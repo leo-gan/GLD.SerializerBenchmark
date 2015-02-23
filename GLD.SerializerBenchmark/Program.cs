@@ -8,11 +8,11 @@ namespace GLD.SerializerBenchmark
         {
             // Input:
             // SerializerName[Json.NET, Bond...] / Format[JSON, XML, Binary, Specific...] / 
-            // Data [int, string, class...] / Quantity
-            // Output: Avrg
+            // Data [int, string, class...] / TestRepetitions
+            // Output: Average time per serialization + deserialization
 
             int repetitions = int.Parse(args[0]);
-            Console.WriteLine("Repetions: " + repetitions);
+            Console.WriteLine("Repetitions: " + repetitions);
 
             Tester.Tests(repetitions, new JsonNet(), "JsonNet");
             Tester.Tests(repetitions, new XmlSerializer(typeof(Person)), "XmlSerializer");
