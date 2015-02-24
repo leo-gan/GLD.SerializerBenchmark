@@ -71,6 +71,11 @@ namespace GLD.SerializerBenchmark
         public List<string> Compare(Person comparable)
         {
             var errors = new List<string> {"************** Comparison failed! "};
+            if (comparable == null)
+            {
+                errors.Add("comparable: is null!");
+                return errors;
+            }
 
             Compare("FirstName", FirstName, comparable.FirstName, errors);
             Compare("LastName", LastName, comparable.LastName, errors);

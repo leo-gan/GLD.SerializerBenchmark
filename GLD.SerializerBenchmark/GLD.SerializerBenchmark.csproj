@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="BinarySerializer.cs" />
     <Compile Include="ISerDeser.cs" />
+    <Compile Include="JsonNetStream.cs" />
     <Compile Include="Tester.cs" />
     <Compile Include="MsgPackSerializer.cs" />
     <Compile Include="XmlSerializer.cs" />
