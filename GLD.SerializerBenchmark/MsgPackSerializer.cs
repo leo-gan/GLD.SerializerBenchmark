@@ -27,7 +27,6 @@ namespace GLD.SerializerBenchmark
 
         public string Serialize(object person)
         {
-            var _serializer = MessagePackSerializer.Get(typeof(Person)) ; // TODO: Hack! How to het the type of the person object?
             using(var ms = new MemoryStream())
             {
                 _serializer.Pack(ms, person);
