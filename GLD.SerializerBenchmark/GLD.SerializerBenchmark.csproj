@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MsgPack">
+      <HintPath>..\packages\MsgPack.Cli.0.5.10\lib\net45\MsgPack.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -44,10 +47,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Bond.cs" />
+    <Compile Include="BinarySerializer.cs" />
     <Compile Include="ISerDeser.cs" />
     <Compile Include="Tester.cs" />
-    <Compile Include="BinarySerializer.cs" />
+    <Compile Include="MsgPackSerializer.cs" />
     <Compile Include="XmlSerializer.cs" />
     <Compile Include="JsonNet.cs" />
     <Compile Include="Person.cs" />

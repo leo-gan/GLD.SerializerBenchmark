@@ -17,6 +17,7 @@ namespace GLD.SerializerBenchmark
             Tester.Tests(repetitions, new JsonNet(), "JsonNet");
             Tester.Tests(repetitions, new XmlSerializer(typeof(Person)), "XmlSerializer");
             Tester.Tests(repetitions, new BinarySerializer(), "BinarySerializer");
+            Tester.Tests(repetitions, new MsgPackSerializer(), "MsgPackSerializer");
         }
     }
 }
