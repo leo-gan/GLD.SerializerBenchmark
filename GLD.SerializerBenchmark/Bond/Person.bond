@@ -1,0 +1,32 @@
+﻿namespace GLD.SerializerBenchmark.Bond
+
+	using DateTime = int64;
+
+	enum Gender
+    {
+        Male,
+        Female
+    }
+
+    struct Passport
+    {
+        0: string Number; 
+        1: string Authority; 
+        2: DateTime ExpirationDate; 
+    }
+
+    struct PoliceRecord
+    {
+        0: int32 Id; 
+        1: string CrimeCode; 
+    }
+
+    struct Person
+    {
+        0: string FirstName; 
+        1: string LastName; 
+        2: uint32 Age; 
+        3: Gender Gender; 
+        4: Passport Passport; 
+        5: list<PoliceRecord> PoliceRecords = nothing;
+	} 

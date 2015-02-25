@@ -19,7 +19,7 @@ namespace GLD.SerializerBenchmark
     {
         private static readonly IMessagePackSerializer _serializer =
             MessagePackSerializer.Get((typeof (Person)));
-            // TODO: Hack! How to het the type of the person object?
+            // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
 
         //public MsgPackSerializer (Person t)
         //{

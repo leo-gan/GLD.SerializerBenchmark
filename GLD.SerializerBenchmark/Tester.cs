@@ -16,10 +16,8 @@ namespace GLD.SerializerBenchmark
                 var original = new Person();
                 sw.Start();
                 string serialized = serializer.Serialize(original);
-                    //JsonConvert.SerializeObject(original);
                 lenghts[i] = serialized.Length;
                 var processed = serializer.Deserialize<Person>(serialized);
-                    // JsonConvert.DeserializeObject<Person>(serialized);
                 sw.Stop();
                 Trace.WriteLine(serialized);
                 times[i] = sw.ElapsedMilliseconds;

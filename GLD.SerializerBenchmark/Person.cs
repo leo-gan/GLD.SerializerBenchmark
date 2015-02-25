@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using Bond;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using ProtoBuf;
 
 namespace GLD.SerializerBenchmark
 {
-    [JsonConverter(typeof (StringEnumConverter))]
+    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.02")]
+    [JsonConverter(typeof(StringEnumConverter))]
     [Serializable]
     public enum Gender
     {
@@ -13,25 +16,44 @@ namespace GLD.SerializerBenchmark
         Female,
     }
 
+    [ProtoContract]
+    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.02")]
+    [global::Bond.Schema]
     [Serializable]
     public class Passport
     {
+        [ProtoMember(1)]
+        [Id(0)]
         public string Number { get; set; }
+        [ProtoMember(2)]
+        [Id(1)]
         public string Authority { get; set; }
+        [ProtoMember(3)]
+        [Id(2)]
         public DateTime ExpirationDate { get; set; }
     }
 
+    [ProtoContract]
+    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.02")]
+    [global::Bond.Schema]
     [Serializable]
     public class PoliceRecord
     {
+        [ProtoMember(1)]
+        [Id(0)]
         public int Id { get; set; }
+        [ProtoMember(2)]
+        [Id(1)]
         public string CrimeCode { get; set; }
     }
 
+    [ProtoContract]
+    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.02")]
+    [global::Bond.Schema]
     [Serializable]
     public class Person
     {
-        private static int maxPoliceRecordCounter = 20;
+        // private static int maxPoliceRecordCounter = 20;
 
         public Person()
         {
@@ -56,17 +78,29 @@ namespace GLD.SerializerBenchmark
                 };
         }
 
+        [ProtoMember(1)]
+        [Id(0)]
         public string FirstName { get; set; }
+        [ProtoMember(2)]
+        [Id(1)]
         public string LastName { get; set; }
+        [ProtoMember(3)]
+        [Id(2)]
         public uint Age { get; set; }
+        [ProtoMember(4)]
+        [Id(3)]
         public Gender Gender { get; set; }
+        [ProtoMember(5)]
+        [Id(4)]
         public Passport Passport { get; set; }
+        [ProtoMember(6)]
+        [Id(5)]
         public PoliceRecord[] PoliceRecords { get; set; }
 
-        public static void Initialize(int maxPoliceRecords = 20)
-        {
-            maxPoliceRecordCounter = maxPoliceRecords;
-        }
+        //public static void Initialize(int maxPoliceRecords = 20)
+        //{
+        //    maxPoliceRecordCounter = maxPoliceRecords;
+        //}
 
         public List<string> Compare(Person comparable)
         {
@@ -91,9 +125,10 @@ namespace GLD.SerializerBenchmark
 
             PoliceRecord[] originalPoliceRecords = PoliceRecords;
             PoliceRecord[] comparablePoliceRecords = comparable.PoliceRecords;
-            Compare("PoliceRecords.Length", PoliceRecords.Length, comparable.PoliceRecords.Length, errors);
+            Compare("PoliceRecords.Length", originalPoliceRecords.Length, comparablePoliceRecords.Length, errors);
 
-            for (var i = 0; i < originalPoliceRecords.Length; i++)
+            var minLength = Math.Min(originalPoliceRecords.Length, comparablePoliceRecords.Length);
+            for (var i = 0; i < minLength; i++)
             {
                 Compare("PoliceRecords[" + i + "].Id", originalPoliceRecords[i].Id, comparablePoliceRecords[i].Id, errors);
                 Compare("PoliceRecords[" + i + "].CrimeCode", originalPoliceRecords[i].CrimeCode, comparablePoliceRecords[i].CrimeCode, errors);
@@ -104,7 +139,7 @@ namespace GLD.SerializerBenchmark
         private static void Compare(string objectName, object left, object right, List<string> errors)
         {
             if (!left.Equals(right))
-                errors.Add(String.Format("{0}: {1} != {2}", objectName, left, right));
+                errors.Add(String.Format("\t{0}: {1} != {2}", objectName, left, right));
         }
     }
 }
