@@ -93,7 +93,7 @@ namespace GLD.SerializerBenchmark
         [ProtoMember(5)]
         [Id(4)]
         public Passport Passport { get; set; }
-        [ProtoMember(6)]
+        [ProtoMember(6, OverwriteList = true)] // OverwriteList happens to be very important in this case, where constructor generates this array!
         [Id(5)]
         public PoliceRecord[] PoliceRecords { get; set; }
 
