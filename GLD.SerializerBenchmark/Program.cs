@@ -21,6 +21,7 @@ namespace GLD.SerializerBenchmark
             Tester.Tests(repetitions, new MsgPackSerializer(), "MsgPackSerializer");
             // Tester.Tests(repetitions, new BondSerializer(typeof(Person)), "BondSerializer"); // TODO: It doesnt not yet. 
             Tester.Tests(repetitions, new ProtoBufSerializer(), "ProtoBufSerializer");
+            Tester.Tests(repetitions, new AvroSerializer(), "AvroSerializer");
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Bond;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -7,8 +9,9 @@ using ProtoBuf;
 
 namespace GLD.SerializerBenchmark
 {
-    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.02")]
-    [JsonConverter(typeof(StringEnumConverter))]
+    [DataContract]
+    [GeneratedCode("gbc", "3.02")]
+    [JsonConverter(typeof (StringEnumConverter))]
     [Serializable]
     public enum Gender
     {
@@ -16,40 +19,51 @@ namespace GLD.SerializerBenchmark
         Female,
     }
 
+    [DataContract]
     [ProtoContract]
-    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.02")]
-    [global::Bond.Schema]
+    [GeneratedCode("gbc", "3.02")]
+    [Schema]
     [Serializable]
     public class Passport
     {
+        [DataMember]
         [ProtoMember(1)]
         [Id(0)]
         public string Number { get; set; }
+
+        [DataMember]
         [ProtoMember(2)]
         [Id(1)]
         public string Authority { get; set; }
+
+        [DataMember]
         [ProtoMember(3)]
         [Id(2)]
         public DateTime ExpirationDate { get; set; }
     }
 
+    [DataContract]
     [ProtoContract]
-    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.02")]
-    [global::Bond.Schema]
+    [GeneratedCode("gbc", "3.02")]
+    [Schema]
     [Serializable]
     public class PoliceRecord
     {
+        [DataMember]
         [ProtoMember(1)]
         [Id(0)]
         public int Id { get; set; }
+
+        [DataMember]
         [ProtoMember(2)]
         [Id(1)]
         public string CrimeCode { get; set; }
     }
 
+    [DataContract]
     [ProtoContract]
-    [System.CodeDom.Compiler.GeneratedCode("gbc", "3.02")]
-    [global::Bond.Schema]
+    [GeneratedCode("gbc", "3.02")]
+    [Schema]
     [Serializable]
     public class Person
     {
@@ -78,22 +92,35 @@ namespace GLD.SerializerBenchmark
                 };
         }
 
+        [DataMember]
         [ProtoMember(1)]
         [Id(0)]
         public string FirstName { get; set; }
+
+        [DataMember]
         [ProtoMember(2)]
         [Id(1)]
         public string LastName { get; set; }
+
+        [DataMember]
         [ProtoMember(3)]
         [Id(2)]
         public uint Age { get; set; }
+
+        [DataMember]
         [ProtoMember(4)]
         [Id(3)]
         public Gender Gender { get; set; }
+
+        [DataMember]
         [ProtoMember(5)]
         [Id(4)]
         public Passport Passport { get; set; }
-        [ProtoMember(6, OverwriteList = true)] // OverwriteList happens to be very important in this case, where constructor generates this array!
+
+        [DataMember]
+        [ProtoMember(6, OverwriteList = true, IsRequired = false)]
+        // OverwriteList happens to be very important in this case, where constructor generates this array!
+        // IsRequired is important!
         [Id(5)]
         public PoliceRecord[] PoliceRecords { get; set; }
 
@@ -116,7 +143,8 @@ namespace GLD.SerializerBenchmark
             Compare("Age", Age, comparable.Age, errors);
             Compare("Gender", Gender, comparable.Gender, errors);
             Compare("Passport.Authority", Passport.Authority, comparable.Passport.Authority, errors);
-            Compare("Passport.ExpirationDate", Passport.ExpirationDate, comparable.Passport.ExpirationDate, errors);
+            Compare("Passport.ExpirationDate", Passport.ExpirationDate,
+                comparable.Passport.ExpirationDate, errors);
             Compare("Passport.Number", Passport.Number, comparable.Passport.Number, errors);
             Compare("FirstName", FirstName, comparable.FirstName, errors);
             Compare("FirstName", FirstName, comparable.FirstName, errors);
@@ -125,18 +153,22 @@ namespace GLD.SerializerBenchmark
 
             PoliceRecord[] originalPoliceRecords = PoliceRecords;
             PoliceRecord[] comparablePoliceRecords = comparable.PoliceRecords;
-            Compare("PoliceRecords.Length", originalPoliceRecords.Length, comparablePoliceRecords.Length, errors);
+            Compare("PoliceRecords.Length", originalPoliceRecords.Length,
+                comparablePoliceRecords.Length, errors);
 
-            var minLength = Math.Min(originalPoliceRecords.Length, comparablePoliceRecords.Length);
-            for (var i = 0; i < minLength; i++)
+            int minLength = Math.Min(originalPoliceRecords.Length, comparablePoliceRecords.Length);
+            for (int i = 0; i < minLength; i++)
             {
-                Compare("PoliceRecords[" + i + "].Id", originalPoliceRecords[i].Id, comparablePoliceRecords[i].Id, errors);
-                Compare("PoliceRecords[" + i + "].CrimeCode", originalPoliceRecords[i].CrimeCode, comparablePoliceRecords[i].CrimeCode, errors);
+                Compare("PoliceRecords[" + i + "].Id", originalPoliceRecords[i].Id,
+                    comparablePoliceRecords[i].Id, errors);
+                Compare("PoliceRecords[" + i + "].CrimeCode", originalPoliceRecords[i].CrimeCode,
+                    comparablePoliceRecords[i].CrimeCode, errors);
             }
             return errors;
         }
 
-        private static void Compare(string objectName, object left, object right, List<string> errors)
+        private static void Compare(string objectName, object left, object right,
+                                    List<string> errors)
         {
             if (!left.Equals(right))
                 errors.Add(String.Format("\t{0}: {1} != {2}", objectName, left, right));

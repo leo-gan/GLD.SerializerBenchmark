@@ -46,6 +46,9 @@
     <Reference Include="Bond.JSON">
       <HintPath>..\packages\Bond.Runtime.CSharp.3.0.4\lib\net45\Bond.JSON.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Hadoop.Avro">
+      <HintPath>..\packages\Microsoft.Hadoop.Avro.1.4.0.0\lib\net40\Microsoft.Hadoop.Avro.dll</HintPath>
+    </Reference>
     <Reference Include="MsgPack">
       <HintPath>..\packages\MsgPack.Cli.0.5.10\lib\net45\MsgPack.dll</HintPath>
     </Reference>
@@ -57,6 +60,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -69,6 +73,7 @@
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
     <Compile Include="JsonNetStream.cs" />
+    <Compile Include="AvroSerializer.cs" />
     <Compile Include="ProtoBufSerializer.cs" />
     <Compile Include="Tester.cs" />
     <Compile Include="MsgPackSerializer.cs" />
