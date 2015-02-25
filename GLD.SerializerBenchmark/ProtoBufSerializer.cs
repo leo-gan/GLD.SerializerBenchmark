@@ -5,11 +5,11 @@ using ProtoBuf;
 namespace GLD.SerializerBenchmark
 {
     /// <summary>
-    ///     NOTE: I use the protobuf-net NuGet package because of [http://stackoverflow.com/questions/2522376/how-to-choose-between-protobuf-csharp-port-and-protobuf-net]
+    ///     NOTE: I use the protobuf-net NuGet package because of
+    ///     [http://stackoverflow.com/questions/2522376/how-to-choose-between-protobuf-csharp-port-and-protobuf-net]
     /// </summary>
     internal class ProtoBufSerializer : ISerDeser
     {
-  
         #region ISerDeser Members
 
         public string Serialize(object person)
@@ -29,7 +29,7 @@ namespace GLD.SerializerBenchmark
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T) Serializer.Deserialize<T>(stream);
+                return Serializer.Deserialize<T>(stream);
             }
         }
 

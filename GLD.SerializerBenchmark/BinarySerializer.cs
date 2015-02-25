@@ -6,14 +6,13 @@ namespace GLD.SerializerBenchmark
 {
     internal class BinarySerializer : ISerDeser
     {
-        private readonly System.Runtime.Serialization.Formatters.Binary.BinaryFormatter _formatter = new BinaryFormatter();
+        private readonly BinaryFormatter _formatter = new BinaryFormatter();
 
-  
         #region ISerDeser Members
 
         public string Serialize(object person)
         {
-            using(var ms = new MemoryStream())
+            using (var ms = new MemoryStream())
             {
                 _formatter.Serialize(ms, person);
                 ms.Flush();
@@ -29,7 +28,7 @@ namespace GLD.SerializerBenchmark
             {
                 var formatter = new BinaryFormatter();
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T)formatter.Deserialize(stream);
+                return (T) formatter.Deserialize(stream);
             }
         }
 

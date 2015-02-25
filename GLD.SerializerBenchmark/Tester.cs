@@ -35,7 +35,8 @@ namespace GLD.SerializerBenchmark
             // the 5% min and 5% max test times
             double averageTime = AverageTime(times);
             // TODO: Utilize lenghts information
-            string report = String.Format("{0}: Average time: {1:N2} ms", serializerName, averageTime);
+            string report = String.Format("{0}: Average time: {1:N2} ms", serializerName,
+                averageTime);
             Console.WriteLine(report);
             Trace.WriteLine(report);
         }

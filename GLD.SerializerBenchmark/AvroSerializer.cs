@@ -1,7 +1,11 @@
+///
+/// See here http://azure.microsoft.com/en-us/documentation/articles/hdinsight-dotnet-avro-serialization/
+/// >PM Install-Package Microsoft.Hadoop.Avro
+/// 
+
 using System;
 using System.IO;
 using Microsoft.Hadoop.Avro;
-using Microsoft.Hadoop.Avro.Container;
 
 namespace GLD.SerializerBenchmark
 {
@@ -18,18 +22,18 @@ namespace GLD.SerializerBenchmark
     /// </summary>
     internal class AvroSerializer : ISerDeser
     {
-   
-         #region ISerDeser Members
+        #region ISerDeser Members
 
         public string Serialize(object person)
         {
             // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
             // The serialize is typed and type should be know upfront.
-            var serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<Person>();
+            IAvroSerializer<Person> serializer =
+                Microsoft.Hadoop.Avro.AvroSerializer.Create<Person>();
 
             using (var ms = new MemoryStream())
             {
-                serializer.Serialize(ms, (Person)person);
+                serializer.Serialize(ms, (Person) person);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
@@ -38,8 +42,8 @@ namespace GLD.SerializerBenchmark
 
         public T Deserialize<T>(string serialized)
         {
-            var serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<T>();
-            
+            IAvroSerializer<T> serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<T>();
+
             byte[] b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {

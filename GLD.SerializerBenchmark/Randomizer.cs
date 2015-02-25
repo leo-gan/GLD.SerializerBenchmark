@@ -12,7 +12,7 @@ namespace GLD.SerializerBenchmark
         private const string PoolLowerCaseLetters = "qwertyuiopasdfghjklzxcvbnm"; // lenght = 26
 
         private const string PoolPunctuation = "                    ,,,,...!?--:;";
-            // be aware of the JSON special sympols
+        // be aware of the JSON special sympols
 
         public static Random Rand = new Random();
 

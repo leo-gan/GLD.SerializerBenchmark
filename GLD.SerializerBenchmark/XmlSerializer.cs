@@ -27,7 +27,7 @@ namespace GLD.SerializerBenchmark
         {
             using (var sr = new StringReader(serialized))
             {
-                return (T)_serializer.Deserialize(sr);
+                return (T) _serializer.Deserialize(sr);
             }
         }
 

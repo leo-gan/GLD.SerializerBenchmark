@@ -1,3 +1,8 @@
+///
+/// See here http://azure.microsoft.com/en-us/documentation/articles/hdinsight-dotnet-avro-serialization/
+/// >PM Install-Package MsgPack.Cli
+/// 
+
 using System;
 using System.IO;
 using MsgPack.Serialization;
@@ -19,7 +24,8 @@ namespace GLD.SerializerBenchmark
     {
         private static readonly IMessagePackSerializer _serializer =
             MessagePackSerializer.Get((typeof (Person)));
-            // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
+
+        // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
 
         //public MsgPackSerializer (Person t)
         //{
