@@ -34,11 +34,11 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
-        public string Serialize(object person)
+        public string Serialize<T>(object person)
         {
             using (var ms = new MemoryStream())
             {
-                _serializer.Pack(ms, person);
+                _serializer.Pack(ms, (T)person);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());

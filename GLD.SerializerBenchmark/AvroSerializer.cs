@@ -24,7 +24,7 @@ namespace GLD.SerializerBenchmark
     {
         #region ISerDeser Members
 
-        public string Serialize(object person)
+        public string Serialize<T>(object person)
         {
             // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
             // The serialize is typed and type should be know upfront.

@@ -31,11 +31,11 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
-        public string Serialize(object person)
+        public string Serialize<T>(object person)
         {
             var output = new OutputBuffer();
             var writer = new CompactBinaryWriter<OutputBuffer>(output);
-            _serializer.Serialize(person, writer);
+            _serializer.Serialize((T)person, writer);
             return Convert.ToBase64String(output.Data.Array);
         }
 

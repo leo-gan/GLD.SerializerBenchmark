@@ -14,11 +14,11 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
-        public string Serialize(object person)
+        public string Serialize<T>(object person)
         {
             using (var sw = new StringWriter())
             {
-                _serializer.Serialize(sw, person);
+                _serializer.Serialize(sw, (T)person);
                 return sw.ToString();
             }
         }

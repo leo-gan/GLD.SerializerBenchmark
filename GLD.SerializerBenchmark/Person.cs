@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Bond;
@@ -10,7 +9,6 @@ using ProtoBuf;
 namespace GLD.SerializerBenchmark
 {
     [DataContract]
-    [GeneratedCode("gbc", "3.02")]
     [JsonConverter(typeof (StringEnumConverter))]
     [Serializable]
     public enum Gender
@@ -21,7 +19,6 @@ namespace GLD.SerializerBenchmark
 
     [DataContract]
     [ProtoContract]
-    [GeneratedCode("gbc", "3.02")]
     [Schema]
     [Serializable]
     public class Passport
@@ -44,7 +41,6 @@ namespace GLD.SerializerBenchmark
 
     [DataContract]
     [ProtoContract]
-    [GeneratedCode("gbc", "3.02")]
     [Schema]
     [Serializable]
     public class PoliceRecord
@@ -62,7 +58,6 @@ namespace GLD.SerializerBenchmark
 
     [DataContract]
     [ProtoContract]
-    [GeneratedCode("gbc", "3.02")]
     [Schema]
     [Serializable]
     public class Person

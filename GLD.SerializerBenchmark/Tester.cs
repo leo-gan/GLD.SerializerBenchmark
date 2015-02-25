@@ -15,7 +15,7 @@ namespace GLD.SerializerBenchmark
             {
                 var original = new Person();
                 sw.Start();
-                string serialized = serializer.Serialize(original);
+                string serialized = serializer.Serialize<Person>(original);
                 lenghts[i] = serialized.Length;
                 var processed = serializer.Deserialize<Person>(serialized);
                 sw.Stop();

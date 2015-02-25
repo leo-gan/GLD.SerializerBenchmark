@@ -6,9 +6,9 @@ namespace GLD.SerializerBenchmark
     {
         #region ISerDeser Members
 
-        public string Serialize(object person)
+        public string Serialize<T>(object person)
         {
-            return JsonConvert.SerializeObject(person);
+            return JsonConvert.SerializeObject((T)person);
         }
 
         public T Deserialize<T>(string serialized)
