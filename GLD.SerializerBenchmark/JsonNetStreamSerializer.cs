@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace GLD.SerializerBenchmark
 {
-    internal class JsonNetStream : ISerDeser
+    internal class JsonNetStreamSerializer : ISerDeser
     {
         private readonly JsonSerializer _serializer = new JsonSerializer();
 

@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace GLD.SerializerBenchmark
 {
-    internal class JsonNet : ISerDeser
+    internal class JsonNetSerializer : ISerDeser
     {
         #region ISerDeser Members
 

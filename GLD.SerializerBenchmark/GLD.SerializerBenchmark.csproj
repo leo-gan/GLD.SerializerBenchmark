@@ -46,6 +46,9 @@
     <Reference Include="Bond.JSON">
       <HintPath>..\packages\Bond.Runtime.CSharp.3.0.4\lib\net45\Bond.JSON.dll</HintPath>
     </Reference>
+    <Reference Include="Jil">
+      <HintPath>..\packages\Jil.2.8.1\lib\net45\Jil.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Hadoop.Avro">
       <HintPath>..\packages\Microsoft.Hadoop.Avro.1.4.0.0\lib\net40\Microsoft.Hadoop.Avro.dll</HintPath>
     </Reference>
@@ -57,6 +60,9 @@
     </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="Sigil">
+      <HintPath>..\packages\Sigil.4.4.0\lib\net45\Sigil.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -72,13 +78,14 @@
     <Compile Include="BondSerializer.cs" />
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
-    <Compile Include="JsonNetStream.cs" />
+    <Compile Include="JilSerializer.cs" />
+    <Compile Include="JsonNetStreamSerializer.cs" />
     <Compile Include="AvroSerializer.cs" />
     <Compile Include="ProtoBufSerializer.cs" />
     <Compile Include="Tester.cs" />
     <Compile Include="MsgPackSerializer.cs" />
     <Compile Include="XmlSerializer.cs" />
-    <Compile Include="JsonNet.cs" />
+    <Compile Include="JsonNetSerializer.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

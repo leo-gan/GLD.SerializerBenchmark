@@ -14,14 +14,15 @@ namespace GLD.SerializerBenchmark
             int repetitions = int.Parse(args[0]);
             Console.WriteLine("Repetitions: " + repetitions);
 
-            Tester.Tests(repetitions, new JsonNet(), "JsonNet");
-            Tester.Tests(repetitions, new JsonNetStream(), "JsonNetStream");
+            Tester.Tests(repetitions, new JsonNetSerializer(), "JsonNetSerializer");
+            Tester.Tests(repetitions, new JsonNetStreamSerializer(), "JsonNetStreamSerializer");
             Tester.Tests(repetitions, new XmlSerializer(typeof(Person)), "XmlSerializer");
             Tester.Tests(repetitions, new BinarySerializer(), "BinarySerializer");
-            Tester.Tests(repetitions, new MsgPackSerializer(), "MsgPackSerializer");
+            Tester.Tests(repetitions, new MsgPackSerializer(), "MsgPackSerializer"); // TODO: DateTime format?
             // Tester.Tests(repetitions, new BondSerializer(typeof(Person)), "BondSerializer"); // TODO: It doesnt not yet. 
             Tester.Tests(repetitions, new ProtoBufSerializer(), "ProtoBufSerializer");
             Tester.Tests(repetitions, new AvroSerializer(), "AvroSerializer");
+            Tester.Tests(repetitions, new JilSerializer(), "JilSerializer"); // TODO: DateTime format?
         }
     }
 }
