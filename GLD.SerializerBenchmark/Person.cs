@@ -13,7 +13,9 @@ namespace GLD.SerializerBenchmark
     [Serializable]
     public enum Gender
     {
+        [EnumMember]
         Male,
+        [EnumMember]
         Female,
     }
 

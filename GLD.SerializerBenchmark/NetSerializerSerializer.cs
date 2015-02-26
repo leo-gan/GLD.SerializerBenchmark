@@ -1,9 +1,7 @@
 ///
 /// https://github.com/jsonfx/jsonfx
-/// PM> Install-Package Install-Package NetSerializer
-/// TODO: DateTime fields is still under work.
-/// TODO: Find faster method.
-
+/// PM> Install-Package NetSerializer
+///
 using System;
 using System.IO;
 using NetSerializer;

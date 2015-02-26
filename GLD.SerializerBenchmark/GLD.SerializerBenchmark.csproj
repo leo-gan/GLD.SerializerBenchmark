@@ -47,6 +47,9 @@
     <Reference Include="Bond.JSON">
       <HintPath>..\packages\Bond.Runtime.CSharp.3.0.4\lib\net45\Bond.JSON.dll</HintPath>
     </Reference>
+    <Reference Include="Flexo">
+      <HintPath>..\packages\flexo.1.0.0.18\lib\Flexo.dll</HintPath>
+    </Reference>
     <Reference Include="Jil">
       <HintPath>..\packages\Jil.2.8.1\lib\net45\Jil.dll</HintPath>
     </Reference>
@@ -89,6 +92,7 @@
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
     <Compile Include="JilSerializer.cs" />
+    <Compile Include="DataContractSerializer.cs" />
     <Compile Include="NetSerializerSerializer.cs" />
     <Compile Include="ServiceStackJsonSerializer.cs" />
     <Compile Include="JsonFxSerializer.cs" />

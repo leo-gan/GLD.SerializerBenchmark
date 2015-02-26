@@ -16,20 +16,21 @@ namespace GLD.SerializerBenchmark
             Console.WriteLine("Repetitions: " + repetitions);
             var serializers = new Dictionary<string, ISerDeser>
             {
+                {"AvroSerializer", new AvroSerializer()},
+                {"BinarySerializer",new BinarySerializer()},
+                //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It doesnt not yet. 
+                {"DataContractSerializerSerializer", new DataContractSerializerSerializer(typeof(Person))},  
+                {"JilSerializer", new JilSerializer()},  // TODO: DateTime format?
+                {"JsonFxSerializer", new JsonFxSerializer()},  // TODO: DateTime format?
                 {"JsonNetSerializer",new JsonNetSerializer()},
                 {"JsonNetStreamSerializer",new JsonNetStreamSerializer()},
-                {"XmlSerializer",new XmlSerializer(typeof (Person))},
-                {"BinarySerializer",new BinarySerializer()},
                 {"MsgPackSerializer", new MsgPackSerializer()},  // TODO: DateTime format?
-                //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It doesnt not yet. 
+                {"NetserializerSerializer", new NetSerializerSerializer(typeof(Person))},  
                 {"ProtoBufSerializer", new ProtoBufSerializer()},
-                {"AvroSerializer", new AvroSerializer()},
-                {"JilSerializer", new JilSerializer()},  // TODO: DateTime format?
-                {"ServiceStackTypeSerializer", new ServiceStackTypeSerializer()},  // TODO: DateTime format?
                 {"ServiceStackJsonSerializer", new ServiceStackJsonSerializer()},  // TODO: DateTime format?
-                {"JsonFxSerializer", new JsonFxSerializer()},  // TODO: DateTime format?
-                {"NetserializerSerializer", new NetSerializerSerializer(typeof(Person))},  // TODO: DateTime format?
-            };
+                {"ServiceStackTypeSerializer", new ServiceStackTypeSerializer()},  // TODO: DateTime format?
+                {"XmlSerializer",new XmlSerializer(typeof (Person))},
+           };
 
             Tester.Tests(repetitions, serializers);
         }

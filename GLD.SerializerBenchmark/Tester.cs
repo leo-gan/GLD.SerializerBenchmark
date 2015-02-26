@@ -31,8 +31,8 @@ namespace GLD.SerializerBenchmark
 
                     sw.Stop();
                     measurements[serializer.Key][i].Time = sw.ElapsedTicks;
-                    Trace.WriteLine(serialized);
-                    Trace.WriteLine(sw.ElapsedTicks);
+                    Trace.WriteLine(serializer.Key + ": " + serialized);
+                    Trace.WriteLine(serializer.Key + ": " + sw.ElapsedTicks);
                     List<string> errors = original.Compare(processed);
                     errors[0] = serializer.Key + errors[0];
                     ReportErrors(errors);
