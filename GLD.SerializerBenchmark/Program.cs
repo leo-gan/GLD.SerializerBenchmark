@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace GLD.SerializerBenchmark
 {
@@ -11,19 +12,25 @@ namespace GLD.SerializerBenchmark
             // Data [int, string, class...] / TestRepetitions
             // Output: Average time per serialization + deserialization
 
-            int repetitions = int.Parse(args[0]);
+            var repetitions = int.Parse(args[0]);
             Console.WriteLine("Repetitions: " + repetitions);
+            var serializers = new Dictionary<string, ISerDeser>
+            {
+                {"JsonNetSerializer",new JsonNetSerializer()},
+                {"JsonNetStreamSerializer",new JsonNetStreamSerializer()},
+                {"XmlSerializer",new XmlSerializer(typeof (Person))},
+                {"BinarySerializer",new BinarySerializer()},
+                {"MsgPackSerializer", new MsgPackSerializer()},  // TODO: DateTime format?
+                //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It doesnt not yet. 
+                {"ProtoBufSerializer", new ProtoBufSerializer()},
+                {"AvroSerializer", new AvroSerializer()},
+                {"JilSerializer", new JilSerializer()},  // TODO: DateTime format?
+                {"ServiceStackTypeSerializer", new ServiceStackTypeSerializer()},  // TODO: DateTime format?
+                {"ServiceStackJsonSerializer", new ServiceStackJsonSerializer()},  // TODO: DateTime format?
+                {"JsonFxSerializer", new JsonFxSerializer()},  // TODO: DateTime format?
+            };
 
-            Tester.Tests(repetitions, new JsonNetSerializer(), "JsonNetSerializer");
-            Tester.Tests(repetitions, new JsonNetStreamSerializer(), "JsonNetStreamSerializer");
-            Tester.Tests(repetitions, new XmlSerializer(typeof (Person)), "XmlSerializer");
-            Tester.Tests(repetitions, new BinarySerializer(), "BinarySerializer");
-            Tester.Tests(repetitions, new MsgPackSerializer(), "MsgPackSerializer"); // TODO: DateTime format?
-            // Tester.Tests(repetitions, new BondSerializer(typeof(Person)), "BondSerializer"); // TODO: It doesnt not yet. 
-            Tester.Tests(repetitions, new ProtoBufSerializer(), "ProtoBufSerializer");
-            Tester.Tests(repetitions, new AvroSerializer(), "AvroSerializer");
-            Tester.Tests(repetitions, new JilSerializer(), "JilSerializer"); // TODO: DateTime format?
-            Tester.Tests(repetitions, new ServiceStackTypeSerializer(), "ServiceStackTypeSerializer"); // TODO: DateTime format?
+            Tester.Tests(repetitions, serializers);
         }
     }
 }

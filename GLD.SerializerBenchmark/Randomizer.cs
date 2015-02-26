@@ -36,9 +36,9 @@ namespace GLD.SerializerBenchmark
         {
             get
             {
-                int wordLenght = GetWordLenght();
+                var wordLenght = GetWordLenght();
                 var sb = new StringBuilder(wordLenght);
-                for (int i = 0; i < wordLenght; i++)
+                for (var i = 0; i < wordLenght; i++)
                     sb.Append(GetChar());
                 return sb.ToString();
             }
@@ -48,9 +48,9 @@ namespace GLD.SerializerBenchmark
         {
             get
             {
-                int wordLenght = GetIdLenght();
+                var wordLenght = GetIdLenght();
                 var sb = new StringBuilder(wordLenght);
-                for (int i = 0; i < wordLenght; i++)
+                for (var i = 0; i < wordLenght; i++)
                     sb.Append(GetDigit());
                 return sb.ToString();
             }
@@ -60,10 +60,10 @@ namespace GLD.SerializerBenchmark
         {
             get
             {
-                int phraseLenght = GetPhraseLenght();
+                var phraseLenght = GetPhraseLenght();
                 var sb = new StringBuilder(phraseLenght);
                 sb.Append(Name);
-                for (int i = 0; i < phraseLenght; i++)
+                for (var i = 0; i < phraseLenght; i++)
                     sb.Append(Word + GetPunctuation());
                 return sb.ToString();
             }

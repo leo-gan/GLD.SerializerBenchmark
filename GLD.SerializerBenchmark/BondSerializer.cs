@@ -41,7 +41,7 @@ namespace GLD.SerializerBenchmark
 
         public T Deserialize<T>(string serialized)
         {
-            byte[] bytes = Convert.FromBase64String(serialized);
+            var bytes = Convert.FromBase64String(serialized);
             var input = new InputBuffer(bytes);
             var reader = new CompactBinaryReader<InputBuffer>(input);
             return (T) _deserializer.Deserialize(reader);

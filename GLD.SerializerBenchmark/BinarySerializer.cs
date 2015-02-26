@@ -23,7 +23,7 @@ namespace GLD.SerializerBenchmark
 
         public T Deserialize<T>(string serialized)
         {
-            byte[] b = Convert.FromBase64String(serialized);
+            var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 var formatter = new BinaryFormatter();

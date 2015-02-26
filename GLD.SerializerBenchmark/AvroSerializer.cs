@@ -28,7 +28,7 @@ namespace GLD.SerializerBenchmark
         {
             // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
             // The serialize is typed and type should be know upfront.
-            IAvroSerializer<Person> serializer =
+            var serializer =
                 Microsoft.Hadoop.Avro.AvroSerializer.Create<Person>();
 
             using (var ms = new MemoryStream())
@@ -42,9 +42,9 @@ namespace GLD.SerializerBenchmark
 
         public T Deserialize<T>(string serialized)
         {
-            IAvroSerializer<T> serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<T>();
+            var serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<T>();
 
-            byte[] b = Convert.FromBase64String(serialized);
+            var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);

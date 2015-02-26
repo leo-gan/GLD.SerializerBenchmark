@@ -4,46 +4,76 @@ using System.Diagnostics;
 
 namespace GLD.SerializerBenchmark
 {
+    internal struct Measurements
+    {
+        public int Size;
+        public long Time;
+    }
+
     internal class Tester
     {
-        public static void Tests(int repetitions, ISerDeser serializer, string serializerName)
+        public static void Tests(int repetitions, Dictionary<string, ISerDeser> serializers)
         {
-            var sw = new Stopwatch();
-            var times = new long[repetitions];
-            var lenghts = new long[repetitions];
+            var measurements = new Dictionary<string, Measurements[]>();
+            foreach (var serializer in serializers)
+                measurements[serializer.Key] = new Measurements[repetitions];
+            var original = new Person(); // the same data for all serializers
             for (int i = 0; i < repetitions; i++)
-            {
-                var original = new Person();
-                sw.Start();
-                string serialized = serializer.Serialize<Person>(original);
-                lenghts[i] = serialized.Length;
-                var processed = serializer.Deserialize<Person>(serialized);
-                sw.Stop();
-                Trace.WriteLine(serialized);
-                times[i] = sw.ElapsedMilliseconds;
-                Trace.WriteLine(sw.ElapsedMilliseconds);
-                List<string> errors = original.Compare(processed);
-                if (errors.Count <= 1) continue;
-                foreach (string error in errors)
+                foreach (var serializer in serializers)
                 {
-                    Trace.WriteLine(error);
-                    Console.WriteLine(error);
-                }
-            }
+                    var sw = Stopwatch.StartNew();
+                    string serialized = serializer.Value.Serialize<Person>(original);
 
-            // Calculate the total times discarding
-            // the 5% min and 5% max test times
-            double averageTime = AverageTime(times);
-            // TODO: Utilize lenghts information
-            string report = String.Format("{0}: Average time: {1:N2} ms", serializerName,
-                averageTime);
+                    measurements[serializer.Key][i].Size = serialized.Length;
+
+                    var processed = serializer.Value.Deserialize<Person>(serialized);
+
+                    sw.Stop();
+                    measurements[serializer.Key][i].Time = sw.ElapsedTicks;
+                    Trace.WriteLine(serialized);
+                    Trace.WriteLine(sw.ElapsedTicks);
+                    List<string> errors = original.Compare(processed);
+                    errors[0] = serializer.Key + errors[0];
+                    ReportErrors(errors);
+                }
+            ReportAllResults(measurements);
+        }
+
+        private static void ReportAllResults(Dictionary<string, Measurements[]> measurements)
+        {
+            foreach (var oneTestMeasurments in measurements)
+                ReportTestResult(oneTestMeasurments);
+        }
+
+        private static void ReportTestResult(
+            KeyValuePair<string, Measurements[]> oneTestMeasurements)
+        {
+            string report = String.Format("{0, -30}: Average: Time: {1,9:N0} ticks  Size: {2,7}",
+                oneTestMeasurements.Key,
+                AverageTime(oneTestMeasurements.Value), AverageSize(oneTestMeasurements.Value));
+
             Console.WriteLine(report);
             Trace.WriteLine(report);
         }
 
-        public static double AverageTime(long[] times)
+        private static void ReportErrors(List<string> errors)
         {
-            if (times == null || times.Length == 0) return 0;
+            // Calculate the total times discarding
+            // the 5% min and 5% max test times
+            if (errors.Count <= 1) return;
+            foreach (string error in errors)
+            {
+                Trace.WriteLine(error);
+                Console.WriteLine(error);
+            }
+        }
+
+        public static double AverageTime(Measurements[] measurements)
+        {
+            if (measurements == null || measurements.Length == 0) return 0;
+            var times = new long[measurements.Length];
+            for (int i = 0; i < measurements.Length; i++)
+                times[i] = measurements[i].Time;
 
             Array.Sort(times);
             int repetitions = times.Length;
@@ -54,6 +84,16 @@ namespace GLD.SerializerBenchmark
                 totalTime += times[i];
 
             return ((double) totalTime)/(count - discardCount);
+        }
+
+        public static int AverageSize(Measurements[] measurements)
+        {
+            if (measurements == null || measurements.Length == 0) return 0;
+            long totalSizes = 0;
+            for (int i = 0; i < measurements.Length; i++)
+                totalSizes += measurements[i].Size;
+
+            return (int) (totalSizes/measurements.Length);
         }
     }
 }

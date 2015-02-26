@@ -77,9 +77,9 @@ namespace GLD.SerializerBenchmark
                     Randomizer.GetDate(DateTime.UtcNow, DateTime.UtcNow + TimeSpan.FromDays(1000)),
                 Number = Randomizer.Id
             };
-            int curPoliceRecordCounter = Randomizer.Rand.Next(20);
+            var curPoliceRecordCounter = Randomizer.Rand.Next(20);
             PoliceRecords = new PoliceRecord[curPoliceRecordCounter];
-            for (int i = 0; i < curPoliceRecordCounter; i++)
+            for (var i = 0; i < curPoliceRecordCounter; i++)
                 PoliceRecords[i] = new PoliceRecord
                 {
                     Id = int.Parse(Randomizer.Id),
@@ -126,7 +126,7 @@ namespace GLD.SerializerBenchmark
 
         public List<string> Compare(Person comparable)
         {
-            var errors = new List<string> {"************** Comparison failed! "};
+            var errors = new List<string> {"  ************** Comparison failed! "};
             if (comparable == null)
             {
                 errors.Add("comparable: is null!");
@@ -146,13 +146,13 @@ namespace GLD.SerializerBenchmark
             Compare("FirstName", FirstName, comparable.FirstName, errors);
             Compare("FirstName", FirstName, comparable.FirstName, errors);
 
-            PoliceRecord[] originalPoliceRecords = PoliceRecords;
-            PoliceRecord[] comparablePoliceRecords = comparable.PoliceRecords;
+            var originalPoliceRecords = PoliceRecords;
+            var comparablePoliceRecords = comparable.PoliceRecords;
             Compare("PoliceRecords.Length", originalPoliceRecords.Length,
                 comparablePoliceRecords.Length, errors);
 
-            int minLength = Math.Min(originalPoliceRecords.Length, comparablePoliceRecords.Length);
-            for (int i = 0; i < minLength; i++)
+            var minLength = Math.Min(originalPoliceRecords.Length, comparablePoliceRecords.Length);
+            for (var i = 0; i < minLength; i++)
             {
                 Compare("PoliceRecords[" + i + "].Id", originalPoliceRecords[i].Id,
                     comparablePoliceRecords[i].Id, errors);
