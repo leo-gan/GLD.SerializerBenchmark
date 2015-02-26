@@ -28,6 +28,7 @@ namespace GLD.SerializerBenchmark
                 {"ServiceStackTypeSerializer", new ServiceStackTypeSerializer()},  // TODO: DateTime format?
                 {"ServiceStackJsonSerializer", new ServiceStackJsonSerializer()},  // TODO: DateTime format?
                 {"JsonFxSerializer", new JsonFxSerializer()},  // TODO: DateTime format?
+                {"NetserializerSerializer", new NetSerializerSerializer(typeof(Person))},  // TODO: DateTime format?
             };
 
             Tester.Tests(repetitions, serializers);

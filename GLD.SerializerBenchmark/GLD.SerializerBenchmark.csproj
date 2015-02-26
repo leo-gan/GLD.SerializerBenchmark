@@ -59,6 +59,9 @@
     <Reference Include="MsgPack">
       <HintPath>..\packages\MsgPack.Cli.0.5.10\lib\net45\MsgPack.dll</HintPath>
     </Reference>
+    <Reference Include="NetSerializer">
+      <HintPath>..\packages\NetSerializer.2.1.0.0\lib\net40\NetSerializer.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -86,6 +89,7 @@
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
     <Compile Include="JilSerializer.cs" />
+    <Compile Include="NetSerializerSerializer.cs" />
     <Compile Include="ServiceStackJsonSerializer.cs" />
     <Compile Include="JsonFxSerializer.cs" />
     <Compile Include="ServiceStackTypeSerializer.cs" />
