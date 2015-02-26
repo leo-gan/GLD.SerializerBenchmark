@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace GLD.SerializerBenchmark
 {
@@ -41,19 +42,28 @@ namespace GLD.SerializerBenchmark
 
         private static void ReportAllResults(Dictionary<string, Measurements[]> measurements)
         {
+            ReportTestResultHeader();
             foreach (var oneTestMeasurments in measurements)
                 ReportTestResult(oneTestMeasurments);
         }
 
-        private static void ReportTestResult(
-            KeyValuePair<string, Measurements[]> oneTestMeasurements)
+        private static void ReportTestResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
         {
-            string report = String.Format("{0, -30}: Average: Time: {1,9:N0} ticks  Size: {2,7}",
-                oneTestMeasurements.Key,
-                AverageTime(oneTestMeasurements.Value), AverageSize(oneTestMeasurements.Value));
+            string report = String.Format("{0, -20}  {1,9:N0} {2,11:N0}    {3,7}",
+                oneTestMeasurements.Key.Replace("Serializer", ""),
+                AverageTime(oneTestMeasurements.Value), MaxTime(oneTestMeasurements.Value), AverageSize(oneTestMeasurements.Value));
 
             Console.WriteLine(report);
             Trace.WriteLine(report);
+        }
+
+        private static void ReportTestResultHeader()
+        {
+            string header = "Serializer:          Time: Avg,    Max ticks   Size: Avg\n"
+                            + "========================================================";
+
+            Console.WriteLine(header);
+            Trace.WriteLine(header);
         }
 
         private static void ReportErrors(List<string> errors)
@@ -68,6 +78,16 @@ namespace GLD.SerializerBenchmark
             }
         }
 
+        public static double MaxTime(Measurements[] measurements)
+        {
+            if (measurements == null || measurements.Length == 0) return 0;
+            var times = new long[measurements.Length];
+            for (int i = 0; i < measurements.Length; i++)
+                times[i] = measurements[i].Time;
+            var max = times.Max();
+            return max;
+        }
+
         public static double AverageTime(Measurements[] measurements)
         {
             if (measurements == null || measurements.Length == 0) return 0;
@@ -79,6 +99,7 @@ namespace GLD.SerializerBenchmark
             int repetitions = times.Length;
             long totalTime = 0;
             var discardCount = (int) Math.Round(repetitions*0.05);
+            if (discardCount == 0 && repetitions > 2) discardCount = 1;
             int count = repetitions - discardCount;
             for (int i = discardCount; i < count; i++)
                 totalTime += times[i];
