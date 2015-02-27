@@ -1,4 +1,8 @@
-﻿using System;
+﻿///
+/// See here https://github.com/Microsoft/bond/
+/// >PM Install-Package Microsoft.Hadoop.Avro
+/// 
+using System;
 using Bond;
 using Bond.IO.Safe;
 using Bond.Protocols;

@@ -1,5 +1,5 @@
 ///
-/// See here http://azure.microsoft.com/en-us/documentation/articles/hdinsight-dotnet-avro-serialization/
+/// See here https://github.com/msgpack/msgpack-cli
 /// >PM Install-Package MsgPack.Cli
 /// 
 

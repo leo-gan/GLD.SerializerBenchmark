@@ -2,7 +2,7 @@
 /// https://github.com/jsonfx/jsonfx
 /// PM> Install-Package JsonFx
 /// TODO: DateTime fields is still under work.
-/// TODO: Find faster method.
+/// 
 
 using System.IO;
 using JsonFx.Json;

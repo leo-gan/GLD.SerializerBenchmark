@@ -87,23 +87,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BinarySerializer.cs" />
-    <Compile Include="BondSerializer.cs" />
+    <Compile Include="Serializers\BinarySerializer.cs" />
+    <Compile Include="Serializers\BondSerializer.cs" />
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
-    <Compile Include="JilSerializer.cs" />
-    <Compile Include="DataContractSerializer.cs" />
-    <Compile Include="NetSerializerSerializer.cs" />
-    <Compile Include="ServiceStackJsonSerializer.cs" />
-    <Compile Include="JsonFxSerializer.cs" />
-    <Compile Include="ServiceStackTypeSerializer.cs" />
-    <Compile Include="JsonNetStreamSerializer.cs" />
-    <Compile Include="AvroSerializer.cs" />
-    <Compile Include="ProtoBufSerializer.cs" />
+    <Compile Include="Serializers\JilSerializer.cs" />
+    <Compile Include="Serializers\DataContractSerializer.cs" />
+    <Compile Include="Serializers\NetSerializerSerializer.cs" />
+    <Compile Include="Serializers\ServiceStackJsonSerializer.cs" />
+    <Compile Include="Serializers\JsonFxSerializer.cs" />
+    <Compile Include="Serializers\ServiceStackTypeSerializer.cs" />
+    <Compile Include="Serializers\JsonNetStreamSerializer.cs" />
+    <Compile Include="Serializers\AvroSerializer.cs" />
+    <Compile Include="Serializers\ProtoBufSerializer.cs" />
     <Compile Include="Tester.cs" />
-    <Compile Include="MsgPackSerializer.cs" />
-    <Compile Include="XmlSerializer.cs" />
-    <Compile Include="JsonNetSerializer.cs" />
+    <Compile Include="Serializers\MsgPackSerializer.cs" />
+    <Compile Include="Serializers\XmlSerializer.cs" />
+    <Compile Include="Serializers\JsonNetSerializer.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
