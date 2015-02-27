@@ -16,9 +16,9 @@ namespace GLD.SerializerBenchmark
             Console.WriteLine("Repetitions: " + repetitions);
             var serializers = new Dictionary<string, ISerDeser>
             {
-                {"AvroSerializer", new AvroSerializer()},
+                {"AvroSerializer", new AvroSerializer(typeof(Person))},
                 {"BinarySerializer",new BinarySerializer()},
-                //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It doesnt not yet. 
+                //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It does not debugged yet. 
                 {"DataContractSerializerSerializer", new DataContractSerializerSerializer(typeof(Person))},  
                 {"JilSerializer", new JilSerializer()},  // TODO: DateTime format?
                 {"JsonFxSerializer", new JsonFxSerializer()},  // TODO: DateTime format?
