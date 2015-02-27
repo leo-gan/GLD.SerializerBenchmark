@@ -1,34 +1,5 @@
-Skip to content
- This repository
-Explore
-Gist
-Blog
-Help
-leo-gan leo-gan
- 
-1  Unwatch 
-  Star 3
- Fork 0leo-gan/GLD.SerializerBenchmark
- branch: master GLD.SerializerBenchmark/GLD.SerializerBenchmark/
-added ReadMe.txt
-
-latest commit 088dd18a40
-leo-gan leo-gan authored 14 hours ago
-..		
-Bond	resharped	2 days ago
-Properties	Initial commit	4 days ago
-Serializers	Added the Serializers folder and moved there serializer wrappers	14 hours ago
-App.config	Initial commit	4 days ago
-GLD.SerializerBenchmark.csproj	added ReadMe.txt	14 hours ago
-ISerDeser.cs	Added <T> to ISerDeser.Serialize(). Added ServiceStack TypeSerializer	2 days ago
-Person.cs	added DataContractSerializer. Sorted serializers.	19 hours ago
-Program.cs	tried to fix Avro	18 hours ago
-Randomizer.cs	improved measurements.	2 days ago
-ReadMe.txt	added ReadMe.txt	14 hours ago
-Tester.cs	added DataContractSerializer. Sorted serializers.	19 hours ago
-packages.config	added DataContractSerializer. Sorted serializers.	19 hours ago
- ReadMe.txt
-﻿What is the best serializer in .NET?
+The text wiht picture is here [http://geekswithblogs.net/LeonidGaneline/archive/2015/02/26/serializers-in-.net.aspx]
+What is the best serializer in .NET?
 No, no, no, this project is not about the best serializer. Here I gather the code which shows in several lines of code, how to use different .NET serializers. Just copy-past code in your project. That is the goal. I want to use serializer in the simplest way but it good to know if this way would really hit your code performance. That is why I added some me measurements, as the byproduct.
 Please, do not take measurements too seriously. I have some numbers, but this project is not the right place to get decisions about serializer performance. I did not spent time to get the best results. If you have the expertise, please, feel free to modify code to get numbers that are more reliable.
 Installation
@@ -49,7 +20,7 @@ Notes:
 •	For Avro I did not find a fast serializable method but its serialized string size is good. 
 •	Json and Binary formats bring not too much difference in the serialized string size.
 •	 Many serializers do not work well with Json DateTime format out-of-box. 
-•	The new Microsoft Bond serializer does not play well in this project. This puzzle is in my list 
+•	The new Microsoft Bond serializer does not play well in this project. This puzzle is in my list :)
 •	The core .NET serializers from Microsoft: XmlSerializer, BinarySerializer, DataContractSerializer are not bad. They show good speed but they not so good for the serialized string size.
 •	Test run outputs the errors and the test results on the console. It also traces the serialized strings and the individual test times, which can be seen in DebugView for example. 
 Status API Training Shop Blog About
