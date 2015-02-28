@@ -50,7 +50,7 @@ namespace GLD.SerializerBenchmark
         private static void ReportTestResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
         {
             string report = String.Format("{0, -20}  {1,9:N0} {2,11:N0}    {3,7}",
-                oneTestMeasurements.Key.Replace("Serializer", ""),
+                oneTestMeasurements.Key,
                 AverageTime(oneTestMeasurements.Value), MaxTime(oneTestMeasurements.Value), AverageSize(oneTestMeasurements.Value));
 
             Console.WriteLine(report);

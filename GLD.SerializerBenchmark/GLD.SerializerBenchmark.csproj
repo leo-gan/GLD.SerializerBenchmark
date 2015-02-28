@@ -68,6 +68,9 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="Polenter.SharpSerializer">
+      <HintPath>..\packages\SharpSerializer.2.20\lib\net20\Polenter.SharpSerializer.dll</HintPath>
+    </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
@@ -93,6 +96,7 @@
     <Compile Include="ISerDeser.cs" />
     <Compile Include="Serializers\JilSerializer.cs" />
     <Compile Include="Serializers\DataContractSerializer.cs" />
+    <Compile Include="Serializers\SharpSerializer.cs" />
     <Compile Include="Serializers\NetSerializerSerializer.cs" />
     <Compile Include="Serializers\ServiceStackJsonSerializer.cs" />
     <Compile Include="Serializers\JsonFxSerializer.cs" />
