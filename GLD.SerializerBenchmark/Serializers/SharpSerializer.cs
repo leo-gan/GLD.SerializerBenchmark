@@ -5,14 +5,13 @@
 
 using System;
 using System.IO;
-using MsgPack.Serialization;
-using Polenter.Serialization;
 
 namespace GLD.SerializerBenchmark
 {
     internal class SharpSerializer : ISerDeser
     {
-        private static Polenter.Serialization.SharpSerializer _serializer = new Polenter.Serialization.SharpSerializer();
+        private static readonly Polenter.Serialization.SharpSerializer _serializer =
+            new Polenter.Serialization.SharpSerializer();
 
         //public SharpSerializer(Type t) // TODO: Is it possible to assigh Type to serializer, so it could speed up?
         //{
@@ -36,7 +35,7 @@ namespace GLD.SerializerBenchmark
 
         public T Deserialize<T>(string serialized)
         {
-            var b = Convert.FromBase64String(serialized);
+            byte[] b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
