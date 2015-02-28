@@ -99,7 +99,7 @@
     <Compile Include="ISerDeser.cs" />
     <Compile Include="Serializers\JilSerializer.cs" />
     <Compile Include="Serializers\DataContractSerializer.cs" />
-    <Compile Include="Serializers\MsgPackSerializer - Copy.cs" />
+    <Compile Include="Serializers\FastJsonSerializer.cs" />
     <Compile Include="Serializers\SharpSerializer.cs" />
     <Compile Include="Serializers\NetSerializerSerializer.cs" />
     <Compile Include="Serializers\ServiceStackJsonSerializer.cs" />
