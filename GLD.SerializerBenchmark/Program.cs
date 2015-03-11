@@ -21,6 +21,7 @@ namespace GLD.SerializerBenchmark
                 //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It does not debugged yet. 
                 {"DataContract", new DataContractSerializerSerializer(typeof(Person))},  
                 {"fastJson", new FastJsonSerializer()},  // TODO: DateTime format?
+                {"JavaScriptSerializer", new JavaScriptSerializer()},  // TODO: DateTime format?
                 {"Jil", new JilSerializer()},  // TODO: DateTime format?
                 {"JsonFx", new JsonFxSerializer()},  // TODO: DateTime format?
                 {"JsonNet",new JsonNetSerializer()},
