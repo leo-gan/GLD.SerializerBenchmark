@@ -10,9 +10,10 @@ namespace GLD.SerializerBenchmark
 {
     internal class NetSerializerSerializer : ISerDeser
     {
+        private readonly Serializer _serializer;
         public NetSerializerSerializer(Type type)
         {
-            Serializer.Initialize(new Type[] {type});
+            _serializer = new Serializer(new Type[] { type });
         }
 
         #region ISerDeser Members
@@ -21,7 +22,7 @@ namespace GLD.SerializerBenchmark
         {
             using (var ms = new MemoryStream())
             {
-                Serializer.Serialize(ms, (T)person);
+                _serializer.Serialize(ms, (T)person);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
@@ -34,7 +35,7 @@ namespace GLD.SerializerBenchmark
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T)Serializer.Deserialize(stream);
+                return (T)_serializer.Deserialize(stream);
             }
         }
 
