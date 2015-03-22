@@ -81,19 +81,18 @@ namespace GLD.SerializerBenchmark
         public static double MaxTime(Measurements[] measurements)
         {
             if (measurements == null || measurements.Length == 0) return 0;
-            var times = new long[measurements.Length];
-            for (int i = 0; i < measurements.Length; i++)
-                times[i] = measurements[i].Time;
-            var max = times.Max();
-            return max;
+            return PrepareTimes(measurements).Max();
+        }
+        public static double MinTime(Measurements[] measurements)
+        {
+            if (measurements == null || measurements.Length == 0) return 0;
+            return PrepareTimes(measurements).Min();
         }
 
         public static double AverageTime(Measurements[] measurements)
         {
             if (measurements == null || measurements.Length == 0) return 0;
-            var times = new long[measurements.Length];
-            for (int i = 0; i < measurements.Length; i++)
-                times[i] = measurements[i].Time;
+            var times = PrepareTimes(measurements);
 
             Array.Sort(times);
             int repetitions = times.Length;
@@ -105,6 +104,15 @@ namespace GLD.SerializerBenchmark
                 totalTime += times[i];
 
             return ((double) totalTime)/(count - discardCount);
+        }
+
+        private static long[] PrepareTimes(Measurements[] measurements)
+        {
+            if (measurements == null || measurements.Length == 0) return null;
+            var times = new long[measurements.Length];
+            for (int i = 0; i < measurements.Length; i++)
+                times[i] = measurements[i].Time;
+            return times;
         }
 
         public static int AverageSize(Measurements[] measurements)
