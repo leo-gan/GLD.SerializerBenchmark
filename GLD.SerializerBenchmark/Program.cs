@@ -28,6 +28,7 @@ namespace GLD.SerializerBenchmark
                 {"JsonNet",new JsonNetSerializer()},
                 {"JsonNetStream",new JsonNetStreamSerializer()},
                 {"MsgPack", new MsgPackSerializer()},  // TODO: DateTime format?
+                {"NetDataContractSer...", new NetDataContractSerializer(typeof(Person))},  
                 {"NetSerializer", new NetSerializerSerializer(typeof(Person))},  
                 {"ProtoBuf", new ProtoBufSerializer()},
                 {"SharpSerializer", new SharpSerializer()},   // TODO: DateTime format?
