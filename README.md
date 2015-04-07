@@ -40,4 +40,5 @@ The winner is… not the **ProtoBuf** but [NetSerializer](http://www.codeproject
 - Many serializers do not work well with **Json DateTime format** out-of-box. Only **NetSerializer** and **Json.Net** take care of DateTime format.
 - The core .NET serializers from Microsoft: **XmlSerializer**, **BinarySerializer**, **DataContractSerializer** are not bad. They show good speed but they not so good for the serialized string size. The **JavaScriptSerializer** produces compact strings but not fast.
 - Test run outputs the errors and the test results on the console. It also traces the serialized strings and the individual test times, which can be seen in DebugView for example.
+
 **[Update2015-03-19]** Updated all GitHub packages. NetSerializer in version 3 now. It changed (simplified) some initialization code. It is now even faster.
