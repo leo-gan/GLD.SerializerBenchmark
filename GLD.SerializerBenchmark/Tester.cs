@@ -49,7 +49,7 @@ namespace GLD.SerializerBenchmark
 
         private static void ReportTestResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
         {
-            string report = String.Format("{0, -20}  {1,9:N0} {2,11:N0}    {3,7}",
+            string report = String.Format("{0, -22}  {1,9:N0} {2,11:N0}    {3,7}",
                 oneTestMeasurements.Key,
                 AverageTime(oneTestMeasurements.Value), MaxTime(oneTestMeasurements.Value), AverageSize(oneTestMeasurements.Value));
 
@@ -59,8 +59,8 @@ namespace GLD.SerializerBenchmark
 
         private static void ReportTestResultHeader()
         {
-            string header = "Serializer:          Time: Avg,    Max ticks   Size: Avg\n"
-                            + "========================================================";
+            string header = "Serializer:            Time: Avg,    Max ticks   Size: Avg\n"
+                            + "==========================================================";
 
             Console.WriteLine(header);
             Trace.WriteLine(header);

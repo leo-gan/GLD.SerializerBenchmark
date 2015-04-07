@@ -104,6 +104,7 @@
     <Compile Include="Serializers\BondSerializer.cs" />
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
+    <Compile Include="Serializers\DataContractJsonSerializer.cs" />
     <Compile Include="Serializers\JilSerializer.cs" />
     <Compile Include="Serializers\DataContractSerializer.cs" />
     <Compile Include="Serializers\FastJsonSerializer.cs" />
