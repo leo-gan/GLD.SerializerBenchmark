@@ -16,25 +16,25 @@ namespace GLD.SerializerBenchmark
             Console.WriteLine("Repetitions: " + repetitions);
             var serializers = new Dictionary<string, ISerDeser>
             {
-                {"Avro", new AvroSerializer(typeof(Person))},
-                {"BinarySerializer",new BinarySerializer()},
+                {"MS Avro", new AvroSerializer(typeof(Person))},
+                {"MS Binary",new BinarySerializer()},
                 //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It does not debugged yet. 
-                {"DataContract", new DataContractSerializerSerializer(typeof(Person))},  
-                {"DataContractJsonSer...", new DataContractJsonSerializer(typeof(Person))},  
+                {"MS DataContract", new DataContractSerializerSerializer(typeof(Person))},  
+                {"MS DataContractJson", new DataContractJsonSerializer(typeof(Person))},  
+                {"MS JavaScript", new JavaScriptSerializer()},  // TODO: DateTime format?
+                {"MS NetDataContract", new NetDataContractSerializer(typeof(Person))},  
+                {"MS XmlSerializer",new XmlSerializer(typeof (Person))},
                 {"fastJson", new FastJsonSerializer()},  // TODO: DateTime format?
-                {"JavaScriptSerializer", new JavaScriptSerializer()},  // TODO: DateTime format?
                 {"Jil", new JilSerializer()},  // TODO: DateTime format?
                 {"JsonFx", new JsonFxSerializer()},  // TODO: DateTime format?
-                {"JsonNet",new JsonNetSerializer()},
-                {"JsonNetStream",new JsonNetStreamSerializer()},
+                {"Json.Net (Helper)",new JsonNetSerializer()},
+                {"Json.Net (Stream)",new JsonNetStreamSerializer()},
                 {"MsgPack", new MsgPackSerializer()},  // TODO: DateTime format?
-                {"NetDataContractSer...", new NetDataContractSerializer(typeof(Person))},  
                 {"NetSerializer", new NetSerializerSerializer(typeof(Person))},  
                 {"ProtoBuf", new ProtoBufSerializer()},
                 {"SharpSerializer", new SharpSerializer()},   // TODO: DateTime format?
-                {"ServiceStackJson", new ServiceStackJsonSerializer()},  // TODO: DateTime format?
-                {"ServiceStackType", new ServiceStackTypeSerializer()},  // TODO: DateTime format?
-                {"XmlSerializer",new XmlSerializer(typeof (Person))},
+                {"ServiceStack Json", new ServiceStackJsonSerializer()},  // TODO: DateTime format?
+                {"ServiceStack Type", new ServiceStackTypeSerializer()},  // TODO: DateTime format?
            };
 
             Tester.Tests(repetitions, serializers);

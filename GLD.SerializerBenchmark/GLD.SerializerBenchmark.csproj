@@ -121,6 +121,7 @@
     <Compile Include="Serializers\JsonNetStreamSerializer.cs" />
     <Compile Include="Serializers\AvroSerializer.cs" />
     <Compile Include="Serializers\ProtoBufSerializer.cs" />
+    <Compile Include="Report.cs" />
     <Compile Include="Tester.cs" />
     <Compile Include="Serializers\MsgPackSerializer.cs" />
     <Compile Include="Serializers\XmlSerializer.cs" />

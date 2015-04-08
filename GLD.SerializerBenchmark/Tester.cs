@@ -31,98 +31,14 @@ namespace GLD.SerializerBenchmark
 
                     sw.Stop();
                     measurements[serializer.Key][i].Time = sw.ElapsedTicks;
-                    Trace.WriteLine(serializer.Key + ": " + serialized);
-                    Trace.WriteLine(serializer.Key + ": " + sw.ElapsedTicks);
-                    List<string> errors = original.Compare(processed);
+                    Report.TimeAndDocument(serializer.Key, sw.ElapsedTicks, serialized);
+                    var errors = original.Compare(processed);
                     errors[0] = serializer.Key + errors[0];
-                    ReportErrors(errors);
+                    Report.Errors(errors);
                 }
-            ReportAllResults(measurements);
+            Report.AllResults(measurements);
         }
 
-        private static void ReportAllResults(Dictionary<string, Measurements[]> measurements)
-        {
-            ReportTestResultHeader();
-            foreach (var oneTestMeasurments in measurements)
-                ReportTestResult(oneTestMeasurments);
-        }
-
-        private static void ReportTestResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
-        {
-            string report = String.Format("{0, -22}  {1,9:N0} {2,11:N0}    {3,7}",
-                oneTestMeasurements.Key,
-                AverageTime(oneTestMeasurements.Value), MaxTime(oneTestMeasurements.Value), AverageSize(oneTestMeasurements.Value));
-
-            Console.WriteLine(report);
-            Trace.WriteLine(report);
-        }
-
-        private static void ReportTestResultHeader()
-        {
-            string header = "Serializer:            Time: Avg,    Max ticks   Size: Avg\n"
-                            + "==========================================================";
-
-            Console.WriteLine(header);
-            Trace.WriteLine(header);
-        }
-
-        private static void ReportErrors(List<string> errors)
-        {
-            // Calculate the total times discarding
-            // the 5% min and 5% max test times
-            if (errors.Count <= 1) return;
-            foreach (string error in errors)
-            {
-                Trace.WriteLine(error);
-                Console.WriteLine(error);
-            }
-        }
-
-        public static double MaxTime(Measurements[] measurements)
-        {
-            if (measurements == null || measurements.Length == 0) return 0;
-            return PrepareTimes(measurements).Max();
-        }
-        public static double MinTime(Measurements[] measurements)
-        {
-            if (measurements == null || measurements.Length == 0) return 0;
-            return PrepareTimes(measurements).Min();
-        }
-
-        public static double AverageTime(Measurements[] measurements)
-        {
-            if (measurements == null || measurements.Length == 0) return 0;
-            var times = PrepareTimes(measurements);
-
-            Array.Sort(times);
-            int repetitions = times.Length;
-            long totalTime = 0;
-            var discardCount = (int) Math.Round(repetitions*0.05);
-            if (discardCount == 0 && repetitions > 2) discardCount = 1;
-            int count = repetitions - discardCount;
-            for (int i = discardCount; i < count; i++)
-                totalTime += times[i];
-
-            return ((double) totalTime)/(count - discardCount);
-        }
-
-        private static long[] PrepareTimes(Measurements[] measurements)
-        {
-            if (measurements == null || measurements.Length == 0) return null;
-            var times = new long[measurements.Length];
-            for (int i = 0; i < measurements.Length; i++)
-                times[i] = measurements[i].Time;
-            return times;
-        }
-
-        public static int AverageSize(Measurements[] measurements)
-        {
-            if (measurements == null || measurements.Length == 0) return 0;
-            long totalSizes = 0;
-            for (int i = 0; i < measurements.Length; i++)
-                totalSizes += measurements[i].Size;
-
-            return (int) (totalSizes/measurements.Length);
-        }
+      
     }
 }

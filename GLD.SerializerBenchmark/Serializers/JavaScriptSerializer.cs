@@ -3,28 +3,24 @@
 /// using System.Web.Script.Serialization; // reference to System.Web.Extensions (in System.Web.Extensions.dll)
 /// 
 
-using System;
-using System.IO;
-using System.Web.Script.Serialization;
-
 namespace GLD.SerializerBenchmark
 {
     internal class JavaScriptSerializer : ISerDeser
     {
-        private static  System.Web.Script.Serialization.JavaScriptSerializer _serializer =
+        private static readonly System.Web.Script.Serialization.JavaScriptSerializer _serializer =
             new System.Web.Script.Serialization.JavaScriptSerializer();
 
- #region ISerDeser Members
+        #region ISerDeser Members
 
         public string Serialize<T>(object person)
         {
-                return _serializer.Serialize(person);
+            return _serializer.Serialize(person);
         }
 
         public T Deserialize<T>(string serialized)
         {
-            return (T) _serializer.Deserialize<T>(serialized);
-          }
+            return _serializer.Deserialize<T>(serialized);
+        }
 
         #endregion
     }
