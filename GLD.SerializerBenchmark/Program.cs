@@ -20,6 +20,7 @@ namespace GLD.SerializerBenchmark
                 {"BinarySerializer",new BinarySerializer()},
                 //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It does not debugged yet. 
                 {"DataContract", new DataContractSerializerSerializer(typeof(Person))},  
+                {"DataContractJsonSer...", new DataContractJsonSerializer(typeof(Person))},  
                 {"fastJson", new FastJsonSerializer()},  // TODO: DateTime format?
                 {"JavaScriptSerializer", new JavaScriptSerializer()},  // TODO: DateTime format?
                 {"Jil", new JilSerializer()},  // TODO: DateTime format?
@@ -27,6 +28,7 @@ namespace GLD.SerializerBenchmark
                 {"JsonNet",new JsonNetSerializer()},
                 {"JsonNetStream",new JsonNetStreamSerializer()},
                 {"MsgPack", new MsgPackSerializer()},  // TODO: DateTime format?
+                {"NetDataContractSer...", new NetDataContractSerializer(typeof(Person))},  
                 {"NetSerializer", new NetSerializerSerializer(typeof(Person))},  
                 {"ProtoBuf", new ProtoBufSerializer()},
                 {"SharpSerializer", new SharpSerializer()},   // TODO: DateTime format?
