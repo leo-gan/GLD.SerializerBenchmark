@@ -14,16 +14,25 @@ Please, do not take these measurements too seriously. I have some numbers, but t
 Most of serializers installed with NuGet package. Look to the “packages.config” file to get a name of the package. I have included comments in the code about it.
 
 ## Tests ##
-The test data created by Randomizer. It fills in fields of the Person object with randomly generated data. This object used for one test cycle with all serializers then it is regenerated for the next cycle.
+The test data created by Randomizer. It fills in fields of the Person object with randomly generated data. This object used for one test cycle with all serializers, then it is regenerated for the next cycle.
 
-The measured time is for the combined serialization and deserialization operations of the same object. When serializer called the first time, it runs the longest time. This **longest time** span is also important and it is measured.
+If you want to test serializers for different object size or for different primitive types, change the Person object.
 
-For the **average time** calculation, the 5% slowest and 5 % fastest results ignored.
+The measured time is for the combined serialization and deserialization operations of the same object. When serializer called the first time, it runs the longest time. This longest time span is also important and it is measured. It is the **Max time**. If we need only single serialization/deserialization, this is the most significant value for us. If we repeat serialization / deserialization many times, the most significant values for us are Average time and **Min time**.
+
+For the **Average time** I calculated three values: 
+- For the Average **100%** all measured times are used.  
+- For the Average **90%** the 5% slowest and 5 % fastest results ignored. 
+- For the Average **80%** the 10% slowest and 10 % fastest results ignored.
+
+If we see significant difference between 80% and 90% average times, probably we need to increase the number of tests to get more stable and correct results.
+
+I also provide two result sets for different test repetitions, so we can make sure the tests show stable results.
 
 Some serializers serialize to strings, others – just to the byte array. I used base64 format to convert byte arrays to strings. I know, it is not fair, because we mostly use a byte array after serialization, not a string. UTF-8 also could be more compact format.
 
 ## Test Results ##
-Again, do not take test results too seriously. I have some numbers, but this project is not the right place to get conclusions about serializer performance.
+Again, do not take test results too seriously. I have some numbers, but this project is not the right place to get conclusions about serializer performance. You'd rather take this code and run it on your specific data in your specific workflows.
 
 Please, see [the last test results on my blog](http://geekswithblogs.net/LeonidGaneline/archive/2015/02/26/serializers-in-.net.aspx). 
 
@@ -33,12 +42,11 @@ The winner is… not the **ProtoBuf** but [NetSerializer](http://www.codeproject
 
 **Notes:**
 
-- The classic **Json.Net** serializer used in two *JsonNet (helper)* and *JsonNet (Stream)* tests. Tests show the difference between using the streams and the serializer **helper classes**. Helper classes could seriously decrease performance. Therefore, streams are the good way to keep up to the fast speed without too much hassle.
+- The classic **Json.Net** serializer used in two **Json.Net (Helper)** and **Json.Net (Stream)** tests. Tests show the difference between using the streams and the serializer helper classes. Helper classes could seriously decrease performance. Therefore, streams are the good way to keep up to the fast speed without too much hassle.
 - The **first call** to serializer initializes the serializer that is why it might take thousand times faster to the next calls.
-- For **Avro** I did not find a fast serializable method but its serialized string size is good. It has some bug, preventing it from passing serialized type to the class (see the comments in code).
+- For **Avro** I did not find a fast serializable method but its serialized string size is good. It has some bug preventing it from passing serialized type to the class (see the comments in code).
 - **Json** and **Binary** formats bring not too much difference in the serialized string size.
 - Many serializers do not work well with **Json DateTime format** out-of-box. Only **NetSerializer** and **Json.Net** take care of DateTime format.
-- The core .NET serializers from Microsoft: **XmlSerializer**, **BinarySerializer**, **DataContractSerializer** are not bad. They show good speed but they not so good for the serialized string size. The **JavaScriptSerializer** produces compact strings but not fast.
-- Test run outputs the errors and the test results on the console. It also traces the serialized strings and the individual test times, which can be seen in DebugView for example.
-
-**[Update2015-03-19]** Updated all GitHub packages. NetSerializer in version 3 now. It changed (simplified) some initialization code. It is now even faster.
+- The core .NET serializers from **Microsoft**: **XmlSerializer**, **BinarySerializer**, **DataContractSerializer**, **NetDataContractSerializer** are not bad. They show good speed but they not so good for the serialized string size. The **JavaScriptSerializer** produces compact strings but not fast. The **DataContractJsonSerializer** is more compact than **DataContractSerializer**.
+- The **NetDataContractSerializer**, **BinarySerializer**, and **Json.Net** show the smallest **Max times**. That means they are optimal choice for cases, when we need only single serialization / deserialization.
+- Test prints the test results on the console. It also traces the errors, the serialized strings, and the individual test times, which can be seen in DebugView for example.
