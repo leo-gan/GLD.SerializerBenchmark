@@ -5,20 +5,22 @@
 
 using System;
 using System.IO;
+using Polenter.Serialization;
 
 namespace GLD.SerializerBenchmark
 {
     internal class SharpSerializer : ISerDeser
     {
-        private static readonly Polenter.Serialization.SharpSerializer _serializer =
-            new Polenter.Serialization.SharpSerializer();
+        private static  Polenter.Serialization.SharpSerializer _serializer;
 
-        //public SharpSerializer(Type t) // TODO: Is it possible to assigh Type to serializer, so it could speed up?
-        //{
-        //    var settings = new SharpSerializerBinarySettings();
-        //    settings.Mode.CompareTo()..
-        //    _serializer = new Polenter.Serialization.SharpSerializer(settings);
-        //}
+        public SharpSerializer() // TODO: Is it possible to assigh Type to serializer, so it could speed up?
+        {
+            var settings = new Polenter.Serialization.SharpSerializerBinarySettings
+            {
+                Mode = BinarySerializationMode.Burst
+            };
+            _serializer = new Polenter.Serialization.SharpSerializer(settings);
+        }
 
         #region ISerDeser Members
 
