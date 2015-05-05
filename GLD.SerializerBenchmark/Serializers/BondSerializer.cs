@@ -4,7 +4,7 @@
 /// 
 using System;
 using Bond;
-using Bond.IO.Safe;
+using Bond.IO.Unsafe;
 using Bond.Protocols;
 
 namespace GLD.SerializerBenchmark
