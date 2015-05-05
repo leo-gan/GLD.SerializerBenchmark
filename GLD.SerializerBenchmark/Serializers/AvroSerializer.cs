@@ -11,7 +11,9 @@ namespace GLD.SerializerBenchmark
 {
     internal class AvroSerializer : ISerDeser
     {
+        private AvroSerializerSettings _settings = new AvroSerializerSettings {UseCache = true};
         //private static Microsoft.Hadoop.Avro.AvroSerializer _serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<Person>();;
+
         #region ISerDeser Members
 
         public AvroSerializer(Type type)
@@ -24,7 +26,7 @@ namespace GLD.SerializerBenchmark
 
         public string Serialize<T>(object person)
         {
-            var serializer =  Microsoft.Hadoop.Avro.AvroSerializer.Create<T>(); 
+            var serializer =  Microsoft.Hadoop.Avro.AvroSerializer.Create<T>(_settings); 
             using (var ms = new MemoryStream())
             {
                 serializer.Serialize(ms, (T)person); 
@@ -36,7 +38,7 @@ namespace GLD.SerializerBenchmark
 
         public T Deserialize<T>(string serialized)
         {
-            var serializer =  Microsoft.Hadoop.Avro.AvroSerializer.Create<T>();
+            var serializer =  Microsoft.Hadoop.Avro.AvroSerializer.Create<T>(_settings);
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
