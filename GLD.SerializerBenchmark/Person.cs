@@ -39,7 +39,7 @@ namespace GLD.SerializerBenchmark
 
         [DataMember]
         [ProtoMember(3)]
-        [Id(2)]
+        [Id(2), global::Bond.Type(typeof(long))]
         public DateTime ExpirationDate { get; set; }
     }
 
@@ -173,6 +173,19 @@ namespace GLD.SerializerBenchmark
         {
             if (!left.Equals(right))
                 errors.Add(String.Format("\t{0}: {1} != {2}", objectName, left, right));
+        }
+    }
+
+    public static class BondTypeAliasConverter
+    {
+        public static long Convert(DateTime value, long unused)
+        {
+            return value.Ticks;
+        }
+
+        public static DateTime Convert(long value, DateTime unused)
+        {
+            return new DateTime(value);
         }
     }
 }

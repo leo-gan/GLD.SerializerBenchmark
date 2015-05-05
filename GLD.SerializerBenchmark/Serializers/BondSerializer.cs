@@ -9,19 +9,6 @@ using Bond.Protocols;
 
 namespace GLD.SerializerBenchmark
 {
-    public static class BondTypeAliasConverter
-    {
-        public static long Convert(DateTime value, long unused)
-        {
-            return value.Ticks;
-        }
-
-        public static DateTime Convert(long value, DateTime unused)
-        {
-            return new DateTime(value);
-        }
-    }
-
     internal class BondSerializer : ISerDeser
     {
         private readonly Deserializer<CompactBinaryReader<InputBuffer>> _deserializer;
@@ -37,10 +24,10 @@ namespace GLD.SerializerBenchmark
 
         public string Serialize<T>(object person)
         {
-            var output = new OutputBuffer();
+            var output = new OutputBuffer(2 * 1024);
             var writer = new CompactBinaryWriter<OutputBuffer>(output);
             _serializer.Serialize((T)person, writer);
-            return Convert.ToBase64String(output.Data.Array);
+            return Convert.ToBase64String(output.Data.Array, output.Data.Offset, output.Data.Count);
         }
 
         public T Deserialize<T>(string serialized)

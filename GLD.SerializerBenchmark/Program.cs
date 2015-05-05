@@ -18,7 +18,7 @@ namespace GLD.SerializerBenchmark
             {
                 {"MS Avro", new AvroSerializer(typeof(Person))}, 
                 {"MS Binary",new BinarySerializer()},
-                //{"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It does not debugged yet. 
+                {"BondSerializer", new BondSerializer(typeof(Person))}, // TODO: It does not debugged yet. 
                 {"MS DataContract", new DataContractSerializerSerializer(typeof(Person))},  
                 {"MS DataContractJson", new DataContractJsonSerializer(typeof(Person))},  
                 {"MS JavaScript", new JavaScriptSerializer()},  // TODO: DateTime format?
