@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace GLD.SerializerBenchmark
 {
@@ -18,12 +17,13 @@ namespace GLD.SerializerBenchmark
             var measurements = new Dictionary<string, Measurements[]>();
             foreach (var serializer in serializers)
                 measurements[serializer.Key] = new Measurements[repetitions];
-            var original = new Person(); // the same data for all serializers
-            for (int i = 0; i < repetitions; i++)
+            var original = Person.Generate(); // the same data for all serializers
+            for (var i = 0; i < repetitions; i++)
+            {
                 foreach (var serializer in serializers)
                 {
                     var sw = Stopwatch.StartNew();
-                    string serialized = serializer.Value.Serialize<Person>(original);
+                    var serialized = serializer.Value.Serialize<Person>(original);
 
                     measurements[serializer.Key][i].Size = serialized.Length;
 
@@ -36,6 +36,10 @@ namespace GLD.SerializerBenchmark
                     errors[0] = serializer.Key + errors[0];
                     Report.Errors(errors);
                 }
+                GC.Collect();
+                GC.WaitForFullGCComplete();
+                GC.Collect();
+            }
             Report.AllResults(measurements);
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using Bond;
 using Newtonsoft.Json;
@@ -39,7 +40,7 @@ namespace GLD.SerializerBenchmark
 
         [DataMember]
         [ProtoMember(3)]
-        [Id(2)]
+        [Id(2), global::Bond.Type(typeof(long))]
         public DateTime ExpirationDate { get; set; }
     }
 
@@ -69,28 +70,31 @@ namespace GLD.SerializerBenchmark
     public class Person
     {
         // private static int maxPoliceRecordCounter = 20;
-
         public Person()
         {
-            FirstName = Randomizer.Name;
-            LastName = Randomizer.Name;
-            Age = (uint) Randomizer.Rand.Next(120);
-            Gender = (Randomizer.Rand.Next(0, 1) == 0) ? Gender.Male : Gender.Female;
-            Passport = new Passport
+        }
+
+        public static Person Generate()
+        {
+            return new Person
             {
-                Authority = Randomizer.Phrase,
-                ExpirationDate =
-                    Randomizer.GetDate(DateTime.UtcNow, DateTime.UtcNow + TimeSpan.FromDays(1000)),
-                Number = Randomizer.Id
-            };
-            var curPoliceRecordCounter = Randomizer.Rand.Next(20);
-            PoliceRecords = new PoliceRecord[curPoliceRecordCounter];
-            for (var i = 0; i < curPoliceRecordCounter; i++)
-                PoliceRecords[i] = new PoliceRecord
+                FirstName = Randomizer.Name,
+                LastName = Randomizer.Name,
+                Age = (uint) Randomizer.Rand.Next(120),
+                Gender = (Randomizer.Rand.Next(0, 1) == 0) ? Gender.Male : Gender.Female,
+                Passport = new Passport
                 {
-                    Id = int.Parse(Randomizer.Id),
+                    Authority = Randomizer.Phrase,
+                    ExpirationDate =
+                        Randomizer.GetDate(DateTime.UtcNow, DateTime.UtcNow + TimeSpan.FromDays(1000)),
+                    Number = Randomizer.Id
+                },
+                PoliceRecords = Enumerable.Range(0, 20).Select(i => new PoliceRecord
+                {
+                    Id = i,
                     CrimeCode = Randomizer.Name
-                };
+                }).ToArray()
+            };
         }
 
         [DataMember]
@@ -173,6 +177,19 @@ namespace GLD.SerializerBenchmark
         {
             if (!left.Equals(right))
                 errors.Add(String.Format("\t{0}: {1} != {2}", objectName, left, right));
+        }
+    }
+
+    public static class BondTypeAliasConverter
+    {
+        public static long Convert(DateTime value, long unused)
+        {
+            return value.ToBinary();
+        }
+
+        public static DateTime Convert(long value, DateTime unused)
+        {
+            return DateTime.FromBinary(value);
         }
     }
 }
