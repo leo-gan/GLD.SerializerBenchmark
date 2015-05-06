@@ -11,6 +11,7 @@ namespace GLD.SerializerBenchmark
 {
     internal class AvroSerializer : ISerDeser
     {
+        // TODO: There is a hack: FOr some reason it is impossible to pass generic T type. The Person type is patched into serializer code.
         private readonly IAvroSerializer<Person> _serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<Person>();
 
         #region ISerDeser Members

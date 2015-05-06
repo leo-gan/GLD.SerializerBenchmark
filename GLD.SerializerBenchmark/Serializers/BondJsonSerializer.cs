@@ -1,6 +1,6 @@
 ﻿///
 /// See here https://github.com/Microsoft/bond/
-/// >PM Install-Package Microsoft.Hadoop.Avro
+/// >PM Install-Package Bond.CSharp
 /// 
 using System;
 using System.IO;

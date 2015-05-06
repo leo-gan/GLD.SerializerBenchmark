@@ -7,19 +7,14 @@ namespace GLD.SerializerBenchmark
     {
         private static void Main(string[] args)
         {
-            // Input:
-            // SerializerName[Json.NET, Bond...] / Format[JSON, XML, Binary, Specific...] / 
-            // Data [int, string, class...] / TestRepetitions
-            // Output: Average time per serialization + deserialization
-
             var repetitions = int.Parse(args[0]);
             Console.WriteLine("Repetitions: " + repetitions);
             var serializers = new Dictionary<string, ISerDeser>
             {
                 {"MS Avro", new AvroSerializer(typeof(Person))}, 
                 {"MS Binary",new BinarySerializer()},
-                {"BondSerializer", new BondSerializer(typeof(Person))},
-                {"BondJson", new BondJsonSerializer(typeof(Person))},
+                {"MS BondSerializer", new BondSerializer(typeof(Person))},
+                {"MS BondJson", new BondJsonSerializer(typeof(Person))},
                 {"MS DataContract", new DataContractSerializerSerializer(typeof(Person))},  
                 {"MS DataContractJson", new DataContractJsonSerializer(typeof(Person))},  
                 {"MS JavaScript", new JavaScriptSerializer()},  // TODO: DateTime format?
