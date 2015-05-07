@@ -13,7 +13,7 @@ namespace GLD.SerializerBenchmark
             {
                 {"MS Avro", new AvroSerializer(typeof(Person))}, 
                 {"MS Binary",new BinarySerializer()},
-                {"MS BondSerializer", new BondSerializer(typeof(Person))},
+                {"MS Bond", new BondSerializer(typeof(Person))},
                 {"MS BondJson", new BondJsonSerializer(typeof(Person))},
                 {"MS DataContract", new DataContractSerializerSerializer(typeof(Person))},  
                 {"MS DataContractJson", new DataContractJsonSerializer(typeof(Person))},  
