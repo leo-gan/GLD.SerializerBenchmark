@@ -36,7 +36,7 @@ namespace GLD.SerializerBenchmark
                     errors[0] = serializer.Key + errors[0];
                     Report.Errors(errors);
                 }
-                GC.Collect(); // it has very little impact for repetitions < 100
+                GC.Collect(); // it has very little impact on speed for repetitions < 100
                 GC.WaitForFullGCComplete();
                 GC.Collect();
             }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Bond;
 
 namespace GLD.SerializerBenchmark
 {
@@ -22,7 +23,7 @@ namespace GLD.SerializerBenchmark
         public static void Errors(List<string> errors)
         {
             if (errors.Count <= 1) return;
-            foreach (string error in errors)
+            foreach (var error in errors)
             {
                 Trace.WriteLine(error);
                 //Console.WriteLine(error);
@@ -31,14 +32,14 @@ namespace GLD.SerializerBenchmark
 
         private static void SingleResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
         {
-            string report =
-                String.Format("{0, -20} {1,7:N0} {2,7:N0} {3,7:N0} {4,7:N0} {5,7:N0} {6,10:N0} {7,7:N0}",
+            var report =
+                String.Format("{0, -20} {1,7:N0} {2,7:N0} {3,7:N0} {4,7:N0} {5,10:N0} {6,7:N0}",
                     oneTestMeasurements.Key,
-                    AverageTime(oneTestMeasurements.Value, 50),
+                    //AverageTime(oneTestMeasurements.Value, 20),
                     AverageTime(oneTestMeasurements.Value, 10),
                     AverageTime(oneTestMeasurements.Value),
-                    P99Time(oneTestMeasurements.Value),
                     MinTime(oneTestMeasurements.Value),
+                    P99Time(oneTestMeasurements.Value),
                     MaxTime(oneTestMeasurements.Value),
                     AverageSize(oneTestMeasurements.Value));
 
@@ -48,9 +49,9 @@ namespace GLD.SerializerBenchmark
 
         private static void Header()
         {
-            string header = "Serializer:   Time:  Avg-50%    -90%   -100%    -p99    Min      Max  Size: Avg\n"
-                            +
-                            "===============================================================================";
+            const string header = "Serializer:    Time: Avg-90%   -100%     Min    99st%      Max  Size: Avg\n"
+                                  +
+                                  "======================================++=================================";
             Console.WriteLine(header);
             Trace.WriteLine(header);
         }
@@ -84,14 +85,7 @@ namespace GLD.SerializerBenchmark
         private static double AverageTime(Measurements[] measurements, int discardedPercent = 0)
         {
             if (measurements == null || measurements.Length == 0) return 0;
-
             return BottomPercent(measurements, discardedPercent).Average(m => m.Time);
-        }
-
-        private static long[] PrepareTimes(Measurements[] measurements)
-        {
-            if (measurements == null || measurements.Length == 0) return null;
-            return measurements.Select(m => m.Time).ToArray();
         }
 
         private static int AverageSize(Measurements[] measurements)
