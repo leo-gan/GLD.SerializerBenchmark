@@ -25,6 +25,7 @@ namespace GLD.SerializerBenchmark
                 {"JsonFx", new JsonFxSerializer()},  // TODO: DateTime format?
                 {"Json.Net (Helper)",new JsonNetSerializer()},
                 {"Json.Net (Stream)",new JsonNetStreamSerializer()},
+                {"HaveBoxJSON",new HaveBoxJSON()}, // TODO: DateTime format?
                 {"MsgPack", new MsgPackSerializer()},  // TODO: DateTime format?
                 {"NetSerializer", new NetSerializerSerializer(typeof(Person))},  
                 {"ProtoBuf", new ProtoBufSerializer()},
