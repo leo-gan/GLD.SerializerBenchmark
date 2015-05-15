@@ -19,6 +19,7 @@ namespace GLD.SerializerBenchmark
                 {"MS DataContractJson", new DataContractJsonSerializer(typeof(Person))},  
                 {"MS JavaScript", new JavaScriptSerializer()},  // TODO: DateTime format?
                 {"MS NetDataContract", new NetDataContractSerializer(typeof(Person))},
+                {"MS XmlSerializer", new XmlSerializer(typeof (Person))},
                 {"fastJson", new FastJsonSerializer()},  // TODO: DateTime format?
                 {"Jil", new JilSerializer()},  // TODO: DateTime format?
                 {"JsonFx", new JsonFxSerializer()},  // TODO: DateTime format?
@@ -33,7 +34,6 @@ namespace GLD.SerializerBenchmark
                 {"ServiceStack Json", new ServiceStackJsonSerializer()},  // TODO: DateTime format?
                 {"ServiceStack Type", new ServiceStackTypeSerializer()},  // TODO: DateTime format?
            };
-            serializers.Add("MS XmlSerializer", new XmlSerializer(typeof (Person)));
 
             Tester.Tests(repetitions, serializers);
         }

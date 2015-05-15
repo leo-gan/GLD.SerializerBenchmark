@@ -51,7 +51,7 @@ namespace GLD.SerializerBenchmark
         {
             const string header = "Serializer:    Time: Avg-90%   -100%    Min    99st%      Max  Size: Avg\n"
                                   +
-                                  "======================================++=================================";
+                                  "=========================================================================";
             Console.WriteLine(header);
             Trace.WriteLine(header);
         }
