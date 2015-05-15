@@ -69,6 +69,9 @@
     <Reference Include="JsonFx">
       <HintPath>..\packages\JsonFx.2.0.1209.2802\lib\net40\JsonFx.dll</HintPath>
     </Reference>
+    <Reference Include="MessageShark">
+      <HintPath>..\packages\MessageShark.1.0.1\lib\net40\MessageShark.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Hadoop.Avro, Version=1.5.6.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Hadoop.Avro.1.5.6\lib\net45\Microsoft.Hadoop.Avro.dll</HintPath>
@@ -118,6 +121,7 @@
     <Compile Include="ISerDeser.cs" />
     <Compile Include="Serializers\DataContractJsonSerializer.cs" />
     <Compile Include="Serializers\HaveBoxJSON.cs" />
+    <Compile Include="Serializers\MessageSharkSerializer.cs" />
     <Compile Include="Serializers\NetDataContractSerializer.cs" />
     <Compile Include="Serializers\JilSerializer.cs" />
     <Compile Include="Serializers\DataContractSerializer.cs" />
