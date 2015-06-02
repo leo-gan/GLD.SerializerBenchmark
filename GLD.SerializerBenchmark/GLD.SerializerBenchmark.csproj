@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Apolyton.FastJson, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\Apolyton.FastJson.dll</HintPath>
+    </Reference>
     <Reference Include="Bond, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Bond.Runtime.CSharp.3.0.6\lib\net45\Bond.dll</HintPath>
@@ -53,18 +57,18 @@
     </Reference>
     <Reference Include="fastjson, Version=2.1.0.0, Culture=neutral, PublicKeyToken=6b75a806b86095cd, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\fastJSON.2.1.12.0\lib\net40\fastjson.dll</HintPath>
+      <HintPath>..\packages\fastJSON.2.1.14.0\lib\net40\fastjson.dll</HintPath>
     </Reference>
-    <Reference Include="Flexo, Version=1.0.21.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Flexo, Version=1.0.22.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\flexo.1.0.21.0\lib\Flexo.dll</HintPath>
+      <HintPath>..\packages\flexo.1.0.22.0\lib\Flexo.dll</HintPath>
     </Reference>
     <Reference Include="HaveBoxJSON">
       <HintPath>..\packages\HaveBoxJSON.1.0.0\lib\net45\HaveBoxJSON.dll</HintPath>
     </Reference>
-    <Reference Include="Jil, Version=2.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Jil, Version=2.10.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Jil.2.9.0\lib\net45\Jil.dll</HintPath>
+      <HintPath>..\packages\Jil.2.10.0\lib\net45\Jil.dll</HintPath>
     </Reference>
     <Reference Include="JsonFx">
       <HintPath>..\packages\JsonFx.2.0.1209.2802\lib\net40\JsonFx.dll</HintPath>
@@ -120,6 +124,7 @@
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
     <Compile Include="Serializers\DataContractJsonSerializer.cs" />
+    <Compile Include="Serializers\ApJsonSerializer.cs" />
     <Compile Include="Serializers\HaveBoxJSON.cs" />
     <Compile Include="Serializers\MessageSharkSerializer.cs" />
     <Compile Include="Serializers\NetDataContractSerializer.cs" />

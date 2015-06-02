@@ -20,6 +20,7 @@ namespace GLD.SerializerBenchmark
                 {"MS JavaScript", new JavaScriptSerializer()},  // TODO: DateTime format?
                 {"MS NetDataContract", new NetDataContractSerializer(typeof(Person))},
                 {"MS XmlSerializer", new XmlSerializer(typeof (Person))},
+                {"ApJsonSerializer", new ApJsonSerializer()},  // TODO: DateTime format?
                 {"fastJson", new FastJsonSerializer()},  // TODO: DateTime format?
                 {"Jil", new JilSerializer()},  // TODO: DateTime format?
                 {"JsonFx", new JsonFxSerializer()},  // TODO: DateTime format?
