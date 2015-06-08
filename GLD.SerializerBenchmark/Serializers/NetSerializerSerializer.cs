@@ -1,5 +1,5 @@
 ///
-/// https://github.com/jsonfx/jsonfx
+/// https://github.com/tomba/netserializer
 /// PM> Install-Package NetSerializer
 ///
 using System;
