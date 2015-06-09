@@ -16,7 +16,7 @@ namespace GLD.SerializerBenchmark
 
         public SlimSerializer(IEnumerable<Type> types)
         {
-            var treg = new TypeRegistry(types);
+            var treg = new TypeRegistry(types, TypeRegistry.BoxedCommonNullableTypes, TypeRegistry.BoxedCommonTypes );
             _serializer = new NFX.Serialization.Slim.SlimSerializer(treg);
         }
 
@@ -26,8 +26,8 @@ namespace GLD.SerializerBenchmark
             {
                 _serializer.Serialize(ms, (T) person);
                 ms.Flush();
-                ms.Position = 0;
-                return Convert.ToBase64String(ms.ToArray());
+                // ms.Position = 0;
+                return Convert.ToBase64String(ms.GetBuffer(), 0, (int)ms.Position, Base64FormattingOptions.None);
             }
         }
 
