@@ -8,7 +8,11 @@ namespace GLD.SerializerBenchmark
         private static void Main(string[] args)
         {
             var repetitions = int.Parse(args[0]);
-            Console.WriteLine("Repetitions: " + repetitions);
+
+            var testData = new Dictionary<string, ITestData>
+            {
+                {"Person", new Person()}, 
+            };
             var serializers = new Dictionary<string, ISerDeser>
             {
                 {"MS Avro", new AvroSerializer(typeof (Person))},
@@ -37,7 +41,7 @@ namespace GLD.SerializerBenchmark
                 {"ServiceStack Type", new ServiceStackTypeSerializer()} // TODO: DateTime format?
             };
 
-            Tester.Tests(repetitions, serializers);
+             Tester.Tests(repetitions, serializers, testData);
         }
     }
 }

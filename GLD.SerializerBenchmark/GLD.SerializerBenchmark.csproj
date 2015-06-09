@@ -123,6 +123,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ITestData.cs" />
     <Compile Include="Serializers\BinarySerializer.cs" />
     <Compile Include="Serializers\BondJsonSerializer.cs" />
     <Compile Include="Serializers\BondSerializer.cs" />

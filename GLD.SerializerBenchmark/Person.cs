@@ -67,14 +67,14 @@ namespace GLD.SerializerBenchmark
     [ProtoContract]
     [Schema]
     [Serializable]
-    public class Person
+    public class Person : ITestData
     {
         // private static int maxPoliceRecordCounter = 20;
         public Person()
         {
         }
 
-        public static Person Generate()
+        public  Person Generate()
         {
             return new Person
             {
@@ -95,6 +95,16 @@ namespace GLD.SerializerBenchmark
                     CrimeCode = Randomizer.Name
                 }).ToArray()
             };
+        }
+
+        ITestData ITestData.Generate()
+        {
+            return Generate();
+        }
+
+        public List<string> Compare(ITestData comparable)
+        {
+            return ComparePerson((Person)comparable);
         }
 
         [DataMember]
@@ -134,7 +144,7 @@ namespace GLD.SerializerBenchmark
         //    maxPoliceRecordCounter = maxPoliceRecords;
         //}
 
-        public List<string> Compare(Person comparable)
+        public List<string> ComparePerson(Person comparable)
         {
             var errors = new List<string> {"  ************** Comparison failed! "};
             if (comparable == null)

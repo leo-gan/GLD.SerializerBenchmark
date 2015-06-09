@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Bond;
 
 namespace GLD.SerializerBenchmark
 {
@@ -30,10 +29,25 @@ namespace GLD.SerializerBenchmark
             }
         }
 
+        public static void Repetitions(int repetitions)
+        {
+            var str = "Repetitions: " + repetitions;
+            Console.WriteLine(str);
+            Trace.WriteLine(str);
+        }
+
+        public static void TestData(string key)
+        {
+            var name = "\nTest Data: " + key + " ";
+            var str = name + new string('>', 80 - name.Length);
+            Console.WriteLine(str);
+            Trace.WriteLine(str);
+        }
+
         private static void SingleResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
         {
             var report =
-                String.Format("{0, -20} {1,7:N0} {2,7:N0} {3,6:N0} {4,9:N0} {5,10:N0} {6,6:N0}",
+                string.Format("{0, -20} {1,7:N0} {2,7:N0} {3,6:N0} {4,9:N0} {5,10:N0} {6,6:N0}",
                     oneTestMeasurements.Key,
                     //AverageTime(oneTestMeasurements.Value, 20),
                     AverageTime(oneTestMeasurements.Value, 10),
@@ -49,9 +63,8 @@ namespace GLD.SerializerBenchmark
 
         private static void Header()
         {
-            const string header = "Serializer:    Time: Avg-90%   -100%    Min    99st%      Max  Size: Avg\n"
-                                  +
-                                  "=========================================================================";
+            var header = "Serializer:    Time: Avg-90%   -100%    Min    99st%      Max  Size: Avg\n"
+                         + new string('=', 73);
             Console.WriteLine(header);
             Trace.WriteLine(header);
         }
@@ -61,7 +74,6 @@ namespace GLD.SerializerBenchmark
             if (measurements == null || measurements.Length == 0) return 0;
             return BottomPercent(measurements, 1).Select(m => m.Time).LastOrDefault();
         }
-     
 
         private static double MaxTime(Measurements[] measurements)
         {
@@ -78,7 +90,7 @@ namespace GLD.SerializerBenchmark
         private static IEnumerable<Measurements> BottomPercent(Measurements[] measurements, int discardedPercent)
         {
             if (discardedPercent == 0) return measurements;
-            var take = (int)Math.Round(measurements.Length * (100 - discardedPercent) / 100.0);
+            var take = (int) Math.Round(measurements.Length*(100 - discardedPercent)/100.0);
             return measurements.OrderBy(m => m.Time).Take(take);
         }
 
@@ -91,7 +103,7 @@ namespace GLD.SerializerBenchmark
         private static int AverageSize(Measurements[] measurements)
         {
             if (measurements == null || measurements.Length == 0) return 0;
-            return (int)measurements.Average(m => m.Size);
+            return (int) measurements.Average(m => m.Size);
         }
     }
 }
