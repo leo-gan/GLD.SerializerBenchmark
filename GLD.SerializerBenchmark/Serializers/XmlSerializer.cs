@@ -7,9 +7,9 @@ namespace GLD.SerializerBenchmark
     {
         private readonly System.Xml.Serialization.XmlSerializer _serializer;
 
-        public XmlSerializer(Type person)
+        public XmlSerializer(Type person, Type[] extraTypes)
         {
-            _serializer = new System.Xml.Serialization.XmlSerializer(person);
+            _serializer = new System.Xml.Serialization.XmlSerializer(person, extraTypes);
         }
 
         #region ISerDeser Members

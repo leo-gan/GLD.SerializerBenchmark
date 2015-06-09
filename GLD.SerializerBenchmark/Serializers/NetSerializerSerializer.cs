@@ -3,6 +3,7 @@
 /// PM> Install-Package NetSerializer
 ///
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NetSerializer;
 
@@ -11,9 +12,9 @@ namespace GLD.SerializerBenchmark
     internal class NetSerializerSerializer : ISerDeser
     {
         private readonly Serializer _serializer;
-        public NetSerializerSerializer(Type type)
+        public NetSerializerSerializer(IEnumerable<Type> types)
         {
-            _serializer = new Serializer(new Type[] { type });
+            _serializer = new Serializer(types);
         }
 
         #region ISerDeser Members

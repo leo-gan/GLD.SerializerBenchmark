@@ -14,9 +14,9 @@ namespace GLD.SerializerBenchmark
         private static  DataContractSerializer _serializer = null;
 
 
-        public DataContractSerializerSerializer(Type t)
+        public DataContractSerializerSerializer(Type t, Type[] extraTypes)
         {
-            _serializer = new DataContractSerializer(t);
+            _serializer = new DataContractSerializer(t, extraTypes);
         }
 
         #region ISerDeser Members

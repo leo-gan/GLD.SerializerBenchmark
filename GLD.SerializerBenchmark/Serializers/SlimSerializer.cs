@@ -1,15 +1,24 @@
 /// https://github.com/aumcode/nfx
 /// Clone a project from GitHub b compile it. Add reference to NFX.dll 
+
 using System;
+using System.Collections.Generic;
 using System.IO;
+using NFX.Serialization.Slim;
 
 namespace GLD.SerializerBenchmark
 {
     internal class SlimSerializer : ISerDeser
     {
-        private readonly NFX.Serialization.Slim.SlimSerializer _serializer = new NFX.Serialization.Slim.SlimSerializer();
+        private readonly NFX.Serialization.Slim.SlimSerializer _serializer;
 
         #region ISerDeser Members
+
+        public SlimSerializer(IEnumerable<Type> types)
+        {
+            var treg = new TypeRegistry(types);
+            _serializer = new NFX.Serialization.Slim.SlimSerializer(treg);
+        }
 
         public string Serialize<T>(object person)
         {

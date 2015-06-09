@@ -7,12 +7,17 @@
 
 using System;
 using System.IO;
+using System.Runtime.Serialization;
 using ProtoBuf;
 
 namespace GLD.SerializerBenchmark
 {
      internal class ProtoBufSerializer : ISerDeser
     {
+         //public ProtoBufSerializer(Type type)
+         //{
+         //    var serializationInfo = new SerializationInfo(type, new FormatterConverter());
+         //}
         #region ISerDeser Members
 
         public string Serialize<T>(object person)

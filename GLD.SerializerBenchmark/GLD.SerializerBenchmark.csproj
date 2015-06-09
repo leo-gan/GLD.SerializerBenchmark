@@ -37,7 +37,7 @@
   <ItemGroup>
     <Reference Include="Apolyton.FastJson, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\Debug\Apolyton.FastJson.dll</HintPath>
+      <HintPath>..\..\..\..\Users\lganeline\Downloads\Apolyton.FastJson.dll</HintPath>
     </Reference>
     <Reference Include="Bond, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -92,7 +92,7 @@
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="NFX">
-      <HintPath>..\..\nfx\Output\Release\NFX.dll</HintPath>
+      <HintPath>..\..\..\..\Users\lganeline\Downloads\NFX.dll</HintPath>
     </Reference>
     <Reference Include="Polenter.SharpSerializer">
       <HintPath>..\packages\SharpSerializer.2.20\lib\net20\Polenter.SharpSerializer.dll</HintPath>

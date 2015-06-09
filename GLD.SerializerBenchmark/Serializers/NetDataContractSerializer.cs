@@ -12,9 +12,9 @@ namespace GLD.SerializerBenchmark
         private static  System.Runtime.Serialization.DataContractSerializer _serializer = null;
 
 
-        public NetDataContractSerializer(Type t)
+        public NetDataContractSerializer(Type t, Type[] extraTypes)
         {
-            _serializer = new System.Runtime.Serialization.DataContractSerializer(t);
+            _serializer = new System.Runtime.Serialization.DataContractSerializer(t, extraTypes);
         }
 
         #region ISerDeser Members
