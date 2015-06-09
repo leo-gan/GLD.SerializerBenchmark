@@ -30,6 +30,7 @@ namespace GLD.SerializerBenchmark
                 {"MessageShark", new MessageSharkSer()}, 
                 {"MsgPack", new MsgPackSerializer()},  // TODO: DateTime format?
                 {"NetSerializer", new NetSerializerSerializer(typeof(Person))},  
+                {"NFX.SlimSerializer", new SlimSerializer()},  
                 {"ProtoBuf", new ProtoBufSerializer()},
                 {"SharpSerializer", new SharpSerializer()},   // TODO: DateTime format?
                 {"ServiceStack Json", new ServiceStackJsonSerializer()},  // TODO: DateTime format?

@@ -91,6 +91,9 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="NFX">
+      <HintPath>..\..\nfx\Output\Release\NFX.dll</HintPath>
+    </Reference>
     <Reference Include="Polenter.SharpSerializer">
       <HintPath>..\packages\SharpSerializer.2.20\lib\net20\Polenter.SharpSerializer.dll</HintPath>
     </Reference>
@@ -109,8 +112,10 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http.Formatting, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -126,6 +131,7 @@
     <Compile Include="Serializers\DataContractJsonSerializer.cs" />
     <Compile Include="Serializers\ApJsonSerializer.cs" />
     <Compile Include="Serializers\HaveBoxJSON.cs" />
+    <Compile Include="Serializers\SlimSerializer.cs" />
     <Compile Include="Serializers\MessageSharkSerializer.cs" />
     <Compile Include="Serializers\NetDataContractSerializer.cs" />
     <Compile Include="Serializers\JilSerializer.cs" />
