@@ -36,7 +36,7 @@ namespace GLD.SerializerBenchmark
             Trace.WriteLine(str);
         }
 
-        public static void TestData(string key)
+        public static void TestDataHeader(string key)
         {
             var name = "\nTest Data: " + key + " ";
             var str = name + new string('>', 80 - name.Length);

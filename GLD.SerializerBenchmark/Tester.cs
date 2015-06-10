@@ -25,7 +25,7 @@ namespace GLD.SerializerBenchmark
             foreach (var serializer in serializers)
                 measurements[serializer.Key] = new Measurements[repetitions];
             var original = testDataItem.Value.Generate(); // the same data for all serializers
-            Report.TestData(testDataItem.Key);
+            Report.TestDataHeader(testDataItem.Key);
             for (var i = 0; i < repetitions; i++)
                 TestOnSerializer(serializers, original, measurements, i);
             Report.AllResults(measurements);
