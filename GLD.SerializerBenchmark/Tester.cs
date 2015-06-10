@@ -26,6 +26,9 @@ namespace GLD.SerializerBenchmark
                 measurements[serializer.Key] = new Measurements[repetitions];
             var original = testDataItem.Value.Generate(); // the same data for all serializers
             Report.TestDataHeader(testDataItem.Key);
+            GC.Collect(); // it has very little impact on speed for repetitions < 100
+            GC.WaitForFullGCComplete();
+            GC.Collect();
             for (var i = 0; i < repetitions; i++)
                 TestOnSerializer(serializers, original, measurements, i);
             Report.AllResults(measurements);
