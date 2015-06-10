@@ -63,7 +63,7 @@ namespace GLD.SerializerBenchmark
 
         private static void Header()
         {
-            var header = "Serializer:    Time: Avg-90%   -100%    Min    99st%      Max  Size: Avg\n"
+            var header = "\nSerializer:    Time: Avg-90%   -100%    Min    99st%      Max  Size: Avg\n"
                          + new string('=', 73);
             Console.WriteLine(header);
             Trace.WriteLine(header);

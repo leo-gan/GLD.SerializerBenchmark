@@ -11,7 +11,7 @@ namespace GLD.SerializerBenchmark
 
             var testData = new Dictionary<string, ITestData>
             {
-                {"Person", new Person()}, 
+                {"Person (nested objects and an array)", new Person()}, 
             };
             var serializers = new Dictionary<string, ISerDeser>
             {
