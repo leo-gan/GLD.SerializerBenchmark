@@ -84,6 +84,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\MsgPack.Cli.0.5.11\lib\net45\MsgPack.dll</HintPath>
     </Reference>
+    <Reference Include="NetJSON">
+      <HintPath>..\packages\NetJSON.1.0.7\lib\net40\NetJSON.dll</HintPath>
+    </Reference>
     <Reference Include="NetSerializer, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NetSerializer.3.0.0.0\lib\net40\NetSerializer.dll</HintPath>
@@ -132,6 +135,7 @@
     <Compile Include="Serializers\DataContractJsonSerializer.cs" />
     <Compile Include="Serializers\ApJsonSerializer.cs" />
     <Compile Include="Serializers\HaveBoxJSON.cs" />
+    <Compile Include="Serializers\NetJSONSer.cs" />
     <Compile Include="Serializers\SlimSerializer.cs" />
     <Compile Include="Serializers\MessageSharkSerializer.cs" />
     <Compile Include="Serializers\NetDataContractSerializer.cs" />

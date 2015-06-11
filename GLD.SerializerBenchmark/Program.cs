@@ -33,6 +33,7 @@ namespace GLD.SerializerBenchmark
                 {"HaveBoxJSON", new HaveBoxJSON()}, // TODO: DateTime format?
                 {"MessageShark", new MessageSharkSer()},
                 {"MsgPack", new MsgPackSerializer()}, // TODO: DateTime format?
+                {"NetJSON", new NetJSONSer()}, // TODO: DateTime format?
                 {"NetSerializer", new NetSerializerSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
                 {"NFX.SlimSerializer", new SlimSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}) },
                 {"ProtoBuf", new ProtoBufSerializer()},
