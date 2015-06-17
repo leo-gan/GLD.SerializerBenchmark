@@ -1,6 +1,5 @@
 ///
-/// See here http://azure.microsoft.com/en-us/documentation/articles/hdinsight-dotnet-avro-serialization/
-/// >PM Install-Package MsgPack.Cli
+/// using System.Runtime.Serialization
 /// 
 
 using System;
