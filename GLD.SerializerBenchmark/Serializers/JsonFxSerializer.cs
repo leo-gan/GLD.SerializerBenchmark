@@ -1,7 +1,7 @@
 ///
 /// https://github.com/jsonfx/jsonfx
 /// PM> Install-Package JsonFx
-/// TODO: DateTime fields is still under work.
+/// by Stephen McKamey
 /// 
 
 using System.IO;

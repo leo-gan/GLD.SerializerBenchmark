@@ -103,6 +103,10 @@
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
+    <Reference Include="Salar.Bois, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c6a95817615ec2cb, processorArchitecture=MSIL">
+      <HintPath>..\packages\Salar.Bois.2.0.0.0\lib\net40\Salar.Bois.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Serialization">
       <HintPath>..\packages\ObjectSerialization.1.0.0.0\lib\net45\Serialization.dll</HintPath>
     </Reference>
@@ -135,6 +139,7 @@
     <Compile Include="Serializers\DataContractJsonSerializer.cs" />
     <Compile Include="Serializers\ApJsonSerializer.cs" />
     <Compile Include="Serializers\HaveBoxJSON.cs" />
+    <Compile Include="Serializers\SalarBoisSerializer.cs" />
     <Compile Include="Serializers\NetJSONSer.cs" />
     <Compile Include="Serializers\SlimSerializer.cs" />
     <Compile Include="Serializers\MessageSharkSerializer.cs" />

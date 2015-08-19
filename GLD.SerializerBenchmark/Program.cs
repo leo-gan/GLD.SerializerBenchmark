@@ -39,7 +39,8 @@ namespace GLD.SerializerBenchmark
                 {"ProtoBuf", new ProtoBufSerializer()},
                 {"SharpSerializer", new SharpSerializer()}, // TODO: DateTime format?
                 {"ServiceStack Json", new ServiceStackJsonSerializer()}, // TODO: DateTime format?
-                {"ServiceStack Type", new ServiceStackTypeSerializer()} // TODO: DateTime format?
+                {"ServiceStack Type", new ServiceStackTypeSerializer()}, // TODO: DateTime format?
+                {"Salar.Bois", new SalarBoisSerializer()}, 
             };
 
              Tester.Tests(repetitions, serializers, testData);
