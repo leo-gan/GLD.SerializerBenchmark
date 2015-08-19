@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace GLD.SerializerBenchmark
 {
@@ -11,38 +10,41 @@ namespace GLD.SerializerBenchmark
 
             var testData = new Dictionary<string, ITestData>
             {
-                {"Person (nested objects and an array)", new Person()}, 
+                {"Person (nested objects and an array)", new Person()}
             };
-            var serializers = new Dictionary<string, ISerDeser>
+            var serializers = new List<ISerDeser>
             {
-                {"MS Avro", new AvroSerializer(typeof (Person))},
-                {"MS Binary", new BinarySerializer()},
-                {"MS Bond", new BondSerializer(typeof (Person))},
-                {"MS BondJson", new BondJsonSerializer(typeof (Person))},
-                {"MS DataContract", new DataContractSerializerSerializer(typeof (Person), new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
-                {"MS DataContractJson", new DataContractJsonSerializer(typeof (Person), new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
-                {"MS JavaScript", new JavaScriptSerializer()}, // TODO: DateTime format?
-                {"MS XmlSerializer", new XmlSerializer(typeof (Person), new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
-                {"ApJson", new ApJsonSerializer()}, // TODO: DateTime format?
-                {"fastJson", new FastJsonSerializer()}, // TODO: DateTime format?
-                {"Jil", new JilSerializer()}, // TODO: DateTime format?
-                {"JsonFx", new JsonFxSerializer()}, // TODO: DateTime format?
-                {"Json.Net (Helper)", new JsonNetSerializer()},
-                {"Json.Net (Stream)", new JsonNetStreamSerializer()},
-                {"HaveBoxJSON", new HaveBoxJSON()}, // TODO: DateTime format?
-                {"MessageShark", new MessageSharkSer()},
-                {"MsgPack", new MsgPackSerializer()}, // TODO: DateTime format?
-                {"NetJSON", new NetJSONSer()}, // TODO: DateTime format?
-                {"NetSerializer", new NetSerializerSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
-                {"NFX.SlimSerializer", new SlimSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}) },
-                {"ProtoBuf", new ProtoBufSerializer()},
-                {"SharpSerializer", new SharpSerializer()}, // TODO: DateTime format?
-                {"ServiceStack Json", new ServiceStackJsonSerializer()}, // TODO: DateTime format?
-                {"ServiceStack Type", new ServiceStackTypeSerializer()}, // TODO: DateTime format?
-                {"Salar.Bois", new SalarBoisSerializer()}, 
+                new AvroSerializer(typeof (Person)),
+                new BinarySerializer(),
+                new BondSerializer(typeof (Person)),
+                new BondJsonSerializer(typeof (Person)),
+                new DataContractSerializerSerializer(typeof (Person),
+                    new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
+                new DataContractJsonSerializer(typeof (Person),
+                    new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
+                new JavaScriptSerializer(), // TODO: DateTime format?
+                new XmlSerializer(typeof (Person), new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
+                new ApJsonSerializer(), // TODO: DateTime format?
+                new FastJsonSerializer(), // TODO: DateTime format?
+                new JilSerializer(), // TODO: DateTime format?
+                new JsonFxSerializer(), // TODO: DateTime format?
+                new JsonNetSerializer(),
+                new JsonNetStreamSerializer(),
+                new HaveBoxJSON(), // TODO: DateTime format?
+                new MessageSharkSer(),
+                new MsgPackSerializer(), // TODO: DateTime format?
+                new NetJSONSer(), // TODO: DateTime format?
+                new NetSerializerSerializer(new[]
+                {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
+                new SlimSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
+                new ProtoBufSerializer(),
+                new SharpSerializer(), // TODO: DateTime format?
+                new ServiceStackJsonSerializer(), // TODO: DateTime format?
+                new ServiceStackTypeSerializer(), // TODO: DateTime format?
+                new SalarBoisSerializer()
             };
 
-             Tester.Tests(repetitions, serializers, testData);
+            Tester.Tests(repetitions, serializers, testData);
         }
     }
 }
