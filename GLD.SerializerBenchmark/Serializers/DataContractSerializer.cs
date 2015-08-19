@@ -20,6 +20,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "MS DataContract"; } }
+
         public string Serialize<T>(object person)
         {
             using (var stream = new MemoryStream())

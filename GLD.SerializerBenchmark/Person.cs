@@ -74,6 +74,8 @@ namespace GLD.SerializerBenchmark
         {
         }
 
+        public string Name {get { return "Person"; } }
+
         public  Person Generate()
         {
             return new Person

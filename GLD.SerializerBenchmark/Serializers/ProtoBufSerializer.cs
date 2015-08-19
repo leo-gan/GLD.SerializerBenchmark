@@ -20,7 +20,9 @@ namespace GLD.SerializerBenchmark
          //}
         #region ISerDeser Members
 
-        public string Serialize<T>(object person)
+        public string Name {get { return "ProtoBuf"; } }
+
+         public string Serialize<T>(object person)
         {
             using (var ms = new MemoryStream())
             {

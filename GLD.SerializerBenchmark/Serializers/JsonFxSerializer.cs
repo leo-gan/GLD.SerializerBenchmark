@@ -16,6 +16,8 @@ namespace GLD.SerializerBenchmark
         static readonly JsonReader _jr = new JsonReader();
         #region ISerDeser Members
 
+        public string Name {get { return "JsonFx"; } }
+
         public string Serialize<T>(object person)
         {
             return _jw.Write(person);

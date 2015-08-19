@@ -13,6 +13,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "HaveBoxJSON"; } }
+
         public string Serialize<T>(object person)
         {
             return _serializer.Serialize((T) person);

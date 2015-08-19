@@ -23,6 +23,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "MS BondJson"; } }
+
         public string Serialize<T>(object person)
         {
             using (var tw = new StringWriter())

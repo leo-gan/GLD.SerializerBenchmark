@@ -23,7 +23,9 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
-        public string Serialize<T>(object person)
+        public string Name {get { return "Salar.Bois"; } }
+
+         public string Serialize<T>(object person)
         {
             using (var ms = new MemoryStream())
             {

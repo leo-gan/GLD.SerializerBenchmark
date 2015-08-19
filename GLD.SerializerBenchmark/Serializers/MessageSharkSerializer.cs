@@ -12,6 +12,8 @@ namespace GLD.SerializerBenchmark
     {
         #region ISerDeser Members
 
+        public string Name {get { return "MessageShark"; } }
+
         public string Serialize<T>(object person)
         {
             var buf = MessageSharkSerializer.Serialize((T) person);

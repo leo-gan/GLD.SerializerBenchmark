@@ -19,6 +19,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "NetSerializer"; } }
+
         public string Serialize<T>(object person)
         {
             using (var ms = new MemoryStream())

@@ -8,6 +8,7 @@ namespace GLD.SerializerBenchmark
 {
     public interface ITestData
     {
+        string Name { get; }
         ITestData Generate();
         List<string> Compare(ITestData comparable);
     }

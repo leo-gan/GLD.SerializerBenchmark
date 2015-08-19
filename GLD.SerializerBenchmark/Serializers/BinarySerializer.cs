@@ -10,6 +10,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "MS Binary"; } }
+
         public string Serialize<T>(object person)
         {
             using (var ms = new MemoryStream())

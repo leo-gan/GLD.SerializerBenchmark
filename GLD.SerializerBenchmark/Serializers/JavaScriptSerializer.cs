@@ -12,6 +12,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "MS JavaScript"; } }
+
         public string Serialize<T>(object person)
         {
             return _serializer.Serialize(person);

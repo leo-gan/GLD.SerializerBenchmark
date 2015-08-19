@@ -22,7 +22,6 @@ namespace GLD.SerializerBenchmark
                 {"MS DataContract", new DataContractSerializerSerializer(typeof (Person), new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
                 {"MS DataContractJson", new DataContractJsonSerializer(typeof (Person), new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
                 {"MS JavaScript", new JavaScriptSerializer()}, // TODO: DateTime format?
-                {"MS NetDataContract", new NetDataContractSerializer(typeof (Person), new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
                 {"MS XmlSerializer", new XmlSerializer(typeof (Person), new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)})},
                 {"ApJson", new ApJsonSerializer()}, // TODO: DateTime format?
                 {"fastJson", new FastJsonSerializer()}, // TODO: DateTime format?

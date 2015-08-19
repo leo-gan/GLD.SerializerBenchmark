@@ -14,6 +14,8 @@ namespace GLD.SerializerBenchmark
  
         #region ISerDeser Members
 
+        public string Name {get { return "fastJson"; } }
+
         public string Serialize<T>(object person)
         {
                return fastJSON.JSON.ToJSON(person);

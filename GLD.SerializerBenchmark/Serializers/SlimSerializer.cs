@@ -20,6 +20,8 @@ namespace GLD.SerializerBenchmark
             _serializer = new NFX.Serialization.Slim.SlimSerializer(treg);
         }
 
+        public string Name {get { return "NFX.Slim"; } }
+
         public string Serialize<T>(object person)
         {
             using (var ms = new MemoryStream())

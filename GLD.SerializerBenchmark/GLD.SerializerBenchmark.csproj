@@ -143,7 +143,6 @@
     <Compile Include="Serializers\NetJSONSer.cs" />
     <Compile Include="Serializers\SlimSerializer.cs" />
     <Compile Include="Serializers\MessageSharkSerializer.cs" />
-    <Compile Include="Serializers\NetDataContractSerializer.cs" />
     <Compile Include="Serializers\JilSerializer.cs" />
     <Compile Include="Serializers\DataContractSerializer.cs" />
     <Compile Include="Serializers\FastJsonSerializer.cs" />

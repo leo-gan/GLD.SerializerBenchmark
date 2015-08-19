@@ -13,6 +13,8 @@ namespace GLD.SerializerBenchmark
  
         #region ISerDeser Members
 
+        public string Name {get { return "Apolyton.Json"; } }
+
         public string Serialize<T>(object person)
         {
             return Apolyton.FastJson.Json.Current.ToJson(person);

@@ -9,6 +9,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "Json.Net (Stream)"; } }
+
         public string Serialize<T>(object person)
         {
             using (var sw = new StringWriter())

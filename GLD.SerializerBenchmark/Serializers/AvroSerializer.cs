@@ -20,6 +20,8 @@ namespace GLD.SerializerBenchmark
         {
         }
 
+        public string Name {get { return "MS Avro"; } }
+
         public string Serialize<T>(object person)
         {
             using (var ms = new MemoryStream())

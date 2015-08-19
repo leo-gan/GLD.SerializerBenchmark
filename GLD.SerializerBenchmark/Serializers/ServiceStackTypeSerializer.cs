@@ -13,6 +13,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "ServiceStack Type"; } }
+
         public string Serialize<T>(object person)
         {
             using (var sw = new StringWriter())

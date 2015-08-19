@@ -22,6 +22,8 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
+        public string Name {get { return "MS Bond"; } }
+
         public string Serialize<T>(object person)
         {
             var output = new OutputBuffer(2 * 1024);
