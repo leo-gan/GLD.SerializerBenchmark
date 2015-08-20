@@ -36,7 +36,8 @@ namespace GLD.SerializerBenchmark
                 new NetJSONSer(), // TODO: DateTime format?
                 new NetSerializerSerializer(new[]
                 {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
-                new SlimSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
+                new NfxJsonSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
+                new NfxSlimSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
                 new ProtoBufSerializer(),
                 new SharpSerializer(), // TODO: DateTime format?
                 new ServiceStackJsonSerializer(), // TODO: DateTime format?

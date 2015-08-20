@@ -8,13 +8,13 @@ using NFX.Serialization.Slim;
 
 namespace GLD.SerializerBenchmark
 {
-    internal class SlimSerializer : ISerDeser
+    internal class NfxSlimSerializer : ISerDeser
     {
         private readonly NFX.Serialization.Slim.SlimSerializer _serializer;
 
         #region ISerDeser Members
 
-        public SlimSerializer(IEnumerable<Type> types)
+        public NfxSlimSerializer(IEnumerable<Type> types)
         {
             var treg = new TypeRegistry(types, TypeRegistry.BoxedCommonNullableTypes, TypeRegistry.BoxedCommonTypes );
             _serializer = new NFX.Serialization.Slim.SlimSerializer(treg);

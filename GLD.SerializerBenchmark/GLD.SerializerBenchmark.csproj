@@ -139,9 +139,10 @@
     <Compile Include="Serializers\DataContractJsonSerializer.cs" />
     <Compile Include="Serializers\ApJsonSerializer.cs" />
     <Compile Include="Serializers\HaveBoxJSON.cs" />
+    <Compile Include="Serializers\NfxJsonSerializer.cs" />
     <Compile Include="Serializers\SalarBoisSerializer.cs" />
     <Compile Include="Serializers\NetJSONSer.cs" />
-    <Compile Include="Serializers\SlimSerializer.cs" />
+    <Compile Include="Serializers\NfxSlimSerializer.cs" />
     <Compile Include="Serializers\MessageSharkSerializer.cs" />
     <Compile Include="Serializers\JilSerializer.cs" />
     <Compile Include="Serializers\DataContractSerializer.cs" />
