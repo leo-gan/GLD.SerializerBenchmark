@@ -7,11 +7,28 @@ namespace GLD.SerializerBenchmark
 {
     internal static class Report
     {
-        public static void AllResults(Dictionary<string, Measurements[]> measurements)
+        public static void AllResults(Dictionary<string, Measurements[]> measurements, List<string> aborts)
         {
             Header();
             foreach (var oneTestMeasurments in measurements)
                 SingleResult(oneTestMeasurments);
+            Aborts(aborts);
+        }
+
+        private static void Aborts(List<string> aborts)
+        {
+            if (aborts.Count <= 1) return;
+
+            const string abortHeader = "\nABORTS: some serializers throw exceptions *********************\n";
+            Console.WriteLine(abortHeader);
+            Trace.WriteLine(abortHeader);
+
+            aborts = aborts.Select(abort => abort).Distinct().ToList();
+            foreach (var abort in aborts)
+            {
+                Console.WriteLine(abort);
+                Trace.WriteLine(abort);
+            }
         }
 
         public static void TimeAndDocument(string name, long timeTicks, string document)
@@ -47,13 +64,14 @@ namespace GLD.SerializerBenchmark
         private static void SingleResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
         {
             var report =
-                string.Format("{0, -20} {1,7:N0} {2,7:N0} {3,6:N0} {4,9:N0} {5,10:N0} {6,6:N0}",
+                //string.Format("{0, -20} {1,7:N0} {2,7:N0} {3,6:N0} {4,9:N0} {5,10:N0} {6,6:N0}",
+                string.Format("{0, -20} {1,7:N0} {2,7:N0} {3,6:N0} {4,10:N0} {5,6:N0}",
                     oneTestMeasurements.Key,
                     //AverageTime(oneTestMeasurements.Value, 20),
                     AverageTime(oneTestMeasurements.Value, 10),
                     AverageTime(oneTestMeasurements.Value),
                     MinTime(oneTestMeasurements.Value),
-                    P99Time(oneTestMeasurements.Value),
+                    //P99Time(oneTestMeasurements.Value),
                     MaxTime(oneTestMeasurements.Value),
                     AverageSize(oneTestMeasurements.Value));
 
@@ -63,8 +81,8 @@ namespace GLD.SerializerBenchmark
 
         private static void Header()
         {
-            var header = "\nSerializer:    Time: Avg-90%   -100%    Min    99st%      Max  Size: Avg\n"
-                         + new string('=', 73);
+            var header = "\nSerializer:    Time: Avg-90%   -100%    Min      Max  Size: Avg\n"
+                         + new string('=', 64);
             Console.WriteLine(header);
             Trace.WriteLine(header);
         }
@@ -105,5 +123,6 @@ namespace GLD.SerializerBenchmark
             if (measurements == null || measurements.Length == 0) return 0;
             return (int) measurements.Average(m => m.Size);
         }
-    }
+
+     }
 }
