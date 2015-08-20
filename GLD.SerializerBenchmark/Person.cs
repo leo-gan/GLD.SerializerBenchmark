@@ -151,7 +151,7 @@ namespace GLD.SerializerBenchmark
             var errors = new List<string> {"  ************** Comparison failed! "};
             if (comparable == null)
             {
-                errors.Add("comparable: is null!");
+                errors.Add("comparable Person: is null!");
                 return errors;
             }
 
@@ -159,27 +159,35 @@ namespace GLD.SerializerBenchmark
             Compare("LastName", LastName, comparable.LastName, errors);
             Compare("Age", Age, comparable.Age, errors);
             Compare("Gender", Gender, comparable.Gender, errors);
-            Compare("Passport.Authority", Passport.Authority, comparable.Passport.Authority, errors);
-            Compare("Passport.ExpirationDate", Passport.ExpirationDate,
-                comparable.Passport.ExpirationDate, errors);
-            Compare("Passport.Number", Passport.Number, comparable.Passport.Number, errors);
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-
-            var originalPoliceRecords = PoliceRecords;
-            var comparablePoliceRecords = comparable.PoliceRecords;
-            Compare("PoliceRecords.Length", originalPoliceRecords.Length,
-                comparablePoliceRecords.Length, errors);
-
-            var minLength = Math.Min(originalPoliceRecords.Length, comparablePoliceRecords.Length);
-            for (var i = 0; i < minLength; i++)
+            Compare("Passport", Passport, comparable.Passport, errors);
+            if (Passport != null && comparable.Passport != null)
             {
-                Compare("PoliceRecords[" + i + "].Id", originalPoliceRecords[i].Id,
-                    comparablePoliceRecords[i].Id, errors);
-                Compare("PoliceRecords[" + i + "].CrimeCode", originalPoliceRecords[i].CrimeCode,
-                    comparablePoliceRecords[i].CrimeCode, errors);
+                Compare("Passport.Authority", Passport.Authority, comparable.Passport.Authority, errors);
+                Compare("Passport.ExpirationDate", Passport.ExpirationDate,
+                    comparable.Passport.ExpirationDate, errors);
+                Compare("Passport.Number", Passport.Number, comparable.Passport.Number, errors);
+            }
+            Compare("FirstName", FirstName, comparable.FirstName, errors);
+            Compare("FirstName", FirstName, comparable.FirstName, errors);
+            Compare("FirstName", FirstName, comparable.FirstName, errors);
+            Compare("FirstName", FirstName, comparable.FirstName, errors);
+
+            Compare("PoliceRecords", PoliceRecords, comparable.PoliceRecords, errors);
+            if (Passport != null && comparable.Passport != null)
+            {
+                var originalPoliceRecords = PoliceRecords;
+                var comparablePoliceRecords = comparable.PoliceRecords;
+                Compare("PoliceRecords.Length", originalPoliceRecords.Length,
+                    comparablePoliceRecords.Length, errors);
+
+                var minLength = Math.Min(originalPoliceRecords.Length, comparablePoliceRecords.Length);
+                for (var i = 0; i < minLength; i++)
+                {
+                    Compare("PoliceRecords[" + i + "].Id", originalPoliceRecords[i].Id,
+                        comparablePoliceRecords[i].Id, errors);
+                    Compare("PoliceRecords[" + i + "].CrimeCode", originalPoliceRecords[i].CrimeCode,
+                        comparablePoliceRecords[i].CrimeCode, errors);
+                }
             }
             return errors;
         }

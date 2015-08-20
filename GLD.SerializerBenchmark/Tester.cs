@@ -39,19 +39,8 @@ namespace GLD.SerializerBenchmark
         private static void TestOnSerializer(List<ISerDeser> serializers, ITestData original,
             Dictionary<string, Measurements[]> measurements, int repetition, List<string> aborts)
         {
-            string tempName = null;
             foreach (var serializer in serializers)
-            {
-                try
-                {
-                    tempName = serializer.Name;
-                    SingleTest(serializer, original, measurements, repetition);
-                }
-                catch (Exception ex)
-                {
-                    aborts.Add("Serializer: " + tempName + " Exception: \n\t" + ex.Message);
-                }
-            }
+                SingleTest(serializer, original, measurements, repetition, aborts);
 
             GC.Collect(); // it has very little impact on speed for repetitions < 100
             GC.WaitForFullGCComplete();
@@ -59,20 +48,32 @@ namespace GLD.SerializerBenchmark
         }
 
         private static void SingleTest(ISerDeser serializer, ITestData original,
-            Dictionary<string, Measurements[]> measurements, int repetition)
+            Dictionary<string, Measurements[]> measurements, int repetition, List<string> aborts)
         {
             var errors = new List<string>();
             errors.Add(serializer.Name);
-            var sw = Stopwatch.StartNew();
-            var serialized = serializer.Serialize<Person>(original);
-            measurements[serializer.Name][repetition].Size = serialized.Length;
+            string serialized = null;
+            Person processed = null;
 
-            var processed = serializer.Deserialize<Person>(serialized);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                serialized = serializer.Serialize<Person>(original);
+                measurements[serializer.Name][repetition].Size = serialized.Length;
+
+                processed = serializer.Deserialize<Person>(serialized);
+            }
+            catch (Exception ex)
+            {
+                aborts.Add("Serializer: " + serializer.Name + " Exception: \n\t" + ex.Message);
+                return;
+            }
             sw.Stop();
+
             measurements[serializer.Name][repetition].Time = sw.ElapsedTicks;
             Report.TimeAndDocument(serializer.Name, sw.ElapsedTicks, serialized);
-            errors.AddRange(original.Compare(processed));
 
+            errors.AddRange(original.Compare(processed));
             Report.Errors(errors);
         }
     }
