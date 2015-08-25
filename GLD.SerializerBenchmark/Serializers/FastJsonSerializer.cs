@@ -26,6 +26,17 @@ namespace GLD.SerializerBenchmark
             return fastJSON.JSON.ToObject<T>(serialized);
         }
 
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public T Deserialize<T>(Stream inputStream)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

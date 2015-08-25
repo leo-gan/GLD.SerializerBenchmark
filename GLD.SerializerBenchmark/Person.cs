@@ -5,6 +5,7 @@ using System.Runtime.Serialization;
 using Bond;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using NFX;
 using ProtoBuf;
 using Serialization;
 
@@ -159,7 +160,8 @@ namespace GLD.SerializerBenchmark
             Compare("LastName", LastName, comparable.LastName, errors);
             Compare("Age", Age, comparable.Age, errors);
             Compare("Gender", Gender, comparable.Gender, errors);
-            Compare("Passport", Passport, comparable.Passport, errors);
+            if (Passport == null)
+                Assert("Passport == null but comparable.Passport != null", (() => comparable.Passport == null), errors);
             if (Passport != null && comparable.Passport != null)
             {
                 Compare("Passport.Authority", Passport.Authority, comparable.Passport.Authority, errors);
@@ -172,8 +174,9 @@ namespace GLD.SerializerBenchmark
             Compare("FirstName", FirstName, comparable.FirstName, errors);
             Compare("FirstName", FirstName, comparable.FirstName, errors);
 
-            Compare("PoliceRecords", PoliceRecords, comparable.PoliceRecords, errors);
-            if (Passport != null && comparable.Passport != null)
+            if (PoliceRecords == null)
+                Assert("PoliceRecords == null but comparable.PoliceRecords != null", (() => comparable.PoliceRecords == null), errors);
+            if (PoliceRecords != null && comparable.PoliceRecords != null)
             {
                 var originalPoliceRecords = PoliceRecords;
                 var comparablePoliceRecords = comparable.PoliceRecords;
@@ -190,6 +193,12 @@ namespace GLD.SerializerBenchmark
                 }
             }
             return errors;
+        }
+
+        private void Assert(string passportNullComparablePassportNull, Func<bool> errorIfFalse, List<string> errors)
+        {
+           if (!errorIfFalse())
+                errors.Add(passportNullComparablePassportNull);
         }
 
         private static void Compare(string objectName, object left, object right,

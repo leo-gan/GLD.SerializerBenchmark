@@ -28,10 +28,20 @@ namespace GLD.SerializerBenchmark
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
-                var formatter = new BinaryFormatter();
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T) formatter.Deserialize(stream);
+                return (T) _formatter.Deserialize(stream);
             }
+        }
+
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+                _formatter.Serialize(outputStream, (T)person);
+        }
+
+  
+        public T Deserialize<T>(Stream inputStream)
+        {
+                return (T) _formatter.Deserialize(inputStream);
         }
 
         #endregion

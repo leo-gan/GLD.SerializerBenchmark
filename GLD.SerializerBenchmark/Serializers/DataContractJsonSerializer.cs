@@ -19,7 +19,7 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
-        public string Name {get { return "MS DataContractJson"; } }
+        public string Name {get { return "MS DataContract Json"; } }
 
         public string Serialize<T>(object person)
         {
@@ -40,6 +40,17 @@ namespace GLD.SerializerBenchmark
                 stream.Seek(0, SeekOrigin.Begin);
                 return (T) _serializer.ReadObject(stream);
             }
+        }
+
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+                _serializer.WriteObject(outputStream, (T)person);
+        }
+
+  
+        public T Deserialize<T>(Stream inputStream)
+        {
+                return (T) _serializer.ReadObject(inputStream);
         }
 
         #endregion

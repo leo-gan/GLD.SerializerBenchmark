@@ -28,6 +28,17 @@ namespace GLD.SerializerBenchmark
             return _jr.Read<T>(serialized);
         }
 
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+            _jw.Write(person, new StreamWriter(outputStream));
+        }
+
+
+        public T Deserialize<T>(Stream inputStream)
+        {
+            return _jr.Read<T>(new StreamReader(inputStream));
+        }
+
         #endregion
     }
 }

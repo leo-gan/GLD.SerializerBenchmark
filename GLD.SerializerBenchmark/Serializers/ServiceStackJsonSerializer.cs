@@ -32,6 +32,17 @@ namespace GLD.SerializerBenchmark
             }
         }
 
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+                JsonSerializer.SerializeToWriter<T>((T)person, new StreamWriter(outputStream));
+        }
+
+ 
+        public T Deserialize<T>(Stream inputStream)
+        {
+                return JsonSerializer.DeserializeFromReader<T>(new StreamReader(inputStream));
+        }
+
         #endregion
     }
 }

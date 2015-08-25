@@ -1,29 +1,22 @@
-///
-/// See here https://www.nuget.org/packages/HaveBoxJSON/
-/// >PM Install-Package HaveBoxJSON
-/// 
-
 using System.IO;
-using HaveBoxJSON;
+using Newtonsoft.Json;
 
 namespace GLD.SerializerBenchmark
 {
-    internal class HaveBoxJSON : ISerDeser
+    internal class JsonNetHelperSerializer : ISerDeser
     {
-        private static readonly JsonConverter _serializer = new JsonConverter();
-
         #region ISerDeser Members
 
-        public string Name {get { return "HaveBoxJSON"; } }
+        public string Name {get { return "Json.Net (Helper)"; } }
 
         public string Serialize<T>(object person)
         {
-            return _serializer.Serialize((T) person);
+            return JsonConvert.SerializeObject((T)person);
         }
 
         public T Deserialize<T>(string serialized)
         {
-            return _serializer.Deserialize<T>(serialized);
+            return JsonConvert.DeserializeObject<T>(serialized);
         }
 
         public void Serialize<T>(object person, Stream outputStream)
@@ -31,7 +24,7 @@ namespace GLD.SerializerBenchmark
             throw new System.NotImplementedException();
         }
 
-   
+
         public T Deserialize<T>(Stream inputStream)
         {
             throw new System.NotImplementedException();

@@ -43,6 +43,17 @@ namespace GLD.SerializerBenchmark
             }
         }
 
-        #endregion
+         public void Serialize<T>(object person, Stream outputStream)
+         {
+                Serializer.Serialize(outputStream, (T)person);
+         }
+
+
+         public T Deserialize<T>(Stream inputStream)
+         {
+                return Serializer.Deserialize<T>(inputStream);
+         }
+
+         #endregion
     }
 }

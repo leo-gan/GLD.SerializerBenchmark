@@ -13,14 +13,6 @@ namespace GLD.SerializerBenchmark
     {
         private static readonly BoisSerializer _serializer = new BoisSerializer();
             
-
-        // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
-
-        //public MsgPackSerializer (Person t)
-        //{
-        //    var _serializer = MsgPack.Serialization.SerializationContext.Default.GetSerializer<Person>();
-        //}
-
         #region ISerDeser Members
 
         public string Name {get { return "Salar.Bois"; } }
@@ -46,6 +38,17 @@ namespace GLD.SerializerBenchmark
             }
         }
 
-        #endregion
+         public void Serialize<T>(object person, Stream outputStream)
+         {
+                _serializer.Serialize((T)person, outputStream);
+         }
+
+ 
+         public T Deserialize<T>(Stream inputStream)
+         {
+                return (T) _serializer.Deserialize<T>(inputStream);
+         }
+
+         #endregion
     }
 }

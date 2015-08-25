@@ -4,6 +4,7 @@
 /// 
 
 using System;
+using System.IO;
 using MessageShark;
 
 namespace GLD.SerializerBenchmark
@@ -24,6 +25,21 @@ namespace GLD.SerializerBenchmark
         {
             var b = Convert.FromBase64String(serialized);
             return MessageSharkSerializer.Deserialize<T>(b);
+        }
+
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+            MessageSharkSerializer.Serialize((T) person);
+        }
+
+
+        public T Deserialize<T>(Stream inputStream)
+        {
+            using (var ms = new MemoryStream())
+            {
+                inputStream.CopyTo(ms);
+                return MessageSharkSerializer.Deserialize<T>(ms.ToArray());
+            }
         }
 
         #endregion

@@ -20,15 +20,11 @@ namespace GLD.SerializerBenchmark
             if (aborts.Count <= 1) return;
 
             const string abortHeader = "\nABORTS: some serializers throw exceptions *********************\n";
-            Console.WriteLine(abortHeader);
-            Trace.WriteLine(abortHeader);
+            OutputEverywhere(abortHeader);
 
             aborts = aborts.Select(abort => abort).Distinct().ToList();
             foreach (var abort in aborts)
-            {
-                Console.WriteLine(abort);
-                Trace.WriteLine(abort);
-            }
+                OutputEverywhere(abort);
         }
 
         public static void TimeAndDocument(string name, long timeTicks, string document)
@@ -38,27 +34,35 @@ namespace GLD.SerializerBenchmark
 
         public static void Errors(List<string> errors)
         {
-            if (errors.Count <= 1) return;
+            if (errors.Count == 1) return;
             foreach (var error in errors)
-            {
                 Trace.WriteLine(error);
-                //Console.WriteLine(error);
-            }
         }
 
         public static void Repetitions(int repetitions)
         {
             var str = "Repetitions: " + repetitions;
-            Console.WriteLine(str);
-            Trace.WriteLine(str);
+            OutputEverywhere(str);
         }
 
         public static void TestDataHeader(string key)
         {
             var name = "\nTest Data: " + key + " ";
             var str = name + new string('>', 80 - name.Length);
-            Console.WriteLine(str);
-            Trace.WriteLine(str);
+            OutputEverywhere(str);
+        }
+
+        private static void OutputEverywhere(string line)
+        {
+            Console.WriteLine(line);
+            Trace.WriteLine(line);
+        }
+
+        public static void StringOrStream(bool streaming)
+        {
+            var name = "\nSerialize / Deserialize to/from " + (streaming ? "Stream " : "String ");
+            var str = name + new string('.', 80 - name.Length);
+            OutputEverywhere(str);
         }
 
         private static void SingleResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
@@ -75,16 +79,14 @@ namespace GLD.SerializerBenchmark
                     MaxTime(oneTestMeasurements.Value),
                     AverageSize(oneTestMeasurements.Value));
 
-            Console.WriteLine(report);
-            Trace.WriteLine(report);
+            OutputEverywhere(report);
         }
 
         private static void Header()
         {
             var header = "\nSerializer:    Time: Avg-90%   -100%    Min      Max  Size: Avg\n"
                          + new string('=', 64);
-            Console.WriteLine(header);
-            Trace.WriteLine(header);
+            OutputEverywhere(header);
         }
 
         private static double P99Time(Measurements[] measurements)
@@ -123,6 +125,5 @@ namespace GLD.SerializerBenchmark
             if (measurements == null || measurements.Length == 0) return 0;
             return (int) measurements.Average(m => m.Size);
         }
-
-     }
+    }
 }

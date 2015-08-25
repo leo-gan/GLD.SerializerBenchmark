@@ -25,6 +25,16 @@ namespace GLD.SerializerBenchmark
             return Apolyton.FastJson.Json.Current.ReadObject<T>(serialized);
         }
 
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+            throw new NotImplementedException();
+        }
+
+ public T Deserialize<T>(Stream inputStream)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

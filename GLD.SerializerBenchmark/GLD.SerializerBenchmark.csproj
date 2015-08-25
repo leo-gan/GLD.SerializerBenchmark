@@ -132,8 +132,9 @@
   <ItemGroup>
     <Compile Include="ITestData.cs" />
     <Compile Include="Serializers\BinarySerializer.cs" />
+    <Compile Include="Serializers\BondFastSerializer.cs" />
     <Compile Include="Serializers\BondJsonSerializer.cs" />
-    <Compile Include="Serializers\BondSerializer.cs" />
+    <Compile Include="Serializers\BondCompactSerializer.cs" />
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
     <Compile Include="Serializers\DataContractJsonSerializer.cs" />
@@ -153,14 +154,14 @@
     <Compile Include="Serializers\ServiceStackJsonSerializer.cs" />
     <Compile Include="Serializers\JsonFxSerializer.cs" />
     <Compile Include="Serializers\ServiceStackTypeSerializer.cs" />
-    <Compile Include="Serializers\JsonNetStreamSerializer.cs" />
+    <Compile Include="Serializers\JsonNetSerializer.cs" />
     <Compile Include="Serializers\AvroSerializer.cs" />
     <Compile Include="Serializers\ProtoBufSerializer.cs" />
     <Compile Include="Report.cs" />
     <Compile Include="Tester.cs" />
     <Compile Include="Serializers\MsgPackSerializer.cs" />
     <Compile Include="Serializers\XmlSerializer.cs" />
-    <Compile Include="Serializers\JsonNetSerializer.cs" />
+    <Compile Include="Serializers\JsonNetHelperSerializer.cs" />
     <Compile Include="Person.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

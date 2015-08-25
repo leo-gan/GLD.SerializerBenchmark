@@ -35,6 +35,21 @@ namespace GLD.SerializerBenchmark
             }
         }
 
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+                JSON.Serialize<T>((T)person, new StreamWriter(outputStream),
+                    new Options(
+                        unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
+        }
+
+
+        public T Deserialize<T>(Stream inputStream)
+        {
+                return JSON.Deserialize<T>(new StreamReader(inputStream),
+                    new Options(
+                        unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
+        }
+
         #endregion
     }
 }

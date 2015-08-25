@@ -23,7 +23,7 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
-        public string Name {get { return "MS BondJson"; } }
+        public string Name {get { return "MS Bond Json"; } }
 
         public string Serialize<T>(object person)
         {
@@ -42,6 +42,19 @@ namespace GLD.SerializerBenchmark
                 var reader = new SimpleJsonReader(tr);
                 return _deserializer.Deserialize<T>(reader);
             }
+        }
+
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+                var writer = new SimpleJsonWriter(outputStream);
+                _serializer.Serialize((T) person, writer);
+        }
+
+   
+        public T Deserialize<T>(Stream inputStream)
+        {
+                var reader = new SimpleJsonReader(inputStream);
+                return _deserializer.Deserialize<T>(reader);
         }
 
         #endregion

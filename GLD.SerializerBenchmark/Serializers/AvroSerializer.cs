@@ -20,13 +20,16 @@ namespace GLD.SerializerBenchmark
         {
         }
 
-        public string Name {get { return "MS Avro"; } }
+        public string Name
+        {
+            get { return "MS Avro"; }
+        }
 
         public string Serialize<T>(object person)
         {
             using (var ms = new MemoryStream())
             {
-                _serializer.Serialize(ms, (Person)person); 
+                _serializer.Serialize(ms, (Person) person);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
@@ -41,6 +44,16 @@ namespace GLD.SerializerBenchmark
                 stream.Seek(0, SeekOrigin.Begin);
                 return (T) ((object) _serializer.Deserialize(stream));
             }
+        }
+
+        public void Serialize<T>(object person, Stream outputStream)
+        {
+            _serializer.Serialize(outputStream, (Person) person);
+        }
+
+        public T Deserialize<T>(Stream inputStream)
+        {
+            return (T) ((object) _serializer.Deserialize(inputStream));
         }
 
         #endregion

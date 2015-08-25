@@ -16,7 +16,8 @@ namespace GLD.SerializerBenchmark
             {
                 new AvroSerializer(typeof (Person)),
                 new BinarySerializer(),
-                new BondSerializer(typeof (Person)),
+                new BondCompactSerializer(typeof (Person)),
+                new BondFastSerializer(typeof (Person)),
                 new BondJsonSerializer(typeof (Person)),
                 new DataContractSerializerSerializer(typeof (Person),
                     new[] {typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
@@ -28,12 +29,12 @@ namespace GLD.SerializerBenchmark
                 new FastJsonSerializer(), // TODO: DateTime format?
                 new JilSerializer(), // TODO: DateTime format?
                 new JsonFxSerializer(), // TODO: DateTime format?
+                new JsonNetHelperSerializer(),
                 new JsonNetSerializer(),
-                new JsonNetStreamSerializer(),
                 new HaveBoxJSON(), // TODO: DateTime format?
                 new MessageSharkSer(),
                 new MsgPackSerializer(), // TODO: DateTime format?
-                new NetJSONSer(), // TODO: DateTime format?
+                //new NetJSONSer(), // TODO: DateTime format?
                 new NetSerializerSerializer(new[]
                 {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
                 new NfxJsonSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
