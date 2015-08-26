@@ -6,37 +6,34 @@
 using System;
 using System.IO;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
     /// <summary>
-    internal class FastJsonSerializer : ISerDeser
+    internal class FastJsonSerializer : SerDeser
     {
  
         #region ISerDeser Members
 
-        public string Name {get { return "fastJson"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name {get { return "fastJson"; } }
+        public override string Serialize(object serializable)
         {
-               return fastJSON.JSON.ToJSON(person);
+               return fastJSON.JSON.ToJSON(serializable);
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
-            return fastJSON.JSON.ToObject<T>(serialized);
+            return fastJSON.JSON.ToObject(serialized);
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        public T Deserialize<T>(Stream inputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
             throw new NotImplementedException();
         }
 
+        public override object Deserialize(Stream inputStream)
+        {
+            throw new NotImplementedException();
+        }
         #endregion
     }
 }

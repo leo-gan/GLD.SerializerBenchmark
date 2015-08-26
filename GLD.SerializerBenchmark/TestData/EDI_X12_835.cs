@@ -1,19 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.Serialization;
-using GLD.SerializerBenchmark;
 using NFX;
-using NFX.Environment;
 using NFX.Parsing;
 using ProtoBuf;
 
-namespace Serbench.Specimens.Tests
+namespace GLD.SerializerBenchmark.TestData
 {
-    [ProtoContract]
+   public class EDI_X12_835Description : ITestDataDescription
+    {
+        public string Name { get { return "EDI_X12_835"; }}
+        public string Description { get{ return "A class with complex internal hierarchy."; }}
+        public Type DataType { get { return typeof (EDI_X12_835); } }
+        public List<Type> SecondaryDataTypes { get { return null; } }
+
+        private readonly EDI_X12_835 _data = EDI_X12_835.Generate();
+
+        public object Data { get { return _data; }  }
+    }
+
+   [ProtoContract]
     [DataContract]
     [Serializable]
     public abstract class Segment
@@ -76,12 +82,12 @@ namespace Serbench.Specimens.Tests
         {
             errorString = null;
 
-            if (original is IList<Serbench.Specimens.Tests.EDI_X12_835>)
+            if (original is IList<EDI_X12_835>)
              return deserialized!=null && original.GetType()==deserialized.GetType();
 
              
-            var originalTyped = original as Serbench.Specimens.Tests.EDI_X12_835;
-            var deserializedTyped = deserialized as Serbench.Specimens.Tests.EDI_X12_835;
+            var originalTyped = original as EDI_X12_835;
+            var deserializedTyped = deserialized as EDI_X12_835;
 
             if (originalTyped == null || deserializedTyped == null)
                 errorString = "Error: originalTyped or deserializedType == null";

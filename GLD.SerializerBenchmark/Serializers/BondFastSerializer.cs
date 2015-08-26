@@ -2,61 +2,71 @@
 /// See here https://github.com/Microsoft/bond/
 /// >PM Install-Package Microsoft.Hadoop.Avro
 /// 
+
 using System;
 using System.IO;
 using Bond;
 using Bond.IO.Unsafe;
 using Bond.Protocols;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class BondFastSerializer : ISerDeser
+    internal class BondFastSerializer : SerDeser
     {
-        private readonly Deserializer<FastBinaryReader<InputBuffer>> _deserializer;
-        private readonly Serializer<FastBinaryWriter<OutputBuffer>> _serializer;
-        private readonly Deserializer<FastBinaryReader<InputStream>> _deserializerStream;
-        private readonly Serializer<FastBinaryWriter<OutputStream>> _serializerStream;
+        private  Deserializer<FastBinaryReader<InputBuffer>> _deserializer;
+        private  Deserializer<FastBinaryReader<InputStream>> _deserializerStream;
+        private  Serializer<FastBinaryWriter<OutputBuffer>> _serializer;
+        private  Serializer<FastBinaryWriter<OutputStream>> _serializerStream;
 
-        public BondFastSerializer(Type personType)
+        private void Initialize()
         {
-            _serializer = new Serializer<FastBinaryWriter<OutputBuffer>>(personType);
-            _deserializer = new Deserializer<FastBinaryReader<InputBuffer>>(personType);
-            _serializerStream = new Serializer<FastBinaryWriter<OutputStream>>(personType);
-            _deserializerStream = new Deserializer<FastBinaryReader<InputStream>>(personType);
+            if (!JustInitialized) return;
+            _serializer = new Serializer<FastBinaryWriter<OutputBuffer>>(_primaryType);
+            _deserializer = new Deserializer<FastBinaryReader<InputBuffer>>(_primaryType);
+            _serializerStream = new Serializer<FastBinaryWriter<OutputStream>>(_primaryType);
+            _deserializerStream = new Deserializer<FastBinaryReader<InputStream>>(_primaryType);
+            JustInitialized = false;
         }
 
         #region ISerDeser Members
 
-        public string Name {get { return "MS Bond Fast"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name
         {
-            var output = new OutputBuffer(2 * 1024);
+            get { return "MS Bond Fast"; }
+        }
+
+        public override string Serialize(object serializable)
+        {
+            Initialize();
+            var output = new OutputBuffer(2*1024);
             var writer = new FastBinaryWriter<OutputBuffer>(output);
-            _serializer.Serialize((T)person, writer);
+            _serializer.Serialize(serializable, writer);
             return Convert.ToBase64String(output.Data.Array, output.Data.Offset, output.Data.Count);
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
+            Initialize();
             var bytes = Convert.FromBase64String(serialized);
             var input = new InputBuffer(bytes);
             var reader = new FastBinaryReader<InputBuffer>(input);
-            return (T) _deserializer.Deserialize(reader);
+            return _deserializer.Deserialize(reader);
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-           var output = new OutputStream(outputStream);
+            Initialize();
+            var output = new OutputStream(outputStream);
             var writer = new FastBinaryWriter<OutputStream>(output);
-            _serializerStream.Serialize(person, writer);
+            _serializerStream.Serialize(serializable, writer);
         }
 
-  public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-            var input = new InputStream(inputStream);
+            Initialize();
+           var input = new InputStream(inputStream);
             var reader = new FastBinaryReader<InputStream>(input);
-            return (T) _deserializerStream.Deserialize(reader);
+            return _deserializerStream.Deserialize(reader);
         }
 
         #endregion

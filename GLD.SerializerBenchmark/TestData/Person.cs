@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using Bond;
@@ -9,6 +10,18 @@ using Serialization;
 
 namespace GLD.SerializerBenchmark.TestData
 {
+    public class PersonDescription : ITestDataDescription
+    {
+          public string Name { get { return "Person"; }}
+       public string Description { get{ return "Nested objects and an array of objects."; }}
+      public Type DataType { get { return typeof (Person); } }
+        public List<Type> SecondaryDataTypes { get { return new List<Type>{typeof (Gender), typeof(Passport), typeof(PoliceRecord)}; } }
+
+        private readonly Person _person = Person.Generate();
+
+        public object Data { get { return _person; }  }
+    }
+
     [DataContract]
     [JsonConverter(typeof (StringEnumConverter))]
     [Serializable]
@@ -104,7 +117,7 @@ namespace GLD.SerializerBenchmark.TestData
         [Id(5)]
         public PoliceRecord[] PoliceRecords { get; set; }
 
-        public Person Generate()
+        public static Person Generate()
         {
             return new Person
             {

@@ -6,21 +6,20 @@ using ProtoBuf;
 
 namespace GLD.SerializerBenchmark.TestData
 {
-   public class TelemetryDescription : ITestDataDescription
+    public class SimleObjectDescription : ITestDataDescription
     {
-        public string Name { get { return "Telemetry"; }}
-       public string Description { get{ return "Plain object with numbers and IDs"; }}
-       public Type DataType { get { return typeof (TelemetryData); } }
+        public string Name { get { return "Simle Object"; }}
+        public string Description { get{ return "Plain object with numbers and IDs, no arrays."; }}
+        public Type DataType { get { return typeof (SimleObject); } }
         public List<Type> SecondaryDataTypes { get { return null; } }
 
-        private readonly TelemetryData _data = TelemetryData.Generate(100);
-
+        private readonly SimleObject _data = SimleObject.Generate();
         public object Data { get { return _data; }  }
     }
     [ProtoContract]
     [DataContract]
     [Serializable]
-    public class TelemetryData
+    public class SimleObject
     {
         ///// <summary>
         ///// Required by some serilizers (i.e. XML)
@@ -50,7 +49,7 @@ namespace GLD.SerializerBenchmark.TestData
 
         [ProtoMember(6)]
         [DataMember]
-        public double[] Measurements;
+        public double Measurement;
 
         [ProtoMember(7)]
         [DataMember]
@@ -64,23 +63,21 @@ namespace GLD.SerializerBenchmark.TestData
         [DataMember]
         public bool WasProcessed;
 
-        public static TelemetryData Generate(int measurementsNumber)
+        public static SimleObject Generate()
         {
-            var data = new TelemetryData()
+            return new SimleObject()
             {
                 Id = Guid.NewGuid().ToString(),
                 DataSource = Guid.NewGuid().ToString(),
                 TimeStamp = DateTime.Now,
                 Param1 = ExternalRandomGenerator.Instance.NextRandomInteger,
                 Param2 = (uint)ExternalRandomGenerator.Instance.NextRandomInteger,
-                Measurements = new double[measurementsNumber],
+                Measurement = ExternalRandomGenerator.Instance.NextRandomDouble,
                 AssociatedProblemID = 123,
                 AssociatedLogID = 89032,
                 WasProcessed = true
             };
-            for (var i = 0; i < measurementsNumber; i++)
-                data.Measurements[i] = ExternalRandomGenerator.Instance.NextRandomDouble;
-            return data;
         }
     }
+
 }

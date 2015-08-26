@@ -13,6 +13,8 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>bb222ed6</NuGetPackageImportStamp>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -172,43 +174,30 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Comparer.cs" />
-    <Compile Include="ITestData.cs" />
+    <Compile Include="ITestDataDescription.cs" />
+    <Compile Include="SerDeser.cs" />
+    <Compile Include="Serializers\ApJsonSerializer.cs" />
+    <Compile Include="Serializers\AvroSerializer.cs" />
     <Compile Include="Serializers\BinarySerializer.cs" />
-    <Compile Include="Serializers\BondFastSerializer.cs" />
-    <Compile Include="Serializers\BondJsonSerializer.cs" />
-    <Compile Include="Serializers\BondCompactSerializer.cs" />
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
-    <Compile Include="Serializers\DataContractJsonSerializer.cs" />
-    <Compile Include="Serializers\ApJsonSerializer.cs" />
-    <Compile Include="Serializers\HaveBoxJSON.cs" />
-    <Compile Include="Serializers\NfxJsonSerializer.cs" />
-    <Compile Include="Serializers\SalarBoisSerializer.cs" />
-    <Compile Include="Serializers\NetJSONSer.cs" />
-    <Compile Include="Serializers\NfxSlimSerializer.cs" />
-    <Compile Include="Serializers\MessageSharkSerializer.cs" />
-    <Compile Include="Serializers\JilSerializer.cs" />
+    <Compile Include="Report.cs" />
+    <Compile Include="Serializers\BondCompactSerializer.cs" />
+    <Compile Include="Serializers\BondFastSerializer.cs" />
+    <Compile Include="Serializers\BondJsonSerializer.cs" />
+    <Compile Include="Serializers\DataContractJsonSer.cs" />
     <Compile Include="Serializers\DataContractSerializer.cs" />
     <Compile Include="Serializers\FastJsonSerializer.cs" />
-    <Compile Include="Serializers\JavaScriptSerializer.cs" />
-    <Compile Include="Serializers\SharpSerializer.cs" />
-    <Compile Include="Serializers\NetSerializerSerializer.cs" />
-    <Compile Include="Serializers\ServiceStackJsonSerializer.cs" />
-    <Compile Include="Serializers\JsonFxSerializer.cs" />
-    <Compile Include="Serializers\ServiceStackTypeSerializer.cs" />
-    <Compile Include="Serializers\JsonNetSerializer.cs" />
-    <Compile Include="Serializers\AvroSerializer.cs" />
-    <Compile Include="Serializers\ProtoBufSerializer.cs" />
-    <Compile Include="Report.cs" />
+    <Compile Include="Serializers\HaveBoxJSONSerializer.cs" />
     <Compile Include="TestData\EDI_X12_835.cs" />
     <Compile Include="TestData\EDI_X12_835_NoAtributes.cs" />
+    <Compile Include="TestData\SimleObjectDescription.cs" />
+    <Compile Include="TestData\StringArrayDescription.cs" />
     <Compile Include="TestData\MsgBatching.cs" />
     <Compile Include="TestData\ObjectGraph.cs" />
+    <Compile Include="TestData\IntDescription.cs" />
     <Compile Include="TestData\Telemetry.cs" />
     <Compile Include="Tester.cs" />
-    <Compile Include="Serializers\MsgPackSerializer.cs" />
-    <Compile Include="Serializers\XmlSerializer.cs" />
-    <Compile Include="Serializers\JsonNetHelperSerializer.cs" />
     <Compile Include="TestData\Person.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -229,8 +218,10 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Bond.CSharp.3.0.6\build\Bond.CSharp.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Bond.CSharp.3.0.6\build\Bond.CSharp.props'))" />
     <Error Condition="!Exists('..\packages\Bond.CSharp.3.0.6\build\Bond.CSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Bond.CSharp.3.0.6\build\Bond.CSharp.targets'))" />
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
   <Import Project="..\packages\Bond.CSharp.3.0.6\build\Bond.CSharp.targets" Condition="Exists('..\packages\Bond.CSharp.3.0.6\build\Bond.CSharp.targets')" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

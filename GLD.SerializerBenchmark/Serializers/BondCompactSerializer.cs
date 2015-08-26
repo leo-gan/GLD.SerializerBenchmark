@@ -9,58 +9,64 @@ using Bond;
 using Bond.IO.Unsafe;
 using Bond.Protocols;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class BondCompactSerializer : ISerDeser
+    internal class BondCompactSerializer : SerDeser
     {
-        private readonly Deserializer<CompactBinaryReader<InputBuffer>> _deserializer;
-        private readonly Deserializer<CompactBinaryReader<InputStream>> _deserializerStream;
-        private readonly Serializer<CompactBinaryWriter<OutputBuffer>> _serializer;
-        private readonly Serializer<CompactBinaryWriter<OutputStream>> _serializerStream;
+        private  Deserializer<CompactBinaryReader<InputBuffer>> _deserializer;
+        private  Deserializer<CompactBinaryReader<InputStream>> _deserializerStream;
+        private  Serializer<CompactBinaryWriter<OutputBuffer>> _serializer;
+        private  Serializer<CompactBinaryWriter<OutputStream>> _serializerStream;
 
-        public BondCompactSerializer(Type personType)
+        private void Initialize()
         {
-            _serializer = new Serializer<CompactBinaryWriter<OutputBuffer>>(personType);
-            _deserializer = new Deserializer<CompactBinaryReader<InputBuffer>>(personType);
-            _serializerStream = new Serializer<CompactBinaryWriter<OutputStream>>(personType);
-            _deserializerStream = new Deserializer<CompactBinaryReader<InputStream>>(personType);
+            if (!JustInitialized) return;
+            _serializer = new Serializer<CompactBinaryWriter<OutputBuffer>>(_primaryType);
+            _deserializer = new Deserializer<CompactBinaryReader<InputBuffer>>(_primaryType);
+            _serializerStream = new Serializer<CompactBinaryWriter<OutputStream>>(_primaryType);
+            _deserializerStream = new Deserializer<CompactBinaryReader<InputStream>>(_primaryType);
+            JustInitialized = false;
         }
 
         #region ISerDeser Members
 
-        public string Name
+        public override string Name
         {
             get { return "MS Bond Compact"; }
         }
 
-        public string Serialize<T>(object person)
+        public override string Serialize(object serializable)
         {
+            Initialize();
             var output = new OutputBuffer(2*1024);
             var writer = new CompactBinaryWriter<OutputBuffer>(output);
-            _serializer.Serialize((T) person, writer);
+            _serializer.Serialize(serializable, writer);
             return Convert.ToBase64String(output.Data.Array, output.Data.Offset, output.Data.Count);
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
+            Initialize();
             var bytes = Convert.FromBase64String(serialized);
             var input = new InputBuffer(bytes);
             var reader = new CompactBinaryReader<InputBuffer>(input);
-            return (T) _deserializer.Deserialize(reader);
+            return _deserializer.Deserialize(reader);
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
+            Initialize();
             var output = new OutputStream(outputStream);
             var writer = new CompactBinaryWriter<OutputStream>(output);
-            _serializerStream.Serialize(person, writer);
+            _serializerStream.Serialize(serializable, writer);
         }
 
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
+            Initialize();
             var input = new InputStream(inputStream);
             var reader = new CompactBinaryReader<InputStream>(input);
-            return (T) _deserializerStream.Deserialize(reader);
+            return _deserializerStream.Deserialize(reader);
         }
 
         #endregion

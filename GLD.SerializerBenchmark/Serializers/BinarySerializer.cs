@@ -1,49 +1,54 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class BinarySerializer : ISerDeser
+    internal class BinarySerializer : SerDeser
     {
         private readonly BinaryFormatter _formatter = new BinaryFormatter();
 
         #region ISerDeser Members
 
-        public string Name {get { return "MS Binary"; } }
+         public override string Name
+        {
+            get { return "MS Binary"; }
+        }
+     
 
-        public string Serialize<T>(object person)
+        public override string Serialize(object serializable)
         {
             using (var ms = new MemoryStream())
             {
-                _formatter.Serialize(ms, (T)person);
+                _formatter.Serialize(ms, serializable);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
             }
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T) _formatter.Deserialize(stream);
+                return _formatter.Deserialize(stream);
             }
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-                _formatter.Serialize(outputStream, (T)person);
+            _formatter.Serialize(outputStream, serializable);
         }
 
-  
-        public T Deserialize<T>(Stream inputStream)
-        {
-                return (T) _formatter.Deserialize(inputStream);
-        }
 
+        public override object Deserialize(Stream inputStream)
+        {
+            inputStream.Seek(0, SeekOrigin.Begin);
+            return _formatter.Deserialize(inputStream);
+        }
         #endregion
     }
 }

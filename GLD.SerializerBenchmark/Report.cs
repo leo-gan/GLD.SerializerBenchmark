@@ -45,10 +45,11 @@ namespace GLD.SerializerBenchmark
             OutputEverywhere(str);
         }
 
-        public static void TestDataHeader(string key)
+        public static void TestDataHeader(ITestDataDescription testDataDescription)
         {
-            var name = "\nTest Data: " + key + " ";
-            var str = name + new string('>', 80 - name.Length);
+            var name = "\nTest Data: " + testDataDescription.Name + " ";
+            var str = name + new string('>', 80  - name.Length) 
+                + Environment.NewLine + testDataDescription.Description;
             OutputEverywhere(str);
         }
 

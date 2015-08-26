@@ -2,59 +2,66 @@
 /// See here https://github.com/Microsoft/bond/
 /// >PM Install-Package Bond.CSharp
 /// 
-using System;
+
 using System.IO;
 using Bond;
-using Bond.IO.Unsafe;
 using Bond.Protocols;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class BondJsonSerializer : ISerDeser
+    internal class BondJsonSerializer : SerDeser
     {
-        private readonly Deserializer<SimpleJsonReader> _deserializer;
-        private readonly Serializer<SimpleJsonWriter> _serializer;
+        private Deserializer<SimpleJsonReader> _deserializer;
+        private Serializer<SimpleJsonWriter> _serializer;
 
-        public BondJsonSerializer(Type personType)
+        private void Initialize()
         {
-            _serializer = new Serializer<SimpleJsonWriter>(personType);
-            _deserializer = new Deserializer<SimpleJsonReader>(personType);
+            if (!JustInitialized) return;
+            _serializer = new Serializer<SimpleJsonWriter>(_primaryType);
+            _deserializer = new Deserializer<SimpleJsonReader>(_primaryType);
+            JustInitialized = false;
         }
 
         #region ISerDeser Members
 
-        public string Name {get { return "MS Bond Json"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name
         {
+            get { return "MS Bond Json"; }
+        }
+
+        public override string Serialize(object serializable)
+        {
+            Initialize();
             using (var tw = new StringWriter())
             {
                 var writer = new SimpleJsonWriter(tw);
-                _serializer.Serialize((T) person, writer);
+                _serializer.Serialize(serializable, writer);
                 return tw.ToString();
             }
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
+            Initialize();
             using (var tr = new StringReader(serialized))
             {
                 var reader = new SimpleJsonReader(tr);
-                return _deserializer.Deserialize<T>(reader);
+                return _deserializer.Deserialize(reader);
             }
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-                var writer = new SimpleJsonWriter(outputStream);
-                _serializer.Serialize((T) person, writer);
+            Initialize();
+            var writer = new SimpleJsonWriter(outputStream);
+            _serializer.Serialize(serializable, writer);
         }
 
-   
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-                var reader = new SimpleJsonReader(inputStream);
-                return _deserializer.Deserialize<T>(reader);
+            Initialize();
+            var reader = new SimpleJsonReader(inputStream);
+            return _deserializer.Deserialize(reader);
         }
 
         #endregion

@@ -5,56 +5,55 @@
 
 using System;
 using System.IO;
-using GLD.SerializerBenchmark.TestData;
 using Microsoft.Hadoop.Avro;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class AvroSerializer : ISerDeser
+    internal class AvroSerializer : SerDeser
     {
-        // TODO: There is a hack: FOr some reason it is impossible to pass generic T type. The Person type is patched into serializer code.
-        private readonly IAvroSerializer<Person> _serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<Person>();
+        // TODO: For some reason it is impossible to pass generic T type to serializer. 
+        private readonly IAvroSerializer<object> _serializer;
 
+        public AvroSerializer()
+        {
+            _serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<object>();
+        }
         #region ISerDeser Members
 
-        public AvroSerializer(Type type)
-        {
-        }
-
-        public string Name
+        public override string Name
         {
             get { return "MS Avro"; }
         }
 
-        public string Serialize<T>(object person)
+        public override string Serialize(object serializable)
         {
             using (var ms = new MemoryStream())
             {
-                _serializer.Serialize(ms, (Person) person);
+                _serializer.Serialize(ms, serializable);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
             }
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T) ((object) _serializer.Deserialize(stream));
+                return _serializer.Deserialize(stream);
             }
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-            _serializer.Serialize(outputStream, (Person) person);
+            _serializer.Serialize(outputStream, serializable);
         }
 
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-            return (T) ((object) _serializer.Deserialize(inputStream));
+            return _serializer.Deserialize(inputStream);
         }
 
         #endregion

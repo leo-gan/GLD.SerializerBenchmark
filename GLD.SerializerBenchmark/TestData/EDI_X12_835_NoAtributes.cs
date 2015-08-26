@@ -5,6 +5,18 @@ using NFX.Parsing;
 
 namespace GLD.SerializerBenchmark.TestData.NoAtributes
 {
+    public class EDI_X12_835Description : ITestDataDescription
+    {
+        public string Name { get { return "EDI_X12_835"; }}
+       public string Description { get{ return "Similar to EDI_X12_835 but internal classes are without additional serialize atributes.."; }}
+        public Type DataType { get { return typeof (EDI_X12_835); } }
+        public List<Type> SecondaryDataTypes { get { return null; } }
+
+        private readonly EDI_X12_835 _data = EDI_X12_835.Generate();
+
+        public object Data { get { return _data; }  }
+    }
+
     public abstract class Segment
     {
         public string SegmentTag;

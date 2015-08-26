@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace GLD.SerializerBenchmark
@@ -5,9 +7,10 @@ namespace GLD.SerializerBenchmark
     internal interface ISerDeser
     {
         string Name { get; }
-        string Serialize<T>(object person);
-        T Deserialize<T>(string serialized);
-        void Serialize<T>(object person, Stream outputStream);
-        T Deserialize<T>(Stream inputStream);
+        void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null);
+        string Serialize(object serializable);
+        object Deserialize(string serialized);
+        void Serialize(object serializable, Stream outputStream);
+        object Deserialize(Stream inputStream);
     }
 }

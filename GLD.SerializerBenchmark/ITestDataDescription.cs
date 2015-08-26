@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 
 namespace GLD.SerializerBenchmark
 {
-    public interface ITestData
+    public interface ITestDataDescription
     {
         string Name { get; }
-        Type DataType { get; set; }
-        object Data { get; set; }
+         string Description { get; }
+       Type DataType { get;  }
+        List<Type> SecondaryDataTypes { get; }
+        object Data { get; }
     }
 }
