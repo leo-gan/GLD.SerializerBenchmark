@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using GLD.SerializerBenchmark.TestData;
 using Microsoft.Hadoop.Avro;
 
 namespace GLD.SerializerBenchmark

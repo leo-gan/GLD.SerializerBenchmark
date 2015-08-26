@@ -5,11 +5,10 @@ using System.Runtime.Serialization;
 using Bond;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using NFX;
 using ProtoBuf;
 using Serialization;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.TestData
 {
     [DataContract]
     [JsonConverter(typeof (StringEnumConverter))]

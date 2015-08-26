@@ -1,5 +1,5 @@
 /// https://github.com/aumcode/nfx
-/// Clone a project from GitHub b compile it. Add reference to NFX.dll 
+/// >PM Install-Package NFX
 
 using System;
 using System.Collections.Generic;
@@ -10,17 +10,20 @@ namespace GLD.SerializerBenchmark
 {
     internal class NfxSlimSerializer : ISerDeser
     {
-        private readonly NFX.Serialization.Slim.SlimSerializer _serializer;
+        private readonly SlimSerializer _serializer;
 
         #region ISerDeser Members
 
         public NfxSlimSerializer(IEnumerable<Type> types)
         {
-            var treg = new TypeRegistry(types, TypeRegistry.BoxedCommonNullableTypes, TypeRegistry.BoxedCommonTypes );
-            _serializer = new NFX.Serialization.Slim.SlimSerializer(treg);
+            var treg = new TypeRegistry(types, TypeRegistry.BoxedCommonNullableTypes, TypeRegistry.BoxedCommonTypes);
+            _serializer = new SlimSerializer(treg);
         }
 
-        public string Name {get { return "NFX.Slim"; } }
+        public string Name
+        {
+            get { return "NFX.Slim"; }
+        }
 
         public string Serialize<T>(object person)
         {
@@ -29,7 +32,7 @@ namespace GLD.SerializerBenchmark
                 _serializer.Serialize(ms, (T) person);
                 ms.Flush();
                 // ms.Position = 0;
-                return Convert.ToBase64String(ms.GetBuffer(), 0, (int)ms.Position, Base64FormattingOptions.None);
+                return Convert.ToBase64String(ms.GetBuffer(), 0, (int) ms.Position, Base64FormattingOptions.None);
             }
         }
 
@@ -45,12 +48,12 @@ namespace GLD.SerializerBenchmark
 
         public void Serialize<T>(object person, Stream outputStream)
         {
-                _serializer.Serialize(outputStream, (T) person);
+            _serializer.Serialize(outputStream, (T) person);
         }
 
-          public T Deserialize<T>(Stream inputStream)
+        public T Deserialize<T>(Stream inputStream)
         {
-                return (T) _serializer.Deserialize(inputStream);
+            return (T) _serializer.Deserialize(inputStream);
         }
 
         #endregion

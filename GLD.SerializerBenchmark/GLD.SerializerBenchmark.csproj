@@ -55,6 +55,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Bond.Runtime.CSharp.3.0.6\lib\net45\Bond.JSON.dll</HintPath>
     </Reference>
+    <Reference Include="delbydate, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\delbydate.exe</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="fastjson, Version=2.1.0.0, Culture=neutral, PublicKeyToken=6b75a806b86095cd, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\fastJSON.2.1.14.0\lib\net40\fastjson.dll</HintPath>
@@ -62,6 +66,14 @@
     <Reference Include="Flexo, Version=1.0.22.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\flexo.1.0.22.0\lib\Flexo.dll</HintPath>
+    </Reference>
+    <Reference Include="getdatetime, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\getdatetime.exe</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="gluec, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\gluec.exe</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="HaveBoxJSON">
       <HintPath>..\packages\HaveBoxJSON.1.0.0\lib\net45\HaveBoxJSON.dll</HintPath>
@@ -94,14 +106,39 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="NFX">
-      <HintPath>..\..\..\..\Users\lganeline\Downloads\NFX.dll</HintPath>
+    <Reference Include="NFX, Version=2.0.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\NFX.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NFX.Wave, Version=2.0.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\NFX.Wave.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NFX.Web, Version=2.0.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\NFX.Web.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NFX.WinForms, Version=2.0.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\NFX.WinForms.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ntc, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\ntc.exe</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="phash, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\phash.exe</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Polenter.SharpSerializer">
       <HintPath>..\packages\SharpSerializer.2.20\lib\net20\Polenter.SharpSerializer.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="rsc, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\rsc.exe</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Salar.Bois, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c6a95817615ec2cb, processorArchitecture=MSIL">
       <HintPath>..\packages\Salar.Bois.2.0.0.0\lib\net40\Salar.Bois.dll</HintPath>
@@ -128,8 +165,13 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="TelemetryViewer, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NFX.2.0.0.3\lib\TelemetryViewer.exe</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Comparer.cs" />
     <Compile Include="ITestData.cs" />
     <Compile Include="Serializers\BinarySerializer.cs" />
     <Compile Include="Serializers\BondFastSerializer.cs" />
@@ -158,11 +200,15 @@
     <Compile Include="Serializers\AvroSerializer.cs" />
     <Compile Include="Serializers\ProtoBufSerializer.cs" />
     <Compile Include="Report.cs" />
+    <Compile Include="TestData\EDI_X12_835.cs" />
+    <Compile Include="TestData\MsgBatching.cs" />
+    <Compile Include="TestData\ObjectGraph.cs" />
+    <Compile Include="TestData\Telemetry.cs" />
     <Compile Include="Tester.cs" />
     <Compile Include="Serializers\MsgPackSerializer.cs" />
     <Compile Include="Serializers\XmlSerializer.cs" />
     <Compile Include="Serializers\JsonNetHelperSerializer.cs" />
-    <Compile Include="Person.cs" />
+    <Compile Include="TestData\Person.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Randomizer.cs" />

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using GLD.SerializerBenchmark.TestData;
 
 namespace GLD.SerializerBenchmark
 {
@@ -119,8 +120,9 @@ namespace GLD.SerializerBenchmark
             sw.Stop();
 
             //Report.TimeAndDocument(serializer.Name, measurement.Time, serializedStream);
-
-            errors.AddRange(original.Compare(processed));
+            string error;
+            if (!Comparer.Compare(original, processed, out error, true))
+                errors.Add(error);
             Report.Errors(errors);
 
             return measurement;

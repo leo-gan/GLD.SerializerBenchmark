@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using GLD.SerializerBenchmark.TestData;
 
 namespace GLD.SerializerBenchmark
 {
