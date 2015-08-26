@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Runtime.Serialization;
+using NFX;
+using NFX.Environment;
+using NFX.Parsing;
 using ProtoBuf;
 
-using NFX;
-using NFX.Parsing;
-using NFX.Environment;
-
-namespace Serbench.Specimens.Tests
+namespace GLD.SerializerBenchmark.TestData
 {
     
     [ProtoContract] [DataContract] [Serializable] public struct HumanName
@@ -233,57 +230,27 @@ namespace Serbench.Specimens.Tests
       
     }
 
-    /// <summary>
-    /// NOTE: ProtBuf DOES NOT support references, the ProtoBuf.Net serializer does because it is an "extra feature" from Marc Gravell.
-    /// So technically we are favoring not ProtoBuf but ProtoBuf.NET as Google's format does not care about object normalization.
-    /// This crosses out ProtoBuff portability between platforms as other readers will not be able to "read-in" the original object graph.
-    /// see: http://stackoverflow.com/questions/6063729/does-protocol-buffers-support-serialization-of-object-graphs-with-shared-referen
-    /// </summary>
-    public class ObjectGraph : Test
+     [ProtoContract(AsReferenceDefault=true)]
+    [DataContract(IsReference=true)]
+   public class ObjectGraph
     {
-        
-
-        public ObjectGraph(TestingSystem context, IConfigSectionNode conf)
-            : base(context, conf)
+        public static ObjectGraph Generate(int conferenceCount, int participantCount, int eventCount)
         {
-            if (m_ConferenceCount < 1) m_ConferenceCount = 1;
-            if (m_ParticipantCount < 1) m_ParticipantCount = 1;
-            if (m_EventCount < 1) m_EventCount = 1;
+            var objectGraph = new ObjectGraph
+            {
+                ConferenceCount = conferenceCount < 1 ? 1 : conferenceCount,
+                ParticipantCount = participantCount < 1 ? 1 : participantCount,
+                EventCount = eventCount < 1 ? 1 : eventCount
+            };
 
-            for (var i = 0; i < m_ConferenceCount; i++)
-                m_Data.Add( ConferenceBuilder.Build(m_ParticipantCount, m_EventCount ) );
+            for (var i = 0; i < objectGraph.ConferenceCount; i++)
+                objectGraph.Conferences.Add( ConferenceBuilder.Build(objectGraph.ParticipantCount, objectGraph.EventCount ) );
+            return objectGraph;
         }
 
-        [Config]
-        private int m_ConferenceCount;
-
-
-        [Config]
-        private int m_ParticipantCount;
-
-        [Config]
-        private int m_EventCount;
-
-        private List<Conference> m_Data = new List<Conference>();
-
-        
-
-
-        public override Type GetPayloadRootType()
-        {
-            return m_Data.GetType();
-        }
-
-        public override void PerformSerializationTest(Serializer serializer, Stream target)
-        {
-            serializer.Serialize(m_Data, target);
-        }
-
-        public override void PerformDeserializationTest(Serializer serializer, Stream target)
-        {
-           var got = serializer.Deserialize(target);
-
-           serializer.AssertPayloadEquality(this, m_Data, got);
-        }
+        [ProtoMember(1)][DataMember] public int ConferenceCount;
+        [ProtoMember(2)][DataMember] public int ParticipantCount;
+        [ProtoMember(3)][DataMember] public int EventCount;
+        [ProtoMember(4)][DataMember] public List<Conference> Conferences = new List<Conference>();
     }
 }

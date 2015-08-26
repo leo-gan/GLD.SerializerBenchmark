@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using Bond;
@@ -15,10 +14,8 @@ namespace GLD.SerializerBenchmark.TestData
     [Serializable]
     public enum Gender
     {
-        [EnumMember]
-        Male,
-        [EnumMember]
-        Female,
+        [EnumMember] Male,
+        [EnumMember] Female
     }
 
     [SerializableObject(SerializedElements.All, EncodingName = "ASCII")]
@@ -40,7 +37,7 @@ namespace GLD.SerializerBenchmark.TestData
 
         [DataMember]
         [ProtoMember(3)]
-        [Id(2), global::Bond.Type(typeof(long))]
+        [Id(2), Type(typeof (long))]
         public DateTime ExpirationDate { get; set; }
     }
 
@@ -67,47 +64,13 @@ namespace GLD.SerializerBenchmark.TestData
     [ProtoContract]
     [Schema]
     [Serializable]
-    public class Person : ITestData
+    public class Person
     {
-        // private static int maxPoliceRecordCounter = 20;
-        public Person()
+        public string Name
         {
+            get { return "Person"; }
         }
 
-        public string Name {get { return "Person"; } }
-
-        public  Person Generate()
-        {
-            return new Person
-            {
-                FirstName = Randomizer.Name,
-                LastName = Randomizer.Name,
-                Age = (uint) Randomizer.Rand.Next(120),
-                Gender = (Randomizer.Rand.Next(0, 1) == 0) ? Gender.Male : Gender.Female,
-                Passport = new Passport
-                {
-                    Authority = Randomizer.Phrase,
-                    ExpirationDate =
-                        Randomizer.GetDate(DateTime.UtcNow, DateTime.UtcNow + TimeSpan.FromDays(1000)),
-                    Number = Randomizer.Id
-                },
-                PoliceRecords = Enumerable.Range(0, 20).Select(i => new PoliceRecord
-                {
-                    Id = i,
-                    CrimeCode = Randomizer.Name
-                }).ToArray()
-            };
-        }
-
-        ITestData ITestData.Generate()
-        {
-            return Generate();
-        }
-
-        public List<string> Compare(ITestData comparable)
-        {
-            return ComparePerson((Person)comparable);
-        }
 
         [DataMember]
         [ProtoMember(1)]
@@ -141,70 +104,27 @@ namespace GLD.SerializerBenchmark.TestData
         [Id(5)]
         public PoliceRecord[] PoliceRecords { get; set; }
 
-        //public static void Initialize(int maxPoliceRecords = 20)
-        //{
-        //    maxPoliceRecordCounter = maxPoliceRecords;
-        //}
-
-        public List<string> ComparePerson(Person comparable)
+        public Person Generate()
         {
-            var errors = new List<string> {"  ************** Comparison failed! "};
-            if (comparable == null)
+            return new Person
             {
-                errors.Add("comparable Person: is null!");
-                return errors;
-            }
-
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-            Compare("LastName", LastName, comparable.LastName, errors);
-            Compare("Age", Age, comparable.Age, errors);
-            Compare("Gender", Gender, comparable.Gender, errors);
-            if (Passport == null)
-                Assert("Passport == null but comparable.Passport != null", (() => comparable.Passport == null), errors);
-            if (Passport != null && comparable.Passport != null)
-            {
-                Compare("Passport.Authority", Passport.Authority, comparable.Passport.Authority, errors);
-                Compare("Passport.ExpirationDate", Passport.ExpirationDate,
-                    comparable.Passport.ExpirationDate, errors);
-                Compare("Passport.Number", Passport.Number, comparable.Passport.Number, errors);
-            }
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-            Compare("FirstName", FirstName, comparable.FirstName, errors);
-
-            if (PoliceRecords == null)
-                Assert("PoliceRecords == null but comparable.PoliceRecords != null", (() => comparable.PoliceRecords == null), errors);
-            if (PoliceRecords != null && comparable.PoliceRecords != null)
-            {
-                var originalPoliceRecords = PoliceRecords;
-                var comparablePoliceRecords = comparable.PoliceRecords;
-                Compare("PoliceRecords.Length", originalPoliceRecords.Length,
-                    comparablePoliceRecords.Length, errors);
-
-                var minLength = Math.Min(originalPoliceRecords.Length, comparablePoliceRecords.Length);
-                for (var i = 0; i < minLength; i++)
+                FirstName = Randomizer.Name,
+                LastName = Randomizer.Name,
+                Age = (uint) Randomizer.Rand.Next(120),
+                Gender = (Randomizer.Rand.Next(0, 1) == 0) ? Gender.Male : Gender.Female,
+                Passport = new Passport
                 {
-                    Compare("PoliceRecords[" + i + "].Id", originalPoliceRecords[i].Id,
-                        comparablePoliceRecords[i].Id, errors);
-                    Compare("PoliceRecords[" + i + "].CrimeCode", originalPoliceRecords[i].CrimeCode,
-                        comparablePoliceRecords[i].CrimeCode, errors);
-                }
-            }
-            return errors;
-        }
-
-        private void Assert(string passportNullComparablePassportNull, Func<bool> errorIfFalse, List<string> errors)
-        {
-           if (!errorIfFalse())
-                errors.Add(passportNullComparablePassportNull);
-        }
-
-        private static void Compare(string objectName, object left, object right,
-                                    List<string> errors)
-        {
-            if (!left.Equals(right))
-                errors.Add(String.Format("\t{0}: {1} != {2}", objectName, left, right));
+                    Authority = Randomizer.Phrase,
+                    ExpirationDate =
+                        Randomizer.GetDate(DateTime.UtcNow, DateTime.UtcNow + TimeSpan.FromDays(1000)),
+                    Number = Randomizer.Id
+                },
+                PoliceRecords = Enumerable.Range(0, 20).Select(i => new PoliceRecord
+                {
+                    Id = i,
+                    CrimeCode = Randomizer.Name
+                }).ToArray()
+            };
         }
     }
 

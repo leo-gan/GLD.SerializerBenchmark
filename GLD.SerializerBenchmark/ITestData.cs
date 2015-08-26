@@ -10,6 +10,6 @@ namespace GLD.SerializerBenchmark
     {
         string Name { get; }
         Type DataType { get; set; }
-        object Data { get; set; };
+        object Data { get; set; }
     }
 }

@@ -25,56 +25,12 @@ namespace Serbench.Specimens.Tests
         public string SegmentTag;
     }
 
-    public class EDI_X12_835 : ITestData
-    {
-        public EDI_X12_835(TestingSystem context, IConfigSectionNode conf)
-            : base(context, conf)
-        {
-           if (m_Count < 1) m_Count = 1;
-
-            for (var i = 0; i < m_Count; i++)
-                m_Data.Add(EDI_X12_835Data.Make());
-        }
-
-        [Config]
-        private bool m_List;
-        
-        [Config]
-        private int m_Count;
-
-        private List<EDI_X12_835Data> m_Data = new List<EDI_X12_835Data>();
-
-        public override Type GetPayloadRootType()
-        {
-            var root = m_List ? (object)m_Data : m_Data[0];
-            return root.GetType();
-        }
-
-        public override void PerformSerializationTest(Serializer serializer, Stream target)
-        {
-            var root = m_List ? (object)m_Data : m_Data[0];
-            serializer.Serialize(root, target);
-        }
-
-        public override void PerformDeserializationTest(Serializer serializer, Stream target)
-        {
-            var deserialized = serializer.Deserialize(target);
-
-            var originalRoot = m_List ? (object)m_Data : m_Data[0];
-            serializer.AssertPayloadEquality(this, originalRoot, deserialized);
-        }
-
-        public string Name { get; private set; }
-        public Type DataType { get; set; }
-        public object Data { get; set; }
-    }
-
     [ProtoContract]
     [DataContract]
     [Serializable]
-    public class EDI_X12_835Data
+    public class EDI_X12_835
     {
-        public EDI_X12_835Data() { }
+        public EDI_X12_835() { }
 
         [ProtoMember(1)]
         [DataMember]
@@ -101,9 +57,9 @@ namespace Serbench.Specimens.Tests
         [DataMember]
         public List<PLB_ProviderAdjustment> PLB_ProviderAdjustmentList;
 
-        public static EDI_X12_835Data Make()
+        public static EDI_X12_835 Generate()
         {
-            return new EDI_X12_835Data()
+            return new EDI_X12_835()
             {
                 BPR_FinancialInformation = BPR_FinancialInformation.Make(),
                 TRN_ReassociationTraceNumber = TRN_ReassociationTraceNumber.Make(),
@@ -120,12 +76,12 @@ namespace Serbench.Specimens.Tests
         {
             errorString = null;
 
-            if (original is IList<Serbench.Specimens.Tests.EDI_X12_835Data>)
+            if (original is IList<Serbench.Specimens.Tests.EDI_X12_835>)
              return deserialized!=null && original.GetType()==deserialized.GetType();
 
              
-            var originalTyped = original as Serbench.Specimens.Tests.EDI_X12_835Data;
-            var deserializedTyped = deserialized as Serbench.Specimens.Tests.EDI_X12_835Data;
+            var originalTyped = original as Serbench.Specimens.Tests.EDI_X12_835;
+            var deserializedTyped = deserialized as Serbench.Specimens.Tests.EDI_X12_835;
 
             if (originalTyped == null || deserializedTyped == null)
                 errorString = "Error: originalTyped or deserializedType == null";

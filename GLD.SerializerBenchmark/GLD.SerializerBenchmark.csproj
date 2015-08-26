@@ -201,6 +201,7 @@
     <Compile Include="Serializers\ProtoBufSerializer.cs" />
     <Compile Include="Report.cs" />
     <Compile Include="TestData\EDI_X12_835.cs" />
+    <Compile Include="TestData\EDI_X12_835_NoAtributes.cs" />
     <Compile Include="TestData\MsgBatching.cs" />
     <Compile Include="TestData\ObjectGraph.cs" />
     <Compile Include="TestData\Telemetry.cs" />
