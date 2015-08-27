@@ -3,39 +3,37 @@
 /// >PM Install-Package NetJSON
 /// 
 
-using System;
 using System.IO;
-using NetJSON;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class NetJSONSer : ISerDeser
+    internal class NetJSONSer : SerDeser
     {
         #region ISerDeser Members
 
-        public string Name {get { return "NetJSON"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name {get { return "NetJSON"; } }
+        public override string Serialize(object serializable)
         {
-            return NetJSON.NetJSON.Serialize<T>((T)person);
+            return NetJSON.NetJSON.Serialize(serializable);
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
-            return NetJSON.NetJSON.Deserialize<T>(serialized);
+            return NetJSON.NetJSON.Deserialize(_primaryType, serialized);
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-            NetJSON.NetJSON.Serialize<T>((T)person, new StreamWriter(outputStream));
+            NetJSON.NetJSON.Serialize(serializable, new StreamWriter(outputStream));
         }
 
-
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-            return NetJSON.NetJSON.Deserialize<T>(new StreamReader(inputStream));
+            using (var sr = new StreamReader(inputStream))
+            {
+                return NetJSON.NetJSON.Deserialize(_primaryType, sr.ReadToEnd());
+            }
         }
-
         #endregion
     }
 }

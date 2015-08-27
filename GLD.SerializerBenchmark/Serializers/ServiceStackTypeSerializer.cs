@@ -6,41 +6,35 @@
 using System.IO;
 using ServiceStack.Text;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class ServiceStackTypeSerializer : ISerDeser
+    internal class ServiceStackTypeSerializer : SerDeser
     {
-
         #region ISerDeser Members
 
-        public string Name {get { return "ServiceStack Type"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name
         {
-            using (var sw = new StringWriter())
-            {
-                TypeSerializer.SerializeToWriter<T>((T)person, sw);
-                return sw.ToString();
-            }
+            get { return "ServiceStack Type"; }
         }
 
-        public T Deserialize<T>(string serialized)
+        public override string Serialize(object serializable)
         {
-            using (var sr = new StringReader(serialized))
-            {
-                return TypeSerializer.DeserializeFromReader<T>(sr);
-            }
+            return TypeSerializer.SerializeToString(serializable, _primaryType);
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override object Deserialize(string serialized)
         {
-                TypeSerializer.SerializeToWriter<T>((T)person, new StreamWriter(outputStream));
+            return TypeSerializer.DeserializeFromString(serialized, _primaryType);
         }
 
-  
-        public T Deserialize<T>(Stream inputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-                return TypeSerializer.DeserializeFromReader<T>(new StreamReader(inputStream));
+            TypeSerializer.SerializeToStream(serializable, _primaryType, outputStream);
+        }
+
+        public override object Deserialize(Stream inputStream)
+        {
+            return TypeSerializer.DeserializeFromStream(_primaryType, inputStream);
         }
 
         #endregion

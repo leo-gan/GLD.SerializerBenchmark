@@ -7,44 +7,36 @@ using System.IO;
 using NFX.Serialization.JSON;
 using ServiceStack;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class NfxJsonSerializer : ISerDeser
+    internal class NfxJsonSerializer : SerDeser
     {
-        #region ISerDeser Members
+         #region ISerDeser Members
 
-        public NfxJsonSerializer(IEnumerable<Type> types)
-        {
-        }
-
-        public string Name
+        public override string Name
         {
             get { return "NFX.Json"; }
         }
 
-        public string Serialize<T>(object person)
+        public override string Serialize(object serializable)
         {
-            return JSONWriter.Write(person, JSONWritingOptions.Compact);
+            return JSONWriter.Write(serializable, JSONWritingOptions.Compact);
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
-            dynamic dyna = JSONReader.DeserializeDataObject(serialized).ConvertTo<T>();
-            return (T) dyna;
+            return JSONReader.DeserializeDataObject(serialized).ConvertTo<object>();
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-            JSONWriter.Write(person, outputStream, JSONWritingOptions.Compact);
+            JSONWriter.Write(serializable, outputStream, JSONWritingOptions.Compact);
         }
 
-
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-            dynamic dyna = JSONReader.DeserializeDataObject(inputStream).ConvertTo<T>();
-            return (T) dyna;
+            return JSONReader.DeserializeDataObject(inputStream).ConvertTo<object>();
         }
-
         #endregion
     }
 }

@@ -7,9 +7,9 @@ using System;
 using System.IO;
 using Polenter.Serialization;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class SharpSerializer : ISerDeser
+    internal class SharpSerializer : SerDeser
     {
         private static  Polenter.Serialization.SharpSerializer _serializer;
 
@@ -24,40 +24,37 @@ namespace GLD.SerializerBenchmark
 
         #region ISerDeser Members
 
-        public string Name {get { return "SharpSerializer"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name {get { return "SharpSerializer"; } }
+        public override string Serialize(object serializable)
         {
             using (var ms = new MemoryStream())
             {
-                _serializer.Serialize(person, ms);
+                _serializer.Serialize(serializable, ms);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
             }
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
             byte[] b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T) _serializer.Deserialize(stream);
+                return _serializer.Deserialize(stream);
             }
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-                _serializer.Serialize(person, outputStream );
+                _serializer.Serialize(serializable, outputStream );
         }
 
- 
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-                return (T) _serializer.Deserialize(inputStream);
+                return _serializer.Deserialize(inputStream);
         }
-
         #endregion
     }
 }

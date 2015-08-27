@@ -13,13 +13,15 @@ namespace GLD.SerializerBenchmark
 
             var testDataDescriptions = new List<ITestDataDescription>
             {
-                //new IntDescription(),
+                // new IntDescription(), // TODO: Hang up. Investigate.
                 // new StringArrayDescription(), // TODO: OutOfMemory exception
-                //new SimleObjectDescription(),
+                new SimpleObjectDescription(),
                 new TelemetryDescription(),
                 new PersonDescription(),
-                //new EDI_X12_835Description(),
-                // new TestData.NoAtributes.EDI_X12_835Description(),
+                new EDI_X12_835Description(),
+                new TestData.NoAtributes.EDI_X12_835Description(),
+                new ObjectGraphDescription(),
+                new MsgBatchingDescription(),
             };
             var serializers = new List<ISerDeser>
             {
@@ -41,16 +43,15 @@ namespace GLD.SerializerBenchmark
                 new HaveBoxJSONSerializer(), // TODO: DateTime format?
                 new MessageSharkSer(),
                 new MsgPackSerializer(), // TODO: DateTime format?
-                ////new NetJSONSer(), // TODO: DateTime format?
-                //new NetSerializerSerializer(new[]
-                //{typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
-                //new NfxJsonSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
-                //new NfxSlimSerializer(new[] {typeof (Person), typeof (Gender), typeof (Passport), typeof (PoliceRecord)}),
-                //new ProtoBufSerializer(),
-                //new SharpSerializer(), // TODO: DateTime format?
-                //new ServiceStackJsonSerializer(), // TODO: DateTime format?
-                //new ServiceStackTypeSerializer(), // TODO: DateTime format?
-                //new SalarBoisSerializer()
+                new NetJSONSer(), // TODO: DateTime format?
+                new NetSerializerSer(),
+                new NfxJsonSerializer(),
+                new NfxSlimSerializer(),
+                new ProtoBufSerializer(),
+                new SharpSerializer(), // TODO: DateTime format?
+                new ServiceStackJsonSerializer(), // TODO: DateTime format?
+                new ServiceStackTypeSerializer(), // TODO: DateTime format?
+                new SalarBoisSerializer()
             };
 
             Tester.TestsOnData(serializers, testDataDescriptions, repetitions);

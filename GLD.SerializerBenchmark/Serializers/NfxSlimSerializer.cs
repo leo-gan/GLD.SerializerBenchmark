@@ -6,56 +6,63 @@ using System.Collections.Generic;
 using System.IO;
 using NFX.Serialization.Slim;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class NfxSlimSerializer : ISerDeser
+    internal class NfxSlimSerializer : SerDeser
     {
-        private readonly SlimSerializer _serializer;
+        private  SlimSerializer _serializer;
 
         #region ISerDeser Members
 
-        public NfxSlimSerializer(IEnumerable<Type> types)
+        private void Initialize()
         {
-            var treg = new TypeRegistry(types, TypeRegistry.BoxedCommonNullableTypes, TypeRegistry.BoxedCommonTypes);
+            if (!base.JustInitialized) return;
+            var typeList = new List<Type> {_primaryType};
+            if (_secondaryTypes != null) typeList.AddRange(_secondaryTypes);
+            var treg = new TypeRegistry(typeList, TypeRegistry.BoxedCommonNullableTypes, TypeRegistry.BoxedCommonTypes);
             _serializer = new SlimSerializer(treg);
+            JustInitialized = false;
         }
 
-        public string Name
+        public override string Name
         {
             get { return "NFX.Slim"; }
         }
 
-        public string Serialize<T>(object person)
+        public override string Serialize(object serializable)
         {
+            Initialize();
             using (var ms = new MemoryStream())
             {
-                _serializer.Serialize(ms, (T) person);
+                _serializer.Serialize(ms, serializable);
                 ms.Flush();
                 // ms.Position = 0;
                 return Convert.ToBase64String(ms.GetBuffer(), 0, (int) ms.Position, Base64FormattingOptions.None);
             }
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
+            Initialize();
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T) _serializer.Deserialize(stream);
+                return _serializer.Deserialize(stream);
             }
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-            _serializer.Serialize(outputStream, (T) person);
+            Initialize();
+            _serializer.Serialize(outputStream, serializable);
         }
 
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-            return (T) _serializer.Deserialize(inputStream);
+            Initialize();
+            return _serializer.Deserialize(inputStream);
         }
-
         #endregion
     }
 }

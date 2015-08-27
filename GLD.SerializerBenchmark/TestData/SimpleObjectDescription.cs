@@ -7,13 +7,13 @@ using ProtoBuf;
 
 namespace GLD.SerializerBenchmark.TestData
 {
-    public class SimleObjectDescription : ITestDataDescription
+    public class SimpleObjectDescription : ITestDataDescription
     {
         private readonly SimleObject _data = SimleObject.Generate();
 
         public string Name
         {
-            get { return "Simle Object"; }
+            get { return "Simple Object"; }
         }
 
         public string Description

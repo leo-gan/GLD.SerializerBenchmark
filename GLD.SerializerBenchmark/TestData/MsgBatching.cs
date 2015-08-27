@@ -1,30 +1,110 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using GLD.SerializerBenchmark.TestData;
+using Bond;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using NFX;
 using NFX.Parsing;
 using ProtoBuf;
 
-namespace Serbench.Specimens.Tests
+namespace GLD.SerializerBenchmark.TestData
 {
+    /// <summary>
+    ///     This Test shows a batching scenario i.e. a full-duplex socket connection
+    ///     when a party needs to send X consequitive atomic messages one after another in batches
+    /// </summary>
+    public class MsgBatchingDescription : ITestDataDescription
+    {
+        private readonly MsgBatching _data = MsgBatching.Generate(10, MsgBatchingType.RPC);
+
+        public string Name
+        {
+            get { return "MsgBatching"; }
+        }
+
+        public string Description
+        {
+            get { return ""; }
+        }
+
+        public Type DataType
+        {
+            get { return typeof (MsgBatching); }
+        }
+
+        public List<Type> SecondaryDataTypes
+        {
+            get
+            {
+                return new List<Type>
+                {
+                    typeof (AddressMessage),
+                    typeof (BankMsg),
+                    typeof (MsgBatchingType),
+                    typeof (RPCMessage),
+                    typeof (SomePersonalDataMessage),
+                    typeof (TradingRec)
+                };
+            }
+        }
+
+        public object Data
+        {
+            get { return _data; }
+        }
+    }
+
     [ProtoContract]
     [DataContract]
+    [Schema]
+    [Serializable]
+    public class MsgBatching
+    {
+        [ProtoMember(3)] [DataMember] [Id(0)] public List<object> Data = new List<object>();
+        [ProtoMember(1)] [DataMember] [Id(1)] public int MsgCount;
+        [ProtoMember(2)] [DataMember] [Id(2)] public MsgBatchingType MsgType;
+
+        public static MsgBatching Generate(int msgCount, MsgBatchingType msgType)
+        {
+            var msg = new MsgBatching
+            {
+                MsgCount = msgCount < 1 ? 1 : msgCount,
+                MsgType = msgType
+            };
+            msg.Data = new List<object>(msg.MsgCount);
+
+            for (var i = 0; i < msg.MsgCount; i++)
+                msg.Data.Add(msg.MsgType == MsgBatchingType.Personal
+                    ? SomePersonalDataMessage.Generate()
+                    : msg.MsgType == MsgBatchingType.RPC
+                        ? RPCMessage.Generate()
+                        : msg.MsgType == MsgBatchingType.Trading
+                            ? (object) TradingRec.Generate()
+                            : EDI_X12_835.Generate()
+                    );
+            return msg;
+        }
+    }
+
+    [ProtoContract]
+    [DataContract]
+    [Schema]
     [Serializable]
     public class AddressMessage
     {
-        [ProtoMember(1)] [DataMember] public string Address1;
-        [ProtoMember(2)] [DataMember] public string Address2;
-        [ProtoMember(6)] [DataMember] public bool CanAcceptSecureShipments;
-        [ProtoMember(10)] [DataMember] public string CellPhone;
-        [ProtoMember(3)] [DataMember] public string City;
+        [ProtoMember(1)] [DataMember] [Id(0)] public string Address1;
+        [ProtoMember(2)] [DataMember] [Id(1)] public string Address2;
+        [ProtoMember(6)] [DataMember] [Id(2)] public bool CanAcceptSecureShipments;
+        [ProtoMember(10)] [DataMember] [Id(3)] public string CellPhone;
+        [ProtoMember(3)] [DataMember] [Id(4)] public string City;
 
-        [ProtoMember(7)] [DataMember] public string EMail;
-        [ProtoMember(11)] [DataMember] public string Fax;
-        [ProtoMember(8)] [DataMember] public string HomePhone;
-        [ProtoMember(5)] [DataMember] public string PostalCode;
-        [ProtoMember(4)] [DataMember] public string State;
-        [ProtoMember(9)] [DataMember] public string WorkPhone;
+        [ProtoMember(7)] [DataMember] [Id(5)] public string EMail;
+        [ProtoMember(11)] [DataMember] [Id(6)] public string Fax;
+        [ProtoMember(8)] [DataMember] [Id(7)] public string HomePhone;
+        [ProtoMember(5)] [DataMember] [Id(8)] public string PostalCode;
+        [ProtoMember(4)] [DataMember] [Id(9)] public string State;
+        [ProtoMember(9)] [DataMember] [Id(10)] public string WorkPhone;
 
         public static AddressMessage Generate()
         {
@@ -47,38 +127,39 @@ namespace Serbench.Specimens.Tests
 
     [ProtoContract]
     [DataContract]
+    [Schema]
     [Serializable]
     public class SomePersonalDataMessage
     {
-        [ProtoMember(23)] [DataMember] public decimal AssetsAtHand;
-        [ProtoMember(7)] [DataMember] public AddressMessage Billing;
-        [ProtoMember(26)] [DataMember] public double CreditScale;
-        [ProtoMember(21)] [DataMember] public int? EducationGrade;
-        [ProtoMember(17)] [DataMember] public bool? FirearmLicense;
-        [ProtoMember(18)] [DataMember] public bool? FishermanLicense;
-        [ProtoMember(1)] [DataMember] public Guid ID;
-        [ProtoMember(2)] [DataMember] public HumanName LegalName;
-        [ProtoMember(22)] [DataMember] public double? PossibleRiskFactor;
-        [ProtoMember(24)] [DataMember] public decimal PotentialAssets;
+        [ProtoMember(23)] [DataMember] [Id(0)] public decimal AssetsAtHand;
+        [ProtoMember(7)] [DataMember] [Id(1)] public AddressMessage Billing;
+        [ProtoMember(26)] [DataMember] [Id(2)] public double CreditScale;
+        [ProtoMember(21)] [DataMember] [Id(3)] public int? EducationGrade;
+        [ProtoMember(17)] [DataMember] [Id(4)] public bool? FirearmLicense;
+        [ProtoMember(18)] [DataMember] [Id(5)] public bool? FishermanLicense;
+        [ProtoMember(1)] [DataMember] [Id(6)] public Guid ID;
+        [ProtoMember(2)] [DataMember] [Id(7)] public HumanName LegalName;
+        [ProtoMember(22)] [DataMember] [Id(8)] public double? PossibleRiskFactor;
+        [ProtoMember(24)] [DataMember] [Id(9)] public decimal PotentialAssets;
 
-        [ProtoMember(16)] [DataMember] public bool? RegisteredToVote;
-        [ProtoMember(4)] [DataMember] public DateTime RegistrationDate;
-        [ProtoMember(3)] [DataMember] public HumanName RegistrationName;
+        [ProtoMember(16)] [DataMember] [Id(10)] public bool? RegisteredToVote;
+        [ProtoMember(4)] [DataMember] [Id(11)] public DateTime RegistrationDate;
+        [ProtoMember(3)] [DataMember] [Id(12)] public HumanName RegistrationName;
 
-        [ProtoMember(8)] [DataMember] public bool? Reserved_BoolFlag1;
-        [ProtoMember(9)] [DataMember] public bool? Reserved_BoolFlag2;
-        [ProtoMember(12)] [DataMember] public double? Reserved_DblFlag1;
-        [ProtoMember(13)] [DataMember] public double? Reserved_DblFlag2;
-        [ProtoMember(10)] [DataMember] public int? Reserved_IntFlag1;
-        [ProtoMember(11)] [DataMember] public int? Reserved_IntFlag2;
-        [ProtoMember(5)] [DataMember] public AddressMessage Residence;
-        [ProtoMember(6)] [DataMember] public AddressMessage Shipping;
-        [ProtoMember(15)] [DataMember] public byte[] SpeakerAccessCode;
+        [ProtoMember(8)] [DataMember] [Id(13)] public bool? Reserved_BoolFlag1;
+        [ProtoMember(9)] [DataMember] [Id(14)] public bool? Reserved_BoolFlag2;
+        [ProtoMember(12)] [DataMember] [Id(15)] public double? Reserved_DblFlag1;
+        [ProtoMember(13)] [DataMember] [Id(16)] public double? Reserved_DblFlag2;
+        [ProtoMember(10)] [DataMember] [Id(17)] public int? Reserved_IntFlag1;
+        [ProtoMember(11)] [DataMember] [Id(18)] public int? Reserved_IntFlag2;
+        [ProtoMember(5)] [DataMember] [Id(19)] public AddressMessage Residence;
+        [ProtoMember(6)] [DataMember] [Id(20)] public AddressMessage Shipping;
+        [ProtoMember(15)] [DataMember] [Id(21)] public byte[] SpeakerAccessCode;
 
-        [ProtoMember(14)] [DataMember] public byte[] StageAccessCode;
-        [ProtoMember(25)] [DataMember] public decimal TotalDebt;
-        [ProtoMember(20)] [DataMember] public int? YearsInSchool;
-        [ProtoMember(19)] [DataMember] public int? YearsInTheMilitary;
+        [ProtoMember(14)] [DataMember] [Id(22)] public byte[] StageAccessCode;
+        [ProtoMember(25)] [DataMember] [Id(23)] public decimal TotalDebt;
+        [ProtoMember(20)] [DataMember] [Id(24)] public int? YearsInSchool;
+        [ProtoMember(19)] [DataMember] [Id(25)] public int? YearsInTheMilitary;
 
 
         public static SomePersonalDataMessage Generate()
@@ -110,13 +191,14 @@ namespace Serbench.Specimens.Tests
 
     [ProtoContract]
     [DataContract]
+    [Schema]
     [Serializable]
     public class BankMsg
     {
-        [ProtoMember(1)] [DataMember] public string FIPSCode;
-        [ProtoMember(2)] [DataMember] public string HCFACode;
-        [ProtoMember(4)] [DataMember] public bool IsChargeable;
-        [ProtoMember(3)] [DataMember] public long LANGRARCode;
+        [ProtoMember(1)] [DataMember] [Id(0)] public string FIPSCode;
+        [ProtoMember(2)] [DataMember] [Id(1)] public string HCFACode;
+        [ProtoMember(4)] [DataMember] [Id(2)] public bool IsChargeable;
+        [ProtoMember(3)] [DataMember] [Id(3)] public long LANGRARCode;
 
         public static BankMsg Generate()
         {
@@ -134,6 +216,7 @@ namespace Serbench.Specimens.Tests
 
     [ProtoContract]
     [DataContract]
+    [Schema]
     [Serializable]
     public class RPCMessage
     {
@@ -146,15 +229,15 @@ namespace Serbench.Specimens.Tests
         // '... A warning though: you mention "subclasses"; DynamicType does not play nicely with inheritance at the moment;
         // I have some outstanding work to do there.' –  Marc Gravell♦ Aug 2 '12 at 7:22 
 
-        [ProtoMember(9, DynamicType = true)] [DataMember] public object[] CallArguments;
-        [ProtoMember(8)] [DataMember] public bool ElevatePermission;
-        [ProtoMember(4)] [DataMember] public int MethodID;
-        [ProtoMember(3)] [DataMember] public string MethodName;
-        [ProtoMember(5)] [DataMember] public Guid? RemoteInstance;
-        [ProtoMember(1)] [DataMember] public Guid RequestID;
-        [ProtoMember(6)] [DataMember] public double? RequiredReliability;
-        [ProtoMember(2)] [DataMember] public string TypeName;
-        [ProtoMember(7)] [DataMember] public bool WrapException;
+        [ProtoMember(9, DynamicType = true)] [DataMember] [Id(0)] public object[] CallArguments;
+        [ProtoMember(8)] [DataMember] [Id(1)] public bool ElevatePermission;
+        [ProtoMember(4)] [DataMember] [Id(2)] public int MethodID;
+        [ProtoMember(3)] [DataMember] [Id(3)] public string MethodName;
+        [ProtoMember(5)] [DataMember] [Id(4)] public Guid? RemoteInstance;
+        [ProtoMember(1)] [DataMember] [Id(5)] public Guid RequestID;
+        [ProtoMember(6)] [DataMember] [Id(6)] public double? RequiredReliability;
+        [ProtoMember(2)] [DataMember] [Id(7)] public string TypeName;
+        [ProtoMember(7)] [DataMember] [Id(8)] public bool WrapException;
 
         public static RPCMessage Generate()
         {
@@ -190,13 +273,14 @@ namespace Serbench.Specimens.Tests
 
     [ProtoContract]
     [DataContract]
+    [Schema]
     [Serializable]
     public class TradingRec
     {
-        [ProtoMember(3)] [DataMember] public long Bet;
-        [ProtoMember(4)] [DataMember] public long Price;
-        [ProtoMember(1)] [DataMember] public string Symbol;
-        [ProtoMember(2)] [DataMember] public int Volume;
+        [ProtoMember(3)] [DataMember] [Id(0)] public long Bet;
+        [ProtoMember(4)] [DataMember] [Id(1)] public long Price;
+        [ProtoMember(1)] [DataMember] [Id(2)] public string Symbol;
+        [ProtoMember(2)] [DataMember] [Id(3)] public int Volume;
 
         public static TradingRec Generate()
         {
@@ -211,47 +295,14 @@ namespace Serbench.Specimens.Tests
     }
 
 
+    [DataContract]
+    [JsonConverter(typeof (StringEnumConverter))]
+    [Serializable]
     public enum MsgBatchingType
     {
-        Personal = 0,
-        RPC,
-        Trading,
-        EDI
-    }
-
-    /// <summary>
-    ///     This Test shows a batching scenario i.e. a full-duplex socket connection
-    ///     when a party needs to send X consequitive atomic messages one after another in batches
-    /// </summary>
-    [ProtoContract]
-    [DataContract]
-    [Serializable]
-    public class MsgBatching
-    {
-        [ProtoMember(3)] [DataMember] public List<object> Data = new List<object>();
-
-        [ProtoMember(1)] [DataMember] public int MsgCount;
-        [ProtoMember(2)] [DataMember] public MsgBatchingType MsgType;
-
-        public static MsgBatching Generate(int msgCount, MsgBatchingType msgType)
-        {
-            var msg = new MsgBatching
-            {
-                MsgCount = msgCount < 1 ? 1 : msgCount,
-                MsgType = msgType
-            };
-            msg.Data = new List<object>(msg.MsgCount);
-
-            for (var i = 0; i < msg.MsgCount; i++)
-                msg.Data.Add(msg.MsgType == MsgBatchingType.Personal
-                    ? SomePersonalDataMessage.Generate()
-                    : msg.MsgType == MsgBatchingType.RPC
-                        ? RPCMessage.Generate()
-                        : msg.MsgType == MsgBatchingType.Trading
-                            ? (object) TradingRec.Generate()
-                            : EDI_X12_835.Generate()
-                    );
-            return msg;
-        }
+        [EnumMember] Personal = 0,
+        [EnumMember] RPC,
+        [EnumMember] Trading,
+        [EnumMember] EDI
     }
 }

@@ -1,35 +1,41 @@
 ///
-/// See here https://github.com/mgravell/protobuf-net
-/// >PM Install-Package protobuf-net
-///     NOTE: I use the protobuf-net NuGet package because of
-///     [http://stackoverflow.com/questions/2522376/how-to-choose-between-protobuf-csharp-port-and-protobuf-net]
-/// 
+/// https://github.com/tomba/netserializer
+/// PM> Install-Package NetSerializer
+///
 
 using System;
+using System.Collections.Generic;
 using System.IO;
-using ProtoBuf;
+using NetSerializer;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class ProtoBufSerializer : SerDeser
+    internal class NetSerializerSer : SerDeser
     {
-        //public ProtoBufSerializer(Type type)
-        //{
-        //    var serializationInfo = new SerializationInfo(type, new FormatterConverter());
-        //}
+        private Serializer _serializer;
+
+         private void Initialize()
+        {
+            if (!JustInitialized) return;
+            var typeList = new List<Type> {_primaryType};
+            typeList.AddRange(_secondaryTypes);
+            _serializer = new Serializer(typeList);
+            JustInitialized = false;
+        }
 
         #region ISerDeser Members
 
         public override string Name
         {
-            get { return "ProtoBuf"; }
+            get { return "NetSerializer"; }
         }
 
         public override string Serialize(object serializable)
         {
+            Initialize();
             using (var ms = new MemoryStream())
             {
-                Serializer.Serialize(ms, serializable);
+                _serializer.Serialize(ms, serializable);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
@@ -38,22 +44,25 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(string serialized)
         {
+            Initialize();
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return Serializer.Deserialize<object>(stream);
+                return _serializer.Deserialize(stream);
             }
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            Serializer.Serialize(outputStream, serializable);
+            Initialize();
+            _serializer.Serialize(outputStream, serializable);
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            return Serializer.Deserialize<object>(inputStream);
+            Initialize();
+            return _serializer.Deserialize(inputStream);
         }
 
         #endregion
