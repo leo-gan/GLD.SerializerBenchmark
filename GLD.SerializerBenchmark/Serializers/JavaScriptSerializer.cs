@@ -6,43 +6,39 @@
 using System.IO;
 using System.Text;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class JavaScriptSerializer : ISerDeser
+    internal class JavaScriptSerializer : SerDeser
     {
         private static readonly System.Web.Script.Serialization.JavaScriptSerializer _serializer =
             new System.Web.Script.Serialization.JavaScriptSerializer();
 
         #region ISerDeser Members
 
-        public string Name {get { return "MS JavaScript"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name {get { return "MS JavaScript"; } }
+        public override string Serialize(object serializable)
         {
-            return _serializer.Serialize(person);
+            return _serializer.Serialize(serializable);
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
-            return _serializer.Deserialize<T>(serialized);
+            return _serializer.Deserialize(serialized, _primaryType);
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-            var sr = new StringReader(_serializer.Serialize( person));
+            var sr = new StringReader(_serializer.Serialize(serializable));
             sr.ReadToEnd();
-            //outputStream.
         }
 
-
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
             var sb = new StringBuilder();
             var sw = new StringWriter(sb);
             string s = sw.ToString(); // ???
-            return _serializer.Deserialize<T>(s);
+            return _serializer.Deserialize(s, _primaryType);
         }
-
         #endregion
     }
 }

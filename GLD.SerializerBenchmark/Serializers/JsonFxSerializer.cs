@@ -7,38 +7,35 @@
 using System.IO;
 using JsonFx.Json;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class JsonFxSerializer : ISerDeser
+    internal class JsonFxSerializer : SerDeser
     {
 
         static readonly JsonWriter _jw = new JsonWriter();
         static readonly JsonReader _jr = new JsonReader();
         #region ISerDeser Members
 
-        public string Name {get { return "JsonFx"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name {get { return "JsonFx"; } }
+        public override string Serialize(object serializable)
         {
-            return _jw.Write(person);
-         }
-
-        public T Deserialize<T>(string serialized)
-        {
-            return _jr.Read<T>(serialized);
+            return _jw.Write(serializable);
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override object Deserialize(string serialized)
         {
-            _jw.Write(person, new StreamWriter(outputStream));
+            return _jr.Read(serialized, _primaryType);
         }
 
-
-        public T Deserialize<T>(Stream inputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-            return _jr.Read<T>(new StreamReader(inputStream));
+            _jw.Write(serializable, new StreamWriter(outputStream));
         }
 
+        public override object Deserialize(Stream inputStream)
+        {
+            return _jr.Read(new StreamReader(inputStream), _primaryType);
+        }
         #endregion
     }
 }

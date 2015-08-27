@@ -8,7 +8,7 @@ using System.IO;
 using GLD.SerializerBenchmark.TestData;
 using MsgPack.Serialization;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
     /// <summary>
     ///     NOTE: Tests result got the errors:
@@ -21,54 +21,56 @@ namespace GLD.SerializerBenchmark
     ///     will be lost. Note that built-in serealiers pack them in UTC time."
     ///     I am leaving it now at it is.
     /// </summary>
-    internal class MsgPackSerializer : ISerDeser
+    internal class MsgPackSerializer : SerDeser
     {
-        private static readonly IMessagePackSerializer _serializer =
-            MessagePackSerializer.Get((typeof (Person)));
+        private static  IMessagePackSerializer _serializer;
 
         // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
 
-        //public MsgPackSerializer (Person t)
-        //{
-        //    var _serializer = MsgPack.Serialization.SerializationContext.Default.GetSerializer<Person>();
-        //}
+        private void Initialize()
+        {
+            if (!base.JustInitialized) return;
+            _serializer = MessagePackSerializer.Get(_primaryType);
+            JustInitialized = false;
+        }
 
         #region ISerDeser Members
 
-        public string Name {get { return "MsgPack"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name {get { return "MsgPack"; } }
+        public override string Serialize(object serializable)
         {
+            Initialize();
             using (var ms = new MemoryStream())
             {
-                _serializer.Pack(ms, (T)person);
+                _serializer.Pack(ms, serializable);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
             }
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
+            Initialize();
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return (T) _serializer.Unpack(stream);
+                return _serializer.Unpack(stream);
             }
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-            _serializer.Pack(outputStream, (T)person);
+            Initialize();
+            _serializer.Pack(outputStream, serializable);
         }
 
-
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-                return (T) _serializer.Unpack(inputStream);
+            Initialize();
+            return _serializer.Unpack(inputStream);
         }
-
         #endregion
     }
 }

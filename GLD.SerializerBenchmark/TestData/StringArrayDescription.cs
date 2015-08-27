@@ -10,7 +10,7 @@ namespace GLD.SerializerBenchmark.TestData
        public string Name { get { return "String Array"; }}
        public string Description { get{ return "Simple string[]."; }}
       public Type DataType { get { return typeof (string[]); } }
-        public List<Type> SecondaryDataTypes { get { return null; } }
+        public List<Type> SecondaryDataTypes { get { return new List<Type>{}; } }
 
         private readonly string[] _data = 
         {

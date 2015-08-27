@@ -1,78 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using Bond;
 using NFX;
 using ProtoBuf;
 
 namespace GLD.SerializerBenchmark.TestData
 {
-   public class TelemetryDescription : ITestDataDescription
+    public class TelemetryDescription : ITestDataDescription
     {
-        public string Name { get { return "Telemetry"; }}
-       public string Description { get{ return "Plain object with numbers and IDs"; }}
-       public Type DataType { get { return typeof (TelemetryData); } }
-        public List<Type> SecondaryDataTypes { get { return null; } }
-
         private readonly TelemetryData _data = TelemetryData.Generate(100);
 
-        public object Data { get { return _data; }  }
+        public string Name
+        {
+            get { return "Telemetry"; }
+        }
+
+        public string Description
+        {
+            get { return "Plain object with numbers, IDs, and double[]"; }
+        }
+
+        public Type DataType
+        {
+            get { return typeof (TelemetryData); }
+        }
+
+        public List<Type> SecondaryDataTypes
+        {
+            get { return new List<Type>(); }
+        }
+
+        public object Data
+        {
+            get { return _data; }
+        }
     }
+
     [ProtoContract]
     [DataContract]
     [Serializable]
+    [Schema]
     public class TelemetryData
     {
-        ///// <summary>
-        ///// Required by some serilizers (i.e. XML)
-        ///// </summary>
-        //public SimleObject() { }       
+        [ProtoMember(8)] [DataMember] [Id(7)] public long AssociatedLogID;
 
- 
-        [ProtoMember(1)]
-        [DataMember]
-        public string Id;
+        [ProtoMember(7)] [DataMember] [Id(6)] public long AssociatedProblemID;
 
-        [ProtoMember(2)]
-        [DataMember]
-        public string DataSource;
+        [ProtoMember(2)] [DataMember] [Id(1)] public string DataSource;
 
-        [ProtoMember(3)]
-        [DataMember]
-        public DateTime TimeStamp;
+        [ProtoMember(1)] [DataMember] [Id(0)] public string Id;
 
-        [ProtoMember(4)]
-        [DataMember]
-        public int Param1;
+        [ProtoMember(6)] [DataMember] [Id(5)] public double[] Measurements;
 
-        [ProtoMember(5)]
-        [DataMember]
-        public uint Param2;
+        [ProtoMember(4)] [DataMember] [Id(3)] public int Param1;
 
-        [ProtoMember(6)]
-        [DataMember]
-        public double[] Measurements;
+        [ProtoMember(5)] [DataMember] [Id(4)] public uint Param2;
 
-        [ProtoMember(7)]
-        [DataMember]
-        public long AssociatedProblemID;
+        [ProtoMember(3)] [DataMember] [Id(2), Type(typeof (long))] public DateTime TimeStamp;
 
-        [ProtoMember(8)]
-        [DataMember]
-        public long AssociatedLogID;
-
-        [ProtoMember(9)]
-        [DataMember]
-        public bool WasProcessed;
+        [ProtoMember(9)] [DataMember] [Id(8)] public bool WasProcessed;
 
         public static TelemetryData Generate(int measurementsNumber)
         {
-            var data = new TelemetryData()
+            var data = new TelemetryData
             {
                 Id = Guid.NewGuid().ToString(),
                 DataSource = Guid.NewGuid().ToString(),
                 TimeStamp = DateTime.Now,
                 Param1 = ExternalRandomGenerator.Instance.NextRandomInteger,
-                Param2 = (uint)ExternalRandomGenerator.Instance.NextRandomInteger,
+                Param2 = (uint) ExternalRandomGenerator.Instance.NextRandomInteger,
                 Measurements = new double[measurementsNumber],
                 AssociatedProblemID = 123,
                 AssociatedLogID = 89032,

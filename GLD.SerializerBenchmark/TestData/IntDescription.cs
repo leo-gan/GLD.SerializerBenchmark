@@ -15,7 +15,7 @@ namespace GLD.SerializerBenchmark.TestData
           public string Name { get { return "Integer"; }}
        public string Description { get{ return "Simple int (Int32)."; }}
       public Type DataType { get { return typeof (int); } }
-        public List<Type> SecondaryDataTypes { get { return null; } }
+        public List<Type> SecondaryDataTypes { get { return new List<Type>{}; } }
 
         private readonly int _data = 123;
 

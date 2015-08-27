@@ -10,7 +10,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
         public string Name { get { return "EDI_X12_835"; }}
        public string Description { get{ return "Similar to EDI_X12_835 but internal classes are without additional serialize atributes.."; }}
         public Type DataType { get { return typeof (EDI_X12_835); } }
-        public List<Type> SecondaryDataTypes { get { return null; } }
+        public List<Type> SecondaryDataTypes { get { return new List<Type>{}; } }
 
         private readonly EDI_X12_835 _data = EDI_X12_835.Generate();
 

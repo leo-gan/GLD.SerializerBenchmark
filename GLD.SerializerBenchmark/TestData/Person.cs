@@ -17,9 +17,9 @@ namespace GLD.SerializerBenchmark.TestData
       public Type DataType { get { return typeof (Person); } }
         public List<Type> SecondaryDataTypes { get { return new List<Type>{typeof (Gender), typeof(Passport), typeof(PoliceRecord)}; } }
 
-        private readonly Person _person = Person.Generate();
+        private readonly Person _data = Person.Generate();
 
-        public object Data { get { return _person; }  }
+        public object Data { get { return _data; }  }
     }
 
     [DataContract]
@@ -79,12 +79,6 @@ namespace GLD.SerializerBenchmark.TestData
     [Serializable]
     public class Person
     {
-        public string Name
-        {
-            get { return "Person"; }
-        }
-
-
         [DataMember]
         [ProtoMember(1)]
         [Id(0)]

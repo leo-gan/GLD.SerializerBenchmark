@@ -1,35 +1,32 @@
 using System.IO;
 using Newtonsoft.Json;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class JsonNetHelperSerializer : ISerDeser
+    internal class JsonNetHelperSerializer : SerDeser
     {
         #region ISerDeser Members
 
-        public string Name {get { return "Json.Net (Helper)"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name {get { return "Json.Net (Helper)"; } }
+        public override string Serialize(object serializable)
         {
-            return JsonConvert.SerializeObject((T)person);
+            return JsonConvert.SerializeObject(serializable);
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
-            return JsonConvert.DeserializeObject<T>(serialized);
+            return JsonConvert.DeserializeObject(serialized, _primaryType);
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
-        {
-            throw new System.NotImplementedException();
-        }
-
-
-        public T Deserialize<T>(Stream inputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
             throw new System.NotImplementedException();
         }
 
+        public override object Deserialize(Stream inputStream)
+        {
+            throw new System.NotImplementedException();
+        }
         #endregion
     }
 }

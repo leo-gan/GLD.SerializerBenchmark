@@ -6,50 +6,47 @@
 using System.IO;
 using Jil;
 
-namespace GLD.SerializerBenchmark
+namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class JilSerializer : ISerDeser
+    internal class JilSerializer : SerDeser
     {
         #region ISerDeser Members
 
-        public string Name {get { return "Jil"; } }
-
-        public string Serialize<T>(object person)
+        public override string Name {get { return "Jil"; } }
+        public override string Serialize(object serializable)
         {
             using (var sw = new StringWriter())
             {
-                JSON.Serialize<T>((T)person, sw,
+                JSON.Serialize(serializable, sw,
                     new Options(
                         unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
                 return sw.ToString();
             }
         }
 
-        public T Deserialize<T>(string serialized)
+        public override object Deserialize(string serialized)
         {
             using (var sr = new StringReader(serialized))
             {
-                return JSON.Deserialize<T>(sr,
+                return JSON.Deserialize(sr, _primaryType,
                     new Options(
                         unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
             }
         }
 
-        public void Serialize<T>(object person, Stream outputStream)
+        public override void Serialize(object serializable, Stream outputStream)
         {
-                JSON.Serialize<T>((T)person, new StreamWriter(outputStream),
+                JSON.Serialize(serializable, new StreamWriter(outputStream),
                     new Options(
                         unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
         }
 
-
-        public T Deserialize<T>(Stream inputStream)
+        public override object Deserialize(Stream inputStream)
         {
-                return JSON.Deserialize<T>(new StreamReader(inputStream),
+                return JSON.Deserialize(new StreamReader(inputStream), _primaryType,
                     new Options(
                         unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
         }
-
         #endregion
     }
 }

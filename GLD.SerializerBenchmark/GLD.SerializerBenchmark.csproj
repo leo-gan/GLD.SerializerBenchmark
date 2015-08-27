@@ -189,6 +189,14 @@
     <Compile Include="Serializers\DataContractSerializer.cs" />
     <Compile Include="Serializers\FastJsonSerializer.cs" />
     <Compile Include="Serializers\HaveBoxJSONSerializer.cs" />
+    <Compile Include="Serializers\JavaScriptSerializer.cs" />
+    <Compile Include="Serializers\JilSerializer.cs" />
+    <Compile Include="Serializers\JsonFxSerializer.cs" />
+    <Compile Include="Serializers\JsonNetHelperSerializer.cs" />
+    <Compile Include="Serializers\JsonNetSerializer.cs" />
+    <Compile Include="Serializers\MessageSharkSerializer.cs" />
+    <Compile Include="Serializers\MsgPackSerializer.cs" />
+    <Compile Include="Serializers\XmlSerializerSer.cs" />
     <Compile Include="TestData\EDI_X12_835.cs" />
     <Compile Include="TestData\EDI_X12_835_NoAtributes.cs" />
     <Compile Include="TestData\SimleObjectDescription.cs" />

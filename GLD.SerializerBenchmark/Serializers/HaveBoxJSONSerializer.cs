@@ -14,7 +14,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         #region ISerDeser Members
 
-        public override string Name {get { return "HaveBoxJSONSer"; } }
+        public override string Name {get { return "HaveBoxJSON"; } }
         public override string Serialize(object serializable)
         {
             return _serializer.Serialize(serializable);
