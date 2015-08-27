@@ -175,6 +175,7 @@
   <ItemGroup>
     <Compile Include="Comparer.cs" />
     <Compile Include="ITestDataDescription.cs" />
+    <Compile Include="Log.cs" />
     <Compile Include="SerDeser.cs" />
     <Compile Include="Serializers\ApJsonSerializer.cs" />
     <Compile Include="Serializers\AvroSerializer.cs" />

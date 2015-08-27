@@ -7,7 +7,7 @@ namespace GLD.SerializerBenchmark
 {
     internal static class Report
     {
-        public static void AllResults(Dictionary<string, Measurements[]> measurements, List<string> aborts)
+        public static void AllResults(Dictionary<string, Measurement[]> measurements, List<string> aborts)
         {
             Header();
             foreach (var oneTestMeasurments in measurements)
@@ -66,7 +66,7 @@ namespace GLD.SerializerBenchmark
             OutputEverywhere(str);
         }
 
-        private static void SingleResult(KeyValuePair<string, Measurements[]> oneTestMeasurements)
+        private static void SingleResult(KeyValuePair<string, Measurement[]> oneTestMeasurements)
         {
             var report =
                 //string.Format("{0, -20} {1,7:N0} {2,7:N0} {3,6:N0} {4,9:N0} {5,10:N0} {6,6:N0}",
@@ -90,41 +90,41 @@ namespace GLD.SerializerBenchmark
             OutputEverywhere(header);
         }
 
-        private static double P99Time(Measurements[] measurements)
+        private static double P99Time(Measurement[] measurement)
         {
-            if (measurements == null || measurements.Length == 0) return 0;
-            return BottomPercent(measurements, 1).Select(m => m.Time).LastOrDefault();
+            if (measurement == null || measurement.Length == 0) return 0;
+            return BottomPercent(measurement, 1).Select(m => m.Time).LastOrDefault();
         }
 
-        private static double MaxTime(Measurements[] measurements)
+        private static double MaxTime(Measurement[] measurement)
         {
-            if (measurements == null || measurements.Length == 0) return 0;
-            return measurements.Max(m => m.Time);
+            if (measurement == null || measurement.Length == 0) return 0;
+            return measurement.Max(m => m.Time);
         }
 
-        private static double MinTime(Measurements[] measurements)
+        private static double MinTime(Measurement[] measurement)
         {
-            if (measurements == null || measurements.Length == 0) return 0;
-            return measurements.Min(m => m.Time);
+            if (measurement == null || measurement.Length == 0) return 0;
+            return measurement.Min(m => m.Time);
         }
 
-        private static IEnumerable<Measurements> BottomPercent(Measurements[] measurements, int discardedPercent)
+        private static IEnumerable<Measurement> BottomPercent(Measurement[] measurement, int discardedPercent)
         {
-            if (discardedPercent == 0) return measurements;
-            var take = (int) Math.Round(measurements.Length*(100 - discardedPercent)/100.0);
-            return measurements.OrderBy(m => m.Time).Take(take);
+            if (discardedPercent == 0) return measurement;
+            var take = (int) Math.Round(measurement.Length*(100 - discardedPercent)/100.0);
+            return measurement.OrderBy(m => m.Time).Take(take);
         }
 
-        private static double AverageTime(Measurements[] measurements, int discardedPercent = 0)
+        private static double AverageTime(Measurement[] measurement, int discardedPercent = 0)
         {
-            if (measurements == null || measurements.Length == 0) return 0;
-            return BottomPercent(measurements, discardedPercent).Average(m => m.Time);
+            if (measurement == null || measurement.Length == 0) return 0;
+            return BottomPercent(measurement, discardedPercent).Average(m => m.Time);
         }
 
-        private static int AverageSize(Measurements[] measurements)
+        private static int AverageSize(Measurement[] measurement)
         {
-            if (measurements == null || measurements.Length == 0) return 0;
-            return (int) measurements.Average(m => m.Size);
+            if (measurement == null || measurement.Length == 0) return 0;
+            return (int) measurement.Average(m => m.Size);
         }
     }
 }

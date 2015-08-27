@@ -15,13 +15,13 @@ namespace GLD.SerializerBenchmark
             {
                 // new IntDescription(), // TODO: Hang up. Investigate.
                 // new StringArrayDescription(), // TODO: OutOfMemory exception
-                new SimpleObjectDescription(),
+                //new SimpleObjectDescription(),
                 new TelemetryDescription(),
                 new PersonDescription(),
-                new EDI_X12_835Description(),
-                new TestData.NoAtributes.EDI_X12_835Description(),
-                new ObjectGraphDescription(),
-                new MsgBatchingDescription(),
+                //new EDI_X12_835Description(),
+                //new TestData.NoAtributes.EDI_X12_835Description(),
+                //new ObjectGraphDescription(),
+                //new MsgBatchingDescription(),
             };
             var serializers = new List<ISerDeser>
             {
