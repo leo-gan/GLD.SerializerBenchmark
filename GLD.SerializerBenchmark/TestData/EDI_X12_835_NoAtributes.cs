@@ -7,13 +7,11 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
 {
     public class EDI_X12_835Description : ITestDataDescription
     {
+        private readonly EDI_X12_835 _data = EDI_X12_835.Generate();
         public string Name { get { return "EDI_X12_835 No Atributes"; }}
-       public string Description { get{ return "Similar to EDI_X12_835 but internal classes are without additional serialize atributes.."; }}
+        public string Description { get{ return "Similar to EDI_X12_835 but internal classes are without additional serialize atributes.."; }}
         public Type DataType { get { return typeof (EDI_X12_835); } }
         public List<Type> SecondaryDataTypes { get { return new List<Type>{}; } }
-
-        private readonly EDI_X12_835 _data = EDI_X12_835.Generate();
-
         public object Data { get { return _data; }  }
     }
 
@@ -21,7 +19,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
     {
         public string SegmentTag;
 
-        public Segment(string segmentTag)
+        protected Segment(string segmentTag)
         {
             SegmentTag = segmentTag;
         }
@@ -68,14 +66,13 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
 
         public static AccoungInfo Make()
         {
-            var result = new AccoungInfo();
-
-            result.Account_Number = NaturalTextGenerator.GenerateWord();
-            result.Account_Number_Qualifier = "Q";
-            result.DFI_Identification_Number = ExternalRandomGenerator.Instance.NextRandomInteger.ToString();
-            result.DFI_Number_Qualifier = "Q";
-
-            return result;
+            return new AccoungInfo
+            {
+                Account_Number = NaturalTextGenerator.GenerateWord(),
+                Account_Number_Qualifier = "Q",
+                DFI_Identification_Number = ExternalRandomGenerator.Instance.NextRandomInteger.ToString(),
+                DFI_Number_Qualifier = "Q"
+            };
         }
     }
     public class BPR_FinancialInformation : Segment
@@ -97,10 +94,11 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
         }
         public static BPR_FinancialInformation Make()
         {
-            var result = new BPR_FinancialInformation();
-
-            result.TransactionHandlingCode = ExternalRandomGenerator.Instance.NextRandomInteger;
-            result.CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.NextRandomInteger;
+            var result = new BPR_FinancialInformation
+            {
+                TransactionHandlingCode = ExternalRandomGenerator.Instance.NextRandomInteger,
+                CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.NextRandomInteger
+            };
             result.CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.AsInt();
             result.Payment_Format_Code = "CA";
             result.AccoungInfo1 = AccoungInfo.Make();

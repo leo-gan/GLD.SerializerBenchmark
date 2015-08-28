@@ -9,32 +9,39 @@ namespace GLD.SerializerBenchmark
     public class Comparer
     {
         /// <summary>
-        /// It compares two objects only by number of objct elements. It is enough to catch errors in serialization+deserialization chain.
+        ///  It compares two objects only by number of object elements. It is enough to catch errors in serialization+deserialization chain.
         /// It works with objects of different type.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="target"></param>
-        /// <param name="error"></param>
+        /// <param name="errorText">returns text of an error, otherwise returns null</param>
+        /// <param name="log"></param>
         /// <param name="trace">If true, it output both object element names into Trace.</param>
-        /// <returns></returns>
-        public static bool Compare(object source, object target, out string error, bool trace = false)
+        /// <returns>Returns true if number of element in source and target objects are equal, false otherwise.</returns>
+        public static bool Compare(object source, object target, out string errorText, Log log, bool trace = false)
         {
             var sourceElements = (Travers(source));
             var targetElements = (Travers(target));
-            if (trace)
+            var isComparisonFailed = ElementCount(sourceElements) != ElementCount(targetElements);
+            errorText = (isComparisonFailed)
+                ? 
+                string.Format("\nTestData:{0}, Serializer: {1}, {2} ", log.TestDataName, log.SerializerName, log.StringOrStream, log.RepetitionIndex)
+                 + string.Format(""
+                 + "\nElement numbers of source and target test objects are not equal: [{0}] != [{1}] ",
+                    ElementCount(sourceElements), ElementCount(targetElements))
+                : null;
+            if (trace && log.RepetitionIndex == 0 || isComparisonFailed) // trace only for the first test repetion or for the errorText
             {
+                Trace.WriteLine(string.Format("\nTestData:{0}, Serializer: {1}, {2}, Repetition: {3}", log.TestDataName, log.SerializerName, log.StringOrStream, log.RepetitionIndex));
+                if (isComparisonFailed)
+                    Trace.WriteLine(new string('*', 80) + Environment.NewLine + errorText);
                 Trace.WriteLine("\nSource object ===========================================================");
                 Trace.Write(sourceElements);
                 Trace.WriteLine("\nTarget object ===========================================================");
                 Trace.Write(targetElements);
             }
-            var sourceElementCount = ElementCount(sourceElements);
-            var targetElementCount = ElementCount(targetElements);
-            error = (sourceElementCount != targetElementCount)
-                ? string.Format("Element numbers of source and target documents are not equal: [{0}] != [{1}] ",
-                    sourceElementCount, targetElementCount)
-                : null;
-            return sourceElementCount == targetElementCount;
+
+            return !isComparisonFailed;
         }
 
         private static int ElementCount(string traversedObjectElementList)

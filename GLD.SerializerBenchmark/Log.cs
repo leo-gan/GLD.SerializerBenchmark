@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using ServiceStack;
 
 namespace GLD.SerializerBenchmark
 {
@@ -10,7 +13,6 @@ namespace GLD.SerializerBenchmark
         public string StringOrStream { get; set; }
 
         public string TestDataName { get; set; }
-        public string SerializerName { get; set; }
 
         /// <summary>
         ///     Each run started with fresh object initializing.
@@ -27,6 +29,8 @@ namespace GLD.SerializerBenchmark
         /// </summary>
         public int RepetitionIndex { get; set; }
 
+        public string SerializerName { get; set; }
+
         /// <summary>
         ///     Time of serialization in ticks.
         /// </summary>
@@ -41,6 +45,10 @@ namespace GLD.SerializerBenchmark
         ///     Seze of the serialized object in bytes.
         /// </summary>
         public int Size { get; set; }
+        /// <summary>
+        /// It used for saving an error text, if this error happend.
+        /// </summary>
+        public string Note { get; set; }
 
         /// <summary>
         ///     Sum of TimeSer and TimeDeser.
@@ -55,7 +63,7 @@ namespace GLD.SerializerBenchmark
         /// </summary>
         public double OpPerSecSer
         {
-            get { return TimeSer > 0 ? 10000000/TimeSer : 0; }
+            get { return TimeSer > 0 ? 10000000/TimeSer : 0;}
         }
 
         /// <summary>
@@ -101,17 +109,46 @@ namespace GLD.SerializerBenchmark
 
             logFileStreamWriter = File.CreateText(fileName);
 
-            const string fileHeaderLine = "StringOrStream, TestDataName, SerializerName, Repetitions, RepetitionIndex, TimeSer, TimeDeser, Size, TimeSerAndDeser, OpPerSecSer, OpPerSecDeser, OpPerSecSerAndDeser";
+            const string fileHeaderLine = "StringOrStream, TestDataName, Repetitions, RepetitionIndex, SerializerName, TimeSer, TimeDeser, Size, TimeSerAndDeser, OpPerSecSer, OpPerSecDeser, OpPerSecSerAndDeser, Note";
             logFileStreamWriter.WriteLine(fileHeaderLine);
         }
 
-        public void Store(Log log)
+        public void Write(Log log)
         {
-            var line = string.Join(",", log.StringOrStream, log.TestDataName, log.SerializerName, log.Repetitions,
-                log.RepetitionIndex, log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser, log.OpPerSecSer,
+            var line = string.Join("~", log.StringOrStream, log.TestDataName, log.Repetitions,log.RepetitionIndex, log.SerializerName,
+                log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser, log.OpPerSecSer,
                 log.OpPerSecDeser,
-                log.OpPerSecSerAndDeser);
+                log.OpPerSecSerAndDeser, 
+                log.Note
+                );
             logFileStreamWriter.WriteLine(line);
+        }
+
+        public List<Log> ReadAll(string fileFullName )
+        {
+            var lines = File.ReadAllLines(fileFullName);
+            var logs = new List<Log>();
+            foreach (var line in lines)
+            {
+                var fields = line.Split(new[]{'~'}, StringSplitOptions.RemoveEmptyEntries);
+                var log = new Log()
+                {
+                    StringOrStream = fields[0],
+                    TestDataName = fields[1],
+                    Repetitions = fields[2].ToInt(),
+                    RepetitionIndex = fields[3].ToInt(),
+                    SerializerName = fields[4],
+                    TimeSer = fields[5].ToInt64(),
+                    TimeDeser = fields[6].ToInt64(),
+                    //TimeSerAndDeser = fields[7].ToInt64(), // properties: without setters
+                    //OpPerSecSer = fields[8].ToDouble(),
+                    //OpPerSecDeser = fields[9].ToDouble(),
+                    //OpPerSecSerAndDeser = fields[10].ToDouble(),
+                    Note = fields[11],
+                };
+                logs.Add(log);
+            }
+            return logs;
         }
 
         private void CloseStorage()

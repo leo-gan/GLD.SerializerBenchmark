@@ -7,7 +7,8 @@ namespace GLD.SerializerBenchmark
 {
     internal static class Report
     {
-        public static void AllResults(Dictionary<string, Measurement[]> measurements, List<string> aborts)
+
+        public static void AllResults(Dictionary<string, Measurement[]> measurements, List<Error> aborts)
         {
             Header();
             foreach (var oneTestMeasurments in measurements)
@@ -15,7 +16,7 @@ namespace GLD.SerializerBenchmark
             Aborts(aborts);
         }
 
-        private static void Aborts(List<string> aborts)
+        private static void Aborts(List<Error> aborts)
         {
             if (aborts.Count <= 1) return;
 
@@ -24,12 +25,12 @@ namespace GLD.SerializerBenchmark
 
             aborts = aborts.Select(abort => abort).Distinct().ToList();
             foreach (var abort in aborts)
-                OutputEverywhere(abort);
+                OutputEverywhere(abort.ErrorText);
         }
 
         public static void TimeAndDocument(string name, long timeTicks, string document)
         {
-            Trace.WriteLine(name + ": " + timeTicks + " ticks Document: " + document);
+            Trace.WriteLine(Environment.NewLine + name + ": " + timeTicks + " ticks Document: " + document);
         }
 
         public static void Errors(List<string> errors)
@@ -49,7 +50,7 @@ namespace GLD.SerializerBenchmark
         {
             var name = "\nTest Data: " + testDataDescription.Name + " ";
             var str = name + new string('>', 80  - name.Length) 
-                + Environment.NewLine + testDataDescription.Description;
+                + "\n\t" + testDataDescription.Description;
             OutputEverywhere(str);
         }
 
