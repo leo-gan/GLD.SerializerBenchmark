@@ -111,8 +111,8 @@ namespace GLD.SerializerBenchmark
 
         private static void HeaderTestData(string testDataName)
         {
-            var header = "\nSerializer:                 Time:  Min      Avg        Max  Size: Avg\n"
-                         + new string('=', 80);
+            var header = string.Format("\nTest Data: {0}\nSerializer:                 Time:  Min      Avg        Max  Size: Avg\n"
+                         + new string('=', 80), testDataName);
             OutputEverywhere(header);
         }
 

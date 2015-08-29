@@ -17,7 +17,7 @@ namespace GLD.SerializerBenchmark
                 // new StringArrayDescription(), // TODO: OutOfMemory exception
                 //new SimpleObjectDescription(),
                 new TelemetryDescription(),
-                //new PersonDescription(),
+                new PersonDescription(),
                 //new EDI_X12_835Description(),
                 //new TestData.NoAtributes.EDI_X12_835Description(),
                 //new ObjectGraphDescription(),
