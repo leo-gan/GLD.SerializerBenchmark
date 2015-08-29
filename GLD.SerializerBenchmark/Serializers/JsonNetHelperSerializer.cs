@@ -25,6 +25,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
+            inputStream.Seek(0, SeekOrigin.Begin);
             throw new System.NotImplementedException();
         }
         #endregion

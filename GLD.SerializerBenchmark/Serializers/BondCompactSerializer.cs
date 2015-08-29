@@ -64,6 +64,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             Initialize();
+            inputStream.Seek(0, SeekOrigin.Begin);
             var input = new InputStream(inputStream);
             var reader = new CompactBinaryReader<InputStream>(input);
             return _deserializerStream.Deserialize(reader);

@@ -58,6 +58,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             Initialize();
+            inputStream.Seek(0, SeekOrigin.Begin);
             return _serializer.ReadObject(inputStream);
         }
         #endregion

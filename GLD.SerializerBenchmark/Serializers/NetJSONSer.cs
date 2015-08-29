@@ -29,6 +29,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
+            inputStream.Seek(0, SeekOrigin.Begin);
             using (var sr = new StreamReader(inputStream))
             {
                 return NetJSON.NetJSON.Deserialize(_primaryType, sr.ReadToEnd());

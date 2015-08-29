@@ -13,10 +13,10 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class BondFastSerializer : SerDeser
     {
-        private  Deserializer<FastBinaryReader<InputBuffer>> _deserializer;
-        private  Deserializer<FastBinaryReader<InputStream>> _deserializerStream;
-        private  Serializer<FastBinaryWriter<OutputBuffer>> _serializer;
-        private  Serializer<FastBinaryWriter<OutputStream>> _serializerStream;
+        private Deserializer<FastBinaryReader<InputBuffer>> _deserializer;
+        private Deserializer<FastBinaryReader<InputStream>> _deserializerStream;
+        private Serializer<FastBinaryWriter<OutputBuffer>> _serializer;
+        private Serializer<FastBinaryWriter<OutputStream>> _serializerStream;
 
         private void Initialize()
         {
@@ -64,7 +64,8 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             Initialize();
-           var input = new InputStream(inputStream);
+            inputStream.Seek(0, SeekOrigin.Begin);
+            var input = new InputStream(inputStream);
             var reader = new FastBinaryReader<InputStream>(input);
             return _deserializerStream.Deserialize(reader);
         }
