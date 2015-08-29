@@ -5,18 +5,6 @@ using System.IO;
 
 namespace GLD.SerializerBenchmark
 {
-    internal struct Measurement
-    {
-        public int Size;
-        public long TimeSer;
-        public long TimeDeser;
-
-        public long Time
-        {
-            get { return (TimeDeser + TimeSer) > 0 ? TimeDeser + TimeSer : 0; }
-        }
-    }
-
     internal class Tester
     {
         public static void Tests(List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions,
@@ -45,11 +33,9 @@ namespace GLD.SerializerBenchmark
         public static void TestsOnRepetition(ITestDataDescription testDataDescription, bool streaming, int repetitions,
             List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
         {
-            var measurements = new Dictionary<string, Measurement[]>();
             var wasError = new Dictionary<string, bool>();
             foreach (var serializer in serializers)
             {
-                measurements[serializer.Name] = new Measurement[repetitions];
                 wasError[serializer.Name] = false;
             }
             var original = testDataDescription; // the same data for all serializers
@@ -68,18 +54,17 @@ namespace GLD.SerializerBenchmark
                     RepetitionIndex = i,
                     StringOrStream = streaming ? "Stream" : "string"
                 };
-                TestOnSerializer(serializers, original, i, measurements, errors, streaming, logStorage, log);
+                TestOnSerializer(serializers, original, i, errors, streaming, logStorage, log);
             }
         }
 
         private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original, int repetition,
-            Dictionary<string, Measurement[]> measurements, List<Error> errors, bool streaming, LogStorage logStorage,
-            Log log)
+            List<Error> errors, bool streaming, LogStorage logStorage, Log log)
         {
             foreach (var serializer in serializers)
             {
                 var isRepeatedError = false;
-                measurements[serializer.Name][repetition] = SingleTest(serializer, original, errors, streaming, log,
+                SingleTest(serializer, original, errors, streaming, log,
                     logStorage, out isRepeatedError);
                 if (isRepeatedError) break;
             }
@@ -89,11 +74,11 @@ namespace GLD.SerializerBenchmark
             GC.Collect();
         }
 
-        private static Measurement SingleTest(ISerDeser serializer, ITestDataDescription original, List<Error> errors,
+        private static void SingleTest(ISerDeser serializer, ITestDataDescription original, List<Error> errors,
             bool streaming, Log log, LogStorage logStorage, out bool isRepeatedError)
         {
             isRepeatedError = false;
-            var measurement = new Measurement();
+            //var measurement = new Measurement();
             string serializedString = null;
             Stream serializedStream = new MemoryStream();
             object processed;
@@ -114,29 +99,26 @@ namespace GLD.SerializerBenchmark
                 if (streaming)
                 {
                     serializer.Serialize(original.Data, serializedStream);
-                    measurement.Size = (int) serializedStream.Length;
+                    log.Size = (int) serializedStream.Length;
                 }
                 else
                 {
                     serializedString = serializer.Serialize(original.Data);
-                    measurement.Size = serializedString.Length;
+                    log.Size = serializedString.Length;
                 }
                 serSuccessful = true;
-                measurement.TimeSer = sw.ElapsedTicks;
-                log.Size = measurement.Size;
-                log.TimeSer = measurement.TimeSer;
+                log.TimeSer = sw.ElapsedTicks;
 
                 processed = streaming
                     ? serializer.Deserialize(serializedStream)
                     : serializer.Deserialize(serializedString);
-                measurement.TimeDeser = sw.ElapsedTicks - measurement.TimeSer;
-                log.TimeDeser = measurement.TimeDeser;
+                log.TimeDeser = sw.ElapsedTicks - log.TimeSer;
             }
             catch (Exception ex)
             {
                 error.ErrorText = (serSuccessful ? "Deserialization" : "Serialization") + " Exception: " + ex.Message;
                 isRepeatedError = !error.TryAddTo(errors);
-                return measurement;
+                return;
             }
             sw.Stop();
 
@@ -149,8 +131,6 @@ namespace GLD.SerializerBenchmark
                 error.ErrorText = errorText;
                 isRepeatedError = !error.TryAddTo(errors); // if it false adding, that means an error repeated.
             }
-
-            return measurement;
         }
     }
 }
