@@ -107,7 +107,7 @@ namespace GLD.SerializerBenchmark
 
             _logFileStreamWriter = File.CreateText(logFileName);
 
-            const string fileHeaderLine = "StringOrStream, TestDataName, Repetitions, RepetitionIndex, SerializerName, TimeSer, TimeDeser, Size, TimeSerAndDeser, OpPerSecSer, OpPerSecDeser, OpPerSecSerAndDeser, Error";
+            const string fileHeaderLine = "StringOrStream, TestDataName, Repetitions, RepetitionIndex, SerializerName, TimeSer, TimeDeser, Size, TimeSerAndDeser, OpPerSecSer, OpPerSecDeser, OpPerSecSerAndDeser";
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
              _logFileName = logFileName;
