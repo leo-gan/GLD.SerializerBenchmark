@@ -18,7 +18,7 @@ namespace GLD.SerializerBenchmark.Serializers
     ///     "This is a limitation of the MessagePack spec. There are no canonical specification to serialize date/time value,
     ///     but the de facto is usage of the Unix epoc which is an epoc from January 1st, 1970 by milliseconds. MessagePack for
     ///     CLI is compliant for this, so less significant digits and timezone related information of DateTime/DateTimeOffset
-    ///     will be lost. Note that built-in serealiers pack them in UTC time."
+    ///     will be lost. Error that built-in serealiers pack them in UTC time."
     ///     I am leaving it now at it is.
     /// </summary>
     internal class MsgPackSerializer : SerDeser

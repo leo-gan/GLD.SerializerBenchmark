@@ -45,12 +45,8 @@ namespace GLD.SerializerBenchmark
         ///     Seze of the serialized object in bytes.
         /// </summary>
         public int Size { get; set; }
-        /// <summary>
-        /// It used for saving an error text, if this error happend.
-        /// </summary>
-        public string Note { get; set; }
 
-        /// <summary>
+      /// <summary>
         ///     Sum of TimeSer and TimeDeser.
         /// </summary>
         public long TimeSerAndDeser
@@ -85,7 +81,9 @@ namespace GLD.SerializerBenchmark
 
     public class LogStorage
     {
-        private StreamWriter logFileStreamWriter;
+        private StreamWriter _logFileStreamWriter;
+
+        private string _logFileName;
 
         public LogStorage(string logFileName)
         {
@@ -101,36 +99,38 @@ namespace GLD.SerializerBenchmark
         ///     By default it opens a file for writing. If this file is also existed, save it under "name.
         ///     <creationDateTime>.extension, and create a new file.
         /// </summary>
-        /// <param name="fileName">Is a file name.</param>
-        private void InitializeStorage(string fileName)
+        /// <param name="logFileName">Is a file name.</param>
+        private void InitializeStorage(string logFileName)
         {
-            if (File.Exists(fileName))
-                File.Move(fileName, GetArchiveFileName(fileName));
+            if (File.Exists(logFileName))
+                File.Move(logFileName, GetArchiveFileName(logFileName));
 
-            logFileStreamWriter = File.CreateText(fileName);
+            _logFileStreamWriter = File.CreateText(logFileName);
 
-            const string fileHeaderLine = "StringOrStream, TestDataName, Repetitions, RepetitionIndex, SerializerName, TimeSer, TimeDeser, Size, TimeSerAndDeser, OpPerSecSer, OpPerSecDeser, OpPerSecSerAndDeser, Note";
-            logFileStreamWriter.WriteLine(fileHeaderLine);
-        }
+            const string fileHeaderLine = "StringOrStream, TestDataName, Repetitions, RepetitionIndex, SerializerName, TimeSer, TimeDeser, Size, TimeSerAndDeser, OpPerSecSer, OpPerSecDeser, OpPerSecSerAndDeser, Error";
+            _logFileStreamWriter.WriteLine(fileHeaderLine);
+
+             _logFileName = logFileName;
+       }
 
         public void Write(Log log)
         {
-            var line = string.Join("~", log.StringOrStream, log.TestDataName, log.Repetitions,log.RepetitionIndex, log.SerializerName,
+            var line = string.Join("~", 
+                log.StringOrStream, log.TestDataName, log.Repetitions,log.RepetitionIndex, log.SerializerName,
                 log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser, log.OpPerSecSer,
-                log.OpPerSecDeser,
-                log.OpPerSecSerAndDeser, 
-                log.Note
+                log.OpPerSecDeser, log.OpPerSecSerAndDeser
                 );
-            logFileStreamWriter.WriteLine(line);
+            _logFileStreamWriter.WriteLine(line);
         }
 
-        public List<Log> ReadAll(string fileFullName )
+        public List<Log>ReadAll()
         {
-            var lines = File.ReadAllLines(fileFullName);
+            var lines = File.ReadAllLines(_logFileName);
             var logs = new List<Log>();
-            foreach (var line in lines)
+            for (int index = 1; index < lines.Length; index++) // first line is a title. Ignore it!
             {
-                var fields = line.Split(new[]{'~'}, StringSplitOptions.RemoveEmptyEntries);
+                var line = lines[index];
+                var fields = line.Split(new[] {'~'}, StringSplitOptions.None);
                 var log = new Log()
                 {
                     StringOrStream = fields[0],
@@ -140,20 +140,20 @@ namespace GLD.SerializerBenchmark
                     SerializerName = fields[4],
                     TimeSer = fields[5].ToInt64(),
                     TimeDeser = fields[6].ToInt64(),
-                    //TimeSerAndDeser = fields[7].ToInt64(), // properties: without setters
-                    //OpPerSecSer = fields[8].ToDouble(),
-                    //OpPerSecDeser = fields[9].ToDouble(),
-                    //OpPerSecSerAndDeser = fields[10].ToDouble(),
-                    Note = fields[11],
+                    Size = fields[7].ToInt(),
+                    //TimeSerAndDeser = fields[8].ToInt64(), // properties: without setters
+                    //OpPerSecSer = fields[9].ToDouble(),
+                    //OpPerSecDeser = fields[10].ToDouble(),
+                    //OpPerSecSerAndDeser = fields[11].ToDouble(),
                 };
                 logs.Add(log);
             }
             return logs;
         }
 
-        private void CloseStorage()
+        public void CloseStorage()
         {
-            logFileStreamWriter.Close();
+            _logFileStreamWriter.Close();
         }
 
         private static string GetArchiveFileName(string fileFullName)

@@ -177,14 +177,13 @@
     <Compile Include="Error.cs" />
     <Compile Include="ITestDataDescription.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="ReportLog.cs" />
+    <Compile Include="Report.cs" />
     <Compile Include="SerDeser.cs" />
     <Compile Include="Serializers\ApJsonSerializer.cs" />
     <Compile Include="Serializers\AvroSerializer.cs" />
     <Compile Include="Serializers\BinarySerializer.cs" />
     <Compile Include="Bond\Person_types.cs" />
     <Compile Include="ISerDeser.cs" />
-    <Compile Include="Report.cs" />
     <Compile Include="Serializers\BondCompactSerializer.cs" />
     <Compile Include="Serializers\BondFastSerializer.cs" />
     <Compile Include="Serializers\BondJsonSerializer.cs" />

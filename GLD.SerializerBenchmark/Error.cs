@@ -42,9 +42,17 @@ namespace GLD.SerializerBenchmark
                 && SerializerName == error.SerializerName 
                 && ErrorText == error.ErrorText);
             if (!isExisted) errors.Add(this);
-            return !isExisted;
+            return isExisted;
        }
 
-       
+        public static string TryGetErrorText(List<Error> errors, string testDataName, string serializerName, string stringOrStream)
+        {
+            var error =
+                errors.FirstOrDefault(
+                    er =>
+                        er.TestDataName == testDataName && er.SerializerName == serializerName &&
+                        er.StringOrStream == stringOrStream);
+            return error != null ? error.ErrorText : null;
+        }
     }
 }

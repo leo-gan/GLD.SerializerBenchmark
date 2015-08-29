@@ -23,33 +23,36 @@ namespace GLD.SerializerBenchmark
             int repetitions)
         {
             var logStorage = new LogStorage("SerializerBenchmark_Log.csv");
+            var errors = new List<Error>();
 
-            Report.Repetitions(repetitions);
             // initialize all serializers 
             foreach (var testDataDescription in testDataDescriptions)
-                TestOnData(testDataDescription, repetitions, serializers, logStorage);
+                TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
+
+            Report.AllResults(repetitions, logStorage, errors);
         }
 
-        private static void TestOnData(ITestDataDescription testDataDescription, int repetitions, List<ISerDeser> serializers,  
-            LogStorage logStorage)
+        private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,
+            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
         {
-            Report.TestDataHeader(testDataDescription);
             // initialize serializers for every data type.
             foreach (var serializer in serializers)
                 serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
-            TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage);
-            TestsOnRepetition(testDataDescription, true,  repetitions, serializers, logStorage);
+            TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors);
+            TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors);
         }
 
-        public static void TestsOnRepetition(ITestDataDescription testDataDescription, bool streaming,
-            int repetitions,  List<ISerDeser> serializers, LogStorage logStorage)
+        public static void TestsOnRepetition(ITestDataDescription testDataDescription, bool streaming, int repetitions,
+            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
         {
-            var errors = new List<Error>();
             var measurements = new Dictionary<string, Measurement[]>();
+            var wasError = new Dictionary<string, bool>();
             foreach (var serializer in serializers)
+            {
                 measurements[serializer.Name] = new Measurement[repetitions];
+                wasError[serializer.Name] = false;
+            }
             var original = testDataDescription; // the same data for all serializers
-            Report.StringOrStream(streaming);
             //Report.TestDataHeader(testDataDescription.Key);
             GC.Collect(); // it has very little impact on speed for repetitions < 100
             GC.WaitForFullGCComplete();
@@ -67,7 +70,6 @@ namespace GLD.SerializerBenchmark
                 };
                 TestOnSerializer(serializers, original, i, measurements, errors, streaming, logStorage, log);
             }
-            Report.AllResults(measurements, errors);
         }
 
         private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original, int repetition,
@@ -132,21 +134,21 @@ namespace GLD.SerializerBenchmark
             }
             catch (Exception ex)
             {
-                error.ErrorText = string.Format("\nTestData: {0}, Serializer: {1}, {2} \n\t", log.TestDataName, log.SerializerName, log.StringOrStream, log.RepetitionIndex)
-+ (serSuccessful ? "Deserialization" : "Serialization") + " Exception: " + ex.Message;
-                isRepeatedError = error.TryAddTo(errors);
+                error.ErrorText = (serSuccessful ? "Deserialization" : "Serialization") + " Exception: " + ex.Message;
+                isRepeatedError = !error.TryAddTo(errors);
                 return measurement;
             }
             sw.Stop();
 
-            if (log.RepetitionIndex == 0) Report.TimeAndDocument(serializer.Name, measurement.Time, serializedString);
-            logStorage.Write(log);
-
             string errorText;
+            // write log if comparison is true
             if (Comparer.Compare(original.Data, processed, out errorText, log, false))
-                return measurement;
-            error.ErrorText = errorText;
-            isRepeatedError = !error.TryAddTo(errors); // if it false adding, that means an error repeated.
+                logStorage.Write(log);
+            else // write error, if comparison false
+            {
+                error.ErrorText = errorText;
+                isRepeatedError = !error.TryAddTo(errors); // if it false adding, that means an error repeated.
+            }
 
             return measurement;
         }

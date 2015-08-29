@@ -7,51 +7,128 @@ namespace GLD.SerializerBenchmark
 {
     internal static class Report
     {
-
-        public static void AllResults(Dictionary<string, Measurement[]> measurements, List<Error> aborts)
+        public static void AllResults(int repetitions, LogStorage logStorage, List<Error> errors)
         {
-            Header();
-            foreach (var oneTestMeasurments in measurements)
-                SingleResult(oneTestMeasurments);
-            Aborts(aborts);
+            HeaderRepetitions(repetitions);
+            logStorage.CloseStorage(); // close file if it is still opened for writing.
+            var logs = logStorage.ReadAll();
+
+            var aggregatedResults = logs
+                .Select(a => a)
+                .GroupBy(a => new {a.Repetitions, a.TestDataName, a.SerializerName, a.StringOrStream})
+                .Select(g =>
+                    new AggregateLogs
+                    {
+                        StringOrStream = g.Key.StringOrStream,
+                        TestDataName = g.Key.TestDataName,
+                        SerializerName = g.Key.SerializerName,
+                        Repetitions = g.Key.Repetitions,
+                        OpPerSecDeserAver = g.Average(kg => kg.OpPerSecDeser),
+                        OpPerSecDeserMin = g.Min(kg => kg.OpPerSecDeser),
+                        OpPerSecDeserMax = g.Max(kg => kg.OpPerSecDeser),
+                        OpPerSecSerAver = g.Average(kg => kg.OpPerSecSer),
+                        OpPerSecSerMin = g.Min(kg => kg.OpPerSecSer),
+                        OpPerSecSerMax = g.Max(kg => kg.OpPerSecSer),
+                        OpPerSecSerAndDeserAver = g.Average(kg => kg.OpPerSecSerAndDeser),
+                        OpPerSecSerAndDeserMin = g.Min(kg => kg.OpPerSecSerAndDeser),
+                        OpPerSecSerAndDeserMax = g.Max(kg => kg.OpPerSecSerAndDeser),
+                        SizeAver = (int) g.Average(kg => kg.Size)
+                    });
+            Aggregated(aggregatedResults, errors);
         }
 
-        private static void Aborts(List<Error> aborts)
+        private static void Aggregated(IEnumerable<AggregateLogs> aggregatedResults, List<Error> errors)
         {
-            if (aborts.Count <= 1) return;
+            var testDataNames = aggregatedResults.Select(res => res.TestDataName).Distinct().ToList();
 
-            const string abortHeader = "\nABORTS: some serializers throw exceptions *********************\n";
-            OutputEverywhere(abortHeader);
-
-            aborts = aborts.Select(abort => abort).Distinct().ToList();
-            foreach (var abort in aborts)
-                OutputEverywhere(abort.ErrorText);
+            // for each Test Data type
+            foreach (var testDataName in testDataNames)
+            {
+                OnTestData(testDataName, aggregatedResults, errors);
+                OnTestDataErrors(testDataName, errors);
+            }
         }
 
-        public static void TimeAndDocument(string name, long timeTicks, string document)
+        private static void OnTestData(string testDataName, IEnumerable<AggregateLogs> aggregatedResults,
+            List<Error> errors)
         {
-            Trace.WriteLine(Environment.NewLine + name + ": " + timeTicks + " ticks Document: " + document);
+            HeaderTestData(testDataName);
+
+            var serNames = aggregatedResults.Select(res => res.SerializerName).Distinct().ToList();
+            // for each serializer
+            foreach (var serName in serNames)
+            {
+                var serResult =
+                    aggregatedResults.Select(a => a)
+                        .Where(a => a.SerializerName == serName);
+                OnSerializer(serResult);
+            }
         }
 
-        public static void Errors(List<string> errors)
+        private static void OnSerializer(IEnumerable<AggregateLogs> serResults)
         {
-            if (errors.Count == 1) return;
-            foreach (var error in errors)
-                Trace.WriteLine(error);
+            string stringAggregator = null, streamAggregator = null, serName = null;
+            var formatString = "{0, -21} -{1, -6}s {2,7:N0} {3,8:N0} {4,10:N0} {5,10:N0}";
+            foreach (var serResult in serResults)
+            {
+                    serName = serResult.SerializerName;
+                if (serResult.StringOrStream == "string")
+                    stringAggregator = string.Format(formatString,
+                        serResult.SerializerName, serResult.StringOrStream,
+                        serResult.OpPerSecSerAndDeserMin, serResult.OpPerSecSerAndDeserAver,
+                        serResult.OpPerSecSerAndDeserAver, serResult.SizeAver);
+                if (serResult.StringOrStream == "Stream")
+                    streamAggregator = string.Format(formatString,
+                        serResult.SerializerName, serResult.StringOrStream,
+                        serResult.OpPerSecSerAndDeserMin, serResult.OpPerSecSerAndDeserAver,
+                        serResult.OpPerSecSerAndDeserAver, serResult.SizeAver);
+            }
+            
+            if (stringAggregator == null)
+                stringAggregator = string.Format("{0, -21} -{1, -6}s {2}", serName, "string", "Failed!");
+            if (streamAggregator == null)
+                streamAggregator = string.Format("{0, -21} -{1, -6}s {2}", serName, "Stream", "Failed!");
+            if (stringAggregator == null && streamAggregator == null)
+                throw new Exception("No measurements and no errors. Something wrong!");
+            OutputEverywhere(stringAggregator);
+            OutputEverywhere(streamAggregator);
         }
 
-        public static void Repetitions(int repetitions)
+        private static void OnTestDataErrors(string testDataName, List<Error> errors)
         {
-            var str = "Repetitions: " + repetitions;
-            OutputEverywhere(str);
+            if (errors == null) return;
+            if (errors.Count == 0) return;
+
+            HeaderErrors(testDataName);
+            var testDataErrors = errors.Select(a => a).Where(b => b.TestDataName == testDataName).OrderBy(sr=>sr.SerializerName).ToList();
+            foreach (var error in testDataErrors)
+            {
+                var line = string.Format("{0, -21} -{1, -6}s \n\t{2}", 
+                    error.SerializerName, error.StringOrStream, error.ErrorText);
+                OutputEverywhere(line);
+            }
         }
 
-        public static void TestDataHeader(ITestDataDescription testDataDescription)
+        private static void HeaderTestData(string testDataName)
         {
-            var name = "\nTest Data: " + testDataDescription.Name + " ";
-            var str = name + new string('>', 80  - name.Length) 
-                + "\n\t" + testDataDescription.Description;
-            OutputEverywhere(str);
+            var header = "\nSerializer:                 Time:  Min      Avg        Max  Size: Avg\n"
+                         + new string('=', 80);
+            OutputEverywhere(header);
+        }
+
+        private static void HeaderRepetitions(int repetitions)
+        {
+            var header = string.Format("\n\nTests performed for each TestData + Serializer in {0} Repetitions\n",
+                repetitions)
+                         + new string('#', 80);
+            OutputEverywhere(header);
+        }
+
+        private static void HeaderErrors(string testDataName)
+        {
+            var line = string.Format("\nThere are errors in {0}\n"
+                         + new string('*', 80), testDataName);
+            OutputEverywhere(line);
         }
 
         private static void OutputEverywhere(string line)
@@ -59,73 +136,33 @@ namespace GLD.SerializerBenchmark
             Console.WriteLine(line);
             Trace.WriteLine(line);
         }
+    }
 
-        public static void StringOrStream(bool streaming)
-        {
-            var name = "\nSerialize / Deserialize to/from " + (streaming ? "Stream " : "String ");
-            var str = name + new string('.', 80 - name.Length);
-            OutputEverywhere(str);
-        }
+    internal class AggregateLogs
+    {
+        public string StringOrStream { get; set; }
 
-        private static void SingleResult(KeyValuePair<string, Measurement[]> oneTestMeasurements)
-        {
-            var report =
-                //string.Format("{0, -20} {1,7:N0} {2,7:N0} {3,6:N0} {4,9:N0} {5,10:N0} {6,6:N0}",
-                string.Format("{0, -20} {1,7:N0} {2,7:N0} {3,6:N0} {4,10:N0} {5,6:N0}",
-                    oneTestMeasurements.Key,
-                    //AverageTime(oneTestMeasurements.Value, 20),
-                    AverageTime(oneTestMeasurements.Value, 10),
-                    AverageTime(oneTestMeasurements.Value),
-                    MinTime(oneTestMeasurements.Value),
-                    //P99Time(oneTestMeasurements.Value),
-                    MaxTime(oneTestMeasurements.Value),
-                    AverageSize(oneTestMeasurements.Value));
+        public string TestDataName { get; set; }
 
-            OutputEverywhere(report);
-        }
+        /// <summary>
+        ///     A number of repetitions in a single Run
+        /// </summary>
+        public int Repetitions { get; set; }
 
-        private static void Header()
-        {
-            var header = "\nSerializer:    Time: Avg-90%   -100%    Min      Max  Size: Avg\n"
-                         + new string('=', 64);
-            OutputEverywhere(header);
-        }
+        public string SerializerName { get; set; }
 
-        private static double P99Time(Measurement[] measurement)
-        {
-            if (measurement == null || measurement.Length == 0) return 0;
-            return BottomPercent(measurement, 1).Select(m => m.Time).LastOrDefault();
-        }
+        public double OpPerSecSerAver { get; set; }
+        public double OpPerSecSerMin { get; set; }
+        public double OpPerSecSerMax { get; set; }
 
-        private static double MaxTime(Measurement[] measurement)
-        {
-            if (measurement == null || measurement.Length == 0) return 0;
-            return measurement.Max(m => m.Time);
-        }
+        public double OpPerSecDeserAver { get; set; }
+        public double OpPerSecDeserMin { get; set; }
+        public double OpPerSecDeserMax { get; set; }
 
-        private static double MinTime(Measurement[] measurement)
-        {
-            if (measurement == null || measurement.Length == 0) return 0;
-            return measurement.Min(m => m.Time);
-        }
+        public double OpPerSecSerAndDeserAver { get; set; }
+        public double OpPerSecSerAndDeserMin { get; set; }
+        public double OpPerSecSerAndDeserMax { get; set; }
 
-        private static IEnumerable<Measurement> BottomPercent(Measurement[] measurement, int discardedPercent)
-        {
-            if (discardedPercent == 0) return measurement;
-            var take = (int) Math.Round(measurement.Length*(100 - discardedPercent)/100.0);
-            return measurement.OrderBy(m => m.Time).Take(take);
-        }
-
-        private static double AverageTime(Measurement[] measurement, int discardedPercent = 0)
-        {
-            if (measurement == null || measurement.Length == 0) return 0;
-            return BottomPercent(measurement, discardedPercent).Average(m => m.Time);
-        }
-
-        private static int AverageSize(Measurement[] measurement)
-        {
-            if (measurement == null || measurement.Length == 0) return 0;
-            return (int) measurement.Average(m => m.Size);
-        }
+        public int SizeAver { get; set; }
     }
 }

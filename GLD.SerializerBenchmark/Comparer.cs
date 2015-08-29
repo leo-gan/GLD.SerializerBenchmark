@@ -25,20 +25,18 @@ namespace GLD.SerializerBenchmark
             var isComparisonFailed = ElementCount(sourceElements) != ElementCount(targetElements);
             errorText = (isComparisonFailed)
                 ? 
-                string.Format("\nTestData:{0}, Serializer: {1}, {2} ", log.TestDataName, log.SerializerName, log.StringOrStream, log.RepetitionIndex)
-                 + string.Format(""
-                 + "\nElement numbers of source and target test objects are not equal: [{0}] != [{1}] ",
-                    ElementCount(sourceElements), ElementCount(targetElements))
+                string.Format("Element numbers of source and target test objects are not equal: [{0}] != [{1}]",
+                ElementCount(sourceElements), ElementCount(targetElements))
                 : null;
             if (trace && log.RepetitionIndex == 0 || isComparisonFailed) // trace only for the first test repetion or for the errorText
             {
-                Trace.WriteLine(string.Format("\nTestData:{0}, Serializer: {1}, {2}, Repetition: {3}", log.TestDataName, log.SerializerName, log.StringOrStream, log.RepetitionIndex));
-                if (isComparisonFailed)
-                    Trace.WriteLine(new string('*', 80) + Environment.NewLine + errorText);
-                Trace.WriteLine("\nSource object ===========================================================");
-                Trace.Write(sourceElements);
-                Trace.WriteLine("\nTarget object ===========================================================");
-                Trace.Write(targetElements);
+                //Trace.WriteLine(string.Format("\nTestData:{0}, Serializer: {1}, {2}, Repetition: {3}", log.TestDataName, log.SerializerName, log.StringOrStream, log.RepetitionIndex));
+                //if (isComparisonFailed)
+                //    Trace.WriteLine(new string('*', 80) + Environment.NewLine + errorText);
+                //Trace.WriteLine("\nSource object ===========================================================");
+                //Trace.Write(sourceElements);
+                //Trace.WriteLine("\nTarget object ===========================================================");
+                //Trace.Write(targetElements);
             }
 
             return !isComparisonFailed;
