@@ -84,7 +84,7 @@ namespace GLD.SerializerBenchmark
         private StreamWriter _logFileStreamWriter;
 
         private string _logFileName;
-
+        private string _separator;
         public LogStorage(string logFileName)
         {
             InitializeStorage(logFileName);
@@ -100,14 +100,15 @@ namespace GLD.SerializerBenchmark
         ///     <creationDateTime>.extension, and create a new file.
         /// </summary>
         /// <param name="logFileName">Is a file name.</param>
-        private void InitializeStorage(string logFileName)
+        private void InitializeStorage(string logFileName, string separator = "~")
         {
             if (File.Exists(logFileName))
                 File.Move(logFileName, GetArchiveFileName(logFileName));
 
             _logFileStreamWriter = File.CreateText(logFileName);
-
-            const string fileHeaderLine = "StringOrStream, TestDataName, Repetitions, RepetitionIndex, SerializerName, TimeSer, TimeDeser, Size, TimeSerAndDeser, OpPerSecSer, OpPerSecDeser, OpPerSecSerAndDeser";
+            _separator = separator;
+            var fileHeaderLine = "StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser";
+            fileHeaderLine = fileHeaderLine.Replace(",", _separator);
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
              _logFileName = logFileName;
@@ -115,7 +116,7 @@ namespace GLD.SerializerBenchmark
 
         public void Write(Log log)
         {
-            var line = string.Join("~", 
+            var line = string.Join(_separator, 
                 log.StringOrStream, log.TestDataName, log.Repetitions,log.RepetitionIndex, log.SerializerName,
                 log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser, log.OpPerSecSer,
                 log.OpPerSecDeser, log.OpPerSecSerAndDeser
@@ -130,7 +131,7 @@ namespace GLD.SerializerBenchmark
             for (int index = 1; index < lines.Length; index++) // first line is a title. Ignore it!
             {
                 var line = lines[index];
-                var fields = line.Split(new[] {'~'}, StringSplitOptions.None);
+                var fields = line.Split(new[] {"~"}, StringSplitOptions.None);
                 var log = new Log()
                 {
                     StringOrStream = fields[0],
