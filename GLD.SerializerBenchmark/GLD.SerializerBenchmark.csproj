@@ -223,6 +223,7 @@
     <Compile Include="Randomizer.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Analysis.xlsx" />
     <None Include="App.config" />
     <None Include="Bond\Person.bond" />
     <None Include="packages.config" />

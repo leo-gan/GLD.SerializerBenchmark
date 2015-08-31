@@ -28,7 +28,13 @@ namespace GLD.SerializerBenchmark
                 string.Format("Element numbers of source and target test objects are not equal: [{0}] != [{1}]",
                 ElementCount(sourceElements), ElementCount(targetElements))
                 : null;
-            if (trace && log.RepetitionIndex == 0 || isComparisonFailed) // trace only for the first test repetion or for the errorText
+            var isSizeInvalid = false;
+            if (!isComparisonFailed) // validate size only if element count was successful:
+            {
+                isSizeInvalid = ValidateSize(log, out errorText);
+            }
+
+            if (trace && log.RepetitionIndex == 0 || isComparisonFailed || isSizeInvalid) // trace only for the first test repetion or for the errorText
             {
                 //Trace.WriteLine(string.Format("\nTestData:{0}, Serializer: {1}, {2}, Repetition: {3}", log.TestDataName, log.SerializerName, log.StringOrStream, log.RepetitionIndex));
                 //if (isComparisonFailed)
@@ -39,7 +45,18 @@ namespace GLD.SerializerBenchmark
                 //Trace.Write(targetElements);
             }
 
-            return !isComparisonFailed;
+            return (!isComparisonFailed && !isSizeInvalid);
+        }
+
+        private static bool ValidateSize(Log log, out string errorText)
+        {
+            if (log.Size < 100)
+            {
+                errorText = String.Format("Seems serialization failed. Serialized object size = {0} is too small.", log.Size);
+                return true;
+            }
+            errorText = null;
+            return false;
         }
 
         private static int ElementCount(string traversedObjectElementList)
