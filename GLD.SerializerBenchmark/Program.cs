@@ -15,7 +15,7 @@ namespace GLD.SerializerBenchmark
             {
                 // new IntDescription(), // TODO: Hang up. Investigate.
                 // new StringArrayDescription(), // TODO: OutOfMemory exception
-                new SimpleObjectDescription(),
+                //new SimpleObjectDescription(),
                 new TelemetryDescription(),
                 new PersonDescription(),
                 //new EDI_X12_835Description(),

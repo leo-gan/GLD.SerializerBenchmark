@@ -54,11 +54,11 @@ namespace GLD.SerializerBenchmark
                     RepetitionIndex = i,
                     StringOrStream = streaming ? "Stream" : "string"
                 };
-                TestOnSerializer(serializers, original, i, errors, streaming, logStorage, log);
+                TestOnSerializer(serializers, original, errors, streaming, logStorage, log);
             }
         }
 
-        private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original, int repetition,
+        private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original,
             List<Error> errors, bool streaming, LogStorage logStorage, Log log)
         {
             foreach (var serializer in serializers)
