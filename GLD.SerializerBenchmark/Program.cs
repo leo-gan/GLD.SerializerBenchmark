@@ -15,13 +15,13 @@ namespace GLD.SerializerBenchmark
             {
                  //new IntDescription(), // TODO: Hang up. Investigate.
                 // new StringArrayDescription(), // TODO: OutOfMemory exception. Investigate.
-                new SimpleObjectDescription(),
-                new TelemetryDescription(),
-                new PersonDescription(),
-                new EDI_X12_835Description(),
-                new TestData.NoAtributes.EDI_X12_835Description(),
-                //new ObjectGraphDescription(), // TODO: Exception. Investigate.
-                new MsgBatchingDescription(),
+            //    new SimpleObjectDescription(),
+            //    new TelemetryDescription(),
+            //    new PersonDescription(),
+            //    new EDI_X12_835Description(),
+            //    new TestData.NoAtributes.EDI_X12_835Description(),
+                new ObjectGraphDescription(), // TODO: Exception. Investigate.
+            //    new MsgBatchingDescription(),
             };
             var serializers = new List<ISerDeser>
             {
@@ -34,8 +34,8 @@ namespace GLD.SerializerBenchmark
                 new DataContractJsonSer(),
                 new JavaScriptSerializer(), // TODO: DateTime format?
                 new XmlSerializerSer(),
-                new ApJsonSerializer(), // TODO: DateTime format?
-                new FastJsonSerializer(), // TODO: DateTime format?
+                //new ApJsonSerializer(), // TODO: DateTime format?
+                //new FastJsonSerializer(), // TODO: DateTime format?
                 new JilSerializer(), // TODO: DateTime format?
                 //new JsonFxSerializer(), // TODO: DateTime format?
                 //new JsonNetHelperSerializer(),
@@ -44,10 +44,10 @@ namespace GLD.SerializerBenchmark
                 //new MessageSharkSer(),
                 //new MsgPackSerializer(), // TODO: DateTime format?
                 //new NetJSONSer(), // TODO: DateTime format?
-                //new NetSerializerSer(),
-                //new NfxJsonSerializer(),
-                //new NfxSlimSerializer(),
-                //new ProtoBufSerializer(),
+                new NetSerializerSer(),
+                new NfxJsonSerializer(),
+                new NfxSlimSerializer(),
+                new ProtoBufSerializer(),
                 //new SharpSerializer(), // TODO: DateTime format?
                 //new ServiceStackJsonSerializer(), // TODO: DateTime format?
                 //new ServiceStackTypeSerializer(), // TODO: DateTime format?
