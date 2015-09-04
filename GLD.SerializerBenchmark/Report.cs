@@ -60,13 +60,15 @@ namespace GLD.SerializerBenchmark
             {
                 var serResult =
                     aggregatedResults.Select(a => a)
-                        .Where(a => a.SerializerName == serName);
-                OnSerializer(serResult);
+                        .Where(a => a.SerializerName == serName && a.TestDataName == testDataName);
+                OnSerializer(serName, serResult);
             }
         }
 
-        private static void OnSerializer(IEnumerable<AggregateLogs> serResults)
+        private static void OnSerializer(string serNameExternal, IEnumerable<AggregateLogs> serResults)
         {
+            if (serResults == null) return;
+
             string stringAggregator = null, streamAggregator = null, serName = null;
             var formatString = "{0, -21} -{1, -6}s {2,7:N0} {3,8:N0} {4,10:N0} {5,10:N0}";
             foreach (var serResult in serResults)
@@ -76,18 +78,18 @@ namespace GLD.SerializerBenchmark
                     stringAggregator = string.Format(formatString,
                         serResult.SerializerName, serResult.StringOrStream,
                         serResult.OpPerSecSerAndDeserMin, serResult.OpPerSecSerAndDeserAver,
-                        serResult.OpPerSecSerAndDeserAver, serResult.SizeAver);
+                        serResult.OpPerSecSerAndDeserMax, serResult.SizeAver);
                 if (serResult.StringOrStream == "Stream")
                     streamAggregator = string.Format(formatString,
                         serResult.SerializerName, serResult.StringOrStream,
                         serResult.OpPerSecSerAndDeserMin, serResult.OpPerSecSerAndDeserAver,
-                        serResult.OpPerSecSerAndDeserAver, serResult.SizeAver);
+                        serResult.OpPerSecSerAndDeserMax, serResult.SizeAver);
             }
             
             if (stringAggregator == null)
-                stringAggregator = string.Format("{0, -21} -{1, -6}s {2}", serName, "string", "Failed!");
+                stringAggregator = string.Format("{0, -21} -{1, -6}s {2}", serNameExternal, "string", "Failed!");
             if (streamAggregator == null)
-                streamAggregator = string.Format("{0, -21} -{1, -6}s {2}", serName, "Stream", "Failed!");
+                streamAggregator = string.Format("{0, -21} -{1, -6}s {2}", serNameExternal, "Stream", "Failed!");
             if (stringAggregator == null && streamAggregator == null)
                 throw new Exception("No measurements and no errors. Something wrong!");
             OutputEverywhere(stringAggregator);
@@ -111,7 +113,7 @@ namespace GLD.SerializerBenchmark
 
         private static void HeaderTestData(string testDataName)
         {
-            var header = string.Format("\nTest Data: {0}\nSerializer:                 Time:  Min      Avg        Max  Size: Avg\n"
+            var header = string.Format("\nTest Data: {0}\nSerializer:              Ops/sec:  Min      Avg        Max  Size: Avg\n"
                          + new string('=', 80), testDataName);
             OutputEverywhere(header);
         }
