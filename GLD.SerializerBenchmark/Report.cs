@@ -88,10 +88,10 @@ namespace GLD.SerializerBenchmark
             
             if (stringAggregator != null) OutputEverywhere(stringAggregator);
             if (streamAggregator != null) OutputEverywhere(streamAggregator);
-            if (stringAggregator == null)
-                stringAggregator = string.Format("{0, -21} -{1, -6}s {2}", serNameExternal, "string", "Failed!");
-            if (streamAggregator == null)
-                streamAggregator = string.Format("{0, -21} -{1, -6}s {2}", serNameExternal, "Stream", "Failed!");
+            //if (stringAggregator == null)
+            //    stringAggregator = string.Format("{0, -21} -{1, -6}s {2}", serNameExternal, "string", "Failed!");
+            //if (streamAggregator == null)
+            //    streamAggregator = string.Format("{0, -21} -{1, -6}s {2}", serNameExternal, "Stream", "Failed!");
             if (stringAggregator == null && streamAggregator == null)
                 throw new Exception("No measurements and no errors. Something wrong!");
         }
