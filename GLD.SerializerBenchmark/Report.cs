@@ -15,6 +15,7 @@ namespace GLD.SerializerBenchmark
 
             var aggregatedResults = logs
                 .Select(a => a)
+                .Where(w => w.RepetitionIndex != 0) // do not include a warm up in aggregation
                 .GroupBy(a => new {a.Repetitions, a.TestDataName, a.SerializerName, a.StringOrStream})
                 .Select(g =>
                     new AggregateLogs
@@ -24,14 +25,14 @@ namespace GLD.SerializerBenchmark
                         SerializerName = g.Key.SerializerName,
                         Repetitions = g.Key.Repetitions,
                         OpPerSecDeserAver = g.Average(kg => kg.OpPerSecDeser),
-                        OpPerSecDeserMin = g.Min(kg => kg.OpPerSecDeser),
-                        OpPerSecDeserMax = g.Max(kg => kg.OpPerSecDeser),
+                        //OpPerSecDeserMin = g.Min(kg => kg.OpPerSecDeser),
+                        //OpPerSecDeserMax = g.Max(kg => kg.OpPerSecDeser),
                         OpPerSecSerAver = g.Average(kg => kg.OpPerSecSer),
-                        OpPerSecSerMin = g.Min(kg => kg.OpPerSecSer),
-                        OpPerSecSerMax = g.Max(kg => kg.OpPerSecSer),
+                        //OpPerSecSerMin = g.Min(kg => kg.OpPerSecSer),
+                        //OpPerSecSerMax = g.Max(kg => kg.OpPerSecSer),
                         OpPerSecSerAndDeserAver = g.Average(kg => kg.OpPerSecSerAndDeser),
-                        OpPerSecSerAndDeserMin = g.Min(kg => kg.OpPerSecSerAndDeser),
-                        OpPerSecSerAndDeserMax = g.Max(kg => kg.OpPerSecSerAndDeser),
+                        //OpPerSecSerAndDeserMin = g.Min(kg => kg.OpPerSecSerAndDeser),
+                        //OpPerSecSerAndDeserMax = g.Max(kg => kg.OpPerSecSerAndDeser),
                         SizeAver = (int) g.Average(kg => kg.Size)
                     });
             Aggregated(aggregatedResults, errors);
@@ -65,25 +66,32 @@ namespace GLD.SerializerBenchmark
             }
         }
 
+        private static void HeaderTestData(string testDataName)
+        {
+            var header = string.Format("\nTest Data: {0}\nSerializer:               Ops/sec Avg:  Ser      Deser   Ser+Deser  Size: Avg\n"
+                                       + new string('=', 79), testDataName);
+            OutputEverywhere(header);
+        }
+
         private static void OnSerializer(string serNameExternal, IEnumerable<AggregateLogs> serResults)
         {
             if (serResults == null) return;
 
             string stringAggregator = null, streamAggregator = null, serName = null;
-            var formatString = "{0, -21} -{1, -6}s {2,7:N0} {3,8:N0} {4,10:N0} {5,10:N0}";
+            var formatString = "{0, -21} -{1, -6}s {2,12:N0} {3,10:N0} {4,10:N0} {5,10:N0}";
             foreach (var serResult in serResults)
             {
                     serName = serResult.SerializerName;
                 if (serResult.StringOrStream == "string")
                     stringAggregator = string.Format(formatString,
                         serResult.SerializerName, serResult.StringOrStream,
-                        serResult.OpPerSecSerAndDeserMin, serResult.OpPerSecSerAndDeserAver,
-                        serResult.OpPerSecSerAndDeserMax, serResult.SizeAver);
+                        serResult.OpPerSecSerAver, serResult.OpPerSecDeserAver, serResult.OpPerSecSerAndDeserAver, 
+                        serResult.SizeAver);
                 if (serResult.StringOrStream == "Stream")
                     streamAggregator = string.Format(formatString,
                         serResult.SerializerName, serResult.StringOrStream,
-                        serResult.OpPerSecSerAndDeserMin, serResult.OpPerSecSerAndDeserAver,
-                        serResult.OpPerSecSerAndDeserMax, serResult.SizeAver);
+                        serResult.OpPerSecSerAver, serResult.OpPerSecDeserAver, serResult.OpPerSecSerAndDeserAver, 
+                        serResult.SizeAver);
             }
             
             if (stringAggregator != null) OutputEverywhere(stringAggregator);
@@ -109,13 +117,6 @@ namespace GLD.SerializerBenchmark
                     error.SerializerName, error.StringOrStream, error.ErrorText);
                 OutputEverywhere(line);
             }
-        }
-
-        private static void HeaderTestData(string testDataName)
-        {
-            var header = string.Format("\nTest Data: {0}\nSerializer:              Ops/sec:  Min      Avg        Max  Size: Avg\n"
-                         + new string('=', 80), testDataName);
-            OutputEverywhere(header);
         }
 
         private static void HeaderRepetitions(int repetitions)

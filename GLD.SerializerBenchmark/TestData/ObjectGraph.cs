@@ -11,7 +11,7 @@ namespace GLD.SerializerBenchmark.TestData
 {
     public class ObjectGraphDescription : ITestDataDescription
     {
-        private readonly ObjectGraph _data = ObjectGraph.Generate(3, 4, 5);
+        private readonly ObjectGraph _data = ObjectGraph.Generate(3, 4, 6);
 
         public string Name
         {

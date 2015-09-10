@@ -26,6 +26,7 @@ namespace GLD.SerializerBenchmark
             // initialize serializers for every data type.
             foreach (var serializer in serializers)
                 serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
+
             TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors);
             TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors);
         }
