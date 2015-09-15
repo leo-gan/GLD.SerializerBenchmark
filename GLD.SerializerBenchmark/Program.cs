@@ -20,8 +20,8 @@ namespace GLD.SerializerBenchmark
             //    new PersonDescription(),
             //    new EDI_X12_835Description(),
             //    new TestData.NoAtributes.EDI_X12_835Description(),
-                new ObjectGraphDescription(), // TODO: Exception. Investigate.
-            //    new MsgBatchingDescription(),
+            //    new ObjectGraphDescription(), // TODO: Exception. Investigate.
+                new MsgBatchingDescription(),
             };
             var serializers = new List<ISerDeser>
             {
@@ -37,7 +37,7 @@ namespace GLD.SerializerBenchmark
                 new ApJsonSerializer(), // TODO: DateTime format?
                 new FastJsonSerializer(), // TODO: DateTime format?
                 new JilSerializer(), // TODO: DateTime format?
-                //new JsonFxSerializer(), // TODO: DateTime format? // TODO !!! on ObjectGraphDescription gets system exception.
+                new JsonFxSerializer(), // TODO: DateTime format? // TODO !!! on ObjectGraphDescription gets system exception.
                 new JsonNetHelperSerializer(),
                 new JsonNetSerializer(),
                 new HaveBoxJSONSerializer(), // TODO: DateTime format?

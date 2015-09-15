@@ -16,7 +16,7 @@ namespace GLD.SerializerBenchmark.TestData
     /// </summary>
     public class MsgBatchingDescription : ITestDataDescription
     {
-        private readonly MsgBatching _data = MsgBatching.Generate(10, MsgBatchingType.RPC);
+        private readonly MsgBatching _data = MsgBatching.Generate(100, MsgBatchingType.RPC);
 
         public string Name
         {

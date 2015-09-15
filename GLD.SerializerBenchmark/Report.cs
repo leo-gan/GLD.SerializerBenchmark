@@ -34,7 +34,8 @@ namespace GLD.SerializerBenchmark
                         //OpPerSecSerAndDeserMin = g.Min(kg => kg.OpPerSecSerAndDeser),
                         //OpPerSecSerAndDeserMax = g.Max(kg => kg.OpPerSecSerAndDeser),
                         SizeAver = (int) g.Average(kg => kg.Size)
-                    });
+                    })
+                    .OrderByDescending(s => s.OpPerSecSerAndDeserAver);
             Aggregated(aggregatedResults, errors);
         }
 
