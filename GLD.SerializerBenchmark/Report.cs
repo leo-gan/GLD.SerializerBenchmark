@@ -34,14 +34,16 @@ namespace GLD.SerializerBenchmark
                         //OpPerSecSerAndDeserMin = g.Min(kg => kg.OpPerSecSerAndDeser),
                         //OpPerSecSerAndDeserMax = g.Max(kg => kg.OpPerSecSerAndDeser),
                         SizeAver = (int) g.Average(kg => kg.Size)
-                    })
-                    .OrderByDescending(s => s.OpPerSecSerAndDeserAver);
+                    });
             Aggregated(aggregatedResults, errors);
         }
 
         private static void Aggregated(IEnumerable<AggregateLogs> aggregatedResults, List<Error> errors)
         {
-            var testDataNames = aggregatedResults.Select(res => res.TestDataName).Distinct().ToList();
+            var testDataNames = aggregatedResults
+                .Select(res => res.TestDataName)
+                .Distinct()
+                .ToList();
 
             // for each Test Data type
             foreach (var testDataName in testDataNames)
@@ -56,53 +58,42 @@ namespace GLD.SerializerBenchmark
         {
             HeaderTestData(testDataName);
 
-            var serNames = aggregatedResults.Select(res => res.SerializerName).Distinct().ToList();
-            // for each serializer
-            foreach (var serName in serNames)
-            {
-                var serResult =
-                    aggregatedResults.Select(a => a)
-                        .Where(a => a.SerializerName == serName && a.TestDataName == testDataName);
-                OnSerializer(serName, serResult);
-            }
+            //var serNames = aggregatedResults.Select(res => res.SerializerName).Distinct().ToList();
+            //// for each serializer
+            //foreach (var serName in serNames)
+            //{
+            //    var serResult =
+            //        aggregatedResults.Select(a => a)
+            //            .Where(a => a.SerializerName == serName && a.TestDataName == testDataName);
+            //    OnAggregator(serResult);
+            //}
+            var serResult = aggregatedResults
+                .Where(a => a.TestDataName == testDataName)
+                .OrderByDescending(a => a.OpPerSecSerAndDeserAver);
+            foreach (var oneSer in serResult)
+                OnAggregator(oneSer);
+        }
+
+        private static void OnAggregator(AggregateLogs serResult)
+        {
+            if (serResult == null) return;
+
+            const string formatString = "{0, -21} {1, -6}   {2,12:N0} {3,10:N0} {4,10:N0} {5,10:N0}";
+            var stringAggregator = string.Format(formatString,
+                serResult.SerializerName, serResult.StringOrStream,
+                serResult.OpPerSecSerAver, serResult.OpPerSecDeserAver, serResult.OpPerSecSerAndDeserAver,
+                serResult.SizeAver);
+
+            OutputEverywhere(stringAggregator);
         }
 
         private static void HeaderTestData(string testDataName)
         {
-            var header = string.Format("\nTest Data: {0}\nSerializer:               Ops/sec Avg:  Ser      Deser   Ser+Deser  Size: Avg\n"
-                                       + new string('=', 79), testDataName);
+            var header =
+                string.Format(
+                    "\nTest Data: {0}\nSerializer:               Ops/sec Avg:  Ser      Deser   Ser+Deser  Size: Avg\n"
+                    + new string('=', 79), testDataName);
             OutputEverywhere(header);
-        }
-
-        private static void OnSerializer(string serNameExternal, IEnumerable<AggregateLogs> serResults)
-        {
-            if (serResults == null) return;
-
-            string stringAggregator = null, streamAggregator = null, serName = null;
-            var formatString = "{0, -21} -{1, -6}s {2,12:N0} {3,10:N0} {4,10:N0} {5,10:N0}";
-            foreach (var serResult in serResults)
-            {
-                    serName = serResult.SerializerName;
-                if (serResult.StringOrStream == "string")
-                    stringAggregator = string.Format(formatString,
-                        serResult.SerializerName, serResult.StringOrStream,
-                        serResult.OpPerSecSerAver, serResult.OpPerSecDeserAver, serResult.OpPerSecSerAndDeserAver, 
-                        serResult.SizeAver);
-                if (serResult.StringOrStream == "Stream")
-                    streamAggregator = string.Format(formatString,
-                        serResult.SerializerName, serResult.StringOrStream,
-                        serResult.OpPerSecSerAver, serResult.OpPerSecDeserAver, serResult.OpPerSecSerAndDeserAver, 
-                        serResult.SizeAver);
-            }
-            
-            if (stringAggregator != null) OutputEverywhere(stringAggregator);
-            if (streamAggregator != null) OutputEverywhere(streamAggregator);
-            //if (stringAggregator == null)
-            //    stringAggregator = string.Format("{0, -21} -{1, -6}s {2}", serNameExternal, "string", "Failed!");
-            //if (streamAggregator == null)
-            //    streamAggregator = string.Format("{0, -21} -{1, -6}s {2}", serNameExternal, "Stream", "Failed!");
-            if (stringAggregator == null && streamAggregator == null)
-                throw new Exception("No measurements and no errors. Something wrong!");
         }
 
         private static void OnTestDataErrors(string testDataName, List<Error> errors)
@@ -111,10 +102,14 @@ namespace GLD.SerializerBenchmark
             if (errors.Count == 0) return;
 
             HeaderErrors(testDataName);
-            var testDataErrors = errors.Select(a => a).Where(b => b.TestDataName == testDataName).OrderBy(sr=>sr.SerializerName).ToList();
+            var testDataErrors =
+                errors.Select(a => a)
+                    .Where(b => b.TestDataName == testDataName)
+                    .OrderBy(sr => sr.SerializerName)
+                    .ToList();
             foreach (var error in testDataErrors)
             {
-                var line = string.Format("{0, -21} -{1, -6}s \n\t{2}", 
+                var line = string.Format("{0, -21} -{1, -6}s \n\t{2}",
                     error.SerializerName, error.StringOrStream, error.ErrorText);
                 OutputEverywhere(line);
             }
@@ -131,7 +126,7 @@ namespace GLD.SerializerBenchmark
         private static void HeaderErrors(string testDataName)
         {
             var line = string.Format("\nThere are errors in {0}\n"
-                         + new string('*', 80), testDataName);
+                                     + new string('*', 80), testDataName);
             OutputEverywhere(line);
         }
 
