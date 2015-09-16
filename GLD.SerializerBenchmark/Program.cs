@@ -21,7 +21,7 @@ namespace GLD.SerializerBenchmark
             //    new EDI_X12_835Description(),
             //    new TestData.NoAtributes.EDI_X12_835Description(),
             //    new ObjectGraphDescription(), // TODO: Exception. Investigate.
-                new MsgBatchingDescription(),
+            //    new MsgBatchingDescription(),
             };
             var serializers = new List<ISerDeser>
             {

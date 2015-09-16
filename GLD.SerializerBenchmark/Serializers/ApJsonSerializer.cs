@@ -3,36 +3,46 @@
 /// Manually download a dll from mentioned site and add a reference to it.
 /// 
 
-using System;
 using System.IO;
+using Apolyton.FastJson;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
     internal class ApJsonSerializer : SerDeser
     {
- 
         #region ISerDeser Members
 
-        public override string Name {get { return "Apolyton.Json"; } }
+        public override string Name
+        {
+            get { return "Apolyton.Json"; }
+        }
+
         public override string Serialize(object serializable)
         {
-            return Apolyton.FastJson.Json.Current.ToJson(serializable);
+            return Json.Current.ToJson(serializable);
         }
 
         public override object Deserialize(string serialized)
         {
-            return Apolyton.FastJson.Json.Current.ReadObject(serialized, _primaryType);
+            return Json.Current.ReadObject(serialized, _primaryType);
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            throw new NotImplementedException();
+            var str = Json.Current.ToJson(serializable);
+            var sw = new StreamWriter(outputStream);
+            outputStream.Seek(0, SeekOrigin.Begin);
+            sw.Write(str);
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            throw new NotImplementedException();
+            var sr = new StreamReader(inputStream);
+            inputStream.Seek(0, SeekOrigin.Begin);
+            var serialized = sr.ReadToEnd();
+            return Json.Current.ReadObject(serialized, _primaryType);
         }
+
         #endregion
     }
 }

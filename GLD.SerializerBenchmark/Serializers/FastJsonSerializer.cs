@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using Apolyton.FastJson;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
@@ -27,12 +28,18 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            throw new NotImplementedException();
+            var str = fastJSON.JSON.ToJSON(serializable);
+            var sw = new StreamWriter(outputStream);
+            outputStream.Seek(0, SeekOrigin.Begin);
+            sw.Write(str);
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            throw new NotImplementedException();
+            var sr = new StreamReader(inputStream);
+            inputStream.Seek(0, SeekOrigin.Begin);
+            var serialized = sr.ReadToEnd();
+            return fastJSON.JSON.ToObject(serialized);
         }
         #endregion
     }
