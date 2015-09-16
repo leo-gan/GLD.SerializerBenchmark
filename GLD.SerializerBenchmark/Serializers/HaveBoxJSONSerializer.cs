@@ -27,12 +27,19 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            throw new System.NotImplementedException();
+            var str = _serializer.Serialize(serializable);
+            var sw = new StreamWriter(outputStream);
+            outputStream.Seek(0, SeekOrigin.Begin);
+            sw.Write(str);
+            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            throw new System.NotImplementedException();
+            var sr = new StreamReader(inputStream);
+            inputStream.Seek(0, SeekOrigin.Begin);
+            var serialized = sr.ReadToEnd();
+            return _serializer.Deserialize(_primaryType, serialized);
         }
         #endregion
     }

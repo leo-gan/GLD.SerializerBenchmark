@@ -33,6 +33,7 @@ namespace GLD.SerializerBenchmark.Serializers
             var sw = new StreamWriter(outputStream);
             outputStream.Seek(0, SeekOrigin.Begin);
             sw.Write(str);
+            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)
