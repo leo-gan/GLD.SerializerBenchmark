@@ -19,7 +19,12 @@ namespace GLD.SerializerBenchmark.Serializers
             if (!JustInitialized) return;
             var typeList = new List<Type> {_primaryType};
             if (_secondaryTypes != null) typeList.AddRange(_secondaryTypes);
-            var treg = new TypeRegistry(typeList, TypeRegistry.BoxedCommonNullableTypes, TypeRegistry.BoxedCommonTypes);
+            var treg = new TypeRegistry(
+                typeList,
+                TypeRegistry.BoxedCommonTypes,
+                TypeRegistry.BoxedCommonNullableTypes,
+                TypeRegistry.CommonCollectionTypes
+                );
             _serializer = new SlimSerializer(treg);
             JustInitialized = false;
         }
