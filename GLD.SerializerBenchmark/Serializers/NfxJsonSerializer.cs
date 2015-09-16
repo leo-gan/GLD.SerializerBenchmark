@@ -36,7 +36,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            return JSONReader.DeserializeDataObject(inputStream).ConvertTo<object>();
+            return JSONReader.DeserializeDataObject(inputStream);
         }
         #endregion
     }

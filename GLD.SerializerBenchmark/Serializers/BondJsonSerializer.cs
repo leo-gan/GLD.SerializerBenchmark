@@ -55,6 +55,7 @@ namespace GLD.SerializerBenchmark.Serializers
             Initialize();
             var writer = new SimpleJsonWriter(outputStream);
             _serializer.Serialize(serializable, writer);
+            writer.Flush();
         }
 
         public override object Deserialize(Stream inputStream)

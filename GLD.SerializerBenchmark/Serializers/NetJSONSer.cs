@@ -11,7 +11,11 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         #region ISerDeser Members
 
-        public override string Name {get { return "NetJSON"; } }
+        public override string Name
+        {
+            get { return "NetJSON"; }
+        }
+
         public override string Serialize(object serializable)
         {
             return NetJSON.NetJSON.Serialize(serializable);
@@ -24,17 +28,18 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            NetJSON.NetJSON.Serialize(serializable, new StreamWriter(outputStream));
+            var sw = new StreamWriter(outputStream);
+            NetJSON.NetJSON.Serialize(serializable, sw);
+            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            using (var sr = new StreamReader(inputStream))
-            {
-                return NetJSON.NetJSON.Deserialize(_primaryType, sr.ReadToEnd());
-            }
+            var sr = new StreamReader(inputStream);
+            return NetJSON.NetJSON.Deserialize(_primaryType, sr.ReadToEnd());
         }
+
         #endregion
     }
 }
