@@ -13,7 +13,11 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         #region ISerDeser Members
 
-        public override string Name {get { return "MessageShark"; } }
+        public override string Name
+        {
+            get { return "MessageShark"; }
+        }
+
         public override string Serialize(object serializable)
         {
             var buf = MessageSharkSerializer.Serialize(serializable);
@@ -28,18 +32,18 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
+            //MessageSharkSerializer.RegisterTypeFor<object>(_primaryType, 0x75);
             MessageSharkSerializer.Serialize(serializable);
         }
 
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            using (var ms = new MemoryStream())
-            {
-                inputStream.CopyTo(ms);
-                return MessageSharkSerializer.Deserialize<object>(ms.ToArray());
-            }
+            var ms = new MemoryStream();
+            inputStream.CopyTo(ms);
+            return MessageSharkSerializer.Deserialize<object>(ms.ToArray());
         }
+
         #endregion
     }
 }

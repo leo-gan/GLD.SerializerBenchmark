@@ -38,6 +38,7 @@ namespace GLD.SerializerBenchmark.Serializers
             var sw = new StreamWriter(outputStream);
             var jw = new JsonTextWriter(sw);
             _serializer.Serialize(jw, serializable);
+            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)

@@ -29,7 +29,9 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            _jw.Write(serializable, new StreamWriter(outputStream));
+            var sw = new StreamWriter(outputStream);
+            _jw.Write(serializable, sw);
+            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)

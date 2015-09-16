@@ -36,9 +36,11 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-                JSON.Serialize(serializable, new StreamWriter(outputStream),
+            var sw = new StreamWriter(outputStream);
+                JSON.Serialize(serializable, sw,
                     new Options(
                         unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
+            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)
