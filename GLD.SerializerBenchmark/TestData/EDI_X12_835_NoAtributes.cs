@@ -8,11 +8,31 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
     public class EDI_X12_835Description : ITestDataDescription
     {
         private readonly EDI_X12_835 _data = EDI_X12_835.Generate();
-        public string Name { get { return "EDI_X12_835 No Atributes"; }}
-        public string Description { get{ return "Similar to EDI_X12_835 but internal classes are without additional serialize atributes.."; }}
-        public Type DataType { get { return typeof (EDI_X12_835); } }
-        public List<Type> SecondaryDataTypes { get { return new List<Type>{}; } }
-        public object Data { get { return _data; }  }
+
+        public string Name
+        {
+            get { return "EDI_X12_835 No Atributes"; }
+        }
+
+        public string Description
+        {
+            get { return "Similar to EDI_X12_835 but internal classes are without additional serialize atributes.."; }
+        }
+
+        public Type DataType
+        {
+            get { return typeof (EDI_X12_835); }
+        }
+
+        public List<Type> SecondaryDataTypes
+        {
+            get { return new List<Type>(); }
+        }
+
+        public object Data
+        {
+            get { return _data; }
+        }
     }
 
     public abstract class Segment
@@ -35,6 +55,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
         public List<REF_SubLoop> REF_SubLoops;
         public TRN_ReassociationTraceNumber TRN_ReassociationTraceNumber;
         public TS835_2000_Loop TS835_2000_Loop;
+
         public static EDI_X12_835 Generate()
         {
             return new EDI_X12_835
@@ -55,8 +76,8 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
                 }
             };
         }
-
     }
+
     public class AccoungInfo
     {
         public string Account_Number;
@@ -75,6 +96,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class BPR_FinancialInformation : Segment
     {
         public AccoungInfo AccoungInfo1;
@@ -92,6 +114,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             : base("BPR")
         {
         }
+
         public static BPR_FinancialInformation Make()
         {
             var result = new BPR_FinancialInformation
@@ -111,6 +134,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             return result;
         }
     }
+
     public class TRN_ReassociationTraceNumber : Segment
     {
         public string Originatin_Company_Identifier;
@@ -134,6 +158,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class CUR_DateTime
     {
         public string Date;
@@ -150,6 +175,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class CUR_ForeignCurrencyInformation : Segment
     {
         public List<CUR_DateTime> CUR_DateTimes;
@@ -188,6 +214,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class REF_SubLoop
     {
         public REF_Identification REF_ReceiverIdentification;
@@ -202,6 +229,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class REF_Identification : Segment
     {
         public string Description;
@@ -224,6 +252,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class DTM_Date : Segment
     {
         public string Date;
@@ -250,6 +279,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class N1_SubLoop
     {
         public TS835_1000A_Loop TS835_1000A_Loop;
@@ -264,6 +294,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class TS835_1000A_Loop
     {
         public N1_PartyIdentification N1_PayerIdentification;
@@ -289,6 +320,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class TS835_1000B_Loop
     {
         public N1_PartyIdentification N1_PayeeIdentification;
@@ -315,6 +347,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class N1_PartyIdentification : Segment
     {
         public string Entity_Identifier_Code;
@@ -341,6 +374,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class N3_PartyAddress : Segment
     {
         public string AddressInformation1;
@@ -359,6 +393,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class N4_PartyCity_State_ZIPCode : Segment
     {
         public string City_Name;
@@ -387,6 +422,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class REF_AdditionalPartyIdentification : Segment
     {
         public string Description;
@@ -409,6 +445,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class PER_SubLoop
     {
         public PER_PartyContactInformation PER_PayerBusinessContactInformation;
@@ -432,6 +469,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class PER_PartyContactInformation : Segment
     {
         public CommunicationNumber CommunicationNumber1;
@@ -458,6 +496,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class CommunicationNumber
     {
         public string Communication_Number;
@@ -472,6 +511,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class RDM_RemittanceDeliveryMethod : Segment
     {
         public string Communication_Number;
@@ -496,6 +536,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class TS835_2000_Loop
     {
         public List<AMT_ClaimSupplementalInformation> AMT_ClaimSupplementalInformations;
@@ -545,6 +586,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class LX_HeaderNumber : Segment
     {
         public string Assigned_Number;
@@ -561,6 +603,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class TS3_ProviderSummaryInformation : Segment
     {
         public string Date;
@@ -599,6 +642,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class TS2_ProviderSupplementalSummaryInformation : Segment
     {
         public decimal? Monetary_Amount2;
@@ -626,6 +670,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class TS835_2100_Loop
     {
         public CAS_Adjustment CAS_ClaimsAdjustment;
@@ -644,6 +689,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class CLP_ClaimPaymentInformation : Segment
     {
         public string Claim_Filing_Indicator_Code;
@@ -686,6 +732,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class CAS_Adjustment : Segment
     {
         public string Claim_Adjustment_Group_Code;
@@ -713,6 +760,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class ClaimAdjustment
     {
         public string Claim_Adjustment_Reason_Code;
@@ -729,6 +777,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class NM1_SubLoop
     {
         public NM1_PartyName NM1_CorrectedPatient_InsuredName;
@@ -753,6 +802,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class NM1_PartyName : Segment
     {
         public string Entity_Identifier_Code;
@@ -791,6 +841,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class MIA_InpatientAdjudicationInformation : Segment
     {
         public decimal? Monetary_Amount;
@@ -839,6 +890,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class MOA_OutpatientAdjudicationInformation : Segment
     {
         public decimal? Monetary_Amount;
@@ -877,6 +929,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class DTM_SubLoop
     {
         public DTM_Date DTM_ClaimReceivedDate;
@@ -901,6 +954,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class PER_ClaimContactInformation : Segment
     {
         public string Communication_Number_Qualifier;
@@ -931,6 +985,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class AMT_ClaimSupplementalInformation : Segment
     {
         public string Amount_Qualifier_Code;
@@ -951,6 +1006,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class QTY_ClaimSupplementalInformationQuantity : Segment
     {
         public string Description;
@@ -973,6 +1029,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class TS835_2110_Loop
     {
         public List<AMT_ServiceSupplementalAmount> AMT_ServiceSupplementalAmounts;
@@ -1020,6 +1077,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class SVC_ServicePaymentInformation : Segment
     {
         public string Description;
@@ -1048,6 +1106,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class AMT_ServiceSupplementalAmount : Segment
     {
         public string Amount_Qualifier_Code;
@@ -1068,6 +1127,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class QTY_ServiceSupplementalQuantity : Segment
     {
         public string Description;
@@ -1090,6 +1150,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class LQ_HealthCareRemarkCode : Segment
     {
         public string Code_List_Qualifier_Code;
@@ -1108,6 +1169,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             };
         }
     }
+
     public class PLB_ProviderAdjustment : Segment
     {
         public string Date;
@@ -1134,6 +1196,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             return temp;
         }
     }
+
     public class MonetaryAmountAdjustment
     {
         public decimal MonetaryAmount;

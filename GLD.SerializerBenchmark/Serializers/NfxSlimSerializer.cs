@@ -10,13 +10,13 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class NfxSlimSerializer : SerDeser
     {
-        private  SlimSerializer _serializer;
+        private SlimSerializer _serializer;
 
         #region ISerDeser Members
 
         private void Initialize()
         {
-            if (!base.JustInitialized) return;
+            if (!JustInitialized) return;
             var typeList = new List<Type> {_primaryType};
             if (_secondaryTypes != null) typeList.AddRange(_secondaryTypes);
             var treg = new TypeRegistry(typeList, TypeRegistry.BoxedCommonNullableTypes, TypeRegistry.BoxedCommonTypes);
@@ -64,6 +64,7 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             return _serializer.Deserialize(inputStream);
         }
+
         #endregion
     }
 }

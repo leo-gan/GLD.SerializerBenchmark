@@ -11,12 +11,16 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class JsonFxSerializer : SerDeser
     {
+        private static readonly JsonWriter _jw = new JsonWriter();
+        private static readonly JsonReader _jr = new JsonReader();
 
-        static readonly JsonWriter _jw = new JsonWriter();
-        static readonly JsonReader _jr = new JsonReader();
         #region ISerDeser Members
 
-        public override string Name {get { return "JsonFx"; } }
+        public override string Name
+        {
+            get { return "JsonFx"; }
+        }
+
         public override string Serialize(object serializable)
         {
             return _jw.Write(serializable);
@@ -39,6 +43,7 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             return _jr.Read(new StreamReader(inputStream), _primaryType);
         }
+
         #endregion
     }
 }

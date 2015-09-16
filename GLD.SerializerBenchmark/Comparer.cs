@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -9,8 +8,9 @@ namespace GLD.SerializerBenchmark
     public class Comparer
     {
         /// <summary>
-        ///  It compares two objects only by number of object elements. It is enough to catch errors in serialization+deserialization chain.
-        /// It works with objects of different type.
+        ///     It compares two objects only by number of object elements. It is enough to catch errors in
+        ///     serialization+deserialization chain.
+        ///     It works with objects of different type.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="target"></param>
@@ -24,9 +24,8 @@ namespace GLD.SerializerBenchmark
             var targetElements = (Travers(target));
             var isComparisonFailed = ElementCount(sourceElements) != ElementCount(targetElements);
             errorText = (isComparisonFailed)
-                ? 
-                string.Format("Element numbers of source and target test objects are not equal: [{0}] != [{1}]",
-                ElementCount(sourceElements), ElementCount(targetElements))
+                ? string.Format("Element numbers of source and target test objects are not equal: [{0}] != [{1}]",
+                    ElementCount(sourceElements), ElementCount(targetElements))
                 : null;
             var isSizeInvalid = false;
             if (!isComparisonFailed) // validate size only if element count was successful:
@@ -34,7 +33,8 @@ namespace GLD.SerializerBenchmark
                 isSizeInvalid = ValidateSize(log, out errorText);
             }
 
-            if (trace && log.RepetitionIndex == 0 || isComparisonFailed || isSizeInvalid) // trace only for the first test repetion or for the errorText
+            if (trace && log.RepetitionIndex == 0 || isComparisonFailed || isSizeInvalid)
+                // trace only for the first test repetion or for the errorText
             {
                 //Trace.WriteLine(string.Format("\nTestData:{0}, Serializer: {1}, {2}, Repetition: {3}", log.TestDataName, log.SerializerName, log.StringOrStream, log.RepetitionIndex));
                 //if (isComparisonFailed)
@@ -52,7 +52,8 @@ namespace GLD.SerializerBenchmark
         {
             if (log.Size < 5)
             {
-                errorText = String.Format("Seems serialization failed. Serialized object size = {0} is too small.", log.Size);
+                errorText = string.Format("Seems serialization failed. Serialized object size = {0} is too small.",
+                    log.Size);
                 return true;
             }
             errorText = null;
@@ -67,8 +68,8 @@ namespace GLD.SerializerBenchmark
         }
 
         /// <summary>
-        /// It compound names of members of object, including properties, arrays. It travers down the object tree and 
-        /// gathers names of all properties, fields with some exclusions.
+        ///     It compound names of members of object, including properties, arrays. It travers down the object tree and
+        ///     gathers names of all properties, fields with some exclusions.
         /// </summary>
         /// <param name="o"></param>
         /// <param name="name"></param>

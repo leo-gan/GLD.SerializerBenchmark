@@ -14,7 +14,11 @@ namespace GLD.SerializerBenchmark.Serializers
 
         #region ISerDeser Members
 
-        public override string Name {get { return "HaveBoxJSON"; } }
+        public override string Name
+        {
+            get { return "HaveBoxJSON"; }
+        }
+
         public override string Serialize(object serializable)
         {
             return _serializer.Serialize(serializable);
@@ -41,6 +45,7 @@ namespace GLD.SerializerBenchmark.Serializers
             var serialized = sr.ReadToEnd();
             return _serializer.Deserialize(_primaryType, serialized);
         }
+
         #endregion
     }
 }

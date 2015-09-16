@@ -18,6 +18,7 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             _serializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<object>();
         }
+
         #region ISerDeser Members
 
         public override string Name

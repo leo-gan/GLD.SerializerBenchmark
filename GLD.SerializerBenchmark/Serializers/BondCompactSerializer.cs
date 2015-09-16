@@ -13,10 +13,10 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class BondCompactSerializer : SerDeser
     {
-        private  Deserializer<CompactBinaryReader<InputBuffer>> _deserializer;
-        private  Deserializer<CompactBinaryReader<InputStream>> _deserializerStream;
-        private  Serializer<CompactBinaryWriter<OutputBuffer>> _serializer;
-        private  Serializer<CompactBinaryWriter<OutputStream>> _serializerStream;
+        private Deserializer<CompactBinaryReader<InputBuffer>> _deserializer;
+        private Deserializer<CompactBinaryReader<InputStream>> _deserializerStream;
+        private Serializer<CompactBinaryWriter<OutputBuffer>> _serializer;
+        private Serializer<CompactBinaryWriter<OutputStream>> _serializerStream;
 
         private void Initialize()
         {

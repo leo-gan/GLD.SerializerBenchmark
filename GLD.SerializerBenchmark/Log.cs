@@ -46,7 +46,7 @@ namespace GLD.SerializerBenchmark
         /// </summary>
         public int Size { get; set; }
 
-      /// <summary>
+        /// <summary>
         ///     Sum of TimeSer and TimeDeser.
         /// </summary>
         public long TimeSerAndDeser
@@ -59,7 +59,7 @@ namespace GLD.SerializerBenchmark
         /// </summary>
         public double OpPerSecSer
         {
-            get { return TimeSer > 0 ? 10000000/TimeSer : 0;}
+            get { return TimeSer > 0 ? 10000000/TimeSer : 0; }
         }
 
         /// <summary>
@@ -81,10 +81,10 @@ namespace GLD.SerializerBenchmark
 
     public class LogStorage
     {
-        private StreamWriter _logFileStreamWriter;
-
         private string _logFileName;
+        private StreamWriter _logFileStreamWriter;
         private string _separator;
+
         public LogStorage(string logFileName)
         {
             InitializeStorage(logFileName);
@@ -107,32 +107,33 @@ namespace GLD.SerializerBenchmark
 
             _logFileStreamWriter = File.CreateText(logFileName);
             _separator = separator;
-            var fileHeaderLine = "StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser";
+            var fileHeaderLine =
+                "StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser";
             fileHeaderLine = fileHeaderLine.Replace(",", _separator);
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
-             _logFileName = logFileName;
-       }
+            _logFileName = logFileName;
+        }
 
         public void Write(Log log)
         {
-            var line = string.Join(_separator, 
-                log.StringOrStream, log.TestDataName, log.Repetitions,log.RepetitionIndex, log.SerializerName,
+            var line = string.Join(_separator,
+                log.StringOrStream, log.TestDataName, log.Repetitions, log.RepetitionIndex, log.SerializerName,
                 log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser, log.OpPerSecSer,
                 log.OpPerSecDeser, log.OpPerSecSerAndDeser
                 );
             _logFileStreamWriter.WriteLine(line);
         }
 
-        public List<Log>ReadAll()
+        public List<Log> ReadAll()
         {
             var lines = File.ReadAllLines(_logFileName);
             var logs = new List<Log>();
-            for (int index = 1; index < lines.Length; index++) // first line is a title. Ignore it!
+            for (var index = 1; index < lines.Length; index++) // first line is a title. Ignore it!
             {
                 var line = lines[index];
                 var fields = line.Split(new[] {"~"}, StringSplitOptions.None);
-                var log = new Log()
+                var log = new Log
                 {
                     StringOrStream = fields[0],
                     TestDataName = fields[1],
@@ -141,7 +142,7 @@ namespace GLD.SerializerBenchmark
                     SerializerName = fields[4],
                     TimeSer = fields[5].ToInt64(),
                     TimeDeser = fields[6].ToInt64(),
-                    Size = fields[7].ToInt(),
+                    Size = fields[7].ToInt()
                     //TimeSerAndDeser = fields[8].ToInt64(), // properties: without setters
                     //OpPerSecSer = fields[9].ToDouble(),
                     //OpPerSecDeser = fields[10].ToDouble(),

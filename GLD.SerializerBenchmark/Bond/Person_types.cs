@@ -31,7 +31,7 @@ namespace GLD.SerializerBenchmark.Bond
     public enum Gender
     {
         Male,
-        Female,
+        Female
     }
 
     [Schema]

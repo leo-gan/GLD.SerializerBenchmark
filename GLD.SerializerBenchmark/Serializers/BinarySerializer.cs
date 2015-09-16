@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -11,11 +10,11 @@ namespace GLD.SerializerBenchmark.Serializers
 
         #region ISerDeser Members
 
-         public override string Name
+        public override string Name
         {
             get { return "MS Binary"; }
         }
-     
+
 
         public override string Serialize(object serializable)
         {
@@ -49,6 +48,7 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             return _formatter.Deserialize(inputStream);
         }
+
         #endregion
     }
 }

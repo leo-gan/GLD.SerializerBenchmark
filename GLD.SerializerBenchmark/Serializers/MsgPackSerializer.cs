@@ -5,7 +5,6 @@
 
 using System;
 using System.IO;
-using GLD.SerializerBenchmark.TestData;
 using MsgPack.Serialization;
 
 namespace GLD.SerializerBenchmark.Serializers
@@ -23,20 +22,24 @@ namespace GLD.SerializerBenchmark.Serializers
     /// </summary>
     internal class MsgPackSerializer : SerDeser
     {
-        private static  IMessagePackSerializer _serializer;
+        private static IMessagePackSerializer _serializer;
 
         // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
 
         private void Initialize()
         {
-            if (!base.JustInitialized) return;
+            if (!JustInitialized) return;
             _serializer = MessagePackSerializer.Get(_primaryType);
             JustInitialized = false;
         }
 
         #region ISerDeser Members
 
-        public override string Name {get { return "MsgPack"; } }
+        public override string Name
+        {
+            get { return "MsgPack"; }
+        }
+
         public override string Serialize(object serializable)
         {
             Initialize();
@@ -72,6 +75,7 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             return _serializer.Unpack(inputStream);
         }
+
         #endregion
     }
 }

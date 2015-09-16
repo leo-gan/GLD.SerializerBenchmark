@@ -1,8 +1,6 @@
 /// https://github.com/aumcode/nfx
 /// >PM Install-Package NFX
 
-using System;
-using System.Collections.Generic;
 using System.IO;
 using NFX.Serialization.JSON;
 using ServiceStack;
@@ -11,7 +9,7 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class NfxJsonSerializer : SerDeser
     {
-         #region ISerDeser Members
+        #region ISerDeser Members
 
         public override string Name
         {
@@ -38,6 +36,7 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             return JSONReader.DeserializeDataObject(inputStream);
         }
+
         #endregion
     }
 }

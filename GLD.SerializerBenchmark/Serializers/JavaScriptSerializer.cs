@@ -4,7 +4,6 @@
 /// 
 
 using System.IO;
-using System.Text;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
@@ -15,7 +14,11 @@ namespace GLD.SerializerBenchmark.Serializers
 
         #region ISerDeser Members
 
-        public override string Name {get { return "MS JavaScript"; } }
+        public override string Name
+        {
+            get { return "MS JavaScript"; }
+        }
+
         public override string Serialize(object serializable)
         {
             return _serializer.Serialize(serializable);
@@ -33,7 +36,7 @@ namespace GLD.SerializerBenchmark.Serializers
             outputStream.Seek(0, SeekOrigin.Begin);
             sw.Write(str);
             sw.Flush();
-       }
+        }
 
         public override object Deserialize(Stream inputStream)
         {
@@ -41,7 +44,8 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             var serialized = sr.ReadToEnd();
             return _serializer.Deserialize(serialized, _primaryType);
-       }
+        }
+
         #endregion
     }
 }

@@ -14,7 +14,7 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         private Serializer _serializer;
 
-         private void Initialize()
+        private void Initialize()
         {
             if (!JustInitialized) return;
             var typeList = new List<Type> {_primaryType};
@@ -62,8 +62,8 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             Initialize();
-             inputStream.Seek(0, SeekOrigin.Begin);
-           return _serializer.Deserialize(inputStream);
+            inputStream.Seek(0, SeekOrigin.Begin);
+            return _serializer.Deserialize(inputStream);
         }
 
         #endregion

@@ -35,7 +35,7 @@ namespace GLD.SerializerBenchmark
             List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
         {
             var wasError = new Dictionary<string, bool>();
-             var original = testDataDescription; // the same data for all serializers
+            var original = testDataDescription; // the same data for all serializers
             //Report.TestDataHeader(testDataDescription.Key);
             GC.Collect(); // it has very little impact on speed for repetitions < 100
             GC.WaitForFullGCComplete();
@@ -55,11 +55,12 @@ namespace GLD.SerializerBenchmark
             }
         }
 
-        private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original, List<Error> errors, bool streaming, LogStorage logStorage, Log log, Dictionary<string, bool> wasError)
+        private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original,
+            List<Error> errors, bool streaming, LogStorage logStorage, Log log, Dictionary<string, bool> wasError)
         {
             foreach (var serializer in serializers)
             {
-                if (wasError.ContainsKey(serializer.Name)) continue; 
+                if (wasError.ContainsKey(serializer.Name)) continue;
                 var isRepeatedError = false;
                 SingleTest(serializer, original, errors, streaming, log,
                     logStorage, out isRepeatedError);

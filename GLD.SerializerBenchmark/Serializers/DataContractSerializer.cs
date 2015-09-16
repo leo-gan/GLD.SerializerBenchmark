@@ -14,7 +14,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private void Initialize()
         {
-            if (!base.JustInitialized) return;
+            if (!JustInitialized) return;
             _serializer = new DataContractSerializer(_primaryType, _secondaryTypes);
             JustInitialized = false;
         }
@@ -61,6 +61,7 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             return _serializer.ReadObject(inputStream);
         }
+
         #endregion
     }
 }

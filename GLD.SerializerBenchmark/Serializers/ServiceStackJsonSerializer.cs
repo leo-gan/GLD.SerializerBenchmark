@@ -10,30 +10,34 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class ServiceStackJsonSerializer : SerDeser
     {
-
         #region ISerDeser Members
 
-        public override string Name {get { return "ServiceStack Json"; } }
+        public override string Name
+        {
+            get { return "ServiceStack Json"; }
+        }
+
         public override string Serialize(object serializable)
         {
-               return JsonSerializer.SerializeToString(serializable, _primaryType);
+            return JsonSerializer.SerializeToString(serializable, _primaryType);
         }
 
         public override object Deserialize(string serialized)
         {
-                return JsonSerializer.DeserializeFromString(serialized, _primaryType);
+            return JsonSerializer.DeserializeFromString(serialized, _primaryType);
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-                JsonSerializer.SerializeToStream(serializable, _primaryType, outputStream);
+            JsonSerializer.SerializeToStream(serializable, _primaryType, outputStream);
         }
 
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-                return JsonSerializer.DeserializeFromStream(_primaryType, inputStream);
+            return JsonSerializer.DeserializeFromStream(_primaryType, inputStream);
         }
+
         #endregion
     }
 }

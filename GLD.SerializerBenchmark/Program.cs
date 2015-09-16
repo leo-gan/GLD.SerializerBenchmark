@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.Serialization.Json;
 using GLD.SerializerBenchmark.Serializers;
 using GLD.SerializerBenchmark.TestData;
 
@@ -13,15 +12,15 @@ namespace GLD.SerializerBenchmark
 
             var testDataDescriptions = new List<ITestDataDescription>
             {
-                 //new IntDescription(), // TODO: Hang up. Investigate.
+                //new IntDescription(), // TODO: Hang up. Investigate.
                 // new StringArrayDescription(), // TODO: OutOfMemory exception. Investigate.
-            //    new SimpleObjectDescription(),
-            //    new TelemetryDescription(),
-                new PersonDescription(),
-            //    new EDI_X12_835Description(),
-            //    new TestData.NoAtributes.EDI_X12_835Description(),
-            //    new ObjectGraphDescription(), // TODO: Exception. Investigate.
-            //    new MsgBatchingDescription(),
+                //    new SimpleObjectDescription(),
+                //    new TelemetryDescription(),
+                new PersonDescription()
+                //    new EDI_X12_835Description(),
+                //    new TestData.NoAtributes.EDI_X12_835Description(),
+                //    new ObjectGraphDescription(), // TODO: Exception. Investigate.
+                //    new MsgBatchingDescription(),
             };
             var serializers = new List<ISerDeser>
             {
@@ -37,7 +36,8 @@ namespace GLD.SerializerBenchmark
                 new ApJsonSerializer(), // TODO: DateTime format?
                 new FastJsonSerializer(), // TODO: DateTime format?
                 new JilSerializer(), // TODO: DateTime format?
-                new JsonFxSerializer(), // TODO: DateTime format? // TODO !!! on ObjectGraphDescription gets system exception.
+                new JsonFxSerializer(),
+                // TODO: DateTime format? // TODO !!! on ObjectGraphDescription gets system exception.
                 new JsonNetHelperSerializer(),
                 new JsonNetSerializer(),
                 new HaveBoxJSONSerializer(), // TODO: DateTime format?

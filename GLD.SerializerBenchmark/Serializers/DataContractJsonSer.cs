@@ -4,23 +4,28 @@
 
 using System;
 using System.IO;
+using System.Runtime.Serialization.Json;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
     internal class DataContractJsonSer : SerDeser
     {
-        private  System.Runtime.Serialization.Json.DataContractJsonSerializer _serializer = null;
+        private DataContractJsonSerializer _serializer;
 
-         private void Initialize()
+        private void Initialize()
         {
-            if (!base.JustInitialized) return;
-             _serializer = new System.Runtime.Serialization.Json.DataContractJsonSerializer(_primaryType, _secondaryTypes);
-           JustInitialized = false;
+            if (!JustInitialized) return;
+            _serializer = new DataContractJsonSerializer(_primaryType, _secondaryTypes);
+            JustInitialized = false;
         }
- 
+
         #region ISerDeser Members
 
-        public override string Name {get { return "MS DataContract Json"; } }
+        public override string Name
+        {
+            get { return "MS DataContract Json"; }
+        }
+
         public override string Serialize(object serializable)
         {
             Initialize();
@@ -40,7 +45,7 @@ namespace GLD.SerializerBenchmark.Serializers
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return  _serializer.ReadObject(stream);
+                return _serializer.ReadObject(stream);
             }
         }
 
@@ -54,8 +59,9 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             Initialize();
             inputStream.Seek(0, SeekOrigin.Begin);
-            return  _serializer.ReadObject(inputStream);
+            return _serializer.ReadObject(inputStream);
         }
+
         #endregion
     }
 }

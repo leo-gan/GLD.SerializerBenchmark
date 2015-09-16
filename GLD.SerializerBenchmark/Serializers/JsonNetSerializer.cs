@@ -16,7 +16,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
-           using (var sw = new StringWriter())
+            using (var sw = new StringWriter())
             using (var jw = new JsonTextWriter(sw))
             {
                 _serializer.Serialize(jw, serializable);
@@ -48,6 +48,7 @@ namespace GLD.SerializerBenchmark.Serializers
             var jr = new JsonTextReader(sr);
             return _serializer.Deserialize(jr, _primaryType);
         }
+
         #endregion
     }
 }

@@ -29,23 +29,24 @@ namespace GLD.SerializerBenchmark
         public string ErrorText { get; set; }
 
         /// <summary>
-        /// It adds a current error to the error list. If this error is also existed in this list, do not add error.
-        /// It returns true if error is added, false otherwise.
+        ///     It adds a current error to the error list. If this error is also existed in this list, do not add error.
+        ///     It returns true if error is added, false otherwise.
         /// </summary>
         /// <param name="errors">A list of existed errors.</param>
         /// <returns>true if error is added</returns>
         public bool TryAddTo(List<Error> errors)
         {
-            var isExisted = errors.Any(error => 
-                StringOrStream == error.StringOrStream 
-                && TestDataName == error.TestDataName 
-                && SerializerName == error.SerializerName 
+            var isExisted = errors.Any(error =>
+                StringOrStream == error.StringOrStream
+                && TestDataName == error.TestDataName
+                && SerializerName == error.SerializerName
                 && ErrorText == error.ErrorText);
             if (!isExisted) errors.Add(this);
             return isExisted;
-       }
+        }
 
-        public static string TryGetErrorText(List<Error> errors, string testDataName, string serializerName, string stringOrStream)
+        public static string TryGetErrorText(List<Error> errors, string testDataName, string serializerName,
+            string stringOrStream)
         {
             var error =
                 errors.FirstOrDefault(

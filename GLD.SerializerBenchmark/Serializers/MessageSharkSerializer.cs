@@ -20,28 +20,33 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
-            var buf = MessageSharkSerializer.Serialize(serializable);
-            return Convert.ToBase64String(buf);
+            using (var ms = new MemoryStream())
+            {
+                MessageSharkSerializer.Serialize(_primaryType, serializable, ms);
+                ms.Flush();
+                ms.Position = 0;
+                return Convert.ToBase64String(ms.ToArray());
+            }
         }
 
         public override object Deserialize(string serialized)
         {
             var b = Convert.FromBase64String(serialized);
-            return MessageSharkSerializer.Deserialize<object>(b);
+            using (var stream = new MemoryStream(b))
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                return MessageSharkSerializer.Deserialize(_primaryType, stream);
+            }
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            //MessageSharkSerializer.RegisterTypeFor<object>(_primaryType, 0x75);
-            MessageSharkSerializer.Serialize(serializable);
+            MessageSharkSerializer.Serialize(_primaryType, serializable, outputStream);
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            inputStream.Seek(0, SeekOrigin.Begin);
-            var ms = new MemoryStream();
-            inputStream.CopyTo(ms);
-            return MessageSharkSerializer.Deserialize<object>(ms.ToArray());
+            return MessageSharkSerializer.Deserialize(_primaryType, inputStream);
         }
 
         #endregion

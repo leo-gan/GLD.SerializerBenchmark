@@ -12,7 +12,11 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         #region ISerDeser Members
 
-        public override string Name {get { return "Jil"; } }
+        public override string Name
+        {
+            get { return "Jil"; }
+        }
+
         public override string Serialize(object serializable)
         {
             using (var sw = new StringWriter())
@@ -37,19 +41,20 @@ namespace GLD.SerializerBenchmark.Serializers
         public override void Serialize(object serializable, Stream outputStream)
         {
             var sw = new StreamWriter(outputStream);
-                JSON.Serialize(serializable, sw,
-                    new Options(
-                        unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
+            JSON.Serialize(serializable, sw,
+                new Options(
+                    unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
             sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-                return JSON.Deserialize(new StreamReader(inputStream), _primaryType,
-                    new Options(
-                        unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
+            return JSON.Deserialize(new StreamReader(inputStream), _primaryType,
+                new Options(
+                    unspecifiedDateTimeKindBehavior: UnspecifiedDateTimeKindBehavior.IsUTC));
         }
+
         #endregion
     }
 }

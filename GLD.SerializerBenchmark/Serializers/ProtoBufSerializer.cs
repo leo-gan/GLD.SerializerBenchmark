@@ -7,7 +7,6 @@
 
 using System;
 using System.IO;
-using ProtoBuf;
 using ProtoBuf.Meta;
 
 namespace GLD.SerializerBenchmark.Serializers
@@ -62,8 +61,8 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             Initialize();
-             inputStream.Seek(0, SeekOrigin.Begin);
-           return _Model.Deserialize(inputStream, null, _primaryType);
+            inputStream.Seek(0, SeekOrigin.Begin);
+            return _Model.Deserialize(inputStream, null, _primaryType);
         }
 
         #endregion
