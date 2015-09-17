@@ -37,24 +37,20 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Serialize(object serializable)
         {
             Initialize();
-            using (var ms = new MemoryStream())
-            {
-                _serializer.Serialize(ms, serializable);
-                ms.Flush();
-                // ms.Position = 0;
-                return Convert.ToBase64String(ms.GetBuffer(), 0, (int) ms.Position, Base64FormattingOptions.None);
-            }
+            var ms = new MemoryStream();
+            _serializer.Serialize(ms, serializable);
+            ms.Flush();
+            ms.Position = 0;
+            return Convert.ToBase64String(ms.ToArray());
         }
 
         public override object Deserialize(string serialized)
         {
             Initialize();
             var b = Convert.FromBase64String(serialized);
-            using (var stream = new MemoryStream(b))
-            {
-                stream.Seek(0, SeekOrigin.Begin);
-                return _serializer.Deserialize(stream);
-            }
+            var stream = new MemoryStream(b);
+            stream.Seek(0, SeekOrigin.Begin);
+            return _serializer.Deserialize(stream);
         }
 
         public override void Serialize(object serializable, Stream outputStream)
