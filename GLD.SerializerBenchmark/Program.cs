@@ -12,15 +12,15 @@ namespace GLD.SerializerBenchmark
 
             var testDataDescriptions = new List<ITestDataDescription>
             {
-                // new PersonDescription()
-                //new IntDescription(), 
-                // new StringArrayDescription(), 
-                //    new SimpleObjectDescription(),
-                    new TelemetryDescription(),
-                //    new EDI_X12_835Description(),
-                //    new TestData.NoAtributes.EDI_X12_835Description(),
-                //    new ObjectGraphDescription(), // TODO: Exception. Investigate.
-                //    new MsgBatchingDescription(),
+                //new PersonDescription(),
+                //new IntDescription(),
+                //new StringArrayDescription(),
+                //new SimpleObjectDescription(),
+                //new TelemetryDescription(),
+                //new EDI_X12_835Description(),
+                //new TestData.NoAtributes.EDI_X12_835Description(),
+                //new ObjectGraphDescription(), // TODO: Exception. Investigate.
+                new MsgBatchingDescription()
             };
             var serializers = new List<ISerDeser>
             {
