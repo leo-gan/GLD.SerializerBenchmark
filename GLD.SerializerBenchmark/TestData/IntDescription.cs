@@ -5,7 +5,7 @@ namespace GLD.SerializerBenchmark.TestData
 {
     public class IntDescription : ITestDataDescription
     {
-        private readonly int _data = 123;
+        private readonly int _data = Int32.MaxValue - 123;
 
         public string Name
         {

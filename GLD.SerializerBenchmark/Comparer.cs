@@ -50,7 +50,7 @@ namespace GLD.SerializerBenchmark
 
         private static bool ValidateSize(Log log, out string errorText)
         {
-            if (log.Size < 5)
+            if (log.Size < 3)
             {
                 errorText = string.Format("Seems serialization failed. Serialized object size = {0} is too small.",
                     log.Size);

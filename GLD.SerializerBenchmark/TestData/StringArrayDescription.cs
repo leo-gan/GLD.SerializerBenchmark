@@ -6,13 +6,13 @@ namespace GLD.SerializerBenchmark.TestData
 {
     public class StringArrayDescription : ITestDataDescription
     {
-        private readonly string[] _data =
-        {
-            NaturalTextGenerator.GenerateFirstName(),
-            NaturalTextGenerator.GenerateFirstName(),
-            NaturalTextGenerator.GenerateFirstName(),
-            NaturalTextGenerator.GenerateFirstName()
-        };
+       private static string[] Generate(int arraySize)
+       {
+            var array = new string[arraySize];
+           for (var index = 0; index < array.Length; index++)
+               array[index] = NaturalTextGenerator.GenerateFirstName();
+           return array;
+       }
 
         public string Name
         {
@@ -36,7 +36,7 @@ namespace GLD.SerializerBenchmark.TestData
 
         public object Data
         {
-            get { return _data; }
+            get { return Generate(20); }
         }
     }
 }

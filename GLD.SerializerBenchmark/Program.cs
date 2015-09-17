@@ -12,11 +12,11 @@ namespace GLD.SerializerBenchmark
 
             var testDataDescriptions = new List<ITestDataDescription>
             {
-                //new IntDescription(), // TODO: Hang up. Investigate.
-                // new StringArrayDescription(), // TODO: OutOfMemory exception. Investigate.
+                //new IntDescription(), 
+                new StringArrayDescription(), // TODO: OutOfMemory exception. Investigate.
                 //    new SimpleObjectDescription(),
                 //    new TelemetryDescription(),
-                new PersonDescription()
+                // new PersonDescription()
                 //    new EDI_X12_835Description(),
                 //    new TestData.NoAtributes.EDI_X12_835Description(),
                 //    new ObjectGraphDescription(), // TODO: Exception. Investigate.
