@@ -82,7 +82,6 @@ namespace GLD.SerializerBenchmark
             object processed;
             log.SerializerName = serializer.Name;
 
-            var sw = Stopwatch.StartNew();
             var serSuccessful = false;
             var error = new Error
             {
@@ -94,6 +93,7 @@ namespace GLD.SerializerBenchmark
             };
             try
             {
+                var sw = Stopwatch.StartNew();
                 if (streaming)
                 {
                     serializer.Serialize(original.Data, serializedStream);
@@ -111,6 +111,7 @@ namespace GLD.SerializerBenchmark
                     ? serializer.Deserialize(serializedStream)
                     : serializer.Deserialize(serializedString);
                 log.TimeDeser = sw.ElapsedTicks - log.TimeSer;
+                sw.Stop();
             }
             catch (Exception ex)
             {
@@ -118,7 +119,6 @@ namespace GLD.SerializerBenchmark
                 isRepeatedError = !error.TryAddTo(errors);
                 return;
             }
-            sw.Stop();
 
             string errorText;
             // write log if comparison is true
