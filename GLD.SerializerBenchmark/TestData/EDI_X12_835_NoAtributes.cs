@@ -120,16 +120,16 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
             var result = new BPR_FinancialInformation
             {
                 TransactionHandlingCode = ExternalRandomGenerator.Instance.NextRandomInteger,
-                CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.NextRandomInteger
+                CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.NextRandomInteger,
+                Payment_Format_Code = "CA",
+                AccoungInfo1 = AccoungInfo.Make(),
+                Originating_Company_Identifier = NaturalTextGenerator.GenerateWord(),
+                Originating_Company_Supplemental_Code = "CSC",
+                AccoungInfo2 = AccoungInfo.Make(),
+                Date = DateTime.Now.ToShortDateString(),
+                AccoungInfo3 = AccoungInfo.Make()
             };
-            result.CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.AsInt();
-            result.Payment_Format_Code = "CA";
-            result.AccoungInfo1 = AccoungInfo.Make();
-            result.Originating_Company_Identifier =
-                result.Originating_Company_Supplemental_Code = "CSC";
-            result.AccoungInfo2 = AccoungInfo.Make();
-            result.Date = DateTime.Now.ToShortDateString();
-            result.AccoungInfo3 = AccoungInfo.Make();
+            //result.CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.AsInt();
 
             return result;
         }

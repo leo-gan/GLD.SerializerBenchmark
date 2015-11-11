@@ -97,7 +97,7 @@ namespace GLD.SerializerBenchmark
 
         /// <summary>
         ///     By default it opens a file for writing. If this file is also existed, save it under "name.
-        ///     <creationDateTime>.extension, and create a new file.
+        ///     creationDateTime.extension, and create a new file.
         /// </summary>
         /// <param name="logFileName">Is a file name.</param>
         private void InitializeStorage(string logFileName, string separator = "~")

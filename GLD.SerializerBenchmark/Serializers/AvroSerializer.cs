@@ -1,7 +1,7 @@
-///
-/// See here http://azure.microsoft.com/en-us/documentation/articles/hdinsight-dotnet-avro-serialization/
-/// >PM Install-Package Microsoft.Hadoop.Avro
-/// 
+//
+// See here http://azure.microsoft.com/en-us/documentation/articles/hdinsight-dotnet-avro-serialization/
+// >PM Install-Package Microsoft.Hadoop.Avro
+// 
 
 using System;
 using System.IO;

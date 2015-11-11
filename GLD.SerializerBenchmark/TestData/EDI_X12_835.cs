@@ -185,18 +185,20 @@ namespace GLD.SerializerBenchmark.TestData
 
         public static BPR_FinancialInformation Make()
         {
-            var result = new BPR_FinancialInformation();
+            var result = new BPR_FinancialInformation
+            {
+                TransactionHandlingCode = ExternalRandomGenerator.Instance.NextRandomInteger,
+                CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.NextRandomInteger,
+                Payment_Format_Code = "CA",
+                AccoungInfo1 = AccoungInfo.Make(),
+                Date = DateTime.Now.ToShortDateString(),
+                AccoungInfo3 = AccoungInfo.Make(),
+                AccoungInfo2 = AccoungInfo.Make()
+            };
 
-            result.TransactionHandlingCode = ExternalRandomGenerator.Instance.NextRandomInteger;
-            result.CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.NextRandomInteger;
-            result.CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.AsInt();
-            result.Payment_Format_Code = "CA";
-            result.AccoungInfo1 = AccoungInfo.Make();
+            //result.CreditDebit_Flag_Code = ExternalRandomGenerator.Instance.AsInt();
             result.Originating_Company_Identifier =
                 result.Originating_Company_Supplemental_Code = "CSC";
-            result.AccoungInfo2 = AccoungInfo.Make();
-            result.Date = DateTime.Now.ToShortDateString();
-            result.AccoungInfo3 = AccoungInfo.Make();
 
             return result;
         }

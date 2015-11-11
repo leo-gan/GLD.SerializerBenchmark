@@ -1,7 +1,7 @@
-///
-/// See here https://github.com/salarcode/Bois
-/// PM> Install-Package Salar.Bois
-/// 
+//
+// See here https://github.com/salarcode/Bois
+// PM> Install-Package Salar.Bois
+// 
 
 using System;
 using System.IO;
