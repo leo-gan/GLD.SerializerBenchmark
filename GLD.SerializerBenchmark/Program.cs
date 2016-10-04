@@ -26,20 +26,20 @@ namespace GLD.SerializerBenchmark
             {
                 // new AvroSerializer(),  //TODO: For some reason it is impossible to pass generic T type to serializer. 
                 new BinarySerializer(),
-                new BondCompactSerializer(), // TODO: works only for Person
-                new BondFastSerializer(), // TODO: works only for Person
-                new BondJsonSerializer(), // TODO: works only for Person
-                //new DataContractSerializerSerializer(),
-                //new DataContractJsonSer(),
-                //new JavaScriptSerializer(), // TODO: DateTime format?
-                //new XmlSerializerSer(),
+                //new BondCompactSerializer(), // TODO: works only for Person
+                //new BondFastSerializer(), // TODO: works only for Person
+                //new BondJsonSerializer(), // TODO: works only for Person
+                new DataContractSerializerSerializer(),
+                new DataContractJsonSer(),
+                new JavaScriptSerializer(), // TODO: DateTime format?
+                new XmlSerializerSer(),
                 //new ApJsonSerializer(), // TODO: DateTime format?
-                //new FastJsonSerializer(), // TODO: DateTime format?
-                //new JilSerializer(), // TODO: DateTime format?
-                //new JsonFxSerializer(),
-                //// TODO: DateTime format? // TODO !!! on ObjectGraphDescription gets system exception.
-                //new JsonNetHelperSerializer(),
-                //new JsonNetSerializer(),
+                new FastJsonSerializer(), // TODO: DateTime format?
+                new JilSerializer(), // TODO: DateTime format?
+                new JsonFxSerializer(),
+                // TODO: DateTime format? // TODO !!! on ObjectGraphDescription gets system exception.
+                new JsonNetHelperSerializer(),
+                new JsonNetSerializer(),
                 //new HaveBoxJSONSerializer(), // TODO: DateTime format?
                 //new MessageSharkSer(),
                 //new MsgPackSerializer(), // TODO: DateTime format?

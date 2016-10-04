@@ -101,12 +101,13 @@ namespace GLD.SerializerBenchmark
             if (errors == null) return;
             if (errors.Count == 0) return;
 
-            HeaderErrors(testDataName);
             var testDataErrors =
                 errors.Select(a => a)
                     .Where(b => b.TestDataName == testDataName)
                     .OrderBy(sr => sr.SerializerName)
                     .ToList();
+            if (testDataErrors.Count == 0) return;
+            HeaderErrors(testDataName);
             foreach (var error in testDataErrors)
             {
                 var line = string.Format("{0, -21} -{1, -6}s \n\t{2}",
@@ -117,7 +118,7 @@ namespace GLD.SerializerBenchmark
 
         private static void HeaderRepetitions(int repetitions)
         {
-            var header = string.Format("\n\nTests performed for each TestData + Serializer in {0} Repetitions\n",
+            var header = string.Format("\n\nTests performed {0} times for each TestData + Serializer pair\n",
                 repetitions)
                          + new string('#', 80);
             OutputEverywhere(header);
@@ -125,8 +126,8 @@ namespace GLD.SerializerBenchmark
 
         private static void HeaderErrors(string testDataName)
         {
-            var line = string.Format("\nThere are errors in {0}\n"
-                                     + new string('*', 80), testDataName);
+            var line = string.Format("\nErrors in {0}\n"
+                                     + new string('.', 80), testDataName);
             OutputEverywhere(line);
         }
 
