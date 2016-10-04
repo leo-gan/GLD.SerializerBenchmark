@@ -1,25 +1,26 @@
-//
-// See here https://github.com/rpgmaker/MessageShark
-// >PM Install-Package MessageShark
-// 
+﻿/// <summary>
+/// See here http://github.com/akkadotnet/wire
+/// PM> Install-Package Wire
+/// </summary> 
 
 using System;
 using System.IO;
-using MessageShark;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class MessageSharkSer : SerDeser
+    internal class WireSerializer
+        : SerDeser
     {
         #region ISerDeser Members
 
-        public override string Name => "MessageShark";
+        public override string Name => "WireSerializer";
+         private readonly Wire.Serializer _serializer = new  Wire.Serializer(new Wire.SerializerOptions(false, true));
 
         public override string Serialize(object serializable)
         {
             using (var ms = new MemoryStream())
             {
-                MessageSharkSerializer.Serialize(_primaryType, serializable, ms);
+                _serializer.Serialize(serializable, ms);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
@@ -32,18 +33,19 @@ namespace GLD.SerializerBenchmark.Serializers
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return MessageSharkSerializer.Deserialize(_primaryType, stream);
+                return _serializer.Deserialize(stream);
             }
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            MessageSharkSerializer.Serialize(_primaryType, serializable, outputStream);
+            _serializer.Serialize(serializable, outputStream);
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            return MessageSharkSerializer.Deserialize(_primaryType, inputStream);
+            inputStream.Seek(0, SeekOrigin.Begin);
+            return _serializer.Deserialize(inputStream);
         }
 
         #endregion

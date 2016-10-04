@@ -56,15 +56,17 @@ namespace GLD.SerializerBenchmark.Serializers
         public override void Serialize(object serializable, Stream outputStream)
         {
             Initialize();
-            outputStream.Seek(0, SeekOrigin.Begin);
+            //outputStream.Seek(0, SeekOrigin.Begin);
             var output = new OutputStream(outputStream);
             var writer = new CompactBinaryWriter<OutputStream>(output);
             _serializerStream.Serialize(serializable, writer);
-        }
+             output.Flush();
+      }
 
         public override object Deserialize(Stream inputStream)
         {
             Initialize();
+            inputStream.Seek(0, SeekOrigin.Begin);
             var input = new InputStream(inputStream);
             var reader = new CompactBinaryReader<InputStream>(input);
             return _deserializerStream.Deserialize(reader);

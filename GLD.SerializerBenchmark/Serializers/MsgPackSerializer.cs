@@ -22,14 +22,14 @@ namespace GLD.SerializerBenchmark.Serializers
     /// </summary>
     internal class MsgPackSerializer : SerDeser
     {
-        private static IMessagePackSerializer _serializer;
+        private static MessagePackSerializer _serializer;
 
         // TODO: Hack! How to get a type of the person object? In XmlSerializer it works, not here!
 
         private void Initialize()
         {
             if (!JustInitialized) return;
-            _serializer = MessagePackSerializer.Get(_primaryType);
+            _serializer = SerializationContext.Default.GetSerializer(_primaryType);
             JustInitialized = false;
         }
 

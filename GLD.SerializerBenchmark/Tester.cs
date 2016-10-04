@@ -98,6 +98,7 @@ namespace GLD.SerializerBenchmark
                 {
                     serializer.Serialize(original.Data, serializedStream);
                     log.Size = (int) serializedStream.Length;
+                    // serializedStream.Seek(0, SeekOrigin.Begin); // Commented out! It set up explicitly not for all serializers!!!!
                 }
                 else
                 {
@@ -127,7 +128,7 @@ namespace GLD.SerializerBenchmark
             else // write error, if comparison false
             {
                 error.ErrorText = errorText;
-                isRepeatedError = !error.TryAddTo(errors); // if it false adding, that means an error repeated.
+                isRepeatedError = !error.TryAddTo(errors); // if it falses adding, that means an error repeated.
             }
         }
     }

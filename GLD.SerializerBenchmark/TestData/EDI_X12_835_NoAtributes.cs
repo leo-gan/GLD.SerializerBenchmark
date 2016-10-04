@@ -16,7 +16,7 @@ namespace GLD.SerializerBenchmark.TestData.NoAtributes
 
         public string Description
         {
-            get { return "Similar to EDI_X12_835 but internal classes are without additional serialize atributes.."; }
+            get { return "Similar to EDI_X12_835 but internal classes are without additional serialize atributes."; }
         }
 
         public Type DataType

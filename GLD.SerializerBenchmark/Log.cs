@@ -100,7 +100,7 @@ namespace GLD.SerializerBenchmark
         ///     creationDateTime.extension, and create a new file.
         /// </summary>
         /// <param name="logFileName">Is a file name.</param>
-        private void InitializeStorage(string logFileName, string separator = "~")
+        private void InitializeStorage(string logFileName, string separator = ",")
         {
             if (File.Exists(logFileName))
                 File.Move(logFileName, GetArchiveFileName(logFileName));
@@ -132,7 +132,7 @@ namespace GLD.SerializerBenchmark
             for (var index = 1; index < lines.Length; index++) // first line is a title. Ignore it!
             {
                 var line = lines[index];
-                var fields = line.Split(new[] {"~"}, StringSplitOptions.None);
+                var fields = line.Split(new[] {_separator}, StringSplitOptions.None);
                 var log = new Log
                 {
                     StringOrStream = fields[0],

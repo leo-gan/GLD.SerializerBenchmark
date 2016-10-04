@@ -24,10 +24,7 @@ namespace GLD.SerializerBenchmark.TestData
             get { return "Nested objects and an array of objects."; }
         }
 
-        public Type DataType
-        {
-            get { return typeof (Person); }
-        }
+        public Type DataType => typeof (Person);
 
         public List<Type> SecondaryDataTypes
         {
