@@ -26,9 +26,8 @@ namespace GLD.SerializerBenchmark.Serializers
             return JSONReader.DeserializeDataObject(serialized).ConvertTo<object>();
         }
 
-        public override void Serialize(object serializable, Stream outputStream)
-        {
-            JSONWriter.Write(serializable, outputStream, JSONWritingOptions.Compact);
+        public override void Serialize(object serializable, Stream outputStream) {
+            JSONWriter.Write(serializable, outputStream);
         }
 
         public override object Deserialize(Stream inputStream)

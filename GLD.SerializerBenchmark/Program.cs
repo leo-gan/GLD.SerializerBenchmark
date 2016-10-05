@@ -15,12 +15,12 @@ namespace GLD.SerializerBenchmark
                 new PersonDescription(),
                 new IntDescription(),
                 new StringArrayDescription(),
-                new SimpleObjectDescription(),
-                new TelemetryDescription(),
-                new EDI_X12_835Description(),
-                new TestData.NoAtributes.EDI_X12_835Description(),
-                //new ObjectGraphDescription(), // TODO: Exception. Investigate.
-                new MsgBatchingDescription()
+                //new SimpleObjectDescription(),
+                //new TelemetryDescription(),
+                //new EDI_X12_835Description(),
+                //new TestData.NoAtributes.EDI_X12_835Description(),
+                ////new ObjectGraphDescription(), // TODO: Exception. Investigate.
+                //new MsgBatchingDescription()
             };
             var serializers = new List<ISerDeser>
             {
@@ -40,18 +40,18 @@ namespace GLD.SerializerBenchmark
                 // TODO: DateTime format? // TODO !!! on ObjectGraphDescription gets system exception.
                 new JsonNetHelperSerializer(),
                 new JsonNetSerializer(),
-                //new HaveBoxJSONSerializer(), // TODO: DateTime format?
-                //new MessageSharkSer(),
-                //new MsgPackSerializer(), // TODO: DateTime format?
-                //new NetJSONSer(), // TODO: DateTime format?
-                //new NetSerializerSer(),
-                //new NfxJsonSerializer(),
-                //new NfxSlimSerializer(),
-                //new ProtoBufSerializer(),
-                //new SharpSerializer(), // TODO: DateTime format?
-                //new ServiceStackJsonSerializer(), // TODO: DateTime format?
-                //new ServiceStackTypeSerializer(), // TODO: DateTime format?
-                //new SalarBoisSerializer(),
+                new HaveBoxJSONSerializer(), // TODO: DateTime format?
+                new MessageSharkSer(),
+                new MsgPackSerializer(), // TODO: DateTime format?
+                new NetJSONSer(), // TODO: DateTime format?
+                new NetSerializerSer(),
+                new NfxJsonSerializer(),
+                new NfxSlimSerializer(),
+                new ProtoBufSerializer(),
+                new SharpSerializer(), // TODO: DateTime format?
+                new ServiceStackJsonSerializer(), // TODO: DateTime format?
+                new ServiceStackTypeSerializer(), // TODO: DateTime format?
+                new SalarBoisSerializer(),
                 new WireSerializer()
             };
 

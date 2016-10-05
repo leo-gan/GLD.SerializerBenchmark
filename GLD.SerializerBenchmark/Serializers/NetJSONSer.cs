@@ -30,13 +30,13 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             var sw = new StreamWriter(outputStream);
             NetJSON.NetJSON.Serialize(serializable, sw);
-            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            inputStream.Seek(0, SeekOrigin.Begin);
+            //inputStream.Seek(0, SeekOrigin.Begin);
             var sr = new StreamReader(inputStream);
+            inputStream.Seek(0, SeekOrigin.Begin);
             return NetJSON.NetJSON.Deserialize(_primaryType, sr.ReadToEnd());
         }
 

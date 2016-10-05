@@ -4,17 +4,24 @@
 // 
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization.Json;
 using Salar.Bois;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
     internal class SalarBoisSerializer : SerDeser
     {
-        private static readonly BoisSerializer _serializer = new BoisSerializer();
+        private readonly BoisSerializer _serializer = new BoisSerializer();
 
         #region ISerDeser Members
-
+      private void Initialize()
+        {
+            if (!JustInitialized) return;
+            _serializer.Initialize(_primaryType);
+            JustInitialized = false;
+        }
         public override string Name
         {
             get { return "Salar.Bois"; }
@@ -26,7 +33,7 @@ namespace GLD.SerializerBenchmark.Serializers
             {
                 _serializer.Serialize(serializable, ms);
                 ms.Flush();
-                ms.Position = 0;
+                //ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
             }
         }
@@ -36,7 +43,7 @@ namespace GLD.SerializerBenchmark.Serializers
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
-                stream.Seek(0, SeekOrigin.Begin);
+                //stream.Seek(0, SeekOrigin.Begin);
                 return _serializer.Deserialize<object>(stream);
             }
         }
