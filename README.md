@@ -15,17 +15,19 @@ Please, do not take these measurements too seriously. I have some numbers, but t
 Most of serializers installed with NuGet package. Look to the “packages.config” file to get a name of the package. I have included comments in the code about it.
 
 ## Tests ##
-The test data created by Randomizer. It fills in fields of the Person object with randomly generated data. This object used for one test cycle with all serializers, then it is regenerated for the next cycle.
+Different test data kinds placed in the TestData folder. The results heavily depend on the kind of the test data for all serializers! I've tried to cover the most popular data kinds including the heavy EDI documents. This part is opinionated :) 
 
-If you want to test serializers for different object size or for different primitive types, change the Person object.
+The test data created by Randomizer. It fills in fields of the test object with randomly generated data. This object used for one test cycle with all serializers, then it is regenerated for the next cycle.
 
-The measured time is for the combined serialization and deserialization operations of the same object. When serializer called the first time, it runs the longest time. This longest time span is also important and it is measured. It is the **Max time**. If we need only single serialization/deserialization, this is the most significant value for us. If we repeat serialization / deserialization many times, the most significant values for us are Average time and **Min time**.
+If you want to test serializers for different data with different structure, size, or primitive types, add your test class.
+
+The time is measured for the serialization and deserialization operations and for the combined time on the same object. When serializer called the first time, it usually runs the longest time. This longest time span is also important and it is measured. It is the **Max time**. If we need only a single serialization/deserialization operation, this is the most significant value for us. If we repeat serialization/deserialization many times, the most significant values for us are the **Average time** and **Min time**.
 
 For the **Average time** I calculated two values: 
 - For the Average **100%** all measured times are used.  
 - For the Average **90%** the 10% slowest results ignored. 
 
-Some serializers serialize to strings, others – just to the byte array. I used base64 format to convert byte arrays to strings. I know, it is not fair, because we mostly use a byte array after serialization, not a string. UTF-8 also could be more compact format.
+Some serializers serialize to strings, others – just to the byte array. I used base64 format to convert byte arrays to strings. I know, it is not fair, because we can use a byte array after serialization, not a string, which is much faster. UTF-8 also could be the more compact format in some cases.
 
 ## Test Results ##
 Again, do not take test results too seriously. I have some numbers, but this project is not the right place to get conclusions about serializer performance. You'd rather take this code and run it on your specific data in your specific workflows.
