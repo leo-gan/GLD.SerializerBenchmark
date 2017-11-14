@@ -1,4 +1,3 @@
-**Please, use this new, more powerfull benchmarks [Serbench](https://github.com/aumcode/serbench) with more coverage of different data types, with different test cases, and with usefull reports and data outputs.**  
 Any distributed system requires serializing to transfer data through the wires. The serializers used to be hidden in adapters and proxies, where developers did not deal with the serialization process explicitly. The WCF serialization is an example, when all we need to know is where to place the **[Serializable]** attributes. Contemporary tendencies bring serializers to the surface. In Windows .NET development it probably have started when James Newton-King created the **Json.Net** serializer and even Microsoft officially declared it the recommended serializer for .NET.
 
 There are many kinds of serializers; they produce very compact data very fast. There are serializers for messaging, for data stores, for marshaling objects. 
