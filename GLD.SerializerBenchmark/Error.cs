@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+
 
 namespace GLD.SerializerBenchmark
 {
@@ -55,5 +57,31 @@ namespace GLD.SerializerBenchmark
                         er.StringOrStream == stringOrStream);
             return error != null ? error.ErrorText : null;
         }
+
+        public static void SaveErrors(List<Error> errors, string fileName)
+        {
+            if (File.Exists(fileName))
+                File.Move(fileName, Error.GetArchiveFileName(fileName));
+
+            var fileStreamWriter = File.CreateText(fileName);
+            var header = string.Join("\t", new[] {"SerializerName","StringOrStream","ErrorText" });
+            fileStreamWriter.WriteLine(header);
+            foreach (var er in errors)
+                fileStreamWriter.WriteLine(string.Join("\t", new[] { er.SerializerName, er.StringOrStream, er.ErrorText }));
+            fileStreamWriter.Close();
+        }
+
+        private static string GetArchiveFileName(string fileFullName)
+        {
+            if (!File.Exists(fileFullName)) return fileFullName + ".Archived.tsv";
+            var fileName = Path.GetFileNameWithoutExtension(fileFullName);
+            var fileExtension = Path.GetExtension(fileFullName);
+            var fileCreationDate = File.GetLastWriteTime(fileFullName);
+            var fileCreationDateTimeString = string.Format(".{0}-{1}-{2}_{3}{4}{5}.", fileCreationDate.Year,
+                fileCreationDate.Month, fileCreationDate.Day,
+                fileCreationDate.Hour, fileCreationDate.Minute, fileCreationDate.Second);
+            return fileName + fileCreationDateTimeString + fileExtension;
+        }
+
     }
 }

@@ -15,20 +15,20 @@ namespace GLD.SerializerBenchmark
                 new PersonDescription(),
                 new IntDescription(),
                 new StringArrayDescription(),
-                //new SimpleObjectDescription(),
+                new SimpleObjectDescription(),
                 //new TelemetryDescription(),
                 //new EDI_X12_835Description(),
                 //new TestData.NoAtributes.EDI_X12_835Description(),
-                ////new ObjectGraphDescription(), // TODO: Exception. Investigate.
+                //new ObjectGraphDescription(), // TODO: Exception. Investigate.
                 //new MsgBatchingDescription()
             };
             var serializers = new List<ISerDeser>
             {
                 // new AvroSerializer(),  //TODO: For some reason it is impossible to pass generic T type to serializer. 
                 new BinarySerializer(),
-                //new BondCompactSerializer(), // TODO: works only for Person
-                //new BondFastSerializer(), // TODO: works only for Person
-                //new BondJsonSerializer(), // TODO: works only for Person
+                new BondCompactSerializer(), // TODO: works only for Person
+                new BondFastSerializer(), // TODO: works only for Person
+                new BondJsonSerializer(), // TODO: works only for Person
                 new DataContractSerializerSerializer(),
                 new DataContractJsonSer(),
                 new JavaScriptSerializer(), // TODO: DateTime format?
