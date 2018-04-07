@@ -7,6 +7,18 @@ namespace GLD.SerializerBenchmark
 {
     internal class Tester
     {
+        /// <summary>
+        /// It loops on testDataDescriptions (different data types),
+        ///     Then, for each testDataDescriptions, it loops on serializers.
+        ///         Then it repeats on a stream and on a byte64 string
+        ///              Then it loops on the repetition counter.
+        ///  The results of the test are written to the log. 
+        ///  The log is outputed by the Report class. But the log should be processed by 
+        ///  one of the Analyzing tool, like Excel, PowerBI, or a separate app.
+        /// </summary>
+        /// <param name="serializers">Collection of the serializers</param>
+        /// <param name="testDataDescriptions">Collection of the data type instances</param>
+        /// <param name="repetitions">Number of repetitions on the lowest level.</param>
         public static void Tests(List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions,
             int repetitions)
         {
@@ -18,6 +30,7 @@ namespace GLD.SerializerBenchmark
                 TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
 
             Report.AllResults(repetitions, logStorage, errors);
+            Error.SaveErrors(errors, "SerializerBenchmark_Errors.tsv"); // the error text could hold commas, so we use tab-separated file (.tsv)
         }
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,
@@ -61,9 +74,8 @@ namespace GLD.SerializerBenchmark
             foreach (var serializer in serializers)
             {
                 if (wasError.ContainsKey(serializer.Name)) continue;
-                var isRepeatedError = false;
                 SingleTest(serializer, original, errors, streaming, log,
-                    logStorage, out isRepeatedError);
+                    logStorage, out bool isRepeatedError);
                 if (isRepeatedError) wasError[serializer.Name] = true;
             }
 

@@ -21,6 +21,7 @@ namespace GLD.SerializerBenchmark
 
         public abstract string Serialize(object serializable);
         public abstract object Deserialize(string serialized);
+
         public abstract void Serialize(object serializable, Stream outputStream);
         public abstract object Deserialize(Stream inputStream);
     }

@@ -35,6 +35,7 @@ namespace GLD.SerializerBenchmark
                         //OpPerSecSerAndDeserMax = g.Max(kg => kg.OpPerSecSerAndDeser),
                         SizeAver = (int) g.Average(kg => kg.Size)
                     });
+
             Aggregated(aggregatedResults, errors);
         }
 

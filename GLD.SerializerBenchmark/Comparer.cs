@@ -8,9 +8,10 @@ namespace GLD.SerializerBenchmark
     public class Comparer
     {
         /// <summary>
-        ///     It compares two objects only by number of object elements. It is enough to catch errors in
+        ///     It compares two objects  by number of object elements. It is enough to catch errors in
         ///     serialization+deserialization chain.
         ///     It works with objects of different type.
+        ///     Also the comparisation failed if the serialized object is too small.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="target"></param>
@@ -24,7 +25,7 @@ namespace GLD.SerializerBenchmark
             var targetElements = (Travers(target));
             var isComparisonFailed = ElementCount(sourceElements) != ElementCount(targetElements);
             errorText = (isComparisonFailed)
-                ? string.Format("Element numbers of source and target test objects are not equal: [{0}] != [{1}]",
+                ? string.Format("Comparison Error: Element numbers of source and target test objects are not equal: [{0}] != [{1}]",
                     ElementCount(sourceElements), ElementCount(targetElements))
                 : null;
             var isSizeInvalid = false;
@@ -52,7 +53,7 @@ namespace GLD.SerializerBenchmark
         {
             if (log.Size < 3)
             {
-                errorText = string.Format("Seems serialization failed. Serialized object size = {0} is too small.",
+                errorText = string.Format("Validation Error: Seems serialization failed. Serialized object size = {0} is too small.",
                     log.Size);
                 return true;
             }
@@ -68,8 +69,8 @@ namespace GLD.SerializerBenchmark
         }
 
         /// <summary>
-        ///     It compound names of members of object, including properties, arrays. It travers down the object tree and
-        ///     gathers names of all properties, fields with some exclusions.
+        ///     It compounds names of members of object, including properties, arrays. It travers down the object tree and
+        ///     gathers names of all properties and fields with some exclusions.
         /// </summary>
         /// <param name="o"></param>
         /// <param name="name"></param>
