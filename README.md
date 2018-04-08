@@ -6,7 +6,7 @@ There are many kinds of serializers; they produce very compact data and produce 
 
 What is the best serializer in .NET?
 
-Sorry, this project is not about the best serializer. Here I gather the code which shows in several lines of code, how to use different .NET serializers. Just copy-past code in your project. That is the goal. I want to use serializer in the simplest way but it is good to know if this way would really hit your code performance. That is why I added some measurements, as the byproduct.
+Sorry, this project is not about the best serializer. Here I gathered the code which shows in several lines, how to use different .NET serializers. Just copy-past code in your project. That is the goal. I want to use serializer in the simplest way but it is good to know if this way would really hit your code performance. That is why I added some measurements, as the byproduct.
 
 Please, do not take these measurements too seriously. I have some numbers, but this project is not the right place to get decisions about serializer performance. It uses serializers just in the simples way. It does not use the specific methods in some serializers to get the better speed or size.
 
