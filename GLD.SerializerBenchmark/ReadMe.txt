@@ -18,7 +18,5 @@ Notes:
 •	The first call to serializer initializes the serializer that is why it might take thousand times faster to the next calls.
 •	For Avro I did not find a fast serializable method but its serialized string size is good. 
 •	Json and Binary formats bring not too much difference in the serialized string size.
-•	 Many serializers do not work well with Json DateTime format out-of-box. 
-•	The new Microsoft Bond serializer does not play well in this project. This puzzle is in my list 
+•	Many serializers do not work well with Json DateTime format out-of-box. 
 •	The core .NET serializers from Microsoft: XmlSerializer, BinarySerializer, DataContractSerializer are not bad. They show good speed but they not so good for the serialized string size.
-•	Test run outputs the errors and the test results on the console. It also traces the serialized strings and the individual test times, which can be seen in DebugView for example. 
