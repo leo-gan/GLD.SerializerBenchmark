@@ -216,9 +216,11 @@
     <None Include="Analysis.xlsx" />
     <None Include="App.config" />
     <None Include="Bond\Person.bond" />
+    <None Include="Docs\ResultExplanations.md" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Docs\TestResults.txt" />
     <Content Include="ReadMe.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
