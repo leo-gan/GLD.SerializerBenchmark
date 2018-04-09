@@ -8,10 +8,7 @@ namespace GLD.SerializerBenchmark
     internal class Tester
     {
         /// <summary>
-        /// It loops on testDataDescriptions (different data types),
-        ///     Then, for each testDataDescriptions, it loops on serializers.
-        ///         Then it repeats on a stream and on a byte64 string
-        ///              Then it loops on the repetition counter.
+        /// The tests executed in loops in this hierarchy: DataKinds => sting/Stream => Serializers => repetitions
         ///  The results of the test are written to the log. 
         ///  The log is outputed by the Report class. The log should be processed by 
         ///  one of the Analyzing tool, like Excel, PowerBI, or a separate app.

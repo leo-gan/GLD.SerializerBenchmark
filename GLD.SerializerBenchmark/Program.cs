@@ -17,10 +17,10 @@ namespace GLD.SerializerBenchmark
                 new StringArrayDescription(),
                 new SimpleObjectDescription(),
                 new TelemetryDescription(),
-                //new EDI_X12_835Description(),
-                //new TestData.NoAtributes.EDI_X12_835Description(),
+                new EDI_X12_835Description(),
+                new TestData.NoAtributes.EDI_X12_835Description(),
                 //new ObjectGraphDescription(), // TODO: Exception. Investigate.
-                //new MsgBatchingDescription()
+                new MsgBatchingDescription()
             };
             var serializers = new List<ISerDeser>
             {
