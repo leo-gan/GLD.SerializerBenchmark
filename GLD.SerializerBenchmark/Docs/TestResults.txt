@@ -1,0 +1,246 @@
+Tests performed 100 times for each TestData + Serializer pair
+################################################################################
+
+Test Data: Person
+Serializer:               Ops/sec Avg:  Ser      Deser   Ser+Deser  Size: Avg
+===============================================================================
+NetSerializer         Stream        374,194    401,201    192,186        617
+MessageShark          Stream        335,958    426,573    186,899        612
+MS Bond Fast          string        388,683    274,907    159,877      1,056
+MS Bond Fast          Stream        311,629    305,770    152,275        790
+MS Bond Compact       string        324,850    261,182    143,305        852
+MessageShark          string        301,311    264,029    140,109        816
+NetSerializer         string        312,798    254,145    139,692        824
+MS Bond Compact       Stream        256,547    293,183    134,510        638
+NetJSON               string        317,450    210,867    125,854      1,140
+ProtoBuf              Stream        304,805    188,557    115,662        657
+WireSerializer        Stream        193,820    221,708    102,948      1,140
+ProtoBuf              string        270,192    156,469     98,569        876
+Jil                   string        147,871    201,797     84,732      1,159
+Jil                   Stream        149,692    167,099     78,357      1,159
+MS Bond Json          string        194,278    128,470     76,673      1,130
+WireSerializer        string        168,155    139,162     75,603      1,520
+MS Bond Json          Stream        188,394    124,601     74,624      1,130
+MsgPack               Stream        211,280    103,064     68,847        597
+MsgPack               string        194,992     94,559     63,373        796
+Json.Net              string        144,373    112,632     63,249      1,164
+Json.Net              Stream        132,617    107,471     59,309      1,164
+HaveBoxJSON           string        166,140     80,370     54,031      1,167
+ServiceStack Type     string        127,813     88,862     52,116      1,016
+HaveBoxJSON           Stream        144,449     78,019     50,460      1,167
+ServiceStack Type     Stream        121,013     84,511     49,496      1,016
+ServiceStack Json     string        121,513     79,532     47,695      1,159
+Json.Net (Helper)     string        104,442     85,967     47,002      1,164
+MS DataContract       Stream        133,539     72,540     46,820      2,144
+FsPickler             string         84,287    105,238     46,638      1,180
+Json.Net (Helper)     Stream         97,105     80,469     43,901      1,164
+ServiceStack Json     Stream        103,887     75,921     43,715      1,159
+MS DataContract       string        112,796     55,160     36,877      2,860
+fastJson              string         89,781     59,496     35,599      1,817
+MS DataContract Json  Stream        117,146     48,981     34,403      1,154
+FsPicklerJson         string         72,391     63,783     33,846      1,944
+MS XmlSerializer      string         89,656     53,071     33,223      2,763
+fastJson              Stream         81,213     56,229     33,022      1,817
+MS XmlSerializer      Stream         85,815     50,125     31,525      2,745
+MS DataContract Json  string        103,982     44,285     30,840      1,540
+MS Binary             Stream         51,199     57,861     26,970      1,872
+MS Binary             string         51,069     48,683     24,833      2,496
+NFX.Slim              Stream         13,199    108,822     11,766        857
+NFX.Slim              string         12,846     87,692     11,195      1,144
+MS JavaScript         string         13,643     31,301      9,476      1,154
+MS JavaScript         Stream         13,598     30,684      9,401      1,154
+JsonFx                Stream         52,396      1,017        997      1,160
+JsonFx                string         53,701      1,009        989      1,160
+
+
+Test Data: Integer
+Serializer:               Ops/sec Avg:  Ser      Deser   Ser+Deser  Size: Avg
+===============================================================================
+NetSerializer         Stream      3,883,959  7,611,333  2,466,021          6
+MS Bond Fast          string      3,770,603  7,502,590  2,344,655          4
+Json.Net              string      3,538,720  3,945,406  1,813,005         10
+NetSerializer         string      2,857,052  4,427,609  1,689,485          8
+ServiceStack Type     string      4,942,039  2,271,734  1,512,061         10
+WireSerializer        string      2,232,130  3,846,954  1,361,814          8
+NetJSON               string      2,229,134  2,533,249  1,154,782         10
+WireSerializer        Stream      1,498,219  6,060,088  1,123,851          5
+fastJson              string      2,297,111  2,327,250  1,115,927         10
+Salar.Bois            string      2,110,952  2,406,669  1,096,285          4
+ServiceStack Json     string      2,003,129  1,997,327    976,476         10
+MsgPack               string      2,016,432  1,633,282    876,814          8
+Json.Net              Stream      1,230,557  2,538,159    776,553         10
+ServiceStack Type     Stream      1,474,230  1,767,937    742,469         10
+MS Bond Compact       string        842,385  6,167,373    713,695          4
+MsgPack               Stream      1,164,574  2,063,342    699,638          5
+MS JavaScript         string      2,547,703    774,738    576,737         10
+Jil                   string        742,668  1,947,991    529,629         10
+ServiceStack Json     Stream        814,156  1,149,524    452,724         10
+fastJson              Stream        823,184    948,555    422,542         10
+JsonFx                string      1,040,544    638,622    389,311         10
+Jil                   Stream        718,167    820,341    361,428         10
+Json.Net (Helper)     string        958,365    514,780    326,807         10
+MS JavaScript         Stream        659,561    659,724    314,173         10
+MS DataContract Json  string        739,490    468,494    280,977         16
+JsonFx                Stream        568,441    565,186    275,437         10
+MS DataContract Json  Stream        726,650    465,695    259,225         10
+Json.Net (Helper)     Stream        515,611    466,926    238,571         10
+MS DataContract       Stream        650,846    366,385    224,259         81
+MS DataContract       string        601,502    319,654    205,230        108
+NFX.Json              string      1,166,883    228,048    183,478         10
+MS XmlSerializer      Stream        334,204    291,214    152,664         44
+ProtoBuf              string        191,786    846,412    151,003          8
+ProtoBuf              Stream        172,704  1,204,229    150,209          6
+SharpSerializer       Stream        934,441    180,946    149,989        103
+MS Binary             string        269,827    323,082    144,780         72
+SharpSerializer       string        870,995    173,808    143,760        140
+MS XmlSerializer      string        396,378    207,338    132,440         62
+FsPickler             string        204,709    350,012    126,204        140
+MS Binary             Stream        235,839    314,606    124,990         54
+FsPicklerJson         string        213,858    219,638    106,562        340
+NFX.Slim              string         15,132    287,013     14,357         24
+NFX.Slim              Stream         14,766    290,592     14,027         17
+
+
+
+Test Data: String Array
+Serializer:               Ops/sec Avg:  Ser      Deser   Ser+Deser  Size: Avg
+===============================================================================
+ServiceStack Type     string        700,860    712,397    346,995        134
+NetJSON               string        592,377    826,255    340,658        175
+NetSerializer         Stream        472,137    993,343    317,110        156
+WireSerializer        Stream        408,210    949,647    283,988        139
+ServiceStack Type     Stream        592,392    546,567    278,223        135
+fastJson              string        426,789    832,623    270,875        175
+ServiceStack Json     string        514,060    541,315    260,114        175
+NetSerializer         string        419,788    645,152    250,800        210
+WireSerializer        string        364,819    681,832    234,839        187
+Json.Net              string        447,906    504,175    232,923        173
+MsgPack               Stream        404,991    524,967    225,452        137
+fastJson              Stream        339,665    635,306    217,854        174
+Jil                   string        320,493    723,062    217,440        174
+Json.Net              Stream        377,960    450,934    203,389        175
+MsgPack               string        360,753    443,650    196,054        185
+Jil                   Stream        321,112    496,659    189,930        174
+ServiceStack Json     Stream        385,223    360,294    182,840        175
+MS JavaScript         string        358,253    317,481    166,387        173
+Json.Net (Helper)     string        243,511    313,966    135,280        175
+MS JavaScript         Stream        265,942    249,758    127,634        174
+HaveBoxJSON           string        424,889    164,375    117,336        174
+MS DataContract Json  Stream        297,792    184,580    112,761        173
+Json.Net (Helper)     Stream        206,480    249,059    112,083        175
+HaveBoxJSON           Stream        351,413    148,847    103,455        176
+MS DataContract Json  string        255,999    169,267    100,719        234
+MS DataContract       Stream        231,121    170,245     97,172        604
+MS Binary             Stream        148,873    280,018     95,780        257
+MS Binary             string        143,567    222,202     86,103        343
+MS DataContract       string        221,686    131,532     81,974        806
+FsPickler             string        136,430    181,469     77,077        369
+FsPicklerJson         string        138,898    155,652     73,030        604
+MS XmlSerializer      string        152,606     99,345     59,764        706
+MS XmlSerializer      Stream        154,151     97,694     59,436        688
+ProtoBuf              Stream         58,937     59,668     29,526        153
+ProtoBuf              string         59,199     58,805     29,405        208
+NFX.Slim              Stream         14,563    243,560     13,726        168
+NFX.Slim              string         14,580    211,970     13,627        225
+JsonFx                string        214,970      1,356      1,347        173
+JsonFx                Stream        200,572      1,336      1,327        174
+
+
+
+Test Data: Simple Object
+Serializer:               Ops/sec Avg:  Ser      Deser   Ser+Deser  Size: Avg
+===============================================================================
+NetSerializer         Stream        888,540  1,116,754    489,110        112
+MS Bond Fast          string        979,526    918,654    462,500        192
+WireSerializer        Stream        978,090    890,642    456,111        207
+WireSerializer        string        795,906    610,021    338,877        276
+NetSerializer         string        788,134    533,398    309,154        152
+ProtoBuf              Stream        603,914    584,086    291,017        123
+MS Bond Compact       string        461,167    730,541    275,705        164
+ProtoBuf              string        575,034    501,500    265,128        164
+NetJSON               string        436,883    421,919    211,814        282
+MsgPack               Stream        442,007    367,709    199,207        112
+Json.Net              Stream        448,257    357,966    198,180        290
+Json.Net              string        488,036    323,687    192,722        290
+Jil                   string        348,691    370,457    177,023        278
+MsgPack               string        418,826    309,126    176,048        152
+Jil                   Stream        349,208    309,892    161,826        278
+MS Bond Fast          Stream        340,450    299,859    155,026        143
+MS Bond Json          Stream        310,143    268,904    142,318        275
+MS Bond Json          string        362,627    237,868    141,131        275
+ServiceStack Type     string        288,679    242,500    130,341        264
+SharpSerializer       Stream        524,667    163,446    123,621        134
+ServiceStack Type     Stream        273,718    196,445    112,944        264
+SharpSerializer       string        522,050    145,151    112,089        180
+Json.Net (Helper)     string        222,443    206,481    105,824        290
+ServiceStack Json     string        238,915    190,309    104,345        283
+MS Bond Compact       Stream        209,157    215,381    103,269        121
+Json.Net (Helper)     Stream        224,209    184,298    100,360        290
+fastJson              string        214,292    182,381     97,327        429
+ServiceStack Json     Stream        222,209    171,578     95,974        283
+MS DataContract       Stream        217,065    142,120     84,937        542
+FsPickler             string        132,736    215,298     81,392        352
+fastJson              Stream        218,071    129,658     80,445        429
+MS DataContract Json  Stream        215,344    128,661     79,577        285
+MS DataContract Json  string        208,337    116,486     73,376        380
+MS Binary             Stream        122,673    169,247     69,911        400
+MS DataContract       string        211,057    103,509     68,763        724
+MS XmlSerializer      Stream        153,369    121,276     66,886        569
+MS Binary             string        126,258    144,062     66,685        536
+MS XmlSerializer      string        143,057    114,363     62,698        587
+FsPicklerJson         string        137,041    110,125     60,383        756
+MS JavaScript         string         60,462     52,751     28,026        280
+MS JavaScript         Stream         57,991     53,072     27,602        280
+NFX.Slim              Stream         15,594    269,938     14,704        121
+NFX.Slim              string         14,793    222,305     13,839        164
+JsonFx                string        143,391      6,816      6,490        281
+JsonFx                Stream        150,068      6,780      6,469        281
+
+
+
+Test Data: Telemetry
+Serializer:               Ops/sec Avg:  Ser      Deser   Ser+Deser  Size: Avg
+===============================================================================
+MS Bond Fast          Stream        470,040    437,765    221,062        937
+NetSerializer         Stream        369,100    434,707    197,278      1,004
+ProtoBuf              Stream        394,807    355,050    184,929      1,009
+MS Bond Fast          string        528,815    272,919    177,433      1,252
+MS Bond Compact       Stream        274,819    352,661    150,282        915
+WireSerializer        Stream        276,661    321,318    147,127      1,007
+MS Bond Compact       string        327,510    251,898    141,041      1,220
+NetSerializer         string        298,989    200,085    118,595      1,340
+ProtoBuf              string        332,357    185,609    117,740      1,348
+MsgPack               Stream        251,331    184,690    105,066      1,006
+WireSerializer        string        241,367    170,645     99,194      1,344
+MsgPack               string        220,725    130,467     81,188      1,344
+FsPickler             string        111,451    133,677     60,213      1,420
+NetJSON               string        113,532    110,308     55,749      2,063
+MS Binary             Stream         81,381    115,614     46,861      1,210
+MS Binary             string         89,036     98,395     46,120      1,616
+Jil                   string        100,399     81,729     44,726      2,059
+Jil                   Stream         87,578     70,384     38,864      2,059
+ServiceStack Type     string         66,868     67,843     33,488      2,045
+fastJson              string         70,379     60,792     32,481      2,212
+ServiceStack Json     string         66,340     63,445     32,237      2,064
+MS Bond Json          string         67,153     62,243     32,103      2,244
+MS Bond Json          Stream         66,492     60,102     31,402      2,244
+Json.Net              string         58,436     67,586     31,169      2,259
+ServiceStack Type     Stream         64,849     59,184     30,805      2,045
+ServiceStack Json     Stream         61,913     58,389     29,959      2,064
+fastJson              Stream         62,556     56,028     29,476      2,212
+Json.Net              Stream         53,837     63,597     29,027      2,259
+Json.Net (Helper)     string         49,864     56,449     26,391      2,259
+Json.Net (Helper)     Stream         45,903     51,559     24,182      2,259
+MS DataContract       Stream         52,446     37,976     21,898      4,583
+MS XmlSerializer      string         43,510     42,774     21,420      4,764
+MS DataContract Json  Stream         49,865     37,781     21,377      2,254
+FsPicklerJson         string         45,393     40,265     21,194      3,384
+MS XmlSerializer      Stream         41,311     39,294     20,062      4,746
+MS DataContract Json  string         47,712     33,997     19,784      3,008
+MS DataContract       string         46,674     28,977     17,737      6,112
+NFX.Slim              Stream         14,360    193,548     13,342      1,012
+NFX.Slim              string         14,292    122,785     12,748      1,352
+MS JavaScript         string         32,792      6,559      5,451      2,249
+MS JavaScript         Stream         30,236      6,411      5,267      2,249
+JsonFx                string         37,902      5,681      4,925      2,250
+JsonFx                Stream         12,905      5,358      3,749      2,250
