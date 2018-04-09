@@ -5,7 +5,7 @@
 - The speed is measured in the **Ops/sec** [operations in a second].
 
 # Test Execution
-- The tests executed in loops in this hierarchy: **DataKinds => sting/Stream => Serializers => repetitions**
+- The tests executed in loops in this hierarchy: **DataKinds => sting/Stream => repetitions => Serializers**
 - The result of **the first repetition** is not included in the reports. This first repetition usually is much slower due the object initialization.
 - The test data (of DataKind type) is initialized before each repetition loop.
 - The test data generated randomly but we are trying to generate it with similarity to the real data.

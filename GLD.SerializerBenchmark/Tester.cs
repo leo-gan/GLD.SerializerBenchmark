@@ -8,7 +8,7 @@ namespace GLD.SerializerBenchmark
     internal class Tester
     {
         /// <summary>
-        /// The tests executed in loops in this hierarchy: DataKinds => sting/Stream => Serializers => repetitions
+        /// The tests executed in loops in this hierarchy: DataKinds => sting/Stream => repetitions => Serializers
         ///  The results of the test are written to the log. 
         ///  The log is outputed by the Report class. The log should be processed by 
         ///  one of the Analyzing tool, like Excel, PowerBI, or a separate app.
