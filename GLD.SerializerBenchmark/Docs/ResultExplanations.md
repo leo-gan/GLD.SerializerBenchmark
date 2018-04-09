@@ -12,3 +12,4 @@
 
 # Test Result Discussions
 - Despite the popular belif that string serialization is much slower than the stream serialization [in my case it is because of the base64 conversion for strings], the reality is a little bit different. It is havily depend on the serializer implementation. Just check the test reports.
+- If you think that some serializer shows the unfair results, please, check the code for operations of this serializer in the Serializers folder. Any help with improving this code is highly appretiated.
