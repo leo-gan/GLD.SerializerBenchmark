@@ -13,7 +13,7 @@ namespace GLD.SerializerBenchmark
         ///         Then it repeats on a stream and on a byte64 string
         ///              Then it loops on the repetition counter.
         ///  The results of the test are written to the log. 
-        ///  The log is outputed by the Report class. But the log should be processed by 
+        ///  The log is outputed by the Report class. The log should be processed by 
         ///  one of the Analyzing tool, like Excel, PowerBI, or a separate app.
         /// </summary>
         /// <param name="serializers">Collection of the serializers</param>
