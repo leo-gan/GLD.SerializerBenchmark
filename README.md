@@ -4,7 +4,7 @@ Any distributed system requires serializing to transfer data through the wires o
 
 [Analysis of the Tests is here.]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Analysis.ipynb)
 
-You can find here more details about [testing process]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/ResultExplanations.md) and [the test results]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/TestResults.txt)
+You can find here more details about [the Testing Process]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/ResultExplanations.md) and [the Test Reports]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/TestResults.txt)
 
 There are many kinds of serializers; they produce very compact data and produce it very fast. There are serializers for messaging, for data stores, for marshaling objects. 
 

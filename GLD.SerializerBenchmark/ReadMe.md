@@ -3,7 +3,7 @@ First of all, this project is not about the best serializer. The goal of this pr
 Please, do not take measurements too seriously. I have some numbers, but this project is not the right place to get decisions about serializer performance. If you think, some serializer does not used in the proper way, please, feel free to modify code.
 
 [Test Result Analysis is here]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Analysis.ipynb) 
-You can find mode details about [testing process]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/ResultExplanations.md) and [the testing results]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/TestResults.txt)
+You can find mode details about [Testing Process]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/ResultExplanations.md) and [the Testing Reports]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/TestResults.txt)
 
 
 ## Installation
