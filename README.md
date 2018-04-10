@@ -2,6 +2,9 @@ Any distributed system requires serializing to transfer data through the wires. 
 
 **More than 20 .NET serializers tested here.** If the serializer can use several serializing formats (like the Json and th binary formats), I've tested all of them.
 
+[Test Result Analysis is here]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Analysis.ipynb) 
+You can find mode details about [testing process]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/ResultExplanations.md) and [the testing results]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/TestResults.txt)
+
 There are many kinds of serializers; they produce very compact data and produce it very fast. There are serializers for messaging, for data stores, for marshaling objects. 
 
 What is the best serializer in .NET?
