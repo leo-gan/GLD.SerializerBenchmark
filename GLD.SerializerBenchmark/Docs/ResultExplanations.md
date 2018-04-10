@@ -1,7 +1,7 @@
 # Test Reports
 
 - All serializers are tested in two modes: **string** and **Stream**.
-- Reports sorted by **'Ser+Deser'** column which shows the compoundet time of the serialization and deserialization steps.
+- Reports sorted by **'Ser+Deser'** column which shows the summary time of the serialization and deserialization steps.
 - The speed is measured in the **Ops/sec** [operations in a second].
 
 # Test Execution
