@@ -23,9 +23,9 @@ Luckily, some serializers do not require these serialization attributes. I inclu
 ### Data Types
 Now we have a diversity of the data.
 -	Primitive Types:
-- **Integer**
-- **Array of strings**
-- **Telemetry** Data. It is plain object with several fields with primitive types, mostly numbers. **Note:** Many Json serializers cannot properly work with DateTime type!
+  - **Integer**
+  - **Array of strings**
+  - **Telemetry** Data. It is plain object with several fields with primitive types, mostly numbers. **Note:** Many Json serializers cannot properly work with DateTime type!
 - **Person** and **SimpleObject** types. They are the typical small objects with shallow nesting. If the serializer cannot work even with such simple data, do not use it!
 - **EDI_X12_835** type. It is the EDI message with hundreds nested objects and fields and the deep object nesting. 
 - **EDI_X12_835_NoAttributes** type. A copy of the EDI_X12_835 but without the serialization attributes.
