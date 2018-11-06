@@ -2,7 +2,7 @@ Any distributed system requires serializing to transfer data through the wires o
 
 **More than 20 .NET serializers tested here.** If the serializer can use several serializing formats (like the Json and th binary formats), I've tested all of them.
 
-[Analysis of the Tests is here.]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Analysis.ipynb)
+[Analysis of the Results is here.]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Analysis.ipynb)
 
 You can find here more details about [the Testing Process]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/ResultExplanations.md) and [the Test Reports]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/TestResults.txt)
 
