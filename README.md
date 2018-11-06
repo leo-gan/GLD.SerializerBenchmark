@@ -1,6 +1,6 @@
 Any distributed system requires serializing to transfer data through the wires or to save data on the data store. The serializers used to be hidden in adapters and proxies, where developers did not deal with the serialization process explicitly. The WCF serialization is an example, when all we need to know is where to place the **[Serializable]** attributes. Contemporary tendencies bring serializers to the surface. In Windows .NET development the explicit serialization probably has started when James Newton-King created the **Json.Net** serializer and Microsoft officially declared it the recommended serializer for .NET.
 
-**More than 20 .NET serializers tested here.** If the serializer can use several serializing formats (like the Json and th binary formats), I've tested all of them.
+**More than 20 .NET serializers tested here.** If the serializer can use several serializing formats (like the Json and the binary formats), I've tested all of them.
 
 [Analysis of the Results is here.]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Analysis.ipynb)
 
@@ -8,7 +8,7 @@ You can find here more details about [the Testing Process]( https://github.com/l
 
 There are many kinds of serializers; they produce very compact data and produce it very fast. There are serializers for messaging, for data stores, for marshaling objects. 
 
-What is the best serializer in .NET?
+**What is the best serializer in .NET?**
 
 Sorry, this project is not about the best serializer. Here I gathered the code which shows in several lines, how to use different .NET serializers. Just copy-past code in your project. That is the goal. I want to use serializer in the simplest way but it is good to know if this way would really hit your code performance. That is why I added some measurements, as the byproduct.
 
