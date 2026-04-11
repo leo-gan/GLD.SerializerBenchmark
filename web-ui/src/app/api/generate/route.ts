@@ -76,8 +76,9 @@ Requirements:
     const code = lines.join('\n').trim();
 
     return NextResponse.json({ code, className });
-  } catch (error: any) {
-    console.error('Error generating wrapper:', error);
+  } catch (err: unknown) {
+    console.error('Error generating wrapper:', err);
+    const error = err as Error;
     return NextResponse.json({ error: error.message || 'Failed to generate code' }, { status: 500 });
   }
 }
