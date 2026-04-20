@@ -1,15 +1,23 @@
-# Test Reports
+# Understanding the Test Reports
 
-- All serializers are tested in two modes: **string** and **Stream**.
-- Reports sorted by **'Ser+Deser'** column which shows the summary time of the serialization and deserialization steps.
-- The speed is measured in the **Ops/sec** [operations in a second].
+### Measurement Modes
+- Each serializer is benchmarked in two distinct modes: **String** and **Stream**.
+- **Reports** are primarily sorted by the **'Ser+Deser'** column, reflecting the total time for a complete serialization-deserialization cycle.
+- **Speed** is expressed in **Ops/sec** (Operations per second), providing a clear relative performance metric.
 
-# Test Execution
-- The tests executed in loops in this hierarchy: **DataKinds => sting/Stream => repetitions => Serializers**
-- The result of **the first repetition** is not included in the reports. This first repetition usually is much slower due the object initialization.
-- The test data (of DataKind type) is initialized before each repetition loop.
-- The test data generated randomly but we are trying to generate it with similarity to the real data.
+---
 
-# Test Result Discussions
-- Despite the popular belief that string serialization is much slower than the stream serialization [in my case it is because of the base64 conversion for strings], the reality is a little bit different. It is heavily depending on the serializer implementation. Just check the test reports.
-- If you think that some serializer shows the unfair results, please, check the code for operations of this serializer in the Serializers folder. Any help with improving this code is highly appreciated.
+### Test Execution Workflow
+The benchmarking process follows a hierarchical loop structure:
+1. **Data Kinds**: Different complex objects (Person, Telemetry, etc.).
+2. **Serialization Mode**: String vs. Stream.
+3. **Repetitions**: As specified in the command line (e.g., 100 runs).
+4. **Serializers**: All registered serializers are tested against the same data instance.
+
+**Important Note on Cold Starts**: The result of the **first repetition** is excluded from the average calculations. This initial run typically is significantly slower due to JIT compilation and static object initialization.
+
+---
+
+### Key Discussion Points
+- **String vs. Stream**: While there is a common belief that string serialization is slower, our results show this depends heavily on the specific serializer implementation. In this suite, string serialization includes the cost of Base64 conversion where applicable.
+- **Fairness & Tuning**: All serializers are used with their default configurations to ensure a "plug-and-play" baseline. If you believe a specific library can perform significantly better with optional tuning, please feel free to contribute an optimized implementation in the `Serializers/` folder.
