@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="protobuf-net" Version="3.2.30" />
+    <PackageReference Include="protobuf-net" Version="2.4.6" />
     <PackageReference Include="MessagePack" Version="2.5.140" />
     <PackageReference Include="Jil" Version="2.15.4" />
     <PackageReference Include="ServiceStack.Text" Version="6.11.0" />

@@ -1,0 +1,14 @@
+MSBuild version 17.3.4+a400405ba for .NET
+  Determining projects to restore...
+  Restored /src/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj (in 28.36 sec).
+/src/GLD.SerializerBenchmark/TestData/ObjectGraph.cs(45,25): error CS0619: 'ProtoMemberAttribute.AsReference' is obsolete: 'Reference-tracking and dynamic-type are not currently implemented in this build; they may be reinstated later; this is partly due to doubts over whether the features are adviseable, and partly over confidence in testing all the scenarios (it takes time; that time hasn't get happened); feedback is invited' [/src/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj]
+/src/GLD.SerializerBenchmark/TestData/ObjectGraph.cs(49,25): error CS0619: 'ProtoMemberAttribute.AsReference' is obsolete: 'Reference-tracking and dynamic-type are not currently implemented in this build; they may be reinstated later; this is partly due to doubts over whether the features are adviseable, and partly over confidence in testing all the scenarios (it takes time; that time hasn't get happened); feedback is invited' [/src/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj]
+
+Build FAILED.
+
+/src/GLD.SerializerBenchmark/TestData/ObjectGraph.cs(45,25): error CS0619: 'ProtoMemberAttribute.AsReference' is obsolete: 'Reference-tracking and dynamic-type are not currently implemented in this build; they may be reinstated later; this is partly due to doubts over whether the features are adviseable, and partly over confidence in testing all the scenarios (it takes time; that time hasn't get happened); feedback is invited' [/src/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj]
+/src/GLD.SerializerBenchmark/TestData/ObjectGraph.cs(49,25): error CS0619: 'ProtoMemberAttribute.AsReference' is obsolete: 'Reference-tracking and dynamic-type are not currently implemented in this build; they may be reinstated later; this is partly due to doubts over whether the features are adviseable, and partly over confidence in testing all the scenarios (it takes time; that time hasn't get happened); feedback is invited' [/src/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj]
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:29.64

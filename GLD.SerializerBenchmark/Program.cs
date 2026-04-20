@@ -18,6 +18,10 @@ namespace GLD.SerializerBenchmark
                 new PersonDescription(),
                 new IntDescription(),
                 new TelemetryDescription(),
+                new SimpleObjectDescription(),
+                new StringArrayDescription(),
+                new ObjectGraphDescription(),
+                new EDI_X12_835Description()
             };
 
             var allSerializers = new List<ISerDeser>
