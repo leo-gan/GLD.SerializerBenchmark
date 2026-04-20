@@ -28,10 +28,12 @@ namespace GLD.SerializerBenchmark
             {
                 Console.WriteLine($"\n[PROGRESS] Testing Data: {testDataDescription.Name} (Targeting {serializers.Count} serializers, {repetitions} reps)");
                 TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
+                
+                // Save errors after each data type to prevent loss in case of crash later
+                Error.SaveErrors(errors, "logs/SerializerBenchmark_Errors.tsv");
             }
 
             Report.AllResults(repetitions, logStorage, errors, serializers, testDataDescriptions);
-            Error.SaveErrors(errors, "logs/SerializerBenchmark_Errors.tsv"); // the error text could hold commas, so we use tab-separated file (.tsv)
             Console.WriteLine("\n[PROGRESS] Benchmark Complete. Results saved to logs/SerializerBenchmark_Log.csv");
         }
 
@@ -134,7 +136,7 @@ namespace GLD.SerializerBenchmark
             }
             catch (Exception ex)
             {
-                error.ErrorText = (serSuccessful ? "Deserialization" : "Serialization") + " Exception: " + ex.Message;
+                error.ErrorText = (serSuccessful ? "Deserialization" : "Serialization") + " " + ex.GetType().Name + ": " + ex.Message;
                 isRepeatedError = !error.TryAddTo(errors);
                 return;
             }

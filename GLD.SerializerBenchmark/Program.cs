@@ -20,8 +20,8 @@ namespace GLD.SerializerBenchmark
                 new TelemetryDescription(),
                 new SimpleObjectDescription(),
                 new StringArrayDescription(),
-                new ObjectGraphDescription(),
-                new EDI_X12_835Description()
+                new EDI_X12_835Description(),
+                new ObjectGraphDescription()
             };
 
             var allSerializers = new List<ISerDeser>
