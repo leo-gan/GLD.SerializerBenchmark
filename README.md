@@ -14,7 +14,24 @@ This project serves two purposes:
 - **Diverse Test Data**: Realistic data structures including Telemetry, EDI documents, Object Graphs, and simple POCOs.
 - **Dual Mode Testing**: Every serializer is tested in both **String** and **Stream** serialization modes.
 - **Detailed Reporting**: Generates raw metrics in `.csv` format for deep analysis and `.tsv` for error tracking.
+- **Fail-Fast Visibility**: Explicitly reports "FAILED" for serializers that cannot handle complex types (like circular references).
 - **Analysis Ready**: Includes a Jupyter Notebook (`Analysis.ipynb`) for visualizing and interpreting the results.
+
+---
+
+## 📊 Test Data Scenarios
+
+The suite includes several "stress point" test types to reveal the strengths and limitations of each serializer:
+
+| Test Class | Purpose & Stress Points |
+| :--- | :--- |
+| **SimpleObject** | **Baseline Metrics**: Measures minimal overhead (metadata setup and reflection) before data volume dominates. |
+| **Person** | **POCO Complexity**: Standard real-world object with nesting, enums, and strings. The "gold standard" for general use. |
+| **Telemetry** | **Binary Efficiency**: Numeric arrays and high-frequency data. Tests how well binary formats handle repetitive numeric blocks. |
+| **StringArray** | **GC Pressure**: Array of many strings testing memory allocation, pointer handling, and string encoding efficiency. |
+| **ObjectGraph** | **Cyclicity**: Contains circular references. Exposes libraries that lack reference tracking and helps detect stack overflows. |
+| **EDI_835** | **Real-world Depth**: Deeply nested Health Care Claim document. Tests recursion depth and precision for complex business logic. |
+| **Int** | **Primitive Speed**: The absolute ceiling of performance—tests the raw throughput of a single primitive type. |
 
 ---
 
