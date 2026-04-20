@@ -30,7 +30,7 @@ namespace GLD.SerializerBenchmark
                 TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
             }
 
-            Report.AllResults(repetitions, logStorage, errors);
+            Report.AllResults(repetitions, logStorage, errors, serializers, testDataDescriptions);
             Error.SaveErrors(errors, "logs/SerializerBenchmark_Errors.tsv"); // the error text could hold commas, so we use tab-separated file (.tsv)
             Console.WriteLine("\n[PROGRESS] Benchmark Complete. Results saved to logs/SerializerBenchmark_Log.csv");
         }
