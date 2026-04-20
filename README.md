@@ -1,35 +1,112 @@
-Any distributed system requires serializing to transfer data through the wires or to save data on the data store. The serializers used to be hidden in adapters and proxies, where developers did not deal with the serialization process explicitly. The WCF serialization is an example, when all we need to know is where to place the **[Serializable]** attributes. Contemporary tendencies bring serializers to the surface. In Windows .NET development the explicit serialization probably has started when James Newton-King created the **Json.Net** serializer and Microsoft officially declared it the recommended serializer for .NET.
+# .NET Serializer Benchmark
 
-**More than 20 .NET serializers tested here.** If the serializer can use several serializing formats (like the Json and the binary formats), I've tested all of them.
+A highly extensible benchmarking suite designed to evaluate the performance (speed and size) of over 30 different .NET serializers across various complex data structures.
 
-[Analysis of the Results is here.]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Analysis.ipynb)
+This project serves two purposes:
+1. **Performance Insight**: Compare various serialization libraries to make informed architectural decisions.
+2. **Implementation Guide**: Provide clean, copy-pasteable snippets for implementing these serializers in your own projects.
 
-You can find here more details about [the Testing Process]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/ResultExplanations.md) and [the Test Reports]( https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/GLD.SerializerBenchmark/Docs/TestResults.txt)
+---
 
-There are many kinds of serializers; they produce very compact data and produce it very fast. There are serializers for messaging, for data stores, for marshaling objects. 
+## 🚀 Key Features
 
-**What is the best serializer in .NET?**
+- **Extensive Library Support**: Benchmarks for 30+ popular serializers (Json.NET, Protobuf-net, Jil, MessagePack, Wire, etc.).
+- **Diverse Test Data**: Realistic data structures including Telemetry, EDI documents, Object Graphs, and simple POCOs.
+- **Dual Mode Testing**: Every serializer is tested in both **String** and **Stream** serialization modes.
+- **Detailed Reporting**: Generates raw metrics in `.csv` format for deep analysis and `.tsv` for error tracking.
+- **Analysis Ready**: Includes a Jupyter Notebook (`Analysis.ipynb`) for visualizing and interpreting the results.
 
-Sorry, this project is not about the best serializer. Here I gathered the code which shows in several lines, how to use different .NET serializers. Just copy-past code in your project. That is the goal. I want to use serializer in the simplest way but it is good to know if this way would really hit your code performance. That is why I added some measurements, as the byproduct.
+---
 
-Please, do not take these measurements too seriously. I have some numbers, but this project is not the right place to get decisions about serializer performance. It uses serializers just in the simplest way. It does not use the specific methods in some serializers to get the better speed or size.
+## 🛠 Tech Stack
 
-**Note:** I have not tested the serializers that require [IDL](http://en.wikipedia.org/wiki/Interface_description_language) for serialization: [Thrift](https://thrift.apache.org/), [Cap'n Proto](https://github.com/mgravell/capnproto-net), [FlatBuffers](https://github.com/google/flatbuffers), [Simple Binary Encoding](https://github.com/real-logic/simple-binary-encoding). Those sophisticated beasts are not easy in work, they needed for something more special than straightforward serialization for messaging. These serializers are on my Todo list. ProtoBuf for .NET implementation was upgraded to use attributes instead of IDL, kudos to [Marc Gravell](http://blog.marcgravell.com/). 
+- **Framework**: .NET Framework 4.5
+- **Language**: C#
+- **Build Tools**: MSBuild / Visual Studio / Mono
 
-## Installation ##
-Most of serializers installed with NuGet package. Look to the “packages.config” file to get a name of the package. I have included comments in the code about it.
+---
 
-## Tests ##
-Different test data kinds are placed in the TestData folder. The results heavily depend on the kind of the test data for all serializers! I've tried to cover the most popular data kinds including the heavy EDI documents. This part is opinionated :) 
+## 📋 Supported Serializers
 
-The test data created by Generate(). This test data object used for one test cycle with all serializers, then it is regenerated for the next cycle.
+| Category | Serializers |
+| :--- | :--- |
+| **JSON** | Json.NET, Jil, FastJson, ServiceStack.Json, NetJSON, Nfx.Json, JavaScriptSerializer, etc. |
+| **Binary** | Protobuf-net, MessagePack, Wire, Bond, FsPickler, SharpSerializer, SalarBois, etc. |
+| **Standard** | XMLSerializer, DataContractSerializer, BinaryFormatter. |
+| **Experimental** | Avro, MessageShark, etc. |
 
-If you want to test serializers for different data with some specific structure, size, or primitive types, add your test class.
+---
 
-The Benchmark outputs **the simple reports for immediate review**. It also outputs the **raw data into the .csv file** for the detailed analysis. Plus, it outputs **the exceptions and the errors** for thorough analyzing. It is necessary because not all serializers can serialize all kinds of data without problems.
-The time is measured for the serialization and deserialization operations and for the combined time of the serialization and deserialization. When serializer called the first time, it usually runs the longest time because of the objects initialization. This first-time span is excluded from the reports, so it could not disturb the average measurements. Remember, if we need only a single serialization/deserialization operation, this is the most significant value for us. If we repeat serialization/deserialization many times, the most significant values for us are the **Average operations/sec** measurements, which are in the reports.
+## 🚀 Getting Started
 
-We usually use serializers in two ways, we serialize **to strings** or into the byte arrays (**the streams**). Both options are tested. I used base64 format to convert byte arrays to strings. 
+### Windows
+1. Open `GLD.SerializerBenchmark.sln` in Visual Studio.
+2. Restore NuGet packages (Automatic upon build).
+3. Build the solution in **Release** mode.
+4. Run the resulting executable from the command line:
 
-## Test Results ##
-Do not take test results too seriously. I have some numbers, but this project is not the right place to get conclusions about serializer performance. If the serializer has the bells and whistles for getting better performance, it could show much better results. You'd rather copy this code, adjust it for your case, and run it on your specific data in your specific workloads. Here all serializers used in the same simplest way and they show just basic performance.
+```powershell
+.\GLD.SerializerBenchmark.exe 100
+```
+*(Where `100` is the number of repetitions per test case)*
+
+### Linux / macOS (using Mono)
+Ensure you have [Mono](https://www.mono-project.com/download/stable/) and NuGet CLI installed.
+
+1. **Restore Packages**:
+   ```bash
+   nuget restore GLD.SerializerBenchmark.sln
+   ```
+2. **Build**:
+   ```bash
+   msbuild /p:Configuration=Release GLD.SerializerBenchmark.sln
+   ```
+3. **Execute**:
+   ```bash
+   mono GLD.SerializerBenchmark/bin/Release/GLD.SerializerBenchmark.exe 100
+   ```
+
+---
+
+## 📊 Results & Analysis
+
+The benchmark outputs two main files:
+- `SerializerBenchmark_Log.csv`: Raw timing (ticks) and size (bytes) for each run.
+- `SerializerBenchmark_Errors.tsv`: Detailed error reports for serializers that failed specific test cases.
+
+For a deeper dive into the results, open `GLD.SerializerBenchmark/Analysis.ipynb` using Jupyter or the VS Code Interactive window.
+
+---
+
+## 🧩 How to Extend
+
+### Add a New Serializer
+1. Create a new class in the `Serializers/` directory.
+2. Implement the `ISerDeser` interface:
+   ```csharp
+   public interface ISerDeser {
+       string Name { get; }
+       void Initialize(Type primaryType, List<Type> secondaryTypes);
+       string Serialize(object obj);
+       object Deserialize(string serialized);
+       void Serialize(object obj, Stream stream);
+       object Deserialize(Stream stream);
+   }
+   ```
+3. Register your new class in `Program.cs` in the `serializers` list.
+
+### Add New Test Data
+1. Create a new class implementing `ITestDataDescription` in `TestData/`.
+2. Define the schema and generation logic for your data.
+3. Register the description in `Program.cs`.
+
+---
+
+## ⚠️ Important Note on Performance
+Performance measurements can vary significantly based on your specific implementation and hardware. These benchmarks use libraries in their **simplest, default configurations**. Many libraries offer performance tuning (caching, specific serialization options) that could yield better results.
+
+Use these results as a baseline, but always test with your own production data.
+
+---
+
+*Authored by Leonid Ganeline*
