@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -19,15 +19,20 @@ namespace GLD.SerializerBenchmark
         public static void Tests(List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions,
             int repetitions)
         {
-            var logStorage = new LogStorage("SerializerBenchmark_Log.csv");
+            Directory.CreateDirectory("logs");
+            var logStorage = new LogStorage("logs/SerializerBenchmark_Log.csv");
             var errors = new List<Error>();
 
             // initialize all serializers 
             foreach (var testDataDescription in testDataDescriptions)
+            {
+                Console.WriteLine($"\n[PROGRESS] Testing Data: {testDataDescription.Name} (Targeting {serializers.Count} serializers, {repetitions} reps)");
                 TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
+            }
 
             Report.AllResults(repetitions, logStorage, errors);
-            Error.SaveErrors(errors, "SerializerBenchmark_Errors.tsv"); // the error text could hold commas, so we use tab-separated file (.tsv)
+            Error.SaveErrors(errors, "logs/SerializerBenchmark_Errors.tsv"); // the error text could hold commas, so we use tab-separated file (.tsv)
+            Console.WriteLine("\n[PROGRESS] Benchmark Complete. Results saved to logs/SerializerBenchmark_Log.csv");
         }
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,
@@ -53,6 +58,9 @@ namespace GLD.SerializerBenchmark
 
             for (var i = 0; i < repetitions; i++)
             {
+                if (i % 10 == 0 || i == repetitions - 1)
+                    Console.Write($"\r[PROGRESS]   {testDataDescription.Name} [{(streaming ? "Stream" : "String")}] Repetition: {i + 1}/{repetitions}...");
+
                 var log = new Log
                 {
                     Run = 1,
@@ -63,6 +71,7 @@ namespace GLD.SerializerBenchmark
                 };
                 TestOnSerializer(serializers, original, errors, streaming, logStorage, log, wasError);
             }
+            Console.WriteLine();
         }
 
         private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original,

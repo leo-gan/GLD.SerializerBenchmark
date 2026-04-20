@@ -1,0 +1,81 @@
+StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser
+string,Person,5,0,MS Bond Json,145510700,8630934,1242,154141634,0,1,0
+string,Person,5,0,MS DataContract Json,13262383,9265252,1688,22527635,0,1,0
+string,Person,5,0,MS System.Text.Json,19460402,3606237,1271,23066639,0,2,0
+string,Person,5,0,fastJson,11271148,13796324,1929,25067472,0,0,0
+string,Person,5,0,Json.Net (Helper),38105487,18006715,1276,56112202,0,0,0
+string,Person,5,0,Json.Net,161052,129121,1276,290173,62,77,34
+string,Person,5,0,FsPicklerJson,109994133,20899805,2092,130893938,0,0,0
+string,Person,5,0,NetJSON,38103047,7006792,1252,45109839,0,1,0
+string,Person,5,0,ServiceStack Json,36733259,27988834,1271,64722093,0,0,0
+string,Person,5,1,MS Bond Json,26657,23313,1242,49970,375,428,200
+string,Person,5,1,MS DataContract Json,53905,96856,1688,150761,185,103,66
+string,Person,5,1,MS System.Text.Json,92157,34315,1271,126472,108,291,79
+string,Person,5,1,fastJson,37028,44463,1929,81491,270,224,122
+string,Person,5,1,Json.Net (Helper),34411,38773,1276,73184,290,257,136
+string,Person,5,1,Json.Net,16980,23264,1276,40244,588,429,248
+string,Person,5,1,FsPicklerJson,46852,1187578,2092,1234430,213,8,8
+string,Person,5,1,NetJSON,9722,12606,1252,22328,1028,793,447
+string,Person,5,1,ServiceStack Json,44293,26392,1271,70685,225,378,141
+string,Person,5,2,MS Bond Json,11839,15645,1242,27484,844,639,363
+string,Person,5,2,MS DataContract Json,36789,71177,1688,107966,271,140,92
+string,Person,5,2,MS System.Text.Json,30981,23386,1271,54367,322,427,183
+string,Person,5,2,fastJson,27695,33526,1929,61221,361,298,163
+string,Person,5,2,Json.Net (Helper),26947,35564,1276,62511,371,281,159
+string,Person,5,2,Json.Net,17282,23283,1276,40565,578,429,246
+string,Person,5,2,FsPicklerJson,31106,42691,2092,73797,321,234,135
+string,Person,5,2,NetJSON,5997,9180,1252,15177,1667,1089,658
+string,Person,5,2,ServiceStack Json,30984,18728,1271,49712,322,533,201
+string,Person,5,3,MS Bond Json,10968,15080,1242,26048,911,663,383
+string,Person,5,3,MS DataContract Json,26670,59545,1688,86215,374,167,115
+string,Person,5,3,MS System.Text.Json,18829,18795,1271,37624,531,532,265
+string,Person,5,3,fastJson,23036,31312,1929,54348,434,319,183
+string,Person,5,3,Json.Net (Helper),23991,32890,1276,56881,416,304,175
+string,Person,5,3,Json.Net,16152,22838,1276,38990,619,437,256
+string,Person,5,3,FsPicklerJson,22021,28675,2092,50696,454,348,197
+string,Person,5,3,NetJSON,4903,9246,1252,14149,2039,1081,706
+string,Person,5,3,ServiceStack Json,27792,17404,1271,45196,359,574,221
+string,Person,5,4,MS Bond Json,10768,16489,1242,27257,928,606,366
+string,Person,5,4,MS DataContract Json,32746,68441,1688,101187,305,146,98
+string,Person,5,4,MS System.Text.Json,32834,25114,1271,57948,304,398,172
+string,Person,5,4,fastJson,31965,41698,1929,73663,312,239,135
+string,Person,5,4,Json.Net (Helper),34356,37994,1276,72350,291,263,138
+string,Person,5,4,Json.Net,16366,24097,1276,40463,611,414,247
+string,Person,5,4,FsPicklerJson,40112,44548,2092,84660,249,224,118
+string,Person,5,4,NetJSON,8159,12914,1252,21073,1225,774,474
+string,Person,5,4,ServiceStack Json,55264,31688,1271,86952,180,315,115
+Stream,Person,5,0,MS Bond Json,367444,116148,1242,483592,27,86,20
+Stream,Person,5,0,MS DataContract Json,72794,127386,1266,200180,137,78,49
+Stream,Person,5,0,MS System.Text.Json,111785,189554,1271,301339,89,52,33
+Stream,Person,5,0,fastJson,84903,88638,1929,173541,117,112,57
+Stream,Person,5,0,Json.Net (Helper),70958,68458,1276,139416,140,146,71
+Stream,Person,5,0,Json.Net,56151,59260,1276,115411,178,168,86
+Stream,Person,5,0,ServiceStack Json,168536,1488506,1271,1657042,59,6,6
+Stream,Person,5,1,MS Bond Json,36786,28386,1242,65172,271,352,153
+Stream,Person,5,1,MS DataContract Json,51180,84357,1266,135537,195,118,73
+Stream,Person,5,1,MS System.Text.Json,58165,89179,1271,147344,171,112,67
+Stream,Person,5,1,fastJson,48329,54697,1929,103026,206,182,97
+Stream,Person,5,1,Json.Net (Helper),60888,59113,1276,120001,164,169,83
+Stream,Person,5,1,Json.Net,19791,26865,1276,46656,505,372,214
+Stream,Person,5,1,ServiceStack Json,56755,37828,1271,94583,176,264,105
+Stream,Person,5,2,MS Bond Json,12778,18054,1242,30832,782,553,324
+Stream,Person,5,2,MS DataContract Json,31990,67701,1266,99691,312,147,100
+Stream,Person,5,2,MS System.Text.Json,25884,25277,1271,51161,386,395,195
+Stream,Person,5,2,fastJson,27515,37172,1929,64687,363,269,154
+Stream,Person,5,2,Json.Net (Helper),29237,37534,1276,66771,342,266,149
+Stream,Person,5,2,Json.Net,16922,24309,1276,41231,590,411,242
+Stream,Person,5,2,ServiceStack Json,33087,21946,1271,55033,302,455,181
+Stream,Person,5,3,MS Bond Json,11167,16666,1242,27833,895,600,359
+Stream,Person,5,3,MS DataContract Json,24534,68006,1266,92540,407,147,108
+Stream,Person,5,3,MS System.Text.Json,18962,22232,1271,41194,527,449,242
+Stream,Person,5,3,fastJson,24929,35004,1929,59933,401,285,166
+Stream,Person,5,3,Json.Net (Helper),27214,35176,1276,62390,367,284,160
+Stream,Person,5,3,Json.Net,20908,25051,1276,45959,478,399,217
+Stream,Person,5,3,ServiceStack Json,31575,21626,1271,53201,316,462,187
+Stream,Person,5,4,MS Bond Json,11668,18297,1242,29965,857,546,333
+Stream,Person,5,4,MS DataContract Json,25707,64474,1266,90181,388,155,110
+Stream,Person,5,4,MS System.Text.Json,19581,24374,1271,43955,510,410,227
+Stream,Person,5,4,fastJson,27204,38311,1929,65515,367,261,152
+Stream,Person,5,4,Json.Net (Helper),33425,38363,1276,71788,299,260,139
+Stream,Person,5,4,Json.Net,18462,26809,1276,45271,541,373,220
+Stream,Person,5,4,ServiceStack Json,34552,23569,1271,58121,289,424,172

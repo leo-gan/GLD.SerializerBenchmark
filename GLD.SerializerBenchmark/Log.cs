@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using ServiceStack;
@@ -106,6 +106,7 @@ namespace GLD.SerializerBenchmark
                 File.Move(logFileName, GetArchiveFileName(logFileName));
 
             _logFileStreamWriter = File.CreateText(logFileName);
+            _logFileStreamWriter.AutoFlush = true;
             _separator = separator;
             var fileHeaderLine =
                 "StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser";

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Linq;
 using GLD.SerializerBenchmark.Serializers;
 using GLD.SerializerBenchmark.TestData;
 
@@ -8,53 +9,53 @@ namespace GLD.SerializerBenchmark
     {
         private static void Main(string[] args)
         {
-            var repetitions = int.Parse(args[0]);
+            var repetitions = args.Length > 0 ? int.Parse(args[0]) : 100;
+            var serializerFilter = args.Length > 1 ? args[1] : null;
+            var testDataFilter = args.Length > 2 ? args[2] : null;
 
-            var testDataDescriptions = new List<ITestDataDescription>
+            var allTestDataDescriptions = new List<ITestDataDescription>
             {
                 new PersonDescription(),
                 new IntDescription(),
-                new StringArrayDescription(),
-                new SimpleObjectDescription(),
                 new TelemetryDescription(),
-                new EDI_X12_835Description(),
-                new TestData.NoAtributes.EDI_X12_835Description(),
-                //new ObjectGraphDescription(), // TODO: Exception. Investigate.
-                new MsgBatchingDescription()
             };
-            var serializers = new List<ISerDeser>
+
+            var allSerializers = new List<ISerDeser>
             {
-                // new AvroSerializer(),  //TODO: For some reason it is impossible to pass generic T type to serializer. 
                 new BinarySerializer(),
-                new BondCompactSerializer(), // TODO: works only for Person
-                new BondFastSerializer(), // TODO: works only for Person
-                new BondJsonSerializer(), // TODO: works only for Person
+                new BondCompactSerializer(), 
+                new BondFastSerializer(), 
+                new BondJsonSerializer(), 
                 new DataContractSerializerSerializer(),
                 new DataContractJsonSer(),
-                new JavaScriptSerializer(), // TODO: DateTime format?
+                new JavaScriptSerializerSer(), 
                 new XmlSerializerSer(),
-                //new ApJsonSerializer(), // TODO: DateTime format?
-                new FastJsonSerializer(), // TODO: DateTime format?
-                new JilSerializer(), // TODO: DateTime format?
-                new JsonFxSerializer(),
+                new FastJsonSerializer(), 
+                new JilSerializer(), 
                 new JsonNetHelperSerializer(),
                 new JsonNetSerializer(),
-                new HaveBoxJSONSerializer(), // TODO: DateTime format?
                 new FsPicklerBinarySerializer(),
                 new FsPicklerJsonSerializer(),
-                new MessageSharkSer(),
-                new MsgPackSerializer(), // TODO: DateTime format?
-                new NetJSONSer(), // TODO: DateTime format?
-                new NetSerializerSer(),
-                new NfxJsonSerializer(),
-                new NfxSlimSerializer(),
+                new NetJSONSer(), 
                 new ProtoBufSerializer(),
-                new SharpSerializer(), // TODO: DateTime format?
-                new ServiceStackJsonSerializer(), // TODO: DateTime format?
-                new ServiceStackTypeSerializer(), // TODO: DateTime format?
-                new SalarBoisSerializer(),
-                new WireSerializer()
+                new SharpSerializer(), 
+                new ServiceStackJsonSerializer(), 
+                new ServiceStackTypeSerializer(), 
             };
+
+            var testDataDescriptions = allTestDataDescriptions
+                .Where(td => string.IsNullOrEmpty(testDataFilter) || td.Name.Contains(testDataFilter, System.StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var serializers = allSerializers
+                .Where(s => string.IsNullOrEmpty(serializerFilter) || s.Name.Contains(serializerFilter, System.StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (testDataDescriptions.Count == 0 || serializers.Count == 0)
+            {
+                System.Console.WriteLine("No test data or serializers matched the filters.");
+                return;
+            }
 
             Tester.Tests(serializers, testDataDescriptions, repetitions);
         }

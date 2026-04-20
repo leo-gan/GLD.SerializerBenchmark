@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -6,7 +6,6 @@ using Bond;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using ProtoBuf;
-using Serialization;
 
 namespace GLD.SerializerBenchmark.TestData
 {
@@ -46,7 +45,7 @@ namespace GLD.SerializerBenchmark.TestData
         [EnumMember] Female
     }
 
-    [SerializableObject(SerializedElements.All, EncodingName = "ASCII")]
+    
     [DataContract]
     [ProtoContract]
     [Schema]
@@ -69,7 +68,7 @@ namespace GLD.SerializerBenchmark.TestData
         public DateTime ExpirationDate { get; set; }
     }
 
-    [SerializableObject(SerializedElements.All, EncodingName = "ASCII")]
+    
     [DataContract]
     [ProtoContract]
     [Schema]
@@ -87,7 +86,7 @@ namespace GLD.SerializerBenchmark.TestData
         public string CrimeCode { get; set; }
     }
 
-    [SerializableObject(SerializedElements.All, EncodingName = "ASCII")]
+    
     [DataContract]
     [ProtoContract]
     [Schema]

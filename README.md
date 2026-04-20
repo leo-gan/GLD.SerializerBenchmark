@@ -20,50 +20,57 @@ This project serves two purposes:
 
 ## 🛠 Tech Stack
 
-- **Framework**: .NET Framework 4.5
+- **Framework**: .NET 6 (Modernized from .NET Framework 4.5)
 - **Language**: C#
-- **Build Tools**: MSBuild / Visual Studio / Mono
+- **Build Tools**: Docker / .NET SDK 6.0
+- **Platforms**: Linux (Docker recommended), Windows, macOS
 
 ---
 
-## 📋 Supported Serializers
+## 🚀 Getting Started (Docker)
 
-| Category | Serializers |
-| :--- | :--- |
-| **JSON** | Json.NET, Jil, FastJson, ServiceStack.Json, NetJSON, Nfx.Json, JavaScriptSerializer, etc. |
-| **Binary** | Protobuf-net, MessagePack, Wire, Bond, FsPickler, SharpSerializer, SalarBois, etc. |
-| **Standard** | XMLSerializer, DataContractSerializer, BinaryFormatter. |
-| **Experimental** | Avro, MessageShark, etc. |
+The recommended way to run the benchmarks is using Docker. This ensures a consistent environment and provides tiered execution modes.
 
----
-
-## 🚀 Getting Started
-
-### Windows
-1. Open `GLD.SerializerBenchmark.sln` in Visual Studio.
-2. Restore NuGet packages (Automatic upon build).
-3. Build the solution in **Release** mode.
-4. Run the resulting executable from the command line:
-
-```powershell
-.\GLD.SerializerBenchmark.exe 100
+### 1. Build and Verify
+Run the master script to build the image and perform a core verification (smoke test):
+```bash
+./run-benchmarks.sh smoke
 ```
-*(Where `100` is the number of repetitions per test case)*
 
-### Linux / macOS (using Mono)
-Ensure you have [Mono](https://www.mono-project.com/download/stable/) and NuGet CLI installed.
+### 2. Available Execution Modes
+Choose a mode based on your needs:
 
-1. **Restore Packages**:
+| Mode | Command | Description |
+| :--- | :--- | :--- |
+| **Smoke** | `./run-benchmarks.sh smoke` | 1 repetition of `BinarySerializer` on `Person`. Use this to verify installation. |
+| **Verify All** | `./run-benchmarks.sh all-single` | 1 repetition of **all** serializers on all data. Checks for compatibility issues. |
+| **Full Run** | `./run-benchmarks.sh full` | 100 repetitions of all serializers. **Warning**: This can take a long time. |
+| **Custom** | `./run-benchmarks.sh custom 50 "Json" "Person"` | Custom repetitions and name filtering (e.g., only Json serializers on Person). |
+
+### 3. Monitoring Progress
+You can see real-time progress by following the container logs in another terminal:
+```bash
+docker logs -f $(docker ps -lq)
+```
+
+### 4. Results
+Benchmark logs are saved to the `logs/` directory:
+- `SerializerBenchmark_Log.csv`: Performance metrics.
+- `SerializerBenchmark_Errors.tsv`: Tracking any failures.
+
+---
+
+## 🛠 Local Development (Without Docker)
+
+Ensure you have [.NET SDK 6.0](https://dotnet.microsoft.com/download) installed.
+
+1. **Build**:
    ```bash
-   nuget restore GLD.SerializerBenchmark.sln
+   dotnet build GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj -c Release
    ```
-2. **Build**:
+2. **Execute**:
    ```bash
-   msbuild /p:Configuration=Release GLD.SerializerBenchmark.sln
-   ```
-3. **Execute**:
-   ```bash
-   mono GLD.SerializerBenchmark/bin/Release/GLD.SerializerBenchmark.exe 100
+   dotnet run --project GLD.SerializerBenchmark -c Release -- <repetitions> [serializerFilter] [dataFilter]
    ```
 
 ---

@@ -1,0 +1,3 @@
+SerializerName	StringOrStream	ErrorText
+FsPicklerJson	Stream	Serialization Exception: Cannot access a closed Stream.
+NetJSON	Stream	Deserialization Exception: Input is not a valid JSON.
