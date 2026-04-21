@@ -188,3 +188,13 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 /.vs
+logs/
+*.csv
+*.tsv
+.next/
+out/
+next-env.d.ts
+test-results/
+.env*.local
+.vercel
+.turbo

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -7,72 +7,61 @@ namespace GLD.SerializerBenchmark
 {
     internal static class Report
     {
-        public static void AllResults(int repetitions, LogStorage logStorage, List<Error> errors)
+        public static void AllResults(int repetitions, LogStorage logStorage, List<Error> errors, List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions)
         {
             HeaderRepetitions(repetitions);
             logStorage.CloseStorage(); // close file if it is still opened for writing.
             var logs = logStorage.ReadAll();
 
             var aggregatedResults = logs
-                .Select(a => a)
                 .Where(w => w.RepetitionIndex != 0) // do not include a warm up in aggregation
-                .GroupBy(a => new {a.Repetitions, a.TestDataName, a.SerializerName, a.StringOrStream})
+                .GroupBy(a => new {a.TestDataName, a.SerializerName, a.StringOrStream})
                 .Select(g =>
                     new AggregateLogs
                     {
                         StringOrStream = g.Key.StringOrStream,
                         TestDataName = g.Key.TestDataName,
                         SerializerName = g.Key.SerializerName,
-                        Repetitions = g.Key.Repetitions,
                         OpPerSecDeserAver = g.Average(kg => kg.OpPerSecDeser),
-                        //OpPerSecDeserMin = g.Min(kg => kg.OpPerSecDeser),
-                        //OpPerSecDeserMax = g.Max(kg => kg.OpPerSecDeser),
                         OpPerSecSerAver = g.Average(kg => kg.OpPerSecSer),
-                        //OpPerSecSerMin = g.Min(kg => kg.OpPerSecSer),
-                        //OpPerSecSerMax = g.Max(kg => kg.OpPerSecSer),
                         OpPerSecSerAndDeserAver = g.Average(kg => kg.OpPerSecSerAndDeser),
-                        //OpPerSecSerAndDeserMin = g.Min(kg => kg.OpPerSecSerAndDeser),
-                        //OpPerSecSerAndDeserMax = g.Max(kg => kg.OpPerSecSerAndDeser),
                         SizeAver = (int) g.Average(kg => kg.Size)
-                    });
-
-            Aggregated(aggregatedResults, errors);
-        }
-
-        private static void Aggregated(IEnumerable<AggregateLogs> aggregatedResults, List<Error> errors)
-        {
-            var testDataNames = aggregatedResults
-                .Select(res => res.TestDataName)
-                .Distinct()
-                .ToList();
+                    }).ToList();
 
             // for each Test Data type
-            foreach (var testDataName in testDataNames)
+            foreach (var testData in testDataDescriptions)
             {
-                OnTestData(testDataName, aggregatedResults, errors);
-                OnTestDataErrors(testDataName, errors);
+                HeaderTestData(testData.Name);
+                
+                // For each serializer, show result or FAILURE
+                foreach (var serializer in serializers)
+                {
+                    foreach (var mode in new[] { "string", "Stream" })
+                    {
+                        var result = aggregatedResults.FirstOrDefault(r => 
+                            r.TestDataName == testData.Name && 
+                            r.SerializerName == serializer.Name && 
+                            r.StringOrStream == mode);
+
+                        if (result != null)
+                        {
+                            OnAggregator(result);
+                        }
+                        else
+                        {
+                            OnFailure(serializer.Name, mode);
+                        }
+                    }
+                }
+                OnTestDataErrors(testData.Name, errors);
             }
         }
 
-        private static void OnTestData(string testDataName, IEnumerable<AggregateLogs> aggregatedResults,
-            List<Error> errors)
+        private static void OnFailure(string serializerName, string mode)
         {
-            HeaderTestData(testDataName);
-
-            //var serNames = aggregatedResults.Select(res => res.SerializerName).Distinct().ToList();
-            //// for each serializer
-            //foreach (var serName in serNames)
-            //{
-            //    var serResult =
-            //        aggregatedResults.Select(a => a)
-            //            .Where(a => a.SerializerName == serName && a.TestDataName == testDataName);
-            //    OnAggregator(serResult);
-            //}
-            var serResult = aggregatedResults
-                .Where(a => a.TestDataName == testDataName)
-                .OrderByDescending(a => a.OpPerSecSerAndDeserAver);
-            foreach (var oneSer in serResult)
-                OnAggregator(oneSer);
+            const string formatString = "{0, -21} {1, -6}   {2,12} {3,10} {4,10} {5,10}";
+            var line = string.Format(formatString, serializerName, mode, "FAILED", "FAILED", "FAILED", "FAILED");
+            OutputEverywhere(line);
         }
 
         private static void OnAggregator(AggregateLogs serResult)
