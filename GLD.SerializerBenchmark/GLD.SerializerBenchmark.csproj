@@ -25,6 +25,26 @@
     <PackageReference Include="System.ServiceModel.Primitives" Version="6.0.0" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
+    <PackageReference Include="Apex.Serialization" Version="1.*" />
+    <PackageReference Include="Ceras" Version="*" />
+    <PackageReference Include="CsvHelper" Version="*" />
+    <PackageReference Include="ExtendedXmlSerializer" Version="*" />
+    <PackageReference Include="FlatSharp" Version="*" />
+    <PackageReference Include="FluentSerializer.Core" Version="*" />
+    <PackageReference Include="FluentSerializer.Json" Version="*" />
+    <PackageReference Include="Google.Protobuf" Version="*" />
+    <PackageReference Include="GroBuf" Version="*" />
+    <PackageReference Include="Hyperion" Version="*" />
+    <PackageReference Include="NetSerializer" Version="*" />
+    <PackageReference Include="SharpYaml" Version="*" />
+    <PackageReference Include="SpanJson" Version="*" />
+    <PackageReference Include="Utf8Json" Version="*" />
+    <PackageReference Include="YamlDotNet" Version="*" />
+    <PackageReference Include="YAXLib" Version="*" />
+    <PackageReference Include="ZeroFormatter" Version="*" />
+    <PackageReference Include="BinaryPack" Version="*" />
+    <PackageReference Include="MemoryPack" Version="*" />
+
   </ItemGroup>
 
   <ItemGroup>
