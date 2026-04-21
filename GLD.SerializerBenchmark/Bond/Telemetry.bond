@@ -1,0 +1,16 @@
+namespace GLD.SerializerBenchmark.Bond
+
+	using DateTime = int64;
+
+    struct TelemetryData
+    {
+        0: string Id;
+        1: string DataSource;
+        2: DateTime TimeStamp;
+        3: int32 Param1;
+        4: uint32 Param2;
+        5: list<double> Measurements;
+        6: int64 AssociatedProblemID;
+        7: int64 AssociatedLogID;
+        8: bool WasProcessed;
+    }

@@ -13,8 +13,13 @@ namespace GLD.SerializerBenchmark
             logStorage.CloseStorage(); // close file if it is still opened for writing.
             var logs = logStorage.ReadAll();
 
-            var aggregatedResults = logs
-                .Where(w => w.RepetitionIndex != 0) // do not include a warm up in aggregation
+            // Only exclude warmup (RepetitionIndex == 0) if repetitions > 1
+            // When repetitions == 1, the warmup IS the only data point
+            var filteredLogs = repetitions > 1 
+                ? logs.Where(w => w.RepetitionIndex != 0) // exclude warm up
+                : logs; // include warmup when only 1 rep
+            
+            var aggregatedResults = filteredLogs
                 .GroupBy(a => new {a.TestDataName, a.SerializerName, a.StringOrStream})
                 .Select(g =>
                     new AggregateLogs

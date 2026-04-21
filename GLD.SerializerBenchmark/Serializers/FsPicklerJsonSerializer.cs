@@ -41,13 +41,17 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            _serializer.Serialize(outputStream, serializable);
+            // FsPickler closes the stream, so we wrap it to prevent that
+            using (var wrapper = new NonClosingStreamWrapper(outputStream))
+            {
+                _serializer.Serialize(wrapper, serializable);
+            }
         }
 
 
         public override object Deserialize(Stream inputStream)
         {
-            //inputStream.Seek(0, SeekOrigin.Begin);
+            inputStream.Seek(0, SeekOrigin.Begin);
             return _serializer.Deserialize<object>(inputStream);
         }
         #endregion

@@ -1,43 +1,5 @@
 TestDataName	SerializerName	StringOrStream	Repetition	ErrorText
 Person	SharpSerializer	string	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
-Person	FsPickler	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-Person	FsPicklerJson	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-Person	NetJSON	Stream	0	Deserialization NetJSONInvalidJSONException: Input is not a valid JSON.
 Person	SharpSerializer	Stream	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
-Integer	MS Bond Json	string	0	Validation Error: Seems serialization failed. Serialized object size = 2 is too small.
-Integer	MS Bond Compact	Stream	0	Validation Error: Seems serialization failed. Serialized object size = 1 is too small.
-Integer	MS Bond Fast	Stream	0	Validation Error: Seems serialization failed. Serialized object size = 1 is too small.
-Integer	MS Bond Json	Stream	0	Validation Error: Seems serialization failed. Serialized object size = 2 is too small.
-Integer	FsPickler	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-Integer	FsPicklerJson	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-Integer	NetJSON	Stream	0	Validation Error: Seems serialization failed. Serialized object size = 0 is too small.
-Telemetry	MS System.Text.Json	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
-Telemetry	SharpSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
-Telemetry	MS System.Text.Json	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
-Telemetry	FsPickler	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-Telemetry	FsPicklerJson	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-Telemetry	NetJSON	Stream	0	Deserialization NetJSONInvalidJSONException: Input is not a valid JSON.
-Telemetry	SharpSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
-SimpleObject	MS Bond Compact	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-SimpleObject	MS Bond Fast	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-SimpleObject	MS Bond Json	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-SimpleObject	MS Bond Compact	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-SimpleObject	MS Bond Fast	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-SimpleObject	MS Bond Json	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-SimpleObject	FsPickler	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-SimpleObject	FsPicklerJson	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-SimpleObject	NetJSON	Stream	0	Deserialization NetJSONInvalidJSONException: Input is not a valid JSON.
-StringArray	SharpSerializer	string	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
-StringArray	FsPickler	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-StringArray	FsPicklerJson	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-StringArray	NetJSON	Stream	0	Deserialization NetJSONInvalidJSONException: Input is not a valid JSON.
-StringArray	SharpSerializer	Stream	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
-EDI_835	MS Bond Compact	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-EDI_835	MS Bond Fast	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-EDI_835	MS Bond Json	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-EDI_835	MS Bond Compact	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-EDI_835	MS Bond Fast	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-EDI_835	MS Bond Json	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
-EDI_835	FsPickler	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-EDI_835	FsPicklerJson	Stream	0	Serialization ObjectDisposedException: Cannot access a closed Stream.
-EDI_835	NetJSON	Stream	0	Deserialization NetJSONInvalidJSONException: Input is not a valid JSON.
+Telemetry	SharpSerializer	string	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
+Telemetry	SharpSerializer	Stream	0	Serialization NullReferenceException: Object reference not set to an instance of an object.

@@ -1,0 +1,6 @@
+namespace GLD.SerializerBenchmark.Bond
+
+    struct StringArrayObject
+    {
+        0: list<string> Items;
+    }

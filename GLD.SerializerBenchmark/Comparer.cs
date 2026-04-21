@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Linq;
 using System.Text;
@@ -51,9 +51,12 @@ namespace GLD.SerializerBenchmark
 
         private static bool ValidateSize(Log log, out string errorText)
         {
-            if (log.Size < 3)
+            // Compact binary serializers (like Bond, ProtoBuf) can serialize primitive types to very small sizes.
+            // A single int can be 1-5 bytes in compact format. Size of 0 is definitely an error,
+            // but sizes 1-2 are valid for compact binary formats.
+            if (log.Size == 0)
             {
-                errorText = string.Format("Validation Error: Seems serialization failed. Serialized object size = {0} is too small.",
+                errorText = string.Format("Validation Error: Seems serialization failed. Serialized object size = {0}.",
                     log.Size);
                 return true;
             }

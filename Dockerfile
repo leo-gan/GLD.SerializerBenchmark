@@ -9,7 +9,7 @@ COPY GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj GLD.SerializerBenchm
 # Restore dependencies
 RUN dotnet restore
 
-# Copy all source code
+# Copy all source code (including pre-generated Bond types)
 COPY . .
 
 # Build the application
