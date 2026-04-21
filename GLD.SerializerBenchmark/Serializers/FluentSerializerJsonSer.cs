@@ -7,6 +7,13 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class FluentSerializerJsonSer : SerDeser
     {
         public override string Name => "FluentSerializer";
+
+        public override bool Supports(string testDataName)
+        {
+            // FluentSerializer requires profile mappings for each type
+            return false;
+        }
+
         public override string Serialize(object serializable) {
             // FluentSerializer requires mappings
             return ""; 

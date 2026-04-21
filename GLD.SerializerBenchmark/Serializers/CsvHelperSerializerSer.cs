@@ -7,6 +7,13 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class CsvHelperSerializerSer : SerDeser
     {
         public override string Name => "CsvHelper";
+
+        public override bool Supports(string testDataName)
+        {
+            // CsvHelper requires specific mappings and doesn't work well with arbitrary object graphs
+            return false;
+        }
+
         public override string Serialize(object serializable) {
             // CsvHelper doesn't natively serialize "object" generically easily, it requires enumerable.
             return ""; 

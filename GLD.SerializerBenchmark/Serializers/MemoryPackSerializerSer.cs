@@ -7,6 +7,14 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class MemoryPackSerializerSer : SerDeser
     {
         public override string Name => "MemoryPack";
+
+        public override bool Supports(string testDataName)
+        {
+            // MemoryPack requires types to be registered at compile time with source generators
+            // It cannot deserialize to 'object' without proper type registration
+            return false;
+        }
+
         public override string Serialize(object serializable) => Convert.ToBase64String(MemoryPack.MemoryPackSerializer.Serialize(serializable));
         public override object Deserialize(string serialized) => MemoryPack.MemoryPackSerializer.Deserialize<object>(Convert.FromBase64String(serialized));
         public override void Serialize(object serializable, Stream outputStream) {

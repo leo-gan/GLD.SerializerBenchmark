@@ -7,6 +7,14 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class GoogleProtobufSerializerSer : SerDeser
     {
         public override string Name => "Google.Protobuf";
+
+        public override bool Supports(string testDataName)
+        {
+            // Google.Protobuf requires proto definitions and generated code
+            // Only types implementing IMessage are supported
+            return false;
+        }
+
         public override string Serialize(object serializable) {
             if (serializable is Google.Protobuf.IMessage message) {
                 return Convert.ToBase64String(Google.Protobuf.MessageExtensions.ToByteArray(message));

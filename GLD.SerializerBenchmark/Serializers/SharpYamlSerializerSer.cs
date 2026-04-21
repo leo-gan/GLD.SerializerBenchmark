@@ -9,6 +9,12 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         public override string Name => "SharpYaml";
 
+        public override bool Supports(string testDataName)
+        {
+            // SharpYaml has maximum nesting depth limit of 64 which is exceeded by ObjectGraph
+            return testDataName != "ObjectGraph";
+        }
+
         public override string Serialize(object serializable)
         {
             return SharpYaml.YamlSerializer.Serialize(serializable);

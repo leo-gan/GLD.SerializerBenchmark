@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using Antmicro.Migrant;
 
 namespace GLD.SerializerBenchmark.Serializers
@@ -30,7 +31,10 @@ namespace GLD.SerializerBenchmark.Serializers
             var b = Convert.FromBase64String(serialized);
             using (var ms = new MemoryStream(b))
             {
-                return _serializer.Deserialize<object>(ms);
+                // Use reflection to call generic Deserialize with _primaryType
+                var method = typeof(Serializer).GetMethod("Deserialize", new[] { typeof(Stream) });
+                var genericMethod = method.MakeGenericMethod(_primaryType);
+                return genericMethod.Invoke(_serializer, new[] { ms });
             }
         }
 
@@ -42,7 +46,10 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            return _serializer.Deserialize<object>(inputStream);
+            // Use reflection to call generic Deserialize with _primaryType
+            var method = typeof(Serializer).GetMethod("Deserialize", new[] { typeof(Stream) });
+            var genericMethod = method.MakeGenericMethod(_primaryType);
+            return genericMethod.Invoke(_serializer, new[] { inputStream });
         }
     }
 }

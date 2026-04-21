@@ -7,6 +7,13 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class FlatSharpSerializerSer : SerDeser
     {
         public override string Name => "FlatSharp";
+
+        public override bool Supports(string testDataName)
+        {
+            // FlatSharp requires FlatBuffers schema definitions
+            return false;
+        }
+
         public override string Serialize(object serializable) {
             return ""; // Needs schema / interface
         }

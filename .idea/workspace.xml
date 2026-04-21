@@ -4,7 +4,28 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="log" />
+    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="log">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BinaryPackSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BinaryPackSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondCompactSerializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondCompactSerializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondFastSerializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondFastSerializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondJsonSerializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondJsonSerializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CerasSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CerasSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CsvHelperSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CsvHelperSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ExtendedXmlSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ExtendedXmlSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FlatSharpSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FlatSharpSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FluentSerializerJsonSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FluentSerializerJsonSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/GoogleProtobufSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/GoogleProtobufSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/MemoryPackSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/MemoryPackSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/MigrantSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/MigrantSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ServiceStackTypeSerializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ServiceStackTypeSerializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SharpSerializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SharpSerializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SharpYamlSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SharpYamlSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SpanJsonSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SpanJsonSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ZeroFormatterSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ZeroFormatterSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Errors.tsv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -49,7 +70,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "new-serializers",
     "git.auto.fetch.suggestion.counter": "3",
     "last_opened_file_path": "/home/leo/PycharmProjects/GLD/seriailizer-benchmark",
     "node.js.detected.package.eslint": "true",
@@ -116,7 +137,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="modernization-net6" />
+                        <option value="new-serializers" />
                       </list>
                     </value>
                   </entry>

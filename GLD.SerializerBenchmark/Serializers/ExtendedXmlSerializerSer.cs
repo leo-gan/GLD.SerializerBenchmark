@@ -25,6 +25,12 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "ExtendedXmlSerializer";
 
+        public override bool Supports(string testDataName)
+        {
+            // ExtendedXmlSerializer requires special configuration for circular references
+            return testDataName != "ObjectGraph";
+        }
+
         public override string Serialize(object serializable)
         {
             return _serializer.Serialize(serializable);
