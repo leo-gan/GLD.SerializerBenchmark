@@ -1,3 +1,200 @@
 TestDataName	SerializerName	StringOrStream	Repetition	ErrorText
+Person	SharpSerializer	string	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
+Person	CsvHelper	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	FlatSharp	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	FluentSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	Google.Protobuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	SpanJson	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	Utf8Json	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [6]
+Person	YamlDotNet	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [6]
+Person	YAXLib	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
 Person	BinaryPack	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	MemoryPack	string	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+Person	GroBuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [6]
+Person	ExtendedXmlSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	SharpSerializer	Stream	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
+Person	Ceras	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+Person	CsvHelper	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	FlatSharp	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	FluentSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	Google.Protobuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	SpanJson	Stream	0	Deserialization JsonParserException: Error Reading JSON data: 'EndOfData' at position: '0'.
+Person	Utf8Json	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [6]
+Person	YamlDotNet	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	YAXLib	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Person	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
 Person	BinaryPack	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+Person	MemoryPack	Stream	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+Person	GroBuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [6]
+Person	ExtendedXmlSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [47] != [1]
+Integer	CsvHelper	string	0	Validation Error: Seems serialization failed. Serialized object size = 0.
+Integer	FlatSharp	string	0	Validation Error: Seems serialization failed. Serialized object size = 0.
+Integer	FluentSerializer	string	0	Validation Error: Seems serialization failed. Serialized object size = 0.
+Integer	Google.Protobuf	string	0	Validation Error: Seems serialization failed. Serialized object size = 0.
+Integer	SpanJson	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [1] != [10]
+Integer	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
+Integer	MemoryPack	string	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+Integer	Ceras	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+Integer	CsvHelper	Stream	0	Validation Error: Seems serialization failed. Serialized object size = 0.
+Integer	FlatSharp	Stream	0	Validation Error: Seems serialization failed. Serialized object size = 0.
+Integer	FluentSerializer	Stream	0	Validation Error: Seems serialization failed. Serialized object size = 0.
+Integer	Google.Protobuf	Stream	0	Validation Error: Seems serialization failed. Serialized object size = 0.
+Integer	SpanJson	Stream	0	Deserialization JsonParserException: Error Reading JSON data: 'EndOfData' at position: '0'.
+Integer	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
+Integer	BinaryPack	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+Integer	MemoryPack	Stream	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+Telemetry	SharpSerializer	string	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
+Telemetry	CsvHelper	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	FlatSharp	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	FluentSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	Google.Protobuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	SpanJson	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	Utf8Json	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
+Telemetry	YamlDotNet	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
+Telemetry	YAXLib	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
+Telemetry	BinaryPack	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	MemoryPack	string	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+Telemetry	GroBuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
+Telemetry	ExtendedXmlSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	SharpSerializer	Stream	0	Serialization NullReferenceException: Object reference not set to an instance of an object.
+Telemetry	Ceras	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+Telemetry	CsvHelper	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	FlatSharp	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	FluentSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	Google.Protobuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	SpanJson	Stream	0	Deserialization JsonParserException: Error Reading JSON data: 'EndOfData' at position: '0'.
+Telemetry	Utf8Json	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
+Telemetry	YamlDotNet	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	YAXLib	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+Telemetry	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
+Telemetry	BinaryPack	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+Telemetry	MemoryPack	Stream	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+Telemetry	GroBuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [9]
+Telemetry	ExtendedXmlSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [108] != [1]
+SimpleObject	CsvHelper	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	FlatSharp	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	FluentSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	Google.Protobuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	SpanJson	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	YAXLib	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
+SimpleObject	BinaryPack	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	MemoryPack	string	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+SimpleObject	ExtendedXmlSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	Ceras	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+SimpleObject	CsvHelper	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	FlatSharp	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	FluentSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	Google.Protobuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	SpanJson	Stream	0	Deserialization JsonParserException: Error Reading JSON data: 'EndOfData' at position: '0'.
+SimpleObject	YamlDotNet	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	YAXLib	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+SimpleObject	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
+SimpleObject	BinaryPack	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+SimpleObject	MemoryPack	Stream	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+SimpleObject	ExtendedXmlSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [4] != [1]
+StringArray	CsvHelper	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	FlatSharp	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	FluentSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	Google.Protobuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	SpanJson	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	Utf8Json	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	YamlDotNet	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	YAXLib	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
+StringArray	BinaryPack	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	MemoryPack	string	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+StringArray	GroBuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	ExtendedXmlSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	Migrant	string	0	Serialization BadImageFormatException: Bad IL format.
+StringArray	Ceras	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+StringArray	CsvHelper	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	FlatSharp	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	FluentSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	Google.Protobuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	SpanJson	Stream	0	Deserialization JsonParserException: Error Reading JSON data: 'EndOfData' at position: '0'.
+StringArray	Utf8Json	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	YamlDotNet	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	YAXLib	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
+StringArray	BinaryPack	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+StringArray	MemoryPack	Stream	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+StringArray	GroBuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	ExtendedXmlSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [100] != [1]
+StringArray	Migrant	Stream	0	Serialization BadImageFormatException: Bad IL format.
+EDI_835	CsvHelper	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	FlatSharp	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	FluentSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	Google.Protobuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	SpanJson	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	Utf8Json	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [6]
+EDI_835	YamlDotNet	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [6]
+EDI_835	YAXLib	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
+EDI_835	BinaryPack	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	MemoryPack	string	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+EDI_835	GroBuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [5]
+EDI_835	ExtendedXmlSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	Migrant	string	0	Serialization BadImageFormatException: Bad IL format.
+EDI_835	Ceras	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+EDI_835	CsvHelper	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	FlatSharp	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	FluentSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	Google.Protobuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	SpanJson	Stream	0	Deserialization JsonParserException: Error Reading JSON data: 'EndOfData' at position: '0'.
+EDI_835	Utf8Json	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [6]
+EDI_835	YamlDotNet	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	YAXLib	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
+EDI_835	BinaryPack	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+EDI_835	MemoryPack	Stream	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+EDI_835	GroBuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [5]
+EDI_835	ExtendedXmlSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [70] != [1]
+EDI_835	Migrant	Stream	0	Serialization BadImageFormatException: Bad IL format.
+ObjectGraph	MS Bond Compact	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
+ObjectGraph	MS Bond Fast	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
+ObjectGraph	MS Bond Json	string	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
+ObjectGraph	ProtoBuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [17]
+ObjectGraph	ServiceStack Type	string	0	Serialization OutOfMemoryException: Insufficient memory to continue the execution of the program.
+ObjectGraph	CsvHelper	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	FlatSharp	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	FluentSerializer	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	Google.Protobuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	YamlDotNet	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [4]
+ObjectGraph	YAXLib	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
+ObjectGraph	BinaryPack	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	MemoryPack	string	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+ObjectGraph	SharpYaml	string	0	Serialization YamlException: (Lin: 0, Col: 0, Chr: 0) - (Lin: 0, Col: 0, Chr: 0): The maximum nesting depth of 64 has been exceeded.
+ObjectGraph	GroBuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [3]
+ObjectGraph	ExtendedXmlSerializer	string	0	Serialization CircularReferencesDetectedException: The provided instance of type 'GLD.SerializerBenchmark.TestData.GraphNode' contains circular references within its graph. Serializing this instance would result in a recursive, endless loop. To properly serialize this instance, please create a serializer that has referential support enabled by extending it with the ReferencesExtension using the EnableReferences extension method on the ConfigurationContainer.
+
+Here is a list of found references:
+- GLD.SerializerBenchmark.TestData.GraphNode
+- GLD.SerializerBenchmark.TestData.GraphNode
+ObjectGraph	Migrant	string	0	Serialization BadImageFormatException: Bad IL format.
+ObjectGraph	MS Bond Compact	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
+ObjectGraph	MS Bond Fast	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
+ObjectGraph	MS Bond Json	Stream	0	Serialization TargetInvocationException: Exception has been thrown by the target of an invocation.
+ObjectGraph	ProtoBuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [17]
+ObjectGraph	ServiceStack Type	Stream	0	Serialization IOException: Stream was too long.
+ObjectGraph	Ceras	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+ObjectGraph	CsvHelper	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	FlatSharp	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	FluentSerializer	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	Google.Protobuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	YamlDotNet	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	YAXLib	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [1]
+ObjectGraph	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
+ObjectGraph	BinaryPack	Stream	0	Deserialization IndexOutOfRangeException: Index was outside the bounds of the array.
+ObjectGraph	MemoryPack	Stream	0	Serialization MemoryPackSerializationException: System.Object is not registered in this provider.
+ObjectGraph	SharpYaml	Stream	0	Serialization YamlException: (Lin: 0, Col: 0, Chr: 0) - (Lin: 0, Col: 0, Chr: 0): The maximum nesting depth of 64 has been exceeded.
+ObjectGraph	GroBuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [3]
+ObjectGraph	ExtendedXmlSerializer	Stream	0	Serialization CircularReferencesDetectedException: The provided instance of type 'GLD.SerializerBenchmark.TestData.GraphNode' contains circular references within its graph. Serializing this instance would result in a recursive, endless loop. To properly serialize this instance, please create a serializer that has referential support enabled by extending it with the ReferencesExtension using the EnableReferences extension method on the ConfigurationContainer.
+
+Here is a list of found references:
+- GLD.SerializerBenchmark.TestData.GraphNode
+- GLD.SerializerBenchmark.TestData.GraphNode
+ObjectGraph	Migrant	Stream	0	Serialization BadImageFormatException: Bad IL format.

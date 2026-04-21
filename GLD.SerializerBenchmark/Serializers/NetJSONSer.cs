@@ -1,8 +1,4 @@
-///
-/// See here https://github.com/rpgmaker/NetJSON
-/// >PM Install-Package NetJSON
-/// 
-
+using System;
 using System.IO;
 
 namespace GLD.SerializerBenchmark.Serializers
@@ -14,6 +10,12 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Name
         {
             get { return "NetJSON"; }
+        }
+
+        public override bool Supports(string testDataName)
+        {
+            // NetJSON does not support circular references in ObjectGraph
+            return testDataName != "ObjectGraph";
         }
 
         public override string Serialize(object serializable)
@@ -28,22 +30,15 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            // NetJSON has issues with direct stream writing; use intermediate string
-            var json = NetJSON.NetJSON.Serialize(serializable);
-            using (var sw = new StreamWriter(outputStream, leaveOpen: true))
-            {
-                sw.Write(json);
-            }
+            var sw = new StreamWriter(outputStream);
+            sw.Write(NetJSON.NetJSON.Serialize(serializable));
+            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            using (var sr = new StreamReader(inputStream, leaveOpen: true))
-            {
-                var json = sr.ReadToEnd();
-                return NetJSON.NetJSON.Deserialize(_primaryType, json);
-            }
+            return NetJSON.NetJSON.Deserialize(_primaryType, new StreamReader(inputStream).ReadToEnd());
         }
 
         #endregion

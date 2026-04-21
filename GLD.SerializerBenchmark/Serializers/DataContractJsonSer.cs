@@ -1,7 +1,3 @@
-///
-/// System.Runtime.Serialization.dll 
-/// 
-
 using System;
 using System.IO;
 using System.Runtime.Serialization.Json;
@@ -24,6 +20,12 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Name
         {
             get { return "MS DataContract Json"; }
+        }
+
+        public override bool Supports(string testDataName)
+        {
+            // DataContractJsonSerializer often struggles with circular references
+            return testDataName != "ObjectGraph";
         }
 
         public override string Serialize(object serializable)

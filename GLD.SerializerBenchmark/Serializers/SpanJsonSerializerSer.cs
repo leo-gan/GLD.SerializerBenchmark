@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
@@ -8,15 +7,26 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class SpanJsonSerializerSer : SerDeser
     {
         public override string Name => "SpanJson";
+
+        public override bool Supports(string testDataName)
+        {
+            // SpanJson does not support circular references in ObjectGraph
+            return testDataName != "ObjectGraph";
+        }
+
         public override string Serialize(object serializable) => SpanJson.JsonSerializer.Generic.Utf16.Serialize(serializable);
-        public override object Deserialize(string serialized) => SpanJson.JsonSerializer.Generic.Utf16.Deserialize<object>(serialized);
+        public override object Deserialize(string serialized) => SpanJson.JsonSerializer.Generic.Utf16.Deserialize<dynamic>(serialized);
         public override void Serialize(object serializable, Stream outputStream) {
-            using var sw = new StreamWriter(outputStream, Encoding.UTF8, 1024, true);
-            sw.Write(SpanJson.JsonSerializer.Generic.Utf16.Serialize(serializable));
+            // SpanJson usually works with byte[] or ReadOnlySpan<byte>
+            var json = SpanJson.JsonSerializer.Generic.Utf8.Serialize(serializable);
+            outputStream.Write(json, 0, json.Length);
         }
         public override object Deserialize(Stream inputStream) {
-            using var sr = new StreamReader(inputStream, Encoding.UTF8, false, 1024, true);
-            return SpanJson.JsonSerializer.Generic.Utf16.Deserialize<object>(sr.ReadToEnd());
+             using (var ms = new MemoryStream())
+            {
+                inputStream.CopyTo(ms);
+                return SpanJson.JsonSerializer.Generic.Utf8.Deserialize<dynamic>(ms.ToArray());
+            }
         }
     }
 }

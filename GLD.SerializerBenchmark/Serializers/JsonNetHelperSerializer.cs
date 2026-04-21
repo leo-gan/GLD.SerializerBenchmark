@@ -5,6 +5,11 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class JsonNetHelperSerializer : SerDeser
     {
+        private static readonly JsonSerializerSettings _settings = new JsonSerializerSettings
+        {
+            PreserveReferencesHandling = PreserveReferencesHandling.Objects
+        };
+
         #region ISerDeser Members
 
         public override string Name
@@ -14,19 +19,18 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
-            return JsonConvert.SerializeObject(serializable);
+            return JsonConvert.SerializeObject(serializable, _settings);
         }
 
         public override object Deserialize(string serialized)
         {
-            return JsonConvert.DeserializeObject(serialized, _primaryType);
+            return JsonConvert.DeserializeObject(serialized, _primaryType, _settings);
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            var str = JsonConvert.SerializeObject(serializable);
+            var str = JsonConvert.SerializeObject(serializable, _settings);
             var sw = new StreamWriter(outputStream);
-            outputStream.Seek(0, SeekOrigin.Begin);
             sw.Write(str);
             sw.Flush();
         }
@@ -36,7 +40,7 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             var sr = new StreamReader(inputStream);
             var serialized = sr.ReadToEnd();
-            return JsonConvert.DeserializeObject(serialized, _primaryType);
+            return JsonConvert.DeserializeObject(serialized, _primaryType, _settings);
         }
 
         #endregion

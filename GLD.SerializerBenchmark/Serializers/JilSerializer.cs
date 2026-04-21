@@ -1,8 +1,4 @@
-///
-/// https://github.com/kevin-montrose/Jil
-/// PM> Install-Package Jil
-/// TODO: DateTime fields is still under work.
-
+using System;
 using System.IO;
 using Jil;
 
@@ -15,6 +11,14 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Name
         {
             get { return "Jil"; }
+        }
+
+        public override bool Supports(string testDataName)
+        {
+            // Jil does not support circular references in ObjectGraph
+            bool isObjectGraph = testDataName == "ObjectGraph";
+            // Console.WriteLine($"[DEBUG] Jil.Supports({testDataName}) -> {!isObjectGraph}");
+            return !isObjectGraph;
         }
 
         public override string Serialize(object serializable)

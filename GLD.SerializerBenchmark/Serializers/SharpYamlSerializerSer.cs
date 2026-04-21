@@ -8,15 +8,32 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class SharpYamlSerializerSer : SerDeser
     {
         public override string Name => "SharpYaml";
-        public override string Serialize(object serializable) => SharpYaml.YamlSerializer.Serialize(serializable);
-        public override object Deserialize(string serialized) => SharpYaml.YamlSerializer.Deserialize<object>(serialized);
-        public override void Serialize(object serializable, Stream outputStream) {
-            using var sw = new StreamWriter(outputStream, Encoding.UTF8, 1024, true);
-            sw.Write(SharpYaml.YamlSerializer.Serialize(serializable));
+
+        public override string Serialize(object serializable)
+        {
+            return SharpYaml.YamlSerializer.Serialize(serializable);
         }
-        public override object Deserialize(Stream inputStream) {
-            using var sr = new StreamReader(inputStream, Encoding.UTF8, false, 1024, true);
-            return SharpYaml.YamlSerializer.Deserialize<object>(sr.ReadToEnd());
+
+        public override object Deserialize(string serialized)
+        {
+            return SharpYaml.YamlSerializer.Deserialize(serialized, _primaryType);
+        }
+
+        public override void Serialize(object serializable, Stream outputStream)
+        {
+            using (var sw = new StreamWriter(outputStream, Encoding.UTF8, 1024, true))
+            {
+                sw.Write(SharpYaml.YamlSerializer.Serialize(serializable));
+            }
+        }
+
+        public override object Deserialize(Stream inputStream)
+        {
+            inputStream.Seek(0, SeekOrigin.Begin);
+            using (var sr = new StreamReader(inputStream, Encoding.UTF8, false, 1024, true))
+            {
+                return SharpYaml.YamlSerializer.Deserialize(sr.ReadToEnd(), _primaryType);
+            }
         }
     }
 }

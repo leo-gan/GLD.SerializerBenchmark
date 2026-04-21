@@ -5,7 +5,10 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class JsonNetSerializer : SerDeser
     {
-        private readonly JsonSerializer _serializer = new JsonSerializer();
+        private readonly JsonSerializer _serializer = new JsonSerializer 
+        { 
+            PreserveReferencesHandling = PreserveReferencesHandling.Objects 
+        };
 
         #region ISerDeser Members
 

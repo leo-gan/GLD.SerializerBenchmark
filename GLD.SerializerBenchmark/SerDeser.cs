@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -11,6 +11,8 @@ namespace GLD.SerializerBenchmark
         public bool JustInitialized;
 
         public abstract string Name { get; }
+
+        public virtual bool Supports(string testDataName) => true;
 
         public virtual void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {

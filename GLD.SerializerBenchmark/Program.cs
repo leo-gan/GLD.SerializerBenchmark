@@ -59,7 +59,11 @@ namespace GLD.SerializerBenchmark
                 new ZeroFormatterSerializerSer(),
                 new BinaryPackSerializerSer(),
                 new MemoryPackSerializerSer(),
-
+                new SharpYamlSerializerSer(),
+                new GroBufSerializerSer(),
+                new ExtendedXmlSerializerSer(),
+                new MigrantSerializerSer(),
+                new ApexSerializerSer() // Moved to end
             };
 
             var testDataDescriptions = allTestDataDescriptions

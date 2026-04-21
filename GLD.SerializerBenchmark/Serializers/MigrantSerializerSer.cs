@@ -1,21 +1,20 @@
 using System;
 using System.IO;
-using Hyperion;
+using Antmicro.Migrant;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    // Hyperion
-    internal class HyperionSerializerSer : SerDeser
+    // Migrant
+    internal class MigrantSerializerSer : SerDeser
     {
-        private readonly Serializer _serializer = new Serializer(new SerializerOptions(preserveObjectReferences: true));
+        private readonly Serializer _serializer;
 
-        public override string Name => "Hyperion";
-
-        public override bool Supports(string testDataName)
+        public MigrantSerializerSer()
         {
-            // Hyperion can crash with StackOverflow/SegFault on very deep circular references like ObjectGraph
-            return testDataName != "ObjectGraph";
+            _serializer = new Serializer();
         }
+
+        public override string Name => "Migrant";
 
         public override string Serialize(object serializable)
         {
