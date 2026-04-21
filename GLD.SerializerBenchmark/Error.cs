@@ -60,12 +60,11 @@ namespace GLD.SerializerBenchmark
 
         public static void SaveErrors(List<Error> errors, string fileName)
         {
-            var fileStreamWriter = File.CreateText(fileName);
-            var header = string.Join("\t", new[] { "TestDataName", "SerializerName", "StringOrStream", "Repetition", "ErrorText" });
+            using var fileStreamWriter = File.CreateText(fileName);
+            var header = string.Join("\t", "TestDataName", "SerializerName", "StringOrStream", "Repetition", "ErrorText");
             fileStreamWriter.WriteLine(header);
             foreach (var er in errors)
-                fileStreamWriter.WriteLine(string.Join("\t", new[] { er.TestDataName, er.SerializerName, er.StringOrStream, er.Repetition.ToString(), er.ErrorText }));
-            fileStreamWriter.Close();
+                fileStreamWriter.WriteLine(string.Join("\t", er.TestDataName, er.SerializerName, er.StringOrStream, er.Repetition, er.ErrorText));
         }
 
         private static string GetArchiveFileName(string fileFullName)

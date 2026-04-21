@@ -22,7 +22,6 @@
     <PackageReference Include="SharpSerializer" Version="3.0.1" />
     <PackageReference Include="fastJSON" Version="2.4.0.4" />
     <PackageReference Include="NetJSON" Version="1.4.3" />
-    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="4.3.0" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="6.0.0" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />

@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="docs" />
+    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="Add Full Run results (100 repetitions)">
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Error.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Error.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/LegacyCompat.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/LegacyCompat.cs" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -80,7 +85,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776709484331</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Add Full Run results (100 repetitions)">
+      <option name="closed" value="true" />
+      <created>1776736164794</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776736164794</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -97,7 +110,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="jules-4609223718124987945-4b7df6bb" />
+                        <option value="modernization-net6" />
                       </list>
                     </value>
                   </entry>
@@ -111,6 +124,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="docs" />
-    <option name="LAST_COMMIT_MESSAGE" value="docs" />
+    <MESSAGE value="Add Full Run results (100 repetitions)" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add Full Run results (100 repetitions)" />
   </component>
 </project>
