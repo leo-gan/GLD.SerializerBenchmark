@@ -4,11 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="Add Full Run results (100 repetitions)">
+    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="fixes">
+      <change afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/EDI835_types.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/SimpleObject_types.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/StringArrayObject_types.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/TelemetryData_types.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Error.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Error.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/LegacyCompat.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/LegacyCompat.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Report.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Report.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FsPicklerBinarySerializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FsPicklerBinarySerializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FsPicklerJsonSerializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FsPicklerJsonSerializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/NetJSONSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/NetJSONSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SharpSerializer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SharpSerializer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/EDI_X12_835.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/EDI_X12_835.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/SimpleAndStringArray.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/SimpleAndStringArray.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Errors.tsv" beforeDir="false" afterPath="$PROJECT_DIR$/logs/SerializerBenchmark_Errors.tsv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" beforeDir="false" afterPath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,7 +29,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="docs-2" />
+        <entry key="$PROJECT_DIR$" value="master" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -35,6 +46,9 @@
     &quot;accountId&quot;: &quot;444f117e-e053-45f1-b258-37645e0064be&quot;
   }
 }</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/logs/SerializerBenchmark_Errors.tsv" root0="SKIP_INSPECTION" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
 }</component>
@@ -43,25 +57,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "modernization-net6",
-    "git.auto.fetch.suggestion.counter": "3",
-    "last_opened_file_path": "/home/leo/PycharmProjects/GLD/seriailizer-benchmark",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.codeium.AppSettingsConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;error-fixes&quot;,
+    &quot;git.auto.fetch.suggestion.counter&quot;: &quot;3&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/leo/PycharmProjects/GLD/seriailizer-benchmark&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.codeium.AppSettingsConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -93,7 +107,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776736164794</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="fixes">
+      <option name="closed" value="true" />
+      <created>1776740586115</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1776740586115</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -125,6 +147,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="docs" />
     <MESSAGE value="Add Full Run results (100 repetitions)" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add Full Run results (100 repetitions)" />
+    <MESSAGE value="fixes" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixes" />
   </component>
 </project>

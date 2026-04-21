@@ -198,3 +198,4 @@ test-results/
 .env*.local
 .vercel
 .turbo
+/.idea/workspace.xml

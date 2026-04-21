@@ -31,7 +31,7 @@ namespace GLD.SerializerBenchmark.TestData
     {
         [ProtoMember(1)] [DataMember] [Id(0)] public int Id { get; set; }
         [ProtoMember(2)] [DataMember] [Id(1)] public string Name { get; set; }
-        [ProtoMember(3)] [DataMember] [Id(2)] public DateTime Timestamp { get; set; }
+        [ProtoMember(3)] [DataMember] [Id(2), Type(typeof(long))] public DateTime Timestamp { get; set; }
         [ProtoMember(4)] [DataMember] [Id(3)] public bool IsActive { get; set; }
     }
 
@@ -52,13 +52,13 @@ namespace GLD.SerializerBenchmark.TestData
     [Schema]
     public class StringArrayObject
     {
-        [ProtoMember(1)] [DataMember] [Id(0)] public string[] Items { get; set; }
+        [ProtoMember(1)] [DataMember] [Id(0)] public List<string> Items { get; set; }
 
         public static StringArrayObject Generate(int count)
         {
-            var items = new string[count];
+            var items = new List<string>(count);
             for (int i = 0; i < count; i++)
-                items[i] = "Item_" + i + "_" + Guid.NewGuid().ToString().Substring(0, 8);
+                items.Add("Item_" + i + "_" + Guid.NewGuid().ToString().Substring(0, 8));
             return new StringArrayObject { Items = items };
         }
     }

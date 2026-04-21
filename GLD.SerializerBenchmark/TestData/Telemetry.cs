@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Bond;
@@ -43,23 +43,23 @@ namespace GLD.SerializerBenchmark.TestData
     [Schema]
     public class TelemetryData
     {
-        [ProtoMember(8)] [DataMember] [Id(7)] public long AssociatedLogID;
+        [ProtoMember(8)] [DataMember] [Id(7)] public long AssociatedLogID { get; set; }
 
-        [ProtoMember(7)] [DataMember] [Id(6)] public long AssociatedProblemID;
+        [ProtoMember(7)] [DataMember] [Id(6)] public long AssociatedProblemID { get; set; }
 
-        [ProtoMember(2)] [DataMember] [Id(1)] public string DataSource;
+        [ProtoMember(2)] [DataMember] [Id(1)] public string DataSource { get; set; }
 
-        [ProtoMember(1)] [DataMember] [Id(0)] public string Id;
+        [ProtoMember(1)] [DataMember] [Id(0)] public string Id { get; set; }
 
-        [ProtoMember(6)] [DataMember] [Id(5)] public double[] Measurements;
+        [ProtoMember(6)] [DataMember] [Id(5)] public double[] Measurements { get; set; }
 
-        [ProtoMember(4)] [DataMember] [Id(3)] public int Param1;
+        [ProtoMember(4)] [DataMember] [Id(3)] public int Param1 { get; set; }
 
-        [ProtoMember(5)] [DataMember] [Id(4)] public uint Param2;
+        [ProtoMember(5)] [DataMember] [Id(4)] public uint Param2 { get; set; }
 
-        [ProtoMember(3)] [DataMember] [Id(2), Type(typeof (long))] public DateTime TimeStamp;
+        [ProtoMember(3)] [DataMember] [Id(2), Type(typeof (long))] public DateTime TimeStamp { get; set; }
 
-        [ProtoMember(9)] [DataMember] [Id(8)] public bool WasProcessed;
+        [ProtoMember(9)] [DataMember] [Id(8)] public bool WasProcessed { get; set; }
 
         public static TelemetryData Generate(int measurementsNumber)
         {

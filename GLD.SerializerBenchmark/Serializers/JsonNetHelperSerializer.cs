@@ -33,8 +33,8 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
-            var sr = new StreamReader(inputStream);
             inputStream.Seek(0, SeekOrigin.Begin);
+            var sr = new StreamReader(inputStream);
             var serialized = sr.ReadToEnd();
             return JsonConvert.DeserializeObject(serialized, _primaryType);
         }
