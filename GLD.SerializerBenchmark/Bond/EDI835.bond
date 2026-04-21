@@ -1,0 +1,29 @@
+namespace GLD.SerializerBenchmark.Bond
+
+	using DateTime = int64;
+
+    struct ServiceLine
+    {
+        0: string ServiceCode;
+        1: double ChargeAmount;
+        2: double AdjudicatedAmount;
+    }
+
+    struct Claim
+    {
+        0: string ClaimId;
+        1: string PatientName;
+        2: double TotalCharge;
+        3: double PaymentAmount;
+        4: list<ServiceLine> Lines;
+    }
+
+    struct EDI835
+    {
+        0: string PayerName;
+        1: string PayeeName;
+        2: DateTime PaymentDate;
+        3: double TotalActualAmount;
+        4: string TransactionControlNumber;
+        5: list<Claim> Claims;
+    }

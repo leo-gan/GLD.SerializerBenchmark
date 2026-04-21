@@ -1,0 +1,11 @@
+namespace GLD.SerializerBenchmark.Bond
+
+	using DateTime = int64;
+
+    struct SimpleObject
+    {
+        0: int32 Id;
+        1: string Name;
+        2: DateTime Timestamp;
+        3: bool IsActive;
+    }

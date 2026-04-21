@@ -11,15 +11,12 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class SharpSerializer : SerDeser
     {
-        private static Polenter.Serialization.SharpSerializer _serializer;
-
-        public SharpSerializer() // TODO: Is it possible to assigh Type to serializer, so it could speed up?
+        // Create a new serializer instance per operation to avoid threading issues
+        // Using XML settings for better compatibility with arrays
+        private static Polenter.Serialization.SharpSerializer CreateSerializer()
         {
-            var settings = new SharpSerializerBinarySettings
-            {
-                Mode = BinarySerializationMode.Burst
-            };
-            _serializer = new Polenter.Serialization.SharpSerializer(settings);
+            var settings = new SharpSerializerXmlSettings();
+            return new Polenter.Serialization.SharpSerializer(settings);
         }
 
         #region ISerDeser Members
@@ -31,9 +28,13 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
+            if (serializable == null)
+                throw new ArgumentNullException(nameof(serializable));
+                
+            var serializer = CreateSerializer();
             using (var ms = new MemoryStream())
             {
-                _serializer.Serialize(serializable, ms);
+                serializer.Serialize(serializable, ms);
                 ms.Flush();
                 ms.Position = 0;
                 return Convert.ToBase64String(ms.ToArray());
@@ -42,23 +43,37 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(string serialized)
         {
+            if (string.IsNullOrEmpty(serialized))
+                throw new ArgumentNullException(nameof(serialized));
+                
+            var serializer = CreateSerializer();
             var b = Convert.FromBase64String(serialized);
             using (var stream = new MemoryStream(b))
             {
                 stream.Seek(0, SeekOrigin.Begin);
-                return _serializer.Deserialize(stream);
+                return serializer.Deserialize(stream);
             }
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            _serializer.Serialize(serializable, outputStream);
+            if (serializable == null)
+                throw new ArgumentNullException(nameof(serializable));
+            if (outputStream == null)
+                throw new ArgumentNullException(nameof(outputStream));
+                
+            var serializer = CreateSerializer();
+            serializer.Serialize(serializable, outputStream);
         }
 
         public override object Deserialize(Stream inputStream)
         {
+            if (inputStream == null)
+                throw new ArgumentNullException(nameof(inputStream));
+                
+            var serializer = CreateSerializer();
             inputStream.Seek(0, SeekOrigin.Begin);
-            return _serializer.Deserialize(inputStream);
+            return serializer.Deserialize(inputStream);
         }
 
         #endregion

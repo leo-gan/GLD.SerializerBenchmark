@@ -28,16 +28,22 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            var sw = new StreamWriter(outputStream);
-            NetJSON.NetJSON.Serialize(serializable, sw);
+            // NetJSON has issues with direct stream writing; use intermediate string
+            var json = NetJSON.NetJSON.Serialize(serializable);
+            using (var sw = new StreamWriter(outputStream, leaveOpen: true))
+            {
+                sw.Write(json);
+            }
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            //inputStream.Seek(0, SeekOrigin.Begin);
-            var sr = new StreamReader(inputStream);
             inputStream.Seek(0, SeekOrigin.Begin);
-            return NetJSON.NetJSON.Deserialize(_primaryType, sr.ReadToEnd());
+            using (var sr = new StreamReader(inputStream, leaveOpen: true))
+            {
+                var json = sr.ReadToEnd();
+                return NetJSON.NetJSON.Deserialize(_primaryType, json);
+            }
         }
 
         #endregion
