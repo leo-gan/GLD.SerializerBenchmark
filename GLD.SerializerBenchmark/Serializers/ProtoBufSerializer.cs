@@ -13,7 +13,7 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class ProtoBufSerializer : SerDeser
     {
-        private readonly RuntimeTypeModel _Model = TypeModel.Create();
+         private readonly RuntimeTypeModel _Model = RuntimeTypeModel.Create();
 
         private void Initialize()
         {

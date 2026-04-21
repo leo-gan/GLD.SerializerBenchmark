@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
@@ -60,15 +60,11 @@ namespace GLD.SerializerBenchmark
 
         public static void SaveErrors(List<Error> errors, string fileName)
         {
-            if (File.Exists(fileName))
-                File.Move(fileName, Error.GetArchiveFileName(fileName));
-
-            var fileStreamWriter = File.CreateText(fileName);
-            var header = string.Join("\t", new[] {"SerializerName","StringOrStream","ErrorText" });
+            using var fileStreamWriter = File.CreateText(fileName);
+            var header = string.Join("\t", "TestDataName", "SerializerName", "StringOrStream", "Repetition", "ErrorText");
             fileStreamWriter.WriteLine(header);
             foreach (var er in errors)
-                fileStreamWriter.WriteLine(string.Join("\t", new[] { er.SerializerName, er.StringOrStream, er.ErrorText }));
-            fileStreamWriter.Close();
+                fileStreamWriter.WriteLine(string.Join("\t", er.TestDataName, er.SerializerName, er.StringOrStream, er.Repetition, er.ErrorText));
         }
 
         private static string GetArchiveFileName(string fileFullName)
