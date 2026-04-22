@@ -7,15 +7,6 @@ namespace GLD.SerializerBenchmark
 {
     internal class Tester
     {
-        /// <summary>
-        /// The tests executed in loops in this hierarchy: DataKinds => sting/Stream => repetitions => Serializers
-        ///  The results of the test are written to the log. 
-        ///  The log is outputed by the Report class. The log should be processed by 
-        ///  one of the Analyzing tool, like Excel, PowerBI, or a separate app.
-        /// </summary>
-        /// <param name="serializers">Collection of the serializers</param>
-        /// <param name="testDataDescriptions">Collection of the data type instances</param>
-        /// <param name="repetitions">Number of repetitions on the lowest level.</param>
         public static void Tests(List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions,
             int repetitions)
         {
@@ -23,13 +14,10 @@ namespace GLD.SerializerBenchmark
             var logStorage = new LogStorage("logs/SerializerBenchmark_Log.csv");
             var errors = new List<Error>();
 
-            // initialize all serializers 
             foreach (var testDataDescription in testDataDescriptions)
             {
                 Console.WriteLine($"\n[PROGRESS] Testing Data: {testDataDescription.Name} (Targeting {serializers.Count} serializers, {repetitions} reps)");
                 TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
-                
-                // Save errors after each data type to prevent loss in case of crash later
                 Error.SaveErrors(errors, "logs/SerializerBenchmark_Errors.tsv");
             }
 
@@ -40,9 +28,11 @@ namespace GLD.SerializerBenchmark
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,
             List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
         {
-            // initialize serializers for every data type.
             foreach (var serializer in serializers)
+            {
+                Console.WriteLine($"[DEBUG] Initializing {serializer.Name}");
                 serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
+            }
 
             TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors);
             TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors);
@@ -52,17 +42,10 @@ namespace GLD.SerializerBenchmark
             List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
         {
             var wasError = new Dictionary<string, bool>();
-            var original = testDataDescription; // the same data for all serializers
-            //Report.TestDataHeader(testDataDescription.Key);
-            GC.Collect(); // it has very little impact on speed for repetitions < 100
-            GC.WaitForFullGCComplete();
-            GC.Collect();
+            var original = testDataDescription;
 
             for (var i = 0; i < repetitions; i++)
             {
-                if (i % 10 == 0 || i == repetitions - 1)
-                    Console.Write($"\r[PROGRESS]   {testDataDescription.Name} [{(streaming ? "Stream" : "String")}] Repetition: {i + 1}/{repetitions}...");
-
                 var log = new Log
                 {
                     Run = 1,
@@ -73,7 +56,6 @@ namespace GLD.SerializerBenchmark
                 };
                 TestOnSerializer(serializers, original, errors, streaming, logStorage, log, wasError);
             }
-            Console.WriteLine();
         }
 
         private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original,
@@ -82,21 +64,20 @@ namespace GLD.SerializerBenchmark
             foreach (var serializer in serializers)
             {
                 if (wasError.ContainsKey(serializer.Name)) continue;
+                
+                if (!serializer.Supports(original.Name)) continue;
+
+                Console.WriteLine($"[DEBUG] Starting {serializer.Name} ({(streaming ? "Stream" : "string")})");
                 SingleTest(serializer, original, errors, streaming, log,
                     logStorage, out bool isRepeatedError);
                 if (isRepeatedError) wasError[serializer.Name] = true;
             }
-
-            GC.Collect(); // it has very little impact on speed for repetitions < 100
-            GC.WaitForFullGCComplete();
-            GC.Collect();
         }
 
         private static void SingleTest(ISerDeser serializer, ITestDataDescription original, List<Error> errors,
             bool streaming, Log log, LogStorage logStorage, out bool isRepeatedError)
         {
             isRepeatedError = false;
-            //var measurement = new Measurement();
             string serializedString = null;
             Stream serializedStream = new MemoryStream();
             object processed;
@@ -118,7 +99,6 @@ namespace GLD.SerializerBenchmark
                 {
                     serializer.Serialize(original.Data, serializedStream);
                     log.Size = (int) serializedStream.Length;
-                    // serializedStream.Seek(0, SeekOrigin.Begin); // Commented out! It set up explicitly not for all serializers!!!!
                 }
                 else
                 {
@@ -142,13 +122,14 @@ namespace GLD.SerializerBenchmark
             }
 
             string errorText;
-            // write log if comparison is true
             if (Comparer.Compare(original.Data, processed, out errorText, log, false))
+            {
                 logStorage.Write(log);
-            else // write error, if comparison false
+            }
+            else 
             {
                 error.ErrorText = errorText;
-                isRepeatedError = !error.TryAddTo(errors); // if it falses adding, that means an error repeated.
+                isRepeatedError = !error.TryAddTo(errors);
             }
         }
     }

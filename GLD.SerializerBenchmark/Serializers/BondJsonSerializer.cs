@@ -1,4 +1,4 @@
-﻿///
+///
 /// See here https://github.com/Microsoft/bond/
 /// >PM Install-Package Bond.CSharp
 /// 
@@ -27,6 +27,12 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Name
         {
             get { return "MS Bond Json"; }
+        }
+
+        public override bool Supports(string testDataName)
+        {
+            // Bond requires schema attributes for complex types like ObjectGraph
+            return testDataName != "ObjectGraph";
         }
 
         public override string Serialize(object serializable)

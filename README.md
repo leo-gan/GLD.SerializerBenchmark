@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-A highly extensible benchmarking suite designed to evaluate the performance (speed and size) of about 20 different .NET serializers across various complex data structures.
+A highly extensible benchmarking suite designed to evaluate the performance (speed and size) of **38 different .NET serializers** across various complex data structures.
 
 This project serves two purposes:
 1. **Performance Insight**: Compare various serialization libraries to make informed architectural decisions.
@@ -10,7 +10,7 @@ This project serves two purposes:
 
 ## 🚀 Key Features
 
-- **Extensive Library Support**: Benchmarks for ~20 popular serializers (Json.NET, Protobuf-net, Jil, MessagePack, Wire, etc.).
+- **Extensive Library Support**: Benchmarks for **38 popular serializers** (Json.NET, Protobuf-net, Jil, MessagePack, Wire, SpanJson, Utf8Json, MemoryPack, Ceras, FlatSharp, and more).
 - **Diverse Test Data**: Realistic data structures including Telemetry, EDI documents, Object Graphs, and simple POCOs.
 - **Dual Mode Testing**: Every serializer is tested in both **String** and **Stream** serialization modes.
 - **Detailed Reporting**: Generates raw metrics in `.csv` format for deep analysis and `.tsv` for error tracking.
@@ -99,6 +99,10 @@ The benchmark outputs two main files:
 - `SerializerBenchmark_Errors.tsv`: Detailed error reports for serializers that failed specific test cases.
 
 For a deeper dive into the results, open `GLD.SerializerBenchmark/Analysis.ipynb` using Jupyter or the VS Code Interactive window.
+
+### Documentation
+- **[Serializer Reference](GLD.SerializerBenchmark/Docs/Serializers.md)**: Detailed descriptions of all 38 serializers, their capabilities, and limitations.
+- **[Result Explanations](GLD.SerializerBenchmark/Docs/ResultExplanations.md)**: Understanding the test reports, measurement modes, and execution workflow.
 
 ---
 

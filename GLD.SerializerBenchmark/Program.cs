@@ -45,6 +45,25 @@ namespace GLD.SerializerBenchmark
                 new SharpSerializer(), 
                 new ServiceStackJsonSerializer(), 
                 new ServiceStackTypeSerializer(), 
+                new CerasSerializerSer(),
+                new CsvHelperSerializerSer(),
+                new FlatSharpSerializerSer(),
+                new FluentSerializerJsonSer(),
+                new GoogleProtobufSerializerSer(),
+                new HyperionSerializerSer(),
+                new NetSerializerSer(),
+                new SpanJsonSerializerSer(),
+                new Utf8JsonSerializerSer(),
+                new YamlDotNetSerializerSer(),
+                new YAXLibSerializerSer(),
+                new ZeroFormatterSerializerSer(),
+                new BinaryPackSerializerSer(),
+                new MemoryPackSerializerSer(),
+                new SharpYamlSerializerSer(),
+                new GroBufSerializerSer(),
+                new ExtendedXmlSerializerSer(),
+                new MigrantSerializerSer(),
+                new ApexSerializerSer() // Moved to end
             };
 
             var testDataDescriptions = allTestDataDescriptions

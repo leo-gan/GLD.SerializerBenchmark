@@ -7,7 +7,7 @@ namespace GLD.SerializerBenchmark
     internal interface ISerDeser
     {
         string Name { get; }
-
+        bool Supports(string testDataName);
         void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null);
 
         string Serialize(object serializable);
