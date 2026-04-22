@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package benchmark_data;
+
+enum Gender {
+  MALE = 0; // Protobuf enums must start with 0
+  FEMALE = 1;
+}
+
+message Passport {
+  string Number = 1;
+  string Authority = 2;
+  int64 ExpirationDate = 3;
+}
+
+message PoliceRecord {
+  int32 Id = 1;
+  string CrimeCode = 2;
+}
+
+message Person {
+  string FirstName = 1;
+  string LastName = 2;
+  uint32 Age = 3;
+  Gender Gender = 4;
+  Passport Passport = 5;
+  repeated PoliceRecord PoliceRecords = 6;
+}
+
+message SimpleObject {
+  int32 Id = 1;
+  string Name = 2;
+  int64 Timestamp = 3;
+  bool IsActive = 4;
+}
+
+message StringArrayObject {
+  repeated string Items = 1;
+}
+
+message TelemetryData {
+  string Id = 1;
+  string DataSource = 2;
+  int64 TimeStamp = 3;
+  int32 Param1 = 4;
+  uint32 Param2 = 5;
+  repeated double Measurements = 6;
+  int64 AssociatedProblemID = 7;
+  int64 AssociatedLogID = 8;
+  bool WasProcessed = 9;
+}
+
+message ServiceLine {
+  string ServiceCode = 1;
+  double ChargeAmount = 2;
+  double AdjudicatedAmount = 3;
+}
+
+message Claim {
+  string ClaimId = 1;
+  string PatientName = 2;
+  double TotalCharge = 3;
+  double PaymentAmount = 4;
+  repeated ServiceLine Lines = 5;
+}
+
+message EDI835 {
+  string PayerName = 1;
+  string PayeeName = 2;
+  int64 PaymentDate = 3;
+  double TotalActualAmount = 4;
+  string TransactionControlNumber = 5;
+  repeated Claim Claims = 6;
+}
+
+// Object graph with circular references isn't naturally supported by standard Protobuf,
+// but for the sake of completeness we can define the schema.
+// Be careful with circular references when serializing.
+message GraphNode {
+  string Name = 1;
+  GraphNode Parent = 2;
+  repeated GraphNode Children = 3;
+  GraphNode Related = 4;
+}
