@@ -35,9 +35,10 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### XmlSerializer
 - **Type**: XML
-- **Status**: ✅ Working
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: Classic .NET XML serializer. Requires public parameterless constructors.
 - **Best For**: XML-based APIs, SOAP services, configuration files.
+- **Limitations**: Does not support circular references (ObjectGraph).
 
 ---
 
@@ -57,9 +58,10 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### FastJson
 - **Type**: JSON
-- **Status**: ✅ Working
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: Fast, lightweight JSON serializer focused on speed.
 - **Best For**: Simple objects where raw speed is priority.
+- **Limitations**: Does not support circular references (ObjectGraph).
 
 ### Jil
 - **Type**: JSON
@@ -76,21 +78,21 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### ServiceStackJsonSerializer
 - **Type**: JSON
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: Part of ServiceStack framework. Feature-rich with text-based format support.
-- **Limitations**: Disabled due to complex initialization requirements.
+- **Limitations**: Does not support circular references (ObjectGraph).
 
 ### SpanJson
 - **Type**: JSON
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: High-performance JSON serializer using Span<T> for zero-allocation parsing.
-- **Limitations**: Requires compile-time type knowledge; disabled due to generic method reflection issues.
+- **Limitations**: Does not support circular references (ObjectGraph).
 
 ### Utf8Json
 - **Type**: JSON
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: Fast JSON serializer working directly with UTF-8 bytes.
-- **Limitations**: Disabled due to dynamic deserialization issues.
+- **Limitations**: Does not support circular references (ObjectGraph).
 
 ---
 
@@ -123,15 +125,16 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### HyperionSerializer
 - **Type**: Binary
-- **Status**: ✅ Working
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: High-performance binary serializer from the Akka.NET team.
 - **Best For**: Akka.NET clusters, distributed systems, actor messaging.
+- **Limitations**: Can crash with StackOverflow/SegFault on very deep circular references (ObjectGraph).
 
 ### NetSerializer
 - **Type**: Binary
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: Fast, compact binary serializer with minimal overhead.
-- **Limitations**: Requires type registration at startup; disabled for benchmark simplicity.
+- **Limitations**: Crashes on circular references (ObjectGraph).
 
 ### SharpSerializer
 - **Type**: Binary/XML
@@ -141,9 +144,9 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### ApexSerializer
 - **Type**: Binary
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: High-performance binary serializer with advanced features.
-- **Limitations**: Complex initialization; disabled due to benchmark compatibility issues.
+- **Limitations**: Crashes on circular references (ObjectGraph).
 
 ---
 
@@ -158,10 +161,10 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### YAXLibSerializer
 - **Type**: XML
-- **Status**: ⚠️ Disabled (ObjectGraph, Stream)
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: Flexible XML serializer with attribute-based configuration.
 - **Best For**: Human-readable XML with custom formatting.
-- **Limitations**: ObjectGraph and Stream operations disabled due to TargetInvocationException.
+- **Limitations**: Does not support circular references (ObjectGraph).
 
 ---
 
@@ -175,9 +178,9 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### SharpYamlSerializer
 - **Type**: YAML
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ⚠️ Disabled (ObjectGraph only)
 - **Description**: Fast YAML serializer with comprehensive spec support.
-- **Limitations**: Disabled due to complex type handling issues.
+- **Limitations**: Maximum nesting depth limit of 64 exceeded by ObjectGraph.
 
 ---
 
@@ -253,24 +256,30 @@ The following serializers are disabled in the benchmark via the `Supports()` met
 
 | Serializer | Reason | Supported Data |
 |------------|--------|----------------|
-| **Apex.Serialization** | Complex initialization | None |
+| **Apex.Serialization** | Crashes on circular refs | All except ObjectGraph |
 | **BinaryPack** | Compile-time type required | None |
+| **Bond Compact/Fast/Json** | Schema attributes required | All except ObjectGraph |
 | **Ceras** | Type configuration required | None |
 | **CsvHelper** | Tabular format only | None |
 | **ExtendedXmlSerializer** | Comparison errors | Integer only |
+| **FastJson** | Circular reference issues | All except ObjectGraph |
 | **FlatSharp** | Schema compilation required | None |
 | **FluentSerializer** | Configuration required | None |
 | **Google.Protobuf** | Schema compilation required | None |
 | **GroBuf** | Comparison errors | Integer, SimpleObject |
+| **Hyperion** | StackOverflow on deep circular refs | All except ObjectGraph |
+| **JavaScriptSerializer** | Deprecated / Not implemented | None |
 | **MemoryPack** | Source generators required | None |
 | **Migrant** | BadImageFormatException | Integer, SimpleObject |
-| **NetSerializer** | Type registration required | None |
-| **ServiceStack Json** | Complex initialization | None |
-| **ServiceStack Type** | Complex initialization | None |
-| **SharpYaml** | Complex type handling | None |
-| **SpanJson** | Compile-time type required | None |
-| **Utf8Json** | Dynamic deserialization issues | None |
-| **YAXLib** | Stream/ObjectGraph issues | All except ObjectGraph |
+| **NetSerializer** | Crashes on circular refs | All except ObjectGraph |
+| **ServiceStack Json** | Circular reference issues | All except ObjectGraph |
+| **ServiceStack Type** | Circular reference issues | All except ObjectGraph |
+| **SharpSerializer** | NullReferenceException | SimpleObject, StringArray, EDI_835 |
+| **SharpYaml** | Max nesting depth exceeded | All except ObjectGraph |
+| **SpanJson** | Does not support circular refs | All except ObjectGraph |
+| **Utf8Json** | Does not support circular refs | All except ObjectGraph |
+| **XmlSerializer** | Does not support circular refs | All except ObjectGraph |
+| **YAXLib** | Does not support circular refs | All except ObjectGraph |
 | **ZeroFormatter** | Attribute marking required | None |
 
 ---
