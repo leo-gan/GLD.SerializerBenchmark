@@ -8,26 +8,26 @@ namespace GLD.SerializerBenchmark.FShrp
     public class SimpleObject
     {
         [FlatBufferItem(0)]
-        public int Id { get; set; }
+        public virtual int Id { get; set; }
         [FlatBufferItem(1)]
-        public string Name { get; set; }
+        public virtual string Name { get; set; }
         [FlatBufferItem(2)]
-        public long Timestamp { get; set; }
+        public virtual long Timestamp { get; set; }
         [FlatBufferItem(3)]
-        public bool IsActive { get; set; }
+        public virtual bool IsActive { get; set; }
     }
 
     [FlatBufferTable]
     public class StringArrayObject
     {
         [FlatBufferItem(0)]
-        public IList<string> Items { get; set; }
+        public virtual IList<string> Items { get; set; }
     }
 
     [FlatBufferTable]
     public class IntObject
     {
         [FlatBufferItem(0)]
-        public int Value { get; set; }
+        public virtual int Value { get; set; }
     }
 }

@@ -196,23 +196,23 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 ### MemoryPackSerializer
 - **Type**: Binary
 - **Status**: ✅ Working (Integer, SimpleObject, StringArray)
-- **Description**: Ultra-high-performance serializer from the MagicOnion team. Uses annotated types with [MemoryPackable] attribute.
+- **Description**: Ultra-high-performance serializer from the MagicOnion team. Uses [MemoryPackable] attributes with MemoryPack.Generator for build-time code generation.
 - **Best For**: gRPC scenarios, maximum throughput with modern C# features.
-- **Limitations**: Requires compile-time annotated types. Uses parallel type folder (MPack/) like Bond approach.
+- **Limitations**: Requires MemoryPack.Generator package for code generation at build time.
 
 ### ZeroFormatterSerializer
 - **Type**: Binary
-- **Status**: ❌ Requires Compile-Time Registration
+- **Status**: ❌ Requires zfc Tool
 - **Description**: Fast binary serializer with zero-copy deserialization.
 - **Best For**: Game networking, real-time applications.
-- **Limitations**: Requires [ZeroFormattable] attribute AND compile-time code generation to create formatters. The ZFmt/ folder types have attributes but the formatters weren't generated at build time.
+- **Limitations**: Requires [ZeroFormattable] attribute AND zfc (ZeroFormatter.Compiler) command-line tool to generate formatters at build time. Formatters must be registered at startup.
 
 ### FlatSharpSerializer
 - **Type**: Binary (FlatBuffers)
-- **Status**: ❌ Requires Compile-Time Generation
-- **Description**: .NET implementation of Google's FlatBuffers. Zero-copy deserialization.
+- **Status**: ✅ Working (Integer, SimpleObject, StringArray)
+- **Description**: .NET implementation of Google's FlatBuffers. Zero-copy deserialization using [FlatBufferTable] attributes with virtual properties.
 - **Best For**: Game development, embedded systems, zero-copy scenarios.
-- **Limitations**: Requires [FlatBufferTable] attribute AND FlatSharp compiler to generate serialization code at build time. The FShrp/ folder types have attributes but the code wasn't generated.
+- **Limitations**: Requires FlatSharp.Compiler package and virtual properties on annotated types.
 
 ### BinaryPackSerializer
 - **Type**: Binary
@@ -263,13 +263,13 @@ The following serializers are disabled in the benchmark via the `Supports()` met
 | **CsvHelper** | CSV is flat format, no nested objects | Integer, SimpleObject |
 | **ExtendedXmlSerializer** | Comparison errors | Integer only |
 | **FastJson** | Circular reference issues | All except ObjectGraph |
-| **FlatSharp** | [FlatBufferTable] + compiler | ❌ Build-time code gen needed |
+| **FlatSharp** | ✅ Now Working | Integer, SimpleObject, StringArray |
 | **FluentSerializer** | Profile mappings required | ❌ Permanently Disabled |
 | **Google.Protobuf** | .proto definitions required | ❌ Permanently Disabled |
 | **GroBuf** | Comparison errors | Integer, SimpleObject |
 | **Hyperion** | StackOverflow on deep circular refs | All except ObjectGraph |
 | **JavaScriptSerializer** | System.Web not in .NET Core | ❌ Permanently Disabled |
-| **MemoryPack** | ✅ Now Working | Integer, SimpleObject, StringArray |
+| **MemoryPack** | ✅ Working (Generator package) | Integer, SimpleObject, StringArray |
 | **Migrant** | BadImageFormatException | Integer, SimpleObject |
 | **NetSerializer** | Crashes on circular refs | All except ObjectGraph |
 | **ServiceStack Json** | Circular reference issues | All except ObjectGraph |
@@ -280,7 +280,7 @@ The following serializers are disabled in the benchmark via the `Supports()` met
 | **Utf8Json** | Does not support circular refs | All except ObjectGraph |
 | **XmlSerializer** | Does not support circular refs | All except ObjectGraph |
 | **YAXLib** | Does not support circular refs | All except ObjectGraph |
-| **ZeroFormatter** | [ZeroFormattable] + code generation | ❌ Build-time formatters needed |
+| **ZeroFormatter** | Requires zfc compiler tool | ❌ Build-time formatters needed |
 
 ---
 

@@ -20,11 +20,31 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
-            object annotated = ConvertToAnnotated(serializable);
-            int maxSize = _serializer.GetMaxSize(annotated);
-            byte[] buffer = new byte[maxSize];
-            int bytesWritten = _serializer.Serialize(annotated, buffer);
-            return Convert.ToBase64String(buffer, 0, bytesWritten);
+            if (_primaryType == typeof(int))
+            {
+                var annotated = FlatSharpTypeConverter.ToFlatSharp((int)serializable);
+                int maxSize = _serializer.GetMaxSize(annotated);
+                byte[] buffer = new byte[maxSize];
+                int bytesWritten = _serializer.Serialize(annotated, buffer);
+                return Convert.ToBase64String(buffer, 0, bytesWritten);
+            }
+            if (_primaryType == typeof(SimpleObject))
+            {
+                var annotated = FlatSharpTypeConverter.ToFlatSharp((SimpleObject)serializable);
+                int maxSize = _serializer.GetMaxSize(annotated);
+                byte[] buffer = new byte[maxSize];
+                int bytesWritten = _serializer.Serialize(annotated, buffer);
+                return Convert.ToBase64String(buffer, 0, bytesWritten);
+            }
+            if (_primaryType == typeof(StringArrayObject))
+            {
+                var annotated = FlatSharpTypeConverter.ToFlatSharp((StringArrayObject)serializable);
+                int maxSize = _serializer.GetMaxSize(annotated);
+                byte[] buffer = new byte[maxSize];
+                int bytesWritten = _serializer.Serialize(annotated, buffer);
+                return Convert.ToBase64String(buffer, 0, bytesWritten);
+            }
+            return "";
         }
 
         public override object Deserialize(string serialized)
@@ -36,10 +56,30 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            object annotated = ConvertToAnnotated(serializable);
-            int maxSize = _serializer.GetMaxSize(annotated);
-            byte[] buffer = new byte[maxSize];
-            int bytesWritten = _serializer.Serialize(annotated, buffer);
+            byte[] buffer;
+            int bytesWritten;
+            if (_primaryType == typeof(int))
+            {
+                var annotated = FlatSharpTypeConverter.ToFlatSharp((int)serializable);
+                int maxSize = _serializer.GetMaxSize(annotated);
+                buffer = new byte[maxSize];
+                bytesWritten = _serializer.Serialize(annotated, buffer);
+            }
+            else if (_primaryType == typeof(SimpleObject))
+            {
+                var annotated = FlatSharpTypeConverter.ToFlatSharp((SimpleObject)serializable);
+                int maxSize = _serializer.GetMaxSize(annotated);
+                buffer = new byte[maxSize];
+                bytesWritten = _serializer.Serialize(annotated, buffer);
+            }
+            else if (_primaryType == typeof(StringArrayObject))
+            {
+                var annotated = FlatSharpTypeConverter.ToFlatSharp((StringArrayObject)serializable);
+                int maxSize = _serializer.GetMaxSize(annotated);
+                buffer = new byte[maxSize];
+                bytesWritten = _serializer.Serialize(annotated, buffer);
+            }
+            else return;
             outputStream.Write(buffer, 0, bytesWritten);
         }
 
@@ -52,16 +92,6 @@ namespace GLD.SerializerBenchmark.Serializers
             return ConvertFromAnnotated(annotated);
         }
 
-        private object ConvertToAnnotated(object obj)
-        {
-            if (_primaryType == typeof(int))
-                return FlatSharpTypeConverter.ToFlatSharp((int)obj);
-            if (_primaryType == typeof(SimpleObject))
-                return FlatSharpTypeConverter.ToFlatSharp((SimpleObject)obj);
-            if (_primaryType == typeof(StringArrayObject))
-                return FlatSharpTypeConverter.ToFlatSharp((StringArrayObject)obj);
-            return obj;
-        }
 
         private object DeserializeAnnotated(byte[] bytes)
         {

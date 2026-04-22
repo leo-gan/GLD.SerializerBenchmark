@@ -4,15 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="doc fixes">
+    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="fixes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/Serializers.md" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/Serializers.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BinaryPackSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BinaryPackSerializerSer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CerasSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CerasSerializerSer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CsvHelperSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CsvHelperSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/FlatSharp/FlatSharpTypes.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/FlatSharp/FlatSharpTypes.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FlatSharpSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FlatSharpSerializerSer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/MemoryPackSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/MemoryPackSerializerSer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ZeroFormatterSerializerSer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ZeroFormatterSerializerSer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Errors.tsv" beforeDir="false" afterPath="$PROJECT_DIR$/logs/SerializerBenchmark_Errors.tsv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" beforeDir="false" afterPath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -141,7 +137,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776823657206</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="fixes">
+      <option name="closed" value="true" />
+      <created>1776825742352</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1776825742352</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -173,9 +177,9 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="docs" />
     <MESSAGE value="Add Full Run results (100 repetitions)" />
-    <MESSAGE value="fixes" />
     <MESSAGE value="fixes, docs, log" />
     <MESSAGE value="doc fixes" />
-    <option name="LAST_COMMIT_MESSAGE" value="doc fixes" />
+    <MESSAGE value="fixes" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixes" />
   </component>
 </project>
