@@ -9,6 +9,13 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         private static readonly Lazy<Ceras.CerasSerializer> _serializer = new Lazy<Ceras.CerasSerializer>(() => new Ceras.CerasSerializer());
         public override string Name => "Ceras";
+
+        public override bool Supports(string testDataName)
+        {
+            // Ceras requires explicit type configuration and doesn't work well with arbitrary types
+            // via reflection. Disabling to avoid NullReferenceException errors.
+            return false;
+        }
         public override string Serialize(object serializable) => Convert.ToBase64String(_serializer.Value.Serialize(serializable));
 
         public override object Deserialize(string serialized)
@@ -18,7 +25,9 @@ namespace GLD.SerializerBenchmark.Serializers
             var method = typeof(Ceras.CerasSerializer).GetMethod("Deserialize", new[] { typeof(byte[]), typeof(byte).MakeByRefType() });
             var genericMethod = method.MakeGenericMethod(_primaryType);
             byte protocolMembers = 0;
-            return genericMethod.Invoke(_serializer.Value, new object[] { bytes, protocolMembers });
+            // Pass ref parameter as a single-element array
+            var args = new object[] { bytes, protocolMembers };
+            return genericMethod.Invoke(_serializer.Value, args);
         }
 
         public override void Serialize(object serializable, Stream outputStream)

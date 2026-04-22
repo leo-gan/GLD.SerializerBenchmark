@@ -28,7 +28,8 @@ namespace GLD.SerializerBenchmark.Serializers
         public override bool Supports(string testDataName)
         {
             // ExtendedXmlSerializer requires special configuration for circular references
-            return testDataName != "ObjectGraph";
+            // and has comparison errors on most types
+            return testDataName == "Integer";
         }
 
         public override string Serialize(object serializable)

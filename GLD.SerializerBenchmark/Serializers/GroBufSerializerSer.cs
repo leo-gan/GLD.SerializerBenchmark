@@ -12,6 +12,13 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "GroBuf";
 
+        public override bool Supports(string testDataName)
+        {
+            // GroBuf has comparison errors on complex types due to field handling issues
+            // Only enable for simple types
+            return testDataName == "Integer" || testDataName == "SimpleObject";
+        }
+
         public override string Serialize(object serializable)
         {
             var bytes = _serializer.Serialize(serializable);

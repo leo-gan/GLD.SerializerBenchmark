@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace GLD.SerializerBenchmark.Serializers
@@ -19,8 +20,9 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(string serialized)
         {
-            // Use reflection to call generic Deserialize with _primaryType
-            var method = typeof(SpanJson.JsonSerializer.Generic.Utf16).GetMethod("Deserialize", new[] { typeof(string) });
+            // Use reflection to call generic Deserialize<T>(string) with _primaryType
+            var method = typeof(SpanJson.JsonSerializer.Generic.Utf16).GetMethods()
+                .First(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(string));
             var genericMethod = method.MakeGenericMethod(_primaryType);
             return genericMethod.Invoke(null, new[] { serialized });
         }
@@ -33,12 +35,14 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
+            inputStream.Seek(0, SeekOrigin.Begin);
             using (var ms = new MemoryStream())
             {
                 inputStream.CopyTo(ms);
                 var bytes = ms.ToArray();
-                // Use reflection to call generic Deserialize with _primaryType
-                var method = typeof(SpanJson.JsonSerializer.Generic.Utf8).GetMethod("Deserialize", new[] { typeof(byte[]) });
+                // Use reflection to call generic Deserialize<T>(byte[]) with _primaryType
+                var method = typeof(SpanJson.JsonSerializer.Generic.Utf8).GetMethods()
+                    .First(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(byte[]));
                 var genericMethod = method.MakeGenericMethod(_primaryType);
                 return genericMethod.Invoke(null, new[] { bytes });
             }
