@@ -5,9 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="fixes">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/Serializers.md" beforeDir="false" afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/Serializers.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" beforeDir="false" afterPath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/BenchmarkAnalysis.Gemini Export April 21, 2026 at 8_50_00 p.m. UTC-7.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +20,7 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -53,7 +53,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "new-serializers",
+    "git-widget-placeholder": "analysis",
     "git.auto.fetch.suggestion.counter": "3",
     "last_opened_file_path": "/home/leo/PycharmProjects/GLD/seriailizer-benchmark",
     "node.js.detected.package.eslint": "true",
@@ -64,6 +64,11 @@
     "settings.editor.selected.configurable": "com.codeium.AppSettingsConfigurable"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
