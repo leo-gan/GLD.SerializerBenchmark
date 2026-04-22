@@ -1,0 +1,37 @@
+  Determining projects to restore...
+/src/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj : error NU1102: Unable to find package Google.Protobuf with version (>= 33.4.1) [/src/GLD.SerializerBenchmark.sln]
+/src/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj : error NU1102:   - Found 200 version(s) in nuget.org [ Nearest version: 4.0.0-rc2 ] [/src/GLD.SerializerBenchmark.sln]
+  Failed to restore /src/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj (in 3.03 min).
+    9.0.5   
+   > Bond.Runtime.CSharp                            9.0.5       9.0.5   
+   > Ceras                                          *           4.1.7   
+   > CsvHelper                                      *           33.1.0  
+   > ExtendedXmlSerializer                          *           3.10.0  
+   > fastJSON                                       2.4.0.4     2.4.0.4 
+   > FlatSharp                                      *           7.5.1   
+   > FluentSerializer.Core                          *           3.1.3   
+   > FluentSerializer.Json                          *           3.1.3   
+   > FsPickler                                      5.3.2       5.3.2   
+   > FsPickler.Json                                 5.3.2       5.3.2   
+   > Google.Protobuf                                *           3.34.1  
+   > GroBuf                                         *           1.9.2   
+   > Hyperion                                       *           0.12.2  
+   > Jil                                            2.15.4      2.15.4  
+   > MemoryPack                                     *           1.21.4  
+   > MessagePack                                    2.5.140     2.5.140 
+   > NetJSON                                        1.4.3       1.4.3   
+   > NetSerializer                                  *           4.1.2   
+   > Newtonsoft.Json                                13.0.3      13.0.3  
+   > protobuf-net                                   2.4.6       2.4.6   
+   > ServiceStack.Text                              6.11.0      6.11.0  
+   > SharpSerializer                                3.0.1       3.0.1   
+   > SharpYaml                                      *           3.7.0   
+   > SpanJson                                       *           4.2.1   
+   > System.ComponentModel.Annotations              5.0.0       5.0.0   
+   > System.Configuration.ConfigurationManager      6.0.1       6.0.1   
+   > System.ServiceModel.Primitives                 6.0.0       6.0.0   
+   > Utf8Json                                       *           1.3.7   
+   > YamlDotNet                                     *           17.0.1  
+   > YAXLib                                         *           4.4.0   
+   > ZeroFormatter                                  *           1.6.4   
+

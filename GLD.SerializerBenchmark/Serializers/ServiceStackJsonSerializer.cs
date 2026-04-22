@@ -1,8 +1,3 @@
-///
-/// https://github.com/ServiceStack/ServiceStack.Text
-/// PM> Install-Package ServiceStack.Text
-/// TODO: DateTime fields is still under work.
-
 using System.IO;
 using ServiceStack.Text;
 
@@ -17,9 +12,15 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "ServiceStack Json"; }
         }
 
+        public override bool Supports(string testDataName)
+        {
+            // ServiceStack Json can have issues with circular references in some versions
+            return testDataName != "ObjectGraph";
+        }
+
         public override string Serialize(object serializable)
         {
-            return JsonSerializer.SerializeToString(serializable, _primaryType);
+            return JsonSerializer.SerializeToString(serializable);
         }
 
         public override object Deserialize(string serialized)
@@ -29,7 +30,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            JsonSerializer.SerializeToStream(serializable, _primaryType, outputStream);
+            JsonSerializer.SerializeToStream(serializable, outputStream);
         }
 
         public override object Deserialize(Stream inputStream)

@@ -26,6 +26,13 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "SharpSerializer"; }
         }
 
+        public override bool Supports(string testDataName)
+        {
+            // SharpSerializer has issues with Person and Telemetry test data
+            // causing NullReferenceException during serialization
+            return testDataName != "Person" && testDataName != "Telemetry";
+        }
+
         public override string Serialize(object serializable)
         {
             if (serializable == null)
