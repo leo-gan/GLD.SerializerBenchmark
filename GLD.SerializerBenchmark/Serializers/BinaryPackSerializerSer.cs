@@ -12,7 +12,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override bool Supports(string testDataName)
         {
             // BinaryPack requires compile-time type knowledge and proper generic constraints
-            // The reflection approach causes TargetInvocationException
+            // The reflection approach causes TargetInvocationException - cannot be fixed without source changes
             return false;
         }
         public override string Serialize(object serializable) => Convert.ToBase64String(BinaryPack.BinaryConverter.Serialize(serializable));
@@ -34,6 +34,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
+            inputStream.Seek(0, SeekOrigin.Begin);
             using var ms = new MemoryStream();
             inputStream.CopyTo(ms);
             var bytes = ms.ToArray();

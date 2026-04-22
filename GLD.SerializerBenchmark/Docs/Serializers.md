@@ -107,9 +107,9 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### GoogleProtobufSerializer
 - **Type**: Binary (Official Google)
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ❌ Permanently Disabled
 - **Description**: Official Google Protobuf library for .NET. Requires code generation from .proto files.
-- **Limitations**: Requires pre-compiled schemas; disabled for generic benchmark compatibility.
+- **Limitations**: Requires .proto schema definitions and generated code. Only types implementing IMessage are supported. Use protobuf-net for dynamic scenarios.
 
 ### FsPicklerBinarySerializer
 - **Type**: Binary
@@ -188,38 +188,38 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### CerasSerializer
 - **Type**: Binary
-- **Status**: ⚠️ Disabled (all test data)
-- **Description**: High-performance binary serializer with versioning support.
-- **Best For**: Game development, real-time applications requiring versioning.
-- **Limitations**: Requires explicit type configuration; disabled due to NullReferenceException.
+- **Status**: ✅ Working
+- **Description**: High-performance binary serializer with versioning support. Handles circular references automatically.
+- **Best For**: Game development, real-time applications requiring versioning, complex object graphs.
+- **Limitations**: None significant for benchmark test data.
 
 ### MemoryPackSerializer
 - **Type**: Binary
-- **Status**: ⚠️ Disabled (all test data)
-- **Description**: Ultra-high-performance serializer from the MagicOnion team.
+- **Status**: ✅ Working (Integer, SimpleObject, StringArray)
+- **Description**: Ultra-high-performance serializer from the MagicOnion team. Uses annotated types with [MemoryPackable] attribute.
 - **Best For**: gRPC scenarios, maximum throughput with modern C# features.
-- **Limitations**: Requires source generators; disabled for benchmark compatibility.
+- **Limitations**: Requires compile-time annotated types. Uses parallel type folder (MPack/) like Bond approach.
 
 ### ZeroFormatterSerializer
 - **Type**: Binary
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ❌ Requires Compile-Time Registration
 - **Description**: Fast binary serializer with zero-copy deserialization.
 - **Best For**: Game networking, real-time applications.
-- **Limitations**: Requires attribute marking; disabled due to InvalidOperationException.
+- **Limitations**: Requires [ZeroFormattable] attribute AND compile-time code generation to create formatters. The ZFmt/ folder types have attributes but the formatters weren't generated at build time.
 
 ### FlatSharpSerializer
 - **Type**: Binary (FlatBuffers)
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ❌ Requires Compile-Time Generation
 - **Description**: .NET implementation of Google's FlatBuffers. Zero-copy deserialization.
 - **Best For**: Game development, embedded systems, zero-copy scenarios.
-- **Limitations**: Requires schema compilation; disabled for benchmark compatibility.
+- **Limitations**: Requires [FlatBufferTable] attribute AND FlatSharp compiler to generate serialization code at build time. The FShrp/ folder types have attributes but the code wasn't generated.
 
 ### BinaryPackSerializer
 - **Type**: Binary
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ❌ Permanently Disabled
 - **Description**: High-performance binary serializer using Memory<T>.
 - **Best For**: Modern .NET applications using Memory<T> and Span<T>.
-- **Limitations**: Requires compile-time type knowledge; disabled due to TargetInvocationException.
+- **Limitations**: Requires compile-time type knowledge with proper generic constraints (T : new()). Cannot work with arbitrary types via reflection.
 
 ### GroBufSerializer
 - **Type**: Binary
@@ -237,16 +237,16 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### FluentSerializerJson
 - **Type**: JSON
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ❌ Permanently Disabled
 - **Description**: Fluent API JSON serializer from the FluentSerializer project.
-- **Limitations**: Requires configuration; disabled due to validation errors.
+- **Limitations**: Requires profile mappings for each type to be defined at compile time. Cannot work with arbitrary types without profiles.
 
 ### CsvHelperSerializer
 - **Type**: CSV
-- **Status**: ⚠️ Disabled (all test data)
+- **Status**: ⚠️ Disabled (Integer, SimpleObject only)
 - **Description**: Popular CSV library for .NET.
-- **Best For**: Tabular data export/import.
-- **Limitations**: Not suitable for complex object graphs; disabled due to validation errors.
+- **Best For**: Tabular data export/import for simple flat objects.
+- **Limitations**: CSV is flat tabular format - cannot handle nested objects, arrays, or circular references. Limited to simple types.
 
 ---
 
@@ -257,19 +257,19 @@ The following serializers are disabled in the benchmark via the `Supports()` met
 | Serializer | Reason | Supported Data |
 |------------|--------|----------------|
 | **Apex.Serialization** | Crashes on circular refs | All except ObjectGraph |
-| **BinaryPack** | Compile-time type required | None |
+| **BinaryPack** | Compile-time type required (T : new()) | ❌ Permanently Disabled |
 | **Bond Compact/Fast/Json** | Schema attributes required | All except ObjectGraph |
-| **Ceras** | Type configuration required | None |
-| **CsvHelper** | Tabular format only | None |
+| **Ceras** | ✅ Now Working | All test data |
+| **CsvHelper** | CSV is flat format, no nested objects | Integer, SimpleObject |
 | **ExtendedXmlSerializer** | Comparison errors | Integer only |
 | **FastJson** | Circular reference issues | All except ObjectGraph |
-| **FlatSharp** | Schema compilation required | None |
-| **FluentSerializer** | Configuration required | None |
-| **Google.Protobuf** | Schema compilation required | None |
+| **FlatSharp** | [FlatBufferTable] + compiler | ❌ Build-time code gen needed |
+| **FluentSerializer** | Profile mappings required | ❌ Permanently Disabled |
+| **Google.Protobuf** | .proto definitions required | ❌ Permanently Disabled |
 | **GroBuf** | Comparison errors | Integer, SimpleObject |
 | **Hyperion** | StackOverflow on deep circular refs | All except ObjectGraph |
-| **JavaScriptSerializer** | Deprecated / Not implemented | None |
-| **MemoryPack** | Source generators required | None |
+| **JavaScriptSerializer** | System.Web not in .NET Core | ❌ Permanently Disabled |
+| **MemoryPack** | ✅ Now Working | Integer, SimpleObject, StringArray |
 | **Migrant** | BadImageFormatException | Integer, SimpleObject |
 | **NetSerializer** | Crashes on circular refs | All except ObjectGraph |
 | **ServiceStack Json** | Circular reference issues | All except ObjectGraph |
@@ -280,7 +280,7 @@ The following serializers are disabled in the benchmark via the `Supports()` met
 | **Utf8Json** | Does not support circular refs | All except ObjectGraph |
 | **XmlSerializer** | Does not support circular refs | All except ObjectGraph |
 | **YAXLib** | Does not support circular refs | All except ObjectGraph |
-| **ZeroFormatter** | Attribute marking required | None |
+| **ZeroFormatter** | [ZeroFormattable] + code generation | ❌ Build-time formatters needed |
 
 ---
 

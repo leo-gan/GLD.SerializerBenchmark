@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace GLD.SerializerBenchmark.Serializers
@@ -12,22 +13,19 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override bool Supports(string testDataName)
         {
-            // Ceras requires explicit type configuration and doesn't work well with arbitrary types
-            // via reflection. Disabling to avoid NullReferenceException errors.
-            return false;
+            // Ceras is now enabled - uses reflection for generic type deserialization
+            return true;
         }
         public override string Serialize(object serializable) => Convert.ToBase64String(_serializer.Value.Serialize(serializable));
 
         public override object Deserialize(string serialized)
         {
             var bytes = Convert.FromBase64String(serialized);
-            // Use reflection to call generic Deserialize with _primaryType
-            var method = typeof(Ceras.CerasSerializer).GetMethod("Deserialize", new[] { typeof(byte[]), typeof(byte).MakeByRefType() });
+            // Use reflection to call generic Deserialize<T>(byte[]) with _primaryType
+            var method = typeof(Ceras.CerasSerializer).GetMethods()
+                .First(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(byte[]));
             var genericMethod = method.MakeGenericMethod(_primaryType);
-            byte protocolMembers = 0;
-            // Pass ref parameter as a single-element array
-            var args = new object[] { bytes, protocolMembers };
-            return genericMethod.Invoke(_serializer.Value, args);
+            return genericMethod.Invoke(_serializer.Value, new object[] { bytes });
         }
 
         public override void Serialize(object serializable, Stream outputStream)
@@ -38,14 +36,15 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
+            inputStream.Seek(0, SeekOrigin.Begin);
             using var ms = new MemoryStream();
             inputStream.CopyTo(ms);
             var bytes = ms.ToArray();
-            // Use reflection to call generic Deserialize with _primaryType
-            var method = typeof(Ceras.CerasSerializer).GetMethod("Deserialize", new[] { typeof(byte[]), typeof(byte).MakeByRefType() });
+            // Use reflection to call generic Deserialize<T>(byte[]) with _primaryType
+            var method = typeof(Ceras.CerasSerializer).GetMethods()
+                .First(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(byte[]));
             var genericMethod = method.MakeGenericMethod(_primaryType);
-            byte protocolMembers = 0;
-            return genericMethod.Invoke(_serializer.Value, new object[] { bytes, protocolMembers });
+            return genericMethod.Invoke(_serializer.Value, new object[] { bytes });
         }
     }
 }
