@@ -1,3 +1,4 @@
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using GLD.SerializerBenchmark.Serializers;
@@ -9,6 +10,13 @@ namespace GLD.SerializerBenchmark
     {
         private static void Main(string[] args)
         {
+            if (args.Length > 0 && args[0].ToLower() == "export-data")
+            {
+                var outputDir = args.Length > 1 ? args[1] : "../data";
+                Exporter.ExportData(outputDir);
+                return;
+            }
+
             var repetitions = args.Length > 0 ? int.Parse(args[0]) : 100;
             var serializerFilter = args.Length > 1 ? args[1] : null;
             var testDataFilter = args.Length > 2 ? args[2] : null;
