@@ -20,9 +20,10 @@ namespace GLD.SerializerBenchmark
                 : logs; // include warmup when only 1 rep
             
             var aggregatedResults = filteredLogs
-                .GroupBy(a => new {a.TestDataName, a.SerializerName, a.StringOrStream})
-                .Select(g =>
-                    new AggregateLogs
+                .GroupBy(a => new { a.TestDataName, a.SerializerName, a.StringOrStream })
+                .ToDictionary(
+                    g => (g.Key.TestDataName, g.Key.SerializerName, g.Key.StringOrStream),
+                    g => new AggregateLogs
                     {
                         StringOrStream = g.Key.StringOrStream,
                         TestDataName = g.Key.TestDataName,
@@ -30,25 +31,20 @@ namespace GLD.SerializerBenchmark
                         OpPerSecDeserAver = g.Average(kg => kg.OpPerSecDeser),
                         OpPerSecSerAver = g.Average(kg => kg.OpPerSecSer),
                         OpPerSecSerAndDeserAver = g.Average(kg => kg.OpPerSecSerAndDeser),
-                        SizeAver = (int) g.Average(kg => kg.Size)
-                    }).ToList();
+                        SizeAver = (int)g.Average(kg => kg.Size)
+                    });
 
             // for each Test Data type
             foreach (var testData in testDataDescriptions)
             {
                 HeaderTestData(testData.Name);
-                
+
                 // For each serializer, show result or FAILURE
                 foreach (var serializer in serializers)
                 {
                     foreach (var mode in new[] { "string", "Stream" })
                     {
-                        var result = aggregatedResults.FirstOrDefault(r => 
-                            r.TestDataName == testData.Name && 
-                            r.SerializerName == serializer.Name && 
-                            r.StringOrStream == mode);
-
-                        if (result != null)
+                        if (aggregatedResults.TryGetValue((testData.Name, serializer.Name, mode), out var result))
                         {
                             OnAggregator(result);
                         }
