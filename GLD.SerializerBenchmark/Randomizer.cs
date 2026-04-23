@@ -16,17 +16,6 @@ namespace GLD.SerializerBenchmark
 
         public static Random Rand = new Random();
 
-        // lenght = 51
-
-        //private static int UpperCaseLetterCounter;
-        //private static int LowerCaseLetterCounter;
-        //private static int DigitCounter;
-        //private static int PunctuationCounter;
-        //private static int WordLenghtCounter = 1;
-        //private static int IdLenghtCounter = 1;
-        //private static int PhraseLenghtCounter = 1;
-        //private static int DateCounter = 0;
-
         public static string Name
         {
             get { return GetCapitalChar() + Word; }
