@@ -1,7 +1,10 @@
 #!/bin/bash
 
-LOG_FILE="logs/SerializerBenchmark_Log.csv"
-ERROR_FILE="logs/SerializerBenchmark_Errors.tsv"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+LOG_FILE="logs/csharp/benchmark-log.csv"
+ERROR_FILE="logs/csharp/benchmark-errors.csv"
 
 echo "[INFO] Verifying benchmark results..."
 # Colors

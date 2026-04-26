@@ -5,7 +5,10 @@
 
 set -e
 
-BOND_DIR="GLD.SerializerBenchmark/Bond"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+BOND_DIR="src/Bond"
 NAMESPACE="GLD.SerializerBenchmark.Bond"
 
 echo "Compiling Bond schemas..."
