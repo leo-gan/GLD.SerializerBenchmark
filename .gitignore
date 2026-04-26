@@ -20,3 +20,4 @@ TestResults/
 *.vs/
 .vs/
 data/
+.idea/workspace.xml

@@ -1,0 +1,3 @@
+StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser
+string,Person,1,0,MS Binary,2296528,1267133,2432,3563661,4,7,2
+Stream,Person,1,0,MS Binary,130036,152179,1823,282215,76,65,35
