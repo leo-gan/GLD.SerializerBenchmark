@@ -13,8 +13,8 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override bool Supports(string testDataName)
         {
-            // Apex.Serialization crashes on circular references (ObjectGraph)
-            return testDataName != "ObjectGraph";
+            // Disable Apex.Serialization for all test data due to known crashes
+            return false;
         }
 
         public override string Serialize(object serializable) {

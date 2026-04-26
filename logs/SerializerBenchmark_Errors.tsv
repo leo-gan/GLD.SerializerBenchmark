@@ -1,9 +1,0 @@
-TestDataName	SerializerName	StringOrStream	Repetition	ErrorText
-Integer	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
-Integer	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
-SimpleObject	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
-SimpleObject	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
-StringArray	ZeroFormatter	string	0	Serialization InvalidOperationException: Type is not supported, please register Object
-StringArray	ZeroFormatter	Stream	0	Serialization InvalidOperationException: Type is not supported, please register Object
-ObjectGraph	ProtoBuf	string	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [17]
-ObjectGraph	ProtoBuf	Stream	0	Comparison Error: Element numbers of source and target test objects are not equal: [11] != [17]

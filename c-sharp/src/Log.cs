@@ -161,7 +161,7 @@ namespace GLD.SerializerBenchmark
 
         private static string GetArchiveFileName(string fileFullName)
         {
-            if (!File.Exists(fileFullName)) return fileFullName + ".Archived.txt";
+            if (!File.Exists(fileFullName)) return fileFullName + ".Archived.csv";
             var fileName = Path.GetFileNameWithoutExtension(fileFullName);
             var fileExtension = Path.GetExtension(fileFullName);
             var fileCreationDate = File.GetLastWriteTime(fileFullName);

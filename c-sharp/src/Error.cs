@@ -61,15 +61,15 @@ namespace GLD.SerializerBenchmark
         public static void SaveErrors(List<Error> errors, string fileName)
         {
             using var fileStreamWriter = File.CreateText(fileName);
-            var header = string.Join("\t", "TestDataName", "SerializerName", "StringOrStream", "Repetition", "ErrorText");
+            var header = string.Join(",", "TestDataName", "SerializerName", "StringOrStream", "Repetition", "ErrorText");
             fileStreamWriter.WriteLine(header);
             foreach (var er in errors)
-                fileStreamWriter.WriteLine(string.Join("\t", er.TestDataName, er.SerializerName, er.StringOrStream, er.Repetition, er.ErrorText));
+                fileStreamWriter.WriteLine(string.Join(",", er.TestDataName, er.SerializerName, er.StringOrStream, er.Repetition, er.ErrorText));
         }
 
         private static string GetArchiveFileName(string fileFullName)
         {
-            if (!File.Exists(fileFullName)) return fileFullName + ".Archived.tsv";
+            if (!File.Exists(fileFullName)) return fileFullName + ".Archived.csv";
             var fileName = Path.GetFileNameWithoutExtension(fileFullName);
             var fileExtension = Path.GetExtension(fileFullName);
             var fileCreationDate = File.GetLastWriteTime(fileFullName);
