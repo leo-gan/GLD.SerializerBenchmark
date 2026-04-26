@@ -10,19 +10,19 @@ namespace GLD.SerializerBenchmark
         public static void Tests(List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions,
             int repetitions)
         {
-            Directory.CreateDirectory("logs");
-            var logStorage = new LogStorage("logs/SerializerBenchmark_Log.csv");
+            Directory.CreateDirectory("logs/csharp");
+            var logStorage = new LogStorage("logs/csharp/benchmark-log.csv");
             var errors = new List<Error>();
 
             foreach (var testDataDescription in testDataDescriptions)
             {
                 Console.WriteLine($"\n[PROGRESS] Testing Data: {testDataDescription.Name} (Targeting {serializers.Count} serializers, {repetitions} reps)");
                 TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
-                Error.SaveErrors(errors, "logs/SerializerBenchmark_Errors.tsv");
+                Error.SaveErrors(errors, "logs/csharp/benchmark-errors.csv");
             }
 
             Report.AllResults(repetitions, logStorage, errors, serializers, testDataDescriptions);
-            Console.WriteLine("\n[PROGRESS] Benchmark Complete. Results saved to logs/SerializerBenchmark_Log.csv");
+            Console.WriteLine("\n[PROGRESS] Benchmark Complete. Results saved to logs/csharp/benchmark-log.csv");
         }
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,

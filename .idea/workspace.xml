@@ -4,203 +4,178 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="docs">
-      <change afterPath="$PROJECT_DIR$/c-sharp/.dockerignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/.nuget/NuGet.Config" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/.nuget/NuGet.exe" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/.nuget/NuGet.targets" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark.sln" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Analysis.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Analysis.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/App.config" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/EDI835.bond" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/EDI835_types.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/Person.bond" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/Person_types.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/SimpleObject.bond" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/SimpleObject_types.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/StringArray.bond" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/StringArrayObject_types.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/Telemetry.bond" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/TelemetryData_types.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Comparer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Docs/BenchmarkAnalysis.Gemini Export April 21, 2026 at 8_50_00 p.m. UTC-7.pdf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Docs/ResultExplanations.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Docs/Serializers.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Docs/TestResults.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Error.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Exporter.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/FlatSharp/FlatSharpTypes.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/ISerDeser.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/ITestDataDescription.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/LegacyCompat.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Log.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/MemoryPack/MemoryPackTypes.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Program.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Randomizer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/ReadMe.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Report.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/SerDeser.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ApexSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BinaryPackSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BinarySerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BondCompactSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BondFastSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BondJsonSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/CerasSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/CsvHelperSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/DataContractJsonSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/DataContractSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ExtendedXmlSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FastJsonSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FlatSharpSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FluentSerializerJsonSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FsPicklerBinarySerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FsPicklerJsonSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/GoogleProtobufSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/GroBufSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/HyperionSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/JavaScriptSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/JilSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/JsonNetHelperSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/JsonNetSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/MemoryPackSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/MigrantSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/NetJSONSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/NetSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ProtoBufSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ServiceStackJsonSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ServiceStackTypeSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/SharpSerializer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/SharpYamlSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/SpanJsonSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/Utf8JsonSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/XmlSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/YAXLibSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/YamlDotNetSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ZeroFormatterSerializerSer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/BondTypeAlliasConverter.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/EDI_X12_835.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/FlatSharpTypeConverter.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/IntDescription.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/MemoryPackTypeConverter.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/ObjectGraph.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/Person.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/SimpleAndStringArray.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/Telemetry.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/ZeroFormatterTypeConverter.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Tester.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/ZeroFormatter/ZeroFormatterTypes.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/packages.config" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/package_list.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/scripts/compile-bond-schemas.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/c-sharp/scripts/run-benchmarks.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/python/scripts/compile_protos.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/python/scripts/run-python-benchmarks.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/verify-results.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.dockerignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="8aa24bdf-7132-4867-a04e-273f99e380a7" name="Changes" comment="refactor">
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/App.config" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/EDI835.bond" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/EDI835_types.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/Person.bond" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/Person_types.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/SimpleObject.bond" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/SimpleObject_types.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/StringArray.bond" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/StringArrayObject_types.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/Telemetry.bond" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Bond/TelemetryData_types.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Comparer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Docs/BenchmarkAnalysis.Gemini Export April 21, 2026 at 8_50_00 p.m. UTC-7.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Docs/ResultExplanations.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Docs/Serializers.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Docs/TestResults.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Error.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Exporter.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/FlatSharp/FlatSharpTypes.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/GLD.SerializerBenchmark.csproj" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/ISerDeser.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/ITestDataDescription.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/LegacyCompat.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Log.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/MemoryPack/MemoryPackTypes.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Program.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Randomizer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/ReadMe.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Report.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/SerDeser.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/ApexSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/BinaryPackSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/BinarySerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/BondCompactSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/BondFastSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/BondJsonSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/CerasSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/CsvHelperSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/DataContractJsonSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/DataContractSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/ExtendedXmlSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/FastJsonSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/FlatSharpSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/FluentSerializerJsonSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/FsPicklerBinarySerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/FsPicklerJsonSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/GoogleProtobufSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/GroBufSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/HyperionSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/JavaScriptSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/JilSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/JsonNetHelperSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/JsonNetSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/MemoryPackSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/MigrantSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/NetJSONSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/NetSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/ProtoBufSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/ServiceStackJsonSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/ServiceStackTypeSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/SharpSerializer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/SharpYamlSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/SpanJsonSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/Utf8JsonSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/XmlSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/YAXLibSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/YamlDotNetSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Serializers/ZeroFormatterSerializerSer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/BondTypeAlliasConverter.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/EDI_X12_835.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/FlatSharpTypeConverter.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/IntDescription.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/MemoryPackTypeConverter.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/ObjectGraph.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/Person.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/SimpleAndStringArray.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/Telemetry.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/TestData/ZeroFormatterTypeConverter.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/Tester.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/ZeroFormatter/ZeroFormatterTypes.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/c-sharp/src/packages.config" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.nuget/NuGet.Config" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.nuget/NuGet.exe" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.nuget/NuGet.targets" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark.sln" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Analysis.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Analysis.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/App.config" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/EDI835.bond" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/EDI835_types.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/Person.bond" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/Person_types.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/SimpleObject.bond" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/SimpleObject_types.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/StringArray.bond" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/StringArrayObject_types.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/Telemetry.bond" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Bond/TelemetryData_types.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Comparer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/BenchmarkAnalysis.Gemini Export April 21, 2026 at 8_50_00 p.m. UTC-7.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/ResultExplanations.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/Serializers.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs/TestResults.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Error.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Exporter.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/FlatSharp/FlatSharpTypes.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/ISerDeser.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/ITestDataDescription.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/LegacyCompat.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Log.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/MemoryPack/MemoryPackTypes.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Program.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Randomizer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/ReadMe.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Report.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/SerDeser.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ApexSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BinaryPackSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BinarySerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondCompactSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondFastSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/BondJsonSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CerasSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/CsvHelperSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/DataContractJsonSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/DataContractSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ExtendedXmlSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FastJsonSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FlatSharpSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FluentSerializerJsonSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FsPicklerBinarySerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/FsPicklerJsonSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/GoogleProtobufSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/GroBufSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/HyperionSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/JavaScriptSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/JilSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/JsonNetHelperSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/JsonNetSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/MemoryPackSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/MigrantSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/NetJSONSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/NetSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ProtoBufSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ServiceStackJsonSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ServiceStackTypeSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SharpSerializer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SharpYamlSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/SpanJsonSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/Utf8JsonSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/XmlSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/YAXLibSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/YamlDotNetSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Serializers/ZeroFormatterSerializerSer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/BondTypeAlliasConverter.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/EDI_X12_835.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/FlatSharpTypeConverter.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/IntDescription.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/MemoryPackTypeConverter.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/ObjectGraph.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/Person.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/SimpleAndStringArray.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/Telemetry.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/TestData/ZeroFormatterTypeConverter.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/Tester.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/ZeroFormatter/ZeroFormatterTypes.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GLD.SerializerBenchmark/packages.config" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compile-bond-schemas.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/package_list.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/python/compile_protos.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/run-benchmarks.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/run-python-benchmarks.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/verify-results.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web-ui/.env.local" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web-ui/next-env.d.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/c-sharp/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark.sln" beforeDir="false" afterPath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark.sln" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Analysis.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/Analysis.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Analysis.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/Analysis.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/App.config" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/EDI835.bond" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/EDI835_types.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/Person.bond" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/Person_types.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/SimpleObject.bond" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/SimpleObject_types.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/StringArray.bond" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/StringArrayObject_types.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/Telemetry.bond" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Bond/TelemetryData_types.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Comparer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Docs/BenchmarkAnalysis.Gemini Export April 21, 2026 at 8_50_00 p.m. UTC-7.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Docs/ResultExplanations.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Docs/Serializers.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Docs/TestResults.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Error.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Exporter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/FlatSharp/FlatSharpTypes.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/GLD.SerializerBenchmark.csproj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/ISerDeser.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/ITestDataDescription.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/LegacyCompat.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Log.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/MemoryPack/MemoryPackTypes.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Program.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Randomizer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/ReadMe.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Report.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/SerDeser.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ApexSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BinaryPackSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BinarySerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BondCompactSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BondFastSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/BondJsonSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/CerasSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/CsvHelperSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/DataContractJsonSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/DataContractSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ExtendedXmlSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FastJsonSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FlatSharpSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FluentSerializerJsonSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FsPicklerBinarySerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/FsPicklerJsonSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/GoogleProtobufSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/GroBufSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/HyperionSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/JavaScriptSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/JilSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/JsonNetHelperSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/JsonNetSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/MemoryPackSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/MigrantSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/NetJSONSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/NetSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ProtoBufSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ServiceStackJsonSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ServiceStackTypeSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/SharpSerializer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/SharpYamlSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/SpanJsonSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/Utf8JsonSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/XmlSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/YAXLibSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/YamlDotNetSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Serializers/ZeroFormatterSerializerSer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/BondTypeAlliasConverter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/EDI_X12_835.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/FlatSharpTypeConverter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/IntDescription.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/MemoryPackTypeConverter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/ObjectGraph.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/Person.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/SimpleAndStringArray.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/Telemetry.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/TestData/ZeroFormatterTypeConverter.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/Tester.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/ZeroFormatter/ZeroFormatterTypes.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/GLD.SerializerBenchmark/packages.config" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/c-sharp/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/c-sharp/scripts/compile-bond-schemas.sh" beforeDir="false" afterPath="$PROJECT_DIR$/c-sharp/scripts/compile-bond-schemas.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Errors.tsv" beforeDir="false" afterPath="$PROJECT_DIR$/logs/SerializerBenchmark_Errors.tsv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" beforeDir="false" afterPath="$PROJECT_DIR$/logs/SerializerBenchmark_Log.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -261,6 +236,9 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/GLD.SerializerBenchmark/Docs" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/analysis" />
     </key>
   </component>
   <component name="SharedIndexes">
@@ -358,7 +336,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776830937931</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="refactor">
+      <option name="closed" value="true" />
+      <created>1777165516395</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1777165516395</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -393,6 +379,7 @@
     <MESSAGE value="doc fixes" />
     <MESSAGE value="fixes" />
     <MESSAGE value="docs" />
-    <option name="LAST_COMMIT_MESSAGE" value="docs" />
+    <MESSAGE value="refactor" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor" />
   </component>
 </project>

@@ -8,7 +8,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-BOND_DIR="GLD.SerializerBenchmark/Bond"
+BOND_DIR="src/Bond"
 NAMESPACE="GLD.SerializerBenchmark.Bond"
 
 echo "Compiling Bond schemas..."
