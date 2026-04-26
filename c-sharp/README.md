@@ -51,7 +51,7 @@ The recommended way to run the benchmarks is using Docker. This ensures a consis
 ### 1. Build and Verify
 Run the master script to build the image and perform a core verification (smoke test):
 ```bash
-./run-benchmarks.sh smoke
+./scripts/run-benchmarks.sh smoke
 ```
 
 ### 2. Available Execution Modes
@@ -59,10 +59,10 @@ Choose a mode based on your needs:
 
 | Mode | Command | Description |
 | :--- | :--- | :--- |
-| **Smoke** | `./run-benchmarks.sh smoke` | 1 repetition of `BinarySerializer` on `Person`. Use this to verify installation. |
-| **Verify All** | `./run-benchmarks.sh all-single` | 1 repetition of **all** serializers on all data. Checks for compatibility issues. |
-| **Full Run** | `./run-benchmarks.sh full` | 100 repetitions of all serializers. **Warning**: This can take a long time. |
-| **Custom** | `./run-benchmarks.sh custom 50 "Json" "Person"` | Custom repetitions and name filtering (e.g., only Json serializers on Person). |
+| **Smoke** | `./scripts/run-benchmarks.sh smoke` | 1 repetition of `BinarySerializer` on `Person`. Use this to verify installation. |
+| **Verify All** | `./scripts/run-benchmarks.sh all-single` | 1 repetition of **all** serializers on all data. Checks for compatibility issues. |
+| **Full Run** | `./scripts/run-benchmarks.sh full` | 100 repetitions of all serializers. **Warning**: This can take a long time. |
+| **Custom** | `./scripts/run-benchmarks.sh custom 50 "Json" "Person"` | Custom repetitions and name filtering (e.g., only Json serializers on Person). |
 
 ### 3. Monitoring Progress
 You can see real-time progress by following the container logs in another terminal:

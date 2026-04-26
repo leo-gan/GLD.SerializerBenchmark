@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 # First ensure C# data is exported if it doesn't exist
+cd "$PROJECT_ROOT"
 if [ ! -d "data" ] || [ -z "$(ls -A data)" ]; then
     echo "Exporting test data from C#..."
-    dotnet run --project GLD.SerializerBenchmark export-data data
+    dotnet run --project c-sharp/GLD.SerializerBenchmark export-data data
 fi
 
 echo "Running Python benchmarks locally..."
-cd python
+cd "$PROJECT_ROOT/python"
 uv sync
-./compile_protos.sh
+./scripts/compile_protos.sh
 uv run pytest benchmark.py
