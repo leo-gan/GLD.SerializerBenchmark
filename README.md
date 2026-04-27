@@ -25,7 +25,7 @@ This repository benchmarks serialization libraries across **.NET (C#)** and **Py
 
 ## Python Benchmark
 
-- **9 serializers** across JSON, Binary, Schema, and Python-native groups.
+- **Serializers** across JSON, Binary, Schema, and Python-native groups.
 - Dual-mode testing: **bytes** and **stream** APIs.
 - Extended metrics: throughput, latency, memory allocation, output size, and type fidelity.
 - Dockerized execution with `uv` for reproducible environments.
