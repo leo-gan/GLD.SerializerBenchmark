@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "GraphNode",
+  "namespace": "benchmark_data",
+  "fields": [
+    {"name": "Name", "type": "string"},
+    {"name": "Parent", "type": ["null", "GraphNode"]},
+    {"name": "Children", "type": {"type": "array", "items": "GraphNode"}},
+    {"name": "Related", "type": ["null", "GraphNode"]}
+  ]
+}

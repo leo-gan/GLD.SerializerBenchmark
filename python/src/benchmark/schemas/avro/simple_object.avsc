@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "SimpleObject",
+  "namespace": "benchmark_data",
+  "fields": [
+    {"name": "Id", "type": "int"},
+    {"name": "Name", "type": "string"},
+    {"name": "Timestamp", "type": "long"},
+    {"name": "IsActive", "type": "boolean"}
+  ]
+}
