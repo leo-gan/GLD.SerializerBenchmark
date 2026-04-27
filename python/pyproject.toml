@@ -14,3 +14,12 @@ dependencies = [
     "fastavro>=1.10.0",
     "cloudpickle>=3.1.0",
 ]
+
+[project.optional-dependencies]
+analysis = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "tabulate>=0.9.0",
+]
