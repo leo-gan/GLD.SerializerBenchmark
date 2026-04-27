@@ -1,10 +1,16 @@
 [project]
-name = "python"
+name = "serializer-benchmark"
 version = "0.1.0"
-description = "Add your description here"
+description = "Python serializer benchmark suite matching the C# benchmark design"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "protobuf>=7.34.1",
-    "pytest-benchmark>=5.2.3",
+    "orjson>=3.10.0",
+    "msgspec>=0.19.0",
+    "python-rapidjson>=1.20",
+    "msgpack>=1.1.0",
+    "cbor2>=5.6.0",
+    "fastavro>=1.10.0",
+    "cloudpickle>=3.1.0",
 ]
