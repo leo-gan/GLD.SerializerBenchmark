@@ -1,0 +1,31 @@
+{
+  "type": "record",
+  "name": "Person",
+  "namespace": "benchmark_data",
+  "fields": [
+    {"name": "FirstName", "type": "string"},
+    {"name": "LastName", "type": "string"},
+    {"name": "Age", "type": "int"},
+    {"name": "Gender", "type": {"type": "enum", "name": "Gender", "symbols": ["Male", "Female"]}},
+    {"name": "Passport", "type": [
+      "null",
+      {
+        "type": "record",
+        "name": "Passport",
+        "fields": [
+          {"name": "Number", "type": "string"},
+          {"name": "Authority", "type": "string"},
+          {"name": "ExpirationDate", "type": "long"}
+        ]
+      }
+    ]},
+    {"name": "PoliceRecords", "type": {"type": "array", "items": {
+      "type": "record",
+      "name": "PoliceRecord",
+      "fields": [
+        {"name": "Id", "type": "int"},
+        {"name": "CrimeCode", "type": "string"}
+      ]
+    }}}
+  ]
+}

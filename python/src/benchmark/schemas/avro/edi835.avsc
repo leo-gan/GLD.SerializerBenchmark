@@ -1,0 +1,31 @@
+{
+  "type": "record",
+  "name": "EDI835",
+  "namespace": "benchmark_data",
+  "fields": [
+    {"name": "PayerName", "type": "string"},
+    {"name": "PayeeName", "type": "string"},
+    {"name": "PaymentDate", "type": "long"},
+    {"name": "TotalActualAmount", "type": "double"},
+    {"name": "TransactionControlNumber", "type": "string"},
+    {"name": "Claims", "type": {"type": "array", "items": {
+      "type": "record",
+      "name": "Claim",
+      "fields": [
+        {"name": "ClaimId", "type": "string"},
+        {"name": "PatientName", "type": "string"},
+        {"name": "TotalCharge", "type": "double"},
+        {"name": "PaymentAmount", "type": "double"},
+        {"name": "Lines", "type": {"type": "array", "items": {
+          "type": "record",
+          "name": "ServiceLine",
+          "fields": [
+            {"name": "ServiceCode", "type": "string"},
+            {"name": "ChargeAmount", "type": "double"},
+            {"name": "AdjudicatedAmount", "type": "double"}
+          ]
+        }}}
+      ]
+    }}}
+  ]
+}

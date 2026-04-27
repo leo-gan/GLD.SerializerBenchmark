@@ -1,0 +1,8 @@
+{
+  "type": "record",
+  "name": "StringArrayObject",
+  "namespace": "benchmark_data",
+  "fields": [
+    {"name": "Items", "type": {"type": "array", "items": "string"}}
+  ]
+}
