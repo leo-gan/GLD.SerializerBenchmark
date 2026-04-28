@@ -109,8 +109,10 @@ person = cbor2.loads(encoded)
 |------------|------------------|-----------------|
 | MS Bond Fast | 79,563 | ~400 bytes |
 | NetSerializer | 35,785 | ~600 bytes |
-| MemoryPack | - | - |
+| MemoryPack | 59,444* | ~500 bytes* |
 | ProtoBuf | 22,735 | 665 bytes |
+
+*MemoryPack: tested on SimpleObject (Person not supported in benchmark)
 
 ### Python Binary
 

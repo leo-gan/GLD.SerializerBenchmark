@@ -130,8 +130,8 @@ public interface ISerDeser
 
 ## Detailed Documentation
 
-- **[Serializer Reference](../../c-sharp/src/Docs/Serializers.md)** — All 38 serializers with descriptions
-- **[Result Explanations](../../c-sharp/src/Docs/ResultExplanations.md)** — Understanding the output
+- **[Serializer Reference](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/main/c-sharp/src/Docs/Serializers.md)** — All 38 serializers with descriptions
+- **[Result Explanations](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/main/c-sharp/src/Docs/ResultExplanations.md)** — Understanding the output
 
 ## Running Benchmarks
 

@@ -149,8 +149,8 @@ Options:
 
 ## Detailed Documentation
 
-- **[Analysis Methodology](../../analysis/docs/ANALYSIS_METHODOLOGY.md)** — Complete statistical methods and data pipeline
-- **[Analysis README](../../analysis/docs/README.md)** — Component reference and quick start
+- **[Analysis Methodology](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/main/analysis/docs/ANALYSIS_METHODOLOGY.md)** — Complete statistical methods and data pipeline
+- **[Analysis README](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/main/analysis/docs/README.md)** — Component reference and quick start
 
 ## Jupyter Notebook
 

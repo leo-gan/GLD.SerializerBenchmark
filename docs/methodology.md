@@ -99,4 +99,4 @@ Verify analysis correctness:
 
 ## Full Documentation
 
-For the complete analysis system documentation, see [analysis/docs/README.md](../analysis/docs/README.md).
+For the complete analysis system documentation, see [analysis/docs/README.md](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/main/analysis/docs/README.md).

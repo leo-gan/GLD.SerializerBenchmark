@@ -128,7 +128,7 @@ class MySerializer(Serializer):
 
 ## Detailed Documentation
 
-- **[Serializer Reference](../../python/docs/serializers.md)** — All 9 serializers with detailed descriptions, pros/cons, and benchmark notes
+- **[Serializer Reference](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/main/python/docs/serializers.md)** — All 9 serializers with detailed descriptions, pros/cons, and benchmark notes
 
 ## Running Benchmarks
 

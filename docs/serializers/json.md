@@ -94,11 +94,11 @@ person = decoder.decode(json_bytes)
 
 ## Performance Comparison
 
-| Operation | C# Best (SpanJson) | Python Best (orjson) | Winner |
+| Data Type | C# Best (SpanJson) | Python Best (orjson) | Winner |
 |-----------|-------------------|---------------------|--------|
-| Small object | ~22K ops/sec | ~60K ops/sec | Python |
-| Simple object | ~33K ops/sec | ~209K ops/sec | Python |
-| Large arrays | ~137K ops/sec | ~346K ops/sec | Python |
+| Integer | ~129K ops/sec | ~488K ops/sec | Python |
+| SimpleObject | ~34K ops/sec | ~209K ops/sec | Python |
+| Person | ~23K ops/sec | ~60K ops/sec | Python |
 
 *Note: Python's orjson/msgspec significantly outperform C# JSON serializers due to highly optimized Rust/C implementations.*
 
