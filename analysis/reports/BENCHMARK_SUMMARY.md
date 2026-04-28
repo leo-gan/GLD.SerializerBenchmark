@@ -1,6 +1,6 @@
 # Serializer Benchmark Summary
 
-**Generated:** 2026-04-27T20:01:00.195222
+**Generated:** 2026-04-27T20:09:03.919065
 
 ---
 
@@ -68,6 +68,35 @@
 
 - **C#:** MS Bond Compact - 1 bytes
 - **Python:** msgpack - 5 bytes
+
+## Multidimensional Analysis
+
+### Best Performers by Data Type
+
+- **EDI_835:** Python orjson (bytes) - 22,635 ns
+- **Integer:** Python msgspec (bytes) - 1,591 ns
+- **ObjectGraph:** Python pickle (bytes) - 20,071 ns
+- **Person:** Python msgspec (bytes) - 15,678 ns
+- **SimpleObject:** Python msgspec (bytes) - 3,091 ns
+- **StringArray:** Python orjson (bytes) - 29,223 ns
+- **Telemetry:** Python msgspec (bytes) - 15,860 ns
+
+### Performance by Mode (Stream vs String/Bytes)
+
+- **Stream:** C# NetSerializer (Integer) - 2,255 ns
+- **bytes:** Python msgspec (Integer) - 1,591 ns
+- **stream:** Python msgspec (Integer) - 2,906 ns
+- **string:** C# Json.Net (Integer) - 3,260 ns
+
+### Cross-Language Comparison (Same Data Types)
+
+- **EDI_835:** C# MS Bond Fast (34,936 ns) vs Python orjson (22,635 ns) - Python wins (0.65×)
+- **Integer:** C# NetSerializer (2,255 ns) vs Python msgspec (1,591 ns) - Python wins (0.71×)
+- **ObjectGraph:** C# Ceras (32,586 ns) vs Python pickle (20,071 ns) - Python wins (0.62×)
+- **Person:** C# NetSerializer (24,296 ns) vs Python msgspec (15,678 ns) - Python wins (0.65×)
+- **SimpleObject:** C# GroBuf (7,573 ns) vs Python msgspec (3,091 ns) - Python wins (0.41×)
+- **StringArray:** C# NetSerializer (36,854 ns) vs Python orjson (29,223 ns) - Python wins (0.79×)
+- **Telemetry:** C# MS Bond Fast (15,877 ns) vs Python msgspec (15,860 ns) - Python wins (1.00×)
 
 ---
 

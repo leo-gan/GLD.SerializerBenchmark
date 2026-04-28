@@ -100,6 +100,38 @@
         .badge-python { background: #3776ab; color: white; }
         .badge-stream { background: #28a745; color: white; }
         .badge-string { background: #6c757d; color: white; }
+        .badge-integer { background: #fd7e14; color: white; }
+        .badge-person { background: #20c997; color: white; }
+        .badge-simple { background: #6f42c1; color: white; }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 1rem;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            font-weight: 500;
+        }
+        .tab:hover { background: #f5f5f5; }
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .comparison-table {
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .winner { color: #28a745; font-weight: bold; }
+        .loser { color: #dc3545; }
         .footer {
             text-align: center;
             padding: 2rem;
@@ -112,7 +144,7 @@
     <div class="header">
         <h1>Serializer Benchmark Dashboard</h1>
         <p>Cross-language serialization performance comparison</p>
-        <p>Generated: 2026-04-27 20:01:00</p>
+        <p>Generated: 2026-04-27 20:09:03</p>
     </div>
 
     <div class="container">
@@ -4304,6 +4336,161 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Multidimensional Analysis -->
+        <div class="card">
+            <h2>Multidimensional Analysis</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('by-data-type')">By Data Type</div>
+                <div class="tab" onclick="showTab('by-mode')">By Mode</div>
+                <div class="tab" onclick="showTab('cross-lang')">Cross-Language</div>
+            </div>
+
+            <div id="by-data-type" class="tab-content active">
+                <h3>Best Performers by Data Type</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>Winner</th>
+                            <th>Language</th>
+                            <th>Serializer</th>
+                            <th>Time (ns)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>EDI_835</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>orjson</td>
+                            <td>22,635</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Integer</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>msgspec</td>
+                            <td>1,591</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ObjectGraph</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>pickle</td>
+                            <td>20,071</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Person</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>msgspec</td>
+                            <td>15,678</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SimpleObject</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>msgspec</td>
+                            <td>3,091</td>
+                        </tr>
+                        <tr>
+                            <td><strong>StringArray</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>orjson</td>
+                            <td>29,223</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Telemetry</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>msgspec</td>
+                            <td>15,860</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="by-mode" class="tab-content">
+                <h3>Performance by Mode</h3>
+                <p>Compare Stream vs String/Bytes serialization modes across all serializers.</p>
+            </div>
+
+            <div id="cross-lang" class="tab-content">
+                <h3>Cross-Language Comparison</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>C# Best</th>
+                            <th>C# Time</th>
+                            <th>Python Best</th>
+                            <th>Python Time</th>
+                            <th>Winner</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>EDI_835</strong></td>
+                            <td>MS Bond Fast</td>
+                            <td>34,936 ns</td>
+                            <td>orjson</td>
+                            <td>22,635 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Integer</strong></td>
+                            <td>NetSerializer</td>
+                            <td>2,255 ns</td>
+                            <td>msgspec</td>
+                            <td>1,591 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ObjectGraph</strong></td>
+                            <td>Ceras</td>
+                            <td>32,586 ns</td>
+                            <td>pickle</td>
+                            <td>20,071 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Person</strong></td>
+                            <td>NetSerializer</td>
+                            <td>24,296 ns</td>
+                            <td>msgspec</td>
+                            <td>15,678 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SimpleObject</strong></td>
+                            <td>GroBuf</td>
+                            <td>7,573 ns</td>
+                            <td>msgspec</td>
+                            <td>3,091 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                        <tr>
+                            <td><strong>StringArray</strong></td>
+                            <td>NetSerializer</td>
+                            <td>36,854 ns</td>
+                            <td>orjson</td>
+                            <td>29,223 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Telemetry</strong></td>
+                            <td>MS Bond Fast</td>
+                            <td>15,877 ns</td>
+                            <td>msgspec</td>
+                            <td>15,860 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <div class="footer">
@@ -4312,60 +4499,68 @@
 
     <script>
         // C# Chart
-        new Chart(document.getElementById('csharpChart'), {
+        new Chart(document.getElementById('csharpChart'), {{
             type: 'bar',
-            data: {
-                labels: ["NetSerializer", "Json.Net", "Hyperion", "Json.Net", "ServiceStack Type", "ServiceStack Type", "GroBuf", "NetJSON", "NetSerializer", "MS Bond Json", "ServiceStack Json", "Hyperion", "ServiceStack Json", "GroBuf", "NetSerializer"],
-                datasets: [{
+            data: {{
+                labels: {json.dumps(cs_labels)},
+                datasets: [{{
                     label: 'Total Time (microseconds)',
-                    data: [2.25, 3.26, 3.83, 4.12, 4.23, 4.67, 5.29, 5.98, 6.15, 6.31, 6.75, 6.91, 7.16, 7.57, 7.94],
+                    data: {json.dumps(cs_times)},
                     backgroundColor: 'rgba(81, 43, 212, 0.7)',
                     borderColor: 'rgba(81, 43, 212, 1)',
                     borderWidth: 1
-                }]
-            },
-            options: {
+                }}]
+            }},
+            options: {{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
+                plugins: {{
+                    legend: {{ display: false }}
+                }},
+                scales: {{
+                    y: {{
                         beginAtZero: true,
-                        title: { display: true, text: 'Time (microseconds)' }
-                    }
-                }
-            }
-        });
+                        title: {{ display: true, text: 'Time (microseconds)' }}
+                    }}
+                }}
+            }}
+        }});
 
         // Python Chart
-        new Chart(document.getElementById('pythonChart'), {
+        new Chart(document.getElementById('pythonChart'), {{
             type: 'bar',
-            data: {
-                labels: ["msgspec", "orjson", "msgpack", "msgspec", "msgspec", "orjson", "msgspec", "pickle", "msgpack", "orjson", "rapidjson", "orjson", "rapidjson", "pickle", "cloudpickle"],
-                datasets: [{
+            data: {{
+                labels: {json.dumps(py_labels)},
+                datasets: [{{
                     label: 'Total Time (microseconds)',
-                    data: [1.59, 2.29, 2.86, 2.91, 3.09, 4.04, 4.38, 4.42, 4.7, 4.72, 4.98, 5.86, 6.12, 7.12, 10.08],
+                    data: {json.dumps(py_times)},
                     backgroundColor: 'rgba(55, 118, 171, 0.7)',
                     borderColor: 'rgba(55, 118, 171, 1)',
                     borderWidth: 1
-                }]
-            },
-            options: {
+                }}]
+            }},
+            options: {{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
+                plugins: {{
+                    legend: {{ display: false }}
+                }},
+                scales: {{
+                    y: {{
                         beginAtZero: true,
-                        title: { display: true, text: 'Time (microseconds)' }
-                    }
-                }
-            }
-        });
+                        title: {{ display: true, text: 'Time (microseconds)' }}
+                    }}
+                }}
+            }}
+        }});
+
+        // Tab switching function
+        function showTab(tabId) {{
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }}
     </script>
 </body>
 </html>
