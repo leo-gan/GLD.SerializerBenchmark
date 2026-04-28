@@ -42,11 +42,13 @@ def main():
     # Generate outputs
     if args.generate_summary:
         summary_path = os.path.join(args.output_dir, 'BENCHMARK_SUMMARY.md')
-        generate_markdown_summary(csharp_stats, python_stats, summary_path)
+        generate_markdown_summary(csharp_stats, python_stats, summary_path,
+                                csharp_records=csharp_records, python_records=python_records)
 
     if args.generate_dashboard:
         dashboard_dir = os.path.join(args.output_dir, 'dashboard')
-        generate_html_dashboard(csharp_stats, python_stats, dashboard_dir)
+        generate_html_dashboard(csharp_stats, python_stats, dashboard_dir,
+                                csharp_records=csharp_records, python_records=python_records)
 
     # Check regression
     if args.check_regression:

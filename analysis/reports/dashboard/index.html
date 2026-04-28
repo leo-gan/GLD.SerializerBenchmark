@@ -144,7 +144,7 @@
     <div class="header">
         <h1>Serializer Benchmark Dashboard</h1>
         <p>Cross-language serialization performance comparison</p>
-        <p>Generated: 2026-04-27 20:09:03</p>
+        <p>Generated: 2026-04-27 20:23:25</p>
     </div>
 
     <div class="container">
@@ -4489,6 +4489,43 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Distribution Analysis (Violin Plots)</h2>
+            <p style="margin-bottom:1rem;">Serialization vs Deserialization time distributions per data type. Split violins show the density of timing measurements.</p>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));">
+                <div class="card" style="padding: 1rem;">
+                    <h4>EDI_835</h4>
+                    <img src="violin_EDI_835.png" alt="Violin plot for EDI_835" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Integer</h4>
+                    <img src="violin_Integer.png" alt="Violin plot for Integer" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>ObjectGraph</h4>
+                    <img src="violin_ObjectGraph.png" alt="Violin plot for ObjectGraph" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Person</h4>
+                    <img src="violin_Person.png" alt="Violin plot for Person" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>SimpleObject</h4>
+                    <img src="violin_SimpleObject.png" alt="Violin plot for SimpleObject" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>StringArray</h4>
+                    <img src="violin_StringArray.png" alt="Violin plot for StringArray" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Telemetry</h4>
+                    <img src="violin_Telemetry.png" alt="Violin plot for Telemetry" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
             </div>
         </div>
     </div>

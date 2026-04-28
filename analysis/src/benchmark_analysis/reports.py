@@ -1,15 +1,124 @@
 """Report generation (Markdown and HTML)."""
 
+import base64
+import io
 import json
 import os
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+
+def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
+    """Convert raw records to a melted dataframe for violin plots."""
+    if not records:
+        return pd.DataFrame()
+    df = pd.DataFrame(records)
+    df['Language'] = language
+    # Melt serialize/deserialize into Operation column
+    ser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeSer', 'OpPerSecSer', 'Language']].copy()
+    ser['Operation'] = 'Serialize'
+    ser = ser.rename(columns={'TimeSer': 'Time_ns', 'OpPerSecSer': 'OpPerSec'})
+
+    deser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeDeser', 'OpPerSecDeser', 'Language']].copy()
+    deser['Operation'] = 'Deserialize'
+    deser = deser.rename(columns={'TimeDeser': 'Time_ns', 'OpPerSecDeser': 'OpPerSec'})
+
+    melted = pd.concat([ser, deser], ignore_index=True)
+    # Clean up outliers (same logic as notebook: z-score < 3 and Time_ns < 60000)
+    if not melted.empty:
+        melted = melted[melted['Time_ns'] < 60000]
+    return melted
+
+
+def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: str) -> Optional[str]:
+    """Generate violin plot for a specific data type, returning relative image path."""
+    if melted_df.empty or data_type not in melted_df['TestDataName'].values:
+        return None
+
+    subset = melted_df[melted_df['TestDataName'] == data_type].copy()
+    if subset.empty:
+        return None
+
+    # Convert time to nanoseconds consistently (C# ticks -> ns; Python already ns)
+    # Detect unit by checking if values are large (ticks) or small (ns)
+    sample_time = subset['Time_ns'].median()
+    if sample_time > 1_000_000:
+        subset['Time_ns'] = subset['Time_ns'] * 100  # Ticks to ns
+
+    # Use catplot (modern seaborn name for factorplot)
+    try:
+        g = sns.catplot(
+            data=subset,
+            x='Time_ns',
+            y='SerializerName',
+            hue='Operation',
+            kind='violin',
+            split=True,
+            height=10,
+            aspect=1.5,
+            legend_out=False
+        )
+        g.fig.suptitle(f'{data_type} - Serialization vs Deserialization Time', fontsize=16, y=1.02)
+        g.set_axis_labels('Time (nanoseconds)', 'Serializer')
+
+        img_path = os.path.join(output_dir, f'violin_{data_type.replace(" ", "_")}.png')
+        plt.savefig(img_path, dpi=150, bbox_inches='tight')
+        plt.close(g.fig)
+        return os.path.basename(img_path)
+    except Exception as e:
+        print(f"Warning: Could not generate violin plot for {data_type}: {e}")
+        plt.close('all')
+        return None
+
+
+def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
+    """Generate a markdown pivot table from stats dict."""
+    lines = [f"\n### {title}\n"]
+
+    # Extract unique row and column values
+    row_vals = sorted(set(s[rows_dim] for s in stats.values()))
+    col_vals = sorted(set(s[cols_dim] for s in stats.values()))
+
+    if not row_vals or not col_vals:
+        lines.append("*No data available*\n")
+        return '\n'.join(lines)
+
+    # Header
+    header = f"| {rows_dim} | " + " | ".join(col_vals) + " |"
+    lines.append(header)
+    lines.append("|" + "---|" * (len(col_vals) + 1))
+
+    # Rows
+    for rv in row_vals:
+        row_cells = [rv]
+        for cv in col_vals:
+            matching = [s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv]
+            if matching:
+                val = matching[0][value_key]
+                if isinstance(val, float):
+                    row_cells.append(f"{val:,.0f}")
+                else:
+                    row_cells.append(str(val))
+            else:
+                row_cells.append("-")
+        lines.append("| " + " | ".join(row_cells) + " |")
+
+    lines.append("")
+    return '\n'.join(lines)
 
 
 def generate_markdown_summary(
     csharp_stats: Dict,
     python_stats: Dict,
-    output_path: str
+    output_path: str,
+    csharp_records: Optional[List[Dict]] = None,
+    python_records: Optional[List[Dict]] = None
 ) -> None:
     """Generate markdown summary report."""
     lines = []
@@ -129,6 +238,21 @@ def generate_markdown_summary(
             winner = "C#" if ratio > 1 else "Python"
             lines.append(f"- **{dtype}:** C# {cs_best['serializer']} ({cs_best['avg_time_total_ns']:,.0f} ns) vs Python {py_best['serializer']} ({py_best['avg_time_total_ns']:,.0f} ns) - {winner} wins ({ratio:.2f}×)")
 
+    # Pivot Tables
+    lines.append("\n## Pivot Tables\n")
+
+    if csharp_stats:
+        lines.append(_pivot_table_md(csharp_stats, 'serializer', 'mode', 'avg_time_total_ns',
+                                       'C#: Avg Total Time (ns) by Serializer and Mode'))
+        lines.append(_pivot_table_md(csharp_stats, 'serializer', 'test_data', 'avg_ops_per_sec',
+                                       'C#: Ops/Sec by Serializer and Data Type'))
+
+    if python_stats:
+        lines.append(_pivot_table_md(python_stats, 'serializer', 'mode', 'avg_time_total_ns',
+                                       'Python: Avg Total Time (ns) by Serializer and Mode'))
+        lines.append(_pivot_table_md(python_stats, 'serializer', 'test_data', 'avg_ops_per_sec',
+                                       'Python: Ops/Sec by Serializer and Data Type'))
+
     lines.append("\n---\n")
     lines.append("*Generated by Serializer Benchmark CI*\n")
 
@@ -141,9 +265,11 @@ def generate_markdown_summary(
 def generate_html_dashboard(
     csharp_stats: Dict,
     python_stats: Dict,
-    output_dir: str
+    output_dir: str,
+    csharp_records: Optional[List[Dict]] = None,
+    python_records: Optional[List[Dict]] = None
 ) -> None:
-    """Generate HTML dashboard with benchmark results."""
+    """Generate HTML dashboard with benchmark results including violin plots."""
     os.makedirs(output_dir, exist_ok=True)
 
     # Generate data for charts
@@ -193,6 +319,20 @@ def generate_html_dashboard(
     for lang, stat in all_stats:
         mode_data[stat['mode']].append({'lang': lang, 'serializer': stat['serializer'],
                                          'data_type': stat['test_data'], 'time': stat['avg_time_total_ns']})
+
+    # Generate violin plots for each data type (like plot_serializers3 from notebook)
+    violin_images = {}
+    if csharp_records or python_records:
+        cs_melted = _records_to_melted_df(csharp_records or [], 'C#')
+        py_melted = _records_to_melted_df(python_records or [], 'Python')
+        all_melted = pd.concat([cs_melted, py_melted], ignore_index=True) if not (cs_melted.empty and py_melted.empty) else pd.DataFrame()
+
+        if not all_melted.empty:
+            data_types = sorted(all_melted['TestDataName'].unique())
+            for dtype in data_types:
+                img_name = _generate_violin_plot(all_melted, dtype, output_dir)
+                if img_name:
+                    violin_images[dtype] = img_name
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -502,7 +642,29 @@ def generate_html_dashboard(
             </div>
         </div>
     </div>
+'''
 
+    # Add violin plots section
+    if violin_images:
+        html += '''
+    <div class="container">
+        <div class="card">
+            <h2>Distribution Analysis (Violin Plots)</h2>
+            <p style="margin-bottom:1rem;">Serialization vs Deserialization time distributions per data type. Split violins show the density of timing measurements.</p>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));">
+'''
+        for dtype, img_name in sorted(violin_images.items()):
+            html += f'''                <div class="card" style="padding: 1rem;">
+                    <h4>{dtype}</h4>
+                    <img src="{img_name}" alt="Violin plot for {dtype}" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+'''
+        html += '''            </div>
+        </div>
+    </div>
+'''
+
+    html += '''
     <div class="footer">
         <p>Generated by Serializer Benchmark CI</p>
     </div>
