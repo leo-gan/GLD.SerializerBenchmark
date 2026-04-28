@@ -12,13 +12,13 @@ from .regression import check_regression, save_baseline
 
 def main():
     parser = argparse.ArgumentParser(description='Analyze serializer benchmarks')
-    parser.add_argument('--csharp-logs', help='Path to C# benchmark CSV')
-    parser.add_argument('--python-logs', help='Path to Python benchmark CSV')
+    parser.add_argument('--csharp-logs', default='../logs/csharp/benchmark-log.csv', help='Path to C# benchmark CSV (default: ../logs/csharp/benchmark-log.csv)')
+    parser.add_argument('--python-logs', default='../logs/python/benchmark-log.csv', help='Path to Python benchmark CSV (default: ../logs/python/benchmark-log.csv)')
     parser.add_argument('--output-dir', default='reports', help='Output directory')
     parser.add_argument('--generate-dashboard', action='store_true', help='Generate HTML dashboard')
     parser.add_argument('--generate-summary', action='store_true', help='Generate Markdown summary')
     parser.add_argument('--check-regression', action='store_true', help='Check for regressions')
-    parser.add_argument('--regression-threshold', type=float, default=10.0, help='Regression threshold %')
+    parser.add_argument('--regression-threshold', type=float, default=10.0, help='Regression threshold percent')
     parser.add_argument('--baseline-file', default='baseline.json', help='Baseline file path')
     parser.add_argument('--save-baseline', action='store_true', help='Save current as baseline')
 

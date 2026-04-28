@@ -14,6 +14,7 @@ Unified benchmark runner for all languages. Coordinates C# and Python benchmark 
 ```
 
 **Options:**
+
 | Flag | Description |
 |------|-------------|
 | `-m, --mode MODE` | Benchmark mode: `smoke`, `all-single`, `full` |
@@ -54,6 +55,7 @@ analyze-benchmarks \
 ```
 
 **Arguments:**
+
 | Argument | Description |
 |----------|-------------|
 | `--csharp-logs PATH` | Path to C# benchmark CSV |
