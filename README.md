@@ -1,18 +1,10 @@
-`# Cross-Language Serializer Benchmark
+# Cross-Language Serializer Benchmark
+
+> **📚 [Documentation:](https://leo-gan.github.io/GLD.SerializerBenchmark/)**
+>
+> *Comprehensive guides for serialization formats, performance results, and implementation details.*
 
 This repository benchmarks serialization libraries across **.NET (C#)** and **Python**, using identical test data, dual-mode APIs, and comparable metrics to enable fair cross-language performance analysis.
-
-## Structure
-
-```
-├── c-sharp/          # .NET 8 benchmark (38 serializers)
-├── python/           # Python 3.12 benchmark (9 serializers)
-├── schemas/          # Shared Protobuf schema definitions
-├── logs/             # Benchmark output CSVs
-│   ├── csharp/
-│   └── python/
-└── README.md         # This file
-```
 
 ## .NET (C#) Benchmark
 
