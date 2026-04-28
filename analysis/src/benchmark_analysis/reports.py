@@ -54,15 +54,19 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
     if subset.empty:
         return None
 
-    # Convert time to nanoseconds consistently (C# ticks -> ns; Python already ns)
+    # Convert time to microseconds for display (C# ticks are 100ns, so ticks * 100 / 1000 = ticks / 10)
     sample_time = subset['Time_ns'].median()
     if sample_time > 1_000_000:
-        subset['Time_ns'] = subset['Time_ns'] * 100  # Ticks to ns
+        # C# ticks: convert to microseconds (ticks * 100ns / 1000 = ticks / 10)
+        subset['Time_us'] = subset['Time_ns'] / 10  # ticks to microseconds
+    else:
+        # Python nanoseconds: convert to microseconds
+        subset['Time_us'] = subset['Time_ns'] / 1000
 
     # Filter to top N serializers by mean time if requested
     if top_n:
-        # Calculate mean time per serializer
-        mean_times = subset.groupby('SerializerName')['Time_ns'].mean().sort_values()
+        # Calculate mean time per serializer (using Time_us)
+        mean_times = subset.groupby('SerializerName')['Time_us'].mean().sort_values()
         top_serializers = mean_times.head(top_n).index.tolist()
         subset = subset[subset['SerializerName'].isin(top_serializers)].copy()
 
@@ -70,20 +74,21 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
     try:
         g = sns.catplot(
             data=subset,
-            x='Time_ns',
+            x='Time_us',
             y='SerializerName',
             hue='Operation',
             kind='violin',
             split=True,
+            inner=None,  # Remove box plot inner lines for cleaner violin appearance
             height=6,
             aspect=1.2,
             legend_out=False,
-            order=subset.groupby('SerializerName')['Time_ns'].mean().sort_values().index.tolist()
+            order=subset.groupby('SerializerName')['Time_us'].mean().sort_values().index.tolist()
         )
         lang_prefix = f"{language} " if language else ""
         g.fig.suptitle(f'{lang_prefix}{data_type} - Top {top_n or "All"} Serializers',
                        fontsize=14, y=1.02)
-        g.set_axis_labels('Time (nanoseconds)', 'Serializer')
+        g.set_axis_labels('Time (microseconds)', 'Serializer')
 
         lang_suffix = f"_{language.lower().replace('#', 'sharp')}" if language else ""
         img_path = os.path.join(output_dir,
