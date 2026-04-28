@@ -1,0 +1,158 @@
+name: Benchmark CI
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.gitignore'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Benchmark mode'
+        required: true
+        default: 'all-single'
+        type: choice
+        options:
+          - smoke
+          - all-single
+          - full
+      fail_on_regression:
+        description: 'Fail CI on performance regression'
+        required: true
+        default: false
+        type: boolean
+      regression_threshold:
+        description: 'Regression threshold percentage (e.g., 10 for 10% slower)'
+        required: true
+        default: '10'
+        type: string
+
+env:
+  REGRESSION_THRESHOLD: ${{ github.event.inputs.regression_threshold || '10' }}
+
+jobs:
+  csharp-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run C# Benchmark
+        run: |
+          cd c-sharp
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'all-single' }}
+
+      - name: Upload C# Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: csharp-results
+          path: logs/csharp/
+          retention-days: 30
+
+  python-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Python Benchmark
+        run: |
+          cd python
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'all-single' }}
+
+      - name: Upload Python Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-results
+          path: logs/python/
+          retention-days: 30
+
+  analyze-and-report:
+    needs: [csharp-benchmark, python-benchmark]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install analysis package
+        run: |
+          cd analysis
+          pip install -e .
+
+      - name: Download All Results
+        uses: actions/download-artifact@v4
+        with:
+          path: logs/
+          pattern: '*-results'
+          merge-multiple: true
+
+      - name: Run Analysis
+        run: |
+          analyze-benchmarks \
+            --csharp-logs logs/csharp/benchmark-log.csv \
+            --python-logs logs/python/benchmark-log.csv \
+            --output-dir reports/ \
+            --generate-dashboard \
+            --generate-summary
+
+      - name: Check for Regressions
+        if: github.event.inputs.fail_on_regression == 'true'
+        run: |
+          analyze-benchmarks \
+            --csharp-logs logs/csharp/benchmark-log.csv \
+            --python-logs logs/python/benchmark-log.csv \
+            --check-regression \
+            --regression-threshold ${{ env.REGRESSION_THRESHOLD }} \
+            --baseline-file baseline.json
+        continue-on-error: false
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports
+          path: reports/
+          retention-days: 90
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: reports/dashboard/
+
+      - name: Update Summary in Repository
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cp reports/BENCHMARK_SUMMARY.md BENCHMARK_SUMMARY.md
+          git add BENCHMARK_SUMMARY.md
+          if git diff --cached --quiet; then
+            echo "No changes to summary"
+          else
+            git commit -m "Update benchmark summary [skip ci]"
+            git push
+          fi
+
+  deploy-dashboard:
+    needs: analyze-and-report
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

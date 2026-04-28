@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serializer Benchmark Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header p { opacity: 0.9; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #444;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        tr:hover { background: #f8f9fa; }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .badge-csharp { background: #512bd4; color: white; }
+        .badge-python { background: #3776ab; color: white; }
+        .badge-stream { background: #28a745; color: white; }
+        .badge-string { background: #6c757d; color: white; }
+        .badge-integer { background: #fd7e14; color: white; }
+        .badge-person { background: #20c997; color: white; }
+        .badge-simple { background: #6f42c1; color: white; }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 1rem;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            font-weight: 500;
+        }
+        .tab:hover { background: #f5f5f5; }
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .comparison-table {
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .winner { color: #28a745; font-weight: bold; }
+        .loser { color: #dc3545; }
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Serializer Benchmark Dashboard</h1>
+        <p>Cross-language serialization performance comparison</p>
+        <p>Generated: 2026-04-28 12:43:05</p>
+    </div>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">352</div>
+                <div class="stat-label">C# Serializer Tests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">108</div>
+                <div class="stat-label">Python Serializer Tests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">30</div>
+                <div class="stat-label">Total Configurations</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>C# Performance (Top 15)</h2>
+                <div class="chart-container">
+                    <canvas id="csharpChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Python Performance (Top 15)</h2>
+                <div class="chart-container">
+                    <canvas id="pythonChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pivot Tables -->
+        <div class="card">
+            <h2>Results by Mode and Data Type (Pivot Tables)</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('pivot-csharp')">C# Pivot Tables</div>
+                <div class="tab" onclick="showTab('pivot-python')">Python Pivot Tables</div>
+            </div>
+
+            <div id="pivot-csharp" class="tab-content active">
+<h4>C#: Avg Total Time (ns) by Serializer and Mode</h4>
+<table class="pivot-table">
+    <thead>
+        <tr>
+            <th>serializer</th>
+            <th>Stream</th>
+            <th>string</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Ceras</strong></td>
+            <td>69,629</td>
+            <td>65,441</td>
+        </tr>
+        <tr>
+            <td><strong>CsvHelper</strong></td>
+            <td>419,815</td>
+            <td>417,879</td>
+        </tr>
+        <tr>
+            <td><strong>ExtendedXmlSerializer</strong></td>
+            <td>15,570</td>
+            <td>14,914</td>
+        </tr>
+        <tr>
+            <td><strong>FlatSharp</strong></td>
+            <td>7,229</td>
+            <td>7,235</td>
+        </tr>
+        <tr>
+            <td><strong>FsPickler</strong></td>
+            <td>75,215</td>
+            <td>65,294</td>
+        </tr>
+        <tr>
+            <td><strong>FsPicklerJson</strong></td>
+            <td>130,531</td>
+            <td>113,530</td>
+        </tr>
+        <tr>
+            <td><strong>GroBuf</strong></td>
+            <td>3,510</td>
+            <td>3,441</td>
+        </tr>
+        <tr>
+            <td><strong>Hyperion</strong></td>
+            <td>55,240</td>
+            <td>53,857</td>
+        </tr>
+        <tr>
+            <td><strong>Jil</strong></td>
+            <td>75,413</td>
+            <td>65,333</td>
+        </tr>
+        <tr>
+            <td><strong>Json.Net</strong></td>
+            <td>191,017</td>
+            <td>126,892</td>
+        </tr>
+        <tr>
+            <td><strong>Json.Net (Helper)</strong></td>
+            <td>260,589</td>
+            <td>186,366</td>
+        </tr>
+        <tr>
+            <td><strong>MS Binary</strong></td>
+            <td>168,878</td>
+            <td>144,561</td>
+        </tr>
+        <tr>
+            <td><strong>MS Bond Compact</strong></td>
+            <td>24,856</td>
+            <td>16,128</td>
+        </tr>
+        <tr>
+            <td><strong>MS Bond Fast</strong></td>
+            <td>19,681</td>
+            <td>12,569</td>
+        </tr>
+        <tr>
+            <td><strong>MS Bond Json</strong></td>
+            <td>83,070</td>
+            <td>65,619</td>
+        </tr>
+        <tr>
+            <td><strong>MS DataContract</strong></td>
+            <td>125,450</td>
+            <td>132,166</td>
+        </tr>
+        <tr>
+            <td><strong>MS DataContract Json</strong></td>
+            <td>128,484</td>
+            <td>130,833</td>
+        </tr>
+        <tr>
+            <td><strong>MS XmlSerializer</strong></td>
+            <td>178,280</td>
+            <td>175,005</td>
+        </tr>
+        <tr>
+            <td><strong>MemoryPack</strong></td>
+            <td>6,057</td>
+            <td>5,464</td>
+        </tr>
+        <tr>
+            <td><strong>Migrant</strong></td>
+            <td>43,897</td>
+            <td>45,536</td>
+        </tr>
+        <tr>
+            <td><strong>NetJSON</strong></td>
+            <td>64,319</td>
+            <td>58,699</td>
+        </tr>
+        <tr>
+            <td><strong>NetSerializer</strong></td>
+            <td>26,689</td>
+            <td>27,945</td>
+        </tr>
+        <tr>
+            <td><strong>ProtoBuf</strong></td>
+            <td>45,532</td>
+            <td>43,985</td>
+        </tr>
+        <tr>
+            <td><strong>ServiceStack Json</strong></td>
+            <td>165,917</td>
+            <td>156,866</td>
+        </tr>
+        <tr>
+            <td><strong>ServiceStack Type</strong></td>
+            <td>135,828</td>
+            <td>136,644</td>
+        </tr>
+        <tr>
+            <td><strong>SharpSerializer</strong></td>
+            <td>40,909</td>
+            <td>42,637</td>
+        </tr>
+        <tr>
+            <td><strong>SharpYaml</strong></td>
+            <td>792,222</td>
+            <td>741,856</td>
+        </tr>
+        <tr>
+            <td><strong>SpanJson</strong></td>
+            <td>50,398</td>
+            <td>43,512</td>
+        </tr>
+        <tr>
+            <td><strong>Utf8Json</strong></td>
+            <td>68,868</td>
+            <td>72,679</td>
+        </tr>
+        <tr>
+            <td><strong>YAXLib</strong></td>
+            <td>996,052</td>
+            <td>893,760</td>
+        </tr>
+        <tr>
+            <td><strong>YamlDotNet</strong></td>
+            <td>1,412,790</td>
+            <td>1,248,686</td>
+        </tr>
+        <tr>
+            <td><strong>fastJson</strong></td>
+            <td>204,717</td>
+            <td>142,846</td>
+        </tr>
+    </tbody>
+</table>
+<h4>C#: Ops/Sec by Serializer and Data Type</h4>
+<table class="pivot-table">
+    <thead>
+        <tr>
+            <th>serializer</th>
+            <th>EDI_835</th>
+            <th>Integer</th>
+            <th>ObjectGraph</th>
+            <th>Person</th>
+            <th>SimpleObject</th>
+            <th>StringArray</th>
+            <th>Telemetry</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Ceras</strong></td>
+            <td>12,846</td>
+            <td>67,261</td>
+            <td>38,175</td>
+            <td>15,281</td>
+            <td>22,178</td>
+            <td>11,012</td>
+            <td>13,666</td>
+        </tr>
+        <tr>
+            <td><strong>CsvHelper</strong></td>
+            <td>-</td>
+            <td>2,393</td>
+            <td>-</td>
+            <td>-</td>
+            <td>3</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>ExtendedXmlSerializer</strong></td>
+            <td>-</td>
+            <td>67,053</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>FlatSharp</strong></td>
+            <td>-</td>
+            <td>138,222</td>
+            <td>-</td>
+            <td>-</td>
+            <td>38,799</td>
+            <td>15,347</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>FsPickler</strong></td>
+            <td>12,499</td>
+            <td>50,104</td>
+            <td>36,994</td>
+            <td>15,315</td>
+            <td>21,548</td>
+            <td>10,405</td>
+            <td>14,368</td>
+        </tr>
+        <tr>
+            <td><strong>FsPicklerJson</strong></td>
+            <td>7,312</td>
+            <td>27,652</td>
+            <td>26,760</td>
+            <td>8,808</td>
+            <td>15,648</td>
+            <td>7,706</td>
+            <td>4,273</td>
+        </tr>
+        <tr>
+            <td><strong>GroBuf</strong></td>
+            <td>-</td>
+            <td>290,604</td>
+            <td>-</td>
+            <td>-</td>
+            <td>137,802</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>Hyperion</strong></td>
+            <td>14,053</td>
+            <td>223,508</td>
+            <td>-</td>
+            <td>18,568</td>
+            <td>42,639</td>
+            <td>10,695</td>
+            <td>16,219</td>
+        </tr>
+        <tr>
+            <td><strong>Jil</strong></td>
+            <td>11,543</td>
+            <td>131,125</td>
+            <td>-</td>
+            <td>15,306</td>
+            <td>53,856</td>
+            <td>12,121</td>
+            <td>5,157</td>
+        </tr>
+        <tr>
+            <td><strong>Json.Net</strong></td>
+            <td>13,993</td>
+            <td>293,705</td>
+            <td>75,554</td>
+            <td>7,881</td>
+            <td>46,223</td>
+            <td>9,440</td>
+            <td>4,756</td>
+        </tr>
+        <tr>
+            <td><strong>Json.Net (Helper)</strong></td>
+            <td>8,342</td>
+            <td>72,603</td>
+            <td>34,008</td>
+            <td>5,366</td>
+            <td>14,859</td>
+            <td>6,923</td>
+            <td>3,662</td>
+        </tr>
+        <tr>
+            <td><strong>MS Binary</strong></td>
+            <td>3,937</td>
+            <td>32,979</td>
+            <td>14,402</td>
+            <td>6,917</td>
+            <td>13,609</td>
+            <td>5,967</td>
+            <td>9,985</td>
+        </tr>
+        <tr>
+            <td><strong>MS Bond Compact</strong></td>
+            <td>34,253</td>
+            <td>356,167</td>
+            <td>-</td>
+            <td>62,005</td>
+            <td>103,761</td>
+            <td>22,487</td>
+            <td>59,758</td>
+        </tr>
+        <tr>
+            <td><strong>MS Bond Fast</strong></td>
+            <td>43,486</td>
+            <td>773,149</td>
+            <td>-</td>
+            <td>79,563</td>
+            <td>190,586</td>
+            <td>25,395</td>
+            <td>113,012</td>
+        </tr>
+        <tr>
+            <td><strong>MS Bond Json</strong></td>
+            <td>15,741</td>
+            <td>179,697</td>
+            <td>-</td>
+            <td>15,239</td>
+            <td>37,704</td>
+            <td>14,349</td>
+            <td>6,157</td>
+        </tr>
+        <tr>
+            <td><strong>MS DataContract</strong></td>
+            <td>4,188</td>
+            <td>46,988</td>
+            <td>21,714</td>
+            <td>7,566</td>
+            <td>11,607</td>
+            <td>3,668</td>
+            <td>4,015</td>
+        </tr>
+        <tr>
+            <td><strong>MS DataContract Json</strong></td>
+            <td>3,260</td>
+            <td>70,942</td>
+            <td>-</td>
+            <td>7,643</td>
+            <td>16,146</td>
+            <td>4,110</td>
+            <td>4,939</td>
+        </tr>
+        <tr>
+            <td><strong>MS XmlSerializer</strong></td>
+            <td>6,106</td>
+            <td>42,235</td>
+            <td>-</td>
+            <td>5,714</td>
+            <td>13,174</td>
+            <td>5,579</td>
+            <td>3,432</td>
+        </tr>
+        <tr>
+            <td><strong>MemoryPack</strong></td>
+            <td>-</td>
+            <td>183,013</td>
+            <td>-</td>
+            <td>-</td>
+            <td>59,444</td>
+            <td>17,129</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>Migrant</strong></td>
+            <td>-</td>
+            <td>21,961</td>
+            <td>-</td>
+            <td>-</td>
+            <td>5,134</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>NetJSON</strong></td>
+            <td>18,156</td>
+            <td>238,840</td>
+            <td>-</td>
+            <td>17,036</td>
+            <td>47,335</td>
+            <td>14,263</td>
+            <td>7,506</td>
+        </tr>
+        <tr>
+            <td><strong>NetSerializer</strong></td>
+            <td>24,458</td>
+            <td>429,066</td>
+            <td>-</td>
+            <td>35,785</td>
+            <td>104,531</td>
+            <td>19,804</td>
+            <td>15,843</td>
+        </tr>
+        <tr>
+            <td><strong>ProtoBuf</strong></td>
+            <td>20,904</td>
+            <td>90,734</td>
+            <td>-</td>
+            <td>22,735</td>
+            <td>38,135</td>
+            <td>12,734</td>
+            <td>21,318</td>
+        </tr>
+        <tr>
+            <td><strong>ServiceStack Json</strong></td>
+            <td>6,807</td>
+            <td>210,576</td>
+            <td>-</td>
+            <td>6,375</td>
+            <td>22,790</td>
+            <td>8,754</td>
+            <td>3,715</td>
+        </tr>
+        <tr>
+            <td><strong>ServiceStack Type</strong></td>
+            <td>8,442</td>
+            <td>304,053</td>
+            <td>-</td>
+            <td>7,318</td>
+            <td>23,858</td>
+            <td>10,933</td>
+            <td>4,507</td>
+        </tr>
+        <tr>
+            <td><strong>SharpSerializer</strong></td>
+            <td>1,111</td>
+            <td>23,454</td>
+            <td>4,995</td>
+            <td>-</td>
+            <td>7,460</td>
+            <td>2,401</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td><strong>SharpYaml</strong></td>
+            <td>1,061</td>
+            <td>38,576</td>
+            <td>-</td>
+            <td>1,348</td>
+            <td>3,459</td>
+            <td>1,066</td>
+            <td>1,129</td>
+        </tr>
+        <tr>
+            <td><strong>SpanJson</strong></td>
+            <td>16,182</td>
+            <td>128,735</td>
+            <td>-</td>
+            <td>22,982</td>
+            <td>33,746</td>
+            <td>15,722</td>
+            <td>7,696</td>
+        </tr>
+        <tr>
+            <td><strong>Utf8Json</strong></td>
+            <td>8,412</td>
+            <td>110,252</td>
+            <td>-</td>
+            <td>13,759</td>
+            <td>27,551</td>
+            <td>11,075</td>
+            <td>3,635</td>
+        </tr>
+        <tr>
+            <td><strong>YAXLib</strong></td>
+            <td>947</td>
+            <td>9,830</td>
+            <td>-</td>
+            <td>1,119</td>
+            <td>2,027</td>
+            <td>1,536</td>
+            <td>930</td>
+        </tr>
+        <tr>
+            <td><strong>YamlDotNet</strong></td>
+            <td>1,125</td>
+            <td>13,316</td>
+            <td>6,001</td>
+            <td>801</td>
+            <td>2,586</td>
+            <td>4</td>
+            <td>5</td>
+        </tr>
+        <tr>
+            <td><strong>fastJson</strong></td>
+            <td>7,786</td>
+            <td>98,623</td>
+            <td>-</td>
+            <td>7,001</td>
+            <td>20,978</td>
+            <td>10,151</td>
+            <td>4,312</td>
+        </tr>
+    </tbody>
+</table>
+            </div>
+
+            <div id="pivot-python" class="tab-content">
+<h4>Python: Avg Total Time (ns) by Serializer and Mode</h4>
+<table class="pivot-table">
+    <thead>
+        <tr>
+            <th>serializer</th>
+            <th>bytes</th>
+            <th>stream</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>avro</strong></td>
+            <td>191,993</td>
+            <td>186,495</td>
+        </tr>
+        <tr>
+            <td><strong>cbor2</strong></td>
+            <td>473,325</td>
+            <td>463,476</td>
+        </tr>
+        <tr>
+            <td><strong>cloudpickle</strong></td>
+            <td>221,025</td>
+            <td>220,190</td>
+        </tr>
+        <tr>
+            <td><strong>msgpack</strong></td>
+            <td>376,178</td>
+            <td>382,255</td>
+        </tr>
+        <tr>
+            <td><strong>msgspec</strong></td>
+            <td>18,097</td>
+            <td>20,361</td>
+        </tr>
+        <tr>
+            <td><strong>orjson</strong></td>
+            <td>16,638</td>
+            <td>20,051</td>
+        </tr>
+        <tr>
+            <td><strong>pickle</strong></td>
+            <td>89,910</td>
+            <td>96,911</td>
+        </tr>
+        <tr>
+            <td><strong>protobuf</strong></td>
+            <td>193,597</td>
+            <td>201,847</td>
+        </tr>
+        <tr>
+            <td><strong>rapidjson</strong></td>
+            <td>390,000</td>
+            <td>397,690</td>
+        </tr>
+    </tbody>
+</table>
+<h4>Python: Ops/Sec by Serializer and Data Type</h4>
+<table class="pivot-table">
+    <thead>
+        <tr>
+            <th>serializer</th>
+            <th>EDI_835</th>
+            <th>Integer</th>
+            <th>ObjectGraph</th>
+            <th>Person</th>
+            <th>SimpleObject</th>
+            <th>StringArray</th>
+            <th>Telemetry</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>avro</strong></td>
+            <td>3,368</td>
+            <td>-</td>
+            <td>-</td>
+            <td>5,209</td>
+            <td>34,010</td>
+            <td>3,015</td>
+            <td>7,107</td>
+        </tr>
+        <tr>
+            <td><strong>cbor2</strong></td>
+            <td>1,618</td>
+            <td>53,028</td>
+            <td>-</td>
+            <td>2,113</td>
+            <td>5,862</td>
+            <td>3,870</td>
+            <td>2,782</td>
+        </tr>
+        <tr>
+            <td><strong>cloudpickle</strong></td>
+            <td>4,580</td>
+            <td>99,988</td>
+            <td>22,796</td>
+            <td>4,524</td>
+            <td>25,801</td>
+            <td>13,754</td>
+            <td>17,192</td>
+        </tr>
+        <tr>
+            <td><strong>msgpack</strong></td>
+            <td>2,107</td>
+            <td>346,845</td>
+            <td>-</td>
+            <td>2,658</td>
+            <td>9,715</td>
+            <td>6,359</td>
+            <td>4,062</td>
+        </tr>
+        <tr>
+            <td><strong>msgspec</strong></td>
+            <td>16,274</td>
+            <td>685,675</td>
+            <td>-</td>
+            <td>55,257</td>
+            <td>327,476</td>
+            <td>27,564</td>
+            <td>54,650</td>
+        </tr>
+        <tr>
+            <td><strong>orjson</strong></td>
+            <td>38,424</td>
+            <td>487,675</td>
+            <td>-</td>
+            <td>60,102</td>
+            <td>208,617</td>
+            <td>30,948</td>
+            <td>66,081</td>
+        </tr>
+        <tr>
+            <td><strong>pickle</strong></td>
+            <td>10,054</td>
+            <td>222,586</td>
+            <td>50,343</td>
+            <td>11,122</td>
+            <td>52,766</td>
+            <td>11,186</td>
+            <td>30,992</td>
+        </tr>
+        <tr>
+            <td><strong>protobuf</strong></td>
+            <td>2,165</td>
+            <td>-</td>
+            <td>-</td>
+            <td>5,165</td>
+            <td>45,507</td>
+            <td>9,415</td>
+            <td>20,015</td>
+        </tr>
+        <tr>
+            <td><strong>rapidjson</strong></td>
+            <td>1,898</td>
+            <td>195,111</td>
+            <td>-</td>
+            <td>2,564</td>
+            <td>8,906</td>
+            <td>6,126</td>
+            <td>2,725</td>
+        </tr>
+    </tbody>
+</table>
+            </div>
+        </div>
+
+        <!-- Multidimensional Analysis -->
+        <div class="card">
+            <h2>Multidimensional Analysis</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('by-data-type')">By Data Type</div>
+                <div class="tab" onclick="showTab('by-mode')">By Mode</div>
+                <div class="tab" onclick="showTab('cross-lang')">Cross-Language</div>
+            </div>
+
+            <div id="by-data-type" class="tab-content active">
+                <h3>Best Performers by Data Type</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>Winner</th>
+                            <th>Language</th>
+                            <th>Serializer</th>
+                            <th>Time (ns)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>EDI_835</strong></td>
+                            <td class="winner">C#</td>
+                            <td><span class="badge badge-csharp">C#</span></td>
+                            <td>MS Bond Fast</td>
+                            <td>22,996</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Integer</strong></td>
+                            <td class="winner">C#</td>
+                            <td><span class="badge badge-csharp">C#</span></td>
+                            <td>MS Bond Fast</td>
+                            <td>1,293</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ObjectGraph</strong></td>
+                            <td class="winner">C#</td>
+                            <td><span class="badge badge-csharp">C#</span></td>
+                            <td>Json.Net</td>
+                            <td>13,235</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Person</strong></td>
+                            <td class="winner">C#</td>
+                            <td><span class="badge badge-csharp">C#</span></td>
+                            <td>MS Bond Fast</td>
+                            <td>12,569</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SimpleObject</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>msgspec</td>
+                            <td>3,054</td>
+                        </tr>
+                        <tr>
+                            <td><strong>StringArray</strong></td>
+                            <td class="loser">Python</td>
+                            <td><span class="badge badge-python">Python</span></td>
+                            <td>orjson</td>
+                            <td>32,312</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Telemetry</strong></td>
+                            <td class="winner">C#</td>
+                            <td><span class="badge badge-csharp">C#</span></td>
+                            <td>MS Bond Fast</td>
+                            <td>8,849</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="by-mode" class="tab-content">
+                <h3>Performance by Mode</h3>
+                <p>Compare Stream vs String/Bytes serialization modes across all serializers.</p>
+            </div>
+
+            <div id="cross-lang" class="tab-content">
+                <h3>Cross-Language Comparison</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>C# Best</th>
+                            <th>C# Time</th>
+                            <th>Python Best</th>
+                            <th>Python Time</th>
+                            <th>Winner</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>EDI_835</strong></td>
+                            <td>MS Bond Fast</td>
+                            <td>22,996 ns</td>
+                            <td>orjson</td>
+                            <td>26,026 ns</td>
+                            <td class="winner">C#</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Integer</strong></td>
+                            <td>MS Bond Fast</td>
+                            <td>1,293 ns</td>
+                            <td>msgspec</td>
+                            <td>1,458 ns</td>
+                            <td class="winner">C#</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ObjectGraph</strong></td>
+                            <td>Json.Net</td>
+                            <td>13,235 ns</td>
+                            <td>pickle</td>
+                            <td>19,864 ns</td>
+                            <td class="winner">C#</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Person</strong></td>
+                            <td>MS Bond Fast</td>
+                            <td>12,569 ns</td>
+                            <td>orjson</td>
+                            <td>16,638 ns</td>
+                            <td class="winner">C#</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SimpleObject</strong></td>
+                            <td>MS Bond Fast</td>
+                            <td>5,247 ns</td>
+                            <td>msgspec</td>
+                            <td>3,054 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                        <tr>
+                            <td><strong>StringArray</strong></td>
+                            <td>MS Bond Fast</td>
+                            <td>32,337 ns</td>
+                            <td>orjson</td>
+                            <td>32,312 ns</td>
+                            <td class="loser">Python</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Telemetry</strong></td>
+                            <td>MS Bond Fast</td>
+                            <td>8,849 ns</td>
+                            <td>orjson</td>
+                            <td>15,133 ns</td>
+                            <td class="winner">C#</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>C# Distribution Analysis (Violin Plots)</h2>
+            <p style="margin-bottom:1rem;">Top 5 serializers by mean time for each data type. Split violins show serialize (top) vs deserialize (bottom) time distributions.</p>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));">
+                <div class="card" style="padding: 1rem;">
+                    <h4>EDI_835</h4>
+                    <img src="violin_csharp_EDI_835.png" alt="C# violin plot for EDI_835" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Integer</h4>
+                    <img src="violin_csharp_Integer.png" alt="C# violin plot for Integer" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>ObjectGraph</h4>
+                    <img src="violin_csharp_ObjectGraph.png" alt="C# violin plot for ObjectGraph" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Person</h4>
+                    <img src="violin_csharp_Person.png" alt="C# violin plot for Person" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>SimpleObject</h4>
+                    <img src="violin_csharp_SimpleObject.png" alt="C# violin plot for SimpleObject" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>StringArray</h4>
+                    <img src="violin_csharp_StringArray.png" alt="C# violin plot for StringArray" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Telemetry</h4>
+                    <img src="violin_csharp_Telemetry.png" alt="C# violin plot for Telemetry" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Python Distribution Analysis (Violin Plots)</h2>
+            <p style="margin-bottom:1rem;">Top 5 serializers by mean time for each data type. Split violins show serialize (top) vs deserialize (bottom) time distributions.</p>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));">
+                <div class="card" style="padding: 1rem;">
+                    <h4>EDI_835</h4>
+                    <img src="violin_python_EDI_835.png" alt="Python violin plot for EDI_835" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Integer</h4>
+                    <img src="violin_python_Integer.png" alt="Python violin plot for Integer" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>ObjectGraph</h4>
+                    <img src="violin_python_ObjectGraph.png" alt="Python violin plot for ObjectGraph" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Person</h4>
+                    <img src="violin_python_Person.png" alt="Python violin plot for Person" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>SimpleObject</h4>
+                    <img src="violin_python_SimpleObject.png" alt="Python violin plot for SimpleObject" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>StringArray</h4>
+                    <img src="violin_python_StringArray.png" alt="Python violin plot for StringArray" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div class="card" style="padding: 1rem;">
+                    <h4>Telemetry</h4>
+                    <img src="violin_python_Telemetry.png" alt="Python violin plot for Telemetry" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Generated by Serializer Benchmark CI</p>
+    </div>
+
+    <script>
+        // C# Chart
+        new Chart(document.getElementById('csharpChart'), {{
+            type: 'bar',
+            data: {{
+                labels: {json.dumps(cs_labels)},
+                datasets: [{{
+                    label: 'Total Time (microseconds)',
+                    data: {json.dumps(cs_times)},
+                    backgroundColor: 'rgba(81, 43, 212, 0.7)',
+                    borderColor: 'rgba(81, 43, 212, 1)',
+                    borderWidth: 1
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{ display: false }}
+                }},
+                scales: {{
+                    y: {{
+                        beginAtZero: true,
+                        title: {{ display: true, text: 'Time (microseconds)' }}
+                    }}
+                }}
+            }}
+        }});
+
+        // Python Chart
+        new Chart(document.getElementById('pythonChart'), {{
+            type: 'bar',
+            data: {{
+                labels: {json.dumps(py_labels)},
+                datasets: [{{
+                    label: 'Total Time (microseconds)',
+                    data: {json.dumps(py_times)},
+                    backgroundColor: 'rgba(55, 118, 171, 0.7)',
+                    borderColor: 'rgba(55, 118, 171, 1)',
+                    borderWidth: 1
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{ display: false }}
+                }},
+                scales: {{
+                    y: {{
+                        beginAtZero: true,
+                        title: {{ display: true, text: 'Time (microseconds)' }}
+                    }}
+                }}
+            }}
+        }});
+
+        // Tab switching function
+        function showTab(tabId) {{
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }}
+    </script>
+</body>
+</html>
