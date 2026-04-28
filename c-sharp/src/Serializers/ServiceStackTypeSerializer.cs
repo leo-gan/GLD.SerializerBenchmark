@@ -14,7 +14,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name
         {
-            get { return "ServiceStack Type"; }
+            get { return "ServiceStack"; }
         }
 
         public override bool Supports(string testDataName)
