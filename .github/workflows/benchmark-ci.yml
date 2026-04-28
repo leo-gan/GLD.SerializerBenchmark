@@ -123,10 +123,15 @@ jobs:
           path: reports/
           retention-days: 90
 
+      - name: Copy Dashboard to Docs
+        run: |
+          mkdir -p docs/dashboard
+          cp -r reports/dashboard/* docs/dashboard/
+
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: reports/dashboard/
+          path: docs/
 
       - name: Update Summary in Repository
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
