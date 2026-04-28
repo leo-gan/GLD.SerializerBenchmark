@@ -4,7 +4,7 @@ This folder contains documentation for the benchmark analysis system.
 
 ## Files
 
-- **[ANALYSIS_METHODOLOGY.md](./ANALYSIS_METHODOLOGY.md)** - Detailed description of the statistical methods, data pipeline, and algorithms used in the benchmark analysis.
+- **[Analysis Methodology](./ANALYSIS_METHODOLOGY.md)** - Detailed description of the statistical methods, data pipeline, and algorithms used in the benchmark analysis.
 
 ## Quick Reference
 

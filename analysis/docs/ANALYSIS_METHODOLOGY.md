@@ -66,6 +66,27 @@ Values outside [lower, upper] are considered outliers and removed.
 - If IQR is 0 (all identical values), no filtering is done
 - If filtering would remove all values, original data is preserved
 
+#### Warmup Exclusion
+
+Before IQR filtering, the first repetition (RepetitionIndex 0) of each test group is excluded from analysis. This warmup run typically contains:
+
+- **JIT compilation overhead**: First-time code compilation (especially in C#)
+- **Static initialization**: Type constructors and static field initialization
+- **Cache cold starts**: Cold CPU caches, branch predictors, and TLB
+
+These warmup effects can be 10-100× slower than steady-state performance and often blend into the Q3 tail, reducing IQR filter effectiveness. By excluding RepetitionIndex 0 before filtering, we ensure:
+
+1. More accurate baseline for IQR calculation (Q1, Q3, IQR)
+2. Better detection of true runtime outliers (GC pauses, thread delays)
+3. Representative performance metrics for production scenarios
+
+| Metric | Tracking |
+|--------|----------|
+| `runs_raw` | Original count before warmup exclusion |
+| `warmup_skipped` | Count of RepetitionIndex 0 excluded |
+| `outliers_removed` | Count of IQR-filtered outliers |
+| `runs` | Final count after all filtering |
+
 #### Example Impact
 
 | Serializer | Data Type | Mode | Before Outliers (ns) | After Filtering (ns) | Improvement |
@@ -87,9 +108,10 @@ After filtering, the following metrics are computed per group:
 | `min_ops_per_sec` | Min ops/sec (from max time) |
 | `max_ops_per_sec` | Max ops/sec (from min time) |
 | `median_size_bytes` | Median serialized size |
-| `runs` | Count of measurements after filtering |
-| `runs_raw` | Original count before filtering |
-| `outliers_removed` | Number of outliers filtered out |
+| `runs` | Count of measurements after all filtering |
+| `runs_raw` | Original count before warmup exclusion |
+| `warmup_skipped` | Count of warmup (RepetitionIndex 0) excluded |
+| `outliers_removed` | Count of IQR-filtered outliers |
 
 Ops/Sec is recalculated consistently using `1e9 / nanoseconds` for both languages, ensuring comparability.
 
@@ -117,8 +139,8 @@ Tabular views of performance metrics organized by:
 ### Violin Plots
 
 The HTML dashboard includes violin plots showing the distribution of serialization vs deserialization times per data type. These use seaborn's `catplot(kind='violin', split=True)` to show:
-- Left side: Serialize operation distribution
-- Right side: Deserialize operation distribution
+- Top side: Serialize operation distribution
+- Bottom side: Deserialize operation distribution
 
 This reveals performance characteristics that averages hide, such as:
 - Bimodal distributions (suggesting different code paths)

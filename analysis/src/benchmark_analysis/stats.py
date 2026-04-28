@@ -52,11 +52,17 @@ def compute_statistics(records: List[Dict]) -> Dict:
         'times_total': [],
         'sizes': [],
         'test_data': set(),
-        'modes': set()
+        'modes': set(),
+        'warmup_skipped': 0
     })
 
     for r in records:
         key = (r['SerializerName'], r['TestDataName'], r['StringOrStream'])
+
+        # Skip warmup runs (RepetitionIndex 0) before any processing
+        if r.get('RepetitionIndex', 0) == 0:
+            stats[key]['warmup_skipped'] += 1
+            continue
 
         # Auto-detect time units and normalize to nanoseconds
         multiplier = _detect_time_unit(r['TimeSer'])
@@ -98,10 +104,14 @@ def compute_statistics(records: List[Dict]) -> Dict:
             'min_ops_per_sec': min_ops_per_sec,
             'max_ops_per_sec': max_ops_per_sec,
             'runs': len(times_total),
-            'runs_raw': len(data['times_total']),
+            'runs_raw': len(data['times_total']) + data['warmup_skipped'],
+            'warmup_skipped': data['warmup_skipped'],
             'outliers_removed': removed_total
         }
 
+    total_warmup = sum(data['warmup_skipped'] for data in stats.values())
+    if total_warmup:
+        print(f"Skipped {total_warmup} warmup measurements (RepetitionIndex 0)")
     if total_outliers:
         print(f"Removed {total_outliers} outlier measurements (IQR filter)")
     return results
