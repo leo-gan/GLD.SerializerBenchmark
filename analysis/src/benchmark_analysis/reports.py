@@ -36,8 +36,17 @@ def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
     return melted
 
 
-def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: str) -> Optional[str]:
-    """Generate violin plot for a specific data type, returning relative image path."""
+def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: str,
+                          language: str = "", top_n: Optional[int] = None) -> Optional[str]:
+    """Generate violin plot for a specific data type, returning relative image path.
+
+    Args:
+        melted_df: Melted dataframe with benchmark records
+        data_type: Name of the data type to plot
+        output_dir: Directory to save the plot image
+        language: Language label for the plot title (e.g., "C#", "Python")
+        top_n: If specified, only include top N serializers by mean time
+    """
     if melted_df.empty or data_type not in melted_df['TestDataName'].values:
         return None
 
@@ -46,10 +55,16 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
         return None
 
     # Convert time to nanoseconds consistently (C# ticks -> ns; Python already ns)
-    # Detect unit by checking if values are large (ticks) or small (ns)
     sample_time = subset['Time_ns'].median()
     if sample_time > 1_000_000:
         subset['Time_ns'] = subset['Time_ns'] * 100  # Ticks to ns
+
+    # Filter to top N serializers by mean time if requested
+    if top_n:
+        # Calculate mean time per serializer
+        mean_times = subset.groupby('SerializerName')['Time_ns'].mean().sort_values()
+        top_serializers = mean_times.head(top_n).index.tolist()
+        subset = subset[subset['SerializerName'].isin(top_serializers)].copy()
 
     # Use catplot (modern seaborn name for factorplot)
     try:
@@ -60,19 +75,25 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
             hue='Operation',
             kind='violin',
             split=True,
-            height=10,
-            aspect=1.5,
-            legend_out=False
+            height=6,
+            aspect=1.2,
+            legend_out=False,
+            order=subset.groupby('SerializerName')['Time_ns'].mean().sort_values().index.tolist()
         )
-        g.fig.suptitle(f'{data_type} - Serialization vs Deserialization Time', fontsize=16, y=1.02)
+        lang_prefix = f"{language} " if language else ""
+        g.fig.suptitle(f'{lang_prefix}{data_type} - Top {top_n or "All"} Serializers',
+                       fontsize=14, y=1.02)
         g.set_axis_labels('Time (nanoseconds)', 'Serializer')
 
-        img_path = os.path.join(output_dir, f'violin_{data_type.replace(" ", "_")}.png')
+        lang_suffix = f"_{language.lower().replace('#', 'sharp')}" if language else ""
+        img_path = os.path.join(output_dir,
+                                f'violin{lang_suffix}_{data_type.replace(" ", "_")}.png')
         plt.savefig(img_path, dpi=150, bbox_inches='tight')
         plt.close(g.fig)
         return os.path.basename(img_path)
     except Exception as e:
-        print(f"Warning: Could not generate violin plot for {data_type}: {e}")
+        lang_info = f" ({language})" if language else ""
+        print(f"Warning: Could not generate violin plot for {data_type}{lang_info}: {e}")
         plt.close('all')
         return None
 
@@ -111,6 +132,45 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
 
     lines.append("")
     return '\n'.join(lines)
+
+
+def _pivot_table_html(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
+    """Generate an HTML pivot table from stats dict."""
+    # Extract unique row and column values
+    row_vals = sorted(set(s[rows_dim] for s in stats.values()))
+    col_vals = sorted(set(s[cols_dim] for s in stats.values()))
+
+    if not row_vals or not col_vals:
+        return f'<h4>{title}</h4><p>No data available</p>'
+
+    html = f'<h4>{title}</h4>\n<table class="pivot-table">\n'
+
+    # Header row
+    html += '    <thead>\n        <tr>\n'
+    html += f'            <th>{rows_dim}</th>\n'
+    for cv in col_vals:
+        html += f'            <th>{cv}</th>\n'
+    html += '        </tr>\n    </thead>\n    <tbody>\n'
+
+    # Data rows
+    for rv in row_vals:
+        html += '        <tr>\n'
+        html += f'            <td><strong>{rv}</strong></td>\n'
+        for cv in col_vals:
+            matching = [s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv]
+            if matching:
+                val = matching[0][value_key]
+                if isinstance(val, float):
+                    cell_val = f"{val:,.0f}"
+                else:
+                    cell_val = str(val)
+            else:
+                cell_val = "-"
+            html += f'            <td>{cell_val}</td>\n'
+        html += '        </tr>\n'
+
+    html += '    </tbody>\n</table>\n'
+    return html
 
 
 def generate_markdown_summary(
@@ -320,19 +380,30 @@ def generate_html_dashboard(
         mode_data[stat['mode']].append({'lang': lang, 'serializer': stat['serializer'],
                                          'data_type': stat['test_data'], 'time': stat['avg_time_total_ns']})
 
-    # Generate violin plots for each data type (like plot_serializers3 from notebook)
-    violin_images = {}
+    # Generate violin plots for each data type - separate for C# and Python, top 5 only
+    cs_violin_images = {}
+    py_violin_images = {}
     if csharp_records or python_records:
         cs_melted = _records_to_melted_df(csharp_records or [], 'C#')
         py_melted = _records_to_melted_df(python_records or [], 'Python')
-        all_melted = pd.concat([cs_melted, py_melted], ignore_index=True) if not (cs_melted.empty and py_melted.empty) else pd.DataFrame()
 
-        if not all_melted.empty:
-            data_types = sorted(all_melted['TestDataName'].unique())
-            for dtype in data_types:
-                img_name = _generate_violin_plot(all_melted, dtype, output_dir)
+        # Generate separate C# plots
+        if not cs_melted.empty:
+            cs_data_types = sorted(cs_melted['TestDataName'].unique())
+            for dtype in cs_data_types:
+                img_name = _generate_violin_plot(cs_melted, dtype, output_dir,
+                                                 language='C#', top_n=5)
                 if img_name:
-                    violin_images[dtype] = img_name
+                    cs_violin_images[dtype] = img_name
+
+        # Generate separate Python plots
+        if not py_melted.empty:
+            py_data_types = sorted(py_melted['TestDataName'].unique())
+            for dtype in py_data_types:
+                img_name = _generate_violin_plot(py_melted, dtype, output_dir,
+                                                 language='Python', top_n=5)
+                if img_name:
+                    py_violin_images[dtype] = img_name
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -514,48 +585,31 @@ def generate_html_dashboard(
             </div>
         </div>
 
+        <!-- Pivot Tables -->
         <div class="card">
-            <h2>All Results</h2>
-            <table id="resultsTable">
-                <thead>
-                    <tr>
-                        <th>Language</th>
-                        <th>Serializer</th>
-                        <th>Test Data</th>
-                        <th>Mode</th>
-                        <th>Avg Time (ns)</th>
-                        <th>Ops/Sec</th>
-                        <th>Size (bytes)</th>
-                    </tr>
-                </thead>
-                <tbody>
-'''
+            <h2>Results by Mode and Data Type (Pivot Tables)</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('pivot-csharp')">C# Pivot Tables</div>
+                <div class="tab" onclick="showTab('pivot-python')">Python Pivot Tables</div>
+            </div>
 
-    # Add table rows
-    all_stats = []
-    for key, stat in csharp_stats.items():
-        all_stats.append(('C#', stat))
-    for key, stat in python_stats.items():
-        all_stats.append(('Python', stat))
+            <div id="pivot-csharp" class="tab-content active">
+''' + (
+    _pivot_table_html(csharp_stats, 'serializer', 'mode', 'avg_time_total_ns',
+                       'C#: Avg Total Time (ns) by Serializer and Mode') +
+    _pivot_table_html(csharp_stats, 'serializer', 'test_data', 'avg_ops_per_sec',
+                       'C#: Ops/Sec by Serializer and Data Type')
+    if csharp_stats else '<p>No C# data available</p>'
+) + '''            </div>
 
-    all_stats.sort(key=lambda x: x[1]['avg_time_total_ns'])
-
-    for lang, stat in all_stats:
-        badge_class = 'badge-csharp' if lang == 'C#' else 'badge-python'
-        mode_class = 'badge-stream' if stat['mode'] == 'Stream' else 'badge-string'
-        html += f'''                    <tr>
-                        <td><span class="badge {badge_class}">{lang}</span></td>
-                        <td>{stat['serializer']}</td>
-                        <td>{stat['test_data']}</td>
-                        <td><span class="badge {mode_class}">{stat['mode']}</span></td>
-                        <td>{stat['avg_time_total_ns']:,.0f}</td>
-                        <td>{stat['avg_ops_per_sec']:,.0f}</td>
-                        <td>{stat['median_size_bytes']:,.0f}</td>
-                    </tr>
-'''
-
-    html += f'''                </tbody>
-            </table>
+            <div id="pivot-python" class="tab-content">
+''' + (
+    _pivot_table_html(python_stats, 'serializer', 'mode', 'avg_time_total_ns',
+                       'Python: Avg Total Time (ns) by Serializer and Mode') +
+    _pivot_table_html(python_stats, 'serializer', 'test_data', 'avg_ops_per_sec',
+                       'Python: Ops/Sec by Serializer and Data Type')
+    if python_stats else '<p>No Python data available</p>'
+) + '''            </div>
         </div>
 
         <!-- Multidimensional Analysis -->
@@ -644,19 +698,39 @@ def generate_html_dashboard(
     </div>
 '''
 
-    # Add violin plots section
-    if violin_images:
+    # Add C# violin plots section
+    if cs_violin_images:
         html += '''
     <div class="container">
         <div class="card">
-            <h2>Distribution Analysis (Violin Plots)</h2>
-            <p style="margin-bottom:1rem;">Serialization vs Deserialization time distributions per data type. Split violins show the density of timing measurements.</p>
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));">
+            <h2>C# Distribution Analysis (Violin Plots)</h2>
+            <p style="margin-bottom:1rem;">Top 5 serializers by mean time for each data type. Split violins show serialize (left) vs deserialize (right) time distributions.</p>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));">
 '''
-        for dtype, img_name in sorted(violin_images.items()):
+        for dtype, img_name in sorted(cs_violin_images.items()):
             html += f'''                <div class="card" style="padding: 1rem;">
                     <h4>{dtype}</h4>
-                    <img src="{img_name}" alt="Violin plot for {dtype}" style="width: 100%; height: auto; border-radius: 8px;">
+                    <img src="{img_name}" alt="C# violin plot for {dtype}" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+'''
+        html += '''            </div>
+        </div>
+    </div>
+'''
+
+    # Add Python violin plots section
+    if py_violin_images:
+        html += '''
+    <div class="container">
+        <div class="card">
+            <h2>Python Distribution Analysis (Violin Plots)</h2>
+            <p style="margin-bottom:1rem;">Top 5 serializers by mean time for each data type. Split violins show serialize (left) vs deserialize (right) time distributions.</p>
+            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));">
+'''
+        for dtype, img_name in sorted(py_violin_images.items()):
+            html += f'''                <div class="card" style="padding: 1rem;">
+                    <h4>{dtype}</h4>
+                    <img src="{img_name}" alt="Python violin plot for {dtype}" style="width: 100%; height: auto; border-radius: 8px;">
                 </div>
 '''
         html += '''            </div>
