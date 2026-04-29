@@ -72,7 +72,7 @@ def _encode(encoder: cbor2.CBOREncoder, obj: Any) -> None:
     raise TypeError(f"Type {type(obj)} not serializable")
 
 
-def _decode_hook(d: Any, immutable: bool = False) -> Any:
+def _decode_hook(decoder: Any, d: Any) -> Any:
     """
     cbor2 6.0+ object_hook signature is (d, immutable).
     
