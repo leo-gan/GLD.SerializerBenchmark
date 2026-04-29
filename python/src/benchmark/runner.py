@@ -42,6 +42,7 @@ from .serializers import (
     AvroSerializer,
     Cbor2Serializer,
     CloudpickleSerializer,
+    MsgspecMessagePackSerializer,
     MsgpackSerializer,
     MsgspecSerializer,
     OrjsonSerializer,
@@ -59,6 +60,7 @@ ALL_SERIALIZERS: List[Serializer] = [
     OrjsonSerializer(),
     MsgspecSerializer(),
     RapidjsonSerializer(),
+    MsgspecMessagePackSerializer(),
     MsgpackSerializer(),
     Cbor2Serializer(),
     ProtobufSerializer(),
@@ -148,22 +150,25 @@ def _test_on_data(
         if not serializer.supports(td_name):
             continue
 
-        # Set type hint for schema-based serializers that need it during deserialization
+        # Set type hint and let serializers pre-build per-type codecs/schemas outside timing.
         setattr(serializer, "_last_type", td_cls)
+        serializer.prepare(td_name, td_cls)
+        serializer_original = serializer.prepare_data(original, td_name, td_cls)
 
         print(f"[DEBUG] Starting {serializer.name} (bytes)")
         _run_repetitions(
-            serializer, original, td_name, td_cls, repetitions, "bytes", storage, errors
+            serializer, serializer_original, original, td_name, td_cls, repetitions, "bytes", storage, errors
         )
         print(f"[DEBUG] Starting {serializer.name} (stream)")
         _run_repetitions(
-            serializer, original, td_name, td_cls, repetitions, "stream", storage, errors
+            serializer, serializer_original, original, td_name, td_cls, repetitions, "stream", storage, errors
         )
 
 
 def _run_repetitions(
     serializer: Serializer,
-    original: Any,
+    serializable: Any,
+    expected: Any,
     td_name: str,
     td_cls: type,
     repetitions: int,
@@ -184,7 +189,7 @@ def _run_repetitions(
         )
 
         try:
-            _single_test(serializer, original, mode, log, td_cls)
+            _single_test(serializer, serializable, expected, mode, log, td_cls)
         except Exception as exc:
             if not was_error:
                 err = BenchmarkError(
@@ -204,7 +209,8 @@ def _run_repetitions(
 
 def _single_test(
     serializer: Serializer,
-    original: Any,
+    serializable: Any,
+    expected: Any,
     mode: str,
     log: BenchmarkLog,
     td_cls: type,
@@ -215,7 +221,7 @@ def _single_test(
     if mode == "bytes":
         # Serialize
         t0 = time.perf_counter_ns()
-        data = serializer.serialize_bytes(original)
+        data = serializer.serialize_bytes(serializable)
         t1 = time.perf_counter_ns()
         log.time_ser_ns = t1 - t0
         log.size_bytes = len(data)
@@ -230,7 +236,7 @@ def _single_test(
 
         # Serialize
         t0 = time.perf_counter_ns()
-        serializer.serialize_stream(original, stream)
+        serializer.serialize_stream(serializable, stream)
         t1 = time.perf_counter_ns()
         log.time_ser_ns = t1 - t0
         log.size_bytes = stream.tell()
@@ -246,7 +252,7 @@ def _single_test(
     log.memory_peak_bytes = peak
 
     # Semantic comparison
-    ok, err_text = compare(original, processed)
+    ok, err_text = compare(expected, processed)
     log.fidelity_score = 1.0 if ok else 0.0
     if not ok:
         raise RuntimeError(f"Roundtrip mismatch: {err_text}")

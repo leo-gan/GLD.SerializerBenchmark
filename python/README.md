@@ -1,13 +1,13 @@
 # Python Serializer Benchmark
 
-A Dockerized benchmarking suite evaluating **9 Python serializers** across 7 realistic data structures, designed to match the methodology and output format of the companion [.NET (C#) benchmark](../c-sharp/).
+A Dockerized benchmarking suite evaluating **10 Python serializers** across 7 realistic data structures, designed to match the methodology and output format of the companion [.NET (C#) benchmark](../c-sharp/).
 
 ## Serializer Groups
 
 | Group | Serializers | Notes |
 | :--- | :--- | :--- |
 | **JSON** | `orjson`, `msgspec`, `rapidjson` | Text-based, schema-optional. |
-| **Binary** | `msgpack`, `cbor2` | Compact binary, schema-optional. |
+| **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2` | Compact binary, schema-optional. |
 | **Schema** | `protobuf`, `avro` | Requires `.proto`/`.avsc` schemas and code generation. |
 | **Python-native** | `pickle`, `cloudpickle` | Built-in serialization, handles arbitrary objects. |
 
