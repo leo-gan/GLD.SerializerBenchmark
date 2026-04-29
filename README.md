@@ -1,10 +1,10 @@
 # Cross-Language Serializer Benchmark
 
-> **📚 [Documentation:](https://leo-gan.github.io/GLD.SerializerBenchmark/)**
->
-> *Comprehensive guides for serialization formats, performance results, and implementation details.*
+> 🎓 **[Take the Serialization 101 Course & View Benchmark Reports](https://leo-gan.github.io/GLD.SerializerBenchmark/)**
+> 
+> *Our official documentation site serves as a comprehensive guide for Senior Software Developers and Data Scientists, covering serialization theory, C#/Python language specifics, and deep-dive benchmark results.*
 
-This repository benchmarks serialization libraries across **.NET (C#)** and **Python**, using identical test data, dual-mode APIs, and comparable metrics to enable fair cross-language performance analysis.
+This repository contains the source code for benchmarking serialization libraries across **.NET (C#)** and **Python**, using identical test data, dual-mode APIs, and comparable metrics to enable fair cross-language performance analysis.
 
 ## .NET (C#) Benchmark
 

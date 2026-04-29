@@ -1,0 +1,65 @@
+name: publish-docs
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'logs/**'           # Trigger when new benchmark logs are pushed
+      - 'analysis/src/**'   # Trigger if analysis code changes
+      - 'mkdocs.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Required for git-auto-commit-action to work smoothly
+          ref: ${{ github.head_ref }}
+          
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10
+          
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+          
+      - name: Generate Benchmark Reports & Plots
+        run: |
+          cd analysis
+          # Generate files directly into the docs/analysis folder
+          uv run python -m src.benchmark_analysis.cli \
+            --csharp-logs ../logs/csharp/benchmark-log.csv \
+            --python-logs ../logs/python/benchmark-log.csv \
+            --output-dir ../docs/analysis \
+            --generate-summary \
+            --generate-dashboard
+            
+      - name: Commit Generated Reports to Main
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: auto-regenerate benchmark reports & violin plots"
+          file_pattern: 'docs/analysis/**'
+            
+      - name: Cache MkDocs
+        run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+        
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+            
+      - name: Setup MkDocs
+        run: pip install mkdocs-material
+        
+      - name: Deploy Docs to gh-pages
+        run: mkdocs gh-deploy --force

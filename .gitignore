@@ -21,3 +21,5 @@ TestResults/
 .vs/
 data/
 .idea/workspace.xml
+
+.TODO.md

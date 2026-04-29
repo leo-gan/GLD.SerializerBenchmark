@@ -1,172 +1,30 @@
-# .NET (C#) Serializer Benchmark
+# The C# Ecosystem: High-Performance Serialization
 
-Benchmark of **38 serializers** for .NET 8, testing String and Stream modes across 7 realistic data types.
+In the .NET ecosystem, serialization has evolved dramatically over the past decade. With the introduction of modern memory management primitives in modern .NET (.NET Core and later .NET 5+), the landscape shifted from heavy reflection-based engines to zero-allocation, code-generated powerhouses.
 
-## Quick Start
+## 1. The Power of `Span<T>` and `Memory<T>`
 
-```bash
-cd c-sharp
-./scripts/run-benchmarks.sh smoke
-```
+Historically, reading a byte array meant copying parts of it into new arrays. The introduction of `Span<T>` and `Memory<T>` allows C# developers to create a window over existing memory without allocating new objects.
+Modern C# serializers (like `MemoryPack`, `System.Text.Json`, and `MessagePack-CSharp`) leverage `Span<T>` extensively to slice and parse incoming byte streams directly, bypassing the Garbage Collector.
 
-## Featured Serializers
+## 2. AOT and Source Generators
 
-| Category | Top Performers | Use Case |
-|----------|----------------|----------|
-| **JSON** | SpanJson, Jil, Utf8Json | Public APIs |
-| **Binary** | GroBuf, MemoryPack, NetSerializer | Internal services |
-| **Schema** | MS Bond Fast, ProtoBuf, FlatSharp | Microservices |
-| **Legacy** | MS Binary, SharpYaml | Compatibility |
+Reflection is notoriously slow and breaks down completely in Ahead-of-Time (AOT) compilation scenarios (like Unity IL2CPP or NativeAOT). 
+To combat this, the .NET ecosystem has embraced **Source Generators**. Instead of inspecting objects at runtime, the compiler analyzes your objects at build time and generates highly optimized, hard-coded serialization methods. 
 
-## All 38 Tested Serializers
+*   **System.Text.Json**: Offers robust source generators for JSON.
+*   **MemoryPack**: An extreme example of source-generation, laying out structs tightly packed in memory.
 
-### JSON (9)
-| Serializer | Best For |
-|------------|----------|
-| Json.NET | Industry standard, flexibility |
-| SpanJson | Maximum JSON speed |
-| Jil | Fast, simple |
-| Utf8Json | UTF-8 optimized |
-| NetJSON | Fast reflection |
-| ServiceStack Json | ServiceStack integration |
-| fastJson | Speed claims |
-| MS DataContract Json | WCF compatible |
-| SharpYaml | YAML with JSON |
+## 3. The Garbage Collector (GC) Pressure
 
-### Binary & Schema (18)
-| Serializer | Format | Best For |
-|------------|--------|----------|
-| MS Bond Fast | Bond | Maximum .NET speed |
-| MS Bond Compact | Bond | Size/speed balance |
-| MS Bond Json | Bond | Human-readable |
-| ProtoBuf | Protocol Buffers | Cross-language |
-| MemoryPack | Custom | Zero-copy binary |
-| FlatSharp | FlatBuffers | Zero-allocation |
-| GroBuf | Custom | Fastest overall |
-| NetSerializer | Custom | General binary |
-| MessagePack | MessagePack | Wide support |
-| Ceras | Custom | Ease of use |
-| Hyperion | Custom | Akka.NET |
-| FsPickler | Custom | F# integration |
-| FsPicklerJson | Pickle+JSON | F# + human-readable |
-| Migrant | Custom | Complex graphs |
-| MS Binary | BinaryFormatter | Legacy only |
-| ServiceStack Type | Custom | ServiceStack |
-| SharpSerializer | Custom | XML-like |
-| ExtendedXmlSerializer | XML | XML with features |
+In high-throughput .NET applications (like ASP.NET Core web servers), the most common bottleneck isn't the CPU; it's Garbage Collection. 
+When a serializer allocates millions of temporary strings or byte arrays, the GC must pause threads to clean them up (Gen 0/Gen 1 collections).
+Choosing a serializer in C# is often less about "Which is fastest?" and more about "Which allocates the least memory?"
 
-### XML & YAML (7)
-| Serializer | Format | Best For |
-|------------|--------|----------|
-| MS XmlSerializer | XML | Built-in |
-| MS DataContract | XML | WCF |
-| YAXLib | XML | XML features |
-| SharpYaml | YAML | YAML serialization |
-| YamlDotNet | YAML | YAML ecosystem |
-| CsvHelper | CSV | Tabular data |
-| Bond | CSV (limited) | Bond CSV export |
+## Prominent .NET Serializers
 
-### Specialized (4)
-| Serializer | Best For |
-|------------|----------|
-| Wire | Akka.NET persistence |
-| ZeroFormatter (if present) | Zero-format |
-
-## Test Data Types
-
-| Type | Description |
-|------|-------------|
-| `SimpleObject` | Minimal overhead baseline |
-| `Person` | Real-world POCO with nesting |
-| `Integer` | Primitive throughput |
-| `StringArray` | GC pressure test |
-| `Telemetry` | Binary efficiency (numeric arrays) |
-| `EDI_835` | Deeply nested document |
-| `ObjectGraph` | Circular references |
-
-## Top Results Summary
-
-### Fastest Overall (by ops/sec)
-
-| Rank | Serializer | Data Type | Ops/Sec |
-|------|------------|-----------|---------|
-| 1 | GroBuf | Integer | 290,604 |
-| 2 | MS Bond Fast | Integer | 773,149 |
-| 3 | NetSerializer | Integer | 429,066 |
-| 4 | Hyperion | Integer | 223,508 |
-| 5 | MemoryPack | Integer | 183,013 |
-
-### Smallest Payload (by bytes)
-
-| Serializer | Person Size | Notes |
-|------------|-------------|-------|
-| MS Bond Fast | ~400 | Variable encoding |
-| MS Bond Compact | ~350 | Compact encoding |
-| ProtoBuf | 665 | Fixed schema |
-| GroBuf | ~600 | Fast binary |
-| NetSerializer | ~600 | General binary |
-
-## Architecture
-
-### ISerDeser Interface
-
-```csharp
-public interface ISerDeser
-{
-    string Name { get; }
-    void Initialize(Type primaryType, List<Type> secondaryTypes);
-    string Serialize(object obj);
-    object Deserialize(string serialized);
-    void Serialize(object obj, Stream stream);
-    object Deserialize(Stream stream);
-}
-```
-
-### Adding a Serializer
-
-1. Create class in `src/Serializers/`
-2. Implement `ISerDeser`
-3. Register in `Program.cs`
-
-## Detailed Documentation
-
-- **[Serializer Reference](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/main/c-sharp/src/Docs/Serializers.md)** — All 38 serializers with descriptions
-- **[Result Explanations](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/main/c-sharp/src/Docs/ResultExplanations.md)** — Understanding the output
-
-## Running Benchmarks
-
-```bash
-# Smoke test (1 repetition)
-./scripts/run-benchmarks.sh smoke
-
-# Verify all serializers
-./scripts/run-benchmarks.sh all-single
-
-# Full run (100 repetitions)
-./scripts/run-benchmarks.sh full
-
-# Custom (50 reps, Json serializers, Person data)
-./scripts/run-benchmarks.sh custom 50 "Json" "Person"
-```
-
-## Results
-
-Results are written to:
-- `logs/csharp/benchmark-log.csv` — Performance metrics
-- `logs/csharp/benchmark-errors.csv` — Failure details
-
-## Docker Support
-
-```bash
-# Build
-docker build -t csharp-benchmark .
-
-# Run
-docker run -v $(pwd)/logs:/app/logs csharp-benchmark smoke
-```
-
-## See Also
-
-- [Python Benchmark](../python/index.md) — Cross-language comparison
-- [Benchmark Results](../benchmark-results.md) — Interactive dashboard
-- [Serializer Formats](../serializers/overview.md) — Format selection guide
+*   **MemoryPack**: Currently the performance king in .NET, utilizing advanced C# 11 features for maximum throughput and zero allocation.
+*   **Protobuf-net**: The standard for Protocol Buffers in .NET. Schema-driven, contract-based, and highly stable.
+*   **MessagePack for C#**: Extremely fast schemaless binary serialization, highly popular in gaming and RPC frameworks.
+*   **System.Text.Json**: Microsoft's official, high-performance, low-allocation JSON parser that replaced `Newtonsoft.Json`.
+*   **FlatSharp**: An ultra-fast, zero-copy implementation of Google's FlatBuffers for .NET.
