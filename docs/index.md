@@ -34,6 +34,7 @@ Allocating memory is cheap; *cleaning it up* is expensive. In managed languages 
 
 ### Zero-Copy Deserialization
 Traditional serialization involves parsing a byte array and instantiating language-specific objects (copying the data).
+
 **Zero-Copy** formats (like FlatBuffers or Cap'n Proto) bypass this entirely. The format on the wire is identical to the format in memory. "Deserialization" is effectively a no-op; you simply cast a pointer to the byte array and read the fields directly. 
 
 ---

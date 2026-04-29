@@ -2,12 +2,15 @@ name: publish-docs
 on:
   push:
     branches:
-      - main
+      - master
+      - fix/doc-2
     paths:
       - 'docs/**'
       - 'logs/**'           # Trigger when new benchmark logs are pushed
       - 'analysis/src/**'   # Trigger if analysis code changes
       - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:      # Allows manual triggering from the GitHub UI
 
 permissions:
   contents: write
@@ -24,7 +27,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10
+          python-version: '3.10'
           
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
