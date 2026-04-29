@@ -8,6 +8,8 @@ on:
       - 'logs/**'           # Trigger when new benchmark logs are pushed
       - 'analysis/src/**'   # Trigger if analysis code changes
       - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:      # Allows manual triggering from the GitHub UI
 
 permissions:
   contents: write
