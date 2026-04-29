@@ -5,9 +5,8 @@ on:
       - main
     paths:
       - 'docs/**'
-      - 'c-sharp/docs/**'
-      - 'python/docs/**'
-      - 'analysis/docs/**'
+      - 'logs/**'           # Trigger when new benchmark logs are pushed
+      - 'analysis/src/**'   # Trigger if analysis code changes
       - 'mkdocs.yml'
 
 permissions:
@@ -18,11 +17,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
-      
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+          # Required for git-auto-commit-action to work smoothly
+          ref: ${{ github.head_ref }}
+          
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10
+          
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+          
+      - name: Generate Benchmark Reports & Plots
+        run: |
+          cd analysis
+          # Generate files directly into the docs/analysis folder
+          uv run python -m src.benchmark_analysis.cli \
+            --csharp-logs ../logs/csharp/benchmark-log.csv \
+            --python-logs ../logs/python/benchmark-log.csv \
+            --output-dir ../docs/analysis \
+            --generate-summary \
+            --generate-dashboard
+            
+      - name: Commit Generated Reports to Main
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: auto-regenerate benchmark reports & violin plots"
+          file_pattern: 'docs/analysis/**'
+            
+      - name: Cache MkDocs
+        run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+        
       - uses: actions/cache@v4
         with:
           key: mkdocs-material-${{ env.cache_id }}
@@ -30,14 +58,8 @@ jobs:
           restore-keys: |
             mkdocs-material-
             
-      - run: pip install mkdocs-material
-      
-      - name: Stitch documentation structure
-        run: |
-          # Copy language-specific docs into the root docs/ folder to satisfy MkDocs
-          mkdir -p docs/c-sharp docs/python docs/analysis
-          cp -r c-sharp/docs/* docs/c-sharp/ 2>/dev/null || true
-          cp -r python/docs/* docs/python/ 2>/dev/null || true
-          cp -r analysis/docs/* docs/analysis/ 2>/dev/null || true
-
-      - run: mkdocs gh-deploy --force
+      - name: Setup MkDocs
+        run: pip install mkdocs-material
+        
+      - name: Deploy Docs to gh-pages
+        run: mkdocs gh-deploy --force

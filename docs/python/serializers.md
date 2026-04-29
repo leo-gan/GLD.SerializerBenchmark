@@ -7,7 +7,6 @@ This document describes the 10 Python serializers tested in the benchmark suite,
 JSON (JavaScript Object Notation) serializers convert Python objects to human-readable text format. These are the most interoperable choice for APIs, configuration files, and cross-language data exchange. All JSON serializers in this benchmark use C-extensions (Rust or C) for performance, significantly outperforming Python's standard library `json` module.
 
 **Common Characteristics:**
-
 - **Human-readable:** Output can be inspected with any text editor or HTTP debugging tools
 - **Universal support:** Every programming language has JSON parsers
 - **Schema-optional:** Can work with any Python object using `default` hooks, but types are not enforced
@@ -23,7 +22,6 @@ JSON (JavaScript Object Notation) serializers convert Python objects to human-re
 ---
 
 ### orjson
-
 **Library:** `orjson`  
 **Type:** Binary JSON encoder/decoder  
 **Description:** A fast, correct JSON library for Python. Written in Rust, it significantly outperforms standard library `json` and other Python JSON libraries. Supports dataclasses, datetime, UUID, bytes, and numpy arrays natively.
@@ -61,7 +59,6 @@ JSON (JavaScript Object Notation) serializers convert Python objects to human-re
 ---
 
 ### msgspec
-
 **Library:** `msgspec`  
 **Type:** Schema-validated JSON/MessagePack  
 **Description:** A fast serialization and validation library, written in C. Supports JSON and MessagePack with zero-copy deserialization. Uses type annotations for schema definition and validation.
@@ -104,7 +101,6 @@ JSON (JavaScript Object Notation) serializers convert Python objects to human-re
 ---
 
 ### rapidjson
-
 **Library:** `python-rapidjson`  
 **Type:** C++ JSON parser  
 **Description:** Python wrapper around RapidJSON, a fast C++ JSON parser and generator. Supports standard JSON with optional precise number parsing and validation.
@@ -173,7 +169,6 @@ Binary serializers convert Python objects to compact byte representations. They 
 ---
 
 ### msgpack
-
 **Library:** `msgpack`  
 **Type:** Binary serialization format  
 **Description:** MessagePack is an efficient binary serialization format that exchanges data among multiple languages like JSON but is faster and smaller. It supports rich data types including datetime and binary data.
@@ -215,7 +210,6 @@ Binary serializers convert Python objects to compact byte representations. They 
 ---
 
 ### cbor2
-
 **Library:** `cbor2`  
 **Type:** CBOR (Concise Binary Object Representation)  
 **Description:** CBOR is a binary serialization format specified in RFC 8949. Designed to be small, schema-free, and extensible. Similar to JSON but binary and more compact.
@@ -248,7 +242,6 @@ Binary serializers convert Python objects to compact byte representations. They 
 - **Learning curve:** Less documentation and community examples
 
 **Comparison with MessagePack:**
-
 | Feature | CBOR | MessagePack |
 |---------|------|-------------|
 | Standard | IETF RFC 8949 | No formal RFC |
@@ -330,7 +323,6 @@ Schema serializers require pre-defined schemas (.proto or .avsc files) that spec
 - **Learning curve:** Different type system than Python
 
 **Technical Details:**
-
 ```protobuf
 // Datetime handling: converts to int64 milliseconds since epoch
 int64 created_at_ms = timestamp_ms(datetime)
@@ -353,7 +345,6 @@ repeated string tags = 6;
 ---
 
 ### avro
-
 **Library:** `fastavro`  
 **Type:** Binary Avro format  
 **Description:** Apache Avro is a row-oriented remote procedure call and data serialization framework. Uses schemas for data structures and types. Schema is stored with the data for self-description.
@@ -388,7 +379,6 @@ repeated string tags = 6;
 - **Smaller ecosystem:** Fewer language implementations than protobuf
 
 **Comparison with Protobuf:**
-
 | Feature | Avro | Protobuf |
 |---------|------|----------|
 | Schema location | In data | Separate .proto file |
@@ -421,10 +411,7 @@ Python-native serializers are designed exclusively for Python-to-Python communic
 - **Python-only:** No interoperability with other languages
 
 **⚠️ Critical Security Warning:**
-Both `pickle` and `cloudpickle` can execute arbitrary Python code during deserialization. 
-
-**Never unpickle data from untrusted sources.** 
-This includes:
+Both `pickle` and `cloudpickle` can execute arbitrary Python code during deserialization. **Never unpickle data from untrusted sources.** This includes:
 - User-uploaded files
 - Data from unauthenticated API endpoints
 - Cookies or session data from web requests
@@ -445,7 +432,6 @@ This includes:
 ---
 
 ### pickle
-
 **Library:** `pickle` (standard library)  
 **Type:** Python-specific binary serialization  
 **Description:** Python's native serialization format. Can serialize nearly any Python object including custom classes, functions, and circular references.
@@ -487,7 +473,6 @@ For untrusted data, use JSON, MessagePack, or protobuf.
 - **No streaming:** Must load entire pickle at once
 
 **Protocol Versions:**
-
 | Protocol | Python | Features |
 |----------|--------|----------|
 | 0 | All | Human-readable (ASCII) |
@@ -506,7 +491,6 @@ For untrusted data, use JSON, MessagePack, or protobuf.
 ---
 
 ### cloudpickle
-
 **Library:** `cloudpickle`  
 **Type:** Extended pickle for distributed computing  
 **Description:** An extended version of pickle that can serialize objects that the standard pickle cannot, such as functions with closures, classes defined in `__main__`, and dependencies on external modules.
@@ -544,7 +528,6 @@ Same security concerns as pickle - can execute arbitrary code. Only use with tru
 - **External dependency:** Not in standard library
 
 **Pickle vs Cloudpickle:**
-
 | Feature | Pickle | Cloudpickle |
 |---------|--------|-------------|
 | `__main__` functions | ❌ | ✅ |

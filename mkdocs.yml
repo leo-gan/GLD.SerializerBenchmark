@@ -24,6 +24,7 @@ theme:
         name: Switch to light mode
 
 markdown_extensions:
+  - attr_list
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -41,4 +42,5 @@ nav:
   - Benchmark Reports:
       - Packages Overview: analysis/README.md
       - Detailed Report: analysis/BENCHMARK_SUMMARY.md
+      - Violin Plots: analysis/violin-plots.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
