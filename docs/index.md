@@ -1,84 +1,48 @@
-# Serialization & Deserialization
+# Serialization 101: Theory and Practices
 
-*A comprehensive benchmark of the language-specific serializers across realistic data scenarios.*
-
-## What is Serialization?
-
-**Serialization** converts in-memory data structures into a format that can be stored or transmitted. **Deserialization** reverses this process, reconstructing the original objects from the stored/transmitted format.
-
-```
-┌─────────────────┐    Serialize    ┌─────────────────┐
-│   In-Memory     │ ───────────────> │  Byte Stream    │
-│   Objects       │                  │  / File / Wire  │
-│  (POCOs/ Dicts) │                  │  (JSON/Binary)  │
-└─────────────────┘                  └─────────────────┘
-        │                                    │
-        │         Deserialize                │
-        │<───────────────────────────────────│
-```
-
-### Why It Matters
-
-| Concern | Impact |
-|--------|--------|
-| **Latency** | Directly affects API response times and user experience |
-| **Throughput** | Determines system capacity under load |
-| **Payload Size** | Impacts bandwidth costs and mobile battery life |
-| **CPU Usage** | Affects server costs and thermal throttling |
-| **Memory Pressure** | Influences GC pauses and allocation overhead |
-
-## Format Taxonomy
-
-| Format | Schema | Human-Readable | Size | Speed | Use Case |
-|--------|--------|----------------|------|-------|----------|
-| **JSON** | Optional | Yes | Large | Medium | APIs, configs, debugging |
-| **Binary (MsgPack/CBOR)** | Optional | No | Small | Fast | Internal services, caching |
-| **Schema (Protobuf/Avro)** | Required | No | Smallest | Fastest | Microservices, storage |
-| **Native (Pickle)** | None | No | Medium | Fast | Python-only, in-process |
-
-## Benchmark Overview
-
-This project provides **fair, reproducible cross-language comparisons** using identical test data and measurement methodologies.
-
-### Test Data Coverage
-
-| Data Type | Description | Stress Point |
-|-----------|-------------|--------------|
-| `Integer` | Single primitive | Raw throughput ceiling |
-| `Person` | Nested POCO with enums | Real-world object complexity |
-| `SimpleObject` | Minimal structure | Overhead baseline |
-| `StringArray` | 100 strings | Memory allocation pressure |
-| `Telemetry` | Numeric arrays | Binary format efficiency |
-| `EDI_835` | Deeply nested document | Recursion depth |
-| `ObjectGraph` | Circular references | Reference tracking |
-
-### Serializer Count
-
-| Language | Serializers | Modes |
-|----------|-------------|-------|
-| C# | 38 | String, Stream |
-| Python | 9 | Bytes, Stream |
-
-## Quick Links
-
-- **[Getting Started](./getting-started.md)** — Run benchmarks in 5 minutes
-- **[Methodology](./methodology.md)** — How we measure and compare
-- **[Serializer Guide](./serializers/overview.md)** — Choose the right format
-- **[C# Benchmarks](./c-sharp/index.md)** — .NET 8 serializer details
-- **[Python Benchmarks](./python/index.md)** — Python serializer details
-- **[Results Dashboard](./benchmark-results.md)** — Interactive performance charts
-
-## Citation
-
-```bibtex
-@misc{serializerbenchmark2024,
-  title={Cross-Language Serializer Benchmark},
-  author={Ganeline, Leonid},
-  year={2026},
-  url={https://leo-gan.github.io/GLD.SerializerBenchmark/}
-}
-```
+Welcome to the **Cross-Language Serializer Benchmark** documentation. This resource is designed to serve as a comprehensive "101 Course" for Senior Software Developers, Data Scientists, and System Architects who need to make informed, data-driven decisions about data serialization.
 
 ---
 
-*For implementation details, see the [GitHub repository](https://github.com/leo-gan/GLD.SerializerBenchmark).*
+## 1. The Core Tradeoffs in Serialization
+
+Serialization is the process of translating a data structure or object state into a format that can be stored or transmitted and reconstructed later. In modern distributed systems, the choice of serialization framework dictates your system's theoretical maximum throughput, CPU overhead, and network saturation limits.
+
+### Text vs. Binary
+
+- **Text Formats (JSON, XML)**: Human-readable, self-describing, and ubiquitous. The major downsides are massive parsing overhead (string-to-primitive conversions), high memory allocations, and large payload sizes.
+- **Binary Formats (Protobuf, MessagePack, MemoryPack)**: Machine-readable, compact, and extremely fast. They avoid string parsing and minimize memory footprints, often performing an order of magnitude faster than text equivalents.
+
+### Schema vs. Schemaless (Self-Describing)
+
+- **Schemaless (JSON, MessagePack)**: Embeds metadata (like field names or type tags) directly alongside the data. Flexible and excellent for dynamic environments, but the repeated metadata inflates payload size.
+- **Schema-Driven (Protobuf, FlatBuffers)**: Requires a pre-defined schema (`.proto`, `.fbs`). Field names are stripped out and replaced with integer tags. This drastically reduces payload size and allows the compiler to generate highly optimized static parsing code.
+
+---
+
+## 2. Deep Dive: Why are some serializers so fast?
+
+### Data Locality & CPU Caches
+Modern CPUs are incredibly fast, but memory access is relatively slow. A CPU reading from its L1 cache is orders of magnitude faster than a fetch from main RAM. 
+High-performance serializers (like C#'s `MemoryPack` or FlatBuffers) are designed with **Data Locality** in mind. They lay out structs sequentially in memory, avoiding "pointer chasing" (following references randomly across the heap, which causes cache misses).
+
+### Memory Allocation and the Garbage Collector (GC)
+Allocating memory is cheap; *cleaning it up* is expensive. In managed languages (C#, Python, Java), high object allocation rates trigger Garbage Collection cycles. During a GC run, all application threads may be paused (Stop-The-World). 
+
+* **The Problem:** Naive serializers allocate new arrays and strings for every field they parse.
+* **The Solution:** Modern serializers utilize **Zero-Allocation** techniques. They deserialize directly into pre-allocated buffers or use span-like structures (e.g., C#'s `Span<T>`) to reference existing memory rather than copying it.
+
+### Zero-Copy Deserialization
+Traditional serialization involves parsing a byte array and instantiating language-specific objects (copying the data).
+**Zero-Copy** formats (like FlatBuffers or Cap'n Proto) bypass this entirely. The format on the wire is identical to the format in memory. "Deserialization" is effectively a no-op; you simply cast a pointer to the byte array and read the fields directly. 
+
+---
+
+## 3. How to Use This Course
+
+This documentation is organized hierarchically to take you from general theory down to language-specific execution and empirical results:
+
+1. **[Methodology](methodology.md):** How we measure throughput, allocation, and footprint.
+2. **[C# Ecosystem](c-sharp/index.md):** Deep dive into the .NET serialization landscape (`Span<T>`, MemoryPack, Protobuf-net).
+3. **[Python Ecosystem](python/index.md):** Deep dive into Python's constraints (GIL, C-extensions, Pickling).
+4. **[Benchmark Reports](analysis/README.md):** Extensive, data-driven comparisons of top serializers using real-world topologies.

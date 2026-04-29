@@ -1,0 +1,44 @@
+site_name: GLD Serializer Benchmark
+site_description: Cross-language serialization performance comparison for .NET and Python.
+site_url: https://leo-gan.github.io/GLD.SerializerBenchmark/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - toc.integrate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+
+nav:
+  - Theory & Practices: 
+      - Serialization 101: index.md
+      - Methodology: methodology.md
+  - C# Ecosystem: c-sharp/index.md
+  - Python Ecosystem: python/index.md
+  - Benchmark Reports:
+      - Packages Overview: analysis/README.md
+      - Detailed Report: analysis/BENCHMARK_SUMMARY.md
+      - Methodology: analysis/ANALYSIS_METHODOLOGY.md
