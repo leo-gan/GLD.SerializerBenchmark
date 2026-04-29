@@ -5,14 +5,15 @@ WORKDIR /app
 ENV PYTHONPATH=/app/src:/app
 
 # Copy dependency files and install
-COPY pyproject.toml uv.lock ./
+COPY python/pyproject.toml python/uv.lock ./
 RUN uv sync --no-dev
 
 # Copy generated protobuf files (needed for protobuf serializer)
-COPY generated/ ./generated/
+COPY python/generated/ ./generated/
 
-# Copy source code
-COPY src/ ./src/
+# Copy source code and shared schemas
+COPY python/src/ ./src/
+COPY schemas/ ./schemas/
 
 # Smoke test: verify the benchmark can run 1 rep of pickle on Person
 RUN uv run python -m benchmark.runner 1 pickle Person

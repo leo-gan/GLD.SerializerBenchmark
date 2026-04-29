@@ -4,8 +4,8 @@ set -e
 # Configuration
 IMAGE_NAME="python-serializer-benchmark"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LOG_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)/logs"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
 # Helper function
@@ -22,26 +22,26 @@ print_usage() {
 # Ensure image is built
 if [[ "$(docker images -q $IMAGE_NAME 2> /dev/null)" == "" ]]; then
     echo "[INFO] Building Docker image..."
-    docker build -t $IMAGE_NAME "$PROJECT_ROOT"
+    docker build -t $IMAGE_NAME -f "$SCRIPT_DIR/../Dockerfile" "$PROJECT_ROOT"
 fi
 
 case "$1" in
     smoke)
         echo "[INFO] Running Smoke Test (1 rep, pickle, Person)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME 1 pickle Person
+        docker run --rm -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 1 pickle Person
         ;;
     all-single)
         echo "[INFO] Running All-Single Test (1 rep, All Serializers)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME 1
+        docker run --rm -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 1
         ;;
     full)
         echo "[INFO] Running Full Benchmark (100 reps, All Serializers)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME 100
+        docker run --rm -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 100
         ;;
     custom)
         shift
         echo "[INFO] Running Custom Benchmark (Args: $@)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME "$@"
+        docker run --rm -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME "$@"
         ;;
     *)
         print_usage
