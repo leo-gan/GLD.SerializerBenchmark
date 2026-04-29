@@ -29,7 +29,7 @@ class Cbor2Serializer(Serializer):
         return test_data_name != "ObjectGraph"
 
     def serialize_bytes(self, obj: Any) -> bytes:
-        return cbor2.dumps(obj, default=_encode, value_sharing=True, timezone=datetime.timezone.utc)
+        return cbor2.dumps(obj, default=_encode, value_sharing=False, timezone=datetime.timezone.utc)
 
     def deserialize_bytes(self, data: bytes) -> Any:
         return cbor2.loads(data, object_hook=_decode_hook)
