@@ -1,6 +1,8 @@
 site_name: GLD Serializer Benchmark
 site_description: Cross-language serialization performance comparison for .NET and Python.
 site_url: https://leo-gan.github.io/GLD.SerializerBenchmark/
+repo_url: https://github.com/leo-gan/GLD.SerializerBenchmark
+repo_name: leo-gan/GLD.SerializerBenchmark
 
 theme:
   name: material
@@ -37,6 +39,7 @@ nav:
   - Theory & Practices: 
       - Serialization 101: index.md
       - Methodology: methodology.md
+      - Test Data Design: test_data_design.md
   - C# Ecosystem: c-sharp/index.md
   - Python Ecosystem: python/index.md
   - Benchmark Reports:

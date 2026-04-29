@@ -1,0 +1,27 @@
+{
+  // This file configures the test data generation for all benchmarked languages.
+  // It ensures consistent object sizes and internal structures.
+
+  // StringOptions: Control string sizes and duplication (for deduplication testing).
+  "StringOptions": {
+    "MinWordLength": 3,
+    "MaxWordLength": 10,
+    "MinPhraseLength": 2,
+    "MaxPhraseLength": 6,
+    "MinIdLength": 8,
+    "MaxIdLength": 12,
+    "DuplicationFactor": 0.1 // 10% chance to reuse an existing string
+  },
+
+  // CollectionOptions: Control the size of lists and arrays in test objects.
+  "CollectionOptions": {
+    "PersonPoliceRecordsCount": 5,
+    "TelemetryMeasurementsCount": 100,
+    "StringArrayCount": 100,
+    "EdiClaimsCount": 5,
+    "EdiLinesPerClaimCount": 3
+  },
+
+  // RandomSeed: Ensures identical data generation across multiple runs and languages.
+  "RandomSeed": 42
+}

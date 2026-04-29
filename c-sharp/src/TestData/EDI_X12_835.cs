@@ -38,7 +38,7 @@ namespace GLD.SerializerBenchmark.TestData
                 TransactionControlNumber = "TRN-99887766"
             };
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < Randomizer.Settings.CollectionOptions.EdiClaimsCount; i++)
             {
                 var claim = new Claim
                 {
@@ -47,7 +47,7 @@ namespace GLD.SerializerBenchmark.TestData
                     TotalCharge = 300.00,
                     PaymentAmount = 250.00,
                 };
-                for (int j = 0; j < 3; j++)
+                for (int j = 0; j < Randomizer.Settings.CollectionOptions.EdiLinesPerClaimCount; j++)
                 {
                     claim.Lines.Add(new ServiceLine
                     {

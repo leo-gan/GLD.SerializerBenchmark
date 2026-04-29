@@ -9,7 +9,7 @@ namespace GLD.SerializerBenchmark.TestData
 {
     public class TelemetryDescription : ITestDataDescription
     {
-        private readonly TelemetryData _data = TelemetryData.Generate(100);
+        private readonly TelemetryData _data = TelemetryData.Generate(Randomizer.Settings.CollectionOptions.TelemetryMeasurementsCount);
 
         public string Name
         {
@@ -65,18 +65,18 @@ namespace GLD.SerializerBenchmark.TestData
         {
             var data = new TelemetryData
             {
-                Id = Guid.NewGuid().ToString(),
-                DataSource = Guid.NewGuid().ToString(),
+                Id = Randomizer.Id,
+                DataSource = Randomizer.Id,
                 TimeStamp = DateTime.Now,
-                Param1 = ExternalRandomGenerator.Instance.NextRandomInteger,
-                Param2 = (uint) ExternalRandomGenerator.Instance.NextRandomInteger,
+                Param1 = Randomizer.Rand.Next(int.MinValue, int.MaxValue),
+                Param2 = (uint) Randomizer.Rand.Next(0, int.MaxValue),
                 Measurements = new double[measurementsNumber],
                 AssociatedProblemID = 123,
                 AssociatedLogID = 89032,
                 WasProcessed = true
             };
             for (var i = 0; i < measurementsNumber; i++)
-                data.Measurements[i] = ExternalRandomGenerator.Instance.NextRandomDouble;
+                data.Measurements[i] = Randomizer.Rand.NextDouble();
             return data;
         }
     }

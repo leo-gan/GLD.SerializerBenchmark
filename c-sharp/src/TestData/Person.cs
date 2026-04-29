@@ -140,7 +140,7 @@ namespace GLD.SerializerBenchmark.TestData
                         Randomizer.GetDate(DateTime.UtcNow, DateTime.UtcNow + TimeSpan.FromDays(1000)),
                     Number = Randomizer.Id
                 },
-                PoliceRecords = Enumerable.Range(0, 20).Select(i => new PoliceRecord
+                PoliceRecords = Enumerable.Range(0, Randomizer.Settings.CollectionOptions.PersonPoliceRecordsCount).Select(i => new PoliceRecord
                 {
                     Id = i,
                     CrimeCode = Randomizer.Name

@@ -42,7 +42,9 @@ cd python
 
 ## Shared Test Data
 
-Both benchmarks use the same conceptual test data types, defined in [`schemas/benchmark_data.proto`](schemas/benchmark_data.proto):
+Both benchmarks use the same conceptual test data types, defined in [`schemas/benchmark_data.proto`](schemas/benchmark_data.proto) and configured via [`schemas/test_data_config.json`](schemas/test_data_config.json).
+
+For details on how test data is generated and configured, see the **[Test Data Design](docs/test_data_design.md)**.
 
 - **Person**: Nested POCO with enums, strings, and arrays.
 - **Integer**: Primitive throughput baseline.

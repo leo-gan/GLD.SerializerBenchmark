@@ -37,7 +37,7 @@ namespace GLD.SerializerBenchmark.TestData
 
     public class StringArrayDescription : ITestDataDescription
     {
-        private readonly StringArrayObject _data = StringArrayObject.Generate(100);
+        private readonly StringArrayObject _data = StringArrayObject.Generate(Randomizer.Settings.CollectionOptions.StringArrayCount);
 
         public string Name => "StringArray";
         public string Description => "Tests memory allocation and string handling with an array of many strings.";
@@ -58,7 +58,7 @@ namespace GLD.SerializerBenchmark.TestData
         {
             var items = new List<string>(count);
             for (int i = 0; i < count; i++)
-                items.Add("Item_" + i + "_" + Guid.NewGuid().ToString().Substring(0, 8));
+                items.Add(Randomizer.Phrase);
             return new StringArrayObject { Items = items };
         }
     }
