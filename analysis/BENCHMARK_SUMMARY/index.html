@@ -1,0 +1,2031 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Cross-language serialization performance comparison for .NET and Python.">
+      
+      
+      
+        <link rel="canonical" href="https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/BENCHMARK_SUMMARY/">
+      
+      
+        <link rel="prev" href="../../python/">
+      
+      
+        <link rel="next" href="../violin-plots/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Detailed Report - GLD Serializer Benchmark</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#serializer-benchmark-summary" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="GLD Serializer Benchmark" class="md-header__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GLD Serializer Benchmark
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Detailed Report
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Theory & Practices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../c-sharp/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  C# Ecosystem
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../python/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Python Ecosystem
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../README.md" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Benchmark Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="GLD Serializer Benchmark" class="md-nav__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GLD Serializer Benchmark
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory & Practices
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory & Practices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-sharp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C# Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packages Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed Report
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#c-net-benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C# / .NET Benchmarks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python Benchmarks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#top-performers-by-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top Performers by Language
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Top Performers by Language">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fastest-serializers-by-total-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fastest Serializers (by total time)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#most-compact-output-by-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Most Compact Output (by size)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multidimensional-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multidimensional Analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multidimensional Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#best-performers-by-data-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Performers by Data Type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-by-mode-stream-vs-stringbytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance by Mode (Stream vs String/Bytes)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cross-language-comparison-same-data-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-Language Comparison (Same Data Types)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pivot-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pivot Tables
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pivot Tables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#c-avg-total-time-ns-by-serializer-and-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C#: Avg Total Time (ns) by Serializer and Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-opssec-by-serializer-and-data-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C#: Ops/Sec by Serializer and Data Type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-avg-total-time-ns-by-serializer-and-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python: Avg Total Time (ns) by Serializer and Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-opssec-by-serializer-and-data-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python: Ops/Sec by Serializer and Data Type
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../violin-plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Violin Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ANALYSIS_METHODOLOGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="serializer-benchmark-summary">Serializer Benchmark Summary</h1>
+<p><strong>Generated:</strong> 2026-04-29T06:01:04.965207</p>
+<hr />
+<h2 id="c-net-benchmarks">C# / .NET Benchmarks</h2>
+<table>
+<thead>
+<tr>
+<th>Serializer</th>
+<th>Test Data</th>
+<th>Mode</th>
+<th>Avg Total (ns)</th>
+<th>Ops/Sec</th>
+<th>Size (bytes)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MS Bond Fast</td>
+<td>Integer</td>
+<td>string</td>
+<td>1,293</td>
+<td>773,149</td>
+<td>4</td>
+</tr>
+<tr>
+<td>NetSerializer</td>
+<td>Integer</td>
+<td>Stream</td>
+<td>1,866</td>
+<td>535,990</td>
+<td>6</td>
+</tr>
+<tr>
+<td>NetSerializer</td>
+<td>Integer</td>
+<td>string</td>
+<td>2,331</td>
+<td>429,066</td>
+<td>8</td>
+</tr>
+<tr>
+<td>MS Bond Compact</td>
+<td>Integer</td>
+<td>string</td>
+<td>2,808</td>
+<td>356,167</td>
+<td>4</td>
+</tr>
+<tr>
+<td>ServiceStack Type</td>
+<td>Integer</td>
+<td>string</td>
+<td>3,289</td>
+<td>304,053</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Json.Net</td>
+<td>Integer</td>
+<td>string</td>
+<td>3,405</td>
+<td>293,705</td>
+<td>10</td>
+</tr>
+<tr>
+<td>GroBuf</td>
+<td>Integer</td>
+<td>string</td>
+<td>3,441</td>
+<td>290,604</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Hyperion</td>
+<td>Integer</td>
+<td>Stream</td>
+<td>3,506</td>
+<td>285,185</td>
+<td>5</td>
+</tr>
+<tr>
+<td>GroBuf</td>
+<td>Integer</td>
+<td>Stream</td>
+<td>3,510</td>
+<td>284,909</td>
+<td>5</td>
+</tr>
+<tr>
+<td>NetJSON</td>
+<td>Integer</td>
+<td>string</td>
+<td>4,187</td>
+<td>238,840</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ServiceStack Type</td>
+<td>Integer</td>
+<td>Stream</td>
+<td>4,309</td>
+<td>232,067</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Json.Net</td>
+<td>Integer</td>
+<td>Stream</td>
+<td>4,400</td>
+<td>227,292</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Hyperion</td>
+<td>Integer</td>
+<td>string</td>
+<td>4,474</td>
+<td>223,508</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ServiceStack Json</td>
+<td>Integer</td>
+<td>string</td>
+<td>4,749</td>
+<td>210,576</td>
+<td>10</td>
+</tr>
+<tr>
+<td>MS Bond Fast</td>
+<td>SimpleObject</td>
+<td>string</td>
+<td>5,247</td>
+<td>190,586</td>
+<td>68</td>
+</tr>
+<tr>
+<td>MemoryPack</td>
+<td>Integer</td>
+<td>string</td>
+<td>5,464</td>
+<td>183,013</td>
+<td>8</td>
+</tr>
+<tr>
+<td>MS Bond Json</td>
+<td>Integer</td>
+<td>string</td>
+<td>5,565</td>
+<td>179,697</td>
+<td>2</td>
+</tr>
+<tr>
+<td>NetJSON</td>
+<td>Integer</td>
+<td>Stream</td>
+<td>5,723</td>
+<td>174,737</td>
+<td>10</td>
+</tr>
+<tr>
+<td>MemoryPack</td>
+<td>Integer</td>
+<td>Stream</td>
+<td>6,057</td>
+<td>165,093</td>
+<td>5</td>
+</tr>
+<tr>
+<td>ServiceStack Json</td>
+<td>Integer</td>
+<td>Stream</td>
+<td>6,998</td>
+<td>142,893</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+<h2 id="python-benchmarks">Python Benchmarks</h2>
+<table>
+<thead>
+<tr>
+<th>Serializer</th>
+<th>Test Data</th>
+<th>Mode</th>
+<th>Avg Total (ns)</th>
+<th>Ops/Sec</th>
+<th>Size (bytes)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>msgspec</td>
+<td>Integer</td>
+<td>bytes</td>
+<td>1,458</td>
+<td>685,675</td>
+<td>10</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>Integer</td>
+<td>bytes</td>
+<td>2,051</td>
+<td>487,675</td>
+<td>10</td>
+</tr>
+<tr>
+<td>msgspec</td>
+<td>Integer</td>
+<td>stream</td>
+<td>2,779</td>
+<td>359,809</td>
+<td>10</td>
+</tr>
+<tr>
+<td>msgpack</td>
+<td>Integer</td>
+<td>bytes</td>
+<td>2,883</td>
+<td>346,845</td>
+<td>5</td>
+</tr>
+<tr>
+<td>msgspec</td>
+<td>SimpleObject</td>
+<td>bytes</td>
+<td>3,054</td>
+<td>327,476</td>
+<td>102</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>Integer</td>
+<td>stream</td>
+<td>3,610</td>
+<td>277,045</td>
+<td>10</td>
+</tr>
+<tr>
+<td>pickle</td>
+<td>Integer</td>
+<td>bytes</td>
+<td>4,493</td>
+<td>222,586</td>
+<td>17</td>
+</tr>
+<tr>
+<td>msgspec</td>
+<td>SimpleObject</td>
+<td>stream</td>
+<td>4,588</td>
+<td>217,938</td>
+<td>102</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>SimpleObject</td>
+<td>bytes</td>
+<td>4,793</td>
+<td>208,617</td>
+<td>102</td>
+</tr>
+<tr>
+<td>rapidjson</td>
+<td>Integer</td>
+<td>bytes</td>
+<td>5,125</td>
+<td>195,111</td>
+<td>10</td>
+</tr>
+<tr>
+<td>msgpack</td>
+<td>Integer</td>
+<td>stream</td>
+<td>5,221</td>
+<td>191,551</td>
+<td>5</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>SimpleObject</td>
+<td>stream</td>
+<td>6,372</td>
+<td>156,925</td>
+<td>102</td>
+</tr>
+<tr>
+<td>rapidjson</td>
+<td>Integer</td>
+<td>stream</td>
+<td>6,430</td>
+<td>155,532</td>
+<td>10</td>
+</tr>
+<tr>
+<td>pickle</td>
+<td>Integer</td>
+<td>stream</td>
+<td>7,506</td>
+<td>133,223</td>
+<td>17</td>
+</tr>
+<tr>
+<td>cloudpickle</td>
+<td>Integer</td>
+<td>bytes</td>
+<td>10,001</td>
+<td>99,988</td>
+<td>17</td>
+</tr>
+<tr>
+<td>cloudpickle</td>
+<td>Integer</td>
+<td>stream</td>
+<td>11,178</td>
+<td>89,459</td>
+<td>17</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>Telemetry</td>
+<td>bytes</td>
+<td>15,133</td>
+<td>66,081</td>
+<td>2,198</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>Person</td>
+<td>bytes</td>
+<td>16,638</td>
+<td>60,102</td>
+<td>919</td>
+</tr>
+<tr>
+<td>msgspec</td>
+<td>Person</td>
+<td>bytes</td>
+<td>18,097</td>
+<td>55,257</td>
+<td>919</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>Telemetry</td>
+<td>stream</td>
+<td>18,137</td>
+<td>55,137</td>
+<td>2,198</td>
+</tr>
+</tbody>
+</table>
+<h2 id="top-performers-by-language">Top Performers by Language</h2>
+<h3 id="fastest-serializers-by-total-time">Fastest Serializers (by total time)</h3>
+<ul>
+<li><strong>C#:</strong> MS Bond Fast - 1,293 ns</li>
+<li><strong>Python:</strong> msgspec - 1,458 ns</li>
+</ul>
+<h3 id="most-compact-output-by-size">Most Compact Output (by size)</h3>
+<ul>
+<li><strong>C#:</strong> MS Bond Compact - 1 bytes</li>
+<li><strong>Python:</strong> msgpack - 5 bytes</li>
+</ul>
+<h2 id="multidimensional-analysis">Multidimensional Analysis</h2>
+<h3 id="best-performers-by-data-type">Best Performers by Data Type</h3>
+<ul>
+<li><strong>EDI_835:</strong> C# MS Bond Fast (string) - 22,996 ns</li>
+<li><strong>Integer:</strong> C# MS Bond Fast (string) - 1,293 ns</li>
+<li><strong>ObjectGraph:</strong> C# Json.Net (string) - 13,235 ns</li>
+<li><strong>Person:</strong> C# MS Bond Fast (string) - 12,569 ns</li>
+<li><strong>SimpleObject:</strong> Python msgspec (bytes) - 3,054 ns</li>
+<li><strong>StringArray:</strong> Python orjson (bytes) - 32,312 ns</li>
+<li><strong>Telemetry:</strong> C# MS Bond Fast (string) - 8,849 ns</li>
+</ul>
+<h3 id="performance-by-mode-stream-vs-stringbytes">Performance by Mode (Stream vs String/Bytes)</h3>
+<ul>
+<li><strong>Stream:</strong> C# NetSerializer (Integer) - 1,866 ns</li>
+<li><strong>bytes:</strong> Python msgspec (Integer) - 1,458 ns</li>
+<li><strong>stream:</strong> Python msgspec (Integer) - 2,779 ns</li>
+<li><strong>string:</strong> C# MS Bond Fast (Integer) - 1,293 ns</li>
+</ul>
+<h3 id="cross-language-comparison-same-data-types">Cross-Language Comparison (Same Data Types)</h3>
+<ul>
+<li><strong>EDI_835:</strong> C# MS Bond Fast (22,996 ns) vs Python orjson (26,026 ns) - C# wins (1.13×)</li>
+<li><strong>Integer:</strong> C# MS Bond Fast (1,293 ns) vs Python msgspec (1,458 ns) - C# wins (1.13×)</li>
+<li><strong>ObjectGraph:</strong> C# Json.Net (13,235 ns) vs Python pickle (19,864 ns) - C# wins (1.50×)</li>
+<li><strong>Person:</strong> C# MS Bond Fast (12,569 ns) vs Python orjson (16,638 ns) - C# wins (1.32×)</li>
+<li><strong>SimpleObject:</strong> C# MS Bond Fast (5,247 ns) vs Python msgspec (3,054 ns) - Python wins (0.58×)</li>
+<li><strong>StringArray:</strong> C# MS Bond Fast (32,337 ns) vs Python orjson (32,312 ns) - Python wins (1.00×)</li>
+<li><strong>Telemetry:</strong> C# MS Bond Fast (8,849 ns) vs Python orjson (15,133 ns) - C# wins (1.71×)</li>
+</ul>
+<h2 id="pivot-tables">Pivot Tables</h2>
+<h3 id="c-avg-total-time-ns-by-serializer-and-mode">C#: Avg Total Time (ns) by Serializer and Mode</h3>
+<table>
+<thead>
+<tr>
+<th>serializer</th>
+<th>Stream</th>
+<th>string</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ceras</td>
+<td>69,629</td>
+<td>65,441</td>
+</tr>
+<tr>
+<td>CsvHelper</td>
+<td>419,815</td>
+<td>417,879</td>
+</tr>
+<tr>
+<td>ExtendedXmlSerializer</td>
+<td>15,570</td>
+<td>14,914</td>
+</tr>
+<tr>
+<td>FlatSharp</td>
+<td>7,229</td>
+<td>7,235</td>
+</tr>
+<tr>
+<td>FsPickler</td>
+<td>75,215</td>
+<td>65,294</td>
+</tr>
+<tr>
+<td>FsPicklerJson</td>
+<td>130,531</td>
+<td>113,530</td>
+</tr>
+<tr>
+<td>GroBuf</td>
+<td>3,510</td>
+<td>3,441</td>
+</tr>
+<tr>
+<td>Hyperion</td>
+<td>55,240</td>
+<td>53,857</td>
+</tr>
+<tr>
+<td>Jil</td>
+<td>75,413</td>
+<td>65,333</td>
+</tr>
+<tr>
+<td>Json.Net</td>
+<td>191,017</td>
+<td>126,892</td>
+</tr>
+<tr>
+<td>Json.Net (Helper)</td>
+<td>260,589</td>
+<td>186,366</td>
+</tr>
+<tr>
+<td>MS Binary</td>
+<td>168,878</td>
+<td>144,561</td>
+</tr>
+<tr>
+<td>MS Bond Compact</td>
+<td>24,856</td>
+<td>16,128</td>
+</tr>
+<tr>
+<td>MS Bond Fast</td>
+<td>19,681</td>
+<td>12,569</td>
+</tr>
+<tr>
+<td>MS Bond Json</td>
+<td>83,070</td>
+<td>65,619</td>
+</tr>
+<tr>
+<td>MS DataContract</td>
+<td>125,450</td>
+<td>132,166</td>
+</tr>
+<tr>
+<td>MS DataContract Json</td>
+<td>128,484</td>
+<td>130,833</td>
+</tr>
+<tr>
+<td>MS XmlSerializer</td>
+<td>178,280</td>
+<td>175,005</td>
+</tr>
+<tr>
+<td>MemoryPack</td>
+<td>6,057</td>
+<td>5,464</td>
+</tr>
+<tr>
+<td>Migrant</td>
+<td>43,897</td>
+<td>45,536</td>
+</tr>
+<tr>
+<td>NetJSON</td>
+<td>64,319</td>
+<td>58,699</td>
+</tr>
+<tr>
+<td>NetSerializer</td>
+<td>26,689</td>
+<td>27,945</td>
+</tr>
+<tr>
+<td>ProtoBuf</td>
+<td>45,532</td>
+<td>43,985</td>
+</tr>
+<tr>
+<td>ServiceStack Json</td>
+<td>165,917</td>
+<td>156,866</td>
+</tr>
+<tr>
+<td>ServiceStack Type</td>
+<td>135,828</td>
+<td>136,644</td>
+</tr>
+<tr>
+<td>SharpSerializer</td>
+<td>40,909</td>
+<td>42,637</td>
+</tr>
+<tr>
+<td>SharpYaml</td>
+<td>792,222</td>
+<td>741,856</td>
+</tr>
+<tr>
+<td>SpanJson</td>
+<td>50,398</td>
+<td>43,512</td>
+</tr>
+<tr>
+<td>Utf8Json</td>
+<td>68,868</td>
+<td>72,679</td>
+</tr>
+<tr>
+<td>YAXLib</td>
+<td>996,052</td>
+<td>893,760</td>
+</tr>
+<tr>
+<td>YamlDotNet</td>
+<td>1,412,790</td>
+<td>1,248,686</td>
+</tr>
+<tr>
+<td>fastJson</td>
+<td>204,717</td>
+<td>142,846</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c-opssec-by-serializer-and-data-type">C#: Ops/Sec by Serializer and Data Type</h3>
+<table>
+<thead>
+<tr>
+<th>serializer</th>
+<th>EDI_835</th>
+<th>Integer</th>
+<th>ObjectGraph</th>
+<th>Person</th>
+<th>SimpleObject</th>
+<th>StringArray</th>
+<th>Telemetry</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ceras</td>
+<td>12,846</td>
+<td>67,261</td>
+<td>38,175</td>
+<td>15,281</td>
+<td>22,178</td>
+<td>11,012</td>
+<td>13,666</td>
+</tr>
+<tr>
+<td>CsvHelper</td>
+<td>-</td>
+<td>2,393</td>
+<td>-</td>
+<td>-</td>
+<td>3</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>ExtendedXmlSerializer</td>
+<td>-</td>
+<td>67,053</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>FlatSharp</td>
+<td>-</td>
+<td>138,222</td>
+<td>-</td>
+<td>-</td>
+<td>38,799</td>
+<td>15,347</td>
+<td>-</td>
+</tr>
+<tr>
+<td>FsPickler</td>
+<td>12,499</td>
+<td>50,104</td>
+<td>36,994</td>
+<td>15,315</td>
+<td>21,548</td>
+<td>10,405</td>
+<td>14,368</td>
+</tr>
+<tr>
+<td>FsPicklerJson</td>
+<td>7,312</td>
+<td>27,652</td>
+<td>26,760</td>
+<td>8,808</td>
+<td>15,648</td>
+<td>7,706</td>
+<td>4,273</td>
+</tr>
+<tr>
+<td>GroBuf</td>
+<td>-</td>
+<td>290,604</td>
+<td>-</td>
+<td>-</td>
+<td>137,802</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Hyperion</td>
+<td>14,053</td>
+<td>223,508</td>
+<td>-</td>
+<td>18,568</td>
+<td>42,639</td>
+<td>10,695</td>
+<td>16,219</td>
+</tr>
+<tr>
+<td>Jil</td>
+<td>11,543</td>
+<td>131,125</td>
+<td>-</td>
+<td>15,306</td>
+<td>53,856</td>
+<td>12,121</td>
+<td>5,157</td>
+</tr>
+<tr>
+<td>Json.Net</td>
+<td>13,993</td>
+<td>293,705</td>
+<td>75,554</td>
+<td>7,881</td>
+<td>46,223</td>
+<td>9,440</td>
+<td>4,756</td>
+</tr>
+<tr>
+<td>Json.Net (Helper)</td>
+<td>8,342</td>
+<td>72,603</td>
+<td>34,008</td>
+<td>5,366</td>
+<td>14,859</td>
+<td>6,923</td>
+<td>3,662</td>
+</tr>
+<tr>
+<td>MS Binary</td>
+<td>3,937</td>
+<td>32,979</td>
+<td>14,402</td>
+<td>6,917</td>
+<td>13,609</td>
+<td>5,967</td>
+<td>9,985</td>
+</tr>
+<tr>
+<td>MS Bond Compact</td>
+<td>34,253</td>
+<td>356,167</td>
+<td>-</td>
+<td>62,005</td>
+<td>103,761</td>
+<td>22,487</td>
+<td>59,758</td>
+</tr>
+<tr>
+<td>MS Bond Fast</td>
+<td>43,486</td>
+<td>773,149</td>
+<td>-</td>
+<td>79,563</td>
+<td>190,586</td>
+<td>25,395</td>
+<td>113,012</td>
+</tr>
+<tr>
+<td>MS Bond Json</td>
+<td>15,741</td>
+<td>179,697</td>
+<td>-</td>
+<td>15,239</td>
+<td>37,704</td>
+<td>14,349</td>
+<td>6,157</td>
+</tr>
+<tr>
+<td>MS DataContract</td>
+<td>4,188</td>
+<td>46,988</td>
+<td>21,714</td>
+<td>7,566</td>
+<td>11,607</td>
+<td>3,668</td>
+<td>4,015</td>
+</tr>
+<tr>
+<td>MS DataContract Json</td>
+<td>3,260</td>
+<td>70,942</td>
+<td>-</td>
+<td>7,643</td>
+<td>16,146</td>
+<td>4,110</td>
+<td>4,939</td>
+</tr>
+<tr>
+<td>MS XmlSerializer</td>
+<td>6,106</td>
+<td>42,235</td>
+<td>-</td>
+<td>5,714</td>
+<td>13,174</td>
+<td>5,579</td>
+<td>3,432</td>
+</tr>
+<tr>
+<td>MemoryPack</td>
+<td>-</td>
+<td>183,013</td>
+<td>-</td>
+<td>-</td>
+<td>59,444</td>
+<td>17,129</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Migrant</td>
+<td>-</td>
+<td>21,961</td>
+<td>-</td>
+<td>-</td>
+<td>5,134</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>NetJSON</td>
+<td>18,156</td>
+<td>238,840</td>
+<td>-</td>
+<td>17,036</td>
+<td>47,335</td>
+<td>14,263</td>
+<td>7,506</td>
+</tr>
+<tr>
+<td>NetSerializer</td>
+<td>24,458</td>
+<td>429,066</td>
+<td>-</td>
+<td>35,785</td>
+<td>104,531</td>
+<td>19,804</td>
+<td>15,843</td>
+</tr>
+<tr>
+<td>ProtoBuf</td>
+<td>20,904</td>
+<td>90,734</td>
+<td>-</td>
+<td>22,735</td>
+<td>38,135</td>
+<td>12,734</td>
+<td>21,318</td>
+</tr>
+<tr>
+<td>ServiceStack Json</td>
+<td>6,807</td>
+<td>210,576</td>
+<td>-</td>
+<td>6,375</td>
+<td>22,790</td>
+<td>8,754</td>
+<td>3,715</td>
+</tr>
+<tr>
+<td>ServiceStack Type</td>
+<td>8,442</td>
+<td>304,053</td>
+<td>-</td>
+<td>7,318</td>
+<td>23,858</td>
+<td>10,933</td>
+<td>4,507</td>
+</tr>
+<tr>
+<td>SharpSerializer</td>
+<td>1,111</td>
+<td>23,454</td>
+<td>4,995</td>
+<td>-</td>
+<td>7,460</td>
+<td>2,401</td>
+<td>-</td>
+</tr>
+<tr>
+<td>SharpYaml</td>
+<td>1,061</td>
+<td>38,576</td>
+<td>-</td>
+<td>1,348</td>
+<td>3,459</td>
+<td>1,066</td>
+<td>1,129</td>
+</tr>
+<tr>
+<td>SpanJson</td>
+<td>16,182</td>
+<td>128,735</td>
+<td>-</td>
+<td>22,982</td>
+<td>33,746</td>
+<td>15,722</td>
+<td>7,696</td>
+</tr>
+<tr>
+<td>Utf8Json</td>
+<td>8,412</td>
+<td>110,252</td>
+<td>-</td>
+<td>13,759</td>
+<td>27,551</td>
+<td>11,075</td>
+<td>3,635</td>
+</tr>
+<tr>
+<td>YAXLib</td>
+<td>947</td>
+<td>9,830</td>
+<td>-</td>
+<td>1,119</td>
+<td>2,027</td>
+<td>1,536</td>
+<td>930</td>
+</tr>
+<tr>
+<td>YamlDotNet</td>
+<td>1,125</td>
+<td>13,316</td>
+<td>6,001</td>
+<td>801</td>
+<td>2,586</td>
+<td>4</td>
+<td>5</td>
+</tr>
+<tr>
+<td>fastJson</td>
+<td>7,786</td>
+<td>98,623</td>
+<td>-</td>
+<td>7,001</td>
+<td>20,978</td>
+<td>10,151</td>
+<td>4,312</td>
+</tr>
+</tbody>
+</table>
+<h3 id="python-avg-total-time-ns-by-serializer-and-mode">Python: Avg Total Time (ns) by Serializer and Mode</h3>
+<table>
+<thead>
+<tr>
+<th>serializer</th>
+<th>bytes</th>
+<th>stream</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>avro</td>
+<td>191,993</td>
+<td>186,495</td>
+</tr>
+<tr>
+<td>cbor2</td>
+<td>473,325</td>
+<td>463,476</td>
+</tr>
+<tr>
+<td>cloudpickle</td>
+<td>221,025</td>
+<td>220,190</td>
+</tr>
+<tr>
+<td>msgpack</td>
+<td>376,178</td>
+<td>382,255</td>
+</tr>
+<tr>
+<td>msgspec</td>
+<td>18,097</td>
+<td>20,361</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>16,638</td>
+<td>20,051</td>
+</tr>
+<tr>
+<td>pickle</td>
+<td>89,910</td>
+<td>96,911</td>
+</tr>
+<tr>
+<td>protobuf</td>
+<td>193,597</td>
+<td>201,847</td>
+</tr>
+<tr>
+<td>rapidjson</td>
+<td>390,000</td>
+<td>397,690</td>
+</tr>
+</tbody>
+</table>
+<h3 id="python-opssec-by-serializer-and-data-type">Python: Ops/Sec by Serializer and Data Type</h3>
+<table>
+<thead>
+<tr>
+<th>serializer</th>
+<th>EDI_835</th>
+<th>Integer</th>
+<th>ObjectGraph</th>
+<th>Person</th>
+<th>SimpleObject</th>
+<th>StringArray</th>
+<th>Telemetry</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>avro</td>
+<td>3,368</td>
+<td>-</td>
+<td>-</td>
+<td>5,209</td>
+<td>34,010</td>
+<td>3,015</td>
+<td>7,107</td>
+</tr>
+<tr>
+<td>cbor2</td>
+<td>1,618</td>
+<td>53,028</td>
+<td>-</td>
+<td>2,113</td>
+<td>5,862</td>
+<td>3,870</td>
+<td>2,782</td>
+</tr>
+<tr>
+<td>cloudpickle</td>
+<td>4,580</td>
+<td>99,988</td>
+<td>22,796</td>
+<td>4,524</td>
+<td>25,801</td>
+<td>13,754</td>
+<td>17,192</td>
+</tr>
+<tr>
+<td>msgpack</td>
+<td>2,107</td>
+<td>346,845</td>
+<td>-</td>
+<td>2,658</td>
+<td>9,715</td>
+<td>6,359</td>
+<td>4,062</td>
+</tr>
+<tr>
+<td>msgspec</td>
+<td>16,274</td>
+<td>685,675</td>
+<td>-</td>
+<td>55,257</td>
+<td>327,476</td>
+<td>27,564</td>
+<td>54,650</td>
+</tr>
+<tr>
+<td>orjson</td>
+<td>38,424</td>
+<td>487,675</td>
+<td>-</td>
+<td>60,102</td>
+<td>208,617</td>
+<td>30,948</td>
+<td>66,081</td>
+</tr>
+<tr>
+<td>pickle</td>
+<td>10,054</td>
+<td>222,586</td>
+<td>50,343</td>
+<td>11,122</td>
+<td>52,766</td>
+<td>11,186</td>
+<td>30,992</td>
+</tr>
+<tr>
+<td>protobuf</td>
+<td>2,165</td>
+<td>-</td>
+<td>-</td>
+<td>5,165</td>
+<td>45,507</td>
+<td>9,415</td>
+<td>20,015</td>
+</tr>
+<tr>
+<td>rapidjson</td>
+<td>1,898</td>
+<td>195,111</td>
+<td>-</td>
+<td>2,564</td>
+<td>8,906</td>
+<td>6,126</td>
+<td>2,725</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Generated by Serializer Benchmark CI</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

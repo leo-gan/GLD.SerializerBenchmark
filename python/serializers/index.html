@@ -1,0 +1,1337 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Cross-language serialization performance comparison for .NET and Python.">
+      
+      
+      
+        <link rel="canonical" href="https://leo-gan.github.io/GLD.SerializerBenchmark/python/serializers/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Python Tested Serializers - GLD Serializer Benchmark</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#python-tested-serializers" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="GLD Serializer Benchmark" class="md-header__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GLD Serializer Benchmark
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Python Tested Serializers
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Theory & Practices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../c-sharp/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  C# Ecosystem
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Python Ecosystem
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../analysis/README.md" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Benchmark Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="GLD Serializer Benchmark" class="md-nav__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GLD Serializer Benchmark
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory & Practices
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory & Practices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-sharp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C# Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packages Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/BENCHMARK_SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/violin-plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Violin Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/ANALYSIS_METHODOLOGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="python-tested-serializers">Python Tested Serializers</h1>
+<p>This document describes the 10 Python serializers tested in the benchmark suite, organized by category.</p>
+<h2 id="json-serializers">JSON Serializers</h2>
+<p>JSON (JavaScript Object Notation) serializers convert Python objects to human-readable text format. These are the most interoperable choice for APIs, configuration files, and cross-language data exchange. All JSON serializers in this benchmark use C-extensions (Rust or C) for performance, significantly outperforming Python's standard library <code>json</code> module.</p>
+<p><strong>Common Characteristics:</strong>
+- <strong>Human-readable:</strong> Output can be inspected with any text editor or HTTP debugging tools
+- <strong>Universal support:</strong> Every programming language has JSON parsers
+- <strong>Schema-optional:</strong> Can work with any Python object using <code>default</code> hooks, but types are not enforced
+- <strong>Size overhead:</strong> Text representation is larger than binary formats (typically 2-5x)
+- <strong>No circular refs:</strong> JSON cannot represent circular object graphs</p>
+<p><strong>When to Choose JSON:</strong>
+- Public APIs requiring broad client compatibility
+- Configuration files humans need to edit
+- Debugging and logging (human-readable is valuable)
+- Web services where bandwidth is not the bottleneck</p>
+<hr />
+<h3 id="orjson">orjson</h3>
+<p><strong>Library:</strong> <code>orjson</code><br />
+<strong>Type:</strong> Binary JSON encoder/decoder<br />
+<strong>Description:</strong> A fast, correct JSON library for Python. Written in Rust, it significantly outperforms standard library <code>json</code> and other Python JSON libraries. Supports dataclasses, datetime, UUID, bytes, and numpy arrays natively.</p>
+<p><strong>Key Features:</strong>
+- Fastest JSON serializer in the benchmark (3-5x faster than standard library <code>json</code>)
+- Optional strict UTF-8 enforcement and ASCII output
+- Supports indent for pretty-printing
+- Handles dataclasses and datetime objects via <code>default</code> hook
+- Optimized Rust implementation with SIMD operations</p>
+<p><strong>When to Use:</strong>
+- High-throughput APIs serving JSON responses
+- Data pipelines processing large volumes of JSON
+- Microservices requiring low-latency serialization
+- Situations where JSON interoperability is required but speed matters</p>
+<p><strong>Pros:</strong>
+- <strong>Speed:</strong> Fastest JSON option; significantly outperforms ujson, simplejson, and stdlib
+- <strong>Safety:</strong> Strict UTF-8 handling prevents encoding issues
+- <strong>Standards compliant:</strong> Produces RFC 8259 compliant JSON
+- <strong>Rich type support:</strong> UUID, bytes, datetime, numpy arrays natively</p>
+<p><strong>Cons:</strong>
+- <strong>Rust dependency:</strong> Requires compiled extension (no pure-Python fallback)
+- <strong>No circular reference support:</strong> Will raise error on circular object graphs
+- <strong>Memory:</strong> Higher memory usage than msgspec due to aggressive optimization strategies</p>
+<p><strong>Benchmark Notes:</strong>
+- Best performer for small-to-medium objects (270K+ ops/sec on Person)
+- Uses <code>default</code> hook for dataclass and datetime serialization
+- Excludes <code>ObjectGraph</code> (circular references) by design
+- Output size comparable to standard JSON (no compression)</p>
+<hr />
+<h3 id="msgspec">msgspec</h3>
+<p><strong>Library:</strong> <code>msgspec</code><br />
+<strong>Type:</strong> Schema-validated JSON/MessagePack<br />
+<strong>Description:</strong> A fast serialization and validation library, written in C. Supports JSON and MessagePack with zero-copy deserialization. Uses type annotations for schema definition and validation.</p>
+<p><strong>Key Features:</strong>
+- Native dataclass support (no custom hooks needed)
+- Built-in datetime support (ISO 8601 format)
+- Type-safe deserialization with validation
+- Low memory footprint
+- Zero-copy deserialization for MessagePack
+- Also supports JSON and MessagePack from same API</p>
+<p><strong>When to Use:</strong>
+- Data validation is as important as serialization speed
+- Type safety and runtime validation are required
+- Memory-constrained environments
+- Applications using both JSON and MessagePack
+- Schema-first API design</p>
+<p><strong>Pros:</strong>
+- <strong>Memory efficiency:</strong> Lowest memory usage among all serializers in benchmark
+- <strong>Type safety:</strong> Validates incoming data against Python type annotations
+- <strong>Zero overhead dataclasses:</strong> Native support without conversion functions
+- <strong>Dual format:</strong> Same code works with JSON and MessagePack
+- <strong>Excellent error messages:</strong> Clear validation failures with path information</p>
+<p><strong>Cons:</strong>
+- <strong>Schema required:</strong> Must define types upfront (not schema-free like standard JSON)
+- <strong>C extension:</strong> Requires compiled code (though wheels provided for all platforms)
+- <strong>Limited dynamic typing:</strong> Less flexible for untyped/dynamic data structures
+- <strong>Learning curve:</strong> Different API pattern than standard <code>json</code> module</p>
+<p><strong>Benchmark Notes:</strong>
+- Excellent memory efficiency (lowest memory usage among JSON serializers ~5KB vs 28KB for orjson)
+- Native dataclass support eliminates conversion overhead
+- Slightly slower than orjson but significantly faster than standard library
+- Excludes <code>ObjectGraph</code> by design
+- Strong type validation prevents runtime errors</p>
+<hr />
+<h3 id="rapidjson">rapidjson</h3>
+<p><strong>Library:</strong> <code>python-rapidjson</code><br />
+<strong>Type:</strong> C++ JSON parser<br />
+<strong>Description:</strong> Python wrapper around RapidJSON, a fast C++ JSON parser and generator. Supports standard JSON with optional precise number parsing and validation.</p>
+<p><strong>Key Features:</strong>
+- C++ backend based on Tencent's RapidJSON library
+- Compliant with RFC 8259
+- Supports custom encoders/decoders
+- Number precision options (decimal vs float)
+- Pretty-printing with customizable indentation</p>
+<p><strong>When to Use:</strong>
+- Need RFC-compliant JSON with precise number handling
+- Applications requiring decimal precision (financial data)
+- Mixed environments with C++ JSON consumers
+- Situations where orjson is unavailable</p>
+<p><strong>Pros:</strong>
+- <strong>Standards compliant:</strong> Strict RFC 8259 adherence
+- <strong>Number precision:</strong> Can preserve decimal precision without floating-point conversion
+- <strong>C++ performance:</strong> Faster than pure-Python JSON libraries
+- <strong>Mature codebase:</strong> Based on widely-used RapidJSON C++ library</p>
+<p><strong>Cons:</strong>
+- <strong>Slower than orjson:</strong> ~10x slower in our benchmarks
+- <strong>Verbose API:</strong> Requires manual hook setup for dataclasses
+- <strong>Limited type support:</strong> No built-in datetime/dataclass handling
+- <strong>Maintenance:</strong> Slower update cadence than orjson</p>
+<p><strong>Benchmark Notes:</strong>
+- Requires custom <code>default</code> and <code>object_hook</code> for dataclasses
+- Uses datetime string parsing in hooks (manual conversion)
+- 3x slower than msgspec, 10x slower than orjson
+- Excludes <code>ObjectGraph</code> by design
+- Good choice when precise decimal handling is critical</p>
+<hr />
+<h2 id="binary-serializers">Binary Serializers</h2>
+<p>Binary serializers convert Python objects to compact byte representations. They sacrifice human readability for significant improvements in size (20-50% smaller than JSON) and parsing speed (no string parsing overhead). Both MessagePack and CBOR are schemaless like JSON but encode data in binary form.</p>
+<p><strong>Common Characteristics:</strong>
+- <strong>Compact size:</strong> Binary encoding removes text formatting overhead
+- <strong>Fast parsing:</strong> No string tokenization; direct byte interpretation
+- <strong>Cross-language:</strong> Wide support across programming languages
+- <strong>Type preservation:</strong> Better handling of binary data, datetime, and numeric types
+- <strong>Not human-readable:</strong> Requires hex dumps or specialized tools to inspect</p>
+<p><strong>Binary vs JSON Trade-offs:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Binary (msgpack/CBOR)</th>
+<th>JSON</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Size</td>
+<td>Smaller (~30-50%)</td>
+<td>Larger</td>
+</tr>
+<tr>
+<td>Speed</td>
+<td>Faster parsing</td>
+<td>Slower (text parsing)</td>
+</tr>
+<tr>
+<td>Readability</td>
+<td>None</td>
+<td>Human-readable</td>
+</tr>
+<tr>
+<td>Debugging</td>
+<td>Harder</td>
+<td>Easier</td>
+</tr>
+<tr>
+<td>Schema</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>When to Choose Binary:</strong>
+- Internal microservices where you control all endpoints
+- High-throughput data pipelines
+- Caching layers (Redis with binary values)
+- Mobile apps where bandwidth matters</p>
+<hr />
+<h3 id="msgpack">msgpack</h3>
+<p><strong>Library:</strong> <code>msgpack</code><br />
+<strong>Type:</strong> Binary serialization format<br />
+<strong>Description:</strong> MessagePack is an efficient binary serialization format that exchanges data among multiple languages like JSON but is faster and smaller. It supports rich data types including datetime and binary data.</p>
+<p><strong>Key Features:</strong>
+- Compact binary representation (typically 20-50% smaller than JSON)
+- Cross-language compatible (50+ language implementations)
+- Supports streaming (unpack from file-like objects)
+- Custom type support via <code>default</code> and <code>object_hook</code>
+- Handles binary data natively (no base64 encoding needed)
+- Extensible type system</p>
+<p><strong>When to Use:</strong>
+- Network protocols where bandwidth matters
+- Caching systems (Redis, Memcached)
+- Microservices communicating internally
+- Storing structured data in binary columns
+- Replacing JSON for internal APIs</p>
+<p><strong>Pros:</strong>
+- <strong>Compact size:</strong> Significantly smaller than JSON for most data
+- <strong>Speed:</strong> Faster parsing than JSON (no string parsing overhead)
+- <strong>Binary data:</strong> Native support for bytes without encoding overhead
+- <strong>Rich ecosystem:</strong> Widely supported across languages and platforms
+- <strong>Streaming:</strong> Can unpack from streams without loading entire message</p>
+<p><strong>Cons:</strong>
+- <strong>Not human-readable:</strong> Cannot debug with standard text tools
+- <strong>No schema:</strong> No built-in validation (unlike protobuf/avro)
+- <strong>Type loss:</strong> Python tuples become lists, custom types need hooks
+- <strong>Security:</strong> Like pickle, can deserialize arbitrary objects if not careful</p>
+<p><strong>Benchmark Notes:</strong>
+- Smaller output size than JSON (especially for numeric data: 1,631 bytes vs 1,730 for Person)
+- Uses <code>default</code>/<code>object_hook</code> for dataclass conversion
+- Memory allocation higher due to internal buffering strategies
+- Excludes <code>ObjectGraph</code> (circular references) by design</p>
+<hr />
+<h3 id="cbor2">cbor2</h3>
+<p><strong>Library:</strong> <code>cbor2</code><br />
+<strong>Type:</strong> CBOR (Concise Binary Object Representation)<br />
+<strong>Description:</strong> CBOR is a binary serialization format specified in RFC 8949. Designed to be small, schema-free, and extensible. Similar to JSON but binary and more compact.</p>
+<p><strong>Key Features:</strong>
+- IETF standard (RFC 8949) - formally specified
+- Smaller than MessagePack for some data types
+- Native datetime support (using CBOR tags 0 and 1)
+- Streaming support via file-like objects
+- Supports indefinite-length arrays/maps
+- Extensible with custom tags</p>
+<p><strong>When to Use:</strong>
+- IETF-compliant protocols requiring standard binary format
+- Constrained environments (IoT, embedded)
+- Situations where CBOR is mandated (some government/military specs)
+- Streaming large data structures</p>
+<p><strong>Pros:</strong>
+- <strong>Standardized:</strong> RFC 8949 ensures long-term compatibility
+- <strong>Datetime native:</strong> Built-in support without custom hooks
+- <strong>Streaming:</strong> Better support for indefinite-length data
+- <strong>Flexible:</strong> Tags system allows rich type extensions
+- <strong>Smallest binary:</strong> Often beats MessagePack on size</p>
+<p><strong>Cons:</strong>
+- <strong>Less popular:</strong> Smaller ecosystem than MessagePack
+- <strong>Complex API:</strong> Hook signatures different from msgpack (encoder, obj) vs (obj)
+- <strong>Slower:</strong> Python implementation slower than msgpack's C extensions
+- <strong>Learning curve:</strong> Less documentation and community examples</p>
+<p><strong>Comparison with MessagePack:</strong>
+| Feature | CBOR | MessagePack |
+|---------|------|-------------|
+| Standard | IETF RFC 8949 | No formal RFC |
+| Datetime | Native tags | Extension type |
+| Streaming | Indefinite length | Chunks |
+| Speed | Slower (pure Python) | Faster (C) |
+| Popularity | Growing | Very popular |</p>
+<p><strong>Benchmark Notes:</strong>
+- Requires careful encoder/decoder hook setup (different signature than msgpack)
+- Uses <code>(encoder, obj)</code> signature for encoding hooks
+- Slower than msgpack but competitive on output size
+- Excludes <code>ObjectGraph</code> by design</p>
+<hr />
+<h2 id="schema-serializers">Schema Serializers</h2>
+<p>Schema serializers require pre-defined schemas (.proto or .avsc files) that specify the exact structure, types, and field numbers of data. They offer the smallest output sizes, fastest deserialization, and strongest compatibility guarantees at the cost of up-front schema design and code generation.</p>
+<p><strong>Common Characteristics:</strong>
+- <strong>Smallest output:</strong> Binary with field numbers instead of field names (2-10x smaller than JSON)
+- <strong>Schema enforcement:</strong> Types checked at build time, not runtime
+- <strong>Evolution support:</strong> Forward/backward compatible changes via field numbering
+- <strong>Code generation:</strong> Schema changes require regenerating Python classes
+- <strong>No bare primitives:</strong> Cannot serialize standalone integers/strings (must be message fields)</p>
+<p><strong>Schema vs Schemaless Trade-offs:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Schema (protobuf/avro)</th>
+<th>Schemaless (JSON/msgpack)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Size</td>
+<td>Smallest</td>
+<td>Larger</td>
+</tr>
+<tr>
+<td>Validation</td>
+<td>Compile-time</td>
+<td>Runtime or none</td>
+</tr>
+<tr>
+<td>Flexibility</td>
+<td>Rigid (schema changes)</td>
+<td>Flexible (any structure)</td>
+</tr>
+<tr>
+<td>Interop</td>
+<td>Excellent (code gen)</td>
+<td>Good (dynamic)</td>
+</tr>
+<tr>
+<td>Initial setup</td>
+<td>Higher (schema files)</td>
+<td>Lower</td>
+</tr>
+</tbody>
+</table>
+<p><strong>When to Choose Schema Serializers:</strong>
+- Microservices with stable, well-defined APIs
+- Long-term data storage requiring evolution
+- Mobile backends where payload size affects battery life
+- High-throughput streaming (Kafka, Kinesis)
+- Cross-platform systems (mobile + web + backend)</p>
+<hr />
+<h3 id="protobuf">protobuf</h3>
+<p><strong>Library:</strong> <code>protobuf</code><br />
+<strong>Type:</strong> Binary protocol buffers<br />
+<strong>Description:</strong> Google's Protocol Buffers is a language-neutral, platform-neutral, extensible mechanism for serializing structured data. Requires pre-defined <code>.proto</code> schemas.</p>
+<p><strong>Key Features:</strong>
+- Schema enforcement via <code>.proto</code> files
+- Extremely compact binary output (smallest among all serializers)
+- Cross-language compatibility (20+ languages)
+- Forward/backward compatibility with field numbering
+- Efficient packed repeated fields
+- Versioned schemas (proto2, proto3, proto3 optional)</p>
+<p><strong>When to Use:</strong>
+- Microservice communication (gRPC uses protobuf)
+- Long-term data storage requiring schema evolution
+- Cross-platform mobile app backends
+- High-throughput streaming data pipelines
+- Situations where every byte matters</p>
+<p><strong>Pros:</strong>
+- <strong>Smallest output:</strong> Consistently smallest serialized size (665 bytes for Person)
+- <strong>Fast deserialization:</strong> Binary format parsed efficiently
+- <strong>Schema evolution:</strong> Add/remove fields without breaking old readers
+- <strong>Type safety:</strong> Generated code provides IDE autocomplete and type checking
+- <strong>Ecosystem:</strong> Massive adoption, excellent tooling (protoc, linters, docs)</p>
+<p><strong>Cons:</strong>
+- <strong>Schema maintenance:</strong> Requires <code>.proto</code> files and code generation step
+- <strong>No bare primitives:</strong> Cannot serialize standalone integers/strings
+- <strong>Generated code:</strong> Must regenerate when schema changes
+- <strong>Build complexity:</strong> Additional build step in CI/CD
+- <strong>Learning curve:</strong> Different type system than Python</p>
+<p><strong>Technical Details:</strong>
+<div class="highlight"><pre><span></span><code><span class="c1">// Datetime handling: converts to int64 milliseconds since epoch</span>
+<span class="kt">int64</span><span class="w"> </span><span class="na">created_at_ms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">timestamp_ms</span><span class="p">(</span><span class="n">datetime</span><span class="p">)</span>
+
+<span class="c1">// Enums stored as integers (not names)</span>
+<span class="na">Gender.MALE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="na">Gender.FEMALE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+
+<span class="c1">// Maps to dicts, repeated to lists</span>
+<span class="n">map</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int32</span><span class="p">&gt;</span><span class="w"> </span><span class="na">metadata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="k">repeated</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="na">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span>
+</code></pre></div></p>
+<p><strong>Benchmark Notes:</strong>
+- Requires generated Python code from <code>.proto</code> files
+- Converts datetimes to milliseconds since epoch (truncates microseconds)
+- Enum values serialized as integers (not strings)
+- <strong>Excludes:</strong> <code>Integer</code> (bare primitives not supported) and <code>ObjectGraph</code> (circular refs)
+- Best size-to-speed ratio for schema-based serialization</p>
+<hr />
+<h3 id="avro">avro</h3>
+<p><strong>Library:</strong> <code>fastavro</code><br />
+<strong>Type:</strong> Binary Avro format<br />
+<strong>Description:</strong> Apache Avro is a row-oriented remote procedure call and data serialization framework. Uses schemas for data structures and types. Schema is stored with the data for self-description.</p>
+<p><strong>Key Features:</strong>
+- Schema included with data (self-describing)
+- Rich type system including unions (null, multiple types)
+- Efficient binary encoding with code generation
+- Schema evolution with default values
+- Hadoop ecosystem integration (Spark, Hive, etc.)
+- RPC support (Avro RPC, though less common now)</p>
+<p><strong>When to Use:</strong>
+- Hadoop/Spark data pipelines
+- Data lakes requiring schema-on-read
+- Streaming platforms (Kafka with Schema Registry)
+- Long-term archival with embedded schemas
+- Situations needing schema evolution without code regeneration</p>
+<p><strong>Pros:</strong>
+- <strong>Self-describing:</strong> Schema travels with data (unlike protobuf)
+- <strong>Hadoop native:</strong> First-class support in big data ecosystem
+- <strong>No code gen needed:</strong> Can use dynamic schemas at runtime
+- <strong>Rich types:</strong> Unions, maps, arrays with null support
+- <strong>Schema registry:</strong> Confluent Schema Registry integration for Kafka</p>
+<p><strong>Cons:</strong>
+- <strong>Slower than protobuf:</strong> Self-describing overhead impacts speed
+- <strong>Java-centric:</strong> Best tooling and support in JVM ecosystem
+- <strong>Complex schemas:</strong> JSON Schema syntax can be verbose
+- <strong>Dynamic overhead:</strong> Runtime schema validation slower than generated code
+- <strong>Smaller ecosystem:</strong> Fewer language implementations than protobuf</p>
+<p><strong>Comparison with Protobuf:</strong>
+| Feature | Avro | Protobuf |
+|---------|------|----------|
+| Schema location | In data | Separate .proto file |
+| Code generation | Optional | Required |
+| Hadoop/Spark | Native | Via connectors |
+| Size | Small | Smallest |
+| Speed | Fast | Faster |
+| Schema evolution | Yes | Yes |
+| Null support | First-class | Via wrappers |</p>
+<p><strong>Benchmark Notes:</strong>
+- Uses <code>fastavro</code> library for performance (C extensions)
+- Datetimes converted to milliseconds (truncates microseconds)
+- Schemas defined in <code>.avsc</code> JSON files
+- <strong>Excludes:</strong> <code>Integer</code> (bare primitives) and <code>ObjectGraph</code> (circular refs)
+- Output size: 567 bytes (Person) - slightly larger than protobuf's 665 bytes
+- Good choice for data lakes, protobuf for microservices</p>
+<hr />
+<h2 id="python-native-serializers">Python-Native Serializers</h2>
+<p>Python-native serializers are designed exclusively for Python-to-Python communication. They can serialize virtually any Python object including functions, classes, lambdas, and circular references—something no cross-language format can achieve. However, they carry significant security risks and cannot share data with non-Python systems.</p>
+<p><strong>Common Characteristics:</strong>
+- <strong>Universal Python support:</strong> Handles any Python object automatically
+- <strong>Circular reference handling:</strong> Native support for object graphs with cycles
+- <strong>No schema needed:</strong> Zero setup for custom classes
+- <strong>Security risk:</strong> Can execute arbitrary code during deserialization
+- <strong>Python-only:</strong> No interoperability with other languages</p>
+<p><strong>⚠️ Critical Security Warning:</strong>
+Both <code>pickle</code> and <code>cloudpickle</code> can execute arbitrary Python code during deserialization. <strong>Never unpickle data from untrusted sources.</strong> This includes:
+- User-uploaded files
+- Data from unauthenticated API endpoints
+- Cookies or session data from web requests
+- Cache entries from shared cache servers</p>
+<p><strong>When to Choose Python-Native:</strong>
+- Internal caching (memoization, Redis with pickle)
+- Python multiprocessing (Queue, Pool)
+- Machine learning model serialization
+- Deep copying complex objects
+- Distributed computing (Dask, Ray)</p>
+<p><strong>When NOT to Use:</strong>
+- Public APIs or data exchange
+- Persisting user data long-term
+- Any data that might come from untrusted sources</p>
+<hr />
+<h3 id="pickle">pickle</h3>
+<p><strong>Library:</strong> <code>pickle</code> (standard library)<br />
+<strong>Type:</strong> Python-specific binary serialization<br />
+<strong>Description:</strong> Python's native serialization format. Can serialize nearly any Python object including custom classes, functions, and circular references.</p>
+<p><strong>Key Features:</strong>
+- Native Python object support (no conversion needed)
+- Handles circular references automatically (only serializer with native support)
+- Supports all Python types including lambdas, nested functions, and metaclasses
+- Multiple protocol versions (0-5, with 5 being highest for Python 3.8+)
+- Optimized for Python object graphs</p>
+<p><strong>When to Use:</strong>
+- Caching Python objects in memory (memoization)
+- Session storage for Python web applications (trusted environment)
+- Machine learning model persistence (sklearn, PyTorch)
+- Temporary serialization between Python processes (multiprocessing)
+- Deep copying complex object hierarchies</p>
+<p><strong>⚠️ Security Warning:</strong>
+<strong>NEVER unpickle data from untrusted sources.</strong> Pickle can execute arbitrary code during deserialization. Malicious payloads can compromise your system. Use only for:
+- Data you created yourself
+- Data from authenticated, trusted sources
+- Internal service communication within secure networks</p>
+<p>For untrusted data, use JSON, MessagePack, or protobuf.</p>
+<p><strong>Pros:</strong>
+- <strong>Universal:</strong> Handles ANY Python object automatically
+- <strong>Circular refs:</strong> Only native solution for circular object graphs
+- <strong>No schema:</strong> Zero setup for custom classes
+- <strong>Fast:</strong> No conversion overhead for Python objects
+- <strong>Built-in:</strong> No external dependencies</p>
+<p><strong>Cons:</strong>
+- <strong>Security risk:</strong> Arbitrary code execution during deserialization
+- <strong>Python-only:</strong> Cannot share data with other languages
+- <strong>Version sensitive:</strong> Protocol changes between Python versions
+- <strong>Large output:</strong> Not optimized for size (1,321 bytes for Person)
+- <strong>No streaming:</strong> Must load entire pickle at once</p>
+<p><strong>Protocol Versions:</strong>
+| Protocol | Python | Features |
+|----------|--------|----------|
+| 0 | All | Human-readable (ASCII) |
+| 1 | All | Binary |
+| 2 | 2.3+ | New-style classes |
+| 3 | 3.0+ | Python 3 types |
+| 4 | 3.4+ | Large objects, framing |
+| 5 | 3.8+ | Out-of-band buffers |</p>
+<p><strong>Benchmark Notes:</strong>
+- Fastest for complex Python objects (no conversion overhead)
+- Only serializer besides cloudpickle that handles <code>ObjectGraph</code> circular refs
+- Fidelity: 1.00 on all supported types
+- <strong>Security:</strong> Only unpickle data you trust (arbitrary code execution risk)</p>
+<hr />
+<h3 id="cloudpickle">cloudpickle</h3>
+<p><strong>Library:</strong> <code>cloudpickle</code><br />
+<strong>Type:</strong> Extended pickle for distributed computing<br />
+<strong>Description:</strong> An extended version of pickle that can serialize objects that the standard pickle cannot, such as functions with closures, classes defined in <code>__main__</code>, and dependencies on external modules.</p>
+<p><strong>Key Features:</strong>
+- Extends pickle for distributed/cloud computing
+- Serializes functions and classes defined in <code>__main__</code> (interactive sessions)
+- Handles dynamic module dependencies
+- Drop-in replacement for pickle (same API)
+- Supports closures and dynamically defined functions
+- Used internally by Dask, Ray, and Apache Spark</p>
+<p><strong>When to Use:</strong>
+- Distributed computing frameworks (Dask, Ray, PySpark)
+- Jupyter notebook serialization (functions defined in <code>__main__</code>)
+- Sending Python objects to remote workers
+- Machine learning pipelines with dynamic functions
+- Interactive development workflows</p>
+<p><strong>⚠️ Security Warning:</strong>
+Same security concerns as pickle - can execute arbitrary code. Only use with trusted data sources.</p>
+<p><strong>Pros:</strong>
+- <strong>Interactive support:</strong> Can pickle functions defined in Jupyter/IPython
+- <strong>Distributed computing:</strong> Used by major frameworks (Dask, Ray)
+- <strong>Closure support:</strong> Serializes functions with captured variables
+- <strong>Drop-in:</strong> Replace <code>import pickle</code> with <code>import cloudpickle</code>
+- <strong>Dynamic imports:</strong> Handles modules not available at unpickling time</p>
+<p><strong>Cons:</strong>
+- <strong>Slower than pickle:</strong> Additional introspection overhead
+- <strong>Larger output:</strong> More metadata for dynamic objects
+- <strong>Same security issues:</strong> Arbitrary code execution risk
+- <strong>Python-only:</strong> No cross-language support
+- <strong>External dependency:</strong> Not in standard library</p>
+<p><strong>Pickle vs Cloudpickle:</strong>
+| Feature | Pickle | Cloudpickle |
+|---------|--------|-------------|
+| <code>__main__</code> functions | ❌ | ✅ |
+| Closures | Limited | ✅ |
+| Standard library | ✅ | ❌ |
+| Speed | Faster | Slower |
+| Size | Smaller | Larger |
+| Security | Same risk | Same risk |</p>
+<p><strong>Benchmark Notes:</strong>
+- Slightly slower than pickle (~30% slower in our tests)
+- Handles <code>ObjectGraph</code> circular references (same as pickle)
+- Larger output size than pickle for some objects (same 1,321 bytes for Person)
+- Designed for sending Python objects between processes/machines
+- Best choice for distributed/interactive Python computing</p>
+<hr />
+<h2 id="summary-table">Summary Table</h2>
+<table>
+<thead>
+<tr>
+<th>Serializer</th>
+<th>Category</th>
+<th>Speed</th>
+<th>Size</th>
+<th>Circular Refs</th>
+<th>Schema Required</th>
+<th>Cross-Language</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>orjson</td>
+<td>JSON</td>
+<td>★★★★★</td>
+<td>★★★☆☆</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>msgspec</td>
+<td>JSON</td>
+<td>★★★★☆</td>
+<td>★★★☆☆</td>
+<td>No</td>
+<td>Optional</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>rapidjson</td>
+<td>JSON</td>
+<td>★★★☆☆</td>
+<td>★★★☆☆</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>msgpack</td>
+<td>Binary</td>
+<td>★★★★☆</td>
+<td>★★★★☆</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>cbor2</td>
+<td>Binary</td>
+<td>★★★☆☆</td>
+<td>★★★★★</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>protobuf</td>
+<td>Schema</td>
+<td>★★★☆☆</td>
+<td>★★★★★</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>avro</td>
+<td>Schema</td>
+<td>★★★☆☆</td>
+<td>★★★★★</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>pickle</td>
+<td>Native</td>
+<td>★★★★☆</td>
+<td>★★★☆☆</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>cloudpickle</td>
+<td>Native</td>
+<td>★★★☆☆</td>
+<td>★★★☆☆</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Legend:</strong> ★ = Poor, ★★ = Fair, ★★★ = Good, ★★★★ = Very Good, ★★★★★ = Excellent</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

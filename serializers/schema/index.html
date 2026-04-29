@@ -1,0 +1,1200 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Cross-language serialization performance comparison for .NET and Python.">
+      
+      
+      
+        <link rel="canonical" href="https://leo-gan.github.io/GLD.SerializerBenchmark/serializers/schema/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Schema Serializers - GLD Serializer Benchmark</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#schema-serializers" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="GLD Serializer Benchmark" class="md-header__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GLD Serializer Benchmark
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Schema Serializers
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Theory & Practices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../c-sharp/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  C# Ecosystem
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../python/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Python Ecosystem
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../analysis/README.md" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Benchmark Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="GLD Serializer Benchmark" class="md-nav__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GLD Serializer Benchmark
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory & Practices
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory & Practices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-sharp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C# Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/README.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packages Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/BENCHMARK_SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detailed Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/violin-plots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Violin Plots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/ANALYSIS_METHODOLOGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="schema-serializers">Schema Serializers</h1>
+<p>Schema serializers require pre-defined schemas (.proto, .avsc, or .bond files) that specify exact data structures, types, and field numbers. They offer the smallest output sizes, fastest deserialization, and strongest compatibility guarantees.</p>
+<h2 id="when-to-use-schema-serializers">When to Use Schema Serializers</h2>
+<p><strong>Choose schema serializers when:</strong>
+- Microservice API contracts are stable and well-defined
+- Long-term data storage requires schema evolution
+- Mobile backends where payload size affects battery life
+- High-throughput streaming (Kafka, Kinesis)
+- Cross-platform systems (mobile + web + backend)
+- Every byte and nanosecond matters</p>
+<h2 id="common-characteristics">Common Characteristics</h2>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Human-readable</strong></td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Schema</strong></td>
+<td>Required</td>
+</tr>
+<tr>
+<td><strong>Size</strong></td>
+<td>Smallest (2-10× smaller than JSON)</td>
+</tr>
+<tr>
+<td><strong>Speed</strong></td>
+<td>Fastest deserialization</td>
+</tr>
+<tr>
+<td><strong>Validation</strong></td>
+<td>Compile-time type checking</td>
+</tr>
+<tr>
+<td><strong>Evolution</strong></td>
+<td>Forward/backward compatible</td>
+</tr>
+</tbody>
+</table>
+<h2 id="format-comparison">Format Comparison</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Protobuf</th>
+<th>Avro</th>
+<th>Bond</th>
+<th>FlatBuffers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Origin</strong></td>
+<td>Google</td>
+<td>Apache</td>
+<td>Microsoft</td>
+<td>Google</td>
+</tr>
+<tr>
+<td><strong>Schema location</strong></td>
+<td>Separate .proto</td>
+<td>Embedded in data</td>
+<td>Separate .bond</td>
+<td>Separate .fbs</td>
+</tr>
+<tr>
+<td><strong>Code generation</strong></td>
+<td>Required</td>
+<td>Optional</td>
+<td>Required</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><strong>Hadoop/Spark</strong></td>
+<td>Via connectors</td>
+<td>Native</td>
+<td>Limited</td>
+<td>Limited</td>
+</tr>
+<tr>
+<td><strong>Best for</strong></td>
+<td>Microservices</td>
+<td>Data lakes</td>
+<td>.NET ecosystem</td>
+<td>Games/real-time</td>
+</tr>
+<tr>
+<td><strong>Zero-copy</strong></td>
+<td>No</td>
+<td>No</td>
+<td>Partial</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="c-schema-serializers">C# Schema Serializers</h2>
+<table>
+<thead>
+<tr>
+<th>Serializer</th>
+<th>Format</th>
+<th>Best For</th>
+<th>Speed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MS Bond Fast</strong></td>
+<td>Bond</td>
+<td>.NET microservices</td>
+<td>★★★★★</td>
+</tr>
+<tr>
+<td><strong>MS Bond Compact</strong></td>
+<td>Bond</td>
+<td>Balanced size/speed</td>
+<td>★★★★☆</td>
+</tr>
+<tr>
+<td><strong>ProtoBuf</strong></td>
+<td>Protocol Buffers</td>
+<td>Cross-language</td>
+<td>★★★★☆</td>
+</tr>
+<tr>
+<td><strong>FlatSharp</strong></td>
+<td>FlatBuffers</td>
+<td>Zero-allocation</td>
+<td>★★★★☆</td>
+</tr>
+<tr>
+<td><strong>MS Bond Json</strong></td>
+<td>Bond JSON</td>
+<td>Human-readable</td>
+<td>★★★☆☆</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example-ms-bond-fast">Example: MS Bond Fast</h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// Define schema (Person.bond)</span>
+<span class="c1">// namespace Benchmark</span>
+<span class="c1">// {</span>
+<span class="c1">//     struct Person {</span>
+<span class="c1">//         0: string Name;</span>
+<span class="c1">//         1: int32 Age;</span>
+<span class="c1">//     }</span>
+<span class="c1">// }</span>
+
+<span class="c1">// Serialize (after generating C# from schema)</span>
+<span class="kt">var</span><span class="w"> </span><span class="n">writer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CompactBinaryWriter</span><span class="o">&lt;</span><span class="n">OutputBuffer</span><span class="o">&gt;</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">OutputBuffer</span><span class="p">());</span>
+<span class="n">Serialize</span><span class="p">.</span><span class="n">To</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span><span class="w"> </span><span class="n">person</span><span class="p">);</span>
+<span class="kt">byte</span><span class="p">[]</span><span class="w"> </span><span class="n">bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">writer</span><span class="p">.</span><span class="n">Data</span><span class="p">.</span><span class="n">Array</span><span class="p">;</span>
+
+<span class="c1">// Deserialize</span>
+<span class="kt">var</span><span class="w"> </span><span class="n">reader</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CompactBinaryReader</span><span class="o">&lt;</span><span class="n">InputBuffer</span><span class="o">&gt;</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">InputBuffer</span><span class="p">(</span><span class="n">bytes</span><span class="p">));</span>
+<span class="n">Person</span><span class="w"> </span><span class="n">person</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Deserialize</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span><span class="p">.</span><span class="n">From</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+</code></pre></div>
+<h3 id="example-protocol-buffers">Example: Protocol Buffers</h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// Generated from .proto file</span>
+<span class="c1">// Serialize</span>
+<span class="kt">byte</span><span class="p">[]</span><span class="w"> </span><span class="n">bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">person</span><span class="p">.</span><span class="n">ToByteArray</span><span class="p">();</span>
+
+<span class="c1">// Deserialize</span>
+<span class="n">Person</span><span class="w"> </span><span class="n">person</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Person</span><span class="p">.</span><span class="n">Parser</span><span class="p">.</span><span class="n">ParseFrom</span><span class="p">(</span><span class="n">bytes</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="python-schema-serializers">Python Schema Serializers</h2>
+<table>
+<thead>
+<tr>
+<th>Serializer</th>
+<th>Format</th>
+<th>Best For</th>
+<th>Speed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>protobuf</strong></td>
+<td>Protocol Buffers</td>
+<td>Cross-language</td>
+<td>★★★☆☆</td>
+</tr>
+<tr>
+<td><strong>avro</strong></td>
+<td>Avro</td>
+<td>Hadoop/Spark pipelines</td>
+<td>★★★☆☆</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example-protocol-buffers-python">Example: Protocol Buffers (Python)</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">benchmark_data_pb2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Person</span>
+
+<span class="c1"># Serialize</span>
+<span class="n">bytes_data</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">SerializeToString</span><span class="p">()</span>
+
+<span class="c1"># Deserialize</span>
+<span class="n">person</span> <span class="o">=</span> <span class="n">Person</span><span class="p">()</span>
+<span class="n">person</span><span class="o">.</span><span class="n">ParseFromString</span><span class="p">(</span><span class="n">bytes_data</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="example-avro">Example: Avro</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">fastavro</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+
+<span class="c1"># Schema defined in .avsc file</span>
+<span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;record&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Person&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;int&#39;</span><span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c1"># Serialize</span>
+<span class="n">buf</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+<span class="n">fastavro</span><span class="o">.</span><span class="n">schemaless_writer</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="n">person_dict</span><span class="p">)</span>
+<span class="n">bytes_data</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+<span class="c1"># Deserialize</span>
+<span class="n">buf</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">bytes_data</span><span class="p">)</span>
+<span class="n">person</span> <span class="o">=</span> <span class="n">fastavro</span><span class="o">.</span><span class="n">schemaless_reader</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="schema-evolution">Schema Evolution</h2>
+<p>All schema formats support forward and backward compatibility:</p>
+<h3 id="adding-fields">Adding Fields</h3>
+<div class="highlight"><pre><span></span><code><span class="c1">// Version 1</span>
+<span class="kd">message</span><span class="w"> </span><span class="nc">Person</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">string</span><span class="w"> </span><span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Version 2 - backward compatible</span>
+<span class="kd">message</span><span class="w"> </span><span class="nc">Person</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">string</span><span class="w"> </span><span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int32</span><span class="w"> </span><span class="na">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w">  </span><span class="c1">// New clients write, old clients ignore</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="compatibility-rules">Compatibility Rules</h3>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Forward</th>
+<th>Backward</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Add field</td>
+<td>✓</td>
+<td>✓</td>
+<td>Use default values</td>
+</tr>
+<tr>
+<td>Remove field</td>
+<td>✗</td>
+<td>✗</td>
+<td>Reserve field number</td>
+</tr>
+<tr>
+<td>Rename field</td>
+<td>✓</td>
+<td>✓</td>
+<td>Field numbers matter</td>
+</tr>
+<tr>
+<td>Change type</td>
+<td>✗</td>
+<td>✗</td>
+<td>Use new field number</td>
+</tr>
+</tbody>
+</table>
+<h2 id="performance-comparison">Performance Comparison</h2>
+<h3 id="c-schema-serializers-person-object">C# Schema Serializers (Person object)</h3>
+<table>
+<thead>
+<tr>
+<th>Serializer</th>
+<th>Ops/Sec</th>
+<th>Size (bytes)</th>
+<th>Time (ns)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MS Bond Fast</td>
+<td>79,563</td>
+<td>~400</td>
+<td>12,569</td>
+</tr>
+<tr>
+<td>MS Bond Compact</td>
+<td>62,005</td>
+<td>~350</td>
+<td>16,128</td>
+</tr>
+<tr>
+<td>ProtoBuf</td>
+<td>22,735</td>
+<td>665</td>
+<td>43,985</td>
+</tr>
+</tbody>
+</table>
+<h3 id="python-schema-serializers-person-object">Python Schema Serializers (Person object)</h3>
+<table>
+<thead>
+<tr>
+<th>Serializer</th>
+<th>Ops/Sec</th>
+<th>Size (bytes)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>protobuf</td>
+<td>5,165</td>
+<td>665</td>
+<td>Code generation required</td>
+</tr>
+<tr>
+<td>avro</td>
+<td>5,209</td>
+<td>567</td>
+<td>Self-describing</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: C# Bond significantly outperforms all other options, especially for .NET ecosystems.</em></p>
+<h2 id="schema-vs-schemaless-trade-offs">Schema vs Schemaless Trade-offs</h2>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Schema</th>
+<th>Schemaless (JSON/msgpack)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Size</td>
+<td>Smallest</td>
+<td>Larger</td>
+</tr>
+<tr>
+<td>Speed</td>
+<td>Fastest</td>
+<td>Fast</td>
+</tr>
+<tr>
+<td>Validation</td>
+<td>Compile-time</td>
+<td>Runtime or none</td>
+</tr>
+<tr>
+<td>Flexibility</td>
+<td>Rigid</td>
+<td>Flexible</td>
+</tr>
+<tr>
+<td>Setup</td>
+<td>Higher</td>
+<td>Lower</td>
+</tr>
+<tr>
+<td>Evolution</td>
+<td>Planned</td>
+<td>Ad-hoc</td>
+</tr>
+</tbody>
+</table>
+<h2 id="when-to-choose-which">When to Choose Which</h2>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>.NET microservices</td>
+<td>MS Bond Fast</td>
+</tr>
+<tr>
+<td>Cross-language gRPC</td>
+<td>Protobuf</td>
+</tr>
+<tr>
+<td>Hadoop/Spark pipelines</td>
+<td>Avro</td>
+</tr>
+<tr>
+<td>Games/real-time</td>
+<td>FlatBuffers (zero-copy)</td>
+</tr>
+<tr>
+<td>Mobile backends</td>
+<td>Protobuf or Bond</td>
+</tr>
+<tr>
+<td>Schema registry (Kafka)</td>
+<td>Avro or Protobuf</td>
+</tr>
+</tbody>
+</table>
+<h2 id="defining-schemas">Defining Schemas</h2>
+<h3 id="protocol-buffers-example">Protocol Buffers Example</h3>
+<div class="highlight"><pre><span></span><code><span class="k">syntax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;proto3&quot;</span><span class="p">;</span>
+
+<span class="kd">message</span><span class="w"> </span><span class="nc">Person</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">string</span><span class="w"> </span><span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int32</span><span class="w"> </span><span class="na">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">enum</span><span class="w"> </span><span class="n">Gender</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="na">UNKNOWN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="na">MALE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="na">FEMALE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">Gender</span><span class="w"> </span><span class="na">gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">repeated</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="na">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<span class="w">    </span><span class="n">map</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">int32</span><span class="p">&gt;</span><span class="w"> </span><span class="na">scores</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="bond-example">Bond Example</h3>
+<div class="highlight"><pre><span></span><code>namespace Benchmark;
+
+struct Person {
+    0: string Name;
+    1: int32 Age;
+    2: Gender Gender;
+    3: vector&lt;string&gt; Tags;
+    4: map&lt;string, int32&gt; Scores;
+};
+
+enum Gender {
+    Unknown = 0,
+    Male = 1,
+    Female = 2
+};
+</code></pre></div>
+<h2 id="code-generation">Code Generation</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Protobuf</span>
+<span class="nb">cd</span><span class="w"> </span>schemas
+protoc<span class="w"> </span>--csharp_out<span class="o">=</span>../c-sharp/src/Generated<span class="w"> </span>benchmark_data.proto
+protoc<span class="w"> </span>--python_out<span class="o">=</span>../python/src/benchmark/generated<span class="w"> </span>benchmark_data.proto
+
+<span class="c1"># Bond</span>
+gbc<span class="w"> </span>csharp<span class="w"> </span>Person.bond<span class="w"> </span>--output-dir<span class="w"> </span>../c-sharp/src/Generated
+</code></pre></div>
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://developers.google.com/protocol-buffers/docs/overview">Protocol Buffers Guide</a></li>
+<li><a href="https://github.com/microsoft/bond">Microsoft Bond Documentation</a></li>
+<li><a href="https://avro.apache.org/docs/current/spec.html">Apache Avro Specification</a></li>
+<li><a href="https://google.github.io/flatbuffers/">FlatBuffers Overview</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
