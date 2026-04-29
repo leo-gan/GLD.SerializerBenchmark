@@ -273,7 +273,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../README.md" class="md-tabs__link">
+        <a href="../packages-overview/" class="md-tabs__link">
           
   
   
@@ -554,7 +554,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../README.md" class="md-nav__link">
+      <a href="../packages-overview/" class="md-nav__link">
         
   
   
@@ -1008,31 +1008,39 @@
 <p>The benchmark analysis tool processes raw CSV logs from C# and Python benchmark runs, normalizes time units, filters outliers, and generates comparative reports. The goal is to provide accurate, comparable performance metrics across different serializers and languages.</p>
 <h2 id="data-pipeline">Data Pipeline</h2>
 <h3 id="1-raw-data-ingestion">1. Raw Data Ingestion</h3>
-<p>Benchmark logs are CSV files with the following columns:
-- <code>StringOrStream</code>: Mode of operation (Stream/string/bytes)
-- <code>TestDataName</code>: Type of test data (Integer, Person, SimpleObject, etc.)
-- <code>Repetitions</code>: Number of repetitions in the batch
-- <code>RepetitionIndex</code>: Index within the repetition batch
-- <code>SerializerName</code>: Name of the serializer being tested
-- <code>TimeSer</code>: Time for serialization (ticks for C#, nanoseconds for Python)
-- <code>TimeDeser</code>: Time for deserialization (ticks for C#, nanoseconds for Python)
-- <code>Size</code>: Size of serialized output in bytes
-- <code>TimeSerAndDeser</code>: Combined time for serialization + deserialization
-- <code>OpPerSecSer</code>, <code>OpPerSecDeser</code>, <code>OpPerSecSerAndDeser</code>: Operations per second (as reported by benchmark)</p>
+<p>Benchmark logs are CSV files with the following columns:</p>
+<ul>
+<li><code>StringOrStream</code>: Mode of operation (Stream/string/bytes)</li>
+<li><code>TestDataName</code>: Type of test data (Integer, Person, SimpleObject, etc.)</li>
+<li><code>Repetitions</code>: Number of repetitions in the batch</li>
+<li><code>RepetitionIndex</code>: Index within the repetition batch</li>
+<li><code>SerializerName</code>: Name of the serializer being tested</li>
+<li><code>TimeSer</code>: Time for serialization (ticks for C#, nanoseconds for Python)</li>
+<li><code>TimeDeser</code>: Time for deserialization (ticks for C#, nanoseconds for Python)</li>
+<li><code>Size</code>: Size of serialized output in bytes</li>
+<li><code>TimeSerAndDeser</code>: Combined time for serialization + deserialization</li>
+<li><code>OpPerSecSer</code>, <code>OpPerSecDeser</code>, <code>OpPerSecSerAndDeser</code>: Operations per second (as reported by benchmark)</li>
+</ul>
 <h3 id="2-time-unit-normalization">2. Time Unit Normalization</h3>
-<p>C# and Python benchmarks use different time units:
-- <strong>C#</strong>: Uses ticks (100 nanoseconds per tick)
-- <strong>Python</strong>: Uses nanoseconds directly</p>
-<p>The <code>_detect_time_unit()</code> function auto-detects the unit based on magnitude:
-- Values &gt; 1,000,000 are assumed to be C# ticks → multiplied by 100 to get nanoseconds
-- Values ≤ 1,000,000 are assumed to be Python nanoseconds → used as-is</p>
+<p>C# and Python benchmarks use different time units:</p>
+<ul>
+<li><strong>C#</strong>: Uses ticks (100 nanoseconds per tick)</li>
+<li><strong>Python</strong>: Uses nanoseconds directly</li>
+</ul>
+<p>The <code>_detect_time_unit()</code> function auto-detects the unit based on magnitude:</p>
+<ul>
+<li>Values &gt; 1,000,000 are assumed to be C# ticks → multiplied by 100 to get nanoseconds</li>
+<li>Values ≤ 1,000,000 are assumed to be Python nanoseconds → used as-is</li>
+</ul>
 <p>This ensures all timing comparisons are done in consistent nanosecond units.</p>
 <h3 id="3-outlier-filtering">3. Outlier Filtering</h3>
-<p>Raw benchmark data often contains extreme outliers due to:
-- GC pauses
-- Thread scheduling delays
-- JIT compilation overhead (first-run effects)
-- System load spikes</p>
+<p>Raw benchmark data often contains extreme outliers due to:</p>
+<ul>
+<li>GC pauses</li>
+<li>Thread scheduling delays</li>
+<li>JIT compilation overhead (first-run effects)</li>
+<li>System load spikes</li>
+</ul>
 <p>These outliers can severely skew mean calculations. For example, a single 90-second measurement among 99 sub-millisecond measurements would make the mean useless.</p>
 <h4 id="tukeys-iqr-method">Tukey's IQR Method</h4>
 <p>We use Tukey's Interquartile Range (IQR) fences for outlier detection:</p>
@@ -1196,10 +1204,12 @@ Values outside [lower, upper] are considered outliers and removed.
 <h3 id="cross-language">Cross-Language</h3>
 <p>Head-to-head comparison of C# vs Python serializers on the same data types</p>
 <h3 id="pivot-tables">Pivot Tables</h3>
-<p>Tabular views of performance metrics organized by:
-- Rows: Serializers
-- Columns: Modes or Data Types
-- Values: Avg time or Ops/Sec</p>
+<p>Tabular views of performance metrics organized by:</p>
+<ul>
+<li>Rows: Serializers</li>
+<li>Columns: Modes or Data Types</li>
+<li>Values: Avg time or Ops/Sec</li>
+</ul>
 <h2 id="visualization">Visualization</h2>
 <h3 id="violin-plots">Violin Plots</h3>
 <p>The HTML dashboard includes violin plots showing the distribution of serialization vs deserialization times per data type. These use seaborn's <code>catplot(kind='violin', split=True)</code> to show:
