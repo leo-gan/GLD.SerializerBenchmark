@@ -155,12 +155,20 @@ class _MsgspecStructSerializer(Serializer):
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
         self._encoder.encode_into(obj, self._buffer)
-        stream.write(self._buffer)
+        view = memoryview(self._buffer)
+        try:
+            stream.write(view)
+        finally:
+            view.release()
 
     def deserialize_stream(self, stream: io.BytesIO) -> Any:
         view = stream.getbuffer()
         try:
-            return self._decoder.decode(view)
+            data = view[:stream.tell()]
+            try:
+                return self._decoder.decode(data)
+            finally:
+                data.release()
         finally:
             view.release()
 
