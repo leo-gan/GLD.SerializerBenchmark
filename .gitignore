@@ -21,3 +21,6 @@ TestResults/
 .vs/
 data/
 .idea/workspace.xml
+
+# Project todo file
+.TODO.md
