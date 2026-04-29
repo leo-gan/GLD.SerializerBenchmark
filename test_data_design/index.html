@@ -10,27 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://leo-gan.github.io/GLD.SerializerBenchmark/serializers/binary/">
+        <link rel="canonical" href="https://leo-gan.github.io/GLD.SerializerBenchmark/test_data_design/">
       
       
+        <link rel="prev" href="../methodology/">
+      
+      
+        <link rel="next" href="../c-sharp/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>Binary Serializers - GLD Serializer Benchmark</title>
+        <title>Test Data Design - GLD Serializer Benchmark</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -49,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -74,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#binary-serializers" class="md-skip">
+        <a href="#test-data-configuration-design" class="md-skip">
           Skip to content
         </a>
       
@@ -88,7 +92,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="GLD Serializer Benchmark" class="md-header__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
+    <a href=".." title="GLD Serializer Benchmark" class="md-header__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -108,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Binary Serializers
+              Test Data Design
             
           </span>
         </div>
@@ -217,11 +221,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../.." class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
           
   
   
@@ -241,7 +247,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../c-sharp/" class="md-tabs__link">
+      <a href="../c-sharp/" class="md-tabs__link">
         
   
   
@@ -260,7 +266,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../python/" class="md-tabs__link">
+      <a href="../python/" class="md-tabs__link">
         
   
   
@@ -281,7 +287,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../analysis/packages-overview/" class="md-tabs__link">
+        <a href="../analysis/packages-overview/" class="md-tabs__link">
           
   
   
@@ -319,7 +325,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="GLD Serializer Benchmark" class="md-nav__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
+    <a href=".." title="GLD Serializer Benchmark" class="md-nav__button md-logo" aria-label="GLD Serializer Benchmark" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -346,6 +352,8 @@
       
   
   
+    
+  
   
   
     
@@ -363,20 +371,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../.." class="md-nav__link ">
+            <a href=".." class="md-nav__link ">
               
   
   
@@ -394,13 +405,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -420,7 +431,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../methodology/" class="md-nav__link">
+      <a href="../methodology/" class="md-nav__link">
         
   
   
@@ -445,10 +456,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../test_data_design/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Data Design
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -464,6 +502,87 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Parameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stringoptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StringOptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#collectionoptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CollectionOptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#randomseed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RandomSeed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-reasons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design Reasons
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -483,7 +602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../c-sharp/" class="md-nav__link">
+      <a href="../c-sharp/" class="md-nav__link">
         
   
   
@@ -510,7 +629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../python/" class="md-nav__link">
+      <a href="../python/" class="md-nav__link">
         
   
   
@@ -599,7 +718,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../analysis/packages-overview/" class="md-nav__link">
+      <a href="../analysis/packages-overview/" class="md-nav__link">
         
   
   
@@ -627,7 +746,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../analysis/BENCHMARK_SUMMARY/" class="md-nav__link">
+      <a href="../analysis/BENCHMARK_SUMMARY/" class="md-nav__link">
         
   
   
@@ -655,7 +774,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../analysis/violin-plots/" class="md-nav__link">
+      <a href="../analysis/violin-plots/" class="md-nav__link">
         
   
   
@@ -683,7 +802,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../analysis/ANALYSIS_METHODOLOGY/" class="md-nav__link">
+      <a href="../analysis/ANALYSIS_METHODOLOGY/" class="md-nav__link">
         
   
   
@@ -731,473 +850,34 @@
   
 
 
-<h1 id="binary-serializers">Binary Serializers</h1>
-<p>Binary formats sacrifice human readability for significant improvements in size (20-50% smaller than JSON) and parsing speed.</p>
-<h2 id="when-to-use-binary">When to Use Binary</h2>
-<p><strong>Choose binary when:</strong>
-- Internal microservices where you control all endpoints
-- High-throughput data pipelines
-- Caching layers (Redis with binary values)
-- Mobile apps where bandwidth affects battery life
-- Network protocols where every byte matters</p>
-<h2 id="common-characteristics">Common Characteristics</h2>
-<table>
-<thead>
-<tr>
-<th>Aspect</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Human-readable</strong></td>
-<td>No</td>
-</tr>
-<tr>
-<td><strong>Schema</strong></td>
-<td>Optional</td>
-</tr>
-<tr>
-<td><strong>Size</strong></td>
-<td>30-50% smaller than JSON</td>
-</tr>
-<tr>
-<td><strong>Speed</strong></td>
-<td>Faster than JSON</td>
-</tr>
-<tr>
-<td><strong>Debugging</strong></td>
-<td>Requires hex dumps or tools</td>
-</tr>
-</tbody>
-</table>
-<h2 id="format-comparison">Format Comparison</h2>
-<table>
-<thead>
-<tr>
-<th>Feature</th>
-<th>MessagePack</th>
-<th>CBOR</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Standard</strong></td>
-<td>De facto standard</td>
-<td>IETF RFC 8949</td>
-</tr>
-<tr>
-<td><strong>Speed</strong></td>
-<td>Faster (C extensions)</td>
-<td>Slower (pure Python)</td>
-</tr>
-<tr>
-<td><strong>Size</strong></td>
-<td>Small</td>
-<td>Often smallest</td>
-</tr>
-<tr>
-<td><strong>Datetime</strong></td>
-<td>Extension type</td>
-<td>Native tags</td>
-</tr>
-<tr>
-<td><strong>Streaming</strong></td>
-<td>Chunks</td>
-<td>Indefinite length</td>
-</tr>
-<tr>
-<td><strong>Popularity</strong></td>
-<td>Very high</td>
-<td>Growing</td>
-</tr>
-</tbody>
-</table>
-<h2 id="c-binary-serializers">C# Binary Serializers</h2>
-<table>
-<thead>
-<tr>
-<th>Serializer</th>
-<th>Format</th>
-<th>Best For</th>
-<th>Speed</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>GroBuf</strong></td>
-<td>Custom binary</td>
-<td>Maximum speed</td>
-<td>★★★★★</td>
-</tr>
-<tr>
-<td><strong>MS Bond Fast</strong></td>
-<td>Bond</td>
-<td>.NET ecosystem</td>
-<td>★★★★★</td>
-</tr>
-<tr>
-<td><strong>MS Bond Compact</strong></td>
-<td>Bond</td>
-<td>Balanced</td>
-<td>★★★★☆</td>
-</tr>
-<tr>
-<td><strong>MemoryPack</strong></td>
-<td>Custom</td>
-<td>Zero-copy</td>
-<td>★★★★☆</td>
-</tr>
-<tr>
-<td><strong>NetSerializer</strong></td>
-<td>Custom</td>
-<td>General use</td>
-<td>★★★★☆</td>
-</tr>
-<tr>
-<td><strong>FlatSharp</strong></td>
-<td>FlatBuffers</td>
-<td>Zero-allocation</td>
-<td>★★★★☆</td>
-</tr>
-<tr>
-<td><strong>ProtoBuf</strong></td>
-<td>Protocol Buffers</td>
-<td>Cross-language</td>
-<td>★★★★☆</td>
-</tr>
-<tr>
-<td><strong>MessagePack-CSharp</strong></td>
-<td>MessagePack</td>
-<td>Wide support</td>
-<td>★★★★☆</td>
-</tr>
-<tr>
-<td><strong>Hyperion</strong></td>
-<td>Custom</td>
-<td>Akka.NET</td>
-<td>★★★☆☆</td>
-</tr>
-<tr>
-<td><strong>Ceras</strong></td>
-<td>Custom</td>
-<td>Ease of use</td>
-<td>★★★☆☆</td>
-</tr>
-<tr>
-<td><strong>Migrant</strong></td>
-<td>Custom</td>
-<td>Complex graphs</td>
-<td>★★☆☆☆</td>
-</tr>
-<tr>
-<td><strong>FsPickler</strong></td>
-<td>Custom</td>
-<td>F# integration</td>
-<td>★★★☆☆</td>
-</tr>
-<tr>
-<td><strong>MS Binary</strong></td>
-<td>BinaryFormatter legacy</td>
-<td>Legacy only</td>
-<td>★★☆☆☆</td>
-</tr>
-</tbody>
-</table>
-<h3 id="example-memorypack">Example: MemoryPack</h3>
-<div class="highlight"><pre><span></span><code><span class="c1">// Serialize to byte array</span>
-<span class="kt">byte</span><span class="p">[]</span><span class="w"> </span><span class="n">bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MemoryPackSerializer</span><span class="p">.</span><span class="n">Serialize</span><span class="p">(</span><span class="n">person</span><span class="p">);</span>
-
-<span class="c1">// Deserialize</span>
-<span class="n">Person</span><span class="w"> </span><span class="n">person</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MemoryPackSerializer</span><span class="p">.</span><span class="n">Deserialize</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span><span class="p">(</span><span class="n">bytes</span><span class="p">);</span>
-</code></pre></div>
-<h3 id="example-messagepack">Example: MessagePack</h3>
-<div class="highlight"><pre><span></span><code><span class="c1">// Serialize</span>
-<span class="kt">byte</span><span class="p">[]</span><span class="w"> </span><span class="n">bytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MessagePackSerializer</span><span class="p">.</span><span class="n">Serialize</span><span class="p">(</span><span class="n">person</span><span class="p">);</span>
-
-<span class="c1">// Deserialize</span>
-<span class="n">Person</span><span class="w"> </span><span class="n">person</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MessagePackSerializer</span><span class="p">.</span><span class="n">Deserialize</span><span class="o">&lt;</span><span class="n">Person</span><span class="o">&gt;</span><span class="p">(</span><span class="n">bytes</span><span class="p">);</span>
-</code></pre></div>
-<h2 id="python-binary-serializers">Python Binary Serializers</h2>
-<table>
-<thead>
-<tr>
-<th>Serializer</th>
-<th>Format</th>
-<th>Best For</th>
-<th>Speed</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>msgpack</strong></td>
-<td>MessagePack</td>
-<td>Speed + ecosystem</td>
-<td>★★★★☆</td>
-</tr>
-<tr>
-<td><strong>cbor2</strong></td>
-<td>CBOR</td>
-<td>Standards compliance</td>
-<td>★★★☆☆</td>
-</tr>
-</tbody>
-</table>
-<h3 id="example-msgpack">Example: msgpack</h3>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">msgpack</span>
-
-<span class="c1"># Serialize</span>
-<span class="n">packed</span> <span class="o">=</span> <span class="n">msgpack</span><span class="o">.</span><span class="n">packb</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">use_bin_type</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="c1"># Deserialize</span>
-<span class="n">person</span> <span class="o">=</span> <span class="n">msgpack</span><span class="o">.</span><span class="n">unpackb</span><span class="p">(</span><span class="n">packed</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="example-cbor2">Example: cbor2</h3>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">cbor2</span>
-
-<span class="c1"># Serialize (handles datetime natively)</span>
-<span class="n">encoded</span> <span class="o">=</span> <span class="n">cbor2</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">datetime_as_timestamp</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="c1"># Deserialize</span>
-<span class="n">person</span> <span class="o">=</span> <span class="n">cbor2</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">encoded</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="performance-comparison">Performance Comparison</h2>
-<h3 id="c-binary-leaders">C# Binary Leaders</h3>
-<table>
-<thead>
-<tr>
-<th>Serializer</th>
-<th>Ops/Sec (Person)</th>
-<th>Size (Person)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>MS Bond Fast</td>
-<td>79,563</td>
-<td>~400 bytes</td>
-</tr>
-<tr>
-<td>NetSerializer</td>
-<td>35,785</td>
-<td>~600 bytes</td>
-</tr>
-<tr>
-<td>MemoryPack</td>
-<td>59,444*</td>
-<td>~500 bytes*</td>
-</tr>
-<tr>
-<td>ProtoBuf</td>
-<td>22,735</td>
-<td>665 bytes</td>
-</tr>
-</tbody>
-</table>
-<p>*MemoryPack: tested on SimpleObject (Person not supported in benchmark)</p>
-<h3 id="python-binary">Python Binary</h3>
-<table>
-<thead>
-<tr>
-<th>Serializer</th>
-<th>Ops/Sec (Person)</th>
-<th>Size (Person)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>msgpack</td>
-<td>2,658</td>
-<td>1,631 bytes</td>
-</tr>
-<tr>
-<td>cbor2</td>
-<td>2,113</td>
-<td>~1,400 bytes</td>
-</tr>
-</tbody>
-</table>
-<p><em>Note: C# binary serializers generally outperform Python due to value types and struct optimizations.</em></p>
-<h2 id="binary-vs-json-trade-offs">Binary vs JSON Trade-offs</h2>
-<table>
-<thead>
-<tr>
-<th>Aspect</th>
-<th>Binary (MessagePack)</th>
-<th>JSON</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Size</td>
-<td>30-50% smaller</td>
-<td>Larger</td>
-</tr>
-<tr>
-<td>Speed</td>
-<td>Faster parsing</td>
-<td>Slower (text parsing)</td>
-</tr>
-<tr>
-<td>Readability</td>
-<td>None</td>
-<td>Human-readable</td>
-</tr>
-<tr>
-<td>Debugging</td>
-<td>Harder</td>
-<td>Easier</td>
-</tr>
-<tr>
-<td>Schema</td>
-<td>None</td>
-<td>None</td>
-</tr>
-<tr>
-<td>Cross-language</td>
-<td>Wide support</td>
-<td>Universal</td>
-</tr>
-</tbody>
-</table>
-<h2 id="type-handling">Type Handling</h2>
-<h3 id="messagepack-type-mapping">MessagePack Type Mapping</h3>
-<table>
-<thead>
-<tr>
-<th>Python/C#</th>
-<th>MessagePack</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>int</td>
-<td>Integer</td>
-<td>Variable encoding</td>
-</tr>
-<tr>
-<td>float</td>
-<td>Float</td>
-<td>IEEE 754</td>
-</tr>
-<tr>
-<td>str/string</td>
-<td>String</td>
-<td>UTF-8</td>
-</tr>
-<tr>
-<td>bytes/byte[]</td>
-<td>Binary</td>
-<td>Native support</td>
-</tr>
-<tr>
-<td>list/List</td>
-<td>Array</td>
-<td>Variable length</td>
-</tr>
-<tr>
-<td>dict/Dictionary</td>
-<td>Map</td>
-<td>Key-value pairs</td>
-</tr>
-<tr>
-<td>datetime</td>
-<td>Extension</td>
-<td>Needs custom handling</td>
-</tr>
-<tr>
-<td>tuple</td>
-<td>Array</td>
-<td>Becomes list in Python</td>
-</tr>
-</tbody>
-</table>
-<h3 id="cbor-type-mapping">CBOR Type Mapping</h3>
-<table>
-<thead>
-<tr>
-<th>Type</th>
-<th>CBOR</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>int</td>
-<td>Integer</td>
-<td>Smaller encoding than MessagePack</td>
-</tr>
-<tr>
-<td>float</td>
-<td>Float/IEEE 754</td>
-<td>Multiple precision options</td>
-</tr>
-<tr>
-<td>str</td>
-<td>Text string</td>
-<td>UTF-8</td>
-</tr>
-<tr>
-<td>bytes</td>
-<td>Byte string</td>
-<td>Native</td>
-</tr>
-<tr>
-<td>datetime</td>
-<td>Tag 0/1</td>
-<td>Native support</td>
-</tr>
-<tr>
-<td>array</td>
-<td>Array</td>
-<td>Definite/indefinite length</td>
-</tr>
-</tbody>
-</table>
-<h2 id="when-to-choose-which">When to Choose Which</h2>
-<table>
-<thead>
-<tr>
-<th>Scenario</th>
-<th>Recommendation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Maximum speed</td>
-<td>MessagePack (C#) or GroBuf</td>
-</tr>
-<tr>
-<td>Standards compliance</td>
-<td>CBOR (RFC 8949)</td>
-</tr>
-<tr>
-<td>IoT/embedded</td>
-<td>CBOR (smallest)</td>
-</tr>
-<tr>
-<td>Existing ecosystem</td>
-<td>MessagePack (more libraries)</td>
-</tr>
-<tr>
-<td>Streaming large data</td>
-<td>CBOR (indefinite length)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="security-considerations">Security Considerations</h2>
+<h1 id="test-data-configuration-design">Test Data Configuration Design</h1>
+<p>To ensure consistent benchmarking across different languages (C# and Python), we use a centralized configuration file located at <code>schemas/test_data_config.json</code>. This allows us to control the structure and size of the test objects, making comparisons more accurate.</p>
+<h2 id="configuration-parameters">Configuration Parameters</h2>
+<h3 id="stringoptions">StringOptions</h3>
 <ul>
-<li><strong>MessagePack</strong>: Can deserialize arbitrary objects if <code>object_hook</code> is misused</li>
-<li><strong>CBOR</strong>: Similar risks with custom decoders</li>
-<li><strong>Best practice</strong>: Use default safe modes, validate after deserialization</li>
+<li><strong>MinWordLength / MaxWordLength</strong>: Controls the size of individual words generated for names and descriptions.</li>
+<li><strong>MinPhraseLength / MaxPhraseLength</strong>: Controls the number of words in a phrase (e.g., for authorities or descriptions).</li>
+<li><strong>MinIdLength / MaxIdLength</strong>: Controls the length of generated ID strings.</li>
+<li><strong>DuplicationFactor</strong>: A value between 0 and 1 representing the probability that a previously generated string will be reused instead of generating a new one. This is crucial for testing serialization algorithms that support object referencing or string deduplication (e.g., CBOR with sharing, or custom deduplication in some formats).</li>
 </ul>
-<h2 id="further-reading">Further Reading</h2>
+<h3 id="collectionoptions">CollectionOptions</h3>
 <ul>
-<li><a href="https://msgpack.org/">MessagePack Specification</a></li>
-<li><a href="https://tools.ietf.org/html/rfc8949">CBOR RFC 8949</a></li>
-<li><a href="../schema/">Schema Serializers</a> — For even smaller size and faster speed</li>
+<li><strong>PersonPoliceRecordsCount</strong>: The number of records in the <code>PoliceRecords</code> array for the <code>Person</code> object.</li>
+<li><strong>TelemetryMeasurementsCount</strong>: The number of double-precision floating-point numbers in the <code>TelemetryData</code> object.</li>
+<li><strong>StringArrayCount</strong>: The number of strings in the <code>StringArrayObject</code>.</li>
+<li><strong>EdiClaimsCount / EdiLinesPerClaimCount</strong>: Controls the complexity of the EDI 835 document.</li>
 </ul>
+<h3 id="randomseed">RandomSeed</h3>
+<ul>
+<li>A fixed seed to ensure that the "random" data generated is identical across different runs and different languages, provided the PRNG implementation is compatible or we use a similar logic.</li>
+</ul>
+<h2 id="design-reasons">Design Reasons</h2>
+<ol>
+<li><strong>Reproducibility</strong>: By using a fixed seed and shared configuration, we can guarantee that the same data payload is being serialized in both C# and Python benchmarks.</li>
+<li><strong>Real-life Resemblance</strong>: Default values are chosen to reflect typical data sizes in enterprise applications. For example, a telemetry packet often contains around 100 measurements, and a person's record typically doesn't have hundreds of police records.</li>
+<li><strong>Serialization Optimization Testing</strong>: The <code>DuplicationFactor</code> allows us to stress-test how different serializers handle redundant data. Serializers that use dictionary-based compression or object tracking should show significantly better performance and smaller payloads when this factor is high.</li>
+<li><strong>Cross-Language Consistency</strong>: Hardcoding these values in each language's source code was prone to desynchronization. Moving them to a shared schema ensures they are always in sync.</li>
+</ol>
 
 
 
@@ -1247,10 +927,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
