@@ -10,7 +10,7 @@ dependencies = [
     "msgspec>=0.19.0",
     "python-rapidjson>=1.20",
     "msgpack>=1.1.0",
-    "cbor2>=5.6.0",
+    "cbor2>=6.0.0,<7.0.0",
     "fastavro>=1.10.0",
     "cloudpickle>=3.1.0",
 ]

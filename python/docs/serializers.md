@@ -212,7 +212,7 @@ Binary serializers convert Python objects to compact byte representations. They 
 ### cbor2
 **Library:** `cbor2`  
 **Type:** CBOR (Concise Binary Object Representation)  
-**Description:** CBOR is a binary serialization format specified in RFC 8949. Designed to be small, schema-free, and extensible. Similar to JSON but binary and more compact.
+**Description:** CBOR is a binary serialization format specified in RFC 8949. Designed to be small, schema-free, and extensible. Version 6.0+ is a major rewrite in Rust, offering significantly improved performance and memory safety.
 
 **Key Features:**
 - IETF standard (RFC 8949) - formally specified
@@ -237,9 +237,9 @@ Binary serializers convert Python objects to compact byte representations. They 
 
 **Cons:**
 - **Less popular:** Smaller ecosystem than MessagePack
-- **Complex API:** Hook signatures different from msgpack (encoder, obj) vs (obj)
-- **Slower:** Python implementation slower than msgpack's C extensions
-- **Learning curve:** Less documentation and community examples
+- **Complex API:** Hook signatures and configuration (like timezone handling) differ from other libraries
+- **Overhead:** Enabling circular reference support (value sharing) adds a performance cost
+- **Learning curve:** Less documentation and community examples compared to JSON/msgpack
 
 **Comparison with MessagePack:**
 | Feature | CBOR | MessagePack |
@@ -247,14 +247,15 @@ Binary serializers convert Python objects to compact byte representations. They 
 | Standard | IETF RFC 8949 | No formal RFC |
 | Datetime | Native tags | Extension type |
 | Streaming | Indefinite length | Chunks |
-| Speed | Slower (pure Python) | Faster (C) |
+| Speed | Fast (Rust) | Faster (C) |
 | Popularity | Growing | Very popular |
 
 **Benchmark Notes:**
 - Requires careful encoder/decoder hook setup (different signature than msgpack)
-- Uses `(encoder, obj)` signature for encoding hooks
-- Slower than msgpack but competitive on output size
-- Excludes `ObjectGraph` by design
+- Supports circular references via `value_sharing=True` (disabled by default for performance)
+- Uses native CBOR tags for `datetime` (requires timezone-aware objects or explicit timezone setting)
+- Much improved performance in 6.0+ due to Rust backend
+- Excludes `ObjectGraph` in this benchmark due to the added complexity of cyclic object reconstruction
 
 ---
 
