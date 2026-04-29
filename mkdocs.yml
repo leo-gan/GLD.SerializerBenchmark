@@ -40,7 +40,7 @@ nav:
   - C# Ecosystem: c-sharp/index.md
   - Python Ecosystem: python/index.md
   - Benchmark Reports:
-      - Packages Overview: analysis/README.md
+      - Packages Overview: analysis/packages-overview.md
       - Detailed Report: analysis/BENCHMARK_SUMMARY.md
       - Violin Plots: analysis/violin-plots.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md

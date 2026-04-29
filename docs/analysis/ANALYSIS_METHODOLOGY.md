@@ -11,6 +11,7 @@ The benchmark analysis tool processes raw CSV logs from C# and Python benchmark 
 ### 1. Raw Data Ingestion
 
 Benchmark logs are CSV files with the following columns:
+
 - `StringOrStream`: Mode of operation (Stream/string/bytes)
 - `TestDataName`: Type of test data (Integer, Person, SimpleObject, etc.)
 - `Repetitions`: Number of repetitions in the batch
@@ -25,10 +26,12 @@ Benchmark logs are CSV files with the following columns:
 ### 2. Time Unit Normalization
 
 C# and Python benchmarks use different time units:
+
 - **C#**: Uses ticks (100 nanoseconds per tick)
 - **Python**: Uses nanoseconds directly
 
 The `_detect_time_unit()` function auto-detects the unit based on magnitude:
+
 - Values > 1,000,000 are assumed to be C# ticks → multiplied by 100 to get nanoseconds
 - Values ≤ 1,000,000 are assumed to be Python nanoseconds → used as-is
 
@@ -37,6 +40,7 @@ This ensures all timing comparisons are done in consistent nanosecond units.
 ### 3. Outlier Filtering
 
 Raw benchmark data often contains extreme outliers due to:
+
 - GC pauses
 - Thread scheduling delays
 - JIT compilation overhead (first-run effects)
@@ -130,6 +134,7 @@ Head-to-head comparison of C# vs Python serializers on the same data types
 
 ### Pivot Tables
 Tabular views of performance metrics organized by:
+
 - Rows: Serializers
 - Columns: Modes or Data Types
 - Values: Avg time or Ops/Sec
