@@ -2,7 +2,8 @@ name: publish-docs
 on:
   push:
     branches:
-      - main
+      - master
+      - fix/doc-2
     paths:
       - 'docs/**'
       - 'logs/**'           # Trigger when new benchmark logs are pushed
