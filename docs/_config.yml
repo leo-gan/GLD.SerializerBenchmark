@@ -1,0 +1,48 @@
+# GitHub Pages Configuration
+# https://leo-gan.github.io/GLD.SerializerBenchmark/
+
+title: "Serializer Benchmark"
+description: "Cross-language serialization performance comparison for .NET and Python"
+baseurl: "/GLD.SerializerBenchmark"
+url: "https://leo-gan.github.io"
+
+theme: minima
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: true
+
+include:
+  - index.md
+  - getting-started.md
+  - methodology.md
+  - benchmark-results.md
+  - serializers/
+  - c-sharp/
+  - python/
+  - analysis/
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+
+# Navigation
+header_pages:
+  - index.md
+  - getting-started.md
+  - serializers/overview.md
+  - c-sharp/index.md
+  - python/index.md
+  - benchmark-results.md
