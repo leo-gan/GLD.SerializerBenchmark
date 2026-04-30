@@ -1,6 +1,6 @@
 from .base import Serializer
 from .json_orjson import OrjsonSerializer
-from .json_msgspec import MsgspecSerializer
+from .json_msgspec import MsgspecMessagePackSerializer, MsgspecSerializer
 from .json_rapidjson import RapidjsonSerializer
 from .binary_msgpack import MsgpackSerializer
 from .binary_cbor2 import Cbor2Serializer
@@ -13,6 +13,7 @@ __all__ = [
     "Serializer",
     "OrjsonSerializer",
     "MsgspecSerializer",
+    "MsgspecMessagePackSerializer",
     "RapidjsonSerializer",
     "MsgpackSerializer",
     "Cbor2Serializer",

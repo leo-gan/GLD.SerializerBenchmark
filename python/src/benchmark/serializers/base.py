@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import io
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 
 class Serializer(ABC):
@@ -27,6 +27,24 @@ class Serializer(ABC):
         Default is True (optimistic).
         """
         return True
+
+    def prepare(self, test_data_name: str, test_data_type: type) -> None:
+        """
+        Prepare reusable serializer state for one benchmark data type.
+
+        Implementations can use this to pre-build schemas/codecs outside the
+        timed loop. The default is a no-op.
+        """
+        return None
+
+    def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
+        """
+        Convert the shared benchmark fixture into a serializer-native object.
+
+        The default is identity. Serializers with their own recommended model
+        types can override this to avoid measuring conversion inside the timed loop.
+        """
+        return obj
 
     @abstractmethod
     def serialize_bytes(self, obj: Any) -> bytes:

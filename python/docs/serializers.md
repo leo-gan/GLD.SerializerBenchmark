@@ -93,7 +93,10 @@ JSON (JavaScript Object Notation) serializers convert Python objects to human-re
 
 **Benchmark Notes:**
 - Excellent memory efficiency (lowest memory usage among JSON serializers ~5KB vs 28KB for orjson)
-- Native dataclass support eliminates conversion overhead
+- Uses msgspec `Struct` models generated from the canonical dataclasses with `array_like=True`
+- Converts the shared dataclass fixtures to `Struct` instances before timed repetitions
+- Uses reusable `Encoder` and pre-built typed `Decoder` instances per benchmark data type
+- Stream mode uses `encode_into` with a reusable `bytearray` buffer
 - Slightly slower than orjson but significantly faster than standard library
 - Excludes `ObjectGraph` by design
 - Strong type validation prevents runtime errors
@@ -165,6 +168,40 @@ Binary serializers convert Python objects to compact byte representations. They 
 - High-throughput data pipelines
 - Caching layers (Redis with binary values)
 - Mobile apps where bandwidth matters
+
+---
+
+### msgspec-msgpack
+**Library:** `msgspec`
+**Type:** MessagePack encoder/decoder with schema validation
+**Description:** The MessagePack side of msgspec's API. It uses the same generated array-like `Struct` models, reusable encoder, and pre-built typed decoders as the JSON msgspec benchmark while producing compact binary MessagePack payloads.
+
+**Key Features:**
+- Uses msgspec `Struct` models generated from the canonical dataclasses with `array_like=True`
+- Reusable `msgspec.msgpack.Encoder` and typed `Decoder` instances
+- Converts shared dataclass fixtures to `Struct` instances before timed repetitions
+- Smaller binary payloads than JSON for object-heavy data
+
+**When to Use:**
+- Internal APIs where both sides can share schema/model definitions
+- High-throughput Python services that need validation and compact binary payloads
+- Workloads where JSON readability is not required
+
+**Pros:**
+- **Speed:** Avoids custom Python conversion hooks in the timed path
+- **Type safety:** Decodes directly into typed msgspec Struct objects
+- **Compact output:** Uses MessagePack rather than text JSON
+- **Memory efficiency:** Reuses encoder/decoder objects and stream buffers
+
+**Cons:**
+- **Not human-readable:** Harder to inspect than JSON
+- **Schema-oriented:** Best results require shared model definitions
+- **No circular reference support:** MessagePack cannot represent object identity cycles
+
+**Benchmark Notes:**
+- Registered separately from `msgspec` JSON as `msgspec-msgpack`
+- Uses typed decoder pre-compilation and Struct fixture preparation outside timed repetitions
+- Excludes `ObjectGraph` by design
 
 ---
 
@@ -554,6 +591,7 @@ Same security concerns as pickle - can execute arbitrary code. Only use with tru
 | orjson | JSON | ★★★★★ | ★★★☆☆ | No | No | Yes |
 | msgspec | JSON | ★★★★☆ | ★★★☆☆ | No | Optional | Yes |
 | rapidjson | JSON | ★★★☆☆ | ★★★☆☆ | No | No | Yes |
+| msgspec-msgpack | Binary | ★★★★★ | ★★★★☆ | No | Optional | Yes |
 | msgpack | Binary | ★★★★☆ | ★★★★☆ | No | No | Yes |
 | cbor2 | Binary | ★★★☆☆ | ★★★★★ | No | No | Yes |
 | protobuf | Schema | ★★★☆☆ | ★★★★★ | No | Yes | Yes |
