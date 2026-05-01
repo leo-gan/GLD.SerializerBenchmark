@@ -160,11 +160,11 @@ ASN.1 remains deeply embedded in modern infrastructure. Every time your browser 
 
 ### The Formal Insight: Remote Procedure Calls (1984)
 
-The 1980s also produced a pivotal academic contribution that formalised an idea that XDR and ASN.1 were groping toward. **Andrew Birrell** and **Bruce Nelson** at Xerox PARC published "Implementing Remote Procedure Calls" in 1984 [5], making the case that network communication should feel like a local function call — arguments go in, results come out, and the serialization should be generated automatically from an interface description rather than written by hand. Their RPC system used a stub compiler that took an interface description and generated the encode/decode code for both the client and the server.
+The 1980s also produced a pivotal academic contribution that formalized an idea that XDR and ASN.1 were groping toward. **Andrew Birrell** and **Bruce Nelson** at Xerox PARC published "Implementing Remote Procedure Calls" in 1984 [5], making the case that network communication should feel like a local function call — arguments go in, results come out, and the serialization should be generated automatically from an interface description rather than written by hand. Their RPC system used a stub compiler that took an interface description and generated the encode/decode code for both the client and the server.
 
 This idea — *define the interface once, generate the serialization code* — is the DNA of every modern RPC framework. You will see it in CORBA's IDL compiler, in Protocol Buffers' `protoc`, in Apache Thrift's compiler, and in gRPC today. It was the right answer in 1984, and it is still the right answer in 2025.
 
-The OSI model, formalised by ISO in the early 1980s, enshrined this insight architecturally: **Layer 6, the Presentation Layer**, is explicitly about serialization and encoding — translating between the application's internal representation and the network's canonical format. The fact that a separate layer in the canonical network model exists purely for serialization tells you how fundamental the problem is.
+The OSI model, formalized by ISO in the early 1980s, enshrined this insight architecturally: **Layer 6, the Presentation Layer**, is explicitly about serialization and encoding — translating between the application's internal representation and the network's canonical format. The fact that a separate layer in the canonical network model exists purely for serialization tells you how fundamental the problem is.
 
 ---
 

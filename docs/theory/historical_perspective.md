@@ -41,9 +41,9 @@ As the web moved toward more interactive applications in the early 2000s, the fr
 
 JSON was a philosophical rejection of the document-centric model of XML. It embraced a programming-centric model based on two structures common to almost all modern languages: a collection of name/value pairs (objects) and an ordered list of values (arrays).9 The shift was popularized by the rise of AJAX (Asynchronous JavaScript and XML) in 2005\. Ironically, while the "X" in AJAX stood for XML, developers quickly found that JSON was far easier to use because it could be parsed by a standard JavaScript eval() call (later replaced by the safer JSON.parse()) without needing a separate, heavy XML parser.1
 
-The trade-offs of JSON were centered on simplicity over robustness. JSON lacks built-in support for dates, requiring them to be serialized as strings or numbers.1 It also does not support binary data directly, necessitating Base64 encoding which adds a ![][image1] overhead in size.6 To ensure compatibility with JavaScript's reserved words, Crockford mandated that all keys in JSON be surrounded by double quotes, a decision that increased the format's stability but also added a small amount of verbosity compared to pure JavaScript literals.9
+The trade-offs of JSON were centered on simplicity over robustness. JSON lacks built-in support for dates, requiring them to be serialized as strings or numbers. It also does not support binary data directly, necessitating Base64 encoding which adds 33% overhead in size. To ensure compatibility with JavaScript's reserved words, Crockford mandated that all keys in JSON be surrounded by double quotes, a decision that increased the format's stability but also added a small amount of verbosity compared to pure JavaScript literals.
 
-JavaScript
+```JavaScript
 
 // Example of the "Discovery" of JSON \- Using a script tag to pass data  
 // This was an early technique to bypass the same-origin policy before CORS  
@@ -53,6 +53,7 @@ deliver({
   "lastName": "Crockford",  
   "position": "main JSON developer"  
 });
+```
 
 Despite its lack of a built-in schema, JSON became the "fat-free" alternative to XML and remains the dominant format for web APIs today.9 The industry's move away from XML was so decisive that by 2013, major platforms like Twitter had dropped XML support entirely in favor of JSON.9
 
@@ -68,7 +69,7 @@ ProtoBuf introduced a strict schema-driven approach. Developers define their dat
 2. **Varints**: To save space, ProtoBuf uses variable-length integers where small numbers take only one byte, while larger ones take more.6  
 3. **Forward and Backward Compatibility**: By making every field optional by default and using field numbers rather than names, ProtoBuf allows systems to evolve without breaking existing consumers.18
 
-Protocol Buffers
+```C
 
 // Example ProtoBuf Schema  
 // Source: https://developers.google.com/protocol-buffers/docs/overview  
@@ -79,6 +80,7 @@ message Person {
   int32 id \= 2;  
   string email \= 3;  
 }
+```
 
 The trade-off for this performance was the loss of human readability. ProtoBuf is a binary format; a raw message is a stream of bytes that is unintelligible without the original .proto file.6 This necessitates a complex build pipeline where code generation must be integrated into the development workflow.21 Kenton Varda, who wrote ProtoBuf version 2 and later open-sourced it, noted that while the format was not designed to be "elegant" (calling it the "Ford F150" of serialization), it was built to handle the incomprehensible complexity of global topology.5
 
@@ -93,38 +95,38 @@ The trade-off for this performance was the loss of human readability. ProtoBuf i
 
 By the early 2010s, even the high performance of ProtoBuf was insufficient for certain domains like high-frequency trading, real-time telemetry, and game engine architecture.8 Kenton Varda, having lived inside the ProtoBuf codebase for years, identified a fundamental bottleneck: the encoding step itself. In traditional serialization, the CPU must copy data from the application's memory objects into a buffer for transmission, and the receiver must perform the reverse.7
 
-Varda's solution was Cap'n Proto, a "zero-copy" serialization format founded on the philosophy that there should be no encoding or decoding step at all.7 In Cap'n Proto, the data is arranged in the buffer exactly as a compiler would arrange a struct in memory, using fixed widths, fixed offsets, and proper alignment.7
+Varda's solution was Cap'n Proto, a "zero-copy" serialization format founded on the philosophy that there should be no encoding or decoding step at all. In Cap'n Proto, the data is arranged in the buffer exactly as a compiler would arrange a struct in memory, using fixed widths, fixed offsets, and proper alignment.7
 
 This shift changed the relationship between data and the CPU. When a Cap'n Proto message is received, the application does not "parse" it into new objects. Instead, it uses accessor methods to read the bytes directly from the buffer.7 This allows for "infinity times faster" performance in benchmarks that measure serialization time, as the time taken is literally zero.7
 
 The mechanics of this are detailed in the Cap'n Proto Encoding Spec:
 
-* **64-bit Word Alignment**: All data is organized into 8-byte "words" to match modern CPU architectures.7  
-* **Offset-Based Pointers**: Instead of absolute memory addresses, pointers are stored as offsets, making the entire message position-independent.7  
-* **Segments**: Messages can be split into multiple segments, allowing them to be built without knowing the final size in advance.7
+* **64-bit Word Alignment**: All data is organized into 8-byte "words" to match modern CPU architectures.  
+* **Offset-Based Pointers**: Instead of absolute memory addresses, pointers are stored as offsets, making the entire message position-independent.  
+* **Segments**: Messages can be split into multiple segments, allowing them to be built without knowing the final size in advance.
 
-C++
-
+```C++
 // Logic for random access in Cap'n Proto (Conceptual)  
 // Because fields are at fixed offsets, reading is a single dereference:  
 // value \= buffer\[struct\_base \+ field\_offset\]
+```
 
 The trade-offs of the zero-copy approach are significant. Fixed offsets mean that unset optional fields still take up space in the buffer, potentially leading to larger payloads than ProtoBuf.7 Varda mitigated this by introducing an extremely fast "packing" scheme that compresses runs of zeros, but this adds a step back into the process.7 Furthermore, the custom TCP streams used by Cap'n Proto RPC are incompatible with standard cloud infrastructure like HTTP/2 load balancers, creating a high maintenance burden for infrastructure teams.8
 
 ## **Gaming and Mobile: Wouter van Oortmerssen and FlatBuffers**
 
-Simultaneously with the development of Cap'n Proto, Wouter van Oortmerssen at Google created FlatBuffers.27 Originally designed for game development (van Oortmerssen was the author of the Cube game engines), FlatBuffers was built to solve the performance and memory constraints of mobile hardware.27
+Simultaneously with the development of Cap'n Proto, Wouter van Oortmerssen at Google created FlatBuffers.27 Originally designed for game development (van Oortmerssen was the author of the Cube game engines), FlatBuffers was built to solve the performance and memory constraints of mobile hardware.
 
 FlatBuffers follows a similar zero-copy philosophy to Cap'n Proto but uses a different structural approach: vtables (virtual tables). Instead of fixed offsets for every field, a FlatBuffer table points to a vtable that contains the offsets for the fields actually present in that instance.28 This allows FlatBuffers to support optional fields more compactly than Cap'n Proto while still allowing for random access without a full parse.27
 
-The impact of FlatBuffers was seen most clearly at Facebook. After struggling with the performance of JSON on Android, Facebook's engineering team switched to FlatBuffers for their news feed. This change reduced story load time from disk cache from ![][image2] to ![][image3], reduced transient memory allocations by ![][image4], and improved cold start times by ![][image5].27
+The impact of FlatBuffers was seen most clearly at Facebook. After struggling with the performance of JSON on Android, Facebook's engineering team switched to FlatBuffers for their news feed. This change reduced story load time from disk cache, reduced transient memory allocations, and improved cold start times.
 
-C++
-
+```C++
 // Source: tensorflow/lite/model\_builder\_base.h  
 // Line 522 (Example of FlatBuffers usage in TensorFlow Lite)  
 // The code chains through GetVTable() and ReadScalar() to access model data  
 // without unpacking the entire buffer.
+```
 
 The "unsafe" nature of zero-copy formats was highlighted in a security report involving TensorFlow Lite, where the unverified BuildFromBuffer API could be exploited. By providing a malicious offset in a .tflite file, an attacker could trigger an out-of-bounds heap read, as the library followed the pointer without first running a flatbuffers::Verifier.30 This illustrates the trade-off of the zero-copy era: by bypassing the parsing step, developers also bypass the implicit validation that occurs during traditional deserialization.
 

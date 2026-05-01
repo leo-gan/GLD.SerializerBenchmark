@@ -22,6 +22,7 @@ Early on, data interchange used simple text formats (e.g. **CSV**, INI-like key-
 - **YAML (2001–2004):** Spearheaded by **Clark Evans**, **Brian “Ingy” Ingerson**, and **Oren Ben-Kiki**, YAML (“YAML Ain’t Markup Language”) was created to be a very human-friendly superset of JSON. It uses indentation for structure (like Python), supports references, and can express complex data with minimal syntax. **Why YAML?** People needed a format easier to write by hand (e.g. config files) than JSON or XML. Its designers explicitly collaborated (Ingerson, Evans, Ben-Kiki published YAML 1.0 in 2002). Trade-offs: extremely readable, but parsing is more complicated and historically had security issues (`yaml.load` can execute code). Nonetheless, YAML became popular in DevOps (e.g. Docker Compose, Kubernetes configs). For instance, using `ruamel.yaml` (a modern YAML lib), one can dump a Python dict with:
 
     ```python
+    import sys  
     from ruyaml import YAML
     data = {"servers": [{"ip": "10.0.0.1", "role": "db"}, {"ip": "10.0.0.2", "role": "web"}]}
     yaml = YAML()
