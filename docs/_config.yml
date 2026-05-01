@@ -42,7 +42,7 @@ kramdown:
 header_pages:
   - index.md
   - getting-started.md
-  - serializers/overview.md
+  - serializers/index.md
   - c-sharp/index.md
   - python/index.md
   - benchmark-results.md

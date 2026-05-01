@@ -86,5 +86,5 @@ See the [Live Dashboard](./benchmark-results.md) for the latest benchmark result
 ## Next Steps
 
 - Read the [Methodology](./methodology.md) to understand the measurement approach
-- Browse [Serializer Comparisons](./serializers/overview.md) to choose a format
+- Browse [Serializer Comparisons](serializers/index.md) to choose a format
 - Explore [C#](./c-sharp/index.md) or [Python](./python/index.md) specific documentation

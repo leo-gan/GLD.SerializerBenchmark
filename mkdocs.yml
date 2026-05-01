@@ -25,6 +25,11 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
 
+plugins:
+  - redirects:
+      redirect_maps:
+        'index.md': 'theory/index.md'
+
 markdown_extensions:
   - attr_list
   - admonition
@@ -48,11 +53,12 @@ nav:
       - Overview: python/index.md
       - Python Tested Serializers: python/python_tested_serializers.md
   - Selection Guide:
-      - Overview: serializers/overview.md
+      - Overview: serializers/index.md
       - Json Serializers: serializers/json.md
       - Binary Serializers: serializers/binary.md
       - Schema-based Serializers: serializers/schema.md
-  - Benchmark Reports:
+  - Benchmarks:
+      - Overview: analysis/index.md
       - Serialization Categories: analysis/serialization_categories.md
       - Analysis Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Test Data Configuration: analysis/test_data_configuration.md
