@@ -1,8 +1,4 @@
-# Benchmarked Packages Overview
-
-Our benchmark suite evaluates a wide array of serialization libraries across both the C# and Python ecosystems. We categorize these serializers into distinct groups to help you make fair comparisons.
-
-## Serialization Categories
+# Serialization Categories
 
 When evaluating performance, it is critical to compare serializers within the same paradigm. Comparing a schema-driven binary format to a dynamic JSON parser is often comparing apples to oranges.
 

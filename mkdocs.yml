@@ -1,5 +1,5 @@
-site_name: GLD Serializer Benchmark
-site_description: Cross-language serialization performance comparison for .NET and Python.
+site_name: Cross-Language Serializer Benchmark
+site_description: Cross-language serialization performance comparison.
 site_url: https://leo-gan.github.io/GLD.SerializerBenchmark/
 repo_url: https://github.com/leo-gan/GLD.SerializerBenchmark
 repo_name: leo-gan/GLD.SerializerBenchmark
@@ -36,14 +36,25 @@ markdown_extensions:
   - pymdownx.inlinehilite
 
 nav:
-  - Theory & Practices: 
-      - Serialization 101: theory/index.md
+  - Serialization 101:
+      - Theory & Practices: theory/index.md
+      - Historical Perspective: theory/historical_perspective.md
       - Data Science Perspective: theory/data_science_perspective.md
-  - C# Ecosystem: c-sharp/index.md
-  - Python Ecosystem: python/index.md
+      - Engineer Perspective: theory/engineer_perspective.md
+  - C# Ecosystem:
+      - Overview: c-sharp/index.md
+      - C# Tested Serializers: c-sharp/c-sharp_tested_serializers.md
+  - Python Ecosystem:
+      - Overview: python/index.md
+      - Python Tested Serializers: python/python_tested_serializers.md
+  - Selection Guide:
+      - Overview: serializers/overview.md
+      - Json Serializers: serializers/json.md
+      - Binary Serializers: serializers/binary.md
+      - Schema-based Serializers: serializers/schema.md
   - Benchmark Reports:
-      - Packages Overview: analysis/packages-overview.md
-      - Methodology: analysis/ANALYSIS_METHODOLOGY.md
-      - Test Data Design: analysis/test_data_design.md
+      - Serialization Categories: analysis/serialization_categories.md
+      - Analysis Methodology: analysis/ANALYSIS_METHODOLOGY.md
+      - Test Data Configuration: analysis/test_data_configuration.md
       - Detailed Report: analysis/BENCHMARK_SUMMARY.md
-      - Violin Plots: analysis/violin-plots.md
+      - Performance Distribution: analysis/violin-plots.md

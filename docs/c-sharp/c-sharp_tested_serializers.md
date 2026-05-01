@@ -1,4 +1,4 @@
-# Serializer Reference Guide
+# C# Tested Serializers
 
 Complete reference for all **38 serializers** included in the benchmark suite, organized by category.
 
@@ -250,9 +250,10 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ---
 
-## Disabled Serializers
+## Partially Tested Serializers
 
-The following serializers are partially disabled in the benchmark via the `Supports()` method:
+The following serializers are partially tested in the benchmark via the `Supports()` method.
+That means they are not tested with all data types, but some of them are tested with specific data types.
 
 | Serializer | Reason | Supported Data                                       |
 |------------|--------|------------------------------------------------------|

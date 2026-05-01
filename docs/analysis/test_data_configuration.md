@@ -1,4 +1,4 @@
-# Test Data Configuration Design
+# Test Data Configuration
 
 To ensure consistent benchmarking across different languages (C# and Python), we use a centralized configuration file located at `schemas/test_data_config.json`. This allows us to control the structure and size of the test objects, making comparisons more accurate.
 

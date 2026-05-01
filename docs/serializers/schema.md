@@ -251,5 +251,5 @@ gbc csharp Person.bond --output-dir ../c-sharp/src/Generated
 
 - [Protocol Buffers Guide](https://developers.google.com/protocol-buffers/docs/overview)
 - [Microsoft Bond Documentation](https://github.com/microsoft/bond)
-- [Apache Avro Specification](https://avro.apache.org/docs/current/spec.html)
+- [Apache Avro Specification](https://avro.apache.org/docs/)
 - [FlatBuffers Overview](https://google.github.io/flatbuffers/)

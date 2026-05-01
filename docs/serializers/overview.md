@@ -1,4 +1,4 @@
-# Serialization Formats
+# Selection Guide: Overview
 
 Choosing the right format involves trade-offs between speed, size, compatibility, and human readability.
 

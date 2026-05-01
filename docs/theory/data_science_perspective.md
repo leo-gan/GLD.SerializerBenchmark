@@ -1,4 +1,4 @@
-# Serialization 101: Data Science Perspective
+# Data Science Perspective
 
 ## Chapter 1 — A Chronicle of Frozen Data: The Complete History of Serialization
 
