@@ -2,7 +2,7 @@
 
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With the introduction of modern memory management primitives in modern .NET (.NET Core and later .NET 5+), the landscape shifted from heavy reflection-based engines to zero-allocation, code-generated powerhouses.
 
-## The Power of and `Memory`
+## The Power of `Span<T>` and `Memory<T>`
 
 Historically, reading a byte array meant copying parts of it into new arrays. The introduction of and allows C# developers to create a window over existing memory without allocating new objects.
 Modern C# serializers (like `MemoryPack`, `System.Text.Json`, and `MessagePack-CSharp`) leverage extensively to slice and parse incoming byte streams directly, bypassing the Garbage Collector.
