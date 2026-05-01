@@ -1,6 +1,6 @@
-# Benchmarks
+# Serializer Benchmark Summary
 
-**Generated:** 2026-05-01T06:13:44.365050
+**Generated:** 2026-05-01T18:28:05.483926
 
 ---
 
