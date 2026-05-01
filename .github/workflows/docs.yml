@@ -62,7 +62,7 @@ jobs:
             mkdocs-material-
             
       - name: Setup MkDocs
-        run: pip install mkdocs-material
-        
+        run: pip install mkdocs-material mkdocs-redirects
+
       - name: Deploy Docs to gh-pages
         run: mkdocs gh-deploy --force
