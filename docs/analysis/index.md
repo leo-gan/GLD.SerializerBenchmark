@@ -18,7 +18,9 @@ Empirical performance comparison of 38 C# and 10 Python serialization libraries 
 
 ## Summary Statistics
 
-### C# Top Performers (by ops/sec)
+### C# Top Performers
+
+Top performers by ops/sec.
 
 | Rank | Serializer | Test Data | Mode | Ops/Sec |
 |------|------------|-----------|------|---------|
@@ -26,7 +28,9 @@ Empirical performance comparison of 38 C# and 10 Python serialization libraries 
 | 2 | NetSerializer | Integer | string | 419,342 |
 | 3 | MS Bond Compact | Integer | string | 320,888 |
 
-### Python Top Performers (by ops/sec)
+### Python Top Performers
+
+Top performers by ops/sec.
 
 | Rank | Serializer | Test Data | Mode | Ops/Sec |
 |------|------------|-----------|------|---------|

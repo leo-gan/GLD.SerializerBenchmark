@@ -13,7 +13,7 @@ Serialization is the process of translating a data structure or object state int
 - **Text Formats (JSON, XML)**: Human-readable, self-describing, and ubiquitous. The major downsides are massive parsing overhead (string-to-primitive conversions), high memory allocations, and large payload sizes.
 - **Binary Formats (Protobuf, MessagePack, MemoryPack)**: Machine-readable, compact, and extremely fast. They avoid string parsing and minimize memory footprints, often performing an order of magnitude faster than text equivalents.
 
-### Schema vs. Schemaless (Self-Describing)
+### Schema vs. Schemaless
 
 - **Schemaless (JSON, MessagePack)**: Embeds metadata (like field names or type tags) directly alongside the data. Flexible and excellent for dynamic environments, but the repeated metadata inflates payload size.
 - **Schema-Driven (Protobuf, FlatBuffers)**: Requires a pre-defined schema (`.proto`, `.fbs`). Field names are stripped out and replaced with integer tags. This drastically reduces payload size and allows the compiler to generate highly optimized static parsing code.

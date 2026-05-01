@@ -8,7 +8,7 @@ These serializers output standard JSON. They are optimized for human readability
 - **C#**: `System.Text.Json`, `Newtonsoft.Json`, `Jil`, `Utf8Json`
 - **Python**: `json` (built-in), `orjson`, `ujson`, `msgspec`
 
-### 2. Binary (Schemaless / Self-Describing)
+### 2. Binary (Schemaless)
 These serializers output compact binary data but embed type information or field names directly in the payload, requiring no pre-shared schema.
 
 - **C#**: `MessagePack-CSharp`, `BSON`

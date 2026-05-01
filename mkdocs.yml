@@ -9,7 +9,8 @@ theme:
   features:
     - navigation.tabs
     - navigation.sections
-    - navigation.indexes
+#    - navigation.indexes
+#    - navigation.expand
     - toc.integrate
   palette:
     - scheme: default
