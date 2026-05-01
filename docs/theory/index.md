@@ -30,7 +30,7 @@ High-performance serializers (like C#'s **MemoryPack** or **FlatBuffers**) are d
 Allocating memory is cheap; *cleaning it up* is expensive. In managed languages (C#, Python, Java), high object allocation rates trigger Garbage Collection cycles. During a GC run, all application threads may be paused (Stop-The-World). 
 
 * **The Problem:** Naive serializers allocate new arrays and strings for every field they parse.
-* **The Solution:** Modern serializers utilize **Zero-Allocation** techniques. They deserialize directly into pre-allocated buffers or use span-like structures (e.g., C#'s Span<T>) to reference existing memory rather than copying it.
+* **The Solution:** Modern serializers utilize **Zero-Allocation** techniques. They deserialize directly into pre-allocated buffers or use span-like structures (e.g., C#'s `Span<T>`) to reference existing memory rather than copying it.
 ### Zero-Copy Deserialization
 Traditional serialization involves parsing a byte array and instantiating language-specific objects (copying the data).
 
