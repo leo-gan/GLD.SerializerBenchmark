@@ -30,8 +30,7 @@ High-performance serializers (like C#'s **MemoryPack** or **FlatBuffers**) are d
 Allocating memory is cheap; *cleaning it up* is expensive. In managed languages (C#, Python, Java), high object allocation rates trigger Garbage Collection cycles. During a GC run, all application threads may be paused (Stop-The-World). 
 
 * **The Problem:** Naive serializers allocate new arrays and strings for every field they parse.
-* **The Solution:** Modern serializers utilize **Zero-Allocation** techniques. They deserialize directly into pre-allocated buffers or use span-like structures (e.g., C#) to reference existing memory rather than copying it.
-
+* **The Solution:** Modern serializers utilize **Zero-Allocation** techniques. They deserialize directly into pre-allocated buffers or use span-like structures (e.g., C#'s Span<T>) to reference existing memory rather than copying it.
 ### Zero-Copy Deserialization
 Traditional serialization involves parsing a byte array and instantiating language-specific objects (copying the data).
 
@@ -44,7 +43,7 @@ Traditional serialization involves parsing a byte array and instantiating langua
 This documentation is organized hierarchically to take you from general theory down to language-specific execution and empirical results:
 
 1. **[Theory and Practices](../theory/index.md):** Historical overview and core concepts.
-2. **[C# Ecosystem](../c-sharp/index.md):** Deep dive into the .NET serialization landscape.
+2. **[C# Ecosystem](../c-sharp/index.md):** Deep dive into the .NET serialization landscape  (`Span<T>`, `MemoryPack`, `Protobuf-net`).
 3. **[Python Ecosystem](../python/index.md):** Deep dive into Python's constraints (GIL, C-extensions, Pickling).
 4. **[Selection Guide](../serializers/index.md):** Comparative analysis of formats and guidance on choosing the right serializer.
 5. **[Benchmarks](../analysis/index.md):** Extensive, data-driven comparisons of top serializers using real-world topologies.
