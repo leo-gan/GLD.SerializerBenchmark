@@ -37,13 +37,13 @@ markdown_extensions:
 
 nav:
   - Theory & Practices: 
-      - Serialization 101: index.md
-      - Methodology: methodology.md
-      - Test Data Design: test_data_design.md
+      - Serialization 101: theory/index.md
+      - Data Science Perspective: theory/data_science_perspective.md
   - C# Ecosystem: c-sharp/index.md
   - Python Ecosystem: python/index.md
   - Benchmark Reports:
       - Packages Overview: analysis/packages-overview.md
+      - Methodology: analysis/ANALYSIS_METHODOLOGY.md
+      - Test Data Design: analysis/test_data_design.md
       - Detailed Report: analysis/BENCHMARK_SUMMARY.md
       - Violin Plots: analysis/violin-plots.md
-      - Methodology: analysis/ANALYSIS_METHODOLOGY.md
