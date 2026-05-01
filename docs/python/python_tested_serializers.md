@@ -93,7 +93,10 @@ JSON (JavaScript Object Notation) serializers convert Python objects to human-re
 
 **Benchmark Notes:**
 - Excellent memory efficiency (lowest memory usage among JSON serializers ~5KB vs 28KB for orjson)
-- Native dataclass support eliminates conversion overhead
+- Uses msgspec `Struct` models generated from the canonical dataclasses with `array_like=True`
+- Converts the shared dataclass fixtures to `Struct` instances before timed repetitions
+- Uses reusable `Encoder` and pre-built typed `Decoder` instances per benchmark data type
+- Stream mode uses `encode_into` with a reusable `bytearray` buffer
 - Slightly slower than orjson but significantly faster than standard library
 - Excludes `ObjectGraph` by design
 - Strong type validation prevents runtime errors
@@ -168,6 +171,40 @@ Binary serializers convert Python objects to compact byte representations. They 
 
 ---
 
+### msgspec-msgpack
+**Library:** `msgspec`
+**Type:** MessagePack encoder/decoder with schema validation
+**Description:** The MessagePack side of msgspec's API. It uses the same generated array-like `Struct` models, reusable encoder, and pre-built typed decoders as the JSON msgspec benchmark while producing compact binary MessagePack payloads.
+
+**Key Features:**
+- Uses msgspec `Struct` models generated from the canonical dataclasses with `array_like=True`
+- Reusable `msgspec.msgpack.Encoder` and typed `Decoder` instances
+- Converts shared dataclass fixtures to `Struct` instances before timed repetitions
+- Smaller binary payloads than JSON for object-heavy data
+
+**When to Use:**
+- Internal APIs where both sides can share schema/model definitions
+- High-throughput Python services that need validation and compact binary payloads
+- Workloads where JSON readability is not required
+
+**Pros:**
+- **Speed:** Avoids custom Python conversion hooks in the timed path
+- **Type safety:** Decodes directly into typed msgspec Struct objects
+- **Compact output:** Uses MessagePack rather than text JSON
+- **Memory efficiency:** Reuses encoder/decoder objects and stream buffers
+
+**Cons:**
+- **Not human-readable:** Harder to inspect than JSON
+- **Schema-oriented:** Best results require shared model definitions
+- **No circular reference support:** MessagePack cannot represent object identity cycles
+
+**Benchmark Notes:**
+- Registered separately from `msgspec` JSON as `msgspec-msgpack`
+- Uses typed decoder pre-compilation and Struct fixture preparation outside timed repetitions
+- Excludes `ObjectGraph` by design
+
+---
+
 ### msgpack
 **Library:** `msgpack`  
 **Type:** Binary serialization format  
@@ -212,7 +249,7 @@ Binary serializers convert Python objects to compact byte representations. They 
 ### cbor2
 **Library:** `cbor2`  
 **Type:** CBOR (Concise Binary Object Representation)  
-**Description:** CBOR is a binary serialization format specified in RFC 8949. Designed to be small, schema-free, and extensible. Similar to JSON but binary and more compact.
+**Description:** CBOR is a binary serialization format specified in RFC 8949. Designed to be small, schema-free, and extensible. Version 6.0+ is a major rewrite in Rust, offering significantly improved performance and memory safety.
 
 **Key Features:**
 - IETF standard (RFC 8949) - formally specified
@@ -237,24 +274,26 @@ Binary serializers convert Python objects to compact byte representations. They 
 
 **Cons:**
 - **Less popular:** Smaller ecosystem than MessagePack
-- **Complex API:** Hook signatures different from msgpack (encoder, obj) vs (obj)
-- **Slower:** Python implementation slower than msgpack's C extensions
-- **Learning curve:** Less documentation and community examples
+- **Complex API:** Hook signatures and configuration (like timezone handling) differ from other libraries
+- **Overhead:** Enabling circular reference support (value sharing) adds a performance cost
+- **Learning curve:** Less documentation and community examples compared to JSON/msgpack
 
 **Comparison with MessagePack:**
+
 | Feature | CBOR | MessagePack |
 |---------|------|-------------|
 | Standard | IETF RFC 8949 | No formal RFC |
 | Datetime | Native tags | Extension type |
 | Streaming | Indefinite length | Chunks |
-| Speed | Slower (pure Python) | Faster (C) |
+| Speed | Fast (Rust) | Faster (C) |
 | Popularity | Growing | Very popular |
 
 **Benchmark Notes:**
 - Requires careful encoder/decoder hook setup (different signature than msgpack)
-- Uses `(encoder, obj)` signature for encoding hooks
-- Slower than msgpack but competitive on output size
-- Excludes `ObjectGraph` by design
+- Supports circular references via `value_sharing=True` (disabled by default for performance)
+- Uses native CBOR tags for `datetime` (requires timezone-aware objects or explicit timezone setting)
+- Much improved performance in 6.0+ due to Rust backend
+- Excludes `ObjectGraph` in this benchmark due to the added complexity of cyclic object reconstruction
 
 ---
 
@@ -379,6 +418,7 @@ repeated string tags = 6;
 - **Smaller ecosystem:** Fewer language implementations than protobuf
 
 **Comparison with Protobuf:**
+
 | Feature | Avro | Protobuf |
 |---------|------|----------|
 | Schema location | In data | Separate .proto file |
@@ -473,6 +513,7 @@ For untrusted data, use JSON, MessagePack, or protobuf.
 - **No streaming:** Must load entire pickle at once
 
 **Protocol Versions:**
+
 | Protocol | Python | Features |
 |----------|--------|----------|
 | 0 | All | Human-readable (ASCII) |
@@ -528,6 +569,7 @@ Same security concerns as pickle - can execute arbitrary code. Only use with tru
 - **External dependency:** Not in standard library
 
 **Pickle vs Cloudpickle:**
+
 | Feature | Pickle | Cloudpickle |
 |---------|--------|-------------|
 | `__main__` functions | ❌ | ✅ |
@@ -553,6 +595,7 @@ Same security concerns as pickle - can execute arbitrary code. Only use with tru
 | orjson | JSON | ★★★★★ | ★★★☆☆ | No | No | Yes |
 | msgspec | JSON | ★★★★☆ | ★★★☆☆ | No | Optional | Yes |
 | rapidjson | JSON | ★★★☆☆ | ★★★☆☆ | No | No | Yes |
+| msgspec-msgpack | Binary | ★★★★★ | ★★★★☆ | No | Optional | Yes |
 | msgpack | Binary | ★★★★☆ | ★★★★☆ | No | No | Yes |
 | cbor2 | Binary | ★★★☆☆ | ★★★★★ | No | No | Yes |
 | protobuf | Schema | ★★★☆☆ | ★★★★★ | No | Yes | Yes |

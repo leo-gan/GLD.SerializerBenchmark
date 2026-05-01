@@ -177,4 +177,4 @@ To verify the analysis is working correctly:
 ## References
 
 - Tukey, J.W. (1977). *Exploratory Data Analysis*
-- seaborn.catplot documentation: https://seaborn.pydata.org/generated/seaborn.catplot.html
+- [Seaborn.catplot](https://seaborn.pydata.org/generated/seaborn.catplot.html)
