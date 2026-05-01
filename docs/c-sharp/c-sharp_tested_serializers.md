@@ -9,7 +9,7 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 - [XML Serializers](#xml-serializers)
 - [YAML Serializers](#yaml-serializers)
 - [Specialized/High-Performance](#specializedhigh-performance)
-- [Disabled Serializers](#disabled-serializers)
+- [Disabled Serializers](#partially-tested-serializers)
 
 ---
 
