@@ -1,4 +1,4 @@
-# Performance  (Violin Plots)
+# Performance (Violin Plots)
 
 These violin plots visualize the serialization and deserialization performance across different data payloads for both C# and Python serializers. The shape of the "violin" represents the density of measurements: wider sections indicate more measurements at that particular time duration.
 

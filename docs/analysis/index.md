@@ -12,7 +12,7 @@ Empirical performance comparison of 38 C# and 10 Python serialization libraries 
 | [Analysis Methodology](./ANALYSIS_METHODOLOGY.md)         | Statistical methods and data processing pipeline                      |
 | [Test Data Configuration](./test_data_configuration.md)   | Test data types and generation rules                                  |
 | [Detailed Report](./BENCHMARK_SUMMARY.md)                 | Raw performance tables with latency, throughput, and size metrics     |
-| [Performance](./violin-plots.md)                               | Statistical visualizations showing preformance, variance and outliers |
+| [Performance](./violin-plots.md)                               | Statistical visualizations showing performance, variance and outliers |
 
 ---
 
