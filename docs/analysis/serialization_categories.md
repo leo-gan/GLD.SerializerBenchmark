@@ -30,6 +30,6 @@ These serializers are deeply tied to their specific language runtime and can ser
 
 While the detailed metrics are available in the [Detailed Report](BENCHMARK_SUMMARY.md), the overarching trends are clear:
 
-1. **Schema-Driven Binary dominates throughput.** `MemoryPack` (C#) consistently pushes the boundaries of theoretical memory bandwidth.
-2. **Text parsing is a bottleneck.** Even the fastest JSON serializers (like `orjson` in Python) spend significant CPU time executing string-to-integer conversions.
+1. **Schema-Driven Binary dominates throughput.** Within each language, schema-driven binary serializers consistently push the boundaries of theoretical memory bandwidth.
+2. **Text parsing is a bottleneck.** Even the fastest JSON serializers spend significant CPU time executing string-to-integer conversions.
 3. **Allocation is the silent killer.** The fastest serializers are those that allocate the fewest objects on the heap, bypassing the Garbage Collector entirely.

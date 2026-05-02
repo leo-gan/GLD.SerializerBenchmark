@@ -191,120 +191,7 @@ def generate_markdown_summary(
     lines.append(f"**Generated:** {datetime.now().isoformat()}\n")
     lines.append("---\n\n")
 
-    # C# Section
-    lines.append("## C# / .NET Benchmarks\n")
-    if csharp_stats:
-        lines.append("| Serializer | Test Data | Mode | Avg Total (ns) | Ops/Sec | Size (bytes) |")
-        lines.append("|------------|-----------|------|----------------|---------|----------------|")
-
-        sorted_stats = sorted(
-            csharp_stats.items(),
-            key=lambda x: x[1]['avg_time_total_ns']
-        )
-        for key, stat in sorted_stats[:20]:  # Top 20 by performance
-            lines.append(
-                f"| {stat['serializer']} | {stat['test_data']} | {stat['mode']} | "
-                f"{stat['avg_time_total_ns']:,.0f} | "
-                f"{stat['avg_ops_per_sec']:,.0f} | "
-                f"{stat['median_size_bytes']:,.0f} |"
-            )
-        lines.append("")
-    else:
-        lines.append("*No C# benchmark data available*\n")
-
-    # Python Section
-    lines.append("\n## Python Benchmarks\n")
-    if python_stats:
-        lines.append("| Serializer | Test Data | Mode | Avg Total (ns) | Ops/Sec | Size (bytes) |")
-        lines.append("|------------|-----------|------|----------------|---------|----------------|")
-
-        sorted_stats = sorted(
-            python_stats.items(),
-            key=lambda x: x[1]['avg_time_total_ns']
-        )
-        for key, stat in sorted_stats[:20]:  # Top 20 by performance
-            lines.append(
-                f"| {stat['serializer']} | {stat['test_data']} | {stat['mode']} | "
-                f"{stat['avg_time_total_ns']:,.0f} | "
-                f"{stat['avg_ops_per_sec']:,.0f} | "
-                f"{stat['median_size_bytes']:,.0f} |"
-            )
-        lines.append("")
-    else:
-        lines.append("*No Python benchmark data available*\n")
-
-    # Top Performers Comparison
-    lines.append("\n## Top Performers by Language\n")
-    lines.append("### Fastest Serializers (by total time)\n")
-
-    if csharp_stats:
-        fastest_csharp = min(csharp_stats.items(), key=lambda x: x[1]['avg_time_total_ns'])
-        lines.append(f"- **C#:** {fastest_csharp[1]['serializer']} - {fastest_csharp[1]['avg_time_total_ns']:,.0f} ns")
-
-    if python_stats:
-        fastest_python = min(python_stats.items(), key=lambda x: x[1]['avg_time_total_ns'])
-        lines.append(f"- **Python:** {fastest_python[1]['serializer']} - {fastest_python[1]['avg_time_total_ns']:,.0f} ns")
-
-    # Smallest Output
-    lines.append("\n### Most Compact Output (by size)\n")
-    if csharp_stats:
-        smallest_csharp = min(csharp_stats.items(), key=lambda x: x[1]['median_size_bytes'])
-        lines.append(f"- **C#:** {smallest_csharp[1]['serializer']} - {smallest_csharp[1]['median_size_bytes']:,.0f} bytes")
-
-    if python_stats:
-        smallest_python = min(python_stats.items(), key=lambda x: x[1]['median_size_bytes'])
-        lines.append(f"- **Python:** {smallest_python[1]['serializer']} - {smallest_python[1]['median_size_bytes']:,.0f} bytes")
-
-    # Multidimensional Analysis
-    lines.append("\n## Multidimensional Analysis\n")
-    all_stats = {**{k: ('C#', v) for k, v in csharp_stats.items()},
-                 **{k: ('Python', v) for k, v in python_stats.items()}}
-
-    # Analysis by Data Type
-    lines.append("### Best Performers by Data Type\n")
-    data_types = set()
-    for key, (_, stat) in all_stats.items():
-        data_types.add(stat['test_data'])
-
-    for dtype in sorted(data_types):
-        type_stats = [(k, lang, s) for k, (lang, s) in all_stats.items() if s['test_data'] == dtype]
-        if type_stats:
-            type_stats.sort(key=lambda x: x[2]['avg_time_total_ns'])
-            best = type_stats[0]
-            lines.append(f"- **{dtype}:** {best[1]} {best[2]['serializer']} ({best[2]['mode']}) - {best[2]['avg_time_total_ns']:,.0f} ns")
-
-    # Analysis by Mode
-    lines.append("\n### Performance by Mode (Stream vs String/Bytes)\n")
-    modes = set()
-    for key, (_, stat) in all_stats.items():
-        modes.add(stat['mode'])
-
-    for mode in sorted(modes):
-        mode_stats = [(k, lang, s) for k, (lang, s) in all_stats.items() if s['mode'] == mode]
-        if mode_stats:
-            mode_stats.sort(key=lambda x: x[2]['avg_time_total_ns'])
-            best = mode_stats[0]
-            lines.append(f"- **{mode}:** {best[1]} {best[2]['serializer']} ({best[2]['test_data']}) - {best[2]['avg_time_total_ns']:,.0f} ns")
-
-    # Cross-language comparison for same data type
-    lines.append("\n### Cross-Language Comparison (Same Data Types)\n")
-    common_types = set(s['test_data'] for _, (_, s) in all_stats.items() if s['test_data'] in 
-                       [cs['test_data'] for cs in csharp_stats.values()]) & \
-                   set(s['test_data'] for _, (_, s) in all_stats.items() if s['test_data'] in 
-                       [ps['test_data'] for ps in python_stats.values()])
-
-    for dtype in sorted(common_types):
-        cs_best = min((s for k, s in csharp_stats.items() if s['test_data'] == dtype),
-                      key=lambda x: x['avg_time_total_ns'], default=None)
-        py_best = min((s for k, s in python_stats.items() if s['test_data'] == dtype),
-                      key=lambda x: x['avg_time_total_ns'], default=None)
-        if cs_best and py_best:
-            ratio = py_best['avg_time_total_ns'] / cs_best['avg_time_total_ns']
-            winner = "C#" if ratio > 1 else "Python"
-            lines.append(f"- **{dtype}:** C# {cs_best['serializer']} ({cs_best['avg_time_total_ns']:,.0f} ns) vs Python {py_best['serializer']} ({py_best['avg_time_total_ns']:,.0f} ns) - {winner} wins ({ratio:.2f}×)")
-
-    # Pivot Tables
-    lines.append("\n## Pivot Tables\n")
+    lines.append("## Pivot Tables\n")
 
     if csharp_stats:
         lines.append(_pivot_table_md(csharp_stats, 'serializer', 'mode', 'avg_time_total_ns',
@@ -351,39 +238,6 @@ def generate_html_dashboard(
 
     cs_labels, cs_times, cs_sizes = stats_to_chart_data(csharp_stats)
     py_labels, py_times, py_sizes = stats_to_chart_data(python_stats)
-
-    # Prepare data for cross-language comparison by data type
-    all_stats = []
-    for key, stat in csharp_stats.items():
-        all_stats.append(('C#', stat))
-    for key, stat in python_stats.items():
-        all_stats.append(('Python', stat))
-
-    # Get common data types for cross-language comparison
-    cs_types = set(s['test_data'] for _, s in all_stats if s['test_data'] in [cs['test_data'] for cs in csharp_stats.values()])
-    py_types = set(s['test_data'] for _, s in all_stats if s['test_data'] in [ps['test_data'] for ps in python_stats.values()])
-    common_types = sorted(cs_types & py_types)
-
-    # Best performers per data type
-    best_by_type = []
-    for dtype in common_types:
-        cs_best = min((s for k, s in csharp_stats.items() if s['test_data'] == dtype),
-                      key=lambda x: x['avg_time_total_ns'], default=None)
-        py_best = min((s for k, s in python_stats.items() if s['test_data'] == dtype),
-                      key=lambda x: x['avg_time_total_ns'], default=None)
-        if cs_best and py_best:
-            best_by_type.append({
-                'data_type': dtype,
-                'csharp': {'serializer': cs_best['serializer'], 'time': cs_best['avg_time_total_ns']},
-                'python': {'serializer': py_best['serializer'], 'time': py_best['avg_time_total_ns']}
-            })
-
-    # Mode distribution data
-    modes = sorted(set(s['mode'] for _, s in all_stats))
-    mode_data = {mode: [] for mode in modes}
-    for lang, stat in all_stats:
-        mode_data[stat['mode']].append({'lang': lang, 'serializer': stat['serializer'],
-                                         'data_type': stat['test_data'], 'time': stat['avg_time_total_ns']})
 
     # Generate violin plots for each data type - separate for C# and Python, top 5 only
     cs_violin_images = {}
@@ -555,7 +409,7 @@ def generate_html_dashboard(
 <body>
     <div class="header">
         <h1>Serializer Benchmark Dashboard</h1>
-        <p>Cross-language serialization performance comparison</p>
+        <p>Serialization performance comparison</p>
         <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
     </div>
 
@@ -615,90 +469,6 @@ def generate_html_dashboard(
                        'Python: Ops/Sec by Serializer and Data Type')
     if python_stats else '<p>No Python data available</p>'
 ) + '''            </div>
-        </div>
-
-        <!-- Multidimensional Analysis -->
-        <div class="card">
-            <h2>Multidimensional Analysis</h2>
-            <div class="tabs">
-                <div class="tab active" onclick="showTab('by-data-type')">By Data Type</div>
-                <div class="tab" onclick="showTab('by-mode')">By Mode</div>
-                <div class="tab" onclick="showTab('cross-lang')">Cross-Language</div>
-            </div>
-
-            <div id="by-data-type" class="tab-content active">
-                <h3>Best Performers by Data Type</h3>
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Data Type</th>
-                            <th>Winner</th>
-                            <th>Language</th>
-                            <th>Serializer</th>
-                            <th>Time (ns)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-'''
-
-    # Add best by data type rows
-    for dtype in sorted(set(s['test_data'] for _, s in all_stats)):
-        type_stats = [(lang, s) for lang, s in all_stats if s['test_data'] == dtype]
-        type_stats.sort(key=lambda x: x[1]['avg_time_total_ns'])
-        if type_stats:
-            best_lang, best = type_stats[0]
-            html += f'''                        <tr>
-                            <td><strong>{dtype}</strong></td>
-                            <td class="{'winner' if best_lang == 'C#' else 'loser'}">{best_lang}</td>
-                            <td><span class="badge {'badge-csharp' if best_lang == 'C#' else 'badge-python'}">{best_lang}</span></td>
-                            <td>{best['serializer']}</td>
-                            <td>{best['avg_time_total_ns']:,.0f}</td>
-                        </tr>
-'''
-
-    html += '''                    </tbody>
-                </table>
-            </div>
-
-            <div id="by-mode" class="tab-content">
-                <h3>Performance by Mode</h3>
-                <p>Compare Stream vs String/Bytes serialization modes across all serializers.</p>
-            </div>
-
-            <div id="cross-lang" class="tab-content">
-                <h3>Cross-Language Comparison</h3>
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Data Type</th>
-                            <th>C# Best</th>
-                            <th>C# Time</th>
-                            <th>Python Best</th>
-                            <th>Python Time</th>
-                            <th>Winner</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-'''
-
-    # Add cross-language comparison rows
-    for comp in best_by_type:
-        ratio = comp['python']['time'] / comp['csharp']['time'] if comp['csharp']['time'] > 0 else 0
-        winner = "C#" if ratio > 1 else "Python"
-        winner_class = "winner" if winner == "C#" else "loser"
-        html += f'''                        <tr>
-                            <td><strong>{comp['data_type']}</strong></td>
-                            <td>{comp['csharp']['serializer']}</td>
-                            <td>{comp['csharp']['time']:,.0f} ns</td>
-                            <td>{comp['python']['serializer']}</td>
-                            <td>{comp['python']['time']:,.0f} ns</td>
-                            <td class="{winner_class}">{winner}</td>
-                        </tr>
-'''
-
-    html += '''                    </tbody>
-                </table>
-            </div>
         </div>
     </div>
 '''

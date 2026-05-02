@@ -119,19 +119,6 @@ After filtering, the following metrics are computed per group:
 
 Ops/Sec is recalculated consistently using `1e9 / nanoseconds` for both languages, ensuring comparability.
 
-## Multidimensional Analysis
-
-The analysis goes beyond simple serializer rankings to provide:
-
-### By Data Type
-Performance comparison across different data types (Integer, Person, SimpleObject, etc.)
-
-### By Mode
-Comparison of Stream vs String/Bytes serialization modes
-
-### Cross-Language
-Head-to-head comparison of C# vs Python serializers on the same data types
-
 ### Pivot Tables
 Tabular views of performance metrics organized by:
 
@@ -155,15 +142,7 @@ This reveals performance characteristics that averages hide, such as:
 ## Report Generation
 
 ### Markdown Summary
-- Human-readable tables of top performers
-- Multidimensional analysis sections
 - Pivot tables in GitHub-flavored markdown
-
-### HTML Dashboard
-- Interactive charts using Chart.js
-- Violin plots using seaborn/matplotlib
-- Tabbed interface for exploring different dimensions
-- Responsive design for different screen sizes
 
 ## Validation
 
