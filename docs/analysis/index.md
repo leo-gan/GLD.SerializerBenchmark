@@ -6,13 +6,13 @@ Empirical performance comparison of 38 C# and 10 Python serialization libraries 
 
 ## Quick Access
 
-| Report                                                    | Description |
-|-----------------------------------------------------------|-------------|
-| [Serialization Categories](./serialization_categories.md) | How serializers are classified (JSON, Binary, Schema) |
-| [Analysis Methodology](./ANALYSIS_METHODOLOGY.md)         | Statistical methods and data processing pipeline |
-| [Test Data Configuration](./test_data_configuration.md)   | Test data types and generation rules |
-| [Detailed Report](./BENCHMARK_SUMMARY.md)                 | Raw performance tables with latency, throughput, and size metrics |
-| [Graphs](./violin-plots.md)                               | Statistical visualizations showing variance and outliers |
+| Report                                                    | Description                                                           |
+|-----------------------------------------------------------|-----------------------------------------------------------------------|
+| [Serialization Categories](./serialization_categories.md) | How serializers are classified (JSON, Binary, Schema)                 |
+| [Analysis Methodology](./ANALYSIS_METHODOLOGY.md)         | Statistical methods and data processing pipeline                      |
+| [Test Data Configuration](./test_data_configuration.md)   | Test data types and generation rules                                  |
+| [Detailed Report](./BENCHMARK_SUMMARY.md)                 | Raw performance tables with latency, throughput, and size metrics     |
+| [Performance](./violin-plots.md)                               | Statistical visualizations showing preformance, variance and outliers |
 
 ---
 
