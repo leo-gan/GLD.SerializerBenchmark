@@ -64,4 +64,4 @@ nav:
       - Analysis Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Test Data Configuration: analysis/test_data_configuration.md
       - Detailed Report: analysis/BENCHMARK_SUMMARY.md
-      - Performance Distribution: analysis/violin-plots.md
+      - Performance: analysis/violin-plots.md

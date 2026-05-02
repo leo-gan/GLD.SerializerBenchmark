@@ -43,7 +43,7 @@ jobs:
             --python-logs ../logs/python/benchmark-log.csv \
             --output-dir ../docs/analysis \
             --generate-summary \
-            --generate-dashboard
+            --generate-plots
             
       - name: Commit Generated Reports to Main
         uses: stefanzweifel/git-auto-commit-action@v5
