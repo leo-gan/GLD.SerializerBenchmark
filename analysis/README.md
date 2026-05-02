@@ -25,7 +25,7 @@ analyze-benchmarks \
     --csharp-logs logs/csharp/benchmark-log.csv \
     --python-logs logs/python/benchmark-log.csv \
     --output-dir reports/ \
-    --generate-dashboard \
+    --generate-plots \
     --generate-summary
 
 # Check for regressions
