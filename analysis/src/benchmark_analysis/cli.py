@@ -6,7 +6,7 @@ import sys
 
 from .parser import parse_csv_file
 from .stats import compute_statistics
-from .reports import generate_markdown_summary, generate_html_dashboard
+from .reports import generate_markdown_summary, generate_violin_plots
 from .regression import check_regression, save_baseline
 
 
@@ -15,7 +15,7 @@ def main():
     parser.add_argument('--csharp-logs', default='../logs/csharp/benchmark-log.csv', help='Path to C# benchmark CSV (default: ../logs/csharp/benchmark-log.csv)')
     parser.add_argument('--python-logs', default='../logs/python/benchmark-log.csv', help='Path to Python benchmark CSV (default: ../logs/python/benchmark-log.csv)')
     parser.add_argument('--output-dir', default='reports', help='Output directory')
-    parser.add_argument('--generate-dashboard', action='store_true', help='Generate HTML dashboard')
+    parser.add_argument('--generate-plots', action='store_true', help='Generate violin plot images')
     parser.add_argument('--generate-summary', action='store_true', help='Generate Markdown summary')
     parser.add_argument('--check-regression', action='store_true', help='Check for regressions')
     parser.add_argument('--regression-threshold', type=float, default=10.0, help='Regression threshold percent')
@@ -45,10 +45,10 @@ def main():
         generate_markdown_summary(csharp_stats, python_stats, summary_path,
                                 csharp_records=csharp_records, python_records=python_records)
 
-    if args.generate_dashboard:
-        dashboard_dir = os.path.join(args.output_dir, 'dashboard')
-        generate_html_dashboard(csharp_stats, python_stats, dashboard_dir,
-                                csharp_records=csharp_records, python_records=python_records)
+    if args.generate_plots:
+        plots_dir = os.path.join(args.output_dir, 'dashboard')
+        generate_violin_plots(plots_dir,
+                              csharp_records=csharp_records, python_records=python_records)
 
     # Check regression
     if args.check_regression:
