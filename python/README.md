@@ -11,7 +11,6 @@ A Dockerized benchmarking suite evaluating **10 Python serializers** across 7 re
 | **Schema** | `protobuf`, `avro` | Requires `.proto`/`.avsc` schemas and code generation. |
 | **Python-native** | `pickle`, `cloudpickle` | Built-in serialization, handles arbitrary objects. |
 
-> **📖 Detailed Documentation:** See [`docs/serializers.md`](docs/serializers.md) for full descriptions, feature comparisons, and benchmark notes for each serializer.
 
 ## Test Data Scenarios
 
