@@ -15,7 +15,6 @@ This project serves two purposes:
 - **Dual Mode Testing**: Every serializer is tested in both **String** and **Stream** serialization modes.
 - **Detailed Reporting**: Generates raw metrics and error tracking in `.csv` format for deep analysis.
 - **Fail-Fast Visibility**: Explicitly reports "FAILED" for serializers that cannot handle complex types (like circular references).
-- **Analysis Ready**: Includes a Jupyter Notebook (`Analysis.ipynb`) for visualizing and interpreting the results.
 
 ---
 
