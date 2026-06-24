@@ -1,0 +1,494 @@
+# =============================================================================
+# Cross-Language Serializer Benchmark — Master Configuration
+# =============================================================================
+# Single source of truth for runners, analysis, and documentation.
+# Language-specific overrides live under `languages.<lang>`.
+# Add a new language by copying an existing block and implementing the harness.
+# =============================================================================
+
+version: "2.0.0"
+
+# -----------------------------------------------------------------------------
+# Project metadata
+# -----------------------------------------------------------------------------
+project:
+  name: "Cross-Language Serializer Benchmark"
+  description: >
+    Scientific, multi-language benchmark suite for evaluating serialization
+    libraries. Supports serializer authors (version A vs B), system integrators
+    (custom payloads/environments), and researchers (reproducible statistics).
+  license: MIT
+  output_schema_version: "1.1"
+
+# -----------------------------------------------------------------------------
+# Reproducibility
+# -----------------------------------------------------------------------------
+reproducibility:
+  random_seed: 42
+  # Pin CPU affinity / thread count in runners when possible
+  single_threaded: true
+  # Exclude first repetition(s) from timed analysis (JIT / cold caches)
+  warmup_repetitions: 1
+  # Environment capture written beside logs
+  capture_environment: true
+
+# -----------------------------------------------------------------------------
+# Execution modes (CLI / scripts map to these)
+# -----------------------------------------------------------------------------
+modes:
+  smoke:
+    repetitions: 2
+    description: "Minimal sanity run (CI fast path)"
+  all-single:
+    repetitions: 10
+    description: "Quick full-matrix pass"
+  full:
+    repetitions: 100
+    description: "Publication-quality run"
+  research:
+    repetitions: 500
+    description: "High-power statistical study"
+
+# -----------------------------------------------------------------------------
+# Shared test data (conceptual types — each language implements equivalents)
+# -----------------------------------------------------------------------------
+test_data:
+  config_file: "schemas/test_data_config.json"
+  types:
+    - name: Person
+      category: nested_object
+      description: "Nested POCO with enums, strings, and arrays"
+      supports_circular: false
+    - name: Integer
+      category: primitive
+      description: "Primitive throughput baseline"
+      supports_circular: false
+    - name: Telemetry
+      category: numeric_arrays
+      description: "Numeric arrays testing binary efficiency"
+      supports_circular: false
+    - name: SimpleObject
+      category: minimal
+      description: "Minimal object overhead"
+      supports_circular: false
+    - name: StringArray
+      category: memory_pressure
+      description: "GC/memory pressure via large string arrays"
+      supports_circular: false
+    - name: EDI_835
+      category: real_world
+      description: "Deeply nested healthcare remittance document"
+      supports_circular: false
+    - name: ObjectGraph
+      category: circular
+      description: "Circular references (only graph-capable serializers pass)"
+      supports_circular: true
+
+# -----------------------------------------------------------------------------
+# Dual-mode I/O contract (every language implements both when applicable)
+# -----------------------------------------------------------------------------
+io_modes:
+  - name: bytes
+    aliases: [string, buffer]
+    description: "In-memory buffer / byte array API"
+  - name: stream
+    aliases: [stream]
+    description: "Streaming / incremental I/O API"
+
+# -----------------------------------------------------------------------------
+# CSV output contract (all language runners MUST emit this schema)
+# TimeSer/TimeDeser/TimeSerAndDeser are always in nanoseconds for new runners.
+# Legacy C# emits ticks (100ns); analysis normalizes via Language column or auto-detect.
+# -----------------------------------------------------------------------------
+csv_schema:
+  required_columns:
+    - Language
+    - StringOrStream
+    - TestDataName
+    - Repetitions
+    - RepetitionIndex
+    - SerializerName
+    - TimeSer
+    - TimeDeser
+    - Size
+    - TimeSerAndDeser
+    - OpPerSecSer
+    - OpPerSecDeser
+    - OpPerSecSerAndDeser
+  optional_columns:
+    - MemoryPeakBytes
+    - FidelityScore
+    - SerializerVersion
+    - ErrorFlag
+  time_unit: nanoseconds
+  time_unit_legacy_csharp: ticks  # 1 tick = 100 ns
+
+# -----------------------------------------------------------------------------
+# Scientific statistics (analysis pipeline)
+# -----------------------------------------------------------------------------
+statistics:
+  # Pre-processing
+  exclude_warmup: true
+  outlier_method: iqr          # iqr | none | winsorize
+  iqr_k: 1.5
+  min_samples_for_outlier_filter: 10
+  min_samples_for_inference: 5
+
+  # Central tendency & dispersion
+  report_mean: true
+  report_median: true
+  report_std: true
+  report_mad: true             # median absolute deviation
+  report_cv: true              # coefficient of variation
+  report_percentiles: [5, 25, 50, 75, 95, 99]
+  report_min_max: true
+
+  # Confidence intervals (non-parametric bootstrap on mean)
+  bootstrap:
+    enabled: true
+    iterations: 2000
+    confidence_level: 0.95
+    seed: 42
+    method: percentile        # percentile | bca (bca needs more samples)
+
+  # Effect sizes (pairwise vs fastest in group)
+  effect_sizes:
+    enabled: true
+    methods: [cliffs_delta, hedges_g]
+    cliffs_delta_thresholds:
+      negligible: 0.147
+      small: 0.33
+      medium: 0.474
+      # > medium => large
+
+  # Hypothesis testing (optional, for version A/B comparisons)
+  hypothesis_tests:
+    enabled: true
+    method: mann_whitney_u     # non-parametric, no normality assumption
+    alpha: 0.05
+    multiple_comparison_correction: holm
+
+  # Throughput derived consistently: ops/s = 1e9 / mean_time_ns
+  throughput_from: mean_time_ns
+
+# -----------------------------------------------------------------------------
+# Paths (relative to repository root)
+# -----------------------------------------------------------------------------
+paths:
+  logs_root: logs
+  reports_root: reports
+  schemas_root: schemas
+  config_root: config
+  language_log_dirs:
+    csharp: logs/csharp
+    python: logs/python
+    rust: logs/rust
+    c: logs/c
+    javascript: logs/javascript
+  log_filename: benchmark-log.csv
+  errors_filename: benchmark-errors.csv
+  environment_filename: environment.json
+  baseline_filename: reports/baseline.json
+
+# -----------------------------------------------------------------------------
+# Regression gates (CI)
+# -----------------------------------------------------------------------------
+regression:
+  enabled: true
+  threshold_percent: 10.0
+  metric: avg_time_total_ns
+  direction: higher_is_worse
+
+# -----------------------------------------------------------------------------
+# Language harnesses
+# -----------------------------------------------------------------------------
+languages:
+  csharp:
+    display_name: "C# (.NET)"
+    enabled: true
+    runner_dir: c-sharp
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/csharp
+    time_unit: ticks
+    docs_dir: docs/c-sharp
+    # 38 serializers — see docs/c-sharp/c-sharp_tested_serializers.md
+
+  python:
+    display_name: Python
+    enabled: true
+    runner_dir: python
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/python
+    time_unit: nanoseconds
+    docs_dir: docs/python
+    serializers:
+      - name: orjson
+        category: json
+        package: orjson
+        rationale: "Fastest mainstream Python JSON (Rust core)"
+      - name: msgspec-json
+        category: json
+        package: msgspec
+        rationale: "High-performance typed JSON via msgspec"
+      - name: rapidjson
+        category: json
+        package: python-rapidjson
+        rationale: "C++ RapidJSON bindings"
+      - name: msgspec-msgpack
+        category: binary
+        package: msgspec
+        rationale: "msgspec MessagePack backend"
+      - name: msgpack
+        category: binary
+        package: msgpack
+        rationale: "Reference MessagePack implementation"
+      - name: cbor2
+        category: binary
+        package: cbor2
+        rationale: "IETF CBOR with cycle support option"
+      - name: protobuf
+        category: schema
+        package: protobuf
+        rationale: "Google Protocol Buffers"
+      - name: avro
+        category: schema
+        package: fastavro
+        rationale: "Apache Avro (fastavro)"
+      - name: pickle
+        category: native
+        package: stdlib
+        rationale: "Python standard library pickle"
+      - name: cloudpickle
+        category: native
+        package: cloudpickle
+        rationale: "Extended pickle for complex objects"
+
+  rust:
+    display_name: Rust
+    enabled: true
+    runner_dir: rust
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/rust
+    time_unit: nanoseconds
+    docs_dir: docs/rust
+    cargo_package: serializer-benchmark-rust
+    serializers:
+      - name: serde_json
+        category: json
+        crate: serde_json
+        rationale: "De-facto standard JSON via serde"
+        optimal_api: "to_vec / from_slice (no pretty-print)"
+      - name: simd-json
+        category: json
+        crate: simd-json
+        rationale: "SIMD-accelerated JSON parser"
+        optimal_api: "to_owned_value / serialize"
+      - name: sonic-rs
+        category: json
+        crate: sonic-rs
+        rationale: "Very fast JSON (SIMD, zero-copy lean)"
+        optimal_api: "to_vec / from_slice"
+      - name: rmp-serde
+        category: binary
+        crate: rmp-serde
+        rationale: "MessagePack via serde"
+        optimal_api: "to_vec_named / from_slice"
+      - name: ciborium
+        category: binary
+        crate: ciborium
+        rationale: "CBOR (IETF) via serde"
+        optimal_api: "into_writer / from_reader on Vec"
+      - name: bincode
+        category: binary
+        crate: bincode
+        rationale: "Compact Rust-native binary format"
+        optimal_api: "encode_to_vec / decode_from_slice (bincode 2)"
+      - name: postcard
+        category: binary
+        crate: postcard
+        rationale: "no_std-friendly compact binary"
+        optimal_api: "to_allocvec / from_bytes"
+      - name: bitcode
+        category: binary
+        crate: bitcode
+        rationale: "Bit-packed fast binary codec"
+        optimal_api: "encode / decode"
+      - name: prost
+        category: schema
+        crate: prost
+        rationale: "Protocol Buffers (Rust-native prost)"
+        optimal_api: "encode_to_vec / decode"
+      - name: flexbuffers
+        category: schema
+        crate: flexbuffers
+        rationale: "FlatBuffers FlexBuffers (schemaless subset)"
+        optimal_api: "FlexbufferSerializer / Reader"
+      - name: rkyv
+        category: zero_copy
+        crate: rkyv
+        rationale: "Zero-copy archive deserialization"
+        optimal_api: "to_bytes / access (validated)"
+      - name: minicbor
+        category: binary
+        crate: minicbor
+        rationale: "Lightweight CBOR without serde indirection"
+        optimal_api: "to_vec / from_slice with derive"
+
+  c:
+    display_name: "C (native)"
+    enabled: true
+    runner_dir: c
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/c
+    time_unit: nanoseconds
+    docs_dir: docs/c
+    build_system: cmake
+    serializers:
+      - name: cJSON
+        category: json
+        library: cJSON
+        rationale: "Ubiquitous lightweight C JSON"
+        optimal_api: "cJSON_PrintUnformatted / cJSON_Parse"
+      - name: yyjson
+        category: json
+        library: yyjson
+        rationale: "Fastest C JSON (SIMD, immutable DOM)"
+        optimal_api: "yyjson_mut_write / yyjson_read"
+      - name: jansson
+        category: json
+        library: jansson
+        rationale: "Widely deployed C JSON (hash tables)"
+        optimal_api: "json_dumps / json_loads"
+      - name: parson
+        category: json
+        library: parson
+        rationale: "Simple single-file C JSON"
+        optimal_api: "json_serialize_to_string / json_parse_string"
+      - name: mpack
+        category: binary
+        library: mpack
+        rationale: "MessagePack in pure C"
+        optimal_api: "mpack_writer / mpack_tree"
+      - name: tinycbor
+        category: binary
+        library: tinycbor
+        rationale: "Intel tinycbor (IETF CBOR)"
+        optimal_api: "cbor_encoder / cbor_parser"
+      - name: nanopb
+        category: schema
+        library: nanopb
+        rationale: "Protocol Buffers for embedded C"
+        optimal_api: "pb_encode / pb_decode"
+      - name: protobuf-c
+        category: schema
+        library: protobuf-c
+        rationale: "Full protobuf-c runtime"
+        optimal_api: "protobuf_c_message_pack / unpack"
+      - name: flatcc
+        category: schema
+        library: flatcc
+        rationale: "FlatBuffers C builder/verifier"
+        optimal_api: "flatcc_builder / flatbuffers_verifier"
+      - name: ubj
+        category: binary
+        library: ubj
+        rationale: "Universal Binary JSON (C)"
+        optimal_api: "ubjw_write / ubjr_read"
+      - name: cbor-encode
+        category: binary
+        library: libcbor
+        rationale: "libcbor reference implementation"
+        optimal_api: "cbor_serialize_alloc / cbor_load"
+
+  javascript:
+    display_name: "JavaScript (Node.js)"
+    enabled: true
+    runner_dir: javascript
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/javascript
+    time_unit: nanoseconds
+    docs_dir: docs/javascript
+    runtime: node
+    min_node_version: "18"
+    serializers:
+      - name: JSON.stringify
+        category: json
+        package: builtin
+        rationale: "ECMAScript built-in baseline"
+        optimal_api: "JSON.stringify / JSON.parse"
+      - name: fast-json-stringify
+        category: json
+        package: fast-json-stringify
+        rationale: "Schema-compiled fast stringify (Fastify stack)"
+        optimal_api: "compiled stringify + JSON.parse"
+      - name: simdjson
+        category: json
+        package: simdjson
+        rationale: "SIMD JSON parse (C++ addon)"
+        optimal_api: "simdjson.parse + JSON.stringify (roundtrip)"
+      - name: msgpackr
+        category: binary
+        package: msgpackr
+        rationale: "Fastest Node MessagePack"
+        optimal_api: "pack / unpack (reuse instance)"
+      - name: "@msgpack/msgpack"
+        category: binary
+        package: "@msgpack/msgpack"
+        rationale: "Official msgpack org encoder"
+        optimal_api: "encode / decode"
+      - name: cbor-x
+        category: binary
+        package: cbor-x
+        rationale: "Fast CBOR for Node/browsers"
+        optimal_api: "encode / decode (reuse Encoder/Decoder)"
+      - name: cbor
+        category: binary
+        package: cbor
+        rationale: "Reference node-cbor"
+        optimal_api: "encode / decodeFirstSync"
+      - name: avsc
+        category: schema
+        package: avsc
+        rationale: "Apache Avro pure JS"
+        optimal_api: "Type.toBuffer / fromBuffer (precompiled type)"
+      - name: protobufjs
+        category: schema
+        package: protobufjs
+        rationale: "Protocol Buffers in JS"
+        optimal_api: "Type.encode / decode (pre-loaded root)"
+      - name: bson
+        category: binary
+        package: bson
+        rationale: "MongoDB BSON"
+        optimal_api: "BSON.serialize / deserialize"
+      - name: v8-serializer
+        category: native
+        package: node:v8
+        rationale: "V8 structured clone / serialize API"
+        optimal_api: "v8.serialize / v8.deserialize"
+      - name: bser
+        category: binary
+        package: bser
+        rationale: "Binary serialization (Watchman format)"
+        optimal_api: "dumpToBuffer / loadFromBuffer"
+
+# -----------------------------------------------------------------------------
+# Extensibility: template for adding a language
+# -----------------------------------------------------------------------------
+# languages.<id>:
+#   display_name: "..."
+#   enabled: false
+#   runner_dir: <dir>
+#   runner_script: scripts/run-benchmarks.sh
+#   log_dir: logs/<id>
+#   time_unit: nanoseconds
+#   docs_dir: docs/<id>
+#   serializers: [...]
+#
+# Required harness contract:
+#   1. Read config/benchmark_config.yaml (or embedded defaults) for repetitions/seed
+#   2. Emit logs/<id>/benchmark-log.csv with Language=<id> and times in nanoseconds
+#   3. Implement prepare() outside timed loop; timed section = serialize + deserialize only
+#   4. Support bytes + stream modes where the library allows
+#   5. Round-trip fidelity check; skip ObjectGraph if unsupported
+#   6. scripts/run-benchmarks.sh accepts smoke|all-single|full|research

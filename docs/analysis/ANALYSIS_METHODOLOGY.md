@@ -157,3 +157,44 @@ To verify the analysis is working correctly:
 
 - Tukey, J.W. (1977). *Exploratory Data Analysis*
 - [Seaborn.catplot](https://seaborn.pydata.org/generated/seaborn.catplot.html)
+
+
+## 5. Multi-language & scientific extensions (v2)
+
+As of the v2 harness refactor (`config/benchmark_config.yaml`):
+
+### Languages
+
+Analysis accepts logs from any language directory under `logs/<lang>/benchmark-log.csv` with an optional `Language` column. New runners (**Rust**, **C**, **JavaScript**) emit **nanoseconds** directly. C# still emits **ticks** (×100 → ns), detected via `Language=csharp` or magnitude heuristic.
+
+### Extended metrics (per group)
+
+| Metric | Description |
+|--------|-------------|
+| `total_mean_ns` / `total_median_ns` | Central tendency |
+| `total_std_ns` / `total_mad_ns` / `total_cv` | Dispersion (MAD = median absolute deviation; CV = std/mean) |
+| `total_p5_ns` … `total_p99_ns` | Percentiles |
+| `total_ci_low_ns` / `total_ci_high_ns` | Percentile bootstrap CI on the **mean** (default 95%, 2000 resamples, seed 42) |
+| `effect_vs_fastest_cliffs_delta` | Cliff's δ vs fastest serializer in (language, data, mode) |
+| `effect_vs_fastest_hedges_g` | Hedges' g (bias-corrected) vs fastest |
+| `fastest_in_group` | Reference serializer name |
+
+### Version comparison (serializer authors)
+
+```bash
+analyze-benchmarks --compare-a path/to/old.csv --compare-b path/to/new.csv --output-dir reports
+```
+
+Produces `VERSION_COMPARE.md` with Mann–Whitney U, Holm-adjusted p-values, Cliff's δ, Hedges' g, and percent change. This is the recommended path for **old vs new version of the same serializer**.
+
+### Configuration
+
+All thresholds (IQR k, bootstrap iterations, alpha, modes) are centralized in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml) under `statistics:` and `modes:`.
+
+### Limitations (honest assessment)
+
+1. **Cross-language absolute comparisons** are directional only: GC, allocator, and runtime differ. Prefer within-language ranks and effect sizes.
+2. **C harness** defaults to portable minimal codecs (library-named wrappers) unless real C libraries are vendored — document this in papers.
+3. **Rust rkyv/prost/minicbor** entries may use intermediate payloads for untagged multi-type fixtures; upgrade to generated types for schema-format papers.
+4. **Stream mode** is not always a true incremental API (some languages buffer then write); interpret stream columns carefully.
+5. **Fidelity** checks are semantic/structural, not bit-identical across formats (datetime/float representations vary).

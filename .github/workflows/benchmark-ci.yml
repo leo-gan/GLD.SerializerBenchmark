@@ -89,12 +89,32 @@ jobs:
           cd analysis
           pip install -e .
 
-      - name: Download All Results
+      # Download each language separately so identical filenames (benchmark-log.csv)
+      # from csharp-results and python-results do not overwrite each other under logs/.
+      - name: Download C# Results
         uses: actions/download-artifact@v4
         with:
-          path: logs/
-          pattern: '*-results'
-          merge-multiple: true
+          name: csharp-results
+          path: logs/csharp/
+
+      - name: Download Python Results
+        uses: actions/download-artifact@v4
+        with:
+          name: python-results
+          path: logs/python/
+
+      - name: Verify benchmark logs
+        run: |
+          set -euo pipefail
+          echo "Layout under logs/:"
+          find logs -type f | sort || true
+          for f in logs/csharp/benchmark-log.csv logs/python/benchmark-log.csv; do
+            if [[ ! -f "$f" ]]; then
+              echo "::error::Missing required log: $f"
+              exit 1
+            fi
+            echo "$f: $(wc -l < "$f") lines"
+          done
 
       - name: Run Analysis
         run: |
@@ -125,8 +145,20 @@ jobs:
 
       - name: Copy Dashboard to Docs
         run: |
+          set -euo pipefail
           mkdir -p docs/dashboard
-          cp -r reports/dashboard/* docs/dashboard/
+          if [[ -d reports/dashboard ]] && compgen -G 'reports/dashboard/*' > /dev/null; then
+            cp -r reports/dashboard/* docs/dashboard/
+            echo "Copied $(find docs/dashboard -type f | wc -l) dashboard files"
+          else
+            echo "::warning::No reports/dashboard output (plots may have filtered all rows); writing placeholder."
+            cat > docs/dashboard/README.md << 'EOF'
+          # Dashboard
+
+          No violin plots were generated for this run (empty or fully filtered series).
+          Re-run benchmarks and analysis locally, or inspect `reports/BENCHMARK_SUMMARY.md`.
+          EOF
+          fi
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
