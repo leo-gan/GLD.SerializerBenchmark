@@ -30,9 +30,24 @@ def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
     deser = deser.rename(columns={'TimeDeser': 'Time_ns', 'OpPerSecDeser': 'OpPerSec'})
 
     melted = pd.concat([ser, deser], ignore_index=True)
-    # Clean up outliers (same logic as notebook: z-score < 3 and Time_ns < 60000)
-    if not melted.empty:
-        melted = melted[melted['Time_ns'] < 60000]
+    if melted.empty:
+        return melted
+
+    # Normalize to nanoseconds for plotting (legacy C# ticks vs Python/new ns).
+    # Heuristic: values > 1e6 are typically ticks (100 ns); multiply by 100.
+    t = melted['Time_ns'].astype(float)
+    if t.median() > 1_000_000:
+        melted['Time_ns'] = t * 100.0
+    else:
+        melted['Time_ns'] = t
+
+    # Drop non-positive / absurd tails (e.g. multi-second GC stalls) without
+    # the old erroneous "Time_ns < 60000" filter which wiped all real ns timings.
+    melted = melted[melted['Time_ns'] > 0]
+    if len(melted) >= 10:
+        q99 = float(melted['Time_ns'].quantile(0.99))
+        if q99 > 0:
+            melted = melted[melted['Time_ns'] <= q99 * 10]
     return melted
 
 
