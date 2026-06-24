@@ -1,66 +1,88 @@
 # Cross-Language Serializer Benchmark
 
-> 🎓 **[Take the Serialization 101 Course & View Benchmark Reports](https://leo-gan.github.io/GLD.SerializerBenchmark/)**
-> 
-> *Our official documentation site serves as a comprehensive guide for Senior Software Developers and Data Scientists, covering serialization theory, C#/Python language specifics, and deep-dive benchmark results.*
+> **[Serialization 101 & Benchmark Reports](https://leo-gan.github.io/GLD.SerializerBenchmark/)** — theory, methodology, and results for senior engineers and data scientists.
 
-This repository contains the source code for benchmarking serialization libraries across **.NET (C#)** and **Python**, using identical test data, dual-mode APIs, and comparable metrics to enable fair cross-language performance analysis.
+Scientific, multi-language benchmark suite for **comparing serialization libraries** fairly: identical conceptual payloads, dual I/O modes (`bytes`/`stream`), nanosecond timing (C# ticks normalized in analysis), and publication-oriented statistics (bootstrap CIs, effect sizes, non-parametric A/B tests).
 
-## .NET (C#) Benchmark
+## Who it is for
 
-- **38 serializers** including Json.NET, Protobuf-net, MessagePack, MemoryPack, FlatSharp, and more.
-- Dual-mode testing: **String** and **Stream** APIs.
-- Detailed CSV reporting with timing (ticks) and size (bytes).
-- Jupyter Notebook analysis included.
+| Audience | Use case |
+|----------|----------|
+| **Researchers** | Reproducible methods, CIs, effect sizes, configurable outlier/warmup policy |
+| **Serializer authors** | Compare old vs new version: `--compare-a old.csv --compare-b new.csv` |
+| **System integrators** | Custom payloads (`schemas/test_data_config.json`) and environments; same CSV + analysis pipeline |
+| **Engineers** | Pick a serializer for a language/runtime with apples-to-apples metrics |
 
-**[Read the C# README →](c-sharp/README.md)**
+## Supported languages
 
-## Python Benchmark
+| Language | Harness | Serializers (target) | Logs |
+|----------|---------|----------------------|------|
+| C# (.NET) | [`c-sharp/`](c-sharp/) | 38 | `logs/csharp/` |
+| Python | [`python/`](python/) | 10 | `logs/python/` |
+| **Rust** | [`rust/`](rust/) | 12 | `logs/rust/` |
+| **C** | [`c/`](c/) | 12 | `logs/c/` |
+| **JavaScript (Node)** | [`javascript/`](javascript/) | 11–12 | `logs/javascript/` |
 
-- **Serializers** across JSON, Binary, Schema, and Python-native groups.
-- Dual-mode testing: **bytes** and **stream** APIs.
-- Extended metrics: throughput, latency, memory allocation, output size, and type fidelity.
-- Dockerized execution with `uv` for reproducible environments.
+Add more languages via [`docs/architecture/ADDING_A_LANGUAGE.md`](docs/architecture/ADDING_A_LANGUAGE.md).
 
-**[Read the Python README →](python/README.md)**
+## Configuration
 
-## Getting Started
+Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_config.yaml)** (modes, statistics, languages, CSV schema, paths). Test-data shape/seed: **[`schemas/test_data_config.json`](schemas/test_data_config.json)**.
 
-### C# Benchmark
-
-```bash
-cd c-sharp
-./scripts/run-benchmarks.sh smoke
-```
-
-### Python Benchmark
+## Quick start
 
 ```bash
-cd python
-./scripts/run-benchmarks.sh smoke
+# One language (smoke)
+./rust/scripts/run-benchmarks.sh smoke
+./c/scripts/run-benchmarks.sh smoke
+./javascript/scripts/run-benchmarks.sh smoke
+./python/scripts/run-benchmarks.sh smoke   # may use Docker
+./c-sharp/scripts/run-benchmarks.sh smoke
+
+# All languages
+./scripts/run-all-benchmarks.sh --mode all-single
+
+# One language only
+./scripts/run-all-benchmarks.sh --mode full --lang rust
+
+# Analysis (install analysis package first)
+cd analysis && pip install -e .   # or: uv pip install -e .
+analyze-benchmarks --generate-summary --generate-plots --output-dir ../reports
+
+# Serializer version A vs B
+analyze-benchmarks --compare-a logs/rust/v1.csv --compare-b logs/rust/v2.csv --output-dir reports
 ```
 
-## Shared Test Data
+Modes: `smoke` (2 reps) · `all-single` (10) · `full` (100) · `research` (500) — see config.
 
-Both benchmarks use the same conceptual test data types, defined in [`schemas/benchmark_data.proto`](schemas/benchmark_data.proto) and configured via [`schemas/test_data_config.json`](schemas/test_data_config.json).
+## Shared test data
 
-For details on how test data is generated and configured, see the **[Test Data Configuration](docs/analysis/test_data_configuration.md)**.
+- **Person**, **Integer**, **Telemetry**, **SimpleObject**, **StringArray**, **EDI_835**, **ObjectGraph** (cycles; only graph-capable serializers)
+- Config: [Test data configuration](docs/analysis/test_data_configuration.md)
 
-- **Person**: Nested POCO with enums, strings, and arrays.
-- **Integer**: Primitive throughput baseline.
-- **Telemetry**: Numeric arrays testing binary efficiency.
-- **SimpleObject**: Minimal overhead.
-- **StringArray**: GC/memory pressure test.
-- **EDI_835**: Deeply nested real-world document.
-- **ObjectGraph**: Circular references (only native serializers expected to pass).
+## Statistics (analysis)
 
-## Results
+See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistics:` in the master config:
 
-Results are written to:
-- `logs/csharp/benchmark-log.csv`
-- `logs/csharp/benchmark-errors.csv`
-- `logs/python/benchmark-log.csv`
-- `logs/python/benchmark-errors.csv`
+1. Exclude warmup (rep 0)
+2. IQR outlier filter
+3. Mean / median / std / MAD / CV / percentiles
+4. Bootstrap 95% CI on the mean
+5. Cliff's δ + Hedges' g vs fastest in group
+6. Optional Mann–Whitney U + Holm for A/B versions
+
+## Architecture & extensibility
+
+- [Architecture](docs/architecture/index.md)
+- [Adding a language](docs/architecture/ADDING_A_LANGUAGE.md)
+- Harness contract: emit `logs/<lang>/benchmark-log.csv` with `Language=<id>`, times in **nanoseconds** (except legacy C# ticks)
+
+## Documentation site
+
+Language-specific serializer lists:
+
+- [C#](docs/c-sharp/c-sharp_tested_serializers.md) · [Python](docs/python/python_tested_serializers.md)
+- [Rust](docs/rust/rust_tested_serializers.md) · [C](docs/c/c_tested_serializers.md) · [JavaScript](docs/javascript/javascript_tested_serializers.md)
 
 ## License
 

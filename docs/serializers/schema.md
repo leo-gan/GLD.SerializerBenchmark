@@ -198,18 +198,15 @@ message Person {
 
 ```protobuf
 syntax = "proto3";
-
 message Person {
     string name = 1;
     int32 age = 2;
-    
     enum Gender {
         UNKNOWN = 0;
         MALE = 1;
         FEMALE = 2;
     }
     Gender gender = 3;
-    
     repeated string tags = 4;
     map<string, int32> scores = 5;
 }
@@ -217,9 +214,9 @@ message Person {
 
 ### Bond Example
 
-```bond
+```text
+// Microsoft Bond schema (.bond)
 namespace Benchmark;
-
 struct Person {
     0: string Name;
     1: int32 Age;
@@ -227,7 +224,6 @@ struct Person {
     3: vector<string> Tags;
     4: map<string, int32> Scores;
 };
-
 enum Gender {
     Unknown = 0,
     Male = 1,

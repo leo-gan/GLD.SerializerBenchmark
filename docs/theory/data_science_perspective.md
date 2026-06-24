@@ -184,7 +184,6 @@ When **James Gosling** and the Java team at Sun Microsystems released Java in 19
 
 ```java
 import java.io.*;
-
 // Java's built-in serialization: implement one marker interface,
 // and the JVM handles everything automatically via reflection.
 public class User implements Serializable {
@@ -192,16 +191,13 @@ public class User implements Serializable {
     // If the class changes and this UID doesn't match what was serialized,
     // deserialization throws InvalidClassException — a brittle versioning mechanism.
     private static final long serialVersionUID = 1L;
-
     private String name;
     private int    age;
-
     public User(String name, int age) {
         this.name = name;
         this.age  = age;
     }
 }
-
 // Serializing to a file:
 try (ObjectOutputStream oos =
         new ObjectOutputStream(new FileOutputStream("user.bin"))) {
@@ -211,7 +207,6 @@ try (ObjectOutputStream oos =
     // and then each field's type and value. All of this overhead means
     // even a simple two-field object produces dozens of bytes of metadata.
 }
-
 // Deserializing from a file:
 try (ObjectInputStream ois =
         new ObjectInputStream(new FileInputStream("user.bin"))) {
@@ -420,17 +415,14 @@ The key innovation in protobuf's binary encoding is the **varint** (variable-len
 def encode_varint(value: int) -> bytes:
     """
     Encode a non-negative integer as a Protocol Buffers varint.
-
     Each output byte contributes 7 bits of data. The most significant bit
     (the continuation bit) signals whether more bytes follow:
       0 = this is the last byte
       1 = more bytes to come
-
     Examples:
       encode_varint(1)   -> b'\\x01'             (1 byte:  0_0000001)
       encode_varint(128) -> b'\\x80\\x01'         (2 bytes: 1_0000000, 0_0000001)
       encode_varint(300) -> b'\\xac\\x02'         (2 bytes: 1_0101100, 0_0000010)
-
     The practical impact: a field whose value is 0–127 takes ONE byte.
     For the vast majority of real-world integers (small IDs, ages, status codes),
     this is a dramatic improvement over a fixed 4-byte encoding.
