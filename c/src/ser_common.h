@@ -48,9 +48,24 @@ static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b)
     }
 }
 
+/* Wire sizes (excluding leading kind byte consumed/written by caller).
+ * person: 32+32+4+4+24+24+4 = 124 fixed + up to 8*(4+16) = 160 police = 284 max
+ * simple: 4+32+32+1 = 69
+ * telemetry: 24+24+32+4+4+4 = 92 pre-loop + 8*meas + 4+4+1 = 9 tail = 101 + 8*meas
+ * edi subset: 32+32+4+8 = 76
+ */
+#define BIN_PERSON_FIXED_BYTES   124
+#define BIN_PERSON_POLICE_BYTES  20
+#define BIN_PERSON_MAX_BYTES     (BIN_PERSON_FIXED_BYTES + 8 * BIN_PERSON_POLICE_BYTES) /* 284 */
+#define BIN_SIMPLE_BYTES         69
+#define BIN_TELEMETRY_PRE_BYTES  92
+#define BIN_TELEMETRY_TAIL_BYTES 9
+#define BIN_TELEMETRY_FIXED_BYTES (BIN_TELEMETRY_PRE_BYTES + BIN_TELEMETRY_TAIL_BYTES) /* 101 */
+#define BIN_EDI_SUBSET_BYTES     76
+
 /* --- minimal binary codec used by multiple serializers with different envelopes --- */
 static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *out_len) {
-    if (cap < 8) return -1;
+    if (cap < 1) return -1;
     size_t o = 0;
     buf[o++] = (uint8_t)fx->kind;
     switch (fx->kind) {
@@ -62,7 +77,7 @@ static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size
         }
         case TD_SIMPLE: {
             const simple_object_t *s = &fx->simple;
-            if (o + 4 + 32 + 32 + 1 > cap) return -1;
+            if (o + BIN_SIMPLE_BYTES > cap) return -1;
             memcpy(buf + o, &s->id, 4); o += 4;
             memcpy(buf + o, s->name, 32); o += 32;
             memcpy(buf + o, s->timestamp, 32); o += 32;
@@ -71,15 +86,21 @@ static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size
         }
         case TD_PERSON: {
             const person_t *p = &fx->person;
-            if (o + 200 > cap) return -1;
+            int n_police = p->police_count;
+            if (n_police < 0) n_police = 0;
+            if (n_police > 8) n_police = 8;
+            size_t need = (size_t)BIN_PERSON_FIXED_BYTES + (size_t)n_police * BIN_PERSON_POLICE_BYTES;
+            if (o + need > cap) return -1;
             memcpy(buf + o, p->first_name, 32); o += 32;
             memcpy(buf + o, p->last_name, 32); o += 32;
             memcpy(buf + o, &p->age, 4); o += 4;
             memcpy(buf + o, &p->gender, 4); o += 4;
             memcpy(buf + o, p->passport_number, 24); o += 24;
             memcpy(buf + o, p->passport_authority, 24); o += 24;
-            memcpy(buf + o, &p->police_count, 4); o += 4;
-            for (int i = 0; i < p->police_count && i < 8; i++) {
+            /* write clamped count so decode matches wire layout */
+            int32_t police_wire = (int32_t)n_police;
+            memcpy(buf + o, &police_wire, 4); o += 4;
+            for (int i = 0; i < n_police; i++) {
                 memcpy(buf + o, &p->police_ids[i], 4); o += 4;
                 memcpy(buf + o, p->police_codes[i], 16); o += 16;
             }
@@ -87,21 +108,30 @@ static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size
         }
         case TD_STRING_ARRAY: {
             const string_array_t *a = &fx->string_array;
-            if (o + 4 + (size_t)a->count * 16 > cap) return -1;
-            memcpy(buf + o, &a->count, 4); o += 4;
-            for (int i = 0; i < a->count; i++) { memcpy(buf + o, a->items[i], 16); o += 16; }
+            int n = a->count;
+            if (n < 0) n = 0;
+            if (n > 100) n = 100;
+            if (o + 4 + (size_t)n * 16 > cap) return -1;
+            int32_t count_wire = (int32_t)n;
+            memcpy(buf + o, &count_wire, 4); o += 4;
+            for (int i = 0; i < n; i++) { memcpy(buf + o, a->items[i], 16); o += 16; }
             break;
         }
         case TD_TELEMETRY: {
             const telemetry_t *t = &fx->telemetry;
-            if (o + 64 + 8 + (size_t)t->meas_count * 8 > cap) return -1;
+            int n_meas = t->meas_count;
+            if (n_meas < 0) n_meas = 0;
+            if (n_meas > 100) n_meas = 100;
+            size_t need = (size_t)BIN_TELEMETRY_FIXED_BYTES + (size_t)n_meas * 8;
+            if (o + need > cap) return -1;
             memcpy(buf + o, t->id, 24); o += 24;
             memcpy(buf + o, t->data_source, 24); o += 24;
             memcpy(buf + o, t->time_stamp, 32); o += 32;
             memcpy(buf + o, &t->param1, 4); o += 4;
             memcpy(buf + o, &t->param2, 4); o += 4;
-            memcpy(buf + o, &t->meas_count, 4); o += 4;
-            for (int i = 0; i < t->meas_count; i++) { memcpy(buf + o, &t->measurements[i], 8); o += 8; }
+            int32_t meas_wire = (int32_t)n_meas;
+            memcpy(buf + o, &meas_wire, 4); o += 4;
+            for (int i = 0; i < n_meas; i++) { memcpy(buf + o, &t->measurements[i], 8); o += 8; }
             memcpy(buf + o, &t->problem_id, 4); o += 4;
             memcpy(buf + o, &t->log_id, 4); o += 4;
             buf[o++] = t->was_processed ? 1 : 0;
@@ -110,7 +140,7 @@ static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size
         case TD_EDI835: {
             /* compact: store key fields only for speed/fidelity subset */
             const edi835_t *e = &fx->edi;
-            if (o + 128 > cap) return -1;
+            if (o + BIN_EDI_SUBSET_BYTES > cap) return -1;
             memcpy(buf + o, e->payer_name, 32); o += 32;
             memcpy(buf + o, e->payee_name, 32); o += 32;
             memcpy(buf + o, &e->claim_count, 4); o += 4;
@@ -137,7 +167,7 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
             break;
         case TD_SIMPLE: {
             simple_object_t *s = &out->simple;
-            if (o + 69 > len) return -1;
+            if (o + BIN_SIMPLE_BYTES > len) return -1;
             memcpy(&s->id, buf + o, 4); o += 4;
             memcpy(s->name, buf + o, 32); o += 32;
             memcpy(s->timestamp, buf + o, 32); o += 32;
@@ -146,7 +176,7 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
         }
         case TD_PERSON: {
             person_t *p = &out->person;
-            if (o + 120 > len) return -1;
+            if (o + BIN_PERSON_FIXED_BYTES > len) return -1;
             memcpy(p->first_name, buf + o, 32); o += 32;
             memcpy(p->last_name, buf + o, 32); o += 32;
             memcpy(&p->age, buf + o, 4); o += 4;
@@ -154,8 +184,9 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
             memcpy(p->passport_number, buf + o, 24); o += 24;
             memcpy(p->passport_authority, buf + o, 24); o += 24;
             memcpy(&p->police_count, buf + o, 4); o += 4;
-            for (int i = 0; i < p->police_count && i < 8; i++) {
-                if (o + 20 > len) return -1;
+            if (p->police_count < 0 || p->police_count > 8) return -1;
+            for (int i = 0; i < p->police_count; i++) {
+                if (o + BIN_PERSON_POLICE_BYTES > len) return -1;
                 memcpy(&p->police_ids[i], buf + o, 4); o += 4;
                 memcpy(p->police_codes[i], buf + o, 16); o += 16;
             }
@@ -166,15 +197,15 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
             if (o + 4 > len) return -1;
             memcpy(&a->count, buf + o, 4); o += 4;
             if (a->count < 0 || a->count > 100) return -1;
+            if (o + (size_t)a->count * 16 > len) return -1;
             for (int i = 0; i < a->count; i++) {
-                if (o + 16 > len) return -1;
                 memcpy(a->items[i], buf + o, 16); o += 16;
             }
             break;
         }
         case TD_TELEMETRY: {
             telemetry_t *t = &out->telemetry;
-            if (o + 88 > len) return -1;
+            if (o + BIN_TELEMETRY_PRE_BYTES > len) return -1;
             memcpy(t->id, buf + o, 24); o += 24;
             memcpy(t->data_source, buf + o, 24); o += 24;
             memcpy(t->time_stamp, buf + o, 32); o += 32;
@@ -182,11 +213,10 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
             memcpy(&t->param2, buf + o, 4); o += 4;
             memcpy(&t->meas_count, buf + o, 4); o += 4;
             if (t->meas_count < 0 || t->meas_count > 100) return -1;
+            if (o + (size_t)t->meas_count * 8 + BIN_TELEMETRY_TAIL_BYTES > len) return -1;
             for (int i = 0; i < t->meas_count; i++) {
-                if (o + 8 > len) return -1;
                 memcpy(&t->measurements[i], buf + o, 8); o += 8;
             }
-            if (o + 9 > len) return -1;
             memcpy(&t->problem_id, buf + o, 4); o += 4;
             memcpy(&t->log_id, buf + o, 4); o += 4;
             t->was_processed = buf[o++] != 0;
@@ -194,7 +224,7 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
         }
         case TD_EDI835: {
             edi835_t *e = &out->edi;
-            if (o + 76 > len) return -1;
+            if (o + BIN_EDI_SUBSET_BYTES > len) return -1;
             memcpy(e->payer_name, buf + o, 32); o += 32;
             memcpy(e->payee_name, buf + o, 32); o += 32;
             memcpy(&e->claim_count, buf + o, 4); o += 4;
