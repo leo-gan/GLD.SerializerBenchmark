@@ -1,117 +1,26 @@
 # Serializer Benchmark Summary
 
-**Generated:** 2026-05-02T22:34:56.330147
+**Generated:** 2026-06-24T02:33:21.268713
 
 ---
 
 
+## Methodology (scientific)
+
+- Warmup exclusion (RepetitionIndex 0)
+
+- IQR outlier filter (Tukey 1.5×IQR, groups ≥10)
+
+- Mean/median/std/MAD/CV + bootstrap 95% CI on mean (2000 resamples)
+
+- Within-group Cliff's δ / Hedges' g vs fastest serializer
+
+- Version A/B: `analyze-benchmarks --compare-a A.csv --compare-b B.csv`
+
+- Master config: `config/benchmark_config.yaml`
+
+
 ## Pivot Tables
-
-
-### C#: Avg Total Time (ns) by Serializer and Mode
-
-| serializer | Stream | string |
-|---|---|---|
-| Ceras | 80,487 | 67,322 |
-| CsvHelper | 575,677 | 443,243 |
-| ExtendedXmlSerializer | 22,645 | 15,612 |
-| FlatSharp | 14,093 | 7,762 |
-| FsPickler | 84,944 | 71,369 |
-| FsPicklerJson | 124,996 | 113,079 |
-| GroBuf | 6,977 | 3,342 |
-| Hyperion | 61,024 | 58,699 |
-| Jil | 67,819 | 61,116 |
-| Json.Net | 152,721 | 131,351 |
-| Json.Net (Helper) | 233,699 | 193,144 |
-| MS Binary | 215,550 | 196,973 |
-| MS Bond Compact | 33,274 | 18,760 |
-| MS Bond Fast | 25,880 | 13,412 |
-| MS Bond Json | 81,213 | 67,146 |
-| MS DataContract | 186,564 | 134,567 |
-| MS DataContract Json | 211,462 | 137,633 |
-| MS XmlSerializer | 171,433 | 131,338 |
-| MemoryPack | 10,935 | 5,552 |
-| Migrant | 68,154 | 47,620 |
-| NetJSON | 61,831 | 53,719 |
-| NetSerializer | 25,395 | 28,985 |
-| ProtoBuf | 49,152 | 47,161 |
-| ServiceStack Json | 164,362 | 156,885 |
-| ServiceStack Type | 132,516 | 132,870 |
-| SharpSerializer | 59,469 | 45,683 |
-| SharpYaml | 819,524 | 791,924 |
-| SpanJson | 54,209 | 40,666 |
-| Utf8Json | 69,472 | 69,479 |
-| YAXLib | 1,093,006 | 986,592 |
-| YamlDotNet | 1,442,154 | 1,344,936 |
-| fastJson | 187,900 | 171,458 |
-
-
-### C#: Ops/Sec by Serializer and Data Type
-
-| serializer | EDI_835 | Integer | ObjectGraph | Person | SimpleObject | StringArray | Telemetry |
-|---|---|---|---|---|---|---|---|
-| Ceras | 12,408 | 64,609 | 30,536 | 14,854 | 22,862 | 10,898 | 13,346 |
-| CsvHelper | - | 2,256 | - | - | 3 | - | - |
-| ExtendedXmlSerializer | - | 64,054 | - | - | - | - | - |
-| FlatSharp | - | 128,838 | - | - | 40,684 | 14,693 | - |
-| FsPickler | 12,622 | 48,833 | 27,119 | 14,012 | 24,011 | 12,780 | 14,342 |
-| FsPicklerJson | 7,729 | 27,562 | 22,128 | 8,843 | 16,963 | 9,497 | 4,125 |
-| GroBuf | - | 299,223 | - | - | 137,771 | - | - |
-| Hyperion | 13,508 | 225,967 | - | 17,036 | 42,550 | 11,314 | 17,318 |
-| Jil | 11,204 | 139,602 | - | 16,362 | 53,328 | 11,445 | 4,870 |
-| Json.Net | 15,694 | 271,418 | 63,142 | 7,613 | 49,141 | 12,528 | 4,550 |
-| Json.Net (Helper) | 9,029 | 76,970 | 26,319 | 5,177 | 16,655 | 8,072 | 3,552 |
-| MS Binary | 4,813 | 31,062 | 12,833 | 5,077 | 17,007 | 8,254 | 9,446 |
-| MS Bond Compact | 39,129 | 320,888 | - | 53,306 | 102,108 | 26,851 | 57,921 |
-| MS Bond Fast | 51,414 | 804,528 | - | 74,557 | 179,593 | 30,717 | 98,785 |
-| MS Bond Json | 16,630 | 186,469 | - | 14,893 | 40,250 | 21,066 | 5,723 |
-| MS DataContract | 7,695 | 43,104 | 17,450 | 7,431 | 12,952 | 5,133 | 2,792 |
-| MS DataContract Json | 8,282 | 62,988 | - | 7,266 | 17,236 | 5,983 | 3,183 |
-| MS XmlSerializer | 7,795 | 37,880 | - | 7,614 | 13,043 | 4,615 | 2,923 |
-| MemoryPack | - | 180,122 | - | - | 57,742 | 16,918 | - |
-| Migrant | - | 21,000 | - | - | 5,450 | - | - |
-| NetJSON | 18,645 | 253,776 | - | 18,615 | 46,905 | 14,089 | 7,104 |
-| NetSerializer | 24,342 | 419,342 | - | 34,501 | 107,701 | 22,277 | 18,276 |
-| ProtoBuf | 20,567 | 89,288 | - | 21,204 | 42,097 | 13,440 | 21,884 |
-| ServiceStack Json | 6,686 | 209,496 | - | 6,374 | 22,681 | 7,965 | 3,823 |
-| ServiceStack Type | 8,400 | 303,820 | - | 7,526 | 22,664 | 9,973 | 4,572 |
-| SharpSerializer | 1,048 | 21,890 | 4,073 | - | 7,474 | 2,056 | - |
-| SharpYaml | 1,267 | 35,840 | - | 1,263 | 3,654 | 1,033 | 1,073 |
-| SpanJson | 16,772 | 131,138 | - | 24,590 | 34,472 | 15,126 | 7,284 |
-| Utf8Json | 8,370 | 113,470 | - | 14,393 | 30,183 | 10,959 | 3,776 |
-| YAXLib | 990 | 9,102 | - | 1,014 | 2,139 | 1,484 | 917 |
-| YamlDotNet | 1,298 | 12,491 | 5,377 | 744 | 2,752 | 4 | 5 |
-| fastJson | 7,766 | 91,808 | - | 5,832 | 22,888 | 11,984 | 4,314 |
-
-
-### Python: Avg Total Time (ns) by Serializer and Mode
-
-| serializer | bytes | stream |
-|---|---|---|
-| avro | 96,178 | 95,136 |
-| cbor2 | 318,576 | 328,590 |
-| cloudpickle | 134,079 | 137,456 |
-| msgpack | 263,091 | 275,101 |
-| msgspec | 9,825 | 12,190 |
-| orjson | 10,032 | 12,491 |
-| pickle | 54,350 | 59,981 |
-| protobuf | 88,305 | 90,755 |
-| rapidjson | 268,884 | 270,553 |
-
-
-### Python: Ops/Sec by Serializer and Data Type
-
-| serializer | EDI_835 | Integer | ObjectGraph | Person | SimpleObject | StringArray | Telemetry |
-|---|---|---|---|---|---|---|---|
-| avro | 2,737 | - | - | 10,397 | 38,071 | 3,900 | 5,340 |
-| cbor2 | 1,200 | 44,955 | - | 3,139 | 5,805 | 2,858 | 2,647 |
-| cloudpickle | 3,999 | 85,757 | 19,351 | 7,458 | 20,062 | 13,231 | 13,892 |
-| msgpack | 1,780 | 276,297 | - | 3,801 | 8,525 | 5,606 | 3,762 |
-| msgspec | 33,046 | 544,088 | - | 101,781 | 225,156 | 23,109 | 50,077 |
-| orjson | 43,995 | 392,197 | - | 99,678 | 172,213 | 26,899 | 57,678 |
-| pickle | 9,177 | 196,028 | 43,363 | 18,399 | 52,437 | 17,954 | 22,291 |
-| protobuf | 1,767 | - | - | 11,324 | 33,253 | 7,838 | 15,974 |
-| rapidjson | 1,788 | 154,150 | - | 3,719 | 7,343 | 5,071 | 2,428 |
 
 
 ---
