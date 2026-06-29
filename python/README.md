@@ -2,6 +2,8 @@
 
 A Dockerized benchmarking suite evaluating **10 Python serializers** across 7 realistic data structures, designed to match the methodology and output format of the companion [.NET (C#) benchmark](../c-sharp/).
 
+Canonical serializer reference: [docs/python/python_tested_serializers.md](../docs/python/python_tested_serializers.md) (do not edit `python/docs/serializers.md` — pointer only).
+
 ## Serializer Groups
 
 | Group | Serializers | Notes |
@@ -81,9 +83,10 @@ cd python
 
 | Mode | Command | Description |
 | :--- | :--- | :--- |
-| **Smoke** | `./scripts/run-benchmarks.sh smoke` | 1 repetition of `pickle` on `Person`. Verifies the image and environment. |
-| **Verify All** | `./scripts/run-benchmarks.sh all-single` | 1 repetition of **all** serializers on all data. Checks for compatibility issues. |
+| **Smoke** | `./scripts/run-benchmarks.sh smoke` | 2 repetitions of `pickle` on `Person` (matches `config/benchmark_config.yaml`). |
+| **Verify All** | `./scripts/run-benchmarks.sh all-single` | 10 repetitions of **all** serializers on all data. |
 | **Full Run** | `./scripts/run-benchmarks.sh full` | 100 repetitions of all serializers. |
+| **Research** | `./scripts/run-benchmarks.sh research` | 500 repetitions of all serializers. |
 | **Custom** | `./scripts/run-benchmarks.sh custom 50 "json" "Person"` | Custom repetitions and filters. |
 
 #### 3. Monitoring Progress

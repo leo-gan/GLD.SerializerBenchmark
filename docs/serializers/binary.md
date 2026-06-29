@@ -1,5 +1,7 @@
 # Binary Serializers
 
+> **Concepts page.** Tables mix ecosystem examples with suite members. **MessagePack-CSharp is not registered** in this repo’s C# harness. What we measure: [serialization categories](../analysis/serialization_categories.md) and each `docs/<lang>/*_tested_serializers.md`.
+
 Binary formats sacrifice human readability for significant improvements in size (20-50% smaller than JSON) and parsing speed.
 
 ## When to Use Binary

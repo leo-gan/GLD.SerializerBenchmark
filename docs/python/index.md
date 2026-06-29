@@ -24,9 +24,13 @@ In Python, every object (even a simple integer) is a full-fledged heap-allocated
 *   **Interoperability:** `pickle` is entirely Python-specific. A Node.js or C# microservice cannot read a Pickled object.
 *   **Performance:** While `cPickle` (the C implementation used by default in modern Python) is fast, it is often outperformed by specialized binary serializers like `msgpack` or `orjson`.
 
-## Prominent Python Serializers
+## Serializers in this suite (10)
 
-*   **orjson**: An ultra-fast JSON library written in Rust. It utilizes vector instructions (SIMD) and is widely considered the fastest JSON library for Python.
-*   **msgpack-python**: The standard implementation for MessagePack in Python. Extremely fast, lightweight, and supports zero-copy reading in some configurations.
-*   **Protobuf (Google)**: The official Protocol Buffers compiler generates Python code. While the C-extension backed implementation is fast, it can be cumbersome to manage in pure-Python environments.
-*   **Pydantic**: Not a serializer per-se, but a data validation library. It is often the primary bottleneck in Python APIs because it heavily validates data *after* it has been deserialized from JSON.
+See [Python tested serializers](python_tested_serializers.md) for the full reference. Registered names:
+
+* **JSON:** `orjson`, `msgspec`, `rapidjson`
+* **Binary:** `msgpack`, `msgspec-msgpack`, `cbor2`
+* **Schema:** `protobuf`, `avro` (fastavro)
+* **Native:** `pickle`, `cloudpickle`
+
+**Not in this suite:** stdlib `json`, `ujson`, Pydantic (validation layer, not a harness entry), `dill`, FlatBuffers for Python.

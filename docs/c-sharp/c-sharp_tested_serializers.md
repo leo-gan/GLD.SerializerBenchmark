@@ -1,23 +1,26 @@
 # C# Tested Serializers
 
-Complete reference for all **38 serializers** included in the benchmark suite, organized by category.
+Complete reference for all **38 serializers** registered in `c-sharp/src/Program.cs`, organized by category.
+
+**Not in this suite:** System.Text.Json, MessagePack-CSharp, Wire — mentioned in ecosystem overviews only.
 
 ## Table of Contents
 - [Microsoft Built-in](#microsoft-built-in)
+- [Microsoft Bond](#microsoft-bond)
 - [JSON Serializers](#json-serializers)
 - [Binary Serializers](#binary-serializers)
 - [XML Serializers](#xml-serializers)
 - [YAML Serializers](#yaml-serializers)
 - [Specialized/High-Performance](#specializedhigh-performance)
-- [Disabled Serializers](#partially-tested-serializers)
+- [Partial coverage / limitations](#partially-tested-serializers)
 
 ---
 
 ## Microsoft Built-in
 
-### BinarySerializer
+### BinarySerializer (`MS Binary`)
 - **Type**: Binary
-- **Status**: ✅ All benchmark passed
+- **Status**: ✅ Registered and run (legacy BinaryFormatter path)
 - **Description**: Microsoft's legacy binary formatter. Simple binary serialization for .NET objects.
 - **Limitations**: Limited type support, security concerns with untrusted data.
 
@@ -39,6 +42,29 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 - **Description**: Classic .NET XML serializer. Requires public parameterless constructors.
 - **Best For**: XML-based APIs, SOAP services, configuration files.
 - **Limitations**: Does not support circular references (ObjectGraph).
+
+---
+
+## Microsoft Bond
+
+Bond serializers are **registered** in `Program.cs` and use Bond-generated types under `src/Bond/`. They require Bond schema attributes on the model types used for those paths; partial data-type coverage is listed below.
+
+### MS Bond Compact
+- **Type**: Binary (Bond Compact Binary)
+- **Status**: ⚠️ Partial data coverage (see table)
+- **Description**: Microsoft Bond compact binary protocol.
+- **Best For**: .NET services already on Bond.
+
+### MS Bond Fast
+- **Type**: Binary (Bond Fast Binary)
+- **Status**: ⚠️ Partial data coverage (see table)
+- **Description**: Microsoft Bond fast binary protocol — often among top throughput results for simple payloads.
+- **Best For**: High-throughput .NET microservices using Bond.
+
+### MS Bond Json
+- **Type**: JSON (Bond JSON)
+- **Status**: ⚠️ Partial data coverage (see table)
+- **Description**: Bond’s JSON protocol variant (human-readable Bond payloads).
 
 ---
 
@@ -82,6 +108,12 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 - **Description**: Part of ServiceStack framework. Feature-rich with text-based format support.
 - **Limitations**: Does not support circular references (ObjectGraph).
 
+### ServiceStackTypeSerializer (`ServiceStack`)
+- **Type**: Binary / type serializer (ServiceStack.Text)
+- **Status**: ⚠️ Benchmarked with all except ObjectGraph
+- **Description**: ServiceStack’s non-JSON type serializer path (`ServiceStack` name in logs).
+- **Limitations**: Does not support circular references (ObjectGraph).
+
 ### SpanJson
 - **Type**: JSON
 - **Status**: ⚠️ Benchmarked with all except ObjectGraph
@@ -107,7 +139,7 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### GoogleProtobufSerializer
 - **Type**: Binary (Official Google)
-- **Status**: ❌ Permanently Disabled, Should be fixed!
+- **Status**: ⚠️ Registered; limited without full `.proto` / `IMessage` coverage for all fixtures
 - **Description**: Official Google Protobuf library for .NET. Requires code generation from .proto files.
 - **Limitations**: Requires .proto schema definitions and generated code. Only types implementing IMessage are supported. Use protobuf-net for dynamic scenarios.
 
@@ -202,7 +234,7 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### ZeroFormatterSerializer
 - **Type**: Binary
-- **Status**: ❌ Requires zfc Tool
+- **Status**: ⚠️ Registered; best results with zfc-generated formatters
 - **Description**: Fast binary serializer with zero-copy deserialization.
 - **Best For**: Game networking, real-time applications.
 - **Limitations**: Requires [ZeroFormattable] attribute AND zfc (ZeroFormatter.Compiler) command-line tool to generate formatters at build time. Formatters must be registered at startup.
@@ -216,7 +248,7 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### BinaryPackSerializer
 - **Type**: Binary
-- **Status**: ❌ Permanently Disabled, Should be fixed!
+- **Status**: ⚠️ Registered; limited type requirements (`T : new()`)
 - **Description**: High-performance binary serializer using Memory<T>.
 - **Best For**: Modern .NET applications using Memory<T> and Span<T>.
 - **Limitations**: Requires compile-time type knowledge with proper generic constraints (T : new()). Cannot work with arbitrary types via reflection.
@@ -237,7 +269,7 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ### FluentSerializerJson
 - **Type**: JSON
-- **Status**: ❌ Permanently Disabled, Should be fixed!
+- **Status**: ⚠️ Registered; may fail without profile mappings
 - **Description**: Fluent API JSON serializer from the FluentSerializer project.
 - **Limitations**: Requires profile mappings for each type to be defined at compile time. Cannot work with arbitrary types without profiles.
 
@@ -252,35 +284,34 @@ Complete reference for all **38 serializers** included in the benchmark suite, o
 
 ## Partially Tested Serializers
 
-The following serializers are partially tested in the benchmark via the `Supports()` method.
-That means they are not tested with all data types, but some of them are tested with specific data types.
+All 38 serializers remain **registered** in `Program.cs`. Coverage is limited via `Supports()` / runtime failures for some combinations — failures are recorded in `benchmark-errors.csv`. Historical “permanently disabled” wording was wrong: entries still run; they may skip types or error.
 
-| Serializer | Reason | Supported Data                                       |
-|------------|--------|------------------------------------------------------|
-| **Apex.Serialization** | Crashes on circular refs | All except ObjectGraph                               |
-| **BinaryPack** | Compile-time type required (T : new()) | ❌ Permanently Disabled, Should be fixed!             |
-| **Bond Compact/Fast/Json** | Schema attributes required | All except ObjectGraph                               |
-| **CsvHelper** | CSV is flat format, no nested objects | Integer, SimpleObject                                |
-| **ExtendedXmlSerializer** | Comparison errors | Integer only                                         |
-| **FastJson** | Circular reference issues | All except ObjectGraph                               |
-| **FlatSharp** | ✅ Now Working | Integer, SimpleObject, StringArray                   |
-| **FluentSerializer** | Profile mappings required | ❌ Permanently Disabled, Should be fixed!             |
-| **Google.Protobuf** | .proto definitions required | ❌ Permanently Disabled, Should be fixed!             |
-| **GroBuf** | Comparison errors | Integer, SimpleObject                                |
-| **Hyperion** | StackOverflow on deep circular refs | All except ObjectGraph                               |
-| **JavaScriptSerializer** | System.Web not in .NET Core | ❌ Permanently Disabled, Should be fixed!             |
-| **MemoryPack** | ✅ Working (Generator package) | Integer, SimpleObject, StringArray                   |
-| **Migrant** | BadImageFormatException | Integer, SimpleObject                                |
-| **NetSerializer** | Crashes on circular refs | All except ObjectGraph                               |
-| **ServiceStack Json** | Circular reference issues | All except ObjectGraph                               |
-| **ServiceStack Type** | Circular reference issues | All except ObjectGraph                               |
-| **SharpSerializer** | NullReferenceException | SimpleObject, StringArray, EDI_835                   |
-| **SharpYaml** | Max nesting depth exceeded | All except ObjectGraph                               |
-| **SpanJson** | Does not support circular refs | All except ObjectGraph                               |
-| **Utf8Json** | Does not support circular refs | All except ObjectGraph                               |
-| **XmlSerializer** | Does not support circular refs | All except ObjectGraph                               |
-| **YAXLib** | Does not support circular refs | All except ObjectGraph                               |
-| **ZeroFormatter** | Requires zfc compiler tool | ❌ Permanently Disabled, Build-time formatters needed |
+| Serializer | Reason | Typical coverage |
+|------------|--------|------------------|
+| **Apex.Serialization** | Crashes on circular refs | All except ObjectGraph |
+| **BinaryPack** | Compile-time type required (`T : new()`) | Limited fixtures |
+| **MS Bond Compact/Fast/Json** | Bond schema / generated types | All except ObjectGraph (typical) |
+| **CsvHelper** | CSV is flat; no nested objects | Integer, SimpleObject |
+| **ExtendedXmlSerializer** | Comparison / fidelity issues | Often Integer only |
+| **FastJson** | Circular reference issues | All except ObjectGraph |
+| **FlatSharp** | FlatBuffers-style models | Integer, SimpleObject, StringArray (and more if models allow) |
+| **FluentSerializer** | Profile mappings required | Often fails without setup |
+| **Google.Protobuf** | `.proto` / `IMessage` required | Limited without generated messages |
+| **GroBuf** | Comparison / fidelity issues | Integer, SimpleObject |
+| **Hyperion** | StackOverflow on deep circular refs | All except ObjectGraph |
+| **JavaScriptSerializer** | Legacy `System.Web` — stubbed on modern .NET (`N/A` name) | Not a meaningful run on .NET 8 |
+| **MemoryPack** | Source-generated models | Subset of fixtures with MemoryPack types |
+| **Migrant** | Platform / image issues on some hosts | Integer, SimpleObject |
+| **NetSerializer** | Crashes on circular refs | All except ObjectGraph |
+| **ServiceStack Json** | Circular reference issues | All except ObjectGraph |
+| **ServiceStack** (type serializer) | Circular reference issues | All except ObjectGraph |
+| **SharpSerializer** | NullReferenceException on some graphs | SimpleObject, StringArray, EDI_835 |
+| **SharpYaml** | Max nesting depth exceeded | All except ObjectGraph |
+| **SpanJson** | No circular refs | All except ObjectGraph |
+| **Utf8Json** | No circular refs | All except ObjectGraph |
+| **XmlSerializer** | No circular refs | All except ObjectGraph |
+| **YAXLib** | No circular refs | All except ObjectGraph |
+| **ZeroFormatter** | Prefers zfc-generated formatters | Limited without build-time formatters |
 
 ---
 

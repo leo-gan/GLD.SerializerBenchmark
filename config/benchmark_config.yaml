@@ -226,7 +226,7 @@ languages:
         category: json
         package: orjson
         rationale: "Fastest mainstream Python JSON (Rust core)"
-      - name: msgspec-json
+      - name: msgspec
         category: json
         package: msgspec
         rationale: "High-performance typed JSON via msgspec"
@@ -282,7 +282,7 @@ languages:
         category: json
         crate: simd-json
         rationale: "SIMD-accelerated JSON parser"
-        optimal_api: "to_owned_value / serialize"
+        optimal_api: "serde::from_slice on mut buf (serialize via serde_json)"
       - name: sonic-rs
         category: json
         crate: sonic-rs
@@ -302,7 +302,7 @@ languages:
         category: binary
         crate: bincode
         rationale: "Compact Rust-native binary format"
-        optimal_api: "encode_to_vec / decode_from_slice (bincode 2)"
+        optimal_api: "serde::encode_to_vec / decode_from_slice (bincode 2)"
       - name: postcard
         category: binary
         crate: postcard
@@ -312,27 +312,27 @@ languages:
         category: binary
         crate: bitcode
         rationale: "Bit-packed fast binary codec"
-        optimal_api: "encode / decode"
-      - name: prost
-        category: schema
-        crate: prost
-        rationale: "Protocol Buffers (Rust-native prost)"
-        optimal_api: "encode_to_vec / decode"
+        optimal_api: "serialize / deserialize"
       - name: flexbuffers
         category: schema
         crate: flexbuffers
         rationale: "FlatBuffers FlexBuffers (schemaless subset)"
         optimal_api: "FlexbufferSerializer / Reader"
+      - name: minicbor
+        category: binary
+        crate: minicbor
+        rationale: "Lightweight CBOR (wrapper path for untagged Fixture enum)"
+        optimal_api: "to_vec / decode (MessagePack payload as CBOR byte string)"
       - name: rkyv
         category: zero_copy
         crate: rkyv
         rationale: "Zero-copy archive deserialization"
-        optimal_api: "to_bytes / access (validated)"
-      - name: minicbor
-        category: binary
-        crate: minicbor
-        rationale: "Lightweight CBOR without serde indirection"
-        optimal_api: "to_vec / from_slice with derive"
+        optimal_api: "to_bytes / access + deserialize (archives MessagePack payload)"
+      - name: prost-wire
+        category: schema
+        crate: prost
+        rationale: "Protobuf-style field-1 length-delimited envelope (stand-in until prost-build)"
+        optimal_api: "hand wire field-1 over MessagePack payload"
 
   c:
     display_name: "C (native)"

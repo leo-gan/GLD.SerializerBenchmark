@@ -1,5 +1,7 @@
 # Schema Serializers
 
+> **Concepts page.** Bond Fast/Compact/Json **are** in the C# harness; Rust `prost-wire` is an envelope stand-in (see Rust caveats). What we measure: [serialization categories](../analysis/serialization_categories.md) and each `docs/<lang>/*_tested_serializers.md`.
+
 Schema serializers require pre-defined schemas (.proto, .avsc, or .bond files) that specify exact data structures, types, and field numbers. They offer the smallest output sizes, fastest deserialization, and strongest compatibility guarantees.
 
 ## When to Use Schema Serializers
