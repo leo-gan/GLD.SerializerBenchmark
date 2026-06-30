@@ -47,21 +47,16 @@ nav:
       - Historical Perspective: theory/historical_perspective.md
       - Data Science Perspective: theory/data_science_perspective.md
       - Engineer Perspective: theory/engineer_perspective.md
-  - C# Ecosystem:
+  - C#:
       - Overview: c-sharp/index.md
-      - C# Tested Serializers: c-sharp/c-sharp_tested_serializers.md
-  - Python Ecosystem:
+  - Python:
       - Overview: python/index.md
-      - Python Tested Serializers: python/python_tested_serializers.md
-  - Rust Ecosystem:
+  - Rust:
       - Overview: rust/index.md
-      - Rust Tested Serializers: rust/rust_tested_serializers.md
-  - C Ecosystem:
+  - C:
       - Overview: c/index.md
-      - C Tested Serializers: c/c_tested_serializers.md
-  - JavaScript Ecosystem:
+  - JavaScript:
       - Overview: javascript/index.md
-      - JS Tested Serializers: javascript/javascript_tested_serializers.md
   - Architecture:
       - Overview: architecture/index.md
       - Adding a Language: architecture/ADDING_A_LANGUAGE.md

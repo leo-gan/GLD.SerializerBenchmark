@@ -1,12 +1,12 @@
 # CI Integration Scripts
 
-This directory contains scripts for integrating serializer benchmarks into your CI/CD pipeline, turning performance measurement into a quality gate.
+This directory contains scripts for integrating serializer benchmarks into your CI/CD pipeline.
 
 ## Scripts
 
 ### `run-all-benchmarks.sh`
 
-Unified benchmark runner for all languages. Coordinates C# and Python benchmark execution with report generation.
+Unified benchmark runner for **all enabled languages** (C#, Python, Rust, C, JavaScript). Modes and paths follow [`config/benchmark_config.yaml`](../config/benchmark_config.yaml).
 
 **Usage:**
 ```bash
@@ -17,8 +17,9 @@ Unified benchmark runner for all languages. Coordinates C# and Python benchmark 
 
 | Flag | Description |
 |------|-------------|
-| `-m, --mode MODE` | Benchmark mode: `smoke`, `all-single`, `full` |
-| `-d, --dashboard` | Generate HTML dashboard with visualizations |
+| `-m, --mode MODE` | `smoke`, `all-single`, `full`, or `research` (default: `all-single`) |
+| `-l, --lang LANG` | Only run one language: `csharp` \| `python` \| `rust` \| `c` \| `javascript` |
+| `-d, --dashboard` | Generate plots dashboard (`--generate-plots`) |
 | `-s, --summary` | Generate Markdown summary report |
 | `-r, --regression-check` | Check for performance regressions |
 | `-t, --threshold PERCENT` | Regression threshold (default: 10%) |
@@ -27,8 +28,11 @@ Unified benchmark runner for all languages. Coordinates C# and Python benchmark 
 
 **Examples:**
 ```bash
-# Quick smoke test
+# Quick smoke test (all languages)
 ./scripts/run-all-benchmarks.sh --mode smoke
+
+# One language only
+./scripts/run-all-benchmarks.sh --mode full --lang rust
 
 # Full benchmarks with reports
 ./scripts/run-all-benchmarks.sh --mode full --dashboard --summary
@@ -42,55 +46,42 @@ Unified benchmark runner for all languages. Coordinates C# and Python benchmark 
 
 ### `analyze-benchmarks`
 
-Console script from `analysis/` package. Analyzes benchmark CSV outputs and generates reports.
+Console script from the `analysis/` package. Analyzes benchmark CSV outputs and generates reports.
 
 **Usage (after installing analysis package):**
 ```bash
+cd analysis && pip install -e .   # once
 analyze-benchmarks \
-    --csharp-logs logs/csharp/benchmark-log.csv \
-    --python-logs logs/python/benchmark-log.csv \
-    --output-dir reports/ \
-    --generate-dashboard \
-    --generate-summary
+    --generate-summary \
+    --generate-plots \
+    --output-dir reports/
 ```
 
-**Arguments:**
+Auto-discovers `logs/<lang>/benchmark-log.csv`. Explicit flags:
 
 | Argument | Description |
 |----------|-------------|
-| `--csharp-logs PATH` | Path to C# benchmark CSV |
-| `--python-logs PATH` | Path to Python benchmark CSV |
+| `--logs-root PATH` | Root logs directory |
+| `--csharp-logs PATH` | C# benchmark CSV |
+| `--python-logs PATH` | Python benchmark CSV |
+| `--rust-logs PATH` | Rust benchmark CSV |
+| `--c-logs PATH` | C benchmark CSV |
+| `--javascript-logs PATH` | JavaScript benchmark CSV |
+| `--extra-logs lang=path` | Additional languages (repeatable) |
 | `--output-dir DIR` | Output directory for reports |
-| `--generate-dashboard` | Generate HTML dashboard |
+| `--generate-plots` | Generate violin plot images |
+| `--generate-dashboard` | Alias for `--generate-plots` |
 | `--generate-summary` | Generate Markdown summary |
+| `--compare-a` / `--compare-b` | Version A/B CSV compare |
 | `--check-regression` | Check for regressions against baseline |
 | `--regression-threshold PCT` | Regression threshold percentage |
 | `--baseline-file PATH` | Path to baseline JSON file |
 | `--save-baseline` | Save current results as baseline |
+| `--config PATH` | Master `benchmark_config.yaml` |
 
-## GitHub Actions Integration
+### `verify-results.sh`
 
-The `.github/workflows/benchmark-ci.yml` workflow provides:
-
-1. **Parallel Benchmark Execution**: Runs C# and Python benchmarks concurrently
-2. **Artifact Upload**: Stores raw benchmark results
-3. **Report Generation**: Creates HTML dashboard and Markdown summary
-4. **Regression Detection**: Optionally fails CI on performance degradation
-5. **GitHub Pages Deployment**: Auto-deploys dashboard to Pages
-6. **Summary Commit**: Updates `BENCHMARK_SUMMARY.md` in the repository
-
-### Manual Workflow Dispatch
-
-Trigger via GitHub UI with parameters:
-- **Mode**: `smoke`, `all-single`, or `full`
-- **Fail on regression**: Enable to block on performance regressions
-- **Regression threshold**: Percentage slowdown that triggers failure
-
-### Required Secrets/Permissions
-
-For GitHub Pages deployment, ensure:
-1. Repository Settings → Pages → Source: GitHub Actions
-2. Workflow has `pages: write` and `id-token: write` permissions
+Lightweight check on C# log presence (legacy helper). Prefer language smoke modes for full validation.
 
 ## Baseline Management
 
@@ -110,14 +101,20 @@ Baselines are stored as JSON files with the format:
 ./scripts/run-all-benchmarks.sh --mode all-single --save-baseline
 ```
 
-**Checking against baseline in CI:**
-The GitHub workflow supports `fail_on_regression` input. When enabled, the workflow will fail if any serializer is slower than the baseline by the threshold percentage.
-
 ## Outputs
 
 | Output | Description | Location |
 |--------|-------------|----------|
-| Raw CSVs | Benchmark timing data | `logs/csharp/`, `logs/python/` |
-| HTML Dashboard | Interactive charts | `reports/dashboard/index.html` |
+| Raw CSVs | Benchmark timing data | `logs/csharp/`, `logs/python/`, `logs/rust/`, `logs/c/`, `logs/javascript/` |
 | Markdown Summary | Tabular results | `reports/BENCHMARK_SUMMARY.md` |
-| Baseline JSON | Performance baseline | `baseline.json` |
+| Violin plots | Per-language/data charts | `reports/dashboard/` (or docs site copies under `docs/analysis/dashboard/`) |
+| Baseline JSON | Performance baseline | `baseline.json` (or path you pass) |
+
+## Modes (shared)
+
+| Mode | Repetitions | Source of truth |
+|------|-------------|-----------------|
+| `smoke` | 2 | `config/benchmark_config.yaml` → `modes` |
+| `all-single` | 10 | same |
+| `full` | 100 | same |
+| `research` | 500 | same |

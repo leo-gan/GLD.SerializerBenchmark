@@ -1,57 +1,50 @@
 # Benchmarks
 
-Empirical performance comparison of 38 C# and 10 Python serialization libraries using identical test data and measurement methodologies.
+Empirical performance comparison of serializers across **C#**, **Python**, **Rust**, **C**, and **JavaScript**, using shared conceptual payloads and a common CSV + analysis pipeline.
+
+| Language | Harness | Serializers (registered) | Logs |
+|----------|---------|--------------------------|------|
+| C# | [`c-sharp/`](../../c-sharp/) | 38 | `logs/csharp/` |
+| Python | [`python/`](../../python/) | 10 | `logs/python/` |
+| Rust | [`rust/`](../../rust/) | 12 | `logs/rust/` |
+| C | [`c/`](../../c/) | 12 | `logs/c/` |
+| JavaScript | [`javascript/`](../../javascript/) | 11–12 | `logs/javascript/` |
 
 ---
 
 ## Quick Access
 
-| Report                                                    | Description                                                           |
-|-----------------------------------------------------------|-----------------------------------------------------------------------|
-| [Serialization Categories](./serialization_categories.md) | How serializers are classified (JSON, Binary, Schema)                 |
-| [Analysis Methodology](./ANALYSIS_METHODOLOGY.md)         | Statistical methods and data processing pipeline                      |
-| [Test Data Configuration](./test_data_configuration.md)   | Test data types and generation rules                                  |
-| [Detailed Report](./BENCHMARK_SUMMARY.md)                 | Raw performance tables with latency, throughput, and size metrics     |
-| [Performance](./violin-plots.md)                               | Statistical visualizations showing performance, variance and outliers |
+| Report | Description |
+|--------|-------------|
+| [Serialization Categories](./serialization_categories.md) | How serializers are classified **in this suite** |
+| [Analysis Methodology](./ANALYSIS_METHODOLOGY.md) | Statistical methods and data processing pipeline |
+| [Test Data Configuration](./test_data_configuration.md) | Test data types and generation rules |
+| [Detailed Report](./BENCHMARK_SUMMARY.md) | Generated summary (re-run analysis to refresh) |
+| [Performance (violin plots)](./violin-plots.md) | Visualizations of latency distributions |
 
 ---
 
-## Summary Statistics
+## Generating reports
 
-### C# Top Performers
+```bash
+cd analysis && pip install -e .
+analyze-benchmarks --generate-summary --generate-plots --output-dir ../reports
+```
 
-Top performers by ops/sec.
-
-| Rank | Serializer | Test Data | Mode | Ops/Sec |
-|------|------------|-----------|------|---------|
-| 1 | MS Bond Fast | Integer | string | 804,528 |
-| 2 | NetSerializer | Integer | string | 419,342 |
-| 3 | MS Bond Compact | Integer | string | 320,888 |
-
-### Python Top Performers
-
-Top performers by ops/sec.
-
-| Rank | Serializer | Test Data | Mode | Ops/Sec |
-|------|------------|-----------|------|---------|
-| 1 | msgspec | Integer | bytes | 544,088 |
-| 2 | orjson | Integer | bytes | 392,197 |
-| 3 | msgspec | Integer | stream | 290,684 |
+Reports land under `reports/`. Copy or CI may sync artifacts into `docs/analysis/` for the MkDocs site. Top-performer tables are **not** hand-maintained here — regenerate from current CSVs.
 
 ---
 
-## Key Findings
+## Key Findings (qualitative)
 
-- **Binary formats** (MessagePack, Protobuf) consistently outperform text formats (JSON, XML)
-- **Schema-driven** serializers achieve smaller payload sizes by omitting field names
-- **Zero-allocation** techniques in modern C# serializers (MemoryPack, FlatBuffers) minimize GC pressure
-- Python's **orjson** and **msgspec** (C-extensions) are 10-100x faster than pure-Python alternatives
+- **Binary formats** (MessagePack, Protobuf-style, compact native codecs) often outperform text JSON within a language.
+- **Schema-driven** serializers usually achieve smaller payloads by omitting field names.
+- **Zero-allocation / zero-copy** techniques (e.g. MemoryPack, FlatSharp, rkyv patterns) reduce GC pressure on managed runtimes.
+- Python’s **orjson** and **msgspec** (native extensions) far outperform pure-Python baselines in this suite.
+- Some harnesses use **documented stand-ins** (C portable codecs; Rust `prost-wire` / `rkyv` wrappers) — read language caveats before citing numbers in a paper.
 
 ---
 
-## Raw Data
+## Per-language inventories (source of truth for “what we measure”)
 
-Download complete benchmark results:
-
-- [C# CSV](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/gh-pages/data/csharp/)
-- [Python CSV](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/gh-pages/data/python/)
+- [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md)

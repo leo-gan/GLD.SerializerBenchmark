@@ -19,7 +19,7 @@ Native C harness emitting `logs/c/benchmark-log.csv` (nanoseconds, `Language=c`)
 | cbor-encode | Binary | libcbor-style tag |
 | custom-binary | Binary | Direct struct packing baseline |
 
-> **Honesty note for researchers:** The default build uses a portable minimal codec so CI works without external C deps. For publication runs, vendor/link real libraries and replace `json_write_fixture` / envelope wrappers with optimal APIs (`cJSON_PrintUnformatted`, `yyjson_mut_write`, `mpack_writer`, etc.). See `docs/c/c_tested_serializers.md`.
+> **Honesty note for researchers:** The default build uses a portable minimal codec so CI works without external C deps. For publication runs, vendor/link real libraries and replace `json_write_fixture` / envelope wrappers with optimal APIs (`cJSON_PrintUnformatted`, `yyjson_mut_write`, `mpack_writer`, etc.). See [docs/c/index.md](../docs/c/index.md).
 
 ## Build & run
 

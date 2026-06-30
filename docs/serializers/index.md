@@ -1,5 +1,7 @@
 # Selection Guide: Overview
 
+> **Concepts vs what we measure:** This section describes *formats and trade-offs* in general. For libraries actually registered in harnesses, use [Serialization Categories](../analysis/serialization_categories.md) and each language’s tested-serializers page under `docs/<lang>/`.
+
 Choosing the right format involves trade-offs between speed, size, compatibility, and human readability.
 
 ## Format Comparison Matrix
@@ -123,10 +125,15 @@ JSON ──── MessagePack ──── CBOR ──── Protobuf ───�
   └─ Most flexible, slowest
 ```
 
-## Language-Specific Guides
+## Language-Specific Guides (what we measure)
 
-- **[C# Serializers](../c-sharp/index.md)** — 38 serializers including Json.NET, Protobuf-net, MessagePack, MemoryPack, Bond, FlatSharp
-- **[Python Serializers](../python/index.md)** — 9 serializers including orjson, msgspec, msgpack, protobuf, pickle
+Inventories live on each language overview:
+
+- **[C#](../c-sharp/index.md)** — 38 registered serializers (not MessagePack-CSharp / System.Text.Json / Wire)
+- **[Python](../python/index.md)** — 10 serializers
+- **[Rust](../rust/index.md)** — 12 crates
+- **[C](../c/index.md)** — 12 named codecs (portable stand-ins in default CI build)
+- **[JavaScript](../javascript/index.md)** — 11–12 (simdjson optional)
 
 ## References
 

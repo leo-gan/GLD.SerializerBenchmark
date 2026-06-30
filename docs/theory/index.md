@@ -43,7 +43,7 @@ Traditional serialization involves parsing a byte array and instantiating langua
 This documentation is organized hierarchically to take you from general theory down to language-specific execution and empirical results:
 
 1. **[Theory and Practices](../theory/index.md):** Historical overview and core concepts.
-2. **[C# Ecosystem](../c-sharp/index.md):** Deep dive into the .NET serialization landscape  (`Span<T>`, `MemoryPack`, `Protobuf-net`).
-3. **[Python Ecosystem](../python/index.md):** Deep dive into Python's constraints (GIL, C-extensions, Pickling).
+2. **[C#](../c-sharp/index.md):** Deep dive into the .NET serialization landscape (`Span<T>`, `MemoryPack`, `Protobuf-net`).
+3. **[Python](../python/index.md):** Deep dive into Python's constraints (GIL, C-extensions, Pickling).
 4. **[Selection Guide](../serializers/index.md):** Comparative analysis of formats and guidance on choosing the right serializer.
 5. **[Benchmarks](../analysis/index.md):** Extensive, data-driven comparisons of top serializers using real-world topologies.

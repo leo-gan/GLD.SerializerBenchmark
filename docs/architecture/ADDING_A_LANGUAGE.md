@@ -55,7 +55,7 @@ Map repetitions from `modes` in `benchmark_config.yaml`.
 ## 5. Documentation
 
 - `docs/<lang>/index.md` — ecosystem overview
-- `docs/<lang>/<lang>_tested_serializers.md` — each serializer, optimal API, limitations
+- `docs/<lang>/index.md` — ecosystem overview plus serializer inventory (table + caveats)
 
 ## 6. Wire orchestration
 

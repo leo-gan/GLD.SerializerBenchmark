@@ -79,10 +79,10 @@ See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistic
 
 ## Documentation site
 
-Language-specific serializer lists:
+Language ecosystem pages (serializer inventories live on each overview):
 
-- [C#](docs/c-sharp/c-sharp_tested_serializers.md) · [Python](docs/python/python_tested_serializers.md)
-- [Rust](docs/rust/rust_tested_serializers.md) · [C](docs/c/c_tested_serializers.md) · [JavaScript](docs/javascript/javascript_tested_serializers.md)
+- [C#](docs/c-sharp/index.md) · [Python](docs/python/index.md)
+- [Rust](docs/rust/index.md) · [C](docs/c/index.md) · [JavaScript](docs/javascript/index.md)
 
 ## License
 
