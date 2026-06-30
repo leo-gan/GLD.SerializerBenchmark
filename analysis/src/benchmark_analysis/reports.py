@@ -83,6 +83,26 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
         top_serializers = mean_times.head(top_n).index.tolist()
         subset = subset[subset['SerializerName'].isin(top_serializers)].copy()
 
+    # Per-serializer high-end winsorize (p99): one stalled rep must not stretch the KDE.
+    def _clip_hi(s: pd.Series) -> pd.Series:
+        if len(s) < 4:
+            return s
+        hi = float(s.quantile(0.99))
+        if hi > 0:
+            return s.clip(upper=hi)
+        return s
+
+    subset['Time_us'] = subset.groupby('SerializerName', group_keys=False)['Time_us'].transform(_clip_hi)
+    subset = subset[subset['Time_us'] > 0].copy()
+    if subset.empty:
+        return None
+
+    order = subset.groupby('SerializerName')['Time_us'].mean().sort_values().index.tolist()
+    # Wide dynamic range (e.g. cbor ~20× faster peers) → log x so small violins stay readable.
+    med_by_ser = subset.groupby('SerializerName')['Time_us'].median()
+    dyn_ratio = float(med_by_ser.max() / med_by_ser.min()) if len(med_by_ser) and med_by_ser.min() > 0 else 1.0
+    use_log = dyn_ratio >= 5.0
+
     # Use catplot (modern seaborn name for factorplot)
     try:
         g = sns.catplot(
@@ -95,17 +115,29 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
             # cut=0: do not extend KDE past observed data (avoids fake negative times)
             cut=0,
             inner=None,  # Remove box plot inner lines for cleaner violin appearance
-            height=6,
-            aspect=1.2,
+            height=max(6, 0.35 * len(order) + 2),
+            aspect=1.35,
             legend_out=False,
-            order=subset.groupby('SerializerName')['Time_us'].mean().sort_values().index.tolist()
+            order=order,
         )
         lang_prefix = f"{language} " if language else ""
-        g.fig.suptitle(f'{lang_prefix}{data_type} - Top {top_n or "All"} Serializers',
-                       fontsize=14, y=1.02)
-        g.set_axis_labels('Time (microseconds)', 'Serializer')
-        # Enforce non-negative x-axis even if a backend ignores cut/clip
-        g.set(xlim=(0, None))
+        scale_note = " (log µs)" if use_log else ""
+        g.fig.suptitle(
+            f'{lang_prefix}{data_type} - Top {top_n or "All"} Serializers{scale_note}',
+            fontsize=14,
+            y=1.02,
+        )
+        if use_log:
+            g.set_axis_labels('Time (µs, log scale)', 'Serializer')
+            for ax in g.axes.flat:
+                ax.set_xscale('log')
+                # Log axes cannot include 0; pad within positive data range.
+                lo = float(subset['Time_us'].min())
+                hi = float(subset['Time_us'].max())
+                ax.set_xlim(lo * 0.85, hi * 1.15)
+        else:
+            g.set_axis_labels('Time (microseconds)', 'Serializer')
+            g.set(xlim=(0, None))
 
         lang_suffix = f"_{language.lower().replace('#', 'sharp')}" if language else ""
         img_path = os.path.join(output_dir,
