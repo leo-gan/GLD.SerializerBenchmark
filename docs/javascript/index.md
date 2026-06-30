@@ -1,4 +1,4 @@
-# JavaScript (Node.js) Ecosystem
+# JavaScript
 
 Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 

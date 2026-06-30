@@ -1,4 +1,4 @@
-# The Python Ecosystem: Navigating the GIL and C-Extensions
+# Python
 
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 

@@ -47,15 +47,15 @@ nav:
       - Historical Perspective: theory/historical_perspective.md
       - Data Science Perspective: theory/data_science_perspective.md
       - Engineer Perspective: theory/engineer_perspective.md
-  - C# Ecosystem:
+  - C#:
       - Overview: c-sharp/index.md
-  - Python Ecosystem:
+  - Python:
       - Overview: python/index.md
-  - Rust Ecosystem:
+  - Rust:
       - Overview: rust/index.md
-  - C Ecosystem:
+  - C:
       - Overview: c/index.md
-  - JavaScript Ecosystem:
+  - JavaScript:
       - Overview: javascript/index.md
   - Architecture:
       - Overview: architecture/index.md

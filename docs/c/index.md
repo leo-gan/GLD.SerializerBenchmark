@@ -1,4 +1,4 @@
-# C Ecosystem
+# C
 
 C serialization is fragmented: each library owns its own object model (DOM trees, streams, generated structs). The harness normalizes fixtures into C structs, then times library-specific encode/decode.
 

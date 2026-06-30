@@ -1,4 +1,4 @@
-# Rust Ecosystem
+# Rust
 
 Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends.
 

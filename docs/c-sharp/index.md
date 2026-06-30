@@ -1,4 +1,4 @@
-# The C# Ecosystem: High-Performance Serialization
+# C#
 
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With modern .NET memory primitives (`Span<T>`, `Memory<T>`) and source generators, the landscape shifted from heavy reflection-based engines to lower-allocation, code-generated libraries.
 
