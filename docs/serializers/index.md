@@ -127,11 +127,13 @@ JSON ──── MessagePack ──── CBOR ──── Protobuf ───�
 
 ## Language-Specific Guides (what we measure)
 
-- **[C#](../c-sharp/c-sharp_tested_serializers.md)** — 38 registered serializers (Json.NET, protobuf-net, Bond, MemoryPack, FlatSharp, …). Not MessagePack-CSharp / System.Text.Json / Wire.
-- **[Python](../python/python_tested_serializers.md)** — 10 serializers (orjson, msgspec, rapidjson, msgpack, msgspec-msgpack, cbor2, protobuf, avro, pickle, cloudpickle)
-- **[Rust](../rust/rust_tested_serializers.md)** — 12 crates (serde_json, simd-json, sonic-rs, rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, minicbor, rkyv, prost-wire)
-- **[C](../c/c_tested_serializers.md)** — 12 named codecs (portable stand-ins in default CI build)
-- **[JavaScript](../javascript/javascript_tested_serializers.md)** — 11–12 (simdjson optional)
+Inventories live on each language overview:
+
+- **[C#](../c-sharp/index.md)** — 38 registered serializers (not MessagePack-CSharp / System.Text.Json / Wire)
+- **[Python](../python/index.md)** — 10 serializers
+- **[Rust](../rust/index.md)** — 12 crates
+- **[C](../c/index.md)** — 12 named codecs (portable stand-ins in default CI build)
+- **[JavaScript](../javascript/index.md)** — 11–12 (simdjson optional)
 
 ## References
 

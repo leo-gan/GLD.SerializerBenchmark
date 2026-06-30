@@ -11,7 +11,7 @@ Optimized for human readability and web-API interoperability.
 - **C#**: `Json.Net`, `JsonNetHelper`, `Jil`, `NetJSON`, `SpanJson`, `Utf8Json`, `FastJson`, `ServiceStack` JSON, `DataContractJson`, Bond JSON (`MS Bond Json`)
 - **Python**: `orjson`, `msgspec`, `rapidjson`
 - **Rust**: `serde_json`, `simd-json`, `sonic-rs`
-- **C**: `cJSON`, `yyjson`, `jansson`, `parson` (CI build may use portable stand-ins — see [C tested serializers](../c/c_tested_serializers.md))
+- **C**: `cJSON`, `yyjson`, `jansson`, `parson` (CI build may use portable stand-ins — see [C overview](../c/index.md))
 - **JavaScript**: `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)
 
 ### 2. Binary (Schemaless)
@@ -52,4 +52,4 @@ Detailed metrics belong in generated reports under `reports/` (and copies such a
 3. **Allocation** (GC / heap churn) dominates at high throughput on managed runtimes.
 4. **Cross-language rankings are not interchangeable** — compare within language first, then formats.
 
-For format-level trade-offs (when to choose JSON vs MessagePack vs Protobuf), see the [Selection Guide](../serializers/index.md) (concepts). For **what we actually measure**, use each language’s tested-serializers page under `docs/<lang>/`.
+For format-level trade-offs (when to choose JSON vs MessagePack vs Protobuf), see the [Selection Guide](../serializers/index.md) (concepts). For **what we actually measure**, use each language overview under `docs/<lang>/index.md`.

@@ -6,7 +6,7 @@ This project serves two purposes:
 1. **Performance Insight**: Compare various serialization libraries to make informed architectural decisions.
 2. **Implementation Guide**: Provide clean, copy-pasteable snippets for implementing these serializers in your own projects.
 
-Full inventory: [docs/c-sharp/c-sharp_tested_serializers.md](../docs/c-sharp/c-sharp_tested_serializers.md).
+Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ---
 
@@ -104,7 +104,7 @@ Cross-language analysis: install `analysis/` and run `analyze-benchmarks` (see r
 1. Create a new class in the `Serializers/` directory.
 2. Implement the `ISerDeser` interface.
 3. Register your new class in `Program.cs` in the `serializers` list.
-4. Document it in `docs/c-sharp/c-sharp_tested_serializers.md`.
+4. Document it in `docs/c-sharp/index.md` (serializer inventory table).
 
 ### Add New Test Data
 1. Create a new class implementing `ITestDataDescription` in `TestData/`.

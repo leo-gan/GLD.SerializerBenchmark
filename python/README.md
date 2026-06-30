@@ -2,7 +2,7 @@
 
 A Dockerized benchmarking suite evaluating **10 Python serializers** across 7 realistic data structures, designed to match the methodology and output format of the companion [.NET (C#) benchmark](../c-sharp/).
 
-Canonical serializer reference: [docs/python/python_tested_serializers.md](../docs/python/python_tested_serializers.md).
+Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
 ## Serializer Groups
 

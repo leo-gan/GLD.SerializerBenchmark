@@ -47,8 +47,4 @@ Reports land under `reports/`. Copy or CI may sync artifacts into `docs/analysis
 
 ## Per-language inventories (source of truth for “what we measure”)
 
-- [C# tested serializers](../c-sharp/c-sharp_tested_serializers.md)
-- [Python tested serializers](../python/python_tested_serializers.md)
-- [Rust tested serializers](../rust/rust_tested_serializers.md)
-- [C tested serializers](../c/c_tested_serializers.md)
-- [JavaScript tested serializers](../javascript/javascript_tested_serializers.md)
+- [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md)

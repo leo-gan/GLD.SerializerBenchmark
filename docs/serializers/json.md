@@ -1,6 +1,6 @@
 # JSON Serializers
 
-> **Concepts page.** Tables mix ecosystem examples with suite members. **System.Text.Json is not registered** in this repo’s C# harness. What we measure: [serialization categories](../analysis/serialization_categories.md) and each `docs/<lang>/*_tested_serializers.md`.
+> **Concepts page.** Tables mix ecosystem examples with suite members. **System.Text.Json is not registered** in this repo’s C# harness. What we measure: [serialization categories](../analysis/serialization_categories.md) and each `docs/<lang>/index.md`.
 
 JSON (JavaScript Object Notation) is the most interoperable serialization format, supported by virtually every programming language.
 
