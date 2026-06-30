@@ -27,3 +27,5 @@ Native C harness emitting `logs/c/benchmark-log.csv` (nanoseconds, `Language=c`)
 ./scripts/run-benchmarks.sh smoke
 ./scripts/run-benchmarks.sh full
 ```
+
+Cross-language tables/plots for the docs site are generated **locally** into `docs/analysis/` via `analyze-benchmarks` (see root README) and committed; CI does not regenerate them.

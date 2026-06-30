@@ -25,3 +25,5 @@ npm test
 ```
 
 Output: `logs/javascript/benchmark-log.csv`
+
+Cross-language tables/plots for the docs site are generated **locally** into `docs/analysis/` via `analyze-benchmarks` (see root README) and committed; CI does not regenerate them.

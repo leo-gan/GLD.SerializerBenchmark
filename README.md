@@ -47,13 +47,18 @@ Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_conf
 
 # Analysis (install analysis package first)
 cd analysis && pip install -e .   # or: uv pip install -e .
+# Local scratch (gitignored):
 analyze-benchmarks --generate-summary --generate-plots --output-dir ../reports
+# Publish snapshot for GitHub Pages (commit docs/analysis/** after review):
+analyze-benchmarks --generate-summary --generate-plots --output-dir ../docs/analysis
 
 # Serializer version A vs B
 analyze-benchmarks --compare-a logs/rust/v1.csv --compare-b logs/rust/v2.csv --output-dir reports
 ```
 
 Modes: `smoke` (2 reps) · `all-single` (10) · `full` (100) · `research` (500) — see config.
+
+**Published results:** Tables and violin plots on [GitHub Pages](https://leo-gan.github.io/GLD.SerializerBenchmark/) are **maintainer-committed snapshots** under [`docs/analysis/`](docs/analysis/) (generated locally only). CI does not regenerate them. Your own benchmark runs may differ from the site — that is OK.
 
 ## Shared test data
 
@@ -83,6 +88,9 @@ Language ecosystem pages (serializer inventories live on each overview):
 
 - [C#](docs/c-sharp/index.md) · [Python](docs/python/index.md)
 - [Rust](docs/rust/index.md) · [C](docs/c/index.md) · [JavaScript](docs/javascript/index.md)
+- Benchmarks: [analysis overview](docs/analysis/index.md) · [summary](docs/analysis/BENCHMARK_SUMMARY.md) · [violin plots](docs/analysis/violin-plots.md)
+
+The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree. Refresh site results by regenerating into `docs/analysis/` locally and committing.
 
 ## License
 

@@ -54,7 +54,6 @@ def main():
     parser.add_argument("--output-dir", default="reports", help="Output directory")
     parser.add_argument("--generate-plots", action="store_true", help="Generate violin plot images")
     parser.add_argument("--generate-summary", action="store_true", help="Generate Markdown summary")
-    parser.add_argument("--generate-dashboard", action="store_true", help="Alias for --generate-plots (compat)")
     parser.add_argument("--check-regression", action="store_true", help="Check for regressions")
     parser.add_argument("--regression-threshold", type=float, default=10.0, help="Regression threshold percent")
     parser.add_argument("--baseline-file", default="baseline.json", help="Baseline file path")
@@ -64,8 +63,6 @@ def main():
     parser.add_argument("--config", default=None, help="Path to benchmark_config.yaml")
 
     args = parser.parse_args()
-    if args.generate_dashboard:
-        args.generate_plots = True
 
     stats_cfg = load_stats_config(args.config)
 
@@ -121,7 +118,7 @@ def main():
     if args.generate_plots:
         from .reports import write_violin_plots_markdown
 
-        plots_dir = os.path.join(args.output_dir, "dashboard")
+        plots_dir = os.path.join(args.output_dir, "plots", "violin")
         violin_images = generate_violin_plots(
             plots_dir,
             csharp_records=all_records.get("csharp", []),
@@ -132,7 +129,7 @@ def main():
         write_violin_plots_markdown(
             violin_images,
             os.path.join(args.output_dir, "violin-plots.md"),
-            image_subdir="dashboard",
+            image_subdir="plots/violin",
         )
 
     if args.compare_a and args.compare_b:

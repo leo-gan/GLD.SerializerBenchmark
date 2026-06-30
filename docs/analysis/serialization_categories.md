@@ -45,7 +45,7 @@ Tied to one runtime; often supports cycles and arbitrary objects.
 
 ## High-Level Results Discussion
 
-Detailed metrics belong in generated reports under `reports/` (and copies such as [violin plots](violin-plots.md)). Overarching trends observed in this project:
+Detailed metrics belong in the published snapshot under `docs/analysis/` (see [Detailed Report](BENCHMARK_SUMMARY.md) and [violin plots](violin-plots.md)), regenerated locally — not by CI. Overarching trends observed in this project:
 
 1. **Schema-driven binary** often wins on size and throughput within a language.
 2. **Text parsing** remains a bottleneck even for fast JSON libraries.

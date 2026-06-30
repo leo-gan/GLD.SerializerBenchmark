@@ -130,7 +130,7 @@ Tabular views of performance metrics organized by:
 
 ### Violin Plots
 
-The HTML dashboard includes violin plots showing the distribution of serialization vs deserialization times per data type. These use seaborn's `catplot(kind='violin', split=True)` to show:
+Generated violin plot images show the distribution of serialization vs deserialization times per data type. These use seaborn's `catplot(kind='violin', split=True)` to show:
 - Top side: Serialize operation distribution
 - Bottom side: Deserialize operation distribution
 

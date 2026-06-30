@@ -19,19 +19,30 @@ Empirical performance comparison of serializers across **C#**, **Python**, **Rus
 | [Serialization Categories](./serialization_categories.md) | How serializers are classified **in this suite** |
 | [Analysis Methodology](./ANALYSIS_METHODOLOGY.md) | Statistical methods and data processing pipeline |
 | [Test Data Configuration](./test_data_configuration.md) | Test data types and generation rules |
-| [Detailed Report](./BENCHMARK_SUMMARY.md) | Generated summary (re-run analysis to refresh) |
-| [Performance (violin plots)](./violin-plots.md) | Visualizations of latency distributions |
+| [Detailed Report](./BENCHMARK_SUMMARY.md) | Published snapshot tables (regenerate locally) |
+| [Performance (violin plots)](./violin-plots.md) | Published snapshot visualizations |
+
+Tables and plots on this site are **maintainer-committed snapshots** under `docs/analysis/`. They are produced **locally** only (never by GitHub Actions). Re-running benchmarks on your machine may produce different numbers — that is expected and OK.
 
 ---
 
-## Generating reports
+## Regenerating published reports (maintainers)
 
 ```bash
+# After local harness runs have written logs/<lang>/benchmark-log.csv
 cd analysis && pip install -e .
+analyze-benchmarks --generate-summary --generate-plots --output-dir ../docs/analysis
+# Review and commit docs/analysis/** (including plots/violin/*.png), then push.
+# The publish-docs workflow deploys MkDocs only — it does not re-run analysis.
+```
+
+Optional local scratch (gitignored, not used by Pages):
+
+```bash
 analyze-benchmarks --generate-summary --generate-plots --output-dir ../reports
 ```
 
-Reports land under `reports/`. Copy or CI may sync artifacts into `docs/analysis/` for the MkDocs site. Top-performer tables are **not** hand-maintained here — regenerate from current CSVs.
+Top-performer tables are **not** hand-maintained — regenerate from current CSVs into `docs/analysis/` and commit.
 
 ---
 
