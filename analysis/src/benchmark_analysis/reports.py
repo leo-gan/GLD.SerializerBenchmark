@@ -71,6 +71,10 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
 
     # Time_ns is already normalized to nanoseconds in _records_to_melted_df.
     subset['Time_us'] = subset['Time_ns'].astype(float) / 1000.0
+    # Timings cannot be negative; drop any bad rows before KDE.
+    subset = subset[subset['Time_us'] > 0].copy()
+    if subset.empty:
+        return None
 
     # Filter to top N serializers by mean time if requested
     if top_n:
@@ -88,6 +92,10 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
             hue='Operation',
             kind='violin',
             split=True,
+            # cut=0: do not extend KDE past observed data (avoids fake negative times)
+            cut=0,
+            # clip KDE support to non-negative times only
+            clip=(0, None),
             inner=None,  # Remove box plot inner lines for cleaner violin appearance
             height=6,
             aspect=1.2,
@@ -98,6 +106,8 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
         g.fig.suptitle(f'{lang_prefix}{data_type} - Top {top_n or "All"} Serializers',
                        fontsize=14, y=1.02)
         g.set_axis_labels('Time (microseconds)', 'Serializer')
+        # Enforce non-negative x-axis even if a backend ignores cut/clip
+        g.set(xlim=(0, None))
 
         lang_suffix = f"_{language.lower().replace('#', 'sharp')}" if language else ""
         img_path = os.path.join(output_dir,
