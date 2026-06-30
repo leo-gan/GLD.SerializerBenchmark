@@ -12,56 +12,34 @@ analyze-benchmarks --generate-plots --output-dir reports
 # and reports/violin-plots.md → docs/analysis/violin-plots.md (or merge sections)
 ```
 
-## C#
+| Language | Test data | Plot |
+|----------|-----------|------|
+| C# | Person | ![C# Person](dashboard/violin_csharp_Person.png){ width="50%" } |
+| C# | Telemetry | ![C# Telemetry](dashboard/violin_csharp_Telemetry.png){ width="50%" } |
+| C# | EDI_835 | ![C# EDI_835](dashboard/violin_csharp_EDI_835.png){ width="50%" } |
+| C# | StringArray | ![C# StringArray](dashboard/violin_csharp_StringArray.png){ width="50%" } |
+| C# | Integer | ![C# Integer](dashboard/violin_csharp_Integer.png){ width="50%" } |
+| C# | SimpleObject | ![C# SimpleObject](dashboard/violin_csharp_SimpleObject.png){ width="50%" } |
+| C# | ObjectGraph | ![C# ObjectGraph](dashboard/violin_csharp_ObjectGraph.png){ width="50%" } |
+| Python | Person | ![Python Person](dashboard/violin_python_Person.png){ width="50%" } |
+| Python | Telemetry | ![Python Telemetry](dashboard/violin_python_Telemetry.png){ width="50%" } |
+| Python | EDI_835 | ![Python EDI_835](dashboard/violin_python_EDI_835.png){ width="50%" } |
+| Python | StringArray | ![Python StringArray](dashboard/violin_python_StringArray.png){ width="50%" } |
+| Python | Integer | ![Python Integer](dashboard/violin_python_Integer.png){ width="50%" } |
+| Python | SimpleObject | ![Python SimpleObject](dashboard/violin_python_SimpleObject.png){ width="50%" } |
+| Python | ObjectGraph | ![Python ObjectGraph](dashboard/violin_python_ObjectGraph.png){ width="50%" } |
+| Rust | Person | ![Rust Person](dashboard/violin_rust_Person.png){ width="50%" } |
+| Rust | Telemetry | ![Rust Telemetry](dashboard/violin_rust_Telemetry.png){ width="50%" } |
+| Rust | EDI_835 | ![Rust EDI_835](dashboard/violin_rust_EDI_835.png){ width="50%" } |
+| Rust | StringArray | ![Rust StringArray](dashboard/violin_rust_StringArray.png){ width="50%" } |
+| Rust | Integer | ![Rust Integer](dashboard/violin_rust_Integer.png){ width="50%" } |
+| Rust | SimpleObject | ![Rust SimpleObject](dashboard/violin_rust_SimpleObject.png){ width="50%" } |
+| C | Person | ![C Person](dashboard/violin_c_Person.png){ width="50%" } |
+| JavaScript | Person | ![JavaScript Person](dashboard/violin_javascript_Person.png){ width="50%" } |
+| JavaScript | Telemetry | ![JavaScript Telemetry](dashboard/violin_javascript_Telemetry.png){ width="50%" } |
+| JavaScript | EDI_835 | ![JavaScript EDI_835](dashboard/violin_javascript_EDI_835.png){ width="50%" } |
+| JavaScript | StringArray | ![JavaScript StringArray](dashboard/violin_javascript_StringArray.png){ width="50%" } |
+| JavaScript | Integer | ![JavaScript Integer](dashboard/violin_javascript_Integer.png){ width="50%" } |
+| JavaScript | SimpleObject | ![JavaScript SimpleObject](dashboard/violin_javascript_SimpleObject.png){ width="50%" } |
 
-| Test data | Plot |
-|-----------|------|
-| Person | ![C# Person](dashboard/violin_csharp_Person.png){ width="50%" } |
-| Telemetry | ![C# Telemetry](dashboard/violin_csharp_Telemetry.png){ width="50%" } |
-| EDI_835 | ![C# EDI_835](dashboard/violin_csharp_EDI_835.png){ width="50%" } |
-| StringArray | ![C# StringArray](dashboard/violin_csharp_StringArray.png){ width="50%" } |
-| Integer | ![C# Integer](dashboard/violin_csharp_Integer.png){ width="50%" } |
-| SimpleObject | ![C# SimpleObject](dashboard/violin_csharp_SimpleObject.png){ width="50%" } |
-| ObjectGraph | ![C# ObjectGraph](dashboard/violin_csharp_ObjectGraph.png){ width="50%" } |
-
-## Python
-
-| Test data | Plot |
-|-----------|------|
-| Person | ![Python Person](dashboard/violin_python_Person.png){ width="50%" } |
-| Telemetry | ![Python Telemetry](dashboard/violin_python_Telemetry.png){ width="50%" } |
-| EDI_835 | ![Python EDI_835](dashboard/violin_python_EDI_835.png){ width="50%" } |
-| StringArray | ![Python StringArray](dashboard/violin_python_StringArray.png){ width="50%" } |
-| Integer | ![Python Integer](dashboard/violin_python_Integer.png){ width="50%" } |
-| SimpleObject | ![Python SimpleObject](dashboard/violin_python_SimpleObject.png){ width="50%" } |
-| ObjectGraph | ![Python ObjectGraph](dashboard/violin_python_ObjectGraph.png){ width="50%" } |
-
-## Rust
-
-| Test data | Plot |
-|-----------|------|
-| Person | ![Rust Person](dashboard/violin_rust_Person.png){ width="50%" } |
-| Telemetry | ![Rust Telemetry](dashboard/violin_rust_Telemetry.png){ width="50%" } |
-| EDI_835 | ![Rust EDI_835](dashboard/violin_rust_EDI_835.png){ width="50%" } |
-| StringArray | ![Rust StringArray](dashboard/violin_rust_StringArray.png){ width="50%" } |
-| Integer | ![Rust Integer](dashboard/violin_rust_Integer.png){ width="50%" } |
-| SimpleObject | ![Rust SimpleObject](dashboard/violin_rust_SimpleObject.png){ width="50%" } |
-
-## C
-
-| Test data | Plot |
-|-----------|------|
-| Person | ![C Person](dashboard/violin_c_Person.png){ width="50%" } |
-
-_Note: current `logs/c/` is a minimal smoke-level CSV (few rows); re-run `./c/scripts/run-benchmarks.sh full` for full fixture coverage._
-
-## JavaScript
-
-| Test data | Plot |
-|-----------|------|
-| Person | ![JavaScript Person](dashboard/violin_javascript_Person.png){ width="50%" } |
-| Telemetry | ![JavaScript Telemetry](dashboard/violin_javascript_Telemetry.png){ width="50%" } |
-| EDI_835 | ![JavaScript EDI_835](dashboard/violin_javascript_EDI_835.png){ width="50%" } |
-| StringArray | ![JavaScript StringArray](dashboard/violin_javascript_StringArray.png){ width="50%" } |
-| Integer | ![JavaScript Integer](dashboard/violin_javascript_Integer.png){ width="50%" } |
-| SimpleObject | ![JavaScript SimpleObject](dashboard/violin_javascript_SimpleObject.png){ width="50%" } |
+_Note: C currently has only Person coverage in `logs/c/` (smoke-level CSV); re-run `./c/scripts/run-benchmarks.sh full` for full fixtures._
