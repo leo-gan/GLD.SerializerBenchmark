@@ -422,11 +422,11 @@ def write_violin_plots_markdown(
         title = _LANG_DISPLAY.get(lang_key, lang_key)
         lines.append(f"## {title}")
         lines.append("")
+        lines.append("| Test data | Plot |")
+        lines.append("|-----------|------|")
         for dtype, fname in items:
-            lines.append(f"### {dtype}")
-            lines.append(f'![{title} {dtype}]({image_subdir}/{fname}){{ width="50%" }}')
-            lines.append("")
-        lines.append("---")
+            img = f'![{title} {dtype}]({image_subdir}/{fname}){{ width="50%" }}'
+            lines.append(f"| {dtype} | {img} |")
         lines.append("")
 
     if len(lines) <= 6:
