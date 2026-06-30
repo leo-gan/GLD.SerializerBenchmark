@@ -415,8 +415,8 @@ def write_violin_plots_markdown(
         "Time axis is **microseconds** (normalized from ticks or nanoseconds in the CSVs). "
         "Log scale is used when serializer medians span ≥5×.",
         "",
-        "| Language | Test data | Plot |",
-        "|----------|-----------|------|",
+        "| Language | Plot for |",
+        "|----------|----------|",
     ]
     row_count = 0
     for lang_key in display_order + sorted(k for k in by_lang if k not in display_order):
@@ -425,8 +425,8 @@ def write_violin_plots_markdown(
             continue
         title = _LANG_DISPLAY.get(lang_key, lang_key)
         for dtype, fname in items:
-            img = f'![{title} {dtype}]({image_subdir}/{fname}){{ width="50%" }}'
-            lines.append(f"| {title} | {dtype} | {img} |")
+            img = f'![{dtype}]({image_subdir}/{fname}){{ width="50%" }}'
+            lines.append(f"| {title} | {img} |")
             row_count += 1
     lines.append("")
 
