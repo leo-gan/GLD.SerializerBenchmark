@@ -69,14 +69,8 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
     if subset.empty:
         return None
 
-    # Convert time to microseconds for display (C# ticks are 100ns, so ticks * 100 / 1000 = ticks / 10)
-    sample_time = subset['Time_ns'].median()
-    if sample_time > 1_000_000:
-        # C# ticks: convert to microseconds (ticks * 100ns / 1000 = ticks / 10)
-        subset['Time_us'] = subset['Time_ns'] / 10  # ticks to microseconds
-    else:
-        # Python nanoseconds: convert to microseconds
-        subset['Time_us'] = subset['Time_ns'] / 1000
+    # Time_ns is already normalized to nanoseconds in _records_to_melted_df.
+    subset['Time_us'] = subset['Time_ns'].astype(float) / 1000.0
 
     # Filter to top N serializers by mean time if requested
     if top_n:
@@ -273,6 +267,23 @@ def generate_markdown_summary(
     print(f"Markdown summary written to: {output_path}")
 
 
+# Display labels and stable file-name keys for violin plots
+_LANG_DISPLAY = {
+    "csharp": "C#",
+    "python": "Python",
+    "rust": "Rust",
+    "c": "C",
+    "javascript": "JavaScript",
+}
+
+
+def _lang_file_key(lang_id: str, display: str) -> str:
+    """Stable suffix used in violin_<key>_<TestData>.png filenames."""
+    if lang_id:
+        return lang_id.lower().replace("#", "sharp")
+    return display.lower().replace("#", "sharp").replace(" ", "_")
+
+
 def generate_violin_plots(
     output_dir: str,
     csharp_records: Optional[List[Dict]] = None,
@@ -280,37 +291,110 @@ def generate_violin_plots(
     multi_lang_records: Optional[Dict] = None,
     **_kwargs,
 ) -> Dict[str, str]:
-    """Generate violin plot images for benchmark results.
+    """Generate violin plot images for all languages with records.
 
-    Returns a dict mapping data type names to image filenames.
+    Prefer ``multi_lang_records`` (lang_id -> list of row dicts). Legacy
+    ``csharp_records`` / ``python_records`` are merged in when provided.
+
+    Returns a dict mapping ``{lang_key}_{TestDataName}`` to image filenames.
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    violin_images = {}
+    by_lang: Dict[str, List[Dict]] = {}
+    if multi_lang_records:
+        for k, recs in multi_lang_records.items():
+            if recs:
+                by_lang[str(k).lower()] = list(recs)
+    if csharp_records and "csharp" not in by_lang:
+        by_lang["csharp"] = list(csharp_records)
+    if python_records and "python" not in by_lang:
+        by_lang["python"] = list(python_records)
 
-    if csharp_records or python_records:
-        cs_melted = _records_to_melted_df(csharp_records or [], 'C#')
-        py_melted = _records_to_melted_df(python_records or [], 'Python')
+    # Stable ordering for docs / reports
+    order = ["csharp", "python", "rust", "c", "javascript"]
+    lang_ids = [lid for lid in order if lid in by_lang] + sorted(
+        lid for lid in by_lang if lid not in order
+    )
 
-        # Generate separate C# plots
-        if not cs_melted.empty:
-            cs_data_types = sorted(cs_melted['TestDataName'].unique())
-            for dtype in cs_data_types:
-                img_name = _generate_violin_plot(cs_melted, dtype, output_dir,
-                                                 language='C#', top_n=5)
-                if img_name:
-                    violin_images[f"csharp_{dtype}"] = img_name
+    violin_images: Dict[str, str] = {}
 
-        # Generate separate Python plots
-        if not py_melted.empty:
-            py_data_types = sorted(py_melted['TestDataName'].unique())
-            for dtype in py_data_types:
-                img_name = _generate_violin_plot(py_melted, dtype, output_dir,
-                                                 language='Python', top_n=5)
-                if img_name:
-                    violin_images[f"python_{dtype}"] = img_name
+    for lang_id in lang_ids:
+        records = by_lang[lang_id]
+        display = _LANG_DISPLAY.get(lang_id, lang_id)
+        melted = _records_to_melted_df(records, display)
+        if melted.empty:
+            continue
+        n_sers = int(melted["SerializerName"].nunique())
+        # Cap series on crowded languages (historical C# behaviour: top 5)
+        top_n = 5 if n_sers > 12 else None
+        file_key = _lang_file_key(lang_id, display)
+        for dtype in sorted(melted["TestDataName"].unique()):
+            img_name = _generate_violin_plot(
+                melted, dtype, output_dir, language=display, top_n=top_n
+            )
+            if img_name:
+                violin_images[f"{file_key}_{dtype}"] = img_name
 
     generated = list(violin_images.values())
     if generated:
         print(f"Generated {len(generated)} violin plots in: {output_dir}")
     return violin_images
+
+
+def write_violin_plots_markdown(
+    violin_images: Dict[str, str],
+    output_path: str,
+    image_subdir: str = "dashboard",
+) -> None:
+    """Write a Markdown page embedding generated violin plots, grouped by language."""
+    # Group keys lang_testdata -> filename
+    by_lang: Dict[str, List[Tuple[str, str]]] = {}
+    for key, fname in sorted(violin_images.items()):
+        if "_" not in key:
+            continue
+        # key is {lang}_{TestDataName} but TestDataName may contain underscores (rare)
+        # Prefer longest known lang prefix
+        lang_key = None
+        for candidate in ("javascript", "csharp", "python", "rust", "c"):
+            if key.startswith(candidate + "_"):
+                lang_key = candidate
+                dtype = key[len(candidate) + 1 :]
+                break
+        if lang_key is None:
+            lang_key, dtype = key.split("_", 1)
+        by_lang.setdefault(lang_key, []).append((dtype, fname))
+
+    display_order = ["csharp", "python", "rust", "c", "javascript"]
+    lines = [
+        "# Performance (Violin Plots)",
+        "",
+        "Violin plots show the density of serialize / deserialize timings "
+        "(wider = more samples at that duration). Generated by "
+        "`analyze-benchmarks --generate-plots` for every language with CSV logs.",
+        "",
+        "Time axis is **microseconds** (normalized from ticks or nanoseconds in the CSVs).",
+        "",
+    ]
+    for lang_key in display_order + sorted(k for k in by_lang if k not in display_order):
+        items = by_lang.get(lang_key)
+        if not items:
+            continue
+        title = _LANG_DISPLAY.get(lang_key, lang_key)
+        lines.append(f"## {title}")
+        lines.append("")
+        for dtype, fname in items:
+            lines.append(f"### {dtype}")
+            lines.append(f'![{title} {dtype}]({image_subdir}/{fname}){{ width="50%" }}')
+            lines.append("")
+        lines.append("---")
+        lines.append("")
+
+    if len(lines) <= 6:
+        lines.append("_No plots generated — run benchmarks then "
+                     "`analyze-benchmarks --generate-plots`._")
+        lines.append("")
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"Violin plots markdown written to: {output_path}")

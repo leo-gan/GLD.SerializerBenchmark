@@ -119,12 +119,20 @@ def main():
         )
 
     if args.generate_plots:
+        from .reports import write_violin_plots_markdown
+
         plots_dir = os.path.join(args.output_dir, "dashboard")
-        generate_violin_plots(
+        violin_images = generate_violin_plots(
             plots_dir,
             csharp_records=all_records.get("csharp", []),
             python_records=all_records.get("python", []),
             multi_lang_records=all_records,
+        )
+        # Always refresh the docs-friendly page under the output dir
+        write_violin_plots_markdown(
+            violin_images,
+            os.path.join(args.output_dir, "violin-plots.md"),
+            image_subdir="dashboard",
         )
 
     if args.compare_a and args.compare_b:
