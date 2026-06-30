@@ -94,8 +94,6 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
             split=True,
             # cut=0: do not extend KDE past observed data (avoids fake negative times)
             cut=0,
-            # clip KDE support to non-negative times only
-            clip=(0, None),
             inner=None,  # Remove box plot inner lines for cleaner violin appearance
             height=6,
             aspect=1.2,
