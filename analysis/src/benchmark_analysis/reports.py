@@ -250,7 +250,7 @@ _LANG_ORDER = ["csharp", "python", "rust", "c", "javascript"]
 
 def _normalize_lang_id(lang: str) -> str:
     lang = (lang or "unknown").lower()
-    if lang in ("c#", "cs"):
+    if lang in ("c#", "cs", "c-sharp"):
         return "csharp"
     return lang
 
@@ -355,7 +355,8 @@ def generate_language_results_pages(
     for key, fname in sorted(violin_images.items()):
         lang_key = None
         dtype = None
-        for candidate in ("javascript", "csharp", "python", "rust", "c"):
+        # Longest key first so "javascript" wins over a future "java"
+        for candidate in sorted(_LANG_DOCS_DIR.keys(), key=len, reverse=True):
             if key.startswith(candidate + "_"):
                 lang_key = candidate
                 dtype = key[len(candidate) + 1 :]

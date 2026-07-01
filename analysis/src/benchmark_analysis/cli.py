@@ -131,15 +131,18 @@ def main():
         from .reports import generate_language_results_pages
 
         out_abs = os.path.abspath(args.output_dir)
-        # When writing into docs/analysis, language pages live under docs/
-        docs_root = os.path.dirname(out_abs) if os.path.basename(out_abs) == "analysis" else out_abs
-        # If output is reports/, still try repo docs/ when present
-        if os.path.basename(out_abs) != "analysis":
-            repo_docs = os.path.join(os.path.dirname(out_abs), "docs")
-            if os.path.isdir(repo_docs):
-                docs_root = repo_docs
-            elif os.path.isdir(os.path.join(out_abs, "..", "docs")):
-                docs_root = os.path.abspath(os.path.join(out_abs, "..", "docs"))
+        # Prefer repo-root docs/ so cwd (e.g. analysis/) does not yield analysis/docs
+        repo_root = None
+        for p in Path(__file__).resolve().parents:
+            if (p / "config" / "benchmark_config.yaml").exists() or (p / "docs").is_dir():
+                repo_root = p
+                break
+        if os.path.basename(out_abs) == "analysis":
+            docs_root = os.path.dirname(out_abs)
+        elif repo_root is not None and (repo_root / "docs").is_dir():
+            docs_root = str(repo_root / "docs")
+        else:
+            docs_root = out_abs
         generate_language_results_pages(
             multi_lang_stats=all_stats,
             violin_images=violin_images,
