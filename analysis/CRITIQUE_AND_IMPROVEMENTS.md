@@ -69,7 +69,7 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 | Version compare report | `--compare-a` / `--compare-b` |
 | Rust / C / JS harnesses + docs | `rust/`, `c/`, `javascript/`, `docs/*` |
 | Orchestrator multi-lang | `scripts/run-all-benchmarks.sh` |
-| Extensibility guide | `docs/architecture/ADDING_A_LANGUAGE.md` |
+| Extensibility guide | `docs/analysis/ADDING_A_LANGUAGE.md` |
 | Unit tests | `analysis/tests/`, `javascript/test/`, `python/tests/` |
 | Methodology v2 section | `docs/analysis/ANALYSIS_METHODOLOGY.md` |
 

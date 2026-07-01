@@ -33,7 +33,7 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 - **ObjectGraph** is skipped (most serde formats lack cycles without extensions).
 - Stream mode currently shares the buffer path; extend with `Write`/`Read` per crate for stricter stream realism.
 
-Also listed in [`rust/README.md`](../../rust/README.md). [Selection Guide](../serializers/index.md) · [Serialization Categories](../analysis/serialization_categories.md).
+Also listed in [`rust/README.md`](../../rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## Design choices
 

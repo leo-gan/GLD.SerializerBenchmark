@@ -56,7 +56,7 @@ This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 - **JavaScriptSerializer (N/A)** is a stub — do not treat timings as real.
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.
 
-Harness: [`c-sharp/README.md`](../../c-sharp/README.md). Format trade-offs: [Selection Guide](../serializers/index.md). Categories: [Serialization Categories](../analysis/serialization_categories.md).
+Harness: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
 
 ## The Power of `Span<T>` and `Memory<T>`
 

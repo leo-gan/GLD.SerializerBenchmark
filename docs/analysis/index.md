@@ -12,6 +12,8 @@ Empirical performance comparison of serializers across **C#**, **Python**, **Rus
 
 Inventories are the **source of truth for what we measure** (hand-written). Results pages are **generated** local snapshots (pivots + plots).
 
+Suite layout and harness timing model: [Benchmark architecture](architecture.md). Extending languages: [Adding a Language](ADDING_A_LANGUAGE.md).
+
 ---
 
 ## Regenerating published reports (maintainers)

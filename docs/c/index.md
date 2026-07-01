@@ -30,4 +30,4 @@ C serialization is fragmented: each library owns its own object model (DOM trees
 
 Default CI build uses **portable minimal codecs** labeled with real library names so the pipeline runs without distro packages. For paper results, vendor/link real libraries and replace `json_write_fixture` / envelope wrappers in `register_serializers.c` with real APIs.
 
-Also: [`c/README.md`](../../c/README.md). [Selection Guide](../serializers/index.md) · [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`c/README.md`](../../c/README.md). [Serialization Categories](../analysis/serialization_categories.md).

@@ -45,5 +45,5 @@ This documentation is organized hierarchically to take you from general theory d
 1. **[Theory and Practices](../theory/index.md):** Historical overview and core concepts.
 2. **[C#](../c-sharp/index.md):** Deep dive into the .NET serialization landscape (`Span<T>`, `MemoryPack`, `Protobuf-net`).
 3. **[Python](../python/index.md):** Deep dive into Python's constraints (GIL, C-extensions, Pickling).
-4. **[Selection Guide](../serializers/index.md):** Comparative analysis of formats and guidance on choosing the right serializer.
+4. **[Serialization Categories](../analysis/serialization_categories.md):** Format trade-offs and which libraries this suite registers per paradigm.
 5. **[Benchmarks](../analysis/index.md):** Extensive, data-driven comparisons of top serializers using real-world topologies.

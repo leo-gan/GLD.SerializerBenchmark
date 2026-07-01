@@ -23,7 +23,7 @@ Scientific, multi-language benchmark suite for **comparing serialization librari
 | **C** | [`c/`](c/) | 12 | `logs/c/` |
 | **JavaScript (Node)** | [`javascript/`](javascript/) | 11–12 | `logs/javascript/` |
 
-Add more languages via [`docs/architecture/ADDING_A_LANGUAGE.md`](docs/architecture/ADDING_A_LANGUAGE.md).
+Add more languages via [`docs/analysis/ADDING_A_LANGUAGE.md`](docs/analysis/ADDING_A_LANGUAGE.md).
 
 ## Configuration
 
@@ -76,10 +76,10 @@ See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistic
 5. Cliff's δ + Hedges' g vs fastest in group
 6. Optional Mann–Whitney U + Holm for A/B versions
 
-## Architecture & extensibility
+## Benchmark architecture & extensibility
 
-- [Architecture](docs/architecture/index.md)
-- [Adding a language](docs/architecture/ADDING_A_LANGUAGE.md)
+- [Benchmark architecture](docs/analysis/architecture.md)
+- [Adding a language](docs/analysis/ADDING_A_LANGUAGE.md)
 - Harness contract: emit `logs/<lang>/benchmark-log.csv` with `Language=<id>`, times in **nanoseconds** (except legacy C# ticks)
 
 ## Documentation site

@@ -35,6 +35,13 @@ plugins:
   - redirects:
       redirect_maps:
         'index.md': 'theory/index.md'
+        'serializers/index.md': 'analysis/serialization_categories.md'
+        'serializers/json.md': 'analysis/serialization_categories.md'
+        'serializers/binary.md': 'analysis/serialization_categories.md'
+        'serializers/schema.md': 'analysis/serialization_categories.md'
+        'serializers/native.md': 'analysis/serialization_categories.md'
+        'architecture/index.md': 'analysis/architecture.md'
+        'architecture/ADDING_A_LANGUAGE.md': 'analysis/ADDING_A_LANGUAGE.md'
 
 markdown_extensions:
   - attr_list
@@ -67,16 +74,10 @@ nav:
   - JavaScript:
       - Overview: javascript/index.md
       - Results: javascript/results.md
-  - Architecture:
-      - Overview: architecture/index.md
-      - Adding a Language: architecture/ADDING_A_LANGUAGE.md
-  - Selection Guide:
-      - Overview: serializers/index.md
-      - Json Serializers: serializers/json.md
-      - Binary Serializers: serializers/binary.md
-      - Schema-based Serializers: serializers/schema.md
   - Benchmarks:
       - Overview: analysis/index.md
+      - Benchmark architecture: analysis/architecture.md
+      - Adding a Language: analysis/ADDING_A_LANGUAGE.md
       - Serialization Categories: analysis/serialization_categories.md
       - Analysis Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Test Data Configuration: analysis/test_data_configuration.md
