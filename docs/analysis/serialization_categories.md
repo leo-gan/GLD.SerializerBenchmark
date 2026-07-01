@@ -4,7 +4,7 @@ When evaluating performance, compare serializers within the same paradigm. Compa
 
 This page lists categories as used in **this suite**. Examples are libraries **registered in the harnesses**, not the entire ecosystem.
 
-### 1. JSON (Text-based, Schemaless)
+### JSON (Text-based, Schemaless)
 
 Optimized for human readability and web-API interoperability.
 
@@ -14,7 +14,7 @@ Optimized for human readability and web-API interoperability.
 - **C**: `cJSON`, `yyjson`, `jansson`, `parson` (CI build may use portable stand-ins — see [C overview](../c/index.md))
 - **JavaScript**: `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)
 
-### 2. Binary (Schemaless)
+### Binary (Schemaless)
 
 Compact binary with type tags / field names in the payload; no pre-shared schema required.
 
@@ -24,7 +24,7 @@ Compact binary with type tags / field names in the payload; no pre-shared schema
 - **C**: `mpack`, `tinycbor`, `ubj`, `cbor-encode`, `custom-binary`
 - **JavaScript**: `msgpackr`, `@msgpack/msgpack`, `cbor-x`, `cbor`, `bson`, `bser`
 
-### 3. Binary (Schema-Driven / Schema-ish)
+### Binary (Schema-Driven / Schema-ish)
 
 Schema, IDL, or fixed layout (field numbers, FlexBuffers, etc.).
 
@@ -34,7 +34,7 @@ Schema, IDL, or fixed layout (field numbers, FlexBuffers, etc.).
 - **C**: `nanopb`, `protobuf-c`, `flatcc` (default build: tagged envelopes)
 - **JavaScript**: `avsc`, `protobufjs`
 
-### 4. Language-Native
+### Language-Native
 
 Tied to one runtime; often supports cycles and arbitrary objects.
 
@@ -45,11 +45,11 @@ Tied to one runtime; often supports cycles and arbitrary objects.
 
 ## High-Level Results Discussion
 
-Detailed metrics belong in the published snapshot under `docs/analysis/` (see [Detailed Report](BENCHMARK_SUMMARY.md) and [violin plots](violin-plots.md)), regenerated locally — not by CI. Overarching trends observed in this project:
+Detailed metrics belong on each language [Results](../c-sharp/results.md) page (pivots + plots), regenerated locally — not by CI. Hub: [Benchmark Results](BENCHMARK_SUMMARY.md). Overarching trends observed in this project:
 
-1. **Schema-driven binary** often wins on size and throughput within a language.
-2. **Text parsing** remains a bottleneck even for fast JSON libraries.
-3. **Allocation** (GC / heap churn) dominates at high throughput on managed runtimes.
-4. **Cross-language rankings are not interchangeable** — compare within language first, then formats.
+- **Schema-driven binary** often wins on size and throughput within a language.
+- **Text parsing** remains a bottleneck even for fast JSON libraries.
+- **Allocation** (GC / heap churn) dominates at high throughput on managed runtimes.
+- **Cross-language rankings are not interchangeable** — compare within language first, then formats.
 
 For format-level trade-offs (when to choose JSON vs MessagePack vs Protobuf), see the [Selection Guide](../serializers/index.md) (concepts). For **what we actually measure**, use each language overview under `docs/<lang>/index.md`.

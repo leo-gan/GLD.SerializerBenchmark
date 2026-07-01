@@ -49,18 +49,22 @@ nav:
       - Engineer Perspective: theory/engineer_perspective.md
   - C#:
       - Overview: c-sharp/index.md
+      - Results: c-sharp/results.md
   - Python:
       - Overview: python/index.md
+      - Results: python/results.md
   - Rust:
       - Overview: rust/index.md
+      - Results: rust/results.md
   - C:
       - Overview: c/index.md
+      - Results: c/results.md
   - JavaScript:
       - Overview: javascript/index.md
+      - Results: javascript/results.md
   - Architecture:
       - Overview: architecture/index.md
       - Adding a Language: architecture/ADDING_A_LANGUAGE.md
-      - Critique & Improvements: architecture/CRITIQUE_AND_IMPROVEMENTS.md
   - Selection Guide:
       - Overview: serializers/index.md
       - Json Serializers: serializers/json.md
@@ -71,5 +75,4 @@ nav:
       - Serialization Categories: analysis/serialization_categories.md
       - Analysis Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Test Data Configuration: analysis/test_data_configuration.md
-      - Detailed Report: analysis/BENCHMARK_SUMMARY.md
-      - Performance: analysis/violin-plots.md
+      - Benchmark Results: analysis/BENCHMARK_SUMMARY.md

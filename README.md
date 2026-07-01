@@ -88,7 +88,7 @@ Language ecosystem pages (serializer inventories live on each overview):
 
 - [C#](docs/c-sharp/index.md) · [Python](docs/python/index.md)
 - [Rust](docs/rust/index.md) · [C](docs/c/index.md) · [JavaScript](docs/javascript/index.md)
-- Benchmarks: [analysis overview](docs/analysis/index.md) · [summary](docs/analysis/BENCHMARK_SUMMARY.md) · [violin plots](docs/analysis/violin-plots.md)
+- Benchmarks: [analysis overview](docs/analysis/index.md) · per-language [C#](docs/c-sharp/results.md) / [Python](docs/python/results.md) / [Rust](docs/rust/results.md) / [C](docs/c/results.md) / [JavaScript](docs/javascript/results.md) results
 
 The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree. Refresh site results by regenerating into `docs/analysis/` locally and committing.
 

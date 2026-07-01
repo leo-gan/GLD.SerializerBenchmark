@@ -103,6 +103,17 @@ def main():
     if not python_stats and all_records.get("python"):
         python_stats = compute_statistics(all_records["python"], config=stats_cfg, language_hint="python")
 
+    violin_images = {}
+    if args.generate_plots:
+        plots_dir = os.path.join(args.output_dir, "plots", "violin")
+        violin_images = generate_violin_plots(
+            plots_dir,
+            csharp_records=all_records.get("csharp", []),
+            python_records=all_records.get("python", []),
+            multi_lang_records=all_records,
+        )
+        # Plot embeds live on docs/<lang>/results.md (via generate_language_results_pages)
+
     if args.generate_summary:
         summary_path = os.path.join(args.output_dir, "BENCHMARK_SUMMARY.md")
         generate_markdown_summary(
@@ -115,21 +126,24 @@ def main():
             multi_lang_records=all_records,
         )
 
-    if args.generate_plots:
-        from .reports import write_violin_plots_markdown
+    # Per-language results (pivots + plot embeds) under docs/<lang>/results.md
+    if args.generate_summary or args.generate_plots:
+        from .reports import generate_language_results_pages
 
-        plots_dir = os.path.join(args.output_dir, "plots", "violin")
-        violin_images = generate_violin_plots(
-            plots_dir,
-            csharp_records=all_records.get("csharp", []),
-            python_records=all_records.get("python", []),
-            multi_lang_records=all_records,
-        )
-        # Always refresh the docs-friendly page under the output dir
-        write_violin_plots_markdown(
-            violin_images,
-            os.path.join(args.output_dir, "violin-plots.md"),
-            image_subdir="plots/violin",
+        out_abs = os.path.abspath(args.output_dir)
+        # When writing into docs/analysis, language pages live under docs/
+        docs_root = os.path.dirname(out_abs) if os.path.basename(out_abs) == "analysis" else out_abs
+        # If output is reports/, still try repo docs/ when present
+        if os.path.basename(out_abs) != "analysis":
+            repo_docs = os.path.join(os.path.dirname(out_abs), "docs")
+            if os.path.isdir(repo_docs):
+                docs_root = repo_docs
+            elif os.path.isdir(os.path.join(out_abs, "..", "docs")):
+                docs_root = os.path.abspath(os.path.join(out_abs, "..", "docs"))
+        generate_language_results_pages(
+            multi_lang_stats=all_stats,
+            violin_images=violin_images,
+            docs_root=docs_root,
         )
 
     if args.compare_a and args.compare_b:

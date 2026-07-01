@@ -28,11 +28,12 @@ analyze-benchmarks \
     --generate-plots \
     --output-dir reports/
 
-# Published documentation snapshot (commit docs/analysis/** for GitHub Pages)
+# Published documentation snapshot (commit docs/analysis/** and docs/<lang>/results.md)
 analyze-benchmarks \
     --generate-summary \
     --generate-plots \
     --output-dir ../docs/analysis
+# Also writes docs/c-sharp/results.md, docs/python/results.md, … with pivots + plots
 
 # Explicit per-language paths
 analyze-benchmarks \
@@ -101,4 +102,4 @@ stats = compute_statistics(records, language_hint='rust')
 generate_markdown_summary({}, {}, 'reports/summary.md', multi_lang_stats=stats, multi_lang_records={'rust': records})
 ```
 
-See [docs/analysis/ANALYSIS_METHODOLOGY.md](../docs/analysis/ANALYSIS_METHODOLOGY.md) for statistics details.
+See [docs/analysis/ANALYSIS_METHODOLOGY.md](../docs/analysis/ANALYSIS_METHODOLOGY.md) for statistics details (site docs). Internal review notes (not published on the site): [CRITIQUE_AND_IMPROVEMENTS.md](CRITIQUE_AND_IMPROVEMENTS.md).
