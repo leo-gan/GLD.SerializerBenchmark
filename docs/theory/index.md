@@ -1,6 +1,6 @@
 # Serialization 101: Theory and Practices
 
-Welcome to the **Cross-Language Serializer Benchmark** documentation. This resource is designed to serve as a comprehensive "101 Course" for Senior Software Developers, Data Scientists, and System Architects who need to make informed, data-driven decisions about data serialization.
+Welcome to the **Multi-Language Serializer Benchmark** documentation. This resource is designed to serve as a comprehensive "101 Course" for Senior Software Developers, Data Scientists, and System Architects who need to make informed, data-driven decisions about data serialization.
 
 ---
 
