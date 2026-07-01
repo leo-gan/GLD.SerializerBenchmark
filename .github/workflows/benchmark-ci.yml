@@ -1,7 +1,9 @@
 name: Benchmark CI
 
-# Optional harness smoke checks only. Summaries and plots are generated
-# locally and committed under docs/analysis/ for GitHub Pages — never here.
+# Harness smoke checks (per language when those paths change) and analysis unit
+# tests (when analysis/ or shared config/schemas change). Summaries and plots are
+# generated locally and committed under docs/analysis/ for GitHub Pages — never
+# here. workflow_dispatch runs all jobs for the chosen mode (smoke by default).
 
 on:
   push:
@@ -12,8 +14,16 @@ on:
       - '.gitignore'
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'site/**'
   pull_request:
     branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.gitignore'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'site/**'
   workflow_dispatch:
     inputs:
       mode:
@@ -27,7 +37,59 @@ on:
           - full
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      csharp: ${{ steps.filter.outputs.csharp }}
+      python: ${{ steps.filter.outputs.python }}
+      rust: ${{ steps.filter.outputs.rust }}
+      c: ${{ steps.filter.outputs.c }}
+      javascript: ${{ steps.filter.outputs.javascript }}
+      analysis: ${{ steps.filter.outputs.analysis }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            csharp:
+              - 'c-sharp/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            python:
+              - 'python/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            rust:
+              - 'rust/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            c:
+              - 'c/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            javascript:
+              - 'javascript/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            analysis:
+              - 'analysis/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+
   csharp-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.csharp == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +100,10 @@ jobs:
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
   python-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,3 +112,89 @@ jobs:
         run: |
           cd python
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+  rust-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Rust Benchmark
+        run: |
+          cd rust
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+  c-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.c == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+
+      - name: Run C Benchmark
+        run: |
+          cd c
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+  javascript-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.javascript == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: javascript/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd javascript
+          npm ci
+
+      - name: Run JavaScript Benchmark
+        run: |
+          cd javascript
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+  analysis-unit-tests:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.analysis == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install analysis package with test deps
+        run: |
+          cd analysis
+          python -m venv .venv
+          .venv/bin/pip install -U pip
+          .venv/bin/pip install -e ".[dev]"
+
+      - name: Run unit tests
+        run: |
+          cd analysis
+          .venv/bin/pytest -q

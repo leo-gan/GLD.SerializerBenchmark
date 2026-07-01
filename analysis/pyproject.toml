@@ -19,8 +19,17 @@ dependencies = [
 [project.scripts]
 analyze-benchmarks = "benchmark_analysis.cli:main"
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/benchmark_analysis"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.uv]
 package = true

@@ -34,7 +34,8 @@ def test_detect_time_unit_csharp():
 
 
 def test_filter_outliers_removes_extreme():
-    values = [10.0] * 20 + [10_000.0]
+    # Need non-zero IQR (identical values => IQR 0 => no filtering by design).
+    values = [float(i) for i in range(10, 30)] + [10_000.0]
     filtered, removed = _filter_outliers(values, method="iqr", min_samples=10)
     assert removed >= 1
     assert max(filtered) < 1000
