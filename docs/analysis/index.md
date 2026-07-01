@@ -2,49 +2,49 @@
 
 Empirical performance comparison of serializers across **C#**, **Python**, **Rust**, **C**, and **JavaScript**, using shared conceptual payloads and a common CSV + analysis pipeline.
 
-| Language | Harness | Serializers (registered) | Logs |
-|----------|---------|--------------------------|------|
-| C# | [`c-sharp/`](../../c-sharp/) | 38 | `logs/csharp/` |
-| Python | [`python/`](../../python/) | 10 | `logs/python/` |
-| Rust | [`rust/`](../../rust/) | 12 | `logs/rust/` |
-| C | [`c/`](../../c/) | 12 | `logs/c/` |
-| JavaScript | [`javascript/`](../../javascript/) | 11–12 | `logs/javascript/` |
+| Language | Serializers (registered) | Inventory (what we measure) | Results (snapshot) |
+|----------|--------------------------|----------------------------|--------------------|
+| C# | 38 | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
+| Python | 10 | [Overview](../python/index.md) | [Results](../python/results.md) |
+| Rust | 12 | [Overview](../rust/index.md) | [Results](../rust/results.md) |
+| C | 12 | [Overview](../c/index.md) | [Results](../c/results.md) |
+| JavaScript | 11–12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
+
+Inventories are the **source of truth for what we measure** (hand-written). Results pages are **generated** local snapshots (pivots + plots).
+
+Suite layout and harness timing model: [Benchmark architecture](architecture.md). Extending languages: [Adding a Language](ADDING_A_LANGUAGE.md).
 
 ---
 
-## Quick Access
+## Regenerating published reports (maintainers)
 
-| Report | Description |
-|--------|-------------|
-| [Serialization Categories](./serialization_categories.md) | How serializers are classified **in this suite** |
-| [Analysis Methodology](./ANALYSIS_METHODOLOGY.md) | Statistical methods and data processing pipeline |
-| [Test Data Configuration](./test_data_configuration.md) | Test data types and generation rules |
-| [Detailed Report](./BENCHMARK_SUMMARY.md) | Generated summary (re-run analysis to refresh) |
-| [Performance (violin plots)](./violin-plots.md) | Visualizations of latency distributions |
-
----
-
-## Generating reports
+Requires local CSVs at `logs/<lang>/benchmark-log.csv` (gitignored; from harness or
+`./scripts/run-all-benchmarks.sh --mode full`). Use **both** flags so the hub index,
+PNGs, and per-language pages stay in sync:
 
 ```bash
-cd analysis && pip install -e .
-analyze-benchmarks --generate-summary --generate-plots --output-dir ../reports
+cd analysis && pip install -e .   # once
+analyze-benchmarks \
+  --generate-summary \
+  --generate-plots \
+  --output-dir ../docs/analysis
 ```
 
-Reports land under `reports/`. Copy or CI may sync artifacts into `docs/analysis/` for the MkDocs site. Top-performer tables are **not** hand-maintained here — regenerate from current CSVs.
+That writes (commit these for Pages):
 
----
+| Output | Role |
+|--------|------|
+| `docs/analysis/BENCHMARK_SUMMARY.md` | Hub **Benchmark Results** (links only) |
+| `docs/analysis/plots/violin/*.png` | Shared plot assets |
+| `docs/<lang>/results.md` | Per-language pivots + plot embeds (`c-sharp`, `python`, `rust`, `c`, `javascript`) |
 
-## Key Findings (qualitative)
+Either flag alone still refreshes `docs/<lang>/results.md` from current CSVs, but
+`--generate-summary` without `--generate-plots` omits plot images/embeds on that run,
+and `--generate-plots` without `--generate-summary` skips updating
+`BENCHMARK_SUMMARY.md`. Prefer both flags for a full snapshot.
 
-- **Binary formats** (MessagePack, Protobuf-style, compact native codecs) often outperform text JSON within a language.
-- **Schema-driven** serializers usually achieve smaller payloads by omitting field names.
-- **Zero-allocation / zero-copy** techniques (e.g. MemoryPack, FlatSharp, rkyv patterns) reduce GC pressure on managed runtimes.
-- Python’s **orjson** and **msgspec** (native extensions) far outperform pure-Python baselines in this suite.
-- Some harnesses use **documented stand-ins** (C portable codecs; Rust `prost-wire` / `rkyv` wrappers) — read language caveats before citing numbers in a paper.
+Optional local scratch: `--output-dir ../reports` (gitignored) writes the hub/PNGs under `reports/`; the CLI still refreshes `docs/<lang>/results.md` when a sibling `docs/` directory exists.
 
----
+The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree — it does **not** re-run analysis or benchmarks.
 
-## Per-language inventories (source of truth for “what we measure”)
-
-- [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md)
+Pivot tables and plots are **not** hand-maintained; regenerate from CSVs and commit.

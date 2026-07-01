@@ -1,5 +1,10 @@
 name: Benchmark CI
 
+# Harness smoke checks (per language when those paths change) and analysis unit
+# tests (when analysis/ or shared config/schemas change). Summaries and plots are
+# generated locally and committed under docs/analysis/ for GitHub Pages — never
+# here. workflow_dispatch runs all jobs for the chosen mode (smoke by default).
+
 on:
   push:
     branches: [main, master]
@@ -7,35 +12,84 @@ on:
       - '**.md'
       - '**.txt'
       - '.gitignore'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'site/**'
   pull_request:
     branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.gitignore'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'site/**'
   workflow_dispatch:
     inputs:
       mode:
         description: 'Benchmark mode'
         required: true
-        default: 'all-single'
+        default: 'smoke'
         type: choice
         options:
           - smoke
           - all-single
           - full
-      fail_on_regression:
-        description: 'Fail CI on performance regression'
-        required: true
-        default: false
-        type: boolean
-      regression_threshold:
-        description: 'Regression threshold percentage (e.g., 10 for 10% slower)'
-        required: true
-        default: '10'
-        type: string
-
-env:
-  REGRESSION_THRESHOLD: ${{ github.event.inputs.regression_threshold || '10' }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      csharp: ${{ steps.filter.outputs.csharp }}
+      python: ${{ steps.filter.outputs.python }}
+      rust: ${{ steps.filter.outputs.rust }}
+      c: ${{ steps.filter.outputs.c }}
+      javascript: ${{ steps.filter.outputs.javascript }}
+      analysis: ${{ steps.filter.outputs.analysis }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            csharp:
+              - 'c-sharp/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            python:
+              - 'python/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            rust:
+              - 'rust/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            c:
+              - 'c/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            javascript:
+              - 'javascript/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+            analysis:
+              - 'analysis/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - '.github/workflows/benchmark-ci.yml'
+
   csharp-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.csharp == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,16 +97,13 @@ jobs:
       - name: Run C# Benchmark
         run: |
           cd c-sharp
-          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'all-single' }}
-
-      - name: Upload C# Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: csharp-results
-          path: logs/csharp/
-          retention-days: 30
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
   python-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,22 +111,74 @@ jobs:
       - name: Run Python Benchmark
         run: |
           cd python
-          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'all-single' }}
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
-      - name: Upload Python Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-results
-          path: logs/python/
-          retention-days: 30
-
-  analyze-and-report:
-    needs: [csharp-benchmark, python-benchmark]
+  rust-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Rust Benchmark
+        run: |
+          cd rust
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+  c-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.c == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+
+      - name: Run C Benchmark
+        run: |
+          cd c
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+  javascript-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.javascript == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: javascript/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd javascript
+          npm ci
+
+      - name: Run JavaScript Benchmark
+        run: |
+          cd javascript
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
+  analysis-unit-tests:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.analysis == 'true'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -84,112 +187,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install analysis package
+      - name: Install analysis package with test deps
         run: |
           cd analysis
-          pip install -e .
+          python -m venv .venv
+          .venv/bin/pip install -U pip
+          .venv/bin/pip install -e ".[dev]"
 
-      # Download each language separately so identical filenames (benchmark-log.csv)
-      # from csharp-results and python-results do not overwrite each other under logs/.
-      - name: Download C# Results
-        uses: actions/download-artifact@v4
-        with:
-          name: csharp-results
-          path: logs/csharp/
-
-      - name: Download Python Results
-        uses: actions/download-artifact@v4
-        with:
-          name: python-results
-          path: logs/python/
-
-      - name: Verify benchmark logs
+      - name: Run unit tests
         run: |
-          set -euo pipefail
-          echo "Layout under logs/:"
-          find logs -type f | sort || true
-          for f in logs/csharp/benchmark-log.csv logs/python/benchmark-log.csv; do
-            if [[ ! -f "$f" ]]; then
-              echo "::error::Missing required log: $f"
-              exit 1
-            fi
-            echo "$f: $(wc -l < "$f") lines"
-          done
-
-      - name: Run Analysis
-        run: |
-          analyze-benchmarks \
-            --csharp-logs logs/csharp/benchmark-log.csv \
-            --python-logs logs/python/benchmark-log.csv \
-            --output-dir reports/ \
-            --generate-plots \
-            --generate-summary
-
-      - name: Check for Regressions
-        if: github.event.inputs.fail_on_regression == 'true'
-        run: |
-          analyze-benchmarks \
-            --csharp-logs logs/csharp/benchmark-log.csv \
-            --python-logs logs/python/benchmark-log.csv \
-            --check-regression \
-            --regression-threshold ${{ env.REGRESSION_THRESHOLD }} \
-            --baseline-file baseline.json
-        continue-on-error: false
-
-      - name: Upload Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-reports
-          path: reports/
-          retention-days: 90
-
-      - name: Copy Dashboard to Docs
-        run: |
-          set -euo pipefail
-          mkdir -p docs/dashboard
-          if [[ -d reports/dashboard ]] && compgen -G 'reports/dashboard/*' > /dev/null; then
-            cp -r reports/dashboard/* docs/dashboard/
-            echo "Copied $(find docs/dashboard -type f | wc -l) dashboard files"
-          else
-            echo "::warning::No reports/dashboard output (plots may have filtered all rows); writing placeholder."
-            cat > docs/dashboard/README.md << 'EOF'
-          # Dashboard
-
-          No violin plots were generated for this run (empty or fully filtered series).
-          Re-run benchmarks and analysis locally, or inspect `reports/BENCHMARK_SUMMARY.md`.
-          EOF
-          fi
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/
-
-      - name: Update Summary in Repository
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          cp reports/BENCHMARK_SUMMARY.md BENCHMARK_SUMMARY.md
-          git add BENCHMARK_SUMMARY.md
-          if git diff --cached --quiet; then
-            echo "No changes to summary"
-          else
-            git commit -m "Update benchmark summary [skip ci]"
-            git push
-          fi
-
-  deploy-dashboard:
-    needs: analyze-and-report
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          cd analysis
+          .venv/bin/pytest -q

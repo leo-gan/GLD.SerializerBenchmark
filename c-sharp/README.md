@@ -94,7 +94,7 @@ Ensure you have [.NET SDK 8.0](https://dotnet.microsoft.com/download) installed.
 - `logs/csharp/benchmark-log.csv`: Raw timing (ticks) and size (bytes) for each run.
 - `logs/csharp/benchmark-errors.csv`: Detailed error reports for serializers that failed specific test cases.
 
-Cross-language analysis: install `analysis/` and run `analyze-benchmarks` (see root README).
+Cross-language analysis and docs snapshots: install `analysis/`, run `analyze-benchmarks` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
 
 ---
 

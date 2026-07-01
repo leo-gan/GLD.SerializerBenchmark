@@ -1,22 +1,59 @@
 # Serialization Categories
 
-When evaluating performance, compare serializers within the same paradigm. Comparing a schema-driven binary format to a dynamic JSON parser is often apples-to-oranges.
+Categories used in **this suite**, with short format trade-offs. Compare serializers **within the same paradigm** and **within one language**; cross-language rankings are not interchangeable.
 
-This page lists categories as used in **this suite**. Examples are libraries **registered in the harnesses**, not the entire ecosystem.
+Registered names below are harness inventories (see language **Overview** for caveats). Timings and plots: language **Results** · hub [Benchmark Results](BENCHMARK_SUMMARY.md).
 
-### 1. JSON (Text-based, Schemaless)
+## Indicative format comparison
 
-Optimized for human readability and web-API interoperability.
+Orientation only—not a leaderboard. Real speed/size depend on implementation and payload.
+
+| Family | Schema | Human-readable | Typical size | Typical speed | Cross-language | Often used for |
+|--------|--------|----------------|--------------|---------------|----------------|----------------|
+| **JSON** (text) | Optional | Yes | Larger | Medium | Universal | Public APIs, configs |
+| **Schemaless binary** | Optional | No | Smaller than JSON | Often faster than text JSON | Wide / growing | Internal services, caches |
+| **Schema-driven** | Required / fixed layout | No | Often smallest | Often fastest deserialize | Wide where codegen exists | Stable contracts, streams |
+| **Language-native** | Runtime | No | Medium | Varies | Usually one runtime | Caching, same-stack graphs |
+
+## Decision sketch
+
+```text
+Need humans to read/edit the payload?
+  ├── YES → JSON
+  └── NO
+        Need shared schema / IDL and evolution rules?
+          ├── YES → Schema-driven
+          └── NO
+                Single language / runtime, complex graphs OK?
+                  ├── YES → Language-native
+                  └── NO  → Schemaless binary
+```
+
+## JSON (text, schemaless)
+
+Text interchange optimized for interoperability and debuggability, not minimum size.
+
+**Prefer when:** public APIs, human-edited config, multi-vendor clients without an IDL.
+
+**Trade-offs:** readable and universal; larger payloads; cycles usually unsupported without extensions; binary blobs often base64. Performance varies sharply by implementation (native vs pure).
+
+**In this suite:**
 
 - **C#**: `Json.Net`, `JsonNetHelper`, `Jil`, `NetJSON`, `SpanJson`, `Utf8Json`, `FastJson`, `ServiceStack` JSON, `DataContractJson`, Bond JSON (`MS Bond Json`)
 - **Python**: `orjson`, `msgspec`, `rapidjson`
 - **Rust**: `serde_json`, `simd-json`, `sonic-rs`
-- **C**: `cJSON`, `yyjson`, `jansson`, `parson` (CI build may use portable stand-ins — see [C overview](../c/index.md))
+- **C**: `cJSON`, `yyjson`, `jansson`, `parson` (default build may use portable stand-ins — [C overview](../c/index.md))
 - **JavaScript**: `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)
 
-### 2. Binary (Schemaless)
+## Schemaless binary
 
-Compact binary with type tags / field names in the payload; no pre-shared schema required.
+Structured binary without a mandatory IDL; field names or type tags often appear in the payload (unlike classic Protobuf wire format). Families include **MessagePack**, **CBOR**, and various language-specific binary graphs.
+
+**Prefer when:** internal services, caches/queues, bandwidth limits with JSON-like flexibility.
+
+**Trade-offs:** typically smaller/faster than text JSON; not human-readable; evolution is ad hoc unless you impose conventions. MsgPack vs CBOR trade-offs are **implementation-specific**.
+
+**In this suite:**
 
 - **C#**: `MS Binary` (BinaryFormatter), `Ceras`, `Hyperion`, `NetSerializer`, `BinaryPack`, `GroBuf`, `Migrant`, `Apex.Serialization`, FsPickler binary, ServiceStack type serializer
 - **Python**: `msgpack`, `msgspec-msgpack`, `cbor2`
@@ -24,9 +61,26 @@ Compact binary with type tags / field names in the payload; no pre-shared schema
 - **C**: `mpack`, `tinycbor`, `ubj`, `cbor-encode`, `custom-binary`
 - **JavaScript**: `msgpackr`, `@msgpack/msgpack`, `cbor-x`, `cbor`, `bson`, `bser`
 
-### 3. Binary (Schema-Driven / Schema-ish)
+MessagePack-CSharp is **not** registered unless listed on the [C# overview](../c-sharp/index.md).
 
-Schema, IDL, or fixed layout (field numbers, FlexBuffers, etc.).
+## Schema-driven
+
+IDL, schema, or fixed layout: field numbers, codegen, or zero-copy buffers (**Protobuf**, **Avro**, **Bond**, **FlatBuffers**, MemoryPack-style models, etc.).
+
+**Prefer when:** stable contracts, long-lived storage with evolution rules, high-throughput streams, multi-platform codegen.
+
+**Trade-offs:** often among smallest/fastest with strong typing; schema and tooling cost up front.
+
+| Concern | Protobuf-like | Avro-like | FlatBuffers-like |
+|---------|---------------|-----------|------------------|
+| Schema location | Separate IDL | Often with data / registry | Separate IDL |
+| Codegen | Common | Optional / dynamic | Common |
+| Zero-copy access | Usually no | Usually no | Design goal |
+| Typical niche | Microservices | Data platforms | Games / realtime |
+
+Harness rows may be full codegen types or documented stand-ins (e.g. Rust `prost-wire`, C portable envelopes)—read language overviews.
+
+**In this suite:**
 
 - **C#**: protobuf-net (`ProtoBuf`), `Google.Protobuf`, Bond Fast/Compact, `FlatSharp`, `MemoryPack`, `ZeroFormatter`
 - **Python**: `protobuf`, `avro` (fastavro)
@@ -34,22 +88,29 @@ Schema, IDL, or fixed layout (field numbers, FlexBuffers, etc.).
 - **C**: `nanopb`, `protobuf-c`, `flatcc` (default build: tagged envelopes)
 - **JavaScript**: `avsc`, `protobufjs`
 
-### 4. Language-Native
+## Language-native
 
-Tied to one runtime; often supports cycles and arbitrary objects.
+Tied to one runtime/VM; often supports cycles and rich graphs at the cost of portability and, often, **safety on untrusted input** (classic pickle risks).
 
-- **C#**: legacy binary / graph-capable serializers where supported (see C# tested list)
+**Prefer when:** single-language deployments, internal caches/queues, types IDL formats reject.
+
+**Trade-offs:** poor cross-language portability; version coupling; treat untrusted payloads as dangerous where applicable.
+
+**In this suite:**
+
+- **C#**: legacy binary / graph-capable serializers where supported (see [C# overview](../c-sharp/index.md))
 - **Python**: `pickle`, `cloudpickle`
 - **JavaScript**: `v8-serializer`
-- **Rust / C**: no pickle-equivalent in this suite; `ObjectGraph` is skipped for most formats
+- **Rust / C**: no pickle-equivalent; `ObjectGraph` skipped for most formats
 
-## High-Level Results Discussion
+## Notes on interpreting results
 
-Detailed metrics belong in generated reports under `reports/` (and copies such as [violin plots](violin-plots.md)). Overarching trends observed in this project:
+- Within-language, within-category comparisons are the fair default.
+- Schema-driven entries often lead on size/throughput **in a given language**—not a universal ranking.
+- Text parsing and allocation/GC pressure remain common bottlenecks on managed runtimes.
+- Detailed metrics: language **Results** (pivots + plots), not this page.
 
-1. **Schema-driven binary** often wins on size and throughput within a language.
-2. **Text parsing** remains a bottleneck even for fast JSON libraries.
-3. **Allocation** (GC / heap churn) dominates at high throughput on managed runtimes.
-4. **Cross-language rankings are not interchangeable** — compare within language first, then formats.
+## Further reading
 
-For format-level trade-offs (when to choose JSON vs MessagePack vs Protobuf), see the [Selection Guide](../serializers/index.md) (concepts). For **what we actually measure**, use each language overview under `docs/<lang>/index.md`.
+- [JSON](https://www.json.org/) · [MessagePack](https://msgpack.org/) · [CBOR RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)
+- [Protocol Buffers](https://protobuf.dev/) · [Apache Avro](https://avro.apache.org/) · [FlatBuffers](https://flatbuffers.dev/)

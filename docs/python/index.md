@@ -29,7 +29,7 @@ Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runn
 - `tracemalloc` under-counts C/Rust extension allocations.
 - Fidelity is semantic, not strict type identity.
 
-Harness: [`python/README.md`](../../python/README.md). [Selection Guide](../serializers/index.md) · [Serialization Categories](../analysis/serialization_categories.md).
+Harness: [`python/README.md`](../../python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## The Global Interpreter Lock (GIL)
 

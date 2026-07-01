@@ -33,4 +33,4 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 - **protobufjs** uses a real `Person`/`SimpleObject` schema where applicable; other types may use a JSON-in-protobuf wrapper (documented limitation in code).
 - **v8-serializer** is not portable across languages/processes; included as the Node-native baseline.
 
-Also: [`javascript/README.md`](../../javascript/README.md). [Selection Guide](../serializers/index.md) · [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`javascript/README.md`](../../javascript/README.md). [Serialization Categories](../analysis/serialization_categories.md).

@@ -7,11 +7,16 @@ repo_name: leo-gan/GLD.SerializerBenchmark
 theme:
   name: material
   features:
+    # Header: top-level sections as tabs (Serialization 101, C#, Python, …)
     - navigation.tabs
+    - navigation.tabs.sticky
+    # Left sidebar: only 2nd-level pages for the active tab (no page ToC here)
     - navigation.sections
-#    - navigation.indexes
-#    - navigation.expand
-    - toc.integrate
+    - navigation.tracking
+    - navigation.instant
+    - navigation.top
+    # Right sidebar: in-page headings (requires toc.integrate OFF)
+    - toc.follow
   palette:
     - scheme: default
       primary: indigo
@@ -30,6 +35,13 @@ plugins:
   - redirects:
       redirect_maps:
         'index.md': 'theory/index.md'
+        'serializers/index.md': 'analysis/serialization_categories.md'
+        'serializers/json.md': 'analysis/serialization_categories.md'
+        'serializers/binary.md': 'analysis/serialization_categories.md'
+        'serializers/schema.md': 'analysis/serialization_categories.md'
+        'serializers/native.md': 'analysis/serialization_categories.md'
+        'architecture/index.md': 'analysis/architecture.md'
+        'architecture/ADDING_A_LANGUAGE.md': 'analysis/ADDING_A_LANGUAGE.md'
 
 markdown_extensions:
   - attr_list
@@ -49,27 +61,24 @@ nav:
       - Engineer Perspective: theory/engineer_perspective.md
   - C#:
       - Overview: c-sharp/index.md
+      - Results: c-sharp/results.md
   - Python:
       - Overview: python/index.md
+      - Results: python/results.md
   - Rust:
       - Overview: rust/index.md
+      - Results: rust/results.md
   - C:
       - Overview: c/index.md
+      - Results: c/results.md
   - JavaScript:
       - Overview: javascript/index.md
-  - Architecture:
-      - Overview: architecture/index.md
-      - Adding a Language: architecture/ADDING_A_LANGUAGE.md
-      - Critique & Improvements: architecture/CRITIQUE_AND_IMPROVEMENTS.md
-  - Selection Guide:
-      - Overview: serializers/index.md
-      - Json Serializers: serializers/json.md
-      - Binary Serializers: serializers/binary.md
-      - Schema-based Serializers: serializers/schema.md
+      - Results: javascript/results.md
   - Benchmarks:
       - Overview: analysis/index.md
+      - Benchmark architecture: analysis/architecture.md
+      - Adding a Language: analysis/ADDING_A_LANGUAGE.md
       - Serialization Categories: analysis/serialization_categories.md
       - Analysis Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Test Data Configuration: analysis/test_data_configuration.md
-      - Detailed Report: analysis/BENCHMARK_SUMMARY.md
-      - Performance: analysis/violin-plots.md
+      - Benchmark Results: analysis/BENCHMARK_SUMMARY.md

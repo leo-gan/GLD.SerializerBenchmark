@@ -1,6 +1,6 @@
-# CI Integration Scripts
+# Benchmark runner scripts
 
-This directory contains scripts for integrating serializer benchmarks into your CI/CD pipeline.
+Scripts for running harnesses and analysis **locally**. GitHub Actions may smoke-test harnesses, but **never** regenerates result tables or plots for documentation — those are committed under `docs/analysis/` after a local `analyze-benchmarks` run.
 
 ## Scripts
 
@@ -19,7 +19,7 @@ Unified benchmark runner for **all enabled languages** (C#, Python, Rust, C, Jav
 |------|-------------|
 | `-m, --mode MODE` | `smoke`, `all-single`, `full`, or `research` (default: `all-single`) |
 | `-l, --lang LANG` | Only run one language: `csharp` \| `python` \| `rust` \| `c` \| `javascript` |
-| `-d, --dashboard` | Generate plots dashboard (`--generate-plots`) |
+| `-p, --plots` | Generate violin plots (`--generate-plots`) |
 | `-s, --summary` | Generate Markdown summary report |
 | `-r, --regression-check` | Check for performance regressions |
 | `-t, --threshold PERCENT` | Regression threshold (default: 10%) |
@@ -34,10 +34,10 @@ Unified benchmark runner for **all enabled languages** (C#, Python, Rust, C, Jav
 # One language only
 ./scripts/run-all-benchmarks.sh --mode full --lang rust
 
-# Full benchmarks with reports
-./scripts/run-all-benchmarks.sh --mode full --dashboard --summary
+# Full benchmarks with reports (writes to reports/ by default; gitignored)
+./scripts/run-all-benchmarks.sh --mode full --plots --summary
 
-# CI check with regression detection
+# Local regression check
 ./scripts/run-all-benchmarks.sh --mode all-single --regression-check --threshold 15
 
 # Save new baseline after intentional performance improvements
@@ -51,10 +51,16 @@ Console script from the `analysis/` package. Analyzes benchmark CSV outputs and 
 **Usage (after installing analysis package):**
 ```bash
 cd analysis && pip install -e .   # once
+# Throwaway local output (gitignored):
 analyze-benchmarks \
     --generate-summary \
     --generate-plots \
     --output-dir reports/
+# Snapshot for GitHub Pages (commit docs/analysis/** after review):
+analyze-benchmarks \
+    --generate-summary \
+    --generate-plots \
+    --output-dir ../docs/analysis
 ```
 
 Auto-discovers `logs/<lang>/benchmark-log.csv`. Explicit flags:
@@ -70,7 +76,7 @@ Auto-discovers `logs/<lang>/benchmark-log.csv`. Explicit flags:
 | `--extra-logs lang=path` | Additional languages (repeatable) |
 | `--output-dir DIR` | Output directory for reports |
 | `--generate-plots` | Generate violin plot images |
-| `--generate-dashboard` | Alias for `--generate-plots` |
+
 | `--generate-summary` | Generate Markdown summary |
 | `--compare-a` / `--compare-b` | Version A/B CSV compare |
 | `--check-regression` | Check for regressions against baseline |
@@ -105,10 +111,20 @@ Baselines are stored as JSON files with the format:
 
 | Output | Description | Location |
 |--------|-------------|----------|
-| Raw CSVs | Benchmark timing data | `logs/csharp/`, `logs/python/`, `logs/rust/`, `logs/c/`, `logs/javascript/` |
-| Markdown Summary | Tabular results | `reports/BENCHMARK_SUMMARY.md` |
-| Violin plots | Per-language/data charts | `reports/dashboard/` (or docs site copies under `docs/analysis/dashboard/`) |
+| Raw CSVs | Benchmark timing data (gitignored) | `logs/<lang>/` |
+| Markdown Summary (local) | Tabular results while iterating | `reports/BENCHMARK_SUMMARY.md` (gitignored) |
+| Violin plots (local) | Per-language/data charts while iterating | `reports/plots/violin/` (gitignored) |
+| **Published site snapshot** | Tables + plots on GitHub Pages | **`docs/<lang>/results.md`** + **`docs/analysis/plots/violin/*.png`** (indexes under `docs/analysis/`) — generate locally and commit |
 | Baseline JSON | Performance baseline | `baseline.json` (or path you pass) |
+
+Publish path for documentation:
+
+```bash
+analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis
+git add docs/analysis && git commit -m "docs: refresh benchmark snapshot"
+```
+
+CI does not write these files.
 
 ## Modes (shared)
 

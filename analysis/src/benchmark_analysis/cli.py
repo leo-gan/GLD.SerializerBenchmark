@@ -54,7 +54,6 @@ def main():
     parser.add_argument("--output-dir", default="reports", help="Output directory")
     parser.add_argument("--generate-plots", action="store_true", help="Generate violin plot images")
     parser.add_argument("--generate-summary", action="store_true", help="Generate Markdown summary")
-    parser.add_argument("--generate-dashboard", action="store_true", help="Alias for --generate-plots (compat)")
     parser.add_argument("--check-regression", action="store_true", help="Check for regressions")
     parser.add_argument("--regression-threshold", type=float, default=10.0, help="Regression threshold percent")
     parser.add_argument("--baseline-file", default="baseline.json", help="Baseline file path")
@@ -64,8 +63,6 @@ def main():
     parser.add_argument("--config", default=None, help="Path to benchmark_config.yaml")
 
     args = parser.parse_args()
-    if args.generate_dashboard:
-        args.generate_plots = True
 
     stats_cfg = load_stats_config(args.config)
 
@@ -106,6 +103,17 @@ def main():
     if not python_stats and all_records.get("python"):
         python_stats = compute_statistics(all_records["python"], config=stats_cfg, language_hint="python")
 
+    violin_images = {}
+    if args.generate_plots:
+        plots_dir = os.path.join(args.output_dir, "plots", "violin")
+        violin_images = generate_violin_plots(
+            plots_dir,
+            csharp_records=all_records.get("csharp", []),
+            python_records=all_records.get("python", []),
+            multi_lang_records=all_records,
+        )
+        # Plot embeds live on docs/<lang>/results.md (via generate_language_results_pages)
+
     if args.generate_summary:
         summary_path = os.path.join(args.output_dir, "BENCHMARK_SUMMARY.md")
         generate_markdown_summary(
@@ -118,21 +126,27 @@ def main():
             multi_lang_records=all_records,
         )
 
-    if args.generate_plots:
-        from .reports import write_violin_plots_markdown
+    # Per-language results (pivots + plot embeds) under docs/<lang>/results.md
+    if args.generate_summary or args.generate_plots:
+        from .reports import generate_language_results_pages
 
-        plots_dir = os.path.join(args.output_dir, "dashboard")
-        violin_images = generate_violin_plots(
-            plots_dir,
-            csharp_records=all_records.get("csharp", []),
-            python_records=all_records.get("python", []),
-            multi_lang_records=all_records,
-        )
-        # Always refresh the docs-friendly page under the output dir
-        write_violin_plots_markdown(
-            violin_images,
-            os.path.join(args.output_dir, "violin-plots.md"),
-            image_subdir="dashboard",
+        out_abs = os.path.abspath(args.output_dir)
+        # Prefer repo-root docs/ so cwd (e.g. analysis/) does not yield analysis/docs
+        repo_root = None
+        for p in Path(__file__).resolve().parents:
+            if (p / "config" / "benchmark_config.yaml").exists() or (p / "docs").is_dir():
+                repo_root = p
+                break
+        if os.path.basename(out_abs) == "analysis":
+            docs_root = os.path.dirname(out_abs)
+        elif repo_root is not None and (repo_root / "docs").is_dir():
+            docs_root = str(repo_root / "docs")
+        else:
+            docs_root = out_abs
+        generate_language_results_pages(
+            multi_lang_stats=all_stats,
+            violin_images=violin_images,
+            docs_root=docs_root,
         )
 
     if args.compare_a and args.compare_b:

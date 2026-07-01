@@ -19,12 +19,21 @@ pip install -e .
 
 After installation, the `analyze-benchmarks` command is available. By default it **auto-discovers** `logs/<lang>/benchmark-log.csv` under the repo `logs/` tree.
 
+Summaries and violin plots are generated **locally only**. GitHub Actions never writes them. For the documentation site, write into `docs/analysis/` and commit; local re-runs may differ from published snapshots — that is OK. Use `reports/` (gitignored) for throwaway iteration.
+
 ```bash
-# Generate summary and violin plots (all discovered languages)
+# Local scratch (gitignored — not published)
 analyze-benchmarks \
     --generate-summary \
     --generate-plots \
     --output-dir reports/
+
+# Published documentation snapshot (commit docs/analysis/** and docs/<lang>/results.md)
+analyze-benchmarks \
+    --generate-summary \
+    --generate-plots \
+    --output-dir ../docs/analysis
+# Also writes docs/c-sharp/results.md, docs/python/results.md, … with pivots + plots
 
 # Explicit per-language paths
 analyze-benchmarks \
@@ -33,7 +42,7 @@ analyze-benchmarks \
     --rust-logs logs/rust/benchmark-log.csv \
     --c-logs logs/c/benchmark-log.csv \
     --javascript-logs logs/javascript/benchmark-log.csv \
-    --output-dir reports/ \
+    --output-dir ../docs/analysis \
     --generate-summary \
     --generate-plots
 
@@ -62,8 +71,7 @@ analyze-benchmarks \
 | `--extra-logs` | `lang=path` pairs (repeatable) |
 | `--output-dir` | Report output directory |
 | `--generate-summary` | Write Markdown summary |
-| `--generate-plots` | Write violin plot images |
-| `--generate-dashboard` | Alias for `--generate-plots` (compat) |
+| `--generate-plots` | Write violin plot images under `<output-dir>/plots/violin/` |
 | `--compare-a` / `--compare-b` | Version A/B compare CSVs |
 | `--check-regression` / `--save-baseline` / `--baseline-file` / `--regression-threshold` | Regression gates |
 | `--config` | Path to `benchmark_config.yaml` |
@@ -94,4 +102,4 @@ stats = compute_statistics(records, language_hint='rust')
 generate_markdown_summary({}, {}, 'reports/summary.md', multi_lang_stats=stats, multi_lang_records={'rust': records})
 ```
 
-See [docs/analysis/ANALYSIS_METHODOLOGY.md](../docs/analysis/ANALYSIS_METHODOLOGY.md) for statistics details.
+See [docs/analysis/ANALYSIS_METHODOLOGY.md](../docs/analysis/ANALYSIS_METHODOLOGY.md) for statistics details (site docs). Internal review notes (not published on the site): [CRITIQUE_AND_IMPROVEMENTS.md](CRITIQUE_AND_IMPROVEMENTS.md).

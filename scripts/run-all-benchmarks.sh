@@ -10,7 +10,7 @@ REPORT_DIR="$PROJECT_ROOT/reports"
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 
 MODE="all-single"
-GENERATE_DASHBOARD=false
+GENERATE_PLOTS=false
 GENERATE_SUMMARY=false
 CHECK_REGRESSION=false
 REGRESSION_THRESHOLD=10
@@ -26,12 +26,15 @@ Run serializer benchmarks for supported languages and optionally generate report
 OPTIONS:
     -m, --mode MODE             smoke|all-single|full|research (default: all-single)
     -l, --lang LANG             Only run one language: csharp|python|rust|c|javascript
-    -d, --dashboard             Generate HTML/plots dashboard
-    -s, --summary               Generate Markdown summary
+    -p, --plots                 Generate violin plots under reports/plots/violin/ (local; gitignored)
+    -s, --summary               Generate Markdown summary under reports/ (local)
     -r, --regression-check      Check for performance regressions
     -t, --threshold PERCENT     Regression threshold percentage (default: 10)
     -b, --save-baseline         Save current results as baseline
     -h, --help                  Show this help message
+
+Reports default to reports/ (gitignored). For GitHub Pages snapshots, run
+analyze-benchmarks with --output-dir docs/analysis and commit that tree.
 EOF
 }
 
@@ -39,7 +42,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -m|--mode) MODE="$2"; shift 2 ;;
         -l|--lang) LANG_FILTER="$2"; shift 2 ;;
-        -d|--dashboard) GENERATE_DASHBOARD=true; shift ;;
+        -p|--plots) GENERATE_PLOTS=true; shift ;;
         -s|--summary) GENERATE_SUMMARY=true; shift ;;
         -r|--regression-check) CHECK_REGRESSION=true; shift ;;
         -t|--threshold) REGRESSION_THRESHOLD="$2"; shift 2 ;;
@@ -94,7 +97,7 @@ for lang in csharp python rust c javascript; do
     fi
 done
 
-if [ "$GENERATE_DASHBOARD" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAVE_BASELINE" = true ]; then
+if [ "$GENERATE_PLOTS" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAVE_BASELINE" = true ]; then
     echo ""
     echo -e "${BLUE}Generating Reports...${NC}"
     ANALYSIS_CMD="analyze-benchmarks"
@@ -110,7 +113,7 @@ if [ "$GENERATE_DASHBOARD" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHE
         esac
     done
     ANALYSIS_CMD="$ANALYSIS_CMD --output-dir \"$REPORT_DIR\""
-    [ "$GENERATE_DASHBOARD" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --generate-plots"
+    [ "$GENERATE_PLOTS" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --generate-plots"
     [ "$GENERATE_SUMMARY" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --generate-summary"
     [ "$CHECK_REGRESSION" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --check-regression --regression-threshold $REGRESSION_THRESHOLD"
     [ "$SAVE_BASELINE" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --save-baseline"
@@ -120,7 +123,7 @@ if [ "$GENERATE_DASHBOARD" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHE
         PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.cli \
             --logs-root "$LOG_DIR" --output-dir "$REPORT_DIR" \
             $([ "$GENERATE_SUMMARY" = true ] && echo --generate-summary) \
-            $([ "$GENERATE_DASHBOARD" = true ] && echo --generate-plots) || true
+            $([ "$GENERATE_PLOTS" = true ] && echo --generate-plots) || true
     fi
 fi
 

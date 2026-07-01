@@ -15,8 +15,9 @@ project:
   name: "Cross-Language Serializer Benchmark"
   description: >
     Scientific, multi-language benchmark suite for evaluating serialization
-    libraries. Supports serializer authors (version A vs B), system integrators
-    (custom payloads/environments), and researchers (reproducible statistics).
+    libraries. Supports researchers (reproducible statistics), serializer authors
+    (version A vs B), system integrators (custom payloads/environments), and
+    maintainers (add languages without rewriting analysis).
   license: MIT
   output_schema_version: "1.1"
 

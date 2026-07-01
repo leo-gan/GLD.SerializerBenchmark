@@ -6,12 +6,16 @@ Scientific, multi-language benchmark suite for **comparing serialization librari
 
 ## Who it is for
 
+Same audiences as [Benchmark architecture — Goals](docs/analysis/architecture.md) (details and examples there):
+
 | Audience | Use case |
 |----------|----------|
 | **Researchers** | Reproducible methods, CIs, effect sizes, configurable outlier/warmup policy |
-| **Serializer authors** | Compare old vs new version: `--compare-a old.csv --compare-b new.csv` |
+| **Serializer authors** | Compare old vs new version: `analyze-benchmarks --compare-a old.csv --compare-b new.csv` |
 | **System integrators** | Custom payloads (`schemas/test_data_config.json`) and environments; same CSV + analysis pipeline |
-| **Engineers** | Pick a serializer for a language/runtime with apples-to-apples metrics |
+| **Maintainers** | Add languages and publish docs snapshots without rewriting analysis ([Adding a language](docs/analysis/ADDING_A_LANGUAGE.md)) |
+
+Picking a serializer for one runtime (integrator/researcher workflow) uses language **Overview** / **Results** on the [docs site](https://leo-gan.github.io/GLD.SerializerBenchmark/) or a local regen into `docs/analysis`.
 
 ## Supported languages
 
@@ -23,7 +27,7 @@ Scientific, multi-language benchmark suite for **comparing serialization librari
 | **C** | [`c/`](c/) | 12 | `logs/c/` |
 | **JavaScript (Node)** | [`javascript/`](javascript/) | 11–12 | `logs/javascript/` |
 
-Add more languages via [`docs/architecture/ADDING_A_LANGUAGE.md`](docs/architecture/ADDING_A_LANGUAGE.md).
+Add more languages via [`docs/analysis/ADDING_A_LANGUAGE.md`](docs/analysis/ADDING_A_LANGUAGE.md).
 
 ## Configuration
 
@@ -47,13 +51,18 @@ Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_conf
 
 # Analysis (install analysis package first)
 cd analysis && pip install -e .   # or: uv pip install -e .
+# Local scratch (gitignored):
 analyze-benchmarks --generate-summary --generate-plots --output-dir ../reports
+# Publish snapshot for GitHub Pages (commit docs/analysis/** after review):
+analyze-benchmarks --generate-summary --generate-plots --output-dir ../docs/analysis
 
 # Serializer version A vs B
 analyze-benchmarks --compare-a logs/rust/v1.csv --compare-b logs/rust/v2.csv --output-dir reports
 ```
 
 Modes: `smoke` (2 reps) · `all-single` (10) · `full` (100) · `research` (500) — see config.
+
+**Published results:** Tables and violin plots on [GitHub Pages](https://leo-gan.github.io/GLD.SerializerBenchmark/) are **maintainer-committed snapshots** under [`docs/analysis/`](docs/analysis/) (generated locally only). CI does not regenerate them. Your own benchmark runs may differ from the site — that is OK.
 
 ## Shared test data
 
@@ -71,10 +80,10 @@ See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistic
 5. Cliff's δ + Hedges' g vs fastest in group
 6. Optional Mann–Whitney U + Holm for A/B versions
 
-## Architecture & extensibility
+## Benchmark architecture & extensibility
 
-- [Architecture](docs/architecture/index.md)
-- [Adding a language](docs/architecture/ADDING_A_LANGUAGE.md)
+- [Benchmark architecture](docs/analysis/architecture.md)
+- [Adding a language](docs/analysis/ADDING_A_LANGUAGE.md)
 - Harness contract: emit `logs/<lang>/benchmark-log.csv` with `Language=<id>`, times in **nanoseconds** (except legacy C# ticks)
 
 ## Documentation site
@@ -83,6 +92,9 @@ Language ecosystem pages (serializer inventories live on each overview):
 
 - [C#](docs/c-sharp/index.md) · [Python](docs/python/index.md)
 - [Rust](docs/rust/index.md) · [C](docs/c/index.md) · [JavaScript](docs/javascript/index.md)
+- Benchmarks: [analysis overview](docs/analysis/index.md) · per-language [C#](docs/c-sharp/results.md) / [Python](docs/python/results.md) / [Rust](docs/rust/results.md) / [C](docs/c/results.md) / [JavaScript](docs/javascript/results.md) results
+
+The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree. Refresh site results by regenerating into `docs/analysis/` locally and committing.
 
 ## License
 
