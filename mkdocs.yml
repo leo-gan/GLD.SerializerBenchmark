@@ -7,11 +7,16 @@ repo_name: leo-gan/GLD.SerializerBenchmark
 theme:
   name: material
   features:
+    # Header: top-level sections as tabs (Serialization 101, C#, Python, …)
     - navigation.tabs
+    - navigation.tabs.sticky
+    # Left sidebar: only 2nd-level pages for the active tab (no page ToC here)
     - navigation.sections
-#    - navigation.indexes
-#    - navigation.expand
-    - toc.integrate
+    - navigation.tracking
+    - navigation.instant
+    - navigation.top
+    # Right sidebar: in-page headings (requires toc.integrate OFF)
+    - toc.follow
   palette:
     - scheme: default
       primary: indigo
