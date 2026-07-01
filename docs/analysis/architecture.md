@@ -4,14 +4,68 @@ How this **benchmark suite** is laid out and how measurements flow. Goals, repo 
 
 ## Goals
 
-| Audience | Need |
-|----------|------|
-| Researchers | Reproducible comparisons (CIs, effect sizes, non-parametrics) |
-| Serializer authors | A/B compare versions (`analyze-benchmarks --compare-a` / `--compare-b`) |
-| Integrators | Swap payloads/environments; same metrics pipeline |
-| Maintainers | Add languages without rewriting analysis |
+The suite is built for four overlapping audiences. Each uses the **same harness contract and analysis pipeline**, but asks different questions.
+
+### Researchers
+
+**Need:** Reproducible, statistically defensible comparisons—not a single mean from an uncontrolled laptop run.
+
+**What the suite provides:** Fixed conceptual fixtures ([Test data types](test_data_configuration.md)), shared modes (`smoke` … `research` in `config/benchmark_config.yaml`), warmup exclusion, optional IQR outlier filtering, bootstrap CIs on the mean, percentiles, and within-group effect sizes (Cliff’s δ, Hedges’ g). Methods are documented in [Analysis Methodology](ANALYSIS_METHODOLOGY.md).
+
+**Example use cases:**
+
+- Methods section for a paper or internal report: “we used 100 repetitions (`full`), excluded `RepetitionIndex` 0, IQR *k* = 1.5, 95% bootstrap CI on mean total time.”
+- Within-language ranking of JSON vs MessagePack-style codecs on **Person** and **Telemetry**, with effect sizes vs the fastest serializer in each group—not cross-runtime “X is faster than Y” claims.
+- Sensitivity checks: re-run with `research` (500 reps) on one language when CIs are wide on `all-single` (10 reps).
+
+**Example workflow:** run `./scripts/run-all-benchmarks.sh --mode full --lang rust`, then `analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis`, and cite tables/plots on [Rust Results](../rust/results.md) (or export CSVs under `logs/rust/`).
+
+### Serializer authors
+
+**Need:** Compare **version A vs version B of the same library** (or two builds/flags) under an identical matrix, without rewriting the benchmark harness.
+
+**What the suite provides:** Stable `SerializerName` / fixture / mode groups and `analyze-benchmarks --compare-a` / `--compare-b` (Mann–Whitney U, Holm adjustment, effect sizes, % change → `VERSION_COMPARE.md`). Authors implement or tweak one harness entry and keep everything else fixed.
+
+**Example use cases:**
+
+- After optimizing `orjson` encode path: run Python harness twice (or on two checkouts), save `logs/python/benchmark-log.csv` as `v1.csv` / `v2.csv`, then  
+  `analyze-benchmarks --compare-a v1.csv --compare-b v2.csv --output-dir reports`.
+- Release checklist: fail CI-style gates with `--check-regression` against a committed `baseline.json` when mean total time regresses beyond a threshold (e.g. 10%).
+- Feature flags: same package, “with shared refs” vs “without,” as two registered names or two CSV runs, still using the same **Person** / **ObjectGraph** fixtures.
+
+**Example workflow:** change only the library under test in `python/` (or another harness), keep `schemas/test_data_config.json` and modes unchanged, compare CSVs with the analysis CLI.
+
+### System integrators
+
+**Need:** Answer “which serializer fits **our** payloads and environment?” while keeping metrics comparable to a known methodology.
+
+**What the suite provides:** Dual I/O modes (`bytes` / `stream` where applicable), configurable collection sizes and seed in `schemas/test_data_config.json`, language-local inventories (what is actually registered), and the same CSV + analysis path so integrator-specific runs remain interpretable next to published snapshots.
+
+**Example use cases:**
+
+- Tune **Telemetry** measurement counts or **StringArray** length toward production message sizes, re-run one language’s harness, regenerate **Results** for an internal doc—not for claiming global rankings.
+- Choose between `msgspec` and `orjson` for a Python service: same fixtures and modes, read pivot ops/s and violin spread on [Python Results](../python/results.md) (or a private regen).
+- Validate that “stream” mode in a candidate library behaves acceptably vs buffer APIs for large **EDI_835**-shaped documents before adopting it in a pipeline.
+- Pin `reproducibility.random_seed` / config so two teams in different regions reproduce the same conceptual payload sizes.
+
+**Example workflow:** edit only `test_data_config.json` (or a fork of fixtures), run `./python/scripts/run-benchmarks.sh full`, analyze into `reports/` or a private docs branch.
+
+### Maintainers (suite / multi-language)
+
+**Need:** Add or fix languages and docs **without rewriting analysis** every time.
+
+**What the suite provides:** Language registry and CSV contract in `config/benchmark_config.yaml`, auto-discovery of `logs/<lang>/benchmark-log.csv`, shared modes, and a checklist in [Adding a Language](ADDING_A_LANGUAGE.md). Analysis stays language-agnostic given the contract.
+
+**Example use cases:**
+
+- Add **Go**: implement harness + `run-benchmarks.sh`, register under `languages.go`, emit nanosecond CSV with `Language=go`, wire `scripts/run-all-benchmarks.sh`, add `docs/go/index.md` and MkDocs entries—analysis picks up the log without a new stats implementation.
+- Port a bugfix in C# timing only inside `c-sharp/`; Rust/Python logs and analysis code stay untouched.
+- Refresh GitHub Pages snapshots after a full matrix: local `analyze-benchmarks … --output-dir docs/analysis`, commit `docs/<lang>/results.md` and `docs/analysis/plots/violin/`.
+
+**Example workflow:** follow [Adding a Language](ADDING_A_LANGUAGE.md); smoke with `--mode smoke`, then `full` before publishing results.
 
 ## Repository layout
+
 
 ```text
 config/benchmark_config.yaml   # modes, stats defaults, language registry, CSV schema

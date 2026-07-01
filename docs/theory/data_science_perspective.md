@@ -1,26 +1,20 @@
 # Data Science Perspective
 
-## Chapter 1 — A Chronicle of Frozen Data: The Complete History of Serialization
-
----
+A chronological history of data serialization for practitioners who choose formats in data platforms, ML pipelines, and analytics stacks—why each major approach exists, what trade-offs it encodes, and how the landscape fits together. Measured libraries and timings for **this suite** live under language **Overview** / **Results** and [Benchmarks](../analysis/index.md); this page is conceptual history, not harness documentation.
 
 > *"The purpose of abstracting is not to be vague, but to create a new semantic level
 > in which one can be absolutely precise."*
 > — Edsger W. Dijkstra
 
----
-
-### Preface: What Serialization Actually Is
+## Preface: What serialization actually is
 
 Before we travel back in time, we need a precise definition to anchor the journey. **Serialization** is the process of translating a data structure or object state into a format that can be stored or transmitted — and later reconstructed — possibly in a different process, on a different machine, or by a program written in a completely different language. The reverse operation, reconstructing the original structure from the flat sequence of bytes, is called **deserialization** (or sometimes *unmarshalling* or *decoding*).
 
 The word comes from the Latin *serialis*, meaning "arranged in a row" or "in sequence." This etymology is exact: a running program's memory is a rich, interconnected web of objects, pointers, and heap allocations. Serialization collapses that web into a flat, one-dimensional stream of bytes — something that can travel down a wire, be written to disk, or sit in a cache. The art of serialization is deciding *how* to perform that collapse, and the history of computing is largely a history of arguing about the best answer.
 
-This chapter tells that story chronologically. You will meet the scientists, engineers, and researchers who shaped the field, the real problems they faced, the trade-offs they chose, and the new problems those choices created for the next generation. By the end, you will understand not just *what* each format does, but *why* it exists — which is the only understanding that actually helps you choose between them in practice.
+This page tells that story chronologically: the people and constraints that shaped each era, the trade-offs they chose, and the problems those choices created for the next generation. The aim is to understand not only *what* each format does, but *why* it exists—which is what actually helps when choosing among them.
 
----
-
-## Part I — The Physical Age: When Data Was Made of Holes (1950s–1960s)
+## The Physical Age: When Data Was Made of Holes (1950s–1960s)
 
 It is 1952. A programmer at the IBM Thomas J. Watson Research Center in Yorktown Heights, New York, is working on an IBM 701 — one of the first commercially produced scientific computers. She is not thinking about serialization. She is thinking about punched cards.
 
@@ -65,9 +59,7 @@ The 1950s established three principles that would echo through every subsequent 
 
 First, a serialization format is always a **contract between a writer and a reader**, and that contract must account for the hardware it runs on. Second, **explicit schemas dramatically improve interoperability**, even crude ones like COBOL's fixed-width definitions. Third, and most important: **the simpler the format, the harder it is to extend without breaking existing readers.** Adding a new field to a COBOL fixed-width record means every existing program that reads that record must be updated or it will misinterpret every byte that follows the new field. This last principle is so fundamental that we will see it drive the design of every format in this chapter.
 
----
-
-## Part II — The Network Awakens: Byte-Order Wars and the First Standards (1970s–1980s)
+## The Network Awakens: Byte-Order Wars and the First Standards (1970s–1980s)
 
 By the mid-1970s, computing had fragmented into a zoo of incompatible architectures. Digital Equipment Corporation's PDP-11 stored multi-byte integers in **little-endian** order (least significant byte first). IBM's System/370 mainframes used **big-endian** order (most significant byte first). Motorola's 68000 — which would power the Apple Macintosh and most Unix workstations of the 1980s — was big-endian. Intel's 8086, destined to dominate personal computing for decades, was little-endian.
 
@@ -166,9 +158,7 @@ This idea — *define the interface once, generate the serialization code* — i
 
 The OSI model, formalized by ISO in the early 1980s, enshrined this insight architecturally: **Layer 6, the Presentation Layer**, is explicitly about serialization and encoding — translating between the application's internal representation and the network's canonical format. The fact that a separate layer in the canonical network model exists purely for serialization tells you how fundamental the problem is.
 
----
-
-## Part III — The Object-Oriented Revolution and Its Serialization Problem (Late 1980s–Mid 1990s)
+## The Object-Oriented Revolution and Its Serialization Problem (Late 1980s–Mid 1990s)
 
 The late 1980s brought a revolution in how programmers thought about programs: **object-oriented programming**. Objects had state (fields), behavior (methods), and — crucially — they pointed to other objects, forming graphs with cycles and shared references. This created a serialization problem that flat records, XDR streams, and ASN.1 structures had never been designed for.
 
@@ -259,9 +249,7 @@ Pickle is still the workhorse of Python's data science and ML ecosystem. PyTorch
 
 By the mid-1990s, the serialization landscape was a fracture map. Low-level systems used XDR or ASN.1. Mainframes used COBOL fixed-width records. Java programs used Java serialization. Python programs used pickle. C programs used hand-rolled binary formats. None of these worlds communicated with each other without custom translation code. Something had to change.
 
----
-
-## Part IV — The XML Decade: A Universal Language (1996–2005)
+## The XML Decade: A Universal Language (1996–2005)
 
 The World Wide Web — invented by **Tim Berners-Lee** at CERN and popularized after the release of Mosaic in 1993 — changed the problem entirely. Suddenly, millions of computers on different operating systems, written in different languages, by developers who had never met, needed to exchange data. The internet needed a serialization format that was universal: human-readable, self-describing, extensible, and language-neutral.
 
@@ -317,9 +305,7 @@ But the cracks were showing. A simple "get a user by ID" request required dozens
 
 The XML decade proved a clear and painful theorem: **human-readability and self-description carry real costs.** XML documents are verbose — the tag overhead often dwarfs the actual data. Parsing XML is CPU-intensive. The specification ecosystem became so Byzantine that it required specialists just to understand it. Something simpler was long overdue.
 
----
-
-## Part V — JSON and the RESTful Rebellion (2001–2010)
+## JSON and the RESTful Rebellion (2001–2010)
 
 It was around 2001, and **Douglas Crockford** — a veteran programmer working at State Software in California — was staring at JavaScript's object literal syntax and recognizing something important. JavaScript objects, written as `{"name": "Alice", "age": 30}`, were already a perfectly useful data format. They were human-readable, hierarchical, and parseable by every web browser's built-in JavaScript interpreter, with no additional libraries required.
 
@@ -362,9 +348,7 @@ The JSON library ecosystem began to proliferate as performance concerns emerged.
 
 JSON's type system gap was not merely a cosmetic complaint. For a startup building its first REST API, it is barely noticeable. For a team building a financial system where a timestamp's timezone matters, or a scientific system where floating-point precision matters, or a binary protocol where raw bytes need to be transferred efficiently, the gaps become active hazards. The industry's answer to these gaps came in two waves: a binary renaissance, and a validation renaissance. Let's examine the first.
 
----
-
-## Part VI — The Binary Renaissance: Speed, Schemas, and Efficiency Return (2007–2013)
+## The Binary Renaissance: Speed, Schemas, and Efficiency Return (2007–2013)
 
 It is 2004, and Google's internal systems are making millions of remote procedure calls per second. Google engineers had been encoding and decoding ad-hoc text formats — custom pipe-delimited strings, manually assembled data blobs — for years. The maintenance burden was significant: changing a data format required updating every service that read or wrote it, and there was no tooling to help. Jeff Dean and Sanjay Ghemawat — the same pair who designed GFS and MapReduce, and who would later win the Turing Award in 2023 — were among the engineers who felt this pain most acutely.
 
@@ -483,9 +467,7 @@ The MongoDB team developed **BSON (Binary JSON)** in 2009 to serve simultaneousl
 
 By the early 2010s, the binary-versus-text choice had crystallized into a clear, if not always correctly applied, heuristic: if you control both ends of the communication, are performance-sensitive, and can afford a build step, use a binary format with a schema (protobuf, Thrift). If you need maximum flexibility and human-readability, use JSON. If you want a middle ground without a schema, use MessagePack.
 
----
-
-## Part VII — Big Data, Schema Evolution, and the Columnar Revolution (2009–2015)
+## Big Data, Schema Evolution, and the Columnar Revolution (2009–2015)
 
 In 2003 and 2004, Google published two papers that would reshape distributed computing. "The Google File System" [14] described how Google stored petabytes of data across thousands of commodity servers. "MapReduce: Simplified Data Processing on Large Clusters" [15] described how Google processed that data at scale. **Doug Cutting**, who had been building an open-source web crawler at Yahoo! called Nutch, used these papers as blueprints to create **Apache Hadoop** — making large-scale distributed computing available to anyone who could afford a cluster of commodity servers.
 
@@ -616,9 +598,7 @@ assert monster.Hp() == 300
 
 FlatBuffers is used in Google's internal tooling, in several major game engines, and in systems where even a microsecond of deserialization latency is unacceptable. **Cap'n Proto**, created by **Kenton Varda** (who had previously led Protocol Buffers at Google) in 2013, takes the same zero-copy idea even further — Cap'n Proto messages can be used directly from the wire representation with no transformation step at all, and the format supports streaming and capabilities (a form of object reference) that FlatBuffers does not.
 
----
-
-## Part VIII — The Validation Renaissance: Schema as Code (2015–Present)
+## The Validation Renaissance: Schema as Code (2015–Present)
 
 By 2015, the web API landscape had settled into a rough equilibrium. JSON was the lingua franca of public REST APIs. Binary formats (protobuf, MessagePack) dominated internal service communication at large companies. Columnar formats (Parquet) were standard in data engineering pipelines. Yet a persistent, grinding problem irritated every developer working with JSON APIs: **how do you know the data you receive is what you expect?**
 
@@ -780,11 +760,9 @@ restored = reader.read_all()
 
 Arrow has become the connective tissue of the modern data ecosystem. DuckDB, Polars, pandas 2.0, Apache Spark's shuffle layer, and dozens of other tools use Arrow as their internal format. The project embodies a new philosophy: the best serialization is the serialization you never have to do.
 
----
+## A Map of the Territory: Understanding Where You Stand
 
-## Part IX — A Map of the Territory: Understanding Where You Stand
-
-Seven decades of invention have produced a rich, overlapping landscape of serialization formats. Before we move to the benchmarks in the next chapter, it is worth drawing a clear conceptual map — not to memorize, but to understand the axes along which formats differ.
+Seven decades of invention have produced a rich, overlapping landscape of serialization formats. A clear conceptual map helps—not to memorize names, but to see the axes along which formats differ.
 
 The first and most fundamental axis is **text versus binary**. Text formats — XML, JSON, YAML, TOML — are human-readable and debuggable with any text editor. They are self-describing in the sense that field names appear in the data itself. They pay a real price in space (field names are repeated for every record) and parse speed (every byte must be scanned to find string boundaries and delimiters). Binary formats — XDR, Protocol Buffers, MessagePack, Avro, Parquet — are compact and fast but opaque without tooling. The choice between them is rarely purely technical: debuggability, team tooling habits, and operational practices matter as much as raw throughput.
 
@@ -794,25 +772,18 @@ The third axis is **row-oriented versus columnar**. Row-oriented formats (JSON, 
 
 The fourth axis is **self-describing versus schema-dependent**. ASN.1/BER and CBOR embed type tags in every value, allowing any byte stream to be traversed without an external schema. JSON is structurally self-describing but semantically schema-dependent (you can read it without a schema, but you cannot know if a number is a timestamp or a score without one). Protocol Buffers and raw Avro require the schema to interpret the data at all.
 
-```
-Format Taxonomy as of 2025
-─────────────────────────────────────────────────────────────────────────
-                   │  Text              │  Binary
-───────────────────┼────────────────────┼───────────────────────────────
-Schemaless         │  JSON, YAML        │  MessagePack, BSON, CBOR
-Schema-first       │  XML + XSD, SOAP   │  Protobuf, Thrift, Avro
-Columnar/analytics │  (rare)            │  Parquet, ORC, Arrow
-Zero-copy/in-proc  │  —                 │  FlatBuffers, Cap'n Proto
-Language-native    │  —                 │  pickle, Java serialization
-Validation layer   │  JSON Schema       │  Schema registries (Confluent)
-─────────────────────────────────────────────────────────────────────────
-```
+| | Text | Binary |
+|--|------|--------|
+| **Schemaless** | JSON, YAML | MessagePack, BSON, CBOR |
+| **Schema-first** | XML + XSD, SOAP | Protobuf, Thrift, Avro |
+| **Columnar / analytics** | (rare) | Parquet, ORC, Arrow |
+| **Zero-copy / in-process** | — | FlatBuffers, Cap'n Proto |
+| **Language-native** | — | pickle, Java serialization |
+| **Validation layer** | JSON Schema | Schema registries (e.g. Confluent) |
 
 None of these axes determines the right answer for you — your constraints do. A startup building its first REST API should almost certainly use JSON without a schema: the flexibility and tooling ecosystem are worth the trade-offs. A team building an event-driven architecture with years of data retention should use Avro with a schema registry: safe schema evolution is worth the operational investment. A team building a high-throughput internal RPC layer should use Protocol Buffers or MessagePack with msgspec validation: the performance difference at scale justifies the complexity. A data engineering team building analytical pipelines should use Parquet for storage and Arrow for in-process computation: the I/O savings and zero-copy benefits are decisive at volume.
 
-The benchmarks in the next chapter will give you quantitative data for the Python ecosystem specifically. But numbers are only useful when you understand the qualitative history behind them — the trade-offs that led each format's designers to their decisions, and the problems those decisions solved and created in turn. That history is what you have just read.
-
----
+Quantitative comparisons for libraries **in this suite** are on language **Results** pages and the [Benchmarks](../analysis/index.md) section. Those numbers are useful only when you understand the qualitative history behind the formats—the trade-offs above.
 
 ## References
 
@@ -858,6 +829,3 @@ The benchmarks in the next chapter will give you quantitative data for the Pytho
 
 [21] Abadi, D., Boncz, P., Harizopoulos, S., Idreos, S., & Madden, S. (2013). "The Design and Implementation of Modern Column-Oriented Database Systems." *Foundations and Trends in Databases*, 5(3), 197–280. https://doi.org/10.1561/1900000024
 
----
-
-*End of Chapter 1. Chapter 2 proceeds to the benchmark suite design: datasets, fairness constraints, measurement methodology, and results across the Python serializer ecosystem.*

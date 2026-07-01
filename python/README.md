@@ -155,7 +155,7 @@ MemoryPeakBytes,FidelityScore
 
 Aggregate results are printed to stdout after each run in a format aligned with the C# console output.
 
-Cross-language tables/plots for the docs site are generated **locally** into `docs/analysis/` via `analyze-benchmarks` (see root README) and committed; CI does not regenerate them.
+Cross-language analysis and docs snapshots: install `analysis/`, run `analyze-benchmarks` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
 
 ---
 

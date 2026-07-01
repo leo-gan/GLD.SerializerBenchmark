@@ -1,200 +1,127 @@
-# Benchmark Analysis Methodology
+# Analysis methodology
 
-This document describes the statistical methods and data processing pipeline used in the serializer benchmark analysis.
+How the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and violin plots. Timing *collection* (what is timed in the harness) is defined in [Benchmark architecture](architecture.md). Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml).
 
-## Overview
+Regenerate site snapshots **locally** (`analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis`); CI does not re-run analysis. Numbers appear on language **Results** pages ([Benchmark Results](BENCHMARK_SUMMARY.md) hub).
 
-The benchmark analysis tool processes raw CSV logs from C# and Python benchmark runs, normalizes time units, filters outliers, and generates comparative reports. The goal is to provide accurate, comparable performance metrics across different serializers and languages.
+## Inputs
 
-## Data Pipeline
+| Source | Role |
+|--------|------|
+| `logs/<lang>/benchmark-log.csv` | Per-language harness output (gitignored) |
+| `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, …) |
+| `csv_schema` in master config | Required/optional columns |
 
-### 1. Raw Data Ingestion
+Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`, `SerializerName`, `TimeSer`, `TimeDeser`, `Size`, `TimeSerAndDeser`, ops/sec fields as emitted by runners. Optional: `MemoryPeakBytes`, `FidelityScore`, `SerializerVersion`, …
 
-Benchmark logs are CSV files with the following columns:
+Fixtures: [Test data types](test_data_configuration.md). Paradigms: [Serialization Categories](serialization_categories.md).
 
-- `StringOrStream`: Mode of operation (Stream/string/bytes)
-- `TestDataName`: Type of test data (Integer, Person, SimpleObject, etc.)
-- `Repetitions`: Number of repetitions in the batch
-- `RepetitionIndex`: Index within the repetition batch
-- `SerializerName`: Name of the serializer being tested
-- `TimeSer`: Time for serialization (ticks for C#, nanoseconds for Python)
-- `TimeDeser`: Time for deserialization (ticks for C#, nanoseconds for Python)
-- `Size`: Size of serialized output in bytes
-- `TimeSerAndDeser`: Combined time for serialization + deserialization
-- `OpPerSecSer`, `OpPerSecDeser`, `OpPerSecSerAndDeser`: Operations per second (as reported by benchmark)
+## Pipeline
 
-### 2. Time Unit Normalization
+Processing is **per group**: `(Language, SerializerName, TestDataName, StringOrStream)` unless noted.
 
-C# and Python benchmarks use different time units:
-
-- **C#**: Uses ticks (100 nanoseconds per tick)
-- **Python**: Uses nanoseconds directly
-
-The `_detect_time_unit()` function auto-detects the unit based on magnitude:
-
-- Values > 1,000,000 are assumed to be C# ticks → multiplied by 100 to get nanoseconds
-- Values ≤ 1,000,000 are assumed to be Python nanoseconds → used as-is
-
-This ensures all timing comparisons are done in consistent nanosecond units.
-
-### 3. Outlier Filtering
-
-Raw benchmark data often contains extreme outliers due to:
-
-- GC pauses
-- Thread scheduling delays
-- JIT compilation overhead (first-run effects)
-- System load spikes
-
-These outliers can severely skew mean calculations. For example, a single 90-second measurement among 99 sub-millisecond measurements would make the mean useless.
-
-#### Tukey's IQR Method
-
-We use Tukey's Interquartile Range (IQR) fences for outlier detection:
-
-```
-Q1 = 25th percentile
-Q3 = 75th percentile
-IQR = Q3 - Q1
-
-Lower fence = Q1 - 1.5 × IQR
-Upper fence = Q3 + 1.5 × IQR
-
-Values outside [lower, upper] are considered outliers and removed.
+```text
+CSV → normalize times to ns → drop warmup → outlier filter → descriptive stats
+    → bootstrap CI on mean → effect sizes vs fastest in group
 ```
 
-#### Filtering Rules
+### Time units
 
-- Applied per group: (SerializerName, TestDataName, StringOrStream)
-- Only applied when group has ≥ 10 measurements
-- If IQR is 0 (all identical values), no filtering is done
-- If filtering would remove all values, original data is preserved
+| Runner | Stored unit | Normalization |
+|--------|-------------|---------------|
+| New harnesses (Python, Rust, C, JS, …) | Nanoseconds | As-is |
+| Legacy C# | Ticks (1 tick = 100 ns) | Prefer `Language=csharp`; else magnitude heuristic (very large values treated as ticks × 100) |
 
-#### Warmup Exclusion
+All analysis and published tables use **nanoseconds** (plots often show **µs**).
 
-Before IQR filtering, the first repetition (RepetitionIndex 0) of each test group is excluded from analysis. This warmup run typically contains:
+Ops/sec in reports is derived consistently as **`1e9 / mean_time_ns`** (config: `statistics.throughput_from`), not by trusting mixed runner-reported ops fields across languages.
 
-- **JIT compilation overhead**: First-time code compilation (especially in C#)
-- **Static initialization**: Type constructors and static field initialization
-- **Cache cold starts**: Cold CPU caches, branch predictors, and TLB
+### Warmup exclusion
 
-These warmup effects can be 10-100× slower than steady-state performance and often blend into the Q3 tail, reducing IQR filter effectiveness. By excluding RepetitionIndex 0 before filtering, we ensure:
+If `statistics.exclude_warmup` is true (default), rows with **`RepetitionIndex == 0`** are dropped before outlier filtering and summaries. That removes typical JIT / static-init / cold-cache spikes from aggregates. Count tracked as `warmup_skipped`; `runs_raw` is the pre-warmup size.
 
-1. More accurate baseline for IQR calculation (Q1, Q3, IQR)
-2. Better detection of true runtime outliers (GC pauses, thread delays)
-3. Representative performance metrics for production scenarios
+Default warmup policy in config also lists `reproducibility.warmup_repetitions` for harness guidance.
 
-| Metric | Tracking |
-|--------|----------|
-| `runs_raw` | Original count before warmup exclusion |
-| `warmup_skipped` | Count of RepetitionIndex 0 excluded |
-| `outliers_removed` | Count of IQR-filtered outliers |
-| `runs` | Final count after all filtering |
+### Outlier filtering
 
-#### Example Impact
+Default method: **Tukey IQR** (`statistics.outlier_method: iqr`, `iqr_k: 1.5`).
 
-| Serializer | Data Type | Mode | Before Outliers (ns) | After Filtering (ns) | Improvement |
-|------------|-----------|------|---------------------|---------------------|-------------|
-| FlatSharp | Integer | string | 911,721,849 | 9,686 | ~94,000× |
-| Ceras | Integer | string | ~6,870,000 | 69,524 | ~99× |
-| Jil | Person | string | ~1,370,000 | 62,582 | ~22× |
+```text
+Q1, Q3 = 25th / 75th percentiles of the group series
+IQR = Q3 − Q1
+fences = [Q1 − k·IQR, Q3 + k·IQR]
+```
 
-### 4. Statistics Computation
+| Rule | Default behavior |
+|------|------------------|
+| Group size | Apply only if ≥ `min_samples_for_outlier_filter` (10) |
+| IQR = 0 | No removal |
+| Would drop entire group | Keep original series |
+| Method `none` | Skip filtering |
 
-After filtering, the following metrics are computed per group:
+Removed count: `outliers_removed`. Final sample size: `runs`.
 
-| Metric | Description |
-|--------|-------------|
-| `avg_time_ser_ns` | Mean serialization time (nanoseconds) |
-| `avg_time_deser_ns` | Mean deserialization time (nanoseconds) |
-| `avg_time_total_ns` | Mean total time (nanoseconds) |
-| `avg_ops_per_sec` | Operations per second (1e9 / avg_time_total_ns) |
-| `min_ops_per_sec` | Min ops/sec (from max time) |
-| `max_ops_per_sec` | Max ops/sec (from min time) |
-| `median_size_bytes` | Median serialized size |
-| `runs` | Count of measurements after all filtering |
-| `runs_raw` | Original count before warmup exclusion |
-| `warmup_skipped` | Count of warmup (RepetitionIndex 0) excluded |
-| `outliers_removed` | Count of IQR-filtered outliers |
+IQR reduces the impact of rare GC/scheduling stalls on the **mean**; it is not a substitute for reporting dispersion and CIs.
 
-Ops/Sec is recalculated consistently using `1e9 / nanoseconds` for both languages, ensuring comparability.
+### Descriptive statistics (per group)
 
-### Pivot Tables
-Tabular views of performance metrics organized by:
+After filtering, analysis records (names as in code / optional extended fields):
 
-- Rows: Serializers
-- Columns: Modes or Data Types
-- Values: Avg time or Ops/Sec
+| Kind | Metrics |
+|------|---------|
+| Central tendency | Mean and median of ser / deser / total times (`avg_*` / `total_mean_ns` / `total_median_ns`) |
+| Dispersion | Std, MAD, CV, min/max, percentiles (default 5, 25, 50, 75, 95, 99) |
+| Size | Median serialized `Size` (bytes) |
+| Throughput | Ops/s from mean total time (see above) |
+| Provenance | `runs`, `runs_raw`, `warmup_skipped`, `outliers_removed` |
 
-## Visualization
+Exact keys depend on the analysis version; published markdown pivots emphasize mean total time and ops/s by serializer × mode or × fixture.
 
-### Violin Plots
+### Bootstrap CI on the mean
 
-Generated violin plot images show the distribution of serialization vs deserialization times per data type. These use seaborn's `catplot(kind='violin', split=True)` to show:
-- Top side: Serialize operation distribution
-- Bottom side: Deserialize operation distribution
+When `statistics.bootstrap.enabled` (default): **percentile** bootstrap on the group’s total-time series (`iterations` 2000, `confidence_level` 0.95, `seed` 42). Yields `total_ci_low_ns` / `total_ci_high_ns` around the mean. Non-parametric; does not assume normality.
 
-This reveals performance characteristics that averages hide, such as:
-- Bimodal distributions (suggesting different code paths)
-- Variance within serializers
-- Outliers that passed the IQR filter
+### Effect sizes vs fastest in group
 
-## Report Generation
+When `statistics.effect_sizes.enabled` (default), within the same language, fixture, and I/O mode, each serializer is compared to the **fastest** (lowest mean total time) in that group:
 
-### Markdown Summary
-- Pivot tables in GitHub-flavored markdown
+| Method | Role |
+|--------|------|
+| **Cliff’s δ** | Non-parametric dominance; labels via config thresholds (negligible / small / medium / large) |
+| **Hedges’ g** | Bias-corrected standardized mean difference |
 
-## Validation
+Fields such as `effect_vs_fastest_cliffs_delta`, `effect_vs_fastest_hedges_g`, `fastest_in_group` support within-language interpretation—not cross-runtime rankings.
 
-To verify the analysis is working correctly:
+### Version A/B (same serializer, two builds)
 
-1. Check outlier counts: Look for the console output showing how many outliers were removed
-2. Cross-check pivot tables: Serializer × Mode tables should show reasonable consistency
-3. Compare with notebook: Results should align with the Jupyter notebook analysis
-4. Sanity check extreme values: No serializer should show >1 second average times for simple objects
+```bash
+analyze-benchmarks --compare-a old.csv --compare-b new.csv --output-dir reports
+```
+
+Writes `VERSION_COMPARE.md` with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when `statistics.hypothesis_tests` is enabled (`alpha` 0.05). Prefer this for author-facing regressions rather than comparing unrelated libraries.
+
+## Outputs
+
+| Output | Content |
+|--------|---------|
+| `docs/<lang>/results.md` | Pivot tables + violin embeds for one language |
+| `docs/analysis/plots/violin/*.png` | Split violins: serialize vs deserialize distributions (µs; log scale when medians span ≥5×) |
+| `docs/analysis/BENCHMARK_SUMMARY.md` | Hub links to language Results |
+| Console | Load counts, warmup/outlier tallies |
+
+Violins show spread and multimodality that means hide; they still reflect post-filter samples used for summaries when generated from the same run.
+
+## Limitations
+
+- **Cross-language absolute times** are at best directional (GC, allocator, runtime differ). Prefer within-language ranks and effect sizes.
+- **C** default builds may use portable stand-ins under real library names—see [C overview](../c/index.md) before citing as library rankings.
+- **Rust** schema/zero-copy rows may use documented intermediate/envelope paths—see [Rust overview](../rust/index.md).
+- **Stream** mode is not always a true incremental API (some harnesses buffer then write).
+- **Fidelity** is semantic/structural, not bit-identical across formats (e.g. floats/datetimes).
+- Outlier removal and warmup policy affect means; always consider `runs`, CIs, and effect sizes.
 
 ## References
 
-- Tukey, J.W. (1977). *Exploratory Data Analysis*
-- [Seaborn.catplot](https://seaborn.pydata.org/generated/seaborn.catplot.html)
-
-
-## 5. Multi-language & scientific extensions (v2)
-
-As of the v2 harness refactor (`config/benchmark_config.yaml`):
-
-### Languages
-
-Analysis accepts logs from any language directory under `logs/<lang>/benchmark-log.csv` with an optional `Language` column. New runners (**Rust**, **C**, **JavaScript**) emit **nanoseconds** directly. C# still emits **ticks** (×100 → ns), detected via `Language=csharp` or magnitude heuristic.
-
-### Extended metrics (per group)
-
-| Metric | Description |
-|--------|-------------|
-| `total_mean_ns` / `total_median_ns` | Central tendency |
-| `total_std_ns` / `total_mad_ns` / `total_cv` | Dispersion (MAD = median absolute deviation; CV = std/mean) |
-| `total_p5_ns` … `total_p99_ns` | Percentiles |
-| `total_ci_low_ns` / `total_ci_high_ns` | Percentile bootstrap CI on the **mean** (default 95%, 2000 resamples, seed 42) |
-| `effect_vs_fastest_cliffs_delta` | Cliff's δ vs fastest serializer in (language, data, mode) |
-| `effect_vs_fastest_hedges_g` | Hedges' g (bias-corrected) vs fastest |
-| `fastest_in_group` | Reference serializer name |
-
-### Version comparison (serializer authors)
-
-```bash
-analyze-benchmarks --compare-a path/to/old.csv --compare-b path/to/new.csv --output-dir reports
-```
-
-Produces `VERSION_COMPARE.md` with Mann–Whitney U, Holm-adjusted p-values, Cliff's δ, Hedges' g, and percent change. This is the recommended path for **old vs new version of the same serializer**.
-
-### Configuration
-
-All thresholds (IQR k, bootstrap iterations, alpha, modes) are centralized in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml) under `statistics:` and `modes:`.
-
-### Limitations (honest assessment)
-
-1. **Cross-language absolute comparisons** are directional only: GC, allocator, and runtime differ. Prefer within-language ranks and effect sizes.
-2. **C harness** defaults to portable minimal codecs (library-named wrappers) unless real C libraries are vendored — document this in papers.
-3. **Rust rkyv/prost/minicbor** entries may use intermediate payloads for untagged multi-type fixtures; upgrade to generated types for schema-format papers.
-4. **Stream mode** is not always a true incremental API (some languages buffer then write); interpret stream columns carefully.
-5. **Fidelity** checks are semantic/structural, not bit-identical across formats (datetime/float representations vary).
+- Tukey, J.W. (1977). *Exploratory Data Analysis* (IQR fences)
+- Cliff’s delta; Hedges’ g; Mann–Whitney U (standard non-parametric toolkit)
+- [Seaborn violin / catplot](https://seaborn.pydata.org/generated/seaborn.catplot.html)

@@ -1,148 +1,161 @@
 # Engineer Perspective
 
-**Serialization** is the process of converting data structures or objects into a format that can be stored or transmitted and reconstructed later. Over time, many serialization formats have been created to address needs in efficiency, interoperability, and convenience. We group them here as **text-based formats**, **binary formats**, and **schema-driven formats**, tracing their history and design trade-offs. We also highlight key people behind these innovations. Code snippets from real libraries are shown (with references) to illustrate how these serializers work in practice.
+A practitioner-oriented tour of major serialization **formats** and design trade-offs—text, schemaless binary, schema-driven, and language-native—with short historical notes and illustrative snippets.
 
-## Text-Based Formats (Human-Readable)
+This page is conceptual. Libraries and timings **in this suite** are on language **Overview** / **Results** pages and under [Benchmarks](../analysis/index.md) (including [Serialization Categories](../analysis/serialization_categories.md)).
 
-Early on, data interchange used simple text formats (e.g. **CSV**, INI-like key-value). The need for structured, self-describing data led to more sophisticated text formats:
+We group formats the same way as the suite categories: **text (JSON family)**, **schemaless binary**, **schema-driven**, and **language-native**.
 
-- **XML (1996):** Developed by W3C experts (Tim Bray, Jean Paoli, C. M.) to mark up documents. XML is verbose and schema-optional, allowing nested trees. It became popular for configuration and RPC (SOAP), but its size and parsing complexity were criticized. (Tim Bray later co-authored XML, though JSON proponents mocked XML’s verbosity as “Too Much Markup”.)
+## Text-based formats
 
-- **JSON (2001):** Invented by Douglas **Crockford** and colleagues (e.g. Chip Morningstar) for lightweight browser–server messaging. JSON stands for *JavaScript Object Notation*, a human-readable format derived from JavaScript syntax. It uses name/value pairs and arrays. **Why JSON?** By the early 2000s, web apps needed a simpler, faster alternative to XML. Crockford “specified and popularized the JSON format” around 2001. Unlike XML, JSON omits closing tags and supports JavaScript-native types, making it much more compact. Trade-offs: it is easy to parse and widely supported, but has no formal schema (only an optional schema mechanism like JSON Schema). It also lacks explicit binary support. For example, Python’s built-in JSON encoder has a rich API (see code below) that shows how many options exist for controlling output.
+Early interchange used simple text (CSV, INI-like key–value). Need for structured, self-describing data produced richer text formats.
 
-    ```python
-    def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
-              allow_nan=True, cls=None, indent=None, separators=None,
-              default=None, sort_keys=False, **kw):
-        """Serialize `obj` to a JSON formatted `str`."""
-        # (cached encoder optimization omitted)
-        return _default_encoder.encode(obj)
-    ```
+### XML (1996)
 
-- **YAML (2001–2004):** Spearheaded by **Clark Evans**, **Brian “Ingy” Ingerson**, and **Oren Ben-Kiki**, YAML (“YAML Ain’t Markup Language”) was created to be a very human-friendly superset of JSON. It uses indentation for structure (like Python), supports references, and can express complex data with minimal syntax. **Why YAML?** People needed a format easier to write by hand (e.g. config files) than JSON or XML. Its designers explicitly collaborated (Ingerson, Evans, Ben-Kiki published YAML 1.0 in 2002). Trade-offs: extremely readable, but parsing is more complicated and historically had security issues (`yaml.load` can execute code). Nonetheless, YAML became popular in DevOps (e.g. Docker Compose, Kubernetes configs). For instance, using `ruamel.yaml` (a modern YAML lib), one can dump a Python dict with:
+Developed under the W3C (Tim Bray, Jean Paoli, C. M. Sperberg-McQueen, and others) for document markup. Verbose, schema-optional, tree-shaped. Widely used for configuration and RPC (SOAP). Trade-offs: strong structure and tooling; size and parse cost are high compared with later formats.
 
-    ```python
-    import sys  
-    from ruyaml import YAML
-    data = {"servers": [{"ip": "10.0.0.1", "role": "db"}, {"ip": "10.0.0.2", "role": "web"}]}
-    yaml = YAML()
-    yaml.dump(data, sys.stdout)
-    # Outputs something like:
-    # servers:
-    #   - ip: 10.0.0.1
-    #     role: db
-    #   - ip: 10.0.0.2
-    #     role: web
-    ```
+### JSON (2001)
 
-- **Others:** Other text-based formats include **TOML** (2013, for configuration, by Tom Preston-Werner), **INI** (simple key-value), and **EDN** (Clojure data, by Rich Hickey). The main trend is balancing **readability vs verbosity**. Early formats (XML) were too verbose; JSON reduced syntax and became nearly universal for web APIs; YAML and TOML further trade minimal syntax for structure. However, all text formats share overhead of parsing text and limited support for raw binary data.
+Specified and popularized by Douglas Crockford (with earlier ideas circulating in the JS community) for lightweight browser–server messaging. Human-readable objects and arrays derived from JavaScript syntax—no closing tags, compact relative to XML, optional schema (e.g. JSON Schema). Trade-offs: easy to parse and ubiquitous; no first-class binary or date types; schema is optional discipline, not built into the format.
 
-## Binary Formats (Compact/High-Performance)
+```python
+# Conceptual use of the standard library encoder (CPython json module style)
+import json
 
-Text formats have overhead (ASCII characters, parsing). As applications demanded higher performance and smaller messages (especially in distributed systems, IoT, and performance-sensitive apps), **binary serialization** emerged:
+payload = {"name": "Alice", "scores": [95, 87]}
+text = json.dumps(payload, separators=(",", ":"), sort_keys=True)
+obj = json.loads(text)
+```
 
-- **ASN.1 / XDR (1980s):** Long before JSON, standards like ASN.1 and Sun’s XDR (External Data Representation) defined **binary** encoding for structured data (often in telecom or RPC). They support schema definitions (type tags, lengths) but were complex. ASN.1 still underlies many telecom protocols.
+### YAML (2001–2004)
 
-- **BSON (2009):** MongoDB introduced BSON (“Binary JSON”) to store JSON-like documents efficiently (authors Dwight Merriman and Eliot Horowitz). BSON adds length prefixes and a few extra types (e.g. binary blob, Date). It’s more compact than XML, but still includes field names, so not minimal. Trade-offs: easy use in Mongo but larger than purely binary formats.
+Clark Evans, Brian “Ingy” Ingerson, and Oren Ben-Kiki designed YAML as a human-friendly superset of JSON ideas—indentation-based structure, anchors/aliases, configs written by hand (Docker Compose, Kubernetes manifests). Trade-offs: highly readable; parsers are complex; careless loading of untrusted YAML has historically been a security risk.
 
-- **MessagePack (2008):** Created by **Sadayuki Furuhashi** to be “like JSON, but fast and small”. It encodes JSON-like data (ints, strings, lists, maps) in a compact binary form. It omits quotes for keys and uses type tags. MessagePack has wide language support. For example, in Python:
+```python
+# Example with a modern YAML library (ruamel.yaml / ruyaml-style API)
+from ruyaml import YAML
+import sys
 
-    ```python
-    import msgpack
-    packed = msgpack.packb({"nums": [1,2,3]})
-    print(packed)         # e.g. b'\x81\xa4nums\x93\x01\x02\x03'
-    print(msgpack.unpackb(packed))
-    # Output: {'nums': [1, 2, 3]}
-    ```
+data = {
+    "servers": [
+        {"ip": "10.0.0.1", "role": "db"},
+        {"ip": "10.0.0.2", "role": "web"},
+    ]
+}
+yaml = YAML()
+yaml.dump(data, sys.stdout)
+```
 
-  **Trade-offs:** MessagePack is faster/more compact than JSON, but still dynamic (no schema). It can encode raw bytes and supports extension types. It’s ideal for RPC or in-memory caching.
+### Other text formats
 
-- **CBOR (2013):** The IETF standardized CBOR (Concise Binary Object Representation). Designed by Carsten **Bormann** and Paul **Hoffman**, CBOR targets tiny code footprint (for IoT) and flexible extension. It encodes JSON-like data (maps, arrays, numbers, text, byte strings) with a compact binary format. Key goals: *“extremely small code size, fairly small message size, and extensibility”*. Compared to MsgPack, CBOR has more precise typing (e.g. separate major types for text vs binary, built-in date/time tags) and is an RFC. Trade-offs: similar to MsgPack but sometimes more compact; implementations exist in many languages.
+**TOML** (Tom Preston-Werner, 2013) for explicit config; classic **INI**; **EDN** (Clojure, Rich Hickey). Trend: reduce verbosity while staying human-editable; all pay text-parse cost and handle binary awkwardly (often base64).
 
-- **UBJSON and others:** UBJSON (Universal Binary JSON), Smile (binary JSON variant), Google’s **FlatBuffers** (below) and others exist with niche usage. The general trend: binary formats drop human-readability and incur parsing code, but gain speed and size. For example, Facebook’s **Thrift Binary Protocol** (below) and SBE (Simple Binary Encoding) are used in high-frequency systems.  
+## Schemaless binary formats
 
-## Schema-Driven Formats (IDL-Defined)
+Text pays for characters and scanning. Distributed systems, caches, and IoT often prefer **binary** encodings of JSON-like values without a mandatory IDL.
 
-For complex applications (microservices, RPC, data storage), **schema-based serialization** has become popular. These systems use an **Interface Definition Language (IDL)** or schema to generate code and ensure compatibility.
+### ASN.1 and XDR (1980s)
 
-- **Protocol Buffers (2008):** Developed at Google (initial design by **Sanjay Ghemawat** and **Jeff Dean**, later led by **Kenton Varda**). Protobuf uses a `.proto` schema file defining message types and fields. It generates code in many languages. Data is binary: fields are tagged and encoded with variable-length integers (omitting field names). **Why Protobuf?** Google needed a fast, compact alternative to XML/JSON for internal RPC. Protobuf is highly efficient because it transmits just the field numbers and values, not the field names. **Trade-offs:** Must compile schemas; evolving schemas need careful defaults/field removal for backward compatibility. Protobuf offers features like optional fields, nested messages, and enum types. For example, given `message Person { int32 id = 1; string name = 2; }`, the Python API (auto-generated) lets you write:
+ASN.1 (telecom / ITU-T) and Sun **XDR** (NFS, RPC) defined binary structured encodings with explicit type/length conventions long before JSON. Powerful and portable across endianness when libraries comply; historically complex.
 
-    ```python
-    import addressbook_pb2
+### MessagePack (2008)
 
-    person = addressbook_pb2.Person()
-    person.id = 1234
-    person.name = "Alice"
-    data = person.SerializeToString()
-    person2 = addressbook_pb2.Person()
-    person2.ParseFromString(data)
-    ```
+Sadayuki Furuhashi’s “JSON but fast and small”: maps, arrays, numbers, strings, binaries with type tags and no field-name quotes. Wide language support. Trade-offs: compact and fast vs JSON; still schemaless (validation is your job).
 
-  This shows how code enforces types. Protobuf became a de facto standard (especially protobuf v3, with JSON compatibility) and influenced many others. (Notably, Kenton Varda later designed Cap’n Proto with lessons learned.)
+```python
+import msgpack
 
-- **Apache Thrift (2007):** Originating at Facebook, Thrift combines an IDL, code generation, and a multiplexed RPC framework. Its IDL is similar to Protobuf. Thrift allows pluggable transport (binary, JSON, compact binary) and was designed for “scalable cross-language services development”. **Trade-offs:** Early Facebook/Apache implementations (in C++) are fast, but Thrift’s Java library historically had issues. Unlike Protobuf, Thrift was conceived with RPC in mind. Thrift’s multiple protocols mean one can choose readability (JSON protocol) or speed (binary protocol). Example (using Thrift for Python/C++) might look similar to Protobuf usage.
+packed = msgpack.packb({"nums": [1, 2, 3]})
+print(msgpack.unpackb(packed))  # {'nums': [1, 2, 3]}
+```
 
-- **Apache Avro (2010):** Created by **Doug Cutting** as part of the Hadoop ecosystem. Avro uses JSON to define schemas (e.g. `{"type":"record","name":"User",...}`) and then encodes data in a compact binary form. A key idea: the **schema travels with the data** (in “object container files”) or is stored in a registry. This means no code generation is strictly required at read time (dynamic parsing is possible). Avro is optimized for Hadoop/Big Data (it uses row-based, schema-first encoding). **Trade-offs:** Having JSON schemas can be verbose, but it makes Avro very flexible and self-describing. It also supports schema evolution (old readers can skip unknown fields). For example, Avro’s file format starts with a header containing the JSON schema, then binary data blocks according to that schema.
+### BSON (2009)
 
-- **Cap’n Proto (2013):** Designed by Kenton Varda (author of Protobuf v2) to eliminate the cost of parsing entirely. Cap’n Proto keeps data in a flat, pre-serialized “message” form that can be memory-mapped and accessed without deserialization. It uses an IDL (similar to Protobuf’s) and generates code. Cap’n Proto achieves extremely high speed (zero-copy), but **trade-off** is rigidity: the schema is fixed in the binary layout, so you cannot easily add fields without re-compiling (though it supports versioning in other ways). Use cases include game networking or in-memory shared memory.
+MongoDB’s Binary JSON (Dwight Merriman, Eliot Horowitz, et al.): length prefixes and extra types (binary, Date). Trade-offs: natural for document DBs; still carries field names, so not minimal.
 
-- **FlatBuffers (2014):** Developed by **Wouter van Oortmerssen** at Google, FlatBuffers also targets zero-copy access. It encodes data in a way that objects reference offsets directly; like Cap’n Proto, one can read fields without parsing. It uses schemas (IDL or can import Protobuf `.proto`). **Trade-offs:** FlatBuffers prioritize read speed and memory efficiency, but mutations are hard and optional (unlike Protobuf or Thrift, which allow easy building of objects). It’s used in performance-critical contexts (e.g. games, mobile). Wikipedia notes it “allows you to directly access serialized data without parsing”.
+### CBOR (2013)
 
-- **Others:** There are many related systems. For example, **SBE (Simple Binary Encoding)** by FIX (financial tech), **Ion** by Amazon (richly-typed superset of JSON with text/binary forms), and more. The key theme is always a balance among *size vs speed vs flexibility*. Static schemas (Protobuf/Thrift/Avro) give speed and type safety at the cost of flexibility, whereas dynamic formats (JSON/MsgPack) are more flexible but heavier. Modern developments try to push speed via zero-copy (Cap’n Proto, FlatBuffers) or hardware acceleration (e.g. simdjson for JSON parsing).
+IETF **RFC 7049 / 8949** (Carsten Bormann, Paul Hoffman): concise binary objects for constrained code size and extensibility (tags for dates, etc.). Trade-offs: similar niche to MessagePack with a standards track and richer typing tags.
 
-## Language-Specific / Native Serializers
+### Other schemaless binary
 
-In addition to portable formats, many languages have their own object serialization:
+UBJSON, Smile, and various RPC binary protocols. General theme: drop human readability for size and speed; remain dynamic unless you add schemas elsewhere.
 
-- **Python Pickle (mid-1990s):** Python’s built-in `pickle` serializes arbitrary Python objects (classes, lists, dicts) to a binary stream. Invented early in Python’s history, it is very flexible but insecure (untrusted pickles can execute code) and not cross-language. Example usage is simply `pickle.dumps(obj)` and `pickle.loads(bytes)`. (For code safety, new projects often prefer JSON or more explicit formats.)
+## Schema-driven formats
 
-- **Java Serializable (1996):** Java’s `java.io.Serializable` allows objects to be written to bytes. It’s easy but not recommended for long-term storage (it’s not compact and can break across Java versions). Frameworks like Kryo, Hessian, or Protocol Buffers are often used instead.
+Microservices, RPC, and durable storage often use an **IDL or schema**, codegen, and compact binary layouts.
 
-- **Other languages:** Ruby’s Marshal, .NET’s BinaryFormatter, Erlang’s External Term Format, etc. These are mainly for inter-process or storage *within the same environment*. They typically assume exact same runtime and are not interoperable.
+### Protocol Buffers (open-sourced 2008)
 
-**Trade-offs:** Native serializers require trust (they can be exploited like pickles), tie to a runtime, and aren’t optimized for cross-language or long-term storage. They serve convenience when moving data between processes written in the same language.
+Google’s IDL + codegen (design lineage including Sanjay Ghemawat, Jeff Dean, Kenton Varda, and many others). Fields tagged by number; no field names on the wire. Trade-offs: very efficient; requires schema discipline and careful evolution.
 
-## Key Contributors and Timeline
+```python
+# After protoc generates addressbook_pb2 (illustrative)
+import addressbook_pb2
 
-This section highlights *people and milestones* in the serialization story:
+person = addressbook_pb2.Person()
+person.id = 1234
+person.name = "Alice"
+data = person.SerializeToString()
+person2 = addressbook_pb2.Person()
+person2.ParseFromString(data)
+```
 
-- **Douglas Crockford (JSON, 2001):** Pioneered JSON to “break away” from XML complexity. JSON’s simplicity led to explosive popularity.  
+### Apache Thrift (2007)
 
-- **Clark Evans, Brian “Ingy” Ingerson, Oren Ben-Kiki (YAML, 2001–2004):** Designed YAML as a more human-friendly superset of JSON/XML.
+Facebook → Apache: IDL, codegen, and pluggable transports/protocols (binary, compact, JSON). Built with RPC in mind. Trade-offs: flexible stack; historical unevenness across language implementations.
 
-- **Sadayuki Furuhashi (MessagePack, 2008):** Created MessagePack to be a “binary JSON” – fast and compact.
+### Apache Avro (~2009)
 
-- **Michael “Kent” Varda (Protocol Buffers, 2008; Cap’n Proto, 2013):** Led the development of Google’s Protocol Buffers (noted in the code as “Author: kenton@google.com”) and later created Cap’n Proto to push performance further.
+Doug Cutting and the Hadoop ecosystem: JSON schemas, compact binary data, schema often embedded in container files or registries—strong story for **schema evolution** in data pipelines. Trade-offs: schema management is central; excellent for row-oriented big-data interchange.
 
-- **Sanjay Ghemawat & Jeff Dean (Protocol Buffers, 2008):** Original designers of Google’s data interchange, as seen in Google’s own source: “Based on original Protocol Buffers design by Sanjay Ghemawat, Jeff Dean, and others”.
+### Cap’n Proto (2013) and FlatBuffers (2014)
 
-- **Doug Cutting (Avro, ~2009):** Avro originated in Hadoop projects. DuckDB’s blog confirms “Avro was developed by Doug Cutting” around 2009. Cutting, co-creator of Hadoop and Lucene, needed a flexible, compact format for big data.
+Kenton Varda’s Cap’n Proto and Wouter van Oortmerssen’s FlatBuffers (Google) pursue **zero-copy / low-parse** access with IDL-defined layouts. Trade-offs: excellent read performance and memory characteristics; mutation and tooling differ from classic Protobuf-style builders.
 
-- **Tim Bray and others (XML, 1996+):** As W3C editors, they defined XML, which became a foundation for data interchange before JSON’s rise (Citing directly: [26] notes Crockford’s JSON emerging as an alternative).
+### Other schema-oriented systems
 
-- **Brian Behlendorf, etc. (YAML):** The YAML editors listed on the spec include Evans, Ben-Kiki, Ingerson.
+SBE (finance), Amazon Ion, and related designs balance size, speed, and flexibility differently. Static schemas generally buy efficiency and compatibility rules at the cost of upfront design.
 
-- **Carsten Bormann & Paul Hoffman (CBOR, 2013):** Authored the CBOR RFC to standardize a compact binary JSON.
+## Language-native serializers
 
-- **Wouter van Oortmerssen (FlatBuffers, 2014):** Credited as “primarily written by” Wouter, originally for Google.  
- 
-- **Facebook Developers (Thrift, 2007):** Though not individually named on Wikipedia, Thrift was “developed by Facebook” (later open-sourced via Apache). Its creation was led by developers like Ted Young and colleagues (Facebook engineers) with contributions from Yahoo.
+Portable formats aside, many runtimes ship **native** object graphs:
 
-These are just a few of many contributors. The evolution of serialization also had input from standards bodies (IETF, ECMA), academic papers (e.g. on ASN.1, data encoding), and companies (Google, Amazon, IBM, Facebook) pushing formats that solved their unique problems (e.g. Avro for Hadoop, Ion for AWS).
+| Ecosystem | Example | Notes |
+|-----------|---------|--------|
+| Python | `pickle` / `cloudpickle` | Very flexible; **unsafe** on untrusted data; not cross-language |
+| Java | `Serializable`, Kryo, etc. | Convenience within the JVM; long-term storage needs care |
+| .NET | BinaryFormatter (legacy), etc. | Runtime-coupled; prefer portable formats for interchange |
+| Others | Ruby Marshal, Erlang ETF, … | Same-process / same-stack use cases |
+
+Trade-offs: convenience and rich graphs vs trust boundaries, version coupling, and poor multi-language interoperability. Prefer explicit portable formats when data leaves the trust or language boundary.
+
+## Key contributors and timeline (selected)
+
+| Who / org | Contribution |
+|-----------|----------------|
+| Tim Bray et al. | XML (W3C) |
+| Douglas Crockford | JSON popularization / specification |
+| Evans, Ingerson, Ben-Kiki | YAML |
+| Sadayuki Furuhashi | MessagePack |
+| Bormann & Hoffman | CBOR (IETF) |
+| Ghemawat, Dean, Varda, et al. | Protocol Buffers; Varda later Cap’n Proto |
+| Facebook / Apache | Thrift |
+| Doug Cutting / Hadoop | Avro |
+| Wouter van Oortmerssen | FlatBuffers |
+| Standards bodies & vendors | ASN.1, XDR, Ion, SBE, … |
+
+Many others in IETF, ECMA, and industry labs shaped encodings for specific constraints (telecom, web, big data, games).
 
 ## References
 
-We have cited authoritative sources for each point above. Key references include:
+- Crockford / RFCs on JSON (e.g. RFC 8259)
+- YAML 1.0 and later specs (Evans, Ingerson, Ben-Kiki, et al.)
+- MessagePack specification and implementations
+- CBOR: RFC 7049, RFC 8949
+- Protocol Buffers documentation and open-source history (Google)
+- Apache Thrift and Apache Avro project docs
+- Cap’n Proto and FlatBuffers project documentation
+- Language docs for pickle, Java serialization, etc.
 
-- JSON: Douglas Crockford’s work on JSON.
-- YAML: YAML 1.0 spec (Evans/Ingerson/Ben-Kiki).
-- MessagePack: Wikipedia entry (Furuhashi).
-- CBOR: IETF RFC 7049 (Bormann/Hoffman).
-- Protobuf: Google code comments (Ghemawat/Dean); protocol buffer tutorials.
-- Avro: DuckDB blog (Cutting).
-- FlatBuffers: Wikipedia (Wouter).
-- Thrift: Wikipedia (Facebook).
-- Code examples from various repos/libraries: CPython json.py, ruamel.yaml docs, msgpack-python README, Thrift utility example, Avro+Kafka example, and Protobuf Python guide.
-
-Each citation provides concrete evidence (lines from specs or code) supporting the historical claims and showing real serializer usage. By weaving these elements, this “Serialization 101” overview covers the motivations, trade-offs, and evolution of serialization from multiple angles.
-
+For suite-specific inventories and measured performance, use [Serialization Categories](../analysis/serialization_categories.md) and language **Results**, not this page.

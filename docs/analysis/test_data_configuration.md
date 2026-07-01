@@ -1,30 +1,72 @@
-# Test Data Configuration
+# Test data types
 
-To ensure consistent benchmarking across different languages (C# and Python), we use a centralized configuration file located at `schemas/test_data_config.json`. This allows us to control the structure and size of the test objects, making comparisons more accurate.
+Conceptual fixtures every language harness implements as language-native models. Definitions are the suite SoT in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml) under `test_data.types`. Shape/size knobs and seed live in [`schemas/test_data_config.json`](../../schemas/test_data_config.json) (`test_data.config_file`).
 
-## Configuration Parameters
+Compare serializers on the **same** `TestDataName` values in CSV logs and on language **Results** pages.
 
-### StringOptions
+## Types (`test_data.types`)
 
-- **MinWordLength / MaxWordLength**: Controls the size of individual words generated for names and descriptions.
-- **MinPhraseLength / MaxPhraseLength**: Controls the number of words in a phrase (e.g., for authorities or descriptions).
-- **MinIdLength / MaxIdLength**: Controls the length of generated ID strings.
-- **DuplicationFactor**: A value between 0 and 1 representing the probability that a previously generated string will be reused instead of generating a new one. This is crucial for testing serialization algorithms that support object referencing or string deduplication (e.g., CBOR with sharing, or custom deduplication in some formats).
+| Name | Category | Circular? | Description |
+|------|----------|-----------|-------------|
+| **Person** | `nested_object` | No | Nested POCO with enums, strings, and arrays |
+| **Integer** | `primitive` | No | Primitive throughput baseline |
+| **Telemetry** | `numeric_arrays` | No | Numeric arrays testing binary efficiency |
+| **SimpleObject** | `minimal` | No | Minimal object overhead |
+| **StringArray** | `memory_pressure` | No | GC/memory pressure via large string arrays |
+| **EDI_835** | `real_world` | No | Deeply nested healthcare remittance document |
+| **ObjectGraph** | `circular` | **Yes** | Circular references (only graph-capable serializers pass) |
 
-### CollectionOptions
+### Person (`nested_object`)
 
-- **PersonPoliceRecordsCount**: The number of records in the `PoliceRecords` array for the `Person` object.
-- **TelemetryMeasurementsCount**: The number of double-precision floating-point numbers in the `TelemetryData` object.
-- **StringArrayCount**: The number of strings in the `StringArrayObject`.
-- **EdiClaimsCount / EdiLinesPerClaimCount**: Controls the complexity of the EDI 835 document.
+Nested object graph with mixed scalars, enums, strings, and small collections (e.g. police-style records). Exercises general-purpose object mapping, field names in text formats, and moderate nesting—not pure array throughput.
 
-### RandomSeed
+Collection sizing (e.g. police-record count) comes from `CollectionOptions` in `test_data_config.json`.
 
-- A fixed seed to ensure that the "random" data generated is identical across different runs and different languages, provided the PRNG implementation is compatible or we use a similar logic.
+### Integer (`primitive`)
 
-## Design Reasons
+Smallest practical payload: a primitive (or trivial wrapper) used as a **throughput baseline**. Isolates fixed per-call overhead from large-structure costs.
 
-1. **Reproducibility**: By using a fixed seed and shared configuration, we can guarantee that the same data payload is being serialized in both C# and Python benchmarks.
-2. **Real-life Resemblance**: Default values are chosen to reflect typical data sizes in enterprise applications. For example, a telemetry packet often contains around 100 measurements, and a person's record typically doesn't have hundreds of police records.
-3. **Serialization Optimization Testing**: The `DuplicationFactor` allows us to stress-test how different serializers handle redundant data. Serializers that use dictionary-based compression or object tracking should show significantly better performance and smaller payloads when this factor is high.
-4. **Cross-Language Consistency**: Hardcoding these values in each language's source code was prone to desynchronization. Moving them to a shared schema ensures they are always in sync.
+### Telemetry (`numeric_arrays`)
+
+Payload dominated by **numeric arrays** (e.g. many floating-point measurements). Stresses dense binary packing vs text number formatting and allocation of large homogeneous collections.
+
+Default measurement count: `TelemetryMeasurementsCount` in `test_data_config.json`.
+
+### SimpleObject (`minimal`)
+
+A **minimal object** (few fields) to expose fixed serializer overhead with little payload work—useful contrast to Person / EDI_835.
+
+### StringArray (`memory_pressure`)
+
+Large **string arrays** to pressure GC/allocator and text codecs (escaping, interning, buffer growth). Complements Telemetry’s numeric focus.
+
+Default length: `StringArrayCount` in `test_data_config.json`.
+
+### EDI_835 (`real_world`)
+
+**Deeply nested** document shaped after healthcare remittance (EDI 835–style claims/lines). Exercises real-world nesting depth and many small related records—not a synthetic micro-benchmark.
+
+Default complexity: `EdiClaimsCount` / `EdiLinesPerClaimCount` in `test_data_config.json`.
+
+### ObjectGraph (`circular`)
+
+Object graph with **circular references**. Only serializers that support cycles (or explicit graph modes) should succeed; others skip or fail fidelity and are omitted or marked failed in harness logs. Use this fixture when evaluating graph-capable / language-native codecs—not when comparing pure tree formats.
+
+## Generation parameters (`schemas/test_data_config.json`)
+
+Shared across languages so conceptual sizes stay aligned (PRNG compatibility still matters for bit-identical payloads).
+
+| Area | Role |
+|------|------|
+| **StringOptions** | Word/phrase/ID length ranges; `DuplicationFactor` (0–1) chance to reuse a prior string (dedup / sharing behavior) |
+| **CollectionOptions** | Counts for Person records, Telemetry measurements, StringArray length, EDI claims/lines |
+| **RandomSeed** | Fixed seed (also `reproducibility.random_seed` in master config, default **42**) for reproducible generation |
+
+## Design intent
+
+- **Same conceptual fixtures** in every harness so `TestDataName` rows are comparable within a language and readable across languages.
+- **Categories** (`primitive`, `minimal`, `nested_object`, …) document *why* each type exists—not a second taxonomy of serializers ([Serialization Categories](serialization_categories.md)).
+- **ObjectGraph** is optional capacity: graph-incapable libraries are not “slower,” they are out of scope for that fixture.
+- Tunables stay in JSON so runners do not hardcode diverging sizes.
+
+When changing types or descriptions, update `test_data.types` in `config/benchmark_config.yaml` and keep this page in sync.

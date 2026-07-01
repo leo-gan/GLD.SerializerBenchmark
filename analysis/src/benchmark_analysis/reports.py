@@ -451,11 +451,24 @@ def generate_language_results_pages(
             lines.append("*No violin plots for this language in the current snapshot.*")
             lines.append("")
 
-        lines.append("---")
+        lines.append("## Regenerate")
         lines.append("")
         lines.append(
-            "*Regenerate:* `analyze-benchmarks --generate-summary --generate-plots "
-            "--output-dir docs/analysis`"
+            "Published snapshots are produced **locally** (not by GitHub Actions). "
+            "After updating `logs/<lang>/benchmark-log.csv`:"
+        )
+        lines.append("")
+        lines.append("```bash")
+        lines.append(
+            "analyze-benchmarks --generate-summary --generate-plots "
+            "--output-dir docs/analysis"
+        )
+        lines.append("```")
+        lines.append("")
+        lines.append(
+            "That refreshes this page, other languages' `results.md`, plot images under "
+            "`docs/analysis/plots/violin/`, and the [Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) hub. "
+            "Commit those paths to update the documentation site."
         )
         lines.append("")
 

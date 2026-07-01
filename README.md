@@ -6,12 +6,16 @@ Scientific, multi-language benchmark suite for **comparing serialization librari
 
 ## Who it is for
 
+Same audiences as [Benchmark architecture — Goals](docs/analysis/architecture.md) (details and examples there):
+
 | Audience | Use case |
 |----------|----------|
 | **Researchers** | Reproducible methods, CIs, effect sizes, configurable outlier/warmup policy |
-| **Serializer authors** | Compare old vs new version: `--compare-a old.csv --compare-b new.csv` |
+| **Serializer authors** | Compare old vs new version: `analyze-benchmarks --compare-a old.csv --compare-b new.csv` |
 | **System integrators** | Custom payloads (`schemas/test_data_config.json`) and environments; same CSV + analysis pipeline |
-| **Engineers** | Pick a serializer for a language/runtime with apples-to-apples metrics |
+| **Maintainers** | Add languages and publish docs snapshots without rewriting analysis ([Adding a language](docs/analysis/ADDING_A_LANGUAGE.md)) |
+
+Picking a serializer for one runtime (integrator/researcher workflow) uses language **Overview** / **Results** on the [docs site](https://leo-gan.github.io/GLD.SerializerBenchmark/) or a local regen into `docs/analysis`.
 
 ## Supported languages
 
