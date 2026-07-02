@@ -312,8 +312,10 @@ def main():
             print(f"REGRESSION: {len(regressions)} entries exceeded threshold")
             for r in regressions[:20]:
                 print(f"  {r}")
+            # Intentionally do NOT save baseline here even if --save-baseline
+            # was passed. Saving regressed data would defeat the regression gate.
             if args.save_baseline:
-                save_baseline(all_stats, args.baseline_file)
+                print("Note: --save-baseline skipped because a regression was detected.")
             sys.exit(1)
 
     if args.save_baseline:
