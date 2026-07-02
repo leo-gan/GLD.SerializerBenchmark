@@ -253,7 +253,52 @@ def _pick_column_unit(values: list) -> tuple:
     return 1.0, ""
 
 
-def _format_in_unit(val: float, divisor: float, unit: str, *, sig: int = 2) -> str:
+def _higher_is_better(value_key: str) -> bool:
+    """Semantic direction for “best” in a results column.
+
+    Throughput (ops/s) → higher is better; time/latency/size → lower is better.
+    """
+    key = (value_key or "").lower()
+    if "ops" in key or "throughput" in key or "rate" in key:
+        return True
+    if (
+        "time" in key
+        or key.endswith("_ns")
+        or key.endswith("_us")
+        or key.endswith("_ms")
+        or "latency" in key
+        or "duration" in key
+        or "size" in key
+        or "bytes_len" in key
+        or "payload" in key
+    ):
+        return False
+    return True
+
+
+def _column_best(values: list, *, higher_is_better: bool) -> Optional[float]:
+    """Return the semantic best numeric value in *values*, or None if empty."""
+    nums: List[float] = []
+    for v in values:
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            continue
+        if x == x:  # not NaN
+            nums.append(x)
+    if not nums:
+        return None
+    return max(nums) if higher_is_better else min(nums)
+
+
+def _format_in_unit(
+    val: float,
+    divisor: float,
+    unit: str,
+    *,
+    sig: int = 2,
+    bold: bool = False,
+) -> str:
     """Format ``val`` in a fixed column unit with 2 significant digits."""
     try:
         v = float(val)
@@ -262,16 +307,22 @@ def _format_in_unit(val: float, divisor: float, unit: str, *, sig: int = 2) -> s
     if v != v:  # NaN
         return "-"
     if v == 0:
-        return "0"
-    scaled = v / divisor if divisor else v
-    text = f"{float(f'%.{sig}g' % scaled)}"
-    if text.endswith(".0") and "e" not in text.lower():
-        text = text[:-2]
-    return f"{text}{unit}" if unit else text
+        text = "0"
+    else:
+        scaled = v / divisor if divisor else v
+        text = f"{float(f'%.{sig}g' % scaled)}"
+        if text.endswith(".0") and "e" not in text.lower():
+            text = text[:-2]
+        text = f"{text}{unit}" if unit else text
+    return f"**{text}**" if bold else text
 
 
 def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
-    """Generate a markdown pivot table from stats dict."""
+    """Generate a markdown pivot table from stats dict.
+
+    Semantic best-in-column values are bold (ops/throughput: max; time/size: min).
+    Ties are all bolded. Unit scale and best use **displayed** cell values only.
+    """
     lines = [f"\n### {title}\n"]
 
     # Extract unique row and column values
@@ -289,17 +340,30 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             return f"{base} ({unit})"
         return base
 
-    # One unit per data column (from that column's values only)
+    higher = _higher_is_better(value_key)
+
+    # Resolve one numeric (or None) per displayed cell first — unit/best use these only
+    cell: Dict[Tuple[str, str], Optional[float]] = {}
+    for rv in row_vals:
+        for cv in col_vals:
+            matching = [
+                s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv
+            ]
+            if not matching:
+                cell[(rv, cv)] = None
+                continue
+            val = matching[0].get(value_key)
+            if isinstance(val, (int, float)) and not isinstance(val, bool) and val == val:
+                cell[(rv, cv)] = float(val)
+            else:
+                cell[(rv, cv)] = None
+
     col_units: Dict[str, tuple] = {}
+    col_best: Dict[str, Optional[float]] = {}
     for cv in col_vals:
-        col_vals_raw = [
-            s[value_key]
-            for s in stats.values()
-            if s[cols_dim] == cv
-            and isinstance(s.get(value_key), (int, float))
-            and not isinstance(s.get(value_key), bool)
-        ]
-        col_units[cv] = _pick_column_unit(col_vals_raw)
+        displayed = [cell[(rv, cv)] for rv in row_vals if cell[(rv, cv)] is not None]
+        col_units[cv] = _pick_column_unit(displayed)
+        col_best[cv] = _column_best(displayed, higher_is_better=higher)
 
     # Header (unit in column title when scaled)
     header = (
@@ -310,20 +374,18 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
     lines.append(header)
     lines.append("|" + "---|" * (len(col_vals) + 1))
 
-    # Rows — all cells in a column share that column's unit
+    # Rows — all cells in a column share that column's unit; best is bold
     for rv in row_vals:
         row_cells = [rv]
         for cv in col_vals:
-            matching = [s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv]
-            if matching:
-                val = matching[0][value_key]
-                if isinstance(val, (int, float)) and not isinstance(val, bool):
-                    div, unit = col_units[cv]
-                    row_cells.append(_format_in_unit(float(val), div, unit))
-                else:
-                    row_cells.append(str(val))
-            else:
+            val = cell[(rv, cv)]
+            if val is None:
                 row_cells.append("-")
+            else:
+                div, unit = col_units[cv]
+                best = col_best[cv]
+                is_best = best is not None and val == best
+                row_cells.append(_format_in_unit(val, div, unit, bold=is_best))
         lines.append("| " + " | ".join(row_cells) + " |")
 
     lines.append("")
@@ -428,7 +490,8 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         "**bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — "
         "not “number of bytes”). Higher is better. Stream mode is excluded here. "
         "Each numeric column uses **one** unit (K or M) for the whole column, "
-        "with **2 significant digits** (display only; CSV unchanged).",
+        "with **2 significant digits** (display only; CSV unchanged). "
+        "**Bold** = best in column (ops/s: highest).",
         "",
     ]
     for cat in sorted(by_cat.keys()):
@@ -444,13 +507,17 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         )
         col_vals = [ops for _, ops in ranked]
         div, unit = _pick_column_unit(col_vals)
+        best = _column_best(col_vals, higher_is_better=True)
         unit_label = f" ({unit})" if unit else ""
         lines.append(f"#### {cat}")
         lines.append("")
         lines.append(f"| serializer | mean ops/s (bytes mode){unit_label} |")
         lines.append("|---|---:|")
         for ser, mean_ops in ranked:
-            lines.append(f"| {ser} | {_format_in_unit(mean_ops, div, unit)} |")
+            is_best = best is not None and mean_ops == best
+            lines.append(
+                f"| {ser} | {_format_in_unit(mean_ops, div, unit, bold=is_best)} |"
+            )
         lines.append("")
     return "\n".join(lines)
 
@@ -525,7 +592,9 @@ def generate_language_results_pages(
             lines.append(
                 "Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer "
                 "API; **stream mode** = write/read through a stream-like path. "
-                "These names are *not* payload sizes."
+                "These names are *not* payload sizes. "
+                "In each table, **bold** marks the semantic best value in that column "
+                "(lowest time; highest ops/s). Ties are all bolded."
             )
             lines.append("")
             lines.append(
