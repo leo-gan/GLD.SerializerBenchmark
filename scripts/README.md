@@ -54,7 +54,7 @@ Unified benchmark runner for **all enabled languages** (C#, Python, Rust, C, Jav
 
 Console script from the `analysis/` package. Analyzes benchmark CSV outputs and generates reports.
 
-Each benchmark run creates a timestamped `YYYY-MM-DD-HHMMSS.csv` file — results are never overwritten. When run via `run-all-benchmarks.sh`, all languages share the same timestamp.
+Each benchmark run creates timestamped `YYYY-MM-DD-HHMMSS.{csv,errors.csv,environment.json}` files — never overwritten. When run via `run-all-benchmarks.sh`, all languages share the same timestamp stem.
 
 **Usage (after installing analysis package):**
 ```bash
