@@ -28,15 +28,28 @@ _DEFAULT_STATS_CFG: Dict[str, Any] = {
     "min_samples_for_outlier_filter": 10,
     "min_samples_for_inference": 5,
     "report_percentiles": [5, 25, 50, 75, 95, 99],
+    # NOTE: report_* flags (mean/median/std/...) are declared in config for
+    # documentation but are currently always computed (rich output is the
+    # design goal). Changing them has no effect yet.
+    "report_mean": True,
+    "report_median": True,
+    "report_std": True,
+    "report_mad": True,
+    "report_cv": True,
+    "report_min_max": True,
     "bootstrap": {
         "enabled": True,
         "iterations": 2000,
         "confidence_level": 0.95,
         "seed": 42,
+        # Only "percentile" is implemented. "bca" is accepted in config
+        # but silently falls back to percentile.
         "method": "percentile",
     },
     "effect_sizes": {
         "enabled": True,
+        # "methods" key accepted from config but both cliffs+hedges are always run.
+        "methods": ["cliffs_delta", "hedges_g"],
         "cliffs_delta_thresholds": {
             "negligible": 0.147,
             "small": 0.33,
@@ -45,9 +58,13 @@ _DEFAULT_STATS_CFG: Dict[str, Any] = {
     },
     "hypothesis_tests": {
         "enabled": True,
+        # Only mann_whitney_u is implemented.
+        "method": "mann_whitney_u",
         "alpha": 0.05,
         "multiple_comparison_correction": "holm",
     },
+    # throughput_from is documented but derivation is always 1e9/mean_time_ns.
+    "throughput_from": "mean_time_ns",
 }
 
 
@@ -91,6 +108,19 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         except Exception as exc:  # malformed YAML should not break analysis defaults
             print(f"Warning: could not load stats config from {path}: {exc}")
             continue
+
+    # Surface limitations for declared-but-unimplemented settings
+    boot = cfg.get("bootstrap") or {}
+    if boot.get("method") not in (None, "percentile"):
+        print(f"Note: bootstrap.method={boot.get('method')} requested but only 'percentile' is implemented; using percentile.")
+    eff = cfg.get("effect_sizes") or {}
+    if eff.get("methods") and set(eff["methods"]) != {"cliffs_delta", "hedges_g"}:
+        print("Note: effect_sizes.methods partially supported; both cliffs_delta and hedges_g are always computed when enabled.")
+    ht = cfg.get("hypothesis_tests") or {}
+    if ht.get("method") and ht["method"] != "mann_whitney_u":
+        print(f"Note: hypothesis_tests.method={ht['method']} requested; only mann_whitney_u is implemented.")
+    # csv_schema.time_unit and paths.* are intentionally not read here;
+    # time normalization uses Language + heuristic; CLI discovers logs.
     return cfg
 
 
