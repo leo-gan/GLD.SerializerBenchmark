@@ -4,18 +4,21 @@ from __future__ import annotations
 
 import csv
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 
-def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> List[Dict]:
-    """Parse benchmark CSV file and return list of records.
+def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[List[Dict], int]:
+    """Parse benchmark CSV file and return (records, skipped_count).
 
     Supports legacy headers (no Language column) and v1.1+ with Language,
     MemoryPeakBytes, FidelityScore, SerializerVersion.
+
+    The second return value makes skipped/malformed rows auditable by callers.
     """
     records: List[Dict] = []
+    skipped = 0
     if not filepath or not os.path.exists(filepath):
-        return records
+        return records, 0
 
     # Infer language from path if not provided
     if language_hint is None:
@@ -68,6 +71,9 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> List[D
                     record["SerializerVersion"] = row["SerializerVersion"]
                 records.append(record)
             except (ValueError, KeyError, TypeError) as e:
+                skipped += 1
                 print(f"Warning: Skipping malformed row: {row}, error: {e}")
-    return records
+    if skipped:
+        print(f"Parser: skipped {skipped} malformed row(s) from {filepath}")
+    return records, skipped
 

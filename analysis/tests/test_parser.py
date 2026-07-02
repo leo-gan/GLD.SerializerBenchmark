@@ -20,8 +20,9 @@ def test_parse_legacy_csv_without_language():
                     "OpPerSecSer", "OpPerSecDeser", "OpPerSecSerAndDeser"])
         w.writerow(["string", "Person", 1, 0, "Json.NET", 1000, 2000, 50, 3000, 1, 1, 1])
         path = f.name
-    recs = parse_csv_file(path, language_hint="csharp")
+    recs, skipped = parse_csv_file(path, language_hint="csharp")
     assert len(recs) == 1
+    assert skipped == 0
     assert recs[0]["Language"] == "csharp"
     assert recs[0]["TimeSer"] == 1000
 
@@ -36,7 +37,8 @@ def test_parse_v11_csv_with_language():
         w.writerow(["rust", "bytes", "Person", 10, 1, "serde_json", 5000, 6000, 80, 11000,
                     1, 1, 1, 0, 1.0, "1.0.145"])
         path = f.name
-    recs = parse_csv_file(path)
+    recs, skipped = parse_csv_file(path)
+    assert skipped == 0
     assert recs[0]["Language"] == "rust"
     assert recs[0]["FidelityScore"] == 1.0
     assert recs[0]["SerializerVersion"] == "1.0.145"

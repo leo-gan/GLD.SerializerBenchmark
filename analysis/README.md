@@ -98,7 +98,7 @@ analysis/
 ```python
 from benchmark_analysis import parse_csv_file, compute_statistics
 
-records = parse_csv_file('logs/rust/2026-06-12-123415.csv', language_hint='rust')
+records, skipped = parse_csv_file('logs/rust/2026-06-12-123415.csv', language_hint='rust')
 stats = compute_statistics(records, language_hint='rust')
 ```
 

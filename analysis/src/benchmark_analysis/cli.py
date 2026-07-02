@@ -226,13 +226,13 @@ def main():
         if not path or not os.path.isfile(path):
             all_records[lang] = []
             continue
-        recs = parse_csv_file(path, language_hint=lang)
+        recs, skipped = parse_csv_file(path, language_hint=lang)
         all_records[lang] = recs
         total_loaded += len(recs)
         if recs:
             st = compute_statistics(recs, config=stats_cfg, language_hint=lang)
             all_stats.update(st)
-            print(f"Loaded {len(recs)} {lang} records from {os.path.basename(path)} -> {len(st)} stat groups")
+            print(f"Loaded {len(recs)} {lang} records from {os.path.basename(path)} -> {len(st)} stat groups (skipped {skipped})")
 
     print(f"Total: {total_loaded} records, {len(all_stats)} stat groups")
 
@@ -278,8 +278,8 @@ def main():
 
         hint_a = _infer_language_from_path(ca)
         hint_b = _infer_language_from_path(cb)
-        rec_a = parse_csv_file(ca, language_hint=hint_a)
-        rec_b = parse_csv_file(cb, language_hint=hint_b)
+        rec_a, _ = parse_csv_file(ca, language_hint=hint_a)
+        rec_b, _ = parse_csv_file(cb, language_hint=hint_b)
         sa = compute_statistics(rec_a, config=stats_cfg, language_hint=hint_a)
         sb = compute_statistics(rec_b, config=stats_cfg, language_hint=hint_b)
         comps = compare_versions(sa, sb, config=stats_cfg)
