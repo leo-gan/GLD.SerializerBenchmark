@@ -214,6 +214,20 @@ def _generate_violin_plot(
         return None
 
 
+# CSV StringOrStream values → human labels (not "number of bytes")
+_MODE_DISPLAY = {
+    "bytes": "bytes mode",
+    "stream": "stream mode",
+    "string": "string mode",
+}
+
+
+def _display_mode(mode: str) -> str:
+    """Label harness API mode so it is not confused with payload size."""
+    key = (mode or "").strip().lower()
+    return _MODE_DISPLAY.get(key, mode)
+
+
 def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
     """Generate a markdown pivot table from stats dict."""
     lines = [f"\n### {title}\n"]
@@ -226,8 +240,12 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         lines.append("*No data available*\n")
         return '\n'.join(lines)
 
+    # When columns are harness modes, spell out "bytes mode" / "stream mode"
+    def _col_label(cv: str) -> str:
+        return _display_mode(cv) if cols_dim == "mode" else cv
+
     # Header
-    header = f"| {rows_dim} | " + " | ".join(col_vals) + " |"
+    header = f"| {rows_dim} | " + " | ".join(_col_label(cv) for cv in col_vals) + " |"
     lines.append(header)
     lines.append("|" + "---|" * (len(col_vals) + 1))
 
@@ -344,7 +362,9 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         f"### {title}",
         "",
         "Compare serializers **within the same paradigm** (not across JSON vs zero-copy).",
-        "Values are mean Ser+Deser **ops/s** over fixtures in **bytes** mode (higher is better).",
+        "Values are mean Ser+Deser **ops/s** over fixtures, using the harness "
+        "**bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — "
+        "not “number of bytes”). Higher is better. Stream mode is excluded here.",
         "",
     ]
     for cat in sorted(by_cat.keys()):
@@ -360,7 +380,7 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         )
         lines.append(f"#### {cat}")
         lines.append("")
-        lines.append("| serializer | mean ops/s (bytes) |")
+        lines.append("| serializer | mean ops/s (bytes mode) |")
         lines.append("|---|---:|")
         for ser, mean_ops in ranked:
             lines.append(f"| {ser} | {mean_ops:,.0f} |")
@@ -436,12 +456,18 @@ def generate_language_results_pages(
             lines.append("## Pivot tables")
             lines.append("")
             lines.append(
+                "Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer "
+                "API; **stream mode** = write/read through a stream-like path. "
+                "These names are *not* payload sizes."
+            )
+            lines.append("")
+            lines.append(
                 _pivot_table_md(
                     stats,
                     "serializer",
                     "mode",
                     "avg_time_total_ns",
-                    f"{title}: Avg Total Time (ns) by Serializer and Mode",
+                    f"{title}: Avg Total Time (ns) by Serializer and API Mode",
                 )
             )
             lines.append(
@@ -456,7 +482,7 @@ def generate_language_results_pages(
             cat_md = _category_pivot_md(
                 stats,
                 lang_id,
-                f"{title}: within-category ranking (bytes mode)",
+                f"{title}: within-category ranking (bytes mode only)",
             )
             if cat_md:
                 lines.append(cat_md)
