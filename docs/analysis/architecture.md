@@ -83,8 +83,9 @@ Published site numbers: regenerate **locally** into `docs/<lang>/results.md` and
 ## Measurement model
 
 ```text
-prepare(type)          # untimed: codecs, schemas, buffers
-prepare_data(fixture)  # untimed: serializer-native model
+prepare(type)          # untimed: codecs, schemas, buffers (Python + others)
+prepare_data(fixture)  # untimed: serializer-native model (Python)
+# Rust collapses both into prepare(&fixture) before the timed loop
 for i in 0..N-1:
     t0 = now()
     bytes = serialize(obj)
@@ -96,6 +97,7 @@ for i in 0..N-1:
 ```
 
 Repetition `i = 0` is warmup and is excluded from aggregates by analysis.
+Modes in CSV are `bytes` / `stream` (labeled **bytes mode** / **stream mode** on Results pages — not payload sizes).
 
 ## Harness contract (summary)
 
