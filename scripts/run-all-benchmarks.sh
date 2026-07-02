@@ -10,8 +10,7 @@ REPORT_DIR="$PROJECT_ROOT/reports"
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 
 MODE="all-single"
-GENERATE_PLOTS=false
-GENERATE_SUMMARY=false
+GENERATE_ARTIFACTS=false
 CHECK_REGRESSION=false
 REGRESSION_THRESHOLD=10
 SAVE_BASELINE=false
@@ -26,15 +25,14 @@ Run serializer benchmarks for supported languages and optionally generate report
 OPTIONS:
     -m, --mode MODE             smoke|all-single|full|research (default: all-single)
     -l, --lang LANG             Only run one language: csharp|python|rust|c|javascript
-    -p, --plots                 Generate violin plots under reports/plots/violin/ (local; gitignored)
-    -s, --summary               Generate Markdown summary under reports/ (local)
+    -a, --analyze               Generate analysis artifacts (tables + plots) via analyze-benchmarks
     -r, --regression-check      Check for performance regressions
     -t, --threshold PERCENT     Regression threshold percentage (default: 10)
     -b, --save-baseline         Save current results as baseline
     -h, --help                  Show this help message
 
 Reports default to reports/ (gitignored). For GitHub Pages snapshots, run
-analyze-benchmarks --generate-summary --generate-plots and commit docs/.
+analyze-benchmarks (optionally -l LANG) and commit docs/.
 EOF
 }
 
@@ -42,8 +40,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -m|--mode) MODE="$2"; shift 2 ;;
         -l|--lang) LANG_FILTER="$2"; shift 2 ;;
-        -p|--plots) GENERATE_PLOTS=true; shift ;;
-        -s|--summary) GENERATE_SUMMARY=true; shift ;;
+        -a|--analyze) GENERATE_ARTIFACTS=true; shift ;;
         -r|--regression-check) CHECK_REGRESSION=true; shift ;;
         -t|--threshold) REGRESSION_THRESHOLD="$2"; shift 2 ;;
         -b|--save-baseline) SAVE_BASELINE=true; shift ;;
@@ -119,10 +116,13 @@ for lang in csharp python rust c javascript; do
     fi
 done
 
-if [ "$GENERATE_PLOTS" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAVE_BASELINE" = true ]; then
+if [ "$GENERATE_ARTIFACTS" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAVE_BASELINE" = true ]; then
     echo ""
     echo -e "${BLUE}Generating Reports...${NC}"
-    ANALYSIS_CMD="analyze-benchmarks"
+    ANALYSIS_CMD="analyze-benchmarks --logs-root \"$LOG_DIR\""
+    if [[ -n "$LANG_FILTER" ]]; then
+        ANALYSIS_CMD="$ANALYSIS_CMD -l \"$LANG_FILTER\""
+    fi
     for lang in csharp python rust c javascript; do
         f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
         [[ -f "$f" ]] || continue
@@ -134,8 +134,10 @@ if [ "$GENERATE_PLOTS" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHECK_R
             javascript) ANALYSIS_CMD="$ANALYSIS_CMD --javascript-logs \"$f\"" ;;
         esac
     done
-    [ "$GENERATE_PLOTS" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --generate-plots"
-    [ "$GENERATE_SUMMARY" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --generate-summary"
+    # Artifact generation is the default for analyze-benchmarks (tables + plots).
+    if [ "$GENERATE_ARTIFACTS" != true ]; then
+        ANALYSIS_CMD="$ANALYSIS_CMD --skip-generate"
+    fi
     [ "$CHECK_REGRESSION" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --check-regression --regression-threshold $REGRESSION_THRESHOLD"
     [ "$SAVE_BASELINE" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --save-baseline"
     if command -v analyze-benchmarks >/dev/null 2>&1; then
@@ -143,8 +145,8 @@ if [ "$GENERATE_PLOTS" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHECK_R
     else
         PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.cli \
             --logs-root "$LOG_DIR" \
-            $([ "$GENERATE_SUMMARY" = true ] && echo --generate-summary) \
-            $([ "$GENERATE_PLOTS" = true ] && echo --generate-plots) || true
+            ${LANG_FILTER:+-l "$LANG_FILTER"} \
+            $([ "$GENERATE_ARTIFACTS" != true ] && echo --skip-generate) || true
     fi
 fi
 

@@ -1,10 +1,10 @@
 # Benchmark Results
 
-**Generated:** 2026-07-02T10:31:55.885290
+**Generated:** 2026-07-02T10:39:07.882292
 
 This page is an **index** of published snapshot results. Pivot tables and violin plots are on each language's **Results** page (generated locally, not by GitHub Actions). Re-running benchmarks elsewhere may differ — that is OK.
 
-Snapshot contains data for **5** language(s) and **964** statistical group(s).
+Snapshot contains data for **1** language(s) and **190** statistical group(s).
 
 ---
 
@@ -22,4 +22,4 @@ Methods: [Analysis Methodology](ANALYSIS_METHODOLOGY.md).
 
 ---
 
-*Local snapshot — regenerate with* `analyze-benchmarks --generate-summary --generate-plots`
+*Local snapshot — regenerate with* `analyze-benchmarks` or `analyze-benchmarks -l python`

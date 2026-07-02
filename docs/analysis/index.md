@@ -25,8 +25,6 @@ PNGs, and per-language pages stay in sync:
 ```bash
 cd analysis && pip install -e .   # once
 analyze-benchmarks \
-  --generate-summary \
-  --generate-plots \
 ```
 
 That writes (commit these for Pages):
@@ -38,8 +36,7 @@ That writes (commit these for Pages):
 | `docs/<lang>/results.md` | Per-language pivots + plot embeds (`c-sharp`, `python`, `rust`, `c`, `javascript`) |
 
 Either flag alone still refreshes `docs/<lang>/results.md` from current CSVs, but
-`--generate-summary` without `--generate-plots` omits plot images/embeds on that run,
-and `--generate-plots` without `--generate-summary` skips updating
+By default both results tables and violin plots are written. Use `-l python` (etc.) to limit to one language
 `BENCHMARK_SUMMARY.md`. Prefer both flags for a full snapshot.
 
 The CLI writes the hub/PNGs under `reports/` (gitignored) and refreshes `docs/<lang>/results.md` when a sibling `docs/` directory exists.

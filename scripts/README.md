@@ -25,7 +25,7 @@ Unified benchmark runner for **all enabled languages** (C#, Python, Rust, C, Jav
 |------|-------------|
 | `-m, --mode MODE` | `smoke`, `all-single`, `full`, or `research` (default: `all-single`) |
 | `-l, --lang LANG` | Only run one language: `csharp` \| `python` \| `rust` \| `c` \| `javascript` |
-| `-p, --plots` | Generate violin plots (`--generate-plots`) |
+| `-p, --plots` | Generate violin plots (``) |
 | `-s, --summary` | Generate Markdown summary report |
 | `-r, --regression-check` | Check for performance regressions |
 | `-t, --threshold PERCENT` | Regression threshold (default: 10%) |
@@ -61,13 +61,13 @@ Each benchmark run creates timestamped `YYYY-MM-DD-HHMMSS.{csv,errors.csv,enviro
 cd analysis && pip install -e .   # once
 
 # Generate reports (auto-discovers latest result per language)
-analyze-benchmarks --generate-summary --generate-plots
+analyze-benchmarks
 
 # List all available result files
 analyze-benchmarks --list
 
 # Use a specific run
-analyze-benchmarks --rust-logs rust:2026-06-12 --generate-summary
+analyze-benchmarks --rust-logs rust:2026-06-12 
 
 # Compare two runs (great for serializer experiments)
 analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
@@ -78,8 +78,8 @@ analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
 | `--logs-root PATH` | Root logs directory |
 | `--csharp-logs` / `--python-logs` / ... | CSV path, directory, or shorthand (`rust:2026-06-12`, `rust:latest`) |
 | `--extra-logs lang=path` | Additional languages (repeatable) |
-| `--generate-summary` | Generate Markdown summary |
-| `--generate-plots` | Generate violin plot images |
+| `` | Generate Markdown summary |
+| `` | Generate violin plot images |
 | `--compare-a` / `--compare-b` | Compare two result files (path, dir, or shorthand) |
 | `--check-regression` | Check for regressions against baseline |
 | `--regression-threshold PCT` | Regression threshold percentage |
@@ -123,7 +123,7 @@ Baselines are stored as JSON files with the format:
 Publish path for documentation:
 
 ```bash
-analyze-benchmarks --generate-summary --generate-plots
+analyze-benchmarks
 git add docs/analysis && git commit -m "docs: refresh benchmark snapshot"
 ```
 

@@ -21,21 +21,21 @@ After installation, the `analyze-benchmarks` command is available. Each benchmar
 
 ```bash
 # Generate reports (uses latest result per language automatically)
-analyze-benchmarks --generate-summary --generate-plots
+analyze-benchmarks
 
 # Use a specific historical run
-analyze-benchmarks --rust-logs logs/rust/2026-06-12-123415.csv --generate-summary
+analyze-benchmarks --rust-logs logs/rust/2026-06-12-123415.csv
 
 # Shorthands work too
-analyze-benchmarks --rust-logs rust:2026-06-12 --generate-summary  # partial timestamp match
-analyze-benchmarks --rust-logs rust:latest --generate-summary       # latest timestamped file
-analyze-benchmarks --rust-logs logs/rust --generate-summary         # directory → picks latest
+analyze-benchmarks --rust-logs rust:2026-06-12  # partial timestamp match
+analyze-benchmarks --rust-logs rust:latest       # latest timestamped file
+analyze-benchmarks --rust-logs logs/rust         # directory → picks latest
 
 # List all available result files
 analyze-benchmarks --list
 
 # Extra language (future harnesses)
-analyze-benchmarks --extra-logs go=logs/go --generate-summary
+analyze-benchmarks --extra-logs go=logs/go
 
 # Compare two runs (great for serializer code experiments)
 analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
@@ -55,7 +55,7 @@ analyze-benchmarks --save-baseline
 
 # Process the data: stats, outliers, plots, summaries, and per-language pages
 cd analysis
-uv run analyze-benchmarks --generate-summary --generate-plots
+uv run analyze-benchmarks
 
 # Typical output for a full run:
 #   Loaded 35200 csharp records -> 352 stat groups
@@ -85,8 +85,8 @@ Reports are written to `reports/` (gitignored). Documentation snapshots go to `d
 | `--logs-root` | Root logs directory (default: repo `logs/`) |
 | `--csharp-logs` / `--python-logs` / ... | CSV path, directory, or shorthand (e.g. `rust:2026-06-12`) |
 | `--extra-logs` | `lang=path` pairs (repeatable) |
-| `--generate-summary` | Write Markdown summary |
-| `--generate-plots` | Write violin plots under `reports/plots/violin/` |
+| `-l` / `--language LANG` | Only generate for one language (repeatable) |
+| `--skip-generate` | Skip docs/plots (for compare/regression-only runs) |
 | `--compare-a` / `--compare-b` | Compare two result files (path, dir, or shorthand) |
 | `--check-regression` / `--save-baseline` / `--baseline-file` / `--regression-threshold` | Regression gates |
 | `--config` | Path to `benchmark_config.yaml` |

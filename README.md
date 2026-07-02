@@ -52,9 +52,9 @@ Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_conf
 # Analysis (install analysis package first)
 cd analysis && pip install -e .   # or: uv pip install -e .
 # Local scratch (gitignored):
-analyze-benchmarks --generate-summary --generate-plots
+analyze-benchmarks
 # Publish snapshot for GitHub Pages (commit docs/analysis/** after review):
-analyze-benchmarks --generate-summary --generate-plots
+analyze-benchmarks
 
 # Serializer version A vs B
 analyze-benchmarks --compare-a rust:v1 --compare-b rust:v2

@@ -2,7 +2,7 @@
 
 How the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and violin plots. Timing *collection* (what is timed in the harness) is defined in [Benchmark architecture](architecture.md). Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml).
 
-Regenerate site snapshots **locally** (`analyze-benchmarks --generate-summary --generate-plots`); CI does not re-run analysis. Numbers appear on language **Results** pages ([Benchmark Results](BENCHMARK_SUMMARY.md) hub).
+Regenerate site snapshots **locally** (`analyze-benchmarks`); CI does not re-run analysis. Numbers appear on language **Results** pages ([Benchmark Results](BENCHMARK_SUMMARY.md) hub).
 
 ## Inputs
 

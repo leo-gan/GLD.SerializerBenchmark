@@ -57,7 +57,7 @@ Map repetitions from `modes` in `benchmark_config.yaml`.
 ## 5. Documentation
 
 - `docs/<lang>/index.md` — ecosystem overview, registered serializer inventory, caveats
-- After benchmarks: regenerate site snapshots (`analyze-benchmarks --generate-summary --generate-plots`) so `docs/<lang>/results.md` can be produced when logs exist
+- After benchmarks: regenerate site snapshots (`analyze-benchmarks`) so `docs/<lang>/results.md` can be produced when logs exist
 - Register the language under Benchmarks in `mkdocs.yml` (Overview + Results)
 
 ## 6. Wire orchestration
