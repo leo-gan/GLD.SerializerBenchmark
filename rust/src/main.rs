@@ -117,7 +117,27 @@ fn main() -> anyhow::Result<()> {
         // repo_root/logs/rust when run from rust/
         PathBuf::from("../logs/rust")
     };
-    let log_path = log_dir.join("benchmark-log.csv");
+
+    std::fs::create_dir_all(&log_dir)?;
+
+    // Shared timestamp from the orchestrator (run-all-benchmarks.sh) ensures
+    // one logical run produces matching filenames across languages.
+    let log_name = if let Ok(ts) = std::env::var("BENCHMARK_TS") {
+        if ts.len() >= 15 && ts.contains('-') {
+            format!("{}.csv", ts)
+        } else {
+            format!("{}.csv", ts)
+        }
+    } else {
+        // Local fallback timestamp (rare)
+        let secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        format!("local-{}.csv", secs)
+    };
+
+    let log_path = log_dir.join(&log_name);
     let mut logger = CsvLogger::create(&log_path)?;
 
     let serializers: Vec<Box<dyn BenchSerializer>> = all_serializers()

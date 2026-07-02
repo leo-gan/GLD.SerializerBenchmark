@@ -317,7 +317,7 @@ def generate_markdown_summary(
         "---",
         "",
         "*Local snapshot — regenerate with* "
-        "`analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis`",
+        "`analyze-benchmarks --generate-summary --generate-plots`",
         "",
     ]
     # Touch args so callers can still pass legacy stats without unused warnings in APIs
@@ -456,13 +456,12 @@ def generate_language_results_pages(
         lines.append("")
         lines.append(
             "Published snapshots are produced **locally** (not by GitHub Actions). "
-            "After updating `logs/<lang>/benchmark-log.csv`:"
+            "After running benchmarks (each run creates a timestamped `YYYY-MM-DD-HHMMSS.csv`):"
         )
         lines.append("")
         lines.append("```bash")
         lines.append(
-            "analyze-benchmarks --generate-summary --generate-plots "
-            "--output-dir docs/analysis"
+            "analyze-benchmarks --generate-summary --generate-plots"
         )
         lines.append("```")
         lines.append("")

@@ -186,7 +186,10 @@ paths:
     rust: logs/rust
     c: logs/c
     javascript: logs/javascript
-  log_filename: benchmark-log.csv
+  # Result files are timestamped to preserve history across runs.
+  # Each run creates: YYYY-MM-DD-HHMMSS.csv (e.g. 2026-06-12-123415.csv)
+  # Analysis auto-selects the most recent timestamped file per language.
+  log_filename: "YYYY-MM-DD-HHMMSS.csv"
   errors_filename: benchmark-errors.csv
   environment_filename: environment.json
   baseline_filename: reports/baseline.json
@@ -488,7 +491,8 @@ languages:
 #
 # Required harness contract:
 #   1. Read config/benchmark_config.yaml (or embedded defaults) for repetitions/seed
-#   2. Emit logs/<id>/benchmark-log.csv with Language=<id> and times in nanoseconds
+#   2. Emit logs/<id>/<timestamp>.csv (YYYY-MM-DD-HHMMSS.csv)
+#      with Language=<id> and times in nanoseconds. Never overwrite previous runs.
 #   3. Implement prepare() outside timed loop; timed section = serialize + deserialize only
 #   4. Support bytes + stream modes where the library allows
 #   5. Round-trip fidelity check; skip ObjectGraph if unsupported

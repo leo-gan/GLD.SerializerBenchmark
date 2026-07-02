@@ -4,6 +4,7 @@ from .parser import parse_csv_file
 from .stats import compute_statistics
 from .reports import generate_markdown_summary, generate_violin_plots, generate_language_results_pages
 from .regression import check_regression, save_baseline
+from .environment import capture_environment, load_environment
 
 __version__ = "0.1.0"
 __all__ = [
@@ -14,4 +15,6 @@ __all__ = [
     "generate_language_results_pages",
     "check_regression",
     "save_baseline",
+    "capture_environment",
+    "load_environment",
 ]

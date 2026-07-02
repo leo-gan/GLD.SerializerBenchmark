@@ -69,8 +69,8 @@ docker logs -f $(docker ps -lq)
 
 ### 4. Results
 Benchmark logs are saved to the `logs/csharp/` directory:
-- `benchmark-log.csv`: Performance metrics (times in **ticks**).
-- `benchmark-errors.csv`: Tracking any failures.
+- `2026-06-12-123415.csv` (timestamped): Performance metrics (times in **ticks**). Each run creates a new file — results are never overwritten.
+- `*.environment.json`: Hardware/OS metadata sidecar for that run.
 
 ---
 

@@ -11,7 +11,14 @@ namespace GLD.SerializerBenchmark
             int repetitions)
         {
             Directory.CreateDirectory("logs/csharp");
-            var logStorage = new LogStorage("logs/csharp/benchmark-log.csv");
+
+            // Timestamped result file — each run creates YYYY-MM-DD-HHMMSS.csv, never overwritten.
+            var ts = Environment.GetEnvironmentVariable("BENCHMARK_TS");
+            if (string.IsNullOrEmpty(ts))
+                ts = DateTime.Now.ToString("yyyy-MM-dd-HHmmss");
+            var logPath = $"logs/csharp/{ts}.csv";
+
+            var logStorage = new LogStorage(logPath);
             var errors = new List<Error>();
 
             foreach (var testDataDescription in testDataDescriptions)
@@ -22,7 +29,8 @@ namespace GLD.SerializerBenchmark
             }
 
             Report.AllResults(repetitions, logStorage, errors, serializers, testDataDescriptions);
-            Console.WriteLine("\n[PROGRESS] Benchmark Complete. Results saved to logs/csharp/benchmark-log.csv");
+
+            Console.WriteLine($"\n[PROGRESS] Benchmark Complete. Results saved to {logPath}");
         }
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,

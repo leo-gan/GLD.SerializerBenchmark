@@ -34,7 +34,7 @@ OPTIONS:
     -h, --help                  Show this help message
 
 Reports default to reports/ (gitignored). For GitHub Pages snapshots, run
-analyze-benchmarks with --output-dir docs/analysis and commit that tree.
+analyze-benchmarks --generate-summary --generate-plots and commit docs/.
 EOF
 }
 
@@ -76,6 +76,13 @@ echo -e "${BLUE}============================================${NC}"
 echo -e "${BLUE}  Serializer Benchmark Runner${NC}"
 echo -e "${BLUE}============================================${NC}"
 echo -e "Mode: ${YELLOW}$MODE${NC}  Lang filter: ${YELLOW}${LANG_FILTER:-all}${NC}"
+
+# Timestamp used for all result files in this run so they share the same
+# 2026-06-12-123415.csv name across languages. Results are never overwritten.
+TS=$(date +%Y-%m-%d-%H%M%S)
+export BENCHMARK_TS="$TS"
+echo -e "Run timestamp: ${YELLOW}$TS${NC}"
+
 mkdir -p "$LOG_DIR" "$REPORT_DIR"
 
 run_lang csharp   c-sharp     scripts/run-benchmarks.sh
@@ -85,13 +92,28 @@ run_lang c        c           scripts/run-benchmarks.sh
 run_lang javascript javascript scripts/run-benchmarks.sh
 
 echo ""
+echo -e "${BLUE}Capturing environment metadata...${NC}"
+cd "$PROJECT_ROOT"
+# Write environment.json sidecar for each language's result CSV
+for lang in csharp python rust c javascript; do
+    f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
+    if [[ -f "$f" ]]; then
+        if command -v python3 >/dev/null 2>&1; then
+            PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.environment "$f" 2>/dev/null \
+                && echo -e "  $lang: ${GREEN}✓${NC} environment captured" \
+                || echo -e "  $lang: ${YELLOW}skipped${NC} (analysis package not available)"
+        fi
+    fi
+done
+
+echo ""
 echo -e "${BLUE}Verifying Results...${NC}"
 cd "$PROJECT_ROOT"
 for lang in csharp python rust c javascript; do
-    f="$LOG_DIR/$lang/benchmark-log.csv"
+    f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
     if [[ -f "$f" ]]; then
-        n=$(tail -n +2 "$f" | wc -l)
-        echo -e "  $lang: ${GREEN}$n${NC} records"
+        n=$(tail -n +2 "$f" | wc -l 2>/dev/null || echo 0)
+        echo -e "  $lang: ${GREEN}$n${NC} records  (${BENCHMARK_TS}.csv)"
     else
         echo -e "  $lang: ${YELLOW}no log${NC}"
     fi
@@ -102,7 +124,7 @@ if [ "$GENERATE_PLOTS" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHECK_R
     echo -e "${BLUE}Generating Reports...${NC}"
     ANALYSIS_CMD="analyze-benchmarks"
     for lang in csharp python rust c javascript; do
-        f="$LOG_DIR/$lang/benchmark-log.csv"
+        f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
         [[ -f "$f" ]] || continue
         case $lang in
             csharp) ANALYSIS_CMD="$ANALYSIS_CMD --csharp-logs \"$f\"" ;;
@@ -112,7 +134,6 @@ if [ "$GENERATE_PLOTS" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHECK_R
             javascript) ANALYSIS_CMD="$ANALYSIS_CMD --javascript-logs \"$f\"" ;;
         esac
     done
-    ANALYSIS_CMD="$ANALYSIS_CMD --output-dir \"$REPORT_DIR\""
     [ "$GENERATE_PLOTS" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --generate-plots"
     [ "$GENERATE_SUMMARY" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --generate-summary"
     [ "$CHECK_REGRESSION" = true ] && ANALYSIS_CMD="$ANALYSIS_CMD --check-regression --regression-threshold $REGRESSION_THRESHOLD"
@@ -121,7 +142,7 @@ if [ "$GENERATE_PLOTS" = true ] || [ "$GENERATE_SUMMARY" = true ] || [ "$CHECK_R
         eval "$ANALYSIS_CMD" || true
     else
         PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.cli \
-            --logs-root "$LOG_DIR" --output-dir "$REPORT_DIR" \
+            --logs-root "$LOG_DIR" \
             $([ "$GENERATE_SUMMARY" = true ] && echo --generate-summary) \
             $([ "$GENERATE_PLOTS" = true ] && echo --generate-plots) || true
     fi

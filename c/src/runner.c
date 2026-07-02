@@ -56,8 +56,16 @@ int run_benchmarks(int repetitions, const char *ser_filter, const char *data_fil
     char path[512];
     snprintf(path, sizeof(path), "%s", log_dir ? log_dir : "logs/c");
     mkdir_p(path);
+
+    // Timestamped result file. BENCHMARK_TS set by orchestrator for consistent naming.
+    const char *ts = getenv("BENCHMARK_TS");
     char log_path[600];
-    snprintf(log_path, sizeof(log_path), "%s/benchmark-log.csv", path);
+    if (ts && strlen(ts) > 8) {
+        snprintf(log_path, sizeof(log_path), "%s/%s.csv", path, ts);
+    } else {
+        // local fallback
+        snprintf(log_path, sizeof(log_path), "%s/local-%ld.csv", path, (long)time(NULL));
+    }
     csv_logger_t *log = csv_logger_create(log_path);
     if (!log) {
         fprintf(stderr, "Cannot create log %s\n", log_path);

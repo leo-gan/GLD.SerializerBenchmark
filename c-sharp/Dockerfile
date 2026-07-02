@@ -36,7 +36,7 @@ VOLUME /app/logs
 # Healthcheck: Verify that the log file exists and is being updated (activity check)
 # Since the app might not be running constantly, we check for file existence as a baseline.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD test -f logs/csharp/benchmark-log.csv || exit 1
+  CMD ls logs/csharp/*.csv 1>/dev/null 2>&1 || exit 1
 
 ENTRYPOINT ["dotnet", "GLD.SerializerBenchmark.dll"]
 CMD ["100"]

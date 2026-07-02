@@ -32,8 +32,12 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> List[D
             if token in low:
                 language_hint = lang
                 break
-        if language_hint is None and "/logs/c/" in low or low.rstrip("/").endswith("/c/benchmark-log.csv"):
-            language_hint = "c"
+        if language_hint is None:
+            # Fallbacks for C and generic latest/timestamped files
+            if "/logs/c/" in low or "/c/" in low.split("/")[-2:]:
+                language_hint = "c"
+            elif low.endswith("/c.csv") or "c/" in low:
+                language_hint = "c"
 
     with open(filepath, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
