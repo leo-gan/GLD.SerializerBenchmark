@@ -52,12 +52,20 @@ case "$1" in
         ;;
 esac
 
-# Host-side environment sidecar (analysis package; Docker image may not include it)
+# Environment sidecar (host Python if available; else Docker so root-owned logs are writable)
 CSV="$LOG_DIR/csharp/${BENCHMARK_TS}.csv"
+ENV_JSON="${CSV%.csv}.environment.json"
 if [[ -f "$CSV" ]]; then
     if PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" python3 -m benchmark_analysis.environment "$CSV" 2>/dev/null; then
-        echo "[INFO] Environment captured -> ${CSV%.csv}.environment.json"
+        echo "[INFO] Environment captured -> $ENV_JSON"
+    elif docker run --rm \
+        -v "$LOG_DIR:/logs" \
+        -v "$PROJECT_ROOT/analysis/src:/src:ro" \
+        -e PYTHONPATH=/src \
+        python:3.12-slim \
+        python -m benchmark_analysis.environment "/logs/csharp/${BENCHMARK_TS}.csv" >/dev/null 2>&1; then
+        echo "[INFO] Environment captured (via Docker) -> $ENV_JSON"
     else
-        echo "[WARN] Could not write environment.json (install analysis/ or use run-all-benchmarks.sh)"
+        echo "[WARN] Could not write environment.json"
     fi
 fi

@@ -1,6 +1,6 @@
 # Benchmark Results
 
-**Generated:** 2026-07-01T19:24:41.744658
+**Generated:** 2026-07-01T19:48:51.190445
 
 This page is an **index** of published snapshot results. Pivot tables and violin plots are on each language's **Results** page (generated locally, not by GitHub Actions). Re-running benchmarks elsewhere may differ — that is OK.
 

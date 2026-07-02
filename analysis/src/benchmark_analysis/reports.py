@@ -469,26 +469,19 @@ def generate_language_results_pages(
             lines.append("")
 
         items = plots_by_lang.get(lang_id) or []
-        meta = plot_meta.get(lang_id) or {}
-        log_csv = meta.get("source") or f"logs/{lang_id}/"
         if items:
             lines.append("## Violin plots")
             lines.append("")
             lines.append(
                 "Density of serialize / deserialize timings (µs; log scale when medians span ≥5×). "
-                "Each PNG title/footer and the table below map **plot file → fixture → CSV** "
-                f"(rows with `TestDataName` equal to the fixture in `{log_csv}`)."
+                "Provenance (fixture, CSV path, modes, *n*) is printed on each image."
             )
             lines.append("")
-            lines.append("| Fixture (`TestDataName`) | Plot file | Source CSV | Plot |")
-            lines.append("|--------------------------|-----------|------------|------|")
             for dtype, fname in items:
-                img = f'![{dtype}]({plot_rel_from_lang}/{fname}){{ width="50%" }}'
-                src = (meta.get("files") and log_csv) or log_csv
-                lines.append(
-                    f"| `{dtype}` | `{fname}` | `{src}` | {img} |"
-                )
-            lines.append("")
+                lines.append(f"### {dtype}")
+                lines.append("")
+                lines.append(f"![{dtype}]({plot_rel_from_lang}/{fname}){{ width=\"80%\" }}")
+                lines.append("")
         else:
             lines.append("*No violin plots for this language in the current snapshot.*")
             lines.append("")
