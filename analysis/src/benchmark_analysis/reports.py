@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from .stats import normalize_to_nanoseconds
+from .stats import normalize_to_nanoseconds, _filter_outliers
 
 
 def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
@@ -26,12 +26,19 @@ def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
     # time normalization. The 'language' param is the display name for titles only.
     if 'Language' not in df.columns:
         df['Language'] = language
+
+    # CRITICAL: exclude warmup (RepetitionIndex == 0) to match the stats pipeline.
+    if 'RepetitionIndex' in df.columns:
+        df = df[df['RepetitionIndex'] != 0].copy()
+    if df.empty:
+        return pd.DataFrame()
+
     # Melt serialize/deserialize into Operation column
-    ser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeSer', 'OpPerSecSer', 'Language']].copy()
+    ser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeSer', 'OpPerSecSer', 'Language', 'RepetitionIndex']].copy()
     ser['Operation'] = 'Serialize'
     ser = ser.rename(columns={'TimeSer': 'Time_ns', 'OpPerSecSer': 'OpPerSec'})
 
-    deser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeDeser', 'OpPerSecDeser', 'Language']].copy()
+    deser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeDeser', 'OpPerSecDeser', 'Language', 'RepetitionIndex']].copy()
     deser['Operation'] = 'Deserialize'
     deser = deser.rename(columns={'TimeDeser': 'Time_ns', 'OpPerSecDeser': 'OpPerSec'})
 
@@ -52,6 +59,34 @@ def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
         q99 = float(melted['Time_ns'].quantile(0.99))
         if q99 > 0:
             melted = melted[melted['Time_ns'] <= q99 * 10]
+
+    # Apply the *same* IQR outlier filtering as the stats pipeline so that
+    # violin plots reflect the exact sample population used for the tables.
+    # Group key matches stats: (Serializer, TestData, StringOrStream) + Operation.
+    if len(melted) >= 10:
+        import numpy as np
+        group_cols = ['SerializerName', 'TestDataName', 'StringOrStream', 'Operation']
+        kept_frames = []
+        for _, g in melted.groupby(group_cols, group_keys=False):
+            vals = g['Time_ns'].tolist()
+            filtered_vals, _ = _filter_outliers(vals, method="iqr", iqr_k=1.5, min_samples=10)
+            if len(filtered_vals) == len(vals):
+                kept_frames.append(g)
+                continue
+            # Recompute the exact IQR mask on this group (same as _filter_outliers)
+            arr = np.asarray(vals, dtype=float)
+            q1 = float(np.percentile(arr, 25))
+            q3 = float(np.percentile(arr, 75))
+            iqr = q3 - q1
+            if iqr == 0:
+                kept_frames.append(g)
+                continue
+            lower = q1 - 1.5 * iqr
+            upper = q3 + 1.5 * iqr
+            mask = (arr >= lower) & (arr <= upper)
+            kept_frames.append(g[mask])
+        if kept_frames:
+            melted = pd.concat(kept_frames, ignore_index=True)
     return melted
 
 
