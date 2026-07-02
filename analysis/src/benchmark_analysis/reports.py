@@ -284,13 +284,22 @@ def generate_markdown_summary(
     *,
     multi_lang_stats: Optional[Dict] = None,
     multi_lang_records: Optional[Dict] = None,
-    **_kwargs,
 ) -> None:
     """Write a thin index: methodology notes + links to per-language results pages.
 
-    Pivot tables and plots live on ``docs/<lang>/results.md`` (see
-    ``generate_language_results_pages``).
+    If multi_lang_stats or multi_lang_records are supplied they are used to
+    emit a short data-driven note (language count, group count) so the
+    parameters are not silently ignored.
+    Pivot tables and plots live on ``docs/<lang>/results.md``.
     """
+    stats = multi_lang_stats or {}
+    recs = multi_lang_records or {}
+
+    n_langs = len(set(
+        (e.get("language") or "unknown") for e in stats.values()
+    )) or len([k for k in recs if recs.get(k)])
+    n_groups = len(stats)
+
     lines = [
         "# Benchmark Results",
         "",
@@ -299,6 +308,9 @@ def generate_markdown_summary(
         "This page is an **index** of published snapshot results. Pivot tables and "
         "violin plots are on each language's **Results** page (generated locally, "
         "not by GitHub Actions). Re-running benchmarks elsewhere may differ — that is OK.",
+        "",
+        f"Snapshot contains data for **{n_langs}** language(s) and **{n_groups}** "
+        "statistical group(s).",
         "",
         "---",
         "",
@@ -318,7 +330,6 @@ def generate_markdown_summary(
         "`analyze-benchmarks --generate-summary --generate-plots`",
         "",
     ]
-    _ = (multi_lang_stats, multi_lang_records)  # referenced for completeness
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
