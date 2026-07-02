@@ -7,8 +7,8 @@ Empirical performance comparison of serializers across **C#**, **Python**, **Rus
 | C# | 38 | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
 | Python | 10 | [Overview](../python/index.md) | [Results](../python/results.md) |
 | Rust | 12 | [Overview](../rust/index.md) | [Results](../rust/results.md) |
-| C | 12 | [Overview](../c/index.md) | [Results](../c/results.md) |
-| JavaScript | 11–12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
+| C | 11 | [Overview](../c/index.md) | [Results](../c/results.md) |
+| JavaScript | 12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 
 Inventories are the **source of truth for what we measure** (hand-written). Results pages are **generated** local snapshots (pivots + plots).
 
