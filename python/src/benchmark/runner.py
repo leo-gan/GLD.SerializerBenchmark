@@ -43,6 +43,7 @@ from .report import (
 )
 from .serializers import (
     AvroSerializer,
+    FlatBuffersSerializer,
     Cbor2Serializer,
     CloudpickleSerializer,
     DillSerializer,
@@ -80,6 +81,7 @@ ALL_SERIALIZERS: List[Serializer] = [
     # Schema
     ProtobufSerializer(),
     AvroSerializer(),
+    FlatBuffersSerializer(),
     # Native
     PickleSerializer(),
     CloudpickleSerializer(),

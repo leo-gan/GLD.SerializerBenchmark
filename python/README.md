@@ -1,6 +1,6 @@
 # Python Serializer Benchmark
 
-A Dockerized benchmarking suite evaluating **10 Python serializers** across 7 realistic data structures, designed to match the methodology and output format of the companion [.NET (C#) benchmark](../c-sharp/).
+A Dockerized benchmarking suite evaluating **16 Python serializers** across 7 realistic data structures, designed to match the methodology and output format of the companion [.NET (C#) benchmark](../c-sharp/).
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
@@ -8,10 +8,10 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
 | Group | Serializers | Notes |
 | :--- | :--- | :--- |
-| **JSON** | `orjson`, `msgspec`, `rapidjson` | Text-based, schema-optional. |
+| **JSON** | `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs` | Text-based; typed stacks use prepare/prepare_data. |
 | **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2` | Compact binary, schema-optional. |
-| **Schema** | `protobuf`, `avro` | Requires `.proto`/`.avsc` schemas and code generation. |
-| **Python-native** | `pickle`, `cloudpickle` | Built-in serialization, handles arbitrary objects. |
+| **Schema** | `protobuf`, `avro`, `flatbuffers` | Requires schemas / codegen (flatc for FlatBuffers). |
+| **Python-native** | `pickle`, `cloudpickle`, `dill` | Language-native; cycles only here. |
 
 
 ## Test Data Scenarios

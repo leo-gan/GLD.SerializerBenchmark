@@ -10,6 +10,7 @@ from .binary_msgpack import MsgpackSerializer
 from .binary_cbor2 import Cbor2Serializer
 from .schema_protobuf import ProtobufSerializer
 from .schema_avro import AvroSerializer
+from .schema_flatbuffers import FlatBuffersSerializer
 from .native_pickle import PickleSerializer
 from .native_cloudpickle import CloudpickleSerializer
 from .native_dill import DillSerializer
@@ -28,6 +29,7 @@ __all__ = [
     "Cbor2Serializer",
     "ProtobufSerializer",
     "AvroSerializer",
+    "FlatBuffersSerializer",
     "PickleSerializer",
     "CloudpickleSerializer",
     "DillSerializer",

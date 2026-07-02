@@ -40,7 +40,7 @@ Text interchange optimized for interoperability and debuggability, not minimum s
 **In this suite:**
 
 - **C#**: `Json.Net`, `JsonNetHelper`, `Jil`, `NetJSON`, `SpanJson`, `Utf8Json`, `FastJson`, `ServiceStack` JSON, `DataContractJson`, Bond JSON (`MS Bond Json`)
-- **Python**: `orjson`, `msgspec`, `rapidjson`
+- **Python**: `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs`
 - **Rust**: `serde_json`, `simd-json`, `sonic-rs`
 - **C**: `cJSON`, `yyjson`, `jansson`, `parson` (default build may use portable stand-ins — [C overview](../c/index.md))
 - **JavaScript**: `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)
@@ -83,7 +83,7 @@ Harness rows may be full codegen types or documented stand-ins (e.g. Rust `prost
 **In this suite:**
 
 - **C#**: protobuf-net (`ProtoBuf`), `Google.Protobuf`, Bond Fast/Compact, `FlatSharp`, `MemoryPack`, `ZeroFormatter`
-- **Python**: `protobuf`, `avro` (fastavro)
+- **Python**: `protobuf`, `avro`, `flatbuffers` (fastavro)
 - **Rust**: `flexbuffers`, `prost-wire` (envelope stand-in; see Rust caveats)
 - **C**: `nanopb`, `protobuf-c`, `flatcc` (default build: tagged envelopes)
 - **JavaScript**: `avsc`, `protobufjs`
@@ -99,7 +99,7 @@ Tied to one runtime/VM; often supports cycles and rich graphs at the cost of por
 **In this suite:**
 
 - **C#**: legacy binary / graph-capable serializers where supported (see [C# overview](../c-sharp/index.md))
-- **Python**: `pickle`, `cloudpickle`
+- **Python**: `pickle`, `cloudpickle`, `dill`
 - **JavaScript**: `v8-serializer`
 - **Rust / C**: no pickle-equivalent; `ObjectGraph` skipped for most formats
 

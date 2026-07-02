@@ -8,7 +8,7 @@ ENV PYTHONPATH=/app/src:/app
 COPY python/pyproject.toml python/uv.lock ./
 RUN uv sync --no-dev
 
-# Copy generated protobuf files (needed for protobuf serializer)
+# Copy generated protobuf + flatbuffers tables (schema serializers)
 COPY python/generated/ ./generated/
 
 # Copy source code and shared schemas

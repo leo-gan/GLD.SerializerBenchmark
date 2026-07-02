@@ -206,6 +206,14 @@ wheels = [
 ]
 
 [[package]]
+name = "flatbuffers"
+version = "25.12.19"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl", hash = "sha256:7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4", size = 26661, upload-time = "2025-12-19T23:16:13.622Z" },
+]
+
+[[package]]
 name = "fonttools"
 version = "4.62.1"
 source = { registry = "https://pypi.org/simple" }
@@ -966,6 +974,7 @@ dependencies = [
     { name = "cloudpickle" },
     { name = "dill" },
     { name = "fastavro" },
+    { name = "flatbuffers" },
     { name = "mashumaro" },
     { name = "msgpack" },
     { name = "msgspec" },
@@ -996,6 +1005,7 @@ requires-dist = [
     { name = "cloudpickle", specifier = ">=3.1.0" },
     { name = "dill", specifier = ">=0.3.9" },
     { name = "fastavro", specifier = ">=1.10.0" },
+    { name = "flatbuffers", specifier = ">=25.12.19" },
     { name = "mashumaro", specifier = ">=3.14" },
     { name = "matplotlib", marker = "extra == 'analysis'", specifier = ">=3.7.0" },
     { name = "msgpack", specifier = ">=1.1.0" },
