@@ -134,9 +134,9 @@ def _filter_outliers(
     if method == "winsorize":
         lo, hi = np.percentile(arr, [5, 95])
         wins = np.clip(arr, lo, hi)
-        # Count how many were clipped as "removed" conceptually
-        removed = int(np.sum((arr < lo) | (arr > hi)))
-        return wins.tolist(), removed
+        # Winsorization clips extreme values rather than removing them;
+        # the sample size stays the same, so removed count is 0.
+        return wins.tolist(), 0
 
     # IQR (default)
     q1 = float(np.percentile(arr, 25))
@@ -579,6 +579,3 @@ def compare_versions(
     return comparisons
 
 
-# Backwards-compatible alias used internally in older code paths
-def compute_statistics_legacy(records: List[Dict]) -> Dict:
-    return compute_statistics(records)

@@ -107,6 +107,18 @@ def _resolve_log_spec(spec: str) -> Optional[str]:
     return str(p) if p.is_file() else None
 
 
+_KNOWN_LANGS = ("rust", "python", "csharp", "c", "javascript")
+
+
+def _infer_language_from_path(filepath: str) -> Optional[str]:
+    """Try to extract a language hint from the file path (e.g. /logs/rust/ → 'rust')."""
+    norm = filepath.replace("\\", "/")
+    for lang in _KNOWN_LANGS:
+        if f"/{lang}/" in norm:
+            return lang
+    return None
+
+
 def _discover_logs(logs_root: Path) -> Dict[str, str]:
     """Auto-discover the latest timestamped result CSV under logs/<lang>/."""
     found: Dict[str, str] = {}
@@ -237,8 +249,6 @@ def main():
     if args.generate_summary:
         summary_path = str(reports_root / "BENCHMARK_SUMMARY.md")
         generate_markdown_summary(
-            {},
-            {},
             summary_path,
             multi_lang_stats=all_stats,
             multi_lang_records=all_records,
@@ -266,10 +276,12 @@ def main():
             print(f"Error: cannot resolve --compare-b '{args.compare_b}'")
             sys.exit(1)
 
-        rec_a = parse_csv_file(ca)
-        rec_b = parse_csv_file(cb)
-        sa = compute_statistics(rec_a, config=stats_cfg)
-        sb = compute_statistics(rec_b, config=stats_cfg)
+        hint_a = _infer_language_from_path(ca)
+        hint_b = _infer_language_from_path(cb)
+        rec_a = parse_csv_file(ca, language_hint=hint_a)
+        rec_b = parse_csv_file(cb, language_hint=hint_b)
+        sa = compute_statistics(rec_a, config=stats_cfg, language_hint=hint_a)
+        sb = compute_statistics(rec_b, config=stats_cfg, language_hint=hint_b)
         comps = compare_versions(sa, sb, config=stats_cfg)
         out_path = str(reports_root / "VERSION_COMPARE.md")
         with open(out_path, "w", encoding="utf-8") as f:

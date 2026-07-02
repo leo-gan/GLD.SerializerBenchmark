@@ -22,7 +22,7 @@ def check_regression(
     has_regression = False
 
     for key, current in current_stats.items():
-        key_str = f"{current['serializer']}|{current['test_data']}|{current['mode']}"
+        key_str = f"{current.get('language','unknown')}|{current['serializer']}|{current['test_data']}|{current['mode']}"
         if key_str in baseline:
             baseline_time = baseline[key_str].get('avg_time_total_ns', 0)
             current_time = current['avg_time_total_ns']
@@ -45,7 +45,7 @@ def save_baseline(stats: Dict, output_path: str) -> None:
     """Save current stats as baseline for future regression checks."""
     baseline = {}
     for key, stat in stats.items():
-        key_str = f"{stat['serializer']}|{stat['test_data']}|{stat['mode']}"
+        key_str = f"{stat.get('language','unknown')}|{stat['serializer']}|{stat['test_data']}|{stat['mode']}"
         baseline[key_str] = {
             'avg_time_total_ns': stat['avg_time_total_ns'],
             'avg_ops_per_sec': stat['avg_ops_per_sec'],

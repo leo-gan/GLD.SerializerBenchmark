@@ -3,7 +3,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-LOG_FILE="logs/csharp/benchmark-log.csv"
+LOG_FILE=$(ls -t logs/csharp/*.csv 2>/dev/null | head -1)
 ERROR_FILE="logs/csharp/benchmark-errors.csv"
 
 echo "[INFO] Verifying benchmark results..."

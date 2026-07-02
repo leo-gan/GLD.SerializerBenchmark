@@ -24,6 +24,6 @@
 npm test
 ```
 
-Output: `logs/javascript/benchmark-log.csv`
+Output: `logs/javascript/YYYY-MM-DD-HHMMSS.csv` (timestamped)
 
 Cross-language analysis and docs snapshots: install `analysis/`, run `analyze-benchmarks` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.

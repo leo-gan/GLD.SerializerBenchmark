@@ -25,7 +25,7 @@ Add `paths.language_log_dirs.go: logs/go` if your config uses that map.
 
 | Requirement | Detail |
 |-------------|--------|
-| Output CSV | `logs/<lang>/benchmark-log.csv` with schema in `csv_schema` |
+| Output CSV | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with schema in `csv_schema` |
 | `Language` column | Must match the language id (e.g. `go`) |
 | Time unit | **Nanoseconds** for all new runners |
 | Modes | `bytes` and `stream` (or `string`/`stream` if matching legacy C#) |
@@ -57,17 +57,17 @@ Map repetitions from `modes` in `benchmark_config.yaml`.
 ## 5. Documentation
 
 - `docs/<lang>/index.md` — ecosystem overview, registered serializer inventory, caveats
-- After benchmarks: regenerate site snapshots (`analyze-benchmarks … --output-dir docs/analysis`) so `docs/<lang>/results.md` can be produced when logs exist
+- After benchmarks: regenerate site snapshots (`analyze-benchmarks --generate-summary --generate-plots`) so `docs/<lang>/results.md` can be produced when logs exist
 - Register the language under Benchmarks in `mkdocs.yml` (Overview + Results)
 
 ## 6. Wire orchestration
 
 Update `scripts/run-all-benchmarks.sh` to invoke the new runner.
 
-Analysis auto-discovers `logs/<lang>/benchmark-log.csv`; or pass:
+Auto-discovers timestamped CSVs under `logs/<lang>/`; or pass:
 
 ```bash
-analyze-benchmarks --extra-logs go=logs/go/benchmark-log.csv
+analyze-benchmarks --extra-logs go=logs/go
 ```
 
 Extend `generate_language_results_pages` / `_LANG_DOCS_DIR` in the analysis package if the docs folder id differs from the language id (e.g. `csharp` → `docs/c-sharp/`).

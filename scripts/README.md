@@ -119,7 +119,7 @@ Baselines are stored as JSON files with the format:
 Publish path for documentation:
 
 ```bash
-analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis
+analyze-benchmarks --generate-summary --generate-plots
 git add docs/analysis && git commit -m "docs: refresh benchmark snapshot"
 ```
 

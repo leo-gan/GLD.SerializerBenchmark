@@ -96,7 +96,7 @@ docker logs -f $(docker ps -lq)
 
 #### 4. Results
 Logs are saved to `logs/python/`:
-- `benchmark-log.csv`: Raw per-repetition metrics.
+- `YYYY-MM-DD-HHMMSS.csv` (timestamped): Raw per-repetition metrics.
 - `benchmark-errors.csv`: Failure details.
 
 ### Local Development (Without Docker)
@@ -144,7 +144,7 @@ uv run python -m benchmark.runner 1 "msgpack" ""
 
 ## Results & Analysis
 
-The benchmark outputs `logs/python/benchmark-log.csv` with the following columns:
+The benchmark outputs timestamped files `logs/python/YYYY-MM-DD-HHMMSS.csv` with the following columns:
 
 ```
 StringOrStream,TestDataName,Repetitions,RepetitionIndex,

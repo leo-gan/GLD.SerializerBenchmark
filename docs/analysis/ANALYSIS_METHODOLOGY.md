@@ -2,13 +2,13 @@
 
 How the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and violin plots. Timing *collection* (what is timed in the harness) is defined in [Benchmark architecture](architecture.md). Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml).
 
-Regenerate site snapshots **locally** (`analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis`); CI does not re-run analysis. Numbers appear on language **Results** pages ([Benchmark Results](BENCHMARK_SUMMARY.md) hub).
+Regenerate site snapshots **locally** (`analyze-benchmarks --generate-summary --generate-plots`); CI does not re-run analysis. Numbers appear on language **Results** pages ([Benchmark Results](BENCHMARK_SUMMARY.md) hub).
 
 ## Inputs
 
 | Source | Role |
 |--------|------|
-| `logs/<lang>/benchmark-log.csv` | Per-language harness output (gitignored) |
+| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output (gitignored) |
 | `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, …) |
 | `csv_schema` in master config | Required/optional columns |
 
@@ -95,7 +95,7 @@ Fields such as `effect_vs_fastest_cliffs_delta`, `effect_vs_fastest_hedges_g`, `
 ### Version A/B (same serializer, two builds)
 
 ```bash
-analyze-benchmarks --compare-a old.csv --compare-b new.csv --output-dir reports
+analyze-benchmarks --compare-a old.csv --compare-b new.csv
 ```
 
 Writes `VERSION_COMPARE.md` with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when `statistics.hypothesis_tests` is enabled (`alpha` 0.05). Prefer this for author-facing regressions rather than comparing unrelated libraries.

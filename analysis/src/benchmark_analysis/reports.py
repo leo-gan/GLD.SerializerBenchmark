@@ -1,7 +1,5 @@
 """Report generation (Markdown and HTML)."""
 
-import base64
-import io
 import json
 import os
 from datetime import datetime
@@ -188,44 +186,6 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
     return '\n'.join(lines)
 
 
-def _pivot_table_html(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
-    """Generate an HTML pivot table from stats dict."""
-    # Extract unique row and column values
-    row_vals = sorted(set(s[rows_dim] for s in stats.values()))
-    col_vals = sorted(set(s[cols_dim] for s in stats.values()))
-
-    if not row_vals or not col_vals:
-        return f'<h4>{title}</h4><p>No data available</p>'
-
-    html = f'<h4>{title}</h4>\n<table class="pivot-table">\n'
-
-    # Header row
-    html += '    <thead>\n        <tr>\n'
-    html += f'            <th>{rows_dim}</th>\n'
-    for cv in col_vals:
-        html += f'            <th>{cv}</th>\n'
-    html += '        </tr>\n    </thead>\n    <tbody>\n'
-
-    # Data rows
-    for rv in row_vals:
-        html += '        <tr>\n'
-        html += f'            <td><strong>{rv}</strong></td>\n'
-        for cv in col_vals:
-            matching = [s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv]
-            if matching:
-                val = matching[0][value_key]
-                if isinstance(val, float):
-                    cell_val = f"{val:,.0f}"
-                else:
-                    cell_val = str(val)
-            else:
-                cell_val = "-"
-            html += f'            <td>{cell_val}</td>\n'
-        html += '        </tr>\n'
-
-    html += '    </tbody>\n</table>\n'
-    return html
-
 
 # Display labels, MkDocs docs subdirs, and plot file keys
 _LANG_DISPLAY = {
@@ -279,11 +239,8 @@ def _lang_result_links_md(prefix: str = "../") -> List[str]:
 
 
 def generate_markdown_summary(
-    csharp_stats: Dict,
-    python_stats: Dict,
     output_path: str,
-    csharp_records: Optional[List[Dict]] = None,
-    python_records: Optional[List[Dict]] = None,
+    *,
     multi_lang_stats: Optional[Dict] = None,
     multi_lang_records: Optional[Dict] = None,
     **_kwargs,
@@ -320,8 +277,7 @@ def generate_markdown_summary(
         "`analyze-benchmarks --generate-summary --generate-plots`",
         "",
     ]
-    # Touch args so callers can still pass legacy stats without unused warnings in APIs
-    _ = (csharp_stats, python_stats, csharp_records, python_records, multi_lang_stats, multi_lang_records)
+    _ = (multi_lang_stats, multi_lang_records)  # referenced for completeness
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
@@ -489,15 +445,12 @@ def _lang_file_key(lang_id: str, display: str) -> str:
 
 def generate_violin_plots(
     output_dir: str,
-    csharp_records: Optional[List[Dict]] = None,
-    python_records: Optional[List[Dict]] = None,
     multi_lang_records: Optional[Dict] = None,
     **_kwargs,
 ) -> Dict[str, str]:
     """Generate violin plot images for all languages with records.
 
-    Prefer ``multi_lang_records`` (lang_id -> list of row dicts). Legacy
-    ``csharp_records`` / ``python_records`` are merged in when provided.
+    ``multi_lang_records`` maps lang_id -> list of row dicts.
 
     Returns a dict mapping ``{lang_key}_{TestDataName}`` to image filenames.
     """
@@ -508,10 +461,6 @@ def generate_violin_plots(
         for k, recs in multi_lang_records.items():
             if recs:
                 by_lang[str(k).lower()] = list(recs)
-    if csharp_records and "csharp" not in by_lang:
-        by_lang["csharp"] = list(csharp_records)
-    if python_records and "python" not in by_lang:
-        by_lang["python"] = list(python_records)
 
     # Stable ordering for docs / reports
     order = ["csharp", "python", "rust", "c", "javascript"]

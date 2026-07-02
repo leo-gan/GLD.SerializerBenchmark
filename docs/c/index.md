@@ -5,7 +5,7 @@ C serialization is fragmented: each library owns its own object model (DOM trees
 ## Harness
 
 - `c/` (repository root)
-- Logs: `logs/c/benchmark-log.csv`
+- Logs: `logs/c/YYYY-MM-DD-HHMMSS.csv`
 - Build: CMake, C11
 - Registration: [`c/src/register_serializers.c`](../../c/src/register_serializers.c)
 

@@ -20,4 +20,4 @@ Methods: [Analysis Methodology](ANALYSIS_METHODOLOGY.md).
 
 ---
 
-*Local snapshot — regenerate with* `analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis`
+*Local snapshot — regenerate with* `analyze-benchmarks --generate-summary --generate-plots`

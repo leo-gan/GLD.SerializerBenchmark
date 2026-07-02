@@ -5,7 +5,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 ## Harness
 
 - `javascript/` (repository root)
-- Logs: `logs/javascript/benchmark-log.csv`
+- Logs: `logs/javascript/YYYY-MM-DD-HHMMSS.csv`
 - Requires Node ≥ 18
 - Registration: [`javascript/src/serializers/index.js`](../../javascript/src/serializers/index.js)
 - `prepare()` compiles schemas / reuses encoder instances outside timed loops

@@ -70,13 +70,3 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> List[D
                 print(f"Warning: Skipping malformed row: {row}, error: {e}")
     return records
 
-
-def parse_multi_language_logs(log_paths: Dict[str, str]) -> Dict[str, List[Dict]]:
-    """Parse multiple language log files. Keys are language ids."""
-    out: Dict[str, List[Dict]] = {}
-    for lang, path in log_paths.items():
-        if path and os.path.exists(path):
-            out[lang] = parse_csv_file(path, language_hint=lang)
-        else:
-            out[lang] = []
-    return out
