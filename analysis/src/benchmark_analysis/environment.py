@@ -175,7 +175,13 @@ def capture_environment(
     }
 
     if extra:
-        env.update(extra)
+        # Never silently overwrite keys we already captured (os, cpu, memory, etc.)
+        for k, v in (extra or {}).items():
+            if k in env:
+                # Store conflicting user keys under _extra to avoid data loss
+                env.setdefault("_extra", {})[k] = v
+            else:
+                env[k] = v
 
     # Determine output path
     if output_path is None and result_csv_path:
