@@ -15,6 +15,9 @@ from .base import Serializer
 
 
 class PickleSerializer(Serializer):
+    native_kind = "dataclass"
+    stream_mode = "native"
+
     @property
     def name(self) -> str:
         return "pickle"

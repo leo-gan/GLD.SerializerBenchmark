@@ -171,8 +171,7 @@ def _test_on_data(
         if not serializer.supports(td_name):
             continue
 
-        # Set type hint and let serializers pre-build per-type codecs/schemas outside timing.
-        setattr(serializer, "_last_type", td_cls)
+        # Pre-build codecs/schemas and convert to library-native values outside timing.
         serializer.prepare(td_name, td_cls)
         serializer_original = serializer.prepare_data(original, td_name, td_cls)
 

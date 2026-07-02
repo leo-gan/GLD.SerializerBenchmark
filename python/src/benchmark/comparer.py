@@ -146,6 +146,30 @@ def _compare_mapping(
     return ok
 
 
+def _is_protobuf_message(obj: Any) -> bool:
+    return hasattr(obj, "DESCRIPTOR") and hasattr(obj, "ListFields")
+
+
+def _protobuf_field_value(msg: Any, name: str) -> Any:
+    """Read a protobuf field with correct optional-message / repeated semantics."""
+    if not hasattr(msg, name):
+        return _MISSING
+    try:
+        field = msg.DESCRIPTOR.fields_by_name.get(name)
+    except Exception:
+        field = None
+    if field is not None and field.message_type is not None and not field.is_repeated:
+        try:
+            if not msg.HasField(name):
+                return None
+        except (ValueError, AttributeError):
+            pass
+    value = getattr(msg, name)
+    if field is not None and field.is_repeated:
+        return list(value)
+    return value
+
+
 def _compare_dataclass(
     expected: Any,
     actual: Any,
@@ -167,13 +191,15 @@ def _compare_dataclass(
         actual_fields = {f.name: getattr(actual, f.name, _MISSING) for f in fields(actual)}
     elif isinstance(actual, dict):
         actual_fields = actual
+    elif _is_protobuf_message(actual):
+        actual_fields = {name: _protobuf_field_value(actual, name) for name in expected_fields}
     else:
-        # Maybe a protobuf/avro generated object? Try attribute access for common field names
+        # msgspec.Struct / other attribute-bearing objects
         actual_fields = {}
         for name in expected_fields:
             if hasattr(actual, name):
                 actual_fields[name] = getattr(actual, name, _MISSING)
-            elif hasattr(actual, f"_{name}"):  # Avro sometimes prefixes
+            elif hasattr(actual, f"_{name}"):
                 actual_fields[name] = getattr(actual, f"_{name}", _MISSING)
             else:
                 actual_fields[name] = _MISSING
