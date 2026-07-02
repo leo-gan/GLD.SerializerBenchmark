@@ -27,16 +27,17 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> List[D
             ("/rust/", "rust"),
             ("/javascript/", "javascript"),
             ("/logs/c/", "c"),
-            ("/logs/c\\", "c"),
         ):
             if token in low:
                 language_hint = lang
                 break
         if language_hint is None:
-            # Fallbacks for C and generic latest/timestamped files
-            if "/logs/c/" in low or "/c/" in low.split("/")[-2:]:
+            # Robust C detection: require "c" as an exact path segment (prevents
+            # false positives on "compat", "case", "data/case.csv" etc).
+            parts = [p for p in low.split("/") if p]
+            if "c" in parts:
                 language_hint = "c"
-            elif low.endswith("/c.csv") or "c/" in low:
+            elif low.endswith(("/c", "/c/", "/c.csv")):
                 language_hint = "c"
 
     with open(filepath, "r", encoding="utf-8") as f:
