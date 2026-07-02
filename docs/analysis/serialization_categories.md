@@ -83,7 +83,7 @@ Harness rows may be full codegen types or documented stand-ins (e.g. Rust `prost
 **In this suite:**
 
 - **C#**: protobuf-net (`ProtoBuf`), `Google.Protobuf`, Bond Fast/Compact, `FlatSharp`, `MemoryPack`, `ZeroFormatter`
-- **Python**: `protobuf`, `avro`, `flatbuffers` (fastavro)
+- **Python**: `protobuf`, `avro` (fastavro), `flatbuffers`
 - **Rust**: `flexbuffers`, `prost-wire` (envelope stand-in; see Rust caveats)
 - **C**: `nanopb`, `protobuf-c`, `flatcc` (default build: tagged envelopes)
 - **JavaScript**: `avsc`, `protobufjs`
