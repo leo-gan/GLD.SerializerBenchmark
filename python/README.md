@@ -97,7 +97,7 @@ docker logs -f $(docker ps -lq)
 #### 4. Results
 Logs are saved to `logs/python/`:
 - `YYYY-MM-DD-HHMMSS.csv` (timestamped): Raw per-repetition metrics.
-- `YYYY-MM-DD-HHMMSS.errors.csv`: Per-run failure details (same stem as the result CSV / `.environment.json`).
+- `YYYY-MM-DD-HHMMSS.errors.csv`: Per-run failure details (same stem as the result CSV / `.environment.json`). **Only written when at least one error occurred** — clean runs do not create this file.
 
 ### Local Development (Without Docker)
 
