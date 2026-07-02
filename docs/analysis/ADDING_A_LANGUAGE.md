@@ -70,7 +70,8 @@ Auto-discovers timestamped CSVs under `logs/<lang>/`; or pass:
 analyze-benchmarks --extra-logs go=logs/go
 ```
 
-Extend `generate_language_results_pages` / `_LANG_DOCS_DIR` in the analysis package if the docs folder id differs from the language id (e.g. `csharp` → `docs/c-sharp/`).
+- Update `_KNOWN_LANGS` in `analysis/src/benchmark_analysis/cli.py` so that `--compare-a/--compare-b` and path-based inference recognize the new language id.
+- Extend `generate_language_results_pages` / `_LANG_*` maps in `reports.py` (and `_LANG_DOCS_DIR`) if the docs folder id differs from the language id (e.g. `csharp` → `docs/c-sharp/`).
 
 ## 7. Tests
 
