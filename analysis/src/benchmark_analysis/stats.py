@@ -264,38 +264,72 @@ def hedges_g(x: Sequence[float], y: Sequence[float]) -> float:
 # ---------------------------------------------------------------------------
 
 def mann_whitney_u(x: Sequence[float], y: Sequence[float]) -> Tuple[float, float]:
-    """Two-sided Mann-Whitney U; returns (U, p_value). Uses normal approx."""
+    """Two-sided Mann-Whitney U with tie correction and continuity correction.
+
+    Returns (U, p_value). Uses normal approximation with proper tie-adjusted
+    variance (required when there are duplicate timings, common in benchmarks)
+    and a continuity correction for better discrete approximation.
+
+    If scipy is available, it is used for the authoritative result (it implements
+    the exact tie correction); otherwise we fall back to our corrected formula.
+    """
     a = np.asarray(x, dtype=float)
     b = np.asarray(y, dtype=float)
     n1, n2 = len(a), len(b)
     if n1 == 0 or n2 == 0:
         return 0.0, 1.0
-    # Rank all
+    if n1 < 2 or n2 < 2:
+        # Degenerate; not enough data for meaningful test
+        return 0.0, 1.0
+
+    # Try scipy first (authoritative, handles ties + exact options if wanted)
+    try:
+        from scipy.stats import mannwhitneyu as scipy_mwu
+        # use='asymptotic' + method gives the normal approx we were doing; ties handled internally
+        res = scipy_mwu(a, b, alternative="two-sided", method="asymptotic")
+        return float(res.statistic), float(res.pvalue)
+    except Exception:
+        pass  # fall through to our implementation
+
+    # --- Pure numpy implementation with full tie correction + continuity corr. ---
     combined = np.concatenate([a, b])
-    order = combined.argsort()
+    N = n1 + n2
+    order = combined.argsort(kind="mergesort")  # stable for tie detection
     ranks = np.empty_like(order, dtype=float)
-    ranks[order] = np.arange(1, len(combined) + 1, dtype=float)
-    # Average ties
+    ranks[order] = np.arange(1, N + 1, dtype=float)
+
+    # Average ties and accumulate tie correction sum(t^3 - t)
     sorted_vals = combined[order]
+    tie_sum = 0.0
     i = 0
-    while i < len(sorted_vals):
+    while i < N:
         j = i
-        while j < len(sorted_vals) and sorted_vals[j] == sorted_vals[i]:
+        while j < N and sorted_vals[j] == sorted_vals[i]:
             j += 1
-        if j - i > 1:
+        t = j - i
+        if t > 1:
             avg = (i + 1 + j) / 2.0
             ranks[order[i:j]] = avg
+            tie_sum += (t ** 3 - t)
         i = j
+
     r1 = float(np.sum(ranks[:n1]))
     u1 = r1 - n1 * (n1 + 1) / 2.0
     u2 = n1 * n2 - u1
     u = min(u1, u2)
     mu = n1 * n2 / 2.0
-    sigma = np.sqrt(n1 * n2 * (n1 + n2 + 1) / 12.0)
-    if sigma == 0:
+
+    # Tie-corrected variance
+    # sigma^2 = (n1*n2/12) * ( (N+1) - sum(t^3-t)/(N*(N-1)) )
+    var = (n1 * n2 / 12.0) * ( (N + 1) - tie_sum / (N * (N - 1) if N > 1 else 0) )
+    if var <= 0:
         return float(u), 1.0
-    z = (u - mu) / sigma
-    # Two-sided normal p-value
+    sigma = np.sqrt(var)
+
+    # Continuity correction for normal approximation of discrete U
+    # z = ( |U - mu| - 0.5 ) / sigma
+    z = (abs(u - mu) - 0.5) / sigma if sigma > 0 else 0.0
+
     from math import erfc, sqrt
     p = erfc(abs(z) / sqrt(2.0))
     return float(u), float(min(1.0, p))
