@@ -153,11 +153,17 @@ def _discover_logs(logs_root: Path) -> Dict[str, str]:
     found: Dict[str, str] = {}
     if not logs_root.is_dir():
         return found
+    known = set(_KNOWN_LANGS)
     for child in sorted(logs_root.iterdir()):
-        if child.is_dir():
-            latest = find_latest_csv(child)
-            if latest:
-                found[child.name] = str(latest)
+        if not child.is_dir():
+            continue
+        # Skip backups / non-language dirs (e.g. python.root-docker-backup)
+        if child.name not in known and _try_normalize_language(child.name) is None:
+            continue
+        lang_id = _try_normalize_language(child.name) or child.name
+        latest = find_latest_csv(child)
+        if latest:
+            found[lang_id] = str(latest)
     return found
 
 
@@ -232,11 +238,7 @@ def _generate_artifacts(
 ) -> None:
     """Write hub index, per-language results tables, and violin plots."""
     # Lazy import: reports pulls matplotlib (heavy / optional in some envs).
-    from .reports import (
-        generate_language_results_pages,
-        generate_markdown_summary,
-        generate_violin_plots,
-    )
+    from .reports import generate_language_results_pages, generate_violin_plots
 
     plots_dir = str(publish_root / "plots" / "violin")
     lang_sources = {k: v for k, v in lang_paths.items() if v}
@@ -246,13 +248,7 @@ def _generate_artifacts(
         lang_sources=lang_sources,
     )
 
-    summary_path = str(publish_root / "BENCHMARK_SUMMARY.md")
-    generate_markdown_summary(
-        summary_path,
-        multi_lang_stats=all_stats,
-        multi_lang_records=all_records,
-    )
-
+    # docs/analysis/BENCHMARK_SUMMARY.md is a static hub — do not regenerate it.
     docs_root = str(docs_dir) if docs_dir.is_dir() else str(reports_root)
     generate_language_results_pages(
         multi_lang_stats=all_stats,
@@ -272,9 +268,9 @@ def main():
         ),
         epilog=(
             "By default, loads the latest timestamped CSV under logs/<lang>/ and writes:\n"
-            "  docs/analysis/BENCHMARK_SUMMARY.md\n"
             "  docs/<lang>/results.md\n"
             "  docs/analysis/plots/violin/<lang>_*.png\n"
+            "(docs/analysis/BENCHMARK_SUMMARY.md is a static hub and is not overwritten.)\n"
             "\n"
             "Examples:\n"
             "  analyze-benchmarks\n"

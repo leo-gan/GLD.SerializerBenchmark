@@ -1,91 +1,320 @@
-//! Canonical test data models (serde-compatible), aligned with Python/C# fixtures.
+//! Canonical test data models, aligned with Python/C# fixtures.
+//! Multiple derive stacks co-exist so each serializer can use its native path.
 
+use minicbor::{Decode, Encode};
+use nanoserde::{DeBin, SerBin};
+use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 use serde::{Deserialize, Serialize};
+use speedy::{Readable, Writable};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
+#[repr(u8)]
 pub enum Gender {
+    #[n(0)]
     Male = 0,
+    #[n(1)]
     Female = 1,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+impl nanoserde::SerBin for Gender {
+    fn ser_bin(&self, output: &mut Vec<u8>) {
+        (*self as u8).ser_bin(output);
+    }
+}
+
+impl nanoserde::DeBin for Gender {
+    fn de_bin(offset: &mut usize, bytes: &[u8]) -> Result<Self, nanoserde::DeBinErr> {
+        let v = u8::de_bin(offset, bytes)?;
+        match v {
+            0 => Ok(Gender::Male),
+            1 => Ok(Gender::Female),
+            _ => Err(nanoserde::DeBinErr {
+                o: *offset,
+                l: 1,
+                s: bytes.len(),
+            }),
+        }
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct Passport {
+    #[n(0)]
     pub number: String,
+    #[n(1)]
     pub authority: String,
+    #[n(2)]
     pub expiration_date: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct PoliceRecord {
+    #[n(0)]
     pub id: i32,
+    #[n(1)]
     pub crime_code: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct Person {
+    #[n(0)]
     pub first_name: String,
+    #[n(1)]
     pub last_name: String,
+    #[n(2)]
     pub age: i32,
+    #[n(3)]
     pub gender: Gender,
+    #[n(4)]
     pub passport: Option<Passport>,
+    #[n(5)]
     pub police_records: Vec<PoliceRecord>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct SimpleObject {
+    #[n(0)]
     pub id: i32,
+    #[n(1)]
     pub name: String,
+    #[n(2)]
     pub timestamp: String,
+    #[n(3)]
     pub is_active: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct StringArrayObject {
+    #[n(0)]
     pub items: Vec<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct TelemetryData {
+    #[n(0)]
     pub id: String,
+    #[n(1)]
     pub data_source: String,
+    #[n(2)]
     pub time_stamp: String,
+    #[n(3)]
     pub param1: i32,
+    #[n(4)]
     pub param2: i32,
+    #[n(5)]
     pub measurements: Vec<f64>,
+    #[n(6)]
     pub associated_problem_id: i32,
+    #[n(7)]
     pub associated_log_id: i32,
+    #[n(8)]
     pub was_processed: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct ServiceLine {
+    #[n(0)]
     pub service_code: String,
+    #[n(1)]
     pub charge_amount: f64,
+    #[n(2)]
     pub adjudicated_amount: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct Claim {
+    #[n(0)]
     pub claim_id: String,
+    #[n(1)]
     pub patient_name: String,
+    #[n(2)]
     pub total_charge: f64,
+    #[n(3)]
     pub payment_amount: f64,
+    #[n(4)]
     pub lines: Vec<ServiceLine>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
 pub struct Edi835 {
+    #[n(0)]
     pub payer_name: String,
+    #[n(1)]
     pub payee_name: String,
+    #[n(2)]
     pub payment_date: String,
+    #[n(3)]
     pub total_actual_amount: f64,
+    #[n(4)]
     pub transaction_control_number: String,
+    #[n(5)]
     pub claims: Vec<Claim>,
 }
 
-/// Graph node with optional back-reference for cycle tests (JSON/serde may not support).
+/// Graph node with optional back-reference (cycle tests; most formats skip).
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct GraphNode {
     pub name: String,
@@ -104,7 +333,6 @@ impl Rng {
     }
 
     fn next_u64(&mut self) -> u64 {
-        // xorshift64*
         let mut x = self.state;
         x ^= x << 13;
         x ^= x >> 7;
@@ -220,6 +448,7 @@ pub fn make_edi(rng: &mut Rng) -> Edi835 {
     }
 }
 
+#[allow(dead_code)]
 pub fn make_graph() -> Rc<RefCell<GraphNode>> {
     let root = Rc::new(RefCell::new(GraphNode {
         name: "root".into(),
@@ -235,9 +464,7 @@ pub fn make_graph() -> Rc<RefCell<GraphNode>> {
     root
 }
 
-/// Generic value holder for serializers that work on serde values.
-/// Externally tagged (default) for compatibility with bincode/postcard/bitcode;
-/// JSON/MessagePack still round-trip cleanly for benchmarks.
+/// Holder for harness fixtures (externally tagged for Serde formats).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Fixture {
     Person(Person),

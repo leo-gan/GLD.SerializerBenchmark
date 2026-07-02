@@ -1,12 +1,8 @@
 # Benchmark Results
 
-**Generated:** 2026-07-02T11:16:19.468228
+This page is a **static index** of per-language result snapshots. Pivot tables and violin plots live on each language **Results** page (maintainer-generated locally; not rewritten by CI).
 
-This page is an **index** of published snapshot results. Pivot tables and violin plots are on each language's **Results** page (generated locally, not by GitHub Actions). Re-running benchmarks elsewhere may differ — that is OK.
-
-Snapshot contains data for **1** language(s) and **190** statistical group(s).
-
----
+Numbers on those pages depend on the machine and CSV used to generate them. Re-running benchmarks elsewhere may differ — that is expected.
 
 ## Results by language
 
@@ -16,10 +12,26 @@ Snapshot contains data for **1** language(s) and **190** statistical group(s).
 - [C results](../c/results.md)
 - [JavaScript results](../javascript/results.md)
 
-Hand-written inventories (what we measure): [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md).
+## Inventories (what we measure)
 
-Methods: [Analysis Methodology](ANALYSIS_METHODOLOGY.md).
+Hand-written overviews (serializer lists and caveats):
 
----
+- [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md)
 
-*Local snapshot — regenerate with* `analyze-benchmarks` or `analyze-benchmarks -l python`
+Related:
+
+- [Serialization categories](serialization_categories.md)
+- [Analysis methodology](ANALYSIS_METHODOLOGY.md)
+- [Benchmark architecture](architecture.md)
+
+## Regenerating language snapshots
+
+This hub file is **not** rewritten by `analyze-benchmarks`. To refresh a language’s tables and plots only:
+
+```bash
+analyze-benchmarks -l python   # or rust, csharp, c, javascript
+# or all languages (still does not modify this hub):
+analyze-benchmarks
+```
+
+Commit the updated `docs/<lang>/results.md` and `docs/analysis/plots/violin/<lang>_*.png` paths as needed.

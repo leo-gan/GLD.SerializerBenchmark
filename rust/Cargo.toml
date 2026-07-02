@@ -1,9 +1,10 @@
 [package]
 name = "serializer-benchmark-rust"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Rust harness for the cross-language serializer benchmark"
 license = "MIT"
+build = "build.rs"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -15,12 +16,20 @@ ciborium = "0.2"
 bincode = { version = "2", features = ["serde"] }
 postcard = { version = "1", features = ["alloc", "use-std"] }
 bitcode = { version = "0.6", features = ["serde"] }
-prost = "0.13"
 flexbuffers = "2"
 rkyv = { version = "0.8", features = ["std", "bytecheck", "alloc"] }
 minicbor = { version = "0.25", features = ["std", "derive"] }
+prost = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
 csv = "1"
-serde_yaml = "0.9"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
+# Priority B
+bson = "2"
+nanoserde = "0.1.37"
+speedy = "0.8"
+bytes = "1"
+
+[build-dependencies]
+prost-build = "0.13"
+protoc-bin-vendored = "3"

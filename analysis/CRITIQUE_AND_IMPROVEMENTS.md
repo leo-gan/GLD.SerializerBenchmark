@@ -20,13 +20,11 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 
 **Not fully fixed in code:** Real library linkage is opt-in (vendoring + replace `register_serializers.c` bodies). For publication, **must** vendor yyjson/cJSON/mpack/tinycbor and time their optimal APIs. Until then, treat C results as **pipeline validation**, not library ranking.
 
-### 2. Rust schema/zero-copy serializers are intermediate-payload based (MEDIUM)
+### 2. Rust schema/zero-copy serializers are intermediate-payload based (MEDIUM) — fixed on `refactor/rust-serializers`
 
-**Problem:** `rkyv`, `prost-wire`, `minicbor` archive/wrap MessagePack bytes because untagged multi-type `Fixture` does not derive cleanly on all crates. That measures envelope overhead, not full `#[derive(Archive)]` / `prost-build` paths.
+**Problem (historical):** `rkyv` / `prost` / `minicbor` once wrapped intermediate MessagePack (or similar) because untagged multi-type `Fixture` did not derive cleanly on all crates—measuring envelope overhead, not full native paths.
 
-**Fixed:** Switched intermediate from postcard (fails on some f64/EDI cases) to MessagePack; documented caveats.
-
-**Remaining:** Add `prost-build` from `schemas/benchmark_data.proto` and `rkyv` derives on concrete structs for paper-grade schema/zero-copy sections.
+**Fixed:** `prost-build` from `schemas/benchmark_data.proto` with convert-in-`prepare`; full `rkyv` `Archive` on concrete types (timed deser materializes owned `T` for fidelity); direct `minicbor` `Encode`/`Decode`; plus `bson` / `nanoserde` / `speedy`. Inventory and caveats on [Rust overview](../docs/rust/index.md).
 
 ### 3. Stream mode is often fake (MEDIUM)
 

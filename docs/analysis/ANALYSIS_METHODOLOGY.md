@@ -77,6 +77,13 @@ After filtering, analysis records (names as in code / optional extended fields):
 
 Exact keys depend on the analysis version; published markdown pivots emphasize mean total time and ops/s by serializer × mode or × fixture.
 
+**Display-only formatting** on language `results.md` pages (CSV values unchanged):
+
+- Harness I/O modes are labeled **bytes mode** / **stream mode** (API path, not payload size).
+- Large numbers use a **single unit per column** (K or M from the column max) with ~2 significant digits.
+- **Bold** marks the semantic best cell in each numeric column (lowest time; highest ops/s; ties all bolded).
+- **Rust** pages also include **within-category** mean ops/s rankings (bytes mode only: JSON vs binary families, etc.).
+
 ### Bootstrap CI on the mean
 
 When `statistics.bootstrap.enabled` (default): **percentile** bootstrap on the group’s total-time series (`iterations` 2000, `confidence_level` 0.95, `seed` 42). Yields `total_ci_low_ns` / `total_ci_high_ns` around the mean. Non-parametric; does not assume normality.
@@ -125,7 +132,7 @@ Generated 32 violin plots
 |--------|---------|
 | `docs/<lang>/results.md` | Pivot tables + violin embeds for one language |
 | `docs/analysis/plots/violin/*.png` | Split violins: serialize vs deserialize distributions (µs; log scale when medians span ≥5×) |
-| `docs/analysis/BENCHMARK_SUMMARY.md` | Hub links to language Results |
+| `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** hub links to language Results (not regenerated) |
 | Console | Load counts, warmup/outlier tallies |
 
 Violins show spread and multimodality that means hide. As of recent fixes they exclude warmup (`RepetitionIndex==0`) and apply the same IQR filter per (serializer, fixture, mode, operation) as the summary tables, so the visual density is much closer to the numbers. A final per-serializer p99 clip is still applied only for KDE rendering stability and does not change the underlying sample for statistics.
@@ -134,7 +141,7 @@ Violins show spread and multimodality that means hide. As of recent fixes they e
 
 - **Cross-language absolute times** are at best directional (GC, allocator, runtime differ). Prefer within-language ranks and effect sizes.
 - **C** default builds may use portable stand-ins under real library names—see [C overview](../c/index.md) before citing as library rankings.
-- **Rust** schema/zero-copy rows may use documented intermediate/envelope paths—see [Rust overview](../rust/index.md).
+- **Rust** `prost` / `rkyv` / `minicbor` use concrete native paths (codegen / `Archive` / direct encode); timed `rkyv` deserialize **materializes** owned values for fidelity—see [Rust overview](../rust/index.md). Stream mode is **native** only where noted; others are adapted bytes+buffer.
 - **Stream** mode is not always a true incremental API (some harnesses buffer then write).
 - **Fidelity** is semantic/structural, not bit-identical across formats (e.g. floats/datetimes).
 - Outlier removal and warmup policy affect means; always consider `runs`, CIs, and effect sizes.

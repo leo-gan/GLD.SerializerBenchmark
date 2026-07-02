@@ -1,6 +1,7 @@
 """Report generation (Markdown and HTML)."""
 
 import os
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
@@ -214,8 +215,115 @@ def _generate_violin_plot(
         return None
 
 
+# CSV StringOrStream values → human labels (not "number of bytes")
+_MODE_DISPLAY = {
+    "bytes": "bytes mode",
+    "stream": "stream mode",
+    "string": "string mode",
+}
+
+
+def _display_mode(mode: str) -> str:
+    """Label harness API mode so it is not confused with payload size."""
+    key = (mode or "").strip().lower()
+    return _MODE_DISPLAY.get(key, mode)
+
+
+def _pick_column_unit(values: list) -> tuple:
+    """Choose one scale for an entire column (no mixed K/M in one column).
+
+    Returns ``(divisor, unit_suffix)`` where unit is ``""``, ``"K"``, or ``"M"``.
+    Rule: use **M** if the column's max absolute value is ≥ 1e6, else **K** if
+    max ≥ 1e3, else plain units (no suffix).
+    """
+    nums = []
+    for v in values:
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            continue
+        if x == x:  # not NaN
+            nums.append(abs(x))
+    if not nums:
+        return 1.0, ""
+    mx = max(nums)
+    if mx >= 1_000_000:
+        return 1_000_000.0, "M"
+    if mx >= 1_000:
+        return 1_000.0, "K"
+    return 1.0, ""
+
+
+def _higher_is_better(value_key: str) -> bool:
+    """Semantic direction for “best” in a results column.
+
+    Throughput (ops/s) → higher is better; time/latency/size → lower is better.
+    """
+    key = (value_key or "").lower()
+    if "ops" in key or "throughput" in key or "rate" in key:
+        return True
+    if (
+        "time" in key
+        or key.endswith("_ns")
+        or key.endswith("_us")
+        or key.endswith("_ms")
+        or "latency" in key
+        or "duration" in key
+        or "size" in key
+        or "bytes_len" in key
+        or "payload" in key
+    ):
+        return False
+    return True
+
+
+def _column_best(values: list, *, higher_is_better: bool) -> Optional[float]:
+    """Return the semantic best numeric value in *values*, or None if empty."""
+    nums: List[float] = []
+    for v in values:
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            continue
+        if x == x:  # not NaN
+            nums.append(x)
+    if not nums:
+        return None
+    return max(nums) if higher_is_better else min(nums)
+
+
+def _format_in_unit(
+    val: float,
+    divisor: float,
+    unit: str,
+    *,
+    sig: int = 2,
+    bold: bool = False,
+) -> str:
+    """Format ``val`` in a fixed column unit with 2 significant digits."""
+    try:
+        v = float(val)
+    except (TypeError, ValueError):
+        return str(val)
+    if v != v:  # NaN
+        return "-"
+    if v == 0:
+        text = "0"
+    else:
+        scaled = v / divisor if divisor else v
+        text = f"{float(f'%.{sig}g' % scaled)}"
+        if text.endswith(".0") and "e" not in text.lower():
+            text = text[:-2]
+        text = f"{text}{unit}" if unit else text
+    return f"**{text}**" if bold else text
+
+
 def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
-    """Generate a markdown pivot table from stats dict."""
+    """Generate a markdown pivot table from stats dict.
+
+    Semantic best-in-column values are bold (ops/throughput: max; time/size: min).
+    Ties are all bolded. Unit scale and best use **displayed** cell values only.
+    """
     lines = [f"\n### {title}\n"]
 
     # Extract unique row and column values
@@ -226,24 +334,59 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         lines.append("*No data available*\n")
         return '\n'.join(lines)
 
-    # Header
-    header = f"| {rows_dim} | " + " | ".join(col_vals) + " |"
+    # When columns are harness modes, spell out "bytes mode" / "stream mode"
+    def _col_label(cv: str, unit: str = "") -> str:
+        base = _display_mode(cv) if cols_dim == "mode" else cv
+        if unit:
+            return f"{base} ({unit})"
+        return base
+
+    higher = _higher_is_better(value_key)
+
+    # Resolve one numeric (or None) per displayed cell first — unit/best use these only
+    cell: Dict[Tuple[str, str], Optional[float]] = {}
+    for rv in row_vals:
+        for cv in col_vals:
+            matching = [
+                s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv
+            ]
+            if not matching:
+                cell[(rv, cv)] = None
+                continue
+            val = matching[0].get(value_key)
+            if isinstance(val, (int, float)) and not isinstance(val, bool) and val == val:
+                cell[(rv, cv)] = float(val)
+            else:
+                cell[(rv, cv)] = None
+
+    col_units: Dict[str, tuple] = {}
+    col_best: Dict[str, Optional[float]] = {}
+    for cv in col_vals:
+        displayed = [cell[(rv, cv)] for rv in row_vals if cell[(rv, cv)] is not None]
+        col_units[cv] = _pick_column_unit(displayed)
+        col_best[cv] = _column_best(displayed, higher_is_better=higher)
+
+    # Header (unit in column title when scaled)
+    header = (
+        f"| {rows_dim} | "
+        + " | ".join(_col_label(cv, col_units[cv][1]) for cv in col_vals)
+        + " |"
+    )
     lines.append(header)
     lines.append("|" + "---|" * (len(col_vals) + 1))
 
-    # Rows
+    # Rows — all cells in a column share that column's unit; best is bold
     for rv in row_vals:
         row_cells = [rv]
         for cv in col_vals:
-            matching = [s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv]
-            if matching:
-                val = matching[0][value_key]
-                if isinstance(val, float):
-                    row_cells.append(f"{val:,.0f}")
-                else:
-                    row_cells.append(str(val))
-            else:
+            val = cell[(rv, cv)]
+            if val is None:
                 row_cells.append("-")
+            else:
+                div, unit = col_units[cv]
+                best = col_best[cv]
+                is_best = best is not None and val == best
+                row_cells.append(_format_in_unit(val, div, unit, bold=is_best))
         lines.append("| " + " | ".join(row_cells) + " |")
 
     lines.append("")
@@ -290,74 +433,92 @@ def _stats_by_language(multi_lang_stats: Optional[Dict]) -> Dict[str, Dict]:
     return by_lang
 
 
-def _lang_result_links_md(prefix: str = "../") -> List[str]:
-    """Markdown bullet links to per-language results pages."""
-    lines = []
-    for lang_id in _LANG_ORDER:
-        docs_dir = _LANG_DOCS_DIR.get(lang_id)
-        if not docs_dir:
+
+# Within-language comparison categories (prefer peers over cross-paradigm ranks).
+_RUST_CATEGORY: Dict[str, str] = {
+    "serde_json": "JSON",
+    "simd-json": "JSON",
+    "sonic-rs": "JSON",
+    "rmp-serde": "Schemaless binary (interop)",
+    "ciborium": "Schemaless binary (interop)",
+    "minicbor": "Schemaless binary (interop)",
+    "bson": "Schemaless binary (interop)",
+    "bincode": "Rust-centric binary",
+    "postcard": "Rust-centric binary",
+    "bitcode": "Rust-centric binary",
+    "nanoserde": "Rust-centric binary",
+    "speedy": "Rust-centric binary",
+    "flexbuffers": "Schema / zero-copy family",
+    "rkyv": "Schema / zero-copy family",
+    "prost": "Schema / zero-copy family",
+}
+
+
+def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
+    """Markdown table: mean Ser+Deser ops/s (bytes mode) by serializer within category."""
+    cat_map = _RUST_CATEGORY if lang_id == "rust" else {}
+    if not cat_map or not stats:
+        return ""
+
+    # entry fields from compute_statistics list or dict values
+    entries = list(stats.values()) if isinstance(stats, dict) else list(stats)
+    # Prefer bytes mode only for category ranking
+    by_cat: Dict[str, List[Tuple[str, float]]] = {}
+    for e in entries:
+        if not isinstance(e, dict):
             continue
-        title = _LANG_DISPLAY.get(lang_id, lang_id)
-        lines.append(f"- [{title} results]({prefix}{docs_dir}/results.md)")
-    return lines
+        mode = (e.get("mode") or e.get("StringOrStream") or "").lower()
+        if mode != "bytes":
+            continue
+        ser = e.get("serializer") or e.get("SerializerName") or ""
+        if ser not in cat_map:
+            continue
+        ops = e.get("avg_ops_per_sec")
+        if ops is None:
+            tot = e.get("avg_time_total_ns") or 0
+            ops = (1_000_000_000.0 / tot) if tot else 0.0
+        # Aggregate per serializer across test_data (mean later)
+        by_cat.setdefault(cat_map[ser], []).append((ser, float(ops)))
 
-
-def generate_markdown_summary(
-    output_path: str,
-    *,
-    multi_lang_stats: Optional[Dict] = None,
-    multi_lang_records: Optional[Dict] = None,
-) -> None:
-    """Write a thin index: methodology notes + links to per-language results pages.
-
-    If multi_lang_stats or multi_lang_records are supplied they are used to
-    emit a short data-driven note (language count, group count) so the
-    parameters are not silently ignored.
-    Pivot tables and plots live on ``docs/<lang>/results.md``.
-    """
-    stats = multi_lang_stats or {}
-    recs = multi_lang_records or {}
-
-    n_langs = len(set(
-        (e.get("language") or "unknown") for e in stats.values()
-    )) or len([k for k in recs if recs.get(k)])
-    n_groups = len(stats)
+    if not by_cat:
+        return ""
 
     lines = [
-        "# Benchmark Results",
+        f"### {title}",
         "",
-        f"**Generated:** {datetime.now().isoformat()}",
-        "",
-        "This page is an **index** of published snapshot results. Pivot tables and "
-        "violin plots are on each language's **Results** page (generated locally, "
-        "not by GitHub Actions). Re-running benchmarks elsewhere may differ — that is OK.",
-        "",
-        f"Snapshot contains data for **{n_langs}** language(s) and **{n_groups}** "
-        "statistical group(s).",
-        "",
-        "---",
-        "",
-        "## Results by language",
-        "",
-        *(_lang_result_links_md("../")),
-        "",
-        "Hand-written inventories (what we measure): "
-        "[C#](../c-sharp/index.md) · [Python](../python/index.md) · "
-        "[Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md).",
-        "",
-        "Methods: [Analysis Methodology](ANALYSIS_METHODOLOGY.md).",
-        "",
-        "---",
-        "",
-        "*Local snapshot — regenerate with* "
-        "`analyze-benchmarks` or `analyze-benchmarks -l python`",
+        "Compare serializers **within the same paradigm** (not across JSON vs zero-copy).",
+        "Values are mean Ser+Deser **ops/s** over fixtures, using the harness "
+        "**bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — "
+        "not “number of bytes”). Higher is better. Stream mode is excluded here. "
+        "Each numeric column uses **one** unit (K or M) for the whole column, "
+        "with **2 significant digits** (display only; CSV unchanged). "
+        "**Bold** = best in column (ops/s: highest).",
         "",
     ]
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
-
-    print(f"Markdown summary index written to: {output_path}")
+    for cat in sorted(by_cat.keys()):
+        # average ops per serializer across fixtures
+        acc: Dict[str, List[float]] = defaultdict(list)
+        for ser, ops in by_cat[cat]:
+            acc[ser].append(ops)
+        ranked = sorted(
+            ((s, sum(v) / len(v)) for s, v in acc.items()),
+            key=lambda x: -x[1],
+        )
+        col_vals = [ops for _, ops in ranked]
+        div, unit = _pick_column_unit(col_vals)
+        best = _column_best(col_vals, higher_is_better=True)
+        unit_label = f" ({unit})" if unit else ""
+        lines.append(f"#### {cat}")
+        lines.append("")
+        lines.append(f"| serializer | mean ops/s (bytes mode){unit_label} |")
+        lines.append("|---|---:|")
+        for ser, mean_ops in ranked:
+            is_best = best is not None and mean_ops == best
+            lines.append(
+                f"| {ser} | {_format_in_unit(mean_ops, div, unit, bold=is_best)} |"
+            )
+        lines.append("")
+    return "\n".join(lines)
 
 
 def generate_language_results_pages(
@@ -428,12 +589,20 @@ def generate_language_results_pages(
             lines.append("## Pivot tables")
             lines.append("")
             lines.append(
+                "Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer "
+                "API; **stream mode** = write/read through a stream-like path. "
+                "These names are *not* payload sizes. "
+                "In each table, **bold** marks the semantic best value in that column "
+                "(lowest time; highest ops/s). Ties are all bolded."
+            )
+            lines.append("")
+            lines.append(
                 _pivot_table_md(
                     stats,
                     "serializer",
                     "mode",
                     "avg_time_total_ns",
-                    f"{title}: Avg Total Time (ns) by Serializer and Mode",
+                    f"{title}: Avg Total Time (ns) by Serializer and API Mode",
                 )
             )
             lines.append(
@@ -445,6 +614,28 @@ def generate_language_results_pages(
                     f"{title}: Ops/Sec by Serializer and Data Type",
                 )
             )
+            cat_md = _category_pivot_md(
+                stats,
+                lang_id,
+                f"{title}: within-category ranking (bytes mode only)",
+            )
+            if cat_md:
+                lines.append(cat_md)
+            if lang_id == "rust":
+                lines.append("### Fidelity notes (Rust)")
+                lines.append("")
+                lines.append(
+                    "- **prost** maps ISO timestamps through millisecond integers; "
+                    "harness fidelity allows date-string drift on Person/Simple/Telemetry/EDI."
+                )
+                lines.append(
+                    "- **rkyv** timed deserialize **materializes** owned values for comparison; "
+                    "pure `access` (zero-copy) would be faster and is documented on the overview."
+                )
+                lines.append(
+                    "- **simd-json** serialize uses `serde_json` (crate optimizes parse)."
+                )
+                lines.append("")
         else:
             lines.append("*No statistics for this language in the current snapshot.*")
             lines.append("")
@@ -480,9 +671,10 @@ def generate_language_results_pages(
         lines.append("```")
         lines.append("")
         lines.append(
-            "That refreshes results tables, violin plots under "
-            "`docs/analysis/plots/violin/`, and the [Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) hub. "
-            "Commit those paths to update the documentation site."
+            "That refreshes this language's results tables and violin plots under "
+            "`docs/analysis/plots/violin/`. The hub "
+            "[Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) is a **static** index "
+            "and is not rewritten. Commit the updated `results.md` / plot paths as needed."
         )
         lines.append("")
 

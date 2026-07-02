@@ -57,7 +57,7 @@ Structured binary without a mandatory IDL; field names or type tags often appear
 
 - **C#**: `MS Binary` (BinaryFormatter), `Ceras`, `Hyperion`, `NetSerializer`, `BinaryPack`, `GroBuf`, `Migrant`, `Apex.Serialization`, FsPickler binary, ServiceStack type serializer
 - **Python**: `msgpack`, `msgspec-msgpack`, `cbor2`
-- **Rust**: `rmp-serde`, `ciborium`, `bincode`, `postcard`, `bitcode`, `minicbor`
+- **Rust**: `rmp-serde`, `ciborium`, `minicbor`, `bson` (interop); **Rust-centric:** `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy`
 - **C**: `mpack`, `tinycbor`, `ubj`, `cbor-encode`, `custom-binary`
 - **JavaScript**: `msgpackr`, `@msgpack/msgpack`, `cbor-x`, `cbor`, `bson`, `bser`
 
@@ -78,13 +78,13 @@ IDL, schema, or fixed layout: field numbers, codegen, or zero-copy buffers (**Pr
 | Zero-copy access | Usually no | Usually no | Design goal |
 | Typical niche | Microservices | Data platforms | Games / realtime |
 
-Harness rows may be full codegen types or documented stand-ins (e.g. Rust `prost-wire`, C portable envelopes)—read language overviews.
+Harness rows may be full codegen types or documented stand-ins (e.g. C portable envelopes)—read language overviews.
 
 **In this suite:**
 
 - **C#**: protobuf-net (`ProtoBuf`), `Google.Protobuf`, Bond Fast/Compact, `FlatSharp`, `MemoryPack`, `ZeroFormatter`
 - **Python**: `protobuf`, `avro` (fastavro), `flatbuffers`
-- **Rust**: `flexbuffers`, `prost-wire` (envelope stand-in; see Rust caveats)
+- **Rust**: `prost` (prost-build from shared `.proto`), `flexbuffers`, `rkyv` (full `Archive` on concrete types; materialize for fidelity)
 - **C**: `nanopb`, `protobuf-c`, `flatcc` (default build: tagged envelopes)
 - **JavaScript**: `avsc`, `protobufjs`
 

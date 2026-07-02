@@ -116,3 +116,7 @@ javascript/.nyc_output/
 # Internal / scratch
 # -----------------------------------------------------------------------------
 .TODO.md
+
+# apt downloads
+*.deb
+

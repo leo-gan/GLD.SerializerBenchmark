@@ -19,11 +19,11 @@ Picking a serializer for one runtime (integrator/researcher workflow) uses langu
 
 ## Supported languages
 
-| Language | Harness | Serializers (target) | Logs |
-|----------|---------|----------------------|------|
+| Language | Harness | Serializers (registered) | Logs |
+|----------|---------|--------------------------|------|
 | C# (.NET) | [`c-sharp/`](c-sharp/) | 38 | `logs/csharp/` |
-| Python | [`python/`](python/) | 10 | `logs/python/` |
-| **Rust** | [`rust/`](rust/) | 12 | `logs/rust/` |
+| Python | [`python/`](python/) | 16 | `logs/python/` |
+| **Rust** | [`rust/`](rust/) | 15 | `logs/rust/` |
 | **C** | [`c/`](c/) | 12 | `logs/c/` |
 | **JavaScript (Node)** | [`javascript/`](javascript/) | 11–12 | `logs/javascript/` |
 

@@ -1,43 +1,59 @@
 # Rust
 
-Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends.
+Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends. A second tier (**rkyv**, FlatBuffers, Cap’n Proto) targets zero-copy access.
 
 ## Benchmark harness
 
 - Directory: `rust/` (repository root)
-- Output: `logs/rust/YYYY-MM-DD-HHMMSS.csv` (`Language=rust`, times in **nanoseconds**)
-- Runner: `rust/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
+- Output: monorepo `logs/rust/YYYY-MM-DD-HHMMSS.csv` (`Language=rust`, times in **nanoseconds**)
+- Runner: `rust/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `cargo run --release -- <reps>`
 - Registration: [`rust/src/serializers.rs`](../../rust/src/serializers.rs)
 
-## Serializers (12)
+## Serializers (15)
 
-| Serializer | Category | Crate | Optimal API | Notes |
-|------------|----------|-------|-------------|-------|
-| serde_json | JSON | `serde_json` | `to_vec` / `from_slice` | Industry standard |
-| simd-json | JSON | `simd-json` | `serde::from_slice` on mut buf | SIMD parse; serialize via serde_json |
-| sonic-rs | JSON | `sonic-rs` | `to_vec` / `from_slice` | Very fast JSON |
-| rmp-serde | MessagePack | `rmp-serde` | `to_vec_named` / `from_slice` | Named maps for struct fidelity |
-| ciborium | CBOR | `ciborium` | `into_writer` / `from_reader` | IETF CBOR |
-| bincode | Binary | `bincode` 2 | `serde::encode_to_vec` | Compact, Rust-centric |
-| postcard | Binary | `postcard` | `to_allocvec` / `from_bytes` | no_std friendly |
-| bitcode | Binary | `bitcode` | `serialize` / `deserialize` | Bit-packed |
-| flexbuffers | Schema-ish | `flexbuffers` | `FlexbufferSerializer` / `Reader` | FlatBuffers FlexBuffers |
-| minicbor | CBOR | `minicbor` | `to_vec` / `decode` | Light CBOR (wrapper path for untagged enum) |
-| rkyv | Zero-copy | `rkyv` 0.8 | `to_bytes` / `access` + `deserialize` | Archives MessagePack payload |
-| prost-wire | Protobuf-style | `prost` + hand wire | field-1 length-delimited | Stand-in until `.proto` codegen is wired |
+| Serializer | Category | Crate | Native path | Stream | Notes |
+|------------|----------|-------|-------------|--------|-------|
+| serde_json | JSON | `serde_json` | Serde `Fixture` | native | Baseline |
+| simd-json | JSON | `simd-json` | SIMD **parse**; ser via serde_json | adapted | Honest split responsibilities |
+| sonic-rs | JSON | `sonic-rs` | Serde-compatible SIMD JSON | adapted | Hot-path JSON |
+| rmp-serde | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
+| ciborium | CBOR | `ciborium` | Serde | native | Reused write buffer |
+| bincode | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
+| postcard | Binary | `postcard` | Serde | adapted | no_std-friendly format |
+| bitcode | Binary | `bitcode` | Serde | adapted | Bit-packed |
+| flexbuffers | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
+| bson | Document | `bson` | Serde | adapted | Document DB interop |
+| minicbor | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
+| rkyv | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
+| prost | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | From shared `.proto` |
+| nanoserde | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
+| speedy | Binary | `speedy` | `Writable`/`Readable` | adapted | Fast binary framework |
+
+### Call-path contract (same idea as Python)
+
+```text
+prepare(fixture)                 # untimed: config, kind, prost convert
+for rep:
+  serialize_bytes / stream       # timed
+  deserialize_bytes / stream     # timed
+  fidelity(expected, actual)     # untimed
+```
 
 ### Caveats
 
-- **rkyv** and **prost-wire** measure realistic *patterns* (zero-copy archive, protobuf wire) but are not full `#[derive(Archive)]` / `prost-build` paths.
-- **minicbor** encodes an intermediate byte payload as CBOR for untagged `Fixture` compatibility; direct derive types would be fairer for publication.
-- **ObjectGraph** is skipped (most serde formats lack cycles without extensions).
-- Stream mode currently shares the buffer path; extend with `Write`/`Read` per crate for stricter stream realism.
+- **ObjectGraph:** skipped (cycles).
+- **Integer:** skipped for `prost` (no bare scalar message in schema).
+- **simd-json serialize** is `serde_json` (crate optimizes parse).
+- **rkyv:** access-only (zero-copy without materialize) would be faster; suite materializes for a fair owned-value fidelity check.
+- **prost** date fields go through millisecond timestamps; fidelity allows date string drift on Person/Simple/Telemetry/EDI.
+- **flatbuffers / capnp:** not registered yet (codegen weight); flexbuffers partially covers FB-family schemaless use.
+- Stream mode is **native** only where noted; others are adapted bytes+cursor (same honesty model as Python).
 
-Also listed in [`rust/README.md`](../../rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`rust/README.md`](../../rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## Design choices
 
-1. **Prepare outside the loop** — fixtures built once with seed `42`.
-2. **Optimal APIs** — `to_vec`/`from_slice` style; no pretty-print; named MessagePack maps via `to_vec_named`.
-3. **Dual mode** — `bytes` and `stream` (see caveats).
-4. **ObjectGraph** — skipped for most formats.
+1. **Prepare outside the loop** — configs, buffers, prost messages, kind tags.
+2. **Optimal APIs** — crate-recommended encode/decode; no pretty-print.
+3. **Dual mode** — `bytes` and `stream` with `StreamMode` metadata.
+4. **Concrete types** for non-Serde stacks (minicbor, rkyv, nanoserde, speedy, prost).
