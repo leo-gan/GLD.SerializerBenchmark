@@ -30,7 +30,47 @@ namespace GLD.SerializerBenchmark
 
             Report.AllResults(repetitions, logStorage, errors, serializers, testDataDescriptions);
 
+            TryCaptureEnvironment(logPath);
+
             Console.WriteLine($"\n[PROGRESS] Benchmark Complete. Results saved to {logPath}");
+        }
+
+        /// <summary>
+        /// Write logs/csharp/&lt;ts&gt;.environment.json via analysis package when available on host.
+        /// Docker images often lack it; run-all-benchmarks.sh also captures on the host.
+        /// </summary>
+        private static void TryCaptureEnvironment(string logPath)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "python3",
+                    Arguments = $"-m benchmark_analysis.environment \"{logPath}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                var analysisSrc = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "analysis", "src"));
+                if (!Directory.Exists(analysisSrc))
+                    analysisSrc = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "analysis", "src"));
+                if (Directory.Exists(analysisSrc))
+                    psi.Environment["PYTHONPATH"] = analysisSrc +
+                        (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PYTHONPATH"))
+                            ? ""
+                            : Path.PathSeparator + Environment.GetEnvironmentVariable("PYTHONPATH"));
+                using (var p = Process.Start(psi))
+                {
+                    if (p == null) return;
+                    p.WaitForExit(15000);
+                    if (p.ExitCode == 0)
+                        Console.WriteLine($"[PROGRESS] Environment captured beside {logPath}");
+                }
+            }
+            catch
+            {
+                // Optional sidecar; ignore failures
+            }
         }
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,

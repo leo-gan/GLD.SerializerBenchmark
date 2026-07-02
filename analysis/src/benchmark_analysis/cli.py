@@ -238,16 +238,24 @@ def main():
 
     os.makedirs(str(reports_root), exist_ok=True)
 
+    repo_root = _repo_root()
+    docs_dir = repo_root / "docs"
+    docs_analysis = docs_dir / "analysis"
+    # Prefer docs/analysis for published plots/summary when present
+    publish_root = docs_analysis if docs_analysis.is_dir() else reports_root
+
     violin_images = {}
     if args.generate_plots:
-        plots_dir = str(reports_root / "plots" / "violin")
+        plots_dir = str(publish_root / "plots" / "violin")
+        lang_sources = {k: v for k, v in lang_paths.items() if v}
         violin_images = generate_violin_plots(
             plots_dir,
             multi_lang_records=all_records,
+            lang_sources=lang_sources,
         )
 
     if args.generate_summary:
-        summary_path = str(reports_root / "BENCHMARK_SUMMARY.md")
+        summary_path = str(publish_root / "BENCHMARK_SUMMARY.md")
         generate_markdown_summary(
             summary_path,
             multi_lang_stats=all_stats,
@@ -258,8 +266,7 @@ def main():
     if args.generate_summary or args.generate_plots:
         from .reports import generate_language_results_pages
 
-        repo_root = _repo_root()
-        docs_root = str(repo_root / "docs") if (repo_root / "docs").is_dir() else str(reports_root)
+        docs_root = str(docs_dir) if docs_dir.is_dir() else str(reports_root)
         generate_language_results_pages(
             multi_lang_stats=all_stats,
             violin_images=violin_images,

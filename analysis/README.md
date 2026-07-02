@@ -38,13 +38,44 @@ analyze-benchmarks --list
 analyze-benchmarks --extra-logs go=logs/go --generate-summary
 
 # Compare two runs (great for serializer code experiments)
-analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
+analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
 
-# Check for regressions
-analyze-benchmarks --check-regression --regression-threshold 10
+# Check for regressions (against saved baseline)
+analyze-benchmarks --check-regression --regression-threshold 5
 
-# Save new baseline
+# Save current full run as new baseline
 analyze-benchmarks --save-baseline
+```
+
+### Full benchmark + analysis workflow
+
+```bash
+# Run full (100 reps) benchmarks for all languages and save as baseline
+./scripts/run-all-benchmarks.sh -m full -b
+
+# Process the data: stats, outliers, plots, summaries, and per-language pages
+cd analysis
+uv run analyze-benchmarks --generate-summary --generate-plots
+
+# Typical output for a full run:
+#   Loaded 35200 csharp records -> 352 stat groups
+#   ...
+#   Total: 88400 records, 884 stat groups
+#   Generated 32 violin plots
+```
+
+You can also run the orchestrator without `-b` and save baseline separately.
+
+#### Example regression output
+
+```
+REGRESSION: 234 entries exceeded threshold
+  REGRESSION: rmp-serde on Telemetry (bytes) - 18.6% slower (1,391ns → 1,650ns, CI low 1,636ns)
+  REGRESSION: sonic-rs on Telemetry (stream) - 28.2% slower (4,554ns → 5,836ns, CI low 5,829ns)
+  ...
+```
+
+(The tool uses the full statistical pipeline: IQR filtering, bootstrap CIs, and optional hypothesis testing.)
 ```
 
 Reports are written to `reports/` (gitignored). Documentation snapshots go to `docs/` for the MkDocs site.

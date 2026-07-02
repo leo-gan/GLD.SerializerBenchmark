@@ -90,16 +90,19 @@ def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
     return melted
 
 
-def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: str,
-                          language: str = "", top_n: Optional[int] = None) -> Optional[str]:
-    """Generate violin plot for a specific data type, returning relative image path.
+def _generate_violin_plot(
+    melted_df: pd.DataFrame,
+    data_type: str,
+    output_dir: str,
+    language: str = "",
+    lang_id: str = "",
+    top_n: Optional[int] = None,
+    data_source: str = "",
+) -> Optional[str]:
+    """Generate violin plot for a specific data type, returning image filename.
 
-    Args:
-        melted_df: Melted dataframe with benchmark records
-        data_type: Name of the data type to plot
-        output_dir: Directory to save the plot image
-        language: Language label for the plot title (e.g., "C#", "Python")
-        top_n: If specified, only include top N serializers by mean time
+    Embeds mapping metadata (fixture, language id, log path, modes, n) in the
+    title/footer so plots can be tied back to CSV results.
     """
     if melted_df.empty or data_type not in melted_df['TestDataName'].values:
         return None
@@ -159,12 +162,22 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
             legend_out=False,
             order=order,
         )
-        lang_prefix = f"{language} " if language else ""
-        scale_note = " (log µs)" if use_log else ""
+        lang_key = (lang_id or _lang_file_key("", language)).lower().replace("#", "sharp")
+        safe_fixture = data_type.replace(" ", "_")
+        img_name = f"{lang_key}_{safe_fixture}.png"
+        modes = sorted({str(m) for m in subset.get("StringOrStream", pd.Series(dtype=str)).dropna().unique()})
+        modes_s = ", ".join(modes) if modes else "n/a"
+        n_pts = len(subset)
+        n_ser = int(subset["SerializerName"].nunique())
+        ser_note = f"top {top_n} by mean" if top_n else f"all {n_ser} serializers"
+        scale_note = " · log µs" if use_log else " · µs"
+        src = data_source or f"logs/{lang_key}/benchmark-log.csv"
+
         g.fig.suptitle(
-            f'{lang_prefix}{data_type} - Top {top_n or "All"} Serializers{scale_note}',
-            fontsize=14,
-            y=1.02,
+            f"{language or lang_key} · TestDataName={data_type}{scale_note}\n"
+            f"{ser_note} · modes: {modes_s} · n={n_pts} points",
+            fontsize=12,
+            y=1.04,
         )
         if use_log:
             g.set_axis_labels('Time (µs, log scale)', 'Serializer')
@@ -178,10 +191,20 @@ def _generate_violin_plot(melted_df: pd.DataFrame, data_type: str, output_dir: s
             g.set_axis_labels('Time (microseconds)', 'Serializer')
             g.set(xlim=(0, None))
 
-        # Under plots/violin/; no redundant "violin_" prefix in the filename.
-        lang_key = language.lower().replace("#", "sharp").replace(" ", "_") if language else "unknown"
-        img_path = os.path.join(output_dir, f'{lang_key}_{data_type.replace(" ", "_")}.png')
-        plt.savefig(img_path, dpi=150, bbox_inches='tight')
+        # Footer: map image file ↔ CSV / fixture (visible on the PNG itself)
+        g.fig.text(
+            0.5,
+            -0.02,
+            f"Plot file: {img_name}  |  CSV: {src}  |  filter: TestDataName == {data_type!r}",
+            ha="center",
+            va="top",
+            fontsize=8,
+            color="#444444",
+            wrap=True,
+        )
+
+        img_path = os.path.join(output_dir, img_name)
+        plt.savefig(img_path, dpi=150, bbox_inches="tight")
         plt.close(g.fig)
         return os.path.basename(img_path)
     except Exception as e:
@@ -355,12 +378,15 @@ def generate_language_results_pages(
         List of written file paths.
     """
     by_lang = _stats_by_language(multi_lang_stats)
-    violin_images = violin_images or {}
+    violin_images = dict(violin_images or {})
+    plot_meta = violin_images.pop("_meta", None) or {}
     written: List[str] = []
 
     # Group plot keys by lang_id
     plots_by_lang: Dict[str, List[Tuple[str, str]]] = {}
     for key, fname in sorted(violin_images.items()):
+        if key == "_meta" or not isinstance(fname, str):
+            continue
         lang_key = None
         dtype = None
         # Longest key first so "javascript" wins over a future "java"
@@ -443,18 +469,25 @@ def generate_language_results_pages(
             lines.append("")
 
         items = plots_by_lang.get(lang_id) or []
+        meta = plot_meta.get(lang_id) or {}
+        log_csv = meta.get("source") or f"logs/{lang_id}/"
         if items:
             lines.append("## Violin plots")
             lines.append("")
             lines.append(
-                "Density of serialize / deserialize timings (µs; log scale when medians span ≥5×)."
+                "Density of serialize / deserialize timings (µs; log scale when medians span ≥5×). "
+                "Each PNG title/footer and the table below map **plot file → fixture → CSV** "
+                f"(rows with `TestDataName` equal to the fixture in `{log_csv}`)."
             )
             lines.append("")
-            lines.append("| Fixture | Plot |")
-            lines.append("|---------|------|")
+            lines.append("| Fixture (`TestDataName`) | Plot file | Source CSV | Plot |")
+            lines.append("|--------------------------|-----------|------------|------|")
             for dtype, fname in items:
                 img = f'![{dtype}]({plot_rel_from_lang}/{fname}){{ width="50%" }}'
-                lines.append(f"| {dtype} | {img} |")
+                src = (meta.get("files") and log_csv) or log_csv
+                lines.append(
+                    f"| `{dtype}` | `{fname}` | `{src}` | {img} |"
+                )
             lines.append("")
         else:
             lines.append("*No violin plots for this language in the current snapshot.*")
@@ -498,15 +531,19 @@ def _lang_file_key(lang_id: str, display: str) -> str:
 def generate_violin_plots(
     output_dir: str,
     multi_lang_records: Optional[Dict] = None,
+    lang_sources: Optional[Dict[str, str]] = None,
     **_kwargs,
 ) -> Dict[str, str]:
     """Generate violin plot images for all languages with records.
 
     ``multi_lang_records`` maps lang_id -> list of row dicts.
+    ``lang_sources`` optional map lang_id -> CSV path used for those records
+    (embedded on the PNG for result↔plot mapping).
 
     Returns a dict mapping ``{lang_key}_{TestDataName}`` to image filenames.
     """
     os.makedirs(output_dir, exist_ok=True)
+    lang_sources = lang_sources or {}
 
     by_lang: Dict[str, List[Dict]] = {}
     if multi_lang_records:
@@ -521,6 +558,8 @@ def generate_violin_plots(
     )
 
     violin_images: Dict[str, str] = {}
+    # lang_id -> {fixture -> plot filename} plus source path for results.md
+    plot_meta: Dict[str, Dict] = {}
 
     for lang_id in lang_ids:
         records = by_lang[lang_id]
@@ -532,16 +571,35 @@ def generate_violin_plots(
         # Cap series on crowded languages (historical C# behaviour: top 5)
         top_n = 5 if n_sers > 12 else None
         file_key = _lang_file_key(lang_id, display)
+        src = lang_sources.get(lang_id) or lang_sources.get(file_key)
+        if src:
+            # Prefer path relative to repo if under logs/
+            src_disp = src.replace("\\", "/")
+            if "/logs/" in src_disp:
+                src_disp = "logs/" + src_disp.split("/logs/", 1)[1]
+            data_source = src_disp
+        else:
+            data_source = f"logs/{lang_id}/benchmark-log.csv"
+        plot_meta[lang_id] = {"source": data_source, "files": {}}
         for dtype in sorted(melted["TestDataName"].unique()):
             img_name = _generate_violin_plot(
-                melted, dtype, output_dir, language=display, top_n=top_n
+                melted,
+                dtype,
+                output_dir,
+                language=display,
+                lang_id=file_key,
+                top_n=top_n,
+                data_source=data_source,
             )
             if img_name:
                 violin_images[f"{file_key}_{dtype}"] = img_name
+                plot_meta[lang_id]["files"][dtype] = img_name
 
     generated = list(violin_images.values())
     if generated:
         print(f"Generated {len(generated)} violin plots in: {output_dir}")
+    # Attach meta for callers (results pages) without breaking dict return type
+    violin_images["_meta"] = plot_meta  # type: ignore[assignment]
     return violin_images
 
 

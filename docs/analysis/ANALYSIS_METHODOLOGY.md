@@ -97,10 +97,27 @@ Fields such as `effect_vs_fastest_cliffs_delta`, `effect_vs_fastest_hedges_g`, `
 ### Version A/B (same serializer, two builds)
 
 ```bash
-analyze-benchmarks --compare-a old.csv --compare-b new.csv
+# Using full benchmark data (100 reps)
+./scripts/run-all-benchmarks.sh -m full
+analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
+```
+
+Or with shorthands for older vs latest full run:
+
+```bash
+analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316
 ```
 
 Writes `VERSION_COMPARE.md` with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when `statistics.hypothesis_tests` is enabled (`alpha` 0.05). Prefer this for author-facing regressions rather than comparing unrelated libraries.
+
+A full run typically produces output like:
+
+```
+Loaded 35200 csharp records from ... -> 352 stat groups
+...
+Total: 88400 records, 884 stat groups
+Generated 32 violin plots
+```
 
 ## Outputs
 

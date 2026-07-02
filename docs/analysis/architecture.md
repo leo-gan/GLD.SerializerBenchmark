@@ -18,7 +18,8 @@ The suite is built for four overlapping audiences. Each uses the **same harness 
 - Within-language ranking of JSON vs MessagePack-style codecs on **Person** and **Telemetry**, with effect sizes vs the fastest serializer in each group—not cross-runtime “X is faster than Y” claims.
 - Sensitivity checks: re-run with `research` (500 reps) on one language when CIs are wide on `all-single` (10 reps).
 
-**Example workflow:** run `./scripts/run-all-benchmarks.sh --mode full --lang rust`, then `analyze-benchmarks --generate-summary --generate-plots`, and cite tables/plots on [Rust Results](../rust/results.md) (or export CSVs under `logs/rust/`).
+**Example workflow:** run `./scripts/run-all-benchmarks.sh -m full -b`, then `analyze-benchmarks --generate-summary --generate-plots`, and cite tables/plots on [Rust Results](../rust/results.md). Use `--compare-a rust:185249 --compare-b rust:191316` (or similar) for A/B serializer changes and `--check-regression` for gates.
+
 
 ### Serializer authors
 
