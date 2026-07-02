@@ -98,22 +98,29 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
 # Time unit normalization
 # ---------------------------------------------------------------------------
 
-def _detect_time_unit(time_value: int, language: Optional[str] = None) -> float:
-    """Return multiplier to convert recorded time to nanoseconds.
+def normalize_to_nanoseconds(value: float, language: Optional[str] = None) -> float:
+    """Convert a raw timing value (from CSV) to nanoseconds.
 
-    New runners emit nanoseconds and set Language explicitly.
-    Legacy C# emits ticks (100 ns) without Language or with language=csharp.
+    Prefers explicit Language column (or hint). Falls back to numeric heuristic
+    only for legacy data without language info. This is the single source of
+    truth for time-unit normalization so that stats and plots agree.
     """
     if language:
-        lang = language.lower()
-        if lang in ("csharp", "c#", "cs", "dotnet"):
-            return 100.0
+        lang = language.lower().strip()
+        if lang in ("csharp", "c#", "cs", "dotnet", "c-sharp"):
+            return float(value) * 100.0
         if lang in ("python", "rust", "c", "javascript", "js", "node", "go", "java", "cpp"):
-            return 1.0
+            return float(value)
     # Heuristic fallback (legacy CSVs without Language column)
-    if time_value > 1_000_000:
-        return 100.0  # C# ticks
-    return 1.0
+    v = float(value)
+    if v > 1_000_000:
+        return v * 100.0  # C# ticks
+    return v
+
+
+def _detect_time_unit(time_value: int, language: Optional[str] = None) -> float:
+    """Deprecated wrapper kept for test compatibility. Use normalize_to_nanoseconds."""
+    return normalize_to_nanoseconds(time_value, language)
 
 
 # ---------------------------------------------------------------------------
@@ -403,10 +410,11 @@ def compute_statistics(
             stats[key]["warmup_skipped"] += 1
             continue
 
-        mult = _detect_time_unit(int(r["TimeSer"]), lang or None)
-        time_ser_ns = float(r["TimeSer"]) * mult
-        time_deser_ns = float(r["TimeDeser"]) * mult
-        time_total_ns = float(r.get("TimeSerAndDeser", r["TimeSer"] + r["TimeDeser"])) * mult
+        time_ser_ns = normalize_to_nanoseconds(float(r["TimeSer"]), lang or None)
+        time_deser_ns = normalize_to_nanoseconds(float(r["TimeDeser"]), lang or None)
+        time_total_ns = normalize_to_nanoseconds(
+            float(r.get("TimeSerAndDeser", r["TimeSer"] + r["TimeDeser"])), lang or None
+        )
 
         stats[key]["times_ser"].append(time_ser_ns)
         stats[key]["times_deser"].append(time_deser_ns)

@@ -1,6 +1,5 @@
 """Report generation (Markdown and HTML)."""
 
-import json
 import os
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
@@ -11,13 +10,22 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+from .stats import normalize_to_nanoseconds
+
 
 def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
-    """Convert raw records to a melted dataframe for violin plots."""
+    """Convert raw records to a melted dataframe for violin plots.
+
+    Uses the exact same time normalization as the stats pipeline
+    (normalize_to_nanoseconds) so violin plots match the summary tables.
+    """
     if not records:
         return pd.DataFrame()
     df = pd.DataFrame(records)
-    df['Language'] = language
+    # Preserve per-row Language (from parser/CSV) for correct per-record
+    # time normalization. The 'language' param is the display name for titles only.
+    if 'Language' not in df.columns:
+        df['Language'] = language
     # Melt serialize/deserialize into Operation column
     ser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeSer', 'OpPerSecSer', 'Language']].copy()
     ser['Operation'] = 'Serialize'
@@ -31,13 +39,11 @@ def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
     if melted.empty:
         return melted
 
-    # Normalize to nanoseconds for plotting (legacy C# ticks vs Python/new ns).
-    # Heuristic: values > 1e6 are typically ticks (100 ns); multiply by 100.
-    t = melted['Time_ns'].astype(float)
-    if t.median() > 1_000_000:
-        melted['Time_ns'] = t * 100.0
-    else:
-        melted['Time_ns'] = t
+    # Use the *same* language-aware normalizer as stats.py for consistency.
+    # This fixes the previous mismatch (global median heuristic vs per-lang _detect).
+    def _norm_row(row):
+        return normalize_to_nanoseconds(float(row['Time_ns']), row.get('Language'))
+    melted['Time_ns'] = melted.apply(_norm_row, axis=1)
 
     # Drop non-positive / absurd tails (e.g. multi-second GC stalls) without
     # the old erroneous "Time_ns < 60000" filter which wiped all real ns timings.
