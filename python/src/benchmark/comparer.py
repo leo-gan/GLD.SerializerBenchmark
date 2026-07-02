@@ -20,6 +20,22 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # Sentinel for missing fields
 _MISSING = object()
 
+# Max characters for a single value in error text (keeps errors.csv readable)
+_REPR_MAX = 120
+
+
+def _fmt_value(value: Any) -> str:
+    """Format a value for error messages; truncate long reprs."""
+    if value is _MISSING:
+        return "<missing>"
+    try:
+        text = repr(value)
+    except Exception:
+        text = f"<unreprable {type(value).__name__}>"
+    if len(text) > _REPR_MAX:
+        return text[: _REPR_MAX - 3] + "..."
+    return text
+
 
 def _is_float(value: Any) -> bool:
     return isinstance(value, (float, int)) and not isinstance(value, bool)
@@ -97,8 +113,12 @@ def _compare_scalar(expected: Any, actual: Any, path: str, errors: List[str]) ->
             return False
         return True
 
-    # Generic mismatch
-    errors.append(f"{path}: type/value mismatch {type(expected).__name__}({expected!r}) vs {type(actual).__name__}({actual!r})")
+    # Generic mismatch — always show the real values
+    errors.append(
+        f"{path}: type/value mismatch "
+        f"expected {_fmt_value(expected)} ({type(expected).__name__}), "
+        f"actual {_fmt_value(actual)} ({type(actual).__name__})"
+    )
     return False
 
 
@@ -135,8 +155,19 @@ def _compare_mapping(
     expected_dict: Dict[Any, Any] = dict(expected)
     actual_dict: Dict[Any, Any] = dict(actual)
 
-    if set(expected_dict.keys()) != set(actual_dict.keys()):
-        errors.append(f"{path}: key mismatch {set(expected_dict.keys())} vs {set(actual_dict.keys())}")
+    exp_keys = set(expected_dict.keys())
+    act_keys = set(actual_dict.keys())
+    if exp_keys != act_keys:
+        only_exp = exp_keys - act_keys
+        only_act = act_keys - exp_keys
+        parts = []
+        if only_exp:
+            sample = {k: expected_dict[k] for k in list(only_exp)[:5]}
+            parts.append(f"only in expected: {_fmt_value(sample)}")
+        if only_act:
+            sample = {k: actual_dict[k] for k in list(only_act)[:5]}
+            parts.append(f"only in actual: {_fmt_value(sample)}")
+        errors.append(f"{path}: key mismatch ({'; '.join(parts)})")
         return False
 
     ok = True
@@ -210,11 +241,17 @@ def _compare_dataclass(
         if e_val is _MISSING and a_val is _MISSING:
             continue
         if e_val is _MISSING:
-            errors.append(f"{path}.{name}: expected missing, actual present")
+            # Expected object has no such field; actual carried an unexpected value.
+            errors.append(
+                f"{path}.{name}: expected <missing>, actual {_fmt_value(a_val)}"
+            )
             ok = False
             continue
         if a_val is _MISSING:
-            errors.append(f"{path}.{name}: expected present, actual missing")
+            # Expected a concrete value; actual object had no field / key.
+            errors.append(
+                f"{path}.{name}: expected {_fmt_value(e_val)}, actual <missing>"
+            )
             ok = False
             continue
         if not _deep_equal_impl(e_val, a_val, f"{path}.{name}", errors, visited):
