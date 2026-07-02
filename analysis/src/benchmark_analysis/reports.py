@@ -228,12 +228,33 @@ def _display_mode(mode: str) -> str:
     return _MODE_DISPLAY.get(key, mode)
 
 
-def _format_compact(val: float, *, sig: int = 2) -> str:
-    """Format a number for **results.md only**: 2 significant digits, K/M suffixes.
+def _pick_column_unit(values: list) -> tuple:
+    """Choose one scale for an entire column (no mixed K/M in one column).
 
-    Examples: ``3565844`` → ``3.6M``, ``2911`` → ``2.9K``, ``485`` → ``480``.
-    Does not affect CSV harness output.
+    Returns ``(divisor, unit_suffix)`` where unit is ``""``, ``"K"``, or ``"M"``.
+    Rule: use **M** if the column's max absolute value is ≥ 1e6, else **K** if
+    max ≥ 1e3, else plain units (no suffix).
     """
+    nums = []
+    for v in values:
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            continue
+        if x == x:  # not NaN
+            nums.append(abs(x))
+    if not nums:
+        return 1.0, ""
+    mx = max(nums)
+    if mx >= 1_000_000:
+        return 1_000_000.0, "M"
+    if mx >= 1_000:
+        return 1_000.0, "K"
+    return 1.0, ""
+
+
+def _format_in_unit(val: float, divisor: float, unit: str, *, sig: int = 2) -> str:
+    """Format ``val`` in a fixed column unit with 2 significant digits."""
     try:
         v = float(val)
     except (TypeError, ValueError):
@@ -242,21 +263,11 @@ def _format_compact(val: float, *, sig: int = 2) -> str:
         return "-"
     if v == 0:
         return "0"
-    av = abs(v)
-    if av >= 1_000_000:
-        scaled = v / 1_000_000.0
-        unit = "M"
-    elif av >= 1_000:
-        scaled = v / 1_000.0
-        unit = "K"
-    else:
-        scaled = v
-        unit = ""
-    # %.Ng uses significant figures; strip redundant trailing .0 for screen display
+    scaled = v / divisor if divisor else v
     text = f"{float(f'%.{sig}g' % scaled)}"
     if text.endswith(".0") and "e" not in text.lower():
         text = text[:-2]
-    return f"{text}{unit}"
+    return f"{text}{unit}" if unit else text
 
 
 def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
@@ -272,15 +283,34 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         return '\n'.join(lines)
 
     # When columns are harness modes, spell out "bytes mode" / "stream mode"
-    def _col_label(cv: str) -> str:
-        return _display_mode(cv) if cols_dim == "mode" else cv
+    def _col_label(cv: str, unit: str = "") -> str:
+        base = _display_mode(cv) if cols_dim == "mode" else cv
+        if unit:
+            return f"{base} ({unit})"
+        return base
 
-    # Header
-    header = f"| {rows_dim} | " + " | ".join(_col_label(cv) for cv in col_vals) + " |"
+    # One unit per data column (from that column's values only)
+    col_units: Dict[str, tuple] = {}
+    for cv in col_vals:
+        col_vals_raw = [
+            s[value_key]
+            for s in stats.values()
+            if s[cols_dim] == cv
+            and isinstance(s.get(value_key), (int, float))
+            and not isinstance(s.get(value_key), bool)
+        ]
+        col_units[cv] = _pick_column_unit(col_vals_raw)
+
+    # Header (unit in column title when scaled)
+    header = (
+        f"| {rows_dim} | "
+        + " | ".join(_col_label(cv, col_units[cv][1]) for cv in col_vals)
+        + " |"
+    )
     lines.append(header)
     lines.append("|" + "---|" * (len(col_vals) + 1))
 
-    # Rows
+    # Rows — all cells in a column share that column's unit
     for rv in row_vals:
         row_cells = [rv]
         for cv in col_vals:
@@ -288,7 +318,8 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             if matching:
                 val = matching[0][value_key]
                 if isinstance(val, (int, float)) and not isinstance(val, bool):
-                    row_cells.append(_format_compact(float(val)))
+                    div, unit = col_units[cv]
+                    row_cells.append(_format_in_unit(float(val), div, unit))
                 else:
                     row_cells.append(str(val))
             else:
@@ -396,7 +427,8 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         "Values are mean Ser+Deser **ops/s** over fixtures, using the harness "
         "**bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — "
         "not “number of bytes”). Higher is better. Stream mode is excluded here. "
-        "Numbers use **2 significant digits** with **K/M** suffixes (display only).",
+        "Each numeric column uses **one** unit (K or M) for the whole column, "
+        "with **2 significant digits** (display only; CSV unchanged).",
         "",
     ]
     for cat in sorted(by_cat.keys()):
@@ -410,12 +442,15 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
             ((s, sum(v) / len(v)) for s, v in acc.items()),
             key=lambda x: -x[1],
         )
+        col_vals = [ops for _, ops in ranked]
+        div, unit = _pick_column_unit(col_vals)
+        unit_label = f" ({unit})" if unit else ""
         lines.append(f"#### {cat}")
         lines.append("")
-        lines.append("| serializer | mean ops/s (bytes mode) |")
+        lines.append(f"| serializer | mean ops/s (bytes mode){unit_label} |")
         lines.append("|---|---:|")
         for ser, mean_ops in ranked:
-            lines.append(f"| {ser} | {_format_compact(mean_ops)} |")
+            lines.append(f"| {ser} | {_format_in_unit(mean_ops, div, unit)} |")
         lines.append("")
     return "\n".join(lines)
 
