@@ -445,25 +445,6 @@ def generate_language_results_pages(
                     f"{title}: Ops/Sec by Serializer and Data Type",
                 )
             )
-            sample = next(iter(stats.values()))
-            if sample.get("total_ci_low_ns") is not None:
-                lines.append(
-                    f"### Scientific metrics (sample: {sample.get('serializer')} / "
-                    f"{sample.get('test_data')} / {sample.get('mode')})"
-                )
-                lines.append("")
-                lines.append(
-                    f"- mean total: {sample.get('total_mean_ns', 0):.0f} ns "
-                    f"(95% CI [{sample.get('total_ci_low_ns', 0):.0f}, "
-                    f"{sample.get('total_ci_high_ns', 0):.0f}])"
-                )
-                lines.append(
-                    f"- median: {sample.get('total_median_ns', 0):.0f} ns, "
-                    f"CV: {sample.get('total_cv', 0):.3f}, "
-                    f"vs fastest Cliff's δ: {sample.get('effect_vs_fastest_cliffs_delta', 0):.3f} "
-                    f"({sample.get('effect_vs_fastest_cliffs_label', 'n/a')})"
-                )
-                lines.append("")
         else:
             lines.append("*No statistics for this language in the current snapshot.*")
             lines.append("")
