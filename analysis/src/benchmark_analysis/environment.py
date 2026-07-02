@@ -51,10 +51,14 @@ def _cpu_info() -> Dict[str, Any]:
     except OSError:
         pass
 
-    # Linux: physical cores
-    phys = _safe_run(["nproc", "--all"])
-    if phys:
-        info["physical_cores"] = int(phys)
+    # nproc --all returns *logical* processing units (includes hyperthreads).
+    # Do not label it "physical_cores".
+    nproc = _safe_run(["nproc", "--all"])
+    if nproc:
+        info["cpu_count"] = int(nproc)
+        # If os.cpu_count failed or differed, prefer nproc value for logical count
+        if not info.get("logical_cores"):
+            info["logical_cores"] = int(nproc)
 
     # macOS fallback
     if "model" not in info:
