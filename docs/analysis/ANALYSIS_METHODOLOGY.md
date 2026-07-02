@@ -34,7 +34,7 @@ CSV → normalize times to ns → drop warmup → outlier filter → descriptive
 
 All analysis and published tables use **nanoseconds** (plots often show **µs**).
 
-Ops/sec in reports is derived consistently as **`1e9 / mean_time_ns`** (config: `statistics.throughput_from`), not by trusting mixed runner-reported ops fields across languages.
+Ops/sec in reports is derived consistently as **`1e9 / mean_time_ns`** (the documented `statistics.throughput_from` key is not currently read; the derivation is hard-coded to the mean total time).
 
 ### Warmup exclusion
 
@@ -109,7 +109,7 @@ Writes `VERSION_COMPARE.md` with percent change, Cliff’s δ, Hedges’ g, **Ma
 | `docs/analysis/BENCHMARK_SUMMARY.md` | Hub links to language Results |
 | Console | Load counts, warmup/outlier tallies |
 
-Violins show spread and multimodality that means hide; they still reflect post-filter samples used for summaries when generated from the same run.
+Violins show spread and multimodality that means hide. As of recent fixes they exclude warmup (`RepetitionIndex==0`) and apply the same IQR filter per (serializer, fixture, mode, operation) as the summary tables, so the visual density is much closer to the numbers. A final per-serializer p99 clip is still applied only for KDE rendering stability and does not change the underlying sample for statistics.
 
 ## Limitations
 
@@ -119,6 +119,14 @@ Violins show spread and multimodality that means hide; they still reflect post-f
 - **Stream** mode is not always a true incremental API (some harnesses buffer then write).
 - **Fidelity** is semantic/structural, not bit-identical across formats (e.g. floats/datetimes).
 - Outlier removal and warmup policy affect means; always consider `runs`, CIs, and effect sizes.
+
+### Methodological disclosures
+
+- **Bootstrap reproducibility**: each `(serializer, test_data, mode, language)` group receives a *derived* seed (base `statistics.bootstrap.seed` mixed with a stable hash of the group key). This makes the resampled CIs independent across groups rather than sharing identical random draws.
+- **Paired series**: `times_ser`, `times_deser` and `times_total` are now subset with a common IQR mask derived from total time, preserving repetition correspondence.
+- **Mann–Whitney**: tie ranks + tie-corrected variance + continuity correction are applied (scipy is used when present).
+- **Cliff’s δ for large N**: when the cartesian product exceeds ~2 M pairs the implementation switches to a 100 k-pair random sample (seeded at 0). The approximation is documented in the source.
+- Several documented config keys (`report_*` toggles, `bootstrap.method` other than percentile, `effect_sizes.methods`, `throughput_from`, `csv_schema.time_unit`, certain `paths.*`) are parsed for documentation but do not yet alter runtime behaviour; the implementation always computes the full rich set.
 
 ## References
 
