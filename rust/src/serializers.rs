@@ -23,6 +23,7 @@ pub enum StreamMode {
 
 /// What the timed path primarily operates on (mirrors Python `native_kind`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(dead_code)] // exposed for docs/logging; used via trait method
 pub enum NativeKind {
     /// Serde `Fixture` enum / struct path
     Serde,
@@ -69,20 +70,6 @@ pub trait BenchSerializer: Send {
         r.read_to_end(&mut data)?;
         self.deserialize_bytes(&data)
     }
-}
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
-fn fixture_roundtrip_serde<S, D>(fixture: &Fixture, ser: S, de: D) -> Result<(Vec<u8>, Fixture)>
-where
-    S: FnOnce(&Fixture) -> Result<Vec<u8>>,
-    D: FnOnce(&[u8]) -> Result<Fixture>,
-{
-    let data = ser(fixture)?;
-    let out = de(&data)?;
-    Ok((data, out))
 }
 
 // ---------------------------------------------------------------------------

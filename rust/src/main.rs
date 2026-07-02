@@ -228,11 +228,12 @@ fn main() -> anyhow::Result<()> {
                         Err(e) => {
                             if !had_error {
                                 eprintln!(
-                                    "[ERROR] {} / {} / {} ({:?}): {}",
+                                    "[ERROR] {} / {} / {} (stream={:?}, native={:?}): {}",
                                     ser.name(),
                                     fx.name(),
                                     mode,
                                     ser.stream_mode(),
+                                    ser.native_kind(),
                                     e
                                 );
                                 had_error = true;

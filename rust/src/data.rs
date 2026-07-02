@@ -314,6 +314,7 @@ pub struct Edi835 {
 }
 
 /// Graph node with optional back-reference (cycle tests; most formats skip).
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct GraphNode {
     pub name: String,
@@ -447,6 +448,7 @@ pub fn make_edi(rng: &mut Rng) -> Edi835 {
     }
 }
 
+#[allow(dead_code)]
 pub fn make_graph() -> Rc<RefCell<GraphNode>> {
     let root = Rc::new(RefCell::new(GraphNode {
         name: "root".into(),

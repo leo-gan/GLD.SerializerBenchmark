@@ -2,24 +2,36 @@
 
 Part of the [cross-language serializer benchmark](../README.md).
 
-## Serializers (12)
+## Serializers (15)
 
-| Name | Category | Optimal API |
-|------|----------|-------------|
-| serde_json | JSON | `to_vec` / `from_slice` |
-| simd-json | JSON | `simd_json::serde::from_slice` (mut buffer) |
-| sonic-rs | JSON | `sonic_rs::to_vec` / `from_slice` |
+| Name | Category | Call path notes |
+|------|----------|-----------------|
+| serde_json | JSON | `to_vec` / `from_slice`; **native** stream via `to_writer` / `from_reader` |
+| simd-json | JSON | **deser** via SIMD; **ser** uses `serde_json` (crate focus is parsing) |
+| sonic-rs | JSON | `to_vec` / `from_slice` |
 | rmp-serde | MessagePack | `to_vec_named` / `from_slice` |
-| ciborium | CBOR | `into_writer` / `from_reader` |
-| bincode | Binary | `bincode::serde::encode_to_vec` (v2) |
+| ciborium | CBOR | reusable buffer; **native** stream write/read |
+| bincode | Binary | bincode 2 config **reused** in `prepare` |
 | postcard | Binary | `to_allocvec` / `from_bytes` |
-| bitcode | Binary | `bitcode::serialize` / `deserialize` |
-| flexbuffers | Schema-ish | `FlexbufferSerializer` / `Reader` |
-| minicbor | CBOR | `minicbor::to_vec` / `decode` |
-| rkyv | Zero-copy | `rkyv::to_bytes` / `access` + `deserialize` |
-| prost-wire | Protobuf-style | minimal field-1 length-delimited payload |
+| bitcode | Binary | `serialize` / `deserialize` |
+| flexbuffers | FlexBuffers | Serde flexbuffers path |
+| bson | Document binary | `bson::to_vec` / `from_slice` |
+| minicbor | CBOR | **direct** `Encode`/`Decode` on concrete types (no envelope) |
+| rkyv | Zero-copy | **full** `Archive` on concrete types; timed path materializes owned `T` for fidelity |
+| prost | Protobuf | **`prost-build`** from `schemas/benchmark_data.proto`; convert in `prepare` |
+| nanoserde | Binary | `SerBin` / `DeBin` on concrete types |
+| speedy | Binary | `Writable` / `Readable` on concrete types |
 
-See [docs/rust](../docs/rust/) for rationale and caveats (rkyv/prost wrappers).
+### Call-path contract (aligned with Python)
+
+1. `prepare(&fixture)` — untimed (codec config, kind tracking, prost message build)
+2. `serialize_bytes` / `deserialize_bytes` — timed
+3. Stream mode: **native** or **adapted** (see `StreamMode` on each impl)
+
+### Not yet in suite (Priority B remaining)
+
+- **flatbuffers** / **capnp**: multi-lang zero-copy IDL with separate codegen (flexbuffers covers schemaless FB-family partially)
+- **miniserde**: JSON-only alternative to full Serde (overlap with nanoserde/sonic story)
 
 ## Run
 
@@ -28,12 +40,17 @@ See [docs/rust](../docs/rust/) for rationale and caveats (rkyv/prost wrappers).
 ./scripts/run-benchmarks.sh full
 ```
 
-Or directly:
+Or directly (writes under monorepo `logs/rust/`):
 
 ```bash
 cargo run --release -- 100
 ```
 
-Output: `logs/rust/YYYY-MM-DD-HHMMSS.csv` (timestamped, never overwritten)
+`LOG_DIR` may point at a logs **root** (results go to `$LOG_DIR/rust/`).
 
-Cross-language analysis and docs snapshots: install `analysis/`, then `analyze-benchmarks` (all languages) or `analyze-benchmarks -l rust` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Optional log path: `--logs LANG=PATH`. Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
+Cross-language analysis: `analyze-benchmarks -l rust` (see root README).
+
+## Build notes
+
+- `build.rs` uses **protoc-bin-vendored** + `prost-build` on `../schemas/benchmark_data.proto`.
+- Requires network once to fetch crates/protoc; offline builds need a populated `target/`.
