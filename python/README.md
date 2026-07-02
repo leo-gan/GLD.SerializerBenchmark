@@ -95,9 +95,13 @@ docker logs -f $(docker ps -lq)
 ```
 
 #### 4. Results
-Logs are saved to `logs/python/`:
+Logs are saved under the **monorepo root** `logs/python/` (absolute path), even when you run from `python/`:
+
 - `YYYY-MM-DD-HHMMSS.csv` (timestamped): Raw per-repetition metrics.
 - `YYYY-MM-DD-HHMMSS.errors.csv`: Per-run failure details (same stem as the result CSV / `.environment.json`). **Only written when at least one error occurred** — clean runs do not create this file.
+- `YYYY-MM-DD-HHMMSS.environment.json`: Hardware/OS sidecar (when `benchmark_analysis` is available).
+
+Override the logs **root** with `LOG_DIR` or `BENCHMARK_LOG_DIR` (results go to `$LOG_DIR/python/`). Docker/orchestrator scripts set this to the repo `logs/` mount.
 
 ### Local Development (Without Docker)
 

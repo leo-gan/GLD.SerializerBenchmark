@@ -26,6 +26,43 @@ import tracemalloc
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+
+def _repo_root() -> Optional[Path]:
+    """Locate the monorepo root (directory that contains ``config/benchmark_config.yaml``)."""
+    for p in Path(__file__).resolve().parents:
+        if (p / "config" / "benchmark_config.yaml").is_file():
+            return p
+    return None
+
+
+def _default_log_dir() -> Path:
+    """Canonical log directory: ``<repo>/logs/python`` (not cwd-relative).
+
+    Resolution order:
+    1. ``LOG_DIR`` / ``BENCHMARK_LOG_DIR`` env (logs *root*, e.g. repo ``logs/`` or
+       container ``/app/logs``) → append ``python`` unless the path already ends
+       with ``python``.
+    2. Monorepo root via ``config/benchmark_config.yaml`` next to this package.
+    3. Docker/image layout: parent that has ``src/benchmark`` + ``generated``.
+    4. Last resort: ``<cwd>/logs/python`` (absolute).
+    """
+    env_root = (os.environ.get("LOG_DIR") or os.environ.get("BENCHMARK_LOG_DIR") or "").strip()
+    if env_root:
+        root = Path(env_root).expanduser()
+        if root.name == "python":
+            return root.resolve()
+        return (root / "python").resolve()
+
+    repo = _repo_root()
+    if repo is not None:
+        return (repo / "logs" / "python").resolve()
+
+    for p in Path(__file__).resolve().parents:
+        if (p / "src" / "benchmark").is_dir() and (p / "generated").is_dir():
+            return (p / "logs" / "python").resolve()
+
+    return (Path.cwd() / "logs" / "python").resolve()
+
 from .comparer import compare
 from .data.generator import generate_test_data
 from .data.models import (
@@ -108,9 +145,14 @@ def run(
     repetitions: int = 100,
     serializer_filter: Optional[str] = None,
     data_filter: Optional[str] = None,
-    log_dir: str = "logs/python",
+    log_dir: Optional[str] = None,
 ) -> None:
-    """Execute the full benchmark suite."""
+    """Execute the full benchmark suite.
+
+    Results are written under the monorepo ``logs/python/`` directory by default
+    (absolute path), independent of the process working directory. Override with
+    ``log_dir=...`` or env ``LOG_DIR`` / ``BENCHMARK_LOG_DIR`` (logs root).
+    """
     # Filter
     serializers = [
         s for s in ALL_SERIALIZERS
@@ -129,8 +171,10 @@ def run(
     # Export BENCHMARK_TS so capture_environment (and child tools) see the same stem.
     ts = os.environ.get("BENCHMARK_TS") or datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
     os.environ["BENCHMARK_TS"] = ts
-    log_dir_path = Path(log_dir)
+    log_dir_path = Path(log_dir).expanduser().resolve() if log_dir else _default_log_dir()
     log_dir_path.mkdir(parents=True, exist_ok=True)
+    print(f"[PROGRESS] Writing results under {log_dir_path}")
+
 
     ts_file = log_dir_path / f"{ts}.csv"
     # Per-run errors beside the result CSV (same stem as .environment.json)
