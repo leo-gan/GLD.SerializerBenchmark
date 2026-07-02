@@ -126,13 +126,7 @@ if [ "$GENERATE_ARTIFACTS" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAV
     for lang in csharp python rust c javascript; do
         f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
         [[ -f "$f" ]] || continue
-        case $lang in
-            csharp) ANALYSIS_CMD="$ANALYSIS_CMD --csharp-logs \"$f\"" ;;
-            python) ANALYSIS_CMD="$ANALYSIS_CMD --python-logs \"$f\"" ;;
-            rust) ANALYSIS_CMD="$ANALYSIS_CMD --rust-logs \"$f\"" ;;
-            c) ANALYSIS_CMD="$ANALYSIS_CMD --c-logs \"$f\"" ;;
-            javascript) ANALYSIS_CMD="$ANALYSIS_CMD --javascript-logs \"$f\"" ;;
-        esac
+        ANALYSIS_CMD="$ANALYSIS_CMD --logs ${lang}=\"$f\""
     done
     # Artifact generation is the default for analyze-benchmarks (tables + plots).
     if [ "$GENERATE_ARTIFACTS" != true ]; then

@@ -67,7 +67,7 @@ analyze-benchmarks
 analyze-benchmarks --list
 
 # Use a specific run
-analyze-benchmarks --rust-logs rust:2026-06-12 
+analyze-benchmarks --logs rust:2026-06-12 
 
 # Compare two runs (great for serializer experiments)
 analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
@@ -76,8 +76,7 @@ analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
 | Argument | Description |
 |----------|-------------|
 | `--logs-root PATH` | Root logs directory |
-| `--csharp-logs` / `--python-logs` / ... | CSV path, directory, or shorthand (`rust:2026-06-12`, `rust:latest`) |
-| `--extra-logs lang=path` | Additional languages (repeatable) |
+| `--logs SPEC` | Log override: `LANG=PATH`, path with `-l LANG`, or shorthand |
 | `` | Generate Markdown summary |
 | `` | Generate violin plot images |
 | `--compare-a` / `--compare-b` | Compare two result files (path, dir, or shorthand) |

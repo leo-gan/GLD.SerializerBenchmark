@@ -7,7 +7,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from .parser import parse_csv_file
 from .stats import compute_statistics, compare_versions, load_stats_config
@@ -75,25 +75,26 @@ def find_latest_csv(directory: Path) -> Optional[Path]:
     return ts_files[0]
 
 
-def _resolve_log_spec(spec: str) -> Optional[str]:
+def _resolve_log_spec(spec: str, *, logs_root: Optional[Path] = None) -> Optional[str]:
     """Resolve a log spec to a concrete CSV path.
 
     Supports:
     - Direct file path:  logs/rust/2026-06-12-123415.csv
     - Directory path:    logs/rust  (picks latest timestamped file)
-    - Shorthand:         rust:2026-06-12  (partial timestamp match)
+    - Shorthand:         rust:2026-06-12  (partial timestamp match under logs_root)
     - Shorthand:         rust:latest  (latest timestamped file)
     - Shorthand:         rust  (same as rust:latest)
     """
+    root = logs_root or _default_logs_root()
+
     # Try shorthand first: "lang:qualifier" or bare "lang"
     if ":" in spec and not os.path.exists(spec):
         lang, qualifier = spec.split(":", 1)
-        lang_dir = _default_logs_root() / lang
+        lang_dir = root / lang
         if lang_dir.is_dir():
             if qualifier == "latest":
                 latest = find_latest_csv(lang_dir)
                 return str(latest) if latest else None
-            # Partial timestamp match
             matches = [
                 p for p in lang_dir.iterdir()
                 if p.is_file() and _is_timestamped_result(p.name) and qualifier in p.stem
@@ -107,7 +108,7 @@ def _resolve_log_spec(spec: str) -> Optional[str]:
 
     # Bare language name as shorthand
     if not p.exists():
-        lang_dir = _default_logs_root() / spec
+        lang_dir = root / spec
         if lang_dir.is_dir():
             latest = find_latest_csv(lang_dir)
             return str(latest) if latest else None
@@ -133,10 +134,14 @@ def _normalize_language(name: str) -> str:
     return _LANG_ALIASES[key]
 
 
+def _try_normalize_language(name: str) -> Optional[str]:
+    key = name.strip().lower()
+    return _LANG_ALIASES.get(key)
+
+
 def _infer_language_from_path(filepath: str) -> Optional[str]:
     """Try to extract a language hint from the file path (e.g. /logs/rust/ → 'rust')."""
     norm = filepath.replace("\\", "/")
-    # Longest first so javascript wins over a hypothetical java
     for lang in sorted(_KNOWN_LANGS, key=len, reverse=True):
         if f"/{lang}/" in norm:
             return lang
@@ -165,6 +170,55 @@ def _filter_lang_paths(
         return lang_paths
     wanted = {_normalize_language(x) for x in languages}
     return {k: v for k, v in lang_paths.items() if k in wanted}
+
+
+def _split_logs_spec(spec: str) -> Tuple[Optional[str], str]:
+    """Parse ``lang=path`` or bare ``path`` into (lang_or_None, path_spec).
+
+    ``lang`` may be a known alias (normalized) or any simple id for future
+    languages (e.g. ``go=logs/go``).
+    """
+    if "=" not in spec:
+        return None, spec.strip()
+    left, right = spec.split("=", 1)
+    left = left.strip()
+    right = right.strip()
+    # Simple language token: known alias or [A-Za-z][A-Za-z0-9_-]*
+    if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", left):
+        return _try_normalize_language(left) or left.lower(), right
+    # Path itself may contain '=' — treat whole string as path.
+    return None, spec.strip()
+
+
+def _resolve_logs_assignment(
+    spec: str,
+    *,
+    languages: Optional[Sequence[str]],
+    logs_root: Path,
+) -> Tuple[str, str]:
+    """Resolve one ``--logs`` value to ``(language_id, csv_path)``."""
+    lang, path_spec = _split_logs_spec(spec)
+    resolved = _resolve_log_spec(path_spec, logs_root=logs_root)
+
+    if lang is None:
+        # Infer from resolved path, raw path, or single -l filter.
+        probe = resolved or path_spec
+        lang = _infer_language_from_path(probe)
+        if lang is None and languages and len(languages) == 1:
+            lang = _normalize_language(languages[0])
+
+    if lang is None:
+        raise SystemExit(
+            f"Cannot determine language for --logs {spec!r}. "
+            f"Use --logs LANG=PATH (e.g. python=python/logs/python) "
+            f"or pair a bare path with a single -l LANG."
+        )
+
+    if not resolved or not os.path.isfile(resolved):
+        raise SystemExit(
+            f"Cannot resolve log path for language '{lang}' from {path_spec!r}"
+        )
+    return lang, resolved
 
 
 def _generate_artifacts(
@@ -208,9 +262,8 @@ def _generate_artifacts(
 
 
 def main():
-    logs_root = _default_logs_root()
+    logs_root_default = _default_logs_root()
     reports_root = _default_reports_root()
-    defaults = _discover_logs(logs_root)
 
     parser = argparse.ArgumentParser(
         description=(
@@ -218,7 +271,7 @@ def main():
             "(results tables + violin plots)."
         ),
         epilog=(
-            "By default, loads the latest timestamped CSV per language and writes:\n"
+            "By default, loads the latest timestamped CSV under logs/<lang>/ and writes:\n"
             "  docs/analysis/BENCHMARK_SUMMARY.md\n"
             "  docs/<lang>/results.md\n"
             "  docs/analysis/plots/violin/<lang>_*.png\n"
@@ -226,13 +279,18 @@ def main():
             "Examples:\n"
             "  analyze-benchmarks\n"
             "  analyze-benchmarks -l python\n"
-            "  analyze-benchmarks --language rust --language c\n"
-            "  analyze-benchmarks --python-logs python/logs/python\n"
+            "  analyze-benchmarks -l python --logs python/logs/python\n"
+            "  analyze-benchmarks --logs python=python/logs/python --logs rust=logs/rust\n"
+            "  analyze-benchmarks --logs rust:2026-06-12\n"
             "  analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--logs-root", default=str(logs_root), help="Root logs directory")
+    parser.add_argument(
+        "--logs-root",
+        default=str(logs_root_default),
+        help="Root directory with per-language subdirs (default: repo logs/)",
+    )
     parser.add_argument(
         "-l",
         "--language",
@@ -246,35 +304,16 @@ def main():
         ),
     )
     parser.add_argument(
-        "--csharp-logs",
-        default=defaults.get("csharp"),
-        help="C# result CSV, directory, or shorthand (e.g. csharp:2026-06-12)",
-    )
-    parser.add_argument(
-        "--python-logs",
-        default=defaults.get("python"),
-        help="Python result CSV, directory, or shorthand",
-    )
-    parser.add_argument(
-        "--rust-logs",
-        default=defaults.get("rust"),
-        help="Rust result CSV, directory, or shorthand",
-    )
-    parser.add_argument(
-        "--c-logs",
-        default=defaults.get("c"),
-        help="C result CSV, directory, or shorthand",
-    )
-    parser.add_argument(
-        "--javascript-logs",
-        default=defaults.get("javascript"),
-        help="JavaScript result CSV, directory, or shorthand",
-    )
-    parser.add_argument(
-        "--extra-logs",
+        "--logs",
         action="append",
         default=[],
-        help="Extra lang=path pairs, e.g. go=logs/go or go=logs/go/2026-06-12-123415.csv",
+        metavar="SPEC",
+        help=(
+            "Log source override (repeatable). Forms: "
+            "LANG=PATH (e.g. python=python/logs/python), "
+            "PATH (with a single -l LANG, or when language is in the path), "
+            "or shorthand LANG / LANG:stamp under --logs-root."
+        ),
     )
     parser.add_argument(
         "--skip-generate",
@@ -314,14 +353,14 @@ def main():
     args = parser.parse_args()
 
     stats_cfg = load_stats_config(args.config)
+    logs_root = Path(args.logs_root)
 
     if args.list:
         print("Available result files (latest marked with *):")
-        lr = Path(args.logs_root)
-        if not lr.is_dir():
-            print(f"  (logs root {lr} not found)")
+        if not logs_root.is_dir():
+            print(f"  (logs root {logs_root} not found)")
             return
-        lang_dirs = sorted((d for d in lr.iterdir() if d.is_dir()), key=lambda p: p.name)
+        lang_dirs = sorted((d for d in logs_root.iterdir() if d.is_dir()), key=lambda p: p.name)
         if args.languages:
             wanted = {_normalize_language(x) for x in args.languages}
             lang_dirs = [d for d in lang_dirs if d.name in wanted]
@@ -343,29 +382,28 @@ def main():
                 print(f"  ... ({len(ts_files)} total)")
         return
 
-    # Build language → CSV path map
+    # Start from auto-discovery under --logs-root, then apply --logs overrides.
     lang_paths: Dict[str, Optional[str]] = {
-        "csharp": args.csharp_logs,
-        "python": args.python_logs,
-        "rust": args.rust_logs,
-        "c": args.c_logs,
-        "javascript": args.javascript_logs,
+        k: v for k, v in _discover_logs(logs_root).items()
     }
-    # Resolve any that need it (directories / shorthands passed explicitly)
+
+    for spec in args.logs or []:
+        lang, path = _resolve_logs_assignment(
+            spec,
+            languages=args.languages,
+            logs_root=logs_root,
+        )
+        lang_paths[lang] = path
+
+    # Resolve any remaining unresolved shorthands (should already be files from discover)
     for lang in list(lang_paths):
         val = lang_paths[lang]
         if val and not Path(val).is_file():
-            lang_paths[lang] = _resolve_log_spec(val)
-
-    for item in args.extra_logs or []:
-        if "=" in item:
-            k, v = item.split("=", 1)
-            resolved = _resolve_log_spec(v.strip())
-            lang_paths[k.strip()] = resolved
+            lang_paths[lang] = _resolve_log_spec(val, logs_root=logs_root)
 
     lang_paths = _filter_lang_paths(lang_paths, args.languages)
-    if args.languages and not lang_paths:
-        print("No languages matched the --language filter.")
+    if args.languages and not any(lang_paths.values()):
+        print("No log files found for the requested --language filter.")
         sys.exit(1)
 
     all_records: Dict[str, List[Dict]] = {}
@@ -393,10 +431,8 @@ def main():
     repo_root = _repo_root()
     docs_dir = repo_root / "docs"
     docs_analysis = docs_dir / "analysis"
-    # Prefer docs/analysis for published plots/summary when present
     publish_root = docs_analysis if docs_analysis.is_dir() else reports_root
 
-    # Default action: write all site artifacts (tables + plots). No split flags.
     if not args.skip_generate:
         if total_loaded == 0:
             print("No records loaded; skipping artifact generation.")
@@ -411,8 +447,8 @@ def main():
             )
 
     if args.compare_a and args.compare_b:
-        ca = _resolve_log_spec(args.compare_a)
-        cb = _resolve_log_spec(args.compare_b)
+        ca = _resolve_log_spec(args.compare_a, logs_root=logs_root)
+        cb = _resolve_log_spec(args.compare_b, logs_root=logs_root)
         if not ca or not os.path.isfile(ca):
             print(f"Error: cannot resolve --compare-a '{args.compare_a}'")
             sys.exit(1)
@@ -462,8 +498,6 @@ def main():
             print(f"REGRESSION: {len(regressions)} entries exceeded threshold")
             for r in regressions[:20]:
                 print(f"  {r}")
-            # Intentionally do NOT save baseline here even if --save-baseline
-            # was passed. Saving regressed data would defeat the regression gate.
             if args.save_baseline:
                 print("Note: --save-baseline skipped because a regression was detected.")
             sys.exit(1)

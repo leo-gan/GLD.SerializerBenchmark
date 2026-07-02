@@ -67,7 +67,7 @@ Update `scripts/run-all-benchmarks.sh` to invoke the new runner.
 Auto-discovers timestamped CSVs under `logs/<lang>/`; or pass:
 
 ```bash
-analyze-benchmarks --extra-logs go=logs/go
+analyze-benchmarks --logs go=logs/go
 ```
 
 - Update `_KNOWN_LANGS` in `analysis/src/benchmark_analysis/cli.py` so that `--compare-a/--compare-b` and path-based inference recognize the new language id.

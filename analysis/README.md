@@ -24,18 +24,18 @@ After installation, the `analyze-benchmarks` command is available. Each benchmar
 analyze-benchmarks
 
 # Use a specific historical run
-analyze-benchmarks --rust-logs logs/rust/2026-06-12-123415.csv
+analyze-benchmarks --logs rust=logs/rust/2026-06-12-123415.csv
 
 # Shorthands work too
-analyze-benchmarks --rust-logs rust:2026-06-12  # partial timestamp match
-analyze-benchmarks --rust-logs rust:latest       # latest timestamped file
-analyze-benchmarks --rust-logs logs/rust         # directory → picks latest
+analyze-benchmarks --logs rust:2026-06-12  # partial timestamp match
+analyze-benchmarks --logs rust:latest       # latest under logs-root
+analyze-benchmarks -l rust --logs logs/rust # directory → picks latest
 
 # List all available result files
 analyze-benchmarks --list
 
 # Extra language (future harnesses)
-analyze-benchmarks --extra-logs go=logs/go
+analyze-benchmarks --logs go=logs/go
 
 # Compare two runs (great for serializer code experiments)
 analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
@@ -83,8 +83,7 @@ Reports are written to `reports/` (gitignored). Documentation snapshots go to `d
 | Flag | Description |
 |------|-------------|
 | `--logs-root` | Root logs directory (default: repo `logs/`) |
-| `--csharp-logs` / `--python-logs` / ... | CSV path, directory, or shorthand (e.g. `rust:2026-06-12`) |
-| `--extra-logs` | `lang=path` pairs (repeatable) |
+| `--logs SPEC` | Log override (repeatable): `LANG=PATH`, bare path with `-l`, or `LANG:stamp` |
 | `-l` / `--language LANG` | Only generate for one language (repeatable) |
 | `--skip-generate` | Skip docs/plots (for compare/regression-only runs) |
 | `--compare-a` / `--compare-b` | Compare two result files (path, dir, or shorthand) |
