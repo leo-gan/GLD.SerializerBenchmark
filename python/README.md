@@ -26,7 +26,7 @@ All 7 types mirror the C# benchmark to enable cross-language comparisons:
 | **SimpleObject** | Minimal overhead baseline. |
 | **StringArray** | Array of 100 strings; tests memory allocation and string encoding. |
 | **EDI_835** | Deeply nested health-care claim document; tests recursion depth. |
-| **ObjectGraph** | Circular references; only `pickle` and `cloudpickle` are expected to pass. |
+| **ObjectGraph** | Circular references; only `pickle`, `cloudpickle`, and `dill` are expected to pass. |
 
 ## Benchmark Dimensions
 
