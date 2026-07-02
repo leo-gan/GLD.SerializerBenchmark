@@ -169,7 +169,13 @@ def bootstrap_ci(
     seed: int = 42,
     statistic: str = "mean",
 ) -> Tuple[float, float, float]:
-    """Percentile bootstrap CI. Returns (point_estimate, ci_low, ci_high)."""
+    """Percentile bootstrap CI. Returns (point_estimate, ci_low, ci_high).
+
+    The caller should pass a *per-group* seed (derived from a stable hash of the
+    group key + configured base seed) so that resamples are independent across
+    different serializers / test cases. Using a constant seed for every group
+    makes the CIs artificially correlated.
+    """
     arr = np.asarray(values, dtype=float)
     n = len(arr)
     if n == 0:
@@ -194,6 +200,23 @@ def bootstrap_ci(
     lo = float(np.percentile(boot_stats, 100 * alpha / 2))
     hi = float(np.percentile(boot_stats, 100 * (1 - alpha / 2)))
     return point, lo, hi
+
+
+def _derive_seed(base_seed: int, *key_parts: Any) -> int:
+    """Derive a stable per-group seed from base seed + group identity.
+
+    Ensures bootstrap replicates are independent across (serializer, data, mode, ...)
+    while remaining fully reproducible given the same inputs.
+    """
+    import hashlib
+    h = hashlib.sha256()
+    h.update(str(base_seed).encode("utf-8"))
+    for part in key_parts:
+        h.update(str(part).encode("utf-8"))
+        h.update(b"|")
+    # Fold to a positive 32-bit int suitable for np.random.default_rng
+    digest = int.from_bytes(h.digest()[:8], "little")
+    return digest & 0xFFFFFFFF
 
 
 # ---------------------------------------------------------------------------
@@ -364,8 +387,13 @@ def _summarize_series(
     values: List[float],
     cfg: Dict[str, Any],
     prefix: str,
+    group_key: Optional[Tuple] = None,
 ) -> Dict[str, float]:
-    """Compute descriptive + bootstrap stats for one timing series."""
+    """Compute descriptive + bootstrap stats for one timing series.
+
+    group_key (if given) is used together with the configured base seed to
+    derive an independent per-group bootstrap seed.
+    """
     out: Dict[str, float] = {}
     if not values:
         out[f"{prefix}_mean_ns"] = 0.0
@@ -399,11 +427,16 @@ def _summarize_series(
 
     boot_cfg = cfg.get("bootstrap") or {}
     if boot_cfg.get("enabled", True) and len(arr) >= cfg.get("min_samples_for_inference", 5):
+        base_seed = int(boot_cfg.get("seed", 42))
+        if group_key is not None:
+            per_group_seed = _derive_seed(base_seed, group_key, prefix)
+        else:
+            per_group_seed = base_seed
         _, lo, hi = bootstrap_ci(
             values,
             iterations=int(boot_cfg.get("iterations", 2000)),
             confidence_level=float(boot_cfg.get("confidence_level", 0.95)),
-            seed=int(boot_cfg.get("seed", 42)),
+            seed=per_group_seed,
             statistic="mean",
         )
         out[f"{prefix}_ci_low_ns"] = lo
@@ -482,9 +515,9 @@ def compute_statistics(
         times_deser, _ = _filter_outliers(data["times_deser"], outlier_method, iqr_k, min_out)
         total_outliers += rem_t
 
-        ser_stats = _summarize_series(times_ser, cfg, "ser")
-        deser_stats = _summarize_series(times_deser, cfg, "deser")
-        total_stats = _summarize_series(times_total, cfg, "total")
+        ser_stats = _summarize_series(times_ser, cfg, "ser", group_key=key)
+        deser_stats = _summarize_series(times_deser, cfg, "deser", group_key=key)
+        total_stats = _summarize_series(times_total, cfg, "total", group_key=key)
 
         avg_time_total_ns = total_stats["total_mean_ns"]
         avg_ops_per_sec = 1e9 / avg_time_total_ns if avg_time_total_ns > 0 else 0.0
