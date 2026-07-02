@@ -20,8 +20,11 @@ pip install -e .
 After installation, the `analyze-benchmarks` command is available. Each benchmark run creates a timestamped file like `2026-06-12-123415.csv` — runs are never overwritten. By default analysis auto-discovers the **latest** timestamped result per language.
 
 ```bash
-# Generate reports (uses latest result per language automatically)
+# Generate reports (tables + plots; latest result per language automatically)
 analyze-benchmarks
+
+# One language only
+analyze-benchmarks -l python
 
 # Use a specific historical run
 analyze-benchmarks --logs rust=logs/rust/2026-06-12-123415.csv
@@ -76,7 +79,6 @@ REGRESSION: 234 entries exceeded threshold
 ```
 
 (The tool uses the full statistical pipeline: IQR filtering, bootstrap CIs, and optional hypothesis testing.)
-```
 
 Reports are written to `reports/` (gitignored). Documentation snapshots go to `docs/` for the MkDocs site.
 

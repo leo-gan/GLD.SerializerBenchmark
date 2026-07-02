@@ -18,7 +18,7 @@ The suite is built for four overlapping audiences. Each uses the **same harness 
 - Within-language ranking of JSON vs MessagePack-style codecs on **Person** and **Telemetry**, with effect sizes vs the fastest serializer in each group—not cross-runtime “X is faster than Y” claims.
 - Sensitivity checks: re-run with `research` (500 reps) on one language when CIs are wide on `all-single` (10 reps).
 
-**Example workflow:** run `./scripts/run-all-benchmarks.sh -m full -b`, then `analyze-benchmarks`, and cite tables/plots on [Rust Results](../rust/results.md). Use `--compare-a rust:185249 --compare-b rust:191316` (or similar) for A/B serializer changes and `--check-regression` for gates.
+**Example workflow:** run `./scripts/run-all-benchmarks.sh -m full -b`, then `analyze-benchmarks` (or `analyze-benchmarks -l rust`), and cite tables/plots on [Rust Results](../rust/results.md). Use `--compare-a rust:185249 --compare-b rust:191316` (or similar) for A/B serializer changes and `--check-regression` for gates.
 
 
 ### Serializer authors
@@ -61,7 +61,7 @@ The suite is built for four overlapping audiences. Each uses the **same harness 
 
 - Add **Go**: implement harness + `run-benchmarks.sh`, register under `languages.go`, emit nanosecond CSV with `Language=go`, wire `scripts/run-all-benchmarks.sh`, add `docs/go/index.md` and MkDocs entries—analysis picks up the log without a new stats implementation.
 - Port a bugfix in C# timing only inside `c-sharp/`; Rust/Python logs and analysis code stay untouched.
-- Refresh GitHub Pages snapshots after a full matrix: local `analyze-benchmarks`, commit `docs/<lang>/results.md` and `docs/analysis/plots/violin/`.
+- Refresh GitHub Pages snapshots after a full matrix: local `analyze-benchmarks` / `analyze-benchmarks -l LANG`, commit `docs/<lang>/results.md` and `docs/analysis/plots/violin/`.
 
 **Example workflow:** follow [Adding a Language](ADDING_A_LANGUAGE.md); smoke with `--mode smoke`, then `full` before publishing results.
 

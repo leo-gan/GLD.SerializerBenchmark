@@ -60,14 +60,19 @@ Each benchmark run creates timestamped `YYYY-MM-DD-HHMMSS.{csv,errors.csv,enviro
 ```bash
 cd analysis && pip install -e .   # once
 
-# Generate reports (auto-discovers latest result per language)
+# Generate all artifacts (tables + plots); latest CSV per language under logs/
 analyze-benchmarks
 
-# List all available result files
-analyze-benchmarks --list
+# One language only
+analyze-benchmarks -l python
 
-# Use a specific run
-analyze-benchmarks --logs rust:2026-06-12 
+# Custom / historical log sources (repeatable)
+analyze-benchmarks --logs rust:2026-06-12
+analyze-benchmarks -l python --logs python/logs/python
+analyze-benchmarks --logs python=python/logs/python --logs rust=logs/rust
+
+# List available result files
+analyze-benchmarks --list
 
 # Compare two runs (great for serializer experiments)
 analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
@@ -75,10 +80,10 @@ analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
 
 | Argument | Description |
 |----------|-------------|
-| `--logs-root PATH` | Root logs directory |
-| `--logs SPEC` | Log override: `LANG=PATH`, path with `-l LANG`, or shorthand |
-| `` | Generate Markdown summary |
-| `` | Generate violin plot images |
+| `--logs-root PATH` | Root with `logs/<lang>/` subdirs (default: repo `logs/`) |
+| `-l` / `--language LANG` | Limit load/generate to one language (repeatable; aliases: `py`, `cs`, `js`) |
+| `--logs SPEC` | Log override (repeatable): `LANG=PATH`, bare path with single `-l`, or `LANG:stamp` / `LANG:latest` |
+| `--skip-generate` | Do not write docs/plots (for compare/regression-only runs) |
 | `--compare-a` / `--compare-b` | Compare two result files (path, dir, or shorthand) |
 | `--check-regression` | Check for regressions against baseline |
 | `--regression-threshold PCT` | Regression threshold percentage |

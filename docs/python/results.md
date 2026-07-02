@@ -89,8 +89,10 @@ Density of serialize / deserialize timings (µs; log scale when medians span ≥
 Published snapshots are produced **locally** (not by GitHub Actions). After running benchmarks (each run creates a timestamped `YYYY-MM-DD-HHMMSS.csv`):
 
 ```bash
-analyze-benchmarks              # all languages
+analyze-benchmarks              # all languages (tables + plots)
 analyze-benchmarks -l python   # this language only
 ```
+
+Optional log override: `analyze-benchmarks -l python --logs PATH` or `--logs python=PATH`.
 
 That refreshes results tables, violin plots under `docs/analysis/plots/violin/`, and the [Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) hub. Commit those paths to update the documentation site.
