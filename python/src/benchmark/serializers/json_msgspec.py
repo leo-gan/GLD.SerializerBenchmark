@@ -125,6 +125,8 @@ _build_struct_types()
 
 class _MsgspecStructSerializer(Serializer):
     codec_name = "msgspec"
+    native_kind = "struct"
+    stream_mode = "native"
 
     def __init__(self) -> None:
         super().__init__()
@@ -141,6 +143,7 @@ class _MsgspecStructSerializer(Serializer):
         return test_data_name != "ObjectGraph"
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
+        super().prepare(test_data_name, test_data_type)
         self._decoder = self._decoder_for(_msgspec_type_for(test_data_type))
         self._buffer = bytearray()
 

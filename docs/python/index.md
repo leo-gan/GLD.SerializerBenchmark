@@ -2,32 +2,60 @@
 
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
-## Serializers in this suite (10)
+## Serializers in this suite (16)
 
 Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py). Log names in `logs/python/YYYY-MM-DD-HHMMSS.csv` (nanoseconds). Modes: `bytes` and `stream`.
 
-| Log name | Category | Package | Notes |
-|----------|----------|---------|-------|
-| orjson | JSON | `orjson` | Rust core; dataclasses / datetime via `default` |
-| msgspec | JSON | `msgspec` | Typed `Struct` models; reusable encoder/decoder |
-| rapidjson | JSON | `python-rapidjson` | C++ RapidJSON bindings |
-| msgspec-msgpack | Binary | `msgspec` | Same Struct path, MessagePack codec |
-| msgpack | Binary | `msgpack` | Reference MessagePack |
-| cbor2 | Binary | `cbor2` | IETF CBOR (RFC 8949) |
-| protobuf | Schema | `protobuf` | From `schemas/benchmark_data.proto` |
-| avro | Schema | `fastavro` | `.avsc` under `src/benchmark/` |
-| pickle | Native | stdlib | Cycles supported; **unsafe** on untrusted data |
-| cloudpickle | Native | `cloudpickle` | Extended pickle; same security caveats |
+| Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
+|----------|----------|---------|---------------------------------|-------------|-------|
+| json | JSON | stdlib | dict | adapted | Baseline text JSON |
+| orjson | JSON | `orjson` | dict | adapted | Rust core; conversion untimed |
+| msgspec | JSON | `msgspec` | Struct | native (`encode_into`) | Typed array-like Structs |
+| rapidjson | JSON | `python-rapidjson` | dict | adapted | C++ RapidJSON bindings |
+| pydantic | JSON | `pydantic` v2 | BaseModel | adapted | Validation-oriented API models |
+| mashumaro | JSON | `mashumaro` | dataclass | adapted | ORJSONEncoder/Decoder |
+| serpyco-rs | JSON | `serpyco-rs` + `orjson` | dataclass | adapted | dump/load + orjson wire |
+| msgspec-msgpack | Binary | `msgspec` | Struct | native | Same Struct path, MessagePack |
+| msgpack | Binary | `msgpack` | dict | native | Reference MessagePack |
+| cbor2 | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
+| protobuf | Schema | `protobuf` | Message | adapted | From `schemas/benchmark_data.proto` |
+| avro | Schema | `fastavro` | record dict | native | Compact schemaless size; dict/union path slower than protobuf C++ |
+| flatbuffers | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
+| pickle | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
+| cloudpickle | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
+| dill | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
 
-**Not in this suite:** stdlib `json`, `ujson`, Pydantic, `dill`, FlatBuffers for Python.
+### Call-path contract (fair timing)
+
+Timed methods measure **codec only** on library-native values:
+
+1. `prepare(name, type)` — encoders, schemas, buffers (untimed)
+2. `prepare_data(obj, …)` — dataclass → dict / Struct / Message / Model (untimed)
+3. `serialize_*` / `deserialize_*` — encode/decode only (timed)
+
+FlatBuffers is the exception where Builder construction *is* the serialize API (no separate Message type). Stream mode is **native** when the library has a real file/stream API; otherwise **adapted** (bytes then write / read then bytes).
 
 ### Caveats
 
-- **ObjectGraph:** only `pickle` / `cloudpickle` expected to succeed.
-- **Integer:** protobuf / avro typically exclude bare scalars.
-- msgspec paths convert dataclasses to `Struct` **outside** timed loops.
+#### Why avro size is great but ops/s lag protobuf
+
+- **Size is real:** schemaless Avro omits field names (schema out-of-band).
+- **Speed is mostly library/runtime:** timed path is only `schemaless_writer`/`reader` on a pre-built dict + cached `parse_schema`. fastavro (Cython) still loses to protobuf message `SerializeToString` by ~20–30× on nested types because of Python-dict field walks and null-unions.
+- **Measurement:** the harness no longer runs `tracemalloc` during timed ser/des (it was inflating alloc-heavy codecs ~2–3×).
+
+#### Why flatbuffers and dill ops/s look low
+
+- **flatbuffers (serialize):** the official Python package builds with a pure-Python `Builder`. Expect ~100×+ slower ser than `protobuf` on the same POCO. C++/Rust FlatBuffers are a different performance class; this suite measures the Python binding.
+- **flatbuffers (deserialize):** timed path is zero-copy `GetRootAs` + a thin view. Full field materialization is *not* forced inside the timer (FlatBuffers' model: pay on field access).
+- **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these fixtures. Prefer pickle when you do not need dill's dynamic-object features.
+
+### Other caveats
+
+
+- **ObjectGraph:** only `pickle` / `cloudpickle` / `dill` expected to succeed.
+- **Integer:** protobuf / avro / flatbuffers / serpyco-rs typically exclude bare scalars.
 - `tracemalloc` under-counts C/Rust extension allocations.
-- Fidelity is semantic, not strict type identity.
+- Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).
 
 Harness: [`python/README.md`](../../python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 

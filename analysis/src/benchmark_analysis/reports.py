@@ -350,7 +350,7 @@ def generate_markdown_summary(
         "---",
         "",
         "*Local snapshot — regenerate with* "
-        "`analyze-benchmarks --generate-summary --generate-plots`",
+        "`analyze-benchmarks` or `analyze-benchmarks -l python`",
         "",
     ]
 
@@ -475,13 +475,12 @@ def generate_language_results_pages(
         )
         lines.append("")
         lines.append("```bash")
-        lines.append(
-            "analyze-benchmarks --generate-summary --generate-plots"
-        )
+        lines.append("analyze-benchmarks              # all languages")
+        lines.append(f"analyze-benchmarks -l {lang_id}   # this language only")
         lines.append("```")
         lines.append("")
         lines.append(
-            "That refreshes this page, other languages' `results.md`, plot images under "
+            "That refreshes results tables, violin plots under "
             "`docs/analysis/plots/violin/`, and the [Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) hub. "
             "Commit those paths to update the documentation site."
         )

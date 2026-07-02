@@ -57,7 +57,7 @@ Map repetitions from `modes` in `benchmark_config.yaml`.
 ## 5. Documentation
 
 - `docs/<lang>/index.md` — ecosystem overview, registered serializer inventory, caveats
-- After benchmarks: regenerate site snapshots (`analyze-benchmarks --generate-summary --generate-plots`) so `docs/<lang>/results.md` can be produced when logs exist
+- After benchmarks: regenerate site snapshots (`analyze-benchmarks`) so `docs/<lang>/results.md` can be produced when logs exist
 - Register the language under Benchmarks in `mkdocs.yml` (Overview + Results)
 
 ## 6. Wire orchestration
@@ -67,7 +67,7 @@ Update `scripts/run-all-benchmarks.sh` to invoke the new runner.
 Auto-discovers timestamped CSVs under `logs/<lang>/`; or pass:
 
 ```bash
-analyze-benchmarks --extra-logs go=logs/go
+analyze-benchmarks --logs go=logs/go
 ```
 
 - Update `_KNOWN_LANGS` in `analysis/src/benchmark_analysis/cli.py` so that `--compare-a/--compare-b` and path-based inference recognize the new language id.

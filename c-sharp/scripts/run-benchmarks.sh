@@ -56,12 +56,14 @@ esac
 CSV="$LOG_DIR/csharp/${BENCHMARK_TS}.csv"
 ENV_JSON="${CSV%.csv}.environment.json"
 if [[ -f "$CSV" ]]; then
-    if PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" python3 -m benchmark_analysis.environment "$CSV" 2>/dev/null; then
+    if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
+        python3 -m benchmark_analysis.environment "$CSV" 2>/dev/null; then
         echo "[INFO] Environment captured -> $ENV_JSON"
     elif docker run --rm \
         -v "$LOG_DIR:/logs" \
         -v "$PROJECT_ROOT/analysis/src:/src:ro" \
         -e PYTHONPATH=/src \
+        -e BENCHMARK_TS="${BENCHMARK_TS}" \
         python:3.12-slim \
         python -m benchmark_analysis.environment "/logs/csharp/${BENCHMARK_TS}.csv" >/dev/null 2>&1; then
         echo "[INFO] Environment captured (via Docker) -> $ENV_JSON"

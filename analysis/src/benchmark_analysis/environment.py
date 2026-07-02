@@ -139,6 +139,31 @@ def _git_info() -> Dict[str, str]:
     return info
 
 
+def _resolve_benchmark_ts(result_csv_path: Optional[str] = None) -> str:
+    """Resolve the run timestamp for environment.json.
+
+    Preference order:
+    1. ``BENCHMARK_TS`` environment variable (orchestrator / harness scripts)
+    2. Stem of the result CSV when it matches ``YYYY-MM-DD-HHMMSS``
+    3. Empty string (unknown)
+    """
+    env_ts = (os.environ.get("BENCHMARK_TS") or "").strip()
+    if env_ts:
+        return env_ts
+    if result_csv_path:
+        stem = Path(result_csv_path).stem
+        # YYYY-MM-DD-HHMMSS (17 chars), same as harness log filenames
+        if len(stem) == 17 and stem[4] == "-" and stem[7] == "-" and stem[10] == "-":
+            date_part, time_part = stem[:10], stem[11:]
+            if time_part.isdigit() and len(time_part) == 6:
+                try:
+                    datetime.strptime(date_part, "%Y-%m-%d")
+                    return stem
+                except ValueError:
+                    pass
+    return ""
+
+
 def capture_environment(
     result_csv_path: Optional[str] = None,
     output_path: Optional[str] = None,
@@ -157,7 +182,7 @@ def capture_environment(
     """
     env: Dict[str, Any] = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        "benchmark_ts": os.environ.get("BENCHMARK_TS", ""),
+        "benchmark_ts": _resolve_benchmark_ts(result_csv_path),
         "os": {
             "system": platform.system(),
             "release": platform.release(),

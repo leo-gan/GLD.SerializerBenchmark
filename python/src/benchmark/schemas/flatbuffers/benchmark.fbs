@@ -1,0 +1,74 @@
+// FlatBuffers schema for serializer-benchmark Python suite.
+// Wire field names are snake_case (flatc convention). The Python wrapper maps
+// them to canonical PascalCase dataclass attributes for fidelity compares.
+namespace BenchmarkFB;
+
+enum Gender : byte { Male = 0, Female = 1 }
+
+table Passport {
+  number:string;
+  authority:string;
+  expiration_date:long;  // unix ms
+}
+
+table PoliceRecord {
+  id:int;
+  crime_code:string;
+}
+
+table Person {
+  first_name:string;
+  last_name:string;
+  age:int;
+  gender:Gender = Male;
+  passport:Passport;
+  police_records:[PoliceRecord];
+}
+
+table SimpleObject {
+  id:int;
+  name:string;
+  timestamp:long;
+  is_active:bool;
+}
+
+table StringArrayObject {
+  items:[string];
+}
+
+table TelemetryData {
+  id:string;
+  data_source:string;
+  time_stamp:long;
+  param1:int;   // signed 32-bit range (matches generator)
+  param2:uint;  // unsigned 32-bit range (matches generator)
+  measurements:[double];
+  associated_problem_id:int;
+  associated_log_id:int;
+  was_processed:bool;
+}
+
+table ServiceLine {
+  service_code:string;
+  charge_amount:double;
+  adjudicated_amount:double;
+}
+
+table Claim {
+  claim_id:string;
+  patient_name:string;
+  total_charge:double;
+  payment_amount:double;
+  lines:[ServiceLine];
+}
+
+table EDI835 {
+  payer_name:string;
+  payee_name:string;
+  payment_date:long;
+  total_actual_amount:double;
+  transaction_control_number:string;
+  claims:[Claim];
+}
+
+root_type Person;

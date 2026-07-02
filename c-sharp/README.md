@@ -94,7 +94,7 @@ Ensure you have [.NET SDK 8.0](https://dotnet.microsoft.com/download) installed.
 - `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (timestamped): Raw timing (ticks) and size (bytes) for each run.
 - `logs/csharp/YYYY-MM-DD-HHMMSS.errors.csv`: Per-run failure details (same stem as the result CSV / `.environment.json`).
 
-Cross-language analysis and docs snapshots: install `analysis/`, run `analyze-benchmarks` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
+Cross-language analysis and docs snapshots: install `analysis/`, then `analyze-benchmarks` (all languages) or `analyze-benchmarks -l csharp` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Optional log path: `--logs LANG=PATH`. Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
 
 ---
 

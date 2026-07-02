@@ -151,12 +151,27 @@ class BenchmarkError:
 
 
 def save_errors(errors: List[BenchmarkError], file_name: str) -> None:
+    """Write per-run error CSV, or remove/skip the file when there are no errors.
+
+    Clean runs must not leave a header-only ``*.errors.csv`` on disk.
+    """
+    if not errors:
+        if os.path.isfile(file_name):
+            os.remove(file_name)
+        return
+
     os.makedirs(os.path.dirname(file_name) or ".", exist_ok=True)
     with open(file_name, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["TestDataName", "SerializerName", "StringOrStream", "Repetition", "ErrorText"])
         for e in errors:
-            writer.writerow([e.test_data_name, e.serializer_name, e.string_or_stream, e.repetition, e.error_text])
+            writer.writerow([
+                e.test_data_name,
+                e.serializer_name,
+                e.string_or_stream,
+                e.repetition,
+                e.error_text,
+            ])
 
 
 @dataclass

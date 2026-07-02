@@ -20,6 +20,22 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # Sentinel for missing fields
 _MISSING = object()
 
+# Max characters for a single value in error text (keeps errors.csv readable)
+_REPR_MAX = 120
+
+
+def _fmt_value(value: Any) -> str:
+    """Format a value for error messages; truncate long reprs."""
+    if value is _MISSING:
+        return "<missing>"
+    try:
+        text = repr(value)
+    except Exception:
+        text = f"<unreprable {type(value).__name__}>"
+    if len(text) > _REPR_MAX:
+        return text[: _REPR_MAX - 3] + "..."
+    return text
+
 
 def _is_float(value: Any) -> bool:
     return isinstance(value, (float, int)) and not isinstance(value, bool)
@@ -97,8 +113,12 @@ def _compare_scalar(expected: Any, actual: Any, path: str, errors: List[str]) ->
             return False
         return True
 
-    # Generic mismatch
-    errors.append(f"{path}: type/value mismatch {type(expected).__name__}({expected!r}) vs {type(actual).__name__}({actual!r})")
+    # Generic mismatch — always show the real values
+    errors.append(
+        f"{path}: type/value mismatch "
+        f"expected {_fmt_value(expected)} ({type(expected).__name__}), "
+        f"actual {_fmt_value(actual)} ({type(actual).__name__})"
+    )
     return False
 
 
@@ -135,8 +155,19 @@ def _compare_mapping(
     expected_dict: Dict[Any, Any] = dict(expected)
     actual_dict: Dict[Any, Any] = dict(actual)
 
-    if set(expected_dict.keys()) != set(actual_dict.keys()):
-        errors.append(f"{path}: key mismatch {set(expected_dict.keys())} vs {set(actual_dict.keys())}")
+    exp_keys = set(expected_dict.keys())
+    act_keys = set(actual_dict.keys())
+    if exp_keys != act_keys:
+        only_exp = exp_keys - act_keys
+        only_act = act_keys - exp_keys
+        parts = []
+        if only_exp:
+            sample = {k: expected_dict[k] for k in list(only_exp)[:5]}
+            parts.append(f"only in expected: {_fmt_value(sample)}")
+        if only_act:
+            sample = {k: actual_dict[k] for k in list(only_act)[:5]}
+            parts.append(f"only in actual: {_fmt_value(sample)}")
+        errors.append(f"{path}: key mismatch ({'; '.join(parts)})")
         return False
 
     ok = True
@@ -144,6 +175,30 @@ def _compare_mapping(
         if not _deep_equal_impl(expected_dict[k], actual_dict[k], f"{path}[{k!r}]", errors, visited):
             ok = False
     return ok
+
+
+def _is_protobuf_message(obj: Any) -> bool:
+    return hasattr(obj, "DESCRIPTOR") and hasattr(obj, "ListFields")
+
+
+def _protobuf_field_value(msg: Any, name: str) -> Any:
+    """Read a protobuf field with correct optional-message / repeated semantics."""
+    if not hasattr(msg, name):
+        return _MISSING
+    try:
+        field = msg.DESCRIPTOR.fields_by_name.get(name)
+    except Exception:
+        field = None
+    if field is not None and field.message_type is not None and not field.is_repeated:
+        try:
+            if not msg.HasField(name):
+                return None
+        except (ValueError, AttributeError):
+            pass
+    value = getattr(msg, name)
+    if field is not None and field.is_repeated:
+        return list(value)
+    return value
 
 
 def _compare_dataclass(
@@ -167,13 +222,15 @@ def _compare_dataclass(
         actual_fields = {f.name: getattr(actual, f.name, _MISSING) for f in fields(actual)}
     elif isinstance(actual, dict):
         actual_fields = actual
+    elif _is_protobuf_message(actual):
+        actual_fields = {name: _protobuf_field_value(actual, name) for name in expected_fields}
     else:
-        # Maybe a protobuf/avro generated object? Try attribute access for common field names
+        # msgspec.Struct / other attribute-bearing objects
         actual_fields = {}
         for name in expected_fields:
             if hasattr(actual, name):
                 actual_fields[name] = getattr(actual, name, _MISSING)
-            elif hasattr(actual, f"_{name}"):  # Avro sometimes prefixes
+            elif hasattr(actual, f"_{name}"):
                 actual_fields[name] = getattr(actual, f"_{name}", _MISSING)
             else:
                 actual_fields[name] = _MISSING
@@ -184,11 +241,17 @@ def _compare_dataclass(
         if e_val is _MISSING and a_val is _MISSING:
             continue
         if e_val is _MISSING:
-            errors.append(f"{path}.{name}: expected missing, actual present")
+            # Expected object has no such field; actual carried an unexpected value.
+            errors.append(
+                f"{path}.{name}: expected <missing>, actual {_fmt_value(a_val)}"
+            )
             ok = False
             continue
         if a_val is _MISSING:
-            errors.append(f"{path}.{name}: expected present, actual missing")
+            # Expected a concrete value; actual object had no field / key.
+            errors.append(
+                f"{path}.{name}: expected {_fmt_value(e_val)}, actual <missing>"
+            )
             ok = False
             continue
         if not _deep_equal_impl(e_val, a_val, f"{path}.{name}", errors, visited):

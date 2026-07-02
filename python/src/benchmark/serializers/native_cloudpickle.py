@@ -16,6 +16,9 @@ from .base import Serializer
 
 
 class CloudpickleSerializer(Serializer):
+    native_kind = "dataclass"
+    stream_mode = "native"
+
     @property
     def name(self) -> str:
         return "cloudpickle"

@@ -1,8 +1,10 @@
 """
 Protobuf benchmark wrapper.
 
-Uses the pre-generated `benchmark_data_pb2` module. Data is converted between
-canonical Python dataclasses and Protobuf messages before/after serialization.
+Call-path: prepare_data converts canonical dataclasses to protobuf Messages
+(untimed). Timed path only runs SerializeToString / ParseFromString.
+Deserialize returns the Message so materialization is not timed; the semantic
+comparer understands protobuf attribute / HasField semantics.
 """
 
 from __future__ import annotations
@@ -11,26 +13,19 @@ import calendar
 import datetime
 import io
 import os
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Type
 
 from .base import Serializer
 from ..data.models import (
-    Claim, EDI835, Gender, GraphNode, Passport, Person,
+    Claim, EDI835, Gender, Passport, Person,
     PoliceRecord, ServiceLine, SimpleObject, StringArrayObject, TelemetryData,
 )
 
 
 def _dt_to_ms(dt: datetime.datetime) -> int:
-    """Convert a naive (assumed UTC) datetime to milliseconds since epoch."""
     return int(calendar.timegm(dt.utctimetuple()) * 1000 + dt.microsecond // 1000)
 
 
-def _ms_to_dt(ms: int) -> datetime.datetime:
-    """Convert milliseconds since epoch to a naive UTC datetime."""
-    return datetime.datetime.utcfromtimestamp(ms / 1000.0)
-
-# The generated module path depends on build-time compilation.
-# We attempt two locations: the legacy `generated` package and a local fallback.
 try:
     from generated import benchmark_data_pb2 as pb2
 except ImportError:
@@ -40,44 +35,6 @@ except ImportError:
         sys.path.insert(0, _generated_dir)
     from generated import benchmark_data_pb2 as pb2  # type: ignore[no-redef]
 
-
-class ProtobufSerializer(Serializer):
-    @property
-    def name(self) -> str:
-        return "protobuf"
-
-    def supports(self, test_data_name: str) -> bool:
-        # Protobuf does not natively support circular references or bare primitives
-        return test_data_name not in ("ObjectGraph", "Integer")
-
-    def serialize_bytes(self, obj: Any) -> bytes:
-        msg = _to_protobuf(obj)
-        return msg.SerializeToString()
-
-    def deserialize_bytes(self, data: bytes) -> Any:
-        # We need to know the type; the runner passes the original object,
-        # but here we only have bytes. We delegate type inference to the
-        # caller via _deserialize_with_type helper.
-        # To keep the interface simple, we assume the caller has set
-        # _last_type hint. This is a pragmatic concession to the benchmark design.
-        cls = getattr(self, "_last_type", None)
-        if cls is None:
-            raise RuntimeError("_last_type must be set before deserialization")
-        msg = _protobuf_class_for(cls)()
-        msg.ParseFromString(data)
-        return _from_protobuf(msg, cls)
-
-    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        stream.write(self.serialize_bytes(obj))
-
-    def deserialize_stream(self, stream: io.BytesIO) -> Any:
-        stream.seek(0)
-        return self.deserialize_bytes(stream.read())
-
-
-# ---------------------------------------------------------------------------
-# Type mapping
-# ---------------------------------------------------------------------------
 
 _TYPE_MAP: Dict[Type[Any], Type[Any]] = {
     Person: pb2.Person,
@@ -92,12 +49,51 @@ _TYPE_MAP: Dict[Type[Any], Type[Any]] = {
 }
 
 
-def _protobuf_class_for(cls: Type[Any]) -> Type[Any]:
-    return _TYPE_MAP.get(cls, pb2.SimpleObject)
+class ProtobufSerializer(Serializer):
+    native_kind = "message"
+    stream_mode = "adapted"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._msg_cls: Type[Any] | None = None
+
+    @property
+    def name(self) -> str:
+        return "protobuf"
+
+    def supports(self, test_data_name: str) -> bool:
+        return test_data_name not in ("ObjectGraph", "Integer")
+
+    def prepare(self, test_data_name: str, test_data_type: type) -> None:
+        super().prepare(test_data_name, test_data_type)
+        self._msg_cls = _TYPE_MAP.get(test_data_type)
+        if self._msg_cls is None and test_data_type is not int:
+            raise TypeError(f"No protobuf mapping for {test_data_type}")
+
+    def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
+        return _to_protobuf(obj)
+
+    def serialize_bytes(self, obj: Any) -> bytes:
+        # obj is a protobuf Message
+        return obj.SerializeToString()
+
+    def deserialize_bytes(self, data: bytes) -> Any:
+        if self._msg_cls is None:
+            raise RuntimeError("prepare() must be called before deserialize")
+        msg = self._msg_cls()
+        msg.ParseFromString(data)
+        return msg
+
+    def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
+        stream.write(self.serialize_bytes(obj))
+
+    def deserialize_stream(self, stream: io.BytesIO) -> Any:
+        stream.seek(0)
+        return self.deserialize_bytes(stream.read())
 
 
 def _to_protobuf(obj: Any) -> Any:
-    """Recursively convert a Python dataclass to a protobuf message."""
+    """Recursively convert a Python dataclass to a protobuf message (untimed)."""
     if isinstance(obj, Person):
         p = pb2.Person()
         p.FirstName = obj.FirstName
@@ -180,91 +176,4 @@ def _to_protobuf(obj: Any) -> Any:
             c.CopyFrom(_to_protobuf(claim))
         return p
 
-    if isinstance(obj, int):
-        # Primitive fallback
-        return obj
-
     raise TypeError(f"Unsupported type for protobuf conversion: {type(obj)}")
-
-
-def _from_protobuf(msg: Any, cls: Type[Any]) -> Any:
-    """Recursively convert a protobuf message back to a Python dataclass."""
-    if cls is Person:
-        return Person(
-            FirstName=msg.FirstName,
-            LastName=msg.LastName,
-            Age=msg.Age,
-            Gender=Gender.Male if msg.Gender == pb2.Gender.MALE else Gender.Female,
-            Passport=_from_protobuf(msg.Passport, Passport) if msg.HasField("Passport") else None,
-            PoliceRecords=[_from_protobuf(r, PoliceRecord) for r in msg.PoliceRecords],
-        )
-
-    if cls is Passport:
-        return Passport(
-            Number=msg.Number,
-            Authority=msg.Authority,
-            ExpirationDate=_ms_to_dt(msg.ExpirationDate),
-        )
-
-    if cls is PoliceRecord:
-        return PoliceRecord(
-            Id=msg.Id,
-            CrimeCode=msg.CrimeCode,
-        )
-
-    if cls is SimpleObject:
-        return SimpleObject(
-            Id=msg.Id,
-            Name=msg.Name,
-            Timestamp=_ms_to_dt(msg.Timestamp),
-            IsActive=msg.IsActive,
-        )
-
-    if cls is StringArrayObject:
-        return StringArrayObject(
-            Items=list(msg.Items),
-        )
-
-    if cls is TelemetryData:
-        return TelemetryData(
-            Id=msg.Id,
-            DataSource=msg.DataSource,
-            TimeStamp=_ms_to_dt(msg.TimeStamp),
-            Param1=msg.Param1,
-            Param2=msg.Param2,
-            Measurements=list(msg.Measurements),
-            AssociatedProblemID=msg.AssociatedProblemID,
-            AssociatedLogID=msg.AssociatedLogID,
-            WasProcessed=msg.WasProcessed,
-        )
-
-    if cls is ServiceLine:
-        return ServiceLine(
-            ServiceCode=msg.ServiceCode,
-            ChargeAmount=msg.ChargeAmount,
-            AdjudicatedAmount=msg.AdjudicatedAmount,
-        )
-
-    if cls is Claim:
-        return Claim(
-            ClaimId=msg.ClaimId,
-            PatientName=msg.PatientName,
-            TotalCharge=msg.TotalCharge,
-            PaymentAmount=msg.PaymentAmount,
-            Lines=[_from_protobuf(l, ServiceLine) for l in msg.Lines],
-        )
-
-    if cls is EDI835:
-        return EDI835(
-            PayerName=msg.PayerName,
-            PayeeName=msg.PayeeName,
-            PaymentDate=_ms_to_dt(msg.PaymentDate),
-            TotalActualAmount=msg.TotalActualAmount,
-            TransactionControlNumber=msg.TransactionControlNumber,
-            Claims=[_from_protobuf(c, Claim) for c in msg.Claims],
-        )
-
-    if cls is int:
-        return msg
-
-    raise TypeError(f"Unsupported type for protobuf reconstruction: {cls}")

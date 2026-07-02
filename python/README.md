@@ -1,6 +1,6 @@
 # Python Serializer Benchmark
 
-A Dockerized benchmarking suite evaluating **10 Python serializers** across 7 realistic data structures, designed to match the methodology and output format of the companion [.NET (C#) benchmark](../c-sharp/).
+A Dockerized benchmarking suite evaluating **16 Python serializers** across 7 realistic data structures, designed to match the methodology and output format of the companion [.NET (C#) benchmark](../c-sharp/).
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
@@ -8,10 +8,10 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
 | Group | Serializers | Notes |
 | :--- | :--- | :--- |
-| **JSON** | `orjson`, `msgspec`, `rapidjson` | Text-based, schema-optional. |
+| **JSON** | `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs` | Text-based; typed stacks use prepare/prepare_data. |
 | **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2` | Compact binary, schema-optional. |
-| **Schema** | `protobuf`, `avro` | Requires `.proto`/`.avsc` schemas and code generation. |
-| **Python-native** | `pickle`, `cloudpickle` | Built-in serialization, handles arbitrary objects. |
+| **Schema** | `protobuf`, `avro`, `flatbuffers` | Requires schemas / codegen (flatc for FlatBuffers). |
+| **Python-native** | `pickle`, `cloudpickle`, `dill` | Language-native; cycles only here. |
 
 
 ## Test Data Scenarios
@@ -26,7 +26,7 @@ All 7 types mirror the C# benchmark to enable cross-language comparisons:
 | **SimpleObject** | Minimal overhead baseline. |
 | **StringArray** | Array of 100 strings; tests memory allocation and string encoding. |
 | **EDI_835** | Deeply nested health-care claim document; tests recursion depth. |
-| **ObjectGraph** | Circular references; only `pickle` and `cloudpickle` are expected to pass. |
+| **ObjectGraph** | Circular references; only `pickle`, `cloudpickle`, and `dill` are expected to pass. |
 
 ## Benchmark Dimensions
 
@@ -95,9 +95,13 @@ docker logs -f $(docker ps -lq)
 ```
 
 #### 4. Results
-Logs are saved to `logs/python/`:
+Logs are saved under the **monorepo root** `logs/python/` (absolute path), even when you run from `python/`:
+
 - `YYYY-MM-DD-HHMMSS.csv` (timestamped): Raw per-repetition metrics.
-- `YYYY-MM-DD-HHMMSS.errors.csv`: Per-run failure details (same stem as the result CSV / `.environment.json`).
+- `YYYY-MM-DD-HHMMSS.errors.csv`: Per-run failure details (same stem as the result CSV / `.environment.json`). **Only written when at least one error occurred** — clean runs do not create this file.
+- `YYYY-MM-DD-HHMMSS.environment.json`: Hardware/OS sidecar (when `benchmark_analysis` is available).
+
+Override the logs **root** with `LOG_DIR` or `BENCHMARK_LOG_DIR` (results go to `$LOG_DIR/python/`). Docker/orchestrator scripts set this to the repo `logs/` mount.
 
 ### Local Development (Without Docker)
 
@@ -155,7 +159,7 @@ MemoryPeakBytes,FidelityScore
 
 Aggregate results are printed to stdout after each run in a format aligned with the C# console output.
 
-Cross-language analysis and docs snapshots: install `analysis/`, run `analyze-benchmarks` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
+Cross-language analysis and docs snapshots: install `analysis/`, then `analyze-benchmarks` (all languages) or `analyze-benchmarks -l python` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Optional log path: `--logs LANG=PATH`. Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
 
 ---
 

@@ -43,7 +43,7 @@ It sits between raw harness output (timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.c
    Non-parametric bootstrap CI, effect sizes (Cliff’s δ + Hedges’ g) vs the fastest in each `(language, test_data, mode)` group, Holm-corrected Mann–Whitney for A/B. This is genuinely better than the mean-only tables common in serializer benchmarks.
 
 2. **Language-agnostic contract + discovery**  
-   `Language` column + auto-discovery of latest timestamped CSV under `logs/<lang>/` + `--extra-logs` means adding Go/Java/etc. does not require analysis changes.
+   `Language` column + auto-discovery of latest timestamped CSV under `logs/<lang>/` + `--logs LANG=PATH` means adding Go/Java/etc. does not require analysis changes.
 
 3. **Config-driven with safe fallbacks**  
    `load_stats_config()` walks upward for `benchmark_config.yaml`; works even if PyYAML or the file is absent.
@@ -132,13 +132,12 @@ Loaded but unused (or only partially used):
 
 This creates a false sense of configurability and makes the methodology doc lie slightly.
 
-### 6. Legacy API and CLI migration debt (MEDIUM)
+### 6. Legacy API and CLI migration debt (MEDIUM) — partially addressed
 
-- CLI still parses `--csharp-logs`, `--python-logs` etc. and creates `csharp_stats` / `python_stats` splits.
-- `generate_markdown_summary(csharp_stats, python_stats, ...)` largely ignores them and writes only a link hub.
-- Hard-coded language lists in multiple places (`_LANG_ORDER`, CLI defaults, script).
-- `scripts/run-all-benchmarks.sh` still builds the legacy per-lang flag string.
-- Heavy imports (matplotlib, seaborn, pandas) at top of reports → even `--check-regression` pays the cost unless you avoid importing reports.
+- **Done:** per-lang `--*-logs` / `--extra-logs` replaced by unified `--logs` + `-l` / `--language`.
+- `generate_markdown_summary` still writes only a link hub (by design for published docs).
+- Hard-coded language lists remain in multiple places (`_LANG_ORDER`, CLI known langs, orchestrator script).
+- Heavy imports (matplotlib, seaborn, pandas) live in `reports` (CLI lazy-imports for generate path).
 
 ### 7. Statistical implementation details (MEDIUM)
 

@@ -26,6 +26,43 @@ import tracemalloc
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+
+def _repo_root() -> Optional[Path]:
+    """Locate the monorepo root (directory that contains ``config/benchmark_config.yaml``)."""
+    for p in Path(__file__).resolve().parents:
+        if (p / "config" / "benchmark_config.yaml").is_file():
+            return p
+    return None
+
+
+def _default_log_dir() -> Path:
+    """Canonical log directory: ``<repo>/logs/python`` (not cwd-relative).
+
+    Resolution order:
+    1. ``LOG_DIR`` / ``BENCHMARK_LOG_DIR`` env (logs *root*, e.g. repo ``logs/`` or
+       container ``/app/logs``) → append ``python`` unless the path already ends
+       with ``python``.
+    2. Monorepo root via ``config/benchmark_config.yaml`` next to this package.
+    3. Docker/image layout: parent that has ``src/benchmark`` + ``generated``.
+    4. Last resort: ``<cwd>/logs/python`` (absolute).
+    """
+    env_root = (os.environ.get("LOG_DIR") or os.environ.get("BENCHMARK_LOG_DIR") or "").strip()
+    if env_root:
+        root = Path(env_root).expanduser()
+        if root.name == "python":
+            return root.resolve()
+        return (root / "python").resolve()
+
+    repo = _repo_root()
+    if repo is not None:
+        return (repo / "logs" / "python").resolve()
+
+    for p in Path(__file__).resolve().parents:
+        if (p / "src" / "benchmark").is_dir() and (p / "generated").is_dir():
+            return (p / "logs" / "python").resolve()
+
+    return (Path.cwd() / "logs" / "python").resolve()
+
 from .comparer import compare
 from .data.generator import generate_test_data
 from .data.models import (
@@ -43,16 +80,22 @@ from .report import (
 )
 from .serializers import (
     AvroSerializer,
+    FlatBuffersSerializer,
     Cbor2Serializer,
     CloudpickleSerializer,
+    DillSerializer,
+    MashumaroSerializer,
     MsgspecMessagePackSerializer,
     MsgpackSerializer,
     MsgspecSerializer,
     OrjsonSerializer,
     PickleSerializer,
     ProtobufSerializer,
+    PydanticSerializer,
     RapidjsonSerializer,
+    SerpycoSerializer,
     Serializer,
+    StdlibJsonSerializer,
 )
 
 # ---------------------------------------------------------------------------
@@ -60,16 +103,26 @@ from .serializers import (
 # ---------------------------------------------------------------------------
 
 ALL_SERIALIZERS: List[Serializer] = [
+    # JSON
+    StdlibJsonSerializer(),
     OrjsonSerializer(),
     MsgspecSerializer(),
     RapidjsonSerializer(),
+    PydanticSerializer(),
+    MashumaroSerializer(),
+    SerpycoSerializer(),
+    # Binary
     MsgspecMessagePackSerializer(),
     MsgpackSerializer(),
     Cbor2Serializer(),
+    # Schema
     ProtobufSerializer(),
     AvroSerializer(),
+    FlatBuffersSerializer(),
+    # Native
     PickleSerializer(),
     CloudpickleSerializer(),
+    DillSerializer(),
 ]
 
 ALL_TEST_DATA = [
@@ -92,9 +145,14 @@ def run(
     repetitions: int = 100,
     serializer_filter: Optional[str] = None,
     data_filter: Optional[str] = None,
-    log_dir: str = "logs/python",
+    log_dir: Optional[str] = None,
 ) -> None:
-    """Execute the full benchmark suite."""
+    """Execute the full benchmark suite.
+
+    Results are written under the monorepo ``logs/python/`` directory by default
+    (absolute path), independent of the process working directory. Override with
+    ``log_dir=...`` or env ``LOG_DIR`` / ``BENCHMARK_LOG_DIR`` (logs root).
+    """
     # Filter
     serializers = [
         s for s in ALL_SERIALIZERS
@@ -110,9 +168,13 @@ def run(
         return
 
     # Timestamped result file — each run gets its own CSV, never overwritten.
+    # Export BENCHMARK_TS so capture_environment (and child tools) see the same stem.
     ts = os.environ.get("BENCHMARK_TS") or datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
-    log_dir_path = Path(log_dir)
+    os.environ["BENCHMARK_TS"] = ts
+    log_dir_path = Path(log_dir).expanduser().resolve() if log_dir else _default_log_dir()
     log_dir_path.mkdir(parents=True, exist_ok=True)
+    print(f"[PROGRESS] Writing results under {log_dir_path}")
+
 
     ts_file = log_dir_path / f"{ts}.csv"
     # Per-run errors beside the result CSV (same stem as .environment.json)
@@ -171,8 +233,7 @@ def _test_on_data(
         if not serializer.supports(td_name):
             continue
 
-        # Set type hint and let serializers pre-build per-type codecs/schemas outside timing.
-        setattr(serializer, "_last_type", td_cls)
+        # Pre-build codecs/schemas and convert to library-native values outside timing.
         serializer.prepare(td_name, td_cls)
         serializer_original = serializer.prepare_data(original, td_name, td_cls)
 
@@ -199,6 +260,10 @@ def _run_repetitions(
 ) -> None:
     """Run repetitions for a single serializer + data + mode."""
     was_error = False
+    # Memory sampling is deliberately *outside* timed ser/des: tracemalloc active
+    # during encode/decode inflates alloc-heavy codecs (fastavro, msgpack, …) by 2–3×.
+    # We measure peak once on the first successful rep and reuse for the group.
+    cached_memory_peak = 0
 
     for i in range(repetitions):
         log = BenchmarkLog(
@@ -210,7 +275,20 @@ def _run_repetitions(
         )
 
         try:
-            _single_test(serializer, serializable, expected, mode, log, td_cls)
+            measure_memory = not was_error and cached_memory_peak == 0
+            _single_test(
+                serializer,
+                serializable,
+                expected,
+                mode,
+                log,
+                td_cls,
+                measure_memory=measure_memory,
+            )
+            if measure_memory:
+                cached_memory_peak = log.memory_peak_bytes
+            else:
+                log.memory_peak_bytes = cached_memory_peak
         except Exception as exc:
             if not was_error:
                 err = BenchmarkError(
@@ -235,19 +313,21 @@ def _single_test(
     mode: str,
     log: BenchmarkLog,
     td_cls: type,
+    *,
+    measure_memory: bool = False,
 ) -> None:
-    """Execute one serialization + deserialization + comparison."""
-    tracemalloc.start()
+    """Execute one serialization + deserialization + comparison.
 
+    Timing never runs under an active ``tracemalloc`` session. Optional memory
+    sampling re-runs the same ser/des once *after* timers (first rep only).
+    """
     if mode == "bytes":
-        # Serialize
         t0 = time.perf_counter_ns()
         data = serializer.serialize_bytes(serializable)
         t1 = time.perf_counter_ns()
         log.time_ser_ns = t1 - t0
         log.size_bytes = len(data)
 
-        # Deserialize
         t0 = time.perf_counter_ns()
         processed = serializer.deserialize_bytes(data)
         t1 = time.perf_counter_ns()
@@ -255,24 +335,35 @@ def _single_test(
     else:
         stream = io.BytesIO()
 
-        # Serialize
         t0 = time.perf_counter_ns()
         serializer.serialize_stream(serializable, stream)
         t1 = time.perf_counter_ns()
         log.time_ser_ns = t1 - t0
         log.size_bytes = stream.tell()
 
-        # Deserialize
         t0 = time.perf_counter_ns()
         processed = serializer.deserialize_stream(stream)
         t1 = time.perf_counter_ns()
         log.time_deser_ns = t1 - t0
 
-    _, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-    log.memory_peak_bytes = peak
+    if measure_memory:
+        tracemalloc.start()
+        try:
+            if mode == "bytes":
+                _blob = serializer.serialize_bytes(serializable)
+                serializer.deserialize_bytes(_blob)
+            else:
+                _stream = io.BytesIO()
+                serializer.serialize_stream(serializable, _stream)
+                serializer.deserialize_stream(_stream)
+            _, peak = tracemalloc.get_traced_memory()
+            log.memory_peak_bytes = peak
+        finally:
+            tracemalloc.stop()
+    else:
+        log.memory_peak_bytes = 0
 
-    # Semantic comparison
+    # Semantic comparison (untimed)
     ok, err_text = compare(expected, processed)
     log.fidelity_score = 1.0 if ok else 0.0
     if not ok:

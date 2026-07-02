@@ -19,30 +19,29 @@ Suite layout and harness timing model: [Benchmark architecture](architecture.md)
 ## Regenerating published reports (maintainers)
 
 Requires local CSVs at `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` (gitignored; from harness or
-`./scripts/run-all-benchmarks.sh --mode full`). Use **both** flags so the hub index,
-PNGs, and per-language pages stay in sync:
+`./scripts/run-all-benchmarks.sh --mode full`).
 
 ```bash
 cd analysis && pip install -e .   # once
-analyze-benchmarks \
-  --generate-summary \
-  --generate-plots \
+
+# All languages (tables + violin plots + hub index)
+analyze-benchmarks
+
+# One language only
+analyze-benchmarks -l python
+
+# Custom log location
+analyze-benchmarks -l python --logs python/logs/python
+# or: analyze-benchmarks --logs python=python/logs/python
 ```
 
-That writes (commit these for Pages):
+By default the CLI writes **both** results tables and violin plots (no separate flags).
 
 | Output | Role |
 |--------|------|
 | `docs/analysis/BENCHMARK_SUMMARY.md` | Hub **Benchmark Results** (links only) |
 | `docs/analysis/plots/violin/*.png` | Shared plot assets |
 | `docs/<lang>/results.md` | Per-language pivots + plot embeds (`c-sharp`, `python`, `rust`, `c`, `javascript`) |
-
-Either flag alone still refreshes `docs/<lang>/results.md` from current CSVs, but
-`--generate-summary` without `--generate-plots` omits plot images/embeds on that run,
-and `--generate-plots` without `--generate-summary` skips updating
-`BENCHMARK_SUMMARY.md`. Prefer both flags for a full snapshot.
-
-The CLI writes the hub/PNGs under `reports/` (gitignored) and refreshes `docs/<lang>/results.md` when a sibling `docs/` directory exists.
 
 The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree — it does **not** re-run analysis or benchmarks.
 
