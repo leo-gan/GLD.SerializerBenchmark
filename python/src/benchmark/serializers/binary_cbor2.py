@@ -2,7 +2,15 @@
 cbor2 benchmark wrapper.
 
 Call-path: prepare_data converts dataclasses to dicts (untimed).
-Timed path uses dumps/loads (and native dump/load for stream mode).
+Timed path uses dumps/loads.
+
+Stream note
+-----------
+``cbor2.dump`` to ``BytesIO`` is fine, but the C-extension ``cbor2.load(fp)``
+path mis-decodes some text-string payloads from an in-memory binary buffer
+(``CBORDecodeError: error decoding text string`` / underlying UTF-8 error on
+the first CBOR map byte). ``cbor2.loads(stream.read())`` is reliable and is
+what we use for stream deserialize. Serialize still uses native ``dump``.
 """
 
 from __future__ import annotations
@@ -18,6 +26,7 @@ from ..converters import to_dict
 
 class Cbor2Serializer(Serializer):
     native_kind = "dict"
+    # dump is native; load uses loads(read()) due to cbor2+BytesIO bug (see module doc).
     stream_mode = "native"
 
     @property
@@ -42,4 +51,5 @@ class Cbor2Serializer(Serializer):
 
     def deserialize_stream(self, stream: io.BytesIO) -> Any:
         stream.seek(0)
-        return cbor2.load(stream)
+        # Avoid cbor2.load(BytesIO): broken for some string-heavy payloads (e.g. StringArray).
+        return cbor2.loads(stream.read())

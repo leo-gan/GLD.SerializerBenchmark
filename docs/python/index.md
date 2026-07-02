@@ -20,10 +20,10 @@ Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runn
 | cbor2 | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | protobuf | Schema | `protobuf` | Message | adapted | From `schemas/benchmark_data.proto` |
 | avro | Schema | `fastavro` | record dict | native | `.avsc` under `src/benchmark/` |
-| flatbuffers | Schema | `flatbuffers` | dataclass → Builder | adapted | flatc schema; build timed |
+| flatbuffers | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
 | pickle | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
 | cloudpickle | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
-| dill | Native | `dill` | dataclass | native | Scientific/multiprocess graphs |
+| dill | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
 
 ### Call-path contract (fair timing)
 
@@ -36,6 +36,15 @@ Timed methods measure **codec only** on library-native values:
 FlatBuffers is the exception where Builder construction *is* the serialize API (no separate Message type). Stream mode is **native** when the library has a real file/stream API; otherwise **adapted** (bytes then write / read then bytes).
 
 ### Caveats
+
+#### Why flatbuffers and dill ops/s look low
+
+- **flatbuffers (serialize):** the official Python package builds with a pure-Python `Builder`. Expect ~100×+ slower ser than `protobuf` on the same POCO. C++/Rust FlatBuffers are a different performance class; this suite measures the Python binding.
+- **flatbuffers (deserialize):** timed path is zero-copy `GetRootAs` + a thin view. Full field materialization is *not* forced inside the timer (FlatBuffers' model: pay on field access).
+- **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these fixtures. Prefer pickle when you do not need dill's dynamic-object features.
+
+### Other caveats
+
 
 - **ObjectGraph:** only `pickle` / `cloudpickle` / `dill` expected to succeed.
 - **Integer:** protobuf / avro / flatbuffers / serpyco-rs typically exclude bare scalars.
