@@ -228,6 +228,37 @@ def _display_mode(mode: str) -> str:
     return _MODE_DISPLAY.get(key, mode)
 
 
+def _format_compact(val: float, *, sig: int = 2) -> str:
+    """Format a number for **results.md only**: 2 significant digits, K/M suffixes.
+
+    Examples: ``3565844`` → ``3.6M``, ``2911`` → ``2.9K``, ``485`` → ``480``.
+    Does not affect CSV harness output.
+    """
+    try:
+        v = float(val)
+    except (TypeError, ValueError):
+        return str(val)
+    if v != v:  # NaN
+        return "-"
+    if v == 0:
+        return "0"
+    av = abs(v)
+    if av >= 1_000_000:
+        scaled = v / 1_000_000.0
+        unit = "M"
+    elif av >= 1_000:
+        scaled = v / 1_000.0
+        unit = "K"
+    else:
+        scaled = v
+        unit = ""
+    # %.Ng uses significant figures; strip redundant trailing .0 for screen display
+    text = f"{float(f'%.{sig}g' % scaled)}"
+    if text.endswith(".0") and "e" not in text.lower():
+        text = text[:-2]
+    return f"{text}{unit}"
+
+
 def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
     """Generate a markdown pivot table from stats dict."""
     lines = [f"\n### {title}\n"]
@@ -256,8 +287,8 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             matching = [s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv]
             if matching:
                 val = matching[0][value_key]
-                if isinstance(val, float):
-                    row_cells.append(f"{val:,.0f}")
+                if isinstance(val, (int, float)) and not isinstance(val, bool):
+                    row_cells.append(_format_compact(float(val)))
                 else:
                     row_cells.append(str(val))
             else:
@@ -364,7 +395,8 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         "Compare serializers **within the same paradigm** (not across JSON vs zero-copy).",
         "Values are mean Ser+Deser **ops/s** over fixtures, using the harness "
         "**bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — "
-        "not “number of bytes”). Higher is better. Stream mode is excluded here.",
+        "not “number of bytes”). Higher is better. Stream mode is excluded here. "
+        "Numbers use **2 significant digits** with **K/M** suffixes (display only).",
         "",
     ]
     for cat in sorted(by_cat.keys()):
@@ -383,7 +415,7 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         lines.append("| serializer | mean ops/s (bytes mode) |")
         lines.append("|---|---:|")
         for ser, mean_ops in ranked:
-            lines.append(f"| {ser} | {mean_ops:,.0f} |")
+            lines.append(f"| {ser} | {_format_compact(mean_ops)} |")
         lines.append("")
     return "\n".join(lines)
 
