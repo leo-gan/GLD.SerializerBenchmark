@@ -5,7 +5,6 @@ __version__ = "0.1.0"
 __all__ = [
     "parse_csv_file",
     "compute_statistics",
-    "generate_markdown_summary",
     "generate_violin_plots",
     "generate_language_results_pages",
     "check_regression",
@@ -30,7 +29,6 @@ def __getattr__(name: str):
         from . import environment as _environment
         return getattr(_environment, name)
     if name in (
-        "generate_markdown_summary",
         "generate_violin_plots",
         "generate_language_results_pages",
     ):

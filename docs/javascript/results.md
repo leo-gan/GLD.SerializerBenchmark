@@ -83,4 +83,4 @@ analyze-benchmarks -l javascript   # this language only
 
 Optional log override: `analyze-benchmarks -l javascript --logs PATH` or `--logs javascript=PATH`.
 
-That refreshes results tables, violin plots under `docs/analysis/plots/violin/`, and the [Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) hub. Commit those paths to update the documentation site.
+That refreshes this language's results tables and violin plots under `docs/analysis/plots/violin/`. The hub [Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) is a **static** index and is not rewritten. Commit the updated `results.md` / plot paths as needed.

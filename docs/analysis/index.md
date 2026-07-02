@@ -39,9 +39,10 @@ By default the CLI writes **both** results tables and violin plots (no separate 
 
 | Output | Role |
 |--------|------|
-| `docs/analysis/BENCHMARK_SUMMARY.md` | Hub **Benchmark Results** (links only) |
 | `docs/analysis/plots/violin/*.png` | Shared plot assets |
 | `docs/<lang>/results.md` | Per-language pivots + plot embeds (`c-sharp`, `python`, `rust`, `c`, `javascript`) |
+
+The hub [Benchmark Results](BENCHMARK_SUMMARY.md) is a **static** hand-maintained index (not overwritten by `analyze-benchmarks`).
 
 The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree — it does **not** re-run analysis or benchmarks.
 

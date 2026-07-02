@@ -125,7 +125,7 @@ Generated 32 violin plots
 |--------|---------|
 | `docs/<lang>/results.md` | Pivot tables + violin embeds for one language |
 | `docs/analysis/plots/violin/*.png` | Split violins: serialize vs deserialize distributions (µs; log scale when medians span ≥5×) |
-| `docs/analysis/BENCHMARK_SUMMARY.md` | Hub links to language Results |
+| `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** hub links to language Results (not regenerated) |
 | Console | Load counts, warmup/outlier tallies |
 
 Violins show spread and multimodality that means hide. As of recent fixes they exclude warmup (`RepetitionIndex==0`) and apply the same IQR filter per (serializer, fixture, mode, operation) as the summary tables, so the visual density is much closer to the numbers. A final per-serializer p99 clip is still applied only for KDE rendering stability and does not change the underlying sample for statistics.

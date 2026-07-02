@@ -119,7 +119,7 @@ Baselines are stored as JSON files with the format:
 | Output | Description | Location |
 |--------|-------------|----------|
 | Raw CSVs | Benchmark timing data (gitignored) | `logs/<lang>/` |
-| Markdown Summary (local) | Tabular results while iterating | `reports/BENCHMARK_SUMMARY.md` (gitignored) |
+| Language results + plots | `docs/<lang>/results.md`, violin PNGs
 | Violin plots (local) | Per-language/data charts while iterating | `reports/plots/violin/` (gitignored) |
 | **Published site snapshot** | Tables + plots on GitHub Pages | **`docs/<lang>/results.md`** + **`docs/analysis/plots/violin/*.png`** (indexes under `docs/analysis/`) — generate locally and commit |
 | Baseline JSON | Performance baseline | `baseline.json` (or path you pass) |

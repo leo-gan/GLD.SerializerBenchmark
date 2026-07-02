@@ -290,75 +290,6 @@ def _stats_by_language(multi_lang_stats: Optional[Dict]) -> Dict[str, Dict]:
     return by_lang
 
 
-def _lang_result_links_md(prefix: str = "../") -> List[str]:
-    """Markdown bullet links to per-language results pages."""
-    lines = []
-    for lang_id in _LANG_ORDER:
-        docs_dir = _LANG_DOCS_DIR.get(lang_id)
-        if not docs_dir:
-            continue
-        title = _LANG_DISPLAY.get(lang_id, lang_id)
-        lines.append(f"- [{title} results]({prefix}{docs_dir}/results.md)")
-    return lines
-
-
-def generate_markdown_summary(
-    output_path: str,
-    *,
-    multi_lang_stats: Optional[Dict] = None,
-    multi_lang_records: Optional[Dict] = None,
-) -> None:
-    """Write a thin index: methodology notes + links to per-language results pages.
-
-    If multi_lang_stats or multi_lang_records are supplied they are used to
-    emit a short data-driven note (language count, group count) so the
-    parameters are not silently ignored.
-    Pivot tables and plots live on ``docs/<lang>/results.md``.
-    """
-    stats = multi_lang_stats or {}
-    recs = multi_lang_records or {}
-
-    n_langs = len(set(
-        (e.get("language") or "unknown") for e in stats.values()
-    )) or len([k for k in recs if recs.get(k)])
-    n_groups = len(stats)
-
-    lines = [
-        "# Benchmark Results",
-        "",
-        f"**Generated:** {datetime.now().isoformat()}",
-        "",
-        "This page is an **index** of published snapshot results. Pivot tables and "
-        "violin plots are on each language's **Results** page (generated locally, "
-        "not by GitHub Actions). Re-running benchmarks elsewhere may differ — that is OK.",
-        "",
-        f"Snapshot contains data for **{n_langs}** language(s) and **{n_groups}** "
-        "statistical group(s).",
-        "",
-        "---",
-        "",
-        "## Results by language",
-        "",
-        *(_lang_result_links_md("../")),
-        "",
-        "Hand-written inventories (what we measure): "
-        "[C#](../c-sharp/index.md) · [Python](../python/index.md) · "
-        "[Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md).",
-        "",
-        "Methods: [Analysis Methodology](ANALYSIS_METHODOLOGY.md).",
-        "",
-        "---",
-        "",
-        "*Local snapshot — regenerate with* "
-        "`analyze-benchmarks` or `analyze-benchmarks -l python`",
-        "",
-    ]
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
-
-    print(f"Markdown summary index written to: {output_path}")
-
 
 # Within-language comparison categories (prefer peers over cross-paradigm ranks).
 _RUST_CATEGORY: Dict[str, str] = {
@@ -579,9 +510,10 @@ def generate_language_results_pages(
         lines.append("```")
         lines.append("")
         lines.append(
-            "That refreshes results tables, violin plots under "
-            "`docs/analysis/plots/violin/`, and the [Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) hub. "
-            "Commit those paths to update the documentation site."
+            "That refreshes this language's results tables and violin plots under "
+            "`docs/analysis/plots/violin/`. The hub "
+            "[Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) is a **static** index "
+            "and is not rewritten. Commit the updated `results.md` / plot paths as needed."
         )
         lines.append("")
 
