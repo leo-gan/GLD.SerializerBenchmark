@@ -128,6 +128,25 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
 # Time unit normalization
 # ---------------------------------------------------------------------------
 
+def _detect_time_unit(time_value: int, language: Optional[str] = None) -> float:
+    """Return multiplier to convert recorded time to nanoseconds.
+
+    New runners emit nanoseconds and set Language explicitly.
+    Legacy C# emits ticks (100 ns) without Language or with language=csharp.
+    (Kept as-is for test compatibility and internal use by normalize.)
+    """
+    if language:
+        lang = language.lower().strip()
+        if lang in ("csharp", "c#", "cs", "dotnet", "c-sharp"):
+            return 100.0
+        if lang in ("python", "rust", "c", "javascript", "js", "node", "go", "java", "cpp"):
+            return 1.0
+    # Heuristic fallback (legacy CSVs without Language column)
+    if time_value > 1_000_000:
+        return 100.0  # C# ticks
+    return 1.0
+
+
 def normalize_to_nanoseconds(value: float, language: Optional[str] = None) -> float:
     """Convert a raw timing value (from CSV) to nanoseconds.
 
@@ -135,22 +154,8 @@ def normalize_to_nanoseconds(value: float, language: Optional[str] = None) -> fl
     only for legacy data without language info. This is the single source of
     truth for time-unit normalization so that stats and plots agree.
     """
-    if language:
-        lang = language.lower().strip()
-        if lang in ("csharp", "c#", "cs", "dotnet", "c-sharp"):
-            return float(value) * 100.0
-        if lang in ("python", "rust", "c", "javascript", "js", "node", "go", "java", "cpp"):
-            return float(value)
-    # Heuristic fallback (legacy CSVs without Language column)
-    v = float(value)
-    if v > 1_000_000:
-        return v * 100.0  # C# ticks
-    return v
-
-
-def _detect_time_unit(time_value: int, language: Optional[str] = None) -> float:
-    """Deprecated wrapper kept for test compatibility. Use normalize_to_nanoseconds."""
-    return normalize_to_nanoseconds(time_value, language)
+    mult = _detect_time_unit(int(value), language)
+    return float(value) * mult
 
 
 # ---------------------------------------------------------------------------
