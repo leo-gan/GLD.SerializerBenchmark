@@ -126,7 +126,9 @@ def run(
         return
 
     # Timestamped result file — each run gets its own CSV, never overwritten.
+    # Export BENCHMARK_TS so capture_environment (and child tools) see the same stem.
     ts = os.environ.get("BENCHMARK_TS") or datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    os.environ["BENCHMARK_TS"] = ts
     log_dir_path = Path(log_dir)
     log_dir_path.mkdir(parents=True, exist_ok=True)
 
