@@ -214,6 +214,10 @@ def _run_repetitions(
 ) -> None:
     """Run repetitions for a single serializer + data + mode."""
     was_error = False
+    # Memory sampling is deliberately *outside* timed ser/des: tracemalloc active
+    # during encode/decode inflates alloc-heavy codecs (fastavro, msgpack, …) by 2–3×.
+    # We measure peak once on the first successful rep and reuse for the group.
+    cached_memory_peak = 0
 
     for i in range(repetitions):
         log = BenchmarkLog(
@@ -225,7 +229,20 @@ def _run_repetitions(
         )
 
         try:
-            _single_test(serializer, serializable, expected, mode, log, td_cls)
+            measure_memory = not was_error and cached_memory_peak == 0
+            _single_test(
+                serializer,
+                serializable,
+                expected,
+                mode,
+                log,
+                td_cls,
+                measure_memory=measure_memory,
+            )
+            if measure_memory:
+                cached_memory_peak = log.memory_peak_bytes
+            else:
+                log.memory_peak_bytes = cached_memory_peak
         except Exception as exc:
             if not was_error:
                 err = BenchmarkError(
@@ -250,19 +267,21 @@ def _single_test(
     mode: str,
     log: BenchmarkLog,
     td_cls: type,
+    *,
+    measure_memory: bool = False,
 ) -> None:
-    """Execute one serialization + deserialization + comparison."""
-    tracemalloc.start()
+    """Execute one serialization + deserialization + comparison.
 
+    Timing never runs under an active ``tracemalloc`` session. Optional memory
+    sampling re-runs the same ser/des once *after* timers (first rep only).
+    """
     if mode == "bytes":
-        # Serialize
         t0 = time.perf_counter_ns()
         data = serializer.serialize_bytes(serializable)
         t1 = time.perf_counter_ns()
         log.time_ser_ns = t1 - t0
         log.size_bytes = len(data)
 
-        # Deserialize
         t0 = time.perf_counter_ns()
         processed = serializer.deserialize_bytes(data)
         t1 = time.perf_counter_ns()
@@ -270,24 +289,35 @@ def _single_test(
     else:
         stream = io.BytesIO()
 
-        # Serialize
         t0 = time.perf_counter_ns()
         serializer.serialize_stream(serializable, stream)
         t1 = time.perf_counter_ns()
         log.time_ser_ns = t1 - t0
         log.size_bytes = stream.tell()
 
-        # Deserialize
         t0 = time.perf_counter_ns()
         processed = serializer.deserialize_stream(stream)
         t1 = time.perf_counter_ns()
         log.time_deser_ns = t1 - t0
 
-    _, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-    log.memory_peak_bytes = peak
+    if measure_memory:
+        tracemalloc.start()
+        try:
+            if mode == "bytes":
+                _blob = serializer.serialize_bytes(serializable)
+                serializer.deserialize_bytes(_blob)
+            else:
+                _stream = io.BytesIO()
+                serializer.serialize_stream(serializable, _stream)
+                serializer.deserialize_stream(_stream)
+            _, peak = tracemalloc.get_traced_memory()
+            log.memory_peak_bytes = peak
+        finally:
+            tracemalloc.stop()
+    else:
+        log.memory_peak_bytes = 0
 
-    # Semantic comparison
+    # Semantic comparison (untimed)
     ok, err_text = compare(expected, processed)
     log.fidelity_score = 1.0 if ok else 0.0
     if not ok:

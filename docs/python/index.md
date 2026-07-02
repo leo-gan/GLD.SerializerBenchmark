@@ -19,7 +19,7 @@ Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runn
 | msgpack | Binary | `msgpack` | dict | native | Reference MessagePack |
 | cbor2 | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | protobuf | Schema | `protobuf` | Message | adapted | From `schemas/benchmark_data.proto` |
-| avro | Schema | `fastavro` | record dict | native | `.avsc` under `src/benchmark/` |
+| avro | Schema | `fastavro` | record dict | native | Compact schemaless size; dict/union path slower than protobuf C++ |
 | flatbuffers | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
 | pickle | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
 | cloudpickle | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
@@ -36,6 +36,12 @@ Timed methods measure **codec only** on library-native values:
 FlatBuffers is the exception where Builder construction *is* the serialize API (no separate Message type). Stream mode is **native** when the library has a real file/stream API; otherwise **adapted** (bytes then write / read then bytes).
 
 ### Caveats
+
+#### Why avro size is great but ops/s lag protobuf
+
+- **Size is real:** schemaless Avro omits field names (schema out-of-band).
+- **Speed is mostly library/runtime:** timed path is only `schemaless_writer`/`reader` on a pre-built dict + cached `parse_schema`. fastavro (Cython) still loses to protobuf message `SerializeToString` by ~20–30× on nested types because of Python-dict field walks and null-unions.
+- **Measurement:** the harness no longer runs `tracemalloc` during timed ser/des (it was inflating alloc-heavy codecs ~2–3×).
 
 #### Why flatbuffers and dill ops/s look low
 

@@ -2,7 +2,20 @@
 Avro (fastavro) benchmark wrapper.
 
 Call-path: prepare_data converts dataclasses to Avro-compatible dict records
-(untimed). Timed path only runs schemaless_writer / schemaless_reader.
+(untimed). Timed path only runs schemaless_writer / schemaless_reader on that
+dict with a parse_schema()-cached schema.
+
+Why size looks great but ops/s lag protobuf
+-------------------------------------------
+* **Size:** schemaless Avro omits field names (schema is shared out-of-band), so
+  payloads are often the smallest in the suite — that part is real.
+* **Speed:** fastavro is Cython and already the fast Python Avro stack, but it
+  still walks **Python dicts** with per-field union/enum resolution. Protobuf
+  ``SerializeToString`` on a filled C++ message is typically 20–30× faster on
+  nested fixtures (Person/EDI). That gap is library/runtime, not a missing
+  prepare_data conversion (conversion is already untimed).
+* Nested ``["null", record]`` unions (e.g. Person.Passport) add branch cost on
+  every encode/decode versus protobuf optional fields.
 """
 
 from __future__ import annotations
@@ -44,6 +57,7 @@ _SCHEMAS = {
     "EDI_835": _load_schema("edi835"),
 }
 
+# parse_schema once at import — critical for performance (never re-parse in the loop).
 _PARSERS = {k: fastavro.parse_schema(v) for k, v in _SCHEMAS.items()}
 
 _TYPE_NAMES: Dict[Type[Any], str] = {
@@ -57,7 +71,7 @@ _TYPE_NAMES: Dict[Type[Any], str] = {
 
 class AvroSerializer(Serializer):
     native_kind = "dict"
-    stream_mode = "native"  # schemaless_writer writes directly to the stream
+    stream_mode = "native"  # schemaless_writer/reader on the provided stream
 
     def __init__(self) -> None:
         super().__init__()
@@ -76,12 +90,14 @@ class AvroSerializer(Serializer):
         super().prepare(test_data_name, test_data_type)
         self._td_name = test_data_name
         self._schema = _PARSERS[test_data_name]
+        # Reuse one buffer for bytes-mode encode; seek/truncate avoids realloc churn.
         self._ser_buf = io.BytesIO()
 
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
         return _to_avro(obj)
 
     def serialize_bytes(self, obj: Any) -> bytes:
+        # obj is already an Avro record dict from prepare_data
         buf = self._ser_buf
         buf.seek(0)
         buf.truncate(0)
@@ -89,6 +105,7 @@ class AvroSerializer(Serializer):
         return buf.getvalue()
 
     def deserialize_bytes(self, data: bytes) -> Any:
+        # BytesIO(data) is the supported file-like entry; reader needs .read()
         return fastavro.schemaless_reader(io.BytesIO(data), self._schema)
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
