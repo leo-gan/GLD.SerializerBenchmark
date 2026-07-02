@@ -81,6 +81,8 @@ Exact keys depend on the analysis version; published markdown pivots emphasize m
 
 When `statistics.bootstrap.enabled` (default): **percentile** bootstrap on the group’s total-time series (`iterations` 2000, `confidence_level` 0.95, `seed` 42). Yields `total_ci_low_ns` / `total_ci_high_ns` around the mean. Non-parametric; does not assume normality.
 
+**Minimum sample size**: bootstrap CIs (and some effect-size / test paths) are only produced when the post-filter sample size ≥ `min_samples_for_inference` (default 5). Below this the CI fields are set to the point estimate (degenerate interval). Very small N makes any CI unreliable; the threshold is a hard gate to avoid nonsensical output.
+
 ### Effect sizes vs fastest in group
 
 When `statistics.effect_sizes.enabled` (default), within the same language, fixture, and I/O mode, each serializer is compared to the **fastest** (lowest mean total time) in that group:

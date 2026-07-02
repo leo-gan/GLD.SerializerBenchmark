@@ -135,6 +135,9 @@ statistics:
   outlier_method: iqr          # iqr | none | winsorize
   iqr_k: 1.5
   min_samples_for_outlier_filter: 10
+  # Below this many (post-filter) observations, bootstrap CIs and some
+  # hypothesis tests are not computed (or become the point estimate itself).
+  # Values < ~5 produce degenerate / uninformative intervals.
   min_samples_for_inference: 5
 
   # Central tendency & dispersion
