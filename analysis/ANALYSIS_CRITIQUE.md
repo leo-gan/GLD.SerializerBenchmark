@@ -20,7 +20,7 @@ Small, installable package (`benchmark-analysis`) that consumes language-agnosti
 
 Primary entry: `analyze-benchmarks` console script.
 
-It sits between raw harness output (`logs/*/benchmark-log.csv`) and published documentation.
+It sits between raw harness output (timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.csv`) and published documentation.
 
 ---
 
@@ -43,7 +43,7 @@ It sits between raw harness output (`logs/*/benchmark-log.csv`) and published do
    Non-parametric bootstrap CI, effect sizes (Cliff’s δ + Hedges’ g) vs the fastest in each `(language, test_data, mode)` group, Holm-corrected Mann–Whitney for A/B. This is genuinely better than the mean-only tables common in serializer benchmarks.
 
 2. **Language-agnostic contract + discovery**  
-   `Language` column + `logs/<lang>/benchmark-log.csv` auto-discovery + `--extra-logs` means adding Go/Java/etc. does not require analysis changes.
+   `Language` column + auto-discovery of latest timestamped CSV under `logs/<lang>/` + `--extra-logs` means adding Go/Java/etc. does not require analysis changes.
 
 3. **Config-driven with safe fallbacks**  
    `load_stats_config()` walks upward for `benchmark_config.yaml`; works even if PyYAML or the file is absent.
@@ -82,7 +82,7 @@ Evidence: `docs/c-sharp/results.md` (and siblings), `generate_language_results_p
 `regression.py` + CLI usage:
 
 - Only compares `avg_time_total_ns` with a flat percentage threshold (default 10%).
-- Baseline key = `serializer|test_data|mode` — **no language**. Same serializer name across languages collides.
+- Baseline key now includes language (`language|serializer|test_data|mode`). (Older versions of the code lacked it.)
 - Ignores the CIs, effect sizes, and sample sizes that `stats.py` already computed.
 - No persistence of the full statistical context.
 
@@ -178,9 +178,9 @@ This creates a false sense of configurability and makes the methodology doc lie 
    Add at least one more table (or downloadable `stats.json`) that shows mean + CI + median + Cliff’s δ + n for every (serializer, data, mode) group. Make effect sizes visible in the published pages.
 
 2. **Fix regression**  
-   - Include language in the key.  
-   - At minimum: require both % threshold **and** non-overlapping CIs (or δ above negligible).  
-   - Persist more context (CI, δ, n) in baseline.json.  
+   - Language is now included in the key.
+   - At minimum: require both % threshold **and** non-overlapping CIs (or δ above negligible) — partially addressed by using bootstrap CI lower bound.
+   - Persist more context (CI, δ, n) in baseline.json (future work).  
    - Produce a proper regression report artifact.
 
 3. **Make time units explicit and single-source**  
@@ -242,7 +242,7 @@ This creates a false sense of configurability and makes the methodology doc lie 
 | `hypothesis_tests.method` | No | Always mann_whitney_u |
 | `throughput_from` | No | Always `1e9 / mean` |
 | `csv_schema.time_unit*` + `languages.*.time_unit` | No | Heuristics + hard-coded csharp rule win |
-| `regression:` block | Partially (threshold only via CLI) | No language, no stats-aware logic |
+| `regression:` block | Partially (threshold + CI lower-bound) | Language now included; still limited vs full MWU+δ |
 | `reproducibility.capture_environment` | Analysis never reads the file | Only mentioned in docs |
 
 ---
