@@ -508,11 +508,46 @@ def compute_statistics(
     results: Dict = {}
 
     for key, data in stats.items():
-        times_total, rem_t = _filter_outliers(
-            data["times_total"], outlier_method, iqr_k, min_out
-        )
-        times_ser, _ = _filter_outliers(data["times_ser"], outlier_method, iqr_k, min_out)
-        times_deser, _ = _filter_outliers(data["times_deser"], outlier_method, iqr_k, min_out)
+        raw_ser = data["times_ser"]
+        raw_deser = data["times_deser"]
+        raw_total = data["times_total"]
+
+        # Filter *once* using the primary metric (total), then apply the *same*
+        # kept indices to ser/deser/total. This preserves row correspondence
+        # for paired (ser, deser) measurements from the same repetition.
+        if outlier_method == "none" or len(raw_total) < min_out:
+            times_total = raw_total
+            times_ser = raw_ser
+            times_deser = raw_deser
+            rem_t = 0
+        else:
+            arr_t = np.asarray(raw_total, dtype=float)
+            if outlier_method == "winsorize":
+                lo, hi = np.percentile(arr_t, [5, 95])
+                # Winsorize total; to keep correspondence we winsorize in place on copies
+                times_total = np.clip(arr_t, lo, hi).tolist()
+                times_ser = raw_ser[:]  # winsorize does not drop rows
+                times_deser = raw_deser[:]
+                rem_t = 0
+            else:
+                # IQR on total -> mask -> subset the three aligned series
+                q1 = float(np.percentile(arr_t, 25))
+                q3 = float(np.percentile(arr_t, 75))
+                iqr = q3 - q1
+                if iqr == 0:
+                    times_total = raw_total
+                    times_ser = raw_ser
+                    times_deser = raw_deser
+                    rem_t = 0
+                else:
+                    lower = q1 - iqr_k * iqr
+                    upper = q3 + iqr_k * iqr
+                    mask = (arr_t >= lower) & (arr_t <= upper)
+                    times_total = arr_t[mask].tolist()
+                    times_ser = [v for v, m in zip(raw_ser, mask) if m]
+                    times_deser = [v for v, m in zip(raw_deser, mask) if m]
+                    rem_t = int((~mask).sum())
+
         total_outliers += rem_t
 
         ser_stats = _summarize_series(times_ser, cfg, "ser", group_key=key)
