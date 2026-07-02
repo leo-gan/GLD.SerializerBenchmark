@@ -360,6 +360,83 @@ def generate_markdown_summary(
     print(f"Markdown summary index written to: {output_path}")
 
 
+# Within-language comparison categories (prefer peers over cross-paradigm ranks).
+_RUST_CATEGORY: Dict[str, str] = {
+    "serde_json": "JSON",
+    "simd-json": "JSON",
+    "sonic-rs": "JSON",
+    "rmp-serde": "Schemaless binary (interop)",
+    "ciborium": "Schemaless binary (interop)",
+    "minicbor": "Schemaless binary (interop)",
+    "bson": "Schemaless binary (interop)",
+    "bincode": "Rust-centric binary",
+    "postcard": "Rust-centric binary",
+    "bitcode": "Rust-centric binary",
+    "nanoserde": "Rust-centric binary",
+    "speedy": "Rust-centric binary",
+    "flexbuffers": "Schema / zero-copy family",
+    "rkyv": "Schema / zero-copy family",
+    "prost": "Schema / zero-copy family",
+}
+
+
+def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
+    """Markdown table: mean Ser+Deser ops/s (bytes mode) by serializer within category."""
+    cat_map = _RUST_CATEGORY if lang_id == "rust" else {}
+    if not cat_map or not stats:
+        return ""
+
+    # entry fields from compute_statistics list or dict values
+    entries = list(stats.values()) if isinstance(stats, dict) else list(stats)
+    # Prefer bytes mode only for category ranking
+    by_cat: Dict[str, List[Tuple[str, float]]] = {}
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        mode = (e.get("mode") or e.get("StringOrStream") or "").lower()
+        if mode != "bytes":
+            continue
+        ser = e.get("serializer") or e.get("SerializerName") or ""
+        if ser not in cat_map:
+            continue
+        ops = e.get("avg_ops_per_sec")
+        if ops is None:
+            tot = e.get("avg_time_total_ns") or 0
+            ops = (1_000_000_000.0 / tot) if tot else 0.0
+        # Aggregate per serializer across test_data (mean later)
+        by_cat.setdefault(cat_map[ser], []).append((ser, float(ops)))
+
+    if not by_cat:
+        return ""
+
+    lines = [
+        f"### {title}",
+        "",
+        "Compare serializers **within the same paradigm** (not across JSON vs zero-copy).",
+        "Values are mean Ser+Deser **ops/s** over fixtures in **bytes** mode (higher is better).",
+        "",
+    ]
+    for cat in sorted(by_cat.keys()):
+        # average ops per serializer across fixtures
+        from collections import defaultdict
+
+        acc: Dict[str, List[float]] = defaultdict(list)
+        for ser, ops in by_cat[cat]:
+            acc[ser].append(ops)
+        ranked = sorted(
+            ((s, sum(v) / len(v)) for s, v in acc.items()),
+            key=lambda x: -x[1],
+        )
+        lines.append(f"#### {cat}")
+        lines.append("")
+        lines.append("| serializer | mean ops/s (bytes) |")
+        lines.append("|---|---:|")
+        for ser, mean_ops in ranked:
+            lines.append(f"| {ser} | {mean_ops:,.0f} |")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def generate_language_results_pages(
     multi_lang_stats: Optional[Dict],
     violin_images: Optional[Dict[str, str]],
@@ -445,6 +522,28 @@ def generate_language_results_pages(
                     f"{title}: Ops/Sec by Serializer and Data Type",
                 )
             )
+            cat_md = _category_pivot_md(
+                stats,
+                lang_id,
+                f"{title}: within-category ranking (bytes mode)",
+            )
+            if cat_md:
+                lines.append(cat_md)
+            if lang_id == "rust":
+                lines.append("### Fidelity notes (Rust)")
+                lines.append("")
+                lines.append(
+                    "- **prost** maps ISO timestamps through millisecond integers; "
+                    "harness fidelity allows date-string drift on Person/Simple/Telemetry/EDI."
+                )
+                lines.append(
+                    "- **rkyv** timed deserialize **materializes** owned values for comparison; "
+                    "pure `access` (zero-copy) would be faster and is documented on the overview."
+                )
+                lines.append(
+                    "- **simd-json** serialize uses `serde_json` (crate optimizes parse)."
+                )
+                lines.append("")
         else:
             lines.append("*No statistics for this language in the current snapshot.*")
             lines.append("")

@@ -23,7 +23,6 @@ pub enum StreamMode {
 
 /// What the timed path primarily operates on (mirrors Python `native_kind`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[allow(dead_code)] // exposed for docs/logging; used via trait method
 pub enum NativeKind {
     /// Serde `Fixture` enum / struct path
     Serde,
@@ -365,7 +364,7 @@ impl BenchSerializer for FlexbuffersSer {
 // Store last fixture name on each serializer that needs it.
 
 macro_rules! impl_kinded_direct {
-    ($name:ident, $log:expr, $ver:expr, $ser:expr, $de_person:expr, $de_int:expr, $de_tel:expr, $de_simple:expr, $de_sa:expr, $de_edi:expr) => {
+    ($name:ident, $log:expr, $ver:expr, $nk:expr, $ser:expr, $de_person:expr, $de_int:expr, $de_tel:expr, $de_simple:expr, $de_sa:expr, $de_edi:expr) => {
         pub struct $name {
             kind: &'static str,
         }
@@ -382,7 +381,7 @@ macro_rules! impl_kinded_direct {
                 $ver
             }
             fn native_kind(&self) -> NativeKind {
-                NativeKind::Direct
+                $nk
             }
             fn prepare(&mut self, fixture: &Fixture) -> Result<()> {
                 self.kind = fixture.name();
@@ -421,6 +420,7 @@ impl_kinded_direct!(
     MinicborDirect,
     "minicbor",
     "0.25",
+    NativeKind::Direct,
     minicbor_ser,
     |d| minicbor::decode::<Person>(d).map_err(|e| anyhow!("{e}")),
     |d| minicbor::decode::<i32>(d).map_err(|e| anyhow!("{e}")),
@@ -480,6 +480,7 @@ impl_kinded_direct!(
     RkyvSer,
     "rkyv",
     "0.8",
+    NativeKind::Archive,
     rkyv_ser,
     rkyv_de_person,
     rkyv_de_int,
@@ -816,6 +817,7 @@ impl_kinded_direct!(
     NanoserdeSer,
     "nanoserde",
     "0.1",
+    NativeKind::Direct,
     nanoserde_ser,
     |d| {
         use nanoserde::DeBin;
@@ -859,6 +861,7 @@ impl_kinded_direct!(
     SpeedySer,
     "speedy",
     "0.8",
+    NativeKind::Direct,
     speedy_ser,
     |d| {
         use speedy::Readable;

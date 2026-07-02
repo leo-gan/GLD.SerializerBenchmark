@@ -17,7 +17,7 @@ impl CsvLogger {
         let mut writer = BufWriter::new(file);
         writeln!(
             writer,
-            "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,SerializerVersion"
+            "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,SerializerVersion,NativeKind,StreamMode"
         )?;
         Ok(Self { writer })
     }
@@ -34,6 +34,8 @@ impl CsvLogger {
         size: usize,
         fidelity: f64,
         version: &str,
+        native_kind: &str,
+        stream_mode: &str,
     ) -> std::io::Result<()> {
         let total = time_ser_ns + time_deser_ns;
         let ops_ser = if time_ser_ns > 0 {
@@ -53,7 +55,7 @@ impl CsvLogger {
         };
         writeln!(
             self.writer,
-            "rust,{mode},{test_data},{repetitions},{rep_index},{serializer},{time_ser_ns},{time_deser_ns},{size},{total},{ops_ser:.6},{ops_deser:.6},{ops_tot:.6},0,{fidelity:.1},{version}"
+            "rust,{mode},{test_data},{repetitions},{rep_index},{serializer},{time_ser_ns},{time_deser_ns},{size},{total},{ops_ser:.6},{ops_deser:.6},{ops_tot:.6},0,{fidelity:.1},{version},{native_kind},{stream_mode}"
         )
     }
 

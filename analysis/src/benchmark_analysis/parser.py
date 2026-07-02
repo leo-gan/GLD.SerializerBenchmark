@@ -69,6 +69,11 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
                     record["FidelityScore"] = float(row["FidelityScore"])
                 if "SerializerVersion" in row and row["SerializerVersion"]:
                     record["SerializerVersion"] = row["SerializerVersion"]
+                # Optional metadata (Rust v0.2+; ignored if absent for older CSVs)
+                if "NativeKind" in row and row["NativeKind"] not in (None, ""):
+                    record["NativeKind"] = str(row["NativeKind"]).strip()
+                if "StreamMode" in row and row["StreamMode"] not in (None, ""):
+                    record["StreamMode"] = str(row["StreamMode"]).strip()
                 records.append(record)
             except (ValueError, KeyError, TypeError) as e:
                 skipped += 1

@@ -211,6 +211,16 @@ fn main() -> anyhow::Result<()> {
                     match measured {
                         Ok((ser_ns, deser_ns, size)) => {
                             if !had_error {
+                                let nk = match ser.native_kind() {
+                                    crate::serializers::NativeKind::Serde => "serde",
+                                    crate::serializers::NativeKind::Message => "message",
+                                    crate::serializers::NativeKind::Archive => "archive",
+                                    crate::serializers::NativeKind::Direct => "direct",
+                                };
+                                let sm = match ser.stream_mode() {
+                                    StreamMode::Native => "native",
+                                    StreamMode::Adapted => "adapted",
+                                };
                                 logger.write_row(
                                     mode,
                                     fx.name(),
@@ -222,6 +232,8 @@ fn main() -> anyhow::Result<()> {
                                     size,
                                     1.0,
                                     ser.version(),
+                                    nk,
+                                    sm,
                                 )?;
                             }
                         }
