@@ -22,7 +22,7 @@ def check_regression(
         print(f"Warning: Baseline file not found: {baseline_path}")
         return False, []
 
-    with open(baseline_path, 'r') as f:
+    with open(baseline_path, "r", encoding="utf-8") as f:
         baseline = json.load(f)
 
     regressions = []
@@ -69,7 +69,9 @@ def save_baseline(stats: Dict, output_path: str) -> None:
             'median_size_bytes': stat['median_size_bytes']
         }
 
-    with open(output_path, 'w') as f:
+    out_dir = os.path.dirname(output_path) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(baseline, f, indent=2)
 
     print(f"Baseline saved to: {output_path}")
