@@ -259,6 +259,5 @@ fn main() -> anyhow::Result<()> {
 
     logger.flush()?;
     println!("[PROGRESS] Complete. Results: {}", log_path.display());
-    let _ = StreamMode::Adapted;
     Ok(())
 }

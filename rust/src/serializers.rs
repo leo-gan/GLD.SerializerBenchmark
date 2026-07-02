@@ -106,11 +106,10 @@ impl BenchSerializer for SerdeJson {
         Ok(serde_json::from_slice(data)?)
     }
     fn serialize_stream(&mut self, fixture: &Fixture, w: &mut dyn Write) -> Result<usize> {
-        let before = self.buf.len();
         self.buf.clear();
         serde_json::to_writer(&mut self.buf, fixture)?;
         w.write_all(&self.buf)?;
-        Ok(self.buf.len().saturating_sub(before).max(self.buf.len()))
+        Ok(self.buf.len())
     }
     fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {
         Ok(serde_json::from_reader(r)?)
@@ -236,11 +235,9 @@ impl BenchSerializer for CiboriumSer {
         Ok(ciborium::from_reader(data)?)
     }
     fn serialize_stream(&mut self, fixture: &Fixture, w: &mut dyn Write) -> Result<usize> {
-        let start = self.buf.len();
         self.buf.clear();
         ciborium::into_writer(fixture, &mut self.buf)?;
         w.write_all(&self.buf)?;
-        let _ = start;
         Ok(self.buf.len())
     }
     fn deserialize_stream(&mut self, r: &mut dyn Read) -> Result<Fixture> {
@@ -250,13 +247,11 @@ impl BenchSerializer for CiboriumSer {
 
 pub struct BincodeSer {
     config: bincode::config::Configuration,
-    buf: Vec<u8>,
 }
 impl Default for BincodeSer {
     fn default() -> Self {
         Self {
             config: bincode::config::standard(),
-            buf: Vec::with_capacity(4096),
         }
     }
 }
@@ -273,7 +268,6 @@ impl BenchSerializer for BincodeSer {
         StreamMode::Adapted
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
-        self.buf.clear();
         Ok(())
     }
     fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {

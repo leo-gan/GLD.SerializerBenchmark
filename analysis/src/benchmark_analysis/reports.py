@@ -1,6 +1,7 @@
 """Report generation (Markdown and HTML)."""
 
 import os
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
@@ -496,8 +497,6 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
     ]
     for cat in sorted(by_cat.keys()):
         # average ops per serializer across fixtures
-        from collections import defaultdict
-
         acc: Dict[str, List[float]] = defaultdict(list)
         for ser, ops in by_cat[cat]:
             acc[ser].append(ops)
