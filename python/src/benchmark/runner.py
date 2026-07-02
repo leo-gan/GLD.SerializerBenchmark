@@ -45,14 +45,19 @@ from .serializers import (
     AvroSerializer,
     Cbor2Serializer,
     CloudpickleSerializer,
+    DillSerializer,
+    MashumaroSerializer,
     MsgspecMessagePackSerializer,
     MsgpackSerializer,
     MsgspecSerializer,
     OrjsonSerializer,
     PickleSerializer,
     ProtobufSerializer,
+    PydanticSerializer,
     RapidjsonSerializer,
+    SerpycoSerializer,
     Serializer,
+    StdlibJsonSerializer,
 )
 
 # ---------------------------------------------------------------------------
@@ -60,16 +65,25 @@ from .serializers import (
 # ---------------------------------------------------------------------------
 
 ALL_SERIALIZERS: List[Serializer] = [
+    # JSON
+    StdlibJsonSerializer(),
     OrjsonSerializer(),
     MsgspecSerializer(),
     RapidjsonSerializer(),
+    PydanticSerializer(),
+    MashumaroSerializer(),
+    SerpycoSerializer(),
+    # Binary
     MsgspecMessagePackSerializer(),
     MsgpackSerializer(),
     Cbor2Serializer(),
+    # Schema
     ProtobufSerializer(),
     AvroSerializer(),
+    # Native
     PickleSerializer(),
     CloudpickleSerializer(),
+    DillSerializer(),
 ]
 
 ALL_TEST_DATA = [

@@ -13,6 +13,10 @@ dependencies = [
     "cbor2>=6.0.0,<7.0.0",
     "fastavro>=1.10.0",
     "cloudpickle>=3.1.0",
+    "pydantic>=2.10",
+    "mashumaro>=3.14",
+    "serpyco-rs>=1.13",
+    "dill>=0.3.9",
 ]
 
 [project.optional-dependencies]
