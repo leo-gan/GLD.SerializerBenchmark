@@ -17,6 +17,8 @@ namespace GLD.SerializerBenchmark
             if (string.IsNullOrEmpty(ts))
                 ts = DateTime.Now.ToString("yyyy-MM-dd-HHmmss");
             var logPath = $"logs/csharp/{ts}.csv";
+            // Per-run errors beside the result CSV (same stem as .environment.json)
+            var errorsPath = $"logs/csharp/{ts}.errors.csv";
 
             var logStorage = new LogStorage(logPath);
             var errors = new List<Error>();
@@ -25,7 +27,7 @@ namespace GLD.SerializerBenchmark
             {
                 Console.WriteLine($"\n[PROGRESS] Testing Data: {testDataDescription.Name} (Targeting {serializers.Count} serializers, {repetitions} reps)");
                 TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
-                Error.SaveErrors(errors, "logs/csharp/benchmark-errors.csv");
+                Error.SaveErrors(errors, errorsPath);
             }
 
             Report.AllResults(repetitions, logStorage, errors, serializers, testDataDescriptions);

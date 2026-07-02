@@ -51,7 +51,7 @@ This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 
 ### Caveats
 
-- Coverage is **per fixture**; many skip/fail **ObjectGraph**. Failures: `logs/csharp/benchmark-errors.csv`.
+- Coverage is **per fixture**; many skip/fail **ObjectGraph**. Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Bond, Google.Protobuf, FluentSerializer, BinaryPack, ZeroFormatter, MemoryPack, FlatSharp often need schemas or generated models.
 - **JavaScriptSerializer (N/A)** is a stub — do not treat timings as real.
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.

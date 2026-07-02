@@ -198,11 +198,14 @@ paths:
     c: logs/c
     javascript: logs/javascript
   # Result files are timestamped to preserve history across runs.
-  # Each run creates: YYYY-MM-DD-HHMMSS.csv (e.g. 2026-06-12-123415.csv)
-  # Analysis auto-selects the most recent timestamped file per language.
+  # Each run creates (same stem):
+  #   YYYY-MM-DD-HHMMSS.csv
+  #   YYYY-MM-DD-HHMMSS.errors.csv      (fidelity / harness failures for that run)
+  #   YYYY-MM-DD-HHMMSS.environment.json
+  # Analysis auto-selects the most recent timestamped result CSV per language.
   log_filename: "YYYY-MM-DD-HHMMSS.csv"
-  errors_filename: benchmark-errors.csv
-  environment_filename: environment.json
+  errors_filename: "YYYY-MM-DD-HHMMSS.errors.csv"
+  environment_filename: "YYYY-MM-DD-HHMMSS.environment.json"
   baseline_filename: reports/baseline.json
 
 # -----------------------------------------------------------------------------

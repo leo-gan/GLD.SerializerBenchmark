@@ -23,7 +23,8 @@ fs.mkdirSync(logDir, { recursive: true });
 // Timestamped output so runs are never overwritten. Use BENCHMARK_TS when provided by orchestrator.
 const ts = process.env.BENCHMARK_TS || new Date().toISOString().slice(0,19).replace(/[-:T]/g, '').replace(/(\d{8})(\d{6})/, '$1-$2');
 const logPath = path.join(logDir, `${ts}.csv`);
-const errPath = path.join(logDir, 'benchmark-errors.csv');
+// Per-run errors beside the result CSV (same stem as .environment.json)
+const errPath = path.join(logDir, `${ts}.errors.csv`);
 
 const header =
   'Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,SerializerVersion\n';

@@ -32,7 +32,7 @@ Add `paths.language_log_dirs.go: logs/go` if your config uses that map.
 | Warmup | Repetition index 0 excluded by analysis |
 | Prepare outside loop | Schema compile, type registration, buffer pools — not timed |
 | Timed section | Serialize + deserialize only |
-| Fidelity | Round-trip semantic check; errors in `benchmark-errors.csv` |
+| Fidelity | Round-trip semantic check; errors in `logs/<lang>/<ts>.errors.csv` (same stem as the result CSV) |
 | ObjectGraph | Skip serializers without cycle support |
 | Seed | `RandomSeed` from `schemas/test_data_config.json` (or config `reproducibility.random_seed`) |
 

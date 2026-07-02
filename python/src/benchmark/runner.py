@@ -115,7 +115,8 @@ def run(
     log_dir_path.mkdir(parents=True, exist_ok=True)
 
     ts_file = log_dir_path / f"{ts}.csv"
-    error_file = log_dir_path / "benchmark-errors.csv"
+    # Per-run errors beside the result CSV (same stem as .environment.json)
+    error_file = log_dir_path / f"{ts}.errors.csv"
 
     log_file = str(ts_file)
     storage = LogStorage(log_file)
@@ -124,7 +125,7 @@ def run(
     for td_name, td_cls in test_data:
         print(f"\n[PROGRESS] Testing Data: {td_name} (Targeting {len(serializers)} serializers, {repetitions} reps)")
         _test_on_data(td_name, td_cls, repetitions, serializers, storage, errors)
-        save_errors(errors, error_file)
+        save_errors(errors, str(error_file))
 
     storage.close()
 

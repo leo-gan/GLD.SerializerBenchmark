@@ -2,7 +2,11 @@
 
 Scripts for running harnesses and analysis **locally**. GitHub Actions may smoke-test harnesses, but **never** regenerates result tables or plots for documentation — those are committed under `docs/analysis/` after a local `analyze-benchmarks` run.
 
-Each benchmark run creates timestamped result files (`YYYY-MM-DD-HHMMSS.csv`) plus environment metadata sidecars (`*.environment.json`). Runs are never overwritten.
+Each benchmark run creates timestamped artifacts with the **same stem** (never overwritten):
+
+- `YYYY-MM-DD-HHMMSS.csv` — timings
+- `YYYY-MM-DD-HHMMSS.errors.csv` — fidelity / harness failures for that run
+- `YYYY-MM-DD-HHMMSS.environment.json` — host/runtime metadata
 
 ## Scripts
 

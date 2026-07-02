@@ -106,7 +106,7 @@ Repetition `i = 0` is warmup and is excluded from aggregates by analysis.
 | Time unit | **Nanoseconds** for new harnesses (legacy C# may use ticks; analysis normalizes) |
 | Modes | `bytes` / `stream` (C# may use `string` / `stream`) |
 | Timed section | Serialize + deserialize only |
-| Fidelity | Round-trip check; failures → `benchmark-errors.csv` |
+| Fidelity | Round-trip check; failures → `logs/<lang>/<ts>.errors.csv` (per run) |
 | Seed | From `schemas/test_data_config.json` / config |
 
 Full checklist: [Adding a Language](ADDING_A_LANGUAGE.md).
