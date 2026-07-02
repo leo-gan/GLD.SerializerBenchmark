@@ -25,24 +25,24 @@ docker build -t $IMAGE_NAME -f "$SCRIPT_DIR/../Dockerfile" "$PROJECT_ROOT"
 case "$1" in
     smoke)
         echo "[INFO] Running Smoke Test (2 reps, pickle, Person)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 2 pickle Person
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 2 pickle Person
         ;;
     all-single)
         echo "[INFO] Running All-Single Test (10 reps, All Serializers)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 10
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 10
         ;;
     full)
         echo "[INFO] Running Full Benchmark (100 reps, All Serializers)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 100
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 100
         ;;
     research)
         echo "[INFO] Running Research Benchmark (500 reps, All Serializers)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 500
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 500
         ;;
     custom)
         shift
         echo "[INFO] Running Custom Benchmark (Args: $@)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME "$@"
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS:-}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME "$@"
         ;;
     *)
         print_usage
