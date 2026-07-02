@@ -7,8 +7,8 @@ Empirical performance comparison of serializers across **C#**, **Python**, **Rus
 | C# | 38 | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
 | Python | 10 | [Overview](../python/index.md) | [Results](../python/results.md) |
 | Rust | 12 | [Overview](../rust/index.md) | [Results](../rust/results.md) |
-| C | 12 | [Overview](../c/index.md) | [Results](../c/results.md) |
-| JavaScript | 11–12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
+| C | 11 | [Overview](../c/index.md) | [Results](../c/results.md) |
+| JavaScript | 12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 
 Inventories are the **source of truth for what we measure** (hand-written). Results pages are **generated** local snapshots (pivots + plots).
 
@@ -18,7 +18,7 @@ Suite layout and harness timing model: [Benchmark architecture](architecture.md)
 
 ## Regenerating published reports (maintainers)
 
-Requires local CSVs at `logs/<lang>/benchmark-log.csv` (gitignored; from harness or
+Requires local CSVs at `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` (gitignored; from harness or
 `./scripts/run-all-benchmarks.sh --mode full`). Use **both** flags so the hub index,
 PNGs, and per-language pages stay in sync:
 
@@ -27,7 +27,6 @@ cd analysis && pip install -e .   # once
 analyze-benchmarks \
   --generate-summary \
   --generate-plots \
-  --output-dir ../docs/analysis
 ```
 
 That writes (commit these for Pages):
@@ -43,7 +42,7 @@ Either flag alone still refreshes `docs/<lang>/results.md` from current CSVs, bu
 and `--generate-plots` without `--generate-summary` skips updating
 `BENCHMARK_SUMMARY.md`. Prefer both flags for a full snapshot.
 
-Optional local scratch: `--output-dir ../reports` (gitignored) writes the hub/PNGs under `reports/`; the CLI still refreshes `docs/<lang>/results.md` when a sibling `docs/` directory exists.
+The CLI writes the hub/PNGs under `reports/` (gitignored) and refreshes `docs/<lang>/results.md` when a sibling `docs/` directory exists.
 
 The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree — it does **not** re-run analysis or benchmarks.
 

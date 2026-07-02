@@ -5,7 +5,7 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 ## Benchmark harness
 
 - Directory: `rust/` (repository root)
-- Output: `logs/rust/benchmark-log.csv` (`Language=rust`, times in **nanoseconds**)
+- Output: `logs/rust/YYYY-MM-DD-HHMMSS.csv` (`Language=rust`, times in **nanoseconds**)
 - Runner: `rust/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Registration: [`rust/src/serializers.rs`](../../rust/src/serializers.rs)
 

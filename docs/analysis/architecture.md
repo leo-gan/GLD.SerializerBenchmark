@@ -18,7 +18,8 @@ The suite is built for four overlapping audiences. Each uses the **same harness 
 - Within-language ranking of JSON vs MessagePack-style codecs on **Person** and **Telemetry**, with effect sizes vs the fastest serializer in each group—not cross-runtime “X is faster than Y” claims.
 - Sensitivity checks: re-run with `research` (500 reps) on one language when CIs are wide on `all-single` (10 reps).
 
-**Example workflow:** run `./scripts/run-all-benchmarks.sh --mode full --lang rust`, then `analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis`, and cite tables/plots on [Rust Results](../rust/results.md) (or export CSVs under `logs/rust/`).
+**Example workflow:** run `./scripts/run-all-benchmarks.sh -m full -b`, then `analyze-benchmarks --generate-summary --generate-plots`, and cite tables/plots on [Rust Results](../rust/results.md). Use `--compare-a rust:185249 --compare-b rust:191316` (or similar) for A/B serializer changes and `--check-regression` for gates.
+
 
 ### Serializer authors
 
@@ -28,8 +29,8 @@ The suite is built for four overlapping audiences. Each uses the **same harness 
 
 **Example use cases:**
 
-- After optimizing `orjson` encode path: run Python harness twice (or on two checkouts), save `logs/python/benchmark-log.csv` as `v1.csv` / `v2.csv`, then  
-  `analyze-benchmarks --compare-a v1.csv --compare-b v2.csv --output-dir reports`.
+- After optimizing `orjson` encode path: run Python harness twice (or on two checkouts), run with two different versions, then  
+  `analyze-benchmarks --compare-a python:YYYY-MM-DD-first --compare-b python:YYYY-MM-DD-second`.
 - Release checklist: fail CI-style gates with `--check-regression` against a committed `baseline.json` when mean total time regresses beyond a threshold (e.g. 10%).
 - Feature flags: same package, “with shared refs” vs “without,” as two registered names or two CSV runs, still using the same **Person** / **ObjectGraph** fixtures.
 
@@ -54,13 +55,13 @@ The suite is built for four overlapping audiences. Each uses the **same harness 
 
 **Need:** Add or fix languages and docs **without rewriting analysis** every time.
 
-**What the suite provides:** Language registry and CSV contract in `config/benchmark_config.yaml`, auto-discovery of `logs/<lang>/benchmark-log.csv`, shared modes, and a checklist in [Adding a Language](ADDING_A_LANGUAGE.md). Analysis stays language-agnostic given the contract.
+**What the suite provides:** Language registry and CSV contract in `config/benchmark_config.yaml`, auto-discovery of timestamped CSVs under `logs/<lang>/`, shared modes, and a checklist in [Adding a Language](ADDING_A_LANGUAGE.md). Analysis stays language-agnostic given the contract.
 
 **Example use cases:**
 
 - Add **Go**: implement harness + `run-benchmarks.sh`, register under `languages.go`, emit nanosecond CSV with `Language=go`, wire `scripts/run-all-benchmarks.sh`, add `docs/go/index.md` and MkDocs entries—analysis picks up the log without a new stats implementation.
 - Port a bugfix in C# timing only inside `c-sharp/`; Rust/Python logs and analysis code stay untouched.
-- Refresh GitHub Pages snapshots after a full matrix: local `analyze-benchmarks … --output-dir docs/analysis`, commit `docs/<lang>/results.md` and `docs/analysis/plots/violin/`.
+- Refresh GitHub Pages snapshots after a full matrix: local `analyze-benchmarks --generate-summary --generate-plots`, commit `docs/<lang>/results.md` and `docs/analysis/plots/violin/`.
 
 **Example workflow:** follow [Adding a Language](ADDING_A_LANGUAGE.md); smoke with `--mode smoke`, then `full` before publishing results.
 
@@ -70,7 +71,7 @@ The suite is built for four overlapping audiences. Each uses the **same harness 
 ```text
 config/benchmark_config.yaml   # modes, stats defaults, language registry, CSV schema
 schemas/                       # test_data_config.json, protos
-logs/<language>/               # benchmark-log.csv (gitignored; harness output)
+logs/<language>/               # YYYY-MM-DD-HHMMSS.csv (timestamped results)
 analysis/                      # Python analysis package (local reports)
 python/ | c-sharp/ | rust/ | c/ | javascript/   # language harnesses
 docs/                          # MkDocs site (inventories, results snapshots, this page)
@@ -100,12 +101,12 @@ Repetition `i = 0` is warmup and is excluded from aggregates by analysis.
 
 | Requirement | Detail |
 |-------------|--------|
-| Output | `logs/<lang>/benchmark-log.csv` (`csv_schema` in master config) |
+| Output | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` (`csv_schema` in master config) |
 | `Language` column | Language id (e.g. `csharp`, `python`) |
 | Time unit | **Nanoseconds** for new harnesses (legacy C# may use ticks; analysis normalizes) |
 | Modes | `bytes` / `stream` (C# may use `string` / `stream`) |
 | Timed section | Serialize + deserialize only |
-| Fidelity | Round-trip check; failures → `benchmark-errors.csv` |
+| Fidelity | Round-trip check; failures → `logs/<lang>/<ts>.errors.csv` (per run) |
 | Seed | From `schemas/test_data_config.json` / config |
 
 Full checklist: [Adding a Language](ADDING_A_LANGUAGE.md).

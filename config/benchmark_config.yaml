@@ -123,6 +123,8 @@ csv_schema:
     - ErrorFlag
   time_unit: nanoseconds
   time_unit_legacy_csharp: ticks  # 1 tick = 100 ns
+  # NOTE: csv_schema.time_unit is not currently read by the analysis code;
+  # time normalization is driven by the Language column + internal heuristic.
 
 # -----------------------------------------------------------------------------
 # Scientific statistics (analysis pipeline)
@@ -133,9 +135,15 @@ statistics:
   outlier_method: iqr          # iqr | none | winsorize
   iqr_k: 1.5
   min_samples_for_outlier_filter: 10
+  # Below this many (post-filter) observations, bootstrap CIs and some
+  # hypothesis tests are not computed (or become the point estimate itself).
+  # Values < ~5 produce degenerate / uninformative intervals.
   min_samples_for_inference: 5
 
   # Central tendency & dispersion
+  # NOTE: The report_* toggles are read for documentation but the analysis
+  # currently always emits the full set of metrics (design goal = rich stats).
+  # Changing them has no effect at present.
   report_mean: true
   report_median: true
   report_std: true
@@ -150,12 +158,12 @@ statistics:
     iterations: 2000
     confidence_level: 0.95
     seed: 42
-    method: percentile        # percentile | bca (bca needs more samples)
+    method: percentile        # only "percentile" implemented; "bca" accepted but ignored
 
   # Effect sizes (pairwise vs fastest in group)
   effect_sizes:
     enabled: true
-    methods: [cliffs_delta, hedges_g]
+    methods: [cliffs_delta, hedges_g]  # both are always computed when enabled
     cliffs_delta_thresholds:
       negligible: 0.147
       small: 0.33
@@ -165,12 +173,12 @@ statistics:
   # Hypothesis testing (optional, for version A/B comparisons)
   hypothesis_tests:
     enabled: true
-    method: mann_whitney_u     # non-parametric, no normality assumption
+    method: mann_whitney_u     # only mann_whitney_u implemented
     alpha: 0.05
     multiple_comparison_correction: holm
 
-  # Throughput derived consistently: ops/s = 1e9 / mean_time_ns
-  throughput_from: mean_time_ns
+  # Throughput derivation (documented but the code path is fixed)
+  throughput_from: mean_time_ns   # always 1e9 / mean total time in ns
 
 # -----------------------------------------------------------------------------
 # Paths (relative to repository root)
@@ -180,15 +188,24 @@ paths:
   reports_root: reports
   schemas_root: schemas
   config_root: config
+  # NOTE: language_log_dirs / environment_filename are not read by the
+  # current CLI. The analyzer auto-discovers logs/<lang>/ and environment
+  # files use a sibling sidecar pattern next to the result CSV.
   language_log_dirs:
     csharp: logs/csharp
     python: logs/python
     rust: logs/rust
     c: logs/c
     javascript: logs/javascript
-  log_filename: benchmark-log.csv
-  errors_filename: benchmark-errors.csv
-  environment_filename: environment.json
+  # Result files are timestamped to preserve history across runs.
+  # Each run creates (same stem):
+  #   YYYY-MM-DD-HHMMSS.csv
+  #   YYYY-MM-DD-HHMMSS.errors.csv      (fidelity / harness failures for that run)
+  #   YYYY-MM-DD-HHMMSS.environment.json
+  # Analysis auto-selects the most recent timestamped result CSV per language.
+  log_filename: "YYYY-MM-DD-HHMMSS.csv"
+  errors_filename: "YYYY-MM-DD-HHMMSS.errors.csv"
+  environment_filename: "YYYY-MM-DD-HHMMSS.environment.json"
   baseline_filename: reports/baseline.json
 
 # -----------------------------------------------------------------------------
@@ -488,7 +505,8 @@ languages:
 #
 # Required harness contract:
 #   1. Read config/benchmark_config.yaml (or embedded defaults) for repetitions/seed
-#   2. Emit logs/<id>/benchmark-log.csv with Language=<id> and times in nanoseconds
+#   2. Emit logs/<id>/<timestamp>.csv (YYYY-MM-DD-HHMMSS.csv)
+#      with Language=<id> and times in nanoseconds. Never overwrite previous runs.
 #   3. Implement prepare() outside timed loop; timed section = serialize + deserialize only
 #   4. Support bytes + stream modes where the library allows
 #   5. Round-trip fidelity check; skip ObjectGraph if unsupported

@@ -4,7 +4,7 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 ## What this benchmark measures vs the wider ecosystem
 
-This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/benchmark-log.csv` (times in **ticks**; analysis converts to ns).
+This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **ticks**; analysis converts to ns).
 
 **Not in this suite:** System.Text.Json, MessagePack-CSharp, Wire (ecosystem context only).
 
@@ -51,7 +51,7 @@ This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 
 ### Caveats
 
-- Coverage is **per fixture**; many skip/fail **ObjectGraph**. Failures: `logs/csharp/benchmark-errors.csv`.
+- Coverage is **per fixture**; many skip/fail **ObjectGraph**. Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Bond, Google.Protobuf, FluentSerializer, BinaryPack, ZeroFormatter, MemoryPack, FlatSharp often need schemas or generated models.
 - **JavaScriptSerializer (N/A)** is a stub — do not treat timings as real.
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.

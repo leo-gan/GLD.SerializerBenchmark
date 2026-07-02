@@ -4,7 +4,7 @@ Python's dynamic nature makes serialization uniquely challenging. While it excel
 
 ## Serializers in this suite (10)
 
-Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py). Log names in `logs/python/benchmark-log.csv` (nanoseconds). Modes: `bytes` and `stream`.
+Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py). Log names in `logs/python/YYYY-MM-DD-HHMMSS.csv` (nanoseconds). Modes: `bytes` and `stream`.
 
 | Log name | Category | Package | Notes |
 |----------|----------|---------|-------|

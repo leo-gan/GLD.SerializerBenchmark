@@ -17,64 +17,95 @@ pip install -e .
 
 ## Usage
 
-After installation, the `analyze-benchmarks` command is available. By default it **auto-discovers** `logs/<lang>/benchmark-log.csv` under the repo `logs/` tree.
-
-Summaries and violin plots are generated **locally only**. GitHub Actions never writes them. For the documentation site, write into `docs/analysis/` and commit; local re-runs may differ from published snapshots — that is OK. Use `reports/` (gitignored) for throwaway iteration.
+After installation, the `analyze-benchmarks` command is available. Each benchmark run creates a timestamped file like `2026-06-12-123415.csv` — runs are never overwritten. By default analysis auto-discovers the **latest** timestamped result per language.
 
 ```bash
-# Local scratch (gitignored — not published)
-analyze-benchmarks \
-    --generate-summary \
-    --generate-plots \
-    --output-dir reports/
+# Generate reports (uses latest result per language automatically)
+analyze-benchmarks --generate-summary --generate-plots
 
-# Published documentation snapshot (commit docs/analysis/** and docs/<lang>/results.md)
-analyze-benchmarks \
-    --generate-summary \
-    --generate-plots \
-    --output-dir ../docs/analysis
-# Also writes docs/c-sharp/results.md, docs/python/results.md, … with pivots + plots
+# Use a specific historical run
+analyze-benchmarks --rust-logs logs/rust/2026-06-12-123415.csv --generate-summary
 
-# Explicit per-language paths
-analyze-benchmarks \
-    --csharp-logs logs/csharp/benchmark-log.csv \
-    --python-logs logs/python/benchmark-log.csv \
-    --rust-logs logs/rust/benchmark-log.csv \
-    --c-logs logs/c/benchmark-log.csv \
-    --javascript-logs logs/javascript/benchmark-log.csv \
-    --output-dir ../docs/analysis \
-    --generate-summary \
-    --generate-plots
+# Shorthands work too
+analyze-benchmarks --rust-logs rust:2026-06-12 --generate-summary  # partial timestamp match
+analyze-benchmarks --rust-logs rust:latest --generate-summary       # latest timestamped file
+analyze-benchmarks --rust-logs logs/rust --generate-summary         # directory → picks latest
+
+# List all available result files
+analyze-benchmarks --list
 
 # Extra language (future harnesses)
-analyze-benchmarks --extra-logs go=logs/go/benchmark-log.csv --generate-summary
+analyze-benchmarks --extra-logs go=logs/go --generate-summary
 
-# Serializer version A vs B (same schema CSVs)
-analyze-benchmarks --compare-a logs/rust/v1.csv --compare-b logs/rust/v2.csv --output-dir reports
+# Compare two runs (great for serializer code experiments)
+analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
 
-# Check for regressions
-analyze-benchmarks \
-    --check-regression \
-    --regression-threshold 10 \
-    --baseline-file baseline.json
+# Check for regressions (against saved baseline)
+analyze-benchmarks --check-regression --regression-threshold 5
 
-# Save new baseline
-analyze-benchmarks \
-    --save-baseline \
-    --baseline-file baseline.json
+# Save current full run as new baseline
+analyze-benchmarks --save-baseline
 ```
+
+### Full benchmark + analysis workflow
+
+```bash
+# Run full (100 reps) benchmarks for all languages and save as baseline
+./scripts/run-all-benchmarks.sh -m full -b
+
+# Process the data: stats, outliers, plots, summaries, and per-language pages
+cd analysis
+uv run analyze-benchmarks --generate-summary --generate-plots
+
+# Typical output for a full run:
+#   Loaded 35200 csharp records -> 352 stat groups
+#   ...
+#   Total: 88400 records, 884 stat groups
+#   Generated 32 violin plots
+```
+
+You can also run the orchestrator without `-b` and save baseline separately.
+
+#### Example regression output
+
+```
+REGRESSION: 234 entries exceeded threshold
+  REGRESSION: rmp-serde on Telemetry (bytes) - 18.6% slower (1,391ns → 1,650ns, CI low 1,636ns)
+  REGRESSION: sonic-rs on Telemetry (stream) - 28.2% slower (4,554ns → 5,836ns, CI low 5,829ns)
+  ...
+```
+
+(The tool uses the full statistical pipeline: IQR filtering, bootstrap CIs, and optional hypothesis testing.)
+```
+
+Reports are written to `reports/` (gitignored). Documentation snapshots go to `docs/` for the MkDocs site.
 
 | Flag | Description |
 |------|-------------|
 | `--logs-root` | Root logs directory (default: repo `logs/`) |
-| `--csharp-logs` / `--python-logs` / `--rust-logs` / `--c-logs` / `--javascript-logs` | Per-language CSV paths |
+| `--csharp-logs` / `--python-logs` / ... | CSV path, directory, or shorthand (e.g. `rust:2026-06-12`) |
 | `--extra-logs` | `lang=path` pairs (repeatable) |
-| `--output-dir` | Report output directory |
 | `--generate-summary` | Write Markdown summary |
-| `--generate-plots` | Write violin plot images under `<output-dir>/plots/violin/` |
-| `--compare-a` / `--compare-b` | Version A/B compare CSVs |
+| `--generate-plots` | Write violin plots under `reports/plots/violin/` |
+| `--compare-a` / `--compare-b` | Compare two result files (path, dir, or shorthand) |
 | `--check-regression` / `--save-baseline` / `--baseline-file` / `--regression-threshold` | Regression gates |
 | `--config` | Path to `benchmark_config.yaml` |
+| `--list` | List available result files per language |
+
+## Environment Capture
+
+Each benchmark run also captures hardware/OS/runtime metadata as a sidecar file (`*.environment.json`) beside the result CSV. This records CPU model, core count, RAM, runtime versions, git commit, etc.
+
+```python
+from benchmark_analysis import capture_environment, load_environment
+
+# Capture (done automatically by harnesses)
+capture_environment("logs/rust/2026-06-12-123415.csv")
+
+# Load when analyzing
+env = load_environment("logs/rust/2026-06-12-123415.csv")
+print(env["cpu"]["model"], env["memory"]["total_bytes"])
+```
 
 ## Package Structure
 
@@ -87,7 +118,8 @@ analysis/
 │       ├── parser.py
 │       ├── stats.py
 │       ├── reports.py
-│       └── regression.py
+│       ├── regression.py
+│       └── environment.py
 ├── pyproject.toml
 └── README.md
 ```
@@ -95,11 +127,10 @@ analysis/
 ## API Usage
 
 ```python
-from benchmark_analysis import parse_csv_file, compute_statistics, generate_markdown_summary
+from benchmark_analysis import parse_csv_file, compute_statistics
 
-records = parse_csv_file('logs/rust/benchmark-log.csv', language_hint='rust')
+records, skipped = parse_csv_file('logs/rust/2026-06-12-123415.csv', language_hint='rust')
 stats = compute_statistics(records, language_hint='rust')
-generate_markdown_summary({}, {}, 'reports/summary.md', multi_lang_stats=stats, multi_lang_records={'rust': records})
 ```
 
 See [docs/analysis/ANALYSIS_METHODOLOGY.md](../docs/analysis/ANALYSIS_METHODOLOGY.md) for statistics details (site docs). Internal review notes (not published on the site): [CRITIQUE_AND_IMPROVEMENTS.md](CRITIQUE_AND_IMPROVEMENTS.md).

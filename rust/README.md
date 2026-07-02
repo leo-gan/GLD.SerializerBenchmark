@@ -34,6 +34,6 @@ Or directly:
 cargo run --release -- 100
 ```
 
-Output: `logs/rust/benchmark-log.csv`
+Output: `logs/rust/YYYY-MM-DD-HHMMSS.csv` (timestamped, never overwritten)
 
 Cross-language analysis and docs snapshots: install `analysis/`, run `analyze-benchmarks` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.

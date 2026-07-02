@@ -1,6 +1,6 @@
 # C Serializer Benchmark
 
-Native C harness emitting `logs/c/benchmark-log.csv` (nanoseconds, `Language=c`).
+Native C harness emitting timestamped `logs/c/YYYY-MM-DD-HHMMSS.csv` (nanoseconds, `Language=c`).
 
 ## Serializers (12)
 

@@ -19,8 +19,12 @@ const dataFilter = (process.argv[4] || '').toLowerCase();
 const logDir = process.env.LOG_DIR || path.join(projectRoot, 'logs', 'javascript');
 
 fs.mkdirSync(logDir, { recursive: true });
-const logPath = path.join(logDir, 'benchmark-log.csv');
-const errPath = path.join(logDir, 'benchmark-errors.csv');
+
+// Timestamped output so runs are never overwritten. Use BENCHMARK_TS when provided by orchestrator.
+const ts = process.env.BENCHMARK_TS || new Date().toISOString().slice(0,19).replace(/[-:T]/g, '').replace(/(\d{8})(\d{6})/, '$1-$2');
+const logPath = path.join(logDir, `${ts}.csv`);
+// Per-run errors beside the result CSV (same stem as .environment.json)
+const errPath = path.join(logDir, `${ts}.errors.csv`);
 
 const header =
   'Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,SerializerVersion\n';
@@ -114,4 +118,5 @@ for (const fx of fixtures) {
 
 fs.writeFileSync(logPath, lines.join(''));
 fs.writeFileSync(errPath, errors.join(''));
+
 console.log(`[PROGRESS] Complete. Results: ${logPath}`);

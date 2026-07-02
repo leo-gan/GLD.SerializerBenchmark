@@ -17,10 +17,13 @@ This runner deliberately avoids pytest-benchmark and other frameworks to ensure:
 
 from __future__ import annotations
 
+import datetime
 import io
+import os
 import sys
 import time
 import tracemalloc
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .comparer import compare
@@ -106,16 +109,23 @@ def run(
         print("No test data or serializers matched the filters.")
         return
 
-    # Storage
-    log_file = f"{log_dir}/benchmark-log.csv"
-    error_file = f"{log_dir}/benchmark-errors.csv"
+    # Timestamped result file — each run gets its own CSV, never overwritten.
+    ts = os.environ.get("BENCHMARK_TS") or datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    log_dir_path = Path(log_dir)
+    log_dir_path.mkdir(parents=True, exist_ok=True)
+
+    ts_file = log_dir_path / f"{ts}.csv"
+    # Per-run errors beside the result CSV (same stem as .environment.json)
+    error_file = log_dir_path / f"{ts}.errors.csv"
+
+    log_file = str(ts_file)
     storage = LogStorage(log_file)
     errors: List[BenchmarkError] = []
 
     for td_name, td_cls in test_data:
         print(f"\n[PROGRESS] Testing Data: {td_name} (Targeting {len(serializers)} serializers, {repetitions} reps)")
         _test_on_data(td_name, td_cls, repetitions, serializers, storage, errors)
-        save_errors(errors, error_file)
+        save_errors(errors, str(error_file))
 
     storage.close()
 
@@ -132,7 +142,18 @@ def run(
         [name for name, _ in test_data],
         [s.name for s in serializers],
     )
-    print("\n[PROGRESS] Benchmark Complete. Results saved to", log_file)
+
+    # Capture environment metadata beside the result CSV
+    try:
+        from benchmark_analysis.environment import capture_environment
+        capture_environment(str(ts_file))
+        print(f"[PROGRESS] Environment captured -> {ts_file.with_suffix('.environment.json')}")
+    except ImportError:
+        print("[WARN] benchmark_analysis not installed; skipping environment capture")
+    except Exception as e:
+        print(f"[WARN] Environment capture failed: {e}")
+
+    print(f"\n[PROGRESS] Benchmark Complete. Results saved to {ts_file}")
 
 
 def _test_on_data(

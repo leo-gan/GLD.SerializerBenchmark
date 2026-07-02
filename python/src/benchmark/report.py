@@ -46,8 +46,9 @@ class BenchmarkLog:
         return 1_000_000_000.0 / total if total > 0 else 0.0
 
 
-# C# compatible header + extensions
+# Full harness CSV schema (config/benchmark_config.yaml csv_schema + optional cols)
 CSV_HEADER = [
+    "Language",
     "StringOrStream",
     "TestDataName",
     "Repetitions",
@@ -62,6 +63,7 @@ CSV_HEADER = [
     "OpPerSecSerAndDeser",
     "MemoryPeakBytes",
     "FidelityScore",
+    "SerializerVersion",
 ]
 
 
@@ -83,6 +85,7 @@ class LogStorage:
 
     def write(self, log: BenchmarkLog) -> None:
         self._writer.writerow([
+            "python",
             log.string_or_stream,
             log.test_data_name,
             log.repetitions,
@@ -97,6 +100,7 @@ class LogStorage:
             f"{log.op_per_sec_ser_and_deser:.6f}",
             log.memory_peak_bytes,
             f"{log.fidelity_score:.2f}",
+            "",  # SerializerVersion (optional; fill when known)
         ])
         self._file_handle.flush()
 

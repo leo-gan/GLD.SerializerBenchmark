@@ -52,12 +52,12 @@ Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_conf
 # Analysis (install analysis package first)
 cd analysis && pip install -e .   # or: uv pip install -e .
 # Local scratch (gitignored):
-analyze-benchmarks --generate-summary --generate-plots --output-dir ../reports
+analyze-benchmarks --generate-summary --generate-plots
 # Publish snapshot for GitHub Pages (commit docs/analysis/** after review):
-analyze-benchmarks --generate-summary --generate-plots --output-dir ../docs/analysis
+analyze-benchmarks --generate-summary --generate-plots
 
 # Serializer version A vs B
-analyze-benchmarks --compare-a logs/rust/v1.csv --compare-b logs/rust/v2.csv --output-dir reports
+analyze-benchmarks --compare-a rust:v1 --compare-b rust:v2
 ```
 
 Modes: `smoke` (2 reps) · `all-single` (10) · `full` (100) · `research` (500) — see config.
@@ -84,7 +84,7 @@ See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistic
 
 - [Benchmark architecture](docs/analysis/architecture.md)
 - [Adding a language](docs/analysis/ADDING_A_LANGUAGE.md)
-- Harness contract: emit `logs/<lang>/benchmark-log.csv` with `Language=<id>`, times in **nanoseconds** (except legacy C# ticks)
+- Harness contract: emit timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with `Language=<id>`, times in **nanoseconds** (except legacy C# ticks)
 
 ## Documentation site
 

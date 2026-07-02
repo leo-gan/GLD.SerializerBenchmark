@@ -2,13 +2,13 @@
 
 How the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and violin plots. Timing *collection* (what is timed in the harness) is defined in [Benchmark architecture](architecture.md). Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml).
 
-Regenerate site snapshots **locally** (`analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis`); CI does not re-run analysis. Numbers appear on language **Results** pages ([Benchmark Results](BENCHMARK_SUMMARY.md) hub).
+Regenerate site snapshots **locally** (`analyze-benchmarks --generate-summary --generate-plots`); CI does not re-run analysis. Numbers appear on language **Results** pages ([Benchmark Results](BENCHMARK_SUMMARY.md) hub).
 
 ## Inputs
 
 | Source | Role |
 |--------|------|
-| `logs/<lang>/benchmark-log.csv` | Per-language harness output (gitignored) |
+| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output (gitignored) |
 | `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, …) |
 | `csv_schema` in master config | Required/optional columns |
 
@@ -34,7 +34,7 @@ CSV → normalize times to ns → drop warmup → outlier filter → descriptive
 
 All analysis and published tables use **nanoseconds** (plots often show **µs**).
 
-Ops/sec in reports is derived consistently as **`1e9 / mean_time_ns`** (config: `statistics.throughput_from`), not by trusting mixed runner-reported ops fields across languages.
+Ops/sec in reports is derived consistently as **`1e9 / mean_time_ns`** (the documented `statistics.throughput_from` key is not currently read; the derivation is hard-coded to the mean total time).
 
 ### Warmup exclusion
 
@@ -81,6 +81,8 @@ Exact keys depend on the analysis version; published markdown pivots emphasize m
 
 When `statistics.bootstrap.enabled` (default): **percentile** bootstrap on the group’s total-time series (`iterations` 2000, `confidence_level` 0.95, `seed` 42). Yields `total_ci_low_ns` / `total_ci_high_ns` around the mean. Non-parametric; does not assume normality.
 
+**Minimum sample size**: bootstrap CIs (and some effect-size / test paths) are only produced when the post-filter sample size ≥ `min_samples_for_inference` (default 5). Below this the CI fields are set to the point estimate (degenerate interval). Very small N makes any CI unreliable; the threshold is a hard gate to avoid nonsensical output.
+
 ### Effect sizes vs fastest in group
 
 When `statistics.effect_sizes.enabled` (default), within the same language, fixture, and I/O mode, each serializer is compared to the **fastest** (lowest mean total time) in that group:
@@ -95,10 +97,27 @@ Fields such as `effect_vs_fastest_cliffs_delta`, `effect_vs_fastest_hedges_g`, `
 ### Version A/B (same serializer, two builds)
 
 ```bash
-analyze-benchmarks --compare-a old.csv --compare-b new.csv --output-dir reports
+# Using full benchmark data (100 reps)
+./scripts/run-all-benchmarks.sh -m full
+analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
+```
+
+Or with shorthands for older vs latest full run:
+
+```bash
+analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316
 ```
 
 Writes `VERSION_COMPARE.md` with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when `statistics.hypothesis_tests` is enabled (`alpha` 0.05). Prefer this for author-facing regressions rather than comparing unrelated libraries.
+
+A full run typically produces output like:
+
+```
+Loaded 35200 csharp records from ... -> 352 stat groups
+...
+Total: 88400 records, 884 stat groups
+Generated 32 violin plots
+```
 
 ## Outputs
 
@@ -109,7 +128,7 @@ Writes `VERSION_COMPARE.md` with percent change, Cliff’s δ, Hedges’ g, **Ma
 | `docs/analysis/BENCHMARK_SUMMARY.md` | Hub links to language Results |
 | Console | Load counts, warmup/outlier tallies |
 
-Violins show spread and multimodality that means hide; they still reflect post-filter samples used for summaries when generated from the same run.
+Violins show spread and multimodality that means hide. As of recent fixes they exclude warmup (`RepetitionIndex==0`) and apply the same IQR filter per (serializer, fixture, mode, operation) as the summary tables, so the visual density is much closer to the numbers. A final per-serializer p99 clip is still applied only for KDE rendering stability and does not change the underlying sample for statistics.
 
 ## Limitations
 
@@ -119,6 +138,14 @@ Violins show spread and multimodality that means hide; they still reflect post-f
 - **Stream** mode is not always a true incremental API (some harnesses buffer then write).
 - **Fidelity** is semantic/structural, not bit-identical across formats (e.g. floats/datetimes).
 - Outlier removal and warmup policy affect means; always consider `runs`, CIs, and effect sizes.
+
+### Methodological disclosures
+
+- **Bootstrap reproducibility**: each `(serializer, test_data, mode, language)` group receives a *derived* seed (base `statistics.bootstrap.seed` mixed with a stable hash of the group key). This makes the resampled CIs independent across groups rather than sharing identical random draws.
+- **Paired series**: `times_ser`, `times_deser` and `times_total` are now subset with a common IQR mask derived from total time, preserving repetition correspondence.
+- **Mann–Whitney**: tie ranks + tie-corrected variance + continuity correction are applied (scipy is used when present).
+- **Cliff’s δ for large N**: when the cartesian product exceeds ~2 M pairs the implementation switches to a 100 k-pair random sample (seeded at 0). The approximation is documented in the source.
+- Several documented config keys (`report_*` toggles, `bootstrap.method` other than percentile, `effect_sizes.methods`, `throughput_from`, `csv_schema.time_unit`, certain `paths.*`) are parsed for documentation but do not yet alter runtime behaviour; the implementation always computes the full rich set.
 
 ## References
 

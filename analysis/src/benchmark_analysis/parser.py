@@ -4,18 +4,21 @@ from __future__ import annotations
 
 import csv
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 
-def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> List[Dict]:
-    """Parse benchmark CSV file and return list of records.
+def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[List[Dict], int]:
+    """Parse benchmark CSV file and return (records, skipped_count).
 
     Supports legacy headers (no Language column) and v1.1+ with Language,
     MemoryPeakBytes, FidelityScore, SerializerVersion.
+
+    The second return value makes skipped/malformed rows auditable by callers.
     """
     records: List[Dict] = []
+    skipped = 0
     if not filepath or not os.path.exists(filepath):
-        return records
+        return records, 0
 
     # Infer language from path if not provided
     if language_hint is None:
@@ -27,13 +30,18 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> List[D
             ("/rust/", "rust"),
             ("/javascript/", "javascript"),
             ("/logs/c/", "c"),
-            ("/logs/c\\", "c"),
         ):
             if token in low:
                 language_hint = lang
                 break
-        if language_hint is None and "/logs/c/" in low or low.rstrip("/").endswith("/c/benchmark-log.csv"):
-            language_hint = "c"
+        if language_hint is None:
+            # Robust C detection: require "c" as an exact path segment (prevents
+            # false positives on "compat", "case", "data/case.csv" etc).
+            parts = [p for p in low.split("/") if p]
+            if "c" in parts:
+                language_hint = "c"
+            elif low.endswith(("/c", "/c/", "/c.csv")):
+                language_hint = "c"
 
     with open(filepath, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -63,16 +71,9 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> List[D
                     record["SerializerVersion"] = row["SerializerVersion"]
                 records.append(record)
             except (ValueError, KeyError, TypeError) as e:
+                skipped += 1
                 print(f"Warning: Skipping malformed row: {row}, error: {e}")
-    return records
+    if skipped:
+        print(f"Parser: skipped {skipped} malformed row(s) from {filepath}")
+    return records, skipped
 
-
-def parse_multi_language_logs(log_paths: Dict[str, str]) -> Dict[str, List[Dict]]:
-    """Parse multiple language log files. Keys are language ids."""
-    out: Dict[str, List[Dict]] = {}
-    for lang, path in log_paths.items():
-        if path and os.path.exists(path):
-            out[lang] = parse_csv_file(path, language_hint=lang)
-        else:
-            out[lang] = []
-    return out

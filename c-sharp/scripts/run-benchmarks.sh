@@ -18,35 +18,54 @@ print_usage() {
     echo "  custom     - Manual: ./scripts/run-benchmarks.sh custom <reps> [serializerFilter] [dataFilter]"
 }
 
-if [[ "$(docker images -q $IMAGE_NAME 2> /dev/null)" == "" ]]; then
-    echo "[INFO] Building Docker image..."
-    docker build -t $IMAGE_NAME "$SCRIPT_DIR/.."
-fi
+echo "[INFO] Ensuring Docker image is up to date..."
+docker build -t $IMAGE_NAME "$SCRIPT_DIR/.."
+
+# Ensure timestamp for env sidecar mapping (host captures after Docker exits)
+export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 
 case "$1" in
     smoke)
         echo "[INFO] Running Smoke Test (2 reps, Binary, Person)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME 2 Binary Person
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs $IMAGE_NAME 2 Binary Person
         ;;
     all-single)
         echo "[INFO] Running All-Single Test (10 reps, All Serializers)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME 10
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs $IMAGE_NAME 10
         ;;
     full)
         echo "[INFO] Running Full Benchmark (100 reps, All Serializers)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME 100
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs $IMAGE_NAME 100
         ;;
     research)
         echo "[INFO] Running Research Benchmark (500 reps, All Serializers)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME 500
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs $IMAGE_NAME 500
         ;;
     custom)
         shift
         echo "[INFO] Running Custom Benchmark (Args: $@)..."
-        docker run --rm -v "$LOG_DIR":/app/logs $IMAGE_NAME "$@"
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs $IMAGE_NAME "$@"
         ;;
     *)
         print_usage
         exit 1
         ;;
 esac
+
+# Environment sidecar (host Python if available; else Docker so root-owned logs are writable)
+CSV="$LOG_DIR/csharp/${BENCHMARK_TS}.csv"
+ENV_JSON="${CSV%.csv}.environment.json"
+if [[ -f "$CSV" ]]; then
+    if PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" python3 -m benchmark_analysis.environment "$CSV" 2>/dev/null; then
+        echo "[INFO] Environment captured -> $ENV_JSON"
+    elif docker run --rm \
+        -v "$LOG_DIR:/logs" \
+        -v "$PROJECT_ROOT/analysis/src:/src:ro" \
+        -e PYTHONPATH=/src \
+        python:3.12-slim \
+        python -m benchmark_analysis.environment "/logs/csharp/${BENCHMARK_TS}.csv" >/dev/null 2>&1; then
+        echo "[INFO] Environment captured (via Docker) -> $ENV_JSON"
+    else
+        echo "[WARN] Could not write environment.json"
+    fi
+fi

@@ -11,18 +11,68 @@ namespace GLD.SerializerBenchmark
             int repetitions)
         {
             Directory.CreateDirectory("logs/csharp");
-            var logStorage = new LogStorage("logs/csharp/benchmark-log.csv");
+
+            // Timestamped result file — each run creates YYYY-MM-DD-HHMMSS.csv, never overwritten.
+            var ts = Environment.GetEnvironmentVariable("BENCHMARK_TS");
+            if (string.IsNullOrEmpty(ts))
+                ts = DateTime.Now.ToString("yyyy-MM-dd-HHmmss");
+            var logPath = $"logs/csharp/{ts}.csv";
+            // Per-run errors beside the result CSV (same stem as .environment.json)
+            var errorsPath = $"logs/csharp/{ts}.errors.csv";
+
+            var logStorage = new LogStorage(logPath);
             var errors = new List<Error>();
 
             foreach (var testDataDescription in testDataDescriptions)
             {
                 Console.WriteLine($"\n[PROGRESS] Testing Data: {testDataDescription.Name} (Targeting {serializers.Count} serializers, {repetitions} reps)");
                 TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
-                Error.SaveErrors(errors, "logs/csharp/benchmark-errors.csv");
+                Error.SaveErrors(errors, errorsPath);
             }
 
             Report.AllResults(repetitions, logStorage, errors, serializers, testDataDescriptions);
-            Console.WriteLine("\n[PROGRESS] Benchmark Complete. Results saved to logs/csharp/benchmark-log.csv");
+
+            TryCaptureEnvironment(logPath);
+
+            Console.WriteLine($"\n[PROGRESS] Benchmark Complete. Results saved to {logPath}");
+        }
+
+        /// <summary>
+        /// Write logs/csharp/&lt;ts&gt;.environment.json via analysis package when available on host.
+        /// Docker images often lack it; run-all-benchmarks.sh also captures on the host.
+        /// </summary>
+        private static void TryCaptureEnvironment(string logPath)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "python3",
+                    Arguments = $"-m benchmark_analysis.environment \"{logPath}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                var analysisSrc = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "analysis", "src"));
+                if (!Directory.Exists(analysisSrc))
+                    analysisSrc = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "analysis", "src"));
+                if (Directory.Exists(analysisSrc))
+                    psi.Environment["PYTHONPATH"] = analysisSrc +
+                        (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PYTHONPATH"))
+                            ? ""
+                            : Path.PathSeparator + Environment.GetEnvironmentVariable("PYTHONPATH"));
+                using (var p = Process.Start(psi))
+                {
+                    if (p == null) return;
+                    p.WaitForExit(15000);
+                    if (p.ExitCode == 0)
+                        Console.WriteLine($"[PROGRESS] Environment captured beside {logPath}");
+                }
+            }
+            catch
+            {
+                // Optional sidecar; ignore failures
+            }
         }
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,

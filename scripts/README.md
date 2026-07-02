@@ -2,6 +2,12 @@
 
 Scripts for running harnesses and analysis **locally**. GitHub Actions may smoke-test harnesses, but **never** regenerates result tables or plots for documentation — those are committed under `docs/analysis/` after a local `analyze-benchmarks` run.
 
+Each benchmark run creates timestamped artifacts with the **same stem** (never overwritten):
+
+- `YYYY-MM-DD-HHMMSS.csv` — timings
+- `YYYY-MM-DD-HHMMSS.errors.csv` — fidelity / harness failures for that run
+- `YYYY-MM-DD-HHMMSS.environment.json` — host/runtime metadata
+
 ## Scripts
 
 ### `run-all-benchmarks.sh`
@@ -48,42 +54,39 @@ Unified benchmark runner for **all enabled languages** (C#, Python, Rust, C, Jav
 
 Console script from the `analysis/` package. Analyzes benchmark CSV outputs and generates reports.
 
+Each benchmark run creates timestamped `YYYY-MM-DD-HHMMSS.{csv,errors.csv,environment.json}` files — never overwritten. When run via `run-all-benchmarks.sh`, all languages share the same timestamp stem.
+
 **Usage (after installing analysis package):**
 ```bash
 cd analysis && pip install -e .   # once
-# Throwaway local output (gitignored):
-analyze-benchmarks \
-    --generate-summary \
-    --generate-plots \
-    --output-dir reports/
-# Snapshot for GitHub Pages (commit docs/analysis/** after review):
-analyze-benchmarks \
-    --generate-summary \
-    --generate-plots \
-    --output-dir ../docs/analysis
-```
 
-Auto-discovers `logs/<lang>/benchmark-log.csv`. Explicit flags:
+# Generate reports (auto-discovers latest result per language)
+analyze-benchmarks --generate-summary --generate-plots
+
+# List all available result files
+analyze-benchmarks --list
+
+# Use a specific run
+analyze-benchmarks --rust-logs rust:2026-06-12 --generate-summary
+
+# Compare two runs (great for serializer experiments)
+analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
+```
 
 | Argument | Description |
 |----------|-------------|
 | `--logs-root PATH` | Root logs directory |
-| `--csharp-logs PATH` | C# benchmark CSV |
-| `--python-logs PATH` | Python benchmark CSV |
-| `--rust-logs PATH` | Rust benchmark CSV |
-| `--c-logs PATH` | C benchmark CSV |
-| `--javascript-logs PATH` | JavaScript benchmark CSV |
+| `--csharp-logs` / `--python-logs` / ... | CSV path, directory, or shorthand (`rust:2026-06-12`, `rust:latest`) |
 | `--extra-logs lang=path` | Additional languages (repeatable) |
-| `--output-dir DIR` | Output directory for reports |
-| `--generate-plots` | Generate violin plot images |
-
 | `--generate-summary` | Generate Markdown summary |
-| `--compare-a` / `--compare-b` | Version A/B CSV compare |
+| `--generate-plots` | Generate violin plot images |
+| `--compare-a` / `--compare-b` | Compare two result files (path, dir, or shorthand) |
 | `--check-regression` | Check for regressions against baseline |
 | `--regression-threshold PCT` | Regression threshold percentage |
 | `--baseline-file PATH` | Path to baseline JSON file |
 | `--save-baseline` | Save current results as baseline |
 | `--config PATH` | Master `benchmark_config.yaml` |
+| `--list` | List available result files per language |
 
 ### `verify-results.sh`
 
@@ -120,7 +123,7 @@ Baselines are stored as JSON files with the format:
 Publish path for documentation:
 
 ```bash
-analyze-benchmarks --generate-summary --generate-plots --output-dir docs/analysis
+analyze-benchmarks --generate-summary --generate-plots
 git add docs/analysis && git commit -m "docs: refresh benchmark snapshot"
 ```
 

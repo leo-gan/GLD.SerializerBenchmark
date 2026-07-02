@@ -28,15 +28,28 @@ _DEFAULT_STATS_CFG: Dict[str, Any] = {
     "min_samples_for_outlier_filter": 10,
     "min_samples_for_inference": 5,
     "report_percentiles": [5, 25, 50, 75, 95, 99],
+    # NOTE: report_* flags (mean/median/std/...) are declared in config for
+    # documentation but are currently always computed (rich output is the
+    # design goal). Changing them has no effect yet.
+    "report_mean": True,
+    "report_median": True,
+    "report_std": True,
+    "report_mad": True,
+    "report_cv": True,
+    "report_min_max": True,
     "bootstrap": {
         "enabled": True,
         "iterations": 2000,
         "confidence_level": 0.95,
         "seed": 42,
+        # Only "percentile" is implemented. "bca" is accepted in config
+        # but silently falls back to percentile.
         "method": "percentile",
     },
     "effect_sizes": {
         "enabled": True,
+        # "methods" key accepted from config but both cliffs+hedges are always run.
+        "methods": ["cliffs_delta", "hedges_g"],
         "cliffs_delta_thresholds": {
             "negligible": 0.147,
             "small": 0.33,
@@ -45,9 +58,13 @@ _DEFAULT_STATS_CFG: Dict[str, Any] = {
     },
     "hypothesis_tests": {
         "enabled": True,
+        # Only mann_whitney_u is implemented.
+        "method": "mann_whitney_u",
         "alpha": 0.05,
         "multiple_comparison_correction": "holm",
     },
+    # throughput_from is documented but derivation is always 1e9/mean_time_ns.
+    "throughput_from": "mean_time_ns",
 }
 
 
@@ -91,6 +108,19 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         except Exception as exc:  # malformed YAML should not break analysis defaults
             print(f"Warning: could not load stats config from {path}: {exc}")
             continue
+
+    # Surface limitations for declared-but-unimplemented settings
+    boot = cfg.get("bootstrap") or {}
+    if boot.get("method") not in (None, "percentile"):
+        print(f"Note: bootstrap.method={boot.get('method')} requested but only 'percentile' is implemented; using percentile.")
+    eff = cfg.get("effect_sizes") or {}
+    if eff.get("methods") and set(eff["methods"]) != {"cliffs_delta", "hedges_g"}:
+        print("Note: effect_sizes.methods partially supported; both cliffs_delta and hedges_g are always computed when enabled.")
+    ht = cfg.get("hypothesis_tests") or {}
+    if ht.get("method") and ht["method"] != "mann_whitney_u":
+        print(f"Note: hypothesis_tests.method={ht['method']} requested; only mann_whitney_u is implemented.")
+    # csv_schema.time_unit and paths.* are intentionally not read here;
+    # time normalization uses Language + heuristic; CLI discovers logs.
     return cfg
 
 
@@ -103,10 +133,11 @@ def _detect_time_unit(time_value: int, language: Optional[str] = None) -> float:
 
     New runners emit nanoseconds and set Language explicitly.
     Legacy C# emits ticks (100 ns) without Language or with language=csharp.
+    (Kept as-is for test compatibility and internal use by normalize.)
     """
     if language:
-        lang = language.lower()
-        if lang in ("csharp", "c#", "cs", "dotnet"):
+        lang = language.lower().strip()
+        if lang in ("csharp", "c#", "cs", "dotnet", "c-sharp"):
             return 100.0
         if lang in ("python", "rust", "c", "javascript", "js", "node", "go", "java", "cpp"):
             return 1.0
@@ -114,6 +145,17 @@ def _detect_time_unit(time_value: int, language: Optional[str] = None) -> float:
     if time_value > 1_000_000:
         return 100.0  # C# ticks
     return 1.0
+
+
+def normalize_to_nanoseconds(value: float, language: Optional[str] = None) -> float:
+    """Convert a raw timing value (from CSV) to nanoseconds.
+
+    Prefers explicit Language column (or hint). Falls back to numeric heuristic
+    only for legacy data without language info. This is the single source of
+    truth for time-unit normalization so that stats and plots agree.
+    """
+    mult = _detect_time_unit(int(value), language)
+    return float(value) * mult
 
 
 # ---------------------------------------------------------------------------
@@ -134,9 +176,9 @@ def _filter_outliers(
     if method == "winsorize":
         lo, hi = np.percentile(arr, [5, 95])
         wins = np.clip(arr, lo, hi)
-        # Count how many were clipped as "removed" conceptually
-        removed = int(np.sum((arr < lo) | (arr > hi)))
-        return wins.tolist(), removed
+        # Winsorization clips extreme values rather than removing them;
+        # the sample size stays the same, so removed count is 0.
+        return wins.tolist(), 0
 
     # IQR (default)
     q1 = float(np.percentile(arr, 25))
@@ -162,7 +204,13 @@ def bootstrap_ci(
     seed: int = 42,
     statistic: str = "mean",
 ) -> Tuple[float, float, float]:
-    """Percentile bootstrap CI. Returns (point_estimate, ci_low, ci_high)."""
+    """Percentile bootstrap CI. Returns (point_estimate, ci_low, ci_high).
+
+    The caller should pass a *per-group* seed (derived from a stable hash of the
+    group key + configured base seed) so that resamples are independent across
+    different serializers / test cases. Using a constant seed for every group
+    makes the CIs artificially correlated.
+    """
     arr = np.asarray(values, dtype=float)
     n = len(arr)
     if n == 0:
@@ -187,6 +235,23 @@ def bootstrap_ci(
     lo = float(np.percentile(boot_stats, 100 * alpha / 2))
     hi = float(np.percentile(boot_stats, 100 * (1 - alpha / 2)))
     return point, lo, hi
+
+
+def _derive_seed(base_seed: int, *key_parts: Any) -> int:
+    """Derive a stable per-group seed from base seed + group identity.
+
+    Ensures bootstrap replicates are independent across (serializer, data, mode, ...)
+    while remaining fully reproducible given the same inputs.
+    """
+    import hashlib
+    h = hashlib.sha256()
+    h.update(str(base_seed).encode("utf-8"))
+    for part in key_parts:
+        h.update(str(part).encode("utf-8"))
+        h.update(b"|")
+    # Fold to a positive 32-bit int suitable for np.random.default_rng
+    digest = int.from_bytes(h.digest()[:8], "little")
+    return digest & 0xFFFFFFFF
 
 
 # ---------------------------------------------------------------------------
@@ -257,38 +322,72 @@ def hedges_g(x: Sequence[float], y: Sequence[float]) -> float:
 # ---------------------------------------------------------------------------
 
 def mann_whitney_u(x: Sequence[float], y: Sequence[float]) -> Tuple[float, float]:
-    """Two-sided Mann-Whitney U; returns (U, p_value). Uses normal approx."""
+    """Two-sided Mann-Whitney U with tie correction and continuity correction.
+
+    Returns (U, p_value). Uses normal approximation with proper tie-adjusted
+    variance (required when there are duplicate timings, common in benchmarks)
+    and a continuity correction for better discrete approximation.
+
+    If scipy is available, it is used for the authoritative result (it implements
+    the exact tie correction); otherwise we fall back to our corrected formula.
+    """
     a = np.asarray(x, dtype=float)
     b = np.asarray(y, dtype=float)
     n1, n2 = len(a), len(b)
     if n1 == 0 or n2 == 0:
         return 0.0, 1.0
-    # Rank all
+    if n1 < 2 or n2 < 2:
+        # Degenerate; not enough data for meaningful test
+        return 0.0, 1.0
+
+    # Try scipy first (authoritative, handles ties + exact options if wanted)
+    try:
+        from scipy.stats import mannwhitneyu as scipy_mwu
+        # use='asymptotic' + method gives the normal approx we were doing; ties handled internally
+        res = scipy_mwu(a, b, alternative="two-sided", method="asymptotic")
+        return float(res.statistic), float(res.pvalue)
+    except Exception:
+        pass  # fall through to our implementation
+
+    # --- Pure numpy implementation with full tie correction + continuity corr. ---
     combined = np.concatenate([a, b])
-    order = combined.argsort()
+    N = n1 + n2
+    order = combined.argsort(kind="mergesort")  # stable for tie detection
     ranks = np.empty_like(order, dtype=float)
-    ranks[order] = np.arange(1, len(combined) + 1, dtype=float)
-    # Average ties
+    ranks[order] = np.arange(1, N + 1, dtype=float)
+
+    # Average ties and accumulate tie correction sum(t^3 - t)
     sorted_vals = combined[order]
+    tie_sum = 0.0
     i = 0
-    while i < len(sorted_vals):
+    while i < N:
         j = i
-        while j < len(sorted_vals) and sorted_vals[j] == sorted_vals[i]:
+        while j < N and sorted_vals[j] == sorted_vals[i]:
             j += 1
-        if j - i > 1:
+        t = j - i
+        if t > 1:
             avg = (i + 1 + j) / 2.0
             ranks[order[i:j]] = avg
+            tie_sum += (t ** 3 - t)
         i = j
+
     r1 = float(np.sum(ranks[:n1]))
     u1 = r1 - n1 * (n1 + 1) / 2.0
     u2 = n1 * n2 - u1
     u = min(u1, u2)
     mu = n1 * n2 / 2.0
-    sigma = np.sqrt(n1 * n2 * (n1 + n2 + 1) / 12.0)
-    if sigma == 0:
+
+    # Tie-corrected variance
+    # sigma^2 = (n1*n2/12) * ( (N+1) - sum(t^3-t)/(N*(N-1)) )
+    var = (n1 * n2 / 12.0) * ( (N + 1) - tie_sum / (N * (N - 1) if N > 1 else 0) )
+    if var <= 0:
         return float(u), 1.0
-    z = (u - mu) / sigma
-    # Two-sided normal p-value
+    sigma = np.sqrt(var)
+
+    # Continuity correction for normal approximation of discrete U
+    # z = ( |U - mu| - 0.5 ) / sigma
+    z = (abs(u - mu) - 0.5) / sigma if sigma > 0 else 0.0
+
     from math import erfc, sqrt
     p = erfc(abs(z) / sqrt(2.0))
     return float(u), float(min(1.0, p))
@@ -323,8 +422,13 @@ def _summarize_series(
     values: List[float],
     cfg: Dict[str, Any],
     prefix: str,
+    group_key: Optional[Tuple] = None,
 ) -> Dict[str, float]:
-    """Compute descriptive + bootstrap stats for one timing series."""
+    """Compute descriptive + bootstrap stats for one timing series.
+
+    group_key (if given) is used together with the configured base seed to
+    derive an independent per-group bootstrap seed.
+    """
     out: Dict[str, float] = {}
     if not values:
         out[f"{prefix}_mean_ns"] = 0.0
@@ -358,11 +462,16 @@ def _summarize_series(
 
     boot_cfg = cfg.get("bootstrap") or {}
     if boot_cfg.get("enabled", True) and len(arr) >= cfg.get("min_samples_for_inference", 5):
+        base_seed = int(boot_cfg.get("seed", 42))
+        if group_key is not None:
+            per_group_seed = _derive_seed(base_seed, group_key, prefix)
+        else:
+            per_group_seed = base_seed
         _, lo, hi = bootstrap_ci(
             values,
             iterations=int(boot_cfg.get("iterations", 2000)),
             confidence_level=float(boot_cfg.get("confidence_level", 0.95)),
-            seed=int(boot_cfg.get("seed", 42)),
+            seed=per_group_seed,
             statistic="mean",
         )
         out[f"{prefix}_ci_low_ns"] = lo
@@ -403,10 +512,11 @@ def compute_statistics(
             stats[key]["warmup_skipped"] += 1
             continue
 
-        mult = _detect_time_unit(int(r["TimeSer"]), lang or None)
-        time_ser_ns = float(r["TimeSer"]) * mult
-        time_deser_ns = float(r["TimeDeser"]) * mult
-        time_total_ns = float(r.get("TimeSerAndDeser", r["TimeSer"] + r["TimeDeser"])) * mult
+        time_ser_ns = normalize_to_nanoseconds(float(r["TimeSer"]), lang or None)
+        time_deser_ns = normalize_to_nanoseconds(float(r["TimeDeser"]), lang or None)
+        time_total_ns = normalize_to_nanoseconds(
+            float(r.get("TimeSerAndDeser", r["TimeSer"] + r["TimeDeser"])), lang or None
+        )
 
         stats[key]["times_ser"].append(time_ser_ns)
         stats[key]["times_deser"].append(time_deser_ns)
@@ -433,16 +543,51 @@ def compute_statistics(
     results: Dict = {}
 
     for key, data in stats.items():
-        times_total, rem_t = _filter_outliers(
-            data["times_total"], outlier_method, iqr_k, min_out
-        )
-        times_ser, _ = _filter_outliers(data["times_ser"], outlier_method, iqr_k, min_out)
-        times_deser, _ = _filter_outliers(data["times_deser"], outlier_method, iqr_k, min_out)
+        raw_ser = data["times_ser"]
+        raw_deser = data["times_deser"]
+        raw_total = data["times_total"]
+
+        # Filter *once* using the primary metric (total), then apply the *same*
+        # kept indices to ser/deser/total. This preserves row correspondence
+        # for paired (ser, deser) measurements from the same repetition.
+        if outlier_method == "none" or len(raw_total) < min_out:
+            times_total = raw_total
+            times_ser = raw_ser
+            times_deser = raw_deser
+            rem_t = 0
+        else:
+            arr_t = np.asarray(raw_total, dtype=float)
+            if outlier_method == "winsorize":
+                lo, hi = np.percentile(arr_t, [5, 95])
+                # Winsorize total; to keep correspondence we winsorize in place on copies
+                times_total = np.clip(arr_t, lo, hi).tolist()
+                times_ser = raw_ser[:]  # winsorize does not drop rows
+                times_deser = raw_deser[:]
+                rem_t = 0
+            else:
+                # IQR on total -> mask -> subset the three aligned series
+                q1 = float(np.percentile(arr_t, 25))
+                q3 = float(np.percentile(arr_t, 75))
+                iqr = q3 - q1
+                if iqr == 0:
+                    times_total = raw_total
+                    times_ser = raw_ser
+                    times_deser = raw_deser
+                    rem_t = 0
+                else:
+                    lower = q1 - iqr_k * iqr
+                    upper = q3 + iqr_k * iqr
+                    mask = (arr_t >= lower) & (arr_t <= upper)
+                    times_total = arr_t[mask].tolist()
+                    times_ser = [v for v, m in zip(raw_ser, mask) if m]
+                    times_deser = [v for v, m in zip(raw_deser, mask) if m]
+                    rem_t = int((~mask).sum())
+
         total_outliers += rem_t
 
-        ser_stats = _summarize_series(times_ser, cfg, "ser")
-        deser_stats = _summarize_series(times_deser, cfg, "deser")
-        total_stats = _summarize_series(times_total, cfg, "total")
+        ser_stats = _summarize_series(times_ser, cfg, "ser", group_key=key)
+        deser_stats = _summarize_series(times_deser, cfg, "deser", group_key=key)
+        total_stats = _summarize_series(times_total, cfg, "total", group_key=key)
 
         avg_time_total_ns = total_stats["total_mean_ns"]
         avg_ops_per_sec = 1e9 / avg_time_total_ns if avg_time_total_ns > 0 else 0.0
@@ -579,6 +724,3 @@ def compare_versions(
     return comparisons
 
 
-# Backwards-compatible alias used internally in older code paths
-def compute_statistics_legacy(records: List[Dict]) -> Dict:
-    return compute_statistics(records)

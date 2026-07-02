@@ -77,6 +77,18 @@ namespace GLD.SerializerBenchmark
         {
             get { return (TimeSer + TimeDeser) > 0 ? 10000000/(TimeSer + TimeDeser) : 0; }
         }
+
+        /// <summary>Harness language id for multi-language CSV schema.</summary>
+        public string Language { get { return "csharp"; } }
+
+        /// <summary>Peak memory if measured; 0 when not tracked.</summary>
+        public long MemoryPeakBytes { get; set; }
+
+        /// <summary>1.0 when round-trip fidelity passed (rows are only written on pass).</summary>
+        public double FidelityScore { get; set; } = 1.0;
+
+        /// <summary>Optional package/library version string.</summary>
+        public string SerializerVersion { get; set; } = "";
     }
 
     public class LogStorage
@@ -109,7 +121,9 @@ namespace GLD.SerializerBenchmark
             _logFileStreamWriter.AutoFlush = true;
             _separator = separator;
             var fileHeaderLine =
-                "StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser";
+                "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName," +
+                "TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser," +
+                "MemoryPeakBytes,FidelityScore,SerializerVersion";
             fileHeaderLine = fileHeaderLine.Replace(",", _separator);
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
@@ -119,9 +133,11 @@ namespace GLD.SerializerBenchmark
         public void Write(Log log)
         {
             var line = string.Join(_separator,
-                log.StringOrStream, log.TestDataName, log.Repetitions, log.RepetitionIndex, log.SerializerName,
-                log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser, log.OpPerSecSer,
-                log.OpPerSecDeser, log.OpPerSecSerAndDeser
+                log.Language, log.StringOrStream, log.TestDataName, log.Repetitions, log.RepetitionIndex,
+                log.SerializerName, log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser,
+                log.OpPerSecSer, log.OpPerSecDeser, log.OpPerSecSerAndDeser,
+                log.MemoryPeakBytes, log.FidelityScore.ToString("F2"),
+                log.SerializerVersion ?? ""
                 );
             _logFileStreamWriter.WriteLine(line);
         }
@@ -134,18 +150,19 @@ namespace GLD.SerializerBenchmark
             {
                 var line = lines[index];
                 var fields = line.Split(new[] {_separator}, StringSplitOptions.None);
+                // Schema: Language,StringOrStream,TestDataName,... (Language ignored on read)
                 var log = new Log
                 {
-                    StringOrStream = fields[0],
-                    TestDataName = fields[1],
-                    Repetitions = fields[2].ToInt(),
-                    RepetitionIndex = fields[3].ToInt(),
-                    SerializerName = fields[4],
-                    TimeSer = fields[5].ToInt64(),
-                    TimeDeser = fields[6].ToInt64(),
-                    Size = fields[7].ToInt()
-                    //TimeSerAndDeser = fields[8].ToInt64(), // properties: without setters
-                    //OpPerSecSer = fields[9].ToDouble(),
+                    StringOrStream = fields[1],
+                    TestDataName = fields[2],
+                    Repetitions = fields[3].ToInt(),
+                    RepetitionIndex = fields[4].ToInt(),
+                    SerializerName = fields[5],
+                    TimeSer = fields[6].ToInt64(),
+                    TimeDeser = fields[7].ToInt64(),
+                    Size = fields[8].ToInt()
+                    //TimeSerAndDeser = fields[9]... // properties: without setters
+                    //OpPerSecSer = fields[10]...
                     //OpPerSecDeser = fields[10].ToDouble(),
                     //OpPerSecSerAndDeser = fields[11].ToDouble(),
                 };

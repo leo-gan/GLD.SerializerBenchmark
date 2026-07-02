@@ -69,8 +69,8 @@ docker logs -f $(docker ps -lq)
 
 ### 4. Results
 Benchmark logs are saved to the `logs/csharp/` directory:
-- `benchmark-log.csv`: Performance metrics (times in **ticks**).
-- `benchmark-errors.csv`: Tracking any failures.
+- `2026-06-12-123415.csv` (timestamped): Performance metrics (times in **ticks**). Each run creates a new file — results are never overwritten.
+- `*.environment.json`: Hardware/OS metadata sidecar for that run.
 
 ---
 
@@ -91,8 +91,8 @@ Ensure you have [.NET SDK 8.0](https://dotnet.microsoft.com/download) installed.
 
 ## Results & Analysis
 
-- `logs/csharp/benchmark-log.csv`: Raw timing (ticks) and size (bytes) for each run.
-- `logs/csharp/benchmark-errors.csv`: Detailed error reports for serializers that failed specific test cases.
+- `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (timestamped): Raw timing (ticks) and size (bytes) for each run.
+- `logs/csharp/YYYY-MM-DD-HHMMSS.errors.csv`: Per-run failure details (same stem as the result CSV / `.environment.json`).
 
 Cross-language analysis and docs snapshots: install `analysis/`, run `analyze-benchmarks` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
 
