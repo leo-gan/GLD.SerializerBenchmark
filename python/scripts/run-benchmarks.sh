@@ -1,51 +1,52 @@
 #!/usr/bin/env bash
 set -e
 
-# Configuration — modes match config/benchmark_config.yaml
+# Modes / seed from config/benchmark_config.yaml
 IMAGE_NAME="python-serializer-benchmark"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=../../scripts/lib/config.sh
+source "$PROJECT_ROOT/scripts/lib/config.sh"
+
 LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
 print_usage() {
     echo "Usage: ./scripts/run-benchmarks.sh [smoke | all-single | full | research | custom]"
     echo ""
-    echo "Modes (see config/benchmark_config.yaml):"
-    echo "  smoke      - 2 repetitions, pickle on Person"
-    echo "  all-single - 10 repetitions, all serializers on all test data"
-    echo "  full       - 100 repetitions, all serializers"
-    echo "  research   - 500 repetitions, all serializers"
-    echo "  custom     - Manual: ./scripts/run-benchmarks.sh custom <reps> [serializerFilter] [dataFilter]"
+    echo "Modes (from config/benchmark_config.yaml):"
+    echo "  smoke | all-single | full | research — reps from modes.<name>.repetitions"
+    echo "  custom — Manual: ./scripts/run-benchmarks.sh custom <reps> [serializerFilter] [dataFilter]"
 }
 
 echo "[INFO] Ensuring Docker image is up to date..."
 docker build -t $IMAGE_NAME -f "$SCRIPT_DIR/../Dockerfile" "$PROJECT_ROOT"
 
-# Ensure timestamp for env sidecar mapping (host captures after Docker exits)
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
+export BENCHMARK_SEED="$(bench_random_seed)"
 
-case "$1" in
+MODE="${1:-}"
+case "$MODE" in
     smoke)
-        echo "[INFO] Running Smoke Test (2 reps, pickle, Person)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 2 pickle Person
+        REPS="$(bench_mode_reps smoke)"
+        echo "[INFO] Running Smoke Test ($REPS reps, pickle, Person) [config modes.smoke]..."
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
+          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
+          $IMAGE_NAME "$REPS" pickle Person
         ;;
-    all-single)
-        echo "[INFO] Running All-Single Test (10 reps, All Serializers)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 10
-        ;;
-    full)
-        echo "[INFO] Running Full Benchmark (100 reps, All Serializers)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 100
-        ;;
-    research)
-        echo "[INFO] Running Research Benchmark (500 reps, All Serializers)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME 500
+    all-single|full|research)
+        REPS="$(bench_mode_reps "$MODE")"
+        echo "[INFO] Running $MODE ($REPS reps, all serializers) [config modes.$MODE]..."
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
+          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
+          $IMAGE_NAME "$REPS"
         ;;
     custom)
         shift
-        echo "[INFO] Running Custom Benchmark (Args: $@)..."
-        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas $IMAGE_NAME "$@"
+        echo "[INFO] Running Custom Benchmark (Args: $*)..."
+        docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
+          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
+          $IMAGE_NAME "$@"
         ;;
     *)
         print_usage
@@ -53,14 +54,11 @@ case "$1" in
         ;;
 esac
 
-# Environment sidecar (host Python if available; else Docker so root-owned logs are writable)
 CSV="$LOG_DIR/python/${BENCHMARK_TS}.csv"
 ENV_JSON="${CSV%.csv}.environment.json"
 if [[ -f "$CSV" ]]; then
-    # Pass BENCHMARK_TS so environment.json.benchmark_ts matches the CSV stem
-    # (capture_environment also falls back to the CSV filename stem).
     if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
-        python3 -m benchmark_analysis.environment "$CSV" 2>/dev/null; then
+        python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
         echo "[INFO] Environment captured -> $ENV_JSON"
     elif docker run --rm \
         -v "$LOG_DIR:/logs" \

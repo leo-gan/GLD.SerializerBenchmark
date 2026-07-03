@@ -395,33 +395,57 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
 
 
 # Display labels, MkDocs docs subdirs, and plot file keys
-_LANG_DISPLAY = {
-    "csharp": "C#",
-    "python": "Python",
-    "rust": "Rust",
-    "c": "C",
-    "javascript": "JavaScript",
-    "go": "Go",
-}
+def _lang_display_map() -> dict:
+    try:
+        from .config_loader import known_language_ids, language_display_name
 
-# lang_id -> docs/<dir>/results.md
-_LANG_DOCS_DIR = {
-    "csharp": "c-sharp",
-    "python": "python",
-    "rust": "rust",
-    "c": "c",
-    "javascript": "javascript",
-    "go": "go",
-}
+        return {lid: language_display_name(lid) for lid in known_language_ids()}
+    except Exception:
+        return {
+            "csharp": "C#",
+            "python": "Python",
+            "rust": "Rust",
+            "c": "C",
+            "javascript": "JavaScript",
+            "go": "Go",
+        }
 
-_LANG_ORDER = ["csharp", "python", "rust", "c", "javascript", "go"]
+
+def _lang_docs_dir_map() -> dict:
+    try:
+        from .config_loader import known_language_ids, language_docs_dir
+
+        return {lid: language_docs_dir(lid) for lid in known_language_ids()}
+    except Exception:
+        return {
+            "csharp": "c-sharp",
+            "python": "python",
+            "rust": "rust",
+            "c": "c",
+            "javascript": "javascript",
+            "go": "go",
+        }
+
+
+def _lang_order_list() -> list:
+    try:
+        from .config_loader import lang_order
+
+        return list(lang_order())
+    except Exception:
+        return ["csharp", "python", "rust", "c", "javascript", "go"]
 
 
 def _normalize_lang_id(lang: str) -> str:
     lang = (lang or "unknown").lower()
-    if lang in ("c#", "cs", "c-sharp"):
-        return "csharp"
-    return lang
+    try:
+        from .config_loader import language_aliases
+
+        return language_aliases().get(lang, lang if lang != "c#" else "csharp")
+    except Exception:
+        if lang in ("c#", "cs", "c-sharp"):
+            return "csharp"
+        return lang
 
 
 def _stats_by_language(multi_lang_stats: Optional[Dict]) -> Dict[str, Dict]:
@@ -553,7 +577,8 @@ def generate_language_results_pages(
         lang_key = None
         dtype = None
         # Longest key first so "javascript" wins over a future "java"
-        for candidate in sorted(_LANG_DOCS_DIR.keys(), key=len, reverse=True):
+        docs_map = _lang_docs_dir_map()
+        for candidate in sorted(docs_map.keys(), key=len, reverse=True):
             if key.startswith(candidate + "_"):
                 lang_key = candidate
                 dtype = key[len(candidate) + 1 :]
@@ -562,14 +587,14 @@ def generate_language_results_pages(
             continue
         plots_by_lang.setdefault(lang_key, []).append((dtype, fname))
 
-    langs = [l for l in _LANG_ORDER if l in by_lang or l in plots_by_lang]
+    langs = [l for l in _lang_order_list() if l in by_lang or l in plots_by_lang]
     for extra in sorted(set(by_lang) | set(plots_by_lang)):
         if extra not in langs:
             langs.append(extra)
 
     for lang_id in langs:
-        docs_dir = _LANG_DOCS_DIR.get(lang_id, lang_id)
-        title = _LANG_DISPLAY.get(lang_id, lang_id)
+        docs_dir = _lang_docs_dir_map().get(lang_id, lang_id)
+        title = _lang_display_map().get(lang_id, lang_id)
         stats = by_lang.get(lang_id) or {}
         out_path = os.path.join(docs_root, docs_dir, "results.md")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -730,7 +755,7 @@ def generate_violin_plots(
 
     for lang_id in lang_ids:
         records = by_lang[lang_id]
-        display = _LANG_DISPLAY.get(lang_id, lang_id)
+        display = _lang_display_map().get(lang_id, lang_id)
         melted = _records_to_melted_df(records, display)
         if melted.empty:
             continue

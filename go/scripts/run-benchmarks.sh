@@ -3,6 +3,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT_ROOT="$(cd "$GO_DIR/.." && pwd)"
+# shellcheck source=../../scripts/lib/config.sh
+source "$PROJECT_ROOT/scripts/lib/config.sh"
+
 LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs/go}"
 mkdir -p "$LOG_DIR"
 
@@ -10,22 +13,29 @@ MODE="${1:-all-single}"
 FILTER_SER="${2:-}"
 FILTER_DATA="${3:-}"
 
-case "$MODE" in
-  smoke) REPS=2; FILTER_SER="${FILTER_SER:-encoding/json}"; FILTER_DATA="${FILTER_DATA:-Person}" ;;
-  all-single) REPS=10 ;;
-  full) REPS=100 ;;
-  research) REPS=500 ;;
-  custom) REPS="${2:-10}"; FILTER_SER="${3:-}"; FILTER_DATA="${4:-}" ;;
+VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
+case " $VALID_MODES custom " in
+  *" $MODE "*) ;;
   *) echo "Usage: $0 [smoke|all-single|full|research|custom] [serializerFilter] [dataFilter]"; exit 1 ;;
 esac
 
-# Same stem for result CSV, errors.csv, and environment.json (python/csharp pattern).
+if [[ "$MODE" == "custom" ]]; then
+  REPS="${2:-10}"; FILTER_SER="${3:-}"; FILTER_DATA="${4:-}"
+else
+  REPS="$(bench_mode_reps "$MODE")"
+  if [[ "$MODE" == "smoke" ]]; then
+    FILTER_SER="${FILTER_SER:-encoding/json}"
+    FILTER_DATA="${FILTER_DATA:-Person}"
+  fi
+fi
+
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
+export BENCHMARK_SEED="$(bench_random_seed)"
 
 export PATH="${HOME}/.local/go/bin:${HOME}/.local/bin:${PATH:-}"
 export PATH="$(go env GOPATH 2>/dev/null)/bin:${PATH}"
 
-echo "[INFO] Building Go benchmark..."
+echo "[INFO] Building Go benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cd "$GO_DIR"
 if [[ -x "$GO_DIR/scripts/generate-protobuf.sh" ]]; then
   "$GO_DIR/scripts/generate-protobuf.sh" || echo "[WARN] protobuf generation skipped/failed"
@@ -43,11 +53,9 @@ else
 fi
 
 export LOG_DIR
-# Flags must precede positionals (Go flag.Parse stops at first non-flag).
 echo "[INFO] Running: bin/serializer-benchmark-go -log-dir $LOG_DIR ${ARGS[*]}"
 ./bin/serializer-benchmark-go -log-dir "$LOG_DIR" "${ARGS[@]}"
 
-# Environment sidecar (same as python/c-sharp run-benchmarks.sh; also done by run-all).
 CSV="$LOG_DIR/${BENCHMARK_TS}.csv"
 ENV_JSON="${CSV%.csv}.environment.json"
 if [[ -f "$CSV" ]]; then

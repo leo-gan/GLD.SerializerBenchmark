@@ -69,45 +69,23 @@ _DEFAULT_STATS_CFG: Dict[str, Any] = {
 
 
 def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
-    """Load statistics section from benchmark_config.yaml if available."""
+    """Load ``statistics:`` from master ``config/benchmark_config.yaml`` if available."""
     cfg = dict(_DEFAULT_STATS_CFG)
-    candidates = []
-    if config_path:
-        candidates.append(Path(config_path))
-    # Walk up from this file / cwd
-    here = Path(__file__).resolve()
-    for parent in [here.parent, *here.parents]:
-        candidates.append(parent / "config" / "benchmark_config.yaml")
-        candidates.append(parent.parent / "config" / "benchmark_config.yaml")
-        candidates.append(parent.parent.parent / "config" / "benchmark_config.yaml")
-    candidates.append(Path("config/benchmark_config.yaml"))
-    candidates.append(Path("../config/benchmark_config.yaml"))
-    candidates.append(Path("../../config/benchmark_config.yaml"))
+    try:
+        from .config_loader import default_config_path, load_master_config
 
-    for path in candidates:
-        try:
-            if path.is_file():
-                try:
-                    import yaml  # type: ignore
-                except ImportError:
-                    break
-                with open(path, encoding="utf-8") as f:
-                    data = yaml.safe_load(f) or {}
-                stats = data.get("statistics") or {}
-                # Shallow-merge top-level keys; deep-merge known subdicts
-                for k, v in stats.items():
-                    if isinstance(v, dict) and isinstance(cfg.get(k), dict):
-                        merged = dict(cfg[k])
-                        merged.update(v)
-                        cfg[k] = merged
-                    else:
-                        cfg[k] = v
-                break
-        except OSError:
-            continue
-        except Exception as exc:  # malformed YAML should not break analysis defaults
-            print(f"Warning: could not load stats config from {path}: {exc}")
-            continue
+        path = Path(config_path) if config_path else default_config_path()
+        data = load_master_config(path)
+        stats = data.get("statistics") or {}
+        for k, v in stats.items():
+            if isinstance(v, dict) and isinstance(cfg.get(k), dict):
+                merged = dict(cfg[k])
+                merged.update(v)
+                cfg[k] = merged
+            else:
+                cfg[k] = v
+    except Exception as exc:  # malformed YAML / missing file should not break analysis
+        print(f"Warning: could not load stats config: {exc}")
 
     # Surface limitations for declared-but-unimplemented settings
     boot = cfg.get("bootstrap") or {}
@@ -118,9 +96,10 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         print("Note: effect_sizes.methods partially supported; both cliffs_delta and hedges_g are always computed when enabled.")
     ht = cfg.get("hypothesis_tests") or {}
     if ht.get("method") and ht["method"] != "mann_whitney_u":
-        print(f"Note: hypothesis_tests.method={ht['method']} requested; only mann_whitney_u is implemented.")
-    # csv_schema.time_unit and paths.* are intentionally not read here;
-    # time normalization uses Language + heuristic; CLI discovers logs.
+        print(
+            f"Note: hypothesis_tests.method={ht['method']} requested; "
+            "only mann_whitney_u is implemented."
+        )
     return cfg
 
 

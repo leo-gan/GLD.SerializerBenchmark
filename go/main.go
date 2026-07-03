@@ -168,8 +168,17 @@ func main() {
 		sers = append(sers, s)
 	}
 
+	// Seed from config/benchmark_config.yaml via BENCHMARK_SEED (run scripts set it).
+	seed := uint64(42)
+	if s := os.Getenv("BENCHMARK_SEED"); s != "" {
+		var parsed uint64
+		if _, err := fmt.Sscanf(s, "%d", &parsed); err == nil {
+			seed = parsed
+		}
+	}
+
 	var fxs []model.Fixture
-	for _, fx := range model.AllFixtures(42) {
+	for _, fx := range model.AllFixtures(seed) {
 		if df != "" && !strings.Contains(strings.ToLower(fx.Name), strings.ToLower(df)) {
 			continue
 		}

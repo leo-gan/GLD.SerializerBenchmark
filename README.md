@@ -32,7 +32,7 @@ Add more languages via [`docs/analysis/ADDING_A_LANGUAGE.md`](docs/analysis/ADDI
 
 ## Configuration
 
-Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_config.yaml)** (modes, statistics, languages, CSV schema, paths). Test-data shape/seed: **[`schemas/test_data_config.json`](schemas/test_data_config.json)**.
+**Master config (used at runtime):** **[`config/benchmark_config.yaml`](config/benchmark_config.yaml)** — modes/reps, enabled languages + runners, statistics defaults, paths, regression threshold, seed. Shell harnesses read it via [`scripts/read-config.py`](scripts/read-config.py); analysis via `benchmark_analysis.config_loader`. Test-data **shape** knobs: **[`schemas/test_data_config.json`](schemas/test_data_config.json)** (seed should match `reproducibility.random_seed`).
 
 ## Quick start
 

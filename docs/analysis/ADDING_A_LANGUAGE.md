@@ -4,7 +4,9 @@ Grow language harnesses without changing the analysis core. Background: [Benchma
 
 ## 1. Register the language
 
-Edit `config/benchmark_config.yaml`:
+Edit **`config/benchmark_config.yaml`** (master config — used at runtime by
+`scripts/read-config.py`, `scripts/run-all-benchmarks.sh`, and
+`analyze-benchmarks`):
 
 ```yaml
 languages:
@@ -52,7 +54,9 @@ Use collection sizes from `schemas/test_data_config.json` — [Test Data Configu
 smoke | all-single | full | research
 ```
 
-Map repetitions from `modes` in `benchmark_config.yaml`.
+Source `scripts/lib/config.sh` and use `bench_mode_reps "$MODE"` (reads
+`modes.<name>.repetitions`). Set `BENCHMARK_SEED` from `bench_random_seed`.
+Do **not** hard-code repetition counts.
 
 ## 5. Documentation
 

@@ -1,39 +1,43 @@
 #!/usr/bin/env bash
-# Unified benchmark runner for all languages
+# Unified benchmark runner for all languages (registry from config/benchmark_config.yaml)
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-LOG_DIR="$PROJECT_ROOT/logs"
-REPORT_DIR="$PROJECT_ROOT/reports"
+# shellcheck source=lib/config.sh
+source "$PROJECT_ROOT/scripts/lib/config.sh"
+
+LOG_DIR="$(bench_logs_root)"
+REPORT_DIR="$(bench_read_config --reports-root 2>/dev/null || echo "$PROJECT_ROOT/reports")"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 
 MODE="all-single"
 GENERATE_ARTIFACTS=false
 CHECK_REGRESSION=false
-REGRESSION_THRESHOLD=10
+REGRESSION_THRESHOLD="$(bench_read_config regression.threshold_percent 2>/dev/null || echo 10)"
 SAVE_BASELINE=false
 LANG_FILTER=""  # empty = all enabled
 
 print_usage() {
-    cat << EOF
+    cat << USAGE
 Usage: $(basename "$0") [OPTIONS]
 
-Run serializer benchmarks for supported languages and optionally generate reports.
+Run serializer benchmarks for enabled languages (languages.*.enabled in
+config/benchmark_config.yaml) and optionally generate reports.
 
 OPTIONS:
-    -m, --mode MODE             smoke|all-single|full|research (default: all-single)
-    -l, --lang LANG             Only run one language: csharp|python|rust|c|javascript|go
+    -m, --mode MODE             Mode from config modes: (default: all-single)
+    -l, --lang LANG             Only run one language id from config
     -a, --analyze               Generate analysis artifacts (tables + plots) via analyze-benchmarks
     -r, --regression-check      Check for performance regressions
-    -t, --threshold PERCENT     Regression threshold percentage (default: 10)
+    -t, --threshold PERCENT     Regression threshold (default: regression.threshold_percent)
     -b, --save-baseline         Save current results as baseline
     -h, --help                  Show this help message
 
 Reports default to reports/ (gitignored). For GitHub Pages snapshots, run
 analyze-benchmarks (optionally -l LANG) and commit docs/.
-EOF
+USAGE
 }
 
 while [[ $# -gt 0 ]]; do
@@ -49,8 +53,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-case "$MODE" in smoke|all-single|full|research) ;; *)
-    echo -e "${RED}Error: Invalid mode '$MODE'${NC}"; exit 1 ;;
+VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
+case " $VALID_MODES " in
+  *" $MODE "*) ;;
+  *) echo -e "${RED}Error: Invalid mode '$MODE' (valid: $VALID_MODES)${NC}"; exit 1 ;;
 esac
 
 run_lang() {
@@ -72,32 +78,37 @@ run_lang() {
 echo -e "${BLUE}============================================${NC}"
 echo -e "${BLUE}  Serializer Benchmark Runner${NC}"
 echo -e "${BLUE}============================================${NC}"
-echo -e "Mode: ${YELLOW}$MODE${NC}  Lang filter: ${YELLOW}${LANG_FILTER:-all}${NC}"
+echo -e "Config: ${YELLOW}$PROJECT_ROOT/config/benchmark_config.yaml${NC}"
+echo -e "Mode: ${YELLOW}$MODE${NC} (reps=$(bench_mode_reps "$MODE"))  Lang filter: ${YELLOW}${LANG_FILTER:-all enabled}${NC}"
 
-# Timestamp used for all result files in this run so they share the same
-# 2026-06-12-123415.csv name across languages. Results are never overwritten.
+# Timestamp used for all result files in this run so they share the same stem.
 TS=$(date +%Y-%m-%d-%H%M%S)
 export BENCHMARK_TS="$TS"
-echo -e "Run timestamp: ${YELLOW}$TS${NC}"
+export BENCHMARK_SEED="$(bench_random_seed)"
+echo -e "Run timestamp: ${YELLOW}$TS${NC}  seed: ${YELLOW}$BENCHMARK_SEED${NC}"
 
 mkdir -p "$LOG_DIR" "$REPORT_DIR"
 
-run_lang csharp   c-sharp     scripts/run-benchmarks.sh
-run_lang python   python      scripts/run-benchmarks.sh
-run_lang rust     rust        scripts/run-benchmarks.sh
-run_lang c        c           scripts/run-benchmarks.sh
-run_lang javascript javascript scripts/run-benchmarks.sh
-run_lang go       go          scripts/run-benchmarks.sh
+# Discover enabled languages from master config
+ENABLED_LANGS=()
+while IFS='|' read -r id runner_dir runner_script; do
+    [[ -z "$id" ]] && continue
+    ENABLED_LANGS+=("$id")
+    run_lang "$id" "$runner_dir" "$runner_script"
+done < <(bench_read_config --lang-runners)
 
 echo ""
 echo -e "${BLUE}Capturing environment metadata...${NC}"
 cd "$PROJECT_ROOT"
-# Write environment.json sidecar for each language's result CSV
-for lang in csharp python rust c javascript go; do
+for lang in "${ENABLED_LANGS[@]}"; do
     f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
+    # language_log_dirs may differ; try config path then default
+    if [[ ! -f "$f" ]]; then
+        f="$PROJECT_ROOT/logs/$lang/${BENCHMARK_TS}.csv"
+    fi
     if [[ -f "$f" ]]; then
         if command -v python3 >/dev/null 2>&1; then
-            PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.environment "$f" 2>/dev/null \
+            PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.environment "$f" >/dev/null 2>&1 \
                 && echo -e "  $lang: ${GREEN}✓${NC} environment captured" \
                 || echo -e "  $lang: ${YELLOW}skipped${NC} (analysis package not available)"
         fi
@@ -107,8 +118,11 @@ done
 echo ""
 echo -e "${BLUE}Verifying Results...${NC}"
 cd "$PROJECT_ROOT"
-for lang in csharp python rust c javascript go; do
+for lang in "${ENABLED_LANGS[@]}"; do
     f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
+    if [[ ! -f "$f" ]]; then
+        f="$PROJECT_ROOT/logs/$lang/${BENCHMARK_TS}.csv"
+    fi
     if [[ -f "$f" ]]; then
         n=$(tail -n +2 "$f" | wc -l 2>/dev/null || echo 0)
         echo -e "  $lang: ${GREEN}$n${NC} records  (${BENCHMARK_TS}.csv)"
@@ -120,16 +134,16 @@ done
 if [ "$GENERATE_ARTIFACTS" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAVE_BASELINE" = true ]; then
     echo ""
     echo -e "${BLUE}Generating Reports...${NC}"
-    ANALYSIS_CMD="analyze-benchmarks --logs-root \"$LOG_DIR\""
+    ANALYSIS_CMD="analyze-benchmarks --logs-root \"$LOG_DIR\" --config \"$PROJECT_ROOT/config/benchmark_config.yaml\""
     if [[ -n "$LANG_FILTER" ]]; then
         ANALYSIS_CMD="$ANALYSIS_CMD -l \"$LANG_FILTER\""
     fi
-    for lang in csharp python rust c javascript go; do
+    for lang in "${ENABLED_LANGS[@]}"; do
         f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
+        [[ -f "$f" ]] || f="$PROJECT_ROOT/logs/$lang/${BENCHMARK_TS}.csv"
         [[ -f "$f" ]] || continue
         ANALYSIS_CMD="$ANALYSIS_CMD --logs ${lang}=\"$f\""
     done
-    # Artifact generation is the default for analyze-benchmarks (tables + plots).
     if [ "$GENERATE_ARTIFACTS" != true ]; then
         ANALYSIS_CMD="$ANALYSIS_CMD --skip-generate"
     fi
@@ -140,6 +154,7 @@ if [ "$GENERATE_ARTIFACTS" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAV
     else
         PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.cli \
             --logs-root "$LOG_DIR" \
+            --config "$PROJECT_ROOT/config/benchmark_config.yaml" \
             ${LANG_FILTER:+-l "$LANG_FILTER"} \
             $([ "$GENERATE_ARTIFACTS" != true ] && echo --skip-generate) || true
     fi

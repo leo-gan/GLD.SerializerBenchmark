@@ -575,8 +575,16 @@ languages:
 #   docs_dir: docs/<id>
 #   serializers: [...]
 #
+# Runtime consumers of this file (do not hard-code these values in scripts):
+#   - scripts/read-config.py / scripts/lib/config.sh  — shell harnesses & run-all
+#   - analysis.config_loader / load_stats_config      — analyze-benchmarks
+#   - modes.<name>.repetitions → run-benchmarks.sh REPS
+#   - languages.*.enabled / runner_dir / runner_script → run-all-benchmarks.sh
+#   - reproducibility.random_seed → BENCHMARK_SEED env for harnesses
+#   - paths.* / regression.* → analysis CLI defaults
+#
 # Required harness contract:
-#   1. Read config/benchmark_config.yaml (or embedded defaults) for repetitions/seed
+#   1. Prefer modes/seed from this file (via scripts/lib/config.sh + BENCHMARK_SEED)
 #   2. Emit logs/<id>/<timestamp>.csv (YYYY-MM-DD-HHMMSS.csv)
 #      with Language=<id> and times in nanoseconds. Never overwrite previous runs.
 #   3. Implement prepare() outside timed loop; timed section = serialize + deserialize only
