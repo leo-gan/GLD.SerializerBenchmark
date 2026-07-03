@@ -644,7 +644,7 @@ def generate_language_results_pages(
                 "These names are *not* payload sizes. "
                 "In each table, **bold** marks the semantic best value in that column "
                 "(lowest time; highest ops/s). Ties are all bolded. "
-                "Latency tables are in **microseconds** (µs), plain numbers (no K/M)."
+                "Latency tables are in **microseconds** (µs)."
             )
             lines.append("")
             lines.append(

@@ -8,7 +8,7 @@ Serializer inventory and caveats: [Rust overview](index.md). Methods: [Analysis 
 
 ## Pivot tables
 
-Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer API; **stream mode** = write/read through a stream-like path. These names are *not* payload sizes. In each table, **bold** marks the semantic best value in that column (lowest time; highest ops/s). Ties are all bolded. Latency tables are in **microseconds** (µs), plain numbers (no K/M).
+Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer API; **stream mode** = write/read through a stream-like path. These names are *not* payload sizes. In each table, **bold** marks the semantic best value in that column (lowest time; highest ops/s). Ties are all bolded. Latency tables are in **microseconds** (µs).
 
 
 ### Rust: Avg Total Time (µs) by Serializer and API Mode
