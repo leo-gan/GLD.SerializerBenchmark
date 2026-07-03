@@ -14,6 +14,14 @@ import (
 	"serializer-benchmark-go/serializers"
 )
 
+type benchError struct {
+	testDataName   string
+	serializerName string
+	stringOrStream string
+	repetition     uint32
+	errorText      string
+}
+
 func defaultLogDir() string {
 	if d := os.Getenv("LOG_DIR"); d != "" {
 		if strings.HasSuffix(filepath.Clean(d), "go") {
@@ -28,6 +36,33 @@ func defaultLogDir() string {
 		}
 	}
 	return filepath.Join(cwd, "logs", "go")
+}
+
+// saveErrors writes per-run error CSV, or removes any prior file when clean
+// (same policy as python report.save_errors).
+func saveErrors(path string, errors []benchError) error {
+	if len(errors) == 0 {
+		_ = os.Remove(path)
+		return nil
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	// Schema matches C# / Python (not JS Language column).
+	if _, err := f.WriteString("TestDataName,SerializerName,StringOrStream,Repetition,ErrorText\n"); err != nil {
+		return err
+	}
+	for _, e := range errors {
+		text := strings.ReplaceAll(e.errorText, "\n", " ")
+		text = strings.ReplaceAll(text, ",", ";")
+		if _, err := fmt.Fprintf(f, "%s,%s,%s,%d,%s\n",
+			e.testDataName, e.serializerName, e.stringOrStream, e.repetition, text); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, deserNs uint64, size int, err error) {
@@ -107,11 +142,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Same stem as other harnesses: BENCHMARK_TS or YYYY-MM-DD-HHMMSS (never custom ad-hoc names).
 	ts := os.Getenv("BENCHMARK_TS")
 	if ts == "" {
 		ts = time.Now().Format("2006-01-02-150405")
+		// Export so capture_environment / child tools see the same stem (Rust does this too).
+		_ = os.Setenv("BENCHMARK_TS", ts)
 	}
 	logPath := filepath.Join(logDir, ts+".csv")
+	errPath := filepath.Join(logDir, ts+".errors.csv")
 	logger, err := NewCsvLogger(logPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "csv: %v\n", err)
@@ -140,6 +179,8 @@ func main() {
 	modes := []string{"bytes", "stream"}
 	fmt.Printf("[PROGRESS] Go benchmark: %d serializers, %d data types, %d reps\n", len(sers), len(fxs), repetitions)
 
+	var errors []benchError
+
 	for _, fx := range fxs {
 		fmt.Printf("[PROGRESS] Testing Data: %s\n", fx.Name)
 		for _, ser := range sers {
@@ -148,6 +189,13 @@ func main() {
 			}
 			if err := ser.Prepare(fx); err != nil {
 				fmt.Fprintf(os.Stderr, "[ERROR] prepare %s / %s: %v\n", ser.Name(), fx.Name, err)
+				errors = append(errors, benchError{
+					testDataName:   fx.Name,
+					serializerName: ser.Name(),
+					stringOrStream: "prepare",
+					repetition:     0,
+					errorText:      err.Error(),
+				})
 				continue
 			}
 			for _, mode := range modes {
@@ -164,6 +212,13 @@ func main() {
 					if merr != nil {
 						if !hadError {
 							fmt.Fprintf(os.Stderr, "[ERROR] %s / %s / %s: %v\n", ser.Name(), fx.Name, mode, merr)
+							errors = append(errors, benchError{
+								testDataName:   fx.Name,
+								serializerName: ser.Name(),
+								stringOrStream: mode,
+								repetition:     i,
+								errorText:      merr.Error(),
+							})
 							hadError = true
 						}
 						continue
@@ -182,5 +237,8 @@ func main() {
 	}
 
 	_ = logger.Flush()
+	if err := saveErrors(errPath, errors); err != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] could not write errors csv: %v\n", err)
+	}
 	fmt.Printf("[PROGRESS] Complete. Results: %s\n", logPath)
 }
