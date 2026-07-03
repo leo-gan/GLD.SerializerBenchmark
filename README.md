@@ -2,7 +2,7 @@
 
 > **[Serialization 101 & Benchmark Reports](https://leo-gan.github.io/GLD.SerializerBenchmark/)** — theory, methodology, and results for senior engineers and data scientists.
 
-Scientific, multi-language benchmark suite for **comparing serialization libraries** fairly: identical conceptual payloads, dual I/O modes (`bytes`/`stream`), nanosecond timing (C# ticks normalized in analysis), and publication-oriented statistics (bootstrap CIs, effect sizes, non-parametric A/B tests).
+Scientific, multi-language benchmark suite for **comparing serialization libraries** fairly: identical conceptual payloads, dual I/O modes (`bytes`/`stream`), nanosecond timing in harness CSVs (C# ticks normalized in analysis; published latency tables use **µs**), and publication-oriented statistics (bootstrap CIs, effect sizes, non-parametric A/B tests).
 
 ## Who it is for
 
@@ -19,19 +19,20 @@ Picking a serializer for one runtime (integrator/researcher workflow) uses langu
 
 ## Supported languages
 
-| Language | Harness | Serializers (registered) | Logs |
-|----------|---------|--------------------------|------|
-| C# (.NET) | [`c-sharp/`](c-sharp/) | 38 | `logs/csharp/` |
-| Python | [`python/`](python/) | 16 | `logs/python/` |
-| **Rust** | [`rust/`](rust/) | 15 | `logs/rust/` |
-| **C** | [`c/`](c/) | 12 | `logs/c/` |
-| **JavaScript (Node)** | [`javascript/`](javascript/) | 11–12 | `logs/javascript/` |
+| Language | Serializers (registered) |
+|----------|--------------------------|
+| C# (.NET) | 38 |
+| Python | 16 |
+| Rust | 15 |
+| C | 12 |
+| JavaScript (Node) | 11–12 |
+| Go | 12 |
 
 Add more languages via [`docs/analysis/ADDING_A_LANGUAGE.md`](docs/analysis/ADDING_A_LANGUAGE.md).
 
 ## Configuration
 
-Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_config.yaml)** (modes, statistics, languages, CSV schema, paths). Test-data shape/seed: **[`schemas/test_data_config.json`](schemas/test_data_config.json)**.
+**Master config (used at runtime):** **[`config/benchmark_config.yaml`](config/benchmark_config.yaml)** — modes/reps, enabled languages + runners, statistics defaults, paths, regression threshold, seed. Shell harnesses read it via [`scripts/read-config.py`](scripts/read-config.py); analysis via `benchmark_analysis.config_loader`. Test-data **shape** knobs: **[`schemas/test_data_config.json`](schemas/test_data_config.json)** (seed should match `reproducibility.random_seed`).
 
 ## Quick start
 
@@ -40,6 +41,7 @@ Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_conf
 ./rust/scripts/run-benchmarks.sh smoke
 ./c/scripts/run-benchmarks.sh smoke
 ./javascript/scripts/run-benchmarks.sh smoke
+./go/scripts/run-benchmarks.sh smoke
 ./python/scripts/run-benchmarks.sh smoke   # may use Docker
 ./c-sharp/scripts/run-benchmarks.sh smoke
 
@@ -93,8 +95,8 @@ See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistic
 Language ecosystem pages (serializer inventories live on each overview):
 
 - [C#](docs/c-sharp/index.md) · [Python](docs/python/index.md)
-- [Rust](docs/rust/index.md) · [C](docs/c/index.md) · [JavaScript](docs/javascript/index.md)
-- Benchmarks: [analysis overview](docs/analysis/index.md) · per-language [C#](docs/c-sharp/results.md) / [Python](docs/python/results.md) / [Rust](docs/rust/results.md) / [C](docs/c/results.md) / [JavaScript](docs/javascript/results.md) results
+- [Rust](docs/rust/index.md) · [C](docs/c/index.md) · [JavaScript](docs/javascript/index.md) · [Go](docs/go/index.md)
+- Benchmarks: [analysis overview](docs/analysis/index.md) · per-language [C#](docs/c-sharp/results.md) / [Python](docs/python/results.md) / [Rust](docs/rust/results.md) / [C](docs/c/results.md) / [JavaScript](docs/javascript/results.md) / [Go](docs/go/results.md) results
 
 The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree. Refresh site results by regenerating into `docs/analysis/` locally and committing.
 

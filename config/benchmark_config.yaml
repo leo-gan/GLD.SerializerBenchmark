@@ -197,6 +197,7 @@ paths:
     rust: logs/rust
     c: logs/c
     javascript: logs/javascript
+    go: logs/go
   # Result files are timestamped to preserve history across runs.
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
@@ -490,6 +491,77 @@ languages:
         rationale: "Binary serialization (Watchman format)"
         optimal_api: "dumpToBuffer / loadFromBuffer"
 
+  go:
+    display_name: Go
+    enabled: true
+    runner_dir: go
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/go
+    time_unit: nanoseconds
+    docs_dir: docs/go
+    min_go_version: "1.23"
+    serializers:
+      - name: encoding/json
+        category: json
+        package: stdlib
+        rationale: "Go standard library JSON baseline"
+        optimal_api: "json.Marshal / Unmarshal; Encoder/Decoder for streams"
+      - name: sonic
+        category: json
+        package: github.com/bytedance/sonic
+        rationale: "High-performance SIMD-oriented JSON (widely used in Go services)"
+        optimal_api: "sonic.ConfigDefault + Pretouch; Marshal/Unmarshal"
+      - name: goccy/go-json
+        category: json
+        package: github.com/goccy/go-json
+        rationale: "Fast encoding/json-compatible implementation"
+        optimal_api: "gojson.Marshal / Unmarshal"
+      - name: jsoniter
+        category: json
+        package: github.com/json-iterator/go
+        rationale: "Drop-in json-iterator with stdlib-compatible config"
+        optimal_api: "ConfigCompatibleWithStandardLibrary"
+      - name: segmentio/encoding/json
+        category: json
+        package: github.com/segmentio/encoding/json
+        rationale: "Segment production JSON encoder"
+        optimal_api: "json.Marshal / Unmarshal (segmentio fork)"
+      - name: vmihailenco/msgpack
+        category: binary
+        package: github.com/vmihailenco/msgpack/v5
+        rationale: "De-facto MessagePack library for Go"
+        optimal_api: "msgpack.Marshal / Unmarshal; Encoder/Decoder"
+      - name: shamaton/msgpack
+        category: binary
+        package: github.com/shamaton/msgpack/v3
+        rationale: "High-performance pure-Go MessagePack (benchmark staple)"
+        optimal_api: "msgpack.Marshal / Unmarshal"
+      - name: fxamacker/cbor
+        category: binary
+        package: github.com/fxamacker/cbor/v2
+        rationale: "Leading CBOR (RFC 8949) implementation for Go"
+        optimal_api: "EncMode/DecMode reuse; CoreDetEncOptions"
+      - name: encoding/gob
+        category: native
+        package: stdlib
+        rationale: "Go-native binary codec"
+        optimal_api: "gob.Encoder / Decoder; register types once"
+      - name: mongo-bson
+        category: binary
+        package: go.mongodb.org/mongo-driver/bson
+        rationale: "Official MongoDB BSON codec"
+        optimal_api: "bson.Marshal / Unmarshal"
+      - name: protobuf
+        category: schema
+        package: google.golang.org/protobuf
+        rationale: "Official Protocol Buffers (shared .proto)"
+        optimal_api: "proto.Marshal / Unmarshal on generated messages (convert in prepare)"
+      - name: hamba/avro
+        category: schema
+        package: github.com/hamba/avro/v2
+        rationale: "Modern high-performance Apache Avro for Go"
+        optimal_api: "avro.Marshal/Unmarshal with schema prepared once"
+
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language
 # -----------------------------------------------------------------------------
@@ -503,8 +575,16 @@ languages:
 #   docs_dir: docs/<id>
 #   serializers: [...]
 #
+# Runtime consumers of this file (do not hard-code these values in scripts):
+#   - scripts/read-config.py / scripts/lib/config.sh  — shell harnesses & run-all
+#   - analysis.config_loader / load_stats_config      — analyze-benchmarks
+#   - modes.<name>.repetitions → run-benchmarks.sh REPS
+#   - languages.*.enabled / runner_dir / runner_script → run-all-benchmarks.sh
+#   - reproducibility.random_seed → BENCHMARK_SEED env for harnesses
+#   - paths.* / regression.* → analysis CLI defaults
+#
 # Required harness contract:
-#   1. Read config/benchmark_config.yaml (or embedded defaults) for repetitions/seed
+#   1. Prefer modes/seed from this file (via scripts/lib/config.sh + BENCHMARK_SEED)
 #   2. Emit logs/<id>/<timestamp>.csv (YYYY-MM-DD-HHMMSS.csv)
 #      with Language=<id> and times in nanoseconds. Never overwrite previous runs.
 #   3. Implement prepare() outside timed loop; timed section = serialize + deserialize only

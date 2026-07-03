@@ -17,21 +17,37 @@ from .regression import check_regression, save_baseline
 # Matches result filename format: 2026-06-12-123415.csv
 _TS_PATTERN = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
 
-_KNOWN_LANGS = ("rust", "python", "csharp", "c", "javascript")
+def _KNOWN_LANGS() -> tuple:
+    """Language ids from master config (fallback if config unreadable)."""
+    try:
+        from .config_loader import known_language_ids
 
-_LANG_ALIASES = {
-    "py": "python",
-    "cs": "csharp",
-    "c#": "csharp",
-    "csharp": "csharp",
-    "c-sharp": "csharp",
-    "js": "javascript",
-    "node": "javascript",
-    "javascript": "javascript",
-    "python": "python",
-    "rust": "rust",
-    "c": "c",
-}
+        return known_language_ids()
+    except Exception:
+        return ("rust", "python", "csharp", "c", "javascript", "go")
+
+
+def _LANG_ALIASES() -> dict:
+    try:
+        from .config_loader import language_aliases
+
+        return language_aliases()
+    except Exception:
+        return {
+            "py": "python",
+            "cs": "csharp",
+            "c#": "csharp",
+            "csharp": "csharp",
+            "c-sharp": "csharp",
+            "js": "javascript",
+            "node": "javascript",
+            "javascript": "javascript",
+            "python": "python",
+            "rust": "rust",
+            "c": "c",
+            "go": "go",
+            "golang": "go",
+        }
 
 
 def _is_timestamped_result(name: str) -> bool:
@@ -40,19 +56,34 @@ def _is_timestamped_result(name: str) -> bool:
 
 def _repo_root() -> Path:
     """Walk up from this file to find the repo root (has config/ or logs/)."""
-    here = Path(__file__).resolve()
-    for p in here.parents:
-        if (p / "config" / "benchmark_config.yaml").exists() or (p / "logs").exists():
-            return p
-    return Path(".")
+    try:
+        from .config_loader import repo_root as _cfg_repo_root
+
+        return _cfg_repo_root()
+    except Exception:
+        here = Path(__file__).resolve()
+        for p in here.parents:
+            if (p / "config" / "benchmark_config.yaml").exists() or (p / "logs").exists():
+                return p
+        return Path(".")
 
 
 def _default_logs_root() -> Path:
-    return _repo_root() / "logs"
+    try:
+        from .config_loader import logs_root
+
+        return logs_root()
+    except Exception:
+        return _repo_root() / "logs"
 
 
 def _default_reports_root() -> Path:
-    return _repo_root() / "reports"
+    try:
+        from .config_loader import reports_root
+
+        return reports_root()
+    except Exception:
+        return _repo_root() / "reports"
 
 
 def find_latest_csv(directory: Path) -> Optional[Path]:
@@ -125,24 +156,25 @@ def _resolve_log_spec(spec: str, *, logs_root: Optional[Path] = None) -> Optiona
 
 def _normalize_language(name: str) -> str:
     key = name.strip().lower()
-    if key not in _LANG_ALIASES:
-        known = ", ".join(_KNOWN_LANGS)
+    aliases = _LANG_ALIASES()
+    if key not in aliases:
+        known = ", ".join(_KNOWN_LANGS())
         raise SystemExit(
             f"Unknown language '{name}'. Use one of: {known} "
             f"(aliases: py, cs, c#, c-sharp, js, node)."
         )
-    return _LANG_ALIASES[key]
+    return aliases[key]
 
 
 def _try_normalize_language(name: str) -> Optional[str]:
     key = name.strip().lower()
-    return _LANG_ALIASES.get(key)
+    return _LANG_ALIASES().get(key)
 
 
 def _infer_language_from_path(filepath: str) -> Optional[str]:
     """Try to extract a language hint from the file path (e.g. /logs/rust/ → 'rust')."""
     norm = filepath.replace("\\", "/")
-    for lang in sorted(_KNOWN_LANGS, key=len, reverse=True):
+    for lang in sorted(_KNOWN_LANGS(), key=len, reverse=True):
         if f"/{lang}/" in norm:
             return lang
     return None
@@ -153,7 +185,7 @@ def _discover_logs(logs_root: Path) -> Dict[str, str]:
     found: Dict[str, str] = {}
     if not logs_root.is_dir():
         return found
-    known = set(_KNOWN_LANGS)
+    known = set(_KNOWN_LANGS())
     for child in sorted(logs_root.iterdir()):
         if not child.is_dir():
             continue
@@ -258,6 +290,16 @@ def _generate_artifacts(
 
 
 def main():
+    # Defaults from master config (overridable by flags after parse).
+    try:
+        from .config_loader import baseline_path, regression_threshold
+
+        _default_threshold = regression_threshold()
+        _default_baseline = str(baseline_path())
+    except Exception:
+        _default_threshold = 10.0
+        _default_baseline = str(_default_reports_root() / "baseline.json")
+
     logs_root_default = _default_logs_root()
     reports_root = _default_reports_root()
 
@@ -295,7 +337,7 @@ def main():
         metavar="LANG",
         help=(
             "Only load/generate artifacts for this language "
-            f"({', '.join(_KNOWN_LANGS)}; aliases: py, cs, js). "
+            f"({', '.join(_KNOWN_LANGS())}; aliases: py, cs, js, golang). "
             "Repeatable. Default: all languages with logs."
         ),
     )
@@ -320,13 +362,13 @@ def main():
     parser.add_argument(
         "--regression-threshold",
         type=float,
-        default=10.0,
-        help="Regression threshold percent",
+        default=_default_threshold,
+        help="Regression threshold percent (default: regression.threshold_percent in config)",
     )
     parser.add_argument(
         "--baseline-file",
-        default=str(reports_root / "baseline.json"),
-        help="Baseline file path",
+        default=_default_baseline,
+        help="Baseline file path (default: paths.baseline_filename in config)",
     )
     parser.add_argument("--save-baseline", action="store_true", help="Save current as baseline")
     parser.add_argument(

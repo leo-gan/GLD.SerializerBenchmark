@@ -10,9 +10,27 @@ Each benchmark run creates timestamped artifacts with the **same stem** (never o
 
 ## Scripts
 
+### `read-config.py` / `lib/config.sh`
+
+Query the master config from shell:
+
+```bash
+./scripts/read-config.py --mode-reps full        # → 100
+./scripts/read-config.py --enabled-langs         # → csharp python …
+./scripts/read-config.py --lang-runners          # id|runner_dir|runner_script
+./scripts/read-config.py --seed                  # → 42
+source scripts/lib/config.sh && bench_mode_reps smoke
+```
+
+Language `run-benchmarks.sh` scripts source `lib/config.sh` so mode repetition
+counts and `BENCHMARK_SEED` always match the YAML.
+
 ### `run-all-benchmarks.sh`
 
-Unified benchmark runner for **all enabled languages** (C#, Python, Rust, C, JavaScript). Modes and paths follow [`config/benchmark_config.yaml`](../config/benchmark_config.yaml).
+Unified benchmark runner for **all enabled languages** listed under
+`languages:` in [`config/benchmark_config.yaml`](../config/benchmark_config.yaml)
+(`enabled: true`). Modes, seed, logs root, and regression threshold are read
+from that file via [`read-config.py`](read-config.py) / [`lib/config.sh`](lib/config.sh).
 
 **Usage:**
 ```bash
@@ -23,12 +41,11 @@ Unified benchmark runner for **all enabled languages** (C#, Python, Rust, C, Jav
 
 | Flag | Description |
 |------|-------------|
-| `-m, --mode MODE` | `smoke`, `all-single`, `full`, or `research` (default: `all-single`) |
-| `-l, --lang LANG` | Only run one language: `csharp` \| `python` \| `rust` \| `c` \| `javascript` |
-| `-p, --plots` | Generate violin plots (``) |
-| `-s, --summary` | Generate Markdown summary report |
+| `-m, --mode MODE` | `smoke`, `all-single`, `full`, or `research` (default: `all-single`; reps from config) |
+| `-l, --lang LANG` | Only run one language id from config (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, …) |
+| `-a, --analyze` | After the run, generate analysis artifacts (tables + plots) via `analyze-benchmarks` |
 | `-r, --regression-check` | Check for performance regressions |
-| `-t, --threshold PERCENT` | Regression threshold (default: 10%) |
+| `-t, --threshold PERCENT` | Regression threshold (default: `regression.threshold_percent` in config) |
 | `-b, --save-baseline` | Save current results as baseline |
 | `-h, --help` | Show help message |
 
@@ -94,7 +111,13 @@ analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
 
 ### `verify-results.sh`
 
-Lightweight check on C# log presence (legacy helper). Prefer language smoke modes for full validation.
+Check result CSVs for **enabled languages** (from config):
+
+```bash
+./scripts/verify-results.sh              # latest CSV per language
+BENCHMARK_TS=2026-07-02-173247 ./scripts/verify-results.sh   # shared stem
+./scripts/verify-results.sh go           # one language only
+```
 
 ## Baseline Management
 

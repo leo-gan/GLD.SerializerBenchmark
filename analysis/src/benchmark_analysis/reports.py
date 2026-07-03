@@ -119,12 +119,14 @@ def _generate_violin_plot(
     if subset.empty:
         return None
 
-    # Filter to top N serializers by mean time if requested
-    if top_n:
-        # Calculate mean time per serializer (using Time_us)
-        mean_times = subset.groupby('SerializerName')['Time_us'].mean().sort_values()
-        top_serializers = mean_times.head(top_n).index.tolist()
-        subset = subset[subset['SerializerName'].isin(top_serializers)].copy()
+    # Filter to top N serializers by mean time (default: top 5 for every language).
+    if top_n is None:
+        top_n = VIOLIN_TOP_N_SERIALIZERS
+    if top_n > 0:
+        mean_times = subset.groupby("SerializerName")["Time_us"].mean().sort_values()
+        # If fewer than top_n exist, head() returns all of them.
+        top_serializers = mean_times.head(int(top_n)).index.tolist()
+        subset = subset[subset["SerializerName"].isin(top_serializers)].copy()
 
     # Per-serializer high-end winsorize (p99): one stalled rep must not stretch the KDE.
     def _clip_hi(s: pd.Series) -> pd.Series:
@@ -214,6 +216,9 @@ def _generate_violin_plot(
         plt.close('all')
         return None
 
+
+# Violin plots: always show this many fastest serializers per fixture (all languages).
+VIOLIN_TOP_N_SERIALIZERS = 5
 
 # CSV StringOrStream values → human labels (not "number of bytes")
 _MODE_DISPLAY = {
@@ -318,11 +323,22 @@ def _format_in_unit(
     return f"**{text}**" if bold else text
 
 
+def _time_ns_to_display_us(value_key: str) -> bool:
+    """True when *value_key* is a latency stored in nanoseconds (display as µs)."""
+    key = (value_key or "").lower()
+    if not key.endswith("_ns"):
+        return False
+    return "time" in key or "latency" in key or "duration" in key
+
+
 def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
     """Generate a markdown pivot table from stats dict.
 
     Semantic best-in-column values are bold (ops/throughput: max; time/size: min).
     Ties are all bolded. Unit scale and best use **displayed** cell values only.
+
+    Latency metrics stored as ``*_ns`` are shown in **microseconds** (÷1000) as
+    plain numbers (no K/M suffixes), so ~5400 ns appears as ``5.4`` not ``5.4K``.
     """
     lines = [f"\n### {title}\n"]
 
@@ -342,6 +358,9 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         return base
 
     higher = _higher_is_better(value_key)
+    # Display latency in µs (analysis/stats remain nanoseconds in memory/CSV).
+    to_us = _time_ns_to_display_us(value_key)
+    display_scale = 1_000.0 if to_us else 1.0  # ns → µs
 
     # Resolve one numeric (or None) per displayed cell first — unit/best use these only
     cell: Dict[Tuple[str, str], Optional[float]] = {}
@@ -355,7 +374,7 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
                 continue
             val = matching[0].get(value_key)
             if isinstance(val, (int, float)) and not isinstance(val, bool) and val == val:
-                cell[(rv, cv)] = float(val)
+                cell[(rv, cv)] = float(val) / display_scale
             else:
                 cell[(rv, cv)] = None
 
@@ -363,7 +382,11 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
     col_best: Dict[str, Optional[float]] = {}
     for cv in col_vals:
         displayed = [cell[(rv, cv)] for rv in row_vals if cell[(rv, cv)] is not None]
-        col_units[cv] = _pick_column_unit(displayed)
+        # Time-in-µs: keep plain numbers (avoid re-introducing K on large µs values).
+        if to_us:
+            col_units[cv] = (1.0, "")
+        else:
+            col_units[cv] = _pick_column_unit(displayed)
         col_best[cv] = _column_best(displayed, higher_is_better=higher)
 
     # Header (unit in column title when scaled)
@@ -395,31 +418,57 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
 
 
 # Display labels, MkDocs docs subdirs, and plot file keys
-_LANG_DISPLAY = {
-    "csharp": "C#",
-    "python": "Python",
-    "rust": "Rust",
-    "c": "C",
-    "javascript": "JavaScript",
-}
+def _lang_display_map() -> dict:
+    try:
+        from .config_loader import known_language_ids, language_display_name
 
-# lang_id -> docs/<dir>/results.md
-_LANG_DOCS_DIR = {
-    "csharp": "c-sharp",
-    "python": "python",
-    "rust": "rust",
-    "c": "c",
-    "javascript": "javascript",
-}
+        return {lid: language_display_name(lid) for lid in known_language_ids()}
+    except Exception:
+        return {
+            "csharp": "C#",
+            "python": "Python",
+            "rust": "Rust",
+            "c": "C",
+            "javascript": "JavaScript",
+            "go": "Go",
+        }
 
-_LANG_ORDER = ["csharp", "python", "rust", "c", "javascript"]
+
+def _lang_docs_dir_map() -> dict:
+    try:
+        from .config_loader import known_language_ids, language_docs_dir
+
+        return {lid: language_docs_dir(lid) for lid in known_language_ids()}
+    except Exception:
+        return {
+            "csharp": "c-sharp",
+            "python": "python",
+            "rust": "rust",
+            "c": "c",
+            "javascript": "javascript",
+            "go": "go",
+        }
+
+
+def _lang_order_list() -> list:
+    try:
+        from .config_loader import lang_order
+
+        return list(lang_order())
+    except Exception:
+        return ["csharp", "python", "rust", "c", "javascript", "go"]
 
 
 def _normalize_lang_id(lang: str) -> str:
     lang = (lang or "unknown").lower()
-    if lang in ("c#", "cs", "c-sharp"):
-        return "csharp"
-    return lang
+    try:
+        from .config_loader import language_aliases
+
+        return language_aliases().get(lang, lang if lang != "c#" else "csharp")
+    except Exception:
+        if lang in ("c#", "cs", "c-sharp"):
+            return "csharp"
+        return lang
 
 
 def _stats_by_language(multi_lang_stats: Optional[Dict]) -> Dict[str, Dict]:
@@ -551,7 +600,8 @@ def generate_language_results_pages(
         lang_key = None
         dtype = None
         # Longest key first so "javascript" wins over a future "java"
-        for candidate in sorted(_LANG_DOCS_DIR.keys(), key=len, reverse=True):
+        docs_map = _lang_docs_dir_map()
+        for candidate in sorted(docs_map.keys(), key=len, reverse=True):
             if key.startswith(candidate + "_"):
                 lang_key = candidate
                 dtype = key[len(candidate) + 1 :]
@@ -560,14 +610,14 @@ def generate_language_results_pages(
             continue
         plots_by_lang.setdefault(lang_key, []).append((dtype, fname))
 
-    langs = [l for l in _LANG_ORDER if l in by_lang or l in plots_by_lang]
+    langs = [l for l in _lang_order_list() if l in by_lang or l in plots_by_lang]
     for extra in sorted(set(by_lang) | set(plots_by_lang)):
         if extra not in langs:
             langs.append(extra)
 
     for lang_id in langs:
-        docs_dir = _LANG_DOCS_DIR.get(lang_id, lang_id)
-        title = _LANG_DISPLAY.get(lang_id, lang_id)
+        docs_dir = _lang_docs_dir_map().get(lang_id, lang_id)
+        title = _lang_display_map().get(lang_id, lang_id)
         stats = by_lang.get(lang_id) or {}
         out_path = os.path.join(docs_root, docs_dir, "results.md")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -593,7 +643,8 @@ def generate_language_results_pages(
                 "API; **stream mode** = write/read through a stream-like path. "
                 "These names are *not* payload sizes. "
                 "In each table, **bold** marks the semantic best value in that column "
-                "(lowest time; highest ops/s). Ties are all bolded."
+                "(lowest time; highest ops/s). Ties are all bolded. "
+                "Latency tables are in **microseconds** (µs)."
             )
             lines.append("")
             lines.append(
@@ -602,7 +653,7 @@ def generate_language_results_pages(
                     "serializer",
                     "mode",
                     "avg_time_total_ns",
-                    f"{title}: Avg Total Time (ns) by Serializer and API Mode",
+                    f"{title}: Avg Total Time (µs) by Serializer and API Mode",
                 )
             )
             lines.append(
@@ -646,6 +697,8 @@ def generate_language_results_pages(
             lines.append("")
             lines.append(
                 "Density of serialize / deserialize timings (µs; log scale when medians span ≥5×). "
+                "**Each plot shows only the top 5 serializers by mean total time** for that fixture "
+                "(same rule for every language). Full rankings are in the pivot tables above. "
                 "Provenance (fixture, CSV path, modes, *n*) is printed on each image."
             )
             lines.append("")
@@ -716,8 +769,8 @@ def generate_violin_plots(
             if recs:
                 by_lang[str(k).lower()] = list(recs)
 
-    # Stable ordering for docs / reports
-    order = ["csharp", "python", "rust", "c", "javascript"]
+    # Stable ordering for docs / reports (prefer master config order).
+    order = _lang_order_list()
     lang_ids = [lid for lid in order if lid in by_lang] + sorted(
         lid for lid in by_lang if lid not in order
     )
@@ -728,13 +781,12 @@ def generate_violin_plots(
 
     for lang_id in lang_ids:
         records = by_lang[lang_id]
-        display = _LANG_DISPLAY.get(lang_id, lang_id)
+        display = _lang_display_map().get(lang_id, lang_id)
         melted = _records_to_melted_df(records, display)
         if melted.empty:
             continue
-        n_sers = int(melted["SerializerName"].nunique())
-        # Cap series on crowded languages (historical C# behaviour: top 5)
-        top_n = 5 if n_sers > 12 else None
+        # Same top-N for csharp, python, rust, c, javascript, go, …
+        top_n = VIOLIN_TOP_N_SERIALIZERS
         file_key = _lang_file_key(lang_id, display)
         src = lang_sources.get(lang_id) or lang_sources.get(file_key)
         if src:

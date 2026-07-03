@@ -19,6 +19,8 @@ def test_normalize_language_aliases():
     assert _normalize_language("CS") == "csharp"
     assert _normalize_language("c-sharp") == "csharp"
     assert _normalize_language("js") == "javascript"
+    assert _normalize_language("go") == "go"
+    assert _normalize_language("golang") == "go"
 
 
 def test_normalize_language_unknown():
