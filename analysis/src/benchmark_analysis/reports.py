@@ -119,12 +119,14 @@ def _generate_violin_plot(
     if subset.empty:
         return None
 
-    # Filter to top N serializers by mean time if requested
-    if top_n:
-        # Calculate mean time per serializer (using Time_us)
-        mean_times = subset.groupby('SerializerName')['Time_us'].mean().sort_values()
-        top_serializers = mean_times.head(top_n).index.tolist()
-        subset = subset[subset['SerializerName'].isin(top_serializers)].copy()
+    # Filter to top N serializers by mean time (default: top 5 fastest).
+    if top_n is None:
+        top_n = 5
+    if top_n > 0:
+        mean_times = subset.groupby("SerializerName")["Time_us"].mean().sort_values()
+        # If fewer than top_n exist, head() returns all of them.
+        top_serializers = mean_times.head(int(top_n)).index.tolist()
+        subset = subset[subset["SerializerName"].isin(top_serializers)].copy()
 
     # Per-serializer high-end winsorize (p99): one stalled rep must not stretch the KDE.
     def _clip_hi(s: pd.Series) -> pd.Series:
@@ -743,8 +745,8 @@ def generate_violin_plots(
             if recs:
                 by_lang[str(k).lower()] = list(recs)
 
-    # Stable ordering for docs / reports
-    order = ["csharp", "python", "rust", "c", "javascript"]
+    # Stable ordering for docs / reports (prefer master config order).
+    order = _lang_order_list()
     lang_ids = [lid for lid in order if lid in by_lang] + sorted(
         lid for lid in by_lang if lid not in order
     )
@@ -753,15 +755,17 @@ def generate_violin_plots(
     # lang_id -> {fixture -> plot filename} plus source path for results.md
     plot_meta: Dict[str, Dict] = {}
 
+    # Always show the five fastest serializers per fixture (by mean total time).
+    # Keeps crowded languages readable and makes plots comparable across langs.
+    TOP_N_SERIALIZERS = 5
+
     for lang_id in lang_ids:
         records = by_lang[lang_id]
         display = _lang_display_map().get(lang_id, lang_id)
         melted = _records_to_melted_df(records, display)
         if melted.empty:
             continue
-        n_sers = int(melted["SerializerName"].nunique())
-        # Cap series on crowded languages (historical C# behaviour: top 5)
-        top_n = 5 if n_sers > 12 else None
+        top_n = TOP_N_SERIALIZERS
         file_key = _lang_file_key(lang_id, display)
         src = lang_sources.get(lang_id) or lang_sources.get(file_key)
         if src:
