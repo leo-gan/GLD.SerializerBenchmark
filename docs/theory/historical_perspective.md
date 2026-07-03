@@ -170,21 +170,14 @@ Public and internal APIs stayed on JSON for reach, while teams paid for **ad-hoc
 
 ## One diagram of the tensions
 
-History does not converge on a single winner. It accumulates niches:
+History does not converge on a single winner. It accumulates niches along recurring trade-offs:
 
-```text
-Human-readable & universal     ←—— tension ——→     Compact & CPU-cheap
-        JSON / XML                                    Protobuf / msgpack / …
-
-Flexible & ad hoc              ←—— tension ——→     Evolvable & explicit
-     JSON / pickle / msgpack                          Avro / Protobuf + process
-
-Whole-record access            ←—— tension ——→     Wide-table analytics
-     messages / documents                             Parquet / Arrow
-
-Safe across trust boundaries   ←—— tension ——→     Max power in one runtime
-     portable + validated                             native pickle / Java ser.
-```
+| One pole | ↔ tension ↔ | Other pole |
+|----------|-------------|------------|
+| **Human-readable & universal** (JSON / XML) | | **Compact & CPU-cheap** (Protobuf / MessagePack / …) |
+| **Flexible & ad hoc** (JSON / pickle / MessagePack) | | **Evolvable & explicit** (Avro / Protobuf + process) |
+| **Whole-record access** (messages / documents) | | **Wide-table analytics** (Parquet / Arrow) |
+| **Safe across trust boundaries** (portable + validated) | | **Max power in one runtime** (native pickle / Java serialization) |
 
 ---
 
