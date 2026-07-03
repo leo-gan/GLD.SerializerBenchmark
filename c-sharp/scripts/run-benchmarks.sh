@@ -31,19 +31,19 @@ case "$MODE" in
         REPS="$(bench_mode_reps smoke)"
         echo "[INFO] Running Smoke Test ($REPS reps, Binary, Person) [config modes.smoke]..."
         docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs $IMAGE_NAME "$REPS" Binary Person
+          -v "$LOG_DIR":/app/logs $IMAGE_NAME "$REPS" Binary Person
         ;;
     all-single|full|research)
         REPS="$(bench_mode_reps "$MODE")"
         echo "[INFO] Running $MODE ($REPS reps, all serializers) [config modes.$MODE]..."
         docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs $IMAGE_NAME "$REPS"
+          -v "$LOG_DIR":/app/logs $IMAGE_NAME "$REPS"
         ;;
     custom)
         shift
         echo "[INFO] Running Custom Benchmark (Args: $*)..."
         docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs $IMAGE_NAME "$@"
+          -v "$LOG_DIR":/app/logs $IMAGE_NAME "$@"
         ;;
     *)
         print_usage

@@ -111,7 +111,13 @@ analyze-benchmarks --compare-a rust:2026-06-11 --compare-b rust:2026-06-12
 
 ### `verify-results.sh`
 
-Lightweight check on C# log presence (legacy helper). Prefer language smoke modes for full validation.
+Check result CSVs for **enabled languages** (from config):
+
+```bash
+./scripts/verify-results.sh              # latest CSV per language
+BENCHMARK_TS=2026-07-02-173247 ./scripts/verify-results.sh   # shared stem
+./scripts/verify-results.sh go           # one language only
+```
 
 ## Baseline Management
 

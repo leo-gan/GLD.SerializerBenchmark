@@ -29,9 +29,10 @@ else
   fi
 fi
 
+export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
 
-echo "[INFO] Building Rust benchmark (release, mode=$MODE reps=$REPS)..."
+echo "[INFO] Building Rust benchmark (release, mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cd "$RUST_DIR"
 source "$HOME/.cargo/env" 2>/dev/null || true
 cargo build --release 2>&1 | tail -5
@@ -49,4 +50,16 @@ fi
 export LOG_DIR
 echo "[INFO] Running: target/release/serializer-benchmark-rust ${ARGS[*]}"
 ./target/release/serializer-benchmark-rust "${ARGS[@]}" --log-dir "$LOG_DIR"
+
+CSV="$LOG_DIR/${BENCHMARK_TS}.csv"
+ENV_JSON="${CSV%.csv}.environment.json"
+if [[ -f "$CSV" ]]; then
+  if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
+      python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
+    echo "[INFO] Environment captured -> $ENV_JSON"
+  else
+    echo "[WARN] Could not write environment.json (analysis package optional for standalone runs)"
+  fi
+fi
+
 echo "[SUCCESS] Rust logs in $LOG_DIR"

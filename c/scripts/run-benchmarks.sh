@@ -24,9 +24,11 @@ if [[ "$MODE" == "smoke" ]]; then
   FILTER_SER="${FILTER_SER:-cJSON}"
   FILTER_DATA="${FILTER_DATA:-Person}"
 fi
+
+export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
 
-echo "[INFO] Building C benchmark (mode=$MODE reps=$REPS)..."
+echo "[INFO] Building C benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cmake -S "$C_DIR" -B "$C_DIR/build" -DCMAKE_BUILD_TYPE=Release >/dev/null
 cmake --build "$C_DIR/build" -j"$(nproc 2>/dev/null || echo 2)"
 
@@ -36,4 +38,16 @@ ARGS=("$REPS")
 [[ -n "$FILTER_DATA" ]] && ARGS+=("$FILTER_DATA")
 echo "[INFO] Running serializer_benchmark_c ${ARGS[*]}"
 "$C_DIR/build/serializer_benchmark_c" "${ARGS[@]}"
+
+CSV="$LOG_DIR/${BENCHMARK_TS}.csv"
+ENV_JSON="${CSV%.csv}.environment.json"
+if [[ -f "$CSV" ]]; then
+  if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
+      python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
+    echo "[INFO] Environment captured -> $ENV_JSON"
+  else
+    echo "[WARN] Could not write environment.json (analysis package optional for standalone runs)"
+  fi
+fi
+
 echo "[SUCCESS] C logs in $LOG_DIR"
