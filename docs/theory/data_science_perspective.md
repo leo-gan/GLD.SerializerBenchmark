@@ -112,7 +112,7 @@ Trust boundary check (do this every time):
 
 ### Apache Arrow: stop converting DataFrames for a living
 
-**Arrow** standardizes **in-memory** columnar buffers (types, null bitmaps, nested layouts). When two tools speak Arrow, transfer can be a pointer handoff or a cheap [IPC](https://en.wikipedia.org/wiki/Inter-process_communication "IPC — Inter-process communication")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> stream instead of “to_csv → parse again.”
+**Arrow** (project co-founded with **[Wes McKinney](https://en.wikipedia.org/wiki/Wes_McKinney "Wes McKinney — creator of pandas; co-founder of Apache Arrow")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />** and others) standardizes **in-memory** columnar buffers (types, null bitmaps, nested layouts). When two tools speak Arrow, transfer can be a pointer handoff or a cheap [IPC](https://en.wikipedia.org/wiki/Inter-process_communication "IPC — Inter-process communication")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> stream instead of “to_csv → parse again.”
 
 **Prefer when:**
 
