@@ -1,38 +1,55 @@
 # Benchmark Results
 
-This page is a **static index** of per-language result snapshots. Pivot tables and violin plots live on each language **Results** page (maintainer-generated locally; not rewritten by CI).
+**Job of this page:** static **index of published result snapshots** and the **maintainer commands** to regenerate them.
 
-Numbers on those pages depend on the machine and CSV used to generate them. Re-running benchmarks elsewhere may differ — that is expected.
+Pivot tables and violin plots live on each language **Results** page (generated locally; not rewritten by CI). Numbers depend on the machine and CSV used—re-running elsewhere may differ.
+
+Hub of analysis docs: [Benchmarks overview](index.md).
+
+---
 
 ## Results by language
 
-- [C# results](../c-sharp/results.md)
-- [Python results](../python/results.md)
-- [Rust results](../rust/results.md)
-- [C results](../c/results.md)
-- [JavaScript results](../javascript/results.md)
-- [Go results](../go/results.md)
+| Language | Results snapshot | Inventory (what we measure) |
+|----------|------------------|-----------------------------|
+| C# | [Results](../c-sharp/results.md) | [Overview](../c-sharp/index.md) |
+| Python | [Results](../python/results.md) | [Overview](../python/index.md) |
+| Rust | [Results](../rust/results.md) | [Overview](../rust/index.md) |
+| C | [Results](../c/results.md) | [Overview](../c/index.md) |
+| JavaScript | [Results](../javascript/results.md) | [Overview](../javascript/index.md) |
+| Go | [Results](../go/results.md) | [Overview](../go/index.md) |
 
-## Inventories (what we measure)
+Related (not numbers): [Serialization categories](serialization_categories.md) · [Analysis methodology](ANALYSIS_METHODOLOGY.md) · [Benchmark architecture](architecture.md)
 
-Hand-written overviews (serializer lists and caveats):
-
-- [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md) · [Go](../go/index.md)
-
-Related:
-
-- [Serialization categories](serialization_categories.md)
-- [Analysis methodology](ANALYSIS_METHODOLOGY.md)
-- [Benchmark architecture](architecture.md)
+---
 
 ## Regenerating language snapshots
 
-This hub file is **not** rewritten by `analyze-benchmarks`. To refresh a language’s tables and plots only:
+This hub file is **not** rewritten by `analyze-benchmarks`.
+
+Requires local CSVs at `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` (gitignored; from harness or `./scripts/run-all-benchmarks.sh --mode full`).
 
 ```bash
-analyze-benchmarks -l python   # or rust, csharp, c, javascript, go
-# or all languages (still does not modify this hub):
+cd analysis && pip install -e .   # once
+
+# All languages (tables + violin plots; this hub stays static)
 analyze-benchmarks
+
+# One language only
+analyze-benchmarks -l python   # or rust, csharp, c, javascript, go
+
+# Custom log location
+analyze-benchmarks -l python --logs python/logs/python
+# or: analyze-benchmarks --logs python=python/logs/python
 ```
 
-Commit the updated `docs/<lang>/results.md` and `docs/analysis/plots/violin/<lang>_*.png` paths as needed.
+| Output | Role |
+|--------|------|
+| `docs/<lang>/results.md` | Per-language pivots + plot embeds |
+| `docs/analysis/plots/violin/<lang>_*.png` | Shared violin assets |
+
+By default the CLI writes **both** tables and plots. Commit updated `results.md` and plot paths as needed.
+
+The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree—it does **not** re-run analysis or benchmarks.
+
+How stats are computed: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
