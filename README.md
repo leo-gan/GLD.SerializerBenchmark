@@ -26,6 +26,7 @@ Picking a serializer for one runtime (integrator/researcher workflow) uses langu
 | **Rust** | [`rust/`](rust/) | 15 | `logs/rust/` |
 | **C** | [`c/`](c/) | 12 | `logs/c/` |
 | **JavaScript (Node)** | [`javascript/`](javascript/) | 11–12 | `logs/javascript/` |
+| **Go** | [`go/`](go/) | 12 | `logs/go/` |
 
 Add more languages via [`docs/analysis/ADDING_A_LANGUAGE.md`](docs/analysis/ADDING_A_LANGUAGE.md).
 
@@ -40,6 +41,7 @@ Most parameters live in **[`config/benchmark_config.yaml`](config/benchmark_conf
 ./rust/scripts/run-benchmarks.sh smoke
 ./c/scripts/run-benchmarks.sh smoke
 ./javascript/scripts/run-benchmarks.sh smoke
+./go/scripts/run-benchmarks.sh smoke
 ./python/scripts/run-benchmarks.sh smoke   # may use Docker
 ./c-sharp/scripts/run-benchmarks.sh smoke
 
@@ -93,8 +95,8 @@ See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistic
 Language ecosystem pages (serializer inventories live on each overview):
 
 - [C#](docs/c-sharp/index.md) · [Python](docs/python/index.md)
-- [Rust](docs/rust/index.md) · [C](docs/c/index.md) · [JavaScript](docs/javascript/index.md)
-- Benchmarks: [analysis overview](docs/analysis/index.md) · per-language [C#](docs/c-sharp/results.md) / [Python](docs/python/results.md) / [Rust](docs/rust/results.md) / [C](docs/c/results.md) / [JavaScript](docs/javascript/results.md) results
+- [Rust](docs/rust/index.md) · [C](docs/c/index.md) · [JavaScript](docs/javascript/index.md) · [Go](docs/go/index.md)
+- Benchmarks: [analysis overview](docs/analysis/index.md) · per-language [C#](docs/c-sharp/results.md) / [Python](docs/python/results.md) / [Rust](docs/rust/results.md) / [C](docs/c/results.md) / [JavaScript](docs/javascript/results.md) / [Go](docs/go/results.md) results
 
 The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree. Refresh site results by regenerating into `docs/analysis/` locally and committing.
 

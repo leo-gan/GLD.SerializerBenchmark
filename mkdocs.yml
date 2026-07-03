@@ -74,6 +74,9 @@ nav:
   - JavaScript:
       - Overview: javascript/index.md
       - Results: javascript/results.md
+  - Go:
+      - Overview: go/index.md
+      - Results: go/results.md
   - Benchmarks:
       - Overview: analysis/index.md
       - Benchmark architecture: analysis/architecture.md

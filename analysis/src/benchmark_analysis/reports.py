@@ -401,6 +401,7 @@ _LANG_DISPLAY = {
     "rust": "Rust",
     "c": "C",
     "javascript": "JavaScript",
+    "go": "Go",
 }
 
 # lang_id -> docs/<dir>/results.md
@@ -410,9 +411,10 @@ _LANG_DOCS_DIR = {
     "rust": "rust",
     "c": "c",
     "javascript": "javascript",
+    "go": "go",
 }
 
-_LANG_ORDER = ["csharp", "python", "rust", "c", "javascript"]
+_LANG_ORDER = ["csharp", "python", "rust", "c", "javascript", "go"]
 
 
 def _normalize_lang_id(lang: str) -> str:

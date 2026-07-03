@@ -5,7 +5,7 @@ import (
 
 	"github.com/vmihailenco/msgpack/v5"
 
-	"serializer-benchmark-go/data"
+	"serializer-benchmark-go/model"
 )
 
 // vmihailencoMsgpack — most popular MessagePack library for Go.
@@ -24,24 +24,24 @@ func (s *vmihailencoMsgpack) StreamMode() StreamMode { return StreamNative }
 func (s *vmihailencoMsgpack) NativeKind() NativeKind { return NativeReflect }
 func (s *vmihailencoMsgpack) Supports(n string) bool { return DefaultSupports(n) }
 
-func (s *vmihailencoMsgpack) Prepare(fx data.Fixture) error {
+func (s *vmihailencoMsgpack) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
 	return nil
 }
 
-func (s *vmihailencoMsgpack) SerializeBytes(fx data.Fixture) ([]byte, error) {
+func (s *vmihailencoMsgpack) SerializeBytes(fx model.Fixture) ([]byte, error) {
 	return msgpack.Marshal(fx.Value)
 }
 
 func (s *vmihailencoMsgpack) DeserializeBytes(buf []byte) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := msgpack.Unmarshal(buf, dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }
 
-func (s *vmihailencoMsgpack) SerializeStream(fx data.Fixture, w io.Writer) (int, error) {
+func (s *vmihailencoMsgpack) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	cw := &countWriter{w: w}
 	enc := msgpack.NewEncoder(cw)
 	if err := enc.Encode(fx.Value); err != nil {
@@ -51,10 +51,10 @@ func (s *vmihailencoMsgpack) SerializeStream(fx data.Fixture, w io.Writer) (int,
 }
 
 func (s *vmihailencoMsgpack) DeserializeStream(r io.Reader) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	dec := msgpack.NewDecoder(r)
 	if err := dec.Decode(dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }

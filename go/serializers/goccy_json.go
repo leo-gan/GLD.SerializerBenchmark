@@ -5,7 +5,7 @@ import (
 
 	gojson "github.com/goccy/go-json"
 
-	"serializer-benchmark-go/data"
+	"serializer-benchmark-go/model"
 )
 
 // goccyJSON — goccy/go-json (fast drop-in encoding/json alternative).
@@ -23,24 +23,24 @@ func (s *goccyJSON) StreamMode() StreamMode { return StreamNative }
 func (s *goccyJSON) NativeKind() NativeKind { return NativeReflect }
 func (s *goccyJSON) Supports(n string) bool { return DefaultSupports(n) }
 
-func (s *goccyJSON) Prepare(fx data.Fixture) error {
+func (s *goccyJSON) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
 	return nil
 }
 
-func (s *goccyJSON) SerializeBytes(fx data.Fixture) ([]byte, error) {
+func (s *goccyJSON) SerializeBytes(fx model.Fixture) ([]byte, error) {
 	return gojson.Marshal(fx.Value)
 }
 
 func (s *goccyJSON) DeserializeBytes(buf []byte) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := gojson.Unmarshal(buf, dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }
 
-func (s *goccyJSON) SerializeStream(fx data.Fixture, w io.Writer) (int, error) {
+func (s *goccyJSON) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	cw := &countWriter{w: w}
 	if err := gojson.NewEncoder(cw).Encode(fx.Value); err != nil {
 		return 0, err
@@ -49,9 +49,9 @@ func (s *goccyJSON) SerializeStream(fx data.Fixture, w io.Writer) (int, error) {
 }
 
 func (s *goccyJSON) DeserializeStream(r io.Reader) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := gojson.NewDecoder(r).Decode(dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }

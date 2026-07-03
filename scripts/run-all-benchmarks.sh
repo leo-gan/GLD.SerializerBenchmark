@@ -24,7 +24,7 @@ Run serializer benchmarks for supported languages and optionally generate report
 
 OPTIONS:
     -m, --mode MODE             smoke|all-single|full|research (default: all-single)
-    -l, --lang LANG             Only run one language: csharp|python|rust|c|javascript
+    -l, --lang LANG             Only run one language: csharp|python|rust|c|javascript|go
     -a, --analyze               Generate analysis artifacts (tables + plots) via analyze-benchmarks
     -r, --regression-check      Check for performance regressions
     -t, --threshold PERCENT     Regression threshold percentage (default: 10)
@@ -87,12 +87,13 @@ run_lang python   python      scripts/run-benchmarks.sh
 run_lang rust     rust        scripts/run-benchmarks.sh
 run_lang c        c           scripts/run-benchmarks.sh
 run_lang javascript javascript scripts/run-benchmarks.sh
+run_lang go       go          scripts/run-benchmarks.sh
 
 echo ""
 echo -e "${BLUE}Capturing environment metadata...${NC}"
 cd "$PROJECT_ROOT"
 # Write environment.json sidecar for each language's result CSV
-for lang in csharp python rust c javascript; do
+for lang in csharp python rust c javascript go; do
     f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
     if [[ -f "$f" ]]; then
         if command -v python3 >/dev/null 2>&1; then
@@ -106,7 +107,7 @@ done
 echo ""
 echo -e "${BLUE}Verifying Results...${NC}"
 cd "$PROJECT_ROOT"
-for lang in csharp python rust c javascript; do
+for lang in csharp python rust c javascript go; do
     f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
     if [[ -f "$f" ]]; then
         n=$(tail -n +2 "$f" | wc -l 2>/dev/null || echo 0)
@@ -123,7 +124,7 @@ if [ "$GENERATE_ARTIFACTS" = true ] || [ "$CHECK_REGRESSION" = true ] || [ "$SAV
     if [[ -n "$LANG_FILTER" ]]; then
         ANALYSIS_CMD="$ANALYSIS_CMD -l \"$LANG_FILTER\""
     fi
-    for lang in csharp python rust c javascript; do
+    for lang in csharp python rust c javascript go; do
         f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
         [[ -f "$f" ]] || continue
         ANALYSIS_CMD="$ANALYSIS_CMD --logs ${lang}=\"$f\""

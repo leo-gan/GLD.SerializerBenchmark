@@ -1,6 +1,6 @@
 # Benchmarks
 
-Empirical performance comparison of serializers across **C#**, **Python**, **Rust**, **C**, and **JavaScript**, using shared conceptual payloads and a common CSV + analysis pipeline.
+Empirical performance comparison of serializers across **C#**, **Python**, **Rust**, **C**, **JavaScript**, and **Go**, using shared conceptual payloads and a common CSV + analysis pipeline.
 
 | Language | Serializers (registered) | Inventory (what we measure) | Results (snapshot) |
 |----------|--------------------------|----------------------------|--------------------|
@@ -9,6 +9,7 @@ Empirical performance comparison of serializers across **C#**, **Python**, **Rus
 | Rust | 15 | [Overview](../rust/index.md) | [Results](../rust/results.md) |
 | C | 11 | [Overview](../c/index.md) | [Results](../c/results.md) |
 | JavaScript | 12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
+| Go | 12 | [Overview](../go/index.md) | [Results](../go/results.md) |
 
 Inventories are the **source of truth for what we measure** (hand-written). Results pages are **generated** local snapshots (pivots + plots).
 
@@ -40,7 +41,7 @@ By default the CLI writes **both** results tables and violin plots (no separate 
 | Output | Role |
 |--------|------|
 | `docs/analysis/plots/violin/*.png` | Shared plot assets |
-| `docs/<lang>/results.md` | Per-language pivots + plot embeds (`c-sharp`, `python`, `rust`, `c`, `javascript`) |
+| `docs/<lang>/results.md` | Per-language pivots + plot embeds (`c-sharp`, `python`, `rust`, `c`, `javascript`, `go`) |
 
 The hub [Benchmark Results](BENCHMARK_SUMMARY.md) is a **static** hand-maintained index (not overwritten by `analyze-benchmarks`).
 

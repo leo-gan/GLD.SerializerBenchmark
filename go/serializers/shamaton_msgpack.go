@@ -5,7 +5,7 @@ import (
 
 	"github.com/shamaton/msgpack/v3"
 
-	"serializer-benchmark-go/data"
+	"serializer-benchmark-go/model"
 )
 
 // shamatonMsgpack — high-performance pure-Go MessagePack (frequent top of go_serialization_benchmarks).
@@ -23,24 +23,24 @@ func (s *shamatonMsgpack) StreamMode() StreamMode { return StreamAdapted }
 func (s *shamatonMsgpack) NativeKind() NativeKind { return NativeReflect }
 func (s *shamatonMsgpack) Supports(n string) bool { return DefaultSupports(n) }
 
-func (s *shamatonMsgpack) Prepare(fx data.Fixture) error {
+func (s *shamatonMsgpack) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
 	return nil
 }
 
-func (s *shamatonMsgpack) SerializeBytes(fx data.Fixture) ([]byte, error) {
+func (s *shamatonMsgpack) SerializeBytes(fx model.Fixture) ([]byte, error) {
 	return msgpack.Marshal(fx.Value)
 }
 
 func (s *shamatonMsgpack) DeserializeBytes(buf []byte) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := msgpack.Unmarshal(buf, dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }
 
-func (s *shamatonMsgpack) SerializeStream(fx data.Fixture, w io.Writer) (int, error) {
+func (s *shamatonMsgpack) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	return AdaptedSerializeStream(s, fx, w)
 }
 

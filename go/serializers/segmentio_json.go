@@ -5,7 +5,7 @@ import (
 
 	sjson "github.com/segmentio/encoding/json"
 
-	"serializer-benchmark-go/data"
+	"serializer-benchmark-go/model"
 )
 
 // segmentioJSON — segmentio/encoding/json (high-performance fork used in production at Segment).
@@ -23,24 +23,24 @@ func (s *segmentioJSON) StreamMode() StreamMode { return StreamNative }
 func (s *segmentioJSON) NativeKind() NativeKind { return NativeReflect }
 func (s *segmentioJSON) Supports(n string) bool { return DefaultSupports(n) }
 
-func (s *segmentioJSON) Prepare(fx data.Fixture) error {
+func (s *segmentioJSON) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
 	return nil
 }
 
-func (s *segmentioJSON) SerializeBytes(fx data.Fixture) ([]byte, error) {
+func (s *segmentioJSON) SerializeBytes(fx model.Fixture) ([]byte, error) {
 	return sjson.Marshal(fx.Value)
 }
 
 func (s *segmentioJSON) DeserializeBytes(buf []byte) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := sjson.Unmarshal(buf, dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }
 
-func (s *segmentioJSON) SerializeStream(fx data.Fixture, w io.Writer) (int, error) {
+func (s *segmentioJSON) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	cw := &countWriter{w: w}
 	if err := sjson.NewEncoder(cw).Encode(fx.Value); err != nil {
 		return 0, err
@@ -49,9 +49,9 @@ func (s *segmentioJSON) SerializeStream(fx data.Fixture, w io.Writer) (int, erro
 }
 
 func (s *segmentioJSON) DeserializeStream(r io.Reader) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := sjson.NewDecoder(r).Decode(dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }

@@ -17,7 +17,7 @@ from .regression import check_regression, save_baseline
 # Matches result filename format: 2026-06-12-123415.csv
 _TS_PATTERN = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
 
-_KNOWN_LANGS = ("rust", "python", "csharp", "c", "javascript")
+_KNOWN_LANGS = ("rust", "python", "csharp", "c", "javascript", "go")
 
 _LANG_ALIASES = {
     "py": "python",
@@ -31,6 +31,8 @@ _LANG_ALIASES = {
     "python": "python",
     "rust": "rust",
     "c": "c",
+    "go": "go",
+    "golang": "go",
 }
 
 

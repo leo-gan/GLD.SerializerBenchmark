@@ -7,8 +7,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"serializer-benchmark-go/data"
 	pb "serializer-benchmark-go/gen/pb"
+	"serializer-benchmark-go/model"
 )
 
 // googleProtobuf — official google.golang.org/protobuf (protoimpl API).
@@ -16,9 +16,9 @@ import (
 // convert domain types in Prepare (untimed).
 // https://protobuf.dev/getting-started/gotutorial/
 type googleProtobuf struct {
-	name    string
-	msg     proto.Message // prepared native message
-	fxName  string
+	name   string
+	msg    proto.Message // prepared native message
+	fxName string
 }
 
 func newGoogleProtobuf() *googleProtobuf { return &googleProtobuf{} }
@@ -35,7 +35,7 @@ func (s *googleProtobuf) Supports(n string) bool {
 	return true
 }
 
-func (s *googleProtobuf) Prepare(fx data.Fixture) error {
+func (s *googleProtobuf) Prepare(fx model.Fixture) error {
 	s.fxName = fx.Name
 	msg, err := toProto(fx)
 	if err != nil {
@@ -45,7 +45,7 @@ func (s *googleProtobuf) Prepare(fx data.Fixture) error {
 	return nil
 }
 
-func (s *googleProtobuf) SerializeBytes(_ data.Fixture) ([]byte, error) {
+func (s *googleProtobuf) SerializeBytes(_ model.Fixture) ([]byte, error) {
 	return proto.Marshal(s.msg)
 }
 
@@ -60,7 +60,7 @@ func (s *googleProtobuf) DeserializeBytes(buf []byte) (any, error) {
 	return fromProto(s.fxName, msg)
 }
 
-func (s *googleProtobuf) SerializeStream(fx data.Fixture, w io.Writer) (int, error) {
+func (s *googleProtobuf) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	return AdaptedSerializeStream(s, fx, w)
 }
 
@@ -84,9 +84,9 @@ func formatTimeMs(ms int64) string {
 	return time.UnixMilli(ms).UTC().Format(time.RFC3339)
 }
 
-func toProto(fx data.Fixture) (proto.Message, error) {
+func toProto(fx model.Fixture) (proto.Message, error) {
 	switch v := fx.Value.(type) {
-	case data.Person:
+	case model.Person:
 		var pass *pb.Passport
 		if v.Passport != nil {
 			pass = &pb.Passport{
@@ -100,23 +100,23 @@ func toProto(fx data.Fixture) (proto.Message, error) {
 			recs[i] = &pb.PoliceRecord{Id: r.ID, CrimeCode: r.CrimeCode}
 		}
 		return &pb.Person{
-			FirstName:      v.FirstName,
-			LastName:       v.LastName,
-			Age:            uint32(v.Age),
-			Gender:         pb.Gender(v.Gender),
-			Passport:       pass,
-			PoliceRecords:  recs,
+			FirstName:     v.FirstName,
+			LastName:      v.LastName,
+			Age:           uint32(v.Age),
+			Gender:        pb.Gender(v.Gender),
+			Passport:      pass,
+			PoliceRecords: recs,
 		}, nil
-	case data.SimpleObject:
+	case model.SimpleObject:
 		return &pb.SimpleObject{
 			Id:        v.ID,
 			Name:      v.Name,
 			Timestamp: parseTimeMs(v.Timestamp),
 			IsActive:  v.IsActive,
 		}, nil
-	case data.StringArrayObject:
+	case model.StringArrayObject:
 		return &pb.StringArrayObject{Items: append([]string(nil), v.Items...)}, nil
-	case data.TelemetryData:
+	case model.TelemetryData:
 		return &pb.TelemetryData{
 			Id:                  v.ID,
 			DataSource:          v.DataSource,
@@ -128,7 +128,7 @@ func toProto(fx data.Fixture) (proto.Message, error) {
 			AssociatedLogID:     int64(v.AssociatedLogID),
 			WasProcessed:        v.WasProcessed,
 		}, nil
-	case data.Edi835:
+	case model.Edi835:
 		claims := make([]*pb.Claim, len(v.Claims))
 		for i, c := range v.Claims {
 			lines := make([]*pb.ServiceLine, len(c.Lines))
@@ -181,29 +181,29 @@ func fromProto(name string, msg proto.Message) (any, error) {
 	switch name {
 	case "Person":
 		p := msg.(*pb.Person)
-		var pass *data.Passport
+		var pass *model.Passport
 		if p.Passport != nil {
-			pass = &data.Passport{
+			pass = &model.Passport{
 				Number:         p.Passport.Number,
 				Authority:      p.Passport.Authority,
 				ExpirationDate: formatTimeMs(p.Passport.ExpirationDate),
 			}
 		}
-		recs := make([]data.PoliceRecord, len(p.PoliceRecords))
+		recs := make([]model.PoliceRecord, len(p.PoliceRecords))
 		for i, r := range p.PoliceRecords {
-			recs[i] = data.PoliceRecord{ID: r.Id, CrimeCode: r.CrimeCode}
+			recs[i] = model.PoliceRecord{ID: r.Id, CrimeCode: r.CrimeCode}
 		}
-		return data.Person{
+		return model.Person{
 			FirstName:     p.FirstName,
 			LastName:      p.LastName,
 			Age:           int32(p.Age),
-			Gender:        data.Gender(p.Gender),
+			Gender:        model.Gender(p.Gender),
 			Passport:      pass,
 			PoliceRecords: recs,
 		}, nil
 	case "SimpleObject":
 		p := msg.(*pb.SimpleObject)
-		return data.SimpleObject{
+		return model.SimpleObject{
 			ID:        p.Id,
 			Name:      p.Name,
 			Timestamp: formatTimeMs(p.Timestamp),
@@ -211,10 +211,10 @@ func fromProto(name string, msg proto.Message) (any, error) {
 		}, nil
 	case "StringArray":
 		p := msg.(*pb.StringArrayObject)
-		return data.StringArrayObject{Items: append([]string(nil), p.Items...)}, nil
+		return model.StringArrayObject{Items: append([]string(nil), p.Items...)}, nil
 	case "Telemetry":
 		p := msg.(*pb.TelemetryData)
-		return data.TelemetryData{
+		return model.TelemetryData{
 			ID:                  p.Id,
 			DataSource:          p.DataSource,
 			TimeStamp:           formatTimeMs(p.TimeStamp),
@@ -227,17 +227,17 @@ func fromProto(name string, msg proto.Message) (any, error) {
 		}, nil
 	case "EDI_835":
 		p := msg.(*pb.EDI835)
-		claims := make([]data.Claim, len(p.Claims))
+		claims := make([]model.Claim, len(p.Claims))
 		for i, c := range p.Claims {
-			lines := make([]data.ServiceLine, len(c.Lines))
+			lines := make([]model.ServiceLine, len(c.Lines))
 			for j, l := range c.Lines {
-				lines[j] = data.ServiceLine{
+				lines[j] = model.ServiceLine{
 					ServiceCode:       l.ServiceCode,
 					ChargeAmount:      l.ChargeAmount,
 					AdjudicatedAmount: l.AdjudicatedAmount,
 				}
 			}
-			claims[i] = data.Claim{
+			claims[i] = model.Claim{
 				ClaimID:       c.ClaimId,
 				PatientName:   c.PatientName,
 				TotalCharge:   c.TotalCharge,
@@ -245,7 +245,7 @@ func fromProto(name string, msg proto.Message) (any, error) {
 				Lines:         lines,
 			}
 		}
-		return data.Edi835{
+		return model.Edi835{
 			PayerName:                p.PayerName,
 			PayeeName:                p.PayeeName,
 			PaymentDate:              formatTimeMs(p.PaymentDate),

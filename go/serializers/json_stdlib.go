@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"serializer-benchmark-go/data"
+	"serializer-benchmark-go/model"
 )
 
 // encodingJSON — Go standard library baseline.
@@ -22,24 +22,24 @@ func (s *encodingJSON) StreamMode() StreamMode { return StreamNative }
 func (s *encodingJSON) NativeKind() NativeKind { return NativeReflect }
 func (s *encodingJSON) Supports(n string) bool { return DefaultSupports(n) }
 
-func (s *encodingJSON) Prepare(fx data.Fixture) error {
+func (s *encodingJSON) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
 	return nil
 }
 
-func (s *encodingJSON) SerializeBytes(fx data.Fixture) ([]byte, error) {
+func (s *encodingJSON) SerializeBytes(fx model.Fixture) ([]byte, error) {
 	return json.Marshal(fx.Value)
 }
 
 func (s *encodingJSON) DeserializeBytes(buf []byte) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := json.Unmarshal(buf, dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }
 
-func (s *encodingJSON) SerializeStream(fx data.Fixture, w io.Writer) (int, error) {
+func (s *encodingJSON) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	cw := &countWriter{w: w}
 	if err := json.NewEncoder(cw).Encode(fx.Value); err != nil {
 		return 0, err
@@ -48,9 +48,9 @@ func (s *encodingJSON) SerializeStream(fx data.Fixture, w io.Writer) (int, error
 }
 
 func (s *encodingJSON) DeserializeStream(r io.Reader) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := json.NewDecoder(r).Decode(dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }

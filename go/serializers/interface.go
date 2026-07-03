@@ -4,7 +4,7 @@ package serializers
 import (
 	"io"
 
-	"serializer-benchmark-go/data"
+	"serializer-benchmark-go/model"
 )
 
 // StreamMode documents how stream I/O is implemented.
@@ -49,10 +49,10 @@ type BenchSerializer interface {
 	StreamMode() StreamMode
 	NativeKind() NativeKind
 	Supports(testDataName string) bool
-	Prepare(fx data.Fixture) error
-	SerializeBytes(fx data.Fixture) ([]byte, error)
+	Prepare(fx model.Fixture) error
+	SerializeBytes(fx model.Fixture) ([]byte, error)
 	DeserializeBytes(data []byte) (any, error)
-	SerializeStream(fx data.Fixture, w io.Writer) (int, error)
+	SerializeStream(fx model.Fixture, w io.Writer) (int, error)
 	DeserializeStream(r io.Reader) (any, error)
 }
 
@@ -60,7 +60,7 @@ func DefaultSupports(testDataName string) bool {
 	return testDataName != "ObjectGraph"
 }
 
-func AdaptedSerializeStream(s BenchSerializer, fx data.Fixture, w io.Writer) (int, error) {
+func AdaptedSerializeStream(s BenchSerializer, fx model.Fixture, w io.Writer) (int, error) {
 	b, err := s.SerializeBytes(fx)
 	if err != nil {
 		return 0, err

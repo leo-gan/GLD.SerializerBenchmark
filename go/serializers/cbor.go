@@ -5,7 +5,7 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 
-	"serializer-benchmark-go/data"
+	"serializer-benchmark-go/model"
 )
 
 // fxamackerCBOR — leading CBOR implementation for Go (IETF RFC 8949).
@@ -36,24 +36,24 @@ func (s *fxamackerCBOR) StreamMode() StreamMode { return StreamNative }
 func (s *fxamackerCBOR) NativeKind() NativeKind { return NativeReflect }
 func (s *fxamackerCBOR) Supports(n string) bool { return DefaultSupports(n) }
 
-func (s *fxamackerCBOR) Prepare(fx data.Fixture) error {
+func (s *fxamackerCBOR) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
 	return nil
 }
 
-func (s *fxamackerCBOR) SerializeBytes(fx data.Fixture) ([]byte, error) {
+func (s *fxamackerCBOR) SerializeBytes(fx model.Fixture) ([]byte, error) {
 	return s.em.Marshal(fx.Value)
 }
 
 func (s *fxamackerCBOR) DeserializeBytes(buf []byte) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := s.dm.Unmarshal(buf, dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }
 
-func (s *fxamackerCBOR) SerializeStream(fx data.Fixture, w io.Writer) (int, error) {
+func (s *fxamackerCBOR) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	cw := &countWriter{w: w}
 	if err := s.em.NewEncoder(cw).Encode(fx.Value); err != nil {
 		return 0, err
@@ -62,9 +62,9 @@ func (s *fxamackerCBOR) SerializeStream(fx data.Fixture, w io.Writer) (int, erro
 }
 
 func (s *fxamackerCBOR) DeserializeStream(r io.Reader) (any, error) {
-	dst := data.NewEmptyPtr(s.proto)
+	dst := model.NewEmptyPtr(s.proto)
 	if err := s.dm.NewDecoder(r).Decode(dst); err != nil {
 		return nil, err
 	}
-	return data.Deref(dst), nil
+	return model.Deref(dst), nil
 }

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"serializer-benchmark-go/data"
+	"serializer-benchmark-go/model"
 	"serializer-benchmark-go/serializers"
 )
 
@@ -30,7 +30,7 @@ func defaultLogDir() string {
 	return filepath.Join(cwd, "logs", "go")
 }
 
-func measureBytes(ser serializers.BenchSerializer, fx data.Fixture) (serNs, deserNs uint64, size int, err error) {
+func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, deserNs uint64, size int, err error) {
 	t0 := time.Now()
 	buf, err := ser.SerializeBytes(fx)
 	serNs = uint64(time.Since(t0).Nanoseconds())
@@ -45,13 +45,13 @@ func measureBytes(ser serializers.BenchSerializer, fx data.Fixture) (serNs, dese
 	if err != nil {
 		return
 	}
-	if !data.Fidelity(fx.Value, out) {
+	if !model.Fidelity(fx.Value, out) {
 		err = fmt.Errorf("roundtrip fidelity failed for %s", ser.Name())
 	}
 	return
 }
 
-func measureStream(ser serializers.BenchSerializer, fx data.Fixture) (serNs, deserNs uint64, size int, err error) {
+func measureStream(ser serializers.BenchSerializer, fx model.Fixture) (serNs, deserNs uint64, size int, err error) {
 	buf := &bytes.Buffer{}
 	buf.Grow(4096)
 
@@ -70,7 +70,7 @@ func measureStream(ser serializers.BenchSerializer, fx data.Fixture) (serNs, des
 	if err != nil {
 		return
 	}
-	if !data.Fidelity(fx.Value, out) {
+	if !model.Fidelity(fx.Value, out) {
 		err = fmt.Errorf("stream roundtrip fidelity failed for %s", ser.Name())
 	}
 	return
@@ -129,8 +129,8 @@ func main() {
 		sers = append(sers, s)
 	}
 
-	var fxs []data.Fixture
-	for _, fx := range data.AllFixtures(42) {
+	var fxs []model.Fixture
+	for _, fx := range model.AllFixtures(42) {
 		if df != "" && !strings.Contains(strings.ToLower(fx.Name), strings.ToLower(df)) {
 			continue
 		}
