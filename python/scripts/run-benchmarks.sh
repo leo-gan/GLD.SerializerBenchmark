@@ -30,22 +30,23 @@ case "$MODE" in
     smoke)
         REPS="$(bench_mode_reps smoke)"
         echo "[INFO] Running Smoke Test ($REPS reps, pickle, Person) [config modes.smoke]..."
+        # Inside the container LOG_DIR must be the mount path (/app/logs), not the host path.
         docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
+          -e LOG_DIR=/app/logs -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
           $IMAGE_NAME "$REPS" pickle Person
         ;;
     all-single|full|research)
         REPS="$(bench_mode_reps "$MODE")"
         echo "[INFO] Running $MODE ($REPS reps, all serializers) [config modes.$MODE]..."
         docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
+          -e LOG_DIR=/app/logs -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
           $IMAGE_NAME "$REPS"
         ;;
     custom)
         shift
         echo "[INFO] Running Custom Benchmark (Args: $*)..."
         docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-          -e LOG_DIR="$LOG_DIR" -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
+          -e LOG_DIR=/app/logs -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
           $IMAGE_NAME "$@"
         ;;
     *)
