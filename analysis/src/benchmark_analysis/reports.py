@@ -323,11 +323,22 @@ def _format_in_unit(
     return f"**{text}**" if bold else text
 
 
+def _time_ns_to_display_us(value_key: str) -> bool:
+    """True when *value_key* is a latency stored in nanoseconds (display as µs)."""
+    key = (value_key or "").lower()
+    if not key.endswith("_ns"):
+        return False
+    return "time" in key or "latency" in key or "duration" in key
+
+
 def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
     """Generate a markdown pivot table from stats dict.
 
     Semantic best-in-column values are bold (ops/throughput: max; time/size: min).
     Ties are all bolded. Unit scale and best use **displayed** cell values only.
+
+    Latency metrics stored as ``*_ns`` are shown in **microseconds** (÷1000) as
+    plain numbers (no K/M suffixes), so ~5400 ns appears as ``5.4`` not ``5.4K``.
     """
     lines = [f"\n### {title}\n"]
 
@@ -347,6 +358,9 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         return base
 
     higher = _higher_is_better(value_key)
+    # Display latency in µs (analysis/stats remain nanoseconds in memory/CSV).
+    to_us = _time_ns_to_display_us(value_key)
+    display_scale = 1_000.0 if to_us else 1.0  # ns → µs
 
     # Resolve one numeric (or None) per displayed cell first — unit/best use these only
     cell: Dict[Tuple[str, str], Optional[float]] = {}
@@ -360,7 +374,7 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
                 continue
             val = matching[0].get(value_key)
             if isinstance(val, (int, float)) and not isinstance(val, bool) and val == val:
-                cell[(rv, cv)] = float(val)
+                cell[(rv, cv)] = float(val) / display_scale
             else:
                 cell[(rv, cv)] = None
 
@@ -368,7 +382,11 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
     col_best: Dict[str, Optional[float]] = {}
     for cv in col_vals:
         displayed = [cell[(rv, cv)] for rv in row_vals if cell[(rv, cv)] is not None]
-        col_units[cv] = _pick_column_unit(displayed)
+        # Time-in-µs: keep plain numbers (avoid re-introducing K on large µs values).
+        if to_us:
+            col_units[cv] = (1.0, "")
+        else:
+            col_units[cv] = _pick_column_unit(displayed)
         col_best[cv] = _column_best(displayed, higher_is_better=higher)
 
     # Header (unit in column title when scaled)
@@ -625,7 +643,8 @@ def generate_language_results_pages(
                 "API; **stream mode** = write/read through a stream-like path. "
                 "These names are *not* payload sizes. "
                 "In each table, **bold** marks the semantic best value in that column "
-                "(lowest time; highest ops/s). Ties are all bolded."
+                "(lowest time; highest ops/s). Ties are all bolded. "
+                "Latency tables are in **microseconds** (µs), plain numbers (no K/M)."
             )
             lines.append("")
             lines.append(
@@ -634,7 +653,7 @@ def generate_language_results_pages(
                     "serializer",
                     "mode",
                     "avg_time_total_ns",
-                    f"{title}: Avg Total Time (ns) by Serializer and API Mode",
+                    f"{title}: Avg Total Time (µs) by Serializer and API Mode",
                 )
             )
             lines.append(
