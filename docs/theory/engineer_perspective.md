@@ -44,11 +44,7 @@ Detailed inventory per language: [Serialization categories](../analysis/serializ
 
 ---
 
-## Format tour (engineering angles)
-
-Historical anecdotes are minimal here on purpose.
-
-### Text-based interchange
+## Text-based interchange
 
 **JSON** is the default public contract: universal parsers, easy logging, mediocre density and parse cost. Gaps (dates, binary, int vs float) are managed by **convention** or by a validation layer ([JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for validating JSON")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [OpenAPI](https://en.wikipedia.org/wiki/OpenAPI_Specification "OpenAPI — standard for HTTP API descriptions")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, typed request models).
 
@@ -56,7 +52,7 @@ Historical anecdotes are minimal here on purpose.
 
 **YAML / [TOML](https://en.wikipedia.org/wiki/TOML "TOML — Tom’s Obvious Minimal Language (config format)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** are configuration formats more than wire formats. YAML’s complexity has a long security history with “load untrusted YAML” mistakes—prefer safe loaders and locked-down schemas for untrusted input.
 
-### Schemaless binary
+## Schemaless binary
 
 **MessagePack**, **CBOR**, and **BSON** keep a dynamic data model while dropping text parsing. Field names or type tags usually still appear, so they are typically larger than a tight Protobuf encoding but smaller/faster than JSON.
 
@@ -64,7 +60,7 @@ Historical anecdotes are minimal here on purpose.
 
 **You still own:** validation, compatibility, and documentation.
 
-### Schema-driven binary
+## Schema-driven binary
 
 **Protocol Buffers** — field numbers, codegen, strong multi-language story, explicit evolution discipline (don’t reuse field numbers; reserve deleted ids).
 
@@ -74,7 +70,7 @@ Historical anecdotes are minimal here on purpose.
 
 **FlatBuffers / [Cap’n Proto](https://en.wikipedia.org/wiki/Cap%27n_Proto "Cap’n Proto — zero-copy serialization and RPC")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** — design for **low-parse / zero-copy** access; excellent read paths; different mutation and tooling ergonomics than classic “build a struct → serialize” Protobuf style.
 
-### Language-native
+## Language-native
 
 Convenient for object graphs inside one runtime. Treat as **unsafe by default** on the network or any multi-tenant input path. Prefer portable formats whenever data leaves the process trust domain.
 
