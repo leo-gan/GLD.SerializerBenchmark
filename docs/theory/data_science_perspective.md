@@ -2,9 +2,11 @@
 
 **Question this page answers:** *What serialization choices matter for data work, analytics, and ML—and how do I choose among them?*
 
-This is the **data & ML lens** of [Serialization 101](index.md). It assumes you have (or will get) the big-picture timeline from the [historical perspective](historical_perspective.md). It does **not** retell punched cards through SOAP. For APIs, RPC, caches, and systems performance, use the [engineering perspective](engineer_perspective.md).
+This is the **data & [ML](https://en.wikipedia.org/wiki/Machine_learning "ML — Machine learning")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> lens** of [Serialization 101](index.md). It assumes you have (or will get) the big-picture timeline from the [historical perspective](historical_perspective.md). It does **not** retell punched cards through [SOAP](https://en.wikipedia.org/wiki/SOAP "SOAP — Simple Object Access Protocol")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />. For APIs, [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />, caches, and systems performance, use the [engineering perspective](engineer_perspective.md).
 
 Measured libraries and timings for **this suite** live under language **Overview** / **Results** and [Benchmarks](../analysis/index.md). This page is conceptual judgment for data practitioners.
+
+> **Wikipedia links:** Terms that open a Wikipedia article are marked with the Wikipedia logo (<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> shown after the linked text). Only the **first** mention of each term is linked. Hover a link for a short tip.
 
 ---
 
@@ -12,22 +14,22 @@ Measured libraries and timings for **this suite** live under language **Overview
 
 - Analysts and analytics engineers moving data between warehouses, lakes, and notebooks  
 - ML engineers checkpointing models, features, and batch scores  
-- Data platform folks choosing formats for Kafka topics, S3 layouts, and interchange with Spark/DuckDB/Polars  
+- Data platform folks choosing formats for [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka "Apache Kafka — distributed event streaming platform")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> topics, [S3](https://en.wikipedia.org/wiki/Amazon_S3 "Amazon S3 — object storage service")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> layouts, and interchange with [Spark](https://en.wikipedia.org/wiki/Apache_Spark "Apache Spark — unified analytics engine")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />/[DuckDB](https://en.wikipedia.org/wiki/DuckDB "DuckDB — in-process analytical SQL database")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />/Polars  
 - Scientists who currently “just pickle everything” and want a safer mental model  
 
-If you only build JSON REST microservices, skim the decision guide and switch to [engineering](engineer_perspective.md).
+If you only build [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> [REST](https://en.wikipedia.org/wiki/REST "REST — Representational State Transfer")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> microservices, skim the decision guide and switch to [engineering](engineer_perspective.md).
 
 ---
 
 ## What “serialization” means in data work
 
-In services, serialization often means **one message in, one message out**. In data work it usually means one or more of:
+In services, [serialization](https://en.wikipedia.org/wiki/Serialization "Serialization — converting structures to a byte sequence and back")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> often means **one message in, one message out**. In data work it usually means one or more of:
 
 | Workload | Typical unit | What you optimize for |
 |----------|--------------|------------------------|
 | **Batch tables** | Partitions of rows/columns on object storage | Scan cost, compression, schema evolution over years |
 | **Streaming events** | Records on a log (Kafka, etc.) | Compatibility between old/new producers & consumers |
-| **Notebook ↔ production** | DataFrames, dicts, artifacts | Friction vs portability and safety |
+| **Notebook ↔ production** | [DataFrames](https://en.wikipedia.org/wiki/pandas_(software) "pandas — tabular data library commonly used via DataFrames")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />, dicts, artifacts | Friction vs portability and safety |
 | **Model artifacts** | Weights + preprocessing graph | Load speed, versioning, who may load the file |
 | **Feature interchange** | Training/serving feature payloads | Stable types, low skew, predictable nulls |
 
@@ -39,13 +41,13 @@ Different workloads want different points on the [shared trade-off axes](index.m
 
 Full story: [historical perspective](historical_perspective.md). The short version:
 
-1. **Fixed-width & CSV** — still everywhere for exports and simple tables; weak typing; awkward nesting.  
-2. **Language-native blobs (`pickle`, joblib, many ML checkpoints)** — maximum Python convenience; poor multi-language story; **unsafe on untrusted bytes**.  
+1. **Fixed-width & [CSV](https://en.wikipedia.org/wiki/Comma-separated_values "CSV — Comma-Separated Values")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />** — still everywhere for exports and simple tables; weak typing; awkward nesting.  
+2. **Language-native blobs (`pickle`, joblib, many ML checkpoints)** — maximum Python convenience; poor multi-language story; **unsafe on untrusted bytes**. See [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> under language-native formats.  
 3. **JSON lines / JSON documents** — universal glue; fine for small/medium configs and APIs; painful as a primary lake format at huge scale.  
-4. **Avro (+ schema registry patterns)** — row-oriented binary with a serious **evolution** story for event streams.  
-5. **Parquet / ORC** — **columnar** on-disk formats for analytic scans.  
-6. **Arrow** — shared **in-memory** columnar layout so engines exchange tables without endless convert/copy.  
-7. **Validators (JSON Schema, Pydantic, msgspec, …)** — structure and types when the wire format stays JSON or MessagePack.
+4. **[Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> (+ schema registry patterns)** — row-oriented binary with a serious **evolution** story for event streams.  
+5. **[Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> / [ORC](https://en.wikipedia.org/wiki/Apache_ORC "Apache ORC — Optimized Row Columnar")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />** — **columnar** on-disk formats for analytic scans.  
+6. **[Arrow](https://en.wikipedia.org/wiki/Apache_Arrow "Apache Arrow — in-memory columnar format")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />** — shared **in-memory** columnar layout so engines exchange tables without endless convert/copy.  
+7. **Validators ([JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for validating JSON")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />, Pydantic, msgspec, …)** — structure and types when the wire format stays JSON or [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />.
 
 ---
 
@@ -79,7 +81,7 @@ Trust boundary check (do this every time):
 | Approach | Strength | Risk |
 |----------|----------|------|
 | `pickle` / `cloudpickle` | Almost any Python object graph | Code execution on load; Python-only |
-| `joblib` | Convenient for sklearn-style arrays/pipelines | Same trust issues when backed by pickle-like protocols |
+| `joblib` | Convenient for [scikit-learn](https://en.wikipedia.org/wiki/Scikit-learn "scikit-learn — Python ML library")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />-style arrays/pipelines | Same trust issues when backed by pickle-like protocols |
 | Framework checkpoints (often pickle-based) | One-command save/load in that stack | Environment coupling; supply-chain & tampering risk |
 
 **Practical rule:** use native formats for **ephemeral, trusted, same-environment** artifacts. For sharing, audit, or multi-year storage, prefer **explicit weights formats** (framework-specific safe loaders), **Arrow/Parquet tables**, or **versioned model registries**—not a raw pickle in an open bucket.
@@ -104,13 +106,13 @@ Trust boundary check (do this every time):
 - Better compression (similar values co-located)  
 - Predicate pushdown / page skipping in mature engines  
 
-**Prefer when:** data lakes, warehouse extracts, Spark/DuckDB/Polars/Athena-style scans, wide tables, read-heavy analytics.
+**Prefer when:** data lakes, warehouse extracts, Spark/DuckDB/Polars/[Athena](https://en.wikipedia.org/wiki/Amazon_Athena "Amazon Athena — serverless SQL over data lakes")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />-style scans, wide tables, read-heavy analytics.
 
 **Avoid when:** you mostly fetch one nested document by key at low latency—that is still a **row/document** problem (or a specialized store), not Parquet’s sweet spot.
 
 ### Apache Arrow: stop converting DataFrames for a living
 
-**Arrow** standardizes **in-memory** columnar buffers (types, null bitmaps, nested layouts). When two tools speak Arrow, transfer can be a pointer handoff or a cheap IPC stream instead of “to_csv → parse again.”
+**Arrow** standardizes **in-memory** columnar buffers (types, null bitmaps, nested layouts). When two tools speak Arrow, transfer can be a pointer handoff or a cheap [IPC](https://en.wikipedia.org/wiki/Inter-process_communication "IPC — Inter-process communication")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> stream instead of “to_csv → parse again.”
 
 **Prefer when:**
 
@@ -120,19 +122,19 @@ Trust boundary check (do this every time):
 
 Arrow is complementary to Parquet: **Parquet on disk / in the lake**, **Arrow in memory / between engines** is a common modern pattern.
 
-### MessagePack, BSON, CBOR in data paths
+### MessagePack, [BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />, [CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> in data paths
 
 These are **schemaless binary** encodings of JSON-like values:
 
 | Format | Data-relevant note |
 |--------|--------------------|
 | **MessagePack** | Compact caches, internal service payloads, some feature buses |
-| **BSON** | Document DB heritage (MongoDB); extra types (datetime, binary) |
-| **CBOR** | Standards-track; constrained devices and some security/IoT stacks |
+| **BSON** | Document DB heritage ([MongoDB](https://en.wikipedia.org/wiki/MongoDB "MongoDB — document-oriented database")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />); extra types (datetime, binary) |
+| **CBOR** | Standards-track; constrained devices and some security/[IoT](https://en.wikipedia.org/wiki/Internet_of_things "IoT — Internet of Things")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> stacks |
 
 They help when JSON is too slow/large but you still want a **dynamic** model. They do **not** replace Parquet for lake analytics.
 
-### Protobuf / Thrift at the data boundary
+### [Protobuf](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — schema-driven binary format")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> / [Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> at the data boundary
 
 Schema-driven RPC formats show up when ML **serving** or feature stores talk to microservices. They are excellent **online** contracts; they are usually a poor **sole** lake format compared with Parquet for bulk analytics. Many platforms use **both**: Protobuf online, columnar offline.
 
@@ -167,7 +169,7 @@ Schema-driven RPC formats show up when ML **serving** or feature stores talk to 
 | Need | Prefer |
 |------|--------|
 | Same machine, trusted, rapid iteration | Framework native checkpoint (understand its trust model) |
-| Portable inference, multi-language runtimes | ONNX / framework export formats / dedicated model servers |
+| Portable inference, multi-language runtimes | [ONNX](https://en.wikipedia.org/wiki/Open_Neural_Network_Exchange "ONNX — Open Neural Network Exchange")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> / framework export formats / dedicated model servers |
 | Bundle preprocessing + model for one Python service | Still better with versioned registry + immutable artifact IDs than ad-hoc pickles in chat threads |
 | Audit / compliance | Formats and stores that support signing, lineage, and non-executable weights where possible |
 
@@ -181,9 +183,9 @@ Experiment trackers often accept pickles and arbitrary blobs. **Production promo
 
 Data platforms still emit JSON for APIs, webhooks, and config. Pair text/schemaless payloads with an explicit contract:
 
-- **JSON Schema / OpenAPI** for cross-team HTTP boundaries  
+- **JSON Schema / [OpenAPI](https://en.wikipedia.org/wiki/OpenAPI_Specification "OpenAPI — standard for HTTP API descriptions")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />** for cross-team [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" /> boundaries  
 - **Pydantic / msgspec / similar** for Python services that ingest JSON or MessagePack  
-- **Great Expectations / built-in warehouse tests / custom checks** for table-level quality (orthogonal to wire format, but part of the same reliability story)
+- Table-level quality checks (orthogonal to wire format, but part of the same reliability story)
 
 Validation is how you keep the flexibility of schemaless formats without surprise `null`s in production training jobs.
 
