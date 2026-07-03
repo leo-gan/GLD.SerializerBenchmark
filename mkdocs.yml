@@ -47,11 +47,14 @@ markdown_extensions:
   - attr_list
   - admonition
   - pymdownx.details
+  # use_pygments: false — avoids a Pygments/html.escape(None) crash with current
+  # pymdownx+Pygments that silently breaks all ``` fenced blocks site-wide.
+  - pymdownx.highlight:
+      use_pygments: false
+  - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.highlight
-  - pymdownx.inlinehilite
 
 nav:
   - Serialization 101:

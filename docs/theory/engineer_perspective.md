@@ -171,7 +171,9 @@ Document whether fields are required, defaulted, or nullable—**wire format can
 
 ## Illustrative snippets (conceptual)
 
-JSON (ubiquitous control plane / public API style):
+Orientation only—not library endorsements. (Site-wide fenced code uses plain highlighting; see `mkdocs.yml`.)
+
+### JSON (public API style)
 
 ```python
 import json
@@ -181,7 +183,7 @@ text = json.dumps(payload, separators=(",", ":"), sort_keys=True)
 obj = json.loads(text)
 ```
 
-MessagePack (schemaless binary):
+### MessagePack (schemaless binary)
 
 ```python
 import msgpack
@@ -190,17 +192,15 @@ packed = msgpack.packb({"nums": [1, 2, 3]})
 assert msgpack.unpackb(packed) == {"nums": [1, 2, 3]}
 ```
 
-Protobuf-style flow (after codegen):
+### Protobuf-style (after codegen)
 
 ```python
-# Illustrative: generated module provides Person
+# Generated module provides Person (illustrative names).
 person = addressbook_pb2.Person(id=1234, name="Alice")
 data = person.SerializeToString()
 person2 = addressbook_pb2.Person()
 person2.ParseFromString(data)
 ```
-
-Treat snippets as orientation, not endorsements of a specific library version.
 
 ---
 
