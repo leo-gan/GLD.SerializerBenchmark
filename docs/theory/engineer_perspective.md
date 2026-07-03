@@ -94,7 +94,7 @@ Modern CPUs are fast; **random memory access** is not. Serializers that scatter 
 
 When you benchmark, payload **shape** matters as much as codec brand: deep pointer graphs punish every language; dense structs favor contiguous layouts.
 
-### Allocations and [garbage collection](https://en.wikipedia.org/wiki/Garbage_collection_(computer_science) "Garbage collection — automatic memory reclamation")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />
+### Allocations and [garbage collection](https://en.wikipedia.org/wiki/Garbage_collection_%28computer_science%29 "Garbage collection — automatic memory reclamation")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />
 
 In managed runtimes (C#, Java, Python, JS, Go), **allocation rate** drives GC work and latency spikes.
 

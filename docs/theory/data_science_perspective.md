@@ -29,7 +29,7 @@ In services, [serialization](https://en.wikipedia.org/wiki/Serialization "Serial
 |----------|--------------|------------------------|
 | **Batch tables** | Partitions of rows/columns on object storage | Scan cost, compression, schema evolution over years |
 | **Streaming events** | Records on a log (Kafka, etc.) | Compatibility between old/new producers & consumers |
-| **Notebook ↔ production** | [DataFrames](https://en.wikipedia.org/wiki/pandas_(software) "pandas — tabular data library commonly used via DataFrames")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />, dicts, artifacts | Friction vs portability and safety |
+| **Notebook ↔ production** | [DataFrames](https://en.wikipedia.org/wiki/pandas_%28software%29 "pandas — tabular data library commonly used via DataFrames")<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/16px-Wikipedia-logo-v2.svg.png" alt="Wikipedia" width="12" height="12" />, dicts, artifacts | Friction vs portability and safety |
 | **Model artifacts** | Weights + preprocessing graph | Load speed, versioning, who may load the file |
 | **Feature interchange** | Training/serving feature payloads | Stable types, low skew, predictable nulls |
 
