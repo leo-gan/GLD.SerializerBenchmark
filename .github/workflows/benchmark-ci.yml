@@ -45,6 +45,7 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
       c: ${{ steps.filter.outputs.c }}
       javascript: ${{ steps.filter.outputs.javascript }}
+      go: ${{ steps.filter.outputs.go }}
       analysis: ${{ steps.filter.outputs.analysis }}
     steps:
       - uses: actions/checkout@v4
@@ -58,31 +59,52 @@ jobs:
               - 'c-sharp/**'
               - 'config/benchmark_config.yaml'
               - 'schemas/**'
+              - 'scripts/lib/**'
+              - 'scripts/read-config.py'
               - '.github/workflows/benchmark-ci.yml'
             python:
               - 'python/**'
               - 'config/benchmark_config.yaml'
               - 'schemas/**'
+              - 'scripts/lib/**'
+              - 'scripts/read-config.py'
               - '.github/workflows/benchmark-ci.yml'
             rust:
               - 'rust/**'
               - 'config/benchmark_config.yaml'
               - 'schemas/**'
+              - 'scripts/lib/**'
+              - 'scripts/read-config.py'
               - '.github/workflows/benchmark-ci.yml'
             c:
               - 'c/**'
               - 'config/benchmark_config.yaml'
               - 'schemas/**'
+              - 'scripts/lib/**'
+              - 'scripts/read-config.py'
               - '.github/workflows/benchmark-ci.yml'
             javascript:
               - 'javascript/**'
               - 'config/benchmark_config.yaml'
               - 'schemas/**'
+              - 'scripts/lib/**'
+              - 'scripts/read-config.py'
+              - '.github/workflows/benchmark-ci.yml'
+            go:
+              - 'go/**'
+              - 'config/benchmark_config.yaml'
+              - 'schemas/**'
+              - 'scripts/lib/**'
+              - 'scripts/read-config.py'
               - '.github/workflows/benchmark-ci.yml'
             analysis:
               - 'analysis/**'
               - 'config/benchmark_config.yaml'
               - 'schemas/**'
+              - 'scripts/lib/**'
+              - 'scripts/read-config.py'
+              - 'scripts/run-all-benchmarks.sh'
+              - 'scripts/verify-results.sh'
               - '.github/workflows/benchmark-ci.yml'
 
   csharp-benchmark:
@@ -173,6 +195,33 @@ jobs:
           cd javascript
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+  go-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache-dependency-path: go/go.sum
+
+      - name: Install protoc (optional regen of committed gen/pb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Run Go Benchmark
+        run: |
+          cd go
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
   analysis-unit-tests:
     needs: changes
     if: >-
@@ -198,3 +247,9 @@ jobs:
         run: |
           cd analysis
           .venv/bin/pytest -q
+
+      - name: Smoke read-config (master YAML)
+        run: |
+          PYTHONPATH=analysis/src python3 scripts/read-config.py --enabled-langs
+          PYTHONPATH=analysis/src python3 scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go)\|'
+          PYTHONPATH=analysis/src python3 scripts/read-config.py --mode-reps smoke
