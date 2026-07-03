@@ -2,7 +2,7 @@
 
 **Job of this page:** shared conceptual fixtures (`TestDataName` values), why each exists, and where size/seed knobs live. Not serializer categories ([Serialization categories](serialization_categories.md)) and not harness timing ([architecture](architecture.md)).
 
-Conceptual fixtures every language harness implements as language-native models. Definitions are the suite SoT in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml) under `test_data.types`. Shape/size knobs and seed live in [`schemas/test_data_config.json`](../../schemas/test_data_config.json) (`test_data.config_file`).
+Conceptual fixtures every language harness implements as language-native models. Definitions are the suite SoT in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml) under `test_data.types`. Shape/size knobs and seed live in [`schemas/test_data_config.json`](../../schemas/test_data_config.json) (`test_data.config_file` in master config). That file allows `//` line comments (JSONC-style); canonical keys today are `StringOptions`, `CollectionOptions`, and `RandomSeed` (**42**).
 
 Compare serializers on the **same** `TestDataName` values in CSV logs and on language **Results** pages.
 
@@ -61,8 +61,8 @@ Shared across languages so conceptual sizes stay aligned (PRNG compatibility sti
 | Area | Role |
 |------|------|
 | **StringOptions** | Word/phrase/ID length ranges; `DuplicationFactor` (0–1) chance to reuse a prior string (dedup / sharing behavior) |
-| **CollectionOptions** | Counts for Person records, Telemetry measurements, StringArray length, EDI claims/lines |
-| **RandomSeed** | Fixed seed (also `reproducibility.random_seed` in master config, default **42**) for reproducible generation |
+| **CollectionOptions** | `PersonPoliceRecordsCount` (5), `TelemetryMeasurementsCount` (100), `StringArrayCount` (100), `EdiClaimsCount` (5), `EdiLinesPerClaimCount` (3) — defaults in repo |
+| **RandomSeed** | Fixed seed **42** (also `reproducibility.random_seed` in master config) for reproducible generation |
 
 ## Design intent
 

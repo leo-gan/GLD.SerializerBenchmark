@@ -53,3 +53,14 @@ By default the CLI writes **both** tables and plots. Commit updated `results.md`
 The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree—it does **not** re-run analysis or benchmarks.
 
 How stats are computed: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
+
+## Related analysis CLI outputs (not this hub)
+
+| Output | Where |
+|--------|--------|
+| Language Results + violins | `docs/<lang>/results.md`, `docs/analysis/plots/violin/` |
+| Version A/B report | `reports/VERSION_COMPARE.md` (`--compare-a` / `--compare-b`) |
+| Regression baseline | `reports/baseline.json` by default (`--save-baseline` / `--check-regression`) |
+
+See [Analysis methodology](ANALYSIS_METHODOLOGY.md) for how numbers are computed.
+

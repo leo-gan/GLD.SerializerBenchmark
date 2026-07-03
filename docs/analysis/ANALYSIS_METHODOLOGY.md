@@ -17,7 +17,7 @@ Defaults: `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../c
 
 | Source | Role |
 |--------|------|
-| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output (gitignored) |
+| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output under `logs/csharp`, `logs/python`, `logs/rust`, `logs/c`, `logs/javascript`, `logs/go` (gitignored) |
 | `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, …) |
 | `csv_schema` in master config | Required / optional columns |
 
@@ -111,7 +111,9 @@ analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
 analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316
 ```
 
-Writes `VERSION_COMPARE.md` with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when `statistics.hypothesis_tests` is enabled (`alpha` 0.05). Prefer this for author-facing regressions rather than comparing unrelated libraries.
+Writes `reports/VERSION_COMPARE.md` (under `paths.reports_root`, default `reports/`) with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when `statistics.hypothesis_tests` is enabled (`alpha` 0.05). Prefer this for author-facing regressions rather than comparing unrelated libraries.
+
+Regression gates: `analyze-benchmarks --check-regression` against `paths.baseline_filename` (default `reports/baseline.json`); save with `--save-baseline`.
 
 ---
 

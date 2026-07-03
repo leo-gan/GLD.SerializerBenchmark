@@ -86,6 +86,19 @@ Defaults: `statistics:` / `modes:` in `config/benchmark_config.yaml`. **Authorit
 
 ---
 
+## Run modes (repetitions)
+
+From `modes:` in `config/benchmark_config.yaml` (do not hard-code counts in runners—use `bench_mode_reps`):
+
+| Mode | Repetitions | Intent |
+|------|-------------|--------|
+| `smoke` | 2 | Minimal sanity / CI fast path |
+| `all-single` | 10 | Quick full-matrix pass |
+| `full` | 100 | Publication-quality run |
+| `research` | 500 | High-power statistical study |
+
+Warmup policy: harness guidance uses `reproducibility.warmup_repetitions` (**1**); analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true.
+
 ## Configuration map
 
 | Concern | File / page |

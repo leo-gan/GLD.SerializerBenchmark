@@ -23,17 +23,22 @@ Theory (concepts, not suite metrics): [Serialization 101](../theory/index.md).
 
 ## Languages in this suite
 
+Counts match the **registered inventories on each language Overview** (hand-written source of truth for *what we measure*). Prefer those pages over `languages.*.serializers` in `config/benchmark_config.yaml`, which can lag harness registration.
+
 | Language | Serializers (registered) | Inventory (hand-written SoT) | Results (generated snapshot) |
 |----------|--------------------------|------------------------------|------------------------------|
-| C# | 38 | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
-| Python | 16 | [Overview](../python/index.md) | [Results](../python/results.md) |
-| Rust | 15 | [Overview](../rust/index.md) | [Results](../rust/results.md) |
-| C | 12 | [Overview](../c/index.md) | [Results](../c/results.md) |
-| JavaScript | 12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
-| Go | 12 | [Overview](../go/index.md) | [Results](../go/results.md) |
+| C# | **38** | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
+| Python | **16** | [Overview](../python/index.md) | [Results](../python/results.md) |
+| Rust | **15** | [Overview](../rust/index.md) | [Results](../rust/results.md) |
+| C | **12** | [Overview](../c/index.md) | [Results](../c/results.md) |
+| JavaScript | **12** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
+| Go | **12** | [Overview](../go/index.md) | [Results](../go/results.md) |
 
-- **Inventories** (`docs/<lang>/index.md`) — what we measure and caveats.  
+† **JavaScript:** `simdjson` is optional (native addon). If it fails to build, the run still has the other **11** serializers.
+
+- **Inventories** (`docs/<lang>/index.md`) — log names, categories, caveats.  
 - **Results** (`docs/<lang>/results.md`) — local pivots and violin embeds; machine-dependent.  
-- **Regeneration** — commands and output paths live on [Benchmark Results](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
+- **Log ids:** harness `Language` column uses `csharp`, `python`, `rust`, `c`, `javascript`, `go` (docs folders may differ, e.g. `c-sharp` for C#).  
+- **Regeneration** — [Benchmark Results](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
 
 Compare serializers **within one language** (and ideally one [category](serialization_categories.md)). Cross-runtime absolute times are directional only—see [methodology limitations](ANALYSIS_METHODOLOGY.md#limitations).

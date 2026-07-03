@@ -1,14 +1,16 @@
 # Serialization categories
 
-**Job of this page:** the **four paradigms** this suite uses when grouping serializers, plus a short decision sketch and a **suite-level inventory by family**.
+**Job of this page:** the **four paradigms** this suite uses when grouping serializers, plus a short decision sketch and **suite-level examples by family**.
 
 | For this instead… | Go here |
 |-------------------|---------|
-| Conceptual trade-offs (why formats exist / how to choose in product) | [Theory — engineering](../theory/engineer_perspective.md) · [101 home](../theory/index.md) |
-| Per-library caveats and full names | Language **Overview** pages (SoT for “what we measure”) |
+| Conceptual trade-offs (product / theory) | [Theory — engineering](../theory/engineer_perspective.md) · [101 home](../theory/index.md) |
+| Full registered names and caveats | Language **Overview** pages (SoT for “what we measure”) |
 | Timings and plots | Language **Results** · [Benchmark Results](BENCHMARK_SUMMARY.md) hub |
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
+
+Registered counts (Overview SoT): C# **38** · Python **16** · Rust **15** · C **12** · JavaScript **12** (simdjson optional) · Go **12**.
 
 ---
 
@@ -23,12 +25,14 @@ Orientation only—not a leaderboard. Real speed/size depend on implementation a
 | **Schema-driven** | Numbers / layout from schema or IDL | No | Often smallest | Often fastest deserialize | Where codegen exists | Stable contracts, streams |
 | **Language-native** | Runtime type metadata | No | Medium | Varies | Usually one runtime | Same-stack caches / graphs |
 
+Some harness entries (C# **XML** / **YAML** / **CSV**, etc.) sit outside a pure four-box split; treat them as adjacent text or specialized formats and use the language Overview category column.
+
 ---
 
 ## Decision sketch
 
 1. **Need humans to read/edit the payload?**
-   - **Yes** → JSON family  
+   - **Yes** → JSON family (or other text formats where registered)  
    - **No** → continue  
 2. **Need shared schema / IDL and evolution rules?**
    - **Yes** → Schema-driven  
@@ -43,24 +47,36 @@ Product-oriented guidance: [engineering perspective](../theory/engineer_perspect
 
 ## Family notes (suite-focused)
 
-### JSON (text, schemaless)
+Examples use **log `SerializerName` values** from language overviews (not necessarily package names on PyPI/crates.io).
+
+### JSON (text)
 
 - **Prefer when:** public APIs, human-edited config, multi-vendor clients without an IDL.  
-- **Trade-offs:** readable and universal; larger payloads; binary often base64; performance varies sharply by implementation.  
-- **In this suite (examples):** C# `Json.Net` / `SpanJson` / … · Python `json` / `orjson` / `msgspec` · Rust `serde_json` / `simd-json` · C `yyjson` / `cJSON` · JS `JSON.stringify` / `simdjson` (optional).  
-  Full lists and caveats: language **Overview**.
+- **Trade-offs:** readable; larger payloads; performance varies sharply by implementation.  
+- **Examples in suite:**  
+  - **C#:** `Json.Net`, `Json.Net (Helper)`, `SpanJson`, `Utf8Json`, `Jil`, `NetJSON`, `ServiceStack Json`, …  
+  - **Python:** `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs`  
+  - **Rust:** `serde_json`, `simd-json`, `sonic-rs`  
+  - **C:** `cJSON`, `yyjson`, `jansson`, `parson` (default build may use portable stand-ins—see [C overview](../c/index.md))  
+  - **JavaScript:** `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)  
+  - **Go:** `encoding/json`, `sonic`, `goccy/go-json`, `jsoniter`, `segmentio/encoding/json`  
 
 ### Schemaless binary
 
 - **Prefer when:** internal services, caches/queues, JSON-like flexibility without text parse cost.  
-- **Trade-offs:** not human-readable; evolution is ad hoc unless you add conventions. MessagePack vs CBOR is **implementation-specific**.  
-- **In this suite (examples):** MessagePack / CBOR / BSON-style codecs across languages; plus language-local binary graphs (e.g. Rust `bincode` / `postcard`).  
-  C# “MS Binary” and similar are **not** portable interchange—see [C# overview](../c-sharp/index.md).
+- **Trade-offs:** not human-readable; evolution is ad hoc unless you add conventions.  
+- **Examples in suite:**  
+  - **Python:** `msgpack`, `msgspec-msgpack`, `cbor2`  
+  - **Rust:** `rmp-serde`, `ciborium`, `minicbor`, `bson`, `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy`, `flexbuffers`  
+  - **C:** `mpack`, `tinycbor`, `ubj`, `cbor-encode`, `custom-binary`  
+  - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `cbor-x`, `cbor`, `bson`, `bser`  
+  - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `fxamacker/cbor`, `mongo-bson`  
+  - **C#:** many binary graph/type serializers (`Ceras`, `Hyperion`, `BinaryPack`, `MemoryPack`, …)—portability and trust model vary; see [C# overview](../c-sharp/index.md). **MessagePack-CSharp is not registered.**
 
 ### Schema-driven
 
 - **Prefer when:** stable contracts, evolution rules, multi-platform codegen, high-throughput streams.  
-- **Trade-offs:** schema/tooling cost; excellent size/speed when both ends share the model.
+- **Trade-offs:** schema/tooling cost.
 
 | Concern | Protobuf-like | Avro-like | FlatBuffers-like |
 |---------|---------------|-----------|------------------|
@@ -69,13 +85,24 @@ Product-oriented guidance: [engineering perspective](../theory/engineer_perspect
 | Zero-copy access | Usually no | Usually no | Design goal |
 | Typical niche | Microservices | Data platforms | Games / realtime |
 
-- **In this suite (examples):** protobuf / Bond / FlatBuffers / MemoryPack-style / Avro / `prost` / `rkyv` (materialized for fidelity)—check language overviews for stand-ins (especially **C** portable builds).
+- **Examples in suite:**  
+  - **C#:** `ProtoBuf` (protobuf-net), `Google.Protobuf`, `MS Bond Fast` / `Compact`, `FlatSharp`, `ZeroFormatter`, `MemoryPack` (model/generator path)  
+  - **Python:** `protobuf`, `avro` (fastavro), `flatbuffers`  
+  - **Rust:** `prost` (shared `.proto`; **Integer** unsupported), `rkyv` (timed deser **materializes** owned values), `flexbuffers`  
+  - **C:** `nanopb`, `protobuf-c`, `flatcc` (default build often tagged envelopes—see C overview)  
+  - **JavaScript:** `avsc`, `protobufjs`  
+  - **Go:** `protobuf`, `hamba/avro`  
 
 ### Language-native
 
 - **Prefer when:** single-runtime caches and rich graphs inside a **hard trust boundary**.  
-- **Trade-offs:** poor portability; version coupling; **unsafe** on untrusted input where the format can execute code (classic pickle / Java serialization risks).  
-- **In this suite (examples):** Python `pickle` / `cloudpickle` / `dill` · JS `v8-serializer` · selected C# graph serializers. **ObjectGraph** is skipped for most pure tree formats.
+- **Trade-offs:** poor portability; **unsafe** on untrusted input where formats can execute code.  
+- **Examples in suite:**  
+  - **Python:** `pickle`, `cloudpickle`, `dill`  
+  - **JavaScript:** `v8-serializer`  
+  - **Go:** `encoding/gob`  
+  - **C#:** legacy / graph-oriented binaries (e.g. `MS Binary`)—see Overview  
+  - **Rust / C:** no pickle-equivalent; **`ObjectGraph` skipped** for almost all formats  
 
 ---
 
@@ -83,7 +110,7 @@ Product-oriented guidance: [engineering perspective](../theory/engineer_perspect
 
 - Default comparison: **same language + same family + same fixture + same mode**.  
 - Schema-driven often leads on size/throughput *within a language*—not a universal ranking.  
-- Text parse and allocation/GC pressure dominate many managed-runtime stories.  
+- **C** default builds may label portable stand-ins with real library names—read the C Overview before citing as library rankings.  
 - Metrics live on language **Results**, not here.
 
 ## Further reading
