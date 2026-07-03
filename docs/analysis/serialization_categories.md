@@ -17,17 +17,15 @@ Orientation only—not a leaderboard. Real speed/size depend on implementation a
 
 ## Decision sketch
 
-```text
-Need humans to read/edit the payload?
-  ├── YES → JSON
-  └── NO
-        Need shared schema / IDL and evolution rules?
-          ├── YES → Schema-driven
-          └── NO
-                Single language / runtime, complex graphs OK?
-                  ├── YES → Language-native
-                  └── NO  → Schemaless binary
-```
+1. **Need humans to read/edit the payload?**
+   - **Yes** → JSON
+   - **No** → continue below
+2. **Need shared schema / IDL and evolution rules?**
+   - **Yes** → Schema-driven
+   - **No** → continue below
+3. **Single language / runtime, complex graphs OK?**
+   - **Yes** → Language-native
+   - **No** → Schemaless binary
 
 ## JSON (text, schemaless)
 
