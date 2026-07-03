@@ -89,13 +89,20 @@ echo -e "Run timestamp: ${YELLOW}$TS${NC}  seed: ${YELLOW}$BENCHMARK_SEED${NC}"
 
 mkdir -p "$LOG_DIR" "$REPORT_DIR"
 
-# Discover enabled languages from master config
+# Discover enabled languages from master config.
+# Read into a variable first so a failing bench_read_config trips set -e
+# (process substitution failures are not always fatal under set -e).
+LANG_RUNNERS="$(bench_read_config --lang-runners)"
+if [[ -z "$LANG_RUNNERS" ]]; then
+    echo -e "${RED}Error: no enabled languages from config (bench_read_config --lang-runners)${NC}"
+    exit 1
+fi
 ENABLED_LANGS=()
 while IFS='|' read -r id runner_dir runner_script; do
     [[ -z "$id" ]] && continue
     ENABLED_LANGS+=("$id")
     run_lang "$id" "$runner_dir" "$runner_script"
-done < <(bench_read_config --lang-runners)
+done <<< "$LANG_RUNNERS"
 
 echo ""
 echo -e "${BLUE}Capturing environment metadata...${NC}"

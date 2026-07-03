@@ -270,7 +270,14 @@ func Fidelity(expected, actual any) bool {
 		return ok && av.Value == bv.Value
 	case TelemetryData:
 		bv, ok := actual.(TelemetryData)
-		if !ok || av.ID != bv.ID || av.Param1 != bv.Param1 || len(av.Measurements) != len(bv.Measurements) {
+		if !ok {
+			return false
+		}
+		if av.ID != bv.ID || av.DataSource != bv.DataSource || av.TimeStamp != bv.TimeStamp ||
+			av.Param1 != bv.Param1 || av.Param2 != bv.Param2 ||
+			av.AssociatedProblemID != bv.AssociatedProblemID || av.AssociatedLogID != bv.AssociatedLogID ||
+			av.WasProcessed != bv.WasProcessed ||
+			len(av.Measurements) != len(bv.Measurements) {
 			return false
 		}
 		for i := range av.Measurements {
@@ -281,7 +288,7 @@ func Fidelity(expected, actual any) bool {
 		return true
 	case SimpleObject:
 		bv, ok := actual.(SimpleObject)
-		return ok && av.ID == bv.ID && av.Name == bv.Name && av.IsActive == bv.IsActive
+		return ok && av.ID == bv.ID && av.Name == bv.Name && av.Timestamp == bv.Timestamp && av.IsActive == bv.IsActive
 	case StringArrayObject:
 		bv, ok := actual.(StringArrayObject)
 		if !ok || len(av.Items) != len(bv.Items) {
@@ -295,11 +302,36 @@ func Fidelity(expected, actual any) bool {
 		return true
 	case Edi835:
 		bv, ok := actual.(Edi835)
-		if !ok || av.PayerName != bv.PayerName || av.PayeeName != bv.PayeeName || len(av.Claims) != len(bv.Claims) {
+		if !ok {
+			return false
+		}
+		if av.PayerName != bv.PayerName || av.PayeeName != bv.PayeeName ||
+			av.PaymentDate != bv.PaymentDate ||
+			av.TransactionControlNumber != bv.TransactionControlNumber ||
+			len(av.Claims) != len(bv.Claims) {
 			return false
 		}
 		if math.Abs(av.TotalActualAmount-bv.TotalActualAmount) > 1e-6 {
 			return false
+		}
+		for i := range av.Claims {
+			ac, bc := av.Claims[i], bv.Claims[i]
+			if ac.ClaimID != bc.ClaimID || ac.PatientName != bc.PatientName ||
+				len(ac.Lines) != len(bc.Lines) {
+				return false
+			}
+			if math.Abs(ac.TotalCharge-bc.TotalCharge) > 1e-6 ||
+				math.Abs(ac.PaymentAmount-bc.PaymentAmount) > 1e-6 {
+				return false
+			}
+			for j := range ac.Lines {
+				al, bl := ac.Lines[j], bc.Lines[j]
+				if al.ServiceCode != bl.ServiceCode ||
+					math.Abs(al.ChargeAmount-bl.ChargeAmount) > 1e-6 ||
+					math.Abs(al.AdjudicatedAmount-bl.AdjudicatedAmount) > 1e-6 {
+					return false
+				}
+			}
 		}
 		return true
 	default:

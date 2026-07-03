@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -121,8 +122,7 @@ func main() {
 	repetitions := uint32(*repsFlag)
 	sf, df := *serFilter, *dataFilter
 	if flag.NArg() >= 1 {
-		var r uint64
-		if _, err := fmt.Sscanf(flag.Arg(0), "%d", &r); err == nil && r > 0 {
+		if r, err := strconv.ParseUint(flag.Arg(0), 10, 32); err == nil && r > 0 {
 			repetitions = uint32(r)
 		}
 	}
@@ -171,8 +171,7 @@ func main() {
 	// Seed from config/benchmark_config.yaml via BENCHMARK_SEED (run scripts set it).
 	seed := uint64(42)
 	if s := os.Getenv("BENCHMARK_SEED"); s != "" {
-		var parsed uint64
-		if _, err := fmt.Sscanf(s, "%d", &parsed); err == nil {
+		if parsed, err := strconv.ParseUint(s, 10, 64); err == nil {
 			seed = parsed
 		}
 	}
@@ -208,7 +207,6 @@ func main() {
 				continue
 			}
 			for _, mode := range modes {
-				hadError := false
 				for i := uint32(0); i < repetitions; i++ {
 					var serNs, deserNs uint64
 					var size int
@@ -219,21 +217,16 @@ func main() {
 						serNs, deserNs, size, merr = measureStream(ser, fx)
 					}
 					if merr != nil {
-						if !hadError {
-							fmt.Fprintf(os.Stderr, "[ERROR] %s / %s / %s: %v\n", ser.Name(), fx.Name, mode, merr)
-							errors = append(errors, benchError{
-								testDataName:   fx.Name,
-								serializerName: ser.Name(),
-								stringOrStream: mode,
-								repetition:     i,
-								errorText:      merr.Error(),
-							})
-							hadError = true
-						}
-						continue
-					}
-					if hadError {
-						continue
+						fmt.Fprintf(os.Stderr, "[ERROR] %s / %s / %s: %v\n", ser.Name(), fx.Name, mode, merr)
+						errors = append(errors, benchError{
+							testDataName:   fx.Name,
+							serializerName: ser.Name(),
+							stringOrStream: mode,
+							repetition:     i,
+							errorText:      merr.Error(),
+						})
+						// Stop further reps for this mode; failure is deterministic enough.
+						break
 					}
 					_ = logger.WriteRow(
 						mode, fx.Name, repetitions, i, ser.Name(),
