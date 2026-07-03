@@ -41,12 +41,11 @@ from that file via [`read-config.py`](read-config.py) / [`lib/config.sh`](lib/co
 
 | Flag | Description |
 |------|-------------|
-| `-m, --mode MODE` | `smoke`, `all-single`, `full`, or `research` (default: `all-single`) |
+| `-m, --mode MODE` | `smoke`, `all-single`, `full`, or `research` (default: `all-single`; reps from config) |
 | `-l, --lang LANG` | Only run one language id from config (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, …) |
-| `-p, --plots` | Generate violin plots (``) |
-| `-s, --summary` | Generate Markdown summary report |
+| `-a, --analyze` | After the run, generate analysis artifacts (tables + plots) via `analyze-benchmarks` |
 | `-r, --regression-check` | Check for performance regressions |
-| `-t, --threshold PERCENT` | Regression threshold (default: 10%) |
+| `-t, --threshold PERCENT` | Regression threshold (default: `regression.threshold_percent` in config) |
 | `-b, --save-baseline` | Save current results as baseline |
 | `-h, --help` | Show help message |
 

@@ -11,12 +11,13 @@ Numbers on those pages depend on the machine and CSV used to generate them. Re-r
 - [Rust results](../rust/results.md)
 - [C results](../c/results.md)
 - [JavaScript results](../javascript/results.md)
+- [Go results](../go/results.md)
 
 ## Inventories (what we measure)
 
 Hand-written overviews (serializer lists and caveats):
 
-- [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md)
+- [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [C](../c/index.md) · [JavaScript](../javascript/index.md) · [Go](../go/index.md)
 
 Related:
 

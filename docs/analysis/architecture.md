@@ -73,7 +73,7 @@ config/benchmark_config.yaml   # modes, stats defaults, language registry, CSV s
 schemas/                       # test_data_config.json, protos
 logs/<language>/               # YYYY-MM-DD-HHMMSS.csv (timestamped results)
 analysis/                      # Python analysis package (local reports)
-python/ | c-sharp/ | rust/ | c/ | javascript/   # language harnesses
+python/ | c-sharp/ | rust/ | c/ | javascript/ | go/   # language harnesses
 docs/                          # MkDocs site (inventories, results snapshots, this page)
 scripts/run-all-benchmarks.sh  # multi-language orchestrator
 ```

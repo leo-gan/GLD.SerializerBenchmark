@@ -2,7 +2,7 @@
 
 > **[Serialization 101 & Benchmark Reports](https://leo-gan.github.io/GLD.SerializerBenchmark/)** — theory, methodology, and results for senior engineers and data scientists.
 
-Scientific, multi-language benchmark suite for **comparing serialization libraries** fairly: identical conceptual payloads, dual I/O modes (`bytes`/`stream`), nanosecond timing (C# ticks normalized in analysis), and publication-oriented statistics (bootstrap CIs, effect sizes, non-parametric A/B tests).
+Scientific, multi-language benchmark suite for **comparing serialization libraries** fairly: identical conceptual payloads, dual I/O modes (`bytes`/`stream`), nanosecond timing in harness CSVs (C# ticks normalized in analysis; published latency tables use **µs**), and publication-oriented statistics (bootstrap CIs, effect sizes, non-parametric A/B tests).
 
 ## Who it is for
 

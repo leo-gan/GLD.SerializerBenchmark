@@ -7,7 +7,7 @@ Empirical performance comparison of serializers across **C#**, **Python**, **Rus
 | C# | 38 | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
 | Python | 16 | [Overview](../python/index.md) | [Results](../python/results.md) |
 | Rust | 15 | [Overview](../rust/index.md) | [Results](../rust/results.md) |
-| C | 11 | [Overview](../c/index.md) | [Results](../c/results.md) |
+| C | 12 | [Overview](../c/index.md) | [Results](../c/results.md) |
 | JavaScript | 12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 | Go | 12 | [Overview](../go/index.md) | [Results](../go/results.md) |
 

@@ -9,7 +9,7 @@ Regenerate site snapshots **locally** (`analyze-benchmarks`); CI does not re-run
 | Source | Role |
 |--------|------|
 | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output (gitignored) |
-| `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, …) |
+| `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, …) |
 | `csv_schema` in master config | Required/optional columns |
 
 Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`, `SerializerName`, `TimeSer`, `TimeDeser`, `Size`, `TimeSerAndDeser`, ops/sec fields as emitted by runners. Optional: `MemoryPeakBytes`, `FidelityScore`, `SerializerVersion`, …
