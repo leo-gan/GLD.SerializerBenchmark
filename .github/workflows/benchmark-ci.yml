@@ -249,7 +249,10 @@ jobs:
           .venv/bin/pytest -q
 
       - name: Smoke read-config (master YAML)
+        # Use the analysis venv (has PyYAML); system python3 alone cannot load the config.
         run: |
-          PYTHONPATH=analysis/src python3 scripts/read-config.py --enabled-langs
-          PYTHONPATH=analysis/src python3 scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go)\|'
-          PYTHONPATH=analysis/src python3 scripts/read-config.py --mode-reps smoke
+          set -euo pipefail
+          PY=analysis/.venv/bin/python
+          $PY scripts/read-config.py --enabled-langs | grep -qw go
+          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go)\|'
+          test "$($PY scripts/read-config.py --mode-reps smoke)" = "2"
