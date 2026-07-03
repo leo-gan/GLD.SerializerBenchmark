@@ -42,6 +42,7 @@ else
 fi
 
 export LOG_DIR
-echo "[INFO] Running: bin/serializer-benchmark-go ${ARGS[*]}"
-./bin/serializer-benchmark-go "${ARGS[@]}" -log-dir "$LOG_DIR"
+# Flags must precede positionals (Go flag.Parse stops at first non-flag).
+echo "[INFO] Running: bin/serializer-benchmark-go -log-dir $LOG_DIR ${ARGS[*]}"
+./bin/serializer-benchmark-go -log-dir "$LOG_DIR" "${ARGS[@]}"
 echo "[SUCCESS] Go logs in $LOG_DIR"
