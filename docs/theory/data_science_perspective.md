@@ -69,12 +69,11 @@ CSV is not “wrong”—it is a **lossy social format**. Treat it as an edge ad
 
 ### Language-native: pickle, joblib, and friends
 
-```text
-Trust boundary check (do this every time):
-  Is the byte stream from a fully trusted source you control?
-    NO  → do not unpickle / do not use native deserialize
-    YES → still prefer portable formats for anything long-lived or multi-language
-```
+**Trust boundary check (do this every time):**
+
+- Is the byte stream from a fully trusted source you control?
+  - **No** → do not unpickle / do not use native deserialize
+  - **Yes** → still prefer portable formats for anything long-lived or multi-language
 
 | Approach | Strength | Risk |
 |----------|----------|------|
@@ -191,30 +190,17 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 
 ## Decision guide (start here when choosing)
 
-```text
-What is the primary access pattern?
-│
-├─ Analytic scans over many rows, few columns
-│    → Parquet (disk/lake) + Arrow (memory/engines)
-│
-├─ Event stream with long retention & multiple consumer versions
-│    → Avro (or similar) + schema registry + compatibility policy
-│
-├─ Human-edited or lowest-common-denominator export
-│    → CSV (document the schema separately!)
-│
-├─ Application/API interchange, semi-structured, multi-language
-│    → JSON (+ schema/validation if the contract matters)
-│
-├─ Compact internal dynamic payloads (not a lake table)
-│    → MessagePack / CBOR (still validate at boundaries)
-│
-├─ Online low-latency service contract (features, inference I/O)
-│    → Schema-driven (Protobuf/…) — see engineering perspective
-│
-└─ Python-only, trusted, short-lived object graph
-     → pickle/joblib only with eyes open; plan a portable exit path
-```
+**What is the primary access pattern?**
+
+| If you need… | Prefer… |
+|--------------|---------|
+| Analytic scans over many rows, few columns | **Parquet** (disk/lake) + **Arrow** (memory/engines) |
+| Event stream with long retention and multiple consumer versions | **Avro** (or similar) + schema registry + compatibility policy |
+| Human-edited or lowest-common-denominator export | **CSV** (document the schema separately) |
+| Application/API interchange, semi-structured, multi-language | **JSON** (+ schema/validation if the contract matters) |
+| Compact internal dynamic payloads (not a lake table) | **MessagePack** / **CBOR** (still validate at boundaries) |
+| Online low-latency service contract (features, inference I/O) | **Schema-driven** (Protobuf/…) — see [engineering perspective](engineer_perspective.md) |
+| Python-only, trusted, short-lived object graph | **pickle** / **joblib** only with eyes open; plan a portable exit path |
 
 ### Quick comparison for data workloads
 

@@ -32,17 +32,15 @@ Detailed inventory per language: [Serialization categories](../analysis/serializ
 
 ### Decision sketch (services)
 
-```text
-Need humans to read/edit the payload on the wire?
-  ├── YES → JSON family (add JSON Schema / OpenAPI when contracts matter)
-  └── NO
-        Need shared IDL/schema and multi-language evolution rules?
-          ├── YES → Schema-driven (Protobuf-like, Avro-like, or zero-copy IDL)
-          └── NO
-                Single language/runtime, complex graphs, fully trusted data?
-                  ├── YES → Language-native only inside a hard trust boundary
-                  └── NO  → Schemaless binary (MessagePack/CBOR/…) + validation at edges
-```
+1. **Need humans to read/edit the payload on the wire?**
+   - **Yes** → JSON family (add JSON Schema / OpenAPI when contracts matter)
+   - **No** → continue below
+2. **Need shared IDL/schema and multi-language evolution rules?**
+   - **Yes** → Schema-driven (Protobuf-like, Avro-like, or zero-copy IDL)
+   - **No** → continue below
+3. **Single language/runtime, complex graphs, fully trusted data?**
+   - **Yes** → Language-native only inside a hard trust boundary
+   - **No** → Schemaless binary (MessagePack / CBOR / …) **and** validation at edges
 
 ---
 

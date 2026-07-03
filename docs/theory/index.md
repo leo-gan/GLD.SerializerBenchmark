@@ -79,20 +79,9 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 
 ## How this course connects to the rest of the docs
 
-```text
-docs/theory/          ← you are here (concepts & judgment)
-    ├── historical_perspective.md
-    ├── data_science_perspective.md
-    └── engineer_perspective.md
-         │
-         ▼
-docs/analysis/        ← how we measure; categories; methodology
-    serialization_categories.md, BENCHMARK_SUMMARY.md, …
-         │
-         ▼
-docs/<language>/      ← what is registered per language; Results
-    c-sharp, python, rust, go, javascript, c, …
-```
+1. **`docs/theory/`** — you are here (concepts and judgment): historical, data science, and engineering perspectives  
+2. **`docs/analysis/`** — how we measure; categories; methodology (`serialization_categories.md`, `BENCHMARK_SUMMARY.md`, …)  
+3. **`docs/<language>/`** — what is registered per language; **Results** (C#, Python, Rust, Go, JavaScript, C, …)  
 
 | Next step | Link |
 |-----------|------|
