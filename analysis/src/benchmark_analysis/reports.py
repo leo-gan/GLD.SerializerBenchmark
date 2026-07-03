@@ -119,9 +119,9 @@ def _generate_violin_plot(
     if subset.empty:
         return None
 
-    # Filter to top N serializers by mean time (default: top 5 fastest).
+    # Filter to top N serializers by mean time (default: top 5 for every language).
     if top_n is None:
-        top_n = 5
+        top_n = VIOLIN_TOP_N_SERIALIZERS
     if top_n > 0:
         mean_times = subset.groupby("SerializerName")["Time_us"].mean().sort_values()
         # If fewer than top_n exist, head() returns all of them.
@@ -216,6 +216,9 @@ def _generate_violin_plot(
         plt.close('all')
         return None
 
+
+# Violin plots: always show this many fastest serializers per fixture (all languages).
+VIOLIN_TOP_N_SERIALIZERS = 5
 
 # CSV StringOrStream values → human labels (not "number of bytes")
 _MODE_DISPLAY = {
@@ -675,6 +678,8 @@ def generate_language_results_pages(
             lines.append("")
             lines.append(
                 "Density of serialize / deserialize timings (µs; log scale when medians span ≥5×). "
+                "**Each plot shows only the top 5 serializers by mean total time** for that fixture "
+                "(same rule for every language). Full rankings are in the pivot tables above. "
                 "Provenance (fixture, CSV path, modes, *n*) is printed on each image."
             )
             lines.append("")
@@ -755,17 +760,14 @@ def generate_violin_plots(
     # lang_id -> {fixture -> plot filename} plus source path for results.md
     plot_meta: Dict[str, Dict] = {}
 
-    # Always show the five fastest serializers per fixture (by mean total time).
-    # Keeps crowded languages readable and makes plots comparable across langs.
-    TOP_N_SERIALIZERS = 5
-
     for lang_id in lang_ids:
         records = by_lang[lang_id]
         display = _lang_display_map().get(lang_id, lang_id)
         melted = _records_to_melted_df(records, display)
         if melted.empty:
             continue
-        top_n = TOP_N_SERIALIZERS
+        # Same top-N for csharp, python, rust, c, javascript, go, …
+        top_n = VIOLIN_TOP_N_SERIALIZERS
         file_key = _lang_file_key(lang_id, display)
         src = lang_sources.get(lang_id) or lang_sources.get(file_key)
         if src:
