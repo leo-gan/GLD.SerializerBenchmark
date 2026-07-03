@@ -29,10 +29,10 @@ CSV → normalize times to ns → drop warmup → outlier filter → descriptive
 
 | Runner | Stored unit | Normalization |
 |--------|-------------|---------------|
-| New harnesses (Python, Rust, C, JS, …) | Nanoseconds | As-is |
+| New harnesses (Python, Rust, C, JS, Go, …) | Nanoseconds | As-is |
 | Legacy C# | Ticks (1 tick = 100 ns) | Prefer `Language=csharp`; else magnitude heuristic (very large values treated as ticks × 100) |
 
-All analysis and published tables use **nanoseconds** (plots often show **µs**).
+Internal stats and CSV remain in **nanoseconds**. Published **latency** pivots on language Results pages display **microseconds** (µs = ns ÷ 1000). Violin plots also use **µs** and show only the **top 5 serializers** by mean total time per fixture.
 
 Ops/sec in reports is derived consistently as **`1e9 / mean_time_ns`** (the documented `statistics.throughput_from` key is not currently read; the derivation is hard-coded to the mean total time).
 
@@ -131,7 +131,7 @@ Generated 32 violin plots
 | Output | Content |
 |--------|---------|
 | `docs/<lang>/results.md` | Pivot tables + violin embeds for one language |
-| `docs/analysis/plots/violin/*.png` | Split violins: serialize vs deserialize distributions (µs; log scale when medians span ≥5×) |
+| `docs/analysis/plots/violin/*.png` | Split violins: serialize vs deserialize (µs; top 5 by mean total time; log scale when medians span ≥5×) |
 | `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** hub links to language Results (not regenerated) |
 | Console | Load counts, warmup/outlier tallies |
 

@@ -30,7 +30,7 @@ Related:
 This hub file is **not** rewritten by `analyze-benchmarks`. To refresh a language’s tables and plots only:
 
 ```bash
-analyze-benchmarks -l python   # or rust, csharp, c, javascript
+analyze-benchmarks -l python   # or rust, csharp, c, javascript, go
 # or all languages (still does not modify this hub):
 analyze-benchmarks
 ```
