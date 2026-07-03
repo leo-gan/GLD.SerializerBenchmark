@@ -6,8 +6,6 @@ This is the **systems & application engineering lens** of [Serialization 101](in
 
 This page is conceptual. Libraries and timings **in this suite** are on language **Overview** / **Results** and under [Benchmarks](../analysis/index.md), including the suite’s [Serialization categories](../analysis/serialization_categories.md).
 
-> Linked terms with a small logo icon are first-occurrence encyclopedia links. Hover the term for a short tip. Only the icon marks the link type—no extra label text.
-
 ---
 
 ## Who this page is for

@@ -6,8 +6,6 @@ This is the **data & [ML](https://en.wikipedia.org/wiki/Machine_learning "ML —
 
 Measured libraries and timings for **this suite** live under language **Overview** / **Results** and [Benchmarks](../analysis/index.md). This page is conceptual judgment for data practitioners.
 
-> Linked terms with a small logo icon are first-occurrence encyclopedia links. Hover the term for a short tip. Only the icon marks the link type—no extra label text.
-
 ---
 
 ## Who this page is for

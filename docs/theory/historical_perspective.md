@@ -4,8 +4,6 @@
 
 This is Module 1 of [Serialization 101](index.md). It is a single chronological narrative—constraints, people, and paradigm shifts. It is **not** a how-to for data lakes or production services. For those, use the [data science](data_science_perspective.md) and [engineering](engineer_perspective.md) perspectives.
 
-> Linked terms with a small logo icon are first-occurrence encyclopedia links. Hover the term for a short tip. Only the icon marks the link type—no extra label text.
-
 ---
 
 ## The problem that never goes away
