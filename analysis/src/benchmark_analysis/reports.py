@@ -187,11 +187,26 @@ def _generate_violin_plot(
             g.set_axis_labels('Time (microseconds)', 'Serializer')
             g.set(xlim=(0, None))
 
-        # Footer: map image file ↔ CSV / fixture (visible on the PNG itself)
+        # Footer: map image file ↔ CSV / fixture + important run config
+        cfg_note = ""
+        try:
+            from .environment import important_config_summary, load_run_config
+
+            # data_source may be relative logs/... path; try as-is then repo-relative
+            cfg_doc = load_run_config(data_source) if data_source else None
+            if cfg_doc is None and data_source and not os.path.isabs(data_source):
+                # best-effort: leave empty
+                pass
+            bits = important_config_summary(cfg_doc)[:4]
+            if bits:
+                cfg_note = "  |  " + " · ".join(bits)
+        except Exception:
+            cfg_note = ""
         g.fig.text(
             0.5,
             -0.02,
-            f"Plot file: {img_name}  |  CSV: {src}  |  filter: TestDataName == {data_type!r}",
+            f"Plot file: {img_name}  |  CSV: {src}  |  filter: TestDataName == {data_type!r}"
+            f"{cfg_note}",
             ha="center",
             va="top",
             fontsize=8,
@@ -321,7 +336,21 @@ def _time_ns_to_display_us(value_key: str) -> bool:
     key = (value_key or "").lower()
     if not key.endswith("_ns"):
         return False
-    return "time" in key or "latency" in key or "duration" in key
+    # avg_time_*, total_median_ns, ser_p95_ns, total_ci_low_ns, etc.
+    return (
+        "time" in key
+        or "latency" in key
+        or "duration" in key
+        or key.startswith(("ser_", "deser_", "total_"))
+        or "_median_ns" in key
+        or "_mean_ns" in key
+        or "_p" in key  # percentiles *_p95_ns
+        or "_ci_" in key
+        or "_mad_ns" in key
+        or "_std_ns" in key
+        or "_min_ns" in key
+        or "_max_ns" in key
+    )
 
 
 def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
@@ -563,26 +592,175 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
     return "\n".join(lines)
 
 
+def _load_lang_run_config(csv_path: Optional[str]) -> Optional[Dict]:
+    if not csv_path:
+        return None
+    try:
+        from .environment import load_run_config
+
+        return load_run_config(csv_path)
+    except Exception:
+        return None
+
+
+def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
+    """Markdown block summarizing important run config for Results pages."""
+    from .environment import important_config_summary
+
+    doc = _load_lang_run_config(csv_path)
+    lines = [
+        "## Run configuration (important)",
+        "",
+        "Key fields from the run sidecar (`*.configs.json`, or legacy "
+        "`*.environment.json`). Full metric definitions: "
+        "[Metrics catalog](../analysis/METRICS.md). "
+        "Optional blocks (`dataset`, `serializers`) appear only when captured.",
+        "",
+    ]
+    if csv_path:
+        lines.append(f"- **Source CSV:** `{csv_path.replace(chr(92), '/')}`")
+    summary = important_config_summary(doc)
+    if summary:
+        for s in summary:
+            lines.append(f"- {s}")
+    else:
+        lines.append(
+            "- *No sidecar config found beside the latest CSV "
+            "(re-run harness with environment capture to populate).*"
+        )
+    # Highlight dataset / serializer inventory when present
+    if doc:
+        ds = doc.get("dataset") if isinstance(doc.get("dataset"), dict) else {}
+        if ds.get("fixtures"):
+            names = [f.get("name") for f in ds["fixtures"] if isinstance(f, dict) and f.get("name")]
+            if names:
+                lines.append(f"- **Fixtures (config):** {', '.join(str(n) for n in names)}")
+        ser = doc.get("serializers") if isinstance(doc.get("serializers"), dict) else {}
+        items = ser.get("items") if isinstance(ser.get("items"), list) else []
+        if items:
+            lines.append("- **Serializers (from CSV):**")
+            for it in items[:40]:
+                if not isinstance(it, dict):
+                    continue
+                n, v = it.get("name"), it.get("version") or ""
+                lines.append(f"  - `{n}`" + (f" @ {v}" if v else ""))
+            if len(items) > 40:
+                lines.append(f"  - … ({len(items) - 40} more)")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") -> str:
+    """Compact multi-way table: high-importance scientific fields (median-first)."""
+    from .metrics_catalog import MULTI_WAY_SUMMARY_FIELDS, filter_field_ids, load_metrics_config
+
+    if not stats:
+        return ""
+    cfg = load_metrics_config()
+    field_ids = [f[0] for f in MULTI_WAY_SUMMARY_FIELDS]
+    keep = set(filter_field_ids(field_ids, profile=profile, metrics_cfg=cfg))
+    cols = [c for c in MULTI_WAY_SUMMARY_FIELDS if c[0] in keep]
+    if not cols:
+        return ""
+
+    # One row per serializer: prefer bytes mode, average medians across fixtures if needed
+    by_ser: Dict[str, List[Dict]] = defaultdict(list)
+    for e in stats.values():
+        if not isinstance(e, dict):
+            continue
+        by_ser[str(e.get("serializer") or "")].append(e)
+
+    # Rank by total_median_ns (mean of medians across entries) ascending
+    def rank_key(ser: str) -> float:
+        entries = by_ser[ser]
+        vals = [float(e.get("total_median_ns") or e.get("avg_time_total_ns") or 1e300) for e in entries]
+        return sum(vals) / max(len(vals), 1)
+
+    serializers = sorted(by_ser.keys(), key=rank_key)
+    if not serializers:
+        return ""
+
+    lines = [
+        f"### {title}: scientific summary (multi-way, important metrics)",
+        "",
+        "Default multi-serializer view shows **high-importance** metrics only "
+        "([METRICS.md](../analysis/METRICS.md)). "
+        "**Primary rank:** median total latency (lower is better). "
+        "Pairwise / version A/B reports use the full metric set. "
+        "Latency cells are **µs** (analysis storage remains ns).",
+        "",
+    ]
+    headers = ["serializer"] + [c[1] for c in cols]
+    lines.append("| " + " | ".join(headers) + " |")
+    lines.append("|" + "---|" * len(headers))
+
+    # Best median total for bold
+    best_med = min(rank_key(s) for s in serializers) if serializers else None
+
+    for ser in serializers:
+        entries = by_ser[ser]
+        cells = [ser]
+        is_best = best_med is not None and abs(rank_key(ser) - best_med) < 1e-9
+        for field_id, _title, is_time, _hib in cols:
+            vals = []
+            for e in entries:
+                v = e.get(field_id)
+                if v is None and field_id == "total_median_ns":
+                    v = e.get("avg_time_total_ns")
+                if v is None:
+                    continue
+                if isinstance(v, (int, float)) and not isinstance(v, bool):
+                    vals.append(float(v))
+                elif field_id in ("serializer_version", "effect_vs_fastest_cliffs_label"):
+                    # take first non-empty string
+                    if str(v).strip():
+                        vals.append(str(v).strip())  # type: ignore[arg-type]
+                        break
+            if not vals:
+                cells.append("-")
+                continue
+            if field_id in ("serializer_version", "effect_vs_fastest_cliffs_label"):
+                cells.append(str(vals[0]))
+                continue
+            if field_id == "runs":
+                cells.append(str(int(sum(vals))))
+                continue
+            num = sum(vals) / len(vals)
+            if is_time:
+                text = f"{num / 1000.0:.3g}"  # ns → µs
+            elif field_id == "avg_ops_per_sec":
+                text = f"{num:.3g}"
+            elif field_id == "mean_fidelity":
+                text = f"{num:.2f}"
+            elif field_id == "median_size_bytes":
+                text = f"{num:.4g}"
+            else:
+                text = f"{num:.4g}"
+            if is_best and field_id == "total_median_ns":
+                text = f"**{text}**"
+            cells.append(text)
+        lines.append("| " + " | ".join(cells) + " |")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def generate_language_results_pages(
     multi_lang_stats: Optional[Dict],
     violin_images: Optional[Dict[str, str]],
     docs_root: str,
     plot_rel_from_lang: str = "../analysis/plots/violin",
+    lang_sources: Optional[Dict[str, str]] = None,
+    metrics_profile: str = "multi_way",
 ) -> List[str]:
     """Write ``docs/<lang>/results.md`` with pivots + violin embeds per language.
 
-    Args:
-        multi_lang_stats: Stat groups from analysis (any languages).
-        violin_images: Map ``{lang_key}_{TestData}`` -> filename under plots/violin/.
-        docs_root: Path to the MkDocs ``docs/`` directory.
-        plot_rel_from_lang: Relative path from ``docs/<lang>/`` to plot images.
-
-    Returns:
-        List of written file paths.
+    Multi-way pages emphasize **high-importance** metrics (see METRICS.md).
+    Important run-config fields from ``*.configs.json`` are published when present.
     """
     by_lang = _stats_by_language(multi_lang_stats)
     violin_images = dict(violin_images or {})
     plot_meta = violin_images.pop("_meta", None) or {}
+    lang_sources = lang_sources or {}
     written: List[str] = []
 
     # Group plot keys by lang_id
@@ -615,6 +793,7 @@ def generate_language_results_pages(
         out_path = os.path.join(docs_root, docs_dir, "results.md")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
+        src_csv = lang_sources.get(lang_id) or (plot_meta.get(lang_id) or {}).get("source")
         lines = [
             f"# {title} — Benchmark Results",
             "",
@@ -624,14 +803,18 @@ def generate_language_results_pages(
             "Numbers may differ if you re-run benchmarks on another machine.",
             "",
             f"Serializer inventory and caveats: [{title} overview](index.md). "
-            "Methods: [Analysis Methodology](../analysis/ANALYSIS_METHODOLOGY.md).",
+            "Methods: [Analysis Methodology](../analysis/ANALYSIS_METHODOLOGY.md). "
+            "Metric definitions & importance tiers: [Metrics catalog](../analysis/METRICS.md).",
             "",
         ]
+        lines.append(_config_section_md(lang_id, src_csv if isinstance(src_csv, str) else None))
 
         if stats:
             lines.append("## Pivot tables")
             lines.append("")
             lines.append(
+                "Multi-way leaderboards emphasize **high-importance** metrics "
+                "(configurable via `metrics.multi_way` in master config). "
                 "Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer "
                 "API; **stream mode** = write/read through a stream-like path. "
                 "These names are *not* payload sizes. "
@@ -640,13 +823,29 @@ def generate_language_results_pages(
                 "Latency tables are in **microseconds** (µs)."
             )
             lines.append("")
+            sci = _scientific_summary_md(
+                stats,
+                title,
+                profile=metrics_profile or "multi_way",
+            )
+            if sci:
+                lines.append(sci)
+            lines.append(
+                _pivot_table_md(
+                    stats,
+                    "serializer",
+                    "mode",
+                    "total_median_ns",
+                    f"{title}: Median Total Time (µs) by Serializer and API Mode",
+                )
+            )
             lines.append(
                 _pivot_table_md(
                     stats,
                     "serializer",
                     "mode",
                     "avg_time_total_ns",
-                    f"{title}: Avg Total Time (µs) by Serializer and API Mode",
+                    f"{title}: Mean Total Time (µs) by Serializer and API Mode",
                 )
             )
             lines.append(
@@ -655,7 +854,7 @@ def generate_language_results_pages(
                     "serializer",
                     "test_data",
                     "avg_ops_per_sec",
-                    f"{title}: Ops/Sec by Serializer and Data Type",
+                    f"{title}: Ops/Sec (from mean) by Serializer and Data Type",
                 )
             )
             cat_md = _category_pivot_md(

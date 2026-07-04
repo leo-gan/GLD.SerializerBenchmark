@@ -14,6 +14,7 @@ This page is the **hub** for the Benchmarks section: what each analysis page is 
 | **[Serialization categories](serialization_categories.md)** | Four paradigms and which suite entries fall where | Fair within-paradigm comparisons |
 | **[Test data types](test_data_configuration.md)** | Shared fixtures (`Person`, `Telemetry`, …) and size knobs | What `TestDataName` means |
 | **[Analysis methodology](ANALYSIS_METHODOLOGY.md)** | Stats pipeline: warmup, outliers, CIs, effect sizes, outputs | How CSVs become tables/plots |
+| **[Metrics catalog](METRICS.md)** | Every metric, importance tier, multi-way vs pairwise | What each published number means |
 | **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to register a new harness | Extending the matrix |
 | **[Benchmark Results](BENCHMARK_SUMMARY.md)** | Static links to language **Results** + how to regenerate | Numbers and plots |
 

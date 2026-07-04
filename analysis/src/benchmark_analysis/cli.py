@@ -296,10 +296,17 @@ def _generate_artifacts(
 
     # docs/analysis/BENCHMARK_SUMMARY.md is a static hub — do not regenerate it.
     docs_root = str(docs_dir) if docs_dir.is_dir() else str(reports_root)
+    metrics_profile = (
+        os.environ.get("BENCHMARK_METRICS_PROFILE")
+        or (stats_config or {}).get("_metrics_profile")
+        or "multi_way"
+    )
     generate_language_results_pages(
         multi_lang_stats=all_stats,
         violin_images=violin_images,
         docs_root=docs_root,
+        lang_sources=lang_sources,
+        metrics_profile=str(metrics_profile),
     )
 
 
@@ -397,6 +404,15 @@ def main():
     )
     parser.add_argument("--config", default=None, help="Path to benchmark_config.yaml")
     parser.add_argument(
+        "--metrics-profile",
+        choices=("multi_way", "pairwise", "full"),
+        default=None,
+        help=(
+            "Publication metric tier: multi_way (default, high-importance only), "
+            "pairwise (A/B full set), or full. See docs/analysis/METRICS.md."
+        ),
+    )
+    parser.add_argument(
         "--list",
         action="store_true",
         help="List available result files per language and exit",
@@ -405,6 +421,9 @@ def main():
     args = parser.parse_args()
 
     stats_cfg = load_stats_config(args.config)
+    if args.metrics_profile:
+        stats_cfg["_metrics_profile"] = args.metrics_profile
+        os.environ["BENCHMARK_METRICS_PROFILE"] = args.metrics_profile
     logs_root = Path(args.logs_root)
 
     if args.list:

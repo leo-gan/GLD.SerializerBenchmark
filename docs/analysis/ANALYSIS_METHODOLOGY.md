@@ -2,6 +2,8 @@
 
 **Job of this page:** how the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and violin plots.
 
+**Metric definitions, importance tiers (multi-way vs pairwise), and CSV field catalog:** [Metrics catalog](METRICS.md).
+
 | For this instead… | Go here |
 |-------------------|---------|
 | What the harness times / suite layout | [Benchmark architecture](architecture.md) |
@@ -126,6 +128,7 @@ Regression gates: `analyze-benchmarks --check-regression` against `paths.baselin
 | `docs/<lang>/results.md` | Pivot tables + violin embeds for one language |
 | `docs/analysis/plots/violin/*.png` | Split violins: ser vs deser (µs; top 5 by mean total; log scale when medians span ≥5×) |
 | `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** hub of links (not regenerated) |
+| `logs/<lang>/*.configs.json` | Run sidecar: environment + optional dataset/serializer metadata (legacy `*.environment.json` still readable) |
 | Console | Load counts, warmup/outlier tallies |
 
 Violins consume the **same** sanitized records as the summary tables (shared `prepare_analysis_records` output). No separate q99 tail clip or independent per-operation IQR. Display may still limit to the top 5 serializers by mean time for readability; that does not change table membership.

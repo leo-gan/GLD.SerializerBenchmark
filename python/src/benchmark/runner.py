@@ -177,7 +177,7 @@ def run(
 
 
     ts_file = log_dir_path / f"{ts}.csv"
-    # Per-run errors beside the result CSV (same stem as .environment.json)
+    # Per-run errors beside the result CSV (same stem as .configs.json)
     error_file = log_dir_path / f"{ts}.errors.csv"
 
     log_file = str(ts_file)
@@ -215,7 +215,7 @@ def run(
     try:
         from benchmark_analysis.environment import capture_environment
         capture_environment(str(ts_file))
-        print(f"[PROGRESS] Environment captured -> {ts_file.with_suffix('.environment.json')}")
+        print(f"[PROGRESS] Run config captured -> {ts_file.with_suffix('.configs.json')}")
     except ImportError:
         print("[WARN] benchmark_analysis not installed; skipping environment capture")
     except Exception as e:

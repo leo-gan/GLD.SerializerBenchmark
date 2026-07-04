@@ -105,7 +105,7 @@ while IFS='|' read -r id runner_dir runner_script; do
 done <<< "$LANG_RUNNERS"
 
 echo ""
-echo -e "${BLUE}Capturing environment metadata...${NC}"
+echo -e "${BLUE}Capturing run config sidecars (configs.json)...${NC}"
 cd "$PROJECT_ROOT"
 for lang in "${ENABLED_LANGS[@]}"; do
     f="$LOG_DIR/$lang/${BENCHMARK_TS}.csv"
@@ -116,7 +116,7 @@ for lang in "${ENABLED_LANGS[@]}"; do
     if [[ -f "$f" ]]; then
         if command -v python3 >/dev/null 2>&1; then
             PYTHONPATH="$PROJECT_ROOT/analysis/src" python3 -m benchmark_analysis.environment "$f" >/dev/null 2>&1 \
-                && echo -e "  $lang: ${GREEN}✓${NC} environment captured" \
+                && echo -e "  $lang: ${GREEN}✓${NC} configs.json written" \
                 || echo -e "  $lang: ${YELLOW}skipped${NC} (analysis package not available)"
         fi
     fi

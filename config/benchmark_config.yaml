@@ -208,10 +208,72 @@ paths:
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
   #   YYYY-MM-DD-HHMMSS.errors.csv      (fidelity / harness failures for that run)
-  #   YYYY-MM-DD-HHMMSS.environment.json
+  #   YYYY-MM-DD-HHMMSS.configs.json    (environment + optional dataset/serializer metadata)
+  #   (legacy) YYYY-MM-DD-HHMMSS.environment.json still readable by analysis
   # Analysis auto-selects the most recent timestamped result CSV per language.
   log_filename: "YYYY-MM-DD-HHMMSS.csv"
   errors_filename: "YYYY-MM-DD-HHMMSS.errors.csv"
+  configs_filename: "YYYY-MM-DD-HHMMSS.configs.json"
+
+# -----------------------------------------------------------------------------
+# Run sidecar (configs.json written beside each result CSV)
+# -----------------------------------------------------------------------------
+run_sidecar:
+  # Prefer configs.json; analysis also loads legacy .environment.json
+  filename_suffix: "configs.json"
+  include_environment: true
+  # dataset / serializers blocks are optional enrichment (best-effort)
+  include_dataset: true
+  include_serializers: true
+
+# -----------------------------------------------------------------------------
+# Metric importance (multi-way leaderboards vs pairwise / version A/B)
+# Full catalog: docs/analysis/METRICS.md
+# -----------------------------------------------------------------------------
+metrics:
+  catalog_version: "1"
+  # multi_way: language Results, N-serializer pivots (keeps published surface small)
+  multi_way:
+    include_importance: [high]
+    rank_by: total_median_ns          # lower is better
+    secondary_rank_by: median_size_bytes
+  # pairwise: --compare-a/--compare-b or explicit --metrics-profile pairwise|full
+  pairwise:
+    include_importance: [high, medium, low]
+  # Field id → importance (unknown ids default to medium)
+  importance:
+    total_median_ns: high
+    ser_median_ns: high
+    deser_median_ns: high
+    avg_time_total_ns: medium
+    avg_time_ser_ns: medium
+    avg_time_deser_ns: medium
+    total_mean_ns: medium
+    ser_mean_ns: medium
+    deser_mean_ns: medium
+    avg_ops_per_sec: high
+    median_size_bytes: high
+    mean_fidelity: high
+    serializer_version: high
+    runs: high
+    runs_raw: medium
+    warmup_skipped: medium
+    outliers_removed: medium
+    total_ci_low_ns: medium
+    total_ci_high_ns: medium
+    total_p95_ns: medium
+    total_p99_ns: medium
+    total_cv: medium
+    total_mad_ns: medium
+    total_std_ns: medium
+    mean_memory_peak_bytes: medium
+    effect_vs_fastest_cliffs_delta: medium
+    effect_vs_fastest_cliffs_label: medium
+    effect_vs_fastest_hedges_g: low
+    mann_whitney_u: medium
+    p_value: medium
+    p_value_holm: medium
+
   environment_filename: "YYYY-MM-DD-HHMMSS.environment.json"
   baseline_filename: reports/baseline.json
 
