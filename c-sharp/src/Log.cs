@@ -32,12 +32,12 @@ namespace GLD.SerializerBenchmark
         public string SerializerName { get; set; }
 
         /// <summary>
-        ///     Time of serialization in ticks.
+        ///     Time of serialization in nanoseconds.
         /// </summary>
         public long TimeSer { get; set; }
 
         /// <summary>
-        ///     Time of deserialization in ticks.
+        ///     Time of deserialization in nanoseconds.
         /// </summary>
         public long TimeDeser { get; set; }
 
@@ -55,27 +55,27 @@ namespace GLD.SerializerBenchmark
         }
 
         /// <summary>
-        ///     Serialization Operations per second. One tick = 0.1 mcsec
+        ///     Serialization operations per second (from nanosecond duration).
         /// </summary>
         public double OpPerSecSer
         {
-            get { return TimeSer > 0 ? 10000000/TimeSer : 0; }
+            get { return TimeSer > 0 ? 1_000_000_000.0 / TimeSer : 0; }
         }
 
         /// <summary>
-        ///     Deerialization Operations per second. One tick = 0.1 mcsec
+        ///     Deserialization operations per second (from nanosecond duration).
         /// </summary>
         public double OpPerSecDeser
         {
-            get { return TimeDeser > 0 ? 10000000/TimeDeser : 0; }
+            get { return TimeDeser > 0 ? 1_000_000_000.0 / TimeDeser : 0; }
         }
 
         /// <summary>
-        ///     Sum of Serialization and Deserialization Operations per second. One tick = 0.1 mcsec
+        ///     Combined serialize+deserialize operations per second (from nanosecond duration).
         /// </summary>
         public double OpPerSecSerAndDeser
         {
-            get { return (TimeSer + TimeDeser) > 0 ? 10000000/(TimeSer + TimeDeser) : 0; }
+            get { return (TimeSer + TimeDeser) > 0 ? 1_000_000_000.0 / (TimeSer + TimeDeser) : 0; }
         }
 
         /// <summary>Harness language id for multi-language CSV schema.</summary>

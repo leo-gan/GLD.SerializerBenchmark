@@ -68,7 +68,7 @@ CSV modes are **I/O API paths** (`bytes` / `stream`, or legacy C# `string` / `st
 |-------------|--------|
 | Output | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` matching `csv_schema` |
 | `Language` column | Language id (`csharp`, `python`, `rust`, …) |
-| Time unit | **Nanoseconds** for new harnesses (legacy C# ticks normalized in analysis) |
+| Time unit | **Nanoseconds** for all harnesses (including C#) |
 | Modes | `bytes` / `stream` (C# may use `string` / `stream`) |
 | Timed section | Serialize + deserialize only |
 | Fidelity | Round-trip check; failures → `logs/<lang>/<ts>.errors.csv` |

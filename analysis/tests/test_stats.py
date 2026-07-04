@@ -20,17 +20,18 @@ from benchmark_analysis.stats import (
     hedges_g,
     holm_correction,
     mann_whitney_u,
+    normalize_to_nanoseconds,
     _filter_outliers,
-    _detect_time_unit,
 )
 
 
-def test_detect_time_unit_csharp():
-    assert _detect_time_unit(1000, "csharp") == 100.0
-    assert _detect_time_unit(1000, "python") == 1.0
-    assert _detect_time_unit(1000, "rust") == 1.0
-    assert _detect_time_unit(5_000_000, None) == 100.0  # heuristic ticks
-    assert _detect_time_unit(500, None) == 1.0
+def test_normalize_to_nanoseconds_passthrough():
+    """All harnesses emit nanoseconds; normalize is identity for every language."""
+    assert normalize_to_nanoseconds(1000, "csharp") == 1000.0
+    assert normalize_to_nanoseconds(1000, "python") == 1000.0
+    assert normalize_to_nanoseconds(1000, "rust") == 1000.0
+    assert normalize_to_nanoseconds(5_000_000, None) == 5_000_000.0
+    assert normalize_to_nanoseconds(500, None) == 500.0
 
 
 def test_filter_outliers_removes_extreme():

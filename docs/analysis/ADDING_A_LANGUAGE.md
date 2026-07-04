@@ -35,7 +35,7 @@ Meet the [harness contract summary](architecture.md#harness-contract-summary) an
 |-------------|--------|
 | Output CSV | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with `csv_schema` |
 | `Language` column | Must match the language id (e.g. `go`) |
-| Time unit | **Nanoseconds** for all new runners |
+| Time unit | **Nanoseconds** for all runners (including C#) |
 | Modes | `bytes` and `stream` (or `string`/`stream` if matching legacy C#) |
 | Warmup | Repetition index 0 excluded by analysis |
 | Prepare outside loop | Schema compile, type registration, buffer pools — not timed |

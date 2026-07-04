@@ -2,7 +2,7 @@
 
 > **[Serialization 101 & Benchmark Reports](https://leo-gan.github.io/GLD.SerializerBenchmark/)** — theory, methodology, and results for senior engineers and data scientists.
 
-Scientific, multi-language benchmark suite for **comparing serialization libraries** fairly: identical conceptual payloads, dual I/O modes (`bytes`/`stream`), nanosecond timing in harness CSVs (C# ticks normalized in analysis; published latency tables use **µs**), and publication-oriented statistics (bootstrap CIs, effect sizes, non-parametric A/B tests).
+Scientific, multi-language benchmark suite for **comparing serialization libraries** fairly: identical conceptual payloads, dual I/O modes (`bytes`/`stream`), nanosecond timing in harness CSVs (all languages including C#; published latency tables use **µs**), and publication-oriented statistics (bootstrap CIs, effect sizes, non-parametric A/B tests).
 
 ## Who it is for
 
@@ -88,7 +88,7 @@ See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistic
 
 - [Benchmark architecture](docs/analysis/architecture.md)
 - [Adding a language](docs/analysis/ADDING_A_LANGUAGE.md)
-- Harness contract: emit timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with `Language=<id>`, times in **nanoseconds** (except legacy C# ticks)
+- Harness contract: emit timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with `Language=<id>`, times in **nanoseconds**
 
 ## Documentation site
 

@@ -29,7 +29,7 @@ Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`
 
 Processing is **per group**: `(Language, SerializerName, TestDataName, StringOrStream)` unless noted.
 
-1. Load CSV → normalize times to **nanoseconds**  
+1. Load CSV → treat times as **nanoseconds** (already emitted by harnesses)  
 2. Drop warmup (`RepetitionIndex == 0` when enabled)  
 3. Optional outlier filter (default Tukey IQR)  
 4. Descriptive statistics  
@@ -39,14 +39,10 @@ Processing is **per group**: `(Language, SerializerName, TestDataName, StringOrS
 
 ### Time units
 
-| Runner | Stored unit | Normalization |
-|--------|-------------|---------------|
-| New harnesses (Python, Rust, C, JS, Go, …) | Nanoseconds | As-is |
-| Legacy C# | Ticks (1 tick = 100 ns) | Prefer `Language=csharp`; else magnitude heuristic (very large values treated as ticks × 100) |
+All language harnesses (including **C#**) write `TimeSer` / `TimeDeser` / `TimeSerAndDeser` in **nanoseconds**. Analysis treats CSV times as nanoseconds with no per-language conversion.
 
-Internal stats stay in **nanoseconds**. Published **latency** pivots on language Results use **microseconds** (µs = ns ÷ 1000). Violin plots use **µs** and show the **top 5 serializers** by mean total time per fixture.
+Published **latency** pivots on language Results use **microseconds** (µs = ns ÷ 1000). Violin plots use **µs** and show the **top 5 serializers** by mean total time per fixture.
 
-Ops/sec in reports is derived as **`1e9 / mean_time_ns`** (hard-coded to mean total time; the documented `statistics.throughput_from` key is not currently read).
 
 ### Warmup exclusion
 

@@ -39,7 +39,7 @@ Every serializer is tested in **both modes**, matching C# coverage. For librarie
 
 | Metric | How It Is Measured | Rationale |
 | :--- | :--- | :--- |
-| **Throughput (ops/sec)** | `1_000_000_000 / nanoseconds` for serialize, deserialize, and combined. | Matches C# tick-based ops/sec. |
+| **Throughput (ops/sec)** | `1_000_000_000 / nanoseconds` for serialize, deserialize, and combined. | Same formula as other harnesses (including C#). |
 | **Latency** | Total elapsed nanoseconds per repetition (warm-up excluded when `repetitions > 1`). | Equivalent to C# model; per-call p50/p99 omitted to avoid instrumentation overhead. |
 | **Memory Allocation** | `tracemalloc` peak allocated bytes during each repetition. | Standard Python heap profiler; documents that C-extension allocations (orjson, msgpack) may be under-counted. |
 | **Output Size** | `len(bytes)` in bytes mode; `BytesIO.tell()` in stream mode. | Directly comparable to C# `Size`. |

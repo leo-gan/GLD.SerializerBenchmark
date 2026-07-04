@@ -156,12 +156,13 @@ namespace GLD.SerializerBenchmark
                     log.Size = serializedString.Length;
                 }
                 serSuccessful = true;
-                log.TimeSer = sw.ElapsedTicks;
+                // Nanoseconds (same unit as other language harnesses).
+                log.TimeSer = (long)sw.Elapsed.TotalNanoseconds;
 
                 processed = streaming
                     ? serializer.Deserialize(serializedStream)
                     : serializer.Deserialize(serializedString);
-                log.TimeDeser = sw.ElapsedTicks - log.TimeSer;
+                log.TimeDeser = (long)sw.Elapsed.TotalNanoseconds - log.TimeSer;
                 sw.Stop();
             }
             catch (Exception ex)
