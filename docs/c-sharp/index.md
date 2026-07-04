@@ -4,7 +4,7 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 ## What this benchmark measures vs the wider ecosystem
 
-This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
+This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
 
 **Not in this suite:** System.Text.Json, MessagePack-CSharp, Wire (ecosystem context only).
 
@@ -16,7 +16,6 @@ This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | MS Bond Json | JSON / Bond | Bond JSON protocol |
 | MS DataContract | XML | `DataContractSerializer` |
 | MS DataContract Json | JSON | `DataContractJsonSerializer` |
-| JavaScriptSerializer (N/A) | JSON (stub) | Legacy `System.Web`; not meaningful on .NET 8 |
 | MS XmlSerializer | XML | Classic `XmlSerializer` |
 | fastJson | JSON | FastJson |
 | Jil | JSON | Jil (Sigil) |
@@ -53,7 +52,6 @@ This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 
 - Coverage is **per fixture**; many skip/fail **ObjectGraph**. Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Bond, Google.Protobuf, FluentSerializer, BinaryPack, ZeroFormatter, MemoryPack, FlatSharp often need schemas or generated models.
-- **JavaScriptSerializer (N/A)** is a stub — do not treat timings as real.
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.
 
 Harness: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).

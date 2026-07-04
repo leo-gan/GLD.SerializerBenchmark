@@ -12,7 +12,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **Extensive Library Support**: Benchmarks for **38 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, MemoryPack, Ceras, FlatSharp, Hyperion, and more). **Not** included: System.Text.Json, MessagePack-CSharp, Wire.
+- **Extensive Library Support**: Benchmarks for **37 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, MemoryPack, Ceras, FlatSharp, Hyperion, and more). **Not** included: System.Text.Json, MessagePack-CSharp, Wire.
 - **Diverse Test Data**: Realistic data structures including Telemetry, EDI documents, Object Graphs, and simple POCOs.
 - **Dual Mode Testing**: Every serializer is tested in both **String** and **Stream** serialization modes.
 - **Detailed Reporting**: Generates raw metrics and error tracking in `.csv` format for deep analysis.

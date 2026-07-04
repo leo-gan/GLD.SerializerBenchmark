@@ -27,7 +27,7 @@ Counts match the **registered inventories on each language Overview** (hand-writ
 
 | Language | Serializers (registered) | Inventory (hand-written SoT) | Results (generated snapshot) |
 |----------|--------------------------|------------------------------|------------------------------|
-| C# | **38** | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
+| C# | **37** | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
 | Python | **16** | [Overview](../python/index.md) | [Results](../python/results.md) |
 | Rust | **15** | [Overview](../rust/index.md) | [Results](../rust/results.md) |
 | C | **12** | [Overview](../c/index.md) | [Results](../c/results.md) |

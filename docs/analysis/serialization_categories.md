@@ -10,7 +10,7 @@
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview SoT): C# **38** · Python **16** · Rust **15** · C **12** · JavaScript **12** (simdjson optional) · Go **12**.
+Registered counts (Overview SoT): C# **37** · Python **16** · Rust **15** · C **12** · JavaScript **12** (simdjson optional) · Go **12**.
 
 ---
 

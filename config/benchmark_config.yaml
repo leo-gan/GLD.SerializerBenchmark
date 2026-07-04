@@ -227,7 +227,7 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 38 serializers — see docs/c-sharp/index.md
+    # 37 serializers — see docs/c-sharp/index.md
 
   python:
     display_name: Python
