@@ -8,22 +8,22 @@ Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runn
 
 | Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
 |----------|----------|---------|---------------------------------|-------------|-------|
-| json | JSON | stdlib | dict | adapted | Baseline text JSON |
-| orjson | JSON | `orjson` | dict | adapted | Rust core; conversion untimed |
-| msgspec | JSON | `msgspec` | Struct | native (`encode_into`) | Typed array-like Structs |
-| rapidjson | JSON | `python-rapidjson` | dict | adapted | C++ RapidJSON bindings |
-| pydantic | JSON | `pydantic` v2 | BaseModel | adapted | Validation-oriented API models |
-| mashumaro | JSON | `mashumaro` | dataclass | adapted | ORJSONEncoder/Decoder |
-| serpyco-rs | JSON | `serpyco-rs` + `orjson` | dataclass | adapted | dump/load + orjson wire |
-| msgspec-msgpack | Binary | `msgspec` | Struct | native | Same Struct path, MessagePack |
-| msgpack | Binary | `msgpack` | dict | native | Reference MessagePack |
-| cbor2 | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
-| protobuf | Schema | `protobuf` | Message | adapted | From `schemas/benchmark_data.proto` |
 | avro | Schema | `fastavro` | record dict | native | Compact schemaless size; dict/union path slower than protobuf C++ |
-| flatbuffers | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
-| pickle | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
+| cbor2 | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | cloudpickle | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
 | dill | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
+| flatbuffers | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
+| json | JSON | stdlib | dict | adapted | Baseline text JSON |
+| mashumaro | JSON | `mashumaro` | dataclass | adapted | ORJSONEncoder/Decoder |
+| msgpack | Binary | `msgpack` | dict | native | Reference MessagePack |
+| msgspec | JSON | `msgspec` | Struct | native (`encode_into`) | Typed array-like Structs |
+| msgspec-msgpack | Binary | `msgspec` | Struct | native | Same Struct path, MessagePack |
+| orjson | JSON | `orjson` | dict | adapted | Rust core; conversion untimed |
+| pickle | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
+| protobuf | Schema | `protobuf` | Message | adapted | From `schemas/benchmark_data.proto` |
+| pydantic | JSON | `pydantic` v2 | BaseModel | adapted | Validation-oriented API models |
+| rapidjson | JSON | `python-rapidjson` | dict | adapted | C++ RapidJSON bindings |
+| serpyco-rs | JSON | `serpyco-rs` + `orjson` | dataclass | adapted | dump/load + orjson wire |
 
 ### Call-path contract (fair timing)
 

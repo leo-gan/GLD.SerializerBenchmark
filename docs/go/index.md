@@ -13,18 +13,18 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
-| encoding/json | JSON | stdlib | struct tags | native | Baseline |
-| sonic | JSON | bytedance/sonic | `ConfigDefault` + Pretouch | native | SIMD-oriented hot path |
-| goccy/go-json | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
-| jsoniter | JSON | json-iterator/go | compatible config | native | Widely deployed |
-| segmentio/encoding/json | JSON | segmentio/encoding | drop-in API | native | Production fork |
-| vmihailenco/msgpack | MessagePack | msgpack/v5 | struct tags | native | De-facto Go msgpack |
-| shamaton/msgpack | MessagePack | msgpack/v3 | Marshal/Unmarshal | adapted | Benchmark staple |
-| fxamacker/cbor | CBOR | cbor/v2 | reused Enc/DecMode | native | CoreDet encoding |
 | encoding/gob | Native | stdlib | registered types | native | Go-to-Go only |
+| encoding/json | JSON | stdlib | struct tags | native | Baseline |
+| fxamacker/cbor | CBOR | cbor/v2 | reused Enc/DecMode | native | CoreDet encoding |
+| goccy/go-json | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
+| hamba/avro | Schema | hamba/avro/v2 | schema in `prepare` | adapted | Record schemas per type |
+| jsoniter | JSON | json-iterator/go | compatible config | native | Widely deployed |
 | mongo-bson | Document | mongo-driver/bson | struct tags | adapted | MongoDB interop |
 | protobuf | Schema | protobuf + gen | messages in `prepare` | adapted | Shared `.proto` |
-| hamba/avro | Schema | hamba/avro/v2 | schema in `prepare` | adapted | Record schemas per type |
+| segmentio/encoding/json | JSON | segmentio/encoding | drop-in API | native | Production fork |
+| shamaton/msgpack | MessagePack | msgpack/v3 | Marshal/Unmarshal | adapted | Benchmark staple |
+| sonic | JSON | bytedance/sonic | `ConfigDefault` + Pretouch | native | SIMD-oriented hot path |
+| vmihailenco/msgpack | MessagePack | msgpack/v5 | struct tags | native | De-facto Go msgpack |
 
 ### Call-path contract (same idea as Python/Rust)
 
