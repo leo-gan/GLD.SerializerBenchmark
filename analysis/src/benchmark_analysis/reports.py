@@ -604,13 +604,17 @@ def _load_lang_run_config(csv_path: Optional[str]) -> Optional[Dict]:
 
 
 def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
-    """Markdown block summarizing important run config for Results pages."""
+    """Run-config block for the **end** of Results pages.
+
+    Always emits a visible ``## Run configuration (important)`` heading (TOC +
+    page end). Body is collapsed by default via Material/pymdownx ``???`` details
+    (only the details summary line is clickable; expand to see host/seed/etc.).
+    """
     from .environment import important_config_summary
 
     doc = _load_lang_run_config(csv_path)
-    lines = [
-        "## Run configuration (important)",
-        "",
+    # Indent body by 4 spaces so it stays inside the collapsed details block.
+    body: List[str] = [
         "Key fields from the run sidecar (`*.configs.json`, or legacy "
         "`*.environment.json`). Full metric definitions: "
         "[Metrics catalog](../analysis/METRICS.md). "
@@ -618,34 +622,44 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
         "",
     ]
     if csv_path:
-        lines.append(f"- **Source CSV:** `{csv_path.replace(chr(92), '/')}`")
+        body.append(f"- **Source CSV:** `{csv_path.replace(chr(92), '/')}`")
     summary = important_config_summary(doc)
     if summary:
         for s in summary:
-            lines.append(f"- {s}")
+            body.append(f"- {s}")
     else:
-        lines.append(
+        body.append(
             "- *No sidecar config found beside the latest CSV "
             "(re-run harness with environment capture to populate).*"
         )
-    # Highlight dataset / serializer inventory when present
     if doc:
         ds = doc.get("dataset") if isinstance(doc.get("dataset"), dict) else {}
         if ds.get("fixtures"):
             names = [f.get("name") for f in ds["fixtures"] if isinstance(f, dict) and f.get("name")]
             if names:
-                lines.append(f"- **Fixtures (config):** {', '.join(str(n) for n in names)}")
+                body.append(f"- **Fixtures (config):** {', '.join(str(n) for n in names)}")
         ser = doc.get("serializers") if isinstance(doc.get("serializers"), dict) else {}
         items = ser.get("items") if isinstance(ser.get("items"), list) else []
         if items:
-            lines.append("- **Serializers (from CSV):**")
+            body.append("- **Serializers (from CSV):**")
             for it in items[:40]:
                 if not isinstance(it, dict):
                     continue
                 n, v = it.get("name"), it.get("version") or ""
-                lines.append(f"  - `{n}`" + (f" @ {v}" if v else ""))
+                body.append(f"  - `{n}`" + (f" @ {v}" if v else ""))
             if len(items) > 40:
-                lines.append(f"  - … ({len(items) - 40} more)")
+                body.append(f"  - … ({len(items) - 40} more)")
+
+    # H2 always visible at end of page; details body collapsed by default.
+    lines = [
+        "",
+        "## Run configuration (important)",
+        "",
+        '??? note "Show host, seed, serializers, and source CSV"',
+        "",
+    ]
+    for line in body:
+        lines.append(f"    {line}" if line else "    ")
     lines.append("")
     return "\n".join(lines)
 
@@ -807,7 +821,6 @@ def generate_language_results_pages(
             "Metric definitions & importance tiers: [Metrics catalog](../analysis/METRICS.md).",
             "",
         ]
-        lines.append(_config_section_md(lang_id, src_csv if isinstance(src_csv, str) else None))
 
         if stats:
             lines.append("## Pivot tables")
@@ -922,6 +935,10 @@ def generate_language_results_pages(
             "and is not rewritten. Commit the updated `results.md` / plot paths as needed."
         )
         lines.append("")
+        # Collapsed at end: title always visible, body hidden by default (Material ??? details).
+        lines.append(
+            _config_section_md(lang_id, src_csv if isinstance(src_csv, str) else None)
+        )
 
         with open(out_path, "w", encoding="utf-8") as f:
             f.write("\n".join(lines))
