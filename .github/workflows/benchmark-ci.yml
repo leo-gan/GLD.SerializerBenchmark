@@ -1,9 +1,14 @@
 name: Benchmark CI
 
-# Harness smoke checks (per language when those paths change) and analysis unit
-# tests (when analysis/ or shared config/schemas change). Summaries and plots are
-# generated locally and committed under docs/analysis/ for GitHub Pages — never
-# here. workflow_dispatch runs all jobs for the chosen mode (smoke by default).
+# Per-language smoke when that harness changes; analysis unit tests when analysis/
+# or shared config/scripts change. Shared schemas/** still fan out to all language
+# jobs (fixture contract). Summaries/plots are committed under docs/ — not built here.
+#
+# Why a C#-only commit on a mixed PR still showed every language job:
+# dorny/paths-filter on pull_request compares the *whole PR* to the base branch.
+# Older filters also listed config/scripts/workflow on *every* language, so any
+# shared-file change forced the full matrix. Language jobs now key mainly on
+# their own tree.
 
 on:
   push:
@@ -54,49 +59,27 @@ jobs:
         uses: dorny/paths-filter@v3
         id: filter
         with:
+          # pull_request: all files in the PR vs base (not only the tip commit).
+          # push: files in the push. workflow_dispatch: jobs use inputs, not filters.
           filters: |
             csharp:
               - 'c-sharp/**'
-              - 'config/benchmark_config.yaml'
               - 'schemas/**'
-              - 'scripts/lib/**'
-              - 'scripts/read-config.py'
-              - '.github/workflows/benchmark-ci.yml'
             python:
               - 'python/**'
-              - 'config/benchmark_config.yaml'
               - 'schemas/**'
-              - 'scripts/lib/**'
-              - 'scripts/read-config.py'
-              - '.github/workflows/benchmark-ci.yml'
             rust:
               - 'rust/**'
-              - 'config/benchmark_config.yaml'
               - 'schemas/**'
-              - 'scripts/lib/**'
-              - 'scripts/read-config.py'
-              - '.github/workflows/benchmark-ci.yml'
             c:
               - 'c/**'
-              - 'config/benchmark_config.yaml'
               - 'schemas/**'
-              - 'scripts/lib/**'
-              - 'scripts/read-config.py'
-              - '.github/workflows/benchmark-ci.yml'
             javascript:
               - 'javascript/**'
-              - 'config/benchmark_config.yaml'
               - 'schemas/**'
-              - 'scripts/lib/**'
-              - 'scripts/read-config.py'
-              - '.github/workflows/benchmark-ci.yml'
             go:
               - 'go/**'
-              - 'config/benchmark_config.yaml'
               - 'schemas/**'
-              - 'scripts/lib/**'
-              - 'scripts/read-config.py'
-              - '.github/workflows/benchmark-ci.yml'
             analysis:
               - 'analysis/**'
               - 'config/benchmark_config.yaml'
