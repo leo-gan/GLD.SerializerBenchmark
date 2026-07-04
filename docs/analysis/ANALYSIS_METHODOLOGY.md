@@ -29,9 +29,11 @@ Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`
 
 Processing is **per group**: `(Language, SerializerName, TestDataName, StringOrStream)` unless noted.
 
-1. Load CSV → treat times as **nanoseconds** (already emitted by harnesses)  
+A single function, `prepare_analysis_records` in `stats.py`, performs steps 1–3 and feeds **both** summary tables and violin plots so they cannot diverge on sample membership or units.
+
+1. Load CSV → normalize times via central config (`csv_schema.time_unit`, optional `languages.<id>.time_unit`)  
 2. Drop warmup (`RepetitionIndex == 0` when enabled)  
-3. Optional outlier filter (default Tukey IQR)  
+3. Optional **all-or-nothing** outlier filter (default Tukey IQR on ser ∧ deser ∧ total)  
 4. Descriptive statistics  
 5. Bootstrap CI on the mean (when enabled)  
 6. Effect sizes vs fastest serializer in the group  
@@ -39,30 +41,34 @@ Processing is **per group**: `(Language, SerializerName, TestDataName, StringOrS
 
 ### Time units
 
-All language harnesses (including **C#**) write `TimeSer` / `TimeDeser` / `TimeSerAndDeser` in **nanoseconds**. Analysis treats CSV times as nanoseconds with no per-language conversion.
+All language harnesses (including **C#**) write `TimeSer` / `TimeDeser` / `TimeSerAndDeser` in **nanoseconds**. The analysis package resolves the scale once from master config (`csv_schema.time_unit`, overridable per language) and applies the same factor everywhere — never a median heuristic or ad-hoc language name match.
 
 Published **latency** pivots on language Results use **microseconds** (µs = ns ÷ 1000). Violin plots use **µs** and show the **top 5 serializers** by mean total time per fixture.
 
 
 ### Warmup exclusion
 
-If `statistics.exclude_warmup` is true (default), rows with **`RepetitionIndex == 0`** are dropped before outlier filtering and summaries. That removes typical JIT / static-init / cold-cache spikes. Counts: `warmup_skipped`; `runs_raw` is the pre-warmup size.
+**Harnesses write full raw CSVs.** Every successful timed repetition is logged with its `RepetitionIndex` (including `0`). Runners must not drop warmup, apply IQR, or otherwise post-process before write.
 
-Harness guidance also lists `reproducibility.warmup_repetitions` in config.
+**Analysis only** applies the policy: if `statistics.exclude_warmup` is true (default), rows with **`RepetitionIndex == 0`** are dropped inside `prepare_analysis_records` before outlier filtering and summaries. That removes typical JIT / static-init / cold-cache spikes. Counts: `warmup_skipped`; `runs_raw` is the pre-warmup size (still reflected from the full log).
+
+Harness guidance lists `reproducibility.warmup_repetitions` in config (currently **1** leading rep treated as warmup by analysis).
 
 ### Outlier filtering
 
-Default: **Tukey IQR** (`statistics.outlier_method: iqr`, `iqr_k: 1.5`).
+Default: **Tukey IQR** (`statistics.outlier_method: iqr`, `iqr_k: 1.5`), applied **all-or-nothing** across the paired metrics of each repetition.
 
 | Rule | Default behavior |
 |------|------------------|
-| Fences | `[Q1 − k·IQR, Q3 + k·IQR]` on the group series |
+| Fences | `[Q1 − k·IQR, Q3 + k·IQR]` computed **separately** on ser, deser, and total |
+| Keep rule | A row is kept only if it is **inside all three** fences (union of outlier flags) |
 | Group size | Apply only if ≥ `min_samples_for_outlier_filter` (10) |
-| IQR = 0 | No removal |
+| IQR = 0 (per metric) | That metric contributes an all-keep mask |
 | Would drop entire group | Keep original series |
 | Method `none` | Skip filtering |
+| Method `winsorize` | Clip each series at p5/p95; never drop rows |
 
-Removed count: `outliers_removed`. Final sample size: `runs`. IQR reduces rare GC/scheduling stalls on the **mean**; still report dispersion and CIs.
+Removed count: `outliers_removed`. Final sample size: `runs` (identical for ser, deser, and total). IQR reduces rare GC/scheduling stalls on the **mean**; still report dispersion and CIs.
 
 ### Descriptive statistics (per group)
 
@@ -122,7 +128,7 @@ Regression gates: `analyze-benchmarks --check-regression` against `paths.baselin
 | `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** hub of links (not regenerated) |
 | Console | Load counts, warmup/outlier tallies |
 
-Violins exclude warmup and apply the same IQR filter per (serializer, fixture, mode, operation) as summary tables. A final per-serializer p99 clip is for KDE stability only and does not change underlying stats samples.
+Violins consume the **same** sanitized records as the summary tables (shared `prepare_analysis_records` output). No separate q99 tail clip or independent per-operation IQR. Display may still limit to the top 5 serializers by mean time for readability; that does not change table membership.
 
 How to run the CLI: [Benchmark Results — regenerating](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
 
@@ -139,9 +145,10 @@ How to run the CLI: [Benchmark Results — regenerating](BENCHMARK_SUMMARY.md#re
 
 ### Methodological disclosures
 
-- **Bootstrap reproducibility:** each group gets a *derived* seed (base `statistics.bootstrap.seed` mixed with a stable hash of the group key).  
-- **Paired series:** `times_ser`, `times_deser`, and `times_total` share a common IQR mask derived from total time.  
-- **Mann–Whitney:** tie ranks + tie-corrected variance + continuity correction (scipy when present).  
+- **Bootstrap reproducibility:** each group gets a *derived* seed (base `statistics.bootstrap.seed` mixed with a stable hash of language + serializer + fixture + mode + series prefix) so CIs are independent across groups yet fully reproducible.  
+- **Paired series:** `times_ser`, `times_deser`, and `times_total` share one all-or-nothing keep-mask (outlier on any metric drops the whole row).  
+- **Mann–Whitney:** `scipy.stats.mannwhitneyu` when available (tie-aware asymptotic method); pure-numpy fallback with tie-corrected variance + continuity correction.  
+- **Regression gates:** `--save-baseline` is skipped when `--check-regression` detects a failure, so a degraded run cannot overwrite the gate baseline.  
 - **Cliff’s δ for large N:** if the cartesian product exceeds ~2 M pairs, a 100 k-pair random sample (seeded at 0) is used.  
 - Some documented config keys (`report_*` toggles, alternate `bootstrap.method`, `effect_sizes.methods`, `throughput_from`, certain `paths.*`) are parsed for documentation but do not yet alter runtime behaviour; the implementation computes the full rich set.
 

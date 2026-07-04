@@ -97,7 +97,7 @@ From `modes:` in `config/benchmark_config.yaml` (do not hard-code counts in runn
 | `full` | 100 | Publication-quality run |
 | `research` | 500 | High-power statistical study |
 
-Warmup policy: harness guidance uses `reproducibility.warmup_repetitions` (**1**); analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true.
+Warmup policy: harnesses **always log** every successful rep (including index 0). Analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true (`reproducibility.warmup_repetitions` = **1**). Outlier filtering is analysis-only as well — raw `logs/<lang>/*.csv` files are never rewritten by the stats pipeline.
 
 ## Configuration map
 

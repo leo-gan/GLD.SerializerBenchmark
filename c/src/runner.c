@@ -92,6 +92,7 @@ int run_benchmarks(int repetitions, const char *ser_filter, const char *data_fil
             for (int mi = 0; mi < 2; mi++) {
                 const char *mode = modes[mi];
                 int had_error = 0;
+                /* Log every successful rep including r==0 (warmup). Analysis drops warmup later. */
                 for (int r = 0; r < repetitions; r++) {
                     size_t out_len = 0;
                     test_fixture_t out_fx;

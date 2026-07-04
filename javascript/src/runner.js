@@ -61,6 +61,7 @@ for (const fx of fixtures) {
       console.error(`[WARN] prepare failed ${ser.name}/${fx.name}: ${e.message}`);
       continue;
     }
+    // Log every successful rep including i===0 (warmup). Analysis drops warmup later.
     for (const mode of modes) {
       let hadError = false;
       for (let i = 0; i < repetitions; i++) {

@@ -68,7 +68,13 @@ CSV_HEADER = [
 
 
 class LogStorage:
-    """Handles CSV write/read, analogous to C# LogStorage."""
+    """Handles CSV write/read, analogous to C# LogStorage.
+
+    Contract: every successful timed repetition is appended as-is, including
+    warmup (``RepetitionIndex == 0``). Harnesses must not filter, winsorize,
+    or otherwise post-process rows before write. Warmup/outlier policy is
+    applied only by the analysis package when building tables and plots.
+    """
 
     def __init__(self, log_file_name: str):
         self._log_file_name = log_file_name
@@ -84,6 +90,7 @@ class LogStorage:
         self._file_handle.flush()
 
     def write(self, log: BenchmarkLog) -> None:
+        """Append one raw measurement row (no warmup/outlier filtering)."""
         self._writer.writerow([
             "python",
             log.string_or_stream,

@@ -13,12 +13,16 @@ namespace GLD.SerializerBenchmark
             logStorage.CloseStorage(); // close file if it is still opened for writing.
             var logs = logStorage.ReadAll();
 
-            // Only exclude warmup (RepetitionIndex == 0) if repetitions > 1
-            // When repetitions == 1, the warmup IS the only data point
-            var filteredLogs = repetitions > 1 
-                ? logs.Where(w => w.RepetitionIndex != 0) // exclude warm up
-                : logs; // include warmup when only 1 rep
-            
+            // Console summary only: when repetitions > 1, skip index 0 for the
+            // human-readable average table. The raw CSV written by LogStorage
+            // always retains every successful rep (including warmup). Analysis
+            // (benchmark_analysis) re-reads the full file and applies its own
+            // exclude_warmup / outlier policy — harnesses must not trim logs.
+            // When repetitions == 1, index 0 is the only data point; keep it here.
+            var filteredLogs = repetitions > 1
+                ? logs.Where(w => w.RepetitionIndex != 0)
+                : logs;
+
             var aggregatedResults = filteredLogs
                 .GroupBy(a => new { a.TestDataName, a.SerializerName, a.StringOrStream })
                 .ToDictionary(

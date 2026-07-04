@@ -28,7 +28,10 @@ reproducibility:
   random_seed: 42
   # Pin CPU affinity / thread count in runners when possible
   single_threaded: true
-  # Exclude first repetition(s) from timed analysis (JIT / cold caches)
+  # How many leading repetitions are treated as warmup *by analysis only*.
+  # Harnesses MUST still write those rows to the raw CSV (RepetitionIndex 0..n-1
+  # with no post-filter). Warmup is dropped only when statistics.exclude_warmup
+  # is true in the analysis package — never when logging.
   warmup_repetitions: 1
   # Environment capture written beside logs
   capture_environment: true
@@ -127,7 +130,9 @@ csv_schema:
 # Scientific statistics (analysis pipeline)
 # -----------------------------------------------------------------------------
 statistics:
-  # Pre-processing
+  # Pre-processing (analysis package only — raw logs under logs/<lang>/ are never rewritten)
+  # Drop rows with RepetitionIndex < reproducibility.warmup_repetitions (currently index 0)
+  # before outlier filtering and summaries. Raw CSVs still contain those rows.
   exclude_warmup: true
   outlier_method: iqr          # iqr | none | winsorize
   iqr_k: 1.5

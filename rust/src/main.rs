@@ -200,6 +200,7 @@ fn main() -> anyhow::Result<()> {
                 eprintln!("[ERROR] prepare {} / {}: {}", ser.name(), fx.name(), e);
                 continue;
             }
+            // Log every successful rep including i==0 (warmup). Analysis drops warmup later.
             for mode in &modes {
                 let mut had_error = false;
                 for i in 0..args.repetitions {

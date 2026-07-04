@@ -11,83 +11,85 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from .stats import normalize_to_nanoseconds, _filter_outliers
+from .stats import prepare_analysis_records
 
 
-def _records_to_melted_df(records: List[Dict], language: str) -> pd.DataFrame:
-    """Convert raw records to a melted dataframe for violin plots.
+def _records_to_melted_df(
+    records: List[Dict],
+    language: str,
+    *,
+    stats_config: Optional[Dict] = None,
+    pre_sanitized: bool = False,
+    language_hint: Optional[str] = None,
+) -> pd.DataFrame:
+    """Convert records to a melted dataframe for violin plots.
 
-    Uses the exact same time normalization as the stats pipeline
-    (normalize_to_nanoseconds) so violin plots match the summary tables.
+    Uses the unified :func:`prepare_analysis_records` pipeline (warmup drop,
+    config time-unit normalization, all-or-nothing paired IQR) so violin
+    plots reflect the *exact* sample population used for summary tables.
+    Pass ``pre_sanitized=True`` when *records* already came from that pipeline.
     """
     if not records:
         return pd.DataFrame()
-    df = pd.DataFrame(records)
-    # Preserve per-row Language (from parser/CSV) for correct per-record
-    # time normalization. The 'language' param is the display name for titles only.
-    if 'Language' not in df.columns:
-        df['Language'] = language
 
-    # CRITICAL: exclude warmup (RepetitionIndex == 0) to match the stats pipeline.
-    if 'RepetitionIndex' in df.columns:
-        df = df[df['RepetitionIndex'] != 0].copy()
-    if df.empty:
+    if pre_sanitized:
+        clean = list(records)
+    else:
+        # language_hint should be a language *id* (e.g. python), not display name
+        hint = language_hint
+        clean, _ = prepare_analysis_records(
+            records, config=stats_config, language_hint=hint
+        )
+    if not clean:
         return pd.DataFrame()
 
-    # Melt serialize/deserialize into Operation column
-    ser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeSer', 'OpPerSecSer', 'Language', 'RepetitionIndex']].copy()
-    ser['Operation'] = 'Serialize'
-    ser = ser.rename(columns={'TimeSer': 'Time_ns', 'OpPerSecSer': 'OpPerSec'})
+    df = pd.DataFrame(clean)
+    if "Language" not in df.columns:
+        df["Language"] = language_hint or language
 
-    deser = df[['SerializerName', 'TestDataName', 'StringOrStream', 'TimeDeser', 'OpPerSecDeser', 'Language', 'RepetitionIndex']].copy()
-    deser['Operation'] = 'Deserialize'
-    deser = deser.rename(columns={'TimeDeser': 'Time_ns', 'OpPerSecDeser': 'OpPerSec'})
+    # Melt serialize/deserialize into Operation column. Times are already ns.
+    need = [
+        "SerializerName",
+        "TestDataName",
+        "StringOrStream",
+        "TimeSer",
+        "TimeDeser",
+        "Language",
+        "RepetitionIndex",
+    ]
+    for col in need:
+        if col not in df.columns:
+            if col == "RepetitionIndex":
+                df[col] = -1
+            else:
+                return pd.DataFrame()
+
+    ser = df[
+        ["SerializerName", "TestDataName", "StringOrStream", "TimeSer", "Language", "RepetitionIndex"]
+    ].copy()
+    ser["Operation"] = "Serialize"
+    ser = ser.rename(columns={"TimeSer": "Time_ns"})
+    if "OpPerSecSer" in df.columns:
+        ser["OpPerSec"] = df["OpPerSecSer"].values
+    else:
+        ser["OpPerSec"] = 0
+
+    deser = df[
+        ["SerializerName", "TestDataName", "StringOrStream", "TimeDeser", "Language", "RepetitionIndex"]
+    ].copy()
+    deser["Operation"] = "Deserialize"
+    deser = deser.rename(columns={"TimeDeser": "Time_ns"})
+    if "OpPerSecDeser" in df.columns:
+        deser["OpPerSec"] = df["OpPerSecDeser"].values
+    else:
+        deser["OpPerSec"] = 0
 
     melted = pd.concat([ser, deser], ignore_index=True)
     if melted.empty:
         return melted
 
-    # Use the *same* language-aware normalizer as stats.py for consistency.
-    # This fixes the previous mismatch (global median heuristic vs per-lang _detect).
-    def _norm_row(row):
-        return normalize_to_nanoseconds(float(row['Time_ns']), row.get('Language'))
-    melted['Time_ns'] = melted.apply(_norm_row, axis=1)
-
-    # Drop non-positive / absurd tails (e.g. multi-second GC stalls) without
-    # the old erroneous "Time_ns < 60000" filter which wiped all real ns timings.
-    melted = melted[melted['Time_ns'] > 0]
-    if len(melted) >= 10:
-        q99 = float(melted['Time_ns'].quantile(0.99))
-        if q99 > 0:
-            melted = melted[melted['Time_ns'] <= q99 * 10]
-
-    # Apply the *same* IQR outlier filtering as the stats pipeline so that
-    # violin plots reflect the exact sample population used for the tables.
-    # Group key matches stats: (Serializer, TestData, StringOrStream) + Operation.
-    if len(melted) >= 10:
-        import numpy as np
-        group_cols = ['SerializerName', 'TestDataName', 'StringOrStream', 'Operation']
-        kept_frames = []
-        for _, g in melted.groupby(group_cols, group_keys=False):
-            vals = g['Time_ns'].tolist()
-            filtered_vals, _ = _filter_outliers(vals, method="iqr", iqr_k=1.5, min_samples=10)
-            if len(filtered_vals) == len(vals):
-                kept_frames.append(g)
-                continue
-            # Recompute the exact IQR mask on this group (same as _filter_outliers)
-            arr = np.asarray(vals, dtype=float)
-            q1 = float(np.percentile(arr, 25))
-            q3 = float(np.percentile(arr, 75))
-            iqr = q3 - q1
-            if iqr == 0:
-                kept_frames.append(g)
-                continue
-            lower = q1 - 1.5 * iqr
-            upper = q3 + 1.5 * iqr
-            mask = (arr >= lower) & (arr <= upper)
-            kept_frames.append(g[mask])
-        if kept_frames:
-            melted = pd.concat(kept_frames, ignore_index=True)
+    # Drop non-positive (invalid) only — no extra q99 tail clip / independent IQR.
+    melted = melted[melted["Time_ns"] > 0]
     return melted
 
 
@@ -112,7 +114,7 @@ def _generate_violin_plot(
     if subset.empty:
         return None
 
-    # Time_ns is already normalized to nanoseconds in _records_to_melted_df.
+    # Time_ns already normalized + filtered by the shared stats pipeline.
     subset['Time_us'] = subset['Time_ns'].astype(float) / 1000.0
     # Timings cannot be negative; drop any bad rows before KDE.
     subset = subset[subset['Time_us'] > 0].copy()
@@ -120,6 +122,8 @@ def _generate_violin_plot(
         return None
 
     # Filter to top N serializers by mean time (default: top 5 for every language).
+    # This is a *display* choice (plot density), not a change to the analysis sample
+    # used for tables — tables always include every serializer.
     if top_n is None:
         top_n = VIOLIN_TOP_N_SERIALIZERS
     if top_n > 0:
@@ -128,19 +132,8 @@ def _generate_violin_plot(
         top_serializers = mean_times.head(int(top_n)).index.tolist()
         subset = subset[subset["SerializerName"].isin(top_serializers)].copy()
 
-    # Per-serializer high-end winsorize (p99): one stalled rep must not stretch the KDE.
-    def _clip_hi(s: pd.Series) -> pd.Series:
-        if len(s) < 4:
-            return s
-        hi = float(s.quantile(0.99))
-        if hi > 0:
-            return s.clip(upper=hi)
-        return s
-
-    subset['Time_us'] = subset.groupby('SerializerName', group_keys=False)['Time_us'].transform(_clip_hi)
-    subset = subset[subset['Time_us'] > 0].copy()
-    if subset.empty:
-        return None
+    # No additional p99 winsorization: seaborn cut=0 already limits KDE to the
+    # observed data range, and tables/plots must share the same sample values.
 
     order = subset.groupby('SerializerName')['Time_us'].mean().sort_values().index.tolist()
     # Wide dynamic range (e.g. cbor ~20× faster peers) → log x so small violins stay readable.
@@ -750,6 +743,9 @@ def generate_violin_plots(
     output_dir: str,
     multi_lang_records: Optional[Dict] = None,
     lang_sources: Optional[Dict[str, str]] = None,
+    *,
+    stats_config: Optional[Dict] = None,
+    pre_sanitized: bool = False,
     **_kwargs,
 ) -> Dict[str, str]:
     """Generate violin plot images for all languages with records.
@@ -757,6 +753,9 @@ def generate_violin_plots(
     ``multi_lang_records`` maps lang_id -> list of row dicts.
     ``lang_sources`` optional map lang_id -> CSV path used for those records
     (embedded on the PNG for result↔plot mapping).
+
+    When ``pre_sanitized`` is True, records are assumed to already have been
+    processed by :func:`prepare_analysis_records` (same population as tables).
 
     Returns a dict mapping ``{lang_key}_{TestDataName}`` to image filenames.
     """
@@ -782,7 +781,13 @@ def generate_violin_plots(
     for lang_id in lang_ids:
         records = by_lang[lang_id]
         display = _lang_display_map().get(lang_id, lang_id)
-        melted = _records_to_melted_df(records, display)
+        melted = _records_to_melted_df(
+            records,
+            display,
+            stats_config=stats_config,
+            pre_sanitized=pre_sanitized,
+            language_hint=lang_id,
+        )
         if melted.empty:
             continue
         # Same top-N for csharp, python, rust, c, javascript, go, …

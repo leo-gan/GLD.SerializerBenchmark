@@ -206,6 +206,7 @@ func main() {
 				})
 				continue
 			}
+			// Log every successful rep including i==0 (warmup). Analysis drops warmup later.
 			for _, mode := range modes {
 				for i := uint32(0); i < repetitions; i++ {
 					var serNs, deserNs uint64

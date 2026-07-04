@@ -40,7 +40,7 @@ Every serializer is tested in **both modes**, matching C# coverage. For librarie
 | Metric | How It Is Measured | Rationale |
 | :--- | :--- | :--- |
 | **Throughput (ops/sec)** | `1_000_000_000 / nanoseconds` for serialize, deserialize, and combined. | Same formula as other harnesses (including C#). |
-| **Latency** | Total elapsed nanoseconds per repetition (warm-up excluded when `repetitions > 1`). | Equivalent to C# model; per-call p50/p99 omitted to avoid instrumentation overhead. |
+| **Latency** | Total elapsed nanoseconds per repetition, **all** indices written to CSV (including warmup index 0). Analysis may exclude warmup; harness console summary may too. | Raw logs stay complete for re-analysis; per-call p50/p99 omitted to avoid instrumentation overhead. |
 | **Memory Allocation** | `tracemalloc` peak allocated bytes during each repetition. | Standard Python heap profiler; documents that C-extension allocations (orjson, msgpack) may be under-counted. |
 | **Output Size** | `len(bytes)` in bytes mode; `BytesIO.tell()` in stream mode. | Directly comparable to C# `Size`. |
 | **Type Fidelity** | Semantic roundtrip equality score (1.0 = perfect, 0.0 = failure). | Relaxes strict type identity: `datetime` vs ISO string, `tuple` vs `list`, etc., are considered equal if they represent the same logical value. |
@@ -50,7 +50,7 @@ Every serializer is tested in **both modes**, matching C# coverage. For librarie
 ### Why a Custom Runner Instead of pytest-benchmark?
 
 1. **Format Parity**: The C# suite writes a specific CSV schema (`StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser`). A custom runner guarantees identical column layout plus the two Python-specific extensions (`MemoryPeakBytes`, `FidelityScore`).
-2. **Warm-up Logic**: C# excludes repetition index `0` when `repetitions > 1`. Replicating this exactly in a generic framework is fragile.
+2. **Warm-up contract**: Every successful rep (including index `0`) is written to the raw CSV. Only the analysis pipeline (`statistics.exclude_warmup`) drops warmup for tables/plots; harness console averages may mirror that for a quick readout without rewriting the file.
 3. **Multi-metric Integration**: pytest-benchmark is built around latency only. Adding `tracemalloc` peaks and semantic comparers inside a pytest fixture adds measurement noise and fixture overhead.
 4. **Stream vs Bytes Dual Mode**: pytest-benchmark's `benchmark()` fixture expects a callable; orchestrating two distinct APIs (bytes vs stream) with shared error tracking is cleaner in a standalone loop.
 

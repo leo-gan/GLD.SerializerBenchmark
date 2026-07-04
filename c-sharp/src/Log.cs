@@ -130,6 +130,10 @@ namespace GLD.SerializerBenchmark
             _logFileName = logFileName;
         }
 
+        /// <summary>
+        /// Append one raw measurement row. Includes warmup (<c>RepetitionIndex == 0</c>).
+        /// Do not filter or post-process before calling — analysis owns warmup/outlier policy.
+        /// </summary>
         public void Write(Log log)
         {
             var line = string.Join(_separator,

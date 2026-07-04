@@ -191,11 +191,17 @@ def run(
 
     storage.close()
 
-    # Aggregate and report
+    # CSV already contains *every* successful repetition (including warmup index 0).
+    # Do not rewrite or trim the log file here. Warmup exclusion is analysis-only
+    # (benchmark_analysis.statistics.exclude_warmup / prepare_analysis_records).
+    # Console summary may still de-emphasize warmup for a quick human readout.
     logs = storage.read_all()
-    # Exclude warmup (repetition_index == 0) when repetitions > 1, like C#
-    filtered = [l for l in logs if repetitions == 1 or l.repetition_index != 0]
-    results = aggregate_logs(filtered)
+    console_logs = (
+        logs
+        if repetitions == 1
+        else [l for l in logs if l.repetition_index != 0]
+    )
+    results = aggregate_logs(console_logs)
 
     print_report(
         repetitions,
@@ -265,6 +271,8 @@ def _run_repetitions(
     # We measure peak once on the first successful rep and reuse for the group.
     cached_memory_peak = 0
 
+    # Write *all* indices 0..repetitions-1 on success. Index 0 is the warmup
+    # row for analysis; it must remain in the raw CSV for audit/reprocessing.
     for i in range(repetitions):
         log = BenchmarkLog(
             string_or_stream=mode,
@@ -303,7 +311,7 @@ def _run_repetitions(
             continue
 
         if not was_error:
-            storage.write(log)
+            storage.write(log)  # includes warmup (i == 0); no post-filter on disk
 
 
 def _single_test(
