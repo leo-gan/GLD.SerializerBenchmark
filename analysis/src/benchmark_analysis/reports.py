@@ -691,11 +691,11 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
         return ""
 
     # One row per serializer: prefer bytes mode, average medians across fixtures if needed
-    by_ser: Dict[str, List[Dict]] = defaultdict(list)
+    by_ser: Dict[str, List[Dict]] = {}
     for e in stats.values():
         if not isinstance(e, dict):
             continue
-        by_ser[str(e.get("serializer") or "")].append(e)
+        by_ser.setdefault(str(e.get("serializer") or ""), []).append(e)
 
     # Rank by total_median_ns (mean of medians across entries) ascending
     def rank_key(ser: str) -> float:

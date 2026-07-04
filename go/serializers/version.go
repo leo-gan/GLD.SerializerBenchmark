@@ -17,9 +17,9 @@ func ModuleVersion(modulePath string) string {
 			return strings.TrimPrefix(d.Version, "v")
 		}
 	}
-	// Main module / stdlib markers
+	// Main module / stdlib markers. GoVersion is already like "go1.24.13".
 	if modulePath == "stdlib" {
-		return "go" + bi.GoVersion
+		return bi.GoVersion
 	}
 	return ""
 }
