@@ -45,6 +45,9 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private byte[] SerializeBytes(object serializable)
         {
+            if (serializable == null)
+                throw new ArgumentNullException(nameof(serializable));
+
             if (_primaryType == typeof(int))
             {
                 // Built-in int formatter (no dynamic object segment).
@@ -62,7 +65,7 @@ namespace GLD.SerializerBenchmark.Serializers
             if (_primaryType == typeof(StringArrayObject))
             {
                 var o = (StringArrayObject)serializable;
-                var items = o?.Items != null ? o.Items.ToList() : new List<string>();
+                var items = o.Items != null ? o.Items.ToList() : new List<string>();
                 return ZeroFormatterSerializer.Serialize(items);
             }
 

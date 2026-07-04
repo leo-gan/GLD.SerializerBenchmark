@@ -156,13 +156,14 @@ namespace GLD.SerializerBenchmark
                     log.Size = serializedString.Length;
                 }
                 serSuccessful = true;
-                // Nanoseconds (same unit as other language harnesses).
-                log.TimeSer = (long)sw.Elapsed.TotalNanoseconds;
+                // Nanoseconds from high-resolution Stopwatch ticks (not TimeSpan.TotalNanoseconds,
+                // which quantizes to 100 ns and loses sub-tick precision on many platforms).
+                log.TimeSer = ElapsedNanoseconds(sw);
 
                 processed = streaming
                     ? serializer.Deserialize(serializedStream)
                     : serializer.Deserialize(serializedString);
-                log.TimeDeser = (long)sw.Elapsed.TotalNanoseconds - log.TimeSer;
+                log.TimeDeser = ElapsedNanoseconds(sw) - log.TimeSer;
                 sw.Stop();
             }
             catch (Exception ex)
@@ -177,11 +178,18 @@ namespace GLD.SerializerBenchmark
             {
                 logStorage.Write(log);
             }
-            else 
+            else
             {
                 error.ErrorText = errorText;
                 isRepeatedError = !error.TryAddTo(errors);
             }
         }
+
+        /// <summary>
+        /// Convert <see cref="Stopwatch"/> elapsed time to whole nanoseconds using
+        /// <see cref="Stopwatch.Frequency"/> so resolution is not limited to TimeSpan's 100 ns units.
+        /// </summary>
+        private static long ElapsedNanoseconds(Stopwatch sw) =>
+            (long)((double)sw.ElapsedTicks * 1_000_000_000.0 / Stopwatch.Frequency);
     }
 }
