@@ -1,161 +1,152 @@
 # Analysis methodology
 
-How the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and violin plots. Timing *collection* (what is timed in the harness) is defined in [Benchmark architecture](architecture.md). Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml).
+**Job of this page:** how the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and violin plots.
 
-Regenerate site snapshots **locally** (`analyze-benchmarks`); CI does not re-run analysis. Numbers appear on language **Results** pages ([Benchmark Results](BENCHMARK_SUMMARY.md) hub).
+| For this instead… | Go here |
+|-------------------|---------|
+| What the harness times / suite layout | [Benchmark architecture](architecture.md) |
+| Fixture meanings | [Test data types](test_data_configuration.md) |
+| Paradigms | [Serialization categories](serialization_categories.md) |
+| How to regenerate site snapshots | [Benchmark Results](BENCHMARK_SUMMARY.md#regenerating-language-snapshots) |
+
+Defaults: `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml). Regenerate **locally** (`analyze-benchmarks`); CI does not re-run analysis.
+
+---
 
 ## Inputs
 
 | Source | Role |
 |--------|------|
-| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output (gitignored) |
+| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output under `logs/csharp`, `logs/python`, `logs/rust`, `logs/c`, `logs/javascript`, `logs/go` (gitignored) |
 | `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, …) |
-| `csv_schema` in master config | Required/optional columns |
+| `csv_schema` in master config | Required / optional columns |
 
 Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`, `SerializerName`, `TimeSer`, `TimeDeser`, `Size`, `TimeSerAndDeser`, ops/sec fields as emitted by runners. Optional: `MemoryPeakBytes`, `FidelityScore`, `SerializerVersion`, …
 
-Fixtures: [Test data types](test_data_configuration.md). Paradigms: [Serialization Categories](serialization_categories.md).
+---
 
 ## Pipeline
 
 Processing is **per group**: `(Language, SerializerName, TestDataName, StringOrStream)` unless noted.
 
-```text
-CSV → normalize times to ns → drop warmup → outlier filter → descriptive stats
-    → bootstrap CI on mean → effect sizes vs fastest in group
-```
+1. Load CSV → treat times as **nanoseconds** (already emitted by harnesses)  
+2. Drop warmup (`RepetitionIndex == 0` when enabled)  
+3. Optional outlier filter (default Tukey IQR)  
+4. Descriptive statistics  
+5. Bootstrap CI on the mean (when enabled)  
+6. Effect sizes vs fastest serializer in the group  
+7. Optional version A/B tests (`--compare-a` / `--compare-b`)
 
 ### Time units
 
-| Runner | Stored unit | Normalization |
-|--------|-------------|---------------|
-| New harnesses (Python, Rust, C, JS, Go, …) | Nanoseconds | As-is |
-| Legacy C# | Ticks (1 tick = 100 ns) | Prefer `Language=csharp`; else magnitude heuristic (very large values treated as ticks × 100) |
+All language harnesses (including **C#**) write `TimeSer` / `TimeDeser` / `TimeSerAndDeser` in **nanoseconds**. Analysis treats CSV times as nanoseconds with no per-language conversion.
 
-Internal stats and CSV remain in **nanoseconds**. Published **latency** pivots on language Results pages display **microseconds** (µs = ns ÷ 1000). Violin plots also use **µs** and show only the **top 5 serializers** by mean total time per fixture.
+Published **latency** pivots on language Results use **microseconds** (µs = ns ÷ 1000). Violin plots use **µs** and show the **top 5 serializers** by mean total time per fixture.
 
-Ops/sec in reports is derived consistently as **`1e9 / mean_time_ns`** (the documented `statistics.throughput_from` key is not currently read; the derivation is hard-coded to the mean total time).
 
 ### Warmup exclusion
 
-If `statistics.exclude_warmup` is true (default), rows with **`RepetitionIndex == 0`** are dropped before outlier filtering and summaries. That removes typical JIT / static-init / cold-cache spikes from aggregates. Count tracked as `warmup_skipped`; `runs_raw` is the pre-warmup size.
+If `statistics.exclude_warmup` is true (default), rows with **`RepetitionIndex == 0`** are dropped before outlier filtering and summaries. That removes typical JIT / static-init / cold-cache spikes. Counts: `warmup_skipped`; `runs_raw` is the pre-warmup size.
 
-Default warmup policy in config also lists `reproducibility.warmup_repetitions` for harness guidance.
+Harness guidance also lists `reproducibility.warmup_repetitions` in config.
 
 ### Outlier filtering
 
-Default method: **Tukey IQR** (`statistics.outlier_method: iqr`, `iqr_k: 1.5`).
-
-```text
-Q1, Q3 = 25th / 75th percentiles of the group series
-IQR = Q3 − Q1
-fences = [Q1 − k·IQR, Q3 + k·IQR]
-```
+Default: **Tukey IQR** (`statistics.outlier_method: iqr`, `iqr_k: 1.5`).
 
 | Rule | Default behavior |
 |------|------------------|
+| Fences | `[Q1 − k·IQR, Q3 + k·IQR]` on the group series |
 | Group size | Apply only if ≥ `min_samples_for_outlier_filter` (10) |
 | IQR = 0 | No removal |
 | Would drop entire group | Keep original series |
 | Method `none` | Skip filtering |
 
-Removed count: `outliers_removed`. Final sample size: `runs`.
-
-IQR reduces the impact of rare GC/scheduling stalls on the **mean**; it is not a substitute for reporting dispersion and CIs.
+Removed count: `outliers_removed`. Final sample size: `runs`. IQR reduces rare GC/scheduling stalls on the **mean**; still report dispersion and CIs.
 
 ### Descriptive statistics (per group)
 
-After filtering, analysis records (names as in code / optional extended fields):
-
 | Kind | Metrics |
 |------|---------|
-| Central tendency | Mean and median of ser / deser / total times (`avg_*` / `total_mean_ns` / `total_median_ns`) |
+| Central tendency | Mean and median of ser / deser / total times |
 | Dispersion | Std, MAD, CV, min/max, percentiles (default 5, 25, 50, 75, 95, 99) |
 | Size | Median serialized `Size` (bytes) |
-| Throughput | Ops/s from mean total time (see above) |
+| Throughput | Ops/s from mean total time |
 | Provenance | `runs`, `runs_raw`, `warmup_skipped`, `outliers_removed` |
 
-Exact keys depend on the analysis version; published markdown pivots emphasize mean total time and ops/s by serializer × mode or × fixture.
+**Display-only** on language `results.md` (CSV unchanged):
 
-**Display-only formatting** on language `results.md` pages (CSV values unchanged):
-
-- Harness I/O modes are labeled **bytes mode** / **stream mode** (API path, not payload size).
-- Large numbers use a **single unit per column** (K or M from the column max) with ~2 significant digits.
-- **Bold** marks the semantic best cell in each numeric column (lowest time; highest ops/s; ties all bolded).
-- **Rust** pages also include **within-category** mean ops/s rankings (bytes mode only: JSON vs binary families, etc.).
+- I/O modes labeled **bytes mode** / **stream mode** (API path, not payload size)  
+- Large numbers: single unit per column (K or M) with ~2 significant digits  
+- **Bold** = semantic best cell (lowest time; highest ops/s; ties all bolded)  
+- **Rust** pages also include within-category mean ops/s rankings (bytes mode)
 
 ### Bootstrap CI on the mean
 
-When `statistics.bootstrap.enabled` (default): **percentile** bootstrap on the group’s total-time series (`iterations` 2000, `confidence_level` 0.95, `seed` 42). Yields `total_ci_low_ns` / `total_ci_high_ns` around the mean. Non-parametric; does not assume normality.
+When `statistics.bootstrap.enabled` (default): **percentile** bootstrap on total-time series (`iterations` 2000, `confidence_level` 0.95, `seed` 42) → `total_ci_low_ns` / `total_ci_high_ns`.
 
-**Minimum sample size**: bootstrap CIs (and some effect-size / test paths) are only produced when the post-filter sample size ≥ `min_samples_for_inference` (default 5). Below this the CI fields are set to the point estimate (degenerate interval). Very small N makes any CI unreliable; the threshold is a hard gate to avoid nonsensical output.
+Produced only when post-filter `n` ≥ `min_samples_for_inference` (default 5); otherwise CI fields degenerate to the point estimate.
 
 ### Effect sizes vs fastest in group
 
-When `statistics.effect_sizes.enabled` (default), within the same language, fixture, and I/O mode, each serializer is compared to the **fastest** (lowest mean total time) in that group:
+When `statistics.effect_sizes.enabled` (default), within the same language, fixture, and I/O mode, each serializer is compared to the **fastest** (lowest mean total time):
 
 | Method | Role |
 |--------|------|
-| **Cliff’s δ** | Non-parametric dominance; labels via config thresholds (negligible / small / medium / large) |
+| **Cliff’s δ** | Non-parametric dominance; labels via config thresholds |
 | **Hedges’ g** | Bias-corrected standardized mean difference |
 
-Fields such as `effect_vs_fastest_cliffs_delta`, `effect_vs_fastest_hedges_g`, `fastest_in_group` support within-language interpretation—not cross-runtime rankings.
+For **within-language** interpretation—not cross-runtime rankings.
 
-### Version A/B (same serializer, two builds)
+### Version A/B (same language, two runs)
 
 ```bash
-# Using full benchmark data (100 reps)
 ./scripts/run-all-benchmarks.sh -m full
 analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
-```
-
-Or with shorthands for older vs latest full run:
-
-```bash
+# or:
 analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316
 ```
 
-Writes `VERSION_COMPARE.md` with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when `statistics.hypothesis_tests` is enabled (`alpha` 0.05). Prefer this for author-facing regressions rather than comparing unrelated libraries.
+Writes `reports/VERSION_COMPARE.md` (under `paths.reports_root`, default `reports/`) with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when `statistics.hypothesis_tests` is enabled (`alpha` 0.05). Prefer this for author-facing regressions rather than comparing unrelated libraries.
 
-A full run typically produces output like:
+Regression gates: `analyze-benchmarks --check-regression` against `paths.baseline_filename` (default `reports/baseline.json`); save with `--save-baseline`.
 
-```
-Loaded 35200 csharp records from ... -> 352 stat groups
-...
-Total: 88400 records, 884 stat groups
-Generated 32 violin plots
-```
+---
 
 ## Outputs
 
 | Output | Content |
 |--------|---------|
 | `docs/<lang>/results.md` | Pivot tables + violin embeds for one language |
-| `docs/analysis/plots/violin/*.png` | Split violins: serialize vs deserialize (µs; top 5 by mean total time; log scale when medians span ≥5×) |
-| `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** hub links to language Results (not regenerated) |
+| `docs/analysis/plots/violin/*.png` | Split violins: ser vs deser (µs; top 5 by mean total; log scale when medians span ≥5×) |
+| `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** hub of links (not regenerated) |
 | Console | Load counts, warmup/outlier tallies |
 
-Violins show spread and multimodality that means hide. As of recent fixes they exclude warmup (`RepetitionIndex==0`) and apply the same IQR filter per (serializer, fixture, mode, operation) as the summary tables, so the visual density is much closer to the numbers. A final per-serializer p99 clip is still applied only for KDE rendering stability and does not change the underlying sample for statistics.
+Violins exclude warmup and apply the same IQR filter per (serializer, fixture, mode, operation) as summary tables. A final per-serializer p99 clip is for KDE stability only and does not change underlying stats samples.
+
+How to run the CLI: [Benchmark Results — regenerating](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
+
+---
 
 ## Limitations
 
-- **Cross-language absolute times** are at best directional (GC, allocator, runtime differ). Prefer within-language ranks and effect sizes.
-- **C** default builds may use portable stand-ins under real library names—see [C overview](../c/index.md) before citing as library rankings.
-- **Rust** `prost` / `rkyv` / `minicbor` use concrete native paths (codegen / `Archive` / direct encode); timed `rkyv` deserialize **materializes** owned values for fidelity—see [Rust overview](../rust/index.md). Stream mode is **native** only where noted; others are adapted bytes+buffer.
-- **Stream** mode is not always a true incremental API (some harnesses buffer then write).
-- **Fidelity** is semantic/structural, not bit-identical across formats (e.g. floats/datetimes).
-- Outlier removal and warmup policy affect means; always consider `runs`, CIs, and effect sizes.
+- **Cross-language absolute times** are directional at best (GC, allocator, runtime differ). Prefer within-language ranks and effect sizes.  
+- **C** default builds may use portable stand-ins under real library names—see [C overview](../c/index.md).  
+- **Rust** `prost` / `rkyv` / `minicbor` use concrete native paths; timed `rkyv` deserialize **materializes** owned values for fidelity—see [Rust overview](../rust/index.md).  
+- **Stream** mode is not always a true incremental API (some harnesses buffer then write).  
+- **Fidelity** is semantic/structural, not bit-identical across formats.  
+- Outlier removal and warmup policy affect means; consider `runs`, CIs, and effect sizes.
 
 ### Methodological disclosures
 
-- **Bootstrap reproducibility**: each `(serializer, test_data, mode, language)` group receives a *derived* seed (base `statistics.bootstrap.seed` mixed with a stable hash of the group key). This makes the resampled CIs independent across groups rather than sharing identical random draws.
-- **Paired series**: `times_ser`, `times_deser` and `times_total` are now subset with a common IQR mask derived from total time, preserving repetition correspondence.
-- **Mann–Whitney**: tie ranks + tie-corrected variance + continuity correction are applied (scipy is used when present).
-- **Cliff’s δ for large N**: when the cartesian product exceeds ~2 M pairs the implementation switches to a 100 k-pair random sample (seeded at 0). The approximation is documented in the source.
-- Several documented config keys (`report_*` toggles, `bootstrap.method` other than percentile, `effect_sizes.methods`, `throughput_from`, `csv_schema.time_unit`, certain `paths.*`) are parsed for documentation but do not yet alter runtime behaviour; the implementation always computes the full rich set.
+- **Bootstrap reproducibility:** each group gets a *derived* seed (base `statistics.bootstrap.seed` mixed with a stable hash of the group key).  
+- **Paired series:** `times_ser`, `times_deser`, and `times_total` share a common IQR mask derived from total time.  
+- **Mann–Whitney:** tie ranks + tie-corrected variance + continuity correction (scipy when present).  
+- **Cliff’s δ for large N:** if the cartesian product exceeds ~2 M pairs, a 100 k-pair random sample (seeded at 0) is used.  
+- Some documented config keys (`report_*` toggles, alternate `bootstrap.method`, `effect_sizes.methods`, `throughput_from`, certain `paths.*`) are parsed for documentation but do not yet alter runtime behaviour; the implementation computes the full rich set.
 
 ## References
 
-- Tukey, J.W. (1977). *Exploratory Data Analysis* (IQR fences)
-- Cliff’s delta; Hedges’ g; Mann–Whitney U (standard non-parametric toolkit)
+- Tukey, J.W. (1977). *Exploratory Data Analysis* (IQR fences)  
+- Cliff’s delta; Hedges’ g; Mann–Whitney U (standard non-parametric toolkit)  
 - [Seaborn violin / catplot](https://seaborn.pydata.org/generated/seaborn.catplot.html)

@@ -29,6 +29,8 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
             ("/python/", "python"),
             ("/rust/", "rust"),
             ("/javascript/", "javascript"),
+            ("/logs/go/", "go"),
+            ("/go/", "go"),
             ("/logs/c/", "c"),
         ):
             if token in low:

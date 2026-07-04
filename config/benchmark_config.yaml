@@ -98,8 +98,8 @@ io_modes:
 
 # -----------------------------------------------------------------------------
 # CSV output contract (all language runners MUST emit this schema)
-# TimeSer/TimeDeser/TimeSerAndDeser are always in nanoseconds for new runners.
-# Legacy C# emits ticks (100ns); analysis normalizes via Language column or auto-detect.
+# TimeSer / TimeDeser / TimeSerAndDeser are always in nanoseconds (all languages,
+# including C#). Published Results tables may display latency in microseconds.
 # -----------------------------------------------------------------------------
 csv_schema:
   required_columns:
@@ -122,9 +122,6 @@ csv_schema:
     - SerializerVersion
     - ErrorFlag
   time_unit: nanoseconds
-  time_unit_legacy_csharp: ticks  # 1 tick = 100 ns
-  # NOTE: csv_schema.time_unit is not currently read by the analysis code;
-  # time normalization is driven by the Language column + internal heuristic.
 
 # -----------------------------------------------------------------------------
 # Scientific statistics (analysis pipeline)
@@ -228,9 +225,9 @@ languages:
     runner_dir: c-sharp
     runner_script: scripts/run-benchmarks.sh
     log_dir: logs/csharp
-    time_unit: ticks
+    time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 38 serializers — see docs/c-sharp/index.md
+    # 37 serializers — see docs/c-sharp/index.md
 
   python:
     display_name: Python

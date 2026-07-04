@@ -4,56 +4,55 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 ## What this benchmark measures vs the wider ecosystem
 
-This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **ticks**; analysis converts to ns).
+This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
 
 **Not in this suite:** System.Text.Json, MessagePack-CSharp, Wire (ecosystem context only).
 
 | Log name | Category | Library / notes |
 |----------|----------|-----------------|
+| Apex.Serialization | Binary | Apex.Serialization |
+| BinaryPack | Binary | BinaryPack (`T : new()` constraints) |
+| Ceras | Binary | Ceras |
+| CsvHelper | CSV | Flat tabular only |
+| ExtendedXmlSerializer | XML | ExtendedXmlSerializer |
+| fastJson | JSON | FastJson |
+| FlatSharp | Schema / FlatBuffers | FlatSharp (+ generated models for some fixtures) |
+| FluentSerializer | JSON | FluentSerializer (needs profiles) |
+| FsPickler | Binary | FsPickler binary |
+| FsPicklerJson | JSON | FsPickler JSON |
+| Google.Protobuf | Schema | Official Google.Protobuf (`IMessage` / `.proto`) |
+| GroBuf | Binary | GroBuf |
+| Hyperion | Binary | Hyperion (Akka.NET lineage) |
+| Jil | JSON | Jil (Sigil) |
+| Json.Net | JSON | Newtonsoft.Json |
+| Json.Net (Helper) | JSON | Newtonsoft.Json helper path |
+| MemoryPack | Binary | MemoryPack (+ generator / models for some fixtures) |
+| Migrant | Binary | Migrant |
 | MS Binary | Binary (native) | Legacy `BinaryFormatter` path |
 | MS Bond Compact | Schema / Bond | Bond Compact Binary; types under `src/Bond/` |
 | MS Bond Fast | Schema / Bond | Bond Fast Binary |
 | MS Bond Json | JSON / Bond | Bond JSON protocol |
 | MS DataContract | XML | `DataContractSerializer` |
 | MS DataContract Json | JSON | `DataContractJsonSerializer` |
-| JavaScriptSerializer (N/A) | JSON (stub) | Legacy `System.Web`; not meaningful on .NET 8 |
 | MS XmlSerializer | XML | Classic `XmlSerializer` |
-| fastJson | JSON | FastJson |
-| Jil | JSON | Jil (Sigil) |
-| Json.Net (Helper) | JSON | Newtonsoft.Json helper path |
-| Json.Net | JSON | Newtonsoft.Json |
-| FsPickler | Binary | FsPickler binary |
-| FsPicklerJson | JSON | FsPickler JSON |
 | NetJSON | JSON | NetJSON |
-| ProtoBuf | Schema | protobuf-net |
-| SharpSerializer | Binary / XML | SharpSerializer |
-| ServiceStack Json | JSON | ServiceStack.Text JSON |
-| ServiceStack | Binary | ServiceStack type serializer (non-JSON) |
-| Ceras | Binary | Ceras |
-| CsvHelper | CSV | Flat tabular only |
-| FlatSharp | Schema / FlatBuffers | FlatSharp (+ generated models for some fixtures) |
-| FluentSerializer | JSON | FluentSerializer (needs profiles) |
-| Google.Protobuf | Schema | Official Google.Protobuf (`IMessage` / `.proto`) |
-| Hyperion | Binary | Hyperion (Akka.NET lineage) |
 | NetSerializer | Binary | NetSerializer |
+| ProtoBuf | Schema | protobuf-net |
+| ServiceStack | Binary | ServiceStack type serializer (non-JSON) |
+| ServiceStack Json | JSON | ServiceStack.Text JSON |
+| SharpSerializer | Binary / XML | SharpSerializer |
+| SharpYaml | YAML | SharpYaml |
 | SpanJson | JSON | SpanJson |
 | Utf8Json | JSON | Utf8Json |
 | YamlDotNet | YAML | YamlDotNet |
 | YAXLib | XML | YAXLib |
-| ZeroFormatter | Binary | ZeroFormatter (prefers zfc formatters) |
-| BinaryPack | Binary | BinaryPack (`T : new()` constraints) |
-| MemoryPack | Binary | MemoryPack (+ generator / models for some fixtures) |
-| SharpYaml | YAML | SharpYaml |
-| GroBuf | Binary | GroBuf |
-| ExtendedXmlSerializer | XML | ExtendedXmlSerializer |
-| Migrant | Binary | Migrant |
-| Apex.Serialization | Binary | Apex.Serialization |
+| ZeroFormatter | Binary | ZeroFormatter; Integer / SimpleObject / StringArray via built-in formatters (`int`, `KeyTuple`, `List<string>`) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
 
 ### Caveats
 
 - Coverage is **per fixture**; many skip/fail **ObjectGraph**. Failures: `logs/csharp/<ts>.errors.csv` (per run).
-- Bond, Google.Protobuf, FluentSerializer, BinaryPack, ZeroFormatter, MemoryPack, FlatSharp often need schemas or generated models.
-- **JavaScriptSerializer (N/A)** is a stub — do not treat timings as real.
+- Bond, Google.Protobuf, FluentSerializer, BinaryPack, MemoryPack, FlatSharp often need schemas or generated models.
+- **ZeroFormatter** supports **Integer**, **SimpleObject**, and **StringArray** only (built-in formatters / `KeyTuple` on .NET 8; full dynamic object formatters are not used).
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.
 
 Harness: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).

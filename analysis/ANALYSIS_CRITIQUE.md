@@ -94,13 +94,12 @@ Config declares `regression:` section; it is not consumed by the analysis packag
 
 Two separate heuristics:
 
-- `stats.py:_detect_time_unit()` — `csharp` → ×100, else 1.0; magnitude fallback >1e6.
+- `stats.py:normalize_to_nanoseconds()` — identity; all harnesses emit nanoseconds.
 - `reports.py:_records_to_melted_df()` — median >1e6 → ×100 again.
 
 Config says:
 - `csv_schema.time_unit: nanoseconds`
-- `time_unit_legacy_csharp: ticks`
-- `languages.csharp.time_unit: ticks`
+- - `languages.csharp.time_unit: nanoseconds`
 
 None of these are actually read by analysis code for normalization.
 
@@ -212,7 +211,7 @@ This creates a false sense of configurability and makes the methodology doc lie 
     - Regression key includes language; multi-lang baseline test.
     - CLI smoke with temp dirs and `--check-regression`.
     - Report generation string contains expected sections.
-    - Time-unit matrix (csharp ticks vs others ns).
+    - Time unit: nanoseconds for all languages (including C#).
 
 12. Make parser stricter or at least return `(records, errors)` so callers can decide to fail.
 

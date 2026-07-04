@@ -14,18 +14,18 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 | Name | Category | Package | Optimal API |
 |------|----------|---------|-------------|
-| JSON.stringify | JSON baseline | builtin | `JSON.stringify` / `JSON.parse` |
-| fast-json-stringify | JSON | `fast-json-stringify` | compile once, then `stringify` + `JSON.parse` |
-| simdjson | JSON | `simdjson` (optional native) | `parse` on UTF-8 string |
-| msgpackr | MessagePack | `msgpackr` | reused `Packr` / `Unpackr` |
 | @msgpack/msgpack | MessagePack | `@msgpack/msgpack` | `encode` / `decode` |
-| cbor-x | CBOR | `cbor-x` | reused `Encoder` / `Decoder` |
-| cbor | CBOR | `cbor` | `encode` / `decodeFirstSync` |
 | avsc | Avro | `avsc` | `Type.forValue` in prepare; `toBuffer` / `fromBuffer` |
-| protobufjs | Protobuf | `protobufjs` | preloaded `Type.encode` / `decode` |
-| bson | BSON | `bson` | `BSON.serialize` / `deserialize` |
-| v8-serializer | Native | `node:v8` | `v8.serialize` / `v8.deserialize` |
 | bser | Binary | `bser` | `dumpToBuffer` / `loadFromBuffer` |
+| bson | BSON | `bson` | `BSON.serialize` / `deserialize` |
+| cbor | CBOR | `cbor` | `encode` / `decodeFirstSync` |
+| cbor-x | CBOR | `cbor-x` | reused `Encoder` / `Decoder` |
+| fast-json-stringify | JSON | `fast-json-stringify` | compile once, then `stringify` + `JSON.parse` |
+| JSON.stringify | JSON baseline | builtin | `JSON.stringify` / `JSON.parse` |
+| msgpackr | MessagePack | `msgpackr` | reused `Packr` / `Unpackr` |
+| protobufjs | Protobuf | `protobufjs` | preloaded `Type.encode` / `decode` |
+| simdjson | JSON | `simdjson` (optional native) | `parse` on UTF-8 string |
+| v8-serializer | Native | `node:v8` | `v8.serialize` / `v8.deserialize` |
 
 ### Notes
 

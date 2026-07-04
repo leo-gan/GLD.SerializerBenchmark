@@ -13,20 +13,20 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 
 | Serializer | Category | Crate | Native path | Stream | Notes |
 |------------|----------|-------|-------------|--------|-------|
+| bincode | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
+| bitcode | Binary | `bitcode` | Serde | adapted | Bit-packed |
+| bson | Document | `bson` | Serde | adapted | Document DB interop |
+| ciborium | CBOR | `ciborium` | Serde | native | Reused write buffer |
+| flexbuffers | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
+| minicbor | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
+| nanoserde | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
+| postcard | Binary | `postcard` | Serde | adapted | no_std-friendly format |
+| prost | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | From shared `.proto` |
+| rkyv | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
+| rmp-serde | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
 | serde_json | JSON | `serde_json` | Serde `Fixture` | native | Baseline |
 | simd-json | JSON | `simd-json` | SIMD **parse**; ser via serde_json | adapted | Honest split responsibilities |
 | sonic-rs | JSON | `sonic-rs` | Serde-compatible SIMD JSON | adapted | Hot-path JSON |
-| rmp-serde | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
-| ciborium | CBOR | `ciborium` | Serde | native | Reused write buffer |
-| bincode | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
-| postcard | Binary | `postcard` | Serde | adapted | no_std-friendly format |
-| bitcode | Binary | `bitcode` | Serde | adapted | Bit-packed |
-| flexbuffers | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
-| bson | Document | `bson` | Serde | adapted | Document DB interop |
-| minicbor | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
-| rkyv | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
-| prost | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | From shared `.proto` |
-| nanoserde | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
 | speedy | Binary | `speedy` | `Writable`/`Readable` | adapted | Fast binary framework |
 
 ### Call-path contract (same idea as Python)

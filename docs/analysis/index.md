@@ -1,50 +1,44 @@
 # Benchmarks
 
-Empirical performance comparison of serializers across **C#**, **Python**, **Rust**, **C**, **JavaScript**, and **Go**, using shared conceptual payloads and a common CSV + analysis pipeline.
+Empirical comparison of serializers across **C#**, **Python**, **Rust**, **C**, **JavaScript**, and **Go**—shared conceptual payloads, one CSV contract, one analysis pipeline.
 
-| Language | Serializers (registered) | Inventory (what we measure) | Results (snapshot) |
-|----------|--------------------------|----------------------------|--------------------|
-| C# | 38 | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
-| Python | 16 | [Overview](../python/index.md) | [Results](../python/results.md) |
-| Rust | 15 | [Overview](../rust/index.md) | [Results](../rust/results.md) |
-| C | 12 | [Overview](../c/index.md) | [Results](../c/results.md) |
-| JavaScript | 12 | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
-| Go | 12 | [Overview](../go/index.md) | [Results](../go/results.md) |
-
-Inventories are the **source of truth for what we measure** (hand-written). Results pages are **generated** local snapshots (pivots + plots).
-
-Suite layout and harness timing model: [Benchmark architecture](architecture.md). Extending languages: [Adding a Language](ADDING_A_LANGUAGE.md).
+This page is the **hub** for the Benchmarks section: what each analysis page is for, and where language inventories and result snapshots live. It is not a second copy of architecture, methodology, or per-library inventories.
 
 ---
 
-## Regenerating published reports (maintainers)
+## Page map (read by role)
 
-Requires local CSVs at `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` (gitignored; from harness or
-`./scripts/run-all-benchmarks.sh --mode full`).
+| Page | Single job | Start here if you need… |
+|------|------------|-------------------------|
+| **[Benchmark architecture](architecture.md)** | Suite layout, audiences, harness timing model, config locations | How measurements are *collected* |
+| **[Serialization categories](serialization_categories.md)** | Four paradigms and which suite entries fall where | Fair within-paradigm comparisons |
+| **[Test data types](test_data_configuration.md)** | Shared fixtures (`Person`, `Telemetry`, …) and size knobs | What `TestDataName` means |
+| **[Analysis methodology](ANALYSIS_METHODOLOGY.md)** | Stats pipeline: warmup, outliers, CIs, effect sizes, outputs | How CSVs become tables/plots |
+| **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to register a new harness | Extending the matrix |
+| **[Benchmark Results](BENCHMARK_SUMMARY.md)** | Static links to language **Results** + how to regenerate | Numbers and plots |
 
-```bash
-cd analysis && pip install -e .   # once
+Theory (concepts, not suite metrics): [Serialization 101](../theory/index.md).
 
-# All languages (tables + violin plots; hub index is static)
-analyze-benchmarks
+---
 
-# One language only
-analyze-benchmarks -l python
+## Languages in this suite
 
-# Custom log location
-analyze-benchmarks -l python --logs python/logs/python
-# or: analyze-benchmarks --logs python=python/logs/python
-```
+Counts match the **registered inventories on each language Overview** (hand-written source of truth for *what we measure*). Prefer those pages over `languages.*.serializers` in `config/benchmark_config.yaml`, which can lag harness registration.
 
-By default the CLI writes **both** results tables and violin plots (no separate flags).
+| Language | Serializers (registered) | Inventory (hand-written SoT) | Results (generated snapshot) |
+|----------|--------------------------|------------------------------|------------------------------|
+| C# | **37** | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
+| Python | **16** | [Overview](../python/index.md) | [Results](../python/results.md) |
+| Rust | **15** | [Overview](../rust/index.md) | [Results](../rust/results.md) |
+| C | **12** | [Overview](../c/index.md) | [Results](../c/results.md) |
+| JavaScript | **12** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
+| Go | **12** | [Overview](../go/index.md) | [Results](../go/results.md) |
 
-| Output | Role |
-|--------|------|
-| `docs/analysis/plots/violin/*.png` | Shared plot assets |
-| `docs/<lang>/results.md` | Per-language pivots + plot embeds (`c-sharp`, `python`, `rust`, `c`, `javascript`, `go`) |
+† **JavaScript:** `simdjson` is optional (native addon). If it fails to build, the run still has the other **11** serializers.
 
-The hub [Benchmark Results](BENCHMARK_SUMMARY.md) is a **static** hand-maintained index (not overwritten by `analyze-benchmarks`).
+- **Inventories** (`docs/<lang>/index.md`) — log names, categories, caveats.  
+- **Results** (`docs/<lang>/results.md`) — local pivots and violin embeds; machine-dependent.  
+- **Log ids:** harness `Language` column uses `csharp`, `python`, `rust`, `c`, `javascript`, `go` (docs folders may differ, e.g. `c-sharp` for C#).  
+- **Regeneration** — [Benchmark Results](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
 
-The `publish-docs` workflow only runs `mkdocs gh-deploy` from the committed `docs/` tree — it does **not** re-run analysis or benchmarks.
-
-Pivot tables and plots are **not** hand-maintained; regenerate from CSVs and commit.
+Compare serializers **within one language** (and ideally one [category](serialization_categories.md)). Cross-runtime absolute times are directional only—see [methodology limitations](ANALYSIS_METHODOLOGY.md#limitations).

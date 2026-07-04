@@ -1,37 +1,37 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using GLD.SerializerBenchmark.TestData;
+using ZeroFormatter;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    // ZeroFormatter
+    /// <summary>
+    /// ZeroFormatter on modern .NET (Core/5+/8) cannot dynamically emit formatters for
+    /// <c>[ZeroFormattable]</c> classes (BadImageFormatException / Bad IL). Built-in
+    /// formatters (primitives, arrays, lists, <see cref="KeyTuple"/>) still work.
+    ///
+    /// Strategy: map suite fixtures to built-in-serializable shapes, then convert back
+    /// for fidelity comparison against the original POCOs / primitives.
+    /// Supported fixtures: Integer, SimpleObject, StringArray.
+    /// </summary>
     internal class ZeroFormatterSerializerSer : SerDeser
     {
         public override string Name => "ZeroFormatter";
 
-        public override bool Supports(string testDataName)
-        {
-            // ZeroFormatter works with annotated types: Integer, SimpleObject, StringArray
-            return testDataName == "Integer" || testDataName == "SimpleObject" || testDataName == "StringArray";
-        }
+        public override bool Supports(string testDataName) =>
+            testDataName is "Integer" or "SimpleObject" or "StringArray";
 
-        public override string Serialize(object serializable)
-        {
-            object annotated = ConvertToAnnotated(serializable);
-            return Convert.ToBase64String(ZeroFormatter.ZeroFormatterSerializer.Serialize(annotated));
-        }
+        public override string Serialize(object serializable) =>
+            Convert.ToBase64String(SerializeBytes(serializable));
 
-        public override object Deserialize(string serialized)
-        {
-            var bytes = Convert.FromBase64String(serialized);
-            object annotated = DeserializeAnnotated(bytes);
-            return ConvertFromAnnotated(annotated);
-        }
+        public override object Deserialize(string serialized) =>
+            DeserializeBytes(Convert.FromBase64String(serialized));
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            object annotated = ConvertToAnnotated(serializable);
-            var bytes = ZeroFormatter.ZeroFormatterSerializer.Serialize(annotated);
+            var bytes = SerializeBytes(serializable);
             outputStream.Write(bytes, 0, bytes.Length);
         }
 
@@ -40,41 +40,64 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             using var ms = new MemoryStream();
             inputStream.CopyTo(ms);
-            object annotated = DeserializeAnnotated(ms.ToArray());
-            return ConvertFromAnnotated(annotated);
+            return DeserializeBytes(ms.ToArray());
         }
 
-        private object ConvertToAnnotated(object obj)
+        private byte[] SerializeBytes(object serializable)
+        {
+            if (serializable == null)
+                throw new ArgumentNullException(nameof(serializable));
+
+            if (_primaryType == typeof(int))
+            {
+                // Built-in int formatter (no dynamic object segment).
+                return ZeroFormatterSerializer.Serialize((int)serializable);
+            }
+
+            if (_primaryType == typeof(SimpleObject))
+            {
+                var o = (SimpleObject)serializable;
+                // KeyTuple uses maintained built-in formatters on net8.
+                var tuple = KeyTuple.Create(o.Id, o.Name ?? "", o.Timestamp, o.IsActive);
+                return ZeroFormatterSerializer.Serialize(tuple);
+            }
+
+            if (_primaryType == typeof(StringArrayObject))
+            {
+                var o = (StringArrayObject)serializable;
+                var items = o.Items != null ? o.Items.ToList() : new List<string>();
+                return ZeroFormatterSerializer.Serialize(items);
+            }
+
+            throw new NotSupportedException(
+                $"ZeroFormatter does not support primary type {_primaryType?.FullName ?? "(null)"}.");
+        }
+
+        private object DeserializeBytes(byte[] bytes)
         {
             if (_primaryType == typeof(int))
-                return ZeroFormatterTypeConverter.ToZeroFormatter((int)obj);
-            if (_primaryType == typeof(SimpleObject))
-                return ZeroFormatterTypeConverter.ToZeroFormatter((SimpleObject)obj);
-            if (_primaryType == typeof(StringArrayObject))
-                return ZeroFormatterTypeConverter.ToZeroFormatter((StringArrayObject)obj);
-            return obj;
-        }
+                return ZeroFormatterSerializer.Deserialize<int>(bytes);
 
-        private object DeserializeAnnotated(byte[] bytes)
-        {
-            if (_primaryType == typeof(int))
-                return global::ZeroFormatter.ZeroFormatterSerializer.Deserialize<ZFmt.IntObject>(bytes);
             if (_primaryType == typeof(SimpleObject))
-                return global::ZeroFormatter.ZeroFormatterSerializer.Deserialize<ZFmt.SimpleObject>(bytes);
-            if (_primaryType == typeof(StringArrayObject))
-                return global::ZeroFormatter.ZeroFormatterSerializer.Deserialize<ZFmt.StringArrayObject>(bytes);
-            return null;
-        }
+            {
+                var tuple = ZeroFormatterSerializer.Deserialize<KeyTuple<int, string, DateTime, bool>>(bytes);
+                return new SimpleObject
+                {
+                    Id = tuple.Item1,
+                    Name = tuple.Item2,
+                    Timestamp = tuple.Item3,
+                    IsActive = tuple.Item4
+                };
+            }
 
-        private object ConvertFromAnnotated(object annotated)
-        {
-            if (annotated is ZFmt.IntObject intObj)
-                return ZeroFormatterTypeConverter.FromZeroFormatter(intObj);
-            if (annotated is ZFmt.SimpleObject simpleObj)
-                return ZeroFormatterTypeConverter.FromZeroFormatter(simpleObj);
-            if (annotated is ZFmt.StringArrayObject arrayObj)
-                return ZeroFormatterTypeConverter.FromZeroFormatter(arrayObj);
-            return annotated;
+            if (_primaryType == typeof(StringArrayObject))
+            {
+                var items = ZeroFormatterSerializer.Deserialize<List<string>>(bytes);
+                return new StringArrayObject { Items = items };
+            }
+
+            throw new NotSupportedException(
+                $"ZeroFormatter does not support primary type {_primaryType?.FullName ?? "(null)"}.");
         }
     }
 }

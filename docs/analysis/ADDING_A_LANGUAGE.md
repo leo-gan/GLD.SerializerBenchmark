@@ -1,12 +1,16 @@
 # Adding a language
 
-Grow language harnesses without changing the analysis core. Background: [Benchmark architecture](architecture.md).
+**Job of this page:** implementer checklist to grow a language harness **without** changing the analysis core.
+
+Background (layout, timing model, contract summary): [Benchmark architecture](architecture.md).  
+Fixtures: [Test data types](test_data_configuration.md).  
+Stats after you have CSVs: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
+
+---
 
 ## 1. Register the language
 
-Edit **`config/benchmark_config.yaml`** (master config — used at runtime by
-`scripts/read-config.py`, `scripts/run-all-benchmarks.sh`, and
-`analyze-benchmarks`):
+Edit **`config/benchmark_config.yaml`** (used by `scripts/read-config.py`, `scripts/run-all-benchmarks.sh`, and `analyze-benchmarks`):
 
 ```yaml
 languages:
@@ -25,44 +29,41 @@ Add `paths.language_log_dirs.go: logs/go` if your config uses that map.
 
 ## 2. Implement the harness contract
 
+Meet the [harness contract summary](architecture.md#harness-contract-summary) and [measurement model](architecture.md#measurement-model). In particular:
+
 | Requirement | Detail |
 |-------------|--------|
-| Output CSV | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with schema in `csv_schema` |
+| Output CSV | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with `csv_schema` |
 | `Language` column | Must match the language id (e.g. `go`) |
-| Time unit | **Nanoseconds** for all new runners |
+| Time unit | **Nanoseconds** for all runners (including C#) |
 | Modes | `bytes` and `stream` (or `string`/`stream` if matching legacy C#) |
 | Warmup | Repetition index 0 excluded by analysis |
 | Prepare outside loop | Schema compile, type registration, buffer pools — not timed |
 | Timed section | Serialize + deserialize only |
-| Fidelity | Round-trip semantic check; errors in `logs/<lang>/<ts>.errors.csv` (same stem as the result CSV) |
+| Fidelity | Round-trip semantic check; errors in `logs/<lang>/<ts>.errors.csv` (same timestamp stem as the result CSV) |
+| Optional sidecars | `*.environment.json` when `reproducibility.capture_environment` is true |
 | ObjectGraph | Skip serializers without cycle support |
-| Seed | `RandomSeed` from `schemas/test_data_config.json` (or config `reproducibility.random_seed`) |
-
-Timing model: [Benchmark architecture](architecture.md#measurement-model).
+| Seed | From `schemas/test_data_config.json` / config `reproducibility.random_seed` |
 
 ## 3. Test data types
 
 Implement equivalents of: `Person`, `Integer`, `Telemetry`, `SimpleObject`, `StringArray`, `EDI_835`, `ObjectGraph`.
 
-Use collection sizes from `schemas/test_data_config.json` — [Test Data Configuration](test_data_configuration.md).
+Use collection sizes from `schemas/test_data_config.json` — [Test data types](test_data_configuration.md).
 
 ## 4. Runner script
 
-`runner_dir/scripts/run-benchmarks.sh` must accept:
+`runner_dir/scripts/run-benchmarks.sh` must accept modes:
 
-```text
-smoke | all-single | full | research
-```
+`smoke` | `all-single` | `full` | `research`
 
-Source `scripts/lib/config.sh` and use `bench_mode_reps "$MODE"` (reads
-`modes.<name>.repetitions`). Set `BENCHMARK_SEED` from `bench_random_seed`.
-Do **not** hard-code repetition counts.
+Source `scripts/lib/config.sh` and use `bench_mode_reps "$MODE"` (reads `modes.<name>.repetitions`). Set `BENCHMARK_SEED` from `bench_random_seed`. Do **not** hard-code repetition counts.
 
 ## 5. Documentation
 
-- `docs/<lang>/index.md` — ecosystem overview, registered serializer inventory, caveats
-- After benchmarks: regenerate site snapshots (`analyze-benchmarks`) so `docs/<lang>/results.md` can be produced when logs exist
-- Register the language under Benchmarks in `mkdocs.yml` (Overview + Results)
+- `docs/<lang>/index.md` — ecosystem overview, registered inventory, caveats  
+- After benchmarks: `analyze-benchmarks` so `docs/<lang>/results.md` can be produced when logs exist  
+- Register under Benchmarks in `mkdocs.yml` (Overview + Results)
 
 ## 6. Wire orchestration
 
@@ -74,7 +75,7 @@ Auto-discovers timestamped CSVs under `logs/<lang>/`; or pass:
 analyze-benchmarks --logs go=logs/go
 ```
 
-- Update `_KNOWN_LANGS` in `analysis/src/benchmark_analysis/cli.py` so that `--compare-a/--compare-b` and path-based inference recognize the new language id.
+- Update `_KNOWN_LANGS` in `analysis/src/benchmark_analysis/cli.py` so `--compare-a/--compare-b` and path inference recognize the new id.  
 - Extend `generate_language_results_pages` / `_LANG_*` maps in `reports.py` (and `_LANG_DOCS_DIR`) if the docs folder id differs from the language id (e.g. `csharp` → `docs/c-sharp/`).
 
 ## 7. Tests

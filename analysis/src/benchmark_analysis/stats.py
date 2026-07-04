@@ -107,34 +107,17 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
 # Time unit normalization
 # ---------------------------------------------------------------------------
 
-def _detect_time_unit(time_value: int, language: Optional[str] = None) -> float:
-    """Return multiplier to convert recorded time to nanoseconds.
-
-    New runners emit nanoseconds and set Language explicitly.
-    Legacy C# emits ticks (100 ns) without Language or with language=csharp.
-    (Kept as-is for test compatibility and internal use by normalize.)
-    """
-    if language:
-        lang = language.lower().strip()
-        if lang in ("csharp", "c#", "cs", "dotnet", "c-sharp"):
-            return 100.0
-        if lang in ("python", "rust", "c", "javascript", "js", "node", "go", "java", "cpp"):
-            return 1.0
-    # Heuristic fallback (legacy CSVs without Language column)
-    if time_value > 1_000_000:
-        return 100.0  # C# ticks
-    return 1.0
-
-
 def normalize_to_nanoseconds(value: float, language: Optional[str] = None) -> float:
-    """Convert a raw timing value (from CSV) to nanoseconds.
+    """Return a timing value already expressed in nanoseconds.
 
-    Prefers explicit Language column (or hint). Falls back to numeric heuristic
-    only for legacy data without language info. This is the single source of
-    truth for time-unit normalization so that stats and plots agree.
+    All language harnesses (including C#) emit ``TimeSer`` / ``TimeDeser`` /
+    ``TimeSerAndDeser`` in **nanoseconds**. The optional ``language`` argument
+    is accepted for API stability (call sites / plots) and is unused.
+
+    Published latency tables may still convert ns → µs for display only.
     """
-    mult = _detect_time_unit(int(value), language)
-    return float(value) * mult
+    del language  # unused; kept for call-site compatibility
+    return float(value)
 
 
 # ---------------------------------------------------------------------------

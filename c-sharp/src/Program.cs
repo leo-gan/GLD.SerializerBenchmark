@@ -40,7 +40,6 @@ namespace GLD.SerializerBenchmark
                 new BondJsonSerializer(), 
                 new DataContractSerializerSerializer(),
                 new DataContractJsonSer(),
-                new JavaScriptSerializerSer(), 
                 new XmlSerializerSer(),
                 new FastJsonSerializer(), 
                 new JilSerializer(), 
