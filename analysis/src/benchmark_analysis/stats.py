@@ -104,25 +104,137 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Time unit normalization
+# Time unit normalization (central config baseline)
 # ---------------------------------------------------------------------------
 
-def normalize_to_nanoseconds(value: float, language: Optional[str] = None) -> float:
-    """Return a timing value already expressed in nanoseconds.
+# Canonical scales: multiply raw CSV values by this factor to obtain nanoseconds.
+_TIME_UNIT_TO_NS: Dict[str, float] = {
+    "nanoseconds": 1.0,
+    "ns": 1.0,
+    "nanosecond": 1.0,
+    "microseconds": 1_000.0,
+    "us": 1_000.0,
+    "µs": 1_000.0,
+    "μs": 1_000.0,
+    "microsecond": 1_000.0,
+    "milliseconds": 1_000_000.0,
+    "ms": 1_000_000.0,
+    "millisecond": 1_000_000.0,
+    "seconds": 1_000_000_000.0,
+    "s": 1_000_000_000.0,
+    "second": 1_000_000_000.0,
+}
 
-    All language harnesses (including C#) emit ``TimeSer`` / ``TimeDeser`` /
-    ``TimeSerAndDeser`` in **nanoseconds**. The optional ``language`` argument
-    is accepted for API stability (call sites / plots) and is unused.
+# Cache of language -> scale resolved from master config (cleared in tests via clear).
+_time_scale_cache: Dict[str, float] = {}
 
-    Published latency tables may still convert ns → µs for display only.
+
+def clear_time_scale_cache() -> None:
+    """Test helper: drop cached time-unit scales."""
+    _time_scale_cache.clear()
+
+
+def time_unit_to_ns_scale(unit: str) -> float:
+    """Convert a unit name (e.g. ``nanoseconds``) to a multiply-to-ns factor."""
+    key = (unit or "nanoseconds").strip().lower()
+    if key not in _TIME_UNIT_TO_NS:
+        raise ValueError(
+            f"Unknown time unit {unit!r}. Expected one of: "
+            f"{', '.join(sorted(set(_TIME_UNIT_TO_NS)))}"
+        )
+    return _TIME_UNIT_TO_NS[key]
+
+
+def resolve_time_scale_to_ns(
+    language: Optional[str] = None,
+    config_path: Optional[str] = None,
+) -> float:
+    """Resolve the CSV → nanoseconds scale from the master config.
+
+    Preference order:
+    1. ``languages.<lang>.time_unit`` when *language* is known
+    2. ``csv_schema.time_unit`` (suite baseline; default ``nanoseconds``)
+
+    All current harnesses emit nanoseconds; this central resolution guarantees
+    stats tables and violin plots apply the *same* conversion.
     """
-    del language  # unused; kept for call-site compatibility
-    return float(value)
+    cache_key = f"{language or ''}|{config_path or ''}"
+    if cache_key in _time_scale_cache:
+        return _time_scale_cache[cache_key]
+
+    unit = "nanoseconds"
+    try:
+        from .config_loader import dig, language_entries, load_master_config
+
+        data = load_master_config(config_path)
+        unit = dig(data, "csv_schema.time_unit", "nanoseconds") or "nanoseconds"
+        if language:
+            block = language_entries(config_path).get(str(language).lower()) or {}
+            lang_unit = block.get("time_unit")
+            if lang_unit:
+                unit = lang_unit
+    except Exception as exc:
+        print(f"Warning: could not resolve time unit from config ({exc}); assuming nanoseconds")
+        unit = "nanoseconds"
+
+    try:
+        scale = time_unit_to_ns_scale(str(unit))
+    except ValueError as exc:
+        print(f"Warning: {exc}; assuming nanoseconds")
+        scale = 1.0
+
+    _time_scale_cache[cache_key] = scale
+    return scale
+
+
+def normalize_to_nanoseconds(
+    value: float,
+    language: Optional[str] = None,
+    *,
+    scale_to_ns: Optional[float] = None,
+    config_path: Optional[str] = None,
+) -> float:
+    """Normalize a harness timing value to nanoseconds.
+
+    Scale is resolved once from the master config (see
+    :func:`resolve_time_scale_to_ns`). Callers that process many rows should
+    pass an explicit ``scale_to_ns`` to avoid repeated config lookups.
+    """
+    if scale_to_ns is None:
+        scale_to_ns = resolve_time_scale_to_ns(language, config_path=config_path)
+    return float(value) * float(scale_to_ns)
 
 
 # ---------------------------------------------------------------------------
 # Outlier filtering
 # ---------------------------------------------------------------------------
+
+def _iqr_keep_mask(
+    values: Sequence[float],
+    iqr_k: float = 1.5,
+    min_samples: int = 10,
+) -> np.ndarray:
+    """Boolean mask of non-outlier observations (Tukey fences).
+
+    Returns all-True when the sample is too small, IQR is zero, or the mask
+    would drop every observation (never empty a group silently).
+    """
+    arr = np.asarray(values, dtype=float)
+    n = len(arr)
+    if n < min_samples:
+        return np.ones(n, dtype=bool)
+    q1 = float(np.percentile(arr, 25))
+    q3 = float(np.percentile(arr, 75))
+    iqr = q3 - q1
+    if iqr == 0:
+        return np.ones(n, dtype=bool)
+    lower = q1 - iqr_k * iqr
+    upper = q3 + iqr_k * iqr
+    mask = (arr >= lower) & (arr <= upper)
+    if not mask.any():
+        return np.ones(n, dtype=bool)
+    return mask
+
 
 def _filter_outliers(
     values: List[float],
@@ -130,7 +242,11 @@ def _filter_outliers(
     iqr_k: float = 1.5,
     min_samples: int = 10,
 ) -> Tuple[List[float], int]:
-    """Remove outliers; returns (filtered_values, removed_count)."""
+    """Remove outliers from a single series; returns (filtered_values, removed_count).
+
+    Prefer :func:`filter_outliers_paired` for benchmark rows that carry
+    ser/deser/total measurements from the same repetition.
+    """
     if method == "none" or len(values) < min_samples:
         return values, 0
 
@@ -142,17 +258,190 @@ def _filter_outliers(
         # the sample size stays the same, so removed count is 0.
         return wins.tolist(), 0
 
-    # IQR (default)
-    q1 = float(np.percentile(arr, 25))
-    q3 = float(np.percentile(arr, 75))
-    iqr = q3 - q1
-    lower = q1 - iqr_k * iqr
-    upper = q3 + iqr_k * iqr
-    mask = (arr >= lower) & (arr <= upper)
-    if iqr == 0 or not mask.any():
-        return values, 0
+    mask = _iqr_keep_mask(arr, iqr_k=iqr_k, min_samples=min_samples)
     filtered = arr[mask].tolist()
     return filtered, len(values) - len(filtered)
+
+
+def filter_outliers_paired(
+    times_ser: List[float],
+    times_deser: List[float],
+    times_total: List[float],
+    method: str = "iqr",
+    iqr_k: float = 1.5,
+    min_samples: int = 10,
+) -> Tuple[List[float], List[float], List[float], int]:
+    """All-or-nothing row filter across ser / deser / total.
+
+    A repetition is discarded if it is an IQR outlier on *any* of the three
+    metrics. This preserves paired-sample correspondence required for
+    ser↔deser correlation and for consistent n across table columns.
+
+    Winsorize mode clips each series independently but never drops rows.
+    """
+    n = len(times_total)
+    if not (len(times_ser) == len(times_deser) == n):
+        raise ValueError(
+            "times_ser, times_deser, and times_total must have equal length "
+            f"(got {len(times_ser)}, {len(times_deser)}, {n})"
+        )
+    if method == "none" or n < min_samples:
+        return times_ser, times_deser, times_total, 0
+
+    arr_s = np.asarray(times_ser, dtype=float)
+    arr_d = np.asarray(times_deser, dtype=float)
+    arr_t = np.asarray(times_total, dtype=float)
+
+    if method == "winsorize":
+        def _w(a: np.ndarray) -> np.ndarray:
+            lo, hi = np.percentile(a, [5, 95])
+            return np.clip(a, lo, hi)
+
+        return _w(arr_s).tolist(), _w(arr_d).tolist(), _w(arr_t).tolist(), 0
+
+    # IQR (default): union of outlier flags → keep only rows that pass all three
+    mask = (
+        _iqr_keep_mask(arr_s, iqr_k=iqr_k, min_samples=min_samples)
+        & _iqr_keep_mask(arr_d, iqr_k=iqr_k, min_samples=min_samples)
+        & _iqr_keep_mask(arr_t, iqr_k=iqr_k, min_samples=min_samples)
+    )
+    if not mask.any():
+        return times_ser, times_deser, times_total, 0
+
+    removed = int((~mask).sum())
+    return (
+        arr_s[mask].tolist(),
+        arr_d[mask].tolist(),
+        arr_t[mask].tolist(),
+        removed,
+    )
+
+
+def paired_keep_mask(
+    times_ser: Sequence[float],
+    times_deser: Sequence[float],
+    times_total: Sequence[float],
+    method: str = "iqr",
+    iqr_k: float = 1.5,
+    min_samples: int = 10,
+) -> np.ndarray:
+    """Boolean keep-mask for the all-or-nothing paired filter (same rules as
+    :func:`filter_outliers_paired`)."""
+    n = len(times_total)
+    if method == "none" or method == "winsorize" or n < min_samples:
+        return np.ones(n, dtype=bool)
+    arr_s = np.asarray(times_ser, dtype=float)
+    arr_d = np.asarray(times_deser, dtype=float)
+    arr_t = np.asarray(times_total, dtype=float)
+    mask = (
+        _iqr_keep_mask(arr_s, iqr_k=iqr_k, min_samples=min_samples)
+        & _iqr_keep_mask(arr_d, iqr_k=iqr_k, min_samples=min_samples)
+        & _iqr_keep_mask(arr_t, iqr_k=iqr_k, min_samples=min_samples)
+    )
+    if not mask.any():
+        return np.ones(n, dtype=bool)
+    return mask
+
+
+# ---------------------------------------------------------------------------
+# Unified sanitize pipeline (feeds both tables and plots)
+# ---------------------------------------------------------------------------
+
+def prepare_analysis_records(
+    records: List[Dict],
+    config: Optional[Dict[str, Any]] = None,
+    language_hint: Optional[str] = None,
+) -> Tuple[List[Dict], Dict[Tuple, Dict[str, int]]]:
+    """Single pre-processing step for all analysis consumers.
+
+    1. Resolve and apply time-unit normalization (config baseline).
+    2. Drop warmup rows (``RepetitionIndex == 0`` when enabled).
+    3. All-or-nothing paired IQR (or configured method) per group.
+
+    This function is the **only** place that should drop warmup / outliers for
+    published tables and plots. Language harnesses must write complete raw CSVs
+    (every successful rep, including index 0) with no filtering on disk.
+
+    Returns
+    -------
+    sanitized
+        Row dicts with ``TimeSer`` / ``TimeDeser`` / ``TimeSerAndDeser`` in ns.
+        Ready for aggregation *or* violin melting — same sample population.
+    group_meta
+        Per ``(serializer, test_data, mode, language)`` counters:
+        ``warmup_skipped``, ``outliers_removed``, ``runs_raw``.
+    """
+    cfg = config or load_stats_config()
+    exclude_warmup = cfg.get("exclude_warmup", True)
+    outlier_method = cfg.get("outlier_method", "iqr")
+    iqr_k = float(cfg.get("iqr_k", 1.5))
+    min_out = int(cfg.get("min_samples_for_outlier_filter", 10))
+
+    # language -> scale (resolved once)
+    scale_by_lang: Dict[str, float] = {}
+
+    def _scale_for(lang: str) -> float:
+        if lang not in scale_by_lang:
+            scale_by_lang[lang] = resolve_time_scale_to_ns(lang or None)
+        return scale_by_lang[lang]
+
+    # Bucket non-warmup rows by analysis group key
+    buckets: Dict[Tuple, List[Dict]] = defaultdict(list)
+    group_meta: Dict[Tuple, Dict[str, int]] = defaultdict(
+        lambda: {"warmup_skipped": 0, "outliers_removed": 0, "runs_raw": 0}
+    )
+
+    for r in records:
+        lang = (r.get("Language") or language_hint or "unknown") or "unknown"
+        key = (r["SerializerName"], r["TestDataName"], r["StringOrStream"], lang)
+        group_meta[key]["runs_raw"] += 1
+
+        if exclude_warmup and r.get("RepetitionIndex", 0) == 0:
+            group_meta[key]["warmup_skipped"] += 1
+            continue
+
+        scale = _scale_for(lang)
+        time_ser = normalize_to_nanoseconds(float(r["TimeSer"]), lang, scale_to_ns=scale)
+        time_deser = normalize_to_nanoseconds(float(r["TimeDeser"]), lang, scale_to_ns=scale)
+        raw_total = r.get("TimeSerAndDeser", r["TimeSer"] + r["TimeDeser"])
+        time_total = normalize_to_nanoseconds(float(raw_total), lang, scale_to_ns=scale)
+
+        rec = dict(r)
+        rec["Language"] = lang
+        rec["TimeSer"] = time_ser
+        rec["TimeDeser"] = time_deser
+        rec["TimeSerAndDeser"] = time_total
+        buckets[key].append(rec)
+
+    sanitized: List[Dict] = []
+    for key, recs in buckets.items():
+        ser = [float(x["TimeSer"]) for x in recs]
+        deser = [float(x["TimeDeser"]) for x in recs]
+        total = [float(x["TimeSerAndDeser"]) for x in recs]
+
+        if outlier_method == "winsorize" and len(recs) >= min_out:
+            s_f, d_f, t_f, rem = filter_outliers_paired(
+                ser, deser, total, method="winsorize", iqr_k=iqr_k, min_samples=min_out
+            )
+            group_meta[key]["outliers_removed"] = rem
+            for rec, ts, td, tt in zip(recs, s_f, d_f, t_f):
+                out = dict(rec)
+                out["TimeSer"] = ts
+                out["TimeDeser"] = td
+                out["TimeSerAndDeser"] = tt
+                sanitized.append(out)
+            continue
+
+        mask = paired_keep_mask(
+            ser, deser, total, method=outlier_method, iqr_k=iqr_k, min_samples=min_out
+        )
+        rem = int((~mask).sum())
+        group_meta[key]["outliers_removed"] = rem
+        for rec, keep in zip(recs, mask):
+            if keep:
+                sanitized.append(rec)
+
+    return sanitized, dict(group_meta)
 
 
 # ---------------------------------------------------------------------------
@@ -449,9 +738,29 @@ def compute_statistics(
     records: List[Dict],
     config: Optional[Dict[str, Any]] = None,
     language_hint: Optional[str] = None,
+    *,
+    pre_sanitized: bool = False,
+    group_meta: Optional[Dict[Tuple, Dict[str, int]]] = None,
 ) -> Dict:
-    """Compute aggregate statistics by (serializer, test_data, mode) [+ language]."""
+    """Compute aggregate statistics by (serializer, test_data, mode) [+ language].
+
+    By default runs the unified :func:`prepare_analysis_records` pipeline so
+    summary tables and violin plots share the same sample population. Pass
+    ``pre_sanitized=True`` with already-cleaned records (and optional
+    ``group_meta`` from that prepare call) to avoid double-filtering when the
+    CLI sanitizes once and fans out to multiple consumers.
+    """
     cfg = config or load_stats_config()
+    outlier_method = cfg.get("outlier_method", "iqr")
+
+    if pre_sanitized:
+        clean = records
+        meta = group_meta or {}
+    else:
+        clean, meta = prepare_analysis_records(
+            records, config=cfg, language_hint=language_hint
+        )
+
     stats = defaultdict(lambda: {
         "times_ser": [],
         "times_deser": [],
@@ -459,32 +768,21 @@ def compute_statistics(
         "sizes": [],
         "fidelity": [],
         "memory_peak": [],
-        "warmup_skipped": 0,
         "language": None,
         "serializer_version": None,
     })
 
-    exclude_warmup = cfg.get("exclude_warmup", True)
-
-    for r in records:
-        lang = r.get("Language") or language_hint or ""
-        key = (r["SerializerName"], r["TestDataName"], r["StringOrStream"], lang or "unknown")
-
-        if exclude_warmup and r.get("RepetitionIndex", 0) == 0:
-            stats[key]["warmup_skipped"] += 1
-            continue
-
-        time_ser_ns = normalize_to_nanoseconds(float(r["TimeSer"]), lang or None)
-        time_deser_ns = normalize_to_nanoseconds(float(r["TimeDeser"]), lang or None)
-        time_total_ns = normalize_to_nanoseconds(
-            float(r.get("TimeSerAndDeser", r["TimeSer"] + r["TimeDeser"])), lang or None
+    for r in clean:
+        lang = r.get("Language") or language_hint or "unknown"
+        key = (r["SerializerName"], r["TestDataName"], r["StringOrStream"], lang)
+        # Times are already normalized to ns by prepare_analysis_records
+        stats[key]["times_ser"].append(float(r["TimeSer"]))
+        stats[key]["times_deser"].append(float(r["TimeDeser"]))
+        stats[key]["times_total"].append(
+            float(r.get("TimeSerAndDeser", r["TimeSer"] + r["TimeDeser"]))
         )
-
-        stats[key]["times_ser"].append(time_ser_ns)
-        stats[key]["times_deser"].append(time_deser_ns)
-        stats[key]["times_total"].append(time_total_ns)
         stats[key]["sizes"].append(float(r["Size"]))
-        stats[key]["language"] = lang or "unknown"
+        stats[key]["language"] = lang
         if r.get("SerializerVersion"):
             stats[key]["serializer_version"] = r["SerializerVersion"]
         if "FidelityScore" in r and r["FidelityScore"] is not None:
@@ -498,53 +796,23 @@ def compute_statistics(
             except (TypeError, ValueError):
                 pass
 
-    outlier_method = cfg.get("outlier_method", "iqr")
-    iqr_k = float(cfg.get("iqr_k", 1.5))
-    min_out = int(cfg.get("min_samples_for_outlier_filter", 10))
+    # Include groups that were entirely warmup so counters still surface
+    for key, m in meta.items():
+        if key not in stats and m.get("runs_raw", 0) > 0:
+            _ = stats[key]  # create empty bucket
+            stats[key]["language"] = key[3]
+
     total_outliers = 0
     results: Dict = {}
 
     for key, data in stats.items():
-        raw_ser = data["times_ser"]
-        raw_deser = data["times_deser"]
-        raw_total = data["times_total"]
-
-        # Filter *once* using the primary metric (total), then apply the *same*
-        # kept indices to ser/deser/total. This preserves row correspondence
-        # for paired (ser, deser) measurements from the same repetition.
-        if outlier_method == "none" or len(raw_total) < min_out:
-            times_total = raw_total
-            times_ser = raw_ser
-            times_deser = raw_deser
-            rem_t = 0
-        else:
-            arr_t = np.asarray(raw_total, dtype=float)
-            if outlier_method == "winsorize":
-                lo, hi = np.percentile(arr_t, [5, 95])
-                # Winsorize total; to keep correspondence we winsorize in place on copies
-                times_total = np.clip(arr_t, lo, hi).tolist()
-                times_ser = raw_ser[:]  # winsorize does not drop rows
-                times_deser = raw_deser[:]
-                rem_t = 0
-            else:
-                # IQR on total -> mask -> subset the three aligned series
-                q1 = float(np.percentile(arr_t, 25))
-                q3 = float(np.percentile(arr_t, 75))
-                iqr = q3 - q1
-                if iqr == 0:
-                    times_total = raw_total
-                    times_ser = raw_ser
-                    times_deser = raw_deser
-                    rem_t = 0
-                else:
-                    lower = q1 - iqr_k * iqr
-                    upper = q3 + iqr_k * iqr
-                    mask = (arr_t >= lower) & (arr_t <= upper)
-                    times_total = arr_t[mask].tolist()
-                    times_ser = [v for v, m in zip(raw_ser, mask) if m]
-                    times_deser = [v for v, m in zip(raw_deser, mask) if m]
-                    rem_t = int((~mask).sum())
-
+        times_ser = data["times_ser"]
+        times_deser = data["times_deser"]
+        times_total = data["times_total"]
+        m = meta.get(key) or {}
+        rem_t = int(m.get("outliers_removed", 0))
+        warmup_skipped = int(m.get("warmup_skipped", 0))
+        runs_raw = int(m.get("runs_raw", len(times_total) + warmup_skipped + rem_t))
         total_outliers += rem_t
 
         ser_stats = _summarize_series(times_ser, cfg, "ser", group_key=key)
@@ -572,8 +840,8 @@ def compute_statistics(
             "min_ops_per_sec": min_ops,
             "max_ops_per_sec": max_ops,
             "runs": len(times_total),
-            "runs_raw": len(data["times_total"]) + data["warmup_skipped"],
-            "warmup_skipped": data["warmup_skipped"],
+            "runs_raw": runs_raw,
+            "warmup_skipped": warmup_skipped,
             "outliers_removed": rem_t,
             # Extended scientific metrics
             **ser_stats,
@@ -581,7 +849,7 @@ def compute_statistics(
             **total_stats,
             "mean_fidelity": float(np.mean(data["fidelity"])) if data["fidelity"] else None,
             "mean_memory_peak_bytes": float(np.mean(data["memory_peak"])) if data["memory_peak"] else None,
-            # Retain raw filtered series for effect-size / A-B (not serialized to JSON by default consumers)
+            # Retain filtered series for effect-size / A-B (not serialized by default consumers)
             "_times_total_filtered": times_total,
         }
         results[key] = entry
@@ -590,7 +858,10 @@ def compute_statistics(
     if (cfg.get("effect_sizes") or {}).get("enabled", True):
         _attach_effect_sizes(results, cfg)
 
-    total_warmup = sum(d["warmup_skipped"] for d in stats.values())
+    total_warmup = sum(int((meta.get(k) or {}).get("warmup_skipped", 0)) for k in meta)
+    # Also count from results when meta empty (pre_sanitized without meta)
+    if not meta:
+        total_warmup = sum(int(e.get("warmup_skipped", 0)) for e in results.values())
     if total_warmup:
         print(f"Skipped {total_warmup} warmup measurements (RepetitionIndex 0)")
     if total_outliers:

@@ -45,7 +45,9 @@ go build -o bin/serializer-benchmark-go .
 ./bin/serializer-benchmark-go 100
 ```
 
-Requires Go **1.23+** on `PATH` (and `protoc` + `protoc-gen-go` only if regenerating protobuf).
+Requires Go **1.24+** on `PATH` (and `protoc` + `protoc-gen-go` only if regenerating protobuf).
+Module versions are minimums in `go.mod` / `go.sum` (MVS); refresh non-breaking
+updates with `go get -u=patch ./...` and selected `@latest` within the same major path.
 
 `LOG_DIR` may point at a logs **root** (results go to `$LOG_DIR/go/`).
 

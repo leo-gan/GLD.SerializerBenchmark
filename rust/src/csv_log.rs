@@ -15,9 +15,10 @@ impl CsvLogger {
         }
         let file = File::create(path)?;
         let mut writer = BufWriter::new(file);
+        // SerializerVersion immediately follows SerializerName.
         writeln!(
             writer,
-            "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,SerializerVersion,NativeKind,StreamMode"
+            "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode"
         )?;
         Ok(Self { writer })
     }
@@ -55,7 +56,7 @@ impl CsvLogger {
         };
         writeln!(
             self.writer,
-            "rust,{mode},{test_data},{repetitions},{rep_index},{serializer},{time_ser_ns},{time_deser_ns},{size},{total},{ops_ser:.6},{ops_deser:.6},{ops_tot:.6},0,{fidelity:.1},{version},{native_kind},{stream_mode}"
+            "rust,{mode},{test_data},{repetitions},{rep_index},{serializer},{version},{time_ser_ns},{time_deser_ns},{size},{total},{ops_ser:.6},{ops_deser:.6},{ops_tot:.6},0,{fidelity:.1},{native_kind},{stream_mode}"
         )
     }
 

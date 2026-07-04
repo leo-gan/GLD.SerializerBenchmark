@@ -52,13 +52,13 @@ echo "[INFO] Running: target/release/serializer-benchmark-rust ${ARGS[*]}"
 ./target/release/serializer-benchmark-rust "${ARGS[@]}" --log-dir "$LOG_DIR"
 
 CSV="$LOG_DIR/${BENCHMARK_TS}.csv"
-ENV_JSON="${CSV%.csv}.environment.json"
+ENV_JSON="${CSV%.csv}.configs.json"
 if [[ -f "$CSV" ]]; then
   if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
       python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
-    echo "[INFO] Environment captured -> $ENV_JSON"
+    echo "[INFO] Run config captured -> $ENV_JSON"
   else
-    echo "[WARN] Could not write environment.json (analysis package optional for standalone runs)"
+    echo "[WARN] Could not write configs.json (analysis package optional for standalone runs)"
   fi
 fi
 

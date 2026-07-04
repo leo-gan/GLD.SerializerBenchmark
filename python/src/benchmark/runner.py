@@ -177,7 +177,7 @@ def run(
 
 
     ts_file = log_dir_path / f"{ts}.csv"
-    # Per-run errors beside the result CSV (same stem as .environment.json)
+    # Per-run errors beside the result CSV (same stem as .configs.json)
     error_file = log_dir_path / f"{ts}.errors.csv"
 
     log_file = str(ts_file)
@@ -191,11 +191,17 @@ def run(
 
     storage.close()
 
-    # Aggregate and report
+    # CSV already contains *every* successful repetition (including warmup index 0).
+    # Do not rewrite or trim the log file here. Warmup exclusion is analysis-only
+    # (benchmark_analysis.statistics.exclude_warmup / prepare_analysis_records).
+    # Console summary may still de-emphasize warmup for a quick human readout.
     logs = storage.read_all()
-    # Exclude warmup (repetition_index == 0) when repetitions > 1, like C#
-    filtered = [l for l in logs if repetitions == 1 or l.repetition_index != 0]
-    results = aggregate_logs(filtered)
+    console_logs = (
+        logs
+        if repetitions == 1
+        else [l for l in logs if l.repetition_index != 0]
+    )
+    results = aggregate_logs(console_logs)
 
     print_report(
         repetitions,
@@ -209,7 +215,7 @@ def run(
     try:
         from benchmark_analysis.environment import capture_environment
         capture_environment(str(ts_file))
-        print(f"[PROGRESS] Environment captured -> {ts_file.with_suffix('.environment.json')}")
+        print(f"[PROGRESS] Run config captured -> {ts_file.with_suffix('.configs.json')}")
     except ImportError:
         print("[WARN] benchmark_analysis not installed; skipping environment capture")
     except Exception as e:
@@ -265,6 +271,8 @@ def _run_repetitions(
     # We measure peak once on the first successful rep and reuse for the group.
     cached_memory_peak = 0
 
+    # Write *all* indices 0..repetitions-1 on success. Index 0 is the warmup
+    # row for analysis; it must remain in the raw CSV for audit/reprocessing.
     for i in range(repetitions):
         log = BenchmarkLog(
             string_or_stream=mode,
@@ -272,6 +280,7 @@ def _run_repetitions(
             repetitions=repetitions,
             repetition_index=i,
             serializer_name=serializer.name,
+            serializer_version=serializer.version,
         )
 
         try:
@@ -303,7 +312,7 @@ def _run_repetitions(
             continue
 
         if not was_error:
-            storage.write(log)
+            storage.write(log)  # includes warmup (i == 0); no post-filter on disk
 
 
 def _single_test(

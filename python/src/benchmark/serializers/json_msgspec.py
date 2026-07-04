@@ -125,6 +125,7 @@ _build_struct_types()
 
 class _MsgspecStructSerializer(Serializer):
     codec_name = "msgspec"
+    package_name = "msgspec"
     native_kind = "struct"
     stream_mode = "native"
 

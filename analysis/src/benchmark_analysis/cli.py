@@ -10,7 +10,12 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .parser import parse_csv_file
-from .stats import compute_statistics, compare_versions, load_stats_config
+from .stats import (
+    compute_statistics,
+    compare_versions,
+    load_stats_config,
+    prepare_analysis_records,
+)
 from .regression import check_regression, save_baseline
 
 
@@ -267,8 +272,15 @@ def _generate_artifacts(
     publish_root: Path,
     docs_dir: Path,
     reports_root: Path,
+    stats_config: Optional[Dict] = None,
+    pre_sanitized: bool = True,
 ) -> None:
-    """Write hub index, per-language results tables, and violin plots."""
+    """Write hub index, per-language results tables, and violin plots.
+
+    ``all_records`` should be the *same* sanitized population used to build
+    ``all_stats`` (see :func:`prepare_analysis_records`) so plots and tables
+    cannot diverge.
+    """
     # Lazy import: reports pulls matplotlib (heavy / optional in some envs).
     from .reports import generate_language_results_pages, generate_violin_plots
 
@@ -278,14 +290,23 @@ def _generate_artifacts(
         plots_dir,
         multi_lang_records=all_records,
         lang_sources=lang_sources,
+        stats_config=stats_config,
+        pre_sanitized=pre_sanitized,
     )
 
     # docs/analysis/BENCHMARK_SUMMARY.md is a static hub — do not regenerate it.
     docs_root = str(docs_dir) if docs_dir.is_dir() else str(reports_root)
+    metrics_profile = (
+        os.environ.get("BENCHMARK_METRICS_PROFILE")
+        or (stats_config or {}).get("_metrics_profile")
+        or "multi_way"
+    )
     generate_language_results_pages(
         multi_lang_stats=all_stats,
         violin_images=violin_images,
         docs_root=docs_root,
+        lang_sources=lang_sources,
+        metrics_profile=str(metrics_profile),
     )
 
 
@@ -383,6 +404,15 @@ def main():
     )
     parser.add_argument("--config", default=None, help="Path to benchmark_config.yaml")
     parser.add_argument(
+        "--metrics-profile",
+        choices=("multi_way", "pairwise", "full"),
+        default=None,
+        help=(
+            "Publication metric tier: multi_way (default, high-importance only), "
+            "pairwise (A/B full set), or full. See docs/analysis/METRICS.md."
+        ),
+    )
+    parser.add_argument(
         "--list",
         action="store_true",
         help="List available result files per language and exit",
@@ -391,6 +421,9 @@ def main():
     args = parser.parse_args()
 
     stats_cfg = load_stats_config(args.config)
+    if args.metrics_profile:
+        stats_cfg["_metrics_profile"] = args.metrics_profile
+        os.environ["BENCHMARK_METRICS_PROFILE"] = args.metrics_profile
     logs_root = Path(args.logs_root)
 
     if args.list:
@@ -447,22 +480,40 @@ def main():
     all_records: Dict[str, List[Dict]] = {}
     all_stats: Dict = {}
     total_loaded = 0
+    total_sanitized = 0
     for lang, path in lang_paths.items():
         if not path or not os.path.isfile(path):
             all_records[lang] = []
             continue
         recs, skipped = parse_csv_file(path, language_hint=lang)
-        all_records[lang] = recs
         total_loaded += len(recs)
         if recs:
-            st = compute_statistics(recs, config=stats_cfg, language_hint=lang)
+            # One sanitize pass → same population for tables and violin plots.
+            clean, meta = prepare_analysis_records(
+                recs, config=stats_cfg, language_hint=lang
+            )
+            all_records[lang] = clean
+            total_sanitized += len(clean)
+            st = compute_statistics(
+                clean,
+                config=stats_cfg,
+                language_hint=lang,
+                pre_sanitized=True,
+                group_meta=meta,
+            )
             all_stats.update(st)
             print(
                 f"Loaded {len(recs)} {lang} records from {os.path.basename(path)} "
-                f"-> {len(st)} stat groups (skipped {skipped})"
+                f"-> {len(clean)} after sanitize, {len(st)} stat groups "
+                f"(parse-skipped {skipped})"
             )
+        else:
+            all_records[lang] = []
 
-    print(f"Total: {total_loaded} records, {len(all_stats)} stat groups")
+    print(
+        f"Total: {total_loaded} raw records, {total_sanitized} sanitized, "
+        f"{len(all_stats)} stat groups"
+    )
 
     os.makedirs(str(reports_root), exist_ok=True)
 
@@ -482,6 +533,8 @@ def main():
                 publish_root=publish_root,
                 docs_dir=docs_dir,
                 reports_root=reports_root,
+                stats_config=stats_cfg,
+                pre_sanitized=True,
             )
 
     if args.compare_a and args.compare_b:
@@ -526,6 +579,8 @@ def main():
         print("Error: --compare-a and --compare-b must be used together")
         sys.exit(1)
 
+    # Regression gate: never save a degraded baseline when a regression is detected.
+    # --save-baseline only runs after a clean check (or when check is not requested).
     if args.check_regression:
         has_regression, regressions = check_regression(
             all_stats,
@@ -537,7 +592,10 @@ def main():
             for r in regressions[:20]:
                 print(f"  {r}")
             if args.save_baseline:
-                print("Note: --save-baseline skipped because a regression was detected.")
+                print(
+                    "Note: --save-baseline skipped because a regression was detected "
+                    "(baseline must not be overwritten with degraded performance)."
+                )
             sys.exit(1)
 
     if args.save_baseline:

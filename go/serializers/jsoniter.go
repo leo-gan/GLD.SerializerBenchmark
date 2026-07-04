@@ -21,7 +21,7 @@ func newJSONIter() *jsonIter {
 }
 
 func (s *jsonIter) Name() string           { return "jsoniter" }
-func (s *jsonIter) Version() string        { return "1" }
+func (s *jsonIter) Version() string        { return ModuleVersion("github.com/json-iterator/go") }
 func (s *jsonIter) StreamMode() StreamMode { return StreamNative }
 func (s *jsonIter) NativeKind() NativeKind { return NativeReflect }
 func (s *jsonIter) Supports(n string) bool { return DefaultSupports(n) }

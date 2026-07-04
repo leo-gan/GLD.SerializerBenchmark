@@ -132,6 +132,7 @@ namespace GLD.SerializerBenchmark
             Stream serializedStream = new MemoryStream();
             object processed;
             log.SerializerName = serializer.Name;
+            log.SerializerVersion = serializer.Version ?? "";
 
             var serSuccessful = false;
             var error = new Error

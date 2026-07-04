@@ -26,8 +26,9 @@ const logPath = path.join(logDir, `${ts}.csv`);
 // Per-run errors beside the result CSV (same stem as .environment.json)
 const errPath = path.join(logDir, `${ts}.errors.csv`);
 
+// SerializerVersion immediately follows SerializerName (installed package version).
 const header =
-  'Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,SerializerVersion\n';
+  'Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore\n';
 
 const lines = [header];
 const errors = [
@@ -61,6 +62,7 @@ for (const fx of fixtures) {
       console.error(`[WARN] prepare failed ${ser.name}/${fx.name}: ${e.message}`);
       continue;
     }
+    // Log every successful rep including i===0 (warmup). Analysis drops warmup later.
     for (const mode of modes) {
       let hadError = false;
       for (let i = 0; i < repetitions; i++) {
@@ -100,7 +102,7 @@ for (const fx of fixtures) {
           const opsTot = total > 0 ? 1e9 / total : 0;
           const ver = String(ser.version || '').replace(/,/g, ';');
           lines.push(
-            `javascript,${mode},${fx.name},${repetitions},${i},${ser.name},${serNs},${deserNs},${size},${total},${opsSer.toFixed(6)},${opsDeser.toFixed(6)},${opsTot.toFixed(6)},0,${ok ? 1.0 : 0.0},${ver}\n`,
+            `javascript,${mode},${fx.name},${repetitions},${i},${ser.name},${ver},${serNs},${deserNs},${size},${total},${opsSer.toFixed(6)},${opsDeser.toFixed(6)},${opsTot.toFixed(6)},0,${ok ? 1.0 : 0.0}\n`,
           );
         } catch (e) {
           if (!hadError) {

@@ -75,10 +75,12 @@ Modes: `smoke` (2 reps) · `all-single` (10) · `full` (100) · `research` (500)
 
 ## Statistics (analysis)
 
-See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistics:` in the master config:
+See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistics:` in the master config.
 
-1. Exclude warmup (rep 0)
-2. IQR outlier filter
+**Raw logs are complete:** harnesses write every successful repetition (including warmup index 0) with no IQR or other post-filter. Only the analysis package applies:
+
+1. Exclude warmup (rep 0) when `statistics.exclude_warmup`
+2. IQR outlier filter (all-or-nothing on ser/deser/total)
 3. Mean / median / std / MAD / CV / percentiles
 4. Bootstrap 95% CI on the mean
 5. Cliff's δ + Hedges' g vs fastest in group
@@ -88,7 +90,7 @@ See [Analysis methodology](docs/analysis/ANALYSIS_METHODOLOGY.md) and `statistic
 
 - [Benchmark architecture](docs/analysis/architecture.md)
 - [Adding a language](docs/analysis/ADDING_A_LANGUAGE.md)
-- Harness contract: emit timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with `Language=<id>`, times in **nanoseconds**
+- Harness contract: emit timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with `Language=<id>`, times in **nanoseconds**, **all** successful `RepetitionIndex` values (including 0)
 
 ## Documentation site
 

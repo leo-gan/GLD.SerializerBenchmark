@@ -41,7 +41,7 @@ Meet the [harness contract summary](architecture.md#harness-contract-summary) an
 | Prepare outside loop | Schema compile, type registration, buffer pools — not timed |
 | Timed section | Serialize + deserialize only |
 | Fidelity | Round-trip semantic check; errors in `logs/<lang>/<ts>.errors.csv` (same timestamp stem as the result CSV) |
-| Optional sidecars | `*.environment.json` when `reproducibility.capture_environment` is true |
+| Optional sidecars | `*.configs.json` (environment + optional dataset/serializer metadata; legacy `*.environment.json` still readable) |
 | ObjectGraph | Skip serializers without cycle support |
 | Seed | From `schemas/test_data_config.json` / config `reproducibility.random_seed` |
 

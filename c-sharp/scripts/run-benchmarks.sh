@@ -52,11 +52,11 @@ case "$MODE" in
 esac
 
 CSV="$LOG_DIR/csharp/${BENCHMARK_TS}.csv"
-ENV_JSON="${CSV%.csv}.environment.json"
+ENV_JSON="${CSV%.csv}.configs.json"
 if [[ -f "$CSV" ]]; then
     if BENCHMARK_TS="${BENCHMARK_TS}" PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
         python3 -m benchmark_analysis.environment "$CSV" >/dev/null 2>&1; then
-        echo "[INFO] Environment captured -> $ENV_JSON"
+        echo "[INFO] Run config captured -> $ENV_JSON"
     elif docker run --rm \
         -v "$LOG_DIR:/logs" \
         -v "$PROJECT_ROOT/analysis/src:/src:ro" \
@@ -64,8 +64,8 @@ if [[ -f "$CSV" ]]; then
         -e BENCHMARK_TS="${BENCHMARK_TS}" \
         python:3.12-slim \
         python -m benchmark_analysis.environment "/logs/csharp/${BENCHMARK_TS}.csv" >/dev/null 2>&1; then
-        echo "[INFO] Environment captured (via Docker) -> $ENV_JSON"
+        echo "[INFO] Run config captured (via Docker) -> $ENV_JSON"
     else
-        echo "[WARN] Could not write environment.json"
+        echo "[WARN] Could not write configs.json"
     fi
 fi

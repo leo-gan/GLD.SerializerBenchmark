@@ -3,9 +3,41 @@
  * prepare() runs outside the timed loop.
  */
 
+import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { deepEqual } from '../data.js';
 import v8 from 'node:v8';
 import { performance } from 'node:perf_hooks';
+
+const require = createRequire(import.meta.url);
+
+/** Installed npm package version for CSV SerializerVersion (full semver). */
+function pkgVersion(packageName) {
+  try {
+    return require(`${packageName}/package.json`).version || '';
+  } catch {
+    /* package.json may be blocked by "exports"; walk up from resolved entry */
+  }
+  try {
+    let dir = dirname(require.resolve(packageName));
+    for (let i = 0; i < 8; i++) {
+      try {
+        const raw = readFileSync(join(dir, 'package.json'), 'utf8');
+        const v = JSON.parse(raw).version;
+        if (v) return String(v);
+      } catch {
+        /* continue */
+      }
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  } catch {
+    /* missing package */
+  }
+  return '';
+}
 
 // Lazy-loaded optionals
 let simdjson = null;
@@ -60,7 +92,7 @@ function baseSupports(name) {
 // 1. JSON.stringify / parse (baseline)
 const jsonBuiltin = {
   name: 'JSON.stringify',
-  version: process.versions.node,
+  version: `node-${process.versions.node}`,
   supports: baseSupports,
   prepare() {},
   serialize(value) {
@@ -75,7 +107,7 @@ const jsonBuiltin = {
 let fjsStringify = null;
 const fastJsonSer = {
   name: 'fast-json-stringify',
-  version: '6',
+  version: pkgVersion('fast-json-stringify'),
   supports: baseSupports,
   prepare(dataName, value) {
     // Compile a permissive schema from runtime shape for non-Person; Person uses static schema
@@ -101,7 +133,7 @@ const fastJsonSer = {
 // 3. simdjson (optional native addon)
 const simdjsonSer = {
   name: 'simdjson',
-  version: '0.9',
+  version: pkgVersion('simdjson') || 'optional-missing',
   supports: (n) => baseSupports(n) && !!simdjson,
   prepare() {},
   serialize(value) {
@@ -119,7 +151,7 @@ const packr = new Packr({ useRecords: false, structuredClone: false });
 const unpackr = new Unpackr({ useRecords: false });
 const msgpackrSer = {
   name: 'msgpackr',
-  version: '1',
+  version: pkgVersion('msgpackr'),
   supports: baseSupports,
   prepare() {},
   serialize(value) {
@@ -133,7 +165,7 @@ const msgpackrSer = {
 // 5. @msgpack/msgpack
 const msgpackOffSer = {
   name: '@msgpack/msgpack',
-  version: '3',
+  version: pkgVersion('@msgpack/msgpack'),
   supports: baseSupports,
   prepare() {},
   serialize(value) {
@@ -149,7 +181,7 @@ const cborxEnc = new CborXEncoder();
 const cborxDec = new CborXDecoder();
 const cborxSer = {
   name: 'cbor-x',
-  version: '1',
+  version: pkgVersion('cbor-x'),
   supports: baseSupports,
   prepare() {},
   serialize(value) {
@@ -163,7 +195,7 @@ const cborxSer = {
 // 7. cbor (node-cbor)
 const cborSer = {
   name: 'cbor',
-  version: '9',
+  version: pkgVersion('cbor'),
   supports: baseSupports,
   prepare() {},
   serialize(value) {
@@ -181,7 +213,7 @@ function avroNormalize(value) {
 }
 const avscSer = {
   name: 'avsc',
-  version: '5',
+  version: pkgVersion('avsc'),
   // Avro double/float inference is brittle on randomly generated f64 telemetry/EDI payloads
   supports: (n) => baseSupports(n) && !['Integer', 'Telemetry', 'EDI_835'].includes(n),
   prepare(_name, value) {
@@ -224,7 +256,7 @@ const pbRoot = protobuf.Root.fromJSON({
 });
 const pbSer = {
   name: 'protobufjs',
-  version: '7',
+  version: pkgVersion('protobufjs'),
   supports: baseSupports,
   prepare(dataName) {
     // Always use JSON-wrapper for full fidelity across all fixtures; Person/Simple
@@ -245,7 +277,7 @@ const pbSer = {
 // 10. bson
 const bsonSer = {
   name: 'bson',
-  version: '6',
+  version: pkgVersion('bson'),
   supports: (n) => baseSupports(n) && n !== 'Integer',
   prepare() {},
   serialize(value) {
@@ -261,7 +293,7 @@ const bsonSer = {
 // 11. v8 serialize
 const v8Ser = {
   name: 'v8-serializer',
-  version: process.versions.v8,
+  version: `v8-${process.versions.v8}`,
   supports: () => true,
   prepare() {},
   serialize(value) {
@@ -275,7 +307,7 @@ const v8Ser = {
 // 12. bser
 const bserSer = {
   name: 'bser',
-  version: '2',
+  version: pkgVersion('bser'),
   supports: (n) => baseSupports(n) && n !== 'Integer',
   prepare() {},
   serialize(value) {

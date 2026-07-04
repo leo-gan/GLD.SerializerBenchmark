@@ -86,5 +86,6 @@ nav:
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md
       - Serialization Categories: analysis/serialization_categories.md
       - Analysis Methodology: analysis/ANALYSIS_METHODOLOGY.md
+      - Metrics catalog: analysis/METRICS.md
       - Test Data Configuration: analysis/test_data_configuration.md
       - Benchmark Results: analysis/BENCHMARK_SUMMARY.md

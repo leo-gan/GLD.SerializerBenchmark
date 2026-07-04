@@ -18,7 +18,7 @@ type segmentioJSON struct {
 func newSegmentioJSON() *segmentioJSON { return &segmentioJSON{} }
 
 func (s *segmentioJSON) Name() string           { return "segmentio/encoding/json" }
-func (s *segmentioJSON) Version() string        { return "0.3" }
+func (s *segmentioJSON) Version() string        { return ModuleVersion("github.com/segmentio/encoding") }
 func (s *segmentioJSON) StreamMode() StreamMode { return StreamNative }
 func (s *segmentioJSON) NativeKind() NativeKind { return NativeReflect }
 func (s *segmentioJSON) Supports(n string) bool { return DefaultSupports(n) }

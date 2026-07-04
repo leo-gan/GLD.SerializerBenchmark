@@ -18,7 +18,7 @@ type goccyJSON struct {
 func newGoccyJSON() *goccyJSON { return &goccyJSON{} }
 
 func (s *goccyJSON) Name() string           { return "goccy/go-json" }
-func (s *goccyJSON) Version() string        { return "0.10" }
+func (s *goccyJSON) Version() string        { return ModuleVersion("github.com/goccy/go-json") }
 func (s *goccyJSON) StreamMode() StreamMode { return StreamNative }
 func (s *goccyJSON) NativeKind() NativeKind { return NativeReflect }
 func (s *goccyJSON) Supports(n string) bool { return DefaultSupports(n) }

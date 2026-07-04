@@ -19,7 +19,7 @@ type vmihailencoMsgpack struct {
 func newVmihailencoMsgpack() *vmihailencoMsgpack { return &vmihailencoMsgpack{} }
 
 func (s *vmihailencoMsgpack) Name() string           { return "vmihailenco/msgpack" }
-func (s *vmihailencoMsgpack) Version() string        { return "5" }
+func (s *vmihailencoMsgpack) Version() string        { return ModuleVersion("github.com/vmihailenco/msgpack/v5") }
 func (s *vmihailencoMsgpack) StreamMode() StreamMode { return StreamNative }
 func (s *vmihailencoMsgpack) NativeKind() NativeKind { return NativeReflect }
 func (s *vmihailencoMsgpack) Supports(n string) bool { return DefaultSupports(n) }

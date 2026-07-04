@@ -19,6 +19,7 @@ from ..converters import to_dict
 class RapidjsonSerializer(Serializer):
     native_kind = "dict"
     stream_mode = "adapted"
+    package_name = "python-rapidjson"
 
     @property
     def name(self) -> str:

@@ -20,8 +20,10 @@ bytes-then-write path; subclasses set ``stream_mode`` accordingly.
 from __future__ import annotations
 
 import io
+import sys
 from abc import ABC, abstractmethod
-from typing import Any, Literal
+from functools import lru_cache
+from typing import Any, Literal, Optional
 
 # What the timed serialize path expects as input after prepare_data.
 NativeKind = Literal[
@@ -39,6 +41,21 @@ StreamMode = Literal[
 ]
 
 
+@lru_cache(maxsize=64)
+def installed_package_version(distribution_name: str) -> str:
+    """Return the installed distribution version (importlib.metadata), or \"\"."""
+    if not distribution_name:
+        return ""
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+
+        return version(distribution_name)
+    except PackageNotFoundError:
+        return ""
+    except Exception:
+        return ""
+
+
 class Serializer(ABC):
     """Abstract base for all serializer benchmarks."""
 
@@ -48,11 +65,23 @@ class Serializer(ABC):
     #: Whether stream methods use a real stream API or adapt from bytes.
     stream_mode: StreamMode = "adapted"
 
+    #: PyPI / importlib distribution name for version reporting (CSV SerializerVersion).
+    #: Override when the log ``name`` differs from the install name (e.g. rapidjson).
+    package_name: Optional[str] = None
+
     @property
     @abstractmethod
     def name(self) -> str:
         """Human-readable serializer name (CSV log key)."""
         ...
+
+    @property
+    def version(self) -> str:
+        """Installed library version written to CSV after SerializerName."""
+        dist = self.package_name if self.package_name is not None else self.name
+        if dist in ("json", "stdlib-json", "pickle"):
+            return f"python-{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        return installed_package_version(dist)
 
     def supports(self, test_data_name: str) -> bool:
         """
