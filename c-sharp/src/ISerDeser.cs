@@ -7,6 +7,8 @@ namespace GLD.SerializerBenchmark
     internal interface ISerDeser
     {
         string Name { get; }
+        /// <summary>Installed library / package version for CSV SerializerVersion.</summary>
+        string Version { get; }
         bool Supports(string testDataName);
         void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null);
 

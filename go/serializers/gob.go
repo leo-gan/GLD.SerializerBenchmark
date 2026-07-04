@@ -31,7 +31,7 @@ func newEncodingGob() *encodingGob {
 }
 
 func (s *encodingGob) Name() string           { return "encoding/gob" }
-func (s *encodingGob) Version() string        { return "stdlib" }
+func (s *encodingGob) Version() string        { return ModuleVersion("stdlib") }
 func (s *encodingGob) StreamMode() StreamMode { return StreamNative }
 func (s *encodingGob) NativeKind() NativeKind { return NativeReflect }
 func (s *encodingGob) Supports(n string) bool { return DefaultSupports(n) }

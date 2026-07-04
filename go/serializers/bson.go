@@ -18,7 +18,7 @@ type mongoBSON struct {
 func newMongoBSON() *mongoBSON { return &mongoBSON{} }
 
 func (s *mongoBSON) Name() string           { return "mongo-bson" }
-func (s *mongoBSON) Version() string        { return "1" }
+func (s *mongoBSON) Version() string        { return ModuleVersion("go.mongodb.org/mongo-driver") }
 func (s *mongoBSON) StreamMode() StreamMode { return StreamAdapted }
 func (s *mongoBSON) NativeKind() NativeKind { return NativeReflect }
 func (s *mongoBSON) Supports(n string) bool { return DefaultSupports(n) }

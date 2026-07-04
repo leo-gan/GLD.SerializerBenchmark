@@ -21,7 +21,7 @@ Defaults: `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../c
 | `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, …) |
 | `csv_schema` in master config | Required / optional columns |
 
-Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`, `SerializerName`, `TimeSer`, `TimeDeser`, `Size`, `TimeSerAndDeser`, ops/sec fields as emitted by runners. Optional: `MemoryPeakBytes`, `FidelityScore`, `SerializerVersion`, …
+Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`, `SerializerName`, **`SerializerVersion`** (installed package/crate version, immediately after the name), `TimeSer`, `TimeDeser`, `Size`, `TimeSerAndDeser`, ops/sec fields. Optional: `MemoryPeakBytes`, `FidelityScore`, `NativeKind`, `StreamMode`, …
 
 ---
 

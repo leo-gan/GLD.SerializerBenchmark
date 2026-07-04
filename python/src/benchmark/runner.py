@@ -280,6 +280,7 @@ def _run_repetitions(
             repetitions=repetitions,
             repetition_index=i,
             serializer_name=serializer.name,
+            serializer_version=serializer.version,
         )
 
         try:

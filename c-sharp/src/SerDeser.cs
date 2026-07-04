@@ -12,6 +12,9 @@ namespace GLD.SerializerBenchmark
 
         public abstract string Name { get; }
 
+        /// <summary>Installed package version for CSV (resolved from the library assembly).</summary>
+        public virtual string Version => SerializerVersionRegistry.Resolve(Name);
+
         public virtual bool Supports(string testDataName) => true;
 
         public virtual void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)

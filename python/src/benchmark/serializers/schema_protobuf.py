@@ -50,6 +50,7 @@ _TYPE_MAP: Dict[Type[Any], Type[Any]] = {
 
 
 class ProtobufSerializer(Serializer):
+    package_name = "protobuf"
     native_kind = "message"
     stream_mode = "adapted"
 

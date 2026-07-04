@@ -105,6 +105,8 @@ io_modes:
 # including C#). Published Results tables may display latency in microseconds.
 # -----------------------------------------------------------------------------
 csv_schema:
+  # SerializerVersion is immediately after SerializerName (library/package version
+  # as installed at run time — not a major-only stub). Optional columns may follow.
   required_columns:
     - Language
     - StringOrStream
@@ -112,6 +114,7 @@ csv_schema:
     - Repetitions
     - RepetitionIndex
     - SerializerName
+    - SerializerVersion
     - TimeSer
     - TimeDeser
     - Size
@@ -122,8 +125,9 @@ csv_schema:
   optional_columns:
     - MemoryPeakBytes
     - FidelityScore
-    - SerializerVersion
     - ErrorFlag
+    - NativeKind
+    - StreamMode
   time_unit: nanoseconds
 
 # -----------------------------------------------------------------------------

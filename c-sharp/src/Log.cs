@@ -120,10 +120,11 @@ namespace GLD.SerializerBenchmark
             _logFileStreamWriter = File.CreateText(logFileName);
             _logFileStreamWriter.AutoFlush = true;
             _separator = separator;
+            // SerializerVersion immediately follows SerializerName (installed package version).
             var fileHeaderLine =
                 "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName," +
-                "TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser," +
-                "MemoryPeakBytes,FidelityScore,SerializerVersion";
+                "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser," +
+                "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore";
             fileHeaderLine = fileHeaderLine.Replace(",", _separator);
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
@@ -138,10 +139,10 @@ namespace GLD.SerializerBenchmark
         {
             var line = string.Join(_separator,
                 log.Language, log.StringOrStream, log.TestDataName, log.Repetitions, log.RepetitionIndex,
-                log.SerializerName, log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser,
+                log.SerializerName, log.SerializerVersion ?? "",
+                log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser,
                 log.OpPerSecSer, log.OpPerSecDeser, log.OpPerSecSerAndDeser,
-                log.MemoryPeakBytes, log.FidelityScore.ToString("F2"),
-                log.SerializerVersion ?? ""
+                log.MemoryPeakBytes, log.FidelityScore.ToString("F2")
                 );
             _logFileStreamWriter.WriteLine(line);
         }
@@ -150,26 +151,75 @@ namespace GLD.SerializerBenchmark
         {
             var lines = File.ReadAllLines(_logFileName);
             var logs = new List<Log>();
-            for (var index = 1; index < lines.Length; index++) // first line is a title. Ignore it!
+            if (lines.Length == 0) return logs;
+
+            // Support current schema (SerializerVersion after SerializerName) and legacy
+            // (version at end / missing) by resolving indices from the header row.
+            var header = lines[0].Split(new[] { _separator }, StringSplitOptions.None);
+            int Idx(string name)
             {
-                var line = lines[index];
-                var fields = line.Split(new[] {_separator}, StringSplitOptions.None);
-                // Schema: Language,StringOrStream,TestDataName,... (Language ignored on read)
+                for (var i = 0; i < header.Length; i++)
+                    if (string.Equals(header[i], name, StringComparison.OrdinalIgnoreCase))
+                        return i;
+                return -1;
+            }
+
+            var iStream = Idx("StringOrStream");
+            var iData = Idx("TestDataName");
+            var iReps = Idx("Repetitions");
+            var iRepIdx = Idx("RepetitionIndex");
+            var iName = Idx("SerializerName");
+            var iVer = Idx("SerializerVersion");
+            var iSer = Idx("TimeSer");
+            var iDeser = Idx("TimeDeser");
+            var iSize = Idx("Size");
+            var iMem = Idx("MemoryPeakBytes");
+            var iFid = Idx("FidelityScore");
+
+            // Legacy fixed layout fallback (pre-version-column reorder)
+            if (iName < 0)
+            {
+                iStream = 1; iData = 2; iReps = 3; iRepIdx = 4; iName = 5;
+                iSer = 6; iDeser = 7; iSize = 8;
+            }
+
+            long ParseLong(string[] fields, int i)
+            {
+                if (i < 0 || i >= fields.Length) return 0;
+                long.TryParse(fields[i], System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out var v);
+                return v;
+            }
+            int ParseInt(string[] fields, int i)
+            {
+                if (i < 0 || i >= fields.Length) return 0;
+                int.TryParse(fields[i], System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out var v);
+                return v;
+            }
+            string Field(string[] fields, int i) =>
+                (i >= 0 && i < fields.Length) ? fields[i] : "";
+
+            for (var index = 1; index < lines.Length; index++)
+            {
+                var fields = lines[index].Split(new[] { _separator }, StringSplitOptions.None);
                 var log = new Log
                 {
-                    StringOrStream = fields[1],
-                    TestDataName = fields[2],
-                    Repetitions = fields[3].ToInt(),
-                    RepetitionIndex = fields[4].ToInt(),
-                    SerializerName = fields[5],
-                    TimeSer = fields[6].ToInt64(),
-                    TimeDeser = fields[7].ToInt64(),
-                    Size = fields[8].ToInt()
-                    //TimeSerAndDeser = fields[9]... // properties: without setters
-                    //OpPerSecSer = fields[10]...
-                    //OpPerSecDeser = fields[10].ToDouble(),
-                    //OpPerSecSerAndDeser = fields[11].ToDouble(),
+                    StringOrStream = Field(fields, iStream),
+                    TestDataName = Field(fields, iData),
+                    Repetitions = ParseInt(fields, iReps),
+                    RepetitionIndex = ParseInt(fields, iRepIdx),
+                    SerializerName = Field(fields, iName),
+                    SerializerVersion = Field(fields, iVer),
+                    TimeSer = ParseLong(fields, iSer),
+                    TimeDeser = ParseLong(fields, iDeser),
+                    Size = ParseInt(fields, iSize),
+                    MemoryPeakBytes = ParseLong(fields, iMem),
                 };
+                if (iFid >= 0 && iFid < fields.Length &&
+                    double.TryParse(fields[iFid], System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var fid))
+                    log.FidelityScore = fid;
                 logs.Add(log);
             }
             return logs;

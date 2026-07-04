@@ -70,6 +70,7 @@ _TYPE_NAMES: Dict[Type[Any], str] = {
 
 
 class AvroSerializer(Serializer):
+    package_name = "fastavro"
     native_kind = "dict"
     stream_mode = "native"  # schemaless_writer/reader on the provided stream
 

@@ -17,7 +17,7 @@ type encodingJSON struct {
 func newEncodingJSON() *encodingJSON { return &encodingJSON{} }
 
 func (s *encodingJSON) Name() string           { return "encoding/json" }
-func (s *encodingJSON) Version() string        { return "stdlib" }
+func (s *encodingJSON) Version() string        { return ModuleVersion("stdlib") }
 func (s *encodingJSON) StreamMode() StreamMode { return StreamNative }
 func (s *encodingJSON) NativeKind() NativeKind { return NativeReflect }
 func (s *encodingJSON) Supports(n string) bool { return DefaultSupports(n) }

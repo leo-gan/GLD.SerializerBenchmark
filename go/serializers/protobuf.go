@@ -24,7 +24,7 @@ type googleProtobuf struct {
 func newGoogleProtobuf() *googleProtobuf { return &googleProtobuf{} }
 
 func (s *googleProtobuf) Name() string           { return "protobuf" }
-func (s *googleProtobuf) Version() string        { return "proto3" }
+func (s *googleProtobuf) Version() string        { return ModuleVersion("google.golang.org/protobuf") }
 func (s *googleProtobuf) StreamMode() StreamMode { return StreamAdapted }
 func (s *googleProtobuf) NativeKind() NativeKind { return NativeMessage }
 func (s *googleProtobuf) Supports(n string) bool {

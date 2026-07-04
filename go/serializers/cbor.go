@@ -31,7 +31,7 @@ func newFxamackerCBOR() *fxamackerCBOR {
 }
 
 func (s *fxamackerCBOR) Name() string           { return "fxamacker/cbor" }
-func (s *fxamackerCBOR) Version() string        { return "2" }
+func (s *fxamackerCBOR) Version() string        { return ModuleVersion("github.com/fxamacker/cbor/v2") }
 func (s *fxamackerCBOR) StreamMode() StreamMode { return StreamNative }
 func (s *fxamackerCBOR) NativeKind() NativeKind { return NativeReflect }
 func (s *fxamackerCBOR) Supports(n string) bool { return DefaultSupports(n) }

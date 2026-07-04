@@ -18,7 +18,7 @@ type shamatonMsgpack struct {
 func newShamatonMsgpack() *shamatonMsgpack { return &shamatonMsgpack{} }
 
 func (s *shamatonMsgpack) Name() string           { return "shamaton/msgpack" }
-func (s *shamatonMsgpack) Version() string        { return "3" }
+func (s *shamatonMsgpack) Version() string        { return ModuleVersion("github.com/shamaton/msgpack/v3") }
 func (s *shamatonMsgpack) StreamMode() StreamMode { return StreamAdapted }
 func (s *shamatonMsgpack) NativeKind() NativeKind { return NativeReflect }
 func (s *shamatonMsgpack) Supports(n string) bool { return DefaultSupports(n) }

@@ -12,6 +12,14 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
+// Locked dependency versions from Cargo.lock (build.rs → OUT_DIR/dep_versions.rs).
+include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
+
+#[inline]
+fn ver(crate_name: &str) -> &'static str {
+    crate_version(crate_name)
+}
+
 /// How stream mode is implemented (mirrors Python `stream_mode`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StreamMode {
@@ -90,7 +98,7 @@ impl BenchSerializer for SerdeJson {
         "serde_json"
     }
     fn version(&self) -> &'static str {
-        "1"
+        ver("serde_json")
     }
     fn stream_mode(&self) -> StreamMode {
         StreamMode::Native
@@ -132,7 +140,7 @@ impl BenchSerializer for SimdJson {
         "simd-json"
     }
     fn version(&self) -> &'static str {
-        "0.14"
+        ver("simd-json")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         self.scratch.clear();
@@ -161,7 +169,7 @@ impl BenchSerializer for SonicRs {
         "sonic-rs"
     }
     fn version(&self) -> &'static str {
-        "0.3"
+        ver("sonic-rs")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())
@@ -189,7 +197,7 @@ impl BenchSerializer for RmpSerde {
         "rmp-serde"
     }
     fn version(&self) -> &'static str {
-        "1"
+        ver("rmp-serde")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())
@@ -217,7 +225,7 @@ impl BenchSerializer for CiboriumSer {
         "ciborium"
     }
     fn version(&self) -> &'static str {
-        "0.2"
+        ver("ciborium")
     }
     fn stream_mode(&self) -> StreamMode {
         StreamMode::Native
@@ -260,7 +268,7 @@ impl BenchSerializer for BincodeSer {
         "bincode"
     }
     fn version(&self) -> &'static str {
-        "2"
+        ver("bincode")
     }
     fn stream_mode(&self) -> StreamMode {
         // encode_into_std_write is native; decode_from_std_read needs Sized reader,
@@ -290,7 +298,7 @@ impl BenchSerializer for PostcardSer {
         "postcard"
     }
     fn version(&self) -> &'static str {
-        "1"
+        ver("postcard")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())
@@ -314,7 +322,7 @@ impl BenchSerializer for BitcodeSer {
         "bitcode"
     }
     fn version(&self) -> &'static str {
-        "0.6"
+        ver("bitcode")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())
@@ -338,7 +346,7 @@ impl BenchSerializer for FlexbuffersSer {
         "flexbuffers"
     }
     fn version(&self) -> &'static str {
-        "2"
+        ver("flexbuffers")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())
@@ -372,7 +380,9 @@ macro_rules! impl_kinded_direct {
                 $log
             }
             fn version(&self) -> &'static str {
-                $ver
+                // $ver kept for call-site compatibility; version comes from Cargo.lock.
+                let _ = $ver;
+                ver($log)
             }
             fn native_kind(&self) -> NativeKind {
                 $nk
@@ -701,7 +711,7 @@ impl BenchSerializer for ProstSer {
         "prost"
     }
     fn version(&self) -> &'static str {
-        "0.13"
+        ver("prost")
     }
     fn native_kind(&self) -> NativeKind {
         NativeKind::Message
@@ -780,7 +790,7 @@ impl BenchSerializer for BsonSer {
         "bson"
     }
     fn version(&self) -> &'static str {
-        "2"
+        ver("bson")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())

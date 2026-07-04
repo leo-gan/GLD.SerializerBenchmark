@@ -22,6 +22,7 @@ class BenchmarkLog:
     repetitions: int = 0
     repetition_index: int = 0
     serializer_name: str = ""
+    serializer_version: str = ""
     time_ser_ns: int = 0
     time_deser_ns: int = 0
     size_bytes: int = 0
@@ -46,7 +47,7 @@ class BenchmarkLog:
         return 1_000_000_000.0 / total if total > 0 else 0.0
 
 
-# Full harness CSV schema (config/benchmark_config.yaml csv_schema + optional cols)
+# Full harness CSV schema (SerializerVersion immediately after SerializerName).
 CSV_HEADER = [
     "Language",
     "StringOrStream",
@@ -54,6 +55,7 @@ CSV_HEADER = [
     "Repetitions",
     "RepetitionIndex",
     "SerializerName",
+    "SerializerVersion",
     "TimeSer",
     "TimeDeser",
     "Size",
@@ -63,7 +65,6 @@ CSV_HEADER = [
     "OpPerSecSerAndDeser",
     "MemoryPeakBytes",
     "FidelityScore",
-    "SerializerVersion",
 ]
 
 
@@ -98,6 +99,7 @@ class LogStorage:
             log.repetitions,
             log.repetition_index,
             log.serializer_name,
+            log.serializer_version or "",
             log.time_ser_ns,
             log.time_deser_ns,
             log.size_bytes,
@@ -107,7 +109,6 @@ class LogStorage:
             f"{log.op_per_sec_ser_and_deser:.6f}",
             log.memory_peak_bytes,
             f"{log.fidelity_score:.2f}",
-            "",  # SerializerVersion (optional; fill when known)
         ])
         self._file_handle.flush()
 

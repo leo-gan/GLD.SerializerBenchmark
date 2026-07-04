@@ -21,7 +21,7 @@ type hambaAvro struct {
 func newHambaAvro() *hambaAvro { return &hambaAvro{} }
 
 func (s *hambaAvro) Name() string           { return "hamba/avro" }
-func (s *hambaAvro) Version() string        { return "2" }
+func (s *hambaAvro) Version() string        { return ModuleVersion("github.com/hamba/avro/v2") }
 func (s *hambaAvro) StreamMode() StreamMode { return StreamAdapted }
 func (s *hambaAvro) NativeKind() NativeKind { return NativeSchema }
 func (s *hambaAvro) Supports(n string) bool { return DefaultSupports(n) }

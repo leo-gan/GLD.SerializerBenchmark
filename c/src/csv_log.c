@@ -11,10 +11,11 @@ csv_logger_t *csv_logger_create(const char *path) {
     if (!L) return NULL;
     L->f = fopen(path, "w");
     if (!L->f) { free(L); return NULL; }
+    /* SerializerVersion immediately follows SerializerName. */
     fprintf(L->f,
         "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,"
-        "TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,"
-        "MemoryPeakBytes,FidelityScore,SerializerVersion\n");
+        "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,"
+        "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore\n");
     return L;
 }
 
@@ -28,11 +29,10 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
     double ops_d = deser_ns ? 1e9 / (double)deser_ns : 0;
     double ops_t = tot ? 1e9 / (double)tot : 0;
     fprintf(L->f,
-        "c,%s,%s,%d,%d,%s,%llu,%llu,%zu,%llu,%.6f,%.6f,%.6f,0,%.1f,%s\n",
-        mode, td, reps, rep_idx, ser,
+        "c,%s,%s,%d,%d,%s,%s,%llu,%llu,%zu,%llu,%.6f,%.6f,%.6f,0,%.1f\n",
+        mode, td, reps, rep_idx, ser, version ? version : "",
         (unsigned long long)ser_ns, (unsigned long long)deser_ns, size,
-        (unsigned long long)tot, ops_s, ops_d, ops_t, fidelity,
-        version ? version : "");
+        (unsigned long long)tot, ops_s, ops_d, ops_t, fidelity);
 }
 
 void csv_logger_close(csv_logger_t *L) {

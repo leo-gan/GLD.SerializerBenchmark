@@ -23,7 +23,7 @@ func newSonicJSON() *sonicJSON {
 }
 
 func (s *sonicJSON) Name() string           { return "sonic" }
-func (s *sonicJSON) Version() string        { return "1" }
+func (s *sonicJSON) Version() string        { return ModuleVersion("github.com/bytedance/sonic") }
 func (s *sonicJSON) StreamMode() StreamMode { return StreamNative }
 func (s *sonicJSON) NativeKind() NativeKind { return NativeReflect }
 func (s *sonicJSON) Supports(n string) bool { return DefaultSupports(n) }
