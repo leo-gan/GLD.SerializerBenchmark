@@ -161,19 +161,19 @@ def _generate_violin_plot(
         lang_key = (lang_id or _lang_file_key("", language)).lower().replace("#", "sharp")
         safe_fixture = data_type.replace(" ", "_")
         img_name = f"{lang_key}_{safe_fixture}.png"
-        modes = sorted({str(m) for m in subset.get("StringOrStream", pd.Series(dtype=str)).dropna().unique()})
-        modes_s = ", ".join(modes) if modes else "n/a"
-        n_pts = len(subset)
-        n_ser = int(subset["SerializerName"].nunique())
-        ser_note = f"top {top_n} by mean" if top_n else f"all {n_ser} serializers"
-        scale_note = " · log µs" if use_log else " · µs"
         src = data_source or f"logs/{lang_key}/benchmark-log.csv"
+        modes = sorted(
+            {str(m) for m in subset.get("StringOrStream", pd.Series(dtype=str)).dropna().unique()}
+        )
+        modes_s = ",".join(modes) if modes else "n/a"
+        n_pts = len(subset)
+        top_note = f" · Top {int(top_n)}" if top_n and int(top_n) > 0 else ""
 
+        # Title: language · fixture · Top N (scale on x-axis label).
         g.fig.suptitle(
-            f"{language or lang_key} · TestDataName={data_type}{scale_note}\n"
-            f"{ser_note} · modes: {modes_s} · n={n_pts} points",
+            f"{language or lang_key} · {data_type}{top_note}",
             fontsize=12,
-            y=1.04,
+            y=1.02,
         )
         if use_log:
             g.set_axis_labels('Time (µs, log scale)', 'Serializer')
@@ -184,29 +184,42 @@ def _generate_violin_plot(
                 hi = float(subset['Time_us'].max())
                 ax.set_xlim(lo * 0.85, hi * 1.15)
         else:
-            g.set_axis_labels('Time (microseconds)', 'Serializer')
+            g.set_axis_labels('Time (µs)', 'Serializer')
             g.set(xlim=(0, None))
 
-        # Footer: map image file ↔ CSV / fixture + important run config
-        cfg_note = ""
+        # Footer: file + CSV + samples + mode (+ optional run id). No seed.
+        run_bit = ""
         try:
-            from .environment import important_config_summary, load_run_config
+            from .environment import load_run_config
+            from .config_loader import repo_root as _repo_root
 
-            # data_source may be relative logs/... path; try as-is then repo-relative
-            cfg_doc = load_run_config(data_source) if data_source else None
-            if cfg_doc is None and data_source and not os.path.isabs(data_source):
-                # best-effort: leave empty
-                pass
-            bits = important_config_summary(cfg_doc)[:4]
-            if bits:
-                cfg_note = "  |  " + " · ".join(bits)
+            cfg_doc = None
+            if data_source:
+                candidates = [data_source]
+                if not os.path.isabs(data_source):
+                    candidates.append(os.path.abspath(data_source))
+                    try:
+                        candidates.append(str(_repo_root() / data_source))
+                    except Exception:
+                        pass
+                for cand in candidates:
+                    if not cand:
+                        continue
+                    cfg_doc = load_run_config(cand)
+                    if cfg_doc:
+                        break
+            if cfg_doc:
+                ts = cfg_doc.get("benchmark_ts")
+                if not ts and isinstance(cfg_doc.get("run"), dict):
+                    ts = cfg_doc["run"].get("benchmark_ts")
+                if ts:
+                    run_bit = f"  |  run={ts}"
         except Exception:
-            cfg_note = ""
+            run_bit = ""
         g.fig.text(
             0.5,
             -0.02,
-            f"Plot file: {img_name}  |  CSV: {src}  |  filter: TestDataName == {data_type!r}"
-            f"{cfg_note}",
+            f"{img_name}  |  {src}  |  samples={n_pts}  |  mode={modes_s}{run_bit}",
             ha="center",
             va="top",
             fontsize=8,
