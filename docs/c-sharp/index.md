@@ -39,7 +39,7 @@ This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | Utf8Json | JSON | Utf8Json |
 | YamlDotNet | YAML | YamlDotNet |
 | YAXLib | XML | YAXLib |
-| ZeroFormatter | Binary | ZeroFormatter (prefers zfc formatters) |
+| ZeroFormatter | Binary | ZeroFormatter; Integer / SimpleObject / StringArray via built-in formatters (`int`, `KeyTuple`, `List<string>`) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
 | BinaryPack | Binary | BinaryPack (`T : new()` constraints) |
 | MemoryPack | Binary | MemoryPack (+ generator / models for some fixtures) |
 | SharpYaml | YAML | SharpYaml |
@@ -51,7 +51,8 @@ This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 ### Caveats
 
 - Coverage is **per fixture**; many skip/fail **ObjectGraph**. Failures: `logs/csharp/<ts>.errors.csv` (per run).
-- Bond, Google.Protobuf, FluentSerializer, BinaryPack, ZeroFormatter, MemoryPack, FlatSharp often need schemas or generated models.
+- Bond, Google.Protobuf, FluentSerializer, BinaryPack, MemoryPack, FlatSharp often need schemas or generated models.
+- **ZeroFormatter** supports **Integer**, **SimpleObject**, and **StringArray** only (built-in formatters / `KeyTuple` on .NET 8; full dynamic object formatters are not used).
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.
 
 Harness: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
