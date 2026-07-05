@@ -502,6 +502,62 @@ def main():
                 group_meta=meta,
             )
             all_stats.update(st)
+            
+            # Export to machine-readable JSON: reports/stats_<lang>_latest.json
+            try:
+                import json
+                import datetime
+                os.makedirs(str(reports_root), exist_ok=True)
+                groups_list = []
+                for entry in st.values():
+                    # Strip private helper keys (like _times_total_filtered)
+                    clean_entry = {k: v for k, v in entry.items() if not k.startswith("_")}
+                    groups_list.append(clean_entry)
+                
+                # Dynamic Pareto front computation
+                pareto_front = []
+                workloads = {}
+                for g in groups_list:
+                    wkey = (g["test_data"], g["mode"])
+                    workloads.setdefault(wkey, []).append(g)
+                for wkey, items in workloads.items():
+                    for item in items:
+                        dominated = False
+                        for other in items:
+                            if other == item:
+                                continue
+                            if ((other["avg_time_total_ns"] <= item["avg_time_total_ns"] and other["median_size_bytes"] < item["median_size_bytes"]) or
+                                (other["avg_time_total_ns"] < item["avg_time_total_ns"] and other["median_size_bytes"] <= item["median_size_bytes"])):
+                                dominated = True
+                                break
+                        if not dominated:
+                            pareto_front.append({
+                                "serializer": item["serializer"],
+                                "test_data": item["test_data"],
+                                "mode": item["mode"],
+                                "time": item["avg_time_total_ns"],
+                                "size": item["median_size_bytes"]
+                            })
+
+                export_data = {
+                    "schema_version": "2.0",
+                    "generated": datetime.datetime.now().isoformat(),
+                    "language": lang,
+                    "questions": {
+                        "Q1": "How fast?",
+                        "Q2": "How compact?",
+                        "Q3": "How stable?",
+                        "Q4": "Under which workloads does it win?"
+                    },
+                    "groups": groups_list,
+                    "pareto_front": pareto_front
+                }
+                latest_json_path = reports_root / f"stats_{lang}_latest.json"
+                with open(latest_json_path, "w", encoding="utf-8") as f:
+                    json.dump(export_data, f, indent=2)
+            except Exception as e:
+                print(f"Warning: Failed to export stats JSON for {lang}: {e}")
+
             print(
                 f"Loaded {len(recs)} {lang} records from {os.path.basename(path)} "
                 f"-> {len(clean)} after sanitize, {len(st)} stat groups "

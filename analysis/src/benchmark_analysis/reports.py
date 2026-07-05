@@ -424,10 +424,11 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             col_units[cv] = _pick_column_unit(displayed)
         col_best[cv] = _column_best(displayed, higher_is_better=higher)
 
-    # Header (unit in column title when scaled)
+    # Header (unit in column title when scaled, unless value_key is avg_ops_per_sec)
+    show_unit = (value_key != "avg_ops_per_sec")
     header = (
         f"| {rows_dim} | "
-        + " | ".join(_col_label(cv, col_units[cv][1]) for cv in col_vals)
+        + " | ".join(_col_label(cv, col_units[cv][1] if show_unit else "") for cv in col_vals)
         + " |"
     )
     lines.append(header)
@@ -435,7 +436,18 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
 
     # Rows — all cells in a column share that column's unit; best is bold
     for rv in row_vals:
-        row_cells = [rv]
+        if rows_dim == "serializer":
+            version = ""
+            matching_entries = [s for s in stats.values() if s[rows_dim] == rv]
+            for s in matching_entries:
+                v = s.get("serializer_version")
+                if v:
+                    version = str(v).strip()
+                    break
+            display_name = f"{rv}:{version}" if version else rv
+        else:
+            display_name = rv
+        row_cells = [display_name]
         for cv in col_vals:
             val = cell[(rv, cv)]
             if val is None:
@@ -597,9 +609,18 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         lines.append(f"| serializer | mean ops/s (bytes mode){unit_label} |")
         lines.append("|---|---:|")
         for ser, mean_ops in ranked:
+            # Find the version of this serializer in entries
+            version = ""
+            for e in entries:
+                if (e.get("serializer") or e.get("SerializerName")) == ser:
+                    v = e.get("serializer_version")
+                    if v:
+                        version = str(v).strip()
+                        break
+            display_name = f"{ser}:{version}" if version else ser
             is_best = best is not None and mean_ops == best
             lines.append(
-                f"| {ser} | {_format_in_unit(mean_ops, div, unit, bold=is_best)} |"
+                f"| {display_name} | {_format_in_unit(mean_ops, div, unit, bold=is_best)} |"
             )
         lines.append("")
     return "\n".join(lines)
@@ -686,7 +707,7 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
     cfg = load_metrics_config()
     field_ids = [f[0] for f in MULTI_WAY_SUMMARY_FIELDS]
     keep = set(filter_field_ids(field_ids, profile=profile, metrics_cfg=cfg))
-    cols = [c for c in MULTI_WAY_SUMMARY_FIELDS if c[0] in keep]
+    cols = [c for c in MULTI_WAY_SUMMARY_FIELDS if c[0] in keep and c[0] != "serializer_version"]
     if not cols:
         return ""
 
@@ -708,7 +729,7 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
         return ""
 
     lines = [
-        f"### {title}: scientific summary (multi-way, important metrics)",
+        f"### {title}: summary (multi-way, important metrics)",
         "",
         "Default multi-serializer view shows **high-importance** metrics only "
         "([METRICS.md](../analysis/METRICS.md)). "
@@ -721,14 +742,50 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
     lines.append("| " + " | ".join(headers) + " |")
     lines.append("|" + "---|" * len(headers))
 
-    # Best median total for bold
-    best_med = min(rank_key(s) for s in serializers) if serializers else None
-
+    # 1. Resolve one numeric value per displayed cell first — so we can determine the best value per column
+    cell_vals: Dict[Tuple[str, str], float] = {}
     for ser in serializers:
         entries = by_ser[ser]
-        cells = [ser]
-        is_best = best_med is not None and abs(rank_key(ser) - best_med) < 1e-9
-        for field_id, _title, is_time, _hib in cols:
+        for field_id, _title, is_time, hib in cols:
+            if field_id in ("serializer_version", "effect_vs_fastest_cliffs_label"):
+                continue
+            vals = []
+            for e in entries:
+                v = e.get(field_id)
+                if v is None and field_id == "total_median_ns":
+                    v = e.get("avg_time_total_ns")
+                if v is None:
+                    continue
+                if isinstance(v, (int, float)) and not isinstance(v, bool):
+                    vals.append(float(v))
+            if not vals:
+                continue
+            if field_id == "runs":
+                cell_vals[(ser, field_id)] = sum(vals)
+            else:
+                cell_vals[(ser, field_id)] = sum(vals) / len(vals)
+
+    # 2. Find best value for each column across all serializers
+    col_bests: Dict[str, float] = {}
+    for field_id, _title, is_time, hib in cols:
+        if hib is None:
+            continue
+        vals_in_col = [cell_vals[(ser, field_id)] for ser in serializers if (ser, field_id) in cell_vals]
+        if vals_in_col:
+            col_bests[field_id] = max(vals_in_col) if hib else min(vals_in_col)
+
+    # 3. Render rows
+    for ser in serializers:
+        entries = by_ser[ser]
+        version = ""
+        for e in entries:
+            v = e.get("serializer_version")
+            if v:
+                version = str(v).strip()
+                break
+        display_name = f"{ser}:{version}" if version else ser
+        cells = [display_name]
+        for field_id, _title, is_time, hib in cols:
             vals = []
             for e in entries:
                 v = e.get(field_id)
@@ -739,7 +796,6 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
                 if isinstance(v, (int, float)) and not isinstance(v, bool):
                     vals.append(float(v))
                 elif field_id in ("serializer_version", "effect_vs_fastest_cliffs_label"):
-                    # take first non-empty string
                     if str(v).strip():
                         vals.append(str(v).strip())  # type: ignore[arg-type]
                         break
@@ -749,24 +805,137 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
             if field_id in ("serializer_version", "effect_vs_fastest_cliffs_label"):
                 cells.append(str(vals[0]))
                 continue
-            if field_id == "runs":
-                cells.append(str(int(sum(vals))))
+            
+            num = cell_vals.get((ser, field_id))
+            if num is None:
+                cells.append("-")
                 continue
-            num = sum(vals) / len(vals)
-            if is_time:
+                
+            if field_id == "runs":
+                text = str(int(num))
+            elif is_time:
                 text = f"{num / 1000.0:.3g}"  # ns → µs
             elif field_id == "avg_ops_per_sec":
-                text = f"{num:.3g}"
+                div, unit = _pick_column_unit([num])
+                text = _format_in_unit(num, div, unit, sig=3)
             elif field_id == "mean_fidelity":
                 text = f"{num:.2f}"
             elif field_id == "median_size_bytes":
                 text = f"{num:.4g}"
             else:
                 text = f"{num:.4g}"
-            if is_best and field_id == "total_median_ns":
+                
+            best_val = col_bests.get(field_id)
+            is_best_col = (best_val is not None and abs(num - best_val) < 1e-9)
+            if is_best_col:
                 text = f"**{text}**"
             cells.append(text)
         lines.append("| " + " | ".join(cells) + " |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _total_time_pivot_table_md(stats: Dict, title: str) -> str:
+    """Generate a combined Mean/Median Total Time pivot table."""
+    # Rows are serializers sorted by rank key
+    by_ser: Dict[str, List[Dict]] = {}
+    for e in stats.values():
+        if not isinstance(e, dict):
+            continue
+        by_ser.setdefault(str(e.get("serializer") or ""), []).append(e)
+
+    def rank_key(ser: str) -> float:
+        entries = by_ser[ser]
+        vals = [float(e.get("total_median_ns") or e.get("avg_time_total_ns") or 1e300) for e in entries]
+        return sum(vals) / max(len(vals), 1)
+
+    serializers = sorted(by_ser.keys(), key=rank_key)
+    if not serializers:
+        return ""
+
+    lines = [f"\n### {title}: Total Time (µs) by Serializer and API Mode\n"]
+    
+    headers = [
+        "serializer", 
+        "bytes mode/mean", 
+        "bytes mode/median", 
+        "stream mode/mean", 
+        "stream mode/median"
+    ]
+    lines.append("| " + " | ".join(headers) + " |")
+    lines.append("|" + "---|" * len(headers))
+
+    # Collect values to find min (best) per column
+    col_vals = {
+        "bytes_mean": [],
+        "bytes_median": [],
+        "stream_mean": [],
+        "stream_median": []
+    }
+    
+    def _get_val(entry, key):
+        if not entry:
+            return None
+        v = entry.get(key)
+        if v is None and key == "total_median_ns":
+            v = entry.get("avg_time_total_ns")
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and v == v:
+            return float(v) / 1000.0
+        return None
+
+    for ser in serializers:
+        entries = by_ser[ser]
+        bytes_entry = next((e for e in entries if str(e.get("mode")).lower() == "bytes"), None)
+        stream_entry = next((e for e in entries if str(e.get("mode")).lower() == "stream"), None)
+
+        bm_val = _get_val(bytes_entry, "avg_time_total_ns")
+        bmed_val = _get_val(bytes_entry, "total_median_ns")
+        sm_val = _get_val(stream_entry, "avg_time_total_ns")
+        smed_val = _get_val(stream_entry, "total_median_ns")
+
+        if bm_val is not None: col_vals["bytes_mean"].append(bm_val)
+        if bmed_val is not None: col_vals["bytes_median"].append(bmed_val)
+        if sm_val is not None: col_vals["stream_mean"].append(sm_val)
+        if smed_val is not None: col_vals["stream_median"].append(smed_val)
+
+    bests = {
+        "bytes_mean": min(col_vals["bytes_mean"]) if col_vals["bytes_mean"] else None,
+        "bytes_median": min(col_vals["bytes_median"]) if col_vals["bytes_median"] else None,
+        "stream_mean": min(col_vals["stream_mean"]) if col_vals["stream_mean"] else None,
+        "stream_median": min(col_vals["stream_median"]) if col_vals["stream_median"] else None
+    }
+
+    for ser in serializers:
+        entries = by_ser[ser]
+        version = ""
+        for e in entries:
+            v = e.get("serializer_version")
+            if v:
+                version = str(v).strip()
+                break
+        display_name = f"{ser}:{version}" if version else ser
+
+        bytes_entry = next((e for e in entries if str(e.get("mode")).lower() == "bytes"), None)
+        stream_entry = next((e for e in entries if str(e.get("mode")).lower() == "stream"), None)
+
+        bm_val = _get_val(bytes_entry, "avg_time_total_ns")
+        bmed_val = _get_val(bytes_entry, "total_median_ns")
+        sm_val = _get_val(stream_entry, "avg_time_total_ns")
+        smed_val = _get_val(stream_entry, "total_median_ns")
+
+        row_cells = [display_name]
+        for val, key in [(bm_val, "bytes_mean"), (bmed_val, "bytes_median"), (sm_val, "stream_mean"), (smed_val, "stream_median")]:
+            if val is None:
+                row_cells.append("-")
+            else:
+                is_best = bests[key] is not None and abs(val - bests[key]) < 1e-9
+                text = f"{val:.3g}"
+                if is_best:
+                    text = f"**{text}**"
+                row_cells.append(text)
+        
+        lines.append("| " + " | ".join(row_cells) + " |")
+
     lines.append("")
     return "\n".join(lines)
 
@@ -857,21 +1026,9 @@ def generate_language_results_pages(
             if sci:
                 lines.append(sci)
             lines.append(
-                _pivot_table_md(
+                _total_time_pivot_table_md(
                     stats,
-                    "serializer",
-                    "mode",
-                    "total_median_ns",
-                    f"{title}: Median Total Time (µs) by Serializer and API Mode",
-                )
-            )
-            lines.append(
-                _pivot_table_md(
-                    stats,
-                    "serializer",
-                    "mode",
-                    "avg_time_total_ns",
-                    f"{title}: Mean Total Time (µs) by Serializer and API Mode",
+                    title,
                 )
             )
             lines.append(

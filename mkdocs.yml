@@ -1,8 +1,12 @@
-site_name: Cross-Language Serializer Benchmark
-site_description: Cross-language serialization performance comparison.
+site_name: Multi-Language Serializer Benchmark
+site_description: Multi-language serialization performance comparison.
 site_url: https://leo-gan.github.io/GLD.SerializerBenchmark/
 repo_url: https://github.com/leo-gan/GLD.SerializerBenchmark
 repo_name: leo-gan/GLD.SerializerBenchmark
+
+exclude_docs: |
+  dashboard/logs/**
+
 
 theme:
   name: material
@@ -82,6 +86,7 @@ nav:
       - Results: go/results.md
   - Benchmarks:
       - Overview: analysis/index.md
+      - 📊Dashboard: dashboard/
       - Benchmark architecture: analysis/architecture.md
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md
       - Serialization Categories: analysis/serialization_categories.md

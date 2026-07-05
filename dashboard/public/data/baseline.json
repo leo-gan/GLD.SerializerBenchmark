@@ -1,0 +1,4422 @@
+{
+  "csharp|MS Binary|Person|string": {
+    "avg_time_total_ns": 15734448.484848484,
+    "avg_ops_per_sec": 63.55481737812112,
+    "median_size_bytes": 1420.0
+  },
+  "csharp|MS Bond Compact|Person|string": {
+    "avg_time_total_ns": 1975309.1836734693,
+    "avg_ops_per_sec": 506.2498611687243,
+    "median_size_bytes": 184.0
+  },
+  "csharp|MS Bond Fast|Person|string": {
+    "avg_time_total_ns": 1053842.857142857,
+    "avg_ops_per_sec": 948.9080779189092,
+    "median_size_bytes": 248.0
+  },
+  "csharp|MS Bond Json|Person|string": {
+    "avg_time_total_ns": 4546422.916666667,
+    "avg_ops_per_sec": 219.95314081629192,
+    "median_size_bytes": 334.0
+  },
+  "csharp|MS DataContract|Person|string": {
+    "avg_time_total_ns": 14808732.291666666,
+    "avg_ops_per_sec": 67.52772487910603,
+    "median_size_bytes": 1040.0
+  },
+  "csharp|MS DataContract Json|Person|string": {
+    "avg_time_total_ns": 11376854.736842105,
+    "avg_ops_per_sec": 87.897755850012,
+    "median_size_bytes": 480.0
+  },
+  "csharp|MS XmlSerializer|Person|string": {
+    "avg_time_total_ns": 14401383.157894736,
+    "avg_ops_per_sec": 69.43777476344744,
+    "median_size_bytes": 944.0
+  },
+  "csharp|fastJson|Person|string": {
+    "avg_time_total_ns": 10809700.0,
+    "avg_ops_per_sec": 92.50950535167489,
+    "median_size_bytes": 841.0
+  },
+  "csharp|Jil|Person|string": {
+    "avg_time_total_ns": 4977157.894736842,
+    "avg_ops_per_sec": 200.917877461244,
+    "median_size_bytes": 363.0
+  },
+  "csharp|Json.Net (Helper)|Person|string": {
+    "avg_time_total_ns": 15216714.736842105,
+    "avg_ops_per_sec": 65.71720751121396,
+    "median_size_bytes": 438.0
+  },
+  "csharp|Json.Net|Person|string": {
+    "avg_time_total_ns": 5730233.684210527,
+    "avg_ops_per_sec": 174.51295271874648,
+    "median_size_bytes": 452.0
+  },
+  "csharp|FsPickler|Person|string": {
+    "avg_time_total_ns": 8315693.87755102,
+    "avg_ops_per_sec": 120.25454697167147,
+    "median_size_bytes": 412.0
+  },
+  "csharp|FsPicklerJson|Person|string": {
+    "avg_time_total_ns": 8993936.842105264,
+    "avg_ops_per_sec": 111.18601537409997,
+    "median_size_bytes": 880.0
+  },
+  "csharp|NetJSON|Person|string": {
+    "avg_time_total_ns": 4025545.3608247424,
+    "avg_ops_per_sec": 248.4135465797168,
+    "median_size_bytes": 344.0
+  },
+  "csharp|ProtoBuf|Person|string": {
+    "avg_time_total_ns": 4790296.907216495,
+    "avg_ops_per_sec": 208.75532756508647,
+    "median_size_bytes": 188.0
+  },
+  "csharp|ServiceStack Json|Person|string": {
+    "avg_time_total_ns": 11927483.673469387,
+    "avg_ops_per_sec": 83.8399806175653,
+    "median_size_bytes": 363.0
+  },
+  "csharp|ServiceStack|Person|string": {
+    "avg_time_total_ns": 9693365.656565657,
+    "avg_ops_per_sec": 103.16334237558293,
+    "median_size_bytes": 308.0
+  },
+  "csharp|Ceras|Person|string": {
+    "avg_time_total_ns": 9276095.918367347,
+    "avg_ops_per_sec": 107.8039736544689,
+    "median_size_bytes": 220.0
+  },
+  "csharp|Hyperion|Person|string": {
+    "avg_time_total_ns": 5551997.916666667,
+    "avg_ops_per_sec": 180.11534136172452,
+    "median_size_bytes": 680.0
+  },
+  "csharp|NetSerializer|Person|string": {
+    "avg_time_total_ns": 1981260.4166666667,
+    "avg_ops_per_sec": 504.72920752256823,
+    "median_size_bytes": 176.0
+  },
+  "csharp|SpanJson|Person|string": {
+    "avg_time_total_ns": 4241187.368421053,
+    "avg_ops_per_sec": 235.78302799017555,
+    "median_size_bytes": 368.0
+  },
+  "csharp|Utf8Json|Person|string": {
+    "avg_time_total_ns": 5979444.329896907,
+    "avg_ops_per_sec": 167.2396204108888,
+    "median_size_bytes": 368.0
+  },
+  "csharp|YamlDotNet|Person|string": {
+    "avg_time_total_ns": 67548885.26315789,
+    "avg_ops_per_sec": 14.804093303748626,
+    "median_size_bytes": 342.0
+  },
+  "csharp|YAXLib|Person|string": {
+    "avg_time_total_ns": 96662828.125,
+    "avg_ops_per_sec": 10.345238385813058,
+    "median_size_bytes": 796.0
+  },
+  "csharp|SharpYaml|Person|string": {
+    "avg_time_total_ns": 52113329.787234046,
+    "avg_ops_per_sec": 19.18894847216163,
+    "median_size_bytes": 386.0
+  },
+  "csharp|MS Binary|Person|Stream": {
+    "avg_time_total_ns": 15063284.536082475,
+    "avg_ops_per_sec": 66.38658372313208,
+    "median_size_bytes": 1064.0
+  },
+  "csharp|MS Bond Compact|Person|Stream": {
+    "avg_time_total_ns": 2683615.789473684,
+    "avg_ops_per_sec": 372.63158307625025,
+    "median_size_bytes": 137.0
+  },
+  "csharp|MS Bond Fast|Person|Stream": {
+    "avg_time_total_ns": 1647940.0,
+    "avg_ops_per_sec": 606.8182094008278,
+    "median_size_bytes": 184.0
+  },
+  "csharp|MS Bond Json|Person|Stream": {
+    "avg_time_total_ns": 4785408.510638298,
+    "avg_ops_per_sec": 208.96857557237382,
+    "median_size_bytes": 334.0
+  },
+  "csharp|MS DataContract|Person|Stream": {
+    "avg_time_total_ns": 14733104.166666666,
+    "avg_ops_per_sec": 67.8743589054694,
+    "median_size_bytes": 778.0
+  },
+  "csharp|MS DataContract Json|Person|Stream": {
+    "avg_time_total_ns": 11143386.458333334,
+    "avg_ops_per_sec": 89.73932688587429,
+    "median_size_bytes": 358.0
+  },
+  "csharp|MS XmlSerializer|Person|Stream": {
+    "avg_time_total_ns": 15135201.020408163,
+    "avg_ops_per_sec": 66.07114095489115,
+    "median_size_bytes": 943.0
+  },
+  "csharp|fastJson|Person|Stream": {
+    "avg_time_total_ns": 13177107.368421054,
+    "avg_ops_per_sec": 75.889189640854,
+    "median_size_bytes": 841.0
+  },
+  "csharp|Jil|Person|Stream": {
+    "avg_time_total_ns": 5184661.458333333,
+    "avg_ops_per_sec": 192.8766242572492,
+    "median_size_bytes": 363.0
+  },
+  "csharp|Json.Net (Helper)|Person|Stream": {
+    "avg_time_total_ns": 16417762.765957447,
+    "avg_ops_per_sec": 60.90963880130609,
+    "median_size_bytes": 438.0
+  },
+  "csharp|Json.Net|Person|Stream": {
+    "avg_time_total_ns": 6224156.043956044,
+    "avg_ops_per_sec": 160.66435239377526,
+    "median_size_bytes": 459.0
+  },
+  "csharp|FsPickler|Person|Stream": {
+    "avg_time_total_ns": 8138314.893617021,
+    "avg_ops_per_sec": 122.87555999882876,
+    "median_size_bytes": 309.0
+  },
+  "csharp|FsPicklerJson|Person|Stream": {
+    "avg_time_total_ns": 8026414.130434782,
+    "avg_ops_per_sec": 124.58863743501247,
+    "median_size_bytes": 660.0
+  },
+  "csharp|NetJSON|Person|Stream": {
+    "avg_time_total_ns": 4599919.354838709,
+    "avg_ops_per_sec": 217.39511562264417,
+    "median_size_bytes": 344.0
+  },
+  "csharp|ProtoBuf|Person|Stream": {
+    "avg_time_total_ns": 4478655.913978495,
+    "avg_ops_per_sec": 223.28127438387574,
+    "median_size_bytes": 140.0
+  },
+  "csharp|ServiceStack Json|Person|Stream": {
+    "avg_time_total_ns": 12415406.315789474,
+    "avg_ops_per_sec": 80.54508846224674,
+    "median_size_bytes": 363.0
+  },
+  "csharp|ServiceStack|Person|Stream": {
+    "avg_time_total_ns": 10014614.583333334,
+    "avg_ops_per_sec": 99.85406744102109,
+    "median_size_bytes": 308.0
+  },
+  "csharp|Ceras|Person|Stream": {
+    "avg_time_total_ns": 9819081.632653061,
+    "avg_ops_per_sec": 101.8425182121442,
+    "median_size_bytes": 164.0
+  },
+  "csharp|Hyperion|Person|Stream": {
+    "avg_time_total_ns": 5159637.113402062,
+    "avg_ops_per_sec": 193.8120798074187,
+    "median_size_bytes": 510.0
+  },
+  "csharp|NetSerializer|Person|Stream": {
+    "avg_time_total_ns": 1761386.7346938776,
+    "avg_ops_per_sec": 567.7344902758089,
+    "median_size_bytes": 130.0
+  },
+  "csharp|SpanJson|Person|Stream": {
+    "avg_time_total_ns": 4906872.164948453,
+    "avg_ops_per_sec": 203.79581256331855,
+    "median_size_bytes": 368.0
+  },
+  "csharp|Utf8Json|Person|Stream": {
+    "avg_time_total_ns": 6534035.714285715,
+    "avg_ops_per_sec": 153.04477106142014,
+    "median_size_bytes": 368.0
+  },
+  "csharp|YamlDotNet|Person|Stream": {
+    "avg_time_total_ns": 71896513.54166667,
+    "avg_ops_per_sec": 13.908880288339201,
+    "median_size_bytes": 345.0
+  },
+  "csharp|YAXLib|Person|Stream": {
+    "avg_time_total_ns": 96234846.80851063,
+    "avg_ops_per_sec": 10.391246343331467,
+    "median_size_bytes": 799.0
+  },
+  "csharp|SharpYaml|Person|Stream": {
+    "avg_time_total_ns": 57868564.948453605,
+    "avg_ops_per_sec": 17.28053911291475,
+    "median_size_bytes": 389.0
+  },
+  "csharp|MS Binary|Integer|string": {
+    "avg_time_total_ns": 3962858.3333333335,
+    "avg_ops_per_sec": 252.3431109279287,
+    "median_size_bytes": 72.0
+  },
+  "csharp|MS Bond Compact|Integer|string": {
+    "avg_time_total_ns": 385127.6595744681,
+    "avg_ops_per_sec": 2596.5416275343905,
+    "median_size_bytes": 4.0
+  },
+  "csharp|MS Bond Fast|Integer|string": {
+    "avg_time_total_ns": 165576.66666666666,
+    "avg_ops_per_sec": 6039.498319006301,
+    "median_size_bytes": 4.0
+  },
+  "csharp|MS Bond Json|Integer|string": {
+    "avg_time_total_ns": 673675.2688172043,
+    "avg_ops_per_sec": 1484.3947021474244,
+    "median_size_bytes": 2.0
+  },
+  "csharp|MS DataContract|Integer|string": {
+    "avg_time_total_ns": 2921951.5789473685,
+    "avg_ops_per_sec": 342.2370196703429,
+    "median_size_bytes": 108.0
+  },
+  "csharp|MS DataContract Json|Integer|string": {
+    "avg_time_total_ns": 1889081.7204301076,
+    "avg_ops_per_sec": 529.3577240122355,
+    "median_size_bytes": 16.0
+  },
+  "csharp|MS XmlSerializer|Integer|string": {
+    "avg_time_total_ns": 3150017.8947368423,
+    "avg_ops_per_sec": 317.45851402013756,
+    "median_size_bytes": 61.0
+  },
+  "csharp|fastJson|Integer|string": {
+    "avg_time_total_ns": 1299388.1720430108,
+    "avg_ops_per_sec": 769.592968071822,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Jil|Integer|string": {
+    "avg_time_total_ns": 1023487.2340425532,
+    "avg_ops_per_sec": 977.0517567182702,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Json.Net (Helper)|Integer|string": {
+    "avg_time_total_ns": 1625050.0,
+    "avg_ops_per_sec": 615.3656810559675,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Json.Net|Integer|string": {
+    "avg_time_total_ns": 318803.0612244898,
+    "avg_ops_per_sec": 3136.7327407682433,
+    "median_size_bytes": 10.0
+  },
+  "csharp|FsPickler|Integer|string": {
+    "avg_time_total_ns": 2483946.8085106383,
+    "avg_ops_per_sec": 402.58511034686563,
+    "median_size_bytes": 160.0
+  },
+  "csharp|FsPicklerJson|Integer|string": {
+    "avg_time_total_ns": 4078303.1914893617,
+    "avg_ops_per_sec": 245.20001408595826,
+    "median_size_bytes": 360.0
+  },
+  "csharp|NetJSON|Integer|string": {
+    "avg_time_total_ns": 553698.9247311827,
+    "avg_ops_per_sec": 1806.0356546393757,
+    "median_size_bytes": 10.0
+  },
+  "csharp|ProtoBuf|Integer|string": {
+    "avg_time_total_ns": 1380488.1720430108,
+    "avg_ops_per_sec": 724.3814327797397,
+    "median_size_bytes": 8.0
+  },
+  "csharp|SharpSerializer|Integer|string": {
+    "avg_time_total_ns": 5045041.111111111,
+    "avg_ops_per_sec": 198.2144402743552,
+    "median_size_bytes": 208.0
+  },
+  "csharp|ServiceStack Json|Integer|string": {
+    "avg_time_total_ns": 639841.9354838709,
+    "avg_ops_per_sec": 1562.8859950290143,
+    "median_size_bytes": 10.0
+  },
+  "csharp|ServiceStack|Integer|string": {
+    "avg_time_total_ns": 442926.59574468085,
+    "avg_ops_per_sec": 2257.7104414304276,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Ceras|Integer|string": {
+    "avg_time_total_ns": 1815992.3076923077,
+    "avg_ops_per_sec": 550.6631254791828,
+    "median_size_bytes": 28.0
+  },
+  "csharp|CsvHelper|Integer|string": {
+    "avg_time_total_ns": 52320681.05263158,
+    "avg_ops_per_sec": 19.112901053295882,
+    "median_size_bytes": 12.0
+  },
+  "csharp|FlatSharp|Integer|string": {
+    "avg_time_total_ns": 968757.7777777778,
+    "avg_ops_per_sec": 1032.2497769193537,
+    "median_size_bytes": 24.0
+  },
+  "csharp|Hyperion|Integer|string": {
+    "avg_time_total_ns": 534929.0322580645,
+    "avg_ops_per_sec": 1869.4068552958488,
+    "median_size_bytes": 8.0
+  },
+  "csharp|NetSerializer|Integer|string": {
+    "avg_time_total_ns": 285108.5106382979,
+    "avg_ops_per_sec": 3507.436511667823,
+    "median_size_bytes": 8.0
+  },
+  "csharp|SpanJson|Integer|string": {
+    "avg_time_total_ns": 967367.7777777778,
+    "avg_ops_per_sec": 1033.7330051422475,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Utf8Json|Integer|string": {
+    "avg_time_total_ns": 1112450.5494505495,
+    "avg_ops_per_sec": 898.9163612655951,
+    "median_size_bytes": 10.0
+  },
+  "csharp|YamlDotNet|Integer|string": {
+    "avg_time_total_ns": 9965573.913043479,
+    "avg_ops_per_sec": 100.34545011914932,
+    "median_size_bytes": 11.0
+  },
+  "csharp|YAXLib|Integer|string": {
+    "avg_time_total_ns": 12563638.202247191,
+    "avg_ops_per_sec": 79.59477851098382,
+    "median_size_bytes": 25.0
+  },
+  "csharp|MemoryPack|Integer|string": {
+    "avg_time_total_ns": 808066.3157894737,
+    "avg_ops_per_sec": 1237.5221939835578,
+    "median_size_bytes": 8.0
+  },
+  "csharp|SharpYaml|Integer|string": {
+    "avg_time_total_ns": 3373200.0,
+    "avg_ops_per_sec": 296.45440531246294,
+    "median_size_bytes": 11.0
+  },
+  "csharp|GroBuf|Integer|string": {
+    "avg_time_total_ns": 480352.17391304346,
+    "avg_ops_per_sec": 2081.805921380147,
+    "median_size_bytes": 8.0
+  },
+  "csharp|ExtendedXmlSerializer|Integer|string": {
+    "avg_time_total_ns": 1951418.4782608696,
+    "avg_ops_per_sec": 512.4477456476754,
+    "median_size_bytes": 114.0
+  },
+  "csharp|Migrant|Integer|string": {
+    "avg_time_total_ns": 5935029.47368421,
+    "avg_ops_per_sec": 168.4911598895975,
+    "median_size_bytes": 180.0
+  },
+  "csharp|MS Binary|Integer|Stream": {
+    "avg_time_total_ns": 5606180.208333333,
+    "avg_ops_per_sec": 178.37457285328526,
+    "median_size_bytes": 54.0
+  },
+  "csharp|MS Bond Compact|Integer|Stream": {
+    "avg_time_total_ns": 1523443.0232558139,
+    "avg_ops_per_sec": 656.4078765892132,
+    "median_size_bytes": 1.0
+  },
+  "csharp|MS Bond Fast|Integer|Stream": {
+    "avg_time_total_ns": 1007689.0243902439,
+    "avg_ops_per_sec": 992.3696455909137,
+    "median_size_bytes": 1.0
+  },
+  "csharp|MS Bond Json|Integer|Stream": {
+    "avg_time_total_ns": 1233951.0638297873,
+    "avg_ops_per_sec": 810.4049093294847,
+    "median_size_bytes": 2.0
+  },
+  "csharp|MS DataContract|Integer|Stream": {
+    "avg_time_total_ns": 4163171.276595745,
+    "avg_ops_per_sec": 240.20150350809186,
+    "median_size_bytes": 81.0
+  },
+  "csharp|MS DataContract Json|Integer|Stream": {
+    "avg_time_total_ns": 2785557.4468085105,
+    "avg_ops_per_sec": 358.9945707799807,
+    "median_size_bytes": 10.0
+  },
+  "csharp|MS XmlSerializer|Integer|Stream": {
+    "avg_time_total_ns": 4659648.421052632,
+    "avg_ops_per_sec": 214.60846605549187,
+    "median_size_bytes": 60.0
+  },
+  "csharp|fastJson|Integer|Stream": {
+    "avg_time_total_ns": 2304203.06122449,
+    "avg_ops_per_sec": 433.9895284526635,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Jil|Integer|Stream": {
+    "avg_time_total_ns": 1686683.6734693877,
+    "avg_ops_per_sec": 592.879397440939,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Json.Net (Helper)|Integer|Stream": {
+    "avg_time_total_ns": 2983979.381443299,
+    "avg_ops_per_sec": 335.122959032082,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Json.Net|Integer|Stream": {
+    "avg_time_total_ns": 449984.70588235295,
+    "avg_ops_per_sec": 2222.2977512961224,
+    "median_size_bytes": 10.0
+  },
+  "csharp|FsPickler|Integer|Stream": {
+    "avg_time_total_ns": 3932635.0515463916,
+    "avg_ops_per_sec": 254.28243070934838,
+    "median_size_bytes": 119.0
+  },
+  "csharp|FsPicklerJson|Integer|Stream": {
+    "avg_time_total_ns": 4757792.55319149,
+    "avg_ops_per_sec": 210.18150514553392,
+    "median_size_bytes": 269.0
+  },
+  "csharp|NetJSON|Integer|Stream": {
+    "avg_time_total_ns": 1140401.030927835,
+    "avg_ops_per_sec": 876.8845106939231,
+    "median_size_bytes": 10.0
+  },
+  "csharp|ProtoBuf|Integer|Stream": {
+    "avg_time_total_ns": 2080182.105263158,
+    "avg_ops_per_sec": 480.72714281593767,
+    "median_size_bytes": 6.0
+  },
+  "csharp|SharpSerializer|Integer|Stream": {
+    "avg_time_total_ns": 7778993.87755102,
+    "avg_ops_per_sec": 128.5513288403332,
+    "median_size_bytes": 155.0
+  },
+  "csharp|ServiceStack Json|Integer|Stream": {
+    "avg_time_total_ns": 1516780.612244898,
+    "avg_ops_per_sec": 659.2911274887399,
+    "median_size_bytes": 10.0
+  },
+  "csharp|ServiceStack|Integer|Stream": {
+    "avg_time_total_ns": 850026.0416666666,
+    "avg_ops_per_sec": 1176.434545510248,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Ceras|Integer|Stream": {
+    "avg_time_total_ns": 3186980.8080808083,
+    "avg_ops_per_sec": 313.7765993018946,
+    "median_size_bytes": 20.0
+  },
+  "csharp|CsvHelper|Integer|Stream": {
+    "avg_time_total_ns": 69432082.82828283,
+    "avg_ops_per_sec": 14.402563761095392,
+    "median_size_bytes": 15.0
+  },
+  "csharp|FlatSharp|Integer|Stream": {
+    "avg_time_total_ns": 1917186.3157894737,
+    "avg_ops_per_sec": 521.5977141941013,
+    "median_size_bytes": 18.0
+  },
+  "csharp|Hyperion|Integer|Stream": {
+    "avg_time_total_ns": 733551.0204081633,
+    "avg_ops_per_sec": 1363.2316937458268,
+    "median_size_bytes": 5.0
+  },
+  "csharp|NetSerializer|Integer|Stream": {
+    "avg_time_total_ns": 390925.2631578947,
+    "avg_ops_per_sec": 2558.0337068062545,
+    "median_size_bytes": 6.0
+  },
+  "csharp|SpanJson|Integer|Stream": {
+    "avg_time_total_ns": 1943869.387755102,
+    "avg_ops_per_sec": 514.4378559070065,
+    "median_size_bytes": 10.0
+  },
+  "csharp|Utf8Json|Integer|Stream": {
+    "avg_time_total_ns": 2162617.3469387754,
+    "avg_ops_per_sec": 462.4026536250245,
+    "median_size_bytes": 10.0
+  },
+  "csharp|YamlDotNet|Integer|Stream": {
+    "avg_time_total_ns": 14381561.458333334,
+    "avg_ops_per_sec": 69.53347888525374,
+    "median_size_bytes": 14.0
+  },
+  "csharp|YAXLib|Integer|Stream": {
+    "avg_time_total_ns": 19322811.340206187,
+    "avg_ops_per_sec": 51.75230365776212,
+    "median_size_bytes": 28.0
+  },
+  "csharp|MemoryPack|Integer|Stream": {
+    "avg_time_total_ns": 1544358.3333333333,
+    "avg_ops_per_sec": 647.5181170173157,
+    "median_size_bytes": 5.0
+  },
+  "csharp|SharpYaml|Integer|Stream": {
+    "avg_time_total_ns": 4999171.134020618,
+    "avg_ops_per_sec": 200.03316013623703,
+    "median_size_bytes": 14.0
+  },
+  "csharp|GroBuf|Integer|Stream": {
+    "avg_time_total_ns": 906444.2105263158,
+    "avg_ops_per_sec": 1103.2118561597542,
+    "median_size_bytes": 5.0
+  },
+  "csharp|ExtendedXmlSerializer|Integer|Stream": {
+    "avg_time_total_ns": 2842333.3333333335,
+    "avg_ops_per_sec": 351.823619092295,
+    "median_size_bytes": 117.0
+  },
+  "csharp|Migrant|Integer|Stream": {
+    "avg_time_total_ns": 9084324.74226804,
+    "avg_ops_per_sec": 110.07972836408473,
+    "median_size_bytes": 134.0
+  },
+  "csharp|MS Binary|Telemetry|string": {
+    "avg_time_total_ns": 14526495.95959596,
+    "avg_ops_per_sec": 68.83972588994642,
+    "median_size_bytes": 1748.0
+  },
+  "csharp|MS Bond Compact|Telemetry|string": {
+    "avg_time_total_ns": 2217040.8163265307,
+    "avg_ops_per_sec": 451.05168684125744,
+    "median_size_bytes": 1152.0
+  },
+  "csharp|MS Bond Fast|Telemetry|string": {
+    "avg_time_total_ns": 1055602.0833333333,
+    "avg_ops_per_sec": 947.3266638904734,
+    "median_size_bytes": 1180.0
+  },
+  "csharp|MS Bond Json|Telemetry|string": {
+    "avg_time_total_ns": 17967409.375,
+    "avg_ops_per_sec": 55.65632635895791,
+    "median_size_bytes": 2134.0
+  },
+  "csharp|MS DataContract|Telemetry|string": {
+    "avg_time_total_ns": 29077121.649484538,
+    "avg_ops_per_sec": 34.391299525953166,
+    "median_size_bytes": 5964.0
+  },
+  "csharp|MS DataContract Json|Telemetry|string": {
+    "avg_time_total_ns": 22670415.625,
+    "avg_ops_per_sec": 44.110351417520604,
+    "median_size_bytes": 2860.0
+  },
+  "csharp|MS XmlSerializer|Telemetry|string": {
+    "avg_time_total_ns": 32283995.652173914,
+    "avg_ops_per_sec": 30.975100194348553,
+    "median_size_bytes": 4542.0
+  },
+  "csharp|fastJson|Telemetry|string": {
+    "avg_time_total_ns": 24261651.086956523,
+    "avg_ops_per_sec": 41.217310248832035,
+    "median_size_bytes": 2292.0
+  },
+  "csharp|Jil|Telemetry|string": {
+    "avg_time_total_ns": 20498287.5,
+    "avg_ops_per_sec": 48.784563100698044,
+    "median_size_bytes": 2139.0
+  },
+  "csharp|Json.Net (Helper)|Telemetry|string": {
+    "avg_time_total_ns": 30470586.597938143,
+    "avg_ops_per_sec": 32.81853458205715,
+    "median_size_bytes": 2159.0
+  },
+  "csharp|Json.Net|Telemetry|string": {
+    "avg_time_total_ns": 20367209.782608695,
+    "avg_ops_per_sec": 49.098527028178765,
+    "median_size_bytes": 2162.0
+  },
+  "csharp|FsPickler|Telemetry|string": {
+    "avg_time_total_ns": 10062337.75510204,
+    "avg_ops_per_sec": 99.38048437033996,
+    "median_size_bytes": 1352.0
+  },
+  "csharp|FsPicklerJson|Telemetry|string": {
+    "avg_time_total_ns": 24060995.69892473,
+    "avg_ops_per_sec": 41.56103980537635,
+    "median_size_bytes": 3236.0
+  },
+  "csharp|NetJSON|Telemetry|string": {
+    "avg_time_total_ns": 13728810.638297873,
+    "avg_ops_per_sec": 72.83952167061007,
+    "median_size_bytes": 2143.0
+  },
+  "csharp|ProtoBuf|Telemetry|string": {
+    "avg_time_total_ns": 5778206.25,
+    "avg_ops_per_sec": 173.06408887706283,
+    "median_size_bytes": 1284.0
+  },
+  "csharp|ServiceStack Json|Telemetry|string": {
+    "avg_time_total_ns": 28313444.680851065,
+    "avg_ops_per_sec": 35.31890984202002,
+    "median_size_bytes": 2144.0
+  },
+  "csharp|ServiceStack|Telemetry|string": {
+    "avg_time_total_ns": 22070898.936170213,
+    "avg_ops_per_sec": 45.308530608201956,
+    "median_size_bytes": 2125.0
+  },
+  "csharp|Ceras|Telemetry|string": {
+    "avg_time_total_ns": 10548713.265306123,
+    "avg_ops_per_sec": 94.79829196693784,
+    "median_size_bytes": 1212.0
+  },
+  "csharp|Hyperion|Telemetry|string": {
+    "avg_time_total_ns": 6385661.224489796,
+    "avg_ops_per_sec": 156.60085382620628,
+    "median_size_bytes": 1252.0
+  },
+  "csharp|NetSerializer|Telemetry|string": {
+    "avg_time_total_ns": 6627058.064516129,
+    "avg_ops_per_sec": 150.89652003419025,
+    "median_size_bytes": 1272.0
+  },
+  "csharp|SpanJson|Telemetry|string": {
+    "avg_time_total_ns": 14675028.57142857,
+    "avg_ops_per_sec": 68.14296784041306,
+    "median_size_bytes": 2149.0
+  },
+  "csharp|Utf8Json|Telemetry|string": {
+    "avg_time_total_ns": 27861956.25,
+    "avg_ops_per_sec": 35.8912343062774,
+    "median_size_bytes": 2149.0
+  },
+  "csharp|YamlDotNet|Telemetry|string": {
+    "avg_time_total_ns": 248247684.84848484,
+    "avg_ops_per_sec": 4.028234948536735,
+    "median_size_bytes": 2331.0
+  },
+  "csharp|YAXLib|Telemetry|string": {
+    "avg_time_total_ns": 127612509.375,
+    "avg_ops_per_sec": 7.836222364857795,
+    "median_size_bytes": 4389.0
+  },
+  "csharp|SharpYaml|Telemetry|string": {
+    "avg_time_total_ns": 98674660.20408164,
+    "avg_ops_per_sec": 10.13431409778126,
+    "median_size_bytes": 2537.0
+  },
+  "csharp|MS Binary|Telemetry|Stream": {
+    "avg_time_total_ns": 13165633.333333334,
+    "avg_ops_per_sec": 75.95532813967678,
+    "median_size_bytes": 1311.0
+  },
+  "csharp|MS Bond Compact|Telemetry|Stream": {
+    "avg_time_total_ns": 2824664.5833333335,
+    "avg_ops_per_sec": 354.0243347477097,
+    "median_size_bytes": 863.0
+  },
+  "csharp|MS Bond Fast|Telemetry|Stream": {
+    "avg_time_total_ns": 1724028.7234042552,
+    "avg_ops_per_sec": 580.0367397739215,
+    "median_size_bytes": 885.0
+  },
+  "csharp|MS Bond Json|Telemetry|Stream": {
+    "avg_time_total_ns": 17673855.789473683,
+    "avg_ops_per_sec": 56.58074909695636,
+    "median_size_bytes": 2134.0
+  },
+  "csharp|MS DataContract|Telemetry|Stream": {
+    "avg_time_total_ns": 31279212.37113402,
+    "avg_ops_per_sec": 31.97011446883006,
+    "median_size_bytes": 4473.0
+  },
+  "csharp|MS DataContract Json|Telemetry|Stream": {
+    "avg_time_total_ns": 28221567.346938774,
+    "avg_ops_per_sec": 35.43389308278341,
+    "median_size_bytes": 2144.0
+  },
+  "csharp|MS XmlSerializer|Telemetry|Stream": {
+    "avg_time_total_ns": 29597178.350515462,
+    "avg_ops_per_sec": 33.78700456364902,
+    "median_size_bytes": 4541.0
+  },
+  "csharp|fastJson|Telemetry|Stream": {
+    "avg_time_total_ns": 26563437.755102042,
+    "avg_ops_per_sec": 37.6457297891697,
+    "median_size_bytes": 2292.0
+  },
+  "csharp|Jil|Telemetry|Stream": {
+    "avg_time_total_ns": 19048088.541666668,
+    "avg_ops_per_sec": 52.498705988926595,
+    "median_size_bytes": 2139.0
+  },
+  "csharp|Json.Net (Helper)|Telemetry|Stream": {
+    "avg_time_total_ns": 30401440.425531916,
+    "avg_ops_per_sec": 32.89317828375573,
+    "median_size_bytes": 2159.0
+  },
+  "csharp|Json.Net|Telemetry|Stream": {
+    "avg_time_total_ns": 20194057.291666668,
+    "avg_ops_per_sec": 49.519518814709045,
+    "median_size_bytes": 2162.0
+  },
+  "csharp|FsPickler|Telemetry|Stream": {
+    "avg_time_total_ns": 9753277.777777778,
+    "avg_ops_per_sec": 102.52963391224603,
+    "median_size_bytes": 1012.0
+  },
+  "csharp|FsPicklerJson|Telemetry|Stream": {
+    "avg_time_total_ns": 23218759.18367347,
+    "avg_ops_per_sec": 43.068623611168725,
+    "median_size_bytes": 2427.0
+  },
+  "csharp|NetJSON|Telemetry|Stream": {
+    "avg_time_total_ns": 14166670.408163264,
+    "avg_ops_per_sec": 70.58821665137135,
+    "median_size_bytes": 2143.0
+  },
+  "csharp|ProtoBuf|Telemetry|Stream": {
+    "avg_time_total_ns": 5320734.343434343,
+    "avg_ops_per_sec": 187.94398206217073,
+    "median_size_bytes": 962.0
+  },
+  "csharp|ServiceStack Json|Telemetry|Stream": {
+    "avg_time_total_ns": 31063043.87755102,
+    "avg_ops_per_sec": 32.19259528917869,
+    "median_size_bytes": 2144.0
+  },
+  "csharp|ServiceStack|Telemetry|Stream": {
+    "avg_time_total_ns": 24193836.734693877,
+    "avg_ops_per_sec": 41.33284071335422,
+    "median_size_bytes": 2125.0
+  },
+  "csharp|Ceras|Telemetry|Stream": {
+    "avg_time_total_ns": 11405827.272727273,
+    "avg_ops_per_sec": 87.67448218255261,
+    "median_size_bytes": 908.0
+  },
+  "csharp|Hyperion|Telemetry|Stream": {
+    "avg_time_total_ns": 6742640.816326531,
+    "avg_ops_per_sec": 148.30984287026158,
+    "median_size_bytes": 938.0
+  },
+  "csharp|NetSerializer|Telemetry|Stream": {
+    "avg_time_total_ns": 5997115.306122449,
+    "avg_ops_per_sec": 166.74683559595744,
+    "median_size_bytes": 952.0
+  },
+  "csharp|SpanJson|Telemetry|Stream": {
+    "avg_time_total_ns": 13576998.979591837,
+    "avg_ops_per_sec": 73.6539791674981,
+    "median_size_bytes": 2149.0
+  },
+  "csharp|Utf8Json|Telemetry|Stream": {
+    "avg_time_total_ns": 27034384.375,
+    "avg_ops_per_sec": 36.989930531754524,
+    "median_size_bytes": 2149.0
+  },
+  "csharp|YamlDotNet|Telemetry|Stream": {
+    "avg_time_total_ns": 310281575.5319149,
+    "avg_ops_per_sec": 3.2228790842179484,
+    "median_size_bytes": 2334.0
+  },
+  "csharp|YAXLib|Telemetry|Stream": {
+    "avg_time_total_ns": 135153702.08333334,
+    "avg_ops_per_sec": 7.3989834135909796,
+    "median_size_bytes": 4392.0
+  },
+  "csharp|SharpYaml|Telemetry|Stream": {
+    "avg_time_total_ns": 129147916.66666667,
+    "avg_ops_per_sec": 7.743059476375603,
+    "median_size_bytes": 2540.0
+  },
+  "csharp|MS Binary|SimpleObject|string": {
+    "avg_time_total_ns": 10569374.489795918,
+    "avg_ops_per_sec": 94.61297837118352,
+    "median_size_bytes": 408.0
+  },
+  "csharp|MS Bond Compact|SimpleObject|string": {
+    "avg_time_total_ns": 1413245.3608247424,
+    "avg_ops_per_sec": 707.5912136137631,
+    "median_size_bytes": 60.0
+  },
+  "csharp|MS Bond Fast|SimpleObject|string": {
+    "avg_time_total_ns": 730666.6666666666,
+    "avg_ops_per_sec": 1368.6131386861314,
+    "median_size_bytes": 68.0
+  },
+  "csharp|MS Bond Json|SimpleObject|string": {
+    "avg_time_total_ns": 3621911.3402061854,
+    "avg_ops_per_sec": 276.0973160494516,
+    "median_size_bytes": 93.0
+  },
+  "csharp|MS DataContract|SimpleObject|string": {
+    "avg_time_total_ns": 12727629.292929294,
+    "avg_ops_per_sec": 78.56922738593117,
+    "median_size_bytes": 384.0
+  },
+  "csharp|MS DataContract Json|SimpleObject|string": {
+    "avg_time_total_ns": 8597286.597938145,
+    "avg_ops_per_sec": 116.31576877288542,
+    "median_size_bytes": 132.0
+  },
+  "csharp|MS XmlSerializer|SimpleObject|string": {
+    "avg_time_total_ns": 10395972.916666666,
+    "avg_ops_per_sec": 96.19109322580239,
+    "median_size_bytes": 307.0
+  },
+  "csharp|fastJson|SimpleObject|string": {
+    "avg_time_total_ns": 6788497.959183673,
+    "avg_ops_per_sec": 147.3079915487301,
+    "median_size_bytes": 251.0
+  },
+  "csharp|Jil|SimpleObject|string": {
+    "avg_time_total_ns": 2942940.404040404,
+    "avg_ops_per_sec": 339.7962115125016,
+    "median_size_bytes": 99.0
+  },
+  "csharp|Json.Net (Helper)|SimpleObject|string": {
+    "avg_time_total_ns": 9032419.191919193,
+    "avg_ops_per_sec": 110.7123107057127,
+    "median_size_bytes": 114.0
+  },
+  "csharp|Json.Net|SimpleObject|string": {
+    "avg_time_total_ns": 2233460.9195402297,
+    "avg_ops_per_sec": 447.73561572138703,
+    "median_size_bytes": 117.0
+  },
+  "csharp|FsPickler|SimpleObject|string": {
+    "avg_time_total_ns": 6824654.545454546,
+    "avg_ops_per_sec": 146.5275631667004,
+    "median_size_bytes": 236.0
+  },
+  "csharp|FsPicklerJson|SimpleObject|string": {
+    "avg_time_total_ns": 7861441.666666667,
+    "avg_ops_per_sec": 127.20313174110346,
+    "median_size_bytes": 508.0
+  },
+  "csharp|NetJSON|SimpleObject|string": {
+    "avg_time_total_ns": 3252045.4545454546,
+    "avg_ops_per_sec": 307.4987769935006,
+    "median_size_bytes": 103.0
+  },
+  "csharp|ProtoBuf|SimpleObject|string": {
+    "avg_time_total_ns": 3661334.6938775512,
+    "avg_ops_per_sec": 273.124443299923,
+    "median_size_bytes": 60.0
+  },
+  "csharp|SharpSerializer|SimpleObject|string": {
+    "avg_time_total_ns": 18199374.468085106,
+    "avg_ops_per_sec": 54.94694346520678,
+    "median_size_bytes": 536.0
+  },
+  "csharp|ServiceStack Json|SimpleObject|string": {
+    "avg_time_total_ns": 6544550.0,
+    "avg_ops_per_sec": 152.79889373600935,
+    "median_size_bytes": 99.0
+  },
+  "csharp|ServiceStack|SimpleObject|string": {
+    "avg_time_total_ns": 6033404.12371134,
+    "avg_ops_per_sec": 165.74391164516723,
+    "median_size_bytes": 92.0
+  },
+  "csharp|Ceras|SimpleObject|string": {
+    "avg_time_total_ns": 6590054.166666667,
+    "avg_ops_per_sec": 151.74382102322122,
+    "median_size_bytes": 112.0
+  },
+  "csharp|CsvHelper|SimpleObject|string": {
+    "avg_time_total_ns": 343221615.05376345,
+    "avg_ops_per_sec": 2.9135694144535638,
+    "median_size_bytes": 84.0
+  },
+  "csharp|FlatSharp|SimpleObject|string": {
+    "avg_time_total_ns": 4523289.898989899,
+    "avg_ops_per_sec": 221.07802558118397,
+    "median_size_bytes": 92.0
+  },
+  "csharp|Hyperion|SimpleObject|string": {
+    "avg_time_total_ns": 3721598.98989899,
+    "avg_ops_per_sec": 268.70170663581933,
+    "median_size_bytes": 152.0
+  },
+  "csharp|NetSerializer|SimpleObject|string": {
+    "avg_time_total_ns": 1542007.0707070706,
+    "avg_ops_per_sec": 648.5054569441506,
+    "median_size_bytes": 56.0
+  },
+  "csharp|SpanJson|SimpleObject|string": {
+    "avg_time_total_ns": 5197516.4948453605,
+    "avg_ops_per_sec": 192.39958179868222,
+    "median_size_bytes": 104.0
+  },
+  "csharp|Utf8Json|SimpleObject|string": {
+    "avg_time_total_ns": 4801056.12244898,
+    "avg_ops_per_sec": 208.28750476882743,
+    "median_size_bytes": 104.0
+  },
+  "csharp|YamlDotNet|SimpleObject|string": {
+    "avg_time_total_ns": 47927077.319587626,
+    "avg_ops_per_sec": 20.86503195952872,
+    "median_size_bytes": 95.0
+  },
+  "csharp|YAXLib|SimpleObject|string": {
+    "avg_time_total_ns": 60564828.421052635,
+    "avg_ops_per_sec": 16.511233104598297,
+    "median_size_bytes": 159.0
+  },
+  "csharp|MemoryPack|SimpleObject|string": {
+    "avg_time_total_ns": 2803111.111111111,
+    "avg_ops_per_sec": 356.7464721737752,
+    "median_size_bytes": 60.0
+  },
+  "csharp|SharpYaml|SimpleObject|string": {
+    "avg_time_total_ns": 34664345.45454545,
+    "avg_ops_per_sec": 28.84808545747032,
+    "median_size_bytes": 97.0
+  },
+  "csharp|GroBuf|SimpleObject|string": {
+    "avg_time_total_ns": 1117446.3917525774,
+    "avg_ops_per_sec": 894.8975157829476,
+    "median_size_bytes": 4.0
+  },
+  "csharp|Migrant|SimpleObject|string": {
+    "avg_time_total_ns": 25365561.855670102,
+    "avg_ops_per_sec": 39.423530442179604,
+    "median_size_bytes": 1376.0
+  },
+  "csharp|MS Binary|SimpleObject|Stream": {
+    "avg_time_total_ns": 8213766.326530612,
+    "avg_ops_per_sec": 121.74682846406066,
+    "median_size_bytes": 305.0
+  },
+  "csharp|MS Bond Compact|SimpleObject|Stream": {
+    "avg_time_total_ns": 1959159.574468085,
+    "avg_ops_per_sec": 510.4229451403935,
+    "median_size_bytes": 43.0
+  },
+  "csharp|MS Bond Fast|SimpleObject|Stream": {
+    "avg_time_total_ns": 1254810.989010989,
+    "avg_ops_per_sec": 796.9327721525417,
+    "median_size_bytes": 50.0
+  },
+  "csharp|MS Bond Json|SimpleObject|Stream": {
+    "avg_time_total_ns": 3518709.375,
+    "avg_ops_per_sec": 284.19511060074404,
+    "median_size_bytes": 93.0
+  },
+  "csharp|MS DataContract|SimpleObject|Stream": {
+    "avg_time_total_ns": 9766802.083333334,
+    "avg_ops_per_sec": 102.38765887418369,
+    "median_size_bytes": 288.0
+  },
+  "csharp|MS DataContract Json|SimpleObject|Stream": {
+    "avg_time_total_ns": 6851934.375,
+    "avg_ops_per_sec": 145.9441882059765,
+    "median_size_bytes": 99.0
+  },
+  "csharp|MS XmlSerializer|SimpleObject|Stream": {
+    "avg_time_total_ns": 8840661.458333334,
+    "avg_ops_per_sec": 113.11370814424589,
+    "median_size_bytes": 306.0
+  },
+  "csharp|fastJson|SimpleObject|Stream": {
+    "avg_time_total_ns": 6086502.06185567,
+    "avg_ops_per_sec": 164.29798098106897,
+    "median_size_bytes": 251.0
+  },
+  "csharp|Jil|SimpleObject|Stream": {
+    "avg_time_total_ns": 2498537.373737374,
+    "avg_ops_per_sec": 400.23415719580584,
+    "median_size_bytes": 99.0
+  },
+  "csharp|Json.Net (Helper)|SimpleObject|Stream": {
+    "avg_time_total_ns": 8333240.404040404,
+    "avg_ops_per_sec": 120.0013381967411,
+    "median_size_bytes": 114.0
+  },
+  "csharp|Json.Net|SimpleObject|Stream": {
+    "avg_time_total_ns": 2260315.217391304,
+    "avg_ops_per_sec": 442.41616934921547,
+    "median_size_bytes": 117.0
+  },
+  "csharp|FsPickler|SimpleObject|Stream": {
+    "avg_time_total_ns": 6041911.224489796,
+    "avg_ops_per_sec": 165.51054175484748,
+    "median_size_bytes": 176.0
+  },
+  "csharp|FsPicklerJson|SimpleObject|Stream": {
+    "avg_time_total_ns": 6274848.979591837,
+    "avg_ops_per_sec": 159.36638527116352,
+    "median_size_bytes": 381.0
+  },
+  "csharp|NetJSON|SimpleObject|Stream": {
+    "avg_time_total_ns": 3071173.737373737,
+    "avg_ops_per_sec": 325.6084108270388,
+    "median_size_bytes": 103.0
+  },
+  "csharp|ProtoBuf|SimpleObject|Stream": {
+    "avg_time_total_ns": 3110379.5918367347,
+    "avg_ops_per_sec": 321.50416708768404,
+    "median_size_bytes": 43.0
+  },
+  "csharp|SharpSerializer|SimpleObject|Stream": {
+    "avg_time_total_ns": 14593579.797979798,
+    "avg_ops_per_sec": 68.52328310415179,
+    "median_size_bytes": 401.0
+  },
+  "csharp|ServiceStack Json|SimpleObject|Stream": {
+    "avg_time_total_ns": 6272412.244897959,
+    "avg_ops_per_sec": 159.42829663554238,
+    "median_size_bytes": 99.0
+  },
+  "csharp|ServiceStack|SimpleObject|Stream": {
+    "avg_time_total_ns": 5734178.787878788,
+    "avg_ops_per_sec": 174.39288815232848,
+    "median_size_bytes": 92.0
+  },
+  "csharp|Ceras|SimpleObject|Stream": {
+    "avg_time_total_ns": 5669485.416666667,
+    "avg_ops_per_sec": 176.38285073638002,
+    "median_size_bytes": 84.0
+  },
+  "csharp|CsvHelper|SimpleObject|Stream": {
+    "avg_time_total_ns": 317575231.25,
+    "avg_ops_per_sec": 3.1488601805119525,
+    "median_size_bytes": 87.0
+  },
+  "csharp|FlatSharp|SimpleObject|Stream": {
+    "avg_time_total_ns": 3655973.9583333335,
+    "avg_ops_per_sec": 273.52492424641747,
+    "median_size_bytes": 68.0
+  },
+  "csharp|Hyperion|SimpleObject|Stream": {
+    "avg_time_total_ns": 2504594.897959184,
+    "avg_ops_per_sec": 399.2661650851516,
+    "median_size_bytes": 113.0
+  },
+  "csharp|NetSerializer|SimpleObject|Stream": {
+    "avg_time_total_ns": 1096442.857142857,
+    "avg_ops_per_sec": 912.0402340034658,
+    "median_size_bytes": 40.0
+  },
+  "csharp|SpanJson|SimpleObject|Stream": {
+    "avg_time_total_ns": 4053913.2653061226,
+    "avg_ops_per_sec": 246.67523317731545,
+    "median_size_bytes": 104.0
+  },
+  "csharp|Utf8Json|SimpleObject|Stream": {
+    "avg_time_total_ns": 4514876.288659794,
+    "avg_ops_per_sec": 221.4900112571727,
+    "median_size_bytes": 104.0
+  },
+  "csharp|YamlDotNet|SimpleObject|Stream": {
+    "avg_time_total_ns": 43385637.75510204,
+    "avg_ops_per_sec": 23.049102231588208,
+    "median_size_bytes": 98.0
+  },
+  "csharp|YAXLib|SimpleObject|Stream": {
+    "avg_time_total_ns": 53890021.27659574,
+    "avg_ops_per_sec": 18.556311100108932,
+    "median_size_bytes": 162.0
+  },
+  "csharp|MemoryPack|SimpleObject|Stream": {
+    "avg_time_total_ns": 2366240.404040404,
+    "avg_ops_per_sec": 422.6113282033725,
+    "median_size_bytes": 45.0
+  },
+  "csharp|SharpYaml|SimpleObject|Stream": {
+    "avg_time_total_ns": 31550828.86597938,
+    "avg_ops_per_sec": 31.69488840523869,
+    "median_size_bytes": 100.0
+  },
+  "csharp|GroBuf|SimpleObject|Stream": {
+    "avg_time_total_ns": 1031249.4845360825,
+    "avg_ops_per_sec": 969.697454394229,
+    "median_size_bytes": 1.0
+  },
+  "csharp|Migrant|SimpleObject|Stream": {
+    "avg_time_total_ns": 21677352.040816326,
+    "avg_ops_per_sec": 46.13109562999661,
+    "median_size_bytes": 1030.0
+  },
+  "csharp|MS Binary|StringArray|string": {
+    "avg_time_total_ns": 25565435.05154639,
+    "avg_ops_per_sec": 39.11531323381538,
+    "median_size_bytes": 7328.0
+  },
+  "csharp|MS Bond Compact|StringArray|string": {
+    "avg_time_total_ns": 8138693.617021277,
+    "avg_ops_per_sec": 122.86984214623811,
+    "median_size_bytes": 6172.0
+  },
+  "csharp|MS Bond Fast|StringArray|string": {
+    "avg_time_total_ns": 7335490.721649485,
+    "avg_ops_per_sec": 136.32353143719013,
+    "median_size_bytes": 6176.0
+  },
+  "csharp|MS Bond Json|StringArray|string": {
+    "avg_time_total_ns": 10336169.696969697,
+    "avg_ops_per_sec": 96.74763759859464,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|MS DataContract|StringArray|string": {
+    "avg_time_total_ns": 37526915.46391752,
+    "avg_ops_per_sec": 26.647540508931762,
+    "median_size_bytes": 9172.0
+  },
+  "csharp|MS DataContract Json|StringArray|string": {
+    "avg_time_total_ns": 34676545.36082474,
+    "avg_ops_per_sec": 28.837936120641753,
+    "median_size_bytes": 6444.0
+  },
+  "csharp|MS XmlSerializer|StringArray|string": {
+    "avg_time_total_ns": 23485187.62886598,
+    "avg_ops_per_sec": 42.58003026430522,
+    "median_size_bytes": 6922.0
+  },
+  "csharp|fastJson|StringArray|string": {
+    "avg_time_total_ns": 15651983.673469387,
+    "avg_ops_per_sec": 63.88966541634157,
+    "median_size_bytes": 4993.0
+  },
+  "csharp|Jil|StringArray|string": {
+    "avg_time_total_ns": 17847913.541666668,
+    "avg_ops_per_sec": 56.028958100086044,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|Json.Net (Helper)|StringArray|string": {
+    "avg_time_total_ns": 19266429.591836736,
+    "avg_ops_per_sec": 51.90375285848002,
+    "median_size_bytes": 4843.0
+  },
+  "csharp|Json.Net|StringArray|string": {
+    "avg_time_total_ns": 11821578.57142857,
+    "avg_ops_per_sec": 84.59107165407569,
+    "median_size_bytes": 4846.0
+  },
+  "csharp|FsPickler|StringArray|string": {
+    "avg_time_total_ns": 18227847.959183674,
+    "avg_ops_per_sec": 54.86111153874165,
+    "median_size_bytes": 6520.0
+  },
+  "csharp|FsPicklerJson|StringArray|string": {
+    "avg_time_total_ns": 19330245.16129032,
+    "avg_ops_per_sec": 51.732401304591036,
+    "median_size_bytes": 6868.0
+  },
+  "csharp|NetJSON|StringArray|string": {
+    "avg_time_total_ns": 15532789.69072165,
+    "avg_ops_per_sec": 64.3799356014805,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|ProtoBuf|StringArray|string": {
+    "avg_time_total_ns": 13277661.855670104,
+    "avg_ops_per_sec": 75.31446506697708,
+    "median_size_bytes": 6300.0
+  },
+  "csharp|SharpSerializer|StringArray|string": {
+    "avg_time_total_ns": 60283704.166666664,
+    "avg_ops_per_sec": 16.588230829931998,
+    "median_size_bytes": 10252.0
+  },
+  "csharp|ServiceStack Json|StringArray|string": {
+    "avg_time_total_ns": 21581692.85714286,
+    "avg_ops_per_sec": 46.33556814191393,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|ServiceStack|StringArray|string": {
+    "avg_time_total_ns": 19004766.666666668,
+    "avg_ops_per_sec": 52.61837819634723,
+    "median_size_bytes": 4727.0
+  },
+  "csharp|Ceras|StringArray|string": {
+    "avg_time_total_ns": 16278337.113402061,
+    "avg_ops_per_sec": 61.43133620059346,
+    "median_size_bytes": 6240.0
+  },
+  "csharp|FlatSharp|StringArray|string": {
+    "avg_time_total_ns": 11564314.583333334,
+    "avg_ops_per_sec": 86.47291569196977,
+    "median_size_bytes": 7456.0
+  },
+  "csharp|Hyperion|StringArray|string": {
+    "avg_time_total_ns": 14317965.934065934,
+    "avg_ops_per_sec": 69.84232289732971,
+    "median_size_bytes": 6564.0
+  },
+  "csharp|NetSerializer|StringArray|string": {
+    "avg_time_total_ns": 8607631.1827957,
+    "avg_ops_per_sec": 116.17598137786462,
+    "median_size_bytes": 6312.0
+  },
+  "csharp|SpanJson|StringArray|string": {
+    "avg_time_total_ns": 13116446.875,
+    "avg_ops_per_sec": 76.2401593609931,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|Utf8Json|StringArray|string": {
+    "avg_time_total_ns": 17357894.791666668,
+    "avg_ops_per_sec": 57.61067295327132,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|YamlDotNet|StringArray|string": {
+    "avg_time_total_ns": 448540974.1935484,
+    "avg_ops_per_sec": 2.229450724759191,
+    "median_size_bytes": 4959.0
+  },
+  "csharp|YAXLib|StringArray|string": {
+    "avg_time_total_ns": 86564111.70212767,
+    "avg_ops_per_sec": 11.552131481936305,
+    "median_size_bytes": 6783.0
+  },
+  "csharp|MemoryPack|StringArray|string": {
+    "avg_time_total_ns": 11069353.608247424,
+    "avg_ops_per_sec": 90.33951171773316,
+    "median_size_bytes": 7104.0
+  },
+  "csharp|SharpYaml|StringArray|string": {
+    "avg_time_total_ns": 175431509.7826087,
+    "avg_ops_per_sec": 5.700230256464079,
+    "median_size_bytes": 5195.0
+  },
+  "csharp|MS Binary|StringArray|Stream": {
+    "avg_time_total_ns": 18335504.08163265,
+    "avg_ops_per_sec": 54.53899688537807,
+    "median_size_bytes": 5495.0
+  },
+  "csharp|MS Bond Compact|StringArray|Stream": {
+    "avg_time_total_ns": 5668142.708333333,
+    "avg_ops_per_sec": 176.42463350998463,
+    "median_size_bytes": 4628.0
+  },
+  "csharp|MS Bond Fast|StringArray|Stream": {
+    "avg_time_total_ns": 4597606.521739131,
+    "avg_ops_per_sec": 217.50447657311292,
+    "median_size_bytes": 4630.0
+  },
+  "csharp|MS Bond Json|StringArray|Stream": {
+    "avg_time_total_ns": 4821772.448979592,
+    "avg_ops_per_sec": 207.39261559545912,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|MS DataContract|StringArray|Stream": {
+    "avg_time_total_ns": 30452559.595959596,
+    "avg_ops_per_sec": 32.83796217026954,
+    "median_size_bytes": 6877.0
+  },
+  "csharp|MS DataContract Json|StringArray|Stream": {
+    "avg_time_total_ns": 28633328.86597938,
+    "avg_ops_per_sec": 34.924336065868594,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|MS XmlSerializer|StringArray|Stream": {
+    "avg_time_total_ns": 21344047.916666668,
+    "avg_ops_per_sec": 46.85146903269188,
+    "median_size_bytes": 6921.0
+  },
+  "csharp|fastJson|StringArray|Stream": {
+    "avg_time_total_ns": 12830362.886597939,
+    "avg_ops_per_sec": 77.94011820542958,
+    "median_size_bytes": 4993.0
+  },
+  "csharp|Jil|StringArray|Stream": {
+    "avg_time_total_ns": 16525430.612244898,
+    "avg_ops_per_sec": 60.512795307072174,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|Json.Net (Helper)|StringArray|Stream": {
+    "avg_time_total_ns": 11113928.86597938,
+    "avg_ops_per_sec": 89.97718197217182,
+    "median_size_bytes": 4843.0
+  },
+  "csharp|Json.Net|StringArray|Stream": {
+    "avg_time_total_ns": 5240418.947368421,
+    "avg_ops_per_sec": 190.8244379015097,
+    "median_size_bytes": 4846.0
+  },
+  "csharp|FsPickler|StringArray|Stream": {
+    "avg_time_total_ns": 14168382.474226804,
+    "avg_ops_per_sec": 70.57968697690538,
+    "median_size_bytes": 4890.0
+  },
+  "csharp|FsPicklerJson|StringArray|Stream": {
+    "avg_time_total_ns": 9245153.06122449,
+    "avg_ops_per_sec": 108.16478573990783,
+    "median_size_bytes": 5150.0
+  },
+  "csharp|NetJSON|StringArray|Stream": {
+    "avg_time_total_ns": 14233965.957446808,
+    "avg_ops_per_sec": 70.25448866391508,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|ProtoBuf|StringArray|Stream": {
+    "avg_time_total_ns": 8250350.5050505055,
+    "avg_ops_per_sec": 121.20697167809338,
+    "median_size_bytes": 4724.0
+  },
+  "csharp|SharpSerializer|StringArray|Stream": {
+    "avg_time_total_ns": 52262066.666666664,
+    "avg_ops_per_sec": 19.134337078135705,
+    "median_size_bytes": 7689.0
+  },
+  "csharp|ServiceStack Json|StringArray|Stream": {
+    "avg_time_total_ns": 18652573.469387755,
+    "avg_ops_per_sec": 53.6119051690739,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|ServiceStack|StringArray|Stream": {
+    "avg_time_total_ns": 18304885.858585857,
+    "avg_ops_per_sec": 54.630223194260054,
+    "median_size_bytes": 4727.0
+  },
+  "csharp|Ceras|StringArray|Stream": {
+    "avg_time_total_ns": 11540343.877551021,
+    "avg_ops_per_sec": 86.65253051473283,
+    "median_size_bytes": 4679.0
+  },
+  "csharp|FlatSharp|StringArray|Stream": {
+    "avg_time_total_ns": 7469948.979591837,
+    "avg_ops_per_sec": 133.86972290333375,
+    "median_size_bytes": 5590.0
+  },
+  "csharp|Hyperion|StringArray|Stream": {
+    "avg_time_total_ns": 9561398.969072165,
+    "avg_ops_per_sec": 104.5872056207105,
+    "median_size_bytes": 4923.0
+  },
+  "csharp|NetSerializer|StringArray|Stream": {
+    "avg_time_total_ns": 4226642.857142857,
+    "avg_ops_per_sec": 236.5943927128927,
+    "median_size_bytes": 4733.0
+  },
+  "csharp|SpanJson|StringArray|Stream": {
+    "avg_time_total_ns": 14176947.916666666,
+    "avg_ops_per_sec": 70.5370440716921,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|Utf8Json|StringArray|Stream": {
+    "avg_time_total_ns": 15445008.163265307,
+    "avg_ops_per_sec": 64.74583823001262,
+    "median_size_bytes": 4833.0
+  },
+  "csharp|YamlDotNet|StringArray|Stream": {
+    "avg_time_total_ns": 208073829.2929293,
+    "avg_ops_per_sec": 4.805986429904098,
+    "median_size_bytes": 4962.0
+  },
+  "csharp|YAXLib|StringArray|Stream": {
+    "avg_time_total_ns": 73270601.02040817,
+    "avg_ops_per_sec": 13.648038723218178,
+    "median_size_bytes": 6786.0
+  },
+  "csharp|MemoryPack|StringArray|Stream": {
+    "avg_time_total_ns": 6389902.040816327,
+    "avg_ops_per_sec": 156.49692180136262,
+    "median_size_bytes": 5327.0
+  },
+  "csharp|SharpYaml|StringArray|Stream": {
+    "avg_time_total_ns": 168909408.0,
+    "avg_ops_per_sec": 5.920333342237515,
+    "median_size_bytes": 5198.0
+  },
+  "csharp|MS Binary|EDI_835|string": {
+    "avg_time_total_ns": 25955632.653061226,
+    "avg_ops_per_sec": 38.5272828201342,
+    "median_size_bytes": 3996.0
+  },
+  "csharp|MS Bond Compact|EDI_835|string": {
+    "avg_time_total_ns": 3418297.93814433,
+    "avg_ops_per_sec": 292.5432534247918,
+    "median_size_bytes": 892.0
+  },
+  "csharp|MS Bond Fast|EDI_835|string": {
+    "avg_time_total_ns": 2526808.2474226803,
+    "avg_ops_per_sec": 395.7561880763965,
+    "median_size_bytes": 1092.0
+  },
+  "csharp|MS Bond Json|EDI_835|string": {
+    "avg_time_total_ns": 6897560.416666667,
+    "avg_ops_per_sec": 144.97879534098558,
+    "median_size_bytes": 1722.0
+  },
+  "csharp|MS DataContract|EDI_835|string": {
+    "avg_time_total_ns": 21062505.102040816,
+    "avg_ops_per_sec": 47.477733306429286,
+    "median_size_bytes": 4228.0
+  },
+  "csharp|MS DataContract Json|EDI_835|string": {
+    "avg_time_total_ns": 21732235.789473683,
+    "avg_ops_per_sec": 46.01459369791875,
+    "median_size_bytes": 2204.0
+  },
+  "csharp|MS XmlSerializer|EDI_835|string": {
+    "avg_time_total_ns": 16090186.315789474,
+    "avg_ops_per_sec": 62.14968430904303,
+    "median_size_bytes": 4222.0
+  },
+  "csharp|fastJson|EDI_835|string": {
+    "avg_time_total_ns": 14896900.0,
+    "avg_ops_per_sec": 67.12806020044438,
+    "median_size_bytes": 2289.0
+  },
+  "csharp|Jil|EDI_835|string": {
+    "avg_time_total_ns": 10312377.551020408,
+    "avg_ops_per_sec": 96.97084838607854,
+    "median_size_bytes": 1647.0
+  },
+  "csharp|Json.Net (Helper)|EDI_835|string": {
+    "avg_time_total_ns": 17415818.94736842,
+    "avg_ops_per_sec": 57.41906269363823,
+    "median_size_bytes": 1959.0
+  },
+  "csharp|Json.Net|EDI_835|string": {
+    "avg_time_total_ns": 9788552.173913043,
+    "avg_ops_per_sec": 102.16015425294944,
+    "median_size_bytes": 2010.0
+  },
+  "csharp|FsPickler|EDI_835|string": {
+    "avg_time_total_ns": 10602887.878787879,
+    "avg_ops_per_sec": 94.31392762349194,
+    "median_size_bytes": 1308.0
+  },
+  "csharp|FsPicklerJson|EDI_835|string": {
+    "avg_time_total_ns": 14661314.583333334,
+    "avg_ops_per_sec": 68.20670781709973,
+    "median_size_bytes": 3148.0
+  },
+  "csharp|NetJSON|EDI_835|string": {
+    "avg_time_total_ns": 6382726.262626262,
+    "avg_ops_per_sec": 156.6728634213017,
+    "median_size_bytes": 1651.0
+  },
+  "csharp|ProtoBuf|EDI_835|string": {
+    "avg_time_total_ns": 5724383.5051546395,
+    "avg_ops_per_sec": 174.69130066137765,
+    "median_size_bytes": 896.0
+  },
+  "csharp|SharpSerializer|EDI_835|string": {
+    "avg_time_total_ns": 94989046.31578948,
+    "avg_ops_per_sec": 10.527529634053982,
+    "median_size_bytes": 10564.0
+  },
+  "csharp|ServiceStack Json|EDI_835|string": {
+    "avg_time_total_ns": 20459483.83838384,
+    "avg_ops_per_sec": 48.87708839085714,
+    "median_size_bytes": 1652.0
+  },
+  "csharp|ServiceStack|EDI_835|string": {
+    "avg_time_total_ns": 15678646.391752576,
+    "avg_ops_per_sec": 63.78101623147959,
+    "median_size_bytes": 1447.0
+  },
+  "csharp|Ceras|EDI_835|string": {
+    "avg_time_total_ns": 10834779.591836736,
+    "avg_ops_per_sec": 92.29537080324472,
+    "median_size_bytes": 844.0
+  },
+  "csharp|Hyperion|EDI_835|string": {
+    "avg_time_total_ns": 8841293.75,
+    "avg_ops_per_sec": 113.10561873368363,
+    "median_size_bytes": 1516.0
+  },
+  "csharp|NetSerializer|EDI_835|string": {
+    "avg_time_total_ns": 4612741.414141414,
+    "avg_ops_per_sec": 216.79082138319552,
+    "median_size_bytes": 908.0
+  },
+  "csharp|SpanJson|EDI_835|string": {
+    "avg_time_total_ns": 7967113.265306123,
+    "avg_ops_per_sec": 125.51597632666224,
+    "median_size_bytes": 1657.0
+  },
+  "csharp|Utf8Json|EDI_835|string": {
+    "avg_time_total_ns": 14447497.959183674,
+    "avg_ops_per_sec": 69.21613713496609,
+    "median_size_bytes": 1657.0
+  },
+  "csharp|YamlDotNet|EDI_835|string": {
+    "avg_time_total_ns": 84023753.06122449,
+    "avg_ops_per_sec": 11.901396492862478,
+    "median_size_bytes": 1700.0
+  },
+  "csharp|YAXLib|EDI_835|string": {
+    "avg_time_total_ns": 90943145.83333333,
+    "avg_ops_per_sec": 10.99588089719974,
+    "median_size_bytes": 4069.0
+  },
+  "csharp|SharpYaml|EDI_835|string": {
+    "avg_time_total_ns": 53223675.75757576,
+    "avg_ops_per_sec": 18.788630919721133,
+    "median_size_bytes": 2102.0
+  },
+  "csharp|MS Binary|EDI_835|Stream": {
+    "avg_time_total_ns": 18202298.979591835,
+    "avg_ops_per_sec": 54.938115296380204,
+    "median_size_bytes": 2996.0
+  },
+  "csharp|MS Bond Compact|EDI_835|Stream": {
+    "avg_time_total_ns": 3240974.4897959186,
+    "avg_ops_per_sec": 308.54917345028815,
+    "median_size_bytes": 668.0
+  },
+  "csharp|MS Bond Fast|EDI_835|Stream": {
+    "avg_time_total_ns": 2276769.0721649486,
+    "avg_ops_per_sec": 439.21889673646774,
+    "median_size_bytes": 818.0
+  },
+  "csharp|MS Bond Json|EDI_835|Stream": {
+    "avg_time_total_ns": 5982966.326530612,
+    "avg_ops_per_sec": 167.14117135602828,
+    "median_size_bytes": 1722.0
+  },
+  "csharp|MS DataContract|EDI_835|Stream": {
+    "avg_time_total_ns": 11804239.795918368,
+    "avg_ops_per_sec": 84.71532409446449,
+    "median_size_bytes": 3169.0
+  },
+  "csharp|MS DataContract Json|EDI_835|Stream": {
+    "avg_time_total_ns": 11979180.412371134,
+    "avg_ops_per_sec": 83.47816508108355,
+    "median_size_bytes": 1652.0
+  },
+  "csharp|MS XmlSerializer|EDI_835|Stream": {
+    "avg_time_total_ns": 16357582.653061224,
+    "avg_ops_per_sec": 61.133727471207735,
+    "median_size_bytes": 4221.0
+  },
+  "csharp|fastJson|EDI_835|Stream": {
+    "avg_time_total_ns": 13923968.75,
+    "avg_ops_per_sec": 71.81860416054151,
+    "median_size_bytes": 2289.0
+  },
+  "csharp|Jil|EDI_835|Stream": {
+    "avg_time_total_ns": 10209254.639175259,
+    "avg_ops_per_sec": 97.95034361889358,
+    "median_size_bytes": 1647.0
+  },
+  "csharp|Json.Net (Helper)|EDI_835|Stream": {
+    "avg_time_total_ns": 13330012.24489796,
+    "avg_ops_per_sec": 75.01868577673275,
+    "median_size_bytes": 1959.0
+  },
+  "csharp|Json.Net|EDI_835|Stream": {
+    "avg_time_total_ns": 6876596.907216495,
+    "avg_ops_per_sec": 145.42076749483044,
+    "median_size_bytes": 2010.0
+  },
+  "csharp|FsPickler|EDI_835|Stream": {
+    "avg_time_total_ns": 10319145.454545455,
+    "avg_ops_per_sec": 96.90724919082446,
+    "median_size_bytes": 981.0
+  },
+  "csharp|FsPicklerJson|EDI_835|Stream": {
+    "avg_time_total_ns": 10033689.795918368,
+    "avg_ops_per_sec": 99.66423323220464,
+    "median_size_bytes": 2360.0
+  },
+  "csharp|NetJSON|EDI_835|Stream": {
+    "avg_time_total_ns": 6170714.141414141,
+    "avg_ops_per_sec": 162.05579728423947,
+    "median_size_bytes": 1651.0
+  },
+  "csharp|ProtoBuf|EDI_835|Stream": {
+    "avg_time_total_ns": 4515471.134020618,
+    "avg_ops_per_sec": 221.46083328177332,
+    "median_size_bytes": 671.0
+  },
+  "csharp|SharpSerializer|EDI_835|Stream": {
+    "avg_time_total_ns": 80499798.96907216,
+    "avg_ops_per_sec": 12.422391270619169,
+    "median_size_bytes": 7923.0
+  },
+  "csharp|ServiceStack Json|EDI_835|Stream": {
+    "avg_time_total_ns": 16298802.02020202,
+    "avg_ops_per_sec": 61.35420252117433,
+    "median_size_bytes": 1652.0
+  },
+  "csharp|ServiceStack|EDI_835|Stream": {
+    "avg_time_total_ns": 12608102.02020202,
+    "avg_ops_per_sec": 79.31407902614488,
+    "median_size_bytes": 1447.0
+  },
+  "csharp|Ceras|EDI_835|Stream": {
+    "avg_time_total_ns": 8753508.163265307,
+    "avg_ops_per_sec": 114.23991174150818,
+    "median_size_bytes": 631.0
+  },
+  "csharp|Hyperion|EDI_835|Stream": {
+    "avg_time_total_ns": 6974140.404040404,
+    "avg_ops_per_sec": 143.3868465597078,
+    "median_size_bytes": 1137.0
+  },
+  "csharp|NetSerializer|EDI_835|Stream": {
+    "avg_time_total_ns": 3748487.878787879,
+    "avg_ops_per_sec": 266.7742386627012,
+    "median_size_bytes": 681.0
+  },
+  "csharp|SpanJson|EDI_835|Stream": {
+    "avg_time_total_ns": 6864886.597938145,
+    "avg_ops_per_sec": 145.66883017417186,
+    "median_size_bytes": 1657.0
+  },
+  "csharp|Utf8Json|EDI_835|Stream": {
+    "avg_time_total_ns": 12188718.181818182,
+    "avg_ops_per_sec": 82.04308156797754,
+    "median_size_bytes": 1657.0
+  },
+  "csharp|YamlDotNet|EDI_835|Stream": {
+    "avg_time_total_ns": 72190048.45360824,
+    "avg_ops_per_sec": 13.85232482067987,
+    "median_size_bytes": 1703.0
+  },
+  "csharp|YAXLib|EDI_835|Stream": {
+    "avg_time_total_ns": 75812236.08247423,
+    "avg_ops_per_sec": 13.190482851767161,
+    "median_size_bytes": 4072.0
+  },
+  "csharp|SharpYaml|EDI_835|Stream": {
+    "avg_time_total_ns": 45592111.34020618,
+    "avg_ops_per_sec": 21.933619010053015,
+    "median_size_bytes": 2105.0
+  },
+  "csharp|MS Binary|ObjectGraph|string": {
+    "avg_time_total_ns": 7382335.164835165,
+    "avg_ops_per_sec": 135.45849350804005,
+    "median_size_bytes": 1392.0
+  },
+  "csharp|MS DataContract|ObjectGraph|string": {
+    "avg_time_total_ns": 4815562.5,
+    "avg_ops_per_sec": 207.66006048099263,
+    "median_size_bytes": 692.0
+  },
+  "csharp|Json.Net (Helper)|ObjectGraph|string": {
+    "avg_time_total_ns": 3188108.4210526315,
+    "avg_ops_per_sec": 313.66561858326816,
+    "median_size_bytes": 241.0
+  },
+  "csharp|Json.Net|ObjectGraph|string": {
+    "avg_time_total_ns": 1321629.347826087,
+    "avg_ops_per_sec": 756.6417934384353,
+    "median_size_bytes": 262.0
+  },
+  "csharp|FsPickler|ObjectGraph|string": {
+    "avg_time_total_ns": 2937914.736842105,
+    "avg_ops_per_sec": 340.37747503689513,
+    "median_size_bytes": 400.0
+  },
+  "csharp|FsPicklerJson|ObjectGraph|string": {
+    "avg_time_total_ns": 3808735.5555555555,
+    "avg_ops_per_sec": 262.55432686613403,
+    "median_size_bytes": 948.0
+  },
+  "csharp|SharpSerializer|ObjectGraph|string": {
+    "avg_time_total_ns": 21717732.967032965,
+    "avg_ops_per_sec": 46.045321651112374,
+    "median_size_bytes": 1840.0
+  },
+  "csharp|Ceras|ObjectGraph|string": {
+    "avg_time_total_ns": 2844419.35483871,
+    "avg_ops_per_sec": 351.5656010070653,
+    "median_size_bytes": 104.0
+  },
+  "csharp|YamlDotNet|ObjectGraph|string": {
+    "avg_time_total_ns": 18015262.76595745,
+    "avg_ops_per_sec": 55.508488163139674,
+    "median_size_bytes": 182.0
+  },
+  "csharp|MS Binary|ObjectGraph|Stream": {
+    "avg_time_total_ns": 6442389.583333333,
+    "avg_ops_per_sec": 155.22190750261856,
+    "median_size_bytes": 1042.0
+  },
+  "csharp|MS DataContract|ObjectGraph|Stream": {
+    "avg_time_total_ns": 4095449.4623655914,
+    "avg_ops_per_sec": 244.17344401129185,
+    "median_size_bytes": 517.0
+  },
+  "csharp|Json.Net (Helper)|ObjectGraph|Stream": {
+    "avg_time_total_ns": 3286609.4736842103,
+    "avg_ops_per_sec": 304.26492955946605,
+    "median_size_bytes": 241.0
+  },
+  "csharp|Json.Net|ObjectGraph|Stream": {
+    "avg_time_total_ns": 1415723.469387755,
+    "avg_ops_per_sec": 706.3526328573622,
+    "median_size_bytes": 262.0
+  },
+  "csharp|FsPickler|ObjectGraph|Stream": {
+    "avg_time_total_ns": 3055112.765957447,
+    "avg_ops_per_sec": 327.3201602058078,
+    "median_size_bytes": 300.0
+  },
+  "csharp|FsPicklerJson|ObjectGraph|Stream": {
+    "avg_time_total_ns": 3092103.2258064514,
+    "avg_ops_per_sec": 323.40446840651316,
+    "median_size_bytes": 710.0
+  },
+  "csharp|SharpSerializer|ObjectGraph|Stream": {
+    "avg_time_total_ns": 19342907.36842105,
+    "avg_ops_per_sec": 51.69853636545793,
+    "median_size_bytes": 1380.0
+  },
+  "csharp|Ceras|ObjectGraph|Stream": {
+    "avg_time_total_ns": 2652482.4175824174,
+    "avg_ops_per_sec": 377.00532654668507,
+    "median_size_bytes": 78.0
+  },
+  "csharp|YamlDotNet|ObjectGraph|Stream": {
+    "avg_time_total_ns": 17220369.47368421,
+    "avg_ops_per_sec": 58.07076332062317,
+    "median_size_bytes": 185.0
+  },
+  "python|orjson|Person|bytes": {
+    "avg_time_total_ns": 10783.460674157302,
+    "avg_ops_per_sec": 92734.60813897272,
+    "median_size_bytes": 387.0
+  },
+  "python|orjson|Person|stream": {
+    "avg_time_total_ns": 11775.946808510638,
+    "avg_ops_per_sec": 84918.86183430161,
+    "median_size_bytes": 387.0
+  },
+  "python|msgspec|Person|bytes": {
+    "avg_time_total_ns": 7764.705882352941,
+    "avg_ops_per_sec": 128787.87878787878,
+    "median_size_bytes": 199.0
+  },
+  "python|msgspec|Person|stream": {
+    "avg_time_total_ns": 11685.042105263157,
+    "avg_ops_per_sec": 85579.49479271295,
+    "median_size_bytes": 199.0
+  },
+  "python|rapidjson|Person|bytes": {
+    "avg_time_total_ns": 252038.95505617978,
+    "avg_ops_per_sec": 3967.640636254419,
+    "median_size_bytes": 392.0
+  },
+  "python|rapidjson|Person|stream": {
+    "avg_time_total_ns": 253434.1030927835,
+    "avg_ops_per_sec": 3945.7988794582034,
+    "median_size_bytes": 392.0
+  },
+  "python|msgspec-msgpack|Person|bytes": {
+    "avg_time_total_ns": 7367.846153846154,
+    "avg_ops_per_sec": 135724.8752375185,
+    "median_size_bytes": 165.0
+  },
+  "python|msgspec-msgpack|Person|stream": {
+    "avg_time_total_ns": 11162.076923076924,
+    "avg_ops_per_sec": 89589.06186469295,
+    "median_size_bytes": 165.0
+  },
+  "python|msgpack|Person|bytes": {
+    "avg_time_total_ns": 250357.54639175258,
+    "avg_ops_per_sec": 3994.287427770312,
+    "median_size_bytes": 319.0
+  },
+  "python|msgpack|Person|stream": {
+    "avg_time_total_ns": 260600.21505376344,
+    "avg_ops_per_sec": 3837.295375192587,
+    "median_size_bytes": 319.0
+  },
+  "python|protobuf|Person|bytes": {
+    "avg_time_total_ns": 84722.6559139785,
+    "avg_ops_per_sec": 11803.218268031287,
+    "median_size_bytes": 160.0
+  },
+  "python|protobuf|Person|stream": {
+    "avg_time_total_ns": 91321.63541666667,
+    "avg_ops_per_sec": 10950.30761809479,
+    "median_size_bytes": 160.0
+  },
+  "python|avro|Person|bytes": {
+    "avg_time_total_ns": 89940.05376344085,
+    "avg_ops_per_sec": 11118.516813767834,
+    "median_size_bytes": 138.0
+  },
+  "python|avro|Person|stream": {
+    "avg_time_total_ns": 89811.22988505747,
+    "avg_ops_per_sec": 11134.465047186455,
+    "median_size_bytes": 138.0
+  },
+  "python|pickle|Person|bytes": {
+    "avg_time_total_ns": 51711.35632183908,
+    "avg_ops_per_sec": 19338.111995675376,
+    "median_size_bytes": 481.0
+  },
+  "python|pickle|Person|stream": {
+    "avg_time_total_ns": 56739.4756097561,
+    "avg_ops_per_sec": 17624.413853906935,
+    "median_size_bytes": 481.0
+  },
+  "python|cloudpickle|Person|bytes": {
+    "avg_time_total_ns": 130167.32183908045,
+    "avg_ops_per_sec": 7682.419718493183,
+    "median_size_bytes": 481.0
+  },
+  "python|cloudpickle|Person|stream": {
+    "avg_time_total_ns": 133150.64210526316,
+    "avg_ops_per_sec": 7510.290481434126,
+    "median_size_bytes": 481.0
+  },
+  "python|orjson|Integer|bytes": {
+    "avg_time_total_ns": 2360.4886363636365,
+    "avg_ops_per_sec": 423641.0989635235,
+    "median_size_bytes": 10.0
+  },
+  "python|orjson|Integer|stream": {
+    "avg_time_total_ns": 4178.032258064516,
+    "avg_ops_per_sec": 239347.1228159575,
+    "median_size_bytes": 10.0
+  },
+  "python|msgspec|Integer|bytes": {
+    "avg_time_total_ns": 1704.5,
+    "avg_ops_per_sec": 586682.3115283074,
+    "median_size_bytes": 10.0
+  },
+  "python|msgspec|Integer|stream": {
+    "avg_time_total_ns": 5189.0,
+    "avg_ops_per_sec": 192715.35941414532,
+    "median_size_bytes": 10.0
+  },
+  "python|rapidjson|Integer|bytes": {
+    "avg_time_total_ns": 5986.255319148936,
+    "avg_ops_per_sec": 167049.33997739502,
+    "median_size_bytes": 10.0
+  },
+  "python|rapidjson|Integer|stream": {
+    "avg_time_total_ns": 7521.515789473684,
+    "avg_ops_per_sec": 132951.9245840704,
+    "median_size_bytes": 10.0
+  },
+  "python|msgspec-msgpack|Integer|bytes": {
+    "avg_time_total_ns": 1674.25,
+    "avg_ops_per_sec": 597282.3652381663,
+    "median_size_bytes": 5.0
+  },
+  "python|msgspec-msgpack|Integer|stream": {
+    "avg_time_total_ns": 4964.244680851064,
+    "avg_ops_per_sec": 201440.5139733284,
+    "median_size_bytes": 5.0
+  },
+  "python|msgpack|Integer|bytes": {
+    "avg_time_total_ns": 3293.5384615384614,
+    "avg_ops_per_sec": 303624.81315396115,
+    "median_size_bytes": 5.0
+  },
+  "python|msgpack|Integer|stream": {
+    "avg_time_total_ns": 5516.846153846154,
+    "avg_ops_per_sec": 181262.98470419273,
+    "median_size_bytes": 5.0
+  },
+  "python|cbor2|Integer|bytes": {
+    "avg_time_total_ns": 3514.1,
+    "avg_ops_per_sec": 284567.8836686492,
+    "median_size_bytes": 5.0
+  },
+  "python|cbor2|Integer|stream": {
+    "avg_time_total_ns": 8349.268817204302,
+    "avg_ops_per_sec": 119770.96700245465,
+    "median_size_bytes": 5.0
+  },
+  "python|pickle|Integer|bytes": {
+    "avg_time_total_ns": 4646.033333333334,
+    "avg_ops_per_sec": 215237.37094725965,
+    "median_size_bytes": 17.0
+  },
+  "python|pickle|Integer|stream": {
+    "avg_time_total_ns": 8050.294117647059,
+    "avg_ops_per_sec": 124219.06397281795,
+    "median_size_bytes": 17.0
+  },
+  "python|cloudpickle|Integer|bytes": {
+    "avg_time_total_ns": 10910.919540229885,
+    "avg_ops_per_sec": 91651.30366078483,
+    "median_size_bytes": 17.0
+  },
+  "python|cloudpickle|Integer|stream": {
+    "avg_time_total_ns": 12387.905263157894,
+    "avg_ops_per_sec": 80723.89792760511,
+    "median_size_bytes": 17.0
+  },
+  "python|orjson|Telemetry|bytes": {
+    "avg_time_total_ns": 16624.021276595744,
+    "avg_ops_per_sec": 60153.91723588911,
+    "median_size_bytes": 2193.0
+  },
+  "python|orjson|Telemetry|stream": {
+    "avg_time_total_ns": 19038.53086419753,
+    "avg_ops_per_sec": 52525.0612630267,
+    "median_size_bytes": 2193.0
+  },
+  "python|msgspec|Telemetry|bytes": {
+    "avg_time_total_ns": 18715.2183908046,
+    "avg_ops_per_sec": 53432.45155457725,
+    "median_size_bytes": 2075.0
+  },
+  "python|msgspec|Telemetry|stream": {
+    "avg_time_total_ns": 21224.376470588235,
+    "avg_ops_per_sec": 47115.636183034825,
+    "median_size_bytes": 2075.0
+  },
+  "python|rapidjson|Telemetry|bytes": {
+    "avg_time_total_ns": 385999.2747252747,
+    "avg_ops_per_sec": 2590.6784428849637,
+    "median_size_bytes": 2193.0
+  },
+  "python|rapidjson|Telemetry|stream": {
+    "avg_time_total_ns": 394987.0,
+    "avg_ops_per_sec": 2531.7288923432925,
+    "median_size_bytes": 2193.0
+  },
+  "python|msgspec-msgpack|Telemetry|bytes": {
+    "avg_time_total_ns": 13628.80459770115,
+    "avg_ops_per_sec": 73374.0067099264,
+    "median_size_bytes": 1024.0
+  },
+  "python|msgspec-msgpack|Telemetry|stream": {
+    "avg_time_total_ns": 16364.89010989011,
+    "avg_ops_per_sec": 61106.42926930812,
+    "median_size_bytes": 1024.0
+  },
+  "python|msgpack|Telemetry|bytes": {
+    "avg_time_total_ns": 264935.9222222222,
+    "avg_ops_per_sec": 3774.4975902558917,
+    "median_size_bytes": 1124.0
+  },
+  "python|msgpack|Telemetry|stream": {
+    "avg_time_total_ns": 276330.2921348315,
+    "avg_ops_per_sec": 3618.8576803301175,
+    "median_size_bytes": 1124.0
+  },
+  "python|protobuf|Telemetry|bytes": {
+    "avg_time_total_ns": 51456.0,
+    "avg_ops_per_sec": 19434.079601990048,
+    "median_size_bytes": 906.0
+  },
+  "python|protobuf|Telemetry|stream": {
+    "avg_time_total_ns": 54634.14606741573,
+    "avg_ops_per_sec": 18303.571520383084,
+    "median_size_bytes": 906.0
+  },
+  "python|avro|Telemetry|bytes": {
+    "avg_time_total_ns": 152832.93684210526,
+    "avg_ops_per_sec": 6543.092219925865,
+    "median_size_bytes": 899.0
+  },
+  "python|avro|Telemetry|stream": {
+    "avg_time_total_ns": 150591.84782608695,
+    "avg_ops_per_sec": 6640.465698746612,
+    "median_size_bytes": 899.0
+  },
+  "python|pickle|Telemetry|bytes": {
+    "avg_time_total_ns": 37391.604395604394,
+    "avg_ops_per_sec": 26743.971438614062,
+    "median_size_bytes": 1223.0
+  },
+  "python|pickle|Telemetry|stream": {
+    "avg_time_total_ns": 43315.36170212766,
+    "avg_ops_per_sec": 23086.49773899683,
+    "median_size_bytes": 1223.0
+  },
+  "python|cloudpickle|Telemetry|bytes": {
+    "avg_time_total_ns": 62086.213483146064,
+    "avg_ops_per_sec": 16106.635336546336,
+    "median_size_bytes": 1223.0
+  },
+  "python|cloudpickle|Telemetry|stream": {
+    "avg_time_total_ns": 65441.651162790695,
+    "avg_ops_per_sec": 15280.788033792574,
+    "median_size_bytes": 1223.0
+  },
+  "python|orjson|SimpleObject|bytes": {
+    "avg_time_total_ns": 5303.630434782609,
+    "avg_ops_per_sec": 188550.09079096763,
+    "median_size_bytes": 102.0
+  },
+  "python|orjson|SimpleObject|stream": {
+    "avg_time_total_ns": 6800.358695652174,
+    "avg_ops_per_sec": 147051.06667966684,
+    "median_size_bytes": 102.0
+  },
+  "python|msgspec|SimpleObject|bytes": {
+    "avg_time_total_ns": 3192.804347826087,
+    "avg_ops_per_sec": 313204.28408990323,
+    "median_size_bytes": 67.0
+  },
+  "python|msgspec|SimpleObject|stream": {
+    "avg_time_total_ns": 6256.5161290322585,
+    "avg_ops_per_sec": 159833.36083154593,
+    "median_size_bytes": 67.0
+  },
+  "python|rapidjson|SimpleObject|bytes": {
+    "avg_time_total_ns": 119755.08888888889,
+    "avg_ops_per_sec": 8350.375831859801,
+    "median_size_bytes": 102.0
+  },
+  "python|rapidjson|SimpleObject|stream": {
+    "avg_time_total_ns": 123562.24444444444,
+    "avg_ops_per_sec": 8093.087046906274,
+    "median_size_bytes": 102.0
+  },
+  "python|msgspec-msgpack|SimpleObject|bytes": {
+    "avg_time_total_ns": 2924.4270833333335,
+    "avg_ops_per_sec": 341947.3187412064,
+    "median_size_bytes": 56.0
+  },
+  "python|msgspec-msgpack|SimpleObject|stream": {
+    "avg_time_total_ns": 6324.775280898876,
+    "avg_ops_per_sec": 158108.3841856086,
+    "median_size_bytes": 56.0
+  },
+  "python|msgpack|SimpleObject|bytes": {
+    "avg_time_total_ns": 122711.11956521739,
+    "avg_ops_per_sec": 8149.2207351961215,
+    "median_size_bytes": 83.0
+  },
+  "python|msgpack|SimpleObject|stream": {
+    "avg_time_total_ns": 129039.21875,
+    "avg_ops_per_sec": 7749.581946380158,
+    "median_size_bytes": 83.0
+  },
+  "python|protobuf|SimpleObject|bytes": {
+    "avg_time_total_ns": 21747.67032967033,
+    "avg_ops_per_sec": 45981.936678325525,
+    "median_size_bytes": 37.0
+  },
+  "python|protobuf|SimpleObject|stream": {
+    "avg_time_total_ns": 22510.582417582416,
+    "avg_ops_per_sec": 44423.55073047451,
+    "median_size_bytes": 37.0
+  },
+  "python|avro|SimpleObject|bytes": {
+    "avg_time_total_ns": 25291.80459770115,
+    "avg_ops_per_sec": 39538.49936397552,
+    "median_size_bytes": 34.0
+  },
+  "python|avro|SimpleObject|stream": {
+    "avg_time_total_ns": 27217.57894736842,
+    "avg_ops_per_sec": 36740.960756786444,
+    "median_size_bytes": 34.0
+  },
+  "python|pickle|SimpleObject|bytes": {
+    "avg_time_total_ns": 19943.966666666667,
+    "avg_ops_per_sec": 50140.47690278931,
+    "median_size_bytes": 167.0
+  },
+  "python|pickle|SimpleObject|stream": {
+    "avg_time_total_ns": 22425.17021276596,
+    "avg_ops_per_sec": 44592.749598428054,
+    "median_size_bytes": 167.0
+  },
+  "python|cloudpickle|SimpleObject|bytes": {
+    "avg_time_total_ns": 39675.886597938144,
+    "avg_ops_per_sec": 25204.22568331384,
+    "median_size_bytes": 167.0
+  },
+  "python|cloudpickle|SimpleObject|stream": {
+    "avg_time_total_ns": 43792.36363636364,
+    "avg_ops_per_sec": 22835.03142930689,
+    "median_size_bytes": 167.0
+  },
+  "python|orjson|StringArray|bytes": {
+    "avg_time_total_ns": 36589.802083333336,
+    "avg_ops_per_sec": 27330.019378691864,
+    "median_size_bytes": 4414.0
+  },
+  "python|orjson|StringArray|stream": {
+    "avg_time_total_ns": 38300.010204081635,
+    "avg_ops_per_sec": 26109.65361814525,
+    "median_size_bytes": 4414.0
+  },
+  "python|msgspec|StringArray|bytes": {
+    "avg_time_total_ns": 40040.30588235294,
+    "avg_ops_per_sec": 24974.83418179211,
+    "median_size_bytes": 4406.0
+  },
+  "python|msgspec|StringArray|stream": {
+    "avg_time_total_ns": 49914.0989010989,
+    "avg_ops_per_sec": 20034.419573143576,
+    "median_size_bytes": 4406.0
+  },
+  "python|rapidjson|StringArray|bytes": {
+    "avg_time_total_ns": 179918.41836734695,
+    "avg_ops_per_sec": 5558.074648912588,
+    "median_size_bytes": 4414.0
+  },
+  "python|rapidjson|StringArray|stream": {
+    "avg_time_total_ns": 181834.20833333334,
+    "avg_ops_per_sec": 5499.515240646184,
+    "median_size_bytes": 4414.0
+  },
+  "python|msgspec-msgpack|StringArray|bytes": {
+    "avg_time_total_ns": 40000.13636363636,
+    "avg_ops_per_sec": 24999.914773017823,
+    "median_size_bytes": 4272.0
+  },
+  "python|msgspec-msgpack|StringArray|stream": {
+    "avg_time_total_ns": 51492.65934065934,
+    "avg_ops_per_sec": 19420.243832898832,
+    "median_size_bytes": 4272.0
+  },
+  "python|msgpack|StringArray|bytes": {
+    "avg_time_total_ns": 170901.7894736842,
+    "avg_ops_per_sec": 5851.3138047274915,
+    "median_size_bytes": 4278.0
+  },
+  "python|msgpack|StringArray|stream": {
+    "avg_time_total_ns": 180419.66292134832,
+    "avg_ops_per_sec": 5542.633124394747,
+    "median_size_bytes": 4278.0
+  },
+  "python|protobuf|StringArray|bytes": {
+    "avg_time_total_ns": 117621.58762886598,
+    "avg_ops_per_sec": 8501.840692333812,
+    "median_size_bytes": 4303.0
+  },
+  "python|protobuf|StringArray|stream": {
+    "avg_time_total_ns": 124058.03260869565,
+    "avg_ops_per_sec": 8060.743661429841,
+    "median_size_bytes": 4303.0
+  },
+  "python|avro|StringArray|bytes": {
+    "avg_time_total_ns": 256737.85555555555,
+    "avg_ops_per_sec": 3895.0235750629686,
+    "median_size_bytes": 4213.0
+  },
+  "python|avro|StringArray|stream": {
+    "avg_time_total_ns": 259038.35294117648,
+    "avg_ops_per_sec": 3860.432204906291,
+    "median_size_bytes": 4213.0
+  },
+  "python|pickle|StringArray|bytes": {
+    "avg_time_total_ns": 57174.729166666664,
+    "avg_ops_per_sec": 17490.244633865415,
+    "median_size_bytes": 4429.0
+  },
+  "python|pickle|StringArray|stream": {
+    "avg_time_total_ns": 63530.32978723404,
+    "avg_ops_per_sec": 15740.513284742034,
+    "median_size_bytes": 4429.0
+  },
+  "python|cloudpickle|StringArray|bytes": {
+    "avg_time_total_ns": 72178.07777777778,
+    "avg_ops_per_sec": 13854.622217549279,
+    "median_size_bytes": 4429.0
+  },
+  "python|cloudpickle|StringArray|stream": {
+    "avg_time_total_ns": 77288.84269662922,
+    "avg_ops_per_sec": 12938.47811805329,
+    "median_size_bytes": 4429.0
+  },
+  "python|orjson|EDI_835|bytes": {
+    "avg_time_total_ns": 23812.44318181818,
+    "avg_ops_per_sec": 41994.85085862768,
+    "median_size_bytes": 1730.0
+  },
+  "python|orjson|EDI_835|stream": {
+    "avg_time_total_ns": 26851.1935483871,
+    "avg_ops_per_sec": 37242.29234718947,
+    "median_size_bytes": 1730.0
+  },
+  "python|msgspec|EDI_835|bytes": {
+    "avg_time_total_ns": 26699.21978021978,
+    "avg_ops_per_sec": 37454.27799882204,
+    "median_size_bytes": 591.0
+  },
+  "python|msgspec|EDI_835|stream": {
+    "avg_time_total_ns": 35686.14432989691,
+    "avg_ops_per_sec": 28022.080243682318,
+    "median_size_bytes": 591.0
+  },
+  "python|rapidjson|EDI_835|bytes": {
+    "avg_time_total_ns": 551313.8924731183,
+    "avg_ops_per_sec": 1813.848723300147,
+    "median_size_bytes": 1730.0
+  },
+  "python|rapidjson|EDI_835|stream": {
+    "avg_time_total_ns": 539525.3789473685,
+    "avg_ops_per_sec": 1853.4809279056203,
+    "median_size_bytes": 1730.0
+  },
+  "python|msgspec-msgpack|EDI_835|bytes": {
+    "avg_time_total_ns": 24071.540229885057,
+    "avg_ops_per_sec": 41542.8340043854,
+    "median_size_bytes": 644.0
+  },
+  "python|msgspec-msgpack|EDI_835|stream": {
+    "avg_time_total_ns": 31220.32967032967,
+    "avg_ops_per_sec": 32030.41129159994,
+    "median_size_bytes": 644.0
+  },
+  "python|msgpack|EDI_835|bytes": {
+    "avg_time_total_ns": 509548.5698924731,
+    "avg_ops_per_sec": 1962.5214534720876,
+    "median_size_bytes": 1631.0
+  },
+  "python|msgpack|EDI_835|stream": {
+    "avg_time_total_ns": 505076.95604395604,
+    "avg_ops_per_sec": 1979.896306955987,
+    "median_size_bytes": 1631.0
+  },
+  "python|protobuf|EDI_835|bytes": {
+    "avg_time_total_ns": 514926.3789473684,
+    "avg_ops_per_sec": 1942.025192114331,
+    "median_size_bytes": 665.0
+  },
+  "python|protobuf|EDI_835|stream": {
+    "avg_time_total_ns": 927772.3157894737,
+    "avg_ops_per_sec": 1077.8506568705548,
+    "median_size_bytes": 665.0
+  },
+  "python|avro|EDI_835|bytes": {
+    "avg_time_total_ns": 326096.8977272727,
+    "avg_ops_per_sec": 3066.573178001645,
+    "median_size_bytes": 567.0
+  },
+  "python|avro|EDI_835|stream": {
+    "avg_time_total_ns": 328343.0208333333,
+    "avg_ops_per_sec": 3045.5954186630916,
+    "median_size_bytes": 567.0
+  },
+  "python|pickle|EDI_835|bytes": {
+    "avg_time_total_ns": 108818.13978494624,
+    "avg_ops_per_sec": 9189.64431827513,
+    "median_size_bytes": 1321.0
+  },
+  "python|pickle|EDI_835|stream": {
+    "avg_time_total_ns": 115488.31914893616,
+    "avg_ops_per_sec": 8658.884356177865,
+    "median_size_bytes": 1321.0
+  },
+  "python|cloudpickle|EDI_835|bytes": {
+    "avg_time_total_ns": 240362.70408163266,
+    "avg_ops_per_sec": 4160.379222811444,
+    "median_size_bytes": 1321.0
+  },
+  "python|cloudpickle|EDI_835|stream": {
+    "avg_time_total_ns": 236388.23333333334,
+    "avg_ops_per_sec": 4230.3290053777355,
+    "median_size_bytes": 1321.0
+  },
+  "python|pickle|ObjectGraph|bytes": {
+    "avg_time_total_ns": 22355.5,
+    "avg_ops_per_sec": 44731.72150030194,
+    "median_size_bytes": 174.0
+  },
+  "python|pickle|ObjectGraph|stream": {
+    "avg_time_total_ns": 26188.25581395349,
+    "avg_ops_per_sec": 38185.05543493222,
+    "median_size_bytes": 174.0
+  },
+  "python|cloudpickle|ObjectGraph|bytes": {
+    "avg_time_total_ns": 48936.188888888886,
+    "avg_ops_per_sec": 20434.77480991686,
+    "median_size_bytes": 174.0
+  },
+  "python|cloudpickle|ObjectGraph|stream": {
+    "avg_time_total_ns": 50718.925531914894,
+    "avg_ops_per_sec": 19716.506008605207,
+    "median_size_bytes": 174.0
+  },
+  "rust|serde_json|Person|bytes": {
+    "avg_time_total_ns": 1734.5842696629213,
+    "avg_ops_per_sec": 576507.0152482867,
+    "median_size_bytes": 348.0
+  },
+  "rust|serde_json|Person|stream": {
+    "avg_time_total_ns": 1714.701030927835,
+    "avg_ops_per_sec": 583192.0445390377,
+    "median_size_bytes": 348.0
+  },
+  "rust|simd-json|Person|bytes": {
+    "avg_time_total_ns": 2324.150684931507,
+    "avg_ops_per_sec": 430264.70120179415,
+    "median_size_bytes": 348.0
+  },
+  "rust|simd-json|Person|stream": {
+    "avg_time_total_ns": 1984.0537634408602,
+    "avg_ops_per_sec": 504018.5999122032,
+    "median_size_bytes": 348.0
+  },
+  "rust|sonic-rs|Person|bytes": {
+    "avg_time_total_ns": 1479.7241379310344,
+    "avg_ops_per_sec": 675801.6405667412,
+    "median_size_bytes": 348.0
+  },
+  "rust|sonic-rs|Person|stream": {
+    "avg_time_total_ns": 1580.3505154639174,
+    "avg_ops_per_sec": 632771.0151734576,
+    "median_size_bytes": 348.0
+  },
+  "rust|rmp-serde|Person|bytes": {
+    "avg_time_total_ns": 1385.3033707865168,
+    "avg_ops_per_sec": 721863.5434578075,
+    "median_size_bytes": 271.0
+  },
+  "rust|rmp-serde|Person|stream": {
+    "avg_time_total_ns": 1358.8958333333333,
+    "avg_ops_per_sec": 735891.578640747,
+    "median_size_bytes": 271.0
+  },
+  "rust|ciborium|Person|bytes": {
+    "avg_time_total_ns": 2795.9270833333335,
+    "avg_ops_per_sec": 357663.1185988547,
+    "median_size_bytes": 272.0
+  },
+  "rust|ciborium|Person|stream": {
+    "avg_time_total_ns": 2514.494382022472,
+    "avg_ops_per_sec": 397694.2669466911,
+    "median_size_bytes": 272.0
+  },
+  "rust|bincode|Person|bytes": {
+    "avg_time_total_ns": 658.5568181818181,
+    "avg_ops_per_sec": 1518471.86513209,
+    "median_size_bytes": 95.0
+  },
+  "rust|bincode|Person|stream": {
+    "avg_time_total_ns": 658.5949367088608,
+    "avg_ops_per_sec": 1518383.9781660226,
+    "median_size_bytes": 95.0
+  },
+  "rust|postcard|Person|bytes": {
+    "avg_time_total_ns": 613.53125,
+    "avg_ops_per_sec": 1629908.826974991,
+    "median_size_bytes": 96.0
+  },
+  "rust|postcard|Person|stream": {
+    "avg_time_total_ns": 649.8979591836735,
+    "avg_ops_per_sec": 1538703.0931072382,
+    "median_size_bytes": 96.0
+  },
+  "rust|bitcode|Person|bytes": {
+    "avg_time_total_ns": 3263.682926829268,
+    "avg_ops_per_sec": 306402.3137111299,
+    "median_size_bytes": 94.0
+  },
+  "rust|bitcode|Person|stream": {
+    "avg_time_total_ns": 3544.3367346938776,
+    "avg_ops_per_sec": 282140.23521282873,
+    "median_size_bytes": 94.0
+  },
+  "rust|flexbuffers|Person|bytes": {
+    "avg_time_total_ns": 3849.0,
+    "avg_ops_per_sec": 259807.74227071967,
+    "median_size_bytes": 336.0
+  },
+  "rust|flexbuffers|Person|stream": {
+    "avg_time_total_ns": 4439.13829787234,
+    "avg_ops_per_sec": 225268.94475878248,
+    "median_size_bytes": 336.0
+  },
+  "rust|minicbor|Person|bytes": {
+    "avg_time_total_ns": 5655.873684210526,
+    "avg_ops_per_sec": 176807.34327424865,
+    "median_size_bytes": 540.0
+  },
+  "rust|minicbor|Person|stream": {
+    "avg_time_total_ns": 5221.381443298969,
+    "avg_ops_per_sec": 191520.19649577272,
+    "median_size_bytes": 540.0
+  },
+  "rust|rkyv|Person|bytes": {
+    "avg_time_total_ns": 1177.4086021505377,
+    "avg_ops_per_sec": 849322.8248659804,
+    "median_size_bytes": 280.0
+  },
+  "rust|rkyv|Person|stream": {
+    "avg_time_total_ns": 1126.957894736842,
+    "avg_ops_per_sec": 887344.5979394924,
+    "median_size_bytes": 280.0
+  },
+  "rust|prost-wire|Person|bytes": {
+    "avg_time_total_ns": 1067.3775510204082,
+    "avg_ops_per_sec": 936875.6154221199,
+    "median_size_bytes": 274.0
+  },
+  "rust|prost-wire|Person|stream": {
+    "avg_time_total_ns": 1108.392857142857,
+    "avg_ops_per_sec": 902207.1854357984,
+    "median_size_bytes": 274.0
+  },
+  "rust|serde_json|Integer|bytes": {
+    "avg_time_total_ns": 95.6989247311828,
+    "avg_ops_per_sec": 10449438.202247191,
+    "median_size_bytes": 14.0
+  },
+  "rust|serde_json|Integer|stream": {
+    "avg_time_total_ns": 98.13636363636364,
+    "avg_ops_per_sec": 10189902.732746642,
+    "median_size_bytes": 14.0
+  },
+  "rust|simd-json|Integer|bytes": {
+    "avg_time_total_ns": 291.3488372093023,
+    "avg_ops_per_sec": 3432311.6219667946,
+    "median_size_bytes": 14.0
+  },
+  "rust|simd-json|Integer|stream": {
+    "avg_time_total_ns": 272.0444444444444,
+    "avg_ops_per_sec": 3675869.9558895607,
+    "median_size_bytes": 14.0
+  },
+  "rust|sonic-rs|Integer|bytes": {
+    "avg_time_total_ns": 101.81818181818181,
+    "avg_ops_per_sec": 9821428.571428573,
+    "median_size_bytes": 14.0
+  },
+  "rust|sonic-rs|Integer|stream": {
+    "avg_time_total_ns": 101.3,
+    "avg_ops_per_sec": 9871668.31194472,
+    "median_size_bytes": 14.0
+  },
+  "rust|rmp-serde|Integer|bytes": {
+    "avg_time_total_ns": 88.3586956521739,
+    "avg_ops_per_sec": 11317505.22819535,
+    "median_size_bytes": 10.0
+  },
+  "rust|rmp-serde|Integer|stream": {
+    "avg_time_total_ns": 87.93406593406593,
+    "avg_ops_per_sec": 11372156.960759811,
+    "median_size_bytes": 10.0
+  },
+  "rust|ciborium|Integer|bytes": {
+    "avg_time_total_ns": 159.6304347826087,
+    "avg_ops_per_sec": 6264469.562848972,
+    "median_size_bytes": 11.0
+  },
+  "rust|ciborium|Integer|stream": {
+    "avg_time_total_ns": 160.86813186813185,
+    "avg_ops_per_sec": 6216271.6032515885,
+    "median_size_bytes": 11.0
+  },
+  "rust|bincode|Integer|bytes": {
+    "avg_time_total_ns": 58.29545454545455,
+    "avg_ops_per_sec": 17153996.101364523,
+    "median_size_bytes": 2.0
+  },
+  "rust|bincode|Integer|stream": {
+    "avg_time_total_ns": 58.193548387096776,
+    "avg_ops_per_sec": 17184035.476718403,
+    "median_size_bytes": 2.0
+  },
+  "rust|postcard|Integer|bytes": {
+    "avg_time_total_ns": 68.95604395604396,
+    "avg_ops_per_sec": 14501992.031872509,
+    "median_size_bytes": 2.0
+  },
+  "rust|postcard|Integer|stream": {
+    "avg_time_total_ns": 71.84375,
+    "avg_ops_per_sec": 13919095.258808177,
+    "median_size_bytes": 2.0
+  },
+  "rust|bitcode|Integer|bytes": {
+    "avg_time_total_ns": 372.60227272727275,
+    "avg_ops_per_sec": 2683826.8931653905,
+    "median_size_bytes": 3.0
+  },
+  "rust|bitcode|Integer|stream": {
+    "avg_time_total_ns": 371.40909090909093,
+    "avg_ops_per_sec": 2692448.9046628317,
+    "median_size_bytes": 3.0
+  },
+  "rust|flexbuffers|Integer|bytes": {
+    "avg_time_total_ns": 281.1630434782609,
+    "avg_ops_per_sec": 3556655.197742297,
+    "median_size_bytes": 18.0
+  },
+  "rust|flexbuffers|Integer|stream": {
+    "avg_time_total_ns": 276.93548387096774,
+    "avg_ops_per_sec": 3610949.3302271403,
+    "median_size_bytes": 18.0
+  },
+  "rust|minicbor|Integer|bytes": {
+    "avg_time_total_ns": 258.752688172043,
+    "avg_ops_per_sec": 3864694.14893617,
+    "median_size_bytes": 21.0
+  },
+  "rust|minicbor|Integer|stream": {
+    "avg_time_total_ns": 250.66666666666666,
+    "avg_ops_per_sec": 3989361.7021276597,
+    "median_size_bytes": 21.0
+  },
+  "rust|rkyv|Integer|bytes": {
+    "avg_time_total_ns": 165.79775280898878,
+    "avg_ops_per_sec": 6031444.835998915,
+    "median_size_bytes": 20.0
+  },
+  "rust|rkyv|Integer|stream": {
+    "avg_time_total_ns": 166.2826086956522,
+    "avg_ops_per_sec": 6013858.020656294,
+    "median_size_bytes": 20.0
+  },
+  "rust|prost-wire|Integer|bytes": {
+    "avg_time_total_ns": 103.65853658536585,
+    "avg_ops_per_sec": 9647058.823529411,
+    "median_size_bytes": 12.0
+  },
+  "rust|prost-wire|Integer|stream": {
+    "avg_time_total_ns": 104.11111111111111,
+    "avg_ops_per_sec": 9605122.7321238,
+    "median_size_bytes": 12.0
+  },
+  "rust|serde_json|Telemetry|bytes": {
+    "avg_time_total_ns": 4464.652173913043,
+    "avg_ops_per_sec": 223981.6140309874,
+    "median_size_bytes": 2020.0
+  },
+  "rust|serde_json|Telemetry|stream": {
+    "avg_time_total_ns": 4324.4315789473685,
+    "avg_ops_per_sec": 231244.26453370202,
+    "median_size_bytes": 2020.0
+  },
+  "rust|simd-json|Telemetry|bytes": {
+    "avg_time_total_ns": 4655.130434782609,
+    "avg_ops_per_sec": 214816.7519707102,
+    "median_size_bytes": 2020.0
+  },
+  "rust|simd-json|Telemetry|stream": {
+    "avg_time_total_ns": 4454.655555555555,
+    "avg_ops_per_sec": 224484.24744150316,
+    "median_size_bytes": 2020.0
+  },
+  "rust|sonic-rs|Telemetry|bytes": {
+    "avg_time_total_ns": 4623.041666666667,
+    "avg_ops_per_sec": 216307.8060079493,
+    "median_size_bytes": 2020.0
+  },
+  "rust|sonic-rs|Telemetry|stream": {
+    "avg_time_total_ns": 4554.030927835051,
+    "avg_ops_per_sec": 219585.68482436542,
+    "median_size_bytes": 2020.0
+  },
+  "rust|rmp-serde|Telemetry|bytes": {
+    "avg_time_total_ns": 1391.391304347826,
+    "avg_ops_per_sec": 718705.0809324417,
+    "median_size_bytes": 1073.0
+  },
+  "rust|rmp-serde|Telemetry|stream": {
+    "avg_time_total_ns": 1222.178947368421,
+    "avg_ops_per_sec": 818210.7883245627,
+    "median_size_bytes": 1073.0
+  },
+  "rust|ciborium|Telemetry|bytes": {
+    "avg_time_total_ns": 2650.154761904762,
+    "avg_ops_per_sec": 377336.45384591195,
+    "median_size_bytes": 1072.0
+  },
+  "rust|ciborium|Telemetry|stream": {
+    "avg_time_total_ns": 2829.422680412371,
+    "avg_ops_per_sec": 353428.9899218084,
+    "median_size_bytes": 1072.0
+  },
+  "rust|bincode|Telemetry|bytes": {
+    "avg_time_total_ns": 661.1098901098901,
+    "avg_ops_per_sec": 1512607.83564103,
+    "median_size_bytes": 853.0
+  },
+  "rust|bincode|Telemetry|stream": {
+    "avg_time_total_ns": 673.1684210526316,
+    "avg_ops_per_sec": 1485512.3453894388,
+    "median_size_bytes": 853.0
+  },
+  "rust|postcard|Telemetry|bytes": {
+    "avg_time_total_ns": 607.0112359550562,
+    "avg_ops_per_sec": 1647415.9632755811,
+    "median_size_bytes": 849.0
+  },
+  "rust|postcard|Telemetry|stream": {
+    "avg_time_total_ns": 564.063829787234,
+    "avg_ops_per_sec": 1772849.006072951,
+    "median_size_bytes": 849.0
+  },
+  "rust|bitcode|Telemetry|bytes": {
+    "avg_time_total_ns": 1364.5301204819277,
+    "avg_ops_per_sec": 732853.0055802783,
+    "median_size_bytes": 854.0
+  },
+  "rust|bitcode|Telemetry|stream": {
+    "avg_time_total_ns": 1534.1704545454545,
+    "avg_ops_per_sec": 651818.0538786878,
+    "median_size_bytes": 854.0
+  },
+  "rust|flexbuffers|Telemetry|bytes": {
+    "avg_time_total_ns": 4295.393617021276,
+    "avg_ops_per_sec": 232807.53503877236,
+    "median_size_bytes": 1032.0
+  },
+  "rust|flexbuffers|Telemetry|stream": {
+    "avg_time_total_ns": 4054.7894736842104,
+    "avg_ops_per_sec": 246621.92858348152,
+    "median_size_bytes": 1032.0
+  },
+  "rust|minicbor|Telemetry|bytes": {
+    "avg_time_total_ns": 10296.979591836734,
+    "avg_ops_per_sec": 97115.85723572595,
+    "median_size_bytes": 2088.0
+  },
+  "rust|minicbor|Telemetry|stream": {
+    "avg_time_total_ns": 10327.051546391753,
+    "avg_ops_per_sec": 96833.05980489636,
+    "median_size_bytes": 2088.0
+  },
+  "rust|rkyv|Telemetry|bytes": {
+    "avg_time_total_ns": 1462.1649484536083,
+    "avg_ops_per_sec": 683917.3658605373,
+    "median_size_bytes": 1084.0
+  },
+  "rust|rkyv|Telemetry|stream": {
+    "avg_time_total_ns": 1466.3157894736842,
+    "avg_ops_per_sec": 681981.3352476669,
+    "median_size_bytes": 1084.0
+  },
+  "rust|prost-wire|Telemetry|bytes": {
+    "avg_time_total_ns": 1267.8041237113403,
+    "avg_ops_per_sec": 788765.378891988,
+    "median_size_bytes": 1076.0
+  },
+  "rust|prost-wire|Telemetry|stream": {
+    "avg_time_total_ns": 1302.84375,
+    "avg_ops_per_sec": 767551.7497781296,
+    "median_size_bytes": 1076.0
+  },
+  "rust|serde_json|SimpleObject|bytes": {
+    "avg_time_total_ns": 297.8021978021978,
+    "avg_ops_per_sec": 3357933.5793357934,
+    "median_size_bytes": 94.0
+  },
+  "rust|serde_json|SimpleObject|stream": {
+    "avg_time_total_ns": 308.625,
+    "avg_ops_per_sec": 3240178.2098015393,
+    "median_size_bytes": 94.0
+  },
+  "rust|simd-json|SimpleObject|bytes": {
+    "avg_time_total_ns": 503.1,
+    "avg_ops_per_sec": 1987676.4062810573,
+    "median_size_bytes": 94.0
+  },
+  "rust|simd-json|SimpleObject|stream": {
+    "avg_time_total_ns": 423.1294117647059,
+    "avg_ops_per_sec": 2363343.1574264583,
+    "median_size_bytes": 94.0
+  },
+  "rust|sonic-rs|SimpleObject|bytes": {
+    "avg_time_total_ns": 263.3333333333333,
+    "avg_ops_per_sec": 3797468.35443038,
+    "median_size_bytes": 94.0
+  },
+  "rust|sonic-rs|SimpleObject|stream": {
+    "avg_time_total_ns": 285.9263157894737,
+    "avg_ops_per_sec": 3497404.5576703604,
+    "median_size_bytes": 94.0
+  },
+  "rust|rmp-serde|SimpleObject|bytes": {
+    "avg_time_total_ns": 308.81176470588235,
+    "avg_ops_per_sec": 3238218.5988037637,
+    "median_size_bytes": 72.0
+  },
+  "rust|rmp-serde|SimpleObject|stream": {
+    "avg_time_total_ns": 299.09574468085106,
+    "avg_ops_per_sec": 3343410.9905744265,
+    "median_size_bytes": 72.0
+  },
+  "rust|ciborium|SimpleObject|bytes": {
+    "avg_time_total_ns": 452.9130434782609,
+    "avg_ops_per_sec": 2207929.3462609197,
+    "median_size_bytes": 72.0
+  },
+  "rust|ciborium|SimpleObject|stream": {
+    "avg_time_total_ns": 439.64367816091954,
+    "avg_ops_per_sec": 2274569.269784831,
+    "median_size_bytes": 72.0
+  },
+  "rust|bincode|SimpleObject|bytes": {
+    "avg_time_total_ns": 166.25301204819277,
+    "avg_ops_per_sec": 6014928.618015798,
+    "median_size_bytes": 36.0
+  },
+  "rust|bincode|SimpleObject|stream": {
+    "avg_time_total_ns": 165.28571428571428,
+    "avg_ops_per_sec": 6050129.645635264,
+    "median_size_bytes": 36.0
+  },
+  "rust|postcard|SimpleObject|bytes": {
+    "avg_time_total_ns": 147.08988764044943,
+    "avg_ops_per_sec": 6798563.898861813,
+    "median_size_bytes": 34.0
+  },
+  "rust|postcard|SimpleObject|stream": {
+    "avg_time_total_ns": 147.4,
+    "avg_ops_per_sec": 6784260.515603799,
+    "median_size_bytes": 34.0
+  },
+  "rust|bitcode|SimpleObject|bytes": {
+    "avg_time_total_ns": 727.516129032258,
+    "avg_ops_per_sec": 1374539.9725092007,
+    "median_size_bytes": 36.0
+  },
+  "rust|bitcode|SimpleObject|stream": {
+    "avg_time_total_ns": 750.4742268041238,
+    "avg_ops_per_sec": 1332490.7961975932,
+    "median_size_bytes": 36.0
+  },
+  "rust|flexbuffers|SimpleObject|bytes": {
+    "avg_time_total_ns": 936.7096774193549,
+    "avg_ops_per_sec": 1067566.6368207177,
+    "median_size_bytes": 114.0
+  },
+  "rust|flexbuffers|SimpleObject|stream": {
+    "avg_time_total_ns": 970.2784810126582,
+    "avg_ops_per_sec": 1030631.9469811617,
+    "median_size_bytes": 114.0
+  },
+  "rust|minicbor|SimpleObject|bytes": {
+    "avg_time_total_ns": 1163.528735632184,
+    "avg_ops_per_sec": 859454.4933663943,
+    "median_size_bytes": 144.0
+  },
+  "rust|minicbor|SimpleObject|stream": {
+    "avg_time_total_ns": 1166.595238095238,
+    "avg_ops_per_sec": 857195.3384901116,
+    "median_size_bytes": 144.0
+  },
+  "rust|rkyv|SimpleObject|bytes": {
+    "avg_time_total_ns": 547.8395061728395,
+    "avg_ops_per_sec": 1825352.1126760563,
+    "median_size_bytes": 80.0
+  },
+  "rust|rkyv|SimpleObject|stream": {
+    "avg_time_total_ns": 1188.3711340206185,
+    "avg_ops_per_sec": 841487.9589145674,
+    "median_size_bytes": 80.0
+  },
+  "rust|prost-wire|SimpleObject|bytes": {
+    "avg_time_total_ns": 356.96385542168673,
+    "avg_ops_per_sec": 2801404.0772242476,
+    "median_size_bytes": 74.0
+  },
+  "rust|prost-wire|SimpleObject|stream": {
+    "avg_time_total_ns": 341.63829787234044,
+    "avg_ops_per_sec": 2927072.304913745,
+    "median_size_bytes": 74.0
+  },
+  "rust|serde_json|StringArray|bytes": {
+    "avg_time_total_ns": 3826.4712643678163,
+    "avg_ops_per_sec": 261337.38656605675,
+    "median_size_bytes": 1009.0
+  },
+  "rust|serde_json|StringArray|stream": {
+    "avg_time_total_ns": 3433.5408163265306,
+    "avg_ops_per_sec": 291244.53545010654,
+    "median_size_bytes": 1009.0
+  },
+  "rust|simd-json|StringArray|bytes": {
+    "avg_time_total_ns": 4495.125,
+    "avg_ops_per_sec": 222463.2240482745,
+    "median_size_bytes": 1009.0
+  },
+  "rust|simd-json|StringArray|stream": {
+    "avg_time_total_ns": 4316.858823529412,
+    "avg_ops_per_sec": 231649.91974011605,
+    "median_size_bytes": 1009.0
+  },
+  "rust|sonic-rs|StringArray|bytes": {
+    "avg_time_total_ns": 2360.0,
+    "avg_ops_per_sec": 423728.81355932204,
+    "median_size_bytes": 1009.0
+  },
+  "rust|sonic-rs|StringArray|stream": {
+    "avg_time_total_ns": 2296.4166666666665,
+    "avg_ops_per_sec": 435461.0443807381,
+    "median_size_bytes": 1009.0
+  },
+  "rust|rmp-serde|StringArray|bytes": {
+    "avg_time_total_ns": 3874.3146067415732,
+    "avg_ops_per_sec": 258110.1695406799,
+    "median_size_bytes": 805.0
+  },
+  "rust|rmp-serde|StringArray|stream": {
+    "avg_time_total_ns": 3791.9591836734694,
+    "avg_ops_per_sec": 263715.9187539692,
+    "median_size_bytes": 805.0
+  },
+  "rust|ciborium|StringArray|bytes": {
+    "avg_time_total_ns": 7490.5,
+    "avg_ops_per_sec": 133502.43641946465,
+    "median_size_bytes": 804.0
+  },
+  "rust|ciborium|StringArray|stream": {
+    "avg_time_total_ns": 7306.4375,
+    "avg_ops_per_sec": 136865.60652848944,
+    "median_size_bytes": 804.0
+  },
+  "rust|bincode|StringArray|bytes": {
+    "avg_time_total_ns": 3266.4835164835163,
+    "avg_ops_per_sec": 306139.61312026915,
+    "median_size_bytes": 784.0
+  },
+  "rust|bincode|StringArray|stream": {
+    "avg_time_total_ns": 3352.5416666666665,
+    "avg_ops_per_sec": 298281.1548452045,
+    "median_size_bytes": 784.0
+  },
+  "rust|postcard|StringArray|bytes": {
+    "avg_time_total_ns": 3241.5714285714284,
+    "avg_ops_per_sec": 308492.3537966595,
+    "median_size_bytes": 784.0
+  },
+  "rust|postcard|StringArray|stream": {
+    "avg_time_total_ns": 3403.641304347826,
+    "avg_ops_per_sec": 293802.9923196066,
+    "median_size_bytes": 784.0
+  },
+  "rust|bitcode|StringArray|bytes": {
+    "avg_time_total_ns": 2967.402298850575,
+    "avg_ops_per_sec": 336995.0883934243,
+    "median_size_bytes": 735.0
+  },
+  "rust|bitcode|StringArray|stream": {
+    "avg_time_total_ns": 3117.3516483516482,
+    "avg_ops_per_sec": 320785.1127506795,
+    "median_size_bytes": 735.0
+  },
+  "rust|flexbuffers|StringArray|bytes": {
+    "avg_time_total_ns": 6734.978494623656,
+    "avg_ops_per_sec": 148478.57358390556,
+    "median_size_bytes": 1228.0
+  },
+  "rust|flexbuffers|StringArray|stream": {
+    "avg_time_total_ns": 7571.0,
+    "avg_ops_per_sec": 132082.9480914014,
+    "median_size_bytes": 1228.0
+  },
+  "rust|minicbor|StringArray|bytes": {
+    "avg_time_total_ns": 11296.510204081633,
+    "avg_ops_per_sec": 88522.9138852707,
+    "median_size_bytes": 1612.0
+  },
+  "rust|minicbor|StringArray|stream": {
+    "avg_time_total_ns": 10626.279569892473,
+    "avg_ops_per_sec": 94106.3138253306,
+    "median_size_bytes": 1612.0
+  },
+  "rust|rkyv|StringArray|bytes": {
+    "avg_time_total_ns": 3995.778947368421,
+    "avg_ops_per_sec": 250264.0944786472,
+    "median_size_bytes": 816.0
+  },
+  "rust|rkyv|StringArray|stream": {
+    "avg_time_total_ns": 3865.7113402061855,
+    "avg_ops_per_sec": 258684.60213241453,
+    "median_size_bytes": 816.0
+  },
+  "rust|prost-wire|StringArray|bytes": {
+    "avg_time_total_ns": 3965.8478260869565,
+    "avg_ops_per_sec": 252152.8923581229,
+    "median_size_bytes": 808.0
+  },
+  "rust|prost-wire|StringArray|stream": {
+    "avg_time_total_ns": 3785.6195652173915,
+    "avg_ops_per_sec": 264157.5527525504,
+    "median_size_bytes": 808.0
+  },
+  "rust|serde_json|EDI_835|bytes": {
+    "avg_time_total_ns": 6032.263157894737,
+    "avg_ops_per_sec": 165775.26109603624,
+    "median_size_bytes": 2254.0
+  },
+  "rust|serde_json|EDI_835|stream": {
+    "avg_time_total_ns": 5677.311111111111,
+    "avg_ops_per_sec": 176139.7218558081,
+    "median_size_bytes": 2254.0
+  },
+  "rust|simd-json|EDI_835|bytes": {
+    "avg_time_total_ns": 5319.4,
+    "avg_ops_per_sec": 187991.12681881417,
+    "median_size_bytes": 2254.0
+  },
+  "rust|simd-json|EDI_835|stream": {
+    "avg_time_total_ns": 5302.234042553191,
+    "avg_ops_per_sec": 188599.74719608357,
+    "median_size_bytes": 2254.0
+  },
+  "rust|sonic-rs|EDI_835|bytes": {
+    "avg_time_total_ns": 4006.820224719101,
+    "avg_ops_per_sec": 249574.46152206772,
+    "median_size_bytes": 2254.0
+  },
+  "rust|sonic-rs|EDI_835|stream": {
+    "avg_time_total_ns": 4028.8453608247423,
+    "avg_ops_per_sec": 248210.07272299242,
+    "median_size_bytes": 2254.0
+  },
+  "rust|rmp-serde|EDI_835|bytes": {
+    "avg_time_total_ns": 3426.7263157894736,
+    "avg_ops_per_sec": 291823.71390217455,
+    "median_size_bytes": 1638.0
+  },
+  "rust|rmp-serde|EDI_835|stream": {
+    "avg_time_total_ns": 3559.2929292929293,
+    "avg_ops_per_sec": 280954.67832108296,
+    "median_size_bytes": 1638.0
+  },
+  "rust|ciborium|EDI_835|bytes": {
+    "avg_time_total_ns": 6807.590361445783,
+    "avg_ops_per_sec": 146894.85514043501,
+    "median_size_bytes": 1639.0
+  },
+  "rust|ciborium|EDI_835|stream": {
+    "avg_time_total_ns": 5945.576086956522,
+    "avg_ops_per_sec": 168192.28033996778,
+    "median_size_bytes": 1639.0
+  },
+  "rust|bincode|EDI_835|bytes": {
+    "avg_time_total_ns": 1350.7011494252874,
+    "avg_ops_per_sec": 740356.221970709,
+    "median_size_bytes": 513.0
+  },
+  "rust|bincode|EDI_835|stream": {
+    "avg_time_total_ns": 1313.3058823529411,
+    "avg_ops_per_sec": 761437.2351766087,
+    "median_size_bytes": 513.0
+  },
+  "rust|postcard|EDI_835|bytes": {
+    "avg_time_total_ns": 1158.989247311828,
+    "avg_ops_per_sec": 862820.7744976156,
+    "median_size_bytes": 513.0
+  },
+  "rust|postcard|EDI_835|stream": {
+    "avg_time_total_ns": 1167.9894736842105,
+    "avg_ops_per_sec": 856172.0996043584,
+    "median_size_bytes": 513.0
+  },
+  "rust|bitcode|EDI_835|bytes": {
+    "avg_time_total_ns": 2791.6627906976746,
+    "avg_ops_per_sec": 358209.45256432146,
+    "median_size_bytes": 503.0
+  },
+  "rust|bitcode|EDI_835|stream": {
+    "avg_time_total_ns": 2783.5842696629215,
+    "avg_ops_per_sec": 359249.04839367233,
+    "median_size_bytes": 503.0
+  },
+  "rust|flexbuffers|EDI_835|bytes": {
+    "avg_time_total_ns": 10794.947368421053,
+    "avg_ops_per_sec": 92635.9310398627,
+    "median_size_bytes": 1906.0
+  },
+  "rust|flexbuffers|EDI_835|stream": {
+    "avg_time_total_ns": 10483.613636363636,
+    "avg_ops_per_sec": 95386.95670082532,
+    "median_size_bytes": 1906.0
+  },
+  "rust|minicbor|EDI_835|bytes": {
+    "avg_time_total_ns": 16912.120879120877,
+    "avg_ops_per_sec": 59129.1894817619,
+    "median_size_bytes": 3255.0
+  },
+  "rust|minicbor|EDI_835|stream": {
+    "avg_time_total_ns": 17702.42105263158,
+    "avg_ops_per_sec": 56489.44836567106,
+    "median_size_bytes": 3255.0
+  },
+  "rust|rkyv|EDI_835|bytes": {
+    "avg_time_total_ns": 3475.2061855670104,
+    "avg_ops_per_sec": 287752.71066019963,
+    "median_size_bytes": 1648.0
+  },
+  "rust|rkyv|EDI_835|stream": {
+    "avg_time_total_ns": 3554.0526315789475,
+    "avg_ops_per_sec": 281368.9339079183,
+    "median_size_bytes": 1648.0
+  },
+  "rust|prost-wire|EDI_835|bytes": {
+    "avg_time_total_ns": 3327.4105263157894,
+    "avg_ops_per_sec": 300534.00146787136,
+    "median_size_bytes": 1641.0
+  },
+  "rust|prost-wire|EDI_835|stream": {
+    "avg_time_total_ns": 3302.9148936170213,
+    "avg_ops_per_sec": 302762.8722533932,
+    "median_size_bytes": 1641.0
+  },
+  "c|cJSON|Person|bytes": {
+    "avg_time_total_ns": 411.4183673469388,
+    "avg_ops_per_sec": 2430615.838686475,
+    "median_size_bytes": 130.0
+  },
+  "c|cJSON|Person|stream": {
+    "avg_time_total_ns": 405.8404255319149,
+    "avg_ops_per_sec": 2464022.6480379566,
+    "median_size_bytes": 130.0
+  },
+  "c|yyjson|Person|bytes": {
+    "avg_time_total_ns": 426.76404494382024,
+    "avg_ops_per_sec": 2343215.207203412,
+    "median_size_bytes": 130.0
+  },
+  "c|yyjson|Person|stream": {
+    "avg_time_total_ns": 422.2604166666667,
+    "avg_ops_per_sec": 2368206.8233959097,
+    "median_size_bytes": 130.0
+  },
+  "c|jansson|Person|bytes": {
+    "avg_time_total_ns": 395.01020408163265,
+    "avg_ops_per_sec": 2531580.171010824,
+    "median_size_bytes": 130.0
+  },
+  "c|jansson|Person|stream": {
+    "avg_time_total_ns": 368.44897959183675,
+    "avg_ops_per_sec": 2714079.982275396,
+    "median_size_bytes": 130.0
+  },
+  "c|parson|Person|bytes": {
+    "avg_time_total_ns": 375.4736842105263,
+    "avg_ops_per_sec": 2663302.4950939165,
+    "median_size_bytes": 130.0
+  },
+  "c|parson|Person|stream": {
+    "avg_time_total_ns": 372.62886597938143,
+    "avg_ops_per_sec": 2683635.357587495,
+    "median_size_bytes": 130.0
+  },
+  "c|mpack|Person|bytes": {
+    "avg_time_total_ns": 35.935483870967744,
+    "avg_ops_per_sec": 27827648.114901256,
+    "median_size_bytes": 226.0
+  },
+  "c|mpack|Person|stream": {
+    "avg_time_total_ns": 35.19277108433735,
+    "avg_ops_per_sec": 28414926.39507018,
+    "median_size_bytes": 226.0
+  },
+  "c|tinycbor|Person|bytes": {
+    "avg_time_total_ns": 40.2967032967033,
+    "avg_ops_per_sec": 24815925.824925005,
+    "median_size_bytes": 226.0
+  },
+  "c|tinycbor|Person|stream": {
+    "avg_time_total_ns": 39.876288659793815,
+    "avg_ops_per_sec": 25077559.462254394,
+    "median_size_bytes": 226.0
+  },
+  "c|nanopb|Person|bytes": {
+    "avg_time_total_ns": 38.31521739130435,
+    "avg_ops_per_sec": 26099290.78014184,
+    "median_size_bytes": 226.0
+  },
+  "c|nanopb|Person|stream": {
+    "avg_time_total_ns": 34.94897959183673,
+    "avg_ops_per_sec": 28613138.686131388,
+    "median_size_bytes": 226.0
+  },
+  "c|protobuf-c|Person|bytes": {
+    "avg_time_total_ns": 35.08791208791209,
+    "avg_ops_per_sec": 28499843.407453805,
+    "median_size_bytes": 226.0
+  },
+  "c|protobuf-c|Person|stream": {
+    "avg_time_total_ns": 35.13131313131313,
+    "avg_ops_per_sec": 28464634.847613573,
+    "median_size_bytes": 226.0
+  },
+  "c|flatcc|Person|bytes": {
+    "avg_time_total_ns": 35.20879120879121,
+    "avg_ops_per_sec": 28401997.503121097,
+    "median_size_bytes": 226.0
+  },
+  "c|flatcc|Person|stream": {
+    "avg_time_total_ns": 35.25252525252525,
+    "avg_ops_per_sec": 28366762.17765043,
+    "median_size_bytes": 226.0
+  },
+  "c|ubj|Person|bytes": {
+    "avg_time_total_ns": 35.022222222222226,
+    "avg_ops_per_sec": 28553299.492385782,
+    "median_size_bytes": 226.0
+  },
+  "c|ubj|Person|stream": {
+    "avg_time_total_ns": 38.896907216494846,
+    "avg_ops_per_sec": 25708984.89265836,
+    "median_size_bytes": 226.0
+  },
+  "c|cbor-encode|Person|bytes": {
+    "avg_time_total_ns": 39.333333333333336,
+    "avg_ops_per_sec": 25423728.81355932,
+    "median_size_bytes": 226.0
+  },
+  "c|cbor-encode|Person|stream": {
+    "avg_time_total_ns": 38.282828282828284,
+    "avg_ops_per_sec": 26121372.031662267,
+    "median_size_bytes": 226.0
+  },
+  "c|custom-binary|Person|bytes": {
+    "avg_time_total_ns": 34.72826086956522,
+    "avg_ops_per_sec": 28794992.175273865,
+    "median_size_bytes": 226.0
+  },
+  "c|custom-binary|Person|stream": {
+    "avg_time_total_ns": 36.295918367346935,
+    "avg_ops_per_sec": 27551307.281416927,
+    "median_size_bytes": 226.0
+  },
+  "c|cJSON|Integer|bytes": {
+    "avg_time_total_ns": 92.71111111111111,
+    "avg_ops_per_sec": 10786193.672099713,
+    "median_size_bytes": 2.0
+  },
+  "c|cJSON|Integer|stream": {
+    "avg_time_total_ns": 92.60416666666667,
+    "avg_ops_per_sec": 10798650.168728909,
+    "median_size_bytes": 2.0
+  },
+  "c|yyjson|Integer|bytes": {
+    "avg_time_total_ns": 92.28260869565217,
+    "avg_ops_per_sec": 10836277.974087162,
+    "median_size_bytes": 2.0
+  },
+  "c|yyjson|Integer|stream": {
+    "avg_time_total_ns": 92.13978494623656,
+    "avg_ops_per_sec": 10853075.037927413,
+    "median_size_bytes": 2.0
+  },
+  "c|jansson|Integer|bytes": {
+    "avg_time_total_ns": 106.98913043478261,
+    "avg_ops_per_sec": 9346743.87889871,
+    "median_size_bytes": 2.0
+  },
+  "c|jansson|Integer|stream": {
+    "avg_time_total_ns": 102.38297872340425,
+    "avg_ops_per_sec": 9767248.545303408,
+    "median_size_bytes": 2.0
+  },
+  "c|parson|Integer|bytes": {
+    "avg_time_total_ns": 97.72340425531915,
+    "avg_ops_per_sec": 10232963.204876985,
+    "median_size_bytes": 2.0
+  },
+  "c|parson|Integer|stream": {
+    "avg_time_total_ns": 91.63829787234043,
+    "avg_ops_per_sec": 10912468.075226376,
+    "median_size_bytes": 2.0
+  },
+  "c|mpack|Integer|bytes": {
+    "avg_time_total_ns": 30.50537634408602,
+    "avg_ops_per_sec": 32781106.802960876,
+    "median_size_bytes": 6.0
+  },
+  "c|mpack|Integer|stream": {
+    "avg_time_total_ns": 31.19148936170213,
+    "avg_ops_per_sec": 32060027.285129603,
+    "median_size_bytes": 6.0
+  },
+  "c|tinycbor|Integer|bytes": {
+    "avg_time_total_ns": 32.505376344086024,
+    "avg_ops_per_sec": 30764141.581210718,
+    "median_size_bytes": 6.0
+  },
+  "c|tinycbor|Integer|stream": {
+    "avg_time_total_ns": 33.62244897959184,
+    "avg_ops_per_sec": 29742033.383915022,
+    "median_size_bytes": 6.0
+  },
+  "c|nanopb|Integer|bytes": {
+    "avg_time_total_ns": 31.96842105263158,
+    "avg_ops_per_sec": 31280869.278893642,
+    "median_size_bytes": 6.0
+  },
+  "c|nanopb|Integer|stream": {
+    "avg_time_total_ns": 32.54639175257732,
+    "avg_ops_per_sec": 30725372.18878682,
+    "median_size_bytes": 6.0
+  },
+  "c|protobuf-c|Integer|bytes": {
+    "avg_time_total_ns": 31.33684210526316,
+    "avg_ops_per_sec": 31911320.120927107,
+    "median_size_bytes": 6.0
+  },
+  "c|protobuf-c|Integer|stream": {
+    "avg_time_total_ns": 29.572916666666668,
+    "avg_ops_per_sec": 33814723.49418809,
+    "median_size_bytes": 6.0
+  },
+  "c|flatcc|Integer|bytes": {
+    "avg_time_total_ns": 29.626373626373628,
+    "avg_ops_per_sec": 33753709.19881306,
+    "median_size_bytes": 6.0
+  },
+  "c|flatcc|Integer|stream": {
+    "avg_time_total_ns": 29.459183673469386,
+    "avg_ops_per_sec": 33945271.9085556,
+    "median_size_bytes": 6.0
+  },
+  "c|ubj|Integer|bytes": {
+    "avg_time_total_ns": 29.703296703296704,
+    "avg_ops_per_sec": 33666296.70736219,
+    "median_size_bytes": 6.0
+  },
+  "c|ubj|Integer|stream": {
+    "avg_time_total_ns": 30.232323232323232,
+    "avg_ops_per_sec": 33077180.086869363,
+    "median_size_bytes": 6.0
+  },
+  "c|cbor-encode|Integer|bytes": {
+    "avg_time_total_ns": 30.65625,
+    "avg_ops_per_sec": 32619775.739041794,
+    "median_size_bytes": 6.0
+  },
+  "c|cbor-encode|Integer|stream": {
+    "avg_time_total_ns": 32.27835051546392,
+    "avg_ops_per_sec": 30980517.406579364,
+    "median_size_bytes": 6.0
+  },
+  "c|custom-binary|Integer|bytes": {
+    "avg_time_total_ns": 36.73118279569893,
+    "avg_ops_per_sec": 27224824.355971895,
+    "median_size_bytes": 6.0
+  },
+  "c|custom-binary|Integer|stream": {
+    "avg_time_total_ns": 35.36734693877551,
+    "avg_ops_per_sec": 28274668.20542412,
+    "median_size_bytes": 6.0
+  },
+  "c|cJSON|Telemetry|bytes": {
+    "avg_time_total_ns": 330.2604166666667,
+    "avg_ops_per_sec": 3027913.5782999527,
+    "median_size_bytes": 82.0
+  },
+  "c|cJSON|Telemetry|stream": {
+    "avg_time_total_ns": 311.6185567010309,
+    "avg_ops_per_sec": 3209051.5102391904,
+    "median_size_bytes": 82.0
+  },
+  "c|yyjson|Telemetry|bytes": {
+    "avg_time_total_ns": 298.4020618556701,
+    "avg_ops_per_sec": 3351183.278631888,
+    "median_size_bytes": 82.0
+  },
+  "c|yyjson|Telemetry|stream": {
+    "avg_time_total_ns": 294.65625,
+    "avg_ops_per_sec": 3393785.130978895,
+    "median_size_bytes": 82.0
+  },
+  "c|jansson|Telemetry|bytes": {
+    "avg_time_total_ns": 289.5,
+    "avg_ops_per_sec": 3454231.433506045,
+    "median_size_bytes": 82.0
+  },
+  "c|jansson|Telemetry|stream": {
+    "avg_time_total_ns": 310.8901098901099,
+    "avg_ops_per_sec": 3216570.640839843,
+    "median_size_bytes": 82.0
+  },
+  "c|parson|Telemetry|bytes": {
+    "avg_time_total_ns": 305.2087912087912,
+    "avg_ops_per_sec": 3276445.596601138,
+    "median_size_bytes": 82.0
+  },
+  "c|parson|Telemetry|stream": {
+    "avg_time_total_ns": 312.38709677419354,
+    "avg_ops_per_sec": 3201156.546881454,
+    "median_size_bytes": 82.0
+  },
+  "c|mpack|Telemetry|bytes": {
+    "avg_time_total_ns": 99.0111111111111,
+    "avg_ops_per_sec": 10099876.557064302,
+    "median_size_bytes": 903.0
+  },
+  "c|mpack|Telemetry|stream": {
+    "avg_time_total_ns": 92.91489361702128,
+    "avg_ops_per_sec": 10762537.21089993,
+    "median_size_bytes": 903.0
+  },
+  "c|tinycbor|Telemetry|bytes": {
+    "avg_time_total_ns": 88.06666666666666,
+    "avg_ops_per_sec": 11355034.065102195,
+    "median_size_bytes": 903.0
+  },
+  "c|tinycbor|Telemetry|stream": {
+    "avg_time_total_ns": 88.87096774193549,
+    "avg_ops_per_sec": 11252268.602540834,
+    "median_size_bytes": 903.0
+  },
+  "c|nanopb|Telemetry|bytes": {
+    "avg_time_total_ns": 98.27368421052631,
+    "avg_ops_per_sec": 10175664.095972579,
+    "median_size_bytes": 903.0
+  },
+  "c|nanopb|Telemetry|stream": {
+    "avg_time_total_ns": 92.94791666666667,
+    "avg_ops_per_sec": 10758713.437184803,
+    "median_size_bytes": 903.0
+  },
+  "c|protobuf-c|Telemetry|bytes": {
+    "avg_time_total_ns": 96.3974358974359,
+    "avg_ops_per_sec": 10373719.909562442,
+    "median_size_bytes": 903.0
+  },
+  "c|protobuf-c|Telemetry|stream": {
+    "avg_time_total_ns": 87.65384615384616,
+    "avg_ops_per_sec": 11408512.50548486,
+    "median_size_bytes": 903.0
+  },
+  "c|flatcc|Telemetry|bytes": {
+    "avg_time_total_ns": 95.02631578947368,
+    "avg_ops_per_sec": 10523400.720022155,
+    "median_size_bytes": 903.0
+  },
+  "c|flatcc|Telemetry|stream": {
+    "avg_time_total_ns": 95.19540229885058,
+    "avg_ops_per_sec": 10504709.007486114,
+    "median_size_bytes": 903.0
+  },
+  "c|ubj|Telemetry|bytes": {
+    "avg_time_total_ns": 92.88541666666667,
+    "avg_ops_per_sec": 10765952.674666367,
+    "median_size_bytes": 903.0
+  },
+  "c|ubj|Telemetry|stream": {
+    "avg_time_total_ns": 87.71739130434783,
+    "avg_ops_per_sec": 11400247.831474597,
+    "median_size_bytes": 903.0
+  },
+  "c|cbor-encode|Telemetry|bytes": {
+    "avg_time_total_ns": 91.77551020408163,
+    "avg_ops_per_sec": 10896152.990882812,
+    "median_size_bytes": 903.0
+  },
+  "c|cbor-encode|Telemetry|stream": {
+    "avg_time_total_ns": 98.36585365853658,
+    "avg_ops_per_sec": 10166129.432184478,
+    "median_size_bytes": 903.0
+  },
+  "c|custom-binary|Telemetry|bytes": {
+    "avg_time_total_ns": 94.55913978494624,
+    "avg_ops_per_sec": 10575392.31294064,
+    "median_size_bytes": 903.0
+  },
+  "c|custom-binary|Telemetry|stream": {
+    "avg_time_total_ns": 87.68817204301075,
+    "avg_ops_per_sec": 11404046.597179644,
+    "median_size_bytes": 903.0
+  },
+  "c|cJSON|SimpleObject|bytes": {
+    "avg_time_total_ns": 242.38709677419354,
+    "avg_ops_per_sec": 4125632.153313814,
+    "median_size_bytes": 82.0
+  },
+  "c|cJSON|SimpleObject|stream": {
+    "avg_time_total_ns": 252.53125,
+    "avg_ops_per_sec": 3959905.9522336344,
+    "median_size_bytes": 82.0
+  },
+  "c|yyjson|SimpleObject|bytes": {
+    "avg_time_total_ns": 244.36263736263737,
+    "avg_ops_per_sec": 4092278.634707919,
+    "median_size_bytes": 82.0
+  },
+  "c|yyjson|SimpleObject|stream": {
+    "avg_time_total_ns": 251.6315789473684,
+    "avg_ops_per_sec": 3974064.0033465805,
+    "median_size_bytes": 82.0
+  },
+  "c|jansson|SimpleObject|bytes": {
+    "avg_time_total_ns": 252.53684210526316,
+    "avg_ops_per_sec": 3959818.265182777,
+    "median_size_bytes": 82.0
+  },
+  "c|jansson|SimpleObject|stream": {
+    "avg_time_total_ns": 271.88421052631577,
+    "avg_ops_per_sec": 3678036.315769097,
+    "median_size_bytes": 82.0
+  },
+  "c|parson|SimpleObject|bytes": {
+    "avg_time_total_ns": 262.2474226804124,
+    "avg_ops_per_sec": 3813192.8610739834,
+    "median_size_bytes": 82.0
+  },
+  "c|parson|SimpleObject|stream": {
+    "avg_time_total_ns": 244.85416666666666,
+    "avg_ops_per_sec": 4084063.6433251086,
+    "median_size_bytes": 82.0
+  },
+  "c|mpack|SimpleObject|bytes": {
+    "avg_time_total_ns": 31.010752688172044,
+    "avg_ops_per_sec": 32246879.334257975,
+    "median_size_bytes": 71.0
+  },
+  "c|mpack|SimpleObject|stream": {
+    "avg_time_total_ns": 31.876288659793815,
+    "avg_ops_per_sec": 31371280.724450193,
+    "median_size_bytes": 71.0
+  },
+  "c|tinycbor|SimpleObject|bytes": {
+    "avg_time_total_ns": 31.49411764705882,
+    "avg_ops_per_sec": 31751961.150541652,
+    "median_size_bytes": 71.0
+  },
+  "c|tinycbor|SimpleObject|stream": {
+    "avg_time_total_ns": 33.41935483870968,
+    "avg_ops_per_sec": 29922779.92277992,
+    "median_size_bytes": 71.0
+  },
+  "c|nanopb|SimpleObject|bytes": {
+    "avg_time_total_ns": 33.37894736842105,
+    "avg_ops_per_sec": 29959003.468937244,
+    "median_size_bytes": 71.0
+  },
+  "c|nanopb|SimpleObject|stream": {
+    "avg_time_total_ns": 31.882978723404257,
+    "avg_ops_per_sec": 31364698.031364698,
+    "median_size_bytes": 71.0
+  },
+  "c|protobuf-c|SimpleObject|bytes": {
+    "avg_time_total_ns": 31.870967741935484,
+    "avg_ops_per_sec": 31376518.21862348,
+    "median_size_bytes": 71.0
+  },
+  "c|protobuf-c|SimpleObject|stream": {
+    "avg_time_total_ns": 30.536082474226806,
+    "avg_ops_per_sec": 32748143.14652262,
+    "median_size_bytes": 71.0
+  },
+  "c|flatcc|SimpleObject|bytes": {
+    "avg_time_total_ns": 30.75,
+    "avg_ops_per_sec": 32520325.203252032,
+    "median_size_bytes": 71.0
+  },
+  "c|flatcc|SimpleObject|stream": {
+    "avg_time_total_ns": 31.56382978723404,
+    "avg_ops_per_sec": 31681833.501853727,
+    "median_size_bytes": 71.0
+  },
+  "c|ubj|SimpleObject|bytes": {
+    "avg_time_total_ns": 30.387096774193548,
+    "avg_ops_per_sec": 32908704.883227177,
+    "median_size_bytes": 71.0
+  },
+  "c|ubj|SimpleObject|stream": {
+    "avg_time_total_ns": 30.397959183673468,
+    "avg_ops_per_sec": 32896945.283652235,
+    "median_size_bytes": 71.0
+  },
+  "c|cbor-encode|SimpleObject|bytes": {
+    "avg_time_total_ns": 31.382978723404257,
+    "avg_ops_per_sec": 31864406.779661015,
+    "median_size_bytes": 71.0
+  },
+  "c|cbor-encode|SimpleObject|stream": {
+    "avg_time_total_ns": 30.69148936170213,
+    "avg_ops_per_sec": 32582322.357019063,
+    "median_size_bytes": 71.0
+  },
+  "c|custom-binary|SimpleObject|bytes": {
+    "avg_time_total_ns": 31.35483870967742,
+    "avg_ops_per_sec": 31893004.115226336,
+    "median_size_bytes": 71.0
+  },
+  "c|custom-binary|SimpleObject|stream": {
+    "avg_time_total_ns": 34.08510638297872,
+    "avg_ops_per_sec": 29338327.09113608,
+    "median_size_bytes": 71.0
+  },
+  "c|cJSON|StringArray|bytes": {
+    "avg_time_total_ns": 162.05208333333334,
+    "avg_ops_per_sec": 6170855.563411969,
+    "median_size_bytes": 13.0
+  },
+  "c|cJSON|StringArray|stream": {
+    "avg_time_total_ns": 154.9375,
+    "avg_ops_per_sec": 6454215.40943929,
+    "median_size_bytes": 13.0
+  },
+  "c|yyjson|StringArray|bytes": {
+    "avg_time_total_ns": 156.3684210526316,
+    "avg_ops_per_sec": 6395153.147088522,
+    "median_size_bytes": 13.0
+  },
+  "c|yyjson|StringArray|stream": {
+    "avg_time_total_ns": 162.60416666666666,
+    "avg_ops_per_sec": 6149903.907751442,
+    "median_size_bytes": 13.0
+  },
+  "c|jansson|StringArray|bytes": {
+    "avg_time_total_ns": 168.70833333333334,
+    "avg_ops_per_sec": 5927389.478883674,
+    "median_size_bytes": 13.0
+  },
+  "c|jansson|StringArray|stream": {
+    "avg_time_total_ns": 163.61052631578949,
+    "avg_ops_per_sec": 6112076.175770443,
+    "median_size_bytes": 13.0
+  },
+  "c|parson|StringArray|bytes": {
+    "avg_time_total_ns": 176.4418604651163,
+    "avg_ops_per_sec": 5667589.297482535,
+    "median_size_bytes": 13.0
+  },
+  "c|parson|StringArray|stream": {
+    "avg_time_total_ns": 177.4842105263158,
+    "avg_ops_per_sec": 5634304.015182966,
+    "median_size_bytes": 13.0
+  },
+  "c|mpack|StringArray|bytes": {
+    "avg_time_total_ns": 113.82795698924731,
+    "avg_ops_per_sec": 8785187.984129982,
+    "median_size_bytes": 1606.0
+  },
+  "c|mpack|StringArray|stream": {
+    "avg_time_total_ns": 108.24731182795699,
+    "avg_ops_per_sec": 9238104.698519917,
+    "median_size_bytes": 1606.0
+  },
+  "c|tinycbor|StringArray|bytes": {
+    "avg_time_total_ns": 104.49462365591398,
+    "avg_ops_per_sec": 9569870.343692116,
+    "median_size_bytes": 1606.0
+  },
+  "c|tinycbor|StringArray|stream": {
+    "avg_time_total_ns": 108.98823529411764,
+    "avg_ops_per_sec": 9175302.245250432,
+    "median_size_bytes": 1606.0
+  },
+  "c|nanopb|StringArray|bytes": {
+    "avg_time_total_ns": 110.025,
+    "avg_ops_per_sec": 9088843.444671664,
+    "median_size_bytes": 1606.0
+  },
+  "c|nanopb|StringArray|stream": {
+    "avg_time_total_ns": 107.79166666666667,
+    "avg_ops_per_sec": 9277155.00579822,
+    "median_size_bytes": 1606.0
+  },
+  "c|protobuf-c|StringArray|bytes": {
+    "avg_time_total_ns": 103.53191489361703,
+    "avg_ops_per_sec": 9658857.377722975,
+    "median_size_bytes": 1606.0
+  },
+  "c|protobuf-c|StringArray|stream": {
+    "avg_time_total_ns": 107.11224489795919,
+    "avg_ops_per_sec": 9336000.762122512,
+    "median_size_bytes": 1606.0
+  },
+  "c|flatcc|StringArray|bytes": {
+    "avg_time_total_ns": 97.27659574468085,
+    "avg_ops_per_sec": 10279965.004374454,
+    "median_size_bytes": 1606.0
+  },
+  "c|flatcc|StringArray|stream": {
+    "avg_time_total_ns": 92.67816091954023,
+    "avg_ops_per_sec": 10790028.525362767,
+    "median_size_bytes": 1606.0
+  },
+  "c|ubj|StringArray|bytes": {
+    "avg_time_total_ns": 100.54545454545455,
+    "avg_ops_per_sec": 9945750.452079566,
+    "median_size_bytes": 1606.0
+  },
+  "c|ubj|StringArray|stream": {
+    "avg_time_total_ns": 112.69791666666667,
+    "avg_ops_per_sec": 8873278.491542656,
+    "median_size_bytes": 1606.0
+  },
+  "c|cbor-encode|StringArray|bytes": {
+    "avg_time_total_ns": 108.7,
+    "avg_ops_per_sec": 9199632.014719412,
+    "median_size_bytes": 1606.0
+  },
+  "c|cbor-encode|StringArray|stream": {
+    "avg_time_total_ns": 102.32631578947368,
+    "avg_ops_per_sec": 9772657.134039707,
+    "median_size_bytes": 1606.0
+  },
+  "c|custom-binary|StringArray|bytes": {
+    "avg_time_total_ns": 102.57291666666667,
+    "avg_ops_per_sec": 9749162.181375038,
+    "median_size_bytes": 1606.0
+  },
+  "c|custom-binary|StringArray|stream": {
+    "avg_time_total_ns": 100.64102564102564,
+    "avg_ops_per_sec": 9936305.732484076,
+    "median_size_bytes": 1606.0
+  },
+  "c|cJSON|EDI_835|bytes": {
+    "avg_time_total_ns": 440.2197802197802,
+    "avg_ops_per_sec": 2271592.611083375,
+    "median_size_bytes": 80.0
+  },
+  "c|cJSON|EDI_835|stream": {
+    "avg_time_total_ns": 470.9591836734694,
+    "avg_ops_per_sec": 2123326.255579148,
+    "median_size_bytes": 80.0
+  },
+  "c|yyjson|EDI_835|bytes": {
+    "avg_time_total_ns": 489.3666666666667,
+    "avg_ops_per_sec": 2043457.5301409985,
+    "median_size_bytes": 80.0
+  },
+  "c|yyjson|EDI_835|stream": {
+    "avg_time_total_ns": 495.258064516129,
+    "avg_ops_per_sec": 2019149.3519181919,
+    "median_size_bytes": 80.0
+  },
+  "c|jansson|EDI_835|bytes": {
+    "avg_time_total_ns": 498.0,
+    "avg_ops_per_sec": 2008032.1285140563,
+    "median_size_bytes": 80.0
+  },
+  "c|jansson|EDI_835|stream": {
+    "avg_time_total_ns": 487.61052631578946,
+    "avg_ops_per_sec": 2050817.088703236,
+    "median_size_bytes": 80.0
+  },
+  "c|parson|EDI_835|bytes": {
+    "avg_time_total_ns": 483.0,
+    "avg_ops_per_sec": 2070393.3747412008,
+    "median_size_bytes": 80.0
+  },
+  "c|parson|EDI_835|stream": {
+    "avg_time_total_ns": 494.3298969072165,
+    "avg_ops_per_sec": 2022940.5630865486,
+    "median_size_bytes": 80.0
+  },
+  "c|mpack|EDI_835|bytes": {
+    "avg_time_total_ns": 36.9468085106383,
+    "avg_ops_per_sec": 27065937.230060466,
+    "median_size_bytes": 78.0
+  },
+  "c|mpack|EDI_835|stream": {
+    "avg_time_total_ns": 36.83838383838384,
+    "avg_ops_per_sec": 27145599.12256649,
+    "median_size_bytes": 78.0
+  },
+  "c|tinycbor|EDI_835|bytes": {
+    "avg_time_total_ns": 34.51063829787234,
+    "avg_ops_per_sec": 28976572.13316893,
+    "median_size_bytes": 78.0
+  },
+  "c|tinycbor|EDI_835|stream": {
+    "avg_time_total_ns": 36.0,
+    "avg_ops_per_sec": 27777777.777777776,
+    "median_size_bytes": 78.0
+  },
+  "c|nanopb|EDI_835|bytes": {
+    "avg_time_total_ns": 36.148936170212764,
+    "avg_ops_per_sec": 27663331.37139494,
+    "median_size_bytes": 78.0
+  },
+  "c|nanopb|EDI_835|stream": {
+    "avg_time_total_ns": 34.91836734693877,
+    "avg_ops_per_sec": 28638223.261250734,
+    "median_size_bytes": 78.0
+  },
+  "c|protobuf-c|EDI_835|bytes": {
+    "avg_time_total_ns": 34.54255319148936,
+    "avg_ops_per_sec": 28949799.815214045,
+    "median_size_bytes": 78.0
+  },
+  "c|protobuf-c|EDI_835|stream": {
+    "avg_time_total_ns": 35.355555555555554,
+    "avg_ops_per_sec": 28284098.051539913,
+    "median_size_bytes": 78.0
+  },
+  "c|flatcc|EDI_835|bytes": {
+    "avg_time_total_ns": 34.526881720430104,
+    "avg_ops_per_sec": 28962939.894113984,
+    "median_size_bytes": 78.0
+  },
+  "c|flatcc|EDI_835|stream": {
+    "avg_time_total_ns": 34.37755102040816,
+    "avg_ops_per_sec": 29088750.37102998,
+    "median_size_bytes": 78.0
+  },
+  "c|ubj|EDI_835|bytes": {
+    "avg_time_total_ns": 35.49438202247191,
+    "avg_ops_per_sec": 28173472.61791706,
+    "median_size_bytes": 78.0
+  },
+  "c|ubj|EDI_835|stream": {
+    "avg_time_total_ns": 36.239583333333336,
+    "avg_ops_per_sec": 27594136.246047713,
+    "median_size_bytes": 78.0
+  },
+  "c|cbor-encode|EDI_835|bytes": {
+    "avg_time_total_ns": 36.365591397849464,
+    "avg_ops_per_sec": 27498521.58486103,
+    "median_size_bytes": 78.0
+  },
+  "c|cbor-encode|EDI_835|stream": {
+    "avg_time_total_ns": 35.50515463917526,
+    "avg_ops_per_sec": 28164924.50638792,
+    "median_size_bytes": 78.0
+  },
+  "c|custom-binary|EDI_835|bytes": {
+    "avg_time_total_ns": 35.31111111111111,
+    "avg_ops_per_sec": 28319697.923222154,
+    "median_size_bytes": 78.0
+  },
+  "c|custom-binary|EDI_835|stream": {
+    "avg_time_total_ns": 34.927083333333336,
+    "avg_ops_per_sec": 28631076.64777811,
+    "median_size_bytes": 78.0
+  },
+  "javascript|JSON.stringify|Person|bytes": {
+    "avg_time_total_ns": 4624.722222222223,
+    "avg_ops_per_sec": 216229.2029551324,
+    "median_size_bytes": 326.0
+  },
+  "javascript|JSON.stringify|Person|stream": {
+    "avg_time_total_ns": 4412.118279569892,
+    "avg_ops_per_sec": 226648.50229207438,
+    "median_size_bytes": 326.0
+  },
+  "javascript|fast-json-stringify|Person|bytes": {
+    "avg_time_total_ns": 7095.795698924731,
+    "avg_ops_per_sec": 140928.5219628767,
+    "median_size_bytes": 326.0
+  },
+  "javascript|fast-json-stringify|Person|stream": {
+    "avg_time_total_ns": 5184.45652173913,
+    "avg_ops_per_sec": 192884.2484852297,
+    "median_size_bytes": 326.0
+  },
+  "javascript|simdjson|Person|bytes": {
+    "avg_time_total_ns": 9747.68888888889,
+    "avg_ops_per_sec": 102588.4198191708,
+    "median_size_bytes": 326.0
+  },
+  "javascript|simdjson|Person|stream": {
+    "avg_time_total_ns": 10874.555555555555,
+    "avg_ops_per_sec": 91957.78116091591,
+    "median_size_bytes": 326.0
+  },
+  "javascript|msgpackr|Person|bytes": {
+    "avg_time_total_ns": 14912.842105263158,
+    "avg_ops_per_sec": 67056.29905697667,
+    "median_size_bytes": 267.0
+  },
+  "javascript|msgpackr|Person|stream": {
+    "avg_time_total_ns": 6171.636363636364,
+    "avg_ops_per_sec": 162031.58142823473,
+    "median_size_bytes": 267.0
+  },
+  "javascript|@msgpack/msgpack|Person|bytes": {
+    "avg_time_total_ns": 31916.021739130436,
+    "avg_ops_per_sec": 31332.225807264578,
+    "median_size_bytes": 253.0
+  },
+  "javascript|@msgpack/msgpack|Person|stream": {
+    "avg_time_total_ns": 10340.279069767443,
+    "avg_ops_per_sec": 96709.18872235916,
+    "median_size_bytes": 253.0
+  },
+  "javascript|cbor-x|Person|bytes": {
+    "avg_time_total_ns": 19440.8,
+    "avg_ops_per_sec": 51438.21241924201,
+    "median_size_bytes": 234.0
+  },
+  "javascript|cbor-x|Person|stream": {
+    "avg_time_total_ns": 7986.177777777778,
+    "avg_ops_per_sec": 125216.346020068,
+    "median_size_bytes": 234.0
+  },
+  "javascript|cbor|Person|bytes": {
+    "avg_time_total_ns": 119907.5632183908,
+    "avg_ops_per_sec": 8339.757502858045,
+    "median_size_bytes": 253.0
+  },
+  "javascript|cbor|Person|stream": {
+    "avg_time_total_ns": 109746.09375,
+    "avg_ops_per_sec": 9111.941626623955,
+    "median_size_bytes": 253.0
+  },
+  "javascript|avsc|Person|bytes": {
+    "avg_time_total_ns": 10443.637362637362,
+    "avg_ops_per_sec": 95752.07997718785,
+    "median_size_bytes": 97.0
+  },
+  "javascript|avsc|Person|stream": {
+    "avg_time_total_ns": 6054.53488372093,
+    "avg_ops_per_sec": 165165.45353281221,
+    "median_size_bytes": 97.0
+  },
+  "javascript|protobufjs|Person|bytes": {
+    "avg_time_total_ns": 4611.638554216867,
+    "avg_ops_per_sec": 216842.66627652405,
+    "median_size_bytes": 329.0
+  },
+  "javascript|protobufjs|Person|stream": {
+    "avg_time_total_ns": 4198.966666666666,
+    "avg_ops_per_sec": 238153.83149822577,
+    "median_size_bytes": 329.0
+  },
+  "javascript|bson|Person|bytes": {
+    "avg_time_total_ns": 22620.40860215054,
+    "avg_ops_per_sec": 44207.866338229156,
+    "median_size_bytes": 380.0
+  },
+  "javascript|bson|Person|stream": {
+    "avg_time_total_ns": 10095.188235294117,
+    "avg_ops_per_sec": 99057.09301227958,
+    "median_size_bytes": 380.0
+  },
+  "javascript|v8-serializer|Person|bytes": {
+    "avg_time_total_ns": 5246.488636363636,
+    "avg_ops_per_sec": 190603.6721530201,
+    "median_size_bytes": 309.0
+  },
+  "javascript|v8-serializer|Person|stream": {
+    "avg_time_total_ns": 6160.068181818182,
+    "avg_ops_per_sec": 162335.8655268721,
+    "median_size_bytes": 309.0
+  },
+  "javascript|bser|Person|bytes": {
+    "avg_time_total_ns": 46388.05617977528,
+    "avg_ops_per_sec": 21557.273193869885,
+    "median_size_bytes": 341.0
+  },
+  "javascript|bser|Person|stream": {
+    "avg_time_total_ns": 26134.033333333333,
+    "avg_ops_per_sec": 38264.281186345775,
+    "median_size_bytes": 341.0
+  },
+  "javascript|JSON.stringify|Integer|bytes": {
+    "avg_time_total_ns": 703.0752688172043,
+    "avg_ops_per_sec": 1422322.8213990761,
+    "median_size_bytes": 2.0
+  },
+  "javascript|JSON.stringify|Integer|stream": {
+    "avg_time_total_ns": 724.7608695652174,
+    "avg_ops_per_sec": 1379765.4398752213,
+    "median_size_bytes": 2.0
+  },
+  "javascript|fast-json-stringify|Integer|bytes": {
+    "avg_time_total_ns": 856.2906976744187,
+    "avg_ops_per_sec": 1167827.7046753846,
+    "median_size_bytes": 2.0
+  },
+  "javascript|fast-json-stringify|Integer|stream": {
+    "avg_time_total_ns": 859.5116279069767,
+    "avg_ops_per_sec": 1163451.3920831191,
+    "median_size_bytes": 2.0
+  },
+  "javascript|simdjson|Integer|bytes": {
+    "avg_time_total_ns": 9483.40909090909,
+    "avg_ops_per_sec": 105447.31229180149,
+    "median_size_bytes": 2.0
+  },
+  "javascript|simdjson|Integer|stream": {
+    "avg_time_total_ns": 8169.360465116279,
+    "avg_ops_per_sec": 122408.6027627337,
+    "median_size_bytes": 2.0
+  },
+  "javascript|msgpackr|Integer|bytes": {
+    "avg_time_total_ns": 919.629213483146,
+    "avg_ops_per_sec": 1087394.7731743376,
+    "median_size_bytes": 1.0
+  },
+  "javascript|msgpackr|Integer|stream": {
+    "avg_time_total_ns": 907.7058823529412,
+    "avg_ops_per_sec": 1101678.4395048928,
+    "median_size_bytes": 1.0
+  },
+  "javascript|@msgpack/msgpack|Integer|bytes": {
+    "avg_time_total_ns": 2797.255319148936,
+    "avg_ops_per_sec": 357493.28749305935,
+    "median_size_bytes": 1.0
+  },
+  "javascript|@msgpack/msgpack|Integer|stream": {
+    "avg_time_total_ns": 2641.4583333333335,
+    "avg_ops_per_sec": 378578.75226752897,
+    "median_size_bytes": 1.0
+  },
+  "javascript|cbor-x|Integer|bytes": {
+    "avg_time_total_ns": 803.7590361445783,
+    "avg_ops_per_sec": 1244153.9752967982,
+    "median_size_bytes": 2.0
+  },
+  "javascript|cbor-x|Integer|stream": {
+    "avg_time_total_ns": 871.6321839080459,
+    "avg_ops_per_sec": 1147272.9190842917,
+    "median_size_bytes": 2.0
+  },
+  "javascript|cbor|Integer|bytes": {
+    "avg_time_total_ns": 17029.36470588235,
+    "avg_ops_per_sec": 58722.096641372416,
+    "median_size_bytes": 2.0
+  },
+  "javascript|cbor|Integer|stream": {
+    "avg_time_total_ns": 14707.987951807228,
+    "avg_ops_per_sec": 67990.26510469272,
+    "median_size_bytes": 2.0
+  },
+  "javascript|protobufjs|Integer|bytes": {
+    "avg_time_total_ns": 1336.287356321839,
+    "avg_ops_per_sec": 748342.0353183034,
+    "median_size_bytes": 4.0
+  },
+  "javascript|protobufjs|Integer|stream": {
+    "avg_time_total_ns": 1352.4044943820224,
+    "avg_ops_per_sec": 739423.7479645077,
+    "median_size_bytes": 4.0
+  },
+  "javascript|v8-serializer|Integer|bytes": {
+    "avg_time_total_ns": 1458.2261904761904,
+    "avg_ops_per_sec": 685764.668424619,
+    "median_size_bytes": 4.0
+  },
+  "javascript|v8-serializer|Integer|stream": {
+    "avg_time_total_ns": 1323.7727272727273,
+    "avg_ops_per_sec": 755416.6809738008,
+    "median_size_bytes": 4.0
+  },
+  "javascript|JSON.stringify|Telemetry|bytes": {
+    "avg_time_total_ns": 14551.41935483871,
+    "avg_ops_per_sec": 68721.81851232781,
+    "median_size_bytes": 2014.0
+  },
+  "javascript|JSON.stringify|Telemetry|stream": {
+    "avg_time_total_ns": 14136.591397849463,
+    "avg_ops_per_sec": 70738.4101200043,
+    "median_size_bytes": 2014.0
+  },
+  "javascript|fast-json-stringify|Telemetry|bytes": {
+    "avg_time_total_ns": 18630.17021276596,
+    "avg_ops_per_sec": 53676.37485752919,
+    "median_size_bytes": 2014.0
+  },
+  "javascript|fast-json-stringify|Telemetry|stream": {
+    "avg_time_total_ns": 15946.40909090909,
+    "avg_ops_per_sec": 62710.0430133886,
+    "median_size_bytes": 2014.0
+  },
+  "javascript|simdjson|Telemetry|bytes": {
+    "avg_time_total_ns": 28049.46153846154,
+    "avg_ops_per_sec": 35651.30826589294,
+    "median_size_bytes": 2014.0
+  },
+  "javascript|simdjson|Telemetry|stream": {
+    "avg_time_total_ns": 27809.659090909092,
+    "avg_ops_per_sec": 35958.72918582082,
+    "median_size_bytes": 2014.0
+  },
+  "javascript|msgpackr|Telemetry|bytes": {
+    "avg_time_total_ns": 14126.835051546392,
+    "avg_ops_per_sec": 70787.26383872764,
+    "median_size_bytes": 1056.0
+  },
+  "javascript|msgpackr|Telemetry|stream": {
+    "avg_time_total_ns": 6530.130434782609,
+    "avg_ops_per_sec": 153136.29796328724,
+    "median_size_bytes": 1056.0
+  },
+  "javascript|@msgpack/msgpack|Telemetry|bytes": {
+    "avg_time_total_ns": 21696.978494623654,
+    "avg_ops_per_sec": 46089.36678661466,
+    "median_size_bytes": 1054.0
+  },
+  "javascript|@msgpack/msgpack|Telemetry|stream": {
+    "avg_time_total_ns": 12969.886363636364,
+    "avg_ops_per_sec": 77101.6778376484,
+    "median_size_bytes": 1054.0
+  },
+  "javascript|cbor-x|Telemetry|bytes": {
+    "avg_time_total_ns": 18647.865979381444,
+    "avg_ops_per_sec": 53625.43902372953,
+    "median_size_bytes": 1060.0
+  },
+  "javascript|cbor-x|Telemetry|stream": {
+    "avg_time_total_ns": 9663.823529411764,
+    "avg_ops_per_sec": 103478.71077700339,
+    "median_size_bytes": 1060.0
+  },
+  "javascript|cbor|Telemetry|bytes": {
+    "avg_time_total_ns": 148299.94382022473,
+    "avg_ops_per_sec": 6743.09088890985,
+    "median_size_bytes": 1053.0
+  },
+  "javascript|cbor|Telemetry|stream": {
+    "avg_time_total_ns": 116955.23404255319,
+    "avg_ops_per_sec": 8550.280012574369,
+    "median_size_bytes": 1053.0
+  },
+  "javascript|protobufjs|Telemetry|bytes": {
+    "avg_time_total_ns": 15850.58888888889,
+    "avg_ops_per_sec": 63089.13864399009,
+    "median_size_bytes": 2017.0
+  },
+  "javascript|protobufjs|Telemetry|stream": {
+    "avg_time_total_ns": 15095.511363636364,
+    "avg_ops_per_sec": 66244.85755473669,
+    "median_size_bytes": 2017.0
+  },
+  "javascript|bson|Telemetry|bytes": {
+    "avg_time_total_ns": 19568.472527472528,
+    "avg_ops_per_sec": 51102.60898473717,
+    "median_size_bytes": 1376.0
+  },
+  "javascript|bson|Telemetry|stream": {
+    "avg_time_total_ns": 11616.790697674418,
+    "avg_ops_per_sec": 86082.29467370806,
+    "median_size_bytes": 1376.0
+  },
+  "javascript|v8-serializer|Telemetry|bytes": {
+    "avg_time_total_ns": 6873.13829787234,
+    "avg_ops_per_sec": 145493.9442015246,
+    "median_size_bytes": 1073.0
+  },
+  "javascript|v8-serializer|Telemetry|stream": {
+    "avg_time_total_ns": 6662.934782608696,
+    "avg_ops_per_sec": 150084.01442111615,
+    "median_size_bytes": 1073.0
+  },
+  "javascript|bser|Telemetry|bytes": {
+    "avg_time_total_ns": 31183.0,
+    "avg_ops_per_sec": 32068.755411602477,
+    "median_size_bytes": 1088.0
+  },
+  "javascript|bser|Telemetry|stream": {
+    "avg_time_total_ns": 22110.875,
+    "avg_ops_per_sec": 45226.61360077337,
+    "median_size_bytes": 1088.0
+  },
+  "javascript|JSON.stringify|SimpleObject|bytes": {
+    "avg_time_total_ns": 1130.6741573033707,
+    "avg_ops_per_sec": 884428.1029514062,
+    "median_size_bytes": 82.0
+  },
+  "javascript|JSON.stringify|SimpleObject|stream": {
+    "avg_time_total_ns": 1103.2921348314608,
+    "avg_ops_per_sec": 906378.2550690986,
+    "median_size_bytes": 82.0
+  },
+  "javascript|fast-json-stringify|SimpleObject|bytes": {
+    "avg_time_total_ns": 1930.0,
+    "avg_ops_per_sec": 518134.71502590674,
+    "median_size_bytes": 82.0
+  },
+  "javascript|fast-json-stringify|SimpleObject|stream": {
+    "avg_time_total_ns": 1964.1046511627908,
+    "avg_ops_per_sec": 509137.8401899202,
+    "median_size_bytes": 82.0
+  },
+  "javascript|simdjson|SimpleObject|bytes": {
+    "avg_time_total_ns": 9287.931034482759,
+    "avg_ops_per_sec": 107666.60478930759,
+    "median_size_bytes": 82.0
+  },
+  "javascript|simdjson|SimpleObject|stream": {
+    "avg_time_total_ns": 8517.303370786516,
+    "avg_ops_per_sec": 117408.05234552268,
+    "median_size_bytes": 82.0
+  },
+  "javascript|msgpackr|SimpleObject|bytes": {
+    "avg_time_total_ns": 4928.102272727273,
+    "avg_ops_per_sec": 202917.86668757335,
+    "median_size_bytes": 65.0
+  },
+  "javascript|msgpackr|SimpleObject|stream": {
+    "avg_time_total_ns": 3666.75,
+    "avg_ops_per_sec": 272721.0745210336,
+    "median_size_bytes": 65.0
+  },
+  "javascript|@msgpack/msgpack|SimpleObject|bytes": {
+    "avg_time_total_ns": 4225.471264367816,
+    "avg_ops_per_sec": 236659.9930362117,
+    "median_size_bytes": 63.0
+  },
+  "javascript|@msgpack/msgpack|SimpleObject|stream": {
+    "avg_time_total_ns": 4354.2947368421055,
+    "avg_ops_per_sec": 229658.31677375996,
+    "median_size_bytes": 63.0
+  },
+  "javascript|cbor-x|SimpleObject|bytes": {
+    "avg_time_total_ns": 6387.348314606742,
+    "avg_ops_per_sec": 156559.4908474266,
+    "median_size_bytes": 70.0
+  },
+  "javascript|cbor-x|SimpleObject|stream": {
+    "avg_time_total_ns": 4555.288659793814,
+    "avg_ops_per_sec": 219525.05640888694,
+    "median_size_bytes": 70.0
+  },
+  "javascript|cbor|SimpleObject|bytes": {
+    "avg_time_total_ns": 17321.74157303371,
+    "avg_ops_per_sec": 57730.91555394111,
+    "median_size_bytes": 63.0
+  },
+  "javascript|cbor|SimpleObject|stream": {
+    "avg_time_total_ns": 20692.736263736264,
+    "avg_ops_per_sec": 48326.1366333889,
+    "median_size_bytes": 63.0
+  },
+  "javascript|avsc|SimpleObject|bytes": {
+    "avg_time_total_ns": 2839.3928571428573,
+    "avg_ops_per_sec": 352187.96774964465,
+    "median_size_bytes": 33.0
+  },
+  "javascript|avsc|SimpleObject|stream": {
+    "avg_time_total_ns": 2653.2365591397847,
+    "avg_ops_per_sec": 376898.1685991141,
+    "median_size_bytes": 33.0
+  },
+  "javascript|protobufjs|SimpleObject|bytes": {
+    "avg_time_total_ns": 1406.9,
+    "avg_ops_per_sec": 710782.571611344,
+    "median_size_bytes": 84.0
+  },
+  "javascript|protobufjs|SimpleObject|stream": {
+    "avg_time_total_ns": 1381.7252747252746,
+    "avg_ops_per_sec": 723732.8709926275,
+    "median_size_bytes": 84.0
+  },
+  "javascript|bson|SimpleObject|bytes": {
+    "avg_time_total_ns": 2479.6881720430106,
+    "avg_ops_per_sec": 403276.51326259377,
+    "median_size_bytes": 78.0
+  },
+  "javascript|bson|SimpleObject|stream": {
+    "avg_time_total_ns": 2564.6703296703295,
+    "avg_ops_per_sec": 389913.6619748485,
+    "median_size_bytes": 78.0
+  },
+  "javascript|v8-serializer|SimpleObject|bytes": {
+    "avg_time_total_ns": 2901.8387096774195,
+    "avg_ops_per_sec": 344609.0910101493,
+    "median_size_bytes": 72.0
+  },
+  "javascript|v8-serializer|SimpleObject|stream": {
+    "avg_time_total_ns": 2542.0416666666665,
+    "avg_ops_per_sec": 393384.58260256686,
+    "median_size_bytes": 72.0
+  },
+  "javascript|bser|SimpleObject|bytes": {
+    "avg_time_total_ns": 7050.740740740741,
+    "avg_ops_per_sec": 141829.0697063613,
+    "median_size_bytes": 84.0
+  },
+  "javascript|bser|SimpleObject|stream": {
+    "avg_time_total_ns": 6699.724137931034,
+    "avg_ops_per_sec": 149259.87688633605,
+    "median_size_bytes": 84.0
+  },
+  "javascript|JSON.stringify|StringArray|bytes": {
+    "avg_time_total_ns": 6798.978021978022,
+    "avg_ops_per_sec": 147080.92845240154,
+    "median_size_bytes": 974.0
+  },
+  "javascript|JSON.stringify|StringArray|stream": {
+    "avg_time_total_ns": 6500.902173913043,
+    "avg_ops_per_sec": 153824.8035807739,
+    "median_size_bytes": 974.0
+  },
+  "javascript|fast-json-stringify|StringArray|bytes": {
+    "avg_time_total_ns": 7064.677419354839,
+    "avg_ops_per_sec": 141549.27969681058,
+    "median_size_bytes": 974.0
+  },
+  "javascript|fast-json-stringify|StringArray|stream": {
+    "avg_time_total_ns": 6289.56043956044,
+    "avg_ops_per_sec": 158993.622783262,
+    "median_size_bytes": 974.0
+  },
+  "javascript|simdjson|StringArray|bytes": {
+    "avg_time_total_ns": 15060.708333333334,
+    "avg_ops_per_sec": 66397.93945061238,
+    "median_size_bytes": 974.0
+  },
+  "javascript|simdjson|StringArray|stream": {
+    "avg_time_total_ns": 17557.947916666668,
+    "avg_ops_per_sec": 56954.26394623042,
+    "median_size_bytes": 974.0
+  },
+  "javascript|msgpackr|StringArray|bytes": {
+    "avg_time_total_ns": 11231.485714285714,
+    "avg_ops_per_sec": 89035.41574451415,
+    "median_size_bytes": 775.0
+  },
+  "javascript|msgpackr|StringArray|stream": {
+    "avg_time_total_ns": 6253.482352941176,
+    "avg_ops_per_sec": 159910.90140834474,
+    "median_size_bytes": 775.0
+  },
+  "javascript|@msgpack/msgpack|StringArray|bytes": {
+    "avg_time_total_ns": 16119.267441860466,
+    "avg_ops_per_sec": 62037.558692219405,
+    "median_size_bytes": 773.0
+  },
+  "javascript|@msgpack/msgpack|StringArray|stream": {
+    "avg_time_total_ns": 16477.22340425532,
+    "avg_ops_per_sec": 60689.83684118438,
+    "median_size_bytes": 773.0
+  },
+  "javascript|cbor-x|StringArray|bytes": {
+    "avg_time_total_ns": 6781.64705882353,
+    "avg_ops_per_sec": 147456.80383040733,
+    "median_size_bytes": 779.0
+  },
+  "javascript|cbor-x|StringArray|stream": {
+    "avg_time_total_ns": 6833.366666666667,
+    "avg_ops_per_sec": 146340.74955731924,
+    "median_size_bytes": 779.0
+  },
+  "javascript|cbor|StringArray|bytes": {
+    "avg_time_total_ns": 96966.82978723405,
+    "avg_ops_per_sec": 10312.804927151004,
+    "median_size_bytes": 772.0
+  },
+  "javascript|cbor|StringArray|stream": {
+    "avg_time_total_ns": 101535.78350515464,
+    "avg_ops_per_sec": 9848.744604893242,
+    "median_size_bytes": 772.0
+  },
+  "javascript|avsc|StringArray|bytes": {
+    "avg_time_total_ns": 22474.26595744681,
+    "avg_ops_per_sec": 44495.33532678747,
+    "median_size_bytes": 766.0
+  },
+  "javascript|avsc|StringArray|stream": {
+    "avg_time_total_ns": 19636.402298850575,
+    "avg_ops_per_sec": 50925.82565689925,
+    "median_size_bytes": 766.0
+  },
+  "javascript|protobufjs|StringArray|bytes": {
+    "avg_time_total_ns": 8265.239130434782,
+    "avg_ops_per_sec": 120988.63495887702,
+    "median_size_bytes": 977.0
+  },
+  "javascript|protobufjs|StringArray|stream": {
+    "avg_time_total_ns": 8014.068181818182,
+    "avg_ops_per_sec": 124780.57053079952,
+    "median_size_bytes": 977.0
+  },
+  "javascript|bson|StringArray|bytes": {
+    "avg_time_total_ns": 20638.367816091955,
+    "avg_ops_per_sec": 48453.444037386005,
+    "median_size_bytes": 1570.0
+  },
+  "javascript|bson|StringArray|stream": {
+    "avg_time_total_ns": 17285.544444444444,
+    "avg_ops_per_sec": 57851.808093982196,
+    "median_size_bytes": 1570.0
+  },
+  "javascript|v8-serializer|StringArray|bytes": {
+    "avg_time_total_ns": 8514.978021978022,
+    "avg_ops_per_sec": 117440.11522036798,
+    "median_size_bytes": 880.0
+  },
+  "javascript|v8-serializer|StringArray|stream": {
+    "avg_time_total_ns": 7522.413043478261,
+    "avg_ops_per_sec": 132936.0664217946,
+    "median_size_bytes": 880.0
+  },
+  "javascript|bser|StringArray|bytes": {
+    "avg_time_total_ns": 35092.903225806454,
+    "avg_ops_per_sec": 28495.789976835676,
+    "median_size_bytes": 984.0
+  },
+  "javascript|bser|StringArray|stream": {
+    "avg_time_total_ns": 25777.022727272728,
+    "avg_ops_per_sec": 38794.23976074534,
+    "median_size_bytes": 984.0
+  },
+  "javascript|JSON.stringify|EDI_835|bytes": {
+    "avg_time_total_ns": 13163.768421052631,
+    "avg_ops_per_sec": 75966.08873798736,
+    "median_size_bytes": 2171.0
+  },
+  "javascript|JSON.stringify|EDI_835|stream": {
+    "avg_time_total_ns": 24505.985507246376,
+    "avg_ops_per_sec": 40806.357275625654,
+    "median_size_bytes": 2171.0
+  },
+  "javascript|fast-json-stringify|EDI_835|bytes": {
+    "avg_time_total_ns": 19236.275510204083,
+    "avg_ops_per_sec": 51985.11528229774,
+    "median_size_bytes": 2171.0
+  },
+  "javascript|fast-json-stringify|EDI_835|stream": {
+    "avg_time_total_ns": 13612.393258426966,
+    "avg_ops_per_sec": 73462.46769508619,
+    "median_size_bytes": 2171.0
+  },
+  "javascript|simdjson|EDI_835|bytes": {
+    "avg_time_total_ns": 28880.78350515464,
+    "avg_ops_per_sec": 34625.09941330089,
+    "median_size_bytes": 2171.0
+  },
+  "javascript|simdjson|EDI_835|stream": {
+    "avg_time_total_ns": 34260.347368421055,
+    "avg_ops_per_sec": 29188.262140089522,
+    "median_size_bytes": 2171.0
+  },
+  "javascript|msgpackr|EDI_835|bytes": {
+    "avg_time_total_ns": 16940.315789473683,
+    "avg_ops_per_sec": 59030.77678288481,
+    "median_size_bytes": 1601.0
+  },
+  "javascript|msgpackr|EDI_835|stream": {
+    "avg_time_total_ns": 12913.708333333334,
+    "avg_ops_per_sec": 77437.0904303889,
+    "median_size_bytes": 1601.0
+  },
+  "javascript|@msgpack/msgpack|EDI_835|bytes": {
+    "avg_time_total_ns": 25541.726315789474,
+    "avg_ops_per_sec": 39151.62145409946,
+    "median_size_bytes": 1559.0
+  },
+  "javascript|@msgpack/msgpack|EDI_835|stream": {
+    "avg_time_total_ns": 22611.817204301075,
+    "avg_ops_per_sec": 44224.66319114708,
+    "median_size_bytes": 1559.0
+  },
+  "javascript|cbor-x|EDI_835|bytes": {
+    "avg_time_total_ns": 23665.55789473684,
+    "avg_ops_per_sec": 42255.500776611625,
+    "median_size_bytes": 825.0
+  },
+  "javascript|cbor-x|EDI_835|stream": {
+    "avg_time_total_ns": 14967.510869565218,
+    "avg_ops_per_sec": 66811.37623446726,
+    "median_size_bytes": 825.0
+  },
+  "javascript|cbor|EDI_835|bytes": {
+    "avg_time_total_ns": 159597.83333333334,
+    "avg_ops_per_sec": 6265.749221741732,
+    "median_size_bytes": 1560.0
+  },
+  "javascript|cbor|EDI_835|stream": {
+    "avg_time_total_ns": 145679.625,
+    "avg_ops_per_sec": 6864.377911461537,
+    "median_size_bytes": 1560.0
+  },
+  "javascript|protobufjs|EDI_835|bytes": {
+    "avg_time_total_ns": 12545.838709677419,
+    "avg_ops_per_sec": 79707.70413528712,
+    "median_size_bytes": 2174.0
+  },
+  "javascript|protobufjs|EDI_835|stream": {
+    "avg_time_total_ns": 12175.122222222222,
+    "avg_ops_per_sec": 82134.69908127777,
+    "median_size_bytes": 2174.0
+  },
+  "javascript|bson|EDI_835|bytes": {
+    "avg_time_total_ns": 32124.44155844156,
+    "avg_ops_per_sec": 31128.945796015658,
+    "median_size_bytes": 1878.0
+  },
+  "javascript|bson|EDI_835|stream": {
+    "avg_time_total_ns": 31242.677419354837,
+    "avg_ops_per_sec": 32007.50008001875,
+    "median_size_bytes": 1878.0
+  },
+  "javascript|v8-serializer|EDI_835|bytes": {
+    "avg_time_total_ns": 16233.46875,
+    "avg_ops_per_sec": 61601.128840686004,
+    "median_size_bytes": 1732.0
+  },
+  "javascript|v8-serializer|EDI_835|stream": {
+    "avg_time_total_ns": 13999.427083333334,
+    "avg_ops_per_sec": 71431.49459241264,
+    "median_size_bytes": 1732.0
+  },
+  "javascript|bser|EDI_835|bytes": {
+    "avg_time_total_ns": 34173.59550561798,
+    "avg_ops_per_sec": 29262.358414571994,
+    "median_size_bytes": 1830.0
+  },
+  "javascript|bser|EDI_835|stream": {
+    "avg_time_total_ns": 33434.724137931036,
+    "avg_ops_per_sec": 29909.024996725475,
+    "median_size_bytes": 1830.0
+  }
+}
