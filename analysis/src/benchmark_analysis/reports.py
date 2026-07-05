@@ -742,9 +742,39 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
     lines.append("| " + " | ".join(headers) + " |")
     lines.append("|" + "---|" * len(headers))
 
-    # Best median total for bold
-    best_med = min(rank_key(s) for s in serializers) if serializers else None
+    # 1. Resolve one numeric value per displayed cell first — so we can determine the best value per column
+    cell_vals: Dict[Tuple[str, str], float] = {}
+    for ser in serializers:
+        entries = by_ser[ser]
+        for field_id, _title, is_time, hib in cols:
+            if field_id in ("serializer_version", "effect_vs_fastest_cliffs_label"):
+                continue
+            vals = []
+            for e in entries:
+                v = e.get(field_id)
+                if v is None and field_id == "total_median_ns":
+                    v = e.get("avg_time_total_ns")
+                if v is None:
+                    continue
+                if isinstance(v, (int, float)) and not isinstance(v, bool):
+                    vals.append(float(v))
+            if not vals:
+                continue
+            if field_id == "runs":
+                cell_vals[(ser, field_id)] = sum(vals)
+            else:
+                cell_vals[(ser, field_id)] = sum(vals) / len(vals)
 
+    # 2. Find best value for each column across all serializers
+    col_bests: Dict[str, float] = {}
+    for field_id, _title, is_time, hib in cols:
+        if hib is None:
+            continue
+        vals_in_col = [cell_vals[(ser, field_id)] for ser in serializers if (ser, field_id) in cell_vals]
+        if vals_in_col:
+            col_bests[field_id] = max(vals_in_col) if hib else min(vals_in_col)
+
+    # 3. Render rows
     for ser in serializers:
         entries = by_ser[ser]
         version = ""
@@ -755,8 +785,7 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
                 break
         display_name = f"{ser}:{version}" if version else ser
         cells = [display_name]
-        is_best = best_med is not None and abs(rank_key(ser) - best_med) < 1e-9
-        for field_id, _title, is_time, _hib in cols:
+        for field_id, _title, is_time, hib in cols:
             vals = []
             for e in entries:
                 v = e.get(field_id)
@@ -767,7 +796,6 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
                 if isinstance(v, (int, float)) and not isinstance(v, bool):
                     vals.append(float(v))
                 elif field_id in ("serializer_version", "effect_vs_fastest_cliffs_label"):
-                    # take first non-empty string
                     if str(v).strip():
                         vals.append(str(v).strip())  # type: ignore[arg-type]
                         break
@@ -777,11 +805,15 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
             if field_id in ("serializer_version", "effect_vs_fastest_cliffs_label"):
                 cells.append(str(vals[0]))
                 continue
-            if field_id == "runs":
-                cells.append(str(int(sum(vals))))
+            
+            num = cell_vals.get((ser, field_id))
+            if num is None:
+                cells.append("-")
                 continue
-            num = sum(vals) / len(vals)
-            if is_time:
+                
+            if field_id == "runs":
+                text = str(int(num))
+            elif is_time:
                 text = f"{num / 1000.0:.3g}"  # ns → µs
             elif field_id == "avg_ops_per_sec":
                 div, unit = _pick_column_unit([num])
@@ -792,7 +824,10 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
                 text = f"{num:.4g}"
             else:
                 text = f"{num:.4g}"
-            if is_best and field_id == "total_median_ns":
+                
+            best_val = col_bests.get(field_id)
+            is_best_col = (best_val is not None and abs(num - best_val) < 1e-9)
+            if is_best_col:
                 text = f"**{text}**"
             cells.append(text)
         lines.append("| " + " | ".join(cells) + " |")
