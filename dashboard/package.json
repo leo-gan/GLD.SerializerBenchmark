@@ -1,0 +1,14 @@
+{
+  "name": "serializer-benchmark-dashboard",
+  "version": "1.0.0",
+  "description": "Interactive analytics dashboard for serializer benchmarks",
+  "scripts": {
+    "dev": "vite --port 5173 --open",
+    "build": "vite build",
+    "preview": "vite preview",
+    "sync-data": "python3 scripts/sync-data.py"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

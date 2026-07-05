@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive dashboard presenting performance analytics, trade-offs, and comparisons for serialization libraries.">
+  <title>Serializer Benchmark Analytics Dashboard</title>
+  <link rel="stylesheet" href="./index.css">
+  <!-- Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📊</div>
+      <h1>Serializer Analytics</h1>
+    </div>
+    <ul class="nav-links">
+      <li><a href="../" id="nav-docs-link" style="margin-right: 0.75rem; border: 1px solid var(--border-color); font-weight: 500;">← Back to Docs</a></li>
+      <li class="active"><a href="#dashboard" id="nav-dash-link">Dashboard</a></li>
+      <li><a href="#compare" id="nav-compare-link">Serializer Compare</a></li>
+      <li><a href="#history-custom" id="nav-history-link">History & Custom Runs</a></li>
+    </ul>
+  </header>
+
+  <main class="container">
+    
+    <!-- Controls/Filters Toolbar -->
+    <section class="glass-panel toolbar">
+      <div class="filter-group">
+        <span class="filter-label">Language:</span>
+        <div class="select-wrapper">
+          <select id="lang-select" aria-label="Select Language">
+            <option value="csharp">C# (csharp)</option>
+            <option value="rust">Rust</option>
+            <option value="go">Go</option>
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+            <option value="c">C</option>
+          </select>
+        </div>
+
+        <span class="filter-label">Test Data:</span>
+        <div class="select-wrapper">
+          <select id="data-select" aria-label="Select Test Data">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <span class="filter-label">Mode:</span>
+        <div class="select-wrapper">
+          <select id="mode-select" aria-label="Select Mode">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="btn-ops-sec" aria-label="View Operations Per Second">Ops/Sec</button>
+        <button class="tab-btn" id="btn-time-ns" aria-label="View Time In Nanoseconds">Latency (ns)</button>
+      </div>
+    </section>
+
+    <!-- KPI Summary Cards -->
+    <section class="summary-grid">
+      <div class="glass-panel kpi-card">
+        <span class="kpi-title">Tested Libraries</span>
+        <span class="kpi-value" id="kpi-total">-</span>
+        <span class="kpi-desc">Total serializers in this workload</span>
+      </div>
+      <div class="glass-panel kpi-card purple">
+        <span class="kpi-title">Fastest Serializer</span>
+        <span class="kpi-value" id="kpi-fastest" style="font-size: 1.5rem; line-height: 2.2rem;">-</span>
+        <span class="kpi-desc" id="kpi-fastest-val">Speed: -</span>
+      </div>
+      <div class="glass-panel kpi-card green">
+        <span class="kpi-title">Most Compact</span>
+        <span class="kpi-value" id="kpi-compact" style="font-size: 1.5rem; line-height: 2.2rem;">-</span>
+        <span class="kpi-desc" id="kpi-compact-val">Size: -</span>
+      </div>
+      <div class="glass-panel kpi-card">
+        <span class="kpi-title">Pareto Frontier</span>
+        <span class="kpi-value" id="kpi-pareto">-</span>
+        <span class="kpi-desc">Optimal trade-offs (Speed/Size)</span>
+      </div>
+    </section>
+
+    <!-- Visualizations Layout -->
+    <section class="charts-grid" id="dashboard">
+      <div class="glass-panel">
+        <div class="chart-header">
+          <h2 class="chart-title">Speed vs Size Trade-off</h2>
+          <span class="badge badge-cyan" id="scatter-badge">Pareto Front Highlighted</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="scatter-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass-panel">
+        <div class="chart-header">
+          <h2 class="chart-title">Performance Comparison</h2>
+        </div>
+        <div class="chart-container">
+          <canvas id="bar-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Serializer Comparison Matrix -->
+    <section class="glass-panel comparison-section" id="compare">
+      <div class="chart-header">
+        <h2 class="chart-title">Side-by-Side Comparison</h2>
+      </div>
+
+      <div class="compare-pickers">
+        <div class="picker-card">
+          <label for="compare-a-select" class="filter-label">Serializer A (Reference)</label>
+          <div class="select-wrapper">
+            <select id="compare-a-select" style="width: 100%;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+        <div class="picker-card">
+          <label for="compare-b-select" class="filter-label">Serializer B (Target)</label>
+          <div class="select-wrapper">
+            <select id="compare-b-select" style="width: 100%;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="compare-grid">
+        <div class="glass-panel compare-card">
+          <span class="compare-metric">Total Latency</span>
+          <span class="compare-value" id="compare-total-val">-</span>
+          <span class="compare-diff" id="compare-total-diff">-</span>
+        </div>
+        <div class="glass-panel compare-card">
+          <span class="compare-metric">Serialization</span>
+          <span class="compare-value" id="compare-ser-val">-</span>
+          <span class="compare-diff" id="compare-ser-diff">-</span>
+        </div>
+        <div class="glass-panel compare-card">
+          <span class="compare-metric">Deserialization</span>
+          <span class="compare-value" id="compare-deser-val">-</span>
+          <span class="compare-diff" id="compare-deser-diff">-</span>
+        </div>
+        <div class="glass-panel compare-card">
+          <span class="compare-metric">Throughput</span>
+          <span class="compare-value" id="compare-throughput-val">-</span>
+          <span class="compare-diff" id="compare-throughput-diff">-</span>
+        </div>
+        <div class="glass-panel compare-card">
+          <span class="compare-metric">Serialized Size</span>
+          <span class="compare-value" id="compare-size-val">-</span>
+          <span class="compare-diff" id="compare-size-diff">-</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detailed Analytics Table -->
+    <section class="glass-panel table-panel">
+      <div class="table-header-row">
+        <h2 class="chart-title">Detailed Analytics</h2>
+        <div class="search-input-wrapper">
+          <input type="text" id="table-search" class="search-input" placeholder="Search serializers..." aria-label="Search serializers">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="analytics-table">
+          <thead>
+            <tr>
+              <th id="th-serializer" class="sort-asc">Serializer</th>
+              <th id="th-ops">Ops/Sec</th>
+              <th id="th-total-ns">Total Latency</th>
+              <th id="th-ser-ns">Ser Latency</th>
+              <th id="th-deser-ns">Deser Latency</th>
+              <th id="th-size">Median Size (Bytes)</th>
+              <th id="th-optimal">Optimal</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- History & Custom Runs Section -->
+    <section class="glass-panel" id="history-custom">
+      <div class="chart-header">
+        <h2 class="chart-title">History & Custom Runs</h2>
+      </div>
+
+      <div class="compare-pickers">
+        <!-- Historical Runs Downloader (Local Logs) -->
+        <div class="picker-card" style="gap: 1rem;">
+          <h3 class="filter-label" style="color: var(--accent-cyan); font-size: 1rem;">Historical Runs (Local Logs)</h3>
+          <p style="font-size: 0.9rem; color: var(--text-secondary);">
+            Access run results stored in the local logs folder. Select a run timestamp to download raw files or inspect them.<br>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">*Note: Historical log file downloads require a local dashboard installation.</span>
+          </p>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <label for="history-run-select" class="filter-label">Available Runs:</label>
+            <div class="select-wrapper">
+              <select id="history-run-select" style="width: 100%;">
+                <option value="">-- No runs loaded --</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-top: 0.5rem;">
+            <button id="download-csv-btn" class="tab-btn" style="border: 1px solid var(--panel-border); font-size: 0.85rem;" disabled>Download CSV</button>
+            <button id="download-config-btn" class="tab-btn" style="border: 1px solid var(--panel-border); font-size: 0.85rem;" disabled>Download Config</button>
+            <button id="download-error-btn" class="tab-btn" style="border: 1px solid var(--panel-border); font-size: 0.85rem;" disabled>Download Errors</button>
+            <button id="load-history-btn" class="tab-btn active" style="font-size: 0.85rem;" disabled>Load to Inspect</button>
+          </div>
+        </div>
+
+        <!-- Custom Run Upload -->
+        <div class="picker-card" style="gap: 1rem;">
+          <h3 class="filter-label" style="color: var(--accent-purple); font-size: 1rem;">Upload Custom Stats</h3>
+          <p style="font-size: 0.9rem; color: var(--text-secondary);">
+            Drag and drop a custom computed stats JSON file (e.g. <code>stats_*.json</code>) from your local system to load it instantly.
+          </p>
+
+          <div id="drop-zone" class="dropzone" style="padding: 1.5rem 1rem;">
+            <span class="dropzone-icon" style="font-size: 2rem;">📥</span>
+            <h4 style="font-size: 0.95rem;">Drag & Drop custom stats JSON file here</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Or click to browse and upload</p>
+            <input type="file" id="file-input" style="display: none;" accept=".json">
+          </div>
+          <div id="upload-status" style="font-weight: 500; text-align: center; font-size: 0.9rem; display: none;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Serializer Benchmark Dashboard. Built for high-performance benchmarking analysis.</p>
+  </footer>
+
+  <!-- App logic scripts -->
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

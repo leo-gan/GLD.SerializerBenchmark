@@ -80,6 +80,7 @@ c-sharp/src/Docs/*.PDF
 
 # Misc local data dumps
 data/
+!dashboard/public/data/
 
 # -----------------------------------------------------------------------------
 # MkDocs
@@ -119,4 +120,16 @@ javascript/.nyc_output/
 
 # apt downloads
 *.deb
+
+# -----------------------------------------------------------------------------
+# Dashboard
+# -----------------------------------------------------------------------------
+# Local Vite dev server files and compiled assets
+dashboard/node_modules/
+dashboard/dist/
+docs/dashboard/
+
+# Allow committing dashboard data files, override global ignores
+!dashboard/public/data/
+!dashboard/public/data/baseline.json
 

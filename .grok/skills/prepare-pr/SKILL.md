@@ -122,6 +122,18 @@ Confirm updates under `docs/<lang>/results.md` and/or `docs/analysis/plots/violi
 
 ---
 
+## 5b. Prepare data for dashboard
+
+Prepare the compact, compressed online results for the analytics web dashboard:
+
+```bash
+python3 dashboard/scripts/sync-data.py
+```
+
+This packages the stats, environment configuration, errors, and raw logs into compressed `*_latest.json.gz` files, compiles the available historical runs list, and updates the symlink to local logs.
+
+---
+
 ## 6. Commit
 
 ```bash
