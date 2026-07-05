@@ -395,6 +395,367 @@ select:focus {
   color: var(--text-secondary);
 }
 
+/* Cross-language comparison */
+.cross-lang-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.section-help {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.cross-lang-filters .filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cross-lang-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.xl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-height: 2rem;
+}
+
+.xl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg-blue-light);
+  color: var(--color-blue);
+  border: 1px solid #c6dafc;
+  border-radius: 999px;
+  padding: 0.2rem 0.35rem 0.2rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  max-width: 100%;
+}
+
+.xl-chip.pareto-chip {
+  background: var(--bg-green-light);
+  color: var(--color-green);
+  border-color: #b7e1c4;
+}
+
+.xl-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 16rem;
+}
+
+.xl-chip-remove {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  opacity: 0.75;
+}
+
+.xl-chip-remove:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.xl-table-wrap {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+#xl-compare-table th,
+#xl-compare-table td {
+  text-align: right;
+}
+
+#xl-compare-table th:first-child,
+#xl-compare-table td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: #f1f3f4;
+  z-index: 1;
+}
+
+#xl-compare-table td:first-child {
+  background: var(--bg-surface);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+#xl-compare-table th {
+  cursor: default;
+  vertical-align: bottom;
+  white-space: normal;
+  min-width: 7rem;
+  max-width: 11rem;
+  line-height: 1.25;
+}
+
+#xl-compare-table th:hover {
+  background: #f1f3f4;
+  color: var(--text-secondary);
+}
+
+#xl-compare-table .xl-col-lang {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+#xl-compare-table .xl-col-name {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+#xl-compare-table td.xl-best {
+  background: var(--bg-green-light);
+  color: var(--color-green);
+  font-weight: 600;
+}
+
+#xl-compare-table td.xl-missing {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Single-serializer metrics explorer */
+.metrics-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.metrics-detail-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.metrics-detail-controls-wide {
+  grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.4fr);
+}
+
+.metrics-checklist-card {
+  min-height: 0;
+}
+
+.serializers-checklist {
+  max-height: 240px;
+}
+
+.metrics-checklist-grouped {
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  grid-template-columns: none;
+}
+
+.metric-group-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  padding: 0.15rem 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.15rem;
+}
+
+.metric-group-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.2rem 0.65rem;
+}
+
+.metric-group-toggle {
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.metric-group-toggle:hover {
+  text-decoration: underline;
+}
+
+.metrics-checklist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.metrics-checklist-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.link-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--color-blue);
+  font-family: var(--font-family);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  background: var(--bg-blue-light);
+  border-color: var(--color-blue);
+}
+
+.metrics-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.25rem 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.35rem 0.15rem;
+  margin-top: 0.35rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.metric-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  cursor: pointer;
+  user-select: none;
+}
+
+.metric-check-item input {
+  margin-top: 0.15rem;
+  accent-color: var(--color-blue);
+  cursor: pointer;
+}
+
+.metric-check-item:hover {
+  color: var(--text-primary);
+}
+
+#serializer-metrics-table th {
+  cursor: default;
+  text-align: right;
+  vertical-align: bottom;
+  white-space: normal;
+  min-width: 7rem;
+  max-width: 12rem;
+  line-height: 1.25;
+}
+
+#serializer-metrics-table th:first-child,
+#serializer-metrics-table td:first-child {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+#serializer-metrics-table th:first-child {
+  background: #f1f3f4;
+}
+
+#serializer-metrics-table th:hover {
+  background: #f1f3f4;
+  color: var(--text-secondary);
+}
+
+#serializer-metrics-table td:first-child {
+  background: var(--bg-surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  max-width: 18rem;
+  white-space: normal;
+  word-break: break-word;
+  font-weight: 500;
+}
+
+#serializer-metrics-table td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#serializer-metrics-table tr.metric-group-row td {
+  text-align: left;
+  background: #eef2f7;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-top: 0.7rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  left: 0;
+}
+
+#serializer-metrics-table td.sm-best {
+  background: var(--bg-green-light);
+  color: var(--color-green);
+  font-weight: 600;
+}
+
+#serializer-metrics-table td.sm-missing {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+@media (max-width: 800px) {
+  .metrics-detail-controls,
+  .metrics-detail-controls-wide {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Detailed Data Table (Material Design) */
 .table-panel {
   padding-bottom: 0.5rem;

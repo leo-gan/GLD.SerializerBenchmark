@@ -1,5 +1,47 @@
 import { initCharts, updateCharts } from './charts.js';
 
+const SETTINGS_KEY = 'serializer-dashboard-settings-v1';
+
+/** Keys that identify a group, not metrics. */
+const GROUP_META_KEYS = new Set(['serializer', 'test_data', 'mode', 'language']);
+
+const LANGUAGE_CATALOG = [
+  { id: 'csharp', label: 'C#' },
+  { id: 'rust', label: 'Rust' },
+  { id: 'go', label: 'Go' },
+  { id: 'python', label: 'Python' },
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'c', label: 'C' },
+];
+
+/** Metrics shown as rows in the cross-language matrix. */
+const CROSS_LANG_METRICS = [
+  { key: 'avg_ops_per_sec', label: 'Ops/Sec', higherIsBetter: true },
+  { key: 'avg_time_total_ns', label: 'Total latency', higherIsBetter: false },
+  { key: 'avg_time_ser_ns', label: 'Ser latency', higherIsBetter: false },
+  { key: 'avg_time_deser_ns', label: 'Deser latency', higherIsBetter: false },
+  { key: 'total_median_ns', label: 'Median total', higherIsBetter: false },
+  { key: 'median_size_bytes', label: 'Median size', higherIsBetter: false },
+  { key: 'mean_fidelity', label: 'Fidelity', higherIsBetter: true },
+  { key: 'runs', label: 'Samples', higherIsBetter: null },
+];
+
+/** Default checklist when no saved selection exists. */
+const DEFAULT_SELECTED_METRICS = [
+  'avg_ops_per_sec',
+  'avg_time_total_ns',
+  'avg_time_ser_ns',
+  'avg_time_deser_ns',
+  'total_median_ns',
+  'ser_median_ns',
+  'deser_median_ns',
+  'median_size_bytes',
+  'size_median_bytes',
+  'runs',
+  'mean_fidelity',
+  'serializer_version',
+];
+
 // State Management
 let state = {
   currentLanguage: 'csharp',
@@ -15,7 +57,17 @@ let state = {
   serializerNames: [], // Names of all serializers in filtered group
   compareA: '',
   compareB: '',
-  
+  detailSerializers: [], // multi-select for Serializer Metrics table
+  availableMetrics: [], // all metric field ids in loaded data
+  selectedMetrics: [...DEFAULT_SELECTED_METRICS],
+
+  // Cross-language comparison
+  crossLangGroupsByLang: {}, // langId -> groups[]
+  xlTestData: '',
+  xlMode: '', // normalized: 'bytes' | 'stream' | other
+  xlSelected: [], // [{ lang, serializer }]
+  xlSelectionMode: 'pareto', // 'pareto' | 'custom'
+
   // Historical data state
   currentRunId: '',
   currentRunConfigs: {},
@@ -26,41 +78,156 @@ let state = {
 
 // Initialize elements
 document.addEventListener('DOMContentLoaded', async () => {
+  applySavedSettings(loadSettings());
   setupEventListeners();
   initCharts();
+  applyUiFromState();
   await loadHistoryList();
-  await loadLanguageData(state.currentLanguage);
+  await Promise.all([
+    loadLanguageData(state.currentLanguage),
+    loadAllLanguagesForCrossCompare(),
+  ]);
 });
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn('Could not read saved dashboard settings:', e);
+    return null;
+  }
+}
+
+function saveSettings() {
+  const payload = {
+    currentLanguage: state.currentLanguage,
+    currentTestData: state.currentTestData,
+    currentMode: state.currentMode,
+    displayMetric: state.displayMetric,
+    searchQuery: state.searchQuery,
+    sortKey: state.sortKey,
+    sortDirection: state.sortDirection,
+    compareA: state.compareA,
+    compareB: state.compareB,
+    detailSerializers: state.detailSerializers,
+    selectedMetrics: state.selectedMetrics,
+    xlTestData: state.xlTestData,
+    xlMode: state.xlMode,
+    xlSelected: state.xlSelected,
+    xlSelectionMode: state.xlSelectionMode,
+  };
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.warn('Could not persist dashboard settings:', e);
+  }
+}
+
+function applySavedSettings(saved) {
+  if (!saved || typeof saved !== 'object') return;
+
+  if (typeof saved.currentLanguage === 'string' && saved.currentLanguage) {
+    state.currentLanguage = saved.currentLanguage;
+  }
+  if (typeof saved.currentTestData === 'string') state.currentTestData = saved.currentTestData;
+  if (typeof saved.currentMode === 'string') state.currentMode = saved.currentMode;
+  if (saved.displayMetric === 'ops' || saved.displayMetric === 'time') {
+    state.displayMetric = saved.displayMetric;
+  }
+  if (typeof saved.searchQuery === 'string') state.searchQuery = saved.searchQuery;
+  if (typeof saved.sortKey === 'string' && saved.sortKey) state.sortKey = saved.sortKey;
+  if (saved.sortDirection === 'asc' || saved.sortDirection === 'desc') {
+    state.sortDirection = saved.sortDirection;
+  }
+  if (typeof saved.compareA === 'string') state.compareA = saved.compareA;
+  if (typeof saved.compareB === 'string') state.compareB = saved.compareB;
+  // Multi-select (new) with migration from single detailSerializer
+  if (Array.isArray(saved.detailSerializers)) {
+    state.detailSerializers = saved.detailSerializers.filter((s) => typeof s === 'string');
+  } else if (typeof saved.detailSerializer === 'string' && saved.detailSerializer) {
+    state.detailSerializers = [saved.detailSerializer];
+  }
+  if (Array.isArray(saved.selectedMetrics) && saved.selectedMetrics.length > 0) {
+    state.selectedMetrics = saved.selectedMetrics.filter((k) => typeof k === 'string');
+  }
+  if (typeof saved.xlTestData === 'string') state.xlTestData = saved.xlTestData;
+  if (typeof saved.xlMode === 'string') state.xlMode = saved.xlMode;
+  if (saved.xlSelectionMode === 'pareto' || saved.xlSelectionMode === 'custom') {
+    state.xlSelectionMode = saved.xlSelectionMode;
+  }
+  if (Array.isArray(saved.xlSelected)) {
+    state.xlSelected = saved.xlSelected
+      .filter((x) => x && typeof x.lang === 'string' && typeof x.serializer === 'string')
+      .map((x) => ({ lang: x.lang, serializer: x.serializer }));
+  }
+}
+
+/** Sync non-data-dependent controls from state (before/after data load). */
+function applyUiFromState() {
+  const langSel = document.getElementById('lang-select');
+  if (langSel && [...langSel.options].some((o) => o.value === state.currentLanguage)) {
+    langSel.value = state.currentLanguage;
+  }
+
+  document.getElementById('btn-ops-sec').classList.toggle('active', state.displayMetric === 'ops');
+  document.getElementById('btn-time-ns').classList.toggle('active', state.displayMetric === 'time');
+
+  const search = document.getElementById('table-search');
+  if (search) search.value = state.searchQuery || '';
+
+  // Restore sort indicator on multi-serializer table headers
+  document.querySelectorAll('#analytics-table th').forEach((th) => {
+    th.className = '';
+  });
+  const sortHeaderMap = {
+    serializer: 'th-serializer',
+    avg_ops_per_sec: 'th-ops',
+    avg_time_total_ns: 'th-total-ns',
+    avg_time_ser_ns: 'th-ser-ns',
+    avg_time_deser_ns: 'th-deser-ns',
+    median_size_bytes: 'th-size',
+  };
+  const sortTh = document.getElementById(sortHeaderMap[state.sortKey]);
+  if (sortTh) {
+    sortTh.className = state.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc';
+  }
+}
 
 function setupEventListeners() {
   // Selectors
   document.getElementById('lang-select').addEventListener('change', async (e) => {
     state.currentLanguage = e.target.value;
+    saveSettings();
     await loadLanguageData(state.currentLanguage);
   });
 
   document.getElementById('data-select').addEventListener('change', (e) => {
     state.currentTestData = e.target.value;
+    saveSettings();
     filterAndRefresh();
   });
 
   document.getElementById('mode-select').addEventListener('change', (e) => {
     state.currentMode = e.target.value;
+    saveSettings();
     filterAndRefresh();
   });
 
   // Toggle View Tabs
-  document.getElementById('btn-ops-sec').addEventListener('click', (e) => {
+  document.getElementById('btn-ops-sec').addEventListener('click', () => {
     setViewMetric('ops');
   });
 
-  document.getElementById('btn-time-ns').addEventListener('click', (e) => {
+  document.getElementById('btn-time-ns').addEventListener('click', () => {
     setViewMetric('time');
   });
 
   // Search Input
   document.getElementById('table-search').addEventListener('input', (e) => {
     state.searchQuery = e.target.value.toLowerCase().trim();
+    saveSettings();
     renderTable();
   });
 
@@ -84,12 +251,120 @@ function setupEventListeners() {
   // Comparison Selects
   document.getElementById('compare-a-select').addEventListener('change', (e) => {
     state.compareA = e.target.value;
+    saveSettings();
     updateComparison();
   });
 
   document.getElementById('compare-b-select').addEventListener('change', (e) => {
     state.compareB = e.target.value;
+    saveSettings();
     updateComparison();
+  });
+
+  // Multi-serializer metrics explorer
+  document.getElementById('detail-ser-select-all').addEventListener('click', () => {
+    state.detailSerializers = [...state.serializerNames];
+    saveSettings();
+    renderDetailSerializerChecklist();
+    renderSerializerMetricsTable();
+  });
+
+  document.getElementById('detail-ser-select-none').addEventListener('click', () => {
+    state.detailSerializers = [];
+    saveSettings();
+    renderDetailSerializerChecklist();
+    renderSerializerMetricsTable();
+  });
+
+  document.getElementById('metrics-select-all').addEventListener('click', () => {
+    state.selectedMetrics = [...state.availableMetrics];
+    saveSettings();
+    renderMetricsChecklist();
+    renderSerializerMetricsTable();
+  });
+
+  document.getElementById('metrics-select-none').addEventListener('click', () => {
+    state.selectedMetrics = [];
+    saveSettings();
+    renderMetricsChecklist();
+    renderSerializerMetricsTable();
+  });
+
+  document.getElementById('metrics-select-default').addEventListener('click', () => {
+    state.selectedMetrics = DEFAULT_SELECTED_METRICS.filter((k) =>
+      state.availableMetrics.includes(k)
+    );
+    if (state.selectedMetrics.length === 0) {
+      state.selectedMetrics = state.availableMetrics.slice(0, 12);
+    }
+    saveSettings();
+    renderMetricsChecklist();
+    renderSerializerMetricsTable();
+  });
+
+  // Cross-language comparison
+  document.getElementById('xl-data-select').addEventListener('change', (e) => {
+    state.xlTestData = e.target.value;
+    if (state.xlSelectionMode === 'pareto') {
+      applyCrossLangParetoSelection();
+    } else {
+      pruneCrossLangSelection();
+    }
+    refreshCrossLangAddSerializerOptions();
+    renderCrossLangSelection();
+    renderCrossLangTable();
+    saveSettings();
+  });
+
+  document.getElementById('xl-mode-select').addEventListener('change', (e) => {
+    state.xlMode = e.target.value;
+    if (state.xlSelectionMode === 'pareto') {
+      applyCrossLangParetoSelection();
+    } else {
+      pruneCrossLangSelection();
+    }
+    refreshCrossLangAddSerializerOptions();
+    renderCrossLangSelection();
+    renderCrossLangTable();
+    saveSettings();
+  });
+
+  document.getElementById('xl-reset-pareto').addEventListener('click', () => {
+    state.xlSelectionMode = 'pareto';
+    applyCrossLangParetoSelection();
+    renderCrossLangSelection();
+    renderCrossLangTable();
+    updateCrossLangBadge();
+    saveSettings();
+  });
+
+  document.getElementById('xl-add-lang').addEventListener('change', () => {
+    refreshCrossLangAddSerializerOptions();
+  });
+
+  document.getElementById('xl-add-btn').addEventListener('click', () => {
+    const lang = document.getElementById('xl-add-lang').value;
+    const serializer = document.getElementById('xl-add-serializer').value;
+    if (!lang || !serializer) return;
+    const exists = state.xlSelected.some(
+      (x) => x.lang === lang && x.serializer === serializer
+    );
+    if (exists) {
+      showNotification('Already selected for comparison.', 'info');
+      return;
+    }
+    // Only add if a matching group exists under current filters
+    const group = findCrossLangGroup(lang, serializer);
+    if (!group) {
+      showNotification('No data for that serializer under the current Test Data / Mode.', 'error');
+      return;
+    }
+    state.xlSelectionMode = 'custom';
+    state.xlSelected = [...state.xlSelected, { lang, serializer }];
+    renderCrossLangSelection();
+    renderCrossLangTable();
+    updateCrossLangBadge();
+    saveSettings();
   });
 
   // Navigation Links for Smooth Scrolling
@@ -303,7 +578,7 @@ async function loadHistoricalRunIntoDashboard(runId) {
 
 function processStatsData(statsObj) {
   state.allGroups = statsObj.groups || [];
-  
+
   // Extract unique Test Data and Modes
   const testDataOptions = [...new Set(state.allGroups.map(g => g.test_data))];
   const modeOptions = [...new Set(state.allGroups.map(g => g.mode))];
@@ -312,14 +587,45 @@ function processStatsData(statsObj) {
   populateSelect('data-select', testDataOptions);
   populateSelect('mode-select', modeOptions);
 
-  // Set default filters
-  state.currentTestData = testDataOptions[0] || '';
-  state.currentMode = modeOptions[0] || '';
+  // Prefer saved filters when still valid for this dataset
+  if (!testDataOptions.includes(state.currentTestData)) {
+    state.currentTestData = testDataOptions[0] || '';
+  }
+  if (!modeOptions.includes(state.currentMode)) {
+    state.currentMode = modeOptions[0] || '';
+  }
 
   document.getElementById('data-select').value = state.currentTestData;
   document.getElementById('mode-select').value = state.currentMode;
 
+  state.availableMetrics = discoverMetricKeys(state.allGroups);
+  // Keep only selected metrics that still exist; if none left, fall back to defaults
+  state.selectedMetrics = state.selectedMetrics.filter((k) =>
+    state.availableMetrics.includes(k)
+  );
+  if (state.selectedMetrics.length === 0) {
+    state.selectedMetrics = DEFAULT_SELECTED_METRICS.filter((k) =>
+      state.availableMetrics.includes(k)
+    );
+    if (state.selectedMetrics.length === 0) {
+      state.selectedMetrics = state.availableMetrics.slice(0, 12);
+    }
+  }
+
+  renderMetricsChecklist();
   filterAndRefresh();
+  saveSettings();
+}
+
+function discoverMetricKeys(groups) {
+  const keys = new Set();
+  for (const g of groups) {
+    if (!g || typeof g !== 'object') continue;
+    for (const k of Object.keys(g)) {
+      if (!GROUP_META_KEYS.has(k)) keys.add(k);
+    }
+  }
+  return [...keys].sort((a, b) => a.localeCompare(b));
 }
 
 function populateSelect(id, options) {
@@ -335,7 +641,7 @@ function populateSelect(id, options) {
 
 // Filter dataset based on selected test_data & mode
 function filterAndRefresh() {
-  state.filteredGroups = state.allGroups.filter(g => 
+  state.filteredGroups = state.allGroups.filter(g =>
     g.test_data === state.currentTestData && g.mode === state.currentMode
   );
 
@@ -345,6 +651,7 @@ function filterAndRefresh() {
   // Populate comparison pickers
   state.serializerNames = state.filteredGroups.map(g => g.serializer).sort();
   populateCompareSelectors();
+  populateDetailSerializerSelect();
 
   // Update summary widgets
   updateKPIs();
@@ -354,47 +661,397 @@ function filterAndRefresh() {
 
   // Render Table
   renderTable();
-  
+
   // Update Side-by-side comparison
   updateComparison();
+
+  // Single-serializer metrics table
+  renderSerializerMetricsTable();
+
+  saveSettings();
 }
 
 function setViewMetric(metric) {
   state.displayMetric = metric;
-  
+
   // Update Active Button Style
   document.getElementById('btn-ops-sec').classList.toggle('active', metric === 'ops');
   document.getElementById('btn-time-ns').classList.toggle('active', metric === 'time');
 
   // Redraw charts & table
   updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
+  saveSettings();
 }
 
-// Pareto Frontier Calculation
-function calculateParetoFrontier() {
-  const paretoNames = [];
-  const groups = state.filteredGroups;
+// Pareto Frontier Calculation (minimize latency + size)
+function isParetoDominated(g, groups) {
+  const gTime = g.avg_time_total_ns;
+  const gSize = g.median_size_bytes;
+  if (gTime == null || gSize == null) return true;
 
-  for (let g of groups) {
-    let dominated = false;
-    for (let other of groups) {
-      if (other === g) continue;
-      
-      const otherTime = other.avg_time_total_ns;
-      const otherSize = other.median_size_bytes;
-      const gTime = g.avg_time_total_ns;
-      const gSize = g.median_size_bytes;
-
-      if ((otherTime <= gTime && otherSize < gSize) || (otherTime < gTime && otherSize <= gSize)) {
-        dominated = true;
-        break;
-      }
-    }
-    if (!dominated) {
-      paretoNames.push(g.serializer);
+  for (const other of groups) {
+    if (other === g) continue;
+    const otherTime = other.avg_time_total_ns;
+    const otherSize = other.median_size_bytes;
+    if (otherTime == null || otherSize == null) continue;
+    if (
+      (otherTime <= gTime && otherSize < gSize) ||
+      (otherTime < gTime && otherSize <= gSize)
+    ) {
+      return true;
     }
   }
-  state.paretoSerializerNames = paretoNames;
+  return false;
+}
+
+function paretoOptimalGroups(groups) {
+  return groups.filter((g) => !isParetoDominated(g, groups));
+}
+
+function calculateParetoFrontier() {
+  state.paretoSerializerNames = paretoOptimalGroups(state.filteredGroups).map(
+    (g) => g.serializer
+  );
+}
+
+// ---------- Cross-language comparison ----------
+
+function languageLabel(langId) {
+  return LANGUAGE_CATALOG.find((l) => l.id === langId)?.label || langId;
+}
+
+/** Normalize mode labels across languages (bytes/string vs stream/Stream). */
+function normalizeMode(mode) {
+  const s = String(mode || '').toLowerCase();
+  if (s === 'stream') return 'stream';
+  if (s === 'bytes' || s === 'string' || s === 'buffer') return 'bytes';
+  return s;
+}
+
+function modeDisplayLabel(norm) {
+  if (norm === 'bytes') return 'bytes (buffer)';
+  if (norm === 'stream') return 'stream';
+  return norm;
+}
+
+async function fetchStatsGroups(langId) {
+  // Prefer plain JSON (no gzip edge cases); fall back to packed gz used by main dash.
+  const urls = [`data/stats_${langId}_latest.json`, `data/${langId}_latest.json.gz`];
+  for (const url of urls) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) continue;
+
+      let payload;
+      try {
+        payload = await response.clone().json();
+      } catch {
+        const ds = new DecompressionStream('gzip');
+        const text = await new Response(response.body.pipeThrough(ds)).text();
+        payload = JSON.parse(text);
+      }
+
+      const groups = payload.groups || payload.stats?.groups || [];
+      if (Array.isArray(groups) && groups.length) {
+        return groups.map((g) => ({
+          ...g,
+          language: g.language || langId,
+        }));
+      }
+    } catch (e) {
+      console.warn(`Cross-lang load failed for ${langId} via ${url}:`, e);
+    }
+  }
+  return [];
+}
+
+async function loadAllLanguagesForCrossCompare() {
+  const entries = await Promise.all(
+    LANGUAGE_CATALOG.map(async (lang) => [lang.id, await fetchStatsGroups(lang.id)])
+  );
+  state.crossLangGroupsByLang = Object.fromEntries(entries);
+
+  const loaded = entries.filter(([, g]) => g.length > 0).map(([id]) => id);
+  if (loaded.length === 0) {
+    console.warn('No cross-language stats loaded.');
+  }
+
+  initCrossLangControls();
+  if (state.xlSelectionMode === 'pareto' || state.xlSelected.length === 0) {
+    applyCrossLangParetoSelection();
+  } else {
+    pruneCrossLangSelection();
+    if (state.xlSelected.length === 0) {
+      applyCrossLangParetoSelection();
+    }
+  }
+  renderCrossLangSelection();
+  renderCrossLangTable();
+  updateCrossLangBadge();
+  saveSettings();
+}
+
+function allCrossLangGroups() {
+  return Object.values(state.crossLangGroupsByLang).flat();
+}
+
+function initCrossLangControls() {
+  const all = allCrossLangGroups();
+  const testDataOptions = [...new Set(all.map((g) => g.test_data).filter(Boolean))].sort();
+  const modeOptions = [...new Set(all.map((g) => normalizeMode(g.mode)).filter(Boolean))].sort();
+
+  populateSelect('xl-data-select', testDataOptions);
+  const modeSel = document.getElementById('xl-mode-select');
+  modeSel.innerHTML = '';
+  modeOptions.forEach((m) => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = modeDisplayLabel(m);
+    modeSel.appendChild(opt);
+  });
+
+  // Prefer saved / common defaults
+  const preferredTd = ['Person', 'SimpleObject', 'Integer'];
+  if (!testDataOptions.includes(state.xlTestData)) {
+    state.xlTestData =
+      preferredTd.find((t) => testDataOptions.includes(t)) || testDataOptions[0] || '';
+  }
+  if (!modeOptions.includes(state.xlMode)) {
+    state.xlMode = modeOptions.includes('bytes')
+      ? 'bytes'
+      : modeOptions[0] || '';
+  }
+
+  document.getElementById('xl-data-select').value = state.xlTestData;
+  modeSel.value = state.xlMode;
+
+  // Language add picker
+  const langSel = document.getElementById('xl-add-lang');
+  langSel.innerHTML = '';
+  LANGUAGE_CATALOG.forEach((lang) => {
+    const groups = state.crossLangGroupsByLang[lang.id] || [];
+    if (!groups.length) return;
+    const opt = document.createElement('option');
+    opt.value = lang.id;
+    opt.textContent = lang.label;
+    langSel.appendChild(opt);
+  });
+
+  refreshCrossLangAddSerializerOptions();
+}
+
+function filterGroupsForCrossLang(groups) {
+  return groups.filter(
+    (g) =>
+      g.test_data === state.xlTestData &&
+      normalizeMode(g.mode) === state.xlMode
+  );
+}
+
+function findCrossLangGroup(lang, serializer) {
+  const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang] || []);
+  return groups.find((g) => g.serializer === serializer) || null;
+}
+
+function applyCrossLangParetoSelection() {
+  const selected = [];
+  for (const lang of LANGUAGE_CATALOG) {
+    const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang.id] || []);
+    if (!groups.length) continue;
+    const pareto = paretoOptimalGroups(groups);
+    // Stable order: fastest total first within language
+    pareto
+      .slice()
+      .sort(
+        (a, b) =>
+          (a.avg_time_total_ns ?? Infinity) - (b.avg_time_total_ns ?? Infinity)
+      )
+      .forEach((g) => {
+        selected.push({ lang: lang.id, serializer: g.serializer });
+      });
+  }
+  state.xlSelected = selected;
+  state.xlSelectionMode = 'pareto';
+}
+
+function pruneCrossLangSelection() {
+  state.xlSelected = state.xlSelected.filter((x) => findCrossLangGroup(x.lang, x.serializer));
+}
+
+function refreshCrossLangAddSerializerOptions() {
+  const lang = document.getElementById('xl-add-lang').value;
+  const serSel = document.getElementById('xl-add-serializer');
+  serSel.innerHTML = '';
+
+  const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang] || []);
+  const names = [...new Set(groups.map((g) => g.serializer))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+
+  if (!names.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '— no serializers —';
+    serSel.appendChild(opt);
+    return;
+  }
+
+  names.forEach((name) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    serSel.appendChild(opt);
+  });
+}
+
+function updateCrossLangBadge() {
+  const badge = document.getElementById('cross-lang-badge');
+  if (!badge) return;
+  if (state.xlSelectionMode === 'pareto') {
+    badge.textContent = 'Pareto best';
+    badge.className = 'badge badge-cyan';
+  } else {
+    badge.textContent = 'Custom selection';
+    badge.className = 'badge badge-purple';
+  }
+}
+
+function renderCrossLangSelection() {
+  const host = document.getElementById('xl-selection-chips');
+  if (!host) return;
+  host.innerHTML = '';
+
+  updateCrossLangBadge();
+
+  if (!state.xlSelected.length) {
+    const empty = document.createElement('span');
+    empty.style.color = 'var(--text-muted)';
+    empty.style.fontSize = '0.85rem';
+    empty.textContent = 'No serializers selected. Reset to Pareto best or add one.';
+    host.appendChild(empty);
+    return;
+  }
+
+  // Annotate which are currently Pareto under the active filters
+  const paretoKeys = new Set();
+  for (const lang of LANGUAGE_CATALOG) {
+    const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang.id] || []);
+    paretoOptimalGroups(groups).forEach((g) => {
+      paretoKeys.add(`${lang.id}|${g.serializer}`);
+    });
+  }
+
+  state.xlSelected.forEach((item, idx) => {
+    const key = `${item.lang}|${item.serializer}`;
+    const chip = document.createElement('span');
+    chip.className = 'xl-chip' + (paretoKeys.has(key) ? ' pareto-chip' : '');
+    chip.title = paretoKeys.has(key)
+      ? 'On Pareto front for this language / filter'
+      : 'Not on Pareto front for this language / filter';
+
+    const label = document.createElement('span');
+    label.className = 'xl-chip-label';
+    label.textContent = `${languageLabel(item.lang)} · ${item.serializer}`;
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'xl-chip-remove';
+    remove.setAttribute('aria-label', `Remove ${item.serializer}`);
+    remove.textContent = '×';
+    remove.addEventListener('click', () => {
+      state.xlSelectionMode = 'custom';
+      state.xlSelected = state.xlSelected.filter((_, i) => i !== idx);
+      renderCrossLangSelection();
+      renderCrossLangTable();
+      saveSettings();
+    });
+
+    chip.appendChild(label);
+    chip.appendChild(remove);
+    host.appendChild(chip);
+  });
+}
+
+function renderCrossLangTable() {
+  const thead = document.getElementById('xl-compare-head');
+  const tbody = document.getElementById('xl-compare-body');
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+
+  const headerRow = document.createElement('tr');
+  const metricTh = document.createElement('th');
+  metricTh.textContent = 'Metric';
+  headerRow.appendChild(metricTh);
+
+  const columns = state.xlSelected.map((item) => ({
+    ...item,
+    group: findCrossLangGroup(item.lang, item.serializer),
+  }));
+
+  columns.forEach((col) => {
+    const th = document.createElement('th');
+    th.innerHTML = `<span class="xl-col-lang">${escapeHtml(languageLabel(col.lang))}</span><span class="xl-col-name">${escapeHtml(col.serializer)}</span>`;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+
+  if (!columns.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td colspan="1" style="text-align:center;color:var(--text-muted);">Select serializers to compare across languages</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  CROSS_LANG_METRICS.forEach((metric) => {
+    // Skip metric row if every column is missing that field entirely
+    const values = columns.map((c) =>
+      c.group && c.group[metric.key] != null ? Number(c.group[metric.key]) : null
+    );
+    if (values.every((v) => v === null || Number.isNaN(v))) return;
+
+    let bestVal = null;
+    if (metric.higherIsBetter === true || metric.higherIsBetter === false) {
+      values.forEach((v) => {
+        if (v === null || Number.isNaN(v)) return;
+        if (
+          bestVal === null ||
+          (metric.higherIsBetter ? v > bestVal : v < bestVal)
+        ) {
+          bestVal = v;
+        }
+      });
+    }
+
+    const tr = document.createElement('tr');
+    const tdLabel = document.createElement('td');
+    tdLabel.textContent = metric.label;
+    tr.appendChild(tdLabel);
+
+    values.forEach((v) => {
+      const td = document.createElement('td');
+      if (v === null || Number.isNaN(v)) {
+        td.textContent = '—';
+        td.className = 'xl-missing';
+      } else {
+        td.textContent = formatMetricValue(metric.key, v);
+        // Highlight every column that ties for best (not only the first).
+        if (bestVal !== null && v === bestVal) td.classList.add('xl-best');
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 // Update KPI cards
@@ -442,13 +1099,407 @@ function populateCompareSelectors() {
     selB.appendChild(optB);
   });
 
-  // Pick defaults
-  if (state.serializerNames.length > 0) {
-    state.compareA = state.serializerNames[0];
-    state.compareB = state.serializerNames[Math.min(1, state.serializerNames.length - 1)];
-    selA.value = state.compareA;
-    selB.value = state.compareB;
+  if (state.serializerNames.length === 0) {
+    state.compareA = '';
+    state.compareB = '';
+    return;
   }
+
+  // Prefer previously chosen serializers when still present
+  if (!state.serializerNames.includes(state.compareA)) {
+    state.compareA = state.serializerNames[0];
+  }
+  if (!state.serializerNames.includes(state.compareB)) {
+    state.compareB = state.serializerNames[Math.min(1, state.serializerNames.length - 1)];
+  }
+
+  selA.value = state.compareA;
+  selB.value = state.compareB;
+}
+
+/** Metric family for checklist + table grouping. */
+const METRIC_GROUP_ORDER = [
+  'Run & quality',
+  'Throughput',
+  'Serialization',
+  'Deserialization',
+  'Total latency',
+  'Size',
+  'Comparisons',
+  'Other',
+];
+
+function metricGroupName(key) {
+  if (
+    [
+      'runs',
+      'runs_raw',
+      'warmup_skipped',
+      'outliers_removed',
+      'serializer_version',
+      'mean_fidelity',
+      'mean_memory_peak_bytes',
+    ].includes(key)
+  ) {
+    return 'Run & quality';
+  }
+  if (
+    key.includes('ops_per_sec') ||
+    key.endsWith('_ops_mean') ||
+    key.endsWith('_ops_median') ||
+    key.endsWith('_ops_p95') ||
+    key === 'min_ops_per_sec' ||
+    key === 'max_ops_per_sec'
+  ) {
+    return 'Throughput';
+  }
+  if (key.startsWith('ser_') || key === 'avg_time_ser_ns') return 'Serialization';
+  if (key.startsWith('deser_') || key === 'avg_time_deser_ns') return 'Deserialization';
+  if (key.startsWith('total_') || key === 'avg_time_total_ns') return 'Total latency';
+  if (key.startsWith('size_') || key === 'median_size_bytes') return 'Size';
+  if (
+    key.includes('effect_') ||
+    key.includes('baseline') ||
+    key.includes('fastest') ||
+    key.includes('speedup')
+  ) {
+    return 'Comparisons';
+  }
+  return 'Other';
+}
+
+/** Higher is better for highlighting multi-serializer metric rows; null = no highlight. */
+function metricHigherIsBetter(key) {
+  if (
+    key.includes('cliffs_label') ||
+    key.includes('baseline_serializer') ||
+    key.includes('fastest_in_group') ||
+    key === 'serializer_version' ||
+    key.includes('cliffs_delta') ||
+    key.includes('hedges_g')
+  ) {
+    return null;
+  }
+  if (
+    key.includes('ops_per_sec') ||
+    key.endsWith('_ops_mean') ||
+    key.endsWith('_ops_median') ||
+    key.endsWith('_ops_p95') ||
+    key === 'min_ops_per_sec' ||
+    key === 'max_ops_per_sec' ||
+    key === 'mean_fidelity' ||
+    key.includes('speedup')
+  ) {
+    return true;
+  }
+  if (
+    key.endsWith('_ns') ||
+    key.endsWith('_bytes') ||
+    key.includes('size_') ||
+    key.endsWith('_cv') ||
+    key.includes('_var_') ||
+    key.includes('_std_') ||
+    key.includes('_mad_')
+  ) {
+    return false;
+  }
+  return null;
+}
+
+function groupMetrics(keys) {
+  const buckets = new Map(METRIC_GROUP_ORDER.map((g) => [g, []]));
+  keys.forEach((k) => {
+    const g = metricGroupName(k);
+    if (!buckets.has(g)) buckets.set(g, []);
+    buckets.get(g).push(k);
+  });
+  for (const arr of buckets.values()) arr.sort((a, b) => a.localeCompare(b));
+  return METRIC_GROUP_ORDER
+    .map((name) => ({ name, keys: buckets.get(name) || [] }))
+    .filter((g) => g.keys.length > 0);
+}
+
+function populateDetailSerializerSelect() {
+  // Keep only still-valid serializers; default to first if empty
+  state.detailSerializers = state.detailSerializers.filter((s) =>
+    state.serializerNames.includes(s)
+  );
+  if (state.detailSerializers.length === 0 && state.serializerNames.length > 0) {
+    state.detailSerializers = [state.serializerNames[0]];
+  }
+  renderDetailSerializerChecklist();
+}
+
+function renderDetailSerializerChecklist() {
+  const container = document.getElementById('detail-serializer-checklist');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const selected = new Set(state.detailSerializers);
+
+  if (!state.serializerNames.length) {
+    const empty = document.createElement('span');
+    empty.style.color = 'var(--text-muted)';
+    empty.style.fontSize = '0.8rem';
+    empty.textContent = 'No serializers for this filter';
+    container.appendChild(empty);
+    return;
+  }
+
+  state.serializerNames.forEach((name) => {
+    const label = document.createElement('label');
+    label.className = 'metric-check-item';
+    label.title = name;
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = name;
+    input.checked = selected.has(name);
+    input.addEventListener('change', () => {
+      if (input.checked) {
+        if (!state.detailSerializers.includes(name)) {
+          state.detailSerializers = [...state.detailSerializers, name].sort((a, b) =>
+            a.localeCompare(b)
+          );
+        }
+      } else {
+        state.detailSerializers = state.detailSerializers.filter((s) => s !== name);
+      }
+      saveSettings();
+      renderSerializerMetricsTable();
+    });
+
+    const span = document.createElement('span');
+    span.textContent = name;
+
+    label.appendChild(input);
+    label.appendChild(span);
+    container.appendChild(label);
+  });
+}
+
+function renderMetricsChecklist() {
+  const container = document.getElementById('metrics-checklist');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const selected = new Set(state.selectedMetrics);
+  const groups = groupMetrics(state.availableMetrics);
+
+  groups.forEach((group) => {
+    const block = document.createElement('div');
+    block.className = 'metric-group-block';
+
+    const title = document.createElement('div');
+    title.className = 'metric-group-title';
+
+    const titleText = document.createElement('span');
+    titleText.textContent = `${group.name} (${group.keys.length})`;
+
+    const groupBtn = document.createElement('button');
+    groupBtn.type = 'button';
+    groupBtn.className = 'metric-group-toggle';
+    const allOn = group.keys.every((k) => selected.has(k));
+    groupBtn.textContent = allOn ? 'Clear' : 'All';
+    groupBtn.addEventListener('click', () => {
+      if (allOn) {
+        state.selectedMetrics = state.selectedMetrics.filter((k) => !group.keys.includes(k));
+      } else {
+        const set = new Set(state.selectedMetrics);
+        group.keys.forEach((k) => set.add(k));
+        state.selectedMetrics = [...set].sort((a, b) => a.localeCompare(b));
+      }
+      saveSettings();
+      renderMetricsChecklist();
+      renderSerializerMetricsTable();
+    });
+
+    title.appendChild(titleText);
+    title.appendChild(groupBtn);
+    block.appendChild(title);
+
+    const items = document.createElement('div');
+    items.className = 'metric-group-items';
+
+    group.keys.forEach((key) => {
+      const label = document.createElement('label');
+      label.className = 'metric-check-item';
+      label.title = key;
+
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = key;
+      input.checked = selected.has(key);
+      input.addEventListener('change', () => {
+        if (input.checked) {
+          if (!state.selectedMetrics.includes(key)) {
+            state.selectedMetrics = [...state.selectedMetrics, key].sort((a, b) =>
+              a.localeCompare(b)
+            );
+          }
+        } else {
+          state.selectedMetrics = state.selectedMetrics.filter((k) => k !== key);
+        }
+        saveSettings();
+        renderSerializerMetricsTable();
+      });
+
+      const span = document.createElement('span');
+      span.textContent = metricLabel(key);
+
+      label.appendChild(input);
+      label.appendChild(span);
+      items.appendChild(label);
+    });
+
+    block.appendChild(items);
+    container.appendChild(block);
+  });
+}
+
+function renderSerializerMetricsTable() {
+  const thead = document.getElementById('serializer-metrics-head');
+  const tbody = document.getElementById('serializer-metrics-body');
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+
+  const serializers = state.detailSerializers.filter((s) =>
+    state.serializerNames.includes(s)
+  );
+  const columns = serializers.map((name) => ({
+    name,
+    group: state.filteredGroups.find((g) => g.serializer === name) || null,
+  }));
+
+  const headerRow = document.createElement('tr');
+  const metricTh = document.createElement('th');
+  metricTh.textContent = 'Metric';
+  headerRow.appendChild(metricTh);
+  columns.forEach((col) => {
+    const th = document.createElement('th');
+    th.textContent = col.name;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+
+  const colCount = Math.max(1, columns.length + 1);
+
+  if (!columns.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">Select one or more serializers</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  const selectedKeys = state.selectedMetrics.filter((k) =>
+    state.availableMetrics.includes(k)
+  );
+  if (!selectedKeys.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">Select at least one metric in the checklist</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  const groups = groupMetrics(selectedKeys);
+  groups.forEach((group) => {
+    const groupRow = document.createElement('tr');
+    groupRow.className = 'metric-group-row';
+    const groupTd = document.createElement('td');
+    groupTd.colSpan = colCount;
+    groupTd.textContent = group.name;
+    groupRow.appendChild(groupTd);
+    tbody.appendChild(groupRow);
+
+    group.keys.forEach((key) => {
+      const values = columns.map((c) => {
+        if (!c.group || c.group[key] === undefined || c.group[key] === null) return null;
+        const v = c.group[key];
+        return typeof v === 'number' ? v : v;
+      });
+
+      const higherIsBetter = metricHigherIsBetter(key);
+      let bestVal = null;
+      if (higherIsBetter === true || higherIsBetter === false) {
+        values.forEach((v) => {
+          if (typeof v !== 'number' || !Number.isFinite(v)) return;
+          if (
+            bestVal === null ||
+            (higherIsBetter ? v > bestVal : v < bestVal)
+          ) {
+            bestVal = v;
+          }
+        });
+      }
+
+      const tr = document.createElement('tr');
+      const tdKey = document.createElement('td');
+      tdKey.textContent = key;
+      tdKey.title = metricLabel(key);
+      tr.appendChild(tdKey);
+
+      values.forEach((v) => {
+        const td = document.createElement('td');
+        if (v === null || v === undefined) {
+          td.textContent = '—';
+          td.className = 'sm-missing';
+        } else {
+          td.textContent = formatMetricValue(key, v);
+          // Highlight every tied best value when comparing multiple serializers.
+          if (
+            columns.length > 1 &&
+            typeof v === 'number' &&
+            bestVal !== null &&
+            v === bestVal
+          ) {
+            td.classList.add('sm-best');
+          }
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function metricLabel(key) {
+  // Short readable label for checklist; full field id stays in the table.
+  return key
+    .replace(/_ns$/g, ' (ns)')
+    .replace(/_bytes$/g, ' (B)')
+    .replace(/_per_sec$/g, '/s')
+    .replace(/_/g, ' ');
+}
+
+function formatMetricValue(key, value) {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'string') return value;
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return String(value);
+    if (key.endsWith('_ns')) return formatTime(value);
+    if (
+      key.includes('ops_per_sec') ||
+      key.endsWith('_ops_mean') ||
+      key.endsWith('_ops_median') ||
+      key.endsWith('_ops_p95')
+    ) {
+      return formatOps(value);
+    }
+    if (key.endsWith('_bytes') || key.startsWith('size_')) {
+      if (Math.abs(value) >= 1000) {
+        return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} B`;
+      }
+      return `${Number.isInteger(value) ? value : value.toFixed(4)} B`;
+    }
+    if (Number.isInteger(value)) return String(value);
+    return Number(value.toPrecision(8)).toString();
+  }
+
+  return String(value);
 }
 
 // Update Side by side comparison UI
@@ -529,9 +1580,10 @@ function handleTableSort(key, el) {
     state.sortDirection = 'desc';
   }
 
-  document.querySelectorAll('th').forEach(th => th.className = '');
+  document.querySelectorAll('#analytics-table th').forEach(th => th.className = '');
   el.className = state.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc';
 
+  saveSettings();
   renderTable();
 }
 

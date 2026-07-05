@@ -63,9 +63,9 @@ markdown_extensions:
 nav:
   - Serialization 101:
       - Theory & Practices: theory/index.md
-      - Historical Perspective: theory/historical_perspective.md
-      - Data Science Perspective: theory/data_science_perspective.md
-      - Engineer Perspective: theory/engineer_perspective.md
+      - Historical: theory/historical_perspective.md
+      - Data Science: theory/data_science_perspective.md
+      - Engineering: theory/engineer_perspective.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
@@ -86,11 +86,11 @@ nav:
       - Results: go/results.md
   - Benchmarks:
       - Overview: analysis/index.md
-      - 📊Dashboard: dashboard/
-      - Benchmark architecture: analysis/architecture.md
+      - 📊 Dashboard: dashboard/
+      - Architecture: analysis/architecture.md
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md
-      - Serialization Categories: analysis/serialization_categories.md
-      - Analysis Methodology: analysis/ANALYSIS_METHODOLOGY.md
-      - Metrics catalog: analysis/METRICS.md
-      - Test Data Configuration: analysis/test_data_configuration.md
-      - Benchmark Results: analysis/BENCHMARK_SUMMARY.md
+      - Categories: analysis/serialization_categories.md
+      - Methodology: analysis/ANALYSIS_METHODOLOGY.md
+      - Metrics: analysis/METRICS.md
+      - Test Data: analysis/test_data_configuration.md
+      - Results Summary: analysis/BENCHMARK_SUMMARY.md

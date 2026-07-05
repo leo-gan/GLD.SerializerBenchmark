@@ -19,8 +19,11 @@
     <ul class="nav-links">
       <li><a href="../" id="nav-docs-link" style="margin-right: 0.75rem; border: 1px solid var(--border-color); font-weight: 500;">← Back to Docs</a></li>
       <li class="active"><a href="#dashboard" id="nav-dash-link">Dashboard</a></li>
-      <li><a href="#compare" id="nav-compare-link">Serializer Compare</a></li>
-      <li><a href="#history-custom" id="nav-history-link">History & Custom Runs</a></li>
+      <li><a href="#detailed-analytics" id="nav-table-link">Details</a></li>
+      <li><a href="#compare" id="nav-compare-link">Compare</a></li>
+      <li><a href="#cross-lang" id="nav-cross-link">Cross-lang</a></li>
+      <li><a href="#serializer-metrics" id="nav-metrics-link">All Metrics</a></li>
+      <li><a href="#history-custom" id="nav-history-link">History</a></li>
     </ul>
   </header>
 
@@ -108,6 +111,35 @@
       </div>
     </section>
 
+    <!-- Detailed Analytics Table -->
+    <section class="glass-panel table-panel" id="detailed-analytics">
+      <div class="table-header-row">
+        <h2 class="chart-title">Detailed Analytics</h2>
+        <div class="search-input-wrapper">
+          <input type="text" id="table-search" class="search-input" placeholder="Search serializers..." aria-label="Search serializers">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="analytics-table">
+          <thead>
+            <tr>
+              <th id="th-serializer" class="sort-asc">Serializer</th>
+              <th id="th-ops">Ops/Sec</th>
+              <th id="th-total-ns">Total Latency</th>
+              <th id="th-ser-ns">Ser Latency</th>
+              <th id="th-deser-ns">Deser Latency</th>
+              <th id="th-size">Median Size (Bytes)</th>
+              <th id="th-optimal">Optimal</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- Serializer Comparison Matrix -->
     <section class="glass-panel comparison-section" id="compare">
       <div class="chart-header">
@@ -162,29 +194,108 @@
       </div>
     </section>
 
-    <!-- Detailed Analytics Table -->
-    <section class="glass-panel table-panel">
-      <div class="table-header-row">
-        <h2 class="chart-title">Detailed Analytics</h2>
-        <div class="search-input-wrapper">
-          <input type="text" id="table-search" class="search-input" placeholder="Search serializers..." aria-label="Search serializers">
+    <!-- Cross-language side-by-side comparison -->
+    <section class="glass-panel cross-lang-section" id="cross-lang">
+      <div class="chart-header">
+        <h2 class="chart-title">Cross-language Comparison</h2>
+        <span class="badge badge-purple" id="cross-lang-badge">Pareto best by default</span>
+      </div>
+      <p class="section-help">
+        Compare serializers across languages for the same workload. Default selection is each language’s
+        <strong>Pareto-best</strong> set (speed vs size). Add or remove any language/serializer pair.
+      </p>
+
+      <div class="cross-lang-filters">
+        <div class="filter-group" style="flex-wrap: wrap;">
+          <span class="filter-label">Test Data:</span>
+          <div class="select-wrapper">
+            <select id="xl-data-select" aria-label="Cross-language test data"></select>
+          </div>
+          <span class="filter-label">Mode:</span>
+          <div class="select-wrapper">
+            <select id="xl-mode-select" aria-label="Cross-language mode"></select>
+          </div>
+          <button type="button" id="xl-reset-pareto" class="tab-btn active" style="font-size: 0.85rem;">
+            Reset to Pareto best
+          </button>
         </div>
       </div>
 
-      <div class="table-container">
-        <table id="analytics-table">
-          <thead>
+      <div class="cross-lang-add-row">
+        <div class="select-wrapper">
+          <select id="xl-add-lang" aria-label="Language to add"></select>
+        </div>
+        <div class="select-wrapper" style="min-width: 12rem; flex: 1;">
+          <select id="xl-add-serializer" aria-label="Serializer to add"></select>
+        </div>
+        <button type="button" id="xl-add-btn" class="tab-btn" style="font-size: 0.85rem; border: 1px solid var(--border-color);">
+          Add
+        </button>
+      </div>
+
+      <div id="xl-selection-chips" class="xl-chips" aria-label="Selected serializers for comparison">
+        <!-- chips populated dynamically -->
+      </div>
+
+      <div class="table-container xl-table-wrap">
+        <table id="xl-compare-table">
+          <thead id="xl-compare-head">
+            <tr><th>Metric</th></tr>
+          </thead>
+          <tbody id="xl-compare-body">
+            <!-- populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Multi-serializer full metrics (grouped) -->
+    <section class="glass-panel metrics-detail-section" id="serializer-metrics">
+      <div class="chart-header">
+        <h2 class="chart-title">All Metrics</h2>
+      </div>
+      <p class="section-help">
+        Compare full metric sets for one or more serializers under the current language / test data / mode.
+        Metrics are grouped by family; use the checklists to show only what you need.
+      </p>
+
+      <div class="metrics-detail-controls metrics-detail-controls-wide">
+        <div class="picker-card metrics-checklist-card">
+          <div class="metrics-checklist-header">
+            <span class="filter-label">Serializers</span>
+            <div class="metrics-checklist-actions">
+              <button type="button" id="detail-ser-select-all" class="link-btn">All</button>
+              <button type="button" id="detail-ser-select-none" class="link-btn">None</button>
+            </div>
+          </div>
+          <div id="detail-serializer-checklist" class="metrics-checklist serializers-checklist" role="group" aria-label="Serializer checklist">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div class="picker-card metrics-checklist-card">
+          <div class="metrics-checklist-header">
+            <span class="filter-label">Show metrics</span>
+            <div class="metrics-checklist-actions">
+              <button type="button" id="metrics-select-all" class="link-btn">All</button>
+              <button type="button" id="metrics-select-none" class="link-btn">None</button>
+              <button type="button" id="metrics-select-default" class="link-btn">Defaults</button>
+            </div>
+          </div>
+          <div id="metrics-checklist" class="metrics-checklist metrics-checklist-grouped" role="group" aria-label="Metric checklist by group">
+            <!-- Populated dynamically, grouped -->
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container xl-table-wrap">
+        <table id="serializer-metrics-table">
+          <thead id="serializer-metrics-head">
             <tr>
-              <th id="th-serializer" class="sort-asc">Serializer</th>
-              <th id="th-ops">Ops/Sec</th>
-              <th id="th-total-ns">Total Latency</th>
-              <th id="th-ser-ns">Ser Latency</th>
-              <th id="th-deser-ns">Deser Latency</th>
-              <th id="th-size">Median Size (Bytes)</th>
-              <th id="th-optimal">Optimal</th>
+              <th>Metric</th>
             </tr>
           </thead>
-          <tbody id="table-body">
+          <tbody id="serializer-metrics-body">
             <!-- Dynamically populated -->
           </tbody>
         </table>

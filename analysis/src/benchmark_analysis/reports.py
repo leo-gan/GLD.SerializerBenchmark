@@ -698,7 +698,7 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
     return "\n".join(lines)
 
 
-def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") -> str:
+def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
     """Compact multi-way table: high-importance scientific fields (median-first)."""
     from .metrics_catalog import MULTI_WAY_SUMMARY_FIELDS, filter_field_ids, load_metrics_config
 
@@ -729,7 +729,7 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
         return ""
 
     lines = [
-        f"### {title}: summary (multi-way, important metrics)",
+        "### Summary",
         "",
         "Default multi-serializer view shows **high-importance** metrics only "
         "([METRICS.md](../analysis/METRICS.md)). "
@@ -835,7 +835,7 @@ def _scientific_summary_md(stats: Dict, title: str, profile: str = "multi_way") 
     return "\n".join(lines)
 
 
-def _total_time_pivot_table_md(stats: Dict, title: str) -> str:
+def _total_time_pivot_table_md(stats: Dict) -> str:
     """Generate a combined Mean/Median Total Time pivot table."""
     # Rows are serializers sorted by rank key
     by_ser: Dict[str, List[Dict]] = {}
@@ -853,7 +853,7 @@ def _total_time_pivot_table_md(stats: Dict, title: str) -> str:
     if not serializers:
         return ""
 
-    lines = [f"\n### {title}: Total Time (µs) by Serializer and API Mode\n"]
+    lines = ["\n### Total Time\n"]
     
     headers = [
         "serializer", 
@@ -1020,30 +1020,24 @@ def generate_language_results_pages(
             lines.append("")
             sci = _scientific_summary_md(
                 stats,
-                title,
                 profile=metrics_profile or "multi_way",
             )
             if sci:
                 lines.append(sci)
-            lines.append(
-                _total_time_pivot_table_md(
-                    stats,
-                    title,
-                )
-            )
+            lines.append(_total_time_pivot_table_md(stats))
             lines.append(
                 _pivot_table_md(
                     stats,
                     "serializer",
                     "test_data",
                     "avg_ops_per_sec",
-                    f"{title}: Ops/Sec (from mean) by Serializer and Data Type",
+                    "Ops/Sec",
                 )
             )
             cat_md = _category_pivot_md(
                 stats,
                 lang_id,
-                f"{title}: within-category ranking (bytes mode only)",
+                "Within-category ranking",
             )
             if cat_md:
                 lines.append(cat_md)

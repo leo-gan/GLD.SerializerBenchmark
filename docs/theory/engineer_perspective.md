@@ -1,13 +1,5 @@
 # Engineering Perspective
 
-**Question this page answers:** *What should I ship in services and systems—and what design forces (performance, security, evolution) actually matter?*
-
-This is the **systems & application engineering lens** of [Serialization 101](index.md). For the timeline of *why* formats exist, see the [historical perspective](historical_perspective.md). For lakes, ML artifacts, and columnar analytics, see the [data science perspective](data_science_perspective.md).
-
-This page is conceptual. Libraries and timings **in this suite** are on language **Overview** / **Results** and under [Benchmarks](../analysis/index.md), including the suite’s [Serialization categories](../analysis/serialization_categories.md).
-
----
-
 ## Who this page is for
 
 - Backend and platform engineers choosing API and [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> payloads  
@@ -17,7 +9,7 @@ This page is conceptual. Libraries and timings **in this suite** are on language
 
 ---
 
-## Mental model: four families (aligned with this suite)
+## Four families (suite-aligned)
 
 The benchmark suite groups serializers into paradigms. Compare **within a paradigm and within one language** before crowning a global winner.
 
@@ -27,8 +19,6 @@ The benchmark suite groups serializers into paradigms. Compare **within a paradi
 | **Schemaless binary** | [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, many “binary JSON” codecs | Type tags / field names often present | No | Internal services, caches, queues |
 | **Schema-driven** | [Protobuf](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — schema-driven binary format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [FlatBuffers](https://en.wikipedia.org/wiki/FlatBuffers "FlatBuffers — zero-copy serialization library")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, Bond, many [IDL](https://en.wikipedia.org/wiki/Interface_description_language "IDL — Interface Description Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> tools | Numbers/layout from schema | No | Stable contracts, high-throughput RPC/streams |
 | **Language-native** | [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Java serialization](https://en.wikipedia.org/wiki/Java_serialization "Java object serialization — JVM native object encoding")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, legacy .NET binary formatters | Runtime type metadata | No | Same-stack caches and graphs (**trust carefully**) |
-
-Detailed inventory per language: [Serialization categories](../analysis/serialization_categories.md).
 
 ### Decision sketch (services)
 
@@ -76,7 +66,7 @@ Convenient for object graphs inside one runtime. Treat as **unsafe by default** 
 
 ---
 
-## Performance mechanics (why some codecs feel “magic”)
+## Performance mechanics
 
 Numbers belong on **Results** pages. These are the mechanisms those numbers come from.
 
@@ -115,7 +105,7 @@ Smaller payloads help networks and storage; the fastest codec is not always the 
 
 ---
 
-## Security: deserialization as an attack surface
+## Security: deserialization
 
 Untrusted bytes are **hostile input**.
 
@@ -146,7 +136,7 @@ Document whether fields are required, defaulted, or nullable—**wire format can
 
 ---
 
-## Operational concerns engineers forget in design docs
+## Operational concerns
 
 - **Debuggability:** JSON in logs vs binary needing decoders and schema versions in observability tooling  
 - **Gateways and mesh:** some exotic RPC framings interact poorly with vanilla [HTTP/2](https://en.wikipedia.org/wiki/HTTP/2 "HTTP/2 — major revision of HTTP")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> load balancers and serverless edges  
@@ -169,7 +159,7 @@ Document whether fields are required, defaulted, or nullable—**wire format can
 
 ---
 
-## Illustrative snippets (conceptual)
+## Illustrative snippets
 
 Orientation only—not library endorsements. (Site-wide fenced code uses plain highlighting; see `mkdocs.yml`.)
 
@@ -204,19 +194,6 @@ person2.ParseFromString(data)
 
 ---
 
-## Mapping to this repository
-
-| You want… | Go here |
-|-----------|---------|
-| Category definitions & per-language registrations | [Serialization categories](../analysis/serialization_categories.md) |
-| How measurements are produced | [Analysis methodology](../analysis/ANALYSIS_METHODOLOGY.md) (and related analysis docs) |
-| Empirical timings / plots | [Benchmarks hub](../analysis/index.md) and each language **Results** |
-| Language constraints ([GIL](https://en.wikipedia.org/wiki/Global_interpreter_lock "GIL — Global Interpreter Lock (CPython)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, `Span<T>`, etc.) | Language **Overview** pages under `docs/<lang>/` |
-| Why a format exists historically | [Historical perspective](historical_perspective.md) |
-| Lakes / ML / columnar | [Data science perspective](data_science_perspective.md) |
-
----
-
 ## Key takeaways
 
 1. **Pick a paradigm first**, then a library—suite categories exist to prevent unfair cross-paradigm comparisons.  
@@ -228,7 +205,7 @@ person2.ParseFromString(data)
 
 ---
 
-## References (engineering entry points)
+## References
 
 - RFC 8259 (JSON); JSON Schema and OpenAPI documentation  
 - MessagePack specification; CBOR RFC 8949  
@@ -236,8 +213,3 @@ person2.ParseFromString(data)
 - Apache Thrift and Apache Avro project docs  
 - Cap’n Proto and FlatBuffers documentation (encoding + security/verification notes)  
 - Language security docs for pickle / Java serialization / legacy binary formatters  
-- [Serialization categories](../analysis/serialization_categories.md) for this suite’s taxonomy  
-
----
-
-**Next:** [Serialization categories](../analysis/serialization_categories.md) and a language **Results** page, or return to the [course home](index.md).
