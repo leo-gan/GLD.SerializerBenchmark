@@ -10,7 +10,7 @@
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview SoT): C# **37** · Python **16** · Rust **15** · C **19** · JavaScript **12** (simdjson optional) · Go **12**.
+Registered counts (Overview SoT): C# **37** · Python **16** · Rust **15** · C **19** · JavaScript **13** (simdjson optional) · Go **12**.
 
 ---
 
@@ -90,7 +90,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **Python:** `protobuf`, `avro` (fastavro), `flatbuffers`  
   - **Rust:** `prost` (shared `.proto`; **Integer** unsupported), `rkyv` (timed deser **materializes** owned values), `flexbuffers`  
   - **C:** `nanopb`, `protobuf-c`, `upb` (in-tree wire), `flatcc`, `avro-c`, `zcbor`  
-  - **JavaScript:** `avsc`, `protobufjs`  
+  - **JavaScript:** `avsc`, `protobufjs`, `flatbuffers`  
   - **Go:** `protobuf`, `hamba/avro`  
 
 ### Language-native

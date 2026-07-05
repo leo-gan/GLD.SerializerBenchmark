@@ -1,6 +1,6 @@
 # JavaScript (Node.js) Serializer Benchmark
 
-## Serializers (11–12)
+## Serializers (12–13)
 
 | Name | Category | Optimal API |
 |------|----------|-------------|
@@ -11,11 +11,14 @@
 | @msgpack/msgpack | MessagePack | `encode` / `decode` |
 | cbor-x | CBOR | reused `Encoder` / `Decoder` |
 | cbor | CBOR | `encode` / `decodeFirstSync` |
-| avsc | Avro | `Type.forValue` once, then `toBuffer` / `fromBuffer` |
-| protobufjs | Protobuf | preloaded `Type.encode` / `decode` |
 | bson | BSON | `BSON.serialize` / `deserialize` |
-| v8-serializer | Native | `v8.serialize` / `v8.deserialize` |
 | bser | Binary | `dumpToBuffer` / `loadFromBuffer` |
+| avsc | Avro | explicit `Type.forSchema`, then `toBuffer` / `fromBuffer` |
+| protobufjs | Protobuf | real fixture `Type.encode` / `decode` |
+| flatbuffers | FlatBuffers | `Builder` / `ByteBuffer` |
+| v8-serializer | Native | `v8.serialize` / `v8.deserialize` |
+
+See [docs/javascript/index.md](../docs/javascript/index.md).
 
 ## Run
 
@@ -26,4 +29,4 @@ npm test
 
 Output: `logs/javascript/YYYY-MM-DD-HHMMSS.csv` (timestamped)
 
-Cross-language analysis and docs snapshots: install `analysis/`, then `analyze-benchmarks` (all languages) or `analyze-benchmarks -l javascript` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Optional log path: `--logs LANG=PATH`. Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
+Cross-language analysis: install `analysis/`, then `analyze-benchmarks -l javascript` (see root README).

@@ -13,15 +13,16 @@
     "node": ">=18"
   },
   "dependencies": {
-    "fast-json-stringify": "^6.0.0",
-    "msgpackr": "^1.11.0",
     "@msgpack/msgpack": "^3.0.0",
-    "cbor-x": "^1.6.0",
-    "cbor": "^9.0.0",
     "avsc": "^5.7.0",
-    "protobufjs": "^7.4.0",
+    "bser": "^2.1.1",
     "bson": "^6.8.0",
-    "bser": "^2.1.1"
+    "cbor": "^9.0.0",
+    "cbor-x": "^1.6.0",
+    "fast-json-stringify": "^6.0.0",
+    "flatbuffers": "^24.12.23",
+    "msgpackr": "^1.11.0",
+    "protobufjs": "^7.4.0"
   },
   "optionalDependencies": {
     "simdjson": "^0.9.2"

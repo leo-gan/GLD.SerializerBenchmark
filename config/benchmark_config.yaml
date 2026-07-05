@@ -551,53 +551,58 @@ languages:
       - name: simdjson
         category: json
         package: simdjson
-        rationale: "SIMD JSON parse (C++ addon)"
+        rationale: "SIMD JSON parse (optional native addon)"
         optimal_api: "simdjson.parse + JSON.stringify (roundtrip)"
       - name: msgpackr
         category: binary
         package: msgpackr
-        rationale: "Fastest Node MessagePack"
-        optimal_api: "pack / unpack (reuse instance)"
+        rationale: "Fast Node MessagePack"
+        optimal_api: "Packr.pack / Unpackr.unpack (reuse instances)"
       - name: "@msgpack/msgpack"
         category: binary
         package: "@msgpack/msgpack"
-        rationale: "Official msgpack org encoder"
+        rationale: "Official msgpack.org encoder"
         optimal_api: "encode / decode"
       - name: cbor-x
         category: binary
         package: cbor-x
         rationale: "Fast CBOR for Node/browsers"
-        optimal_api: "encode / decode (reuse Encoder/Decoder)"
+        optimal_api: "Encoder.encode / Decoder.decode (reuse)"
       - name: cbor
         category: binary
         package: cbor
         rationale: "Reference node-cbor"
         optimal_api: "encode / decodeFirstSync"
-      - name: avsc
-        category: schema
-        package: avsc
-        rationale: "Apache Avro pure JS"
-        optimal_api: "Type.toBuffer / fromBuffer (precompiled type)"
-      - name: protobufjs
-        category: schema
-        package: protobufjs
-        rationale: "Protocol Buffers in JS"
-        optimal_api: "Type.encode / decode (pre-loaded root)"
       - name: bson
         category: binary
         package: bson
         rationale: "MongoDB BSON"
         optimal_api: "BSON.serialize / deserialize"
-      - name: v8-serializer
-        category: native
-        package: node:v8
-        rationale: "V8 structured clone / serialize API"
-        optimal_api: "v8.serialize / v8.deserialize"
       - name: bser
         category: binary
         package: bser
-        rationale: "Binary serialization (Watchman format)"
+        rationale: "Facebook Binary JSON (Watchman)"
         optimal_api: "dumpToBuffer / loadFromBuffer"
+      - name: avsc
+        category: schema
+        package: avsc
+        rationale: "Apache Avro pure JS with explicit fixture schemas"
+        optimal_api: "Type.forSchema + toBuffer / fromBuffer"
+      - name: protobufjs
+        category: schema
+        package: protobufjs
+        rationale: "Protocol Buffers with real per-fixture message types"
+        optimal_api: "Type.encode / decode (preloaded Root)"
+      - name: flatbuffers
+        category: schema
+        package: flatbuffers
+        rationale: "Google FlatBuffers JS Builder (real FB wire)"
+        optimal_api: "Builder.createString/finish + ByteBuffer read"
+      - name: v8-serializer
+        category: native
+        package: builtin
+        rationale: "Node V8 structured clone binary"
+        optimal_api: "v8.serialize / v8.deserialize"
 
   go:
     display_name: Go
