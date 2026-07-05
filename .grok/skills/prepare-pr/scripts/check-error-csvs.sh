@@ -27,9 +27,20 @@ fi
 
 STEM="${1:-${BENCHMARK_TS:-}}"
 MODE="${CHECK_ERRORS_MODE:-regression}"
+# Optional: space- or comma-separated language ids (arg2 or PREPARE_PR_LANGS).
+# When set, only those languages are checked (prepare-pr changed-lang mode).
+LANG_FILTER_RAW="${2:-${PREPARE_PR_LANGS:-}}"
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
-echo -e "${YELLOW}[check-error-csvs] mode=${MODE} logs=${LOGS_ROOT} stem=${STEM:-latest}${NC}"
+lang_allowed() {
+  local id="$1"
+  [[ -z "$LANG_FILTER_RAW" ]] && return 0
+  local f
+  f=" ${LANG_FILTER_RAW//,/ } "
+  [[ "$f" == *" $id "* ]]
+}
+
+echo -e "${YELLOW}[check-error-csvs] mode=${MODE} logs=${LOGS_ROOT} stem=${STEM:-latest}${LANG_FILTER_RAW:+ langs=${LANG_FILTER_RAW//,/ }}${NC}"
 
 fail=0
 checked=0
@@ -147,6 +158,7 @@ check_lang() {
 if [[ -n "$LANG_RUNNERS" ]]; then
   while IFS='|' read -r id _rest; do
     [[ -z "$id" ]] && continue
+    lang_allowed "$id" || continue
     check_lang "$id"
   done <<< "$LANG_RUNNERS"
 else
@@ -154,6 +166,7 @@ else
     [[ -d "$dir" ]] || continue
     id=$(basename "$dir")
     [[ "$id" == *backup* ]] && continue
+    lang_allowed "$id" || continue
     check_lang "$id"
   done
 fi
