@@ -24,7 +24,7 @@ Picking a serializer for one runtime (integrator/researcher workflow) uses langu
 | C# (.NET) | 38 |
 | Python | 16 |
 | Rust | 15 |
-| C | 12 |
+| C | 19 |
 | JavaScript (Node) | 11–12 |
 | Go | 12 |
 
