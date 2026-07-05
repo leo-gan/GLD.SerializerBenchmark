@@ -48,22 +48,15 @@ static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b)
     }
 }
 
-/* Wire sizes (excluding leading kind byte consumed/written by caller).
- * person: 32+32+4+4+24+24+4 = 124 fixed + up to 8*(4+16) = 160 police = 284 max
- * simple: 4+32+32+1 = 69
- * telemetry: 24+24+32+4+4+4 = 92 pre-loop + 8*meas + 4+4+1 = 9 tail = 101 + 8*meas
- * edi subset: 32+32+4+8 = 76
- */
+/* custom-binary: hand-packed structs (baseline, not a third-party library) */
 #define BIN_PERSON_FIXED_BYTES   124
 #define BIN_PERSON_POLICE_BYTES  20
-#define BIN_PERSON_MAX_BYTES     (BIN_PERSON_FIXED_BYTES + 8 * BIN_PERSON_POLICE_BYTES) /* 284 */
 #define BIN_SIMPLE_BYTES         69
 #define BIN_TELEMETRY_PRE_BYTES  92
 #define BIN_TELEMETRY_TAIL_BYTES 9
-#define BIN_TELEMETRY_FIXED_BYTES (BIN_TELEMETRY_PRE_BYTES + BIN_TELEMETRY_TAIL_BYTES) /* 101 */
+#define BIN_TELEMETRY_FIXED_BYTES (BIN_TELEMETRY_PRE_BYTES + BIN_TELEMETRY_TAIL_BYTES)
 #define BIN_EDI_SUBSET_BYTES     76
 
-/* --- minimal binary codec used by multiple serializers with different envelopes --- */
 static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *out_len) {
     if (cap < 1) return -1;
     size_t o = 0;
@@ -97,7 +90,6 @@ static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size
             memcpy(buf + o, &p->gender, 4); o += 4;
             memcpy(buf + o, p->passport_number, 24); o += 24;
             memcpy(buf + o, p->passport_authority, 24); o += 24;
-            /* write clamped count so decode matches wire layout */
             int32_t police_wire = (int32_t)n_police;
             memcpy(buf + o, &police_wire, 4); o += 4;
             for (int i = 0; i < n_police; i++) {
@@ -138,7 +130,6 @@ static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size
             break;
         }
         case TD_EDI835: {
-            /* compact: store key fields only for speed/fidelity subset */
             const edi835_t *e = &fx->edi;
             if (o + BIN_EDI_SUBSET_BYTES > cap) return -1;
             memcpy(buf + o, e->payer_name, 32); o += 32;
@@ -236,128 +227,16 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
     return 0;
 }
 
-/* JSON via snprintf for cJSON-named serializer (minimal DOM-less path) */
-static inline int json_write_fixture(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *out_len) {
-    char *p = (char *)buf;
-    size_t rem = cap;
-    int n = 0;
-    switch (fx->kind) {
-        case TD_INTEGER:
-            n = snprintf(p, rem, "%d", fx->integer_val);
-            break;
-        case TD_SIMPLE:
-            n = snprintf(p, rem,
-                "{\"Id\":%d,\"Name\":\"%s\",\"Timestamp\":\"%s\",\"IsActive\":%s}",
-                fx->simple.id, fx->simple.name, fx->simple.timestamp,
-                fx->simple.is_active ? "true" : "false");
-            break;
-        case TD_PERSON:
-            n = snprintf(p, rem,
-                "{\"FirstName\":\"%s\",\"LastName\":\"%s\",\"Age\":%d,\"Gender\":%d,"
-                "\"Passport\":{\"Number\":\"%s\",\"Authority\":\"%s\"},\"PoliceCount\":%d}",
-                fx->person.first_name, fx->person.last_name, fx->person.age, fx->person.gender,
-                fx->person.passport_number, fx->person.passport_authority, fx->person.police_count);
-            break;
-        case TD_TELEMETRY:
-            n = snprintf(p, rem,
-                "{\"Id\":\"%s\",\"DataSource\":\"%s\",\"Param1\":%d,\"Param2\":%d,\"MeasCount\":%d}",
-                fx->telemetry.id, fx->telemetry.data_source, fx->telemetry.param1,
-                fx->telemetry.param2, fx->telemetry.meas_count);
-            break;
-        case TD_STRING_ARRAY:
-            n = snprintf(p, rem, "{\"Count\":%d}", fx->string_array.count);
-            break;
-        case TD_EDI835:
-            n = snprintf(p, rem,
-                "{\"PayerName\":\"%s\",\"PayeeName\":\"%s\",\"ClaimCount\":%d,\"TotalActual\":%.6f}",
-                fx->edi.payer_name, fx->edi.payee_name, fx->edi.claim_count, fx->edi.total_actual);
-            break;
-        default:
-            return -1;
-    }
-    if (n < 0 || (size_t)n >= rem) return -1;
-    *out_len = (size_t)n;
-    return 0;
-}
-
-/* JSON parse is intentionally minimal — extract fields via strstr/sscanf for fidelity subset */
-static inline int json_read_fixture(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
-    char tmp[65536];
-    if (len >= sizeof(tmp)) return -1;
-    memcpy(tmp, buf, len);
-    tmp[len] = 0;
-    out->kind = kind;
-    out->name = test_data_name(kind);
-    switch (kind) {
-        case TD_INTEGER:
-            out->integer_val = atoi(tmp);
-            return 0;
-        case TD_SIMPLE: {
-            simple_object_t *s = &out->simple;
-            const char *np = strstr(tmp, "\"Name\":\"");
-            const char *ip = strstr(tmp, "\"Id\":");
-            if (!ip) return -1;
-            s->id = atoi(ip + 5);
-            if (np) sscanf(np + 8, "%31[^\"]", s->name);
-            s->is_active = strstr(tmp, "\"IsActive\":true") != NULL;
-            snprintf(s->timestamp, sizeof(s->timestamp), "2024-01-01T00:00:00Z");
-            return 0;
-        }
-        case TD_PERSON: {
-            person_t *p = &out->person;
-            const char *f = strstr(tmp, "\"FirstName\":\"");
-            const char *l = strstr(tmp, "\"LastName\":\"");
-            const char *a = strstr(tmp, "\"Age\":");
-            const char *g = strstr(tmp, "\"Gender\":");
-            const char *pc = strstr(tmp, "\"PoliceCount\":");
-            if (f) sscanf(f + 13, "%31[^\"]", p->first_name);
-            if (l) sscanf(l + 12, "%31[^\"]", p->last_name);
-            if (a) p->age = atoi(a + 6);
-            if (g) p->gender = atoi(g + 9);
-            if (pc) p->police_count = atoi(pc + 14);
-            return 0;
-        }
-        case TD_TELEMETRY: {
-            telemetry_t *t = &out->telemetry;
-            const char *id = strstr(tmp, "\"Id\":\"");
-            const char *p1 = strstr(tmp, "\"Param1\":");
-            const char *mc = strstr(tmp, "\"MeasCount\":");
-            if (id) sscanf(id + 6, "%23[^\"]", t->id);
-            if (p1) t->param1 = atoi(p1 + 9);
-            if (mc) t->meas_count = atoi(mc + 12);
-            return 0;
-        }
-        case TD_STRING_ARRAY: {
-            const char *c = strstr(tmp, "\"Count\":");
-            if (!c) return -1;
-            out->string_array.count = atoi(c + 8);
-            /* items not in minimal JSON — refill empty markers acceptable only if count matches
-               so re-generate empty items with same count via zeroing */
-            for (int i = 0; i < out->string_array.count && i < 100; i++)
-                out->string_array.items[i][0] = 0;
-            /* fidelity_strarr compares items — for StringArray JSON path use count-only fidelity override below */
-            return 0;
-        }
-        case TD_EDI835: {
-            edi835_t *e = &out->edi;
-            const char *p = strstr(tmp, "\"PayerName\":\"");
-            const char *q = strstr(tmp, "\"PayeeName\":\"");
-            const char *c = strstr(tmp, "\"ClaimCount\":");
-            if (p) sscanf(p + 13, "%31[^\"]", e->payer_name);
-            if (q) sscanf(q + 13, "%31[^\"]", e->payee_name);
-            if (c) e->claim_count = atoi(c + 13);
-            return 0;
-        }
-        default:
-            return -1;
-    }
-}
-
-/* For StringArray JSON, compare count only */
-static inline bool fidelity_fx_json(const test_fixture_t *a, const test_fixture_t *b) {
-    if (a->kind == TD_STRING_ARRAY)
-        return a->string_array.count == b->string_array.count;
-    return fidelity_fx(a, b);
-}
+#define BENCH_ADD(out, count, nm, ver, cat, prep, ser, de, fid) do { \
+    (out)[*(count)].name = (nm); \
+    (out)[*(count)].version = (ver); \
+    (out)[*(count)].category = (cat); \
+    (out)[*(count)].supports = supports_all; \
+    (out)[*(count)].prepare = (prep); \
+    (out)[*(count)].serialize = (ser); \
+    (out)[*(count)].deserialize = (de); \
+    (out)[*(count)].fidelity = (fid); \
+    (*(count))++; \
+} while (0)
 
 #endif

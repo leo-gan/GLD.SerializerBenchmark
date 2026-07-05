@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define BENCH_MAX_SERIALIZERS 16
+#define BENCH_MAX_SERIALIZERS 32
 #define BENCH_MAX_NAME 64
 
 typedef struct {
@@ -97,21 +97,15 @@ typedef struct {
     const char *version;
     const char *category;
     bool (*supports)(test_data_kind_t kind);
-    /* prepare: untimed setup for this data kind */
     int (*prepare)(test_data_kind_t kind, const test_fixture_t *fx);
-    /* serialize into caller buffer; sets *out_len; returns 0 on success */
     int (*serialize)(const test_fixture_t *fx, uint8_t *buf, size_t buf_cap, size_t *out_len);
-    /* deserialize from buf; result stored in out_fx; returns 0 on success */
     int (*deserialize)(const uint8_t *buf, size_t len, test_fixture_t *out_fx, test_data_kind_t kind);
-    /* semantic compare original vs deserialized */
     bool (*fidelity)(const test_fixture_t *a, const test_fixture_t *b);
 } serializer_t;
 
-/* data.c */
 void data_init_all(test_fixture_t *out, int count, uint64_t seed);
 const char *test_data_name(test_data_kind_t k);
 
-/* csv_log.c */
 typedef struct csv_logger csv_logger_t;
 csv_logger_t *csv_logger_create(const char *path);
 void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
@@ -120,14 +114,32 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
                       double fidelity, const char *version);
 void csv_logger_close(csv_logger_t *L);
 
-/* runner.c */
 int run_benchmarks(int repetitions, const char *ser_filter, const char *data_filter,
                    const char *log_dir);
 
-/* serializer registries implemented in ser_*.c */
 void register_all_serializers(serializer_t *out, int *count);
 
-/* timing */
 uint64_t bench_now_ns(void);
+
+/* Per-serializer registration helpers (defined when HAS_* is set) */
+void bench_register_cjson(serializer_t *out, int *count);
+void bench_register_yyjson(serializer_t *out, int *count);
+void bench_register_jansson(serializer_t *out, int *count);
+void bench_register_parson(serializer_t *out, int *count);
+void bench_register_json_c(serializer_t *out, int *count);
+void bench_register_mpack(serializer_t *out, int *count);
+void bench_register_msgpack_c(serializer_t *out, int *count);
+void bench_register_tinycbor(serializer_t *out, int *count);
+void bench_register_libcbor(serializer_t *out, int *count);
+void bench_register_qcbor(serializer_t *out, int *count);
+void bench_register_ubj(serializer_t *out, int *count);
+void bench_register_libbson(serializer_t *out, int *count);
+void bench_register_custom_binary(serializer_t *out, int *count);
+void bench_register_nanopb(serializer_t *out, int *count);
+void bench_register_protobuf_c(serializer_t *out, int *count);
+void bench_register_upb(serializer_t *out, int *count);
+void bench_register_flatcc(serializer_t *out, int *count);
+void bench_register_avro_c(serializer_t *out, int *count);
+void bench_register_zcbor(serializer_t *out, int *count);
 
 #endif

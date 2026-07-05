@@ -133,3 +133,8 @@ docs/dashboard/
 !dashboard/public/data/
 !dashboard/public/data/baseline.json
 
+
+# C vendored deps (fetch via c/scripts/fetch-and-build-deps.sh)
+c/third_party/**
+!c/third_party/VERSIONS.md
+c/build/

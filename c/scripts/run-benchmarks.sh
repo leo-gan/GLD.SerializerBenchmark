@@ -28,8 +28,13 @@ fi
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
 
+if [[ ! -f "$C_DIR/third_party/_prefix/lib/libjansson.a" ]]; then
+  echo "[INFO] C third_party deps missing; running fetch-and-build-deps.sh (first run may take several minutes)..."
+  "$C_DIR/scripts/fetch-and-build-deps.sh"
+fi
+
 echo "[INFO] Building C benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
-cmake -S "$C_DIR" -B "$C_DIR/build" -DCMAKE_BUILD_TYPE=Release >/dev/null
+cmake -S "$C_DIR" -B "$C_DIR/build" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$C_DIR/build" -j"$(nproc 2>/dev/null || echo 2)"
 
 export LOG_DIR
