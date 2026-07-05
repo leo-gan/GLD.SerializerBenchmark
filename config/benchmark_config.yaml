@@ -557,7 +557,7 @@ languages:
         category: binary
         package: msgpackr
         rationale: "Fast Node MessagePack"
-        optimal_api: "Packr.pack / Unpackr.unpack (reuse instances)"
+        optimal_api: "Packr.pack / Unpackr.unpack (reuse)"
       - name: "@msgpack/msgpack"
         category: binary
         package: "@msgpack/msgpack"
@@ -583,6 +583,16 @@ languages:
         package: bser
         rationale: "Facebook Binary JSON (Watchman)"
         optimal_api: "dumpToBuffer / loadFromBuffer"
+      - name: json-pack-msgpack
+        category: binary
+        package: "@jsonjoy.com/json-pack"
+        rationale: "json-joy high-performance TS MessagePack"
+        optimal_api: "MsgPackEncoder.encode / MsgPackDecoder.decode"
+      - name: sia
+        category: binary
+        package: "@timeleap/sia"
+        rationale: "Sia pure-JS binary (JSON-model over Sia primitives)"
+        optimal_api: "Sia add*/read* with typed tags"
       - name: avsc
         category: schema
         package: avsc
@@ -591,18 +601,38 @@ languages:
       - name: protobufjs
         category: schema
         package: protobufjs
-        rationale: "Protocol Buffers with real per-fixture message types"
+        rationale: "Classic Protocol Buffers in JS (real fixture messages)"
         optimal_api: "Type.encode / decode (preloaded Root)"
+      - name: protobuf-es
+        category: schema
+        package: "@bufbuild/protobuf"
+        rationale: "Modern Protobuf-ES (Buf) from generated schemas"
+        optimal_api: "create + toBinary / fromBinary"
       - name: flatbuffers
         category: schema
         package: flatbuffers
         rationale: "Google FlatBuffers JS Builder (real FB wire)"
-        optimal_api: "Builder.createString/finish + ByteBuffer read"
+        optimal_api: "Builder / ByteBuffer"
+      - name: flexbuffers
+        category: schema
+        package: flatbuffers
+        rationale: "FlexBuffers schemaless FB family (parity with Rust)"
+        optimal_api: "flexbuffers encode / toObject"
+      - name: bebop
+        category: schema
+        package: bebop
+        rationale: "Bebop runtime (JSON-model over BebopView; no .bop codegen)"
+        optimal_api: "BebopView write/read primitives"
       - name: v8-serializer
         category: native
         package: builtin
         rationale: "Node V8 structured clone binary"
         optimal_api: "v8.serialize / v8.deserialize"
+      - name: devalue
+        category: native
+        package: devalue
+        rationale: "SvelteKit-style value string codec"
+        optimal_api: "stringify / parse"
 
   go:
     display_name: Go

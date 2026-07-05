@@ -7,18 +7,25 @@
   "scripts": {
     "benchmark": "node src/runner.js",
     "smoke": "node src/runner.js 2 JSON Person",
-    "test": "node --test test/runner.test.js"
+    "test": "node --test test/runner.test.js",
+    "generate:protobuf-es": "bash scripts/generate-protobuf-es.sh"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.12.1",
+    "@bufbuild/protoc-gen-es": "^2.12.1",
+    "@jsonjoy.com/json-pack": "^18.28.0",
     "@msgpack/msgpack": "^3.0.0",
+    "@timeleap/sia": "^2.3.0",
     "avsc": "^5.7.0",
+    "bebop": "^3.2.3",
     "bser": "^2.1.1",
     "bson": "^6.8.0",
     "cbor": "^9.0.0",
     "cbor-x": "^1.6.0",
+    "devalue": "^5.8.1",
     "fast-json-stringify": "^6.0.0",
     "flatbuffers": "^24.12.23",
     "msgpackr": "^1.11.0",

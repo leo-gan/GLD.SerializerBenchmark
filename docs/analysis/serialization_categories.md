@@ -10,7 +10,7 @@
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview SoT): C# **37** · Python **16** · Rust **15** · C **19** · JavaScript **13** (simdjson optional) · Go **12**.
+Registered counts (Overview SoT): C# **37** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **12**.
 
 ---
 
@@ -69,7 +69,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **Python:** `msgpack`, `msgspec-msgpack`, `cbor2`  
   - **Rust:** `rmp-serde`, `ciborium`, `minicbor`, `bson`, `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy`, `flexbuffers`  
   - **C:** `mpack`, `msgpack-c`, `tinycbor`, `cbor-encode`, `qcbor`, `ubj`, `libbson`, `custom-binary`  
-  - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `cbor-x`, `cbor`, `bson`, `bser`  
+  - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `bson`, `bser`, `sia`  
   - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `fxamacker/cbor`, `mongo-bson`  
   - **C#:** many binary graph/type serializers (`Ceras`, `Hyperion`, `BinaryPack`, `MemoryPack`, …)—portability and trust model vary; see [C# overview](../c-sharp/index.md). **MessagePack-CSharp is not registered.**
 
@@ -90,7 +90,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **Python:** `protobuf`, `avro` (fastavro), `flatbuffers`  
   - **Rust:** `prost` (shared `.proto`; **Integer** unsupported), `rkyv` (timed deser **materializes** owned values), `flexbuffers`  
   - **C:** `nanopb`, `protobuf-c`, `upb` (in-tree wire), `flatcc`, `avro-c`, `zcbor`  
-  - **JavaScript:** `avsc`, `protobufjs`, `flatbuffers`  
+  - **JavaScript:** `avsc`, `protobufjs`, `protobuf-es`, `flatbuffers`, `flexbuffers`, `bebop`  
   - **Go:** `protobuf`, `hamba/avro`  
 
 ### Language-native
@@ -99,7 +99,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 - **Trade-offs:** poor portability; **unsafe** on untrusted input where formats can execute code.  
 - **Examples in suite:**  
   - **Python:** `pickle`, `cloudpickle`, `dill`  
-  - **JavaScript:** `v8-serializer`  
+  - **JavaScript:** `v8-serializer`, `devalue`  
   - **Go:** `encoding/gob`  
   - **C#:** legacy / graph-oriented binaries (e.g. `MS Binary`)—see Overview  
   - **Rust / C:** no pickle-equivalent; **`ObjectGraph` skipped** for almost all formats  

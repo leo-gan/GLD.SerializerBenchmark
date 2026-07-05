@@ -1,6 +1,7 @@
 import avro from 'avsc';
 import protobuf from 'protobufjs';
 import * as flatbuffers from 'flatbuffers';
+import { encode as flexEncode, toObject as flexToObject } from 'flatbuffers/mjs/flexbuffers.js';
 import { pkgVersion, baseSupports, jsonClone } from './common.js';
 
 /* ---------- shared Avro / protobuf field models matching JS fixtures ---------- */
@@ -380,6 +381,36 @@ export const flatbuffersSer = {
   },
 };
 
+/* ---------- FlexBuffers (schemaless FlatBuffers family; parity with Rust flexbuffers) ---------- */
+
+function toArrayBuffer(buf) {
+  if (buf instanceof ArrayBuffer) return buf;
+  if (buf instanceof Uint8Array) {
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  }
+  const u8 = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+  return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+}
+
+export const flexbuffersSer = {
+  name: 'flexbuffers',
+  version: pkgVersion('flatbuffers'),
+  category: 'schema',
+  // flatbuffers FlexBuffers toObject() currently throws on some float-heavy /
+  // large-vector fixtures (library limitation in 24.x). Keep types that round-trip cleanly.
+  supports: (n) =>
+    baseSupports(n) && !['Telemetry', 'EDI_835', 'StringArray'].includes(n),
+  prepare() {},
+  serialize(value) {
+    const plain = jsonClone(value);
+    const u8 = flexEncode(plain, 256 * 1024);
+    return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
+  },
+  deserialize(buf) {
+    return flexToObject(toArrayBuffer(buf));
+  },
+};
+
 export function schemaSerializers() {
-  return [avscSer, pbSer, flatbuffersSer];
+  return [avscSer, pbSer, flatbuffersSer, flexbuffersSer];
 }

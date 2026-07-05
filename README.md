@@ -25,7 +25,7 @@ Picking a serializer for one runtime (integrator/researcher workflow) uses langu
 | Python | 16 |
 | Rust | 15 |
 | C | 19 |
-| JavaScript (Node) | 12–13 |
+| JavaScript (Node) | 18–19 |
 | Go | 12 |
 
 Add more languages via [`docs/analysis/ADDING_A_LANGUAGE.md`](docs/analysis/ADDING_A_LANGUAGE.md).
