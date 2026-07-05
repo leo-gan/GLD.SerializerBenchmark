@@ -3,11 +3,12 @@ name: prepare-pr
 description: >
   End-to-end pre-PR gate for the serializer-benchmark monorepo: refuse master/main,
   run full test suites, full multi-language benchmarks, fail on non-empty
-  logs/<lang>/*.errors.csv, regenerate analysis artifacts, commit, push, and draft
-  a short PR description. Use when the user runs /prepare-pr, says "prepare a PR",
-  "ready for review", "pre-PR gate", or "full PR validation".
+  logs/<lang>/*.errors.csv, regenerate analysis artifacts, update dashboard data
+  (dashboard/scripts/sync-data.py → public/data/*_latest.json.gz), commit, push,
+  and draft a short PR description. Use when the user runs /prepare-pr, says
+  "prepare a PR", "ready for review", "pre-PR gate", or "full PR validation".
 metadata:
-  short-description: "Full test, benchmark, analyze, push, PR body"
+  short-description: "Test, bench, analyze, dashboard sync, push, PR body"
 ---
 
 # /prepare-pr — Pre-PR validation gate
@@ -120,21 +121,51 @@ fi
 
 Confirm updates under `docs/<lang>/results.md` and/or `docs/analysis/plots/violin/`.
 
+Hard fail if analysis exits non-zero or expected result pages/plots are missing after a full run.
+
 ---
 
-## 5b. Prepare data for dashboard
+## 6. Update dashboard data (**required**)
 
-Prepare the compact, compressed online results for the analytics web dashboard:
+After benchmarks + analysis succeed, **always** refresh the analytics web dashboard payloads from the latest logs. This is a **first-class gate step**, not optional.
 
 ```bash
 python3 dashboard/scripts/sync-data.py
 ```
 
-This packages the stats, environment configuration, errors, and raw logs into compressed `*_latest.json.gz` files, compiles the available historical runs list, and updates the symlink to local logs.
+**What it must update** (under `dashboard/public/data/`):
+
+| Artifact | Purpose |
+|----------|---------|
+| `<lang>_latest.json.gz` | Compact stats + configs + errors + CSV slice per language (c, csharp, go, javascript, python, rust, …) |
+| `available_runs.json` | Historical run-id list for the dashboard run picker |
+| logs symlink (if used) | Local logs discovery for the dashboard |
+
+**Verify before commit:**
+
+```bash
+# Each enabled language’s latest payload run_id should match STEM from step 3
+python3 - <<'PY'
+import gzip, json
+from pathlib import Path
+root = Path("dashboard/public/data")
+for p in sorted(root.glob("*_latest.json.gz")):
+    d = json.loads(gzip.open(p).read())
+    print(f"{p.name}: run_id={d.get('run_id')} language={d.get('language')}")
+runs = json.loads((root / "available_runs.json").read_text())
+print("available_runs keys:", sorted(runs.keys()))
+PY
+```
+
+Hard fail if `sync-data.py` exits non-zero or any enabled language is missing a `*_latest.json.gz` after sync.
+
+**Do not** force-add raw `logs/**` CSVs (gitignored). **Do** stage the updated `dashboard/public/data/*` artifacts in step 7.
+
+Avoid re-running sync solely to “touch” files when content is already current (gzip recompression can churn binaries with identical JSON).
 
 ---
 
-## 6. Commit
+## 7. Commit
 
 ```bash
 git status
@@ -142,7 +173,7 @@ git diff --stat
 git log -5 --oneline
 ```
 
-- Stage source + published docs (results, plots, METRICS, skill files, etc.).
+- Stage **source**, **published docs** (results, plots, METRICS, skill files), and **dashboard data** (`dashboard/public/data/*_latest.json.gz`, `available_runs.json`).
 - **Do not** force-add gitignored `logs/**` raw CSVs.
 - If nothing to commit: print that and continue to push if remote is behind.
 - Commit message: short, matches repo style; summarize branch intent vs base (`master`/`main`).
@@ -150,7 +181,7 @@ git log -5 --oneline
 
 ---
 
-## 7. Push
+## 8. Push
 
 User invoked prepare-pr (explicit intent to publish the branch):
 
@@ -162,7 +193,7 @@ On rejection: report output and **stop**.
 
 ---
 
-## 8. Short PR description
+## 9. Short PR description
 
 Build a short body from `git log origin/master..HEAD` (or `main`) and validation results:
 
@@ -175,6 +206,7 @@ Build a short body from `git log origin/master..HEAD` (or `main`) and validation
 - Benchmarks: <mode>, stem `<STEM>`
 - Error CSVs: clean (or list failures — should not ship)
 - Analysis: results + violin plots regenerated
+- Dashboard: `sync-data.py` → `*_latest.json.gz` + `available_runs.json` for stem `<STEM>`
 
 ## Notes
 - …
@@ -195,11 +227,12 @@ If no `gh`: print title + body for the user to paste on GitHub.
 
 ---
 
-## Helper script
+## Helper scripts
 
 | Script | Purpose |
 |--------|---------|
-| `.grok/skills/prepare-pr/scripts/check-error-csvs.sh [STEM]` | Exit 1 if any language has error data rows |
+| `.grok/skills/prepare-pr/scripts/check-error-csvs.sh [STEM]` | Exit 1 on **new** error keys (regression) or any rows (strict) |
+| `dashboard/scripts/sync-data.py` | Build compressed dashboard payloads + `available_runs.json` from latest logs |
 
 ---
 
@@ -210,7 +243,8 @@ If no `gh`: print title + body for the user to paste on GitHub.
 | On `master` / `main` / detached | Ask for new branch; do not proceed |
 | Tests fail | Stop |
 | Benchmarks fail | Stop |
-| Non-empty `*.errors.csv` data rows | Stop |
+| Error CSV regression (or strict non-empty) | Stop |
 | Analysis fails | Stop |
+| Dashboard `sync-data.py` fails or missing `*_latest.json.gz` | Stop |
 | Push rejected | Stop; report |
 
