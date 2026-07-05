@@ -8,20 +8,43 @@
 
 static inline bool supports_all(test_data_kind_t k) { (void)k; return true; }
 
+static inline bool f64_close(double a, double b) {
+    double d = a - b; if (d < 0) d = -d;
+    double s = a >= 0 ? a : -a; if (b > s) s = b >= 0 ? b : -b;
+    return d <= 1e-9 || d <= 1e-6 * (s + 1.0);
+}
+
 static inline bool fidelity_person(const person_t *a, const person_t *b) {
-    return a->age == b->age && a->gender == b->gender &&
-           strcmp(a->first_name, b->first_name) == 0 &&
-           strcmp(a->last_name, b->last_name) == 0 &&
-           a->police_count == b->police_count;
+    if (a->age != b->age || a->gender != b->gender || a->police_count != b->police_count)
+        return false;
+    if (strcmp(a->first_name, b->first_name) || strcmp(a->last_name, b->last_name))
+        return false;
+    if (strcmp(a->passport_number, b->passport_number) ||
+        strcmp(a->passport_authority, b->passport_authority))
+        return false;
+    for (int i = 0; i < a->police_count && i < 8; i++) {
+        if (a->police_ids[i] != b->police_ids[i]) return false;
+        if (strcmp(a->police_codes[i], b->police_codes[i])) return false;
+    }
+    return true;
 }
 
 static inline bool fidelity_simple(const simple_object_t *a, const simple_object_t *b) {
-    return a->id == b->id && a->is_active == b->is_active && strcmp(a->name, b->name) == 0;
+    return a->id == b->id && a->is_active == b->is_active &&
+           strcmp(a->name, b->name) == 0 && strcmp(a->timestamp, b->timestamp) == 0;
 }
 
 static inline bool fidelity_telem(const telemetry_t *a, const telemetry_t *b) {
-    return a->param1 == b->param1 && a->meas_count == b->meas_count &&
-           strcmp(a->id, b->id) == 0;
+    if (a->param1 != b->param1 || a->param2 != b->param2 || a->meas_count != b->meas_count)
+        return false;
+    if (a->problem_id != b->problem_id || a->log_id != b->log_id ||
+        a->was_processed != b->was_processed)
+        return false;
+    if (strcmp(a->id, b->id) || strcmp(a->data_source, b->data_source))
+        return false;
+    for (int i = 0; i < a->meas_count && i < 100; i++)
+        if (!f64_close(a->measurements[i], b->measurements[i])) return false;
+    return true;
 }
 
 static inline bool fidelity_strarr(const string_array_t *a, const string_array_t *b) {
@@ -32,7 +55,15 @@ static inline bool fidelity_strarr(const string_array_t *a, const string_array_t
 }
 
 static inline bool fidelity_edi(const edi835_t *a, const edi835_t *b) {
-    return a->claim_count == b->claim_count && strcmp(a->payer_name, b->payer_name) == 0;
+    if (a->claim_count != b->claim_count) return false;
+    if (strcmp(a->payer_name, b->payer_name) || strcmp(a->payee_name, b->payee_name))
+        return false;
+    if (!f64_close(a->total_actual, b->total_actual)) return false;
+    for (int c = 0; c < a->claim_count && c < 6; c++) {
+        if (strcmp(a->claims[c].claim_id, b->claims[c].claim_id)) return false;
+        if (a->claims[c].line_count != b->claims[c].line_count) return false;
+    }
+    return true;
 }
 
 static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b) {
@@ -55,7 +86,12 @@ static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b)
 #define BIN_TELEMETRY_PRE_BYTES  92
 #define BIN_TELEMETRY_TAIL_BYTES 9
 #define BIN_TELEMETRY_FIXED_BYTES (BIN_TELEMETRY_PRE_BYTES + BIN_TELEMETRY_TAIL_BYTES)
-#define BIN_EDI_SUBSET_BYTES     76
+/* EDI header: payer(32)+payee(32)+payment_date(32)+total(8)+tcn(24)+claim_count(4) */
+#define BIN_EDI_HDR_BYTES        132
+/* service line: code(16)+charge(8)+adjudicated(8) */
+#define BIN_EDI_LINE_BYTES       32
+/* claim fixed: id(16)+patient(32)+total_charge(8)+payment(8)+line_count(4) */
+#define BIN_EDI_CLAIM_FIXED      68
 
 static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *out_len) {
     if (cap < 1) return -1;
@@ -131,11 +167,41 @@ static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size
         }
         case TD_EDI835: {
             const edi835_t *e = &fx->edi;
-            if (o + BIN_EDI_SUBSET_BYTES > cap) return -1;
+            int nc = e->claim_count;
+            if (nc < 0) nc = 0;
+            if (nc > 6) nc = 6;
+            size_t need = (size_t)BIN_EDI_HDR_BYTES;
+            for (int c = 0; c < nc; c++) {
+                int nl = e->claims[c].line_count;
+                if (nl < 0) nl = 0;
+                if (nl > 4) nl = 4;
+                need += (size_t)BIN_EDI_CLAIM_FIXED + (size_t)nl * BIN_EDI_LINE_BYTES;
+            }
+            if (o + need > cap) return -1;
             memcpy(buf + o, e->payer_name, 32); o += 32;
             memcpy(buf + o, e->payee_name, 32); o += 32;
-            memcpy(buf + o, &e->claim_count, 4); o += 4;
+            memcpy(buf + o, e->payment_date, 32); o += 32;
             memcpy(buf + o, &e->total_actual, 8); o += 8;
+            memcpy(buf + o, e->tcn, 24); o += 24;
+            int32_t nc_wire = (int32_t)nc;
+            memcpy(buf + o, &nc_wire, 4); o += 4;
+            for (int c = 0; c < nc; c++) {
+                const claim_t *cl = &e->claims[c];
+                int nl = cl->line_count;
+                if (nl < 0) nl = 0;
+                if (nl > 4) nl = 4;
+                memcpy(buf + o, cl->claim_id, 16); o += 16;
+                memcpy(buf + o, cl->patient_name, 32); o += 32;
+                memcpy(buf + o, &cl->total_charge, 8); o += 8;
+                memcpy(buf + o, &cl->payment, 8); o += 8;
+                int32_t nl_wire = (int32_t)nl;
+                memcpy(buf + o, &nl_wire, 4); o += 4;
+                for (int L = 0; L < nl; L++) {
+                    memcpy(buf + o, cl->lines[L].service_code, 16); o += 16;
+                    memcpy(buf + o, &cl->lines[L].charge, 8); o += 8;
+                    memcpy(buf + o, &cl->lines[L].adjudicated, 8); o += 8;
+                }
+            }
             break;
         }
         default: return -1;
@@ -215,11 +281,31 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
         }
         case TD_EDI835: {
             edi835_t *e = &out->edi;
-            if (o + BIN_EDI_SUBSET_BYTES > len) return -1;
+            memset(e, 0, sizeof *e);
+            if (o + BIN_EDI_HDR_BYTES > len) return -1;
             memcpy(e->payer_name, buf + o, 32); o += 32;
             memcpy(e->payee_name, buf + o, 32); o += 32;
-            memcpy(&e->claim_count, buf + o, 4); o += 4;
+            memcpy(e->payment_date, buf + o, 32); o += 32;
             memcpy(&e->total_actual, buf + o, 8); o += 8;
+            memcpy(e->tcn, buf + o, 24); o += 24;
+            memcpy(&e->claim_count, buf + o, 4); o += 4;
+            if (e->claim_count < 0 || e->claim_count > 6) return -1;
+            for (int c = 0; c < e->claim_count; c++) {
+                if (o + BIN_EDI_CLAIM_FIXED > len) return -1;
+                claim_t *cl = &e->claims[c];
+                memcpy(cl->claim_id, buf + o, 16); o += 16;
+                memcpy(cl->patient_name, buf + o, 32); o += 32;
+                memcpy(&cl->total_charge, buf + o, 8); o += 8;
+                memcpy(&cl->payment, buf + o, 8); o += 8;
+                memcpy(&cl->line_count, buf + o, 4); o += 4;
+                if (cl->line_count < 0 || cl->line_count > 4) return -1;
+                for (int L = 0; L < cl->line_count; L++) {
+                    if (o + BIN_EDI_LINE_BYTES > len) return -1;
+                    memcpy(cl->lines[L].service_code, buf + o, 16); o += 16;
+                    memcpy(&cl->lines[L].charge, buf + o, 8); o += 8;
+                    memcpy(&cl->lines[L].adjudicated, buf + o, 8); o += 8;
+                }
+            }
             break;
         }
         default: return -1;

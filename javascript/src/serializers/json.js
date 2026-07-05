@@ -74,13 +74,15 @@ export const fastJsonSer = {
   },
 };
 
+/** Honest name: serialize is std JSON.stringify; only deserialize uses SIMD. */
 export const simdjsonSer = {
-  name: 'simdjson',
+  name: 'simdjson-parse+JSON.stringify',
   version: pkgVersion('simdjson') || 'optional-missing',
   category: 'json',
   supports: (n) => baseSupports(n) && !!simdjson,
   prepare() {},
   serialize(value) {
+    // Timed path intentionally uses stdlib stringify (simdjson is parse-oriented).
     return Buffer.from(JSON.stringify(value), 'utf8');
   },
   deserialize(buf) {

@@ -333,35 +333,80 @@ let fbDataName = null;
  * Materialize path reconstructs the JS object from the stored string (same model as other langs
  * that rehydrate into owned objects after zero-copy access).
  */
-function fbSerialize(_dataName, value) {
+/**
+ * FlatBuffers paths:
+ * - Integer / SimpleObject: compact table (no JSON blob) for fair small-object sizes
+ * - Other fixtures: table with kind + full JSON payload string (nested fidelity)
+ * Wire tag field 0: mode (0=compact int, 1=compact simple, 2=json blob)
+ */
+function fbSerialize(dataName, value) {
   const builder = new flatbuffers.Builder(1024);
+  // Defaults must differ from written values so fields are not omitted
+  // (FB skips fields equal to default → mode 0 was lost and JSON.parse crashed).
+  const MODE_DEF = 255;
+  if (dataName === 'Integer') {
+    builder.startObject(2);
+    builder.addFieldInt8(0, 0, MODE_DEF); // mode compact-int
+    builder.addFieldInt32(1, value | 0, 0);
+    const root = builder.endObject();
+    builder.finish(root);
+    return Buffer.from(builder.asUint8Array());
+  }
+  if (dataName === 'SimpleObject') {
+    const nameOff = builder.createString(String(value.Name ?? ''));
+    const tsOff = builder.createString(String(value.Timestamp ?? ''));
+    builder.startObject(5);
+    builder.addFieldInt8(0, 1, MODE_DEF); // mode compact-simple
+    builder.addFieldInt32(1, value.Id | 0, 0);
+    builder.addFieldOffset(2, nameOff, 0);
+    builder.addFieldOffset(3, tsOff, 0);
+    builder.addFieldInt8(4, value.IsActive ? 1 : 0, 0);
+    const root = builder.endObject();
+    builder.finish(root);
+    return Buffer.from(builder.asUint8Array());
+  }
+  // full nested via JSON payload field
   const jsonOff = builder.createString(JSON.stringify(value));
-  builder.startObject(1);
-  builder.addFieldOffset(0, jsonOff, 0);
+  builder.startObject(2);
+  builder.addFieldInt8(0, 2, MODE_DEF); // mode json-blob
+  builder.addFieldOffset(1, jsonOff, 0);
   const root = builder.endObject();
   builder.finish(root);
   return Buffer.from(builder.asUint8Array());
 }
 
-function fbDeserialize(buf) {
-  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-  const bb = new flatbuffers.ByteBuffer(bytes);
-  // Root table offset is little-endian int32 at start of buffer (no size prefix).
-  const root = bb.readInt32(0);
-  const table = root;
-  // vtable offset (negative relative from table start in FB encoding)
-  const vtable = table - bb.readInt32(table);
-  const vsize = bb.readInt16(vtable);
-  // field 0 offset in vtable (after vtable size + object size = 4 bytes)
-  let fieldOff = 0;
-  if (vsize >= 6) fieldOff = bb.readInt16(vtable + 4);
-  if (!fieldOff) throw new Error('flatbuffers: empty table');
+function fbReadString(bb, bytes, table, fieldOff) {
+  if (!fieldOff) return '';
   const strOffsetPos = table + fieldOff;
   const strPos = strOffsetPos + bb.readInt32(strOffsetPos);
   const len = bb.readUint32(strPos);
-  // strings are UTF-8 in flatbuffers
-  const slice = bytes.subarray(strPos + 4, strPos + 4 + len);
-  const jsonStr = Buffer.from(slice).toString('utf8');
+  return Buffer.from(bytes.subarray(strPos + 4, strPos + 4 + len)).toString('utf8');
+}
+
+function fbDeserialize(buf) {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  const bb = new flatbuffers.ByteBuffer(bytes);
+  const root = bb.readInt32(0);
+  const table = root;
+  const vtable = table - bb.readInt32(table);
+  const vsize = bb.readInt16(vtable);
+  const field = (id) => (4 + id * 2 + 2 <= vsize ? bb.readInt16(vtable + 4 + id * 2) : 0);
+  const modeOff = field(0);
+  const mode = modeOff ? bb.readInt8(table + modeOff) : 2;
+  if (mode === 0) {
+    const vOff = field(1);
+    return vOff ? bb.readInt32(table + vOff) : 0;
+  }
+  if (mode === 1) {
+    const idOff = field(1);
+    return {
+      Id: idOff ? bb.readInt32(table + idOff) : 0,
+      Name: fbReadString(bb, bytes, table, field(2)),
+      Timestamp: fbReadString(bb, bytes, table, field(3)),
+      IsActive: field(4) ? bb.readInt8(table + field(4)) !== 0 : false,
+    };
+  }
+  const jsonStr = fbReadString(bb, bytes, table, field(1));
   return JSON.parse(jsonStr);
 }
 
@@ -382,6 +427,12 @@ export const flatbuffersSer = {
 };
 
 /* ---------- FlexBuffers (schemaless FlatBuffers family; parity with Rust flexbuffers) ---------- */
+/*
+ * flatbuffers 24.x JS flexbuffers has known bugs:
+ *  - large typed vectors (float/string arrays) → DataView bounds / BigInt mix errors in toObject
+ * Workaround for full-fixture support: encode arrays as maps ({__a,n,i0..}) and non-integer
+ * floats as {__f:"..."}. Still real flexbuffers map/string wire; restores exact JS values.
+ */
 
 function toArrayBuffer(buf) {
   if (buf instanceof ArrayBuffer) return buf;
@@ -392,22 +443,65 @@ function toArrayBuffer(buf) {
   return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
 }
 
+/** Sanitize for flexbuffers 24.x encode/toObject quirks (arrays + non-int floats). */
+function flexSanitize(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return 0;
+    if (!Number.isInteger(value)) return { __f: String(value) };
+    return value;
+  }
+  if (typeof value === 'string' || typeof value === 'boolean') return value;
+  if (Array.isArray(value)) {
+    const o = { __a: true, n: value.length };
+    for (let i = 0; i < value.length; i++) o[`i${i}`] = flexSanitize(value[i]);
+    return o;
+  }
+  if (typeof value === 'object') {
+    const o = {};
+    for (const [k, v] of Object.entries(value)) o[k] = flexSanitize(v);
+    return o;
+  }
+  return String(value);
+}
+
+function flexRestoreSanitized(value) {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    if (value.__a === true) {
+      const a = [];
+      const n = Number(value.n) || 0;
+      for (let i = 0; i < n; i++) a.push(flexRestoreSanitized(value[`i${i}`]));
+      return a;
+    }
+    if (Object.prototype.hasOwnProperty.call(value, '__f') && Object.keys(value).length === 1) {
+      return Number(value.__f);
+    }
+    const o = {};
+    for (const [k, v] of Object.entries(value)) o[k] = flexRestoreSanitized(v);
+    return o;
+  }
+  return value;
+}
+
 export const flexbuffersSer = {
   name: 'flexbuffers',
   version: pkgVersion('flatbuffers'),
   category: 'schema',
-  // flatbuffers FlexBuffers toObject() currently throws on some float-heavy /
-  // large-vector fixtures (library limitation in 24.x). Keep types that round-trip cleanly.
-  supports: (n) =>
-    baseSupports(n) && !['Telemetry', 'EDI_835', 'StringArray'].includes(n),
+  supports: baseSupports,
   prepare() {},
   serialize(value) {
-    const plain = jsonClone(value);
-    const u8 = flexEncode(plain, 256 * 1024);
-    return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
+    const plain = flexSanitize(jsonClone(value));
+    const u8 = flexEncode(plain, 1024 * 1024);
+    const copy = new Uint8Array(u8.byteLength);
+    copy.set(u8);
+    return Buffer.from(copy.buffer);
   },
   deserialize(buf) {
-    return flexToObject(toArrayBuffer(buf));
+    const raw = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+    const ab = new ArrayBuffer(raw.byteLength);
+    new Uint8Array(ab).set(raw);
+    return flexRestoreSanitized(flexToObject(ab));
   },
 };
 

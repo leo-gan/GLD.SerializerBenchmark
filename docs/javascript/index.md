@@ -17,7 +17,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 |------|----------|---------|-------------|
 | JSON.stringify | JSON | builtin | `JSON.stringify` / `JSON.parse` |
 | fast-json-stringify | JSON | `fast-json-stringify` | compile once + `JSON.parse` |
-| simdjson | JSON | `simdjson` (optional) | `parse` (+ stringify for ser) |
+| simdjson-parse+JSON.stringify | JSON | `simdjson` (optional) | ser: `JSON.stringify`; deser: `simdjson.parse` |
 | msgpackr | Binary | `msgpackr` | reused `Packr` / `Unpackr` |
 | @msgpack/msgpack | Binary | `@msgpack/msgpack` | `encode` / `decode` |
 | json-pack-msgpack | Binary | `@jsonjoy.com/json-pack` | `MsgPackEncoder` / `MsgPackDecoder` |
@@ -37,9 +37,10 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 ### Notes
 
-- **simdjson** optional native addon.
+- **simdjson-parse+JSON.stringify** (optional native addon): only **deserialize** uses SIMD; serialize is stdlib `JSON.stringify` (honest leaderboard label).
 - **protobuf-es** uses generated code from `javascript/schemas/js_fixtures.proto` (field shapes match JS fixtures; string timestamps).
-- **flexbuffers** skips Telemetry / EDI_835 / StringArray: upstream `toObject()` throws on those shapes in flatbuffers 24.x.
+- **flatbuffers:** Integer / SimpleObject use a **compact table** (no JSON blob) for fair small-object sizes; larger fixtures store a JSON payload string in a FlatBuffer table.
+- **flexbuffers:** full fixture support. flatbuffers 24.x `toObject` bugs on large vectors / mixed float maps are worked around by encoding arrays as maps and non-integer floats as `{__f}` wrappers (still real FlexBuffers wire; restore is exact).
 - **bebop** / **sia** encode a JSON data model via each library’s primitive writers (no separate IDL codegen in-tree for bebop; full Bebop would use `.bop` + `bebopc`).
 - **bson** / **bser** skip bare `Integer`.
 - **devalue** is a framework-oriented value codec (SvelteKit), not a portable wire standard.

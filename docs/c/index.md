@@ -40,6 +40,7 @@ Pins: [`c/third_party/VERSIONS.md`](../../c/third_party/VERSIONS.md).
 
 - **Real APIs only:** a serializer is registered only when its library is linked (see CMake configure log `serializer: … REAL`).
 - **Symbol prefixing:** `parson` and `tinycbor` are linked with renamed symbols so they co-exist with `jansson` and `libcbor`.
+- **Full nested fidelity:** JSON libs encode Person passport/police, Telemetry measurements, and EDI claims/lines. `nanopb` / `protobuf-c` / `upb` share a full protobuf-style wire (`fixture_pb_full.h`). Map-style binary codecs and `flatcc` / `avro-c` / `zcbor` carry a **full** `bin_write_fixture` payload (including EDI claims) inside the library’s native map/blob type so strengthened `fidelity_fx` passes.
 - **`upb` name:** encodes standard protobuf binary for the harness field layout; it is **not** linked against Google’s upb (follow-up if a CMake-friendly upb package is adopted). C++ libraries are out of scope (separate language later).
 - ObjectGraph is not supported.
 
