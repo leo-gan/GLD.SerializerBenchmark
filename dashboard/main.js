@@ -1012,17 +1012,15 @@ function renderCrossLangTable() {
     );
     if (values.every((v) => v === null || Number.isNaN(v))) return;
 
-    let bestIdx = -1;
+    let bestVal = null;
     if (metric.higherIsBetter === true || metric.higherIsBetter === false) {
-      let bestVal = null;
-      values.forEach((v, i) => {
+      values.forEach((v) => {
         if (v === null || Number.isNaN(v)) return;
         if (
           bestVal === null ||
           (metric.higherIsBetter ? v > bestVal : v < bestVal)
         ) {
           bestVal = v;
-          bestIdx = i;
         }
       });
     }
@@ -1032,14 +1030,15 @@ function renderCrossLangTable() {
     tdLabel.textContent = metric.label;
     tr.appendChild(tdLabel);
 
-    values.forEach((v, i) => {
+    values.forEach((v) => {
       const td = document.createElement('td');
       if (v === null || Number.isNaN(v)) {
         td.textContent = '—';
         td.className = 'xl-missing';
       } else {
         td.textContent = formatMetricValue(metric.key, v);
-        if (i === bestIdx) td.classList.add('xl-best');
+        // Highlight every column that ties for best (not only the first).
+        if (bestVal !== null && v === bestVal) td.classList.add('xl-best');
       }
       tr.appendChild(td);
     });
@@ -1422,17 +1421,15 @@ function renderSerializerMetricsTable() {
       });
 
       const higherIsBetter = metricHigherIsBetter(key);
-      let bestIdx = -1;
+      let bestVal = null;
       if (higherIsBetter === true || higherIsBetter === false) {
-        let bestVal = null;
-        values.forEach((v, i) => {
+        values.forEach((v) => {
           if (typeof v !== 'number' || !Number.isFinite(v)) return;
           if (
             bestVal === null ||
             (higherIsBetter ? v > bestVal : v < bestVal)
           ) {
             bestVal = v;
-            bestIdx = i;
           }
         });
       }
@@ -1443,14 +1440,22 @@ function renderSerializerMetricsTable() {
       tdKey.title = metricLabel(key);
       tr.appendChild(tdKey);
 
-      values.forEach((v, i) => {
+      values.forEach((v) => {
         const td = document.createElement('td');
         if (v === null || v === undefined) {
           td.textContent = '—';
           td.className = 'sm-missing';
         } else {
           td.textContent = formatMetricValue(key, v);
-          if (i === bestIdx && columns.length > 1) td.classList.add('sm-best');
+          // Highlight every tied best value when comparing multiple serializers.
+          if (
+            columns.length > 1 &&
+            typeof v === 'number' &&
+            bestVal !== null &&
+            v === bestVal
+          ) {
+            td.classList.add('sm-best');
+          }
         }
         tr.appendChild(td);
       });
