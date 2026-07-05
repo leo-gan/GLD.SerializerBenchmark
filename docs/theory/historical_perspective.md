@@ -1,11 +1,5 @@
 # Historical Perspective
 
-**Question this page answers:** *Why do serialization formats exist in the shapes they do?*
-
-This is Module 1 of [Serialization 101](index.md). It is a single chronological narrative—constraints, people, and paradigm shifts. It is **not** a how-to for data lakes or production services. For those, use the [data science](data_science_perspective.md) and [engineering](engineer_perspective.md) perspectives.
-
----
-
 ## The problem that never goes away
 
 Programs hold **rich in-memory structure**: nested records, arrays, graphs of objects, different integer widths, and different byte orders. Disks, networks, and many caches only store **linear sequences of bytes**.
@@ -16,24 +10,24 @@ Every major format is a bet on which constraints matter most at the time: human 
 
 ---
 
-## Era map (quick orientation)
+## Era map
 
-| Era | Approx. | Dominant pressure | Representative answers |
-|-----|---------|-------------------|------------------------|
-| Physical & fixed records | 1950s–1960s | Media limits; batch business data | [Punched cards](https://en.wikipedia.org/wiki/Punched_card "Punched card — early physical data medium")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [COBOL](https://en.wikipedia.org/wiki/COBOL "COBOL — Common Business-Oriented Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> fixed-width records; raw memory dumps |
-| Network portability | 1970s–1980s | Heterogeneous machines on one network | Network byte order; [XDR](https://en.wikipedia.org/wiki/External_Data_Representation "XDR — External Data Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [ASN.1](https://en.wikipedia.org/wiki/ASN.1 "ASN.1 — Abstract Syntax Notation One")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> |
-| Distributed objects | Late 1980s–1990s | Object graphs; “call a method elsewhere” | [CORBA](https://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture "CORBA — Common Object Request Broker Architecture")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> [IDL](https://en.wikipedia.org/wiki/Interface_description_language "IDL — Interface Description Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; Java / Python native serialization |
-| Universal documents | Mid-1990s–early 2000s | Web-scale multi-vendor interchange | [XML](https://en.wikipedia.org/wiki/XML "XML — Extensible Markup Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [SOAP](https://en.wikipedia.org/wiki/SOAP "SOAP — Simple Object Access Protocol")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> stack |
-| Lightweight web data | 2000s–2010s | Browser & API simplicity | [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [REST](https://en.wikipedia.org/wiki/REST "REST — Representational State Transfer")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-style APIs |
-| Efficient services & storage | Mid-2000s onward | Datacenter cost; long-lived data | [Protobuf](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — Google schema-driven binary format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> |
-| Analytics & zero-copy | 2010s onward | Scan huge tables; avoid copy/[GC](https://en.wikipedia.org/wiki/Garbage_collection_%28computer_science%29 "Garbage collection — automatic memory reclamation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> | [Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[ORC](https://en.wikipedia.org/wiki/Apache_ORC "Apache ORC — Optimized Row Columnar")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [Arrow](https://en.wikipedia.org/wiki/Apache_Arrow "Apache Arrow — in-memory columnar format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [FlatBuffers](https://en.wikipedia.org/wiki/FlatBuffers "FlatBuffers — zero-copy serialization library")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [Cap’n Proto](https://en.wikipedia.org/wiki/Cap%27n_Proto "Cap’n Proto — zero-copy serialization and RPC")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> |
-| Validation as product | ~2015 onward | Correctness of dynamic JSON at scale | [JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for annotating and validating JSON")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; typed validators (e.g. Pydantic, msgspec) |
+| Years | Era | Dominant pressure | Representative answers |
+|-------|-----|-------------------|------------------------|
+| 1950s–1960s | Physical & fixed records | Media limits; batch business data | [Punched cards](https://en.wikipedia.org/wiki/Punched_card "Punched card — early physical data medium")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [COBOL](https://en.wikipedia.org/wiki/COBOL "COBOL — Common Business-Oriented Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> fixed-width records; raw memory dumps |
+| 1970s–1980s | Network portability | Heterogeneous machines on one network | Network byte order; [XDR](https://en.wikipedia.org/wiki/External_Data_Representation "XDR — External Data Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [ASN.1](https://en.wikipedia.org/wiki/ASN.1 "ASN.1 — Abstract Syntax Notation One")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> |
+| Late 1980s–1990s | Distributed objects | Object graphs; “call a method elsewhere” | [CORBA](https://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture "CORBA — Common Object Request Broker Architecture")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> [IDL](https://en.wikipedia.org/wiki/Interface_description_language "IDL — Interface Description Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; Java / Python native serialization |
+| Mid-1990s–early 2000s | Universal documents | Web-scale multi-vendor interchange | [XML](https://en.wikipedia.org/wiki/XML "XML — Extensible Markup Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [SOAP](https://en.wikipedia.org/wiki/SOAP "SOAP — Simple Object Access Protocol")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> stack |
+| 2000s–2010s | Lightweight web data | Browser & API simplicity | [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [REST](https://en.wikipedia.org/wiki/REST "REST — Representational State Transfer")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-style APIs |
+| Mid-2000s onward | Efficient services & storage | Datacenter cost; long-lived data | [Protobuf](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — Google schema-driven binary format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> |
+| 2010s onward | Analytics & zero-copy | Scan huge tables; avoid copy/[GC](https://en.wikipedia.org/wiki/Garbage_collection_%28computer_science%29 "Garbage collection — automatic memory reclamation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> | [Parquet](https://en.wikipedia.org/wiki/Apache_Parquet "Apache Parquet — columnar storage format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[ORC](https://en.wikipedia.org/wiki/Apache_ORC "Apache ORC — Optimized Row Columnar")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [Arrow](https://en.wikipedia.org/wiki/Apache_Arrow "Apache Arrow — in-memory columnar format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [FlatBuffers](https://en.wikipedia.org/wiki/FlatBuffers "FlatBuffers — zero-copy serialization library")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; [Cap’n Proto](https://en.wikipedia.org/wiki/Cap%27n_Proto "Cap’n Proto — zero-copy serialization and RPC")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> |
+| ~2015 onward | Validation as product | Correctness of dynamic JSON at scale | [JSON Schema](https://en.wikipedia.org/wiki/JSON#Schema_and_metadata "JSON Schema — vocabulary for annotating and validating JSON")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />; typed validators (e.g. Pydantic, msgspec) |
 
 You do not need to memorize every name. Learn the **pressure → response** pattern.
 
 ---
 
-## 1. Physical media and fixed contracts (1950s–1960s)
+## 1950s–1960s: Physical media & fixed contracts
 
 Early “serialization” was often **the medium itself**. **[Herman Hollerith](https://en.wikipedia.org/wiki/Herman_Hollerith "Herman Hollerith — inventor of punched-card tabulation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />**’s punched cards (1890 census technology, still central mid-century) encoded values as hole patterns in fixed columns. The layout *was* the format.
 
@@ -46,31 +40,31 @@ When magnetic tape and disk arrived, two durable ideas competed:
 
 ---
 
-## 2. Networks force canonical forms (1970s–1980s)
+## 1970s–1980s: Networks force canonical forms
 
 Connecting incompatible architectures ([PDP-11](https://en.wikipedia.org/wiki/PDP-11 "PDP-11 — influential minicomputer architecture")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> little-endian, IBM big-endian, and later Intel vs Motorola worlds) made ad-hoc binary dumps a liability. A multi-byte integer that means `1` on one host can mean millions on another if byte order differs.
 
 **[Danny Cohen](https://en.wikipedia.org/wiki/Danny_Cohen_%28engineer%29 "Danny Cohen — computer scientist; endianness essay")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />**’s 1980 essay *On Holy Wars and a Plea for Peace* popularized “endian” as a network problem and argued for a single **network byte order** (big-endian) for interchange—arbitrary, but shared.
 
-Two standardization traditions answered “structured data on the wire”:
+Three threads answered “structured data on the wire” and how to call remote code:
 
-### XDR (External Data Representation, 1987)
+### 1984: ASN.1
 
-Sun’s XDR (RFC 1014, later RFC 4506) powered [NFS](https://en.wikipedia.org/wiki/Network_File_System "NFS — Network File System")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> and Sun [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />: fixed alignment rules, big-endian integers, length-prefixed strings and arrays. Portable and efficient for its time; **not self-describing**—you needed the agreed procedure/types (often an `.x` description) to interpret the stream.
+Telecom and [ISO](https://en.wikipedia.org/wiki/International_Organization_for_Standardization "ISO — International Organization for Standardization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> standards defined **ASN.1** (formalized mid-1980s) abstract types plus encoding rules (notably [BER](https://en.wikipedia.org/wiki/X.690 "BER/DER — ASN.1 encoding rules (X.690)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[DER](https://en.wikipedia.org/wiki/X.690 "DER — Distinguished Encoding Rules (ASN.1)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />). **[Type–Length–Value (TLV)](https://en.wikipedia.org/wiki/Type%E2%80%93length%E2%80%93value "TLV — Type–Length–Value encoding structure")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** encoding lets a parser skip unknown pieces—an early, powerful approach to **extensibility**. DER-encoded structures still sit under [HTTPS](https://en.wikipedia.org/wiki/HTTPS "HTTPS — HTTP over TLS")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> certificates ([X.509](https://en.wikipedia.org/wiki/X.509 "X.509 — public key certificate standard")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />) and other infrastructure.
 
-### ASN.1 (mid-1980s)
-
-Telecom and [ISO](https://en.wikipedia.org/wiki/International_Organization_for_Standardization "ISO — International Organization for Standardization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> standards defined **ASN.1** abstract types plus encoding rules (notably [BER](https://en.wikipedia.org/wiki/X.690 "BER/DER — ASN.1 encoding rules (X.690)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[DER](https://en.wikipedia.org/wiki/X.690 "DER — Distinguished Encoding Rules (ASN.1)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />). **[Type–Length–Value (TLV)](https://en.wikipedia.org/wiki/Type%E2%80%93length%E2%80%93value "TLV — Type–Length–Value encoding structure")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** encoding lets a parser skip unknown pieces—an early, powerful approach to **extensibility**. DER-encoded structures still sit under [HTTPS](https://en.wikipedia.org/wiki/HTTPS "HTTPS — HTTP over TLS")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> certificates ([X.509](https://en.wikipedia.org/wiki/X.509 "X.509 — public key certificate standard")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />) and other infrastructure.
-
-### RPC as an idea (1984)
+### 1984: RPC as an idea
 
 **Birrell & [Nelson](https://en.wikipedia.org/wiki/Bruce_Jay_Nelson "Bruce Jay Nelson — co-author of “Implementing Remote Procedure Calls”")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />**’s work on remote procedure calls formalized a pattern that never left the industry: describe the interface once, **generate** marshal/unmarshal code, make the network call *feel* like a local call. CORBA, `protoc`, Thrift, and [gRPC](https://en.wikipedia.org/wiki/GRPC "gRPC — high-performance RPC framework (often with Protobuf)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> are descendants of that DNA.
+
+### 1987: XDR
+
+Sun’s **XDR** (External Data Representation; RFC 1014, later RFC 4506) powered [NFS](https://en.wikipedia.org/wiki/Network_File_System "NFS — Network File System")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> and Sun [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />: fixed alignment rules, big-endian integers, length-prefixed strings and arrays. Portable and efficient for its time; **not self-describing**—you needed the agreed procedure/types (often an `.x` description) to interpret the stream.
 
 **Lesson:** networks demand a **canonical** representation and push industry toward **IDL + generated codecs**.
 
 ---
 
-## 3. Objects and language-native graphs (late 1980s–1990s)
+## Late 1980s–1990s: Objects & native graphs
 
 Object-oriented runtimes introduced **graphs**: shared references, cycles, inheritance. Flat records and simple RPC structs were not enough for “save this object and restore it later in the same ecosystem.”
 
@@ -82,7 +76,7 @@ Object-oriented runtimes introduced **graphs**: shared references, cycles, inher
 
 ---
 
-## 4. The XML decade (mid-1990s–early 2000s)
+## Mid-1990s–2000s: The XML decade
 
 The public web needed something **language-neutral, hierarchical, and human-inspectable**. **XML 1.0** ([W3C](https://en.wikipedia.org/wiki/World_Wide_Web_Consortium "W3C — World Wide Web Consortium")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, 1998; editors including **[Tim Bray](https://en.wikipedia.org/wiki/Tim_Bray "Tim Bray — co-editor of XML 1.0")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** and **[Jean Paoli](https://en.wikipedia.org/wiki/Jean_Paoli "Jean Paoli — co-editor of XML 1.0")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />**, with roots in [SGML](https://en.wikipedia.org/wiki/Standard_Generalized_Markup_Language "SGML — Standard Generalized Markup Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />) wrapped data in named tags. Tooling exploded: [XSD](https://en.wikipedia.org/wiki/XML_Schema_%28W3C%29 "XSD — XML Schema Definition")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [XPath](https://en.wikipedia.org/wiki/XPath "XPath — query language for XML trees")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [XSLT](https://en.wikipedia.org/wiki/XSLT "XSLT — XML transformations")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, namespaces.
 
@@ -92,7 +86,7 @@ Enterprise systems layered **SOAP** and the WS-\* stack on XML over [HTTP](https
 
 ---
 
-## 5. JSON and the web API default (2000s–)
+## 2000s–: JSON & the web API default
 
 **[Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford "Douglas Crockford — popularized JSON")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** named and popularized **JSON**—essentially [JavaScript](https://en.wikipedia.org/wiki/JavaScript "JavaScript — programming language of the web")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> object literal syntax as a data format—in the early 2000s (later RFC 4627 → RFC 8259 / ECMA-404). Minimal types (`null`, bool, number, string, array, object), trivial for browsers, good enough for most public APIs.
 
@@ -106,19 +100,19 @@ REST-style HTTP APIs (architectural style articulated by **[Roy Fielding](https:
 
 ---
 
-## 6. Datacenter efficiency and schema-driven binary (2000s–2010s)
+## 2000s–2010s: Schema-driven binary efficiency
 
 Inside large service meshes, repeating field names as text and parsing characters became a measurable **datacenter tax**.
 
-### Protocol Buffers
+### Early 2000s: Protocol Buffers
 
 Google’s **Protocol Buffers** (internal early 2000s; open-sourced 2008; design lineage including work associated with **[Jeff Dean](https://en.wikipedia.org/wiki/Jeff_Dean "Jeff Dean — Google Fellow; large-scale systems")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />**, **[Sanjay Ghemawat](https://en.wikipedia.org/wiki/Sanjay_Ghemawat "Sanjay Ghemawat — Google Fellow; systems co-designer")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />**, **Kenton Varda**, and many others) revived IDL + codegen with a compact binary encoding: **field numbers** instead of names, **varints**, and evolution rules centered on never reusing field numbers for different meanings. Opaque without the `.proto`; excellent for polyglot services that invest in schema discipline.
 
-### Apache Thrift (2007)
+### 2007: Apache Thrift
 
 Facebook’s **Thrift** (later Apache): IDL, multi-language codegen, pluggable protocols and transports—RPC-oriented flexibility in polyglot environments.
 
-### Schemaless binary “JSON cousins”
+### ~2008–2013: Schemaless binary cousins
 
 Not every team wanted a compiler in the loop:
 
@@ -132,7 +126,7 @@ Not every team wanted a compiler in the loop:
 
 ---
 
-## 7. Long-lived data and analytics (late 2000s–2010s)
+## Late 2000s–2010s: Long-lived data & analytics
 
 Batch and streaming platforms ([Hadoop](https://en.wikipedia.org/wiki/Apache_Hadoop "Apache Hadoop — distributed storage and MapReduce ecosystem")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> ecosystem and successors) needed formats that survive **years** of readers and writers coexisting.
 
@@ -144,7 +138,7 @@ Batch and streaming platforms ([Hadoop](https://en.wikipedia.org/wiki/Apache_Had
 
 ---
 
-## 8. Zero-copy access (2010s)
+## 2010s: Zero-copy access
 
 Even fast encode/decode still **copies** into language objects. Domains with tight latency or memory budgets (games, some telemetry, certain RPC paths) pushed further:
 
@@ -155,7 +149,7 @@ Even fast encode/decode still **copies** into language objects. Domains with tig
 
 ---
 
-## 9. Validation renaissance (mid-2010s–present)
+## Mid-2010s–present: Validation renaissance
 
 Public and internal APIs stayed on JSON for reach, while teams paid for **ad-hoc validation**. The response was not a single new wire format but **schema as a product layer**:
 
@@ -166,7 +160,7 @@ Public and internal APIs stayed on JSON for reach, while teams paid for **ad-hoc
 
 ---
 
-## One diagram of the tensions
+## Tensions diagram
 
 History does not converge on a single winner. It accumulates niches along recurring trade-offs:
 
@@ -179,16 +173,11 @@ History does not converge on a single winner. It accumulates niches along recurr
 
 ---
 
-## How to use this history in practice
+## Using this history
 
 1. When someone says “just use X,” ask **which pressure** they are optimizing (debug? polyglot? retention? scan speed? unsafe input?).
 2. Prefer portable, explicit formats when data **crosses** a language or trust boundary.
 3. Expect **multiple** formats in one organization: JSON at the edge, binary RPC inside, Parquet in the lake—that is historical normal, not failure.
-4. For *what to pick for data/ML* or *how to ship services*, leave this page:
-   - [Data science perspective](data_science_perspective.md)
-   - [Engineering perspective](engineer_perspective.md)
-   - [Serialization categories](../analysis/serialization_categories.md) (suite taxonomy)
-   - [Benchmarks](../analysis/index.md) (measured behavior)
 
 ---
 
@@ -210,7 +199,3 @@ These are entry points, not an exhaustive bibliography. Wikipedia articles for m
 12. Cap’n Proto and FlatBuffers project documentation.
 13. Kleppmann, M. (2017). *Designing Data-Intensive Applications*. O’Reilly. (Formats in real systems.)
 14. MessagePack specification; MongoDB BSON specification.
-
----
-
-**Next:** choose your applied lens — [data science](data_science_perspective.md) or [engineering](engineer_perspective.md) — or return to the [course home](index.md).

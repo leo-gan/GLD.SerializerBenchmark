@@ -1,25 +1,15 @@
 # Data Science Perspective
 
-**Question this page answers:** *What serialization choices matter for data work, analytics, and ML—and how do I choose among them?*
-
-This is the **data & [ML](https://en.wikipedia.org/wiki/Machine_learning "ML — Machine learning")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> lens** of [Serialization 101](index.md). It assumes you have (or will get) the big-picture timeline from the [historical perspective](historical_perspective.md). It does **not** retell punched cards through [SOAP](https://en.wikipedia.org/wiki/SOAP "SOAP — Simple Object Access Protocol")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. For APIs, [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, caches, and systems performance, use the [engineering perspective](engineer_perspective.md).
-
-Measured libraries and timings for **this suite** live under language **Overview** / **Results** and [Benchmarks](../analysis/index.md). This page is conceptual judgment for data practitioners.
-
----
-
-## Who this page is for
+## Audience
 
 - Analysts and analytics engineers moving data between warehouses, lakes, and notebooks  
 - ML engineers checkpointing models, features, and batch scores  
 - Data platform folks choosing formats for [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka "Apache Kafka — distributed event streaming platform")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> topics, [S3](https://en.wikipedia.org/wiki/Amazon_S3 "Amazon S3 — object storage service")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> layouts, and interchange with [Spark](https://en.wikipedia.org/wiki/Apache_Spark "Apache Spark — unified analytics engine")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/[DuckDB](https://en.wikipedia.org/wiki/DuckDB "DuckDB — in-process analytical SQL database")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />/Polars  
 - Scientists who currently “just pickle everything” and want a safer mental model  
 
-If you only build [JSON](https://en.wikipedia.org/wiki/JSON "JSON — JavaScript Object Notation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> [REST](https://en.wikipedia.org/wiki/REST "REST — Representational State Transfer")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> microservices, skim the decision guide and switch to [engineering](engineer_perspective.md).
-
 ---
 
-## What “serialization” means in data work
+## In data work
 
 In services, [serialization](https://en.wikipedia.org/wiki/Serialization "Serialization — converting structures to a byte sequence and back")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> often means **one message in, one message out**. In data work it usually means one or more of:
 
@@ -31,13 +21,11 @@ In services, [serialization](https://en.wikipedia.org/wiki/Serialization "Serial
 | **Model artifacts** | Weights + preprocessing graph | Load speed, versioning, who may load the file |
 | **Feature interchange** | Training/serving feature payloads | Stable types, low skew, predictable nulls |
 
-Different workloads want different points on the [shared trade-off axes](index.md#shared-vocabulary-core-trade-offs) (text/binary, schema, row/columnar, portable/native).
+Different workloads want different points on the [core trade-off axes](index.md#core-trade-offs) (text/binary, schema, row/columnar, portable/native).
 
 ---
 
-## A minimal history for data people (only what you need)
-
-Full story: [historical perspective](historical_perspective.md). The short version:
+## Brief history
 
 1. **Fixed-width & [CSV](https://en.wikipedia.org/wiki/Comma-separated_values "CSV — Comma-Separated Values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** — still everywhere for exports and simple tables; weak typing; awkward nesting.  
 2. **Language-native blobs (`pickle`, joblib, many ML checkpoints)** — maximum Python convenience; poor multi-language story; **unsafe on untrusted bytes**. See [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> under language-native formats.  
@@ -49,9 +37,9 @@ Full story: [historical perspective](historical_perspective.md). The short versi
 
 ---
 
-## The formats data teams actually live with
+## Common formats
 
-### CSV and “spreadsheet reality”
+### CSV
 
 **Use when:** humans edit data; quick export/import; smallest common denominator.
 
@@ -59,7 +47,7 @@ Full story: [historical perspective](historical_perspective.md). The short versi
 
 CSV is not “wrong”—it is a **lossy social format**. Treat it as an edge adapter, not a lake core.
 
-### JSON and JSON Lines (JSONL)
+### JSON / JSONL
 
 **Use when:** semi-structured logs, configs, small-to-medium interchange, landing zones before a typed table format.
 
@@ -67,7 +55,7 @@ CSV is not “wrong”—it is a **lossy social format**. Treat it as an edge ad
 
 **JSONL** (one JSON object per line) is a pragmatic streaming/batch compromise: append-friendly, parallelizable by line, still text.
 
-### Language-native: pickle, joblib, and friends
+### Pickle & friends
 
 **Trust boundary check (do this every time):**
 
@@ -83,7 +71,7 @@ CSV is not “wrong”—it is a **lossy social format**. Treat it as an edge ad
 
 **Practical rule:** use native formats for **ephemeral, trusted, same-environment** artifacts. For sharing, audit, or multi-year storage, prefer **explicit weights formats** (framework-specific safe loaders), **Arrow/Parquet tables**, or **versioned model registries**—not a raw pickle in an open bucket.
 
-### Avro: events and evolving records
+### Avro
 
 **Avro** stores values compactly and treats the **schema as a first-class object** (in file headers or an external registry). Reader and writer schemas can differ under documented compatibility rules (defaults, field addition/removal policies).
 
@@ -95,7 +83,7 @@ CSV is not “wrong”—it is a **lossy social format**. Treat it as an edge ad
 
 **Operational reality:** schema **process** (registry, CI checks, compatibility mode) matters as much as the binary encoding.
 
-### Parquet (and ORC): the analytic table default
+### Parquet & ORC
 
 **Columnar** layout stores each column’s values together, enabling:
 
@@ -107,7 +95,7 @@ CSV is not “wrong”—it is a **lossy social format**. Treat it as an edge ad
 
 **Avoid when:** you mostly fetch one nested document by key at low latency—that is still a **row/document** problem (or a specialized store), not Parquet’s sweet spot.
 
-### Apache Arrow: stop converting DataFrames for a living
+### Arrow
 
 **Arrow** (project co-founded with **[Wes McKinney](https://en.wikipedia.org/wiki/Wes_McKinney "Wes McKinney — creator of pandas; co-founder of Apache Arrow")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** and others) standardizes **in-memory** columnar buffers (types, null bitmaps, nested layouts). When two tools speak Arrow, transfer can be a pointer handoff or a cheap [IPC](https://en.wikipedia.org/wiki/Inter-process_communication "IPC — Inter-process communication")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> stream instead of “to_csv → parse again.”
 
@@ -119,7 +107,7 @@ CSV is not “wrong”—it is a **lossy social format**. Treat it as an edge ad
 
 Arrow is complementary to Parquet: **Parquet on disk / in the lake**, **Arrow in memory / between engines** is a common modern pattern.
 
-### MessagePack, [BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> in data paths
+### MessagePack / BSON / CBOR
 
 These are **schemaless binary** encodings of JSON-like values:
 
@@ -131,13 +119,13 @@ These are **schemaless binary** encodings of JSON-like values:
 
 They help when JSON is too slow/large but you still want a **dynamic** model. They do **not** replace Parquet for lake analytics.
 
-### [Protobuf](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — schema-driven binary format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> / [Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> at the data boundary
+### Protobuf & Thrift
 
 Schema-driven RPC formats show up when ML **serving** or feature stores talk to microservices. They are excellent **online** contracts; they are usually a poor **sole** lake format compared with Parquet for bulk analytics. Many platforms use **both**: Protobuf online, columnar offline.
 
 ---
 
-## Schema evolution (the data team’s real pain)
+## Schema evolution
 
 “We added a field” is easy in a notebook and hard in a multi-year lake or event bus.
 
@@ -153,9 +141,9 @@ Schema-driven RPC formats show up when ML **serving** or feature stores talk to 
 
 ---
 
-## ML-specific guidance
+## ML guidance
 
-### Features and training tables
+### Features & tables
 
 - Store large training/feature tables as **Parquet** (or equivalent columnar) with explicit dtypes and partitioned layout (time, region, etc.).  
 - Interchange between training jobs with **Arrow** where the stack supports it.  
@@ -170,13 +158,13 @@ Schema-driven RPC formats show up when ML **serving** or feature stores talk to 
 | Bundle preprocessing + model for one Python service | Still better with versioned registry + immutable artifact IDs than ad-hoc pickles in chat threads |
 | Audit / compliance | Formats and stores that support signing, lineage, and non-executable weights where possible |
 
-### Experiment tracking vs production
+### Experiments vs production
 
 Experiment trackers often accept pickles and arbitrary blobs. **Production promotion** should re-materialize critical data into **portable tables** and **reviewed model formats**, not “whatever was in `/tmp`.”
 
 ---
 
-## Validation when JSON still wins
+## JSON validation
 
 Data platforms still emit JSON for APIs, webhooks, and config. Pair text/schemaless payloads with an explicit contract:
 
@@ -188,7 +176,7 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 
 ---
 
-## Decision guide (start here when choosing)
+## Decision guide
 
 **What is the primary access pattern?**
 
@@ -202,7 +190,7 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 | Online low-latency service contract (features, inference I/O) | **Schema-driven** (Protobuf/…) — see [engineering perspective](engineer_perspective.md) |
 | Python-only, trusted, short-lived object graph | **pickle** / **joblib** only with eyes open; plan a portable exit path |
 
-### Quick comparison for data workloads
+### Quick comparison
 
 | Format family | Human-readable | Best at | Weak at |
 |---------------|----------------|---------|---------|
@@ -217,9 +205,9 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 
 ---
 
-## How this suite relates (and what it does not replace)
+## This suite
 
-This repository benchmarks **serializers** across languages and [categories](../analysis/serialization_categories.md) (JSON family, schemaless binary, schema-driven, language-native). That is invaluable for **encode/decode cost** of in-memory objects.
+This repository benchmarks **serializers** across languages and categories (JSON family, schemaless binary, schema-driven, language-native). That is invaluable for **encode/decode cost** of in-memory objects.
 
 Data platform success also depends on **I/O layout, compression, partitioning, cluster execution, and schema governance**—topics larger than a single serialize call. Use suite **Results** to compare libraries; use this page to pick the **paradigm** before you micro-optimize a codec.
 
@@ -227,13 +215,5 @@ Data platform success also depends on **I/O layout, compression, partitioning, c
 
 ## Further reading
 
-- [Historical perspective](historical_perspective.md) — why these designs appeared  
-- [Engineering perspective](engineer_perspective.md) — services, security, performance mechanics  
-- [Serialization categories](../analysis/serialization_categories.md) — suite taxonomy  
-- [Benchmarks](../analysis/index.md) — measured results  
 - Kleppmann, *Designing Data-Intensive Applications* — systems view of encoding & evolution  
 - Apache Parquet, Arrow, and Avro official documentation  
-
----
-
-**Next:** [Engineering perspective](engineer_perspective.md) if you also ship services, or [course home](index.md) / [benchmarks](../analysis/index.md) to go empirical.

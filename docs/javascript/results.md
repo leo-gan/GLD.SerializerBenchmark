@@ -10,8 +10,7 @@ Serializer inventory and caveats: [JavaScript (Node.js) overview](index.md). Met
 
 Multi-way leaderboards emphasize **high-importance** metrics (configurable via `metrics.multi_way` in master config). Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer API; **stream mode** = write/read through a stream-like path. These names are *not* payload sizes. In each table, **bold** marks the semantic best value in that column (lowest time; highest ops/s). Ties are all bolded. Latency tables are in **microseconds** (µs).
 
-### JavaScript (Node.js): summary (multi-way, important metrics)
-
+### Summary
 Default multi-serializer view shows **high-importance** metrics only ([METRICS.md](../analysis/METRICS.md)). **Primary rank:** median total latency (lower is better). Pairwise / version A/B reports use the full metric set. Latency cells are **µs** (analysis storage remains ns).
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
@@ -30,8 +29,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | cbor:9.0.2 | 70.1 | 31.9 | 37.9 | 29.5K | 617.2 | 987 | **1.00** |
 
 
-### JavaScript (Node.js): Total Time (µs) by Serializer and API Mode
-
+### Total Time
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
 | v8-serializer:v8-13.6.233.17-node.48 | 5.22 | 5.15 | 6.2 | 6.2 |
@@ -48,8 +46,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | cbor:9.0.2 | 87.6 | 86.6 | 70.8 | 69.2 |
 
 
-### JavaScript (Node.js): Ops/Sec (from mean) by Serializer and Data Type
-
+### Ops/Sec
 | serializer | EDI_835 | Integer | Person | SimpleObject | StringArray | Telemetry |
 |---|---|---|---|---|---|---|
 | @msgpack/msgpack:3.1.3 | 40K | 0.44M | 71K | 0.3M | 77K | 80K |

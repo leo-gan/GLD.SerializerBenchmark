@@ -10,8 +10,7 @@ Serializer inventory and caveats: [C# (.NET) overview](index.md). Methods: [Anal
 
 Multi-way leaderboards emphasize **high-importance** metrics (configurable via `metrics.multi_way` in master config). Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer API; **stream mode** = write/read through a stream-like path. These names are *not* payload sizes. In each table, **bold** marks the semantic best value in that column (lowest time; highest ops/s). Ties are all bolded. Latency tables are in **microseconds** (µs).
 
-### C# (.NET): summary (multi-way, important metrics)
-
+### Summary
 Default multi-serializer view shows **high-importance** metrics only ([METRICS.md](../analysis/METRICS.md)). **Primary rank:** median total latency (lower is better). Pairwise / version A/B reports use the full metric set. Latency cells are **µs** (analysis storage remains ns).
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
@@ -51,8 +50,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | CsvHelper:33.1.0 | 1.39e+03 | 955 | 439 | 1.43K | 49.5 | 360 | **1.00** |
 
 
-### C# (.NET): Total Time (µs) by Serializer and API Mode
-
+### Total Time
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
 | GroBuf:1.9.2 | - | - | 3.88 | 3.33 |
@@ -90,8 +88,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | CsvHelper:33.1.0 | - | - | 399 | 388 |
 
 
-### C# (.NET): Ops/Sec (from mean) by Serializer and Data Type
-
+### Ops/Sec
 | serializer | EDI_835 | Integer | ObjectGraph | Person | SimpleObject | StringArray | Telemetry |
 |---|---|---|---|---|---|---|---|
 | Ceras:4.1.7 | 20K | 65K | 64K | 30K | 27K | 10K | 20K |

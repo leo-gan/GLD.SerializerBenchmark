@@ -10,8 +10,7 @@ Serializer inventory and caveats: [Go overview](index.md). Methods: [Analysis Me
 
 Multi-way leaderboards emphasize **high-importance** metrics (configurable via `metrics.multi_way` in master config). Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer API; **stream mode** = write/read through a stream-like path. These names are *not* payload sizes. In each table, **bold** marks the semantic best value in that column (lowest time; highest ops/s). Ties are all bolded. Latency tables are in **microseconds** (µs).
 
-### Go: summary (multi-way, important metrics)
-
+### Summary
 Default multi-serializer view shows **high-importance** metrics only ([METRICS.md](../analysis/METRICS.md)). **Primary rank:** median total latency (lower is better). Pairwise / version A/B reports use the full metric set. Latency cells are **µs** (analysis storage remains ns).
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
@@ -30,8 +29,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | encoding/gob:go1.24.13 | 16 | 3.26 | 12.6 | 68K | 593.5 | 1040 | **1.00** |
 
 
-### Go: Total Time (µs) by Serializer and API Mode
-
+### Total Time
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
 | hamba/avro:2.31.0 | 1.85 | 1.84 | **1.49** | **1.21** |
@@ -48,8 +46,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | encoding/gob:go1.24.13 | 15.7 | 15.7 | 24.1 | 26.5 |
 
 
-### Go: Ops/Sec (from mean) by Serializer and Data Type
-
+### Ops/Sec
 | serializer | EDI_835 | Integer | Person | SimpleObject | StringArray | Telemetry |
 |---|---|---|---|---|---|---|
 | encoding/gob:go1.24.13 | 46K | 0.11M | 64K | 0.072M | 51K | 0.046M |

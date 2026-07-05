@@ -10,8 +10,7 @@ Serializer inventory and caveats: [Python overview](index.md). Methods: [Analysi
 
 Multi-way leaderboards emphasize **high-importance** metrics (configurable via `metrics.multi_way` in master config). Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer API; **stream mode** = write/read through a stream-like path. These names are *not* payload sizes. In each table, **bold** marks the semantic best value in that column (lowest time; highest ops/s). Ties are all bolded. Latency tables are in **microseconds** (µs).
 
-### Python: summary (multi-way, important metrics)
-
+### Summary
 Default multi-serializer view shows **high-importance** metrics only ([METRICS.md](../analysis/METRICS.md)). **Primary rank:** median total latency (lower is better). Pairwise / version A/B reports use the full metric set. Latency cells are **µs** (analysis storage remains ns).
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
@@ -34,8 +33,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | flatbuffers:25.12.19 | 122 | 120 | 1.69 | 16K | 1547 | 901 | **1.00** |
 
 
-### Python: Total Time (µs) by Serializer and API Mode
-
+### Total Time
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
 | protobuf:7.35.1 | **1.17** | **1.16** | **1.29** | **1.28** |
@@ -56,8 +54,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | flatbuffers:25.12.19 | 78.6 | 78.3 | 78.4 | 78.5 |
 
 
-### Python: Ops/Sec (from mean) by Serializer and Data Type
-
+### Ops/Sec
 | serializer | EDI_835 | Integer | ObjectGraph | Person | SimpleObject | StringArray | Telemetry |
 |---|---|---|---|---|---|---|---|
 | avro:1.12.2 | 22K | - | - | 64K | 0.25M | 21K | 32K |

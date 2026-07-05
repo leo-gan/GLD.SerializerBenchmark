@@ -10,8 +10,7 @@ Serializer inventory and caveats: [Rust overview](index.md). Methods: [Analysis 
 
 Multi-way leaderboards emphasize **high-importance** metrics (configurable via `metrics.multi_way` in master config). Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer API; **stream mode** = write/read through a stream-like path. These names are *not* payload sizes. In each table, **bold** marks the semantic best value in that column (lowest time; highest ops/s). Ties are all bolded. Latency tables are in **microseconds** (µs).
 
-### Rust: summary (multi-way, important metrics)
-
+### Summary
 Default multi-serializer view shows **high-importance** metrics only ([METRICS.md](../analysis/METRICS.md)). **Primary rank:** median total latency (lower is better). Pairwise / version A/B reports use the full metric set. Latency cells are **µs** (analysis storage remains ns).
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
@@ -33,8 +32,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | flexbuffers:2.0.0 | 4.13 | 2.08 | 2.05 | 1.03M | 772.3 | 1052 | **1.00** |
 
 
-### Rust: Total Time (µs) by Serializer and API Mode
-
+### Total Time
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
 | speedy:0.8.7 | **0.191** | **0.191** | **0.228** | **0.228** |
@@ -54,8 +52,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | flexbuffers:2.0.0 | 3.84 | 3.83 | 3.96 | 3.96 |
 
 
-### Rust: Ops/Sec (from mean) by Serializer and Data Type
-
+### Ops/Sec
 | serializer | EDI_835 | Integer | Person | SimpleObject | StringArray | Telemetry |
 |---|---|---|---|---|---|---|
 | bincode:2.0.1 | 0.79M | 17M | 1.6M | 5.9M | 290K | 1.9M |
@@ -74,8 +71,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | sonic-rs:0.3.17 | 0.27M | 11M | 0.71M | 4.1M | 290K | 0.25M |
 | speedy:0.8.7 | **1.8M** | **32M** | **5.2M** | **18M** | **400K** | **10M** |
 
-### Rust: within-category ranking (bytes mode only)
-
+### Within-category ranking
 Compare serializers **within the same paradigm** (not across JSON vs zero-copy).
 Values are mean Ser+Deser **ops/s** over fixtures, using the harness **bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — not “number of bytes”). Higher is better. Stream mode is excluded here. Each numeric column uses **one** unit (K or M) for the whole column, with **2 significant digits** (display only; CSV unchanged). **Bold** = best in column (ops/s: highest).
 

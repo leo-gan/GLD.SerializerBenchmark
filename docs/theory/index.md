@@ -19,7 +19,7 @@ Memory is a web of pointers and types. The wire and the disk only understand byt
 
 ---
 
-## Three lenses (use the one that matches your job)
+## Three lenses
 
 The same formats appear under three perspectives on purpose. Each document answers a different question:
 
@@ -40,7 +40,7 @@ You can reverse steps 2 and 3 if you already have a concrete problem (“I need 
 
 ---
 
-## Shared vocabulary: core trade-offs
+## Core trade-offs
 
 These axes appear in every lens. Learn the *names*; details live in the perspective docs.
 
@@ -77,7 +77,7 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 
 ---
 
-## How this course connects to the rest of the docs
+## How this course connects
 
 1. **`docs/theory/`** — you are here (concepts and judgment): historical, data science, and engineering perspectives  
 2. **`docs/analysis/`** — how we measure; categories; methodology (`serialization_categories.md`, `BENCHMARK_SUMMARY.md`, …)  
@@ -99,5 +99,3 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 - This theory track is a **map**, not an encyclopedia of every library.
 - Performance claims in prose are **illustrative**. Prefer suite **Results** for numbers on *this* harness and hardware.
 - “Best format” always means **best under your constraints** (team, trust boundary, retention, latency budget, polyglot needs).
-
-Welcome—start with [history](historical_perspective.md), or jump to [data science](data_science_perspective.md) or [engineering](engineer_perspective.md).

@@ -10,8 +10,7 @@ Serializer inventory and caveats: [C (native) overview](index.md). Methods: [Ana
 
 Multi-way leaderboards emphasize **high-importance** metrics (configurable via `metrics.multi_way` in master config). Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer API; **stream mode** = write/read through a stream-like path. These names are *not* payload sizes. In each table, **bold** marks the semantic best value in that column (lowest time; highest ops/s). Ties are all bolded. Latency tables are in **microseconds** (µs).
 
-### C (native): summary (multi-way, important metrics)
-
+### Summary
 Default multi-serializer view shows **high-importance** metrics only ([METRICS.md](../analysis/METRICS.md)). **Primary rank:** median total latency (lower is better). Pairwise / version A/B reports use the full metric set. Latency cells are **µs** (analysis storage remains ns).
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
@@ -30,8 +29,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | cJSON:1.7 | 0.278 | 0.133 | 0.145 | 5.36M | **64.83** | 1078 | **1.00** |
 
 
-### C (native): Total Time (µs) by Serializer and API Mode
-
+### Total Time
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
 | protobuf-c:1.5 | 0.0349 | 0.035 | 0.0337 | 0.034 |
@@ -48,8 +46,7 @@ Default multi-serializer view shows **high-importance** metrics only ([METRICS.m
 | cJSON:1.7 | 0.556 | 0.556 | 0.555 | 0.554 |
 
 
-### C (native): Ops/Sec (from mean) by Serializer and Data Type
-
+### Ops/Sec
 | serializer | EDI_835 | Integer | Person | SimpleObject | StringArray | Telemetry |
 |---|---|---|---|---|---|---|
 | cJSON:1.7 | 2.6M | 12M | 1.8M | 4.1M | 6.8M | 3.9M |
