@@ -72,6 +72,8 @@ nav:
           - Where encode/decode time actually goes: theory/deep-dives/encode-decode-cost.md
           - Self-describing vs schema-dependent: theory/deep-dives/self-describing-vs-schema-dependent.md
           - Schema evolution that doesn’t break readers: theory/deep-dives/schema-evolution.md
+          - Dynamic binary vs IDL binary: theory/deep-dives/dynamic-vs-idl-binary.md
+          - Zero-copy layouts: theory/deep-dives/zero-copy.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
