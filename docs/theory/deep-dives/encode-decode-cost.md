@@ -116,9 +116,3 @@ Methodology and metric definitions: [Analysis methodology](../../analysis/ANALYS
 - Choose formats for the whole product constraint set (debug, evolution, polyglot)—not CPU alone.
 
 ---
-
-## Next
-
-[Self-describing vs schema-dependent](self-describing-vs-schema-dependent.md) — who pays for field identity on the wire, and who stores it out of band?
-
-**See also:** [Engineering perspective](../engineer_perspective.md) · [Serialization categories](../../analysis/serialization_categories.md)

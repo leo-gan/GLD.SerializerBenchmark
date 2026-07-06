@@ -107,9 +107,3 @@ When you read **Results**, you are seeing cost of *those* contracts (JSON text, 
 - Measure real codecs on real payloads; do not use “memcpy was fast in a microbench” as an interchange strategy.
 
 ---
-
-## Next
-
-[Where encode/decode time actually goes](encode-decode-cost.md) — once bytes have a contract, where does CPU time actually go when you encode and decode?
-
-**See also:** [Historical perspective](../historical_perspective.md) (XDR, network byte order) · [Zero-copy layouts](zero-copy.md)

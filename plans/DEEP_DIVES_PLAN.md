@@ -49,10 +49,9 @@ Add a **Deep dives** layer under Serialization 101: short, problem-driven mechan
 ## In this suite         # preferred; link families / Results
 ## Common mistakes
 ## Key takeaways
-## Next
 ```
 
-Do **not** add Module / Prerequisites / Related header chrome on public pages; navigation and the hub own ordering.
+Do **not** add Module / Prerequisites / Related header chrome, or Next / See also footers, on public pages; navigation and the hub own ordering.
 
 | Article type | Emphasize | Soften |
 |--------------|-----------|--------|

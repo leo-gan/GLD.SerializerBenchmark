@@ -110,9 +110,3 @@ Where FlatBuffers or similar codecs are **registered** for a language, treat the
 - Always interpret suite numbers in light of validation settings and access patterns.
 
 ---
-
-## Next
-
-[Compression is not a format](compression-is-not-a-format.md) — why gzip on JSON is not a substitute for choosing an encoding.
-
-**See also:** [Memory layout](memory-layout.md) · [Engineering perspective](../engineer_perspective.md)

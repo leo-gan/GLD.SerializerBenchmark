@@ -123,9 +123,3 @@ Compare **within one language** and prefer same-family charts when asking “is 
 - Match ceremony to how long the contract will live and how many languages share it.
 
 ---
-
-## Next
-
-[Zero-copy layouts](zero-copy.md) — when the goal is not “faster parse into objects,” but reading fields **in place**.
-
-**See also:** [Serialization categories](../../analysis/serialization_categories.md) · [Encode/decode cost](encode-decode-cost.md)

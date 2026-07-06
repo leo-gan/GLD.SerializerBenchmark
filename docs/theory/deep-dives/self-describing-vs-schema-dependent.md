@@ -121,9 +121,3 @@ See [Serialization categories](../../analysis/serialization_categories.md) and l
 - Pick the locus of truth that matches who must read the bytes and how you manage change—next: [Schema evolution](schema-evolution.md).
 
 ---
-
-## Next
-
-[Schema evolution that doesn’t break readers](schema-evolution.md) — how contracts change while old readers and writers still run.
-
-**See also:** [Engineering perspective](../engineer_perspective.md) · [Dynamic binary vs IDL binary](dynamic-vs-idl-binary.md)

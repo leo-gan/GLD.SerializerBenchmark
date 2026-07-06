@@ -125,9 +125,3 @@ The harness focuses on **serializer** behavior (encode/decode of logical fixture
 - Suite **Results** inform codec choice; re-measure with compression on your wire if that is part of the design.
 
 ---
-
-## Next
-
-Return to the [Deep dives hub](index.md) or apply the decision sketch in [Serialization categories](../../analysis/serialization_categories.md). For service-oriented defaults, see [Engineering perspective](../engineer_perspective.md); for lakes and pipelines, [Data science perspective](../data_science_perspective.md).
-
-**See also:** [Encode/decode cost](encode-decode-cost.md) · [Benchmarks hub](../../analysis/index.md)

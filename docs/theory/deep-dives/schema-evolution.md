@@ -123,9 +123,3 @@ When evaluating schema-driven libraries in language overviews, assume production
 - Test old×new and new×old payloads, not only the happy same-version path.
 
 ---
-
-## Next
-
-[Dynamic binary vs IDL binary](dynamic-vs-idl-binary.md) — choosing MessagePack/CBOR-class flexibility versus Protobuf-class contracts in practice.
-
-**See also:** [Self-describing vs schema-dependent](self-describing-vs-schema-dependent.md) · [Engineering perspective](../engineer_perspective.md)
