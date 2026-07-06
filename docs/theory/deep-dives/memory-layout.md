@@ -78,7 +78,7 @@ A **structure** or **record** comprises several fields placed at successive addr
 1. **Order** — which field occupies the lower addresses (often declaration order in C-like languages, though not a universal law).  
 2. **Padding** — unused bytes inserted so that the *next* field begins at an address preferred by the processor and ABI.
 
-#### Why padding exists (alignment)
+#### Why padding exists
 
 Many processors load a four-byte integer most efficiently when its starting address is a **multiple of four** (and an eight-byte quantity when the address is a multiple of eight). Compilers **align** fields to such boundaries by inserting unused **padding** bytes. Those bytes do not appear in source code; they still appear in memory and in an uninterpreted memory dump.
 
