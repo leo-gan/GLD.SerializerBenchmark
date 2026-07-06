@@ -8,7 +8,8 @@ mkdir -p "$TP" "$TP/_build" "$TP/_prefix"
 
 download() {
   local name="$1" url="$2"
-  if [ -d "$TP/$name" ] && [ "$(find "$TP/$name" -name '*.c' -o -name '*.h' | head -1)" ]; then
+  # Drain find after head to avoid SIGPIPE under set -o pipefail when many matches exist.
+  if [ -d "$TP/$name" ] && [ -n "$(find "$TP/$name" \( -name '*.c' -o -name '*.h' \) -print | { head -n 1; cat >/dev/null; })" ]; then
     echo "[skip] $name already present"
     return 0
   fi
@@ -19,7 +20,7 @@ download() {
   mkdir -p "$TP/_extract_$name"
   tar xzf "$tmp" -C "$TP/_extract_$name"
   local top
-  top=$(find "$TP/_extract_$name" -mindepth 1 -maxdepth 1 -type d | head -1)
+  top=$(find "$TP/_extract_$name" -mindepth 1 -maxdepth 1 -type d -print | { head -n 1; cat >/dev/null; })
   mv "$top" "$TP/$name"
   rm -rf "$TP/_extract_$name" "$tmp"
 }
@@ -84,7 +85,7 @@ echo "[build] tinycbor prefixed"
 mkdir -p "$TP/_build/tinycbor_pref"
 cd "$TP/_build/tinycbor_pref"
 rm -f *.o *.a redef.map
-cc -O2 -c -I"$TP/tinycbor/src" \
+${CC:-cc} -O2 -c -I"$TP/tinycbor/src" \
   "$TP/tinycbor/src/cborencoder.c" \
   "$TP/tinycbor/src/cborencoder_close_container_checked.c" \
   "$TP/tinycbor/src/cborerrorstrings.c" \
@@ -101,7 +102,7 @@ echo "[build] parson prefixed"
 mkdir -p "$TP/_build/parson_pref"
 cd "$TP/_build/parson_pref"
 rm -f *.o *.a redef.map syms.txt
-cc -O2 -c -I"$TP/parson" "$TP/parson/parson.c" -o parson.o
+${CC:-cc} -O2 -c -I"$TP/parson" "$TP/parson/parson.c" -o parson.o
 nm parson.o | awk '/ [TDB] /{print $3}' | grep -v '^_' > syms.txt
 > redef.map
 while read -r s; do [ -n "$s" ] && echo "$s parson_$s" >> redef.map; done < syms.txt

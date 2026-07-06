@@ -8,10 +8,12 @@ static int w_char(uint8_t **p, uint8_t *end, char t) {
 static int w_i32(uint8_t **p, uint8_t *end, int32_t v) {
     if (w_char(p, end, 'l')) return -1;
     if (*p + 4 > end) return -1;
-    (*p)[0] = (uint8_t)((v >> 24) & 0xff);
-    (*p)[1] = (uint8_t)((v >> 16) & 0xff);
-    (*p)[2] = (uint8_t)((v >> 8) & 0xff);
-    (*p)[3] = (uint8_t)(v & 0xff);
+    /* Cast before shifts: right-shift of negative signed int is implementation-defined. */
+    uint32_t uv = (uint32_t)v;
+    (*p)[0] = (uint8_t)((uv >> 24) & 0xff);
+    (*p)[1] = (uint8_t)((uv >> 16) & 0xff);
+    (*p)[2] = (uint8_t)((uv >> 8) & 0xff);
+    (*p)[3] = (uint8_t)(uv & 0xff);
     *p += 4; return 0;
 }
 static int w_key(uint8_t **p, uint8_t *end, const char *k) {
@@ -51,7 +53,11 @@ static int r_char(const uint8_t **p, const uint8_t *end, char *t) {
 }
 static int r_i32(const uint8_t **p, const uint8_t *end, int32_t *v) {
     char t; if (r_char(p, end, &t) || t != 'l' || *p + 4 > end) return -1;
-    *v = ((int32_t)(*p)[0] << 24) | ((int32_t)(*p)[1] << 16) | ((int32_t)(*p)[2] << 8) | (int32_t)(*p)[3];
+    /* uint32_t shifts avoid UB from left-shifting into a signed sign bit. */
+    *v = (int32_t)(((uint32_t)(*p)[0] << 24) |
+                   ((uint32_t)(*p)[1] << 16) |
+                   ((uint32_t)(*p)[2] << 8) |
+                   (uint32_t)(*p)[3]);
     *p += 4; return 0;
 }
 static int r_key(const uint8_t **p, const uint8_t *end, char *dst, size_t dstsz) {

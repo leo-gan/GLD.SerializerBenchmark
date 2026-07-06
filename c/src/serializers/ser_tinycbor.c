@@ -25,6 +25,8 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
     if (!cbor_value_is_map(&root)) return -1;
     if (cbor_value_enter_container(&root, &map) != CborNoError) return -1;
     int k = -1; const uint8_t *payload = NULL; size_t plen = 0;
+    /* Function-scope buffer (not static): reentrant; lifetime covers bin_read below. */
+    uint8_t tmp[65536];
     it = map;
     while (!cbor_value_at_end(&it)) {
         char key[32]; size_t kn = sizeof key;
@@ -38,8 +40,6 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
             if (!cbor_value_is_byte_string(&it)) return -1;
             size_t n = 0;
             if (cbor_value_calculate_string_length(&it, &n) != CborNoError) return -1;
-            /* copy into temp then bin_read — tinycbor may need advance */
-            static uint8_t tmp[65536];
             if (n > sizeof tmp) return -1;
             size_t nn = sizeof tmp;
             if (cbor_value_copy_byte_string(&it, tmp, &nn, &it) != CborNoError) return -1;
