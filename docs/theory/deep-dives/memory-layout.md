@@ -126,13 +126,43 @@ Even when both layouts occupy 16 bytes, a reader that assumes Layout 1 and recei
 
 #### Uninterpreted memory dump
 
-For Layout 1 with `flag = 1`, `id = 42`, `score = 7` on a little-endian host:
+For Layout 1 with `flag = 1`, `id = 42`, `score = 7` on a **little-endian** host (least significant byte at the **lowest** address—the usual rule on x86 and many ARM systems). Hexadecimal byte values below use two digits per byte (for example `2a` means decimal 42).
 
 ```text
   offsets:  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
   bytes:   01 00 00 00 2a 00 00 00 07 00 00 00 00 00 00 00
-           └flag┘└─pad──┘└── id = 42 ─┘└────── score = 7 ──────┘
+           │  └─pad─┘  └──── id ────┘  └──────── score ────────┘
+           flag=1        (4 bytes)         (8 bytes)
 ```
+
+**How to read each field (little-endian):**
+
+| Field | Offsets | Bytes (hex) | Why that equals the decimal value |
+|-------|---------|-------------|-----------------------------------|
+| `flag` | 0 | `01` | One-byte field: the byte *is* the value → **1** |
+| pad | 1–3 | `00 00 00` | Unused alignment bytes; not part of the logical record |
+| `id` | 4–7 | `2a 00 00 00` | 32-bit integer. Least significant byte first: `2a₁₆ = 42₁₀`, then three zero high-order bytes → **42** (not “only zeros”) |
+| `score` | 8–15 | `07 00 00 00 00 00 00 00` | 64-bit integer. First byte is the least significant: `07₁₆ = 7₁₀`, then seven zero high-order bytes → **7**. The trailing zeros do **not** mean the value is zero; they mean the upper bits of a small number are zero |
+
+In other words, a multi-byte little-endian integer that “looks mostly zero” is normal for small positive values: the non-zero part sits at the **start** of the field (low address), and zeros pad the more significant end.
+
+**Same layout with `id = 43` instead of 42** (still `flag = 1`, `score = 7`):
+
+```text
+  offsets:  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+  bytes:   01 00 00 00 2b 00 00 00 07 00 00 00 00 00 00 00
+                          ^^
+                          only this byte changes: 2b₁₆ = 43₁₀
+```
+
+| Decimal | Hex | Little-endian 4-byte pattern (`id`) |
+|--------:|-----|--------------------------------------|
+| 42 | `2a` | `2a 00 00 00` |
+| 43 | `2b` | `2b 00 00 00` |
+| 256 | `100` | `00 01 00 00` (now the second byte is non-zero) |
+| 7 as 64-bit `score` | `7` | `07 00 00 00 00 00 00 00` |
+
+On a **big-endian** host the multi-byte fields would reverse byte order within each field (for example `id = 42` as `00 00 00 2a`). That is why uninterpreted dumps are not portable across endianness. Endianness is developed further in the next section.
 
 A portable format might transmit only domain data under an explicit rule—for example “one-byte flag, then four-byte little-endian `id`, then eight-byte little-endian `score`,” **without** the three padding zeros—or employ JSON, MessagePack, or Protocol Buffers so that field identity does not depend on host offsets.
 
