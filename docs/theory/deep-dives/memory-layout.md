@@ -90,7 +90,7 @@ Simplified rules used by many C ABIs (exact rules are ABI-specific):
 
 The instructional conclusion is that **unused gaps appear** between fields.
 
-#### Example A — identical logical fields, different layouts
+#### Identical fields, different layouts
 
 Consider three logical fields:
 
@@ -124,7 +124,7 @@ Even when both layouts occupy 16 bytes, a reader that assumes Layout 1 and recei
 
 **Conclusion:** agreement that both parties “have flag, id, and score” is **insufficient** for an uninterpreted binary dump. The parties need agreed **order, sizes, and padding**—or a format that encodes fields without host padding.
 
-#### Example B — bytes written by an uninterpreted dump
+#### Uninterpreted memory dump
 
 For Layout 1 with `flag = 1`, `id = 42`, `score = 7` on a little-endian host:
 
@@ -136,7 +136,7 @@ For Layout 1 with `flag = 1`, `id = 42`, `score = 7` on a little-endian host:
 
 A portable format might transmit only domain data under an explicit rule—for example “one-byte flag, then four-byte little-endian `id`, then eight-byte little-endian `score`,” **without** the three padding zeros—or employ JSON, MessagePack, or Protocol Buffers so that field identity does not depend on host offsets.
 
-#### Example C — the “same” record in two languages
+#### Same record in two languages
 
 ```c
 /* C (illustrative) */
