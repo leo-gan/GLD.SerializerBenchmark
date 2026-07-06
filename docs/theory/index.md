@@ -99,13 +99,13 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 
 | Order | Topic |
 |------:|-------|
-| 1 | [Memory layout, alignment, and endianness](deep-dives/memory-layout.md) |
-| 2 | [Where encode/decode time actually goes](deep-dives/encode-decode-cost.md) |
-| 3 | [Self-describing vs schema-dependent](deep-dives/self-describing-vs-schema-dependent.md) |
-| 4 | [Schema evolution that doesn’t break readers](deep-dives/schema-evolution.md) |
-| 5 | [Dynamic binary vs IDL binary](deep-dives/dynamic-vs-idl-binary.md) |
-| 6 | [Zero-copy layouts](deep-dives/zero-copy.md) |
-| 7 | [Compression is not a format](deep-dives/compression-is-not-a-format.md) |
+| 1 | [Memory layout](deep-dives/memory-layout.md) |
+| 2 | [Encode/decode cost](deep-dives/encode-decode-cost.md) |
+| 3 | [Self-describing vs schema](deep-dives/self-describing-vs-schema-dependent.md) |
+| 4 | [Schema evolution](deep-dives/schema-evolution.md) |
+| 5 | [Dynamic vs IDL binary](deep-dives/dynamic-vs-idl-binary.md) |
+| 6 | [Zero-copy](deep-dives/zero-copy.md) |
+| 7 | [Compression vs format](deep-dives/compression-is-not-a-format.md) |
 
 ---
 

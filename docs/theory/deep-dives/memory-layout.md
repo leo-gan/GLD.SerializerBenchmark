@@ -1,4 +1,4 @@
-# Memory layout, alignment, and endianness
+# Memory layout
 
 > After reading this page, one should be able to explain why a raw dump of process memory is not a portable interchange format, and what a wire format must specify instead.
 
@@ -172,7 +172,7 @@ Binary floating-point values are subject to the same byte-order considerations w
 
 ### Alignment and zero-copy formats
 
-Formats designed for **in-place reads** (FlatBuffers-class designs—see [Zero-copy layouts](zero-copy.md)) place fields so that a host can load integers from buffer offsets with limited extra work (typically assuming a documented endianness). That arrangement is not the absence of a format; it is a **layout specification** that resembles a convenient memory image while still forbidding raw host pointers into another process’s heap.
+Formats designed for **in-place reads** (FlatBuffers-class designs—see [Zero-copy](zero-copy.md)) place fields so that a host can load integers from buffer offsets with limited extra work (typically assuming a documented endianness). That arrangement is not the absence of a format; it is a **layout specification** that resembles a convenient memory image while still forbidding raw host pointers into another process’s heap.
 
 ### Managed objects and graphs
 

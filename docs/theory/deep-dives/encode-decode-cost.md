@@ -1,4 +1,4 @@
-# Where encode/decode time actually goes
+# Encode/decode cost
 
 > After reading this page, one should be able to identify the principal sources of serialization cost and avoid the unsupported claim that “JSON is invariably slow” or that “binary formats are invariably fast.”
 
@@ -77,7 +77,7 @@ Even without human-oriented punctuation, many binary formats still carry **descr
 - **Type tags** — e.g. “the next value is a 32-bit integer,” “the next value is a UTF-8 string of length *n*.”  
 - **Field names** — string keys such as `"temp_c"` repeated for every record (common in MessagePack maps and in JSON).
 
-Schema-dependent formats such as Protocol Buffers typically replace names on the wire with **small field numbers** defined in a shared schema, reducing per-message metadata at the cost of an out-of-band contract. See [Self-describing versus schema-dependent formats](self-describing-vs-schema-dependent.md).
+Schema-dependent formats such as Protocol Buffers typically replace names on the wire with **small field numbers** defined in a shared schema, reducing per-message metadata at the cost of an out-of-band contract. See [Self-describing vs schema](self-describing-vs-schema-dependent.md).
 
 ### Memory allocation and copying
 

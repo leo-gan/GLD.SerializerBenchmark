@@ -21,13 +21,13 @@ Theory alone does not decide production choices. Use these pages to build mechan
 
 | Step | Article | You should be able to… |
 |------|---------|------------------------|
-| 1 | [Memory layout, alignment, and endianness](memory-layout.md) | Explain why a raw memory dump is not a portable format |
-| 2 | [Where encode/decode time actually goes](encode-decode-cost.md) | Name the real cost centers (parse, numbers, alloc, copy)—not an unqualified claim that JSON is slow |
-| 3 | [Self-describing vs schema-dependent](self-describing-vs-schema-dependent.md) | Say who carries field identity: payload or shared contract |
-| 4 | [Schema evolution that doesn’t break readers](schema-evolution.md) | Plan additive change without breaking old readers/writers |
-| 5 | [Dynamic binary vs IDL binary](dynamic-vs-idl-binary.md) | Choose MessagePack/CBOR-class vs Protobuf-class for a workload |
-| 6 | [Zero-copy layouts](zero-copy.md) | Explain what “no deserialize” means—and what it still costs |
-| 7 | [Compression is not a format](compression-is-not-a-format.md) | Separate gzip-on-the-wire from format-aware density |
+| 1 | [Memory layout](memory-layout.md) | Explain why a raw memory dump is not a portable format |
+| 2 | [Encode/decode cost](encode-decode-cost.md) | Name the real cost centers (parse, numbers, alloc, copy)—not an unqualified claim that JSON is slow |
+| 3 | [Self-describing vs schema](self-describing-vs-schema-dependent.md) | Say who carries field identity: payload or shared contract |
+| 4 | [Schema evolution](schema-evolution.md) | Plan additive change without breaking old readers/writers |
+| 5 | [Dynamic vs IDL binary](dynamic-vs-idl-binary.md) | Choose MessagePack/CBOR-class vs Protobuf-class for a workload |
+| 6 | [Zero-copy](zero-copy.md) | Explain what “no deserialize” means—and what it still costs |
+| 7 | [Compression vs format](compression-is-not-a-format.md) | Separate gzip-on-the-wire from format-aware density |
 
 ---
 
@@ -35,22 +35,22 @@ Theory alone does not decide production choices. Use these pages to build mechan
 
 ### Representation
 
-- [Memory layout, alignment, and endianness](memory-layout.md)
-- [Where encode/decode time actually goes](encode-decode-cost.md)
+- [Memory layout](memory-layout.md)
+- [Encode/decode cost](encode-decode-cost.md)
 
 ### Contracts & change
 
-- [Self-describing vs schema-dependent](self-describing-vs-schema-dependent.md)
-- [Schema evolution that doesn’t break readers](schema-evolution.md)
+- [Self-describing vs schema](self-describing-vs-schema-dependent.md)
+- [Schema evolution](schema-evolution.md)
 
 ### Families in practice
 
-- [Dynamic binary vs IDL binary](dynamic-vs-idl-binary.md)
-- [Zero-copy layouts](zero-copy.md)
+- [Dynamic vs IDL binary](dynamic-vs-idl-binary.md)
+- [Zero-copy](zero-copy.md)
 
 ### Systems concerns
 
-- [Compression is not a format](compression-is-not-a-format.md)
+- [Compression vs format](compression-is-not-a-format.md)
 
 ---
 

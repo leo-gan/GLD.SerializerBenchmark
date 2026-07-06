@@ -1,4 +1,4 @@
-# Zero-copy layouts
+# Zero-copy
 
 > After reading this page, one should be able to explain what “no deserialization” means for FlatBuffers-class formats, and what costs and risks remain.
 
@@ -41,7 +41,7 @@ In a **zero-copy** design (FlatBuffers, Cap’n Proto, and related systems), enc
 
 ### Layout contract (building on memory layout)
 
-Recall from [memory layout, alignment, and endianness](memory-layout.md) that a process-local structure may contain padding and host pointers. A zero-copy **message format** instead defines a **portable layout**:
+Recall from [memory layout](memory-layout.md) that a process-local structure may contain padding and host pointers. A zero-copy **message format** instead defines a **portable layout**:
 
 - multi-byte integers appear at agreed alignments and byte orders;  
 - variable-length data (strings, vectors) are reached through **offsets** stored in the buffer;  
@@ -102,7 +102,7 @@ In-place updates are constrained (sufficient space must already exist; changing 
 | Processor time (read) | Often lower for sparse access to large messages | Verification cost; access patterns |
 | Processor time (write) | Builder complexity; not always faster than packed classical encode | — |
 | Memory / allocations | Fewer objects on the read path | Buffer lifetime must outlive views |
-| Size / bandwidth | Competitive; alignment may introduce padding | Not a substitute for compression ([compression article](compression-is-not-a-format.md)) |
+| Size / bandwidth | Competitive; alignment may introduce padding | Not a substitute for compression ([Compression vs format](compression-is-not-a-format.md)) |
 | Evolution | Schema or IDL still required | Compatibility discipline remains |
 | Security | Omitting verification can appear “fast” and is unsafe | Always verify untrusted buffers |
 | Operability | Specialized inspectors | Weaker ad hoc log readability |
