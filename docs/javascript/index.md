@@ -11,7 +11,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 - `prepare()` compiles schemas / reuses encoder instances outside timed loops
 - Protobuf-ES codegen: `npm run generate:protobuf-es` (needs `protoc`)
 
-## Serializers (18–19)
+## Serializers
 
 | Name | Category | Package | Optimal API |
 |------|----------|---------|-------------|
@@ -37,7 +37,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 ### Notes
 
-- **simdjson-parse+JSON.stringify** (optional native addon): only **deserialize** uses SIMD; serialize is stdlib `JSON.stringify` (honest leaderboard label).
+- **simdjson-parse+JSON.stringify** (optional native addon; omitted from the run if not installed): only **deserialize** uses SIMD; serialize is stdlib `JSON.stringify` (honest leaderboard label).
 - **protobuf-es** uses generated code from `javascript/schemas/js_fixtures.proto` (field shapes match JS fixtures; string timestamps).
 - **flatbuffers:** Integer / SimpleObject use a **compact table** (no JSON blob) for fair small-object sizes; larger fixtures store a JSON payload string in a FlatBuffer table.
 - **flexbuffers:** full fixture support. flatbuffers 24.x `toObject` bugs on large vectors / mixed float maps are worked around by encoding arrays as maps and non-integer floats as `{__f}` wrappers (still real FlexBuffers wire; restore is exact).
