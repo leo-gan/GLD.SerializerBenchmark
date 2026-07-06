@@ -34,9 +34,10 @@ The same formats appear under three perspectives on purpose. Each document answe
 1. Skim the **shared trade-offs** below (10 minutes).
 2. Read the **[historical perspective](historical_perspective.md)** once (big picture).
 3. Deep-dive the lens that matches your work (**data science** or **engineering**).
-4. Open [Serialization categories](../analysis/serialization_categories.md) and a language **Overview** / **Results** page for libraries you might actually use.
+4. When you need *mechanisms* (layout, cost model, schemas, zero-copy, …), work the **[Deep dives](deep-dives/index.md)** track.
+5. Open [Serialization categories](../analysis/serialization_categories.md) and a language **Overview** / **Results** page for libraries you might actually use.
 
-You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”).
+You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single deep dive from the [hub](deep-dives/index.md) when you already know the question.
 
 ---
 
@@ -80,17 +81,31 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 ## How this course connects
 
 1. **`docs/theory/`** — you are here (concepts and judgment): historical, data science, and engineering perspectives  
-2. **`docs/analysis/`** — how we measure; categories; methodology (`serialization_categories.md`, `BENCHMARK_SUMMARY.md`, …)  
-3. **`docs/<language>/`** — what is registered per language; **Results** (C#, Python, Rust, Go, JavaScript, C, …)  
+2. **`docs/theory/deep-dives/`** — short mechanism essays (layout, cost, schemas, families, compression)  
+3. **`docs/analysis/`** — how we measure; categories; methodology (`serialization_categories.md`, `BENCHMARK_SUMMARY.md`, …)  
+4. **`docs/<language>/`** — what is registered per language; **Results** (C#, Python, Rust, Go, JavaScript, C, …)  
 
 | Next step | Link |
 |-----------|------|
 | Why formats exist (timeline) | [Historical perspective](historical_perspective.md) |
 | Data lakes, ML, analytics choices | [Data science perspective](data_science_perspective.md) |
 | Services, performance, security | [Engineering perspective](engineer_perspective.md) |
+| Mechanism deep dives (MVP path) | [Deep dives](deep-dives/index.md) |
 | Suite categories & decision sketch | [Serialization categories](../analysis/serialization_categories.md) |
 | Methodology & results hub | [Benchmarks](../analysis/index.md) |
-| Language deep dives | [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [Go](../go/index.md) · [JavaScript](../javascript/index.md) · [C](../c/index.md) |
+| Language overviews & results | [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [Go](../go/index.md) · [JavaScript](../javascript/index.md) · [C](../c/index.md) |
+
+### Deep dives (quick map)
+
+| Order | Topic |
+|------:|-------|
+| 1 | [Memory layout, alignment, and endianness](deep-dives/memory-layout.md) |
+| 2 | [Where encode/decode time actually goes](deep-dives/encode-decode-cost.md) |
+| 3 | [Self-describing vs schema-dependent](deep-dives/self-describing-vs-schema-dependent.md) |
+| 4 | [Schema evolution that doesn’t break readers](deep-dives/schema-evolution.md) |
+| 5 | [Dynamic binary vs IDL binary](deep-dives/dynamic-vs-idl-binary.md) |
+| 6 | [Zero-copy layouts](deep-dives/zero-copy.md) |
+| 7 | [Compression is not a format](deep-dives/compression-is-not-a-format.md) |
 
 ---
 

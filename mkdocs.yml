@@ -66,6 +66,10 @@ nav:
       - Historical: theory/historical_perspective.md
       - Data Science: theory/data_science_perspective.md
       - Engineering: theory/engineer_perspective.md
+      - Deep dives:
+          - Overview: theory/deep-dives/index.md
+          - Memory layout, alignment, and endianness: theory/deep-dives/memory-layout.md
+          - Where encode/decode time actually goes: theory/deep-dives/encode-decode-cost.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
