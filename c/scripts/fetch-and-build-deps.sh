@@ -108,28 +108,33 @@ while read -r s; do [ -n "$s" ] && echo "$s parson_$s" >> redef.map; done < syms
 objcopy --redefine-syms=redef.map parson.o
 ar rcs libparson_pref.a parson.o
 
-# regenerate prefix headers used by the harness
-python3 - <<'PY'
+# regenerate prefix headers used by the harness (pass paths via env; quoted heredoc)
+TP="$TP" C_DIR="$C_DIR" python3 - <<'PY'
 from pathlib import Path
-tp = Path("'''"$TP"'''")
+import os
+
+tp = Path(os.environ["TP"])
+c_dir = Path(os.environ["C_DIR"])
+
 # tinycbor
-redef = (tp/"_build/tinycbor_pref/redef.map").read_text().splitlines()
+redef = (tp / "_build/tinycbor_pref/redef.map").read_text().splitlines()
 lines = ["#ifndef TINYCBOR_PREF_H", "#define TINYCBOR_PREF_H"]
 for line in redef:
     parts = line.split()
     if len(parts) == 2:
         lines.append(f"#define {parts[0]} {parts[1]}")
 lines += ['#include "cbor.h"', "#endif"]
-Path("'''"$C_DIR"'''/src/tinycbor_pref.h").write_text("\n".join(lines) + "\n")
+(c_dir / "src/tinycbor_pref.h").write_text("\n".join(lines) + "\n")
+
 # parson
-redef = (tp/"_build/parson_pref/redef.map").read_text().splitlines()
+redef = (tp / "_build/parson_pref/redef.map").read_text().splitlines()
 lines = ["#ifndef PARSON_PREF_H", "#define PARSON_PREF_H"]
 for line in redef:
     parts = line.split()
     if len(parts) == 2:
         lines.append(f"#define {parts[0]} {parts[1]}")
 lines += ['#include "parson.h"', "#endif"]
-Path("'''"$C_DIR"'''/src/parson_pref.h").write_text("\n".join(lines) + "\n")
+(c_dir / "src/parson_pref.h").write_text("\n".join(lines) + "\n")
 print("prefix headers regenerated")
 PY
 
