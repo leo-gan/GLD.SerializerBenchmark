@@ -74,6 +74,7 @@ nav:
           - Schema evolution that doesn’t break readers: theory/deep-dives/schema-evolution.md
           - Dynamic binary vs IDL binary: theory/deep-dives/dynamic-vs-idl-binary.md
           - Zero-copy layouts: theory/deep-dives/zero-copy.md
+          - Compression is not a format: theory/deep-dives/compression-is-not-a-format.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
