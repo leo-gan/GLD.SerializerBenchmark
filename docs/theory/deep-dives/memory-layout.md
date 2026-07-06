@@ -76,17 +76,17 @@ Copying only those eight bytes copies an **address that is meaningless in anothe
 A **structure** or **record** comprises several fields placed at successive addresses. Two facts matter for binary dumps:
 
 1. **Order** — which field occupies the lower addresses (often declaration order in C-like languages, though not a universal law).  
-2. **Padding** — unused bytes inserted so that the *next* field begins at an address preferred by the processor and ABI.
+2. **Padding** — unused bytes inserted so that the *next* field begins at an address the processor can load efficiently (for example, a multiple of four or eight).
 
 #### Why padding exists
 
 Many processors load a four-byte integer most efficiently when its starting address is a **multiple of four** (and an eight-byte quantity when the address is a multiple of eight). Compilers **align** fields to such boundaries by inserting unused **padding** bytes. Those bytes do not appear in source code; they still appear in memory and in an uninterpreted memory dump.
 
-Simplified rules used by many C ABIs (exact rules are ABI-specific):
+Simplified rules used by many C compilers on common desktop and server platforms (exact rules depend on the compiler, operating system, and CPU):
 
 - a one-byte field may begin at any address;  
 - a four-byte field begins at an address divisible by four;  
-- an eight-byte field or pointer on a 64-bit ABI begins at an address divisible by eight.
+- an eight-byte field or pointer on a typical 64-bit platform begins at an address divisible by eight.
 
 The instructional conclusion is that **unused gaps appear** between fields.
 
@@ -148,7 +148,7 @@ struct Player { char flag; int32_t id; int64_t score; };
 player = {"flag": 1, "id": 42, "score": 7}
 ```
 
-The Python dictionary comprises references and hash-table machinery in the interpreter heap. There is **no** single 16-byte image equivalent to the C structure. “Binary dump of my object” is defined, if at all, **only within one language’s ABI**—and often not even then for managed objects.
+The Python dictionary comprises references and hash-table machinery in the interpreter heap. There is **no** single 16-byte image equivalent to the C structure. “Binary dump of my object” is meaningful, if at all, **only inside one language and one compiler/runtime on one platform**—and often not even then for managed objects.
 
 ### Endianness
 
@@ -200,7 +200,7 @@ Language-native serializers (for example Python `pickle`) perform that work for 
 
 ## Illustrative scenario
 
-A game client on a little-endian laptop writes player state with an uninterpreted copy of a packed C structure and uploads it to a backend. The backend uses a different ABI or a language that reorders fields for garbage collection. Inventory counts become incorrect; the defect appears to be application logic until the byte sequences are compared with an endian-aware viewer.
+A game client on a little-endian laptop writes player state with an uninterpreted copy of a packed C structure and uploads it to a backend. The backend may use a different compiler or CPU convention for field layout, or a managed language that stores fields in an entirely different way for garbage collection. Inventory counts become incorrect; the defect appears to be application logic until the byte sequences are compared with an endian-aware viewer.
 
 A durable remedy is not an informal document describing structure packing. It is an explicit format (even a simple length-prefixed little-endian layout, or a schema-driven codec) shared by both ends.
 
@@ -217,7 +217,7 @@ The harness measures **codecs**, not raw structure dumps: each registered serial
 ## Common errors of practice
 
 - Treating `sizeof` together with an uninterpreted binary write as a multi-language interface.  
-- Forgetting that **padding and field order** are part of the ABI, not merely part of a mental model of the domain object.  
+- Forgetting that **padding and field order** are decisions of the compiler and platform, not merely part of a mental model of the domain object.  
 - Assuming that the prevalence of little-endian hosts makes endianness irrelevant—**embedded systems, network equipment, and file formats** still require a written rule.  
 - Confusing **host layout** with **zero-copy wire layout**; the latter is designed, versioned, and free of host pointers.  
 - Transmitting language-native serializations of object graphs across a trust boundary (see security notes in the [engineering perspective](../engineer_perspective.md)).
