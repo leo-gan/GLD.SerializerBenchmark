@@ -10,7 +10,7 @@
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview SoT): C# **37** · Python **16** · Rust **15** · C **12** · JavaScript **12** (simdjson optional) · Go **12**.
+Registered counts (Overview SoT): C# **37** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **12**.
 
 ---
 
@@ -57,7 +57,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **C#:** `Json.Net`, `Json.Net (Helper)`, `SpanJson`, `Utf8Json`, `Jil`, `NetJSON`, `ServiceStack Json`, …  
   - **Python:** `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs`  
   - **Rust:** `serde_json`, `simd-json`, `sonic-rs`  
-  - **C:** `cJSON`, `yyjson`, `jansson`, `parson` (default build may use portable stand-ins—see [C overview](../c/index.md))  
+  - **C:** `cJSON`, `yyjson`, `jansson`, `parson`, `json-c`  
   - **JavaScript:** `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)  
   - **Go:** `encoding/json`, `sonic`, `goccy/go-json`, `jsoniter`, `segmentio/encoding/json`  
 
@@ -68,8 +68,8 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 - **Examples in suite:**  
   - **Python:** `msgpack`, `msgspec-msgpack`, `cbor2`  
   - **Rust:** `rmp-serde`, `ciborium`, `minicbor`, `bson`, `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy`, `flexbuffers`  
-  - **C:** `mpack`, `tinycbor`, `ubj`, `cbor-encode`, `custom-binary`  
-  - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `cbor-x`, `cbor`, `bson`, `bser`  
+  - **C:** `mpack`, `msgpack-c`, `tinycbor`, `cbor-encode`, `qcbor`, `ubj`, `libbson`, `custom-binary`  
+  - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `bson`, `bser`, `sia`  
   - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `fxamacker/cbor`, `mongo-bson`  
   - **C#:** many binary graph/type serializers (`Ceras`, `Hyperion`, `BinaryPack`, `MemoryPack`, …)—portability and trust model vary; see [C# overview](../c-sharp/index.md). **MessagePack-CSharp is not registered.**
 
@@ -89,8 +89,8 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **C#:** `ProtoBuf` (protobuf-net), `Google.Protobuf`, `MS Bond Fast` / `Compact`, `FlatSharp`, `ZeroFormatter`, `MemoryPack` (model/generator path)  
   - **Python:** `protobuf`, `avro` (fastavro), `flatbuffers`  
   - **Rust:** `prost` (shared `.proto`; **Integer** unsupported), `rkyv` (timed deser **materializes** owned values), `flexbuffers`  
-  - **C:** `nanopb`, `protobuf-c`, `flatcc` (default build often tagged envelopes—see C overview)  
-  - **JavaScript:** `avsc`, `protobufjs`  
+  - **C:** `nanopb`, `protobuf-c`, `upb` (in-tree wire), `flatcc`, `avro-c`, `zcbor`  
+  - **JavaScript:** `avsc`, `protobufjs`, `protobuf-es`, `flatbuffers`, `flexbuffers`, `bebop`  
   - **Go:** `protobuf`, `hamba/avro`  
 
 ### Language-native
@@ -99,7 +99,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 - **Trade-offs:** poor portability; **unsafe** on untrusted input where formats can execute code.  
 - **Examples in suite:**  
   - **Python:** `pickle`, `cloudpickle`, `dill`  
-  - **JavaScript:** `v8-serializer`  
+  - **JavaScript:** `v8-serializer`, `devalue`  
   - **Go:** `encoding/gob`  
   - **C#:** legacy / graph-oriented binaries (e.g. `MS Binary`)—see Overview  
   - **Rust / C:** no pickle-equivalent; **`ObjectGraph` skipped** for almost all formats  
@@ -110,7 +110,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 
 - Default comparison: **same language + same family + same fixture + same mode**.  
 - Schema-driven often leads on size/throughput *within a language*—not a universal ranking.  
-- **C** default builds may label portable stand-ins with real library names—read the C Overview before citing as library rankings.  
+- **C** uses real library APIs when deps are built (`fetch-and-build-deps.sh`); read the C Overview for `upb` / `ubj` notes.  
 - Metrics live on language **Results**, not here.
 
 ## Further reading

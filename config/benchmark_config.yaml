@@ -451,41 +451,81 @@ languages:
         library: parson
         rationale: "Simple single-file C JSON"
         optimal_api: "json_serialize_to_string / json_parse_string"
+      - name: json-c
+        category: json
+        library: json-c
+        rationale: "Distro-default system JSON (libjson-c)"
+        optimal_api: "json_object_to_json_string_ext / json_tokener_parse"
       - name: mpack
         category: binary
         library: mpack
-        rationale: "MessagePack in pure C"
+        rationale: "MessagePack in pure C (ludocode/mpack)"
         optimal_api: "mpack_writer / mpack_tree"
+      - name: msgpack-c
+        category: binary
+        library: msgpack-c
+        rationale: "Official MessagePack C runtime"
+        optimal_api: "msgpack_pack_* / msgpack_unpack_*"
       - name: tinycbor
         category: binary
         library: tinycbor
         rationale: "Intel tinycbor (IETF CBOR)"
         optimal_api: "cbor_encoder / cbor_parser"
-      - name: nanopb
-        category: schema
-        library: nanopb
-        rationale: "Protocol Buffers for embedded C"
-        optimal_api: "pb_encode / pb_decode"
-      - name: protobuf-c
-        category: schema
-        library: protobuf-c
-        rationale: "Full protobuf-c runtime"
-        optimal_api: "protobuf_c_message_pack / unpack"
-      - name: flatcc
-        category: schema
-        library: flatcc
-        rationale: "FlatBuffers C builder/verifier"
-        optimal_api: "flatcc_builder / flatbuffers_verifier"
-      - name: ubj
-        category: binary
-        library: ubj
-        rationale: "Universal Binary JSON (C)"
-        optimal_api: "ubjw_write / ubjr_read"
       - name: cbor-encode
         category: binary
         library: libcbor
         rationale: "libcbor reference implementation"
         optimal_api: "cbor_serialize_alloc / cbor_load"
+      - name: qcbor
+        category: binary
+        library: QCBOR
+        rationale: "IETF/IoT CBOR (QCBOR)"
+        optimal_api: "QCBOREncode_* / QCBORDecode_*"
+      - name: ubj
+        category: binary
+        library: in-tree
+        rationale: "UBJSON (spec-faithful minimal codec)"
+        optimal_api: "ubj map writer/reader"
+      - name: libbson
+        category: binary
+        library: libbson
+        rationale: "MongoDB BSON"
+        optimal_api: "bson_append_* / bson_iter_*"
+      - name: custom-binary
+        category: binary
+        library: harness
+        rationale: "Hand-packed C struct baseline"
+        optimal_api: "bin_write_fixture / bin_read_fixture"
+      - name: nanopb
+        category: schema
+        library: nanopb
+        rationale: "Protocol Buffers for embedded C (stream API)"
+        optimal_api: "pb_ostream / pb_istream field tags"
+      - name: protobuf-c
+        category: schema
+        library: protobuf-c
+        rationale: "protobuf-c runtime + standard wire layout"
+        optimal_api: "protobuf wire via protobuf-c buffers"
+      - name: upb
+        category: schema
+        library: in-tree-wire
+        rationale: "Protobuf wire codec (upb-compatible layout; not Google upb link)"
+        optimal_api: "standard protobuf binary field tags"
+      - name: flatcc
+        category: schema
+        library: flatcc
+        rationale: "FlatBuffers C builder/reader"
+        optimal_api: "flatcc_builder_* / table reader"
+      - name: avro-c
+        category: schema
+        library: avro-c
+        rationale: "Apache Avro C binary encoding"
+        optimal_api: "avro_value_write / avro_value_read"
+      - name: zcbor
+        category: schema
+        library: zcbor
+        rationale: "Nordic zcbor structured CBOR encode/decode"
+        optimal_api: "zcbor_map_start_encode / zcbor_map_start_decode"
 
   javascript:
     display_name: "JavaScript (Node.js)"
@@ -511,53 +551,88 @@ languages:
       - name: simdjson
         category: json
         package: simdjson
-        rationale: "SIMD JSON parse (C++ addon)"
+        rationale: "SIMD JSON parse (optional native addon)"
         optimal_api: "simdjson.parse + JSON.stringify (roundtrip)"
       - name: msgpackr
         category: binary
         package: msgpackr
-        rationale: "Fastest Node MessagePack"
-        optimal_api: "pack / unpack (reuse instance)"
+        rationale: "Fast Node MessagePack"
+        optimal_api: "Packr.pack / Unpackr.unpack (reuse)"
       - name: "@msgpack/msgpack"
         category: binary
         package: "@msgpack/msgpack"
-        rationale: "Official msgpack org encoder"
+        rationale: "Official msgpack.org encoder"
         optimal_api: "encode / decode"
       - name: cbor-x
         category: binary
         package: cbor-x
         rationale: "Fast CBOR for Node/browsers"
-        optimal_api: "encode / decode (reuse Encoder/Decoder)"
+        optimal_api: "Encoder.encode / Decoder.decode (reuse)"
       - name: cbor
         category: binary
         package: cbor
         rationale: "Reference node-cbor"
         optimal_api: "encode / decodeFirstSync"
-      - name: avsc
-        category: schema
-        package: avsc
-        rationale: "Apache Avro pure JS"
-        optimal_api: "Type.toBuffer / fromBuffer (precompiled type)"
-      - name: protobufjs
-        category: schema
-        package: protobufjs
-        rationale: "Protocol Buffers in JS"
-        optimal_api: "Type.encode / decode (pre-loaded root)"
       - name: bson
         category: binary
         package: bson
         rationale: "MongoDB BSON"
         optimal_api: "BSON.serialize / deserialize"
-      - name: v8-serializer
-        category: native
-        package: node:v8
-        rationale: "V8 structured clone / serialize API"
-        optimal_api: "v8.serialize / v8.deserialize"
       - name: bser
         category: binary
         package: bser
-        rationale: "Binary serialization (Watchman format)"
+        rationale: "Facebook Binary JSON (Watchman)"
         optimal_api: "dumpToBuffer / loadFromBuffer"
+      - name: json-pack-msgpack
+        category: binary
+        package: "@jsonjoy.com/json-pack"
+        rationale: "json-joy high-performance TS MessagePack"
+        optimal_api: "MsgPackEncoder.encode / MsgPackDecoder.decode"
+      - name: sia
+        category: binary
+        package: "@timeleap/sia"
+        rationale: "Sia pure-JS binary (JSON-model over Sia primitives)"
+        optimal_api: "Sia add*/read* with typed tags"
+      - name: avsc
+        category: schema
+        package: avsc
+        rationale: "Apache Avro pure JS with explicit fixture schemas"
+        optimal_api: "Type.forSchema + toBuffer / fromBuffer"
+      - name: protobufjs
+        category: schema
+        package: protobufjs
+        rationale: "Classic Protocol Buffers in JS (real fixture messages)"
+        optimal_api: "Type.encode / decode (preloaded Root)"
+      - name: protobuf-es
+        category: schema
+        package: "@bufbuild/protobuf"
+        rationale: "Modern Protobuf-ES (Buf) from generated schemas"
+        optimal_api: "create + toBinary / fromBinary"
+      - name: flatbuffers
+        category: schema
+        package: flatbuffers
+        rationale: "Google FlatBuffers JS Builder (real FB wire)"
+        optimal_api: "Builder / ByteBuffer"
+      - name: flexbuffers
+        category: schema
+        package: flatbuffers
+        rationale: "FlexBuffers schemaless FB family (parity with Rust)"
+        optimal_api: "flexbuffers encode / toObject"
+      - name: bebop
+        category: schema
+        package: bebop
+        rationale: "Bebop runtime (JSON-model over BebopView; no .bop codegen)"
+        optimal_api: "BebopView write/read primitives"
+      - name: v8-serializer
+        category: native
+        package: builtin
+        rationale: "Node V8 structured clone binary"
+        optimal_api: "v8.serialize / v8.deserialize"
+      - name: devalue
+        category: native
+        package: devalue
+        rationale: "SvelteKit-style value string codec"
+        optimal_api: "stringify / parse"
 
   go:
     display_name: Go

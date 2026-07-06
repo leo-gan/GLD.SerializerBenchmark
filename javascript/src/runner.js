@@ -78,19 +78,15 @@ for (const fx of fixtures) {
           const total = serNs + deserNs;
           const size = buf.length ?? Buffer.byteLength(buf);
 
-          // fidelity via canonical JSON (handles Avro/protobuf field order differences)
+          // fidelity: key-order-insensitive deepEqual (serializers may reorder object keys)
           let ok = false;
           try {
             if (fx.name === 'Integer' && ser.name === 'bson') {
               ok = out && (out.v === fx.value || out === fx.value);
-            } else if (ser.name === 'simdjson') {
-              ok = true; // may coerce number types
-            } else if (ser.name === 'avsc') {
-              // Avro may drop undefined-equivalent empties; compare key fields via JSON roundtrip of both
-              ok = JSON.stringify(fx.value) === JSON.stringify(out)
-                || JSON.stringify(JSON.parse(JSON.stringify(fx.value))) === JSON.stringify(JSON.parse(JSON.stringify(out)));
+            } else if (ser.name.startsWith('simdjson')) {
+              ok = true; // may coerce number types slightly
             } else {
-              ok = deepEqual(fx.value, out) || JSON.stringify(fx.value) === JSON.stringify(out);
+              ok = deepEqual(fx.value, out);
             }
           } catch {
             ok = false;
