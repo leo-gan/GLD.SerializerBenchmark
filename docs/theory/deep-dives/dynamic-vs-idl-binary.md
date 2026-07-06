@@ -2,8 +2,6 @@
 
 > After this page you can choose between MessagePack/CBOR-class dynamic binary and Protobuf-class IDL binary for a workload—without crowning a universal winner.
 
-**Module:** Families in practice (C1) · **Prerequisites:** [Self-describing vs schema-dependent](self-describing-vs-schema-dependent.md), [Schema evolution](schema-evolution.md) · **Related:** [Serialization categories](../../analysis/serialization_categories.md), [Engineering](../engineer_perspective.md)
-
 ---
 
 ## Problem

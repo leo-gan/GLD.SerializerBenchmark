@@ -2,8 +2,6 @@
 
 > After this page you can plan additive changes so old and new producers/consumers can coexist—and name the rules that make “we’ll fix the client” fail.
 
-**Module:** Contracts & change (B2) · **Prerequisites:** [Self-describing vs schema-dependent](self-describing-vs-schema-dependent.md) · **Related:** [Engineering — schema evolution](../engineer_perspective.md), [Data science — Avro](../data_science_perspective.md)
-
 ---
 
 ## Problem

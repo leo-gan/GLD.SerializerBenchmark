@@ -40,8 +40,6 @@ Add a **Deep dives** layer under Serialization 101: short, problem-driven mechan
 
 > One-sentence promise.
 
-**Module:** … · **Prerequisites:** … · **Related:** …
-
 ## Problem
 ## Short answer
 ## Mental model
@@ -53,6 +51,8 @@ Add a **Deep dives** layer under Serialization 101: short, problem-driven mechan
 ## Key takeaways
 ## Next
 ```
+
+Do **not** add Module / Prerequisites / Related header chrome on public pages; navigation and the hub own ordering.
 
 | Article type | Emphasize | Soften |
 |--------------|-----------|--------|

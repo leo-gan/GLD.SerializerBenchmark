@@ -2,8 +2,6 @@
 
 > After this page you can separate general-purpose compression from serialization choices—and know when each tool actually helps.
 
-**Module:** Systems concerns (D1) · **Prerequisites:** [Where encode/decode time actually goes](encode-decode-cost.md), [Dynamic binary vs IDL binary](dynamic-vs-idl-binary.md) · **Related:** [Engineering — size vs speed](../engineer_perspective.md), [Data science](../data_science_perspective.md) (columnar + encoding)
-
 ---
 
 ## Problem

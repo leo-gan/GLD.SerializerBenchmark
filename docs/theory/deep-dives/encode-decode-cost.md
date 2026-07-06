@@ -2,8 +2,6 @@
 
 > After this page you can name the real cost centers of serialization—and avoid the myth that “JSON is always slow” or “binary is always fast.”
 
-**Module:** Representation (A3) · **Prerequisites:** [Memory layout, alignment, and endianness](memory-layout.md) · **Related:** [Engineering — performance mechanics](../engineer_perspective.md), [Metrics](../../analysis/METRICS.md)
-
 ---
 
 ## Problem

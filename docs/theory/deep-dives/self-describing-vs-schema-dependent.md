@@ -2,8 +2,6 @@
 
 > After this page you can say who carries field identity—the payload or a shared contract—and what that choice buys and costs.
 
-**Module:** Contracts & change (B1) · **Prerequisites:** [Where encode/decode time actually goes](encode-decode-cost.md) · **Related:** [101 — core trade-offs](../index.md#core-trade-offs), [Schema evolution](schema-evolution.md)
-
 ---
 
 ## Problem

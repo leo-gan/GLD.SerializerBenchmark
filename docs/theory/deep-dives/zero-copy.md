@@ -2,8 +2,6 @@
 
 > After this page you can explain what “no deserialize” means for FlatBuffers-class formats—and what costs and risks remain.
 
-**Module:** Families in practice (C3) · **Prerequisites:** [Memory layout, alignment, and endianness](memory-layout.md), [Where encode/decode time actually goes](encode-decode-cost.md) · **Related:** [Engineering — zero-copy](../engineer_perspective.md)
-
 ---
 
 ## Problem

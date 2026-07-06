@@ -2,8 +2,6 @@
 
 > After this page you can explain why a raw in-memory dump is not a portable interchange format—and what a wire format must fix up.
 
-**Module:** Representation (A2) · **Prerequisites:** [Serialization 101](../index.md) (what serialization is) · **Related:** [Historical perspective](../historical_perspective.md) (networks force canonical forms), [Engineering](../engineer_perspective.md) (locality)
-
 ---
 
 ## Problem
