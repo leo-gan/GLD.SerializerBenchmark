@@ -14,7 +14,7 @@ A second process—implemented in another language, running on another processor
 
 ## Short answer
 
-Programming languages and application binary interfaces (ABIs) place fields in memory for **the local processor and runtime**: native integer widths, pointer sizes, alignment padding, and often **host byte order**. Networks and durable storage exchange only a **linear sequence of bytes under an agreed interpretation**. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and endianness—or it must be self-describing enough that readers need not assume host layout. Raw memory dumps optimise for one process image; interchange formats optimise for a shared contract.
+Compilers and language runtimes place fields in memory for **the local processor and operating environment**: native integer widths, pointer sizes, alignment padding, and often **host byte order**. Those placement rules are part of how a given platform expects machine code and data to look in RAM; they are chosen for local efficiency, not for exchange with other machines. Networks and durable storage exchange only a **linear sequence of bytes under an agreed interpretation**. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and endianness—or it must be self-describing enough that readers need not assume the writer’s in-memory layout. Raw memory dumps optimise for one process image; interchange formats optimise for a shared contract.
 
 ---
 
