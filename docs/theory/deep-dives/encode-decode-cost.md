@@ -1,118 +1,165 @@
 # Where encode/decode time actually goes
 
-> After this page you can name the real cost centers of serialization—and avoid the myth that “JSON is always slow” or “binary is always fast.”
+> After reading this page, one should be able to identify the principal sources of serialization cost and avoid the unsupported claim that “JSON is invariably slow” or that “binary formats are invariably fast.”
 
 ---
 
 ## Problem
 
-Benchmarks and blog posts often crown a format winner from a single chart: “switch to binary and save 10×.” Teams then ship a new codec and see little change—or a regression—because the bottleneck was never “text versus binary” in the abstract. It was **tokenization**, **number conversion**, **allocations**, **copies**, or **payload shape**.
+Informal comparisons frequently declare a format “winner” from a single chart (“replace text with binary and improve performance by an order of magnitude”). Organizations then change codecs and observe little improvement—or a regression—because the limiting factor was never “text versus binary” as an abstract dichotomy. The dominant costs are typically **tokenization**, **numeric conversion**, **memory allocation**, **copying**, and **payload shape**.
 
 ---
 
 ## Short answer
 
-Encode/decode cost is a sum of several mechanisms. Text formats (especially JSON) pay for scanning UTF-8, finding tokens, unescaping strings, and parsing decimal numbers into binary floats/ints. Binary formats usually skip decimal text and often skip field *names*, but they still pay for length prefixes, tags or field numbers, validation, and building language objects. In managed runtimes, **allocation and GC pressure** frequently dominate “algorithmic” encode time. A highly optimized JSON library can beat a naïve binary stack; a dense, pointer-heavy payload punishes every codec.
+The cost of encoding and decoding is the sum of several mechanisms. Text formats (notably JSON) expend work on scanning character encodings such as UTF-8, recognizing structural tokens, unescaping strings, and converting **decimal digit sequences** into the binary integer and floating-point representations used by the processor. Binary formats ordinarily avoid decimal text and often omit repeated field *names*, yet they still incur cost for length prefixes, type tags or field numbers, validation, and construction of language-level objects. In managed runtimes, **allocation rate and garbage collection** frequently dominate the time spent in the encode or decode routine itself. A carefully engineered JSON implementation may outperform an inefficient binary stack; a payload composed of many small, pointer-linked objects stresses every codec.
 
 ---
 
 ## Mental model
 
 ```text
-  Domain object / map
+  In-memory values (objects, records, maps)
         │
         ▼
-  ┌─────────────┐     CPU: walk graph, format values
-  │   Encode    │ ──► buffer growth, copies out
+  ┌─────────────┐     Processor work: traverse structure, format values
+  │   Encode    │ ──► grow an output buffer; possibly copy
   └─────────────┘
-        │ bytes
+        │ sequence of bytes
         ▼
-  ┌─────────────┐     CPU: scan/parse, validate
-  │   Decode    │ ──► allocate objects, fill fields
+  ┌─────────────┐     Processor work: scan or parse; validate
+  │   Decode    │ ──► allocate language objects; assign fields
   └─────────────┘
         │
         ▼
-  Domain object / map
+  In-memory values again
 ```
 
-Ask of any hot path: **How many times do we touch each byte? How many objects do we allocate? How many times do we convert between text and binary numbers?**
+For any performance-critical path, the useful questions are:
+
+1. How many times is each byte examined?  
+2. How many distinct heap objects are created?  
+3. How often are values converted between **decimal text** and **binary numeric forms**?
 
 ---
 
 ## How it works
 
-### Text parsing and printing
+### From human-readable text to processor values (and the reverse)
 
-JSON/XML-style codecs must:
+Consider a minimal JSON object:
 
-1. **Discover structure** — braces, commas, quotes (branchy, hard to vectorize in simple parsers).
-2. **Handle strings** — UTF-8 validation (policy varies), escape sequences.
-3. **Parse numbers** — decimal text → binary int/float (non-trivial; a major share of JSON time on numeric payloads).
-4. **Print on the way out** — binary numbers → decimal text; escape strings.
+```json
+{"id": 42, "temp_c": 21.5, "label": "sensor-7"}
+```
 
-Binary formats typically store integers in a fixed width or a compact varint encoding and avoid decimal conversion.
+As **text**, this is a sequence of characters (commonly UTF-8 bytes). The processor does not “natively” understand braces or the decimal notation `21.5`. A JSON decoder must, among other steps:
 
-### Self-describing metadata on the wire
+1. **Discover structure** — locate `{`, `:`, `,`, `}`, and string delimiters. Simple parsers do this with many conditional branches; highly optimized parsers may use SIMD instructions, but the logical task remains structure discovery.
+2. **Interpret strings** — read the bytes between quotes; apply escape rules (for example, `\n`); often allocate a string object in the language runtime.
+3. **Interpret numbers** — read the characters `2`, `1`, `.`, `5` and compute the binary floating-point value that the CPU will use in arithmetic. That conversion is non-trivial and can dominate runtime on numeric-heavy payloads.
+4. **On encode (printing)** — convert binary integers and floats back into decimal digit characters; escape strings; emit punctuation.
 
-Schemaless binary (MessagePack, CBOR, …) still carries **type tags** and often **field names** as strings. You save text punctuation and decimal numbers, but you do not get Protobuf-level density “for free.” Schema-driven codecs push names to a shared schema and leave **field numbers** or offsets on the wire—less metadata per message, more contract up front. Details: [Self-describing vs schema-dependent](self-describing-vs-schema-dependent.md).
+**Worked contrast for one integer.** The logical value forty-two may appear as:
 
-### Allocations and copies
+| Representation | Illustrative bytes (concept) | Work to obtain a machine integer |
+|----------------|------------------------------|----------------------------------|
+| JSON text `"id": 42` | characters `4` and `2` (plus structural context) | scan digits; multiply/accumulate to form 42 |
+| Fixed 32-bit little-endian binary | four bytes, e.g. `2a 00 00 00` | load four bytes with a known byte order |
+| Compact binary “varint” (sketch) | one or more bytes encoding small integers densely | loop over continuation bits; shift and combine |
 
-Classic path: bytes → **new** strings, maps, lists, DTOs. Faster path: reuse buffers, decode into preallocated structs, or use span/view APIs. “Faster serializer” in C#, Java, Python, JS, and Go often means **fewer allocations**, not only fewer instructions in the encode loop.
+No row is universally “best.” The table only makes visible **where processor time goes**.
+
+### Metadata that travels with the message
+
+Even without human-oriented punctuation, many binary formats still carry **descriptive metadata**:
+
+- **Type tags** — e.g. “the next value is a 32-bit integer,” “the next value is a UTF-8 string of length *n*.”  
+- **Field names** — string keys such as `"temp_c"` repeated for every record (common in MessagePack maps and in JSON).
+
+Schema-dependent formats such as Protocol Buffers typically replace names on the wire with **small field numbers** defined in a shared schema, reducing per-message metadata at the cost of an out-of-band contract. See [Self-describing versus schema-dependent formats](self-describing-vs-schema-dependent.md).
+
+### Memory allocation and copying
+
+A common decode path in managed languages (Python, Java, C#, JavaScript, and similar environments) is:
+
+```text
+  byte buffer
+      → allocate a map or object
+      → for each field: allocate a string key and/or value object
+      → return a fully populated graph
+```
+
+Each allocation has a direct cost and contributes to later **garbage collection** work, which can increase latency variability (tail latency). Alternative designs reduce that cost:
+
+- decode into a preallocated structure;  
+- reuse buffers across requests;  
+- expose **views** into the existing byte buffer (related to [zero-copy layouts](zero-copy.md)).
+
+Empirically, “a faster serializer” in managed languages often means **fewer allocations**, not merely fewer arithmetic instructions inside the encode loop.
 
 ### Payload shape
 
-Deep object graphs with many small strings stress pointer chasing and allocator traffic. Wide flat records with large blobs stress memcpy bandwidth. **Shape can matter as much as codec brand.** The suite uses controlled fixtures so comparisons stay meaningful within a language—see [Test data](../../analysis/test_data_configuration.md).
+Two messages with the same logical “size in fields” can behave very differently:
+
+| Shape (illustrative) | Characteristic cost |
+|----------------------|---------------------|
+| One flat record: a few large integers and one large binary blob | Fewer objects; more bulk memory copy bandwidth |
+| A deep tree: hundreds of small nested objects and short strings | Many allocations; poor locality (scattered memory access) |
+
+**Shape can matter as much as the choice of format family.** This suite uses controlled fixtures so comparisons remain interpretable within a language; see [Test data configuration](../../analysis/test_data_configuration.md).
 
 ### Implementation quality
 
-The label “JSON” covers both a textbook recursive parser and SIMD-oriented libraries. The label “Protobuf” covers reflection-based and fully generated paths. Always compare **implementations** in the same language and paradigm.
+The label “JSON” covers both pedagogical recursive parsers and highly optimized libraries. The label “Protocol Buffers” covers both reflection-based and fully code-generated paths. Comparisons should fix **language**, **implementation**, and **payload**, not only the marketing name of a format.
 
 ---
 
-## Costs & constraints
+## Costs and constraints
 
-| Axis | What often dominates | What people over-blame |
-|------|----------------------|-------------------------|
-| CPU | Number parse/print; token scan; UTF-8; varint loops | “We used JSON” as a single boolean |
+| Axis | Factors that often dominate | Attribution that is often too coarse |
+|------|------------------------------|--------------------------------------|
+| Processor time | Numeric parse/print; token scanning; UTF-8 handling; varint loops | “We used JSON” treated as a single boolean |
 | Memory / allocations | Per-field objects; intermediate strings; map nodes | Format family alone |
-| Size / bandwidth | Repeated keys; decimal digits; whitespace | Assuming binary always wins after one hop on a LAN |
-| Latency tails | GC pauses from allocation spikes | Mean encode time only |
-| Operability | Cheap logging of text vs need for decoders | — |
+| Size / bandwidth | Repeated keys; decimal digits; optional whitespace | Assuming binary is always superior on a high-speed local network |
+| Latency tails | Garbage-collection pauses after allocation spikes | Mean encode time alone |
+| Operability | Text logs versus the need for binary decoders | — |
 
 ---
 
-## Real-world example
+## Illustrative scenarios
 
-An internal API returns large JSON arrays of telemetry points (many floating-point fields). Switching to a schemaless binary format shrinks payloads and helps WAN clients, but a CPU-bound service on a local network sees modest gains because **building thousands of small objects per request** still dominates. Introducing object reuse or a code-generated schema codec changes the curve more than “binary” as a slogan. Conversely, a public edge API may stay on JSON for debuggability and still meet SLOs with a faster JSON implementation.
+**Scenario A — numeric telemetry over a wide-area network.** An internal service returns large JSON arrays of floating-point measurements. A schemaless binary encoding reduces transfer size and can help distant clients. On a CPU-bound service on a local high-speed network, gains may remain modest if each request still **materializes thousands of small objects**. Object reuse or a code-generated schema codec may change performance more than substituting “binary” as a slogan.
+
+**Scenario B — public HTTP API.** An organization may retain JSON for inspectability and interoperability, and still meet latency objectives by adopting a more efficient JSON implementation, without changing the public contract.
 
 ---
 
 ## In this suite
 
-Language **Results** pages and the [dashboard](../../dashboard/) report measured encode/decode behavior for registered libraries (JSON family, schemaless binary, schema-driven, and language-native where present). Use them to compare **within one language** and preferably **within one family**. Cross-language “winners” are not interchangeable.
+Language **Results** pages and the [dashboard](../../dashboard/) report measured encode and decode behaviour for registered libraries (JSON family, schemaless binary, schema-driven, and language-native where present). Prefer comparisons **within one language** and, where possible, **within one family**. Cross-language “winners” are not interchangeable.
 
-Methodology and metric definitions: [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md), [Metrics](../../analysis/METRICS.md). Treat any single blog-style number in prose as orientation only.
+Methodology and metric definitions: [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md), [Metrics](../../analysis/METRICS.md). Quantitative statements in prose are illustrative; suite measurements are authoritative for this harness.
 
 ---
 
-## Common mistakes
+## Common errors of reasoning
 
-- Concluding “JSON is slow” without naming **which library** and **which payload**.
-- Expecting MessagePack to match Protobuf density while still shipping field names on every message.
-- Optimizing codec choice while allocating a new DTO graph on every request.
-- Microbenchmarking tiny messages and predicting behavior on multi-megabyte documents (or the reverse).
-- Comparing a fully warmed generated Protobuf path to a cold reflective JSON path and calling it a format law.
+- Concluding that “JSON is slow” without specifying **which library** and **which payload**.  
+- Expecting a schemaless binary format that still carries string keys to match the density of a schema-dependent encoding.  
+- Changing only the codec while allocating a new object graph on every request.  
+- Extrapolating from microbenchmarks on tiny messages to multi-megabyte documents (or the reverse).  
+- Comparing a fully warmed, code-generated path with a cold, reflective path and treating the result as a law of formats.
 
 ---
 
 ## Key takeaways
 
-- Cost = parse/print work + metadata handling + allocations/copies + shape effects + implementation quality.
-- Text’s distinctive tax is often **structure discovery and decimal numbers**, not “characters” in the abstract.
-- Binary removes some taxes and introduces others (tags, varints, schema tooling).
-- In managed languages, **allocation rate** is a first-class performance metric.
-- Prefer paradigm-local, same-language evidence from **Results** over format folklore.
-- Choose formats for the whole product constraint set (debug, evolution, polyglot)—not CPU alone.
+- Total cost comprises parse and print work, metadata handling, allocations and copies, payload shape, and implementation quality.  
+- Distinctive costs of text formats often arise from **structure discovery** and **decimal numeric conversion**, not from “using characters” in the abstract.  
+- Binary encodings remove some costs and introduce others (tags, variable-length integers, schema tooling).  
+- In managed languages, **allocation rate** is a first-class performance consideration.  
+- Prefer paradigm-local, same-language evidence from **Results** over informal ranking articles.  
+- Format choice should reflect the full constraint set (debugging, evolution, multiple languages), not processor time alone.
 
 ---

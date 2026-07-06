@@ -22,7 +22,7 @@ Theory alone does not decide production choices. Use these pages to build mechan
 | Step | Article | You should be able to… |
 |------|---------|------------------------|
 | 1 | [Memory layout, alignment, and endianness](memory-layout.md) | Explain why a raw memory dump is not a portable format |
-| 2 | [Where encode/decode time actually goes](encode-decode-cost.md) | Name the real cost centers (parse, numbers, alloc, copy)—not “JSON bad” |
+| 2 | [Where encode/decode time actually goes](encode-decode-cost.md) | Name the real cost centers (parse, numbers, alloc, copy)—not an unqualified claim that JSON is slow |
 | 3 | [Self-describing vs schema-dependent](self-describing-vs-schema-dependent.md) | Say who carries field identity: payload or shared contract |
 | 4 | [Schema evolution that doesn’t break readers](schema-evolution.md) | Plan additive change without breaking old readers/writers |
 | 5 | [Dynamic binary vs IDL binary](dynamic-vs-idl-binary.md) | Choose MessagePack/CBOR-class vs Protobuf-class for a workload |
