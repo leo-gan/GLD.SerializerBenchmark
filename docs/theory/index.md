@@ -80,32 +80,21 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 
 ## How this course connects
 
-1. **`docs/theory/`** — you are here (concepts and judgment): historical, data science, and engineering perspectives  
-2. **`docs/theory/deep-dives/`** — short mechanism essays (layout, cost, schemas, families, compression)  
-3. **`docs/analysis/`** — how we measure; categories; methodology (`serialization_categories.md`, `BENCHMARK_SUMMARY.md`, …)  
-4. **`docs/<language>/`** — what is registered per language; **Results** (C#, Python, Rust, Go, JavaScript, C, …)  
-
-| Next step | Link |
-|-----------|------|
-| Why formats exist (timeline) | [Historical perspective](historical_perspective.md) |
-| Data lakes, ML, analytics choices | [Data science perspective](data_science_perspective.md) |
-| Services, performance, security | [Engineering perspective](engineer_perspective.md) |
-| Mechanism deep dives (MVP path) | [Deep dives](deep-dives/index.md) |
-| Suite categories & decision sketch | [Serialization categories](../analysis/serialization_categories.md) |
-| Methodology & results hub | [Benchmarks](../analysis/index.md) |
-| Language overviews & results | [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [Go](../go/index.md) · [JavaScript](../javascript/index.md) · [C](../c/index.md) |
-
-### Deep dives (quick map)
-
-| Order | Topic |
-|------:|-------|
-| 1 | [Memory layout](deep-dives/memory-layout.md) |
-| 2 | [Encode/decode cost](deep-dives/encode-decode-cost.md) |
-| 3 | [Self-describing vs schema](deep-dives/self-describing-vs-schema-dependent.md) |
-| 4 | [Schema evolution](deep-dives/schema-evolution.md) |
-| 5 | [Dynamic vs IDL binary](deep-dives/dynamic-vs-idl-binary.md) |
-| 6 | [Zero-copy](deep-dives/zero-copy.md) |
-| 7 | [Compression vs format](deep-dives/compression-is-not-a-format.md) |
+1. **Theory & Practices** — you are here (concepts and judgment)
+   - [Historical](historical_perspective.md) — why formats exist (timeline)
+   - [Data Science](data_science_perspective.md) — lakes, ML, analytics choices
+   - [Engineering](engineer_perspective.md) — services, performance, security
+2. **[Deep dives](deep-dives/index.md)** — short mechanism essays
+   - [Memory layout](deep-dives/memory-layout.md)
+   - [Encode/decode cost](deep-dives/encode-decode-cost.md)
+   - [Self-describing vs schema](deep-dives/self-describing-vs-schema-dependent.md)
+   - [Schema evolution](deep-dives/schema-evolution.md)
+   - [Dynamic vs IDL binary](deep-dives/dynamic-vs-idl-binary.md)
+   - [Zero-copy](deep-dives/zero-copy.md)
+   - [Compression vs format](deep-dives/compression-is-not-a-format.md)
+3. **[Benchmarks](../analysis/index.md)** — how we measure; categories; methodology; results summary
+4. **Language tracks** — registered libraries and measured **Results**
+   - [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [Go](../go/index.md) · [JavaScript](../javascript/index.md) · [C](../c/index.md)
 
 ---
 
