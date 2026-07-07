@@ -1,6 +1,6 @@
 # Go Serializer Benchmark
 
-Part of the [cross-language serializer benchmark](../README.md).
+Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 ## Serializers (12)
 
@@ -51,7 +51,7 @@ updates with `go get -u=patch ./...` and selected `@latest` within the same majo
 
 `LOG_DIR` may point at a logs **root** (results go to `$LOG_DIR/go/`).
 
-Cross-language analysis: `analyze-benchmarks -l go` (see root README).
+Analysis: `analyze-benchmarks -l go` (see root README).
 
 ## Build notes
 

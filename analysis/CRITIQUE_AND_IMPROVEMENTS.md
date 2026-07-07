@@ -83,4 +83,4 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 
 ## Bottom line
 
-The repo is now a **credible multi-language benchmark *framework*** with statistics appropriate for a methods section. It is **not yet** a turnkey source of unadjusted "world champion serializer" tables: C stand-ins, intermediate Rust schema paths, and pseudo-stream modes must be fixed or explicitly scoped before claiming library-level superiority in a peer-reviewed venue. Use within-language, within-payload comparisons, report CIs and effect sizes, and treat cross-language numbers as exploratory.
+The repo is now a **multi-language benchmark *framework*** with statistics appropriate for a methods section. It is **not yet** a turnkey source of unadjusted "world champion serializer" tables: C stand-ins, intermediate Rust schema paths, and pseudo-stream modes must be fixed or explicitly scoped before claiming library-level superiority in a peer-reviewed venue. Use within-language, within-payload comparisons, report CIs and effect sizes, and treat numbers as exploratory.

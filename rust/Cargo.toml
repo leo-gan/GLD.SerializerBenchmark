@@ -2,7 +2,7 @@
 name = "serializer-benchmark-rust"
 version = "0.2.0"
 edition = "2021"
-description = "Rust harness for the cross-language serializer benchmark"
+description = "Rust harness for the Multi-Language Serializer Benchmark"
 license = "MIT"
 build = "build.rs"
 

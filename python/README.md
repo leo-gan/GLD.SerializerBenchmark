@@ -16,8 +16,6 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
 ## Test Data Scenarios
 
-All 7 types mirror the C# benchmark to enable cross-language comparisons:
-
 | Test Class | Purpose & Stress Points |
 | :--- | :--- |
 | **Person** | Nested objects, enums, strings — the "gold standard" general-use POCO. |
@@ -159,7 +157,7 @@ MemoryPeakBytes,FidelityScore
 
 Aggregate results are printed to stdout after each run in a format aligned with the C# console output.
 
-Cross-language analysis and docs snapshots: install `analysis/`, then `analyze-benchmarks` (all languages) or `analyze-benchmarks -l python` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Optional log path: `--logs LANG=PATH`. Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
+Analysis and docs snapshots: install `analysis/`, then `analyze-benchmarks` (all languages) or `analyze-benchmarks -l python` (see root README and [Benchmark architecture — Goals](../docs/analysis/architecture.md)). Optional log path: `--logs LANG=PATH`. Write published tables/plots into `docs/analysis/` and `docs/<lang>/results.md` locally and commit; CI does not regenerate them.
 
 ---
 

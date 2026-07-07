@@ -1,6 +1,6 @@
 # Rust Serializer Benchmark
 
-Part of the [cross-language serializer benchmark](../README.md).
+Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 ## Serializers (15)
 
@@ -48,7 +48,7 @@ cargo run --release -- 100
 
 `LOG_DIR` may point at a logs **root** (results go to `$LOG_DIR/rust/`).
 
-Cross-language analysis: `analyze-benchmarks -l rust` (see root README).
+Analysis: `analyze-benchmarks -l rust` (see root README).
 
 ## Build notes
 

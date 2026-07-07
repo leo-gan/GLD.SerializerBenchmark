@@ -21,4 +21,4 @@ Requires: `cmake`, `curl`, `pkg-config`, `libjson-c-dev` (or equivalent), `zlib`
 ./scripts/run-benchmarks.sh full
 ```
 
-Cross-language analysis: install `analysis/`, then `analyze-benchmarks -l c` (see root README).
+Analysis: install `analysis/`, then `analyze-benchmarks -l c` (see root README).
