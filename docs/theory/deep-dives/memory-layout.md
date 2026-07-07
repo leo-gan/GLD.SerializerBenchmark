@@ -218,13 +218,102 @@ Formats designed for **in-place reads** (FlatBuffers-class designs—see [Zero-c
 
 ### Managed objects and graphs
 
-In C#, Java, Python, or JavaScript, a “record” is often a **graph**: the variable holds a reference; fields may be further references to strings, lists, or nested records. Serializing “memory” would require:
+In C, a small structure may store integers **inline** (the bytes of `id` sit inside the structure itself). In managed languages (Python, Java, C#, JavaScript, and similar environments), a “record” or “object” is often a **graph**: the variable holds a **reference** (an address-like handle into a heap managed by the runtime), and fields may be further references to strings, lists, or nested objects. Those addresses are meaningful only inside **this process** and **this runtime**; they must not be treated as portable data.
 
-1. following every reference;  
-2. defining behaviour for **shared** objects and **cycles**;  
-3. recording **type** information so that the receiver can reconstruct objects.
+Serializing such a structure “as memory” would require:
 
-Language-native serializers (for example Python `pickle`) perform that work for **one** runtime. Portable formats ordinarily flatten data to **trees or tables of values** (numbers, character data for strings, nested records) under explicit rules—never “here is a heap address from this virtual machine.”
+1. following every reference to the objects it points to;  
+2. defining behaviour for **shared** objects (one object reachable by two paths) and **cycles** (A refers to B and B refers to A);  
+3. recording **type** information so that the receiver can reconstruct objects of the correct kinds.
+
+#### Nested object with a string field
+
+Logical value in Python (the same idea applies in Java, C#, or JavaScript):
+
+```python
+player = {"id": 42, "name": "Ada"}
+```
+
+Illustrative layout in the heap (addresses are fictional):
+
+```text
+  Variable `player` ──ref──►  Map object @ 0xA100
+                                │
+                                ├─ key "id"   ──ref──►  Int object (value 42) @ 0xB200
+                                │
+                                └─ key "name" ──ref──►  String object @ 0xC300
+                                                         characters: 'A' 'd' 'a'
+                                                         length / type metadata …
+```
+
+What a naïve “dump of `player`” would capture depends on the language, but it is **not** the twelve bytes of a packed C `struct { int32_t id; char name[4]; }`. More often one would obtain only the **reference** to the map (a machine word), or a runtime-specific object header—neither of which another process can interpret as “id 42 and name Ada.”
+
+A portable encoding must emit the **logical content**, for example:
+
+```json
+{"id": 42, "name": "Ada"}
+```
+
+or an equivalent binary form that stores the integer 42 and the character data of `"Ada"`, not the heap addresses `0xA100`, `0xB200`, or `0xC300`.
+
+#### Shared reference (one object, two paths)
+
+```python
+label = "urgent"
+task_a = {"title": label}
+task_b = {"title": label}   # same string object, not a second copy
+```
+
+```text
+  task_a ──► { title ──┐ }
+                       ├──► String "urgent" @ 0xD400
+  task_b ──► { title ──┘ }
+```
+
+In memory there is **one** string object and **two** references to it. A graph-aware native serializer may record that sharing (write the string once, then two back-references). A simple tree encoding (typical JSON) writes the characters twice:
+
+```json
+{"title": "urgent"}
+{"title": "urgent"}
+```
+
+Both approaches can be correct for a given product; they are **different contracts**. An uninterpreted memory dump does not choose either contract—it only freezes process-local addresses that are useless elsewhere.
+
+#### Cycle
+
+```python
+a = {}
+b = {"peer": a}
+a["peer"] = b
+```
+
+```text
+  a @ 0xE100 ──peer──► b @ 0xE200
+       ▲                    │
+       └──────peer──────────┘
+```
+
+A depth-first “copy every field” walk never terminates unless the serializer **detects** objects it has already visited. Language-native tools (for example Python `pickle`) implement such detection for **one** runtime. Portable message formats often **forbid** cycles, or require the application to replace them with explicit identifiers (for example integer keys into a table of nodes).
+
+#### Contrast with an inline C structure
+
+```c
+struct Player {
+    int32_t id;
+    char name[4];   /* fixed inline storage: 'A','d','a','\0' — still not a general string model */
+};
+```
+
+Here `id` and the four `name` bytes can sit **inside** one contiguous block (plus padding rules from earlier sections). Even so, as soon as `name` becomes a `char *` pointer to a heap buffer, the C picture becomes a small graph as well: the structure holds an address, and the characters live elsewhere.
+
+| Approach | What is stored for a string field | Portable as a raw dump? |
+|----------|-----------------------------------|-------------------------|
+| Inline fixed array in C | Character bytes inside the structure | Only with agreed size, order, and encoding |
+| Managed object / `char *` | Reference (address or handle) to data elsewhere | **No** — addresses are process-local |
+| JSON / MessagePack / schema codec | Length or delimiters plus character bytes (or field numbers plus values) | **Yes**, under that format’s rules |
+| Language-native graph serializer (`pickle`, Java serialization, …) | Runtime type tags, handles, and payload for **that** VM | Only to the **same** language/runtime family; unsafe on untrusted input |
+
+Language-native serializers perform graph walking for **one** runtime. Portable formats ordinarily flatten data to **trees or tables of values** (numbers, character data for strings, nested records) under explicit rules—never “here is a heap address from this virtual machine.”
 
 ---
 
