@@ -1,5 +1,5 @@
 # =============================================================================
-# Cross-Language Serializer Benchmark — Master Configuration
+# Multi-Language Serializer Benchmark — Master Configuration
 # =============================================================================
 # Single source of truth for runners, analysis, and documentation.
 # Language-specific overrides live under `languages.<lang>`.
@@ -12,7 +12,7 @@ version: "2.0.0"
 # Project metadata
 # -----------------------------------------------------------------------------
 project:
-  name: "Cross-Language Serializer Benchmark"
+  name: "Multi-Language Serializer Benchmark"
   description: >
     Scientific, multi-language benchmark suite for evaluating serialization
     libraries. Supports researchers (reproducible statistics), serializer authors
