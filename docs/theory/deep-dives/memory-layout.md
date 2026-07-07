@@ -149,27 +149,22 @@ Byte-by-byte map (each row is one address; field borders cannot drift):
 | 14 | `00` | **score** | |
 | 15 | `00` | **score** | most significant byte → together **score = 7** |
 
-Compact one-line view (two characters per offset index so columns stay aligned):
+Compact one-line view. Each column is exactly three characters (`NN` plus a space), so the `field` markers line up under the same offsets as `byte`:
 
 ```text
-offset  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15
-byte    01 00 00 00 2a 00 00 00 07 00 00 00 00 00 00 00
-field   fl pad---- id-------- score------------------
-         =1         =42 LE      =7 LE
+offset  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 
+byte    01 00 00 00 2a 00 00 00 07 00 00 00 00 00 00 00 
+field   F  p  p  p  I  I  I  I  S  S  S  S  S  S  S  S  
 ```
 
-- **flag** occupies only offset `00`.  
-- **pad** occupies `01`–`03` (not a logical field).  
-- **id** occupies `04`–`07`: `2a 00 00 00` little-endian → **42**.  
-- **score** occupies `08`–`15`: `07` then seven `00` bytes little-endian → **7**. Trailing zeros are high-order bits of a small number; they do **not** mean the value is zero.
+Legend: **F** = `flag` (value **1** at offset 00 only) · **p** = padding · **I** = `id` little-endian (**42** from `2a 00 00 00` at 04–07) · **S** = `score` little-endian (**7** from `07` then seven `00` at 08–15). Trailing zeros on multi-byte fields are high-order bits of a small number; they do **not** mean the value is zero.
 
-**Same layout with `id = 43`** (still `flag = 1`, `score = 7`): only offset `04` changes (`2a` → `2b`, because 43₁₀ = `2b`₁₆).
+**Same layout with `id = 43`** (still `flag = 1`, `score = 7`): only the byte under the first **I** changes (`2a` → `2b`, because 43₁₀ = `2b`₁₆).
 
 ```text
-offset  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15
-byte    01 00 00 00 2b 00 00 00 07 00 00 00 00 00 00 00
-field   fl pad---- id-------- score------------------
-         =1         =43 LE      =7 LE
+offset  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 
+byte    01 00 00 00 2b 00 00 00 07 00 00 00 00 00 00 00 
+field   F  p  p  p  I  I  I  I  S  S  S  S  S  S  S  S  
 ```
 
 | Decimal | Hex | Little-endian 4-byte pattern (`id`) |
