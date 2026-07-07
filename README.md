@@ -4,7 +4,7 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 
 - [Serialization 101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/) — a starting point for anyone who wants to understand data serialization—students, data scientists, backend engineers, and systems architects.
 - [Benchmarks](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/)
-- [📊 Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) 
+- [📊 Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
 
 ---
 
@@ -28,9 +28,7 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) - 12
 - [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) - 12
 
-
 [Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/).
-
 
 ---
 

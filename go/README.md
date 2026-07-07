@@ -1,6 +1,6 @@
 # Go Serializer Benchmark
 
-Part of the [Multi-language serializer benchmark](../README.md).
+Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 ## Serializers (12)
 
