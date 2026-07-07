@@ -23,20 +23,28 @@ Memory is a web of pointers and types. The wire and the disk only understand byt
 
 The same formats appear under three perspectives on purpose. Each document answers a different question:
 
-| Lens | Document | Primary question | Best if you care about… |
-|------|----------|------------------|-------------------------|
-| **Historical** | [Historical perspective](historical_perspective.md) | *Why do these formats exist?* | Eras, people, constraints, paradigm shifts |
-| **Data science** | [Data science perspective](data_science_perspective.md) | *What should I use for data & ML work?* | Lakes, pipelines, notebooks, models, columnar I/O |
-| **Engineering** | [Engineering perspective](engineer_perspective.md) | *What should I ship in services & systems?* | APIs, RPC, performance, security, evolution |
+| Lens | Primary question | Best if you care about… |
+|------|------------------|-------------------------|
+| **[Historical](historical_perspective.md)** | *Why do these formats exist?* | Eras, people, constraints, paradigm shifts |
+| **[Data science](data_science_perspective.md)** | *What should I use for data & ML work?* | Lakes, pipelines, notebooks, models, columnar I/O |
+| **[Engineering](engineer_perspective.md)** | *What should I ship in services & systems?* | APIs, RPC, performance, security, evolution |
 
 **Suggested order for a first pass**
 
 1. Skim the **shared trade-offs** below (10 minutes).
 2. Read the **[historical perspective](historical_perspective.md)** once (big picture).
-3. Deep-dive the lens that matches your work (**data science** or **engineering**).
+3. Deep-dive the lens that matches your work (**[data science](data_science_perspective.md)** or **[engineering](engineer_perspective.md)**).
 4. Open [Serialization categories](../analysis/serialization_categories.md) and a language **Overview** / **Results** page for libraries you might actually use.
+5. When you need *mechanisms*, work the **[Deep dives](deep-dives/index.md)** track:
+    1. [Memory layout](deep-dives/memory-layout.md)
+    2. [Encode/decode cost](deep-dives/encode-decode-cost.md)
+    3. [Self-describing vs schema](deep-dives/self-describing-vs-schema-dependent.md)
+    4. [Schema evolution](deep-dives/schema-evolution.md)
+    5. [Dynamic vs IDL binary](deep-dives/dynamic-vs-idl-binary.md)
+    6. [Zero-copy](deep-dives/zero-copy.md)
+    7. [Compression vs format](deep-dives/compression-is-not-a-format.md)
 
-You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”).
+You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single deep dive when you already know the question.
 
 ---
 
@@ -74,23 +82,6 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 
 - **Portable:** designed for multi-language interchange (JSON, Protobuf, MessagePack, …).
 - **Language-native:** tied to one runtime (`pickle`, Java serialization, …). Convenient inside a trust boundary; dangerous or unusable across languages and untrusted inputs.
-
----
-
-## How this course connects
-
-1. **`docs/theory/`** — you are here (concepts and judgment): historical, data science, and engineering perspectives  
-2. **`docs/analysis/`** — how we measure; categories; methodology (`serialization_categories.md`, `BENCHMARK_SUMMARY.md`, …)  
-3. **`docs/<language>/`** — what is registered per language; **Results** (C#, Python, Rust, Go, JavaScript, C, …)  
-
-| Next step | Link |
-|-----------|------|
-| Why formats exist (timeline) | [Historical perspective](historical_perspective.md) |
-| Data lakes, ML, analytics choices | [Data science perspective](data_science_perspective.md) |
-| Services, performance, security | [Engineering perspective](engineer_perspective.md) |
-| Suite categories & decision sketch | [Serialization categories](../analysis/serialization_categories.md) |
-| Methodology & results hub | [Benchmarks](../analysis/index.md) |
-| Language deep dives | [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [Go](../go/index.md) · [JavaScript](../javascript/index.md) · [C](../c/index.md) |
 
 ---
 
