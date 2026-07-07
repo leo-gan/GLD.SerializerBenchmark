@@ -85,26 +85,6 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 
 ---
 
-## How this course connects
-
-1. **Theory & Practices** — you are here (concepts and judgment)
-   - [Historical](historical_perspective.md) — why formats exist (timeline)
-   - [Data Science](data_science_perspective.md) — lakes, ML, analytics choices
-   - [Engineering](engineer_perspective.md) — services, performance, security
-2. **[Deep dives](deep-dives/index.md)** — short mechanism essays
-   - [Memory layout](deep-dives/memory-layout.md)
-   - [Encode/decode cost](deep-dives/encode-decode-cost.md)
-   - [Self-describing vs schema](deep-dives/self-describing-vs-schema-dependent.md)
-   - [Schema evolution](deep-dives/schema-evolution.md)
-   - [Dynamic vs IDL binary](deep-dives/dynamic-vs-idl-binary.md)
-   - [Zero-copy](deep-dives/zero-copy.md)
-   - [Compression vs format](deep-dives/compression-is-not-a-format.md)
-3. **[Benchmarks](../analysis/index.md)** — how we measure; categories; methodology; results summary
-4. **Language tracks** — registered libraries and measured **Results**
-   - [C#](../c-sharp/index.md) · [Python](../python/index.md) · [Rust](../rust/index.md) · [Go](../go/index.md) · [JavaScript](../javascript/index.md) · [C](../c/index.md)
-
----
-
 ## Scope and honesty
 
 - This theory track is a **map**, not an encyclopedia of every library.
