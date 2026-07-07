@@ -33,11 +33,18 @@ The same formats appear under three perspectives on purpose. Each document answe
 
 1. Skim the **shared trade-offs** below (10 minutes).
 2. Read the **[historical perspective](historical_perspective.md)** once (big picture).
-3. Deep-dive the lens that matches your work (**data science** or **engineering**).
-4. When you need *mechanisms* (layout, cost model, schemas, zero-copy, …), work the **[Deep dives](deep-dives/index.md)** track.
-5. Open [Serialization categories](../analysis/serialization_categories.md) and a language **Overview** / **Results** page for libraries you might actually use.
+3. Deep-dive the lens that matches your work (**[data science](data_science_perspective.md)** or **[engineering](engineer_perspective.md)**).
+4. Open [Serialization categories](../analysis/serialization_categories.md) and a language **Overview** / **Results** page for libraries you might actually use.
+5. When you need *mechanisms*, work the **[Deep dives](deep-dives/index.md)** track:
+   - [Memory layout](deep-dives/memory-layout.md)
+   - [Encode/decode cost](deep-dives/encode-decode-cost.md)
+   - [Self-describing vs schema](deep-dives/self-describing-vs-schema-dependent.md)
+   - [Schema evolution](deep-dives/schema-evolution.md)
+   - [Dynamic vs IDL binary](deep-dives/dynamic-vs-idl-binary.md)
+   - [Zero-copy](deep-dives/zero-copy.md)
+   - [Compression vs format](deep-dives/compression-is-not-a-format.md)
 
-You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single deep dive from the [hub](deep-dives/index.md) when you already know the question.
+You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single deep dive when you already know the question.
 
 ---
 
