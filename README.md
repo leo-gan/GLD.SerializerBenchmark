@@ -1,4 +1,4 @@
-# Cross-Language Serializer Benchmark
+# Multi-Language Serializer Benchmark
 
 > **[Serialization 101 & Benchmark Reports](https://leo-gan.github.io/GLD.SerializerBenchmark/)** — theory, methodology, and results for senior engineers and data scientists.
 
