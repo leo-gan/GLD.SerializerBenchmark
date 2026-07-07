@@ -14,8 +14,8 @@ Benchmarks use shared conceptual payloads and publication-oriented statistics.
 |----------|----------|
 | **Researchers** | Reproducible methods, CIs, configurable payloads, metrics |
 | **Serializer authors** | Compare and measure old vs new version |
-| **System integrators** | Find serializers that the best for custom payloads and environments |
-| **Maintainers** | Add serializers and languages and alalyse results without rewriting analysis |
+| **System integrators** | Find serializers that fit custom payloads and environments |
+| **Maintainers** | Add serializers and languages and analyze results without rewriting analysis |
 
 ---
 
