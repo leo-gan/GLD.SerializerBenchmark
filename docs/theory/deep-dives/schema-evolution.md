@@ -94,7 +94,118 @@ Readers compiled for v1 interpret string-shaped bytes (or a different wire type)
 
 ### Avro-style evolution (writer and reader schemas)
 
-Avro’s strength is **schema resolution**: a reader schema and a writer schema may differ under documented rules (for example, defaults for fields the writer omitted). Event platforms often attach a **schema identifier** to each record and fix compatibility modes in a **schema registry**. That practice is a different operational culture from “field numbers retained indefinitely,” not an automatically superior one. For analytical pipelines, see the [data science perspective](../data_science_perspective.md).
+Protocol Buffers evolution is organised around **field numbers that stay on the wire forever**. Avro (and similar systems) organise evolution around **two schemas at read time**:
+
+| Schema | Role |
+|--------|------|
+| **Writer schema** | Describes how the **bytes were encoded** when the record was produced (field names, types, order). |
+| **Reader schema** | Describes how the **application wants to see** the record now (possibly a newer or older version of the model). |
+
+The Avro runtime performs **schema resolution**: it matches fields between writer and reader (primarily by **name**, with optional aliases) and applies documented rules for missing fields, extra fields, and limited type promotions. The important beginner idea is: **the payload need not carry field names on every record** (in the binary encoding they are implied by the writer schema), yet the reader still needs a precise account of how the writer laid the values out—or a **schema id** that retrieves that account from a registry.
+
+#### Minimal example: adding a field with a default
+
+**Writer schema v1** (what older producers encode):
+
+```text
+  record Order {
+      long   order_id;
+      long   total_cents;
+  }
+```
+
+**Reader schema v2** (what newer consumers expect):
+
+```text
+  record Order {
+      long   order_id;
+      long   total_cents;
+      string currency_code = "USD";   // default when the writer did not store this field
+  }
+```
+
+A record written with **v1** contains only two long values in the Avro binary layout (no `currency_code` bytes). A consumer using **reader schema v2** still obtains a complete logical record:
+
+| Field | How the value is obtained |
+|-------|---------------------------|
+| `order_id` | decoded from the writer’s bytes |
+| `total_cents` | decoded from the writer’s bytes |
+| `currency_code` | **not on the wire** → filled from the **default** in the reader schema (`"USD"`) |
+
+That is **backward-compatible** evolution in the “new software reads old data” sense: the new reader understands old bytes because the new field has a default.
+
+#### The opposite direction: new writer, old reader
+
+**Writer schema v2** now includes `currency_code`. **Reader schema v1** does not.
+
+| Field on the wire (v2 writer) | Old reader (v1) behaviour under resolution |
+|-------------------------------|--------------------------------------------|
+| `order_id`, `total_cents` | decoded as usual |
+| `currency_code` | **no matching field** in the reader schema → value is **skipped / discarded** for that application |
+
+The old application never sees `currency_code`, but it continues to process the fields it knows. That supports **forward-compatible** change (old software reading new data) when the project’s compatibility rules allow the writer to add fields.
+
+```text
+  Writer v1 bytes  +  Reader schema v2  →  currency_code := default "USD"
+  Writer v2 bytes  +  Reader schema v1  →  currency_code ignored; other fields OK
+  Writer v2 bytes  +  Reader schema v2  →  currency_code read from the bytes
+```
+
+Both directions require that defaults and “ignore unknown field” behaviour are part of the **resolution rules**, not informal hope.
+
+#### Why both schemas must be known
+
+Suppose only the raw Avro binary for an `Order` is stored, with **no** writer schema and **no** schema id:
+
+```text
+  [ binary longs … ]     ← without a schema, field boundaries and types are ambiguous
+```
+
+A reader cannot know whether the second long is `total_cents` or something else. In practice one of the following is stored or transmitted with the data:
+
+| Pattern | What travels with the bytes |
+|---------|-----------------------------|
+| **Object container file** (classic Avro files) | Writer schema (or enough metadata) in the file header; many records share it |
+| **Schema registry** (common on event buses) | Small **schema id** (or fingerprint) per record or per batch; the full writer schema is fetched from the registry |
+| **Out-of-band agreement** | Both sides pinned to the same schema version by deployment process alone (fragile at scale) |
+
+**Illustrative registry flow:**
+
+```text
+  Producer:  encode(record, writer_schema_v2)
+             → bytes + schema_id=17
+                    │
+                    ▼
+               schema registry:  id 17 ↔ writer_schema_v2 text
+                    │
+  Consumer:  fetch schema 17
+             resolve(writer_schema_v2, reader_schema_v3)
+             → application object
+```
+
+The consumer’s **reader schema** may be v3 (extra fields with defaults, renamed fields via aliases, and so on). Resolution is the step that makes “different versions” precise.
+
+#### Rename via alias (sketch)
+
+Writer still uses the old field name; reader prefers a new name:
+
+```text
+  Writer schema:   long total_cents;
+  Reader schema:   long amount_cents;   with alias "total_cents"
+```
+
+Resolution maps the writer’s `total_cents` bytes onto the reader’s `amount_cents` field. Without an alias or a dual-field period, a pure rename is a **break** (same problem as JSON key renames).
+
+#### Contrast with Protocol Buffers (same logical change)
+
+| Concern | Protocol Buffers (typical) | Avro (typical) |
+|---------|----------------------------|----------------|
+| Field identity on the wire | **Numbers** (`total_cents = 3`) | **Names** in the schema; binary layout follows the writer schema |
+| What the reader must know | Compiled message types / descriptors (numbers stable) | **Writer schema** (or id) **and** reader schema |
+| New field | New number; old readers skip unknown numbers | New name + default for old data; old readers skip unknown names under resolution |
+| Operational centre of gravity | `.proto` ownership and reserved numbers | Schema registry, compatibility modes (BACKWARD / FORWARD / FULL, product-specific) |
+
+Neither model removes the need for a **compatibility policy**; they implement that policy with different mechanisms. For analytical pipelines and lake-oriented formats, see also the [data science perspective](../data_science_perspective.md).
 
 ### JSON and schemaless binary formats
 
