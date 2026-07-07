@@ -23,11 +23,11 @@ Memory is a web of pointers and types. The wire and the disk only understand byt
 
 The same formats appear under three perspectives on purpose. Each document answers a different question:
 
-| Lens | Document | Primary question | Best if you care about… |
-|------|----------|------------------|-------------------------|
-| **Historical** | [Historical perspective](historical_perspective.md) | *Why do these formats exist?* | Eras, people, constraints, paradigm shifts |
-| **Data science** | [Data science perspective](data_science_perspective.md) | *What should I use for data & ML work?* | Lakes, pipelines, notebooks, models, columnar I/O |
-| **Engineering** | [Engineering perspective](engineer_perspective.md) | *What should I ship in services & systems?* | APIs, RPC, performance, security, evolution |
+| Lens | Primary question | Best if you care about… |
+|------|------------------|-------------------------|
+| **[Historical](historical_perspective.md)** | *Why do these formats exist?* | Eras, people, constraints, paradigm shifts |
+| **[Data science](data_science_perspective.md)** | *What should I use for data & ML work?* | Lakes, pipelines, notebooks, models, columnar I/O |
+| **[Engineering](engineer_perspective.md)** | *What should I ship in services & systems?* | APIs, RPC, performance, security, evolution |
 
 **Suggested order for a first pass**
 
