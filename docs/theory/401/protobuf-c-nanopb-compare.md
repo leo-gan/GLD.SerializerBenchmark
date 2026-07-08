@@ -41,11 +41,27 @@ Use **protobuf-c** when you want classic generated structs, descriptor-driven pa
 | **Typical failure** | OOM / leak if free skipped | Encode/decode fail if data exceeds static max |
 | **Suite registration** | `protobuf-c` | `nanopb` (separate name—compare within C + schema family) |
 
-**Ownership contrast (quick diagram)**
+**Ownership contrast**
 
-protobuf-c: struct → pack → your buffer → unpack → heap message → `free_unpacked()`
+```text
+protobuf-c
+  struct (stack/heap)
+       │
+       ▼  get_packed_size + pack
+  caller buffer (you allocated)
+       │
+       ▼  unpack
+  heap message  ──►  free_unpacked()
 
-nanopb: static struct (with max sizes) → `pb_encode` (stream) → static buffer → `pb_decode` (into static struct) → usually nothing to free
+nanopb
+  static struct (max sizes baked in)
+       │
+       ▼  pb_encode → pb_ostream_t
+  static buffer (pre-sized from worst case)
+       │
+       ▼  pb_decode → pb_istream_t
+  static struct  ──►  usually nothing to free
+```
 
 ## Step-by-step: how nanopb thinks about encode
 
@@ -139,7 +155,7 @@ Do not treat a faster `nanopb` row as “protobuf-c is wrong for servers,” or 
 - Using nanopb without setting max sizes, then “fixing” by enabling unbounded dynamic mode everywhere (loses the point).  
 - Assuming nanopb decode allocates like protobuf-c.  
 - Mixing generated headers from different generators in one translation unit.  
-- Cross-ranking C Results against Python/Rust for engine choice.
+- Cross-ranking C Results against Python/Rust for engine choice ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 
 ## What this article is not
 

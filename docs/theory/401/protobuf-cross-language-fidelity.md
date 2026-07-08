@@ -62,11 +62,11 @@ Define values in a language-neutral way:
 
 | Encoder \ Decoder | Python | Rust | C (protobuf-c) |
 |-------------------|--------|------|----------------|
-| Python | round-trip | cross | cross |
-| Rust | cross | round-trip | cross |
-| C | cross | cross | round-trip |
+| Python | A→A round-trip (logical assert) | A→B cross-decode (logical assert) | A→B cross-decode (logical assert) |
+| Rust | A→B cross-decode | A→A round-trip | A→B cross-decode |
+| C | A→B cross-decode | A→B cross-decode | A→A round-trip |
 
-Minimum useful set: **all round-trips** + **each encoder once into each other decoder**.
+Every cell asserts `logical_equal(fixture, decode(encode(fixture)))`. Diagonal = same-language round-trip; off-diagonal = cross-language interop. Minimum useful set: **all round-trips** + **each encoder once into each other decoder**.
 
 ### 4. Assert logical equality, not only `memcmp`
 
@@ -106,7 +106,7 @@ Use the [lab](lab-mini-protobuf-encoder.md) goldens (e.g. `08 01 12 03 41 64 61`
 This suite may:
 
 - Convert fixtures to native messages **outside** timed paths.  
-- Apply language-specific compares (`fidelity_fx` in C, etc.).  
+- Apply language-specific compares (`fidelity_fx` in C — the suite's per-serializer comparison function, etc.).  
 - Exclude types Protobuf cannot express (`ObjectGraph`, bare `Integer` in some langs).
 
 Passing suite fidelity means **that language entry** round-trips under **that** compare function—not that three languages share bytes.

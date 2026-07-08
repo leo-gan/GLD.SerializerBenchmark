@@ -81,16 +81,42 @@ Public API documentation: [Message.SerializeToString / ParseFromString](https://
 
 The logical flow is the same across backends. The package turns a populated message into wire bytes using **descriptors** (field numbers, types, labels) that come from code generation.
 
-### High-level flow
+### S1 — Resolve backend
 
-1. **Resolve backend** at import time (upb by default in modern wheels; pure Python fallback). You usually do not choose this explicitly.
-2. The message object holds field values + descriptor metadata.
-3. `SerializeToString()` walks present fields.
-4. For each field it emits a **key** (field number + wire type) then the payload.
-5. Nested messages become length-delimited blobs.
-6. The result is a new `bytes` object.
+At import time the library selects an **implementation backend**: **upb** by default in modern PyPI wheels; **pure Python** as the portable fallback; legacy **cpp** extension exists but is no longer what `pip install protobuf` ships. You usually do not choose this explicitly; set `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` (or `upb`) to force one for debugging or benchmarks.
 
-This is exactly the tag + payload model from the [wire format article](protobuf-wire-format.md).
+### S2 — Field walk (descriptor-driven)
+
+`SerializeToString()` iterates the message's **present fields** using descriptor metadata (field numbers, types, labels) baked in at codegen time. For each field it emits a **key** (field number + wire type) followed by the payload.
+
+### S3 — Emit tag + payload
+
+Each field becomes exactly the tag + payload pair from the [wire format article](protobuf-wire-format.md):
+
+- Varint types (int, bool, enum) → key + varint encoding.
+- Fixed32/64 → key + 4/8 little-endian bytes.
+- String/bytes → key + length varint + raw data.
+- Nested message → key + length varint + recursive serialize of the submessage.
+
+### S4 — Produce output bytes
+
+The result is a new **immutable `bytes` object** — the caller owns it. No reference to the original message is retained in the output.
+
+```text
+  Message fields
+       │
+       ▼
+  S1  resolve backend (upb / pure Python)
+       │
+       ▼
+  S2  descriptor walk (by field number)
+       │
+       ▼
+  S3  emit key (varint) + payload (varint / fixed / LEN)
+       │
+       ▼
+  S4  bytes (immutable, caller-owned)
+```
 
 ### Decision frame: which backend matters?
 
@@ -98,29 +124,8 @@ This is exactly the tag + payload model from the [wire format article](protobuf-
 |-----------|----------------|
 | You care about speed in hot paths | upb (default) is usually best |
 | You need zero-copy sharing with C++ | Legacy cpp extension (rare now) |
-| You must run without any native extension | Pure Python backend |
-| Benchmarking or debugging | Explicitly pin via env var for reproducibility |
-
-## When to reach for the Python path vs others
-
-- You are in a Python service or glue layer.
-- You want strong multi-language interop with minimal per-language code.
-- Debuggability (text JSON fallback) is valued over raw density.
-
-If you need extremely low allocation or static memory, look at the C paths instead.
-
-```text
-  Message fields
-       │
-       ▼
-  descriptor walk (by field number)
-       │
-       ▼
-  emit key (varint) + payload (varint / fixed / LEN)
-       │
-       ▼
-  bytes (immutable)
-```
+| You must run without any native extension | `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` |
+| Benchmarking or debugging | Pin backend via env var for reproducibility |
 
 ## How the package implements deserialization (step-by-step)
 
@@ -178,7 +183,7 @@ Truncated input, illegal varints, or invalid UTF-8 (where checked) raise parse e
 | Nested | Recursive Python | Native + recursion limit |
 | API | Same `Message` methods | Same |
 
-Functionally interchangeable for ordinary use; performance and some edge behaviors differ. Pin and document the backend for benchmarks.
+Functionally interchangeable for ordinary use; performance and some edge behaviors differ. Pin via `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` (or `upb`) and document the backend for benchmarks.
 
 ## Buffers & ownership (simple diagram)
 

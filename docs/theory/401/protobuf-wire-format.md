@@ -8,7 +8,9 @@ Schema-driven formats are often described as “binary with field numbers.” Th
 
 Protocol Buffers (proto3 binary encoding) write a sequence of **keyed fields**. Each field is a **tag** (field number + wire type) followed by a **payload** whose shape depends on the wire type: varint, fixed 32/64-bit, or length-delimited (strings, bytes, embedded messages, packed repeated). Field **names do not appear** on the wire; readers need the schema (or equivalent) to interpret numbers. Unknown fields are typically **skipped** by field number, which is why additive evolution works when numbers are never reused.
 
-Assumes 201: [self-describing vs schema](../201/self-describing-vs-schema-dependent.md), [schema evolution](../201/schema-evolution.md). Official encoding reference: [Protocol Buffers encoding](https://protobuf.dev/programming-guides/encoding/).
+Assumes 201: [self-describing vs schema](../201/self-describing-vs-schema-dependent.md), [schema evolution](../201/schema-evolution.md).
+
+Official encoding reference: [Protocol Buffers encoding](https://protobuf.dev/programming-guides/encoding/).
 
 ## Prerequisites
 
@@ -42,14 +44,15 @@ Example tag strip for `id = 1` (field 1, varint):
 key = (1<<3) | 0
 ```
 
-Nested message example (field 3 = manager with id=2):
+Nested message example (field 3 = manager with `id=2`):
 
 ```
-1a 02 08 02
-|  |  |  |
-|  |  |  inner key+value for id=2
-|  |  inner message length = 2
-|  outer key for field 3, LEN
+1a       02       08       02
+^^       ^^       ^^       ^^
+|        |        |        value = 2 (varint)
+|        |        inner key = (1<<3)|0 = 0x08 (field 1, VARINT)
+|        length of inner message = 2 bytes
+outer key = (3<<3)|2 = 0x1a (field 3, LEN)
 ```
 
 (Wire types 3/4 are legacy group markers — avoid.)
@@ -154,14 +157,14 @@ Nested example sketch: if `manager` is present with only `id = 2`, field 3 is ke
 
 ## Buffers & ownership
 
-Wire rules are **language-agnostic**. Ownership appears only when a runtime copies into a `bytes` object, a `Vec<u8>`, or a C buffer—see language path articles.
+Wire rules are **language-agnostic** — the encoding spec says nothing about who allocates or frees buffers. Ownership appears only when a runtime materializes the result: Python creates an immutable `bytes`, Rust fills a `Vec<u8>`, C writes into a caller-allocated `uint8_t[]`. Each language path article covers its ownership model; the wire format itself is pure data layout.
 
 ## In this suite
 
 | Asset | Role |
 |-------|------|
 | `schemas/benchmark_data.proto` | Real multi-message schema (Person, Telemetry, …)—larger than MiniUser |
-| Language Protobuf entries | Implementations of **this** wire format (plus suite wrappers) |
+| [Python](protobuf-python.md) / [Rust](protobuf-rust-prost.md) / [C](protobuf-c-protobuf-c.md) | Language runtime implementations of **this** wire format |
 | [301 using this suite](../301/using-this-suite.md) | How not to misuse Results when comparing libs |
 
 ## Common mistakes

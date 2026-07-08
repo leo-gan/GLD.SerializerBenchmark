@@ -65,14 +65,36 @@ Field names are Rust-ified; **tags** still come from `.proto` numbers.
 
 ## How prost implements serialization (step-by-step)
 
-prost turns a Rust struct into wire bytes using **compile-time knowledge** of the schema. There is no runtime descriptor table.
+prost turns a Rust struct into wire bytes using **compile-time knowledge** of the schema. There is no runtime descriptor table — the hot path is monomorphized per message type.
 
-### High-level flow
+### S1 — Codegen bakes the schema into Rust code
 
-1. Codegen (prost-build) produces a struct + `impl Message`.
-2. `encoded_len()` does a dry-run sum of tags + payloads.
-3. `encode_raw()` writes the actual tags and payloads into a `BufMut`.
-4. Public helpers (`encode`, `encode_to_vec`) add capacity checks and length-delimited framing.
+`prost-build` runs at `cargo build` time: it invokes `protoc`, reads the descriptor, and emits a Rust struct plus `impl Message` with per-field `encode_raw` / `merge_field` bodies. After this step, field numbers and wire types are compile-time constants — no descriptor table is consulted at encode time.
+
+### S2 — `encoded_len` (dry-run size)
+
+`encoded_len()` walks the struct's fields and sums `tag_len + payload_len` for every present field. Nested messages recurse. The result tells the caller (or `encode`) how many bytes to reserve.
+
+### S3 — `encode_raw` (write tags + payloads)
+
+`encode_raw(&self, buf: &mut impl BufMut)` emits one tag + payload pair per present field into the output buffer, using helpers from `prost::encoding` (varint, fixed, length-delimited). Nested messages call their own `encode_raw` inside a length-delimited frame.
+
+### S4 — Public wrappers
+
+`encode(&self, buf: &mut impl BufMut)` calls `encoded_len` for a capacity check, then `encode_raw`. `encode_to_vec(&self)` allocates a `Vec<u8>` of exactly the right size, then `encode_raw` into it. `encode_length_delimited` prepends the message's length varint (used by streaming / gRPC framing).
+
+```text
+  Rust struct
+       │
+       ▼
+  S2  encoded_len()  →  capacity check
+       │
+       ▼
+  S3  encode_raw()  →  tag (varint) + payload  →  BufMut
+       │
+       ▼
+  S4  Vec<u8> (caller-owned)
+```
 
 ### Decision frame: when prost feels right
 
@@ -82,36 +104,30 @@ prost turns a Rust struct into wire bytes using **compile-time knowledge** of th
 
 If you need dynamic messages or extremely small binaries, other Rust crates may fit better.
 
-```text
-  Rust struct
-       │
-       ▼
-  encoded_len()  →  capacity check
-       │
-       ▼
-  encode_raw()  →  tag (varint) + payload  →  BufMut
-```
-
 ## How prost implements deserialization (step-by-step)
 
-### High-level flow
+### D1 — `decode` / `decode_length_delimited` entry
 
-1. `decode(buf)` creates `Default::default()` then calls `merge`.
-2. `merge` loops calling `decode_key` then `merge_field`.
-3. `merge_field` (generated) matches on tag and decodes into the struct.
-4. Unknown fields are skipped (or handled per current prost policy).
+`decode(buf: impl Buf)` creates a **`Default::default()`** instance of the target struct, then calls `merge(buf)` on it. `decode_length_delimited` first reads a length varint and limits the merge to that many bytes. Both return a `Result<Self, DecodeError>`.
 
-```text
-  bytes
-       │
-       ▼
-  decode_key loop
-       │
-       ▼
-  merge_field(tag, wire_type)  →  populate struct
-```
+### D2 — Tag loop (`merge`)
 
-A `DecodeContext` tracks recursion depth to protect against malicious nesting.
+`merge` reads the input buffer in a loop:
+
+1. Call `decode_key(buf)` → `(field_number, wire_type)`.
+2. Pass both plus the remaining buffer to `merge_field`.
+3. Repeat until the buffer is exhausted.
+
+A `DecodeContext` tracks **recursion depth** to protect against malicious nesting (configurable limit).
+
+### D3 — `merge_field` dispatch (generated)
+
+`merge_field` is generated per message type. It contains a `match` on `field_number`:
+
+- **Known tag** → call the type-appropriate decoder from `prost::encoding` (e.g. `uint32::merge`, `string::merge`, `message::merge`).
+- **Unknown tag** → skip the payload by wire type (consume varint, fixed bytes, or length-delimited blob) so the loop can continue.
+
+Because `merge_field` is monomorphized code (not a runtime descriptor lookup), the compiler can inline and optimize each branch.
 
 ### D4 — Type-specific merge
 
@@ -120,18 +136,31 @@ A `DecodeContext` tracks recursion depth to protect against malicious nesting.
 | Singular scalar | Overwrite with decoded value |
 | Singular message | Decode length-delimited; merge into nested struct |
 | Repeated | Decode one element and `push` (or expand packed) |
-| String | Validate UTF-8 when required; store `String` |
+| String | Validate UTF-8; store `String` |
+| `oneof` | Match variant tag; decode into the enum arm |
 
 ### D5 — Length-delimited messages
 
-`decode_length_delimited` / nested decode read a length prefix, then merge only that many bytes—same as LEN wire payloads in the encoding guide.
+`decode_length_delimited` / nested decode read a length prefix, then merge only that many bytes — same as LEN wire payloads in the encoding guide. This is how nested messages are bounded: the outer decoder slices the buffer before recursing.
 
 ### D6 — Errors
 
-Insufficient data, invalid varint, recursion limit, bad UTF-8 → `DecodeError`. The entire `decode` buffer is expected to be consumed for `decode` (no trailing garbage depending on API; length-delimited variants stop at the declared length).
+Insufficient data, invalid varint, recursion limit, bad UTF-8 → `DecodeError`. The entire `decode` buffer is expected to be consumed (no trailing garbage); length-delimited variants stop at the declared length.
 
 ```text
-  Buf  →  decode_key loop  →  merge_field(tag)  →  filled struct
+  Buf
+       │
+       ▼
+  D1  Default::default() + merge
+       │
+       ▼
+  D2  decode_key loop
+       │
+       ▼
+  D3  merge_field(tag) → known: type decode / unknown: skip
+       │
+       ▼
+  filled struct (owned)
 ```
 
 ## Generated code vs runtime crate
@@ -176,7 +205,7 @@ Vec<u8>  (you own the output)
 
 - Hand-editing `OUT_DIR` generated files.  
 - Ignoring recursion limits on deep hostile input.  
-- Comparing prost Results across languages without fixing language.  
+- Cross-language Results comparisons without controlling for language ([cross-language fidelity](protobuf-cross-language-fidelity.md)).  
 - Assuming field emission order is part of the contract (decoders must accept any order).
 
 ## What this article is not

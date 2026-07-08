@@ -38,7 +38,7 @@ message MiniUser {
 
 ## Steps (encode)
 
-Implement roughly:
+Implement in **any language you choose**. The pseudocode below is deliberately language-agnostic; the validation section uses Python as one convenient oracle, but protobuf-c or prost work equally well.
 
 ```text
 function encode_varint(u):

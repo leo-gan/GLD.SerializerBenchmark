@@ -52,7 +52,13 @@ By the end of this course you should be able to:
 - [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md)
 - [Same bytes, three runtimes](protobuf-cross-language-fidelity.md)
 
-**Suggested order:** wire → lab (parallel after wire) → Python → Rust → C → nanopb compare → cross-language fidelity.
+**Suggested order:**
+
+1. [Wire format](protobuf-wire-format.md)
+2. [Lab](lab-mini-protobuf-encoder.md) *(can start in parallel after wire)*
+3. [Python path](protobuf-python.md) → [Rust path](protobuf-rust-prost.md) → [C path](protobuf-c-protobuf-c.md)
+4. [nanopb compare](protobuf-c-nanopb-compare.md)
+5. [Cross-language fidelity](protobuf-cross-language-fidelity.md)
 
 ## Honesty rules
 
