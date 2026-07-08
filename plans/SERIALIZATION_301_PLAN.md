@@ -95,7 +95,8 @@ By the end of 301, the learner should be able to:
 ## Key takeaways
 ```
 
-Hub owns prereqs/order. Individual pages: at most one “Assumes 201: …” line.
+Hub owns prereqs/order. Individual pages: at most one “Assumes 201: …” line.  
+**No** Previous/Next/See-also header or footer chrome on articles (nav + hub only).
 
 | Type | Emphasize | Soften |
 |------|-----------|--------|

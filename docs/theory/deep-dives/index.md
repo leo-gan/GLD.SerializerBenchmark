@@ -54,13 +54,8 @@ Theory alone does not decide production choices. Use these pages to build mechan
 
 ---
 
-## After Serialization 201
+## Where to go next
 
-| Next | Link |
-|------|------|
-| Production judgment (core next, when published) | Serialization **301** — choose under constraints |
-| Implement codecs (senior elective, when published) | Serialization **401** — wire + language paths + lab |
-| Suite families & decision sketch | [Serialization categories](../../analysis/serialization_categories.md) |
-| Services lens | [Engineering perspective](../engineer_perspective.md) |
-| Data & ML lens | [Data science perspective](../data_science_perspective.md) |
-| Methodology & results hub | [Benchmarks](../../analysis/index.md) |
+- **Core path:** [Serialization 301](../301/index.md) — production judgment under constraints  
+- **Implementer elective:** Serialization 401 (planned) — wire + language paths + lab  
+- [Serialization categories](../../analysis/serialization_categories.md) · [Engineering](../engineer_perspective.md) · [Data science](../data_science_perspective.md) · [Benchmarks](../../analysis/index.md)

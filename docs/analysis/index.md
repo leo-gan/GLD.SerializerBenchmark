@@ -18,7 +18,7 @@ This page is the **hub** for the Benchmarks section: what each analysis page is 
 | **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to register a new harness | Extending the matrix |
 | **[Benchmark Results](BENCHMARK_SUMMARY.md)** | Static links to language **Results** + how to regenerate | Numbers and plots |
 
-Theory (concepts, not suite metrics): [Serialization 101](../theory/index.md).
+Theory: [Serialization 101](../theory/index.md) · [201](../theory/deep-dives/index.md) · [301](../theory/301/index.md) (production judgment).
 
 ---
 

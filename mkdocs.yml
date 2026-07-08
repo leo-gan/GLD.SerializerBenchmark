@@ -75,6 +75,8 @@ nav:
           - Dynamic vs IDL binary: theory/deep-dives/dynamic-vs-idl-binary.md
           - Zero-copy: theory/deep-dives/zero-copy.md
           - Compression vs format: theory/deep-dives/compression-is-not-a-format.md
+  - Serialization 301:
+      - Overview: theory/301/index.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md

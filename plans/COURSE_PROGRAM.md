@@ -20,7 +20,7 @@ Plans follow common higher-ed course-design practice:
 | **Prerequisites** | Explicit prior courses; no silent re-teaching of owned topics |
 | **Constructive alignment** | Article type matches level (map ≠ case study ≠ implementer lab) |
 | **Single ownership** | Each topic has one home course; others **link**, never re-derive |
-| **Syllabus-shaped hubs** | Every course hub: description, audience, prereqs, outcomes, modules, honesty rules, “next course” |
+| **Syllabus-shaped hubs** | Every course hub: description, audience, prereqs, outcomes, modules, honesty rules, “where to go next” (hub only) |
 
 Sources of practice (not copied text): learning-outcome design via Bloom’s hierarchy (e.g. Stanford Teaching Commons; standard instructional-design syllabi).
 
@@ -151,6 +151,13 @@ Public hubs should use the same skeleton (titles may vary slightly):
 ## Honesty rules              # program rules + course-specific
 ## Assessment (self-check)    # optional: checklist, case, lab
 ```
+
+**Navigation chrome (locked — user preference):**
+
+- **Do not** put Previous / Next / “See also” / module chrome in **article headers or footers**.  
+- Ordering lives in **nav** + **course hub** only.  
+- In-body links are fine when teaching (e.g. “see schema evolution”), not as pager bars.  
+- Hubs may have a short **Where to go next** list (not a Next|Prev table on every page).
 
 **Program honesty rules (all courses):**
 

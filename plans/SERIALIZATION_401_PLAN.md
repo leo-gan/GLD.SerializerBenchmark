@@ -124,7 +124,8 @@ By the end of 401 MVP, the learner should be able to:
 | Lab | Correct subset + validate | Feature completeness |
 
 **Length:** ~1200–2000 (wire); ~1000–1800 (language); ~800–1400 (lab).  
-**Diagrams:** tag/varint strip · nested lengths · ownership (who frees).
+**Diagrams:** tag/varint strip · nested lengths · ownership (who frees).  
+**No** Previous/Next/See-also header or footer chrome on articles (nav + hub only; see `COURSE_PROGRAM.md`).
 
 ---
 

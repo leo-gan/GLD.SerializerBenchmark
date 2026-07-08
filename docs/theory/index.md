@@ -46,6 +46,8 @@ The same formats appear under three perspectives on purpose. Each document answe
 
 You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single 201 article when you already know the question.
 
+When mechanisms are solid and you need **production multi-constraint judgment**, continue to [Serialization 301](301/index.md).
+
 ---
 
 ## Core trade-offs
