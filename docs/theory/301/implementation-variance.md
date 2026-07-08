@@ -1,7 +1,5 @@
 # Implementation variance within a family
 
-> After reading this page, one should be able to treat “JSON,” “MessagePack,” or “Protobuf” as families of *implementations*—and use this suite to choose a library, not a slogan.
-
 ## Problem
 
 Architecture discussions often stop at the format name: “we use JSON,” “we switched to binary,” “we standardized on Protobuf.” On any language **Results** page, several serializers share a family label and differ sharply in encode time, decode time, size, allocation behavior, and fidelity notes. Teams that pick the brand without picking the **implementation** leave performance and reliability to accident—or copy a blog post’s library pin from another runtime.

@@ -1,7 +1,5 @@
 # Untrusted input and parser risk
 
-> After reading this page, one should be able to treat deserialize paths as attack surfaces and apply size, depth, and format-class controls before “performance” debates.
-
 ## Problem
 
 Every public or multi-tenant deserialize path accepts **attacker-controlled bytes**. Classic failures are not slow codecs—they are remote code execution via native deserializers, resource exhaustion via nested or huge payloads, and logic bugs from unvalidated schemaless data. Teams discover this after an incident, then retrofit limits that should have been part of the original boundary design.

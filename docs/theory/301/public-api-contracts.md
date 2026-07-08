@@ -1,7 +1,5 @@
 # Public API contracts (JSON + schema layers)
 
-> After reading this page, one should be able to require a hard contract for public JSON APIs—even though JSON is “schemaless” on the wire.
-
 ## Problem
 
 JSON’s flexibility is a gift for browsers and integrators and a curse for accidental breakage: fields appear, types drift (`"1"` vs `1`), and renames ship without a version bump. Saying “we use JSON” is not a contract. Public APIs need an **external schema and process** as strict as IDL cultures—just with different artifacts.

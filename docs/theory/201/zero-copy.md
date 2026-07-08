@@ -1,7 +1,5 @@
 # Zero-copy
 
-> After reading this page, one should be able to explain what “no deserialization” means for FlatBuffers-class formats, and what costs and risks remain.
-
 ---
 
 ## Problem

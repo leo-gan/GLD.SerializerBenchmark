@@ -1,7 +1,5 @@
 # Latency tails, allocations, and GC
 
-> After reading this page, one should be able to judge serializers by allocation behavior and tail latency—not only by mean encode time on a Results table.
-
 ## Problem
 
 Mean serialize time looks fine while p99 collapses under load. Managed runtimes pay for **allocation rate** with garbage-collection pauses; native heaps pay with allocator contention and cache misses. Codecs that “win” microbenchmarks by allocating per field can lose the service-level objective. Charts that show only means hide the failure mode.

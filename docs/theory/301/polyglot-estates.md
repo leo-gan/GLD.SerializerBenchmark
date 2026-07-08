@@ -1,7 +1,5 @@
 # Polyglot estates
 
-> After reading this page, one should be able to defend a single wire contract across multiple languages—and know when dual stacks are the honest answer.
-
 ## Problem
 
 Real estates run **C#**, **Python**, **Go**, **Rust**, **JavaScript**, and more against shared data. Each language has a “fastest” library on some chart. Without a polyglot policy, every team picks a local optimum: one service speaks MessagePack with string keys, another speaks Protobuf, a third pickles to Redis. Integration cost appears later as translation layers, dual-write windows, and incidents that only reproduce at language boundaries.

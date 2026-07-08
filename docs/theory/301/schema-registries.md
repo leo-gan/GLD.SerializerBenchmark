@@ -1,7 +1,5 @@
 # Schema registries and compatibility modes
 
-> After reading this page, one should be able to choose and enforce registry compatibility modes as an operating policy—not as a library feature checkbox.
-
 ## Problem
 
 Event platforms and multi-team producers need a **control plane** for schemas: where the current schema lives, who may publish a new version, and which old reader/writer combinations remain legal. Without a registry (or equivalent), “we use Avro/Protobuf” becomes tribal knowledge and production breaks on the first incompatible field.

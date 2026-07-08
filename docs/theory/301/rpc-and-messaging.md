@@ -1,7 +1,5 @@
 # RPC and messaging payload design
 
-> After reading this page, one should be able to shape messages for RPC vs async fan-out without treating “one big struct” as a universal design.
-
 ## Problem
 
 Teams reuse the same payload for synchronous RPC, fan-out events, and UI refresh. The result is chatty RPCs carrying analytics blobs, or events so large that consumers collapse. Serialization format debates hide a prior question: **what is the unit of work, and who needs which fields?**

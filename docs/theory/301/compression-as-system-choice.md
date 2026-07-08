@@ -1,7 +1,5 @@
 # Compression as a system choice
 
-> After reading this page, one should be able to place gzip/zstd (and friends) in the stack without confusing them for a serialization format.
-
 ## Problem
 
 Bandwidth tickets trigger “enable compression” as a global default. Small RPCs get slower; already-compressed media is double-compressed; teams stop improving message design because “gzip will fix size.” 201 explains the mechanism ([compression vs format](../201/compression-is-not-a-format.md)); 301 places compression in **budgets and tiers**.

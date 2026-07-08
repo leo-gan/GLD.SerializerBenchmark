@@ -1,7 +1,5 @@
 # Schema evolution
 
-> After reading this page, one should be able to plan additive changes so that older and newer producers and consumers can coexist, and to state the rules that make informal “we shall update the client later” strategies fail.
-
 ---
 
 ## Problem

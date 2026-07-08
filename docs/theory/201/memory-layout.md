@@ -1,7 +1,5 @@
 # Memory layout
 
-> After reading this page, one should be able to explain why a raw dump of process memory is not a portable interchange format, and what a wire format must specify instead.
-
 ---
 
 ## Problem

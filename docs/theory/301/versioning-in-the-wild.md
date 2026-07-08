@@ -1,7 +1,5 @@
 # Versioning strategies in the wild
 
-> After reading this page, one should be able to pick dual-write, content-type, and additive-change tactics that match real deploy constraints.
-
 ## Problem
 
 Schemas and APIs change while old clients and old data remain. Pure theory (“never break”) collides with product deadlines. Without a playbook, teams mix silent renames, hard cuts, and dual stacks until no one knows which version is canonical.

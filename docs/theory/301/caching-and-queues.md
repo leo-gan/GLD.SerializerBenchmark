@@ -1,7 +1,5 @@
 # Caching and queues
 
-> After reading this page, one should be able to choose portable encodings for shared caches and buses—and keep native blobs inside a single trust domain.
-
 ## Problem
 
 Redis, SQS, Kafka, and in-process caches all store **bytes**. Developers paste the fastest local serializer into the cache “temporarily.” Months later another language must read the key, or an attacker influences a value. The cache becomes a serialization and trust boundary that no one designed.

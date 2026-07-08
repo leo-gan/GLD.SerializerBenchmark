@@ -1,7 +1,5 @@
 # Zero-copy in production
 
-> After reading this page, one should be able to adopt FlatBuffers-class layouts only when ops, mutation, and verification costs fit the workload.
-
 ## Problem
 
 Marketing claims “no deserialize” and microbenchmarks look excellent for large, mostly-read messages. Production then hits: missing verifiers, painful updates, language/tooling gaps, and debugging friction. The 201 mechanism is sound; the **operations** story decides whether zero-copy ships.

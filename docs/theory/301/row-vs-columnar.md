@@ -1,7 +1,5 @@
 # Row vs columnar at system scale
 
-> After reading this page, one should be able to keep RPC-style row codecs out of analytics lakes (and columnar formats out of chatty RPC) unless the access pattern truly matches.
-
 ## Problem
 
 The same organization often runs:

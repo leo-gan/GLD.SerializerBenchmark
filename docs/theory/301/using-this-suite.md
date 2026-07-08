@@ -1,7 +1,5 @@
 # Using this suite without fooling yourself
 
-> After reading this page, one should be able to read language **Results** as evidence under fixed constraints—not as a universal ranking of formats or languages.
-
 ## Problem
 
 Benchmark tables are easy to misuse. A single chart—“library A is 3× faster than library B”—often becomes a policy decision without asking whether A and B implement the **same job**, on the **same payload shape**, in the **same language**, under the **same timing rules**. Organizations then switch codecs, observe little improvement, and conclude that “benchmarks lie,” when the real issue was **misaligned comparison**.

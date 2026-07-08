@@ -1,7 +1,5 @@
 # Trust boundaries: portable vs native
 
-> After reading this page, one should be able to decide when language-native serialization is acceptable and when only portable interchange formats should cross a boundary.
-
 ## Problem
 
 Language-native serializers—Python `pickle`, Java serialization, many .NET binary formatters, and similar “dump the object graph” tools—are ergonomic inside one runtime. They often win microbenchmarks on complex graphs and preserve types that portable formats handle awkwardly. Teams then place those bytes on a **queue**, a **cache shared across services**, a **file that other teams can open**, or a **network API**. The security and portability failure modes are not subtle: gadget chains, version skew that only appears at runtime, and permanent lock-in to one language.

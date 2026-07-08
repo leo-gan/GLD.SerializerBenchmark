@@ -1,7 +1,5 @@
 # Self-describing vs schema
 
-> After reading this page, one should be able to state where field identity resides—in the payload or in a shared contract—and what each placement implies for size, tooling, and change management.
-
 ---
 
 ## Problem

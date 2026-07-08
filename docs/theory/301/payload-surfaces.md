@@ -1,7 +1,5 @@
 # Secrets, PII, and payload surfaces
 
-> After reading this page, one should be able to spot where serialized payloads leak sensitive data through logs, support tools, and secondary stores.
-
 ## Problem
 
 Serialization choices affect **where meaning appears in cleartext**: HTTP bodies, queue messages, core dumps, APM traces, exception messages, and “temporary” debug flags. A secure transport (TLS) does not protect **logs that capture the body**, nor support engineers pasting payloads into tickets. Incidents often start as performance or schema work and end as privacy breaches.

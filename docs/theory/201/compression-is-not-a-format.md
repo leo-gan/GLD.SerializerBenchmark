@@ -1,7 +1,5 @@
 # Compression vs format
 
-> After reading this page, one should be able to distinguish general-purpose compression from serialization format choice, and to determine when each mechanism is appropriate.
-
 ---
 
 ## Problem

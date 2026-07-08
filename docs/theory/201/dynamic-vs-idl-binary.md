@@ -1,7 +1,5 @@
 # Dynamic vs IDL binary
 
-> After reading this page, one should be able to choose between MessagePack/CBOR-class dynamic binary encodings and Protocol Buffers–class IDL binary encodings for a given workload, without asserting a universal ranking of formats.
-
 ---
 
 ## Problem

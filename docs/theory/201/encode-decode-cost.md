@@ -1,7 +1,5 @@
 # Encode/decode cost
 
-> After reading this page, one should be able to identify the principal sources of serialization cost and avoid the unsupported claim that “JSON is invariably slow” or that “binary formats are invariably fast.”
-
 ---
 
 ## Problem

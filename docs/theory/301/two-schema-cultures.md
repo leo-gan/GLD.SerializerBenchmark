@@ -1,7 +1,5 @@
 # Two schema cultures: Avro vs Protobuf
 
-> After reading this page, one should be able to contrast Avro-style schema resolution with Protobuf-style field-number discipline as *operational cultures*—not as a byte-level tutorial.
-
 ## Problem
 
 Both Apache Avro and Protocol Buffers are **schema-driven**. Teams still fail migrations because they treat “we have a schema” as one practice. In reality, two mature cultures dominate industry systems:
