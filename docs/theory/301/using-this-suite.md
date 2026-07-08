@@ -18,7 +18,7 @@ Treat every published number as the answer to a **narrow question**: for a given
 |------------|------------------------------|
 | **Language / runtime** | Different VMs, GC, and stdlibs; “Protobuf in Python” is not “Protobuf in C.” |
 | **Paradigm family** | JSON and schema-driven binary solve different product problems; speed alone is not interchangeability. |
-| **Payload shape** | Dense structs vs deep graphs change cost centers (see [Encode/decode cost](../deep-dives/encode-decode-cost.md)). |
+| **Payload shape** | Dense structs vs deep graphs change cost centers (see [Encode/decode cost](../201/encode-decode-cost.md)). |
 | **Implementation** | Several libraries can share a format label and differ by an order of magnitude. |
 | **What is timed** | Harness paths measure ser/deser of prepared fixtures—not network RTT, disk I/O, or your production validation layer. |
 | **Analysis policy** | Warmup exclusion and outlier filters change means; raw CSV ≠ published table unless you re-run analysis with the same config. |
@@ -87,9 +87,9 @@ A team sees that a schema-driven library is fastest on **Rust** Results for a de
 ## What this suite cannot tell you
 
 - End-to-end **service** latency (queueing, network, TLS, framework overhead).  
-- **Correctness of your schema evolution policy** under rolling deploys (see 201 [schema evolution](../deep-dives/schema-evolution.md) and later 301 contract articles).  
+- **Correctness of your schema evolution policy** under rolling deploys (see 201 [schema evolution](../201/schema-evolution.md) and later 301 contract articles).  
 - **Security** of deserializing untrusted bytes (native formats, hostile inputs).  
-- Whether **gzip/zstd** on the wire wins for your message size mix (compression is orthogonal; see 201 [compression vs format](../deep-dives/compression-is-not-a-format.md)).  
+- Whether **gzip/zstd** on the wire wins for your message size mix (compression is orthogonal; see 201 [compression vs format](../201/compression-is-not-a-format.md)).  
 - Cross-language byte identity for every registered pair (harnesses are per-language unless you design a fidelity experiment).  
 - Business constraints: compliance, team skill, vendor lock-in, existing public contracts.
 

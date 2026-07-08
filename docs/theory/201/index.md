@@ -1,6 +1,6 @@
 # Serialization 201
 
-Short, problem-driven essays on **how serialization mechanisms work**. They sit between the [101 home](../index.md) / three lenses and later courses (**301** production judgment, **401** implementers) plus suite [categories](../../analysis/serialization_categories.md) + language **Results**.
+Short, problem-driven essays on **how serialization mechanisms work**. They sit between the [101 home](../101/index.md) / three lenses and later courses (**301** production judgment, **401** implementers) plus suite [categories](../../analysis/serialization_categories.md) + language **Results**.
 
 Theory alone does not decide production choices. Use these pages to build mechanism-level models, then validate with measured libraries and—when choosing under multi-constraint production pressure—continue to advanced courses as they ship.
 
@@ -8,8 +8,8 @@ Theory alone does not decide production choices. Use these pages to build mechan
 
 ## How to use this track
 
-1. Skim [Serialization 101](../index.md) (definitions and trade-off axes).
-2. Optionally read one lens: [Historical](../historical_perspective.md), [Data science](../data_science_perspective.md), or [Engineering](../engineer_perspective.md).
+1. Skim [Serialization 101](../101/index.md) (definitions and trade-off axes).
+2. Optionally read one lens: [Historical](../101/historical_perspective.md), [Data science](../101/data_science_perspective.md), or [Engineering](../101/engineer_perspective.md).
 3. Work the articles below when you need *how* or *why*.
 4. Open [Serialization categories](../../analysis/serialization_categories.md) and a language **Results** page for numbers on *this* harness.
 
@@ -57,5 +57,5 @@ Theory alone does not decide production choices. Use these pages to build mechan
 ## Where to go next
 
 - **Core path:** [Serialization 301](../301/index.md) — production judgment under constraints  
-- **Implementer elective:** Serialization 401 (planned) — wire + language paths + lab  
-- [Serialization categories](../../analysis/serialization_categories.md) · [Engineering](../engineer_perspective.md) · [Data science](../data_science_perspective.md) · [Benchmarks](../../analysis/index.md)
+- **Implementer elective:** [Serialization 401](../401/index.md) — wire + language paths + lab  
+- [Serialization categories](../../analysis/serialization_categories.md) · [Engineering](../101/engineer_perspective.md) · [Data science](../101/data_science_perspective.md) · [Benchmarks](../../analysis/index.md)

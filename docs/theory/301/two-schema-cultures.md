@@ -15,7 +15,7 @@ Choosing the wrong culture for the ops model—or mixing habits—breaks consume
 
 Use **Avro-like resolution** when producers and consumers evolve independently, schemas are published to a **registry**, and you want compatibility rules (BACKWARD / FORWARD / FULL) checked as policy artifacts. Use **Protobuf-like field-number discipline** when a shared `.proto` (or equivalent IDL) is the product interface, codegen is central, and change control is “reserve numbers, additive fields, CI breaks on incompatible edits.” Both can serve RPC and events; the difference is **how change is governed**, not a universal speed ranking.
 
-Assumes 201: [schema evolution](../deep-dives/schema-evolution.md) for forward/backward vocabulary; [self-describing vs schema](../deep-dives/self-describing-vs-schema-dependent.md) for why schemas exist. This page owns **culture and operations**.
+Assumes 201: [schema evolution](../201/schema-evolution.md) for forward/backward vocabulary; [self-describing vs schema](../201/self-describing-vs-schema-dependent.md) for why schemas exist. This page owns **culture and operations**.
 
 ## Constraints that matter
 
@@ -74,7 +74,7 @@ Swapping habits—treating Protobuf field names as the long-term identity, or de
 | Language **Overview** / **Results** | Where Avro, Protobuf, or similar **implementations** are registered |
 | [Serialization categories](../../analysis/serialization_categories.md) | Both sit in **schema-driven** family—do not rank cultures by a mixed chart |
 | [Using this suite](using-this-suite.md) | Same language + paradigm before comparing libraries |
-| 201 [schema evolution](../deep-dives/schema-evolution.md) | Mechanism vocabulary |
+| 201 [schema evolution](../201/schema-evolution.md) | Mechanism vocabulary |
 
 Suite timings compare **libraries**, not “Avro culture vs Protobuf culture” as governance systems. Use Results to pick an implementation **after** the culture fits the ops model.
 

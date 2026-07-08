@@ -12,7 +12,7 @@ The design question is not “is native fast?” It is **which trust and interop
 
 Treat **language-native** encodings as **unsafe by default** for anything outside a single process trust domain (or a tightly controlled same-stack path with authenticated peers and no untrusted input). Prefer **portable** formats—text or binary, self-describing or schema-driven—whenever data is stored long-term, shared across languages, accepted from clients, or exposed to multi-tenant input. Native formats remain useful for **trusted, same-runtime** checkpoints and caches when the threat model explicitly allows them and operators accept the lock-in.
 
-Assumes 201: [self-describing vs schema](../deep-dives/self-describing-vs-schema-dependent.md) for where field identity lives; this page owns **trust and portability policy**.
+Assumes 201: [self-describing vs schema](../201/self-describing-vs-schema-dependent.md) for where field identity lives; this page owns **trust and portability policy**.
 
 ## Constraints that matter
 
@@ -71,7 +71,7 @@ A Python service caches session graphs with `pickle` in Redis for speed. Latency
 | Language **Overview** | Which native codecs are registered (if any) and caveats |
 | Language **Results** | Speed/size **within one language**—never a reason to put native on the wire alone |
 | [Using this suite](using-this-suite.md) | How not to misread those numbers |
-| [Engineering perspective](../engineer_perspective.md) | Product framing of native vs portable |
+| [Engineering perspective](../101/engineer_perspective.md) | Product framing of native vs portable |
 
 When native and portable entries both appear for a language, compare them only to answer “what do we pay for portability **in this runtime**?”—not “is native a good public contract?”
 

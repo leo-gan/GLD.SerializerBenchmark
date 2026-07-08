@@ -4,16 +4,16 @@
 
 ## Who this is for
 
-Experienced students and developers who must **ship a choice** under conflicting constraints (trust, evolution, multi-language estates, performance claims). This is the **core** advanced course after [Serialization 201](../deep-dives/index.md).
+Experienced students and developers who must **ship a choice** under conflicting constraints (trust, evolution, multi-language estates, performance claims). This is the **core** advanced course after [Serialization 201](../201/index.md).
 
-If you need to **implement** a codec (wire encoding, runtime paths, a subset lab), that is Serialization **401** (planned elective)—not this course.
+If you need to **implement** a codec (wire encoding, runtime paths, a subset lab), that is [Serialization 401](../401/index.md) (implementer elective)—not this course.
 
 ## Prerequisites
 
 | Type | Requirement |
 |------|-------------|
-| **Hard** | [Serialization 101](../index.md) — trade-off axes and at least one lens |
-| **Hard** | [Serialization 201](../deep-dives/index.md) — especially schema identity, evolution, dynamic vs IDL, encode cost, zero-copy, compression vs format *(or equivalent experience)* |
+| **Hard** | [Serialization 101](../101/index.md) — trade-off axes and at least one lens |
+| **Hard** | [Serialization 201](../201/index.md) — especially schema identity, evolution, dynamic vs IDL, encode cost, zero-copy, compression vs format *(or equivalent experience)* |
 
 This course does **not** re-teach 201 mechanisms. Open the 201 article when you need a model; return here for multi-constraint judgment.
 
@@ -32,10 +32,10 @@ By the end of this course you should be able to:
 
 | Course | Role |
 |--------|------|
-| [101](../index.md) | Foundations — what serialization is; axes and lenses |
-| [201](../deep-dives/index.md) | Mechanisms — how formats work |
+| [101](../101/index.md) | Foundations — what serialization is; axes and lenses |
+| [201](../201/index.md) | Mechanisms — how formats work |
 | **301 (this course)** | Production judgment — what to ship under constraints |
-| **401** (planned) | Implementer elective — wire + language paths + lab |
+| [**401**](../401/index.md) | Implementer elective — wire + language paths + lab |
 
 Default path: **101 → 201 → 301**. Suite lab: [Benchmarks](../../analysis/index.md) and language **Results**.
 
@@ -100,6 +100,6 @@ Treat the three MVP case studies as the course exam: under fixed constraints, re
 
 ## Where to go next
 
-- Finish or skim [Serialization 201](../deep-dives/index.md) if mechanisms are rusty.  
+- Finish or skim [Serialization 201](../201/index.md) if mechanisms are rusty.  
 - [Serialization categories](../../analysis/serialization_categories.md) and language **Results** for suite evidence.  
-- Serialization **401** (planned) if you build or deeply integrate codecs.
+- [Serialization 401](../401/index.md) if you build or deeply integrate codecs.

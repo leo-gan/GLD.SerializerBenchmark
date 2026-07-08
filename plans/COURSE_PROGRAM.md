@@ -58,7 +58,7 @@ Sources of practice (not copied text): learning-outcome design via Bloom’s hie
 4. **401 soft prereq:** 301 (trust, polyglot, honest measurement)—link, do not re-teach; allow implementers to enter 401 after 201 if they only need wire/path/lab.  
 5. **No parallel “second 301”:** chooser content stays in 301; implementer content stays in 401.
 
-**Nav (public):** top-level tabs for 101, 201, 301, 401 when each exists. 201 may remain path `docs/theory/deep-dives/` until a later path rename.
+**Nav (public):** single top-level **Serialization** tab with nested **101 / 201 / 301 / 401** (`docs/theory/{101,201,301,401}/`).
 
 ---
 
@@ -186,8 +186,8 @@ Public hubs should use the same skeleton (titles may vary slightly):
 
 | Course | Path | Nav label |
 |--------|------|-----------|
-| 101 | `docs/theory/index.md` + perspectives | Serialization 101 |
-| 201 | `docs/theory/deep-dives/` | Serialization 201 |
+| 101 | `docs/theory/101/index.md` + perspectives | Serialization 101 |
+| 201 | `docs/theory/201/` | Serialization 201 |
 | 301 | `docs/theory/301/` | Serialization 301 |
 | 401 | `docs/theory/401/` | Serialization 401 |
 | Suite (not a course) | `docs/analysis/`, `docs/<lang>/` | Benchmarks / languages |
@@ -217,7 +217,7 @@ Public hubs should use the same skeleton (titles may vary slightly):
 2. Ship **301** MVP (chooser core completes the sequence).  
 3. Ship **401** MVP (elective; W1 → L* → Lab1).  
 4. Wire hubs and README to this ladder.  
-5. Path rename `deep-dives/` → `201/` only as a later, explicit migration (not required for consistency of *titles*).
+5. Path rename deep-dives → 201: done.
 
 ---
 

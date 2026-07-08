@@ -208,7 +208,7 @@ A multi-byte integer is stored as **several bytes in a defined order**. Two comm
   Little-endian:  78  56  34  12
 ```
 
-If a little-endian writer emits those four bytes and a big-endian reader loads them as a native integer **without conversion**, the reader obtains a different numeric value. Network protocols historically adopted a **network byte order** (classical Internet Protocol stacks: big-endian). Every serialization format must **document** endianness—or avoid host integers as the interchange unit (for example decimal text in JSON). See also the [historical perspective](../historical_perspective.md).
+If a little-endian writer emits those four bytes and a big-endian reader loads them as a native integer **without conversion**, the reader obtains a different numeric value. Network protocols historically adopted a **network byte order** (classical Internet Protocol stacks: big-endian). Every serialization format must **document** endianness—or avoid host integers as the interchange unit (for example decimal text in JSON). See also the [historical perspective](../101/historical_perspective.md).
 
 Binary floating-point values are subject to the same byte-order considerations when stored in memory.
 
@@ -351,7 +351,7 @@ The harness measures **codecs**, not raw structure dumps: each registered serial
 - Forgetting that **padding and field order** are decisions of the compiler and platform, not merely part of a mental model of the domain object.  
 - Assuming that the prevalence of little-endian hosts makes endianness irrelevant—**embedded systems, network equipment, and file formats** still require a written rule.  
 - Confusing **host layout** with **zero-copy wire layout**; the latter is designed, versioned, and free of host pointers.  
-- Transmitting language-native serializations of object graphs across a trust boundary (see security notes in the [engineering perspective](../engineer_perspective.md)).
+- Transmitting language-native serializations of object graphs across a trust boundary (see security notes in the [engineering perspective](../101/engineer_perspective.md)).
 
 ---
 

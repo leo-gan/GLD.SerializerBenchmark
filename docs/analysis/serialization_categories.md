@@ -4,7 +4,7 @@
 
 | For this instead… | Go here |
 |-------------------|---------|
-| Conceptual trade-offs (product / theory) | [Theory — engineering](../theory/engineer_perspective.md) · [101 home](../theory/index.md) |
+| Conceptual trade-offs (product / theory) | [Theory — engineering](../theory/101/engineer_perspective.md) · [101 home](../theory/101/index.md) |
 | Full registered names and caveats | Language **Overview** pages (SoT for “what we measure”) |
 | Timings and plots | Language **Results** · [Benchmark Results](BENCHMARK_SUMMARY.md) hub |
 
@@ -41,7 +41,7 @@ Some harness entries (C# **XML** / **YAML** / **CSV**, etc.) sit outside a pure 
    - **Yes** → Language-native  
    - **No** → Schemaless binary  
 
-Product-oriented guidance: [engineering perspective](../theory/engineer_perspective.md).
+Product-oriented guidance: [engineering perspective](../theory/101/engineer_perspective.md).
 
 ---
 
@@ -117,4 +117,4 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 
 - [JSON](https://www.json.org/) · [MessagePack](https://msgpack.org/) · [CBOR RFC 8949](https://www.rfc-editor.org/rfc/rfc8949.html)  
 - [Protocol Buffers](https://protobuf.dev/) · [Apache Avro](https://avro.apache.org/) · [FlatBuffers](https://flatbuffers.dev/)  
-- [Theory 101](../theory/index.md)
+- [Theory 101](../theory/101/index.md)

@@ -205,7 +205,7 @@ Resolution maps the writer’s `total_cents` bytes onto the reader’s `amount_c
 | New field | New number; old readers skip unknown numbers | New name + default for old data; old readers skip unknown names under resolution |
 | Operational centre of gravity | `.proto` ownership and reserved numbers | Schema registry, compatibility modes (BACKWARD / FORWARD / FULL, product-specific) |
 
-Neither model removes the need for a **compatibility policy**; they implement that policy with different mechanisms. For analytical pipelines and lake-oriented formats, see also the [data science perspective](../data_science_perspective.md).
+Neither model removes the need for a **compatibility policy**; they implement that policy with different mechanisms. For analytical pipelines and lake-oriented formats, see also the [data science perspective](../101/data_science_perspective.md).
 
 ### JSON and schemaless binary formats
 

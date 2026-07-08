@@ -10,7 +10,7 @@ Architecture discussions often stop at the format name: “we use JSON,” “we
 
 After the **paradigm family** is fixed ([categories](../../analysis/serialization_categories.md)), choose a **concrete library** (and version) per language using same-fixture, same-mode Results—and read Overview caveats. Format brand sets interoperability *possibility*; implementation sets cost and engineering quality on that runtime. Do not assume one language’s winning JSON library has a twin with identical behavior elsewhere ([polyglot estates](polyglot-estates.md)).
 
-Assumes [using this suite](using-this-suite.md) and 201 [encode/decode cost](../deep-dives/encode-decode-cost.md).
+Assumes [using this suite](using-this-suite.md) and 201 [encode/decode cost](../201/encode-decode-cost.md).
 
 ## Constraints that matter
 

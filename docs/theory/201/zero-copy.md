@@ -79,7 +79,7 @@ Builders must produce a correct buffer (packing, offsets, padding). Workloads th
 
 ### Validation
 
-Avoiding object materialization must not mean avoiding **bounds and structural checks** on untrusted data. FlatBuffers-style stacks provide verifiers; using them on adversarial input is part of the security discussion in the [engineering perspective](../engineer_perspective.md). An unverified buffer is a collection of offsets that an attacker may craft to induce out-of-bounds access.
+Avoiding object materialization must not mean avoiding **bounds and structural checks** on untrusted data. FlatBuffers-style stacks provide verifiers; using them on adversarial input is part of the security discussion in the [engineering perspective](../101/engineer_perspective.md). An unverified buffer is a collection of offsets that an attacker may craft to induce out-of-bounds access.
 
 ### Mutation and operability
 
@@ -89,7 +89,7 @@ In-place updates are constrained (sufficient space must already exist; changing 
 
 | Idea | Relation to message zero-copy |
 |------|-------------------------------|
-| Memory-mapped columnar formats (Arrow, Parquet access paths) | Zero-copy *columns* for analytical workloads—different problem domain ([data science perspective](../data_science_perspective.md)) |
+| Memory-mapped columnar formats (Arrow, Parquet access paths) | Zero-copy *columns* for analytical workloads—different problem domain ([data science perspective](../101/data_science_perspective.md)) |
 | `span` / buffer views on ordinary codecs | Reduce copies without a full zero-copy message format |
 | Protocol Buffers with arenas or pooling | Fast materialization or reduced allocation—not the same layout model |
 

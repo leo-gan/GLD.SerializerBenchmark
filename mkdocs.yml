@@ -11,10 +11,10 @@ exclude_docs: |
 theme:
   name: material
   features:
-    # Header: top-level sections as tabs (Serialization 101, C#, Python, …)
+    # Header: top-level sections as tabs (Serialization, C#, Python, …)
     - navigation.tabs
     - navigation.tabs.sticky
-    # Left sidebar: only 2nd-level pages for the active tab (no page ToC here)
+    # Left sidebar: sections under the active tab
     - navigation.sections
     - navigation.tracking
     - navigation.instant
@@ -38,7 +38,19 @@ theme:
 plugins:
   - redirects:
       redirect_maps:
-        'index.md': 'theory/index.md'
+        'index.md': 'theory/101/index.md'
+        'theory/index.md': 'theory/101/index.md'
+        'theory/historical_perspective.md': 'theory/101/historical_perspective.md'
+        'theory/data_science_perspective.md': 'theory/101/data_science_perspective.md'
+        'theory/engineer_perspective.md': 'theory/101/engineer_perspective.md'
+        'theory/deep-dives/index.md': 'theory/201/index.md'
+        'theory/deep-dives/memory-layout.md': 'theory/201/memory-layout.md'
+        'theory/deep-dives/encode-decode-cost.md': 'theory/201/encode-decode-cost.md'
+        'theory/deep-dives/self-describing-vs-schema-dependent.md': 'theory/201/self-describing-vs-schema-dependent.md'
+        'theory/deep-dives/schema-evolution.md': 'theory/201/schema-evolution.md'
+        'theory/deep-dives/dynamic-vs-idl-binary.md': 'theory/201/dynamic-vs-idl-binary.md'
+        'theory/deep-dives/zero-copy.md': 'theory/201/zero-copy.md'
+        'theory/deep-dives/compression-is-not-a-format.md': 'theory/201/compression-is-not-a-format.md'
         'serializers/index.md': 'analysis/serialization_categories.md'
         'serializers/json.md': 'analysis/serialization_categories.md'
         'serializers/binary.md': 'analysis/serialization_categories.md'
@@ -61,31 +73,34 @@ markdown_extensions:
       alternate_style: true
 
 nav:
-  - Serialization 101:
-      - Theory & Practices: theory/index.md
-      - Historical: theory/historical_perspective.md
-      - Data Science: theory/data_science_perspective.md
-      - Engineering: theory/engineer_perspective.md
-      - Serialization 201:
-          - Overview: theory/deep-dives/index.md
-          - Memory layout: theory/deep-dives/memory-layout.md
-          - Encode/decode cost: theory/deep-dives/encode-decode-cost.md
-          - Self-describing vs schema: theory/deep-dives/self-describing-vs-schema-dependent.md
-          - Schema evolution: theory/deep-dives/schema-evolution.md
-          - Dynamic vs IDL binary: theory/deep-dives/dynamic-vs-idl-binary.md
-          - Zero-copy: theory/deep-dives/zero-copy.md
-          - Compression vs format: theory/deep-dives/compression-is-not-a-format.md
-  - Serialization 301:
-      - Overview: theory/301/index.md
-      - Trust boundaries: theory/301/trust-boundaries.md
-      - Two schema cultures: theory/301/two-schema-cultures.md
-      - Row vs columnar: theory/301/row-vs-columnar.md
-      - Polyglot estates: theory/301/polyglot-estates.md
-      - Using this suite: theory/301/using-this-suite.md
-      - Implementation variance: theory/301/implementation-variance.md
-      - Case: public REST API: theory/301/case-public-rest-api.md
-      - Case: internal RPC: theory/301/case-internal-rpc.md
-      - Case: event backbone: theory/301/case-event-stream.md
+  - Serialization:
+      - 101:
+          - Overview: theory/101/index.md
+          - Historical: theory/101/historical_perspective.md
+          - Data Science: theory/101/data_science_perspective.md
+          - Engineering: theory/101/engineer_perspective.md
+      - 201:
+          - Overview: theory/201/index.md
+          - Memory layout: theory/201/memory-layout.md
+          - Encode/decode cost: theory/201/encode-decode-cost.md
+          - Self-describing vs schema: theory/201/self-describing-vs-schema-dependent.md
+          - Schema evolution: theory/201/schema-evolution.md
+          - Dynamic vs IDL binary: theory/201/dynamic-vs-idl-binary.md
+          - Zero-copy: theory/201/zero-copy.md
+          - Compression vs format: theory/201/compression-is-not-a-format.md
+      - 301:
+          - Overview: theory/301/index.md
+          - Trust boundaries: theory/301/trust-boundaries.md
+          - Two schema cultures: theory/301/two-schema-cultures.md
+          - Row vs columnar: theory/301/row-vs-columnar.md
+          - Polyglot estates: theory/301/polyglot-estates.md
+          - Using this suite: theory/301/using-this-suite.md
+          - Implementation variance: theory/301/implementation-variance.md
+          - "Case: public REST API": theory/301/case-public-rest-api.md
+          - "Case: internal RPC": theory/301/case-internal-rpc.md
+          - "Case: event backbone": theory/301/case-event-stream.md
+      - 401:
+          - Overview: theory/401/index.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md

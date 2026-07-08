@@ -70,7 +70,7 @@ Examples of structure reducing size **using knowledge of the model**:
 | Omit repeated field names | Names live in a schema, not in every record | Schema-dependent encodings |
 | Variable-length integers | Small numbers use fewer bytes than fixed 64-bit fields | Many RPC binary formats |
 | Enumerations | Store a small integer instead of a long string label | Status codes, units |
-| Columnar layout | Store one column contiguously; encode and compress per column | Parquet, ORC ([data science perspective](../data_science_perspective.md)) |
+| Columnar layout | Store one column contiguously; encode and compress per column | Parquet, ORC ([data science perspective](../101/data_science_perspective.md)) |
 | Domain encoding | Differences of timestamps; dictionary codes for categories | Analytics and telemetry |
 
 These representations remain **interpretable under format rules**. A gzip bitstream alone is not a data schema.

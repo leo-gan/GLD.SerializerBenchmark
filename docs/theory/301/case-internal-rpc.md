@@ -57,7 +57,7 @@
 | Never rank Go vs Rust for format choice | [Using this suite](using-this-suite.md) |
 | p99 under concurrent RPC framework | e2e load test outside suite |
 | Compatibility: old binary × new binary | Contract tests / buf breaking / golden payloads |
-| Payload shape stress (nested vs flat) | Fixtures + 201 [encode cost](../deep-dives/encode-decode-cost.md) |
+| Payload shape stress (nested vs flat) | Fixtures + 201 [encode cost](../201/encode-decode-cost.md) |
 
 ## What would change the answer
 

@@ -95,7 +95,7 @@ Logical value: `id = 42`, `label = "x"`.
 
 ### What this comparison is not
 
-- Not “Protocol Buffers versus Avro” (both are schema-centric; operational cultures differ—see the [data science perspective](../data_science_perspective.md) for Avro-oriented workloads).  
+- Not “Protocol Buffers versus Avro” (both are schema-centric; operational cultures differ—see the [data science perspective](../101/data_science_perspective.md) for Avro-oriented workloads).  
 - Not “binary versus zero-copy” (FlatBuffers-class designs are a separate point—[zero-copy layouts](zero-copy.md)).  
 - Not a guarantee that any MessagePack library outperforms any Protocol Buffers library in a given language.
 
