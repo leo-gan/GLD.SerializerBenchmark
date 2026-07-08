@@ -47,7 +47,7 @@ Articles ship incrementally. The hub lists the full curriculum; missing pages ar
 
 | Article | You should be able to… | Status |
 |---------|------------------------|--------|
-| Trust boundaries: portable vs native | Say when native formats are unacceptable as interchange | Planned |
+| [Trust boundaries: portable vs native](trust-boundaries.md) | Say when native formats are unacceptable as interchange | **Published** |
 | Untrusted input and parser risk | Name failure modes for hostile payloads | Planned (later) |
 | Secrets, PII, and payload surfaces | Spot leak surfaces in logs and dumps | Planned (later) |
 
