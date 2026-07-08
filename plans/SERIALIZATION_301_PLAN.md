@@ -1,6 +1,6 @@
 # Serialization 301 — Plan (internal)
 
-**Status:** draft outline (not yet implemented)  
+**Status:** implemented (full curriculum published under `docs/theory/301/`)  
 **Audience:** maintainers only — **not** published in MkDocs  
 **Program SoT:** `plans/COURSE_PROGRAM.md` (ladder, Bloom, topic ownership, hub template)  
 **Sibling:** `plans/SERIALIZATION_401_PLAN.md` (senior elective — implementers)
@@ -204,23 +204,11 @@ Capstones **must** include validate + “suite cannot answer.”
 ## Paths & nav
 
 ```text
-docs/theory/301/
-  index.md
-  trust-boundaries.md
-  two-schema-cultures.md
-  row-vs-columnar.md
-  polyglot-estates.md
-  using-this-suite.md
-  implementation-variance.md
-  case-public-rest-api.md
-  case-internal-rpc.md
-  case-event-stream.md
+docs/theory/301/   # full set: A*, B*, C*, D*, E* + index
 ```
 
 ```text
-Serialization 301          # top-level tab
-  Overview
-  … MVP articles …
+Serialization → 301 → (all articles in mkdocs.yml)
 ```
 
 Full program nav: `COURSE_PROGRAM.md`.
@@ -250,14 +238,21 @@ Full program nav: `COURSE_PROGRAM.md`.
 
 ---
 
-## Done when (MVP)
+## Done when
 
+### MVP
 - [x] Hub + 9 MVP articles under **Serialization 301**  
 - [x] Outcomes + prereqs on hub match this plan / program SoT  
 - [x] Owned topics not re-taught from 201/401  
 - [x] Capstones E1–E3 include validate + limits  
 - [x] 201 hub points here as default next; hub points to 401 elective  
 - [x] Plan stays outside MkDocs  
+
+### Full curriculum (second wave + later)
+- [x] A2, A3, B2–B4, C3–C5, D3–D4, E4–E6 published  
+- [x] Hub reading paths (services / data / performance)  
+- [x] MkDocs nav lists full 301 set under Serialization → 301  
+
 
 ---
 

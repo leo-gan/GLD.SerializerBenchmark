@@ -91,14 +91,27 @@ nav:
       - 301:
           - Overview: theory/301/index.md
           - Trust boundaries: theory/301/trust-boundaries.md
+          - Untrusted input: theory/301/untrusted-input.md
+          - Payload surfaces: theory/301/payload-surfaces.md
           - Two schema cultures: theory/301/two-schema-cultures.md
+          - Schema registries: theory/301/schema-registries.md
+          - Public API contracts: theory/301/public-api-contracts.md
+          - Versioning in the wild: theory/301/versioning-in-the-wild.md
           - Row vs columnar: theory/301/row-vs-columnar.md
           - Polyglot estates: theory/301/polyglot-estates.md
+          - RPC and messaging: theory/301/rpc-and-messaging.md
+          - Zero-copy in production: theory/301/zero-copy-in-production.md
+          - Caching and queues: theory/301/caching-and-queues.md
           - Using this suite: theory/301/using-this-suite.md
           - Implementation variance: theory/301/implementation-variance.md
+          - Latency tails and GC: theory/301/latency-tails-and-gc.md
+          - Compression as system choice: theory/301/compression-as-system-choice.md
           - "Case: public REST API": theory/301/case-public-rest-api.md
           - "Case: internal RPC": theory/301/case-internal-rpc.md
           - "Case: event backbone": theory/301/case-event-stream.md
+          - "Case: analytics lake": theory/301/case-analytics-lake.md
+          - "Case: polyglot boundary": theory/301/case-polyglot-boundary.md
+          - "Case: faster postmortem": theory/301/case-faster-postmortem.md
       - 401:
           - Overview: theory/401/index.md
   - C#:

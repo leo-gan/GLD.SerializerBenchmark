@@ -23,7 +23,7 @@ By the end of this course you should be able to:
 
 1. **Analyze** trust boundaries and state when portable vs language-native formats are acceptable.
 2. **Distinguish** operational schema cultures (e.g. Avro-style resolution vs Protobuf field-number discipline) without re-deriving wire rules.
-3. **Evaluate** workload fit (row vs columnar at system scale; polyglot contracts).
+3. **Evaluate** workload fit (row vs columnar at system scale; polyglot contracts; RPC vs messaging shape).
 4. **Critique** benchmark claims using this suite’s paradigm-and-language rules.
 5. **Recommend** a family or approach under stated constraints and **justify** it with categories and **Results**.
 6. **Identify** what this harness cannot answer.
@@ -35,51 +35,66 @@ By the end of this course you should be able to:
 | [101](../101/index.md) | Foundations — what serialization is; axes and lenses |
 | [201](../201/index.md) | Mechanisms — how formats work |
 | **301 (this course)** | Production judgment — what to ship under constraints |
-| [**401**](../401/index.md) | Implementer elective — wire + language paths + lab |
+| [401](../401/index.md) | Implementer elective — wire + language paths + lab |
 
 Default path: **101 → 201 → 301**. Suite lab: [Benchmarks](../../analysis/index.md) and language **Results**.
 
-## Modules
+## Suggested paths
 
-Articles ship incrementally. The hub lists the full curriculum; missing pages are not linked until published.
+**Services track:** [trust boundaries](trust-boundaries.md) → [untrusted input](untrusted-input.md) → [using this suite](using-this-suite.md) → [two schema cultures](two-schema-cultures.md) / [public API contracts](public-api-contracts.md) → [rpc and messaging](rpc-and-messaging.md) → [implementation variance](implementation-variance.md) → cases [public REST](case-public-rest-api.md), [internal RPC](case-internal-rpc.md), [polyglot boundary](case-polyglot-boundary.md).
+
+**Data / events track:** [using this suite](using-this-suite.md) → [row vs columnar](row-vs-columnar.md) → [two schema cultures](two-schema-cultures.md) → [schema registries](schema-registries.md) → [versioning](versioning-in-the-wild.md) → cases [event backbone](case-event-stream.md), [analytics lake](case-analytics-lake.md).
+
+**Performance deep path:** [using this suite](using-this-suite.md) → [implementation variance](implementation-variance.md) → [latency tails and GC](latency-tails-and-gc.md) → [compression as system choice](compression-as-system-choice.md) → [zero-copy in production](zero-copy-in-production.md) → [faster postmortem](case-faster-postmortem.md).
+
+## Modules
 
 ### Trust & boundaries
 
-| Article | You should be able to… | Status |
-|---------|------------------------|--------|
-| [Trust boundaries: portable vs native](trust-boundaries.md) | Say when native formats are unacceptable as interchange | **Published** |
-| Untrusted input and parser risk | Name failure modes for hostile payloads | Planned (later) |
-| Secrets, PII, and payload surfaces | Spot leak surfaces in logs and dumps | Planned (later) |
+| Article | You should be able to… |
+|---------|------------------------|
+| [Trust boundaries: portable vs native](trust-boundaries.md) | Say when native formats are unacceptable as interchange |
+| [Untrusted input and parser risk](untrusted-input.md) | Name failure modes and controls for hostile payloads |
+| [Secrets, PII, and payload surfaces](payload-surfaces.md) | Spot leak surfaces in logs, traces, and secondary stores |
 
 ### Contracts that survive years
 
-| Article | You should be able to… | Status |
-|---------|------------------------|--------|
-| [Two schema cultures: Avro vs Protobuf](two-schema-cultures.md) | Contrast resolution culture vs field-number discipline | **Published** |
-| Schema registries and compatibility modes | Use BACKWARD / FORWARD / FULL appropriately | Planned (later) |
-| Public API contracts | Require a hard contract when the wire is JSON | Planned (later) |
+| Article | You should be able to… |
+|---------|------------------------|
+| [Two schema cultures: Avro vs Protobuf](two-schema-cultures.md) | Contrast resolution culture vs field-number discipline |
+| [Schema registries and compatibility modes](schema-registries.md) | Choose and enforce BACKWARD / FORWARD / FULL-class policy |
+| [Public API contracts](public-api-contracts.md) | Require a hard contract when the wire is JSON |
+| [Versioning strategies in the wild](versioning-in-the-wild.md) | Plan dual-write, content-type, and kill criteria |
 
 ### Workload architecture
 
-| Article | You should be able to… | Status |
-|---------|------------------------|--------|
-| [Row vs columnar at system scale](row-vs-columnar.md) | Keep RPC codecs out of lake design (and the reverse) | **Published** |
-| [Polyglot estates](polyglot-estates.md) | Defend one product contract across runtimes | **Published** |
+| Article | You should be able to… |
+|---------|------------------------|
+| [Row vs columnar at system scale](row-vs-columnar.md) | Keep RPC codecs out of lake design (and the reverse) |
+| [Polyglot estates](polyglot-estates.md) | Defend one product contract across runtimes |
+| [RPC and messaging payload design](rpc-and-messaging.md) | Shape messages for sync vs fan-out |
+| [Zero-copy in production](zero-copy-in-production.md) | Adopt zero-copy only when ops fit |
+| [Caching and queues](caching-and-queues.md) | Keep shared stores portable and versioned |
 
 ### Performance as engineering
 
-| Article | You should be able to… | Status |
-|---------|------------------------|--------|
-| [Using this suite without fooling yourself](using-this-suite.md) | Read Results within paradigm and language | **Published** |
-| [Implementation variance within a family](implementation-variance.md) | Choose among libraries without ranking formats globally | **Published** |
+| Article | You should be able to… |
+|---------|------------------------|
+| [Using this suite without fooling yourself](using-this-suite.md) | Read Results within paradigm and language |
+| [Implementation variance within a family](implementation-variance.md) | Choose libraries without ranking formats globally |
+| [Latency tails, allocations, and GC](latency-tails-and-gc.md) | Judge p99 and allocation pressure |
+| [Compression as a system choice](compression-as-system-choice.md) | Place gzip/zstd without replacing format design |
 
 ### Capstones
 
-| Case study | Focus | Status |
-|------------|--------|--------|
-| [Public REST API](case-public-rest-api.md) | JSON + validation vs dual contracts | **Published** |
-| [Internal high-QPS RPC](case-internal-rpc.md) | Schema-driven vs schemaless binary | **Published** |
-| [Event backbone](case-event-stream.md) | Avro/Protobuf + evolution under rolling deploy | **Published** |
+| Case study | Focus |
+|------------|--------|
+| [Public REST API](case-public-rest-api.md) | JSON + validation vs dual contracts |
+| [Internal high-QPS RPC](case-internal-rpc.md) | Schema-driven vs schemaless binary |
+| [Event backbone](case-event-stream.md) | Avro/Protobuf + evolution under rolling deploy |
+| [Analytics lake](case-analytics-lake.md) | Columnar lake vs row event dumps |
+| [Cross-language service boundary](case-polyglot-boundary.md) | One contract, three languages |
+| [“We need it faster” postmortem](case-faster-postmortem.md) | Wrong bench vs wrong paradigm vs wrong payload |
 
 ## Honesty rules
 
@@ -92,11 +107,11 @@ Same program rules as 101 / 201:
 5. Security and trust are first-class.  
 6. Prose numbers are illustrative; **Results** own suite truth for this harness.
 
-**301-specific:** every article should end with what to measure here and **what this suite cannot tell you**. Prefer failure modes and decision tables over mechanism encyclopedias.
+**301-specific:** every article ends with what to measure here and **what this suite cannot tell you**. Prefer failure modes and decision tables over mechanism encyclopedias.
 
 ## Assessment (self-check)
 
-Treat the three MVP case studies as the course exam: under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the harness.
+Treat the capstone case studies as the course exam: under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the harness.
 
 ## Where to go next
 
