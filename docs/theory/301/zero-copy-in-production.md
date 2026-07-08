@@ -54,6 +54,41 @@ A game state blob (100KB+) is read by many services for a few fields per request
 
 Absence from a language harness means “not measured,” not “bad technology.”
 
+
+## Experiments
+
+**Question:** Does a **zero-copy / random-access** layout pay off in *our* read path after verification cost—and can ops verify safely?
+
+### Setup
+1. Workload: full materialization vs field touches / mmap reads.  
+2. Candidates: classic deser vs flatbuffer/cap’n-style (language Overview).  
+3. Ability to run verifier and fault inject truncated/corrupt buffers.
+
+### Procedure
+1. Measure end-to-end time for **actual access pattern** (not only full parse).  
+2. Include **verify** step cost on untrusted or untrusted-adjacent paths.  
+3. Suite Results: compare relevant serializers; read caveats for fidelity and access.  
+4. Chaos: corrupt buffer; ensure verifier fails closed.  
+5. Decide adopt vs stick to ordinary deser.
+
+### Decision rule
+- Adopt only if access-pattern benchmark wins **including verify** and ops can version the schema.  
+- Untrusted input without verify ⇒ do not adopt.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Time-to-first-field / access path latency** | **Primary** benefit metric |
+| Full `deser_median_ns` (classic) | Baseline |
+| Verify time / fail rate on corrupt input | Safety |
+| `median_size_bytes` | Density tradeoff |
+| Schema rollout complexity | Ops cost |
+| Suite `mean_fidelity` | Correctness under harness |
+| Planned `time_access_ns` (if available) | Direct suite support when present |
+
+**Conclusion style:** “Flat layout wins field touches + verify OK; adopt for cache blob, not public API.”
+
 ## What this suite cannot tell you
 
 - Builder ergonomics for *your* schema.  

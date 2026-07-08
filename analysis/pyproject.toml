@@ -4,9 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "benchmark-analysis"
-version = "0.1.0"
+version = "0.2.0"
 description = "Benchmark analysis and reporting tools"
 requires-python = ">=3.12"
+authors = [
+    { name = "Leonid Ganeline", email = "leo.gan.57@gmail.com" },
+]
 dependencies = [
     "pandas>=2.0.0",
     "numpy>=1.24.0",

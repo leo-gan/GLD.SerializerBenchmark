@@ -58,6 +58,41 @@ An orders API must change `amount` from float to integer cents. Team adds `amoun
 | Fixtures | Stable logical models—not multi-version simulators |
 | Capstones | Decision context for REST / events / RPC |
 
+
+## Experiments
+
+**Question:** For a breaking wire change, which **versioning strategy** (dual-write, content-type, parallel subject, flag) meets kill criteria with acceptable cost?
+
+### Setup
+1. Define the break and the set of producers/consumers.  
+2. Pick 1–2 candidate strategies from the article’s options.  
+3. Metrics backend for error rate, lag, and traffic % on old vs new.
+
+### Procedure
+1. Implement strategy in a non-prod environment with both versions live.  
+2. Migrate a canary % of traffic; watch errors and lag.  
+3. Exercise rollback: force old path; confirm recovery.  
+4. Write kill criteria (e.g. “old version <1% for 7 days”).  
+5. Only then schedule old-path removal.
+
+### Decision rule
+- Strategy wins if canary meets SLOs **and** rollback works within your incident budget.  
+- No kill criteria ⇒ do not start dual-running.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **% traffic on old vs new version** | **Primary** migration progress |
+| Error rate by version | Safety |
+| Consumer lag / DLQ rate | Event-path health |
+| Dual-run cost (CPU, storage) | Economic limit |
+| Time to rollback | Operational risk |
+| Kill-criteria boolean | Go/no-go for decommission |
+| Suite benchmarks | Not primary for versioning ops |
+
+**Conclusion style:** “Dual-write 2 weeks; kill old when <1% and zero DLQ spike.”
+
 ## What this suite cannot tell you
 
 - How long *your* clients need.  

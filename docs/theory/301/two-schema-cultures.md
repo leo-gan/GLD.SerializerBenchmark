@@ -76,6 +76,40 @@ Swapping habits—treating Protobuf field names as the long-term identity, or de
 
 Suite timings compare **libraries**, not “Avro culture vs Protobuf culture” as governance systems. Use Results to pick an implementation **after** the culture fits the ops model.
 
+
+## Experiments
+
+**Question:** Should this system’s evolution culture be **writer-schema resolution** (Avro-like) or **field-number discipline** (Protobuf-like)—and are we operating it consistently?
+
+### Setup
+1. List producers, consumers, and whether a **registry** or shared `.proto`/IDL repo exists.  
+2. Note deploy topology: independent services vs monorepo lockstep.  
+3. Sample one planned schema change (add field, rename, remove).
+
+### Procedure
+1. Classify current stack: resolution-at-read vs tag/field-id binary.  
+2. Walk the planned change through **both** cultures’ rules; list breakages.  
+3. Check whether ops actually enforce the culture (registry compatibility mode vs proto review + reserved).  
+4. Suite optional: same logical fixture encoded by Avro vs Protobuf implementations for **size/speed orientation only**—not culture choice.  
+5. Write the chosen culture + enforcement owner into the architecture note.
+
+### Decision rule
+- Prefer the culture your **ops can enforce** (registry modes vs IDL governance).  
+- Do not mix cultures on one topic without an explicit dual-stack plan.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Compatibility mode** (BACKWARD/FORWARD/FULL) or **proto breaking-change policy** | **Primary** ops metric |
+| Schema-change lead time / failed deploys from skew | Health of the culture |
+| Registry reject rate vs silent consumer errors | Enforcement quality |
+| Consumer languages count | Pressure toward explicit contracts |
+| Suite `median_size_bytes` / speed | Secondary cost of a culture’s typical stack |
+| Conformance across languages ([401 fidelity](../401/protobuf-cross-language-fidelity.md) for Pb) | Implementation discipline |
+
+**Conclusion style:** “Event bus uses Avro + BACKWARD registry; RPC uses Protobuf field-id discipline.”
+
 ## What this suite cannot tell you
 
 - Which **compatibility mode** your registry should enforce.  

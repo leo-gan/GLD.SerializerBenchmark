@@ -59,6 +59,40 @@ A payments topic uses Avro with BACKWARD. A producer removes a field still read 
 | [Two schema cultures](two-schema-cultures.md) | Which control plane you run |
 | [Case: event backbone](case-event-stream.md) | End-to-end recommendation |
 
+
+## Experiments
+
+**Question:** Which **compatibility mode** and registry workflow should govern this subject, and does a dry-run change pass?
+
+### Setup
+1. Identify subject(s), registry product, and producer/consumer deploy order.  
+2. Draft a realistic schema evolution (add optional field; attempt a break).  
+3. Access to registry API or CI check that calls compatibility.
+
+### Procedure
+1. Set proposed mode (e.g. BACKWARD for consumer-first).  
+2. Register new schema in a **dev** subject; confirm accept/reject matches intent.  
+3. Try a known-breaking change; confirm **reject**.  
+4. Roll a canary producer/consumer and watch lag/errors.  
+5. Document mode + who can register.
+
+### Decision rule
+- Mode must match deploy order (see decision frame).  
+- If registry cannot reject breaks, you do not have registry-enforced compatibility—fix process or tool.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Compatibility check result** (pass/fail) | **Primary** experiment outcome |
+| Chosen mode (BACKWARD / FORWARD / FULL / NONE) | Policy variable |
+| Time-to-detect incompatible schema in prod | Safety lag |
+| Consumer error rate on canary | Empirical validation |
+| Registration ACL violations | Process hygiene |
+| Suite ser/deser metrics | Irrelevant to mode choice |
+
+**Conclusion style:** “Subject orders.v1 stays BACKWARD; breaking change rejected in CI.”
+
 ## What this suite cannot tell you
 
 - Which vendor registry to buy.  

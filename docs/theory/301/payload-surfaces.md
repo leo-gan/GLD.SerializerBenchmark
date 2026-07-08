@@ -55,6 +55,40 @@ A team switches internal RPC to Protobuf for speed. Debugging gets harder, so th
 | **Results** | Size/time only |
 | [Using this suite](using-this-suite.md) | Measurement honesty, not compliance |
 
+
+## Experiments
+
+**Question:** Where can **secrets/PII** in serialized payloads leak (logs, traces, caches, support tools), and what redaction is required?
+
+### Setup
+1. Inventory serializers on the path (API bodies, queue payloads, cache values).  
+2. List secondary systems: APM, structured logs, DLQ dumps, admin UIs.  
+3. Mark fields: secret, PII, regulated, benign.
+
+### Procedure
+1. Trace one request: note every component that might log raw payload or fields.  
+2. Check default log level and exception formatters for body capture.  
+3. For each sink, require allowlist/redaction or payload omission.  
+4. Confirm support tooling cannot pull production payloads without access control.  
+5. Re-test after a deliberate fault (failed deser) to ensure error paths do not dump secrets.
+
+### Decision rule
+- Any sink with unrestricted payload logging ⇒ fix redaction or drop body logging before ship.  
+- Serialization format choice is secondary to **surface control**.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Count of sinks that can see raw payload** | **Primary** exposure metric |
+| **Fields classified secret/PII** | Scope of redaction |
+| **Redaction coverage** (% sensitive fields scrubbed) | Control effectiveness |
+| Access-control on DLQ/debug endpoints | Residual risk |
+| Log volume of payload-sized events | Cost + leak amplification |
+| Suite metrics | Not primary for this decision |
+
+**Conclusion style:** “APM and error logs redacted; DLQ restricted; no full-body info logs.”
+
 ## What this suite cannot tell you
 
 - Legal classification of your fields (GDPR, HIPAA, …).  

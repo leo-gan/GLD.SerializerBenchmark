@@ -39,13 +39,36 @@
 
 Pick **implementations per language** via suite Results within the chosen family ([implementation variance](implementation-variance.md)).
 
-## How to validate
 
-| Step | Where |
-|------|--------|
-| Within-language family compare | Go / Python / JS **Results** |
-| Cross-language golden payloads | CI conformance **outside** suite rank tables |
-| Never crown cross-language winner from mixed charts | [Using this suite](using-this-suite.md) |
+
+## Experiments
+
+**Question:** One contract across three languages—does the **interop matrix** pass before we optimize?
+
+### Setup
+1. Three languages from the case; shared schema.  
+2. Golden logical fixtures.  
+3. CI job skeleton for encode/decode matrix.
+
+### Procedure
+1. Freeze schema; implement matrix ([polyglot estates](polyglot-estates.md), [401 fidelity](../401/protobuf-cross-language-fidelity.md)).  
+2. Fix failures (defaults, field names, packing).  
+3. Then per-language library pins via suite Results.  
+4. Document version pins and CI gate.
+
+### Decision rule
+- Matrix green required before performance work.  
+- No global “fastest language” ranking as the boundary decision.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| Matrix pass rate | **Primary** |
+| Logical equality failures by pair | Debug signal |
+| Per-lang `mean_fidelity` | Local health |
+| Per-lang p99 / suite medians | Capacity after interop |
+| Version pin drift | Drift risk |
 
 ## What would change the answer
 

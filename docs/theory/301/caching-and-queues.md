@@ -54,6 +54,40 @@ Session cache stores MessagePack with a `v` field and a documented schema. Auth 
 | Native entries | Cost of portability—not a green light for shared stores |
 | [Using this suite](using-this-suite.md) | Local comparisons only |
 
+
+## Experiments
+
+**Question:** Are shared **cache/queue** payloads portable, versioned, and safe for every consumer that can read them?
+
+### Setup
+1. List cache keys/topics and all reader services/languages.  
+2. Current encoding (often native or ad hoc JSON).  
+3. TTL, poison-message handling, and DLQ behavior.
+
+### Procedure
+1. Apply trust-boundary test: multi-service or multi-language readers ⇒ portable required.  
+2. Encode a golden fixture; consume from each reader; check logical equality.  
+3. Deploy a compatible schema change; confirm old readers still work.  
+4. Inject poison payload; confirm quarantine, not crash loops.  
+5. Suite: size/speed among allowed portable codecs for payload budget.
+
+### Decision rule
+- Any cross-service reader + native encoding ⇒ migrate to portable.  
+- No poison handling ⇒ fix ops before chasing ser benchmarks.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Reader language/service count** | **Primary** portability driver |
+| Interop matrix pass rate | Correctness |
+| Poison/DLQ rate | Operational safety |
+| Payload size p95 vs broker/cache limits | Capacity |
+| Schema evolution success | Longevity |
+| Suite size / deser time | Cost among portable options |
+
+**Conclusion style:** “Redis blob is Protobuf portable; native cache encoding removed.”
+
 ## What this suite cannot tell you
 
 - Redis eviction and hot-key design.  

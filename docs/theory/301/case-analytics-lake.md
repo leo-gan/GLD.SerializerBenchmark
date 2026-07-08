@@ -35,14 +35,37 @@
 
 **Prefer A:** keep operational events as row messages on the bus ([event backbone](case-event-stream.md)); **compact** into columnar partitions with a catalog. Use B only as a **landing zone** with TTL, not as the system of record for analytics. **Reject C** ([row vs columnar](row-vs-columnar.md)).
 
-## How to validate
 
-| Step | Where |
-|------|--------|
-| Event codec cost | Language **Results** for producers |
-| Lake scan cost | Engine benchmarks **outside** this suite |
-| Schema evolution of tables | Catalog + file metrics |
-| Fair message comparisons | [Using this suite](using-this-suite.md) |
+
+## Experiments
+
+**Question:** Lake path—columnar analytical format vs storing row event dumps—for the stated query mix?
+
+### Setup
+1. Representative analytical queries and data volume.  
+2. Candidate: Parquet/ORC/Arrow vs raw JSON/Avro row dumps.  
+3. Cluster or local prototype with same dataset.
+
+### Procedure
+1. Load same data into row dumps and columnar tables.  
+2. Run query set; record wall time and bytes read.  
+3. Measure storage footprint.  
+4. Confirm ingest path still uses appropriate **row** codec if needed.  
+5. Reject “use RPC Protobuf files as the lake.”
+
+### Decision rule
+- Scan queries dominate ⇒ columnar.  
+- Only point lookup of whole events ⇒ row store may suffice (rare for “lake”).
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Query wall time / bytes scanned** | **Primary** |
+| Storage bytes | Cost |
+| Ingest throughput | Pipeline fit |
+| Suite row-codec metrics | Ingest hop only |
+| Compression ratio | Secondary |
 
 ## What would change the answer
 

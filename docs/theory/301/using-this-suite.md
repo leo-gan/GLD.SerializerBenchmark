@@ -82,6 +82,43 @@ A team sees that a schema-driven library is fastest on **Rust** Results for a de
 
 **Illustrative only:** prose in theory pages must not invent winners; when you need a number, open **Results** for the language you will actually run.
 
+
+## Experiments
+
+**Question:** Am I about to quote a **fair** suite comparison for a real decision—or a misaligned chart?
+
+### Setup
+1. Write the decision question in one sentence (e.g. “Which JSON library in Python for Person-shaped RPC?”).  
+2. Open [categories](../../analysis/serialization_categories.md) and the language **Results** / Overview for the runtime you will ship.  
+3. Note analysis config (warmup, outlier policy) from [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) if you will re-derive tables.
+
+### Procedure
+1. Apply the checklist in **Decision frame** (language → paradigm → fixture → mode → metric).  
+2. Pull only the matching rows from Results or dashboard; discard cross-family and cross-language ranks for the policy claim.  
+3. Record which metric column you will use (encode vs decode vs size vs ops/s).  
+4. List product constraints the suite does **not** measure (trust, registry, RTT).  
+5. Either decide from that slice or design an out-of-suite experiment for missing constraints.
+
+### Decision rule
+- If any checklist box fails, **do not** use the number as architecture policy.  
+- If the slice is fair but the product question is non-performance, treat suite data as **supporting**, not decisive.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Comparison validity** (same language, paradigm, fixture, mode) | **Primary gate**—binary pass/fail before any number |
+| Chosen SLO metric (e.g. decode median, size) | The one number allowed in the argument |
+| `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Default speed ranks on Results |
+| `median_size_bytes` | Density / bandwidth axis |
+| `mean_fidelity` | Eligibility: non-faithful rows out |
+| `serializer_version` | Reproducibility of the claim |
+| `runs` / warmup / outliers removed | Trust in the statistic |
+| Dashboard / CSV **filter state** | Document what you hid |
+
+**Conclusion style:** “Under Python + JSON family + Person + bytes mode, A beats B on deser median; size similar; fidelity 1.0.”  
+**Not decision metrics:** mixed-paradigm leaderboards; cross-language “champions.”
+
 ## What this suite cannot tell you
 
 - End-to-end **service** latency (queueing, network, TLS, framework overhead).  

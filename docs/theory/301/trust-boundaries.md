@@ -73,6 +73,41 @@ A Python service caches session graphs with `pickle` in Redis for speed. Latency
 
 When native and portable entries both appear for a language, compare them only to answer “what do we pay for portability **in this runtime**?”—not “is native a good public contract?”
 
+
+## Experiments
+
+**Question:** May these bytes use a **language-native** codec, or must they be **portable**?
+
+### Setup
+1. Draw the data path: producer process → store/queue/API → consumers.  
+2. Mark each hop: same process, same trust domain, multi-tenant, public, multi-language.  
+3. List candidate native vs portable codecs for the language (suite categories help label them).
+
+### Procedure
+1. For each hop, answer: *Can an untrusted or other-language principal supply or read bytes?*  
+2. If **yes** on any long-lived or cross-service hop → portable required; native disqualified for that hop.  
+3. If **no** (trusted same-runtime only) → native allowed *if* threat model and ops accept lock-in.  
+4. Document the policy in the service boundary checklist.  
+5. Optional suite check: compare native vs portable **only** for performance *after* policy allows native—never to override a failed trust test.
+
+### Decision rule
+- Trust/portability failure ⇒ portable, regardless of suite speed.  
+- Suite timings may choose *which* portable family/impl, not whether native is safe.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Trust-domain crossing** (yes/no per hop) | **Primary** decision variable |
+| **Consumer language set** | Forces portable if >1 runtime family |
+| **Attack surface** (untrusted producer?) | Forces portable + [untrusted input](untrusted-input.md) controls |
+| **Retention / durability** | Long-lived native = version-skew risk |
+| Suite `total_median_ns` / size | Secondary, only among **policy-allowed** codecs |
+| `mean_fidelity` | Among allowed candidates |
+
+**Conclusion style:** “Queue hop is multi-tenant → portable only; native pickle rejected despite speed.”  
+**Not decision metrics:** native microbenchmark wins on unsafe boundaries.
+
 ## What this suite cannot tell you
 
 - Whether a specific native stack has a known gadget chain in *your* dependency set.  
