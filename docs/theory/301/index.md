@@ -55,7 +55,7 @@ Articles ship incrementally. The hub lists the full curriculum; missing pages ar
 
 | Article | You should be able to… | Status |
 |---------|------------------------|--------|
-| Two schema cultures: Avro vs Protobuf | Contrast resolution culture vs field-number discipline | Planned |
+| [Two schema cultures: Avro vs Protobuf](two-schema-cultures.md) | Contrast resolution culture vs field-number discipline | **Published** |
 | Schema registries and compatibility modes | Use BACKWARD / FORWARD / FULL appropriately | Planned (later) |
 | Public API contracts | Require a hard contract when the wire is JSON | Planned (later) |
 
