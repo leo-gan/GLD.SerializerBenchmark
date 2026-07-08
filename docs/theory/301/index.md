@@ -70,7 +70,7 @@ Articles ship incrementally. The hub lists the full curriculum; missing pages ar
 
 | Article | You should be able to… | Status |
 |---------|------------------------|--------|
-| Using this suite without fooling yourself | Read Results within paradigm and language | Planned |
+| [Using this suite without fooling yourself](using-this-suite.md) | Read Results within paradigm and language | **Published** |
 | Implementation variance within a family | Choose among libraries without ranking formats globally | Planned |
 
 ### Capstones

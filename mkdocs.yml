@@ -77,6 +77,7 @@ nav:
           - Compression vs format: theory/deep-dives/compression-is-not-a-format.md
   - Serialization 301:
       - Overview: theory/301/index.md
+      - Using this suite: theory/301/using-this-suite.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
