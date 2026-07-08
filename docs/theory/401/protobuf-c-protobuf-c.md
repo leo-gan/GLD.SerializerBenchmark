@@ -204,6 +204,9 @@ Both emit the **same wire format** if schemas and field numbers match.
 
 ## nanopb comparison box
 
+Short form only—full treatment: [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md).
+
+
 | Axis | **protobuf-c** (primary) | **nanopb** |
 |------|--------------------------|------------|
 | Allocation | Heap unpack common | Static buffers / callbacks |

@@ -20,7 +20,7 @@ By the end of this course you should be able to:
 
 1. **Encode and decode** (on paper / with tables) core Protobuf wire structures: tags, varints, length-delimited, nested, simple repeated, skip unknowns.  
 2. **Trace** encode/decode paths in Python (`google.protobuf`), Rust (`prost`), and C (`protobuf-c`), including buffer ownership.  
-3. **Contrast** briefly classic C runtime vs embedded nanopb design axes.  
+3. **Contrast** classic C runtime (protobuf-c) vs embedded nanopb design axes.  
 4. **Construct** a mini subset codec and **validate** against golden bytes or an official parser.  
 5. **State** deliberate omissions (subset honesty).
 
@@ -38,7 +38,7 @@ By the end of this course you should be able to:
 | Decision | Choice |
 |----------|--------|
 | **Depth** | **B + thin lab**: wire + library paths; mini subset lab—not full Protobuf |
-| **C stack** | **Primary: protobuf-c**; nanopb comparison box only |
+| **C stack** | **Primary: protobuf-c**; full nanopb compare in second-wave article |
 | **Flagship format** | Protocol Buffers + shared `schemas/benchmark_data.proto` |
 
 ## Modules
@@ -46,12 +46,14 @@ By the end of this course you should be able to:
 | Module | Article | Role |
 |--------|---------|------|
 | Shared wire | [Protobuf wire format step-by-step](protobuf-wire-format.md) | Byte-level rules + worked MiniUser |
-| Python path | [google.protobuf path](protobuf-python.md) | Codegen → SerializeToString / ParseFromString |
-| Rust path | [prost path](protobuf-rust-prost.md) | prost-build → `Message` encode/decode |
-| C path | [protobuf-c path](protobuf-c-protobuf-c.md) | pack/unpack + ownership; nanopb box |
+| Python path | [google.protobuf path](protobuf-python.md) | Codegen → SerializeToString / ParseFromString + backends |
+| Rust path | [prost path](protobuf-rust-prost.md) | prost-build → `Message` encode/decode internals |
+| C path | [protobuf-c path](protobuf-c-protobuf-c.md) | Descriptor pack/unpack + ownership |
+| C compare | [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md) | Embedded vs classic C engines |
 | Lab | [Mini Protobuf subset encoder/decoder](lab-mini-protobuf-encoder.md) | Build + golden + official validate |
+| Cross-language | [Same bytes, three runtimes](protobuf-cross-language-fidelity.md) | Interoperability vs bit-identity |
 
-**Suggested order:** wire → lab (can start after wire) → language paths in any order (Python → Rust → C recommended).
+**Suggested order:** wire → lab → language paths (Python → Rust → C) → nanopb compare → cross-language fidelity.
 
 ## Honesty rules
 
@@ -67,7 +69,10 @@ Program rules (no universal winners; implementation beats brand; suite Results o
 
 ## Assessment (self-check)
 
-Complete the lab golden vectors G1–G5 and at least one official-parser cross-check. Explain pack/unpack ownership in one of Python, Rust, or C without reading the article.
+1. Complete the lab golden vectors G1–G5 and at least one official-parser cross-check.  
+2. Explain pack/unpack ownership in one of Python, Rust, or C.  
+3. State when nanopb is preferable to protobuf-c (and the reverse).  
+4. Design a 3-language encode/decode matrix test and say when `memcmp` of encodings is required.
 
 ## Where to go next
 

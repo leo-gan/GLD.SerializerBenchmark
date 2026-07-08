@@ -1,6 +1,6 @@
 # Serialization 401 — Plan (internal)
 
-**Status:** MVP implemented under `docs/theory/401/`  
+**Status:** full curriculum implemented under `docs/theory/401/` (MVP + second wave)  
 **Audience:** maintainers only — **not** published in MkDocs  
 **Program SoT:** `plans/COURSE_PROGRAM.md` (ladder, Bloom, topic ownership, hub template)  
 **Sibling:** `plans/SERIALIZATION_301_PLAN.md` (core advanced — choosers)
@@ -156,7 +156,7 @@ Link 201 for *concepts*; W1 owns **byte-level** procedure. Teaching mini-message
 | L1 | `protobuf-python.md` | Python: google.protobuf path | Generated messages, serialize/parse, CPython ownership | **MVP** |
 | L2 | `protobuf-rust-prost.md` | Rust: prost path | `Message` trait, prost-build, typed codec | **MVP** |
 | L3 | `protobuf-c-protobuf-c.md` | C: protobuf-c path | Pack/unpack, memory discipline; **nanopb box** | **MVP** |
-| L4 | `protobuf-c-nanopb-compare.md` | nanopb vs protobuf-c | Embedded vs classic design | Second wave |
+| L4 | `protobuf-c-nanopb-compare.md` | nanopb vs protobuf-c | Embedded vs classic design | **Done** |
 
 | Lang | Suite anchor | Article |
 |------|--------------|---------|
@@ -187,7 +187,7 @@ Link 201 for *concepts*; W1 owns **byte-level** procedure. Teaching mini-message
 
 | ID | File | Title | Ship |
 |----|------|-------|------|
-| X1 | `protobuf-cross-language-fidelity.md` | Same bytes, three runtimes | Second wave |
+| X1 | `protobuf-cross-language-fidelity.md` | Same bytes, three runtimes | **Done** |
 
 **X1 vs 301 C2:** 401 = byte/fidelity discipline; 301 = product polyglot choice. No merge.
 
@@ -217,7 +217,9 @@ docs/theory/401/
   protobuf-python.md
   protobuf-rust-prost.md
   protobuf-c-protobuf-c.md
+  protobuf-c-nanopb-compare.md
   lab-mini-protobuf-encoder.md
+  protobuf-cross-language-fidelity.md
 ```
 
 ```text
@@ -255,14 +257,20 @@ Serialization 401
 
 ---
 
-## Done when (MVP)
+## Done when
 
+### MVP
 - [x] Hub + W1 + L1 + L2 + L3 + Lab1 under **Serialization 401**  
 - [x] Outcomes, hard/soft prereqs, depth model on hub  
 - [x] Lab documents subset in/out + validation  
 - [x] No 301 chooser content duplicated  
 - [x] 201/301 hubs link elective correctly  
 - [x] Plan stays outside MkDocs  
+
+### Second wave
+- [x] L4 nanopb vs protobuf-c  
+- [x] X1 cross-language fidelity  
+
 
 ---
 

@@ -118,7 +118,9 @@ nav:
           - "Python: google.protobuf": theory/401/protobuf-python.md
           - "Rust: prost": theory/401/protobuf-rust-prost.md
           - "C: protobuf-c": theory/401/protobuf-c-protobuf-c.md
+          - "C: nanopb vs protobuf-c": theory/401/protobuf-c-nanopb-compare.md
           - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
+          - "Same bytes, three runtimes": theory/401/protobuf-cross-language-fidelity.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
