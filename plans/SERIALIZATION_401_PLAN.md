@@ -1,6 +1,6 @@
 # Serialization 401 — Plan (internal)
 
-**Status:** draft outline (not yet implemented)  
+**Status:** MVP implemented under `docs/theory/401/`  
 **Audience:** maintainers only — **not** published in MkDocs  
 **Program SoT:** `plans/COURSE_PROGRAM.md` (ladder, Bloom, topic ownership, hub template)  
 **Sibling:** `plans/SERIALIZATION_301_PLAN.md` (core advanced — choosers)
@@ -257,12 +257,12 @@ Serialization 401
 
 ## Done when (MVP)
 
-- [ ] Hub + W1 + L1 + L2 + L3 + Lab1 under **Serialization 401**  
-- [ ] Outcomes, hard/soft prereqs, depth model on hub  
-- [ ] Lab documents subset in/out + validation  
-- [ ] No 301 chooser content duplicated  
-- [ ] 201/301 hubs link elective correctly  
-- [ ] Plan stays outside MkDocs  
+- [x] Hub + W1 + L1 + L2 + L3 + Lab1 under **Serialization 401**  
+- [x] Outcomes, hard/soft prereqs, depth model on hub  
+- [x] Lab documents subset in/out + validation  
+- [x] No 301 chooser content duplicated  
+- [x] 201/301 hubs link elective correctly  
+- [x] Plan stays outside MkDocs  
 
 ---
 

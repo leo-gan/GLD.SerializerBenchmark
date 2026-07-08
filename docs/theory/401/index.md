@@ -16,10 +16,10 @@ People who **build or deeply integrate** codecs—not only choose formats. This 
 
 ## Learning outcomes
 
-By the end of the planned MVP you should be able to:
+By the end of this course you should be able to:
 
-1. **Encode and decode** (on paper / with tables) core Protobuf wire structures.  
-2. **Trace** encode/decode paths in Python (`google.protobuf`), Rust (`prost`), and C (`protobuf-c`).  
+1. **Encode and decode** (on paper / with tables) core Protobuf wire structures: tags, varints, length-delimited, nested, simple repeated, skip unknowns.  
+2. **Trace** encode/decode paths in Python (`google.protobuf`), Rust (`prost`), and C (`protobuf-c`), including buffer ownership.  
 3. **Contrast** briefly classic C runtime vs embedded nanopb design axes.  
 4. **Construct** a mini subset codec and **validate** against golden bytes or an official parser.  
 5. **State** deliberate omissions (subset honesty).
@@ -33,25 +33,44 @@ By the end of the planned MVP you should be able to:
 | [301](../301/index.md) | Production judgment (core advanced) |
 | **401 (this course)** | Implementer elective — wire + paths + lab |
 
-## Modules (planned)
+## Depth model
 
-Articles will ship under this hub. Until then, use [201](../201/index.md) for mechanisms and [301](../301/index.md) for shipping decisions.
+| Decision | Choice |
+|----------|--------|
+| **Depth** | **B + thin lab**: wire + library paths; mini subset lab—not full Protobuf |
+| **C stack** | **Primary: protobuf-c**; nanopb comparison box only |
+| **Flagship format** | Protocol Buffers + shared `schemas/benchmark_data.proto` |
 
-| Module | Content | Status |
-|--------|---------|--------|
-| Shared wire | Protobuf wire format step-by-step | Planned |
-| Python path | `google.protobuf` encode/decode | Planned |
-| Rust path | `prost` + prost-build | Planned |
-| C path | protobuf-c (nanopb comparison box) | Planned |
-| Lab | Mini Protobuf subset encoder/decoder | Planned |
+## Modules
+
+| Module | Article | Role |
+|--------|---------|------|
+| Shared wire | [Protobuf wire format step-by-step](protobuf-wire-format.md) | Byte-level rules + worked MiniUser |
+| Python path | [google.protobuf path](protobuf-python.md) | Codegen → SerializeToString / ParseFromString |
+| Rust path | [prost path](protobuf-rust-prost.md) | prost-build → `Message` encode/decode |
+| C path | [protobuf-c path](protobuf-c-protobuf-c.md) | pack/unpack + ownership; nanopb box |
+| Lab | [Mini Protobuf subset encoder/decoder](lab-mini-protobuf-encoder.md) | Build + golden + official validate |
+
+**Suggested order:** wire → lab (can start after wire) → language paths in any order (Python → Rust → C recommended).
 
 ## Honesty rules
 
 Program rules (no universal winners; implementation beats brand; suite Results own numbers).  
-**401-specific:** subset labs label omissions; suite harnesses illustrate integration—they are not the reference design for Protobuf.
+**401-specific:**
+
+1. Wire truth is shared; runtimes differ.  
+2. Subset lab labels omissions.  
+3. Suite harnesses illustrate integration—they are not the reference design for Protobuf.  
+4. Results are optional cost context—not the focus of this course.  
+5. Hostile input: [301 untrusted input](../301/untrusted-input.md).  
+6. Parallel language tours—not “Rust wins.”
+
+## Assessment (self-check)
+
+Complete the lab golden vectors G1–G5 and at least one official-parser cross-check. Explain pack/unpack ownership in one of Python, Rust, or C without reading the article.
 
 ## Where to go next
 
-- [Serialization 201](../201/index.md) if wire concepts are rusty.  
+- [Serialization 201](../201/index.md) if schema-dependent concepts are rusty.  
 - [Serialization 301](../301/index.md) for multi-constraint product choices.  
-- Shared schema anchor: repository `schemas/benchmark_data.proto` (when following language harnesses).
+- Shared schema: repository `schemas/benchmark_data.proto`.

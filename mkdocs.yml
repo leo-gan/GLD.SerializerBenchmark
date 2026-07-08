@@ -114,6 +114,11 @@ nav:
           - "Case: faster postmortem": theory/301/case-faster-postmortem.md
       - 401:
           - Overview: theory/401/index.md
+          - Protobuf wire format: theory/401/protobuf-wire-format.md
+          - "Python: google.protobuf": theory/401/protobuf-python.md
+          - "Rust: prost": theory/401/protobuf-rust-prost.md
+          - "C: protobuf-c": theory/401/protobuf-c-protobuf-c.md
+          - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
