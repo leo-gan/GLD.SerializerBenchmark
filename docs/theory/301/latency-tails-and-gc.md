@@ -59,6 +59,49 @@ Two JSON libraries show similar mean decode on Python Results. Production p99 di
 
 Many published tables emphasize central tendency; **you** still owe a concurrent validation.
 
+
+## Experiments
+
+**Question:** Under production-shaped load, is encode/decode **allocation pressure** (not mean time alone) driving p99 risk for candidate libraries in the same family?
+
+### Setup
+1. Fix **one language**, **one paradigm family**, and **one fixture** close to production shape (e.g. deep graph vs dense `Telemetry`)—see [using this suite](using-this-suite.md).  
+2. Shortlist 2–3 implementations from language **Results** (same family); note versions.  
+3. Confirm the harness reports or you can attach: wall times, optional `MemoryPeakBytes` / tracemalloc (Python), and a **process profiler** (alloc rate, GC pauses) outside pure means.  
+4. Configure a load path that reuses your service concurrency model (workers, pool sizes)—not only single-threaded suite loops.
+
+### Procedure
+1. Run suite slice for candidates → record mean/median ser, deser, total; size; fidelity.  
+2. If available, record `mean_memory_peak_bytes` / peak alloc columns.  
+3. Load-test or profile each candidate on the same fixture at target concurrency; capture **p99/p999** latency and GC/alloc stats from the runtime.  
+4. Optionally disable “fantasy” modes (e.g. GC off) only as a diagnostic—not as the decision number.  
+5. Apply the decision rule below; pin library + version.
+
+### Decision rule
+- Prefer the candidate that meets **p99 SLO** with acceptable alloc/GC, even if mean is slightly worse.  
+- Reject candidates that win mean Results but show high alloc/op or GC pause clustering under load.  
+- Do **not** compare GC metrics across languages to choose a format brand.
+
+## Metrics
+
+Primary signals for this page’s decision (see also [Metrics catalog](../../analysis/METRICS.md)):
+
+| Metric / signal | Where | Role |
+|-----------------|-------|------|
+| **p99 / p999 latency** (ser, deser, or end-to-end) | Load test / APM | **Primary**—tails are the SLO |
+| `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Suite analysis | Orientation within language; not sufficient alone |
+| `total_mean_ns`, `avg_ops_per_sec` | Suite | Central tendency; easy to over-trust |
+| `total_p95_ns` / `total_p99_ns` (if computed) | Suite / full metrics profile | Bridge from harness to tails when available |
+| `total_std_ns` / CV / MAD | Suite | Dispersion hint; not production p99 |
+| `mean_memory_peak_bytes` / `MemoryPeakBytes` | Suite (optional) | Alloc pressure proxy when present |
+| **Allocations per op / alloc rate** | Profiler | Explains GC pressure |
+| **GC pause time / frequency** | Runtime metrics | Direct tail mechanism on managed runtimes |
+| `median_size_bytes` | Suite | Separates “big payload” from “alloc-heavy codec” |
+| `mean_fidelity` | Suite | Reject broken codecs before performance debate |
+
+**Conclusion style:** “Choose library L because p99 and alloc rate under load meet SLO; mean Results only shortlisted L.”  
+**Not decision metrics here:** cross-language Results ranks; format brand alone.
+
 ## What this suite cannot tell you
 
 - p99 under *your* framework and GC flags.  

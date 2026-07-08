@@ -66,6 +66,40 @@ Platform engineering standardizes **internal RPC on Protobuf** and **public HTTP
 
 A format that appears in **many** language overviews is a candidate for polyglot adoption; absence in one language is a **integration risk**, not a moral failing of that language.
 
+
+## Experiments
+
+**Question:** Can one **product contract** interoperate across the languages we ship—and where does fidelity break?
+
+### Setup
+1. List languages on the boundary and candidate contract (e.g. Protobuf + shared `.proto`).  
+2. Shared golden fixtures (logical values).  
+3. Encode/decode matrix plan ([401 cross-language fidelity](../401/protobuf-cross-language-fidelity.md) if Protobuf).
+
+### Procedure
+1. Freeze schema and fixture values.  
+2. Encode in each language; decode in every other; assert **logical** equality.  
+3. Optionally assert bit-identity (document if not required).  
+4. Run per-language suite fidelity for harness round-trip (local only).  
+5. Record footguns (defaults, packed repeated, renames).
+
+### Decision rule
+- Any required language pair failing logical interop ⇒ contract or implementation fix before performance tuning.  
+- Product choice of family stays; suite multi-language speed ranks do **not** pick the estate contract.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Matrix pass rate** (encode A → decode B) | **Primary** |
+| Logical field equality | Correctness definition |
+| Bit-identical encode (optional) | Caching/signing only |
+| Per-language `mean_fidelity` | Local harness health |
+| Schema/version alignment | Drift detector |
+| Per-language latency Results | Capacity planning **after** interop |
+
+**Conclusion style:** “Pb contract green on Py/Go/Rust matrix; pin prost/protobuf versions.”
+
 ## What this suite cannot tell you
 
 - Political cost of mandating one IDL monorepo.  

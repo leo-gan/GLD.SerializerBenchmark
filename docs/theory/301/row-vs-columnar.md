@@ -69,6 +69,40 @@ A metrics pipeline ingests events as Protobuf (good: row, low latency). Analysts
 
 **Important:** this suite is **not** a columnar engine benchmark. Absence of Parquet/Arrow from a language Results page means “not measured here,” not “irrelevant for lakes.”
 
+
+## Experiments
+
+**Question:** Is this path **row/RPC-shaped** or **analytical/columnar**, and are we using the wrong codec class for the system?
+
+### Setup
+1. Describe access pattern: point lookups / RPC vs scan aggregates over many rows.  
+2. Estimate selectivity (few columns vs wide rows) and data volume.  
+3. Candidate stacks: row JSON/Protobuf/Avro vs Parquet/ORC/Arrow-class.
+
+### Procedure
+1. Classify primary workload using the decision frame.  
+2. If analytical: prototype scan time and compression on columnar layout vs dumping RPC rows.  
+3. If RPC: measure per-message latency with row codecs; do not use lake formats on the hot path.  
+4. Suite Results orient **row** codec costs only—do not treat them as lake rankings.  
+5. Document two-hop design if both patterns exist (events row → lake columnar).
+
+### Decision rule
+- Scan-heavy lake path ⇒ columnar system format; RPC suite winners are irrelevant.  
+- Hot RPC ⇒ row/schema-driven family; columnar files are not substitutes.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Query shape** (point vs scan; columns touched) | **Primary** classifier |
+| Scan time / bytes read for analytical job | Columnar effectiveness |
+| RPC p99 per message | Row-path SLO |
+| Compression ratio on lake files | Storage economics |
+| Suite `total_median_ns` / `median_size_bytes` | Row-codec orientation only |
+| Cross-paradigm “winner” charts | Misleading for this decision |
+
+**Conclusion style:** “Ingest RPC uses Protobuf rows; lake uses Parquet; no dual-use of one codec.”
+
 ## What this suite cannot tell you
 
 - Scan cost of Parquet vs ORC on your warehouse.  

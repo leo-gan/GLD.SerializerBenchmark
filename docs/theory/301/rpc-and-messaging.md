@@ -56,6 +56,40 @@ Checkout RPC needs auth result and risk score—tens of fields. Marketing wants 
 | [Row vs columnar](row-vs-columnar.md) | Batch analytics path |
 | [Using this suite](using-this-suite.md) | Same fixture when comparing libs |
 
+
+## Experiments
+
+**Question:** Should this payload be optimized as **sync RPC** (latency, small messages) or **async messaging** (throughput, fan-out, evolution)?
+
+### Setup
+1. Measure or estimate: RPS, fan-out, max acceptable p99, retention of messages.  
+2. Note whether consumers are lag-tolerant.  
+3. Candidate families for each style.
+
+### Procedure
+1. Classify the hop with the decision frame.  
+2. For RPC-like: suite + load test on encode/decode latency and size.  
+3. For messaging: prioritize schema evolution, registry, and consumer lag under burst—not only ser mean.  
+4. Reject designs that use chatty RPC patterns on bulk fan-out topics (or the reverse).  
+5. Document payload size budgets per pattern.
+
+### Decision rule
+- Strict sync SLO + request/response ⇒ RPC-shaped codec and size budget.  
+- Multi-consumer durable stream ⇒ messaging evolution + backlog metrics dominate.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **RPC p99 / timeout budget** | **Primary** for sync hops |
+| Message size p95 | Network + ser cost |
+| Suite `ser_median_ns` / `deser_median_ns` / size | Codec shortlist |
+| Consumer lag / throughput | **Primary** for async hops |
+| Schema-change failure rate | Messaging evolution health |
+| Fan-out factor | Amplification of size/CPU |
+
+**Conclusion style:** “User RPC: small Protobuf; audit topic: Avro + registry; separate budgets.”
+
 ## What this suite cannot tell you
 
 - Correct service boundaries.  

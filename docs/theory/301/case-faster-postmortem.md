@@ -38,14 +38,41 @@
 
 In the composite postmortem, the root cause was **unbounded JSON allocations on a deep graph** plus a **slow library**, not “JSON is impossible.” Switching libraries and flattening the DTO restored SLO without a cross-stack Protobuf migration.
 
-## How to validate
 
-| Step | Where |
-|------|--------|
-| Profiler / tracing | Production or load test |
-| Fair codec compare | Language **Results** |
-| Load test after change | e2e |
-| Contract impact | Client matrix if format changes |
+
+## Experiments
+
+**Question:** What actually caused the latency regression—wrong library, wrong paradigm, wrong payload/allocs, or not serialization?
+
+### Setup
+1. Production profile or reproduction under load.  
+2. Current codec family and library pin.  
+3. Fair suite access for same-language slices.
+
+### Procedure
+1. Profile: confirm ser/deser on critical path (H4).  
+2. Fair Results within **same family** (H1) ([using this suite](using-this-suite.md)).  
+3. Inspect payload shape and allocs (H3) ([latency tails](latency-tails-and-gc.md)).  
+4. Only if family cannot meet SLO, revisit paradigm (H2).  
+5. Check compression/network (H5) before rewrite.  
+6. Write postmortem with evidence for the winning hypothesis.
+
+### Decision rule
+- Act on the first hypothesis that both explains p99 and is cheap to validate.  
+- Format rewrite last, not first.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **p99 before/after** | **Primary** success |
+| Profile % time in ser/deser | Attribution |
+| Alloc rate / GC pauses | H3 evidence |
+| Suite same-family deser median | H1 evidence |
+| Size / RTT / compress CPU | H5 evidence |
+| Error rate during change | Safety |
+
+**Conclusion style:** Root cause tagged H1–H5 with metrics; fix matched tag.
 
 ## What would change the answer
 

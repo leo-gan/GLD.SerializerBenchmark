@@ -7,6 +7,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>GLD.SerializerBenchmark</AssemblyName>
     <RootNamespace>GLD.SerializerBenchmark</RootNamespace>
+    <Version>0.2.0</Version>
     <BondSkipCodegen>true</BondSkipCodegen>
   </PropertyGroup>
 

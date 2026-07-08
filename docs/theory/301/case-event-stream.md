@@ -54,15 +54,38 @@ Bridge **webhooks** to JSON at the edge; do not force external parties to speak 
 
 Compact to **columnar** lake formats in batch; do not treat the event codec as the analytics store.
 
-## How to validate
 
-| Step | Where |
-|------|--------|
-| Encode/decode cost of candidate libs **per producer language** | Language **Results**, schema-driven or JSON family |
-| Compatibility matrix old×new payloads | Outside suite (registry test tooling / golden corpora) |
-| Consumer lag under schema rollout | Integration environment |
-| Dual-write period metrics | Product metrics, not suite |
-| Fair reading of charts | [Using this suite](using-this-suite.md) |
+
+## Experiments
+
+**Question:** Event backbone under rolling deploy—which **schema culture + registry mode + codec** keeps consumers live?
+
+### Setup
+1. Multi-service producers/consumers; registry available.  
+2. Rolling deploy plan; sample additive and breaking schema events.  
+3. Broker lag/DLQ metrics.
+
+### Procedure
+1. Choose culture ([two schema cultures](two-schema-cultures.md)) and compatibility mode.  
+2. Dry-run schema register accept/reject.  
+3. Canary producer with additive field; watch consumer errors/lag.  
+4. Attempt break; confirm reject or controlled dual-run ([versioning](versioning-in-the-wild.md)).  
+5. Suite size/speed only for capacity of chosen stack.
+
+### Decision rule
+- Prefer enforceable registry mode + culture that matches deploy order.  
+- Speed cannot override failed compatibility experiment.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| Compatibility pass/fail | **Primary** |
+| Consumer lag / error rate on canary | Production safety |
+| DLQ rate | Poison/schema skew |
+| Dual-run duration vs kill criteria | Migration health |
+| Suite size / ser time | Capacity planning |
+| Matrix interop if polyglot | Estate fit |
 
 ## What would change the answer
 

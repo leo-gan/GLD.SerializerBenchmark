@@ -1,6 +1,6 @@
 {
   "name": "serializer-benchmark-javascript",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Node.js harness for cross-language serializer benchmark",
   "type": "module",
   "main": "src/runner.js",

@@ -107,7 +107,7 @@ Same program rules as 101 / 201:
 5. Security and trust are first-class.  
 6. Prose numbers are illustrative; **Results** own suite truth for this harness.
 
-**301-specific:** every article ends with what to measure here and **what this suite cannot tell you**. Prefer failure modes and decision tables over mechanism encyclopedias.
+**301-specific:** every article includes **Experiments** (setup, procedure, decision rule for the page’s problem) and **Metrics** (primary signals for that experiment’s conclusion), plus **what this suite cannot tell you**. Prefer failure modes and decision tables over mechanism encyclopedias.
 
 ## Assessment (self-check)
 

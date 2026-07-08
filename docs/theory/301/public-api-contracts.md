@@ -49,6 +49,40 @@ A fintech publishes OpenAPI 3 and generates TypeScript and Kotlin clients. CI fa
 | [Categories](../../analysis/serialization_categories.md) | JSON vs other families |
 | [Using this suite](using-this-suite.md) | Fair comparisons |
 
+
+## Experiments
+
+**Question:** Is the public wire **contract** hard enough (schema/OpenAPI/JSON Schema), and what breaks if we only “use JSON”?
+
+### Setup
+1. Collect public endpoints and current docs (OpenAPI, ad hoc examples).  
+2. List client languages and critical fields.  
+3. One proposed additive change and one breaking change.
+
+### Procedure
+1. Validate production samples against the published schema (should pass).  
+2. Ship additive change; confirm old clients still work.  
+3. Attempt breaking change behind a new version or content-type; confirm old route unchanged.  
+4. Check error bodies for accidental internal leakage ([payload surfaces](payload-surfaces.md)).  
+5. Suite: optional JSON library compare for server language—**after** contract exists.
+
+### Decision rule
+- No machine-readable contract + multi-party clients ⇒ insufficient; add schema before optimizing codecs.  
+- Performance experiments only among codecs that honor the published contract.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Schema coverage** (% endpoints with formal schema) | **Primary** |
+| Contract-test pass rate in CI | Enforcement |
+| Breaking-change escape rate | Process quality |
+| Client SDK regenerate success | Contract usability |
+| Suite JSON `deser_median_ns` / size | Secondary server cost |
+| `mean_fidelity` | Implementation correctness |
+
+**Conclusion style:** “OpenAPI + JSON Schema required; content-type versioning for breaks.”
+
 ## What this suite cannot tell you
 
 - OpenAPI style guide politics.  

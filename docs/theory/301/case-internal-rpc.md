@@ -49,15 +49,38 @@
 
 **Reject D** at the service boundary.
 
-## How to validate
 
-| Step | Where |
-|------|--------|
-| Schema-driven vs JSON vs schemaless binary **within Go** and **within Rust** | Per-language **Results**, same fixture shape as prod records if possible |
-| Never rank Go vs Rust for format choice | [Using this suite](using-this-suite.md) |
-| p99 under concurrent RPC framework | e2e load test outside suite |
-| Compatibility: old binary × new binary | Contract tests / buf breaking / golden payloads |
-| Payload shape stress (nested vs flat) | Fixtures + 201 [encode cost](../201/encode-decode-cost.md) |
+
+## Experiments
+
+**Question:** Internal high-QPS RPC—schema-driven binary vs schemaless binary vs JSON—under the stated QPS and evolution constraints?
+
+### Setup
+1. Fix language(s), QPS, p99 budget, payload fixture.  
+2. Families: JSON, MessagePack/CBOR-class, Protobuf/Avro-class.  
+3. Suite Results + load generator.
+
+### Procedure
+1. Fair suite slice per family ([using this suite](using-this-suite.md)).  
+2. Load-test shortlisted impls at target QPS; record p99 and CPU.  
+3. Score evolution needs (field adds, multi-service).  
+4. Apply trust (internal mesh vs expose).  
+5. Recommend with evidence table.
+
+### Decision rule
+- Miss p99 at QPS ⇒ denser/faster family or impl.  
+- Strong evolution + multi-service ⇒ prefer schema-driven despite small speed gap.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **p99 RPC latency @ target QPS** | **Primary** |
+| CPU % on ser/deser | Capacity |
+| Suite median ser/deser + size | Shortlist |
+| Schema evolution pain (qualitative + incident count) | Long-term cost |
+| `mean_fidelity` | Correctness |
+| Cross-family leaderboard | Do not use raw |
 
 ## What would change the answer
 

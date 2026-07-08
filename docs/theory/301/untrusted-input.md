@@ -62,6 +62,41 @@ An internal API accepts MessagePack from other services and later from a partner
 
 This harness does **not** run adversarial fuzz campaigns or claim parser security.
 
+
+## Experiments
+
+**Question:** For this deserialize path, are **hostile-payload controls** sufficient, and is the codec class acceptable?
+
+### Setup
+1. Identify every public or multi-tenant parse entrypoint.  
+2. Note codec (JSON, Protobuf, native, …) and max request size at the edge.  
+3. Gather parser settings: depth limits, document size, known CVE posture.
+
+### Procedure
+1. Threat checklist: code execution (native deser), expansion bombs, huge alloc, deeply nested structures.  
+2. Verify **hard limits** (body size, depth, collection cardinality) before or during parse.  
+3. Confirm native/pickle/Java serialization are **banned** on untrusted paths.  
+4. Optional: fuzz or adversarial fixtures; watch process memory and time-to-failure.  
+5. Suite Results optional for performance among **safe** portable codecs only.
+
+### Decision rule
+- Any untrusted path with native deserialize or no size/depth limits ⇒ **fail**; fix before optimizing.  
+- Among safe codecs, use implementation-variance + latency experiments as usual.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| **Max body size enforced** | **Primary** control metric |
+| **Max depth / array size** | Expansion / stack risk |
+| **Time and memory to reject** huge/nested payloads | DoS resistance |
+| Parser error rate on fuzz | Robustness |
+| CVE / advisory state of library | Eligibility |
+| Suite speed / size | Secondary after safety pass |
+| `mean_fidelity` on valid fixtures | Still required for correctness |
+
+**Conclusion style:** “Edge enforces 1 MB + depth 32; JSON library X; native deser banned.”
+
 ## What this suite cannot tell you
 
 - Whether a library is free of known CVEs.  

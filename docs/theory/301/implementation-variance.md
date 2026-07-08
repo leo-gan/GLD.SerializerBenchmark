@@ -67,6 +67,43 @@ An ADR says “use JSON for the public API.” Three services pick three Python 
 
 When multiple JSON (or multiple schema-driven) entries exist, **that spread is the lesson**: implementation variance is first-class.
 
+
+## Experiments
+
+**Question:** Within a **fixed family** (e.g. JSON text or schema-driven Protobuf), which **library + version** should we pin on this language?
+
+### Setup
+1. Freeze boundary contract and paradigm family (other 301 articles).  
+2. One language, production-like `TestDataName`, same string/stream mode.  
+3. Candidate list from Overview (same family only).
+
+### Procedure
+1. Run or read suite Results for all candidates on that slice.  
+2. Filter `mean_fidelity` failures and Overview caveats (stream, unsupported fixtures).  
+3. Rank by the SLO metric (often deser or total median; sometimes size).  
+4. Spot-check version pins and maintenance posture.  
+5. Optional: short load test if p99 matters ([latency tails](latency-tails-and-gc.md)).  
+6. Pin winner in lockfile/manifest.
+
+### Decision rule
+- Winner = best SLO metric among **faithful** same-family candidates.  
+- Never pick by format name alone; never import another language’s winning library name without re-running this experiment.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| `total_median_ns` / `deser_median_ns` / `ser_median_ns` | **Primary** speed compare within family |
+| `avg_ops_per_sec` | Throughput-oriented display of the same idea |
+| `median_size_bytes` | When density matters inside the family |
+| `mean_fidelity` | **Hard filter** |
+| `mean_memory_peak_bytes` | Tie-break when allocs matter |
+| `serializer_version` | What you pin |
+| Effect sizes vs fastest (Cliff’s δ, if multi-way) | “Is the gap real?” |
+| Overview caveats / error CSV | Disqualify unsafe paths |
+
+**Conclusion style:** “Pin `orjson@x` for Python JSON Person bytes—lowest deser median, fidelity 1.0.”
+
 ## What this suite cannot tell you
 
 - Security audit status of a dependency.  

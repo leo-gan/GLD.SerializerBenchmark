@@ -47,15 +47,40 @@
 
 **Reject C** for this public multi-integrator setting unless the product is explicitly a binary protocol API (not classic REST for third parties).
 
-## How to validate
 
-| Step | Where |
-|------|--------|
-| Compare JSON implementations in each serving language | Language **Results**, JSON family, API-like fixtures |
-| Confirm paradigm discipline | [Using this suite](using-this-suite.md) |
-| Load-test **with** validation and framework overhead | Outside suite (e2e) |
-| Contract tests for optional binary path if B | Cross-client golden payloads |
-| Security: body size limits, depth limits | Outside suite |
+
+## Experiments
+
+**Question:** For this public REST API, do we ship **JSON + hard contract** only, or a **dual** binary/JSON contract?
+
+### Setup
+1. Constraints from the case (public clients, versioning, team skills).  
+2. Draft OpenAPI/JSON Schema for the resource.  
+3. Optional second content-type candidate (e.g. Protobuf) only if clients demand it.
+
+### Procedure
+1. Contract-test JSON samples against schema (old + additive).  
+2. Load-test JSON library options on the server language ([implementation variance](implementation-variance.md)).  
+3. If dual contract proposed: interop matrix for the binary type + versioning plan.  
+4. Compare ops cost of one vs two contracts against non-goals.  
+5. Recommend under the case constraints.
+
+### Decision rule
+- Default: single JSON contract with schema if public multi-language clients dominate.  
+- Dual only with explicit client need and versioning budget.
+
+## Metrics
+
+| Metric / signal | Role |
+|-----------------|------|
+| Schema/contract CI pass rate | **Primary** ship gate |
+| Public client break rate on additive changes | Evolution safety |
+| Server p99 on JSON encode/decode | Performance SLO |
+| Suite JSON metrics (language of server) | Library shortlist |
+| Dual-contract engineering cost | Go/no-go for second type |
+| Payload leak checks on errors | Security |
+
+**Conclusion style:** Match the case **Recommendation**; metrics must support it.
 
 ## What would change the answer
 
