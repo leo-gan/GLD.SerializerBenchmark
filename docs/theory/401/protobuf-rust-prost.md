@@ -10,10 +10,13 @@ Rust Protobuf stacks differ (`prost`, `protobuf` crate, …). Client use of `enc
 
 Assumes [wire format](protobuf-wire-format.md). Crate: [tokio-rs/prost](https://github.com/tokio-rs/prost) (`Message` in `prost/src/message.rs`).
 
+**Suite pin (this monorepo):** `prost` / `prost-build` **0.13** in `rust/Cargo.toml`.
+
 ## Prerequisites
 
 - Intermediate Rust (ownership, `Vec<u8>`, traits).  
-- 201 schema-dependent encoding.
+- 201 schema-dependent encoding.  
+- Soft: [301 untrusted input](../301/untrusted-input.md) (recursion limits and hostile nesting).
 
 ## Mental model
 
@@ -61,7 +64,7 @@ let buf = person.encode_to_vec();
 let parsed = pb::Person::decode(&buf[..])?;
 ```
 
-Field names are Rust-ified; **tags** still come from `.proto` numbers.
+Field names are Rust-ified; **tags** still come from `.proto` numbers. For the teaching [MiniUser](lab-mini-protobuf-encoder.md) message, compile a separate tiny `mini.proto`—it is not part of suite `benchmark_data.proto`.
 
 ## How prost implements serialization (step-by-step)
 
@@ -87,6 +90,9 @@ prost turns a Rust struct into wire bytes using **compile-time knowledge** of th
   Rust struct
        │
        ▼
+  S1  codegen (build-time; field tags as constants)
+       │
+       ▼
   S2  encoded_len()  →  capacity check
        │
        ▼
@@ -96,13 +102,9 @@ prost turns a Rust struct into wire bytes using **compile-time knowledge** of th
   S4  Vec<u8> (caller-owned)
 ```
 
-### Decision frame: when prost feels right
+### When prost fits
 
-- You are in a Rust service or CLI that must speak Protobuf.
-- You want zero-cost abstractions and strong typing.
-- You are comfortable with build-time code generation.
-
-If you need dynamic messages or extremely small binaries, other Rust crates may fit better.
+Use prost when you want typed, monomorphized encode/decode in a Rust binary with build-time codegen. Prefer other crates if you need fully dynamic messages at runtime or a different codegen style—this page does not rank alternatives.
 
 ## How prost implements deserialization (step-by-step)
 
@@ -118,7 +120,7 @@ If you need dynamic messages or extremely small binaries, other Rust crates may 
 2. Pass both plus the remaining buffer to `merge_field`.
 3. Repeat until the buffer is exhausted.
 
-A `DecodeContext` tracks **recursion depth** to protect against malicious nesting (configurable limit).
+A `DecodeContext` tracks **recursion depth** to protect against malicious nesting (configurable limit). Bound untrusted input size as well ([301 untrusted input](../301/untrusted-input.md)).
 
 ### D3 — `merge_field` dispatch (generated)
 
@@ -199,13 +201,16 @@ Vec<u8>  (you own the output)
 | `rust/build.rs` | `prost-build` on shared proto |
 | `rust/src/serializers.rs` (`ProstSer`) | `prepare` → message; `serialize_bytes` → `encode` |
 | Log name | `prost` |
+| Pin | `prost` / `prost-build` 0.13 |
 | [Rust Results](../../rust/results.md) | Schema-driven comparisons |
+
+Do not cross-rank language Results without controlling for language ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 
 ## Common mistakes
 
 - Hand-editing `OUT_DIR` generated files.  
 - Ignoring recursion limits on deep hostile input.  
-- Cross-language Results comparisons without controlling for language ([cross-language fidelity](protobuf-cross-language-fidelity.md)).  
+- Cross-language Results comparisons without controlling for language.  
 - Assuming field emission order is part of the contract (decoders must accept any order).
 
 ## What this article is not

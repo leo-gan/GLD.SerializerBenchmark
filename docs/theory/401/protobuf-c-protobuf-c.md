@@ -6,9 +6,11 @@ C clients call `pack` / `unpack` without seeing that protobuf-c is a **descripto
 
 ## Short answer
 
-**Primary stack: protobuf-c.** Codegen emits C structs plus a `ProtobufCMessageDescriptor` (field array: id, type, offset, label, …). **`protobuf_c_message_get_packed_size`** sums sizes; **`protobuf_c_message_pack`** writes tags/payloads into a caller buffer; **`protobuf_c_message_unpack`** scans the buffer into a **heap** message; **`protobuf_c_message_free_unpacked`** frees it. Implementation lives mainly in [`protobuf-c/protobuf-c.c`](https://github.com/protobuf-c/protobuf-c/blob/master/protobuf-c/protobuf-c.c); API overview: [packing docs](https://protobuf-c.github.io/protobuf-c/pack.html). **nanopb** is a different design (comparison box only).
+Codegen emits C structs plus a `ProtobufCMessageDescriptor` (field array: id, type, offset, label, …). **`protobuf_c_message_get_packed_size`** sums sizes; **`protobuf_c_message_pack`** writes tags/payloads into a caller buffer; **`protobuf_c_message_unpack`** scans the buffer into a **heap** message; **`protobuf_c_message_free_unpacked`** frees it. Implementation lives mainly in [`protobuf-c/protobuf-c.c`](https://github.com/protobuf-c/protobuf-c/blob/master/protobuf-c/protobuf-c.c); API overview: [packing docs](https://protobuf-c.github.io/protobuf-c/pack.html). **nanopb** is a different design—short box below; full compare: [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md).
 
 Assumes [wire format](protobuf-wire-format.md).
+
+**Suite pin (this monorepo):** **protobuf-c v1.5.0** (`c/third_party/VERSIONS.md`).
 
 ## Prerequisites
 
@@ -28,15 +30,7 @@ Assumes [wire format](protobuf-wire-format.md).
 
 Every message instance begins with descriptor linkage so the runtime can treat it as a generic `ProtobufCMessage *`.
 
-## Client path (what you write)
-
-### 1. Codegen
-
-```bash
-protoc --c_out=gen -I schemas schemas/benchmark_data.proto
-```
-
-### 2. Populate / pack / unpack
+## Minimum recipe (what you write)
 
 ```c
 /* names are illustrative—generators apply their own prefixing */
@@ -55,7 +49,15 @@ benchmark_data__person__free_unpacked(out, NULL);
 free(buf);
 ```
 
+Codegen:
+
+```bash
+protoc --c_out=gen -I schemas schemas/benchmark_data.proto
+```
+
 Alternatively **`protobuf_c_message_pack_to_buffer`** streams chunks through a `ProtobufCBuffer` vtable (append callback) without precomputing a single allocation size.
+
+For the teaching [MiniUser](lab-mini-protobuf-encoder.md) goldens, compile a separate tiny `mini.proto`—not suite `benchmark_data.proto`.
 
 ## How protobuf-c implements serialization (step-by-step)
 
@@ -97,30 +99,32 @@ for each unknown_field:
 return size
 ```
 
-`required_field_get_packed_size` accounts for **tag bytes + payload** (varint length of integers, string length + bytes, nested `get_packed_size` for submessages, etc.).
+Size helpers account for **tag bytes + payload** (varint length of integers, string length + bytes, nested `get_packed_size` for submessages, etc.).
 
 ### S3 — `protobuf_c_message_pack`
 
-Same field loop; instead of summing, call `*_pack` helpers that **write** into `out + rv` and return bytes written:
+Same field loop; instead of summing, call pack helpers that **write** into `out + rv` and return bytes written:
 
 ```text
 rv = 0
 for each field (as above):
-  rv += required_field_pack / optional_field_pack / repeated_field_pack / ...
+  rv += *_field_pack(...)   # label-specific
 for each unknown_field:
   rv += unknown_field_pack(...)
 return rv
 ```
 
-### S4 — `required_field_pack` (core primitive)
+### S4 — Type dispatch (tag + payload)
 
-The pack function writes a tag (field id + wire type) followed by the payload. It dispatches on the field type in the descriptor:
+Regardless of label, the core write is **tag (field id + wire type) then payload**, dispatched on the field **type** in the descriptor:
 
 - Varint types (int, bool, enum) → varint encoding  
 - Fixed32 / float → 4-byte little-endian  
 - Fixed64 / double → 8-byte  
 - String / bytes → length prefix + data  
-- Message → length prefix + recursive pack of the sub-message
+- Message → length prefix + recursive pack of the sub-message  
+
+(Source helpers are often named like `required_field_pack` even when called from optional/repeated paths—think “type dispatch pack,” not “proto2 required only.”)
 
 This is descriptor-driven (one interpreter loop) rather than monomorphized per-message code.
 
@@ -155,6 +159,16 @@ The unpacker walks the byte buffer as a Protobuf stream:
 
 This separates “find fields in the buffer” from “store into C structs.”
 
+**Sketch — G1 bytes `08 01 12 03 41 64 61` (`id=1`, `name=Ada` on MiniUser-shaped schema):**
+
+| Scan step | Bytes | Result |
+|-----------|-------|--------|
+| Tag | `08` | field 1, VARINT |
+| Payload | `01` | varint value 1 |
+| Tag | `12` | field 2, LEN |
+| Len | `03` | 3 payload bytes |
+| Payload | `41 64 61` | `Ada` |
+
 ### D2 — Lookup field by number
 
 Known numbers map through descriptor **field ranges** / tables to a `ProtobufCFieldDescriptor *`. Unknown numbers become **unknown field** entries (stored for later pack) after skipping by wire type.
@@ -163,10 +177,10 @@ Known numbers map through descriptor **field ranges** / tables to a `ProtobufCFi
 
 For each scanned member the code calls type-specific helpers that write into the struct at the descriptor's offset:
 
-- Scalars → direct store
-- String/bytes → allocate + copy
-- Message → recursive unpack
-- Repeated → grow array and append
+- Scalars → direct store  
+- String/bytes → allocate + copy  
+- Message → recursive unpack  
+- Repeated → grow array and append  
 
 The key point: everything is driven by the runtime descriptor, not generated straight-line code per field.
 
@@ -195,15 +209,15 @@ On failure, unpack returns **NULL** (and should not leak partial trees—impleme
 | Typical use | C without heavy templates | Rust type system |
 | Teaching value | Offsets + labels are explicit | Trait methods are explicit |
 
-Both emit the **same wire format** if schemas and field numbers match.
+Both emit the **same wire format** if schemas and field numbers match. Hub [three engines table](index.md#three-engines-at-a-glance) includes Python and nanopb as well.
 
 ## nanopb comparison box
 
 Short form only—full treatment: [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md).
 
 
-| Axis | **protobuf-c** (primary) | **nanopb** |
-|------|--------------------------|------------|
+| Axis | **protobuf-c** | **nanopb** |
+|------|----------------|------------|
 | Allocation | Heap unpack common | Static buffers / callbacks |
 | Engine | Descriptor pack/unpack | Stream encode/decode with max sizes |
 | Suite | `protobuf-c` | Separate registration |
@@ -235,7 +249,10 @@ heap message → free_unpacked()
 | `c/src/serializers/ser_protobuf_c.c` | Register `protobuf-c`; call fixture encode/decode helpers |
 | Fixture helpers | Map harness fixtures ↔ protobuf-c messages |
 | Log name | `protobuf-c` |
+| Pin | protobuf-c v1.5.0 |
 | [C Results](../../c/results.md) | Schema-driven C peers |
+
+Do not rank C against Python/Rust from Results alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 
 ## Common mistakes
 
@@ -253,7 +270,7 @@ heap message → free_unpacked()
 ## Key takeaways
 
 - protobuf-c = **generated layout + shared descriptor runtime**.  
-- Pack: **size walk → pack walk** with `required_field_pack`-style tag|wire + payload.  
-- Unpack: **scan → lookup → parse/merge → heap message**.  
+- Pack: **size walk → pack walk** with tag|wire + payload type dispatch.  
+- Unpack: **scan → lookup → parse/merge → heap message** (see G1 scan sketch).  
 - Same wire as Python/Rust; different engineering of the engine.  
 - Parallel: [Python](protobuf-python.md), [Rust prost](protobuf-rust-prost.md).

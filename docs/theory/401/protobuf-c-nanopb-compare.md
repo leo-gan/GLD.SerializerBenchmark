@@ -8,9 +8,11 @@ Both **protobuf-c** and **nanopb** claim “Protobuf for C,” but they optimize
 
 Use **protobuf-c** when you want classic generated structs, descriptor-driven pack/unpack, and heap-friendly services ([protobuf-c path](protobuf-c-protobuf-c.md)). Use **nanopb** when RAM/flash are tight, you can declare **maximum sizes** in options, and you accept stream/callback-oriented encode/decode instead of free-form heap trees. Wire format remains Protobuf binary ([wire format](protobuf-wire-format.md)); **engineering**—allocation, codegen, APIs—diverges.
 
+**Suite pins (this monorepo):** protobuf-c **v1.5.0**; nanopb **0.4.9** (`c/third_party/VERSIONS.md`, registration in `ser_nanopb.c`).
+
 ## Prerequisites
 
-- [C: protobuf-c path](protobuf-c-protobuf-c.md) (primary C path).  
+- [C: protobuf-c path](protobuf-c-protobuf-c.md).  
 - [Wire format](protobuf-wire-format.md).  
 - Soft: [301 untrusted input](../301/untrusted-input.md) (bounds matter even more on embedded).
 
@@ -62,6 +64,39 @@ nanopb
        ▼  pb_decode → pb_istream_t
   static struct  ──►  usually nothing to free
 ```
+
+## Minimal nanopb sketch
+
+Illustrative only—field names and generated symbols depend on your `.proto` / `.options` and nanopb version ([upstream docs](https://jpa.kapsi.fi/nanopb/)).
+
+```c
+/* After nanopb codegen: MiniUser has e.g. name[32], tags_count, tags[8] */
+MiniUser user = MiniUser_init_zero;
+user.id = 1;
+strncpy(user.name, "Ada", sizeof(user.name) - 1);
+user.has_name = true;   /* if your options use has_ flags */
+
+uint8_t buffer[64];
+pb_ostream_t ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+if (!pb_encode(&ostream, MiniUser_fields, &user)) {
+    /* buffer full or encode error */
+}
+
+MiniUser out = MiniUser_init_zero;
+pb_istream_t istream = pb_istream_from_buffer(buffer, ostream.bytes_written);
+if (!pb_decode(&istream, MiniUser_fields, &out)) {
+    /* truncated, bad wire, or exceeds max sizes */
+}
+```
+
+### When valid Protobuf still fails nanopb
+
+Suppose `name` is generated as a 8-byte array (`max_size:8` including null in some setups) and the peer sends a longer string that is **valid** length-delimited Protobuf:
+
+1. protobuf-c `unpack` → heap string of full length (until you OOM).  
+2. nanopb `pb_decode` → **false** / error: value does not fit the static contract.
+
+That is intentional for embedded safety, not a wire-format bug. The same applies to `repeated` counts above `max_count`.
 
 ## Step-by-step: how nanopb thinks about encode
 
@@ -144,8 +179,8 @@ Product/polyglot choice of “Protobuf or not” is [301](../301/index.md); this
 | Entry | Role |
 |-------|------|
 | `protobuf-c` | Classic path; see [protobuf-c article](protobuf-c-protobuf-c.md) |
-| `nanopb` | Registered separately (`ser_nanopb.c`); version pinned in registration |
-| Shared helpers | Some C schema entries share fixture/wire helpers—**always read Overview notes** for what is timed and what fidelity means |
+| `nanopb` | `c/src/serializers/ser_nanopb.c` — separate log name; version **0.4.9** |
+| Shared helpers | Some C schema entries share fixture/wire helpers—read the language [C Overview](../../c/index.md) and serializer notes for what is timed and what fidelity means |
 | [C Results](../../c/results.md) | Compare **within C** and schema-driven family ([301 using this suite](../301/using-this-suite.md)) |
 
 Do not treat a faster `nanopb` row as “protobuf-c is wrong for servers,” or the reverse for MCUs.
@@ -155,7 +190,8 @@ Do not treat a faster `nanopb` row as “protobuf-c is wrong for servers,” or 
 - Using nanopb without setting max sizes, then “fixing” by enabling unbounded dynamic mode everywhere (loses the point).  
 - Assuming nanopb decode allocates like protobuf-c.  
 - Mixing generated headers from different generators in one translation unit.  
-- Cross-ranking C Results against Python/Rust for engine choice ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
+- Cross-ranking C Results against Python/Rust for engine choice ([cross-language fidelity](protobuf-cross-language-fidelity.md)).  
+- Calling a max-size reject a “wire bug” when the peer used protobuf-c with no caps.
 
 ## What this article is not
 

@@ -10,9 +10,11 @@
 
 Assumes [wire format](protobuf-wire-format.md) and at least one language path ([Python](protobuf-python.md), [Rust](protobuf-rust-prost.md), [C](protobuf-c-protobuf-c.md)).
 
+This monorepo already has Python, Rust, and C Protobuf entries—use them when available. Outside the suite, the same discipline applies with any three official runtimes.
+
 ## Prerequisites
 
-- Shared schema discipline (`schemas/benchmark_data.proto` in this repo).  
+- Shared schema discipline (`schemas/benchmark_data.proto` in this repo, or a tiny shared `mini.proto`).  
 - Soft: [301 using this suite](../301/using-this-suite.md)—do not use Results as fidelity proofs.
 
 ## Mental model
@@ -106,17 +108,36 @@ Use the [lab](lab-mini-protobuf-encoder.md) goldens (e.g. `08 01 12 03 41 64 61`
 This suite may:
 
 - Convert fixtures to native messages **outside** timed paths.  
-- Apply language-specific compares (`fidelity_fx` in C — the suite's per-serializer comparison function, etc.).  
+- Apply language-specific compare callbacks (in C, the per-serializer compare function often named something like `fidelity_fx`—**suite-local round-trip check**, not multi-language proof).  
 - Exclude types Protobuf cannot express (`ObjectGraph`, bare `Integer` in some langs).
 
 Passing suite fidelity means **that language entry** round-trips under **that** compare function—not that three languages share bytes.
 
-## Worked mini protocol (recommended exercise)
+## MiniUser matrix runbook (~10 minutes)
+
+Teaching schema only—create `mini.proto` (same as the [lab](lab-mini-protobuf-encoder.md)); it is **not** suite `benchmark_data.proto`.
+
+**Logical fixture:** `MiniUser { id = 1, name = "Ada" }`  
+**Golden:** `08 01 12 03 41 64 61`
+
+| Step | Action |
+|------|--------|
+| 1 | Write `mini.proto` with MiniUser fields 1–4 as in the lab. |
+| 2 | **Python:** `protoc --python_out=. mini.proto` → `mini_pb2.MiniUser`, set fields, `SerializeToString()`, assert hex equals golden (or logical equal after parse). |
+| 3 | **Rust:** `prost-build` on `mini.proto` (or temporary `build.rs`), `encode_to_vec()`, same asserts. |
+| 4 | **C:** `protoc --c_out=. mini.proto`, pack with protobuf-c (or label nanopb separately—**do not mix engines mid-matrix without labeling**). |
+| 5 | Cross-decode: each language’s bytes → other two decoders → `id==1`, `name=="Ada"`. |
+| 6 | Record whether the three encodes are bit-identical (`memcmp` / `==` on bytes). |
+| 7 | Append unknown field `28 63` to Python bytes; confirm Rust and C still yield id/name (skip-unknown). |
+
+Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN confidence.
+
+## Worked mini protocol (summary)
 
 1. Take lab message `MiniUser { id=1, name="Ada" }`.  
-2. Encode with Python `SerializeToString`, Rust `encode_to_vec`, C `protobuf_c_message_pack` (or nanopb if that is your C choice—don’t mix engines mid-matrix without labeling).  
+2. Encode with Python `SerializeToString`, Rust `encode_to_vec`, C `protobuf_c_message_pack` (or nanopb if that is your C choice—label it).  
 3. Decode each blob with the other two.  
-4. Record whether encodes are `memcmp`-equal.  
+4. Record whether encodes are bit-identical.  
 5. Append unknown field `28 63` and confirm logical id/name still round-trip where skip-unknown works.
 
 ## Decision frame: when bit-identity matters
@@ -132,9 +153,9 @@ Passing suite fidelity means **that language entry** round-trips under **that** 
 
 | Asset | Fidelity role |
 |-------|----------------|
-| `schemas/benchmark_data.proto` | Shared field numbers |
-| Python `protobuf` / Rust `prost` / C `protobuf-c` & `nanopb` | Separate encode paths |
-| Per-language fidelity hooks | Local round-trip checks |
+| `schemas/benchmark_data.proto` | Shared field numbers for suite types |
+| Python `protobuf` / Rust `prost` / C `protobuf-c` & `nanopb` | Separate encode paths (pins on language articles) |
+| Per-language fidelity hooks | Local round-trip checks only |
 | Results / ops | **Not** interoperability proofs |
 | [301 polyglot estates](../301/polyglot-estates.md) | One **product** contract; this page tests **bytes/logic** |
 
@@ -144,7 +165,8 @@ Passing suite fidelity means **that language entry** round-trips under **that** 
 - Testing only A→A round-trips.  
 - Comparing floats with `==` across languages without a policy.  
 - Mixing nanopb static limits with “full” protobuf-c fixtures and calling it a wire bug.  
-- Editing generated code in one language only (schema drift).
+- Editing generated code in one language only (schema drift).  
+- Using suite Person for a first matrix when MiniUser goldens are enough.
 
 ## What this article is not
 

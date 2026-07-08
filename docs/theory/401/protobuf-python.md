@@ -6,9 +6,11 @@ Python services often “use Protobuf” via generated `*_pb2.py` modules withou
 
 ## Short answer
 
-With `google.protobuf`, `protoc` generates message classes that implement the `Message` API (`SerializeToString`, `ParseFromString`, …). At import time the library selects an **implementation backend** (default **upb**, else pure Python; legacy **cpp** exists but is no longer what PyPI ships). Serialize walks the message’s fields using **descriptors** (field numbers + types) and emits standard Protobuf binary; parse consumes tags and merges into a message instance. In this suite, **dataclass → Message is untimed `prepare_data`**; timed work is serialize/parse of the Message.
+With `google.protobuf`, `protoc` generates message classes that implement the `Message` API (`SerializeToString`, `ParseFromString`, …). At import time the library selects an **implementation backend** (default **upb**, else pure Python; legacy **cpp** exists but is no longer what PyPI ships). Serialize walks the message’s fields using **descriptors** (field numbers + types) and emits standard Protobuf binary; parse consumes tags and fills a message instance. In this suite, **dataclass → Message is untimed `prepare_data`**; timed work is serialize/parse of the Message.
 
 Assumes [wire format](protobuf-wire-format.md). Package: `protobuf` ([Python tutorial](https://protobuf.dev/getting-started/pythontutorial/), [encoding guide](https://protobuf.dev/programming-guides/encoding/), [python/README backends](https://github.com/protocolbuffers/protobuf/blob/main/python/README.md)).
+
+**Suite pin (this monorepo):** `protobuf>=7.34.1,<8` in `python/pyproject.toml`—patterns below track that line; always re-check your installed version.
 
 ## Prerequisites
 
@@ -40,7 +42,7 @@ protoc -I schemas --python_out=python/generated schemas/benchmark_data.proto
 
 Generated modules define classes such as `Person` with field numbers from the `.proto`—Python attribute names are bindings, not wire identity.
 
-### 2. Build a message
+### 2. Build a message (suite schema)
 
 ```python
 import benchmark_data_pb2 as pb2
@@ -57,22 +59,39 @@ rec.CrimeCode = "A"
 
 proto3: unset scalars with default values are typically **omitted** on the wire.
 
-**MiniUser example** (`id=1, name="Ada"`):
+### 3. Teaching MiniUser (not suite codegen)
+
+`MiniUser` is the [wire](protobuf-wire-format.md) / [lab](lab-mini-protobuf-encoder.md) teaching message. It is **not** in `schemas/benchmark_data.proto`. Generate from a local `mini.proto`:
+
+```bash
+protoc --python_out=. mini.proto   # defines message MiniUser
+```
 
 ```python
-msg = pb2.MiniUser()
+import mini_pb2
+
+msg = mini_pb2.MiniUser()
 msg.id = 1
 msg.name = "Ada"
 data = msg.SerializeToString()   # b'\x08\x01\x12\x03Ada'
 ```
 
-### 3. Encode / decode (API)
+### 4. Encode / decode (API)
+
+Using the suite `Person` from step 2 (same APIs on any generated message, including teaching MiniUser):
 
 ```python
 data: bytes = msg.SerializeToString()
+
+# Replace semantics: clear message, then parse
 out = pb2.Person()
 out.ParseFromString(data)
-# or: out = pb2.Person.FromString(data)
+
+# Or construct fresh:
+out = pb2.Person.FromString(data)
+
+# True merge into an existing message (does not clear first):
+# out.MergeFromString(data)
 ```
 
 Public API documentation: [Message.SerializeToString / ParseFromString](https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html). Optional `deterministic=True` on serialize requests stable map key ordering when maps are present.
@@ -129,11 +148,16 @@ The result is a new **immutable `bytes` object** — the caller owns it. No refe
 
 ## How the package implements deserialization (step-by-step)
 
-### D1 — `ParseFromString` / `FromString` entry
+### D1 — `ParseFromString` / `MergeFromString` / `FromString`
 
-1. `ParseFromString(data)` merges into **existing** `self` (often after `Clear()` semantics depending on call).  
-2. `FromString(data)` constructs a **new** message, then parses.  
-3. Backend receives a pointer/view of the input buffer (zero-copy into C for upb when possible for the raw read; Python objects for field values are still allocated as needed).
+| API | Behavior |
+|-----|----------|
+| **`ParseFromString(data)`** | **Replace:** clears `self`, then parses `data` into it |
+| **`MergeFromString(data)`** | **Merge:** does not clear; merges fields into existing state |
+| **`FromString(data)`** | Constructs a **new** message, then parse (replace into empty) |
+
+1. Backend receives a pointer/view of the input buffer (zero-copy into C for upb when possible for the raw read; Python objects for field values are still allocated as needed).  
+2. Prefer `FromString` or a fresh instance + `ParseFromString` when you want replace semantics; use `MergeFromString` only when merge is intentional.
 
 ### D2 — Tag loop
 
@@ -158,9 +182,9 @@ This matches the decode loop in the wire article.
 | Repeated | Append element (or unpack packed block into multiple elements) |
 | Map | Decode as repeated entry messages → Python map |
 
-### D4 — Merge semantics
+### D4 — Merge semantics (when merging)
 
-Parsing **merges** into the message: repeated fields append; singulars overwrite; submessages merge field-by-field. That is why “parse into an already-filled message” can surprise you—prefer a fresh instance or clear first when you want replace semantics.
+When using **`MergeFromString`** (or merge paths inside nested updates): repeated fields append; singulars overwrite; submessages merge field-by-field. That is why “parse into an already-filled message” with merge APIs can surprise you—use `ParseFromString` / fresh instance when you want replace.
 
 ### D5 — Allocate Python-visible structure
 
@@ -194,14 +218,14 @@ Python Message object
 new bytes (immutable, you own it)
      ▲
      │ ParseFromString
-input bytes/buffer (must stay alive during call)
+input bytes (or memoryview — underlying buffer must remain valid for the call)
 ```
 
 | Object | Owner |
 |--------|--------|
 | Generated Message | Python GC |
 | `bytes` from serialize | Immutable; caller-owned |
-| Parse input buffer | Caller must keep alive through `ParseFromString` |
+| Parse input | Caller; ordinary `bytes` are fine; if you pass a view into a mutable buffer, keep that buffer alive for the call |
 | Unknown fields | Held on message when the backend retains them |
 
 ## In this suite
@@ -209,19 +233,22 @@ input bytes/buffer (must stay alive during call)
 | Location | Role |
 |----------|------|
 | `python/src/benchmark/serializers/schema_protobuf.py` | `prepare_data` → Message; `serialize_bytes` → `SerializeToString` |
-| `python/generated/benchmark_data_pb2.py` | Generated types |
+| `python/generated/benchmark_data_pb2.py` | Generated types (Person, …)—not MiniUser |
 | Log name | `protobuf` |
+| Pin | `protobuf>=7.34.1,<8` |
 | [Python Results](../../python/results.md) | Cost under whatever backend the environment selected |
 
-Harness keeps conversion **out** of the timed path so Results compare codec work, not model mapping.
+Harness keeps conversion **out** of the timed path so Results compare codec work, not model mapping. Do not rank Python vs Rust/C from Results alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 
 ## Common mistakes
 
 - Timing `prepare_data` + serialize together.  
 - Assuming pure-Python behavior while upb is active (or the reverse).  
+- Using `MergeFromString` when you meant replace (`ParseFromString` / fresh message).  
 - Mutating a message while another thread serializes it.  
 - Parsing untrusted bytes without size limits.  
-- Hand-editing `*_pb2.py`.
+- Hand-editing `*_pb2.py`.  
+- Expecting `MiniUser` in suite `benchmark_data_pb2` (teaching schema only).
 
 ## What this article is not
 
@@ -232,7 +259,7 @@ Harness keeps conversion **out** of the timed path so Results compare codec work
 ## Key takeaways
 
 - Client API: **codegen → Message → SerializeToString / ParseFromString**.  
+- **ParseFromString** replaces (clear + parse); **MergeFromString** merges.  
 - Implementation: **backend** + **descriptor-driven** field walk = wire tags.  
 - Default backend is **upb**; pure Python remains the portable fallback.  
-- Deserialize is a **tag loop** with merge and skip-unknown.  
 - Parallel: [Rust prost](protobuf-rust-prost.md), [C protobuf-c](protobuf-c-protobuf-c.md).

@@ -33,32 +33,42 @@ By the end of this course you should be able to:
 | [301](../301/index.md) | Production judgment (core advanced) |
 | **401 (this course)** | Implementer elective — wire + paths + lab |
 
-## Depth model
-
-| Decision | Choice |
-|----------|--------|
-| **Depth** | **B + thin lab**: wire + library paths; mini subset lab—not full Protobuf |
-| **C stack** | **Primary: protobuf-c**; full nanopb compare in second-wave article |
-| **Flagship format** | Protocol Buffers + shared `schemas/benchmark_data.proto` |
+This course teaches **wire encoding, runtime paths, and a thin subset lab**—not a full Protobuf reimplementation, not multi-constraint product choice (that is 301).
 
 ## Modules
 
-**Core (MVP)**
-- [Protobuf wire format step-by-step](protobuf-wire-format.md) — tags, varints, LEN, nested, unpacked repeated
-- Language paths — codegen, ownership, encode/decode in each runtime
-- [Lab: mini encoder/decoder](lab-mini-protobuf-encoder.md) — build + validate against goldens
+| Article | You should be able to… |
+|---------|------------------------|
+| [Protobuf wire format step-by-step](protobuf-wire-format.md) | Read/emit tags, varints, LEN, nested, unpacked/packed repeated; skip unknowns |
+| [Lab: mini encoder/decoder](lab-mini-protobuf-encoder.md) | Build a MiniUser subset codec; pass goldens + bounds + official parse |
+| [Python: google.protobuf path](protobuf-python.md) | Trace codegen → backend → SerializeToString / ParseFromString and ownership |
+| [Rust: prost path](protobuf-rust-prost.md) | Trace `encoded_len` / `encode_raw` / `merge_field` and monomorphized codegen |
+| [C: protobuf-c path](protobuf-c-protobuf-c.md) | Trace descriptor pack/unpack and heap free discipline |
+| [C: nanopb vs protobuf-c](protobuf-c-nanopb-compare.md) | Choose heap-friendly vs static-budget C engines for a deployment |
+| [Same bytes, three runtimes](protobuf-cross-language-fidelity.md) | Design interop matrix tests; separate bit-identity from logical fidelity |
 
-**Second wave**
-- [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md)
-- [Same bytes, three runtimes](protobuf-cross-language-fidelity.md)
+**Suggested path** (matches self-check; side nav lists the same pages):
 
-**Suggested order:**
+1. [Wire format](protobuf-wire-format.md)  
+2. [Lab](lab-mini-protobuf-encoder.md) *(start as soon as wire is readable)*  
+3. [Python](protobuf-python.md) → [Rust](protobuf-rust-prost.md) → [C protobuf-c](protobuf-c-protobuf-c.md)  
+4. [nanopb compare](protobuf-c-nanopb-compare.md)  
+5. [Cross-language fidelity](protobuf-cross-language-fidelity.md)  
 
-1. [Wire format](protobuf-wire-format.md)
-2. [Lab](lab-mini-protobuf-encoder.md) *(can start in parallel after wire)*
-3. [Python path](protobuf-python.md) → [Rust path](protobuf-rust-prost.md) → [C path](protobuf-c-protobuf-c.md)
-4. [nanopb compare](protobuf-c-nanopb-compare.md)
-5. [Cross-language fidelity](protobuf-cross-language-fidelity.md)
+Flagship schema in the suite: `schemas/benchmark_data.proto`. Teaching pages use a smaller **MiniUser** message (not the suite Person schema).
+
+## Three engines at a glance
+
+Same wire format; different engineering of the codec:
+
+| | **Python** (`google.protobuf`) | **Rust** (`prost`) | **C** (`protobuf-c`) | **C** (nanopb) |
+|--|--------------------------------|--------------------|----------------------|----------------|
+| Schema at encode time | Runtime descriptors + backend (upb / pure Python) | Monomorphized per-type code | Runtime descriptor tables | Field list + static max sizes |
+| Output ownership | New immutable `bytes` | Caller-owned `Vec<u8>` | Caller-allocated buffer | Static / stream budget |
+| Decode ownership | GC-managed Message | Owned Rust struct | Heap message → `free_unpacked` | Preallocated static struct |
+| Typical failure | Parse error / Python exception | `DecodeError` | `NULL` / leak if free skipped | Fail if data exceeds max |
+
+Details: language path articles and [nanopb compare](protobuf-c-nanopb-compare.md).
 
 ## Honesty rules
 
@@ -74,10 +84,10 @@ Program rules (no universal winners; implementation beats brand; suite Results o
 
 ## Assessment (self-check)
 
-1. Complete the lab golden vectors G1–G5 and at least one official-parser cross-check.  
+1. Complete the lab golden vectors G1–G5 (and G2 empty), unknown-field skip, bounds failures, and at least one official-parser cross-check.  
 2. Explain pack/unpack ownership in one of Python, Rust, or C.  
-3. State when nanopb is preferable to protobuf-c (and the reverse).  
-4. Design a 3-language encode/decode matrix test and say when `memcmp` of encodings is required.
+3. State when nanopb is preferable to protobuf-c (and the reverse)—see [nanopb compare](protobuf-c-nanopb-compare.md).  
+4. Design a 3-language encode/decode matrix test and say when `memcmp` of encodings is required—see [cross-language fidelity](protobuf-cross-language-fidelity.md).
 
 ## Where to go next
 
