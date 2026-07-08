@@ -1,0 +1,79 @@
+# Latency tails, allocations, and GC
+
+## Problem
+
+Mean serialize time looks fine while p99 collapses under load. Managed runtimes pay for **allocation rate** with garbage-collection pauses; native heaps pay with allocator contention and cache misses. Codecs that “win” microbenchmarks by allocating per field can lose the service-level objective. Charts that show only means hide the failure mode.
+
+## Short answer
+
+Treat **allocation and copy behavior** as first-class when choosing among implementations in a family ([implementation variance](implementation-variance.md)). Prefer APIs that reuse buffers, stream, or reduce temporary strings when p99 matters. Interpret suite **means** as a starting point; validate under concurrency with **your** runtime GC settings and payload shape (201 [encode/decode cost](../201/encode-decode-cost.md)). Format brand does not determine GC pressure—implementation and shape do.
+
+## Constraints that matter
+
+| Factor | Effect on tails |
+|--------|-----------------|
+| Allocations per message | GC or allocator work |
+| Payload shape | Deep graphs → many objects |
+| Concurrency | Parallel allocate → pause clustering |
+| Buffer reuse | Lowers steady-state pressure |
+| Native vs managed | Different pause mechanics, same “don’t thrash the allocator” lesson |
+
+## Decision frame
+
+```text
+  SLO is p99/p999 under load?
+    → inspect allocs / pooling / streaming options
+    → load-test; do not stop at mean Results
+  Mean-only batch job nightly?
+    → means may suffice; still watch memory ceiling
+```
+
+| Signal | Action |
+|--------|--------|
+| High alloc/op in profiler | Try alternate lib or object reuse |
+| GC pause correlates with traffic | Reduce chattiness of decode |
+| Size fine, latency bad | CPU/alloc path—not network |
+
+## Failure modes
+
+| Mistake | Outcome |
+|---------|---------|
+| Optimizing mean only | p99 pages at peak |
+| Ignoring shape | Microbench on tiny structs misleads |
+| Cross-language GC comparison | Invalid |
+| Disabling GC in bench | Fantasy numbers |
+| Pooling without clear ownership | Use-after-free / data races |
+
+## Real-world sketch
+
+Two JSON libraries show similar mean decode on Python Results. Production p99 diverges: one builds full `dict` trees; another binds into typed objects with fewer temporary strings. A load test with production-shaped payloads and workers decides the pin—not the mean column alone.
+
+## In this suite
+
+| Resource | Role |
+|----------|------|
+| **Results** means / ops | Orientation within language |
+| Methodology | Warmup, outliers—read before quoting |
+| Optional memory metrics | If present for a language, use cautiously |
+| [Using this suite](using-this-suite.md) | Fair slice checklist |
+
+Many published tables emphasize central tendency; **you** still owe a concurrent validation.
+
+## What this suite cannot tell you
+
+- p99 under *your* framework and GC flags.  
+- Interaction with other allocators on the host.  
+- Whether pooling is safe in *your* concurrency model.
+
+## Common mistakes
+
+- “Binary always lower GC” without measuring.  
+- Comparing C# and Python pause behavior for format choice.  
+- Shipping the fastest mean lib that allocates unbounded on hostile input ([untrusted input](untrusted-input.md)).
+
+## Key takeaways
+
+- Tails track **allocations and shape**, not slogans.  
+- Means are necessary, not sufficient, for latency SLOs.  
+- Pick implementations with runtime behavior in mind.  
+- Confirm under load outside the harness.

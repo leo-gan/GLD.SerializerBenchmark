@@ -7,7 +7,7 @@ A starting point for **anyone** who wants to understand data serialization—stu
 3. Choose a format *for a workload* using the right lens (data work vs services).
 4. Connect concepts to **measured** libraries in this multi-language benchmark suite.
 
-Theory alone does not decide production choices. Use this course to build vocabulary and judgment, then validate with [Benchmarks](../analysis/index.md) and language **Results**.
+Theory alone does not decide production choices. Use this course to build vocabulary and judgment, then validate with [Benchmarks](../../analysis/index.md) and language **Results**.
 
 ---
 
@@ -34,17 +34,19 @@ The same formats appear under three perspectives on purpose. Each document answe
 1. Skim the **shared trade-offs** below (10 minutes).
 2. Read the **[historical perspective](historical_perspective.md)** once (big picture).
 3. Deep-dive the lens that matches your work (**[data science](data_science_perspective.md)** or **[engineering](engineer_perspective.md)**).
-4. Open [Serialization categories](../analysis/serialization_categories.md) and a language **Overview** / **Results** page for libraries you might actually use.
-5. When you need *mechanisms*, work the **[Deep dives](deep-dives/index.md)** track:
-    1. [Memory layout](deep-dives/memory-layout.md)
-    2. [Encode/decode cost](deep-dives/encode-decode-cost.md)
-    3. [Self-describing vs schema](deep-dives/self-describing-vs-schema-dependent.md)
-    4. [Schema evolution](deep-dives/schema-evolution.md)
-    5. [Dynamic vs IDL binary](deep-dives/dynamic-vs-idl-binary.md)
-    6. [Zero-copy](deep-dives/zero-copy.md)
-    7. [Compression vs format](deep-dives/compression-is-not-a-format.md)
+4. Open [Serialization categories](../../analysis/serialization_categories.md) and a language **Overview** / **Results** page for libraries you might actually use.
+5. When you need *mechanisms*, work the **[Serialization 201](../201/index.md)** track:
+    1. [Memory layout](../201/memory-layout.md)
+    2. [Encode/decode cost](../201/encode-decode-cost.md)
+    3. [Self-describing vs schema](../201/self-describing-vs-schema-dependent.md)
+    4. [Schema evolution](../201/schema-evolution.md)
+    5. [Dynamic vs IDL binary](../201/dynamic-vs-idl-binary.md)
+    6. [Zero-copy](../201/zero-copy.md)
+    7. [Compression vs format](../201/compression-is-not-a-format.md)
 
-You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single deep dive when you already know the question.
+You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single 201 article when you already know the question.
+
+When mechanisms are solid and you need **production multi-constraint judgment**, continue to [Serialization 301](../301/index.md).
 
 ---
 

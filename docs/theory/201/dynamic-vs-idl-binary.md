@@ -1,9 +1,5 @@
 # Dynamic vs IDL binary
 
-> After reading this page, one should be able to choose between MessagePack/CBOR-class dynamic binary encodings and Protocol Buffers–class IDL binary encodings for a given workload, without asserting a universal ranking of formats.
-
----
-
 ## Problem
 
 Suppose text JSON is already judged unsuitable for a particular hop—payloads are large enough, or the path is sufficiently performance-sensitive, that a binary encoding is under consideration. Two frequent alternatives are:
@@ -95,7 +91,7 @@ Logical value: `id = 42`, `label = "x"`.
 
 ### What this comparison is not
 
-- Not “Protocol Buffers versus Avro” (both are schema-centric; operational cultures differ—see the [data science perspective](../data_science_perspective.md) for Avro-oriented workloads).  
+- Not “Protocol Buffers versus Avro” (both are schema-centric; operational cultures differ—see the [data science perspective](../101/data_science_perspective.md) for Avro-oriented workloads).  
 - Not “binary versus zero-copy” (FlatBuffers-class designs are a separate point—[zero-copy layouts](zero-copy.md)).  
 - Not a guarantee that any MessagePack library outperforms any Protocol Buffers library in a given language.
 

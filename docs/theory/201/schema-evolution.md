@@ -1,9 +1,5 @@
 # Schema evolution
 
-> After reading this page, one should be able to plan additive changes so that older and newer producers and consumers can coexist, and to state the rules that make informal “we shall update the client later” strategies fail.
-
----
-
 ## Problem
 
 Services and data pipelines are seldom deployed as a single atomic unit. For a period of time one invariably observes **older readers with newer writers**, **newer readers with older writers**, or both. A field rename regarded as “local to one team,” reuse of a Protocol Buffers field number, or removal of a JSON property without a defined default can break a consumer that was overlooked—or corrupt analytical results for an extended period before the defect is noticed.
@@ -205,7 +201,7 @@ Resolution maps the writer’s `total_cents` bytes onto the reader’s `amount_c
 | New field | New number; old readers skip unknown numbers | New name + default for old data; old readers skip unknown names under resolution |
 | Operational centre of gravity | `.proto` ownership and reserved numbers | Schema registry, compatibility modes (BACKWARD / FORWARD / FULL, product-specific) |
 
-Neither model removes the need for a **compatibility policy**; they implement that policy with different mechanisms. For analytical pipelines and lake-oriented formats, see also the [data science perspective](../data_science_perspective.md).
+Neither model removes the need for a **compatibility policy**; they implement that policy with different mechanisms. For analytical pipelines and lake-oriented formats, see also the [data science perspective](../101/data_science_perspective.md).
 
 ### JSON and schemaless binary formats
 
@@ -258,7 +254,7 @@ A billing field `amount_cents` (integer) is “replaced” by `amount` (decimal 
 
 ## In this suite
 
-Benchmark fixtures assume a **stable logical model** so that libraries remain comparable; the suite is not a schema-registry simulator. Use these deep dives and the perspective documents for evolutionary *judgment*; use **Results** for encode and decode cost of a chosen codec once the contract is fixed.
+Benchmark fixtures assume a **stable logical model** so that libraries remain comparable; the suite is not a schema-registry simulator. Use Serialization 201 and the perspective documents for evolutionary *judgment*; use **Results** for encode and decode cost of a chosen codec once the contract is fixed.
 
 When evaluating schema-driven libraries on language overview pages, production use still requires an organization’s own compatibility process—the harness does not replace it.
 
