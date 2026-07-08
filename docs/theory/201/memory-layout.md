@@ -1,7 +1,5 @@
 # Memory layout
 
----
-
 ## Problem
 
 A structure in C, a record in Go, or an object graph in a managed language occupies a region of the process’s address space. Writing that region to disk or to a network socket appears inexpensive: no schema file, no serialization library, and high throughput on *this* machine.

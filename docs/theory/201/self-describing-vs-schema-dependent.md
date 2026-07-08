@@ -1,7 +1,5 @@
 # Self-describing vs schema
 
----
-
 ## Problem
 
 Two systems exchange the “same” logical record: an identifier, a name, and a monetary balance. Encoded as JSON, a practitioner can often open a log line and infer meaning from field names. Encoded as a compact binary sequence without accompanying documentation, the same practitioner sees only opaque bytes until a schema file, interface description, or other authoritative specification is consulted.

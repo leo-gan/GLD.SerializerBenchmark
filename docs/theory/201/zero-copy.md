@@ -1,7 +1,5 @@
 # Zero-copy
 
----
-
 ## Problem
 
 In the classical serialization model, a byte sequence arrives, a parser **constructs a new object graph** in the language runtime, application code reads properties from those objects, and memory is later reclaimed (manually or by garbage collection). The model is straightforward to reason about and becomes expensive when messages are large, numerous, or only partly examined—because the implementation pays to materialize fields that are never read.

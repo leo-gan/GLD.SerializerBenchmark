@@ -1,7 +1,5 @@
 # Compression vs format
 
----
-
 ## Problem
 
 When bandwidth or storage is expensive, a common sequence of decisions is:

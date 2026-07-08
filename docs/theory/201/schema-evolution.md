@@ -1,7 +1,5 @@
 # Schema evolution
 
----
-
 ## Problem
 
 Services and data pipelines are seldom deployed as a single atomic unit. For a period of time one invariably observes **older readers with newer writers**, **newer readers with older writers**, or both. A field rename regarded as “local to one team,” reuse of a Protocol Buffers field number, or removal of a JSON property without a defined default can break a consumer that was overlooked—or corrupt analytical results for an extended period before the defect is noticed.

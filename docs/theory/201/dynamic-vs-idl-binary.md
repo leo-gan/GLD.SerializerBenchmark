@@ -1,7 +1,5 @@
 # Dynamic vs IDL binary
 
----
-
 ## Problem
 
 Suppose text JSON is already judged unsuitable for a particular hop—payloads are large enough, or the path is sufficiently performance-sensitive, that a binary encoding is under consideration. Two frequent alternatives are:

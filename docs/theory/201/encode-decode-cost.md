@@ -1,7 +1,5 @@
 # Encode/decode cost
 
----
-
 ## Problem
 
 Informal comparisons frequently declare a format “winner” from a single chart (“replace text with binary and improve performance by an order of magnitude”). Organizations then change codecs and observe little improvement—or a regression—because the limiting factor was never “text versus binary” as an abstract dichotomy. The dominant costs are typically **tokenization**, **numeric conversion**, **memory allocation**, **copying**, and **payload shape**.
