@@ -1,8 +1,8 @@
-# Deep dives
+# Serialization 201
 
-Short, problem-driven essays on **how serialization mechanisms work** and **how to choose under constraints**. They sit between the [101 home](../index.md) / three lenses and the suite [categories](../../analysis/serialization_categories.md) + language **Results**.
+Short, problem-driven essays on **how serialization mechanisms work**. They sit between the [101 home](../index.md) / three lenses and later courses (**301** production judgment, **401** implementers) plus suite [categories](../../analysis/serialization_categories.md) + language **Results**.
 
-Theory alone does not decide production choices. Use these pages to build mechanism-level judgment, then validate with measured libraries.
+Theory alone does not decide production choices. Use these pages to build mechanism-level models, then validate with measured libraries and—when choosing under multi-constraint production pressure—continue to advanced courses as they ship.
 
 ---
 
@@ -10,10 +10,10 @@ Theory alone does not decide production choices. Use these pages to build mechan
 
 1. Skim [Serialization 101](../index.md) (definitions and trade-off axes).
 2. Optionally read one lens: [Historical](../historical_perspective.md), [Data science](../data_science_perspective.md), or [Engineering](../engineer_perspective.md).
-3. Work the deep dives below when you need *how* or *why*.
+3. Work the articles below when you need *how* or *why*.
 4. Open [Serialization categories](../../analysis/serialization_categories.md) and a language **Results** page for numbers on *this* harness.
 
-**Honesty rules (same as the rest of 101):** no universal winners; implementation beats brand name; payload shape matters; compare within paradigm and language; prose numbers are illustrative—**Results** own suite truth.
+**Honesty rules (same as Serialization 101):** no universal winners; implementation beats brand name; payload shape matters; compare within paradigm and language; prose numbers are illustrative—**Results** own suite truth.
 
 ---
 
@@ -54,10 +54,12 @@ Theory alone does not decide production choices. Use these pages to build mechan
 
 ---
 
-## After the dives
+## After Serialization 201
 
 | Next | Link |
 |------|------|
+| Production judgment (core next, when published) | Serialization **301** — choose under constraints |
+| Implement codecs (senior elective, when published) | Serialization **401** — wire + language paths + lab |
 | Suite families & decision sketch | [Serialization categories](../../analysis/serialization_categories.md) |
 | Services lens | [Engineering perspective](../engineer_perspective.md) |
 | Data & ML lens | [Data science perspective](../data_science_perspective.md) |

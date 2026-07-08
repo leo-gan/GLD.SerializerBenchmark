@@ -1,14 +1,16 @@
-# Serialization 101 — Deep Dives Plan (internal)
+# Serialization 201 — Mechanisms Plan (internal)
 
-**Status:** approved outline for branch `refactor/docs-serializing-101`  
-**Audience:** maintainers only — **not** published in MkDocs (lives outside `docs/`).  
-**Related public pages:** `docs/theory/`, `docs/analysis/serialization_categories.md`
+**Formerly:** Serialization 101 — Deep Dives Plan  
+**Status:** historical design for the 201 article set (mostly shipped under `docs/theory/deep-dives/`)  
+**Audience:** maintainers only — **not** published in MkDocs  
+**Program SoT:** `plans/COURSE_PROGRAM.md` (ladder, ownership; deferred B3/C2/D2/D3 → **301**)  
+**Public name:** Serialization **201** (nav); path may still be `deep-dives/`
 
 ---
 
 ## Goal
 
-Add a **Deep dives** layer under Serialization 101: short, problem-driven mechanism essays that sit **between** the high-level 101 home / three lenses and the suite categories + Results.
+Add a **mechanisms** layer (now **Serialization 201**): short, problem-driven mechanism essays that sit **between** the high-level 101 home / three lenses and the suite categories + Results.
 
 | Layer | Role | Location |
 |-------|------|----------|

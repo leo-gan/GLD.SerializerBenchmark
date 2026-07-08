@@ -66,7 +66,7 @@ nav:
       - Historical: theory/historical_perspective.md
       - Data Science: theory/data_science_perspective.md
       - Engineering: theory/engineer_perspective.md
-      - Deep dives:
+      - Serialization 201:
           - Overview: theory/deep-dives/index.md
           - Memory layout: theory/deep-dives/memory-layout.md
           - Encode/decode cost: theory/deep-dives/encode-decode-cost.md

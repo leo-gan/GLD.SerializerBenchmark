@@ -258,7 +258,7 @@ A billing field `amount_cents` (integer) is “replaced” by `amount` (decimal 
 
 ## In this suite
 
-Benchmark fixtures assume a **stable logical model** so that libraries remain comparable; the suite is not a schema-registry simulator. Use these deep dives and the perspective documents for evolutionary *judgment*; use **Results** for encode and decode cost of a chosen codec once the contract is fixed.
+Benchmark fixtures assume a **stable logical model** so that libraries remain comparable; the suite is not a schema-registry simulator. Use Serialization 201 and the perspective documents for evolutionary *judgment*; use **Results** for encode and decode cost of a chosen codec once the contract is fixed.
 
 When evaluating schema-driven libraries on language overview pages, production use still requires an organization’s own compatibility process—the harness does not replace it.
 

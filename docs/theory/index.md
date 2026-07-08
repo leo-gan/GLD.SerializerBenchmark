@@ -35,7 +35,7 @@ The same formats appear under three perspectives on purpose. Each document answe
 2. Read the **[historical perspective](historical_perspective.md)** once (big picture).
 3. Deep-dive the lens that matches your work (**[data science](data_science_perspective.md)** or **[engineering](engineer_perspective.md)**).
 4. Open [Serialization categories](../analysis/serialization_categories.md) and a language **Overview** / **Results** page for libraries you might actually use.
-5. When you need *mechanisms*, work the **[Deep dives](deep-dives/index.md)** track:
+5. When you need *mechanisms*, work the **[Serialization 201](deep-dives/index.md)** track:
     1. [Memory layout](deep-dives/memory-layout.md)
     2. [Encode/decode cost](deep-dives/encode-decode-cost.md)
     3. [Self-describing vs schema](deep-dives/self-describing-vs-schema-dependent.md)
@@ -44,7 +44,7 @@ The same formats appear under three perspectives on purpose. Each document answe
     6. [Zero-copy](deep-dives/zero-copy.md)
     7. [Compression vs format](deep-dives/compression-is-not-a-format.md)
 
-You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single deep dive when you already know the question.
+You can reverse steps 2 and 3 if you already have a concrete problem (“I need Parquet for analytics” or “I need an internal RPC format”). Jump to a single 201 article when you already know the question.
 
 ---
 
