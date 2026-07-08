@@ -18,22 +18,41 @@ Assumes 201: [self-describing vs schema](../201/self-describing-vs-schema-depend
 
 ## Mental model
 
-```text
-  message on the wire = concatenation of fields (order not required for correctness)
+A message is a sequence of **fields**. Each field is:
 
-  each field:
-    key (varint) = (field_number << 3) | wire_type
-    payload      = depends on wire_type
 ```
+[key varint] [payload...]
+```
+
+Where `key = (field_number << 3) | wire_type`.
 
 | Wire type | Value | Payload |
 |-----------|------:|---------|
-| VARINT | 0 | unsigned varint (ints, bool, enum as int, …) |
-| I64 | 1 | 8 bytes little-endian |
-| LEN | 2 | varint length `n`, then `n` bytes |
-| I32 | 5 | 4 bytes little-endian |
+| VARINT | 0 | unsigned varint |
+| I64    | 1 | exactly 8 bytes, little-endian |
+| LEN    | 2 | varint length `n` + `n` bytes |
+| I32    | 5 | exactly 4 bytes, little-endian |
 
-(Wire types 3/4 are historical group start/end—avoid in new designs.)
+Example tag strip for `id = 1` (field 1, varint):
+
+```
+08 01
+^^ ^^
+|  value = 1
+key = (1<<3) | 0
+```
+
+Nested message example (field 3 = manager with id=2):
+
+```
+1a 02 08 02
+|  |  |  |
+|  |  |  inner key+value for id=2
+|  |  inner message length = 2
+|  outer key for field 3, LEN
+```
+
+(Wire types 3/4 are legacy group markers — avoid.)
 
 **Teaching mini-message** (not the full suite `Person`):
 

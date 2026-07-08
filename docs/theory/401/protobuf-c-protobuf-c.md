@@ -114,19 +114,15 @@ return rv
 
 ### S4 — `required_field_pack` (core primitive)
 
-From the implementation pattern in `required_field_pack`:
+The pack function writes a tag (field id + wire type) followed by the payload. It dispatches on the field type in the descriptor:
 
-1. **`tag_pack(field->id, out)`** — write field number as a tag base.  
-2. **OR in the wire type** on the first tag byte (`VARINT`, `32BIT`, `64BIT`, `LENGTH_PREFIXED`).  
-3. **Type switch** packs the payload:
-   - `UINT32` / `INT32` / `ENUM` / … → varint packers  
-   - `FIXED32` / `FLOAT` → 4-byte little-endian  
-   - `FIXED64` / `DOUBLE` → 8-byte  
-   - `STRING` → length-prefixed bytes  
-   - `BYTES` → length-prefixed `ProtobufCBinaryData`  
-   - `MESSAGE` → nested `get_packed_size` + length + recursive `pack` (`prefixed_message_pack`)
+- Varint types (int, bool, enum) → varint encoding  
+- Fixed32 / float → 4-byte little-endian  
+- Fixed64 / double → 8-byte  
+- String / bytes → length prefix + data  
+- Message → length prefix + recursive pack of the sub-message
 
-This is the C analogue of prost’s `encode_raw` field write—except driven by **data** (descriptor) rather than generated straight-line code per message type.
+This is descriptor-driven (one interpreter loop) rather than monomorphized per-message code.
 
 ### S5 — Optional / repeated / oneof
 
@@ -165,15 +161,14 @@ Known numbers map through descriptor **field ranges** / tables to a `ProtobufCFi
 
 ### D3 — Parse into struct members
 
-For each scanned member, type-specific parsers (e.g. `parse_required_member`, `parse_optional_member`, `parse_repeated_member`, packed variants):
+For each scanned member the code calls type-specific helpers that write into the struct at the descriptor's offset:
 
-| Type | Storage action |
-|------|----------------|
-| Integers / bool / enum | Store into `member` at `offset` |
-| String | Allocate copy (or allocator policy); set `char *` |
-| Bytes | Allocate `ProtobufCBinaryData` |
-| Message | Recursive **`protobuf_c_message_unpack`** on the slice; store pointer |
-| Repeated | Grow array; parse element at next index; bump count |
+- Scalars → direct store
+- String/bytes → allocate + copy
+- Message → recursive unpack
+- Repeated → grow array and append
+
+The key point: everything is driven by the runtime descriptor, not generated straight-line code per field.
 
 ### D4 — Merge when the same field appears twice
 
@@ -214,7 +209,17 @@ Short form only—full treatment: [nanopb vs protobuf-c](protobuf-c-nanopb-compa
 | Suite | `protobuf-c` | Separate registration |
 | When | General C services | Embedded / constrained RAM |
 
-## Buffers & ownership
+## Buffers & ownership (simple diagram)
+
+```text
+struct (stack or heap)
+     │
+     ▼ pack
+caller buffer (you allocated)
+     ▲
+     │ unpack
+heap message → free_unpacked()
+```
 
 | Stage | Ownership |
 |-------|-----------|

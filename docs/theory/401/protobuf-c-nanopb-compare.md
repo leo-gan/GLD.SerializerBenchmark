@@ -41,6 +41,12 @@ Use **protobuf-c** when you want classic generated structs, descriptor-driven pa
 | **Typical failure** | OOM / leak if free skipped | Encode/decode fail if data exceeds static max |
 | **Suite registration** | `protobuf-c` | `nanopb` (separate name—compare within C + schema family) |
 
+**Ownership contrast (quick diagram)**
+
+protobuf-c: struct → pack → your buffer → unpack → heap message → `free_unpacked()`
+
+nanopb: static struct (with max sizes) → `pb_encode` (stream) → static buffer → `pb_decode` (into static struct) → usually nothing to free
+
 ## Step-by-step: how nanopb thinks about encode
 
 (Logical model of [nanopb](https://jpa.kapsi.fi/nanopb/); always check your nanopb version docs.)

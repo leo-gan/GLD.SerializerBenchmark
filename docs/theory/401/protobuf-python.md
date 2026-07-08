@@ -57,6 +57,15 @@ rec.CrimeCode = "A"
 
 proto3: unset scalars with default values are typically **omitted** on the wire.
 
+**MiniUser example** (`id=1, name="Ada"`):
+
+```python
+msg = pb2.MiniUser()
+msg.id = 1
+msg.name = "Ada"
+data = msg.SerializeToString()   # b'\x08\x01\x12\x03Ada'
+```
+
 ### 3. Encode / decode (API)
 
 ```python
@@ -70,75 +79,47 @@ Public API documentation: [Message.SerializeToString / ParseFromString](https://
 
 ## How the package implements serialization (step-by-step)
 
-The following is the **logical** path shared by backends; exact C/upb/Python frames differ, but the stages match the library design and [wire encoding](https://protobuf.dev/programming-guides/encoding/).
+The logical flow is the same across backends. The package turns a populated message into wire bytes using **descriptors** (field numbers, types, labels) that come from code generation.
 
-### S1 — Resolve the runtime backend
+### High-level flow
 
-On first use, `google.protobuf` picks an implementation ([python/README.md](https://github.com/protocolbuffers/protobuf/blob/main/python/README.md)):
+1. **Resolve backend** at import time (upb by default in modern wheels; pure Python fallback). You usually do not choose this explicitly.
+2. The message object holds field values + descriptor metadata.
+3. `SerializeToString()` walks present fields.
+4. For each field it emits a **key** (field number + wire type) then the payload.
+5. Nested messages become length-delimited blobs.
+6. The result is a new `bytes` object.
 
-| Backend | What it is | Notes |
-|---------|------------|--------|
-| **upb** | Extension on the [upb](https://github.com/protocolbuffers/protobuf/tree/main/upb) C library | **Default** since 4.21; preferred for speed; ships in PyPI wheels |
-| **cpp** | Extension wrapping C++ protobuf | **Deprecated / not in modern PyPI wheels**; legacy zero-copy C++ sharing |
-| **python** | Pure Python in `google/protobuf/internal` | Fallback; slowest; no native extension |
+This is exactly the tag + payload model from the [wire format article](protobuf-wire-format.md).
 
-Priority is normally **upb → cpp (if present) → python**. Override for diagnosis: env `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb|cpp|python`. Ad-hoc check: `google.protobuf.internal.api_implementation.Type()` (not a stable public API, useful for debugging).
+### Decision frame: which backend matters?
 
-**Why it matters:** the same `SerializeToString()` call may run native code or pure Python loops; Results and production must not mix backends accidentally.
+| Situation | Practical note |
+|-----------|----------------|
+| You care about speed in hot paths | upb (default) is usually best |
+| You need zero-copy sharing with C++ | Legacy cpp extension (rare now) |
+| You must run without any native extension | Pure Python backend |
+| Benchmarking or debugging | Explicitly pin via env var for reproducibility |
 
-### S2 — Message holds values + descriptor metadata
+## When to reach for the Python path vs others
 
-A generated class is more than a bag of attributes:
+- You are in a Python service or glue layer.
+- You want strong multi-language interop with minimal per-language code.
+- Debuggability (text JSON fallback) is valued over raw density.
 
-- **Field values** live in the message instance (and nested messages / repeated containers).  
-- A **descriptor** (from codegen) lists each field’s **number**, **type**, label (singular/repeated), and Python name.  
-- Wire identity is the **number + type**, not the Python identifier.
-
-When you assign `msg.Age = 36`, you update the in-memory value; nothing is written to the network yet.
-
-### S3 — `SerializeToString` entry
-
-Public method (simplified contract):
-
-1. Ensure the message is in a state the API allows (proto2 “required” / initialization checks where applicable; proto3 is laxer).  
-2. Optionally request **deterministic** serialization (map key order).  
-3. Dispatch into the active backend’s serialize implementation.  
-4. Return a new Python **`bytes`** object containing the binary payload.
-
-### S4 — Size / buffer preparation (backend)
-
-Backends typically:
-
-1. Walk fields (via descriptor or generated layout) and **compute encoded size** (or grow a buffer while writing).  
-2. Allocate an output buffer of that size (or a resizable buffer).  
-3. Write into that buffer, then wrap as `bytes` for Python.
-
-upb/cpp do this in native code with far fewer Python-level object touches than pure Python.
-
-### S5 — Field walk → wire primitives
-
-For each field that is **present** for encoding (proto3: non-default singulars; always-encoded repeated elements; etc.):
-
-1. Emit **key** = `(field_number << 3) | wire_type` as a varint.  
-2. Emit **payload** by type:
-   - integers/bool/enum → varint (or fixed32/64 for fixed types);  
-   - string/bytes → length-delimited;  
-   - nested message → serialize nested message to temporary bytes, then length-delimit;  
-   - repeated → one field or packed length-delimited block per language/proto rules;  
-   - map → repeated entries as synthetic key/value messages.
-
-This is the same algorithm as the [lab](lab-mini-protobuf-encoder.md) and [wire article](protobuf-wire-format.md)—the package is a production implementation of those rules.
-
-### S6 — Nested messages and recursion
-
-Nested messages call the same serialize path recursively (with a depth budget in native backends). The parent sees only a **length-delimited blob**.
-
-### S7 — Hand off to Python
-
-The finished buffer becomes an immutable `bytes` instance. The caller owns it; the Message is unchanged unless you clear it.
+If you need extremely low allocation or static memory, look at the C paths instead.
 
 ```text
-  msg fields  →  backend field walk  →  tag+payload bytes  →  PyBytes
+  Message fields
+       │
+       ▼
+  descriptor walk (by field number)
+       │
+       ▼
+  emit key (varint) + payload (varint / fixed / LEN)
+       │
+       ▼
+  bytes (immutable)
 ```
 
 ## How the package implements deserialization (step-by-step)
@@ -199,7 +180,17 @@ Truncated input, illegal varints, or invalid UTF-8 (where checked) raise parse e
 
 Functionally interchangeable for ordinary use; performance and some edge behaviors differ. Pin and document the backend for benchmarks.
 
-## Buffers & ownership
+## Buffers & ownership (simple diagram)
+
+```text
+Python Message object
+     │
+     ▼ SerializeToString
+new bytes (immutable, you own it)
+     ▲
+     │ ParseFromString
+input bytes/buffer (must stay alive during call)
+```
 
 | Object | Owner |
 |--------|--------|

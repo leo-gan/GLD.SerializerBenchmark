@@ -65,106 +65,53 @@ Field names are Rust-ified; **tags** still come from `.proto` numbers.
 
 ## How prost implements serialization (step-by-step)
 
-Source of truth for the trait API: [`prost/src/message.rs`](https://github.com/tokio-rs/prost/blob/master/prost/src/message.rs). Encoding helpers: `prost` encoding module (varint, wire types) documented as implementing the official encoding guide.
+prost turns a Rust struct into wire bytes using **compile-time knowledge** of the schema. There is no runtime descriptor table.
 
-### S1 — Codegen produces a concrete `Message` impl
+### High-level flow
 
-For each message type, prost-build (with `prost-derive` patterns) generates roughly:
+1. Codegen (prost-build) produces a struct + `impl Message`.
+2. `encoded_len()` does a dry-run sum of tags + payloads.
+3. `encode_raw()` writes the actual tags and payloads into a `BufMut`.
+4. Public helpers (`encode`, `encode_to_vec`) add capacity checks and length-delimited framing.
 
-- A **struct** with owned Rust fields (`String`, `Vec<T>`, `Option`/presence rules for proto3, nested structs).  
-- An **`impl Message`** whose methods know each field’s **tag number** and **wire type**.
+### Decision frame: when prost feels right
 
-There is **no runtime reflection table** like protobuf-c descriptors for the hot path: field knowledge is **compiled into** `encode_raw` / `merge_field`.
+- You are in a Rust service or CLI that must speak Protobuf.
+- You want zero-cost abstractions and strong typing.
+- You are comfortable with build-time code generation.
 
-### S2 — `encoded_len`: dry-run sizing
-
-```text
-encoded_len(message) =
-  sum over present fields of
-    key_len(tag) + payload_len(value)
-```
-
-Used so `encode` can check `BufMut::remaining_mut` and so `encode_to_vec` can `Vec::with_capacity(encoded_len())` and avoid realloc churn.
-
-### S3 — Public `encode` / `encode_to_vec`
-
-From the trait (logic, not a line-for-line quote):
-
-1. `required = self.encoded_len()`.  
-2. If the output buffer’s remaining capacity `< required` → `EncodeError` (or, for `encode_to_vec`, allocate exactly).  
-3. Call **`encode_raw(&mut buf)`** — the method that actually writes.  
-4. `encode_to_vec` is: allocate `Vec` with capacity `encoded_len()`, `encode_raw`, return the vec.
-
-`encode_length_delimited` prefixes a varint length (for embedding this message as a LEN field elsewhere).
-
-### S4 — `encode_raw`: field-by-field write
-
-Generated/hand-specialized code (conceptually):
+If you need dynamic messages or extremely small binaries, other Rust crates may fit better.
 
 ```text
-for each field that should appear on the wire:
-  encode_key(field_number, wire_type) into buf   // varint tag
-  encode_payload(field_type, value) into buf
-```
-
-Payload helpers (in `prost::encoding`):
-
-| Kind | Helper behavior |
-|------|-----------------|
-| Varint types | `encode_varint` |
-| Fixed32/64 | little-endian raw stores |
-| String / bytes | length delimiter + raw bytes |
-| Nested message | nested `encoded_len` + length delimiter + nested `encode_raw` |
-| Repeated | loop (unpacked) or packed block |
-| Map | as repeated map-entry messages |
-
-This is the same tag/payload model as [wire format](protobuf-wire-format.md).
-
-### S5 — `bytes::{Buf, BufMut}`
-
-prost writes through the [`bytes`](https://github.com/tokio-rs/bytes) traits so the destination can be a `Vec<u8>`, a pre-sized buffer, or other `BufMut` types—without reimplementing growth for every backend.
-
-```text
-  struct fields  →  encoded_len  →  encode_raw (tags+payloads)  →  BufMut
+  Rust struct
+       │
+       ▼
+  encoded_len()  →  capacity check
+       │
+       ▼
+  encode_raw()  →  tag (varint) + payload  →  BufMut
 ```
 
 ## How prost implements deserialization (step-by-step)
 
-### D1 — `decode` = default + `merge`
+### High-level flow
+
+1. `decode(buf)` creates `Default::default()` then calls `merge`.
+2. `merge` loops calling `decode_key` then `merge_field`.
+3. `merge_field` (generated) matches on tag and decodes into the struct.
+4. Unknown fields are skipped (or handled per current prost policy).
 
 ```text
-decode(buf):
-  message = Default::default()
-  merge(&mut message, buf)
-  return message
+  bytes
+       │
+       ▼
+  decode_key loop
+       │
+       ▼
+  merge_field(tag, wire_type)  →  populate struct
 ```
 
-So decode never “constructs field-by-field from a schema registry”; it **fills a default struct**.
-
-### D2 — `merge`: the tag loop
-
-From `Message::merge` (same source file):
-
-```text
-while buf still has bytes:
-  (tag, wire_type) = decode_key(buf)   // read tag varint, split number / wire type
-  message.merge_field(tag, wire_type, buf, ctx)?
-```
-
-`DecodeContext` tracks **recursion depth** for nested messages (default recursion limit; `no-recursion-limit` feature exists). Hostility/depth is a real concern ([301 untrusted input](../301/untrusted-input.md)).
-
-### D3 — `merge_field`: generated match on tag
-
-Each message’s `merge_field` is essentially:
-
-```text
-match tag:
-  1 => decode this field’s wire_type into self.field_1
-  2 => ...
-  _ => skip unknown field given wire_type  // or retain, per version/features
-```
-
-Wrong `wire_type` for a known tag → `DecodeError`.
+A `DecodeContext` tracks recursion depth to protect against malicious nesting.
 
 ### D4 — Type-specific merge
 
@@ -198,14 +145,23 @@ Insufficient data, invalid varint, recursion limit, bad UTF-8 → `DecodeError`.
 
 Hot path = **monomorphized** encode/decode per type, not a single reflective interpreter.
 
-## Buffers & ownership
+## Buffers & ownership (simple diagram)
 
-| Value | Notes |
-|-------|--------|
-| Generated struct | Fully owned Rust data |
-| `encode_to_vec` output | Owned `Vec<u8>` |
-| `decode` input | Borrowed `impl Buf` for the call duration |
-| Nested decode | Recursion context decrements depth |
+```text
+Your struct (owned fields)
+     │
+     ▼ encode
+Vec<u8>  (you own the output)
+     ▲
+     │ decode
+&[u8] (borrowed during call) → new owned struct
+```
+
+| Value | Owner / Lifetime |
+|-------|------------------|
+| Generated struct | You (owned `String`/`Vec`) |
+| `encode_to_vec()` result | You own the `Vec<u8>` |
+| Decode input slice | Must outlive the call |
 
 ## In this suite
 

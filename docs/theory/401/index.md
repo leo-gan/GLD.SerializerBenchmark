@@ -43,17 +43,16 @@ By the end of this course you should be able to:
 
 ## Modules
 
-| Module | Article | Role |
-|--------|---------|------|
-| Shared wire | [Protobuf wire format step-by-step](protobuf-wire-format.md) | Byte-level rules + worked MiniUser |
-| Python path | [google.protobuf path](protobuf-python.md) | Codegen → SerializeToString / ParseFromString + backends |
-| Rust path | [prost path](protobuf-rust-prost.md) | prost-build → `Message` encode/decode internals |
-| C path | [protobuf-c path](protobuf-c-protobuf-c.md) | Descriptor pack/unpack + ownership |
-| C compare | [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md) | Embedded vs classic C engines |
-| Lab | [Mini Protobuf subset encoder/decoder](lab-mini-protobuf-encoder.md) | Build + golden + official validate |
-| Cross-language | [Same bytes, three runtimes](protobuf-cross-language-fidelity.md) | Interoperability vs bit-identity |
+**Core (MVP)**
+- [Protobuf wire format step-by-step](protobuf-wire-format.md) — tags, varints, LEN, nested, unpacked repeated
+- Language paths — codegen, ownership, encode/decode in each runtime
+- [Lab: mini encoder/decoder](lab-mini-protobuf-encoder.md) — build + validate against goldens
 
-**Suggested order:** wire → lab → language paths (Python → Rust → C) → nanopb compare → cross-language fidelity.
+**Second wave**
+- [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md)
+- [Same bytes, three runtimes](protobuf-cross-language-fidelity.md)
+
+**Suggested order:** wire → lab (parallel after wire) → Python → Rust → C → nanopb compare → cross-language fidelity.
 
 ## Honesty rules
 

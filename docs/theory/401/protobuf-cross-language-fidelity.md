@@ -87,7 +87,7 @@ If bit-identity fails but logical cross-decode works, document **why** (field or
 
 ### 5. Golden vectors for the subset you hand-rolled
 
-The [lab](lab-mini-protobuf-encoder.md) goldens (e.g. `08 01 12 03 41 64 61`) should decode in **all three** official stacks—excellent smoke test for “we speak the same wire.”
+Use the [lab](lab-mini-protobuf-encoder.md) goldens (e.g. `08 01 12 03 41 64 61`) as the **minimal cross-runtime test**. Encode the same logical `MiniUser` in Python, Rust, and C, then decode in the other two runtimes. This is the cheapest way to prove that your three implementations actually speak the same wire.
 
 ### 6. Track known semantic footguns
 
