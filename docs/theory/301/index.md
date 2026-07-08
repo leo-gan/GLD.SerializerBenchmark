@@ -71,7 +71,7 @@ Articles ship incrementally. The hub lists the full curriculum; missing pages ar
 | Article | You should be able to… | Status |
 |---------|------------------------|--------|
 | [Using this suite without fooling yourself](using-this-suite.md) | Read Results within paradigm and language | **Published** |
-| Implementation variance within a family | Choose among libraries without ranking formats globally | Planned |
+| [Implementation variance within a family](implementation-variance.md) | Choose among libraries without ranking formats globally | **Published** |
 
 ### Capstones
 

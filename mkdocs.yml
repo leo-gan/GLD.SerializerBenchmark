@@ -82,6 +82,7 @@ nav:
       - Row vs columnar: theory/301/row-vs-columnar.md
       - Polyglot estates: theory/301/polyglot-estates.md
       - Using this suite: theory/301/using-this-suite.md
+      - Implementation variance: theory/301/implementation-variance.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
