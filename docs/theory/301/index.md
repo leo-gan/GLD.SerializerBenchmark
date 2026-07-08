@@ -77,9 +77,9 @@ Articles ship incrementally. The hub lists the full curriculum; missing pages ar
 
 | Case study | Focus | Status |
 |------------|--------|--------|
-| Public REST API | JSON + validation vs dual contracts | Planned |
-| Internal high-QPS RPC | Schema-driven vs schemaless binary | Planned |
-| Event backbone | Avro/Protobuf + evolution under rolling deploy | Planned |
+| [Public REST API](case-public-rest-api.md) | JSON + validation vs dual contracts | **Published** |
+| [Internal high-QPS RPC](case-internal-rpc.md) | Schema-driven vs schemaless binary | **Published** |
+| [Event backbone](case-event-stream.md) | Avro/Protobuf + evolution under rolling deploy | **Published** |
 
 ## Honesty rules
 
@@ -96,7 +96,7 @@ Same program rules as 101 / 201:
 
 ## Assessment (self-check)
 
-When articles and capstones are published, treat the three MVP case studies as the course exam: under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the harness.
+Treat the three MVP case studies as the course exam: under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the harness.
 
 ## Where to go next
 

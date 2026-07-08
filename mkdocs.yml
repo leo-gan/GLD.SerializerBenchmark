@@ -83,6 +83,9 @@ nav:
       - Polyglot estates: theory/301/polyglot-estates.md
       - Using this suite: theory/301/using-this-suite.md
       - Implementation variance: theory/301/implementation-variance.md
+      - Case: public REST API: theory/301/case-public-rest-api.md
+      - Case: internal RPC: theory/301/case-internal-rpc.md
+      - Case: event backbone: theory/301/case-event-stream.md
   - C#:
       - Overview: c-sharp/index.md
       - Results: c-sharp/results.md
