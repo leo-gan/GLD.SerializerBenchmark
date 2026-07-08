@@ -252,12 +252,12 @@ Full program nav: `COURSE_PROGRAM.md`.
 
 ## Done when (MVP)
 
-- [ ] Hub + 9 MVP articles under **Serialization 301**  
-- [ ] Outcomes + prereqs on hub match this plan / program SoT  
-- [ ] Owned topics not re-taught from 201/401  
-- [ ] Capstones E1–E3 include validate + limits  
-- [ ] 201 hub points here as default next; hub points to 401 elective  
-- [ ] Plan stays outside MkDocs  
+- [x] Hub + 9 MVP articles under **Serialization 301**  
+- [x] Outcomes + prereqs on hub match this plan / program SoT  
+- [x] Owned topics not re-taught from 201/401  
+- [x] Capstones E1–E3 include validate + limits  
+- [x] 201 hub points here as default next; hub points to 401 elective  
+- [x] Plan stays outside MkDocs  
 
 ---
 
