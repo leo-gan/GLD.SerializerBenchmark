@@ -79,6 +79,8 @@ nav:
       - Overview: theory/301/index.md
       - Trust boundaries: theory/301/trust-boundaries.md
       - Two schema cultures: theory/301/two-schema-cultures.md
+      - Row vs columnar: theory/301/row-vs-columnar.md
+      - Polyglot estates: theory/301/polyglot-estates.md
       - Using this suite: theory/301/using-this-suite.md
   - C#:
       - Overview: c-sharp/index.md

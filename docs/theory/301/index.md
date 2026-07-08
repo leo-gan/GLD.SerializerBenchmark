@@ -63,8 +63,8 @@ Articles ship incrementally. The hub lists the full curriculum; missing pages ar
 
 | Article | You should be able to… | Status |
 |---------|------------------------|--------|
-| Row vs columnar at system scale | Keep RPC codecs out of lake design (and the reverse) | Planned |
-| Polyglot estates | Defend one product contract across runtimes | Planned |
+| [Row vs columnar at system scale](row-vs-columnar.md) | Keep RPC codecs out of lake design (and the reverse) | **Published** |
+| [Polyglot estates](polyglot-estates.md) | Defend one product contract across runtimes | **Published** |
 
 ### Performance as engineering
 
