@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { allFixtures, deepEqual } from './data.js';
+import { allFixtures, deepEqual, objectGraphEqual } from './data.js';
 import { ALL_SERIALIZERS, performance } from './serializers/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -83,6 +83,8 @@ for (const fx of fixtures) {
           try {
             if (fx.name === 'Integer' && ser.name === 'bson') {
               ok = out && (out.v === fx.value || out === fx.value);
+            } else if (fx.name === 'ObjectGraph') {
+              ok = objectGraphEqual(fx.value, out);
             } else if (ser.name.startsWith('simdjson')) {
               ok = true; // may coerce number types slightly
             } else {

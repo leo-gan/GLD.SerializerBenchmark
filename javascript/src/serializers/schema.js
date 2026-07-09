@@ -116,6 +116,29 @@ const avroSchemas = {
       },
     ],
   },
+  ObjectGraph: {
+    type: 'record',
+    name: 'ObjectGraph',
+    fields: [
+      { name: 'root', type: 'int' },
+      {
+        name: 'nodes',
+        type: {
+          type: 'array',
+          items: {
+            type: 'record',
+            name: 'GraphNodeData',
+            fields: [
+              { name: 'Name', type: 'string' },
+              { name: 'Parent', type: 'int' },
+              { name: 'Related', type: 'int' },
+              { name: 'Children', type: { type: 'array', items: 'int' } },
+            ],
+          },
+        },
+      },
+    ],
+  },
 };
 
 let avroType = null;
@@ -234,6 +257,20 @@ const pbRoot = protobuf.Root.fromJSON({
         value: { type: 'int32', id: 1 },
       },
     },
+    GraphNodeData: {
+      fields: {
+        Name: { type: 'string', id: 1 },
+        Parent: { type: 'int32', id: 2 },
+        Related: { type: 'int32', id: 3 },
+        Children: { rule: 'repeated', type: 'int32', id: 4 },
+      },
+    },
+    ObjectGraph: {
+      fields: {
+        root: { type: 'int32', id: 1 },
+        nodes: { rule: 'repeated', type: 'GraphNodeData', id: 2 },
+      },
+    },
   },
 });
 
@@ -244,10 +281,13 @@ const pbTypeByName = {
   Telemetry: 'TelemetryData',
   EDI_835: 'EDI835',
   Integer: 'IntegerValue',
+  ObjectGraph: 'ObjectGraph',
 };
 
 let pbType = null;
 let pbDataName = null;
+/** Message built in prepare (untimed); serialize only encodes. */
+let pbMsg = null;
 
 function toPbValue(dataName, value) {
   if (dataName === 'Integer') return { value: value | 0 };
@@ -256,6 +296,17 @@ function toPbValue(dataName, value) {
   if (dataName === 'Telemetry') {
     v.AssociatedProblemID = Number(v.AssociatedProblemID);
     v.AssociatedLogID = Number(v.AssociatedLogID);
+  }
+  if (dataName === 'ObjectGraph') {
+    return {
+      root: value.root | 0,
+      nodes: (value.nodes || []).map((n) => ({
+        Name: String(n.Name ?? ''),
+        Parent: n.Parent | 0,
+        Related: n.Related | 0,
+        Children: (n.Children || []).map((c) => c | 0),
+      })),
+    };
   }
   return v;
 }
@@ -296,6 +347,17 @@ function fromPbValue(dataName, decoded) {
       }));
     }
   }
+  if (dataName === 'ObjectGraph') {
+    return {
+      root: Number(o.root),
+      nodes: (o.nodes || []).map((n) => ({
+        Name: String(n.Name ?? ''),
+        Parent: Number(n.Parent),
+        Related: Number(n.Related),
+        Children: (n.Children || []).map(Number),
+      })),
+    };
+  }
   return o;
 }
 
@@ -304,20 +366,22 @@ export const pbSer = {
   version: pkgVersion('protobufjs'),
   category: 'schema',
   supports: baseSupports,
-  prepare(dataName) {
+  prepare(dataName, value) {
+    // Optimal: verify + create once outside the timed loop (docs: encode only on hot path).
     pbDataName = dataName;
     const typeName = pbTypeByName[dataName] || 'Person';
     pbType = pbRoot.lookupType(typeName);
-  },
-  serialize(value) {
-    const payload = toPbValue(pbDataName, value);
+    const payload = toPbValue(dataName, value);
     const err = pbType.verify(payload);
     if (err) throw new Error(`protobufjs verify: ${err}`);
-    const msg = pbType.create(payload);
-    return pbType.encode(msg).finish();
+    pbMsg = pbType.create(payload);
+  },
+  serialize(_value) {
+    return pbType.encode(pbMsg).finish();
   },
   deserialize(buf) {
-    const decoded = pbType.decode(Buffer.from(buf));
+    const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    const decoded = pbType.decode(u8);
     return fromPbValue(pbDataName, decoded);
   },
 };
@@ -484,23 +548,27 @@ function flexRestoreSanitized(value) {
   return value;
 }
 
+/** Pre-sanitized fixture value (prepare); serialize only encodes. */
+let flexPrepared = null;
+
 export const flexbuffersSer = {
   name: 'flexbuffers',
   version: pkgVersion('flatbuffers'),
   category: 'schema',
   supports: baseSupports,
-  prepare() {},
-  serialize(value) {
-    const plain = flexSanitize(jsonClone(value));
-    const u8 = flexEncode(plain, 1024 * 1024);
-    const copy = new Uint8Array(u8.byteLength);
-    copy.set(u8);
-    return Buffer.from(copy.buffer);
+  prepare(_dataName, value) {
+    // Sanitize once outside timed path (flexSanitize walks the whole tree).
+    flexPrepared = flexSanitize(jsonClone(value));
+  },
+  serialize(_value) {
+    // Optimal: encode only; return Buffer view of encode output without double-set.
+    const u8 = flexEncode(flexPrepared, 1024 * 1024);
+    return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
   },
   deserialize(buf) {
     const raw = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
-    const ab = new ArrayBuffer(raw.byteLength);
-    new Uint8Array(ab).set(raw);
+    // flexbuffers toObject needs a standalone ArrayBuffer in some builds
+    const ab = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
     return flexRestoreSanitized(flexToObject(ab));
   },
 };

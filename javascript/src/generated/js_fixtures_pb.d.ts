@@ -320,3 +320,57 @@ export declare type IntegerValue = Message<"js_fixtures.IntegerValue"> & {
  */
 export declare const IntegerValueSchema: GenMessage<IntegerValue>;
 
+/**
+ * Flat graph with index edges (cycles without recursive identity).
+ *
+ * @generated from message js_fixtures.GraphNodeData
+ */
+export declare type GraphNodeData = Message<"js_fixtures.GraphNodeData"> & {
+  /**
+   * @generated from field: string Name = 1;
+   */
+  Name: string;
+
+  /**
+   * @generated from field: int32 Parent = 2;
+   */
+  Parent: number;
+
+  /**
+   * @generated from field: int32 Related = 3;
+   */
+  Related: number;
+
+  /**
+   * @generated from field: repeated int32 Children = 4;
+   */
+  Children: number[];
+};
+
+/**
+ * Describes the message js_fixtures.GraphNodeData.
+ * Use `create(GraphNodeDataSchema)` to create a new message.
+ */
+export declare const GraphNodeDataSchema: GenMessage<GraphNodeData>;
+
+/**
+ * @generated from message js_fixtures.ObjectGraph
+ */
+export declare type ObjectGraph = Message<"js_fixtures.ObjectGraph"> & {
+  /**
+   * @generated from field: int32 root = 1;
+   */
+  root: number;
+
+  /**
+   * @generated from field: repeated js_fixtures.GraphNodeData nodes = 2;
+   */
+  nodes: GraphNodeData[];
+};
+
+/**
+ * Describes the message js_fixtures.ObjectGraph.
+ * Use `create(ObjectGraphSchema)` to create a new message.
+ */
+export declare const ObjectGraphSchema: GenMessage<ObjectGraph>;
+

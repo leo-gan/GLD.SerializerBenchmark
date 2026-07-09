@@ -61,3 +61,15 @@ message EDI835 {
 message IntegerValue {
   int32 value = 1;
 }
+
+// Flat graph with index edges (cycles without recursive identity).
+message GraphNodeData {
+  string Name = 1;
+  int32 Parent = 2;
+  int32 Related = 3;
+  repeated int32 Children = 4;
+}
+message ObjectGraph {
+  int32 root = 1;
+  repeated GraphNodeData nodes = 2;
+}

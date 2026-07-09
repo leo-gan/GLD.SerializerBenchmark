@@ -4,8 +4,9 @@ import { Encoder as CborXEncoder, Decoder as CborXDecoder } from 'cbor-x';
 import cbor from 'cbor';
 import { BSON } from 'bson';
 import bser from 'bser';
-import { pkgVersion, baseSupports } from './common.js';
+import { pkgVersion, baseSupports, asBuffer } from './common.js';
 
+// Reuse encoder instances (msgpackr docs: Packr/Unpackr are stateful and reusable).
 const packr = new Packr({ useRecords: false, structuredClone: false });
 const unpackr = new Unpackr({ useRecords: false });
 
@@ -19,7 +20,7 @@ export const msgpackrSer = {
     return packr.pack(value);
   },
   deserialize(buf) {
-    return unpackr.unpack(buf);
+    return unpackr.unpack(asBuffer(buf));
   },
 };
 
@@ -30,10 +31,13 @@ export const msgpackOffSer = {
   supports: baseSupports,
   prepare() {},
   serialize(value) {
-    return Buffer.from(msgpackOfficial.encode(value));
+    // encode returns Uint8Array; avoid Buffer.from copy (runner accepts length).
+    return msgpackOfficial.encode(value);
   },
   deserialize(buf) {
-    return msgpackOfficial.decode(buf);
+    // decode accepts Uint8Array / ArrayBuffer views without requiring Buffer.
+    const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    return msgpackOfficial.decode(u8);
   },
 };
 
@@ -49,7 +53,7 @@ export const cborxSer = {
     return cborxEnc.encode(value);
   },
   deserialize(buf) {
-    return cborxDec.decode(buf);
+    return cborxDec.decode(buf instanceof Uint8Array ? buf : new Uint8Array(buf));
   },
 };
 
@@ -63,7 +67,8 @@ export const cborSer = {
     return cbor.encode(value);
   },
   deserialize(buf) {
-    return cbor.decodeFirstSync(buf);
+    // decodeFirstSync is the recommended sync path for a complete buffer.
+    return cbor.decodeFirstSync(asBuffer(buf));
   },
 };
 
@@ -79,7 +84,8 @@ export const bsonSer = {
     return BSON.serialize(doc);
   },
   deserialize(buf) {
-    return BSON.deserialize(Buffer.from(buf));
+    // BSON.serialize returns Buffer; deserialize accepts Buffer/Uint8Array.
+    return BSON.deserialize(asBuffer(buf));
   },
 };
 
@@ -93,7 +99,7 @@ export const bserSer = {
     return bser.dumpToBuffer(value);
   },
   deserialize(buf) {
-    return bser.loadFromBuffer(buf);
+    return bser.loadFromBuffer(asBuffer(buf));
   },
 };
 

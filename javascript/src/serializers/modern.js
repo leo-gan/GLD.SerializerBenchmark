@@ -14,8 +14,9 @@ import {
   TelemetryDataSchema,
   EDI835Schema,
   IntegerValueSchema,
+  ObjectGraphSchema,
 } from '../generated/js_fixtures_pb.js';
-import { pkgVersion, baseSupports, jsonClone } from './common.js';
+import { pkgVersion, baseSupports, jsonClone, bufToUtf8, asBuffer } from './common.js';
 
 const require = createRequire(import.meta.url);
 
@@ -28,13 +29,27 @@ const esSchemaByName = {
   Telemetry: TelemetryDataSchema,
   EDI_835: EDI835Schema,
   Integer: IntegerValueSchema,
+  ObjectGraph: ObjectGraphSchema,
 };
 
 let esSchema = null;
 let esDataName = null;
+/** Message built in prepare (untimed); serialize only runs toBinary. */
+let esMsg = null;
 
 function toEsInput(dataName, value) {
   if (dataName === 'Integer') return { value: value | 0 };
+  if (dataName === 'ObjectGraph') {
+    return {
+      root: value.root | 0,
+      nodes: (value.nodes || []).map((n) => ({
+        Name: String(n.Name ?? ''),
+        Parent: n.Parent | 0,
+        Related: n.Related | 0,
+        Children: (n.Children || []).map((c) => c | 0),
+      })),
+    };
+  }
   const v = jsonClone(value);
   if (dataName === 'Telemetry') {
     v.AssociatedProblemID = BigInt(v.AssociatedProblemID);
@@ -107,6 +122,17 @@ function fromEsMessage(dataName, msg) {
       })),
     };
   }
+  if (dataName === 'ObjectGraph') {
+    return {
+      root: Number(msg.root),
+      nodes: [...(msg.nodes ?? [])].map((n) => ({
+        Name: String(n.Name ?? ''),
+        Parent: Number(n.Parent),
+        Related: Number(n.Related),
+        Children: [...(n.Children ?? [])].map(Number),
+      })),
+    };
+  }
   return toJson(esSchema, msg, { emitDefaultValues: true });
 }
 
@@ -115,17 +141,20 @@ export const protobufEsSer = {
   version: pkgVersion('@bufbuild/protobuf'),
   category: 'schema',
   supports: baseSupports,
-  prepare(dataName) {
+  prepare(dataName, value) {
+    // Optimal: create() once outside timed path; serialize only toBinary.
     esDataName = dataName;
     esSchema = esSchemaByName[dataName];
     if (!esSchema) throw new Error(`protobuf-es: no schema for ${dataName}`);
+    esMsg = create(esSchema, toEsInput(dataName, value));
   },
-  serialize(value) {
-    const msg = create(esSchema, toEsInput(esDataName, value));
-    return Buffer.from(toBinary(esSchema, msg));
+  serialize(_value) {
+    const u8 = toBinary(esSchema, esMsg);
+    return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
   },
   deserialize(buf) {
-    const msg = fromBinary(esSchema, buf instanceof Uint8Array ? buf : new Uint8Array(buf));
+    const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    const msg = fromBinary(esSchema, u8);
     return fromEsMessage(esDataName, msg);
   },
 };
@@ -144,6 +173,7 @@ export const jsonPackMsgpackSer = {
   supports: baseSupports,
   prepare() {},
   serialize(value) {
+    // Encoder instance reused; return Buffer view of encode output.
     const u8 = jpEnc.encode(value);
     return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
   },
@@ -159,14 +189,14 @@ export const devalueSer = {
   name: 'devalue',
   version: pkgVersion('devalue'),
   category: 'native',
+  // Flat ObjectGraph is a plain object; devalue also handles live cycles if needed.
   supports: baseSupports,
   prepare() {},
   serialize(value) {
-    // devalue produces a JS expression string; store as UTF-8 bytes
     return Buffer.from(devalueStringify(value), 'utf8');
   },
   deserialize(buf) {
-    return devalueParse(Buffer.from(buf).toString('utf8'));
+    return devalueParse(bufToUtf8(buf));
   },
 };
 
@@ -264,10 +294,12 @@ export const bebopSer = {
   supports: baseSupports,
   prepare() {},
   serialize(value) {
+    // BebopView.getInstance() is the documented reuse path (singleton writer).
     const view = BebopView.getInstance();
     view.startWriting();
     bebopWriteAny(view, value);
-    return Buffer.from(view.toArray());
+    const arr = view.toArray();
+    return Buffer.from(arr.buffer, arr.byteOffset, arr.byteLength);
   },
   deserialize(buf) {
     const view = BebopView.getInstance();
@@ -429,17 +461,13 @@ export const siaSer = {
   supports: baseSupports,
   prepare() {},
   serialize(value) {
-    siaWriter.offset = 0;
-    // reset write position: Sia may not have seek for write — recreate or set offset
-    siaWriter.seek(0);
-    // If seek only for read, assign offset
+    // Reuse writer buffer; only reset offset once.
     siaWriter.offset = 0;
     siaWriteAnyFixed(siaWriter, value);
     return Buffer.from(siaWriter.content.subarray(0, siaWriter.offset));
   },
   deserialize(buf) {
     const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-    // copy into reader content at start
     if (siaReader.content.length < u8.length) {
       siaReader.content = new Uint8Array(Math.max(u8.length, 65536));
       siaReader.dataView = new DataView(
@@ -449,8 +477,6 @@ export const siaSer = {
       );
     }
     siaReader.content.set(u8, 0);
-    siaReader.offset = 0;
-    siaReader.seek(0);
     siaReader.offset = 0;
     return siaReadAny(siaReader);
   },

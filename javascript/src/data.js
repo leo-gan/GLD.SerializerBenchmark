@@ -105,11 +105,46 @@ export function makeEdi(rng) {
   };
 }
 
-export function makeGraph() {
-  const root = { Name: 'root', Children: [] };
-  const child = { Name: 'child', Children: [], Parent: root };
-  root.Children.push(child);
-  return root;
+/** Null edge index for ObjectGraph (matches C/Rust GRAPH_NULL). */
+export const GRAPH_NULL = -1;
+
+/**
+ * Flat ObjectGraph: same topology as C#/Python/C/Rust.
+ * Edges are node indices (not live parent pointers) so every codec can encode cycles.
+ */
+export function makeObjectGraph() {
+  return {
+    root: 0,
+    nodes: [
+      { Name: 'Root', Parent: GRAPH_NULL, Related: GRAPH_NULL, Children: [1, 2] },
+      { Name: 'Child1', Parent: 0, Related: 2, Children: [] },
+      { Name: 'Child2', Parent: 0, Related: 1, Children: [] },
+    ],
+  };
+}
+
+/** Structural fidelity for ObjectGraph (names + index edges + sibling cycle). */
+export function objectGraphEqual(a, b) {
+  if (!a || !b || a.root !== b.root) return false;
+  if (!Array.isArray(a.nodes) || !Array.isArray(b.nodes) || a.nodes.length !== b.nodes.length) {
+    return false;
+  }
+  for (let i = 0; i < a.nodes.length; i++) {
+    const na = a.nodes[i];
+    const nb = b.nodes[i];
+    if (na.Name !== nb.Name || na.Parent !== nb.Parent || na.Related !== nb.Related) return false;
+    if (!deepEqual(na.Children || [], nb.Children || [])) return false;
+  }
+  if (a.nodes.length >= 3 && a.root === 0) {
+    const root = a.nodes[0];
+    if ((root.Children || []).length >= 2) {
+      const i1 = root.Children[0];
+      const i2 = root.Children[1];
+      if (a.nodes[i1].Parent !== 0 || a.nodes[i2].Parent !== 0) return false;
+      if (a.nodes[i1].Related !== i2 || a.nodes[i2].Related !== i1) return false;
+    }
+  }
+  return true;
 }
 
 export function allFixtures(seed = 42) {
@@ -121,7 +156,7 @@ export function allFixtures(seed = 42) {
     { name: 'SimpleObject', value: makeSimple(rng), circular: false },
     { name: 'StringArray', value: makeStringArray(rng), circular: false },
     { name: 'EDI_835', value: makeEdi(rng), circular: false },
-    // ObjectGraph only for v8-serializer / bser if they handle cycles
+    { name: 'ObjectGraph', value: makeObjectGraph(), circular: true },
   ];
 }
 
