@@ -126,6 +126,26 @@ static inline int pb_full_encode(const test_fixture_t *fx, uint8_t *buf, size_t 
             }
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            const object_graph_t *g = &fx->graph;
+            if (pb_append_varint(buf, cap, &o, 70, (uint64_t)(uint32_t)(int32_t)g->root)) return -1;
+            int nn = g->node_count; if (nn < 0) nn = 0; if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            if (pb_append_varint(buf, cap, &o, 71, (uint64_t)(uint32_t)nn)) return -1;
+            for (int i = 0; i < nn; i++) {
+                const graph_node_t *n = &g->nodes[i];
+                uint8_t sub[256]; size_t so = 0;
+                if (pb_append_str(sub, sizeof sub, &so, 1, n->name)) return -1;
+                /* parent/related as signed zig? use int32 varint as uint cast */
+                if (pb_append_varint(sub, sizeof sub, &so, 2, (uint64_t)(uint32_t)(int32_t)n->parent)) return -1;
+                if (pb_append_varint(sub, sizeof sub, &so, 3, (uint64_t)(uint32_t)(int32_t)n->related)) return -1;
+                int nc = n->child_count; if (nc < 0) nc = 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                for (int c = 0; c < nc; c++)
+                    if (pb_append_varint(sub, sizeof sub, &so, 4, (uint64_t)(uint32_t)(int32_t)n->children[c])) return -1;
+                if (pb_append_bytes(buf, cap, &o, 72, sub, so)) return -1;
+            }
+            break;
+        }
         default: return -1;
     }
     *out_len = o;
@@ -283,6 +303,43 @@ static inline int pb_full_decode(const uint8_t *buf, size_t len, test_fixture_t 
                 else return -1;
             }
             if (out->edi.claim_count < claims_n) out->edi.claim_count = claims_n;
+
+        } else if (field == 70 && wt == 0) {
+            uint64_t v; if (pb_rd_varint(&p, end, &v)) return -1;
+            out->graph.root = (int)(int32_t)(uint32_t)v;
+        } else if (field == 71 && wt == 0) {
+            uint64_t v; if (pb_rd_varint(&p, end, &v)) return -1;
+            /* advisory count */
+            (void)v;
+        } else if (field == 72 && wt == 2) {
+            const uint8_t *sub; size_t slen;
+            if (pb_rd_bytes(&p, end, &sub, &slen)) return -1;
+            if (out->graph.node_count >= GRAPH_MAX_NODES) continue;
+            graph_node_t *n = &out->graph.nodes[out->graph.node_count++];
+            const uint8_t *sp = sub, *send = sub + slen;
+            int kids = 0;
+            while (sp < send) {
+                uint64_t t2; if (pb_rd_varint(&sp, send, &t2)) return -1;
+                uint32_t f2 = (uint32_t)(t2 >> 3), w2 = (uint32_t)(t2 & 7);
+                if (f2 == 1 && w2 == 2) {
+                    if (pb_rd_str(&sp, send, n->name, sizeof n->name)) return -1;
+                } else if (f2 == 2 && w2 == 0) {
+                    uint64_t v; if (pb_rd_varint(&sp, send, &v)) return -1;
+                    n->parent = (int)(int32_t)(uint32_t)v;
+                } else if (f2 == 3 && w2 == 0) {
+                    uint64_t v; if (pb_rd_varint(&sp, send, &v)) return -1;
+                    n->related = (int)(int32_t)(uint32_t)v;
+                } else if (f2 == 4 && w2 == 0) {
+                    uint64_t v; if (pb_rd_varint(&sp, send, &v)) return -1;
+                    if (kids < GRAPH_MAX_CHILDREN) n->children[kids++] = (int)(int32_t)(uint32_t)v;
+                } else if (w2 == 0) { uint64_t v; if (pb_rd_varint(&sp, send, &v)) return -1; }
+                else if (w2 == 1) { if (sp+8>send) return -1; sp+=8; }
+                else if (w2 == 2) { const uint8_t *x; size_t xn; if (pb_rd_bytes(&sp, send, &x, &xn)) return -1; }
+                else if (w2 == 5) { if (sp+4>send) return -1; sp+=4; }
+                else return -1;
+            }
+            n->child_count = kids;
+
         } else if (wt == 0) {
             uint64_t v; if (pb_rd_varint(&p, end, &v)) return -1;
         } else if (wt == 1) {

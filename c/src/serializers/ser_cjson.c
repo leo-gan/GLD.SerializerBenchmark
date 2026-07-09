@@ -91,6 +91,27 @@ static cJSON *fx_to_json(const test_fixture_t *fx) {
             cJSON_AddItemToObject(root, "Claims", claims);
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            const object_graph_t *g = &fx->graph;
+            cJSON_AddNumberToObject(root, "root", g->root);
+            cJSON *nodes = cJSON_CreateArray();
+            int nn = g->node_count; if (nn < 0) nn = 0; if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            for (int i = 0; i < nn; i++) {
+                const graph_node_t *n = &g->nodes[i];
+                cJSON *no = cJSON_CreateObject();
+                cJSON_AddStringToObject(no, "Name", n->name);
+                cJSON_AddNumberToObject(no, "Parent", n->parent);
+                cJSON_AddNumberToObject(no, "Related", n->related);
+                cJSON *ch = cJSON_CreateArray();
+                int nc = n->child_count; if (nc < 0) nc = 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                for (int c = 0; c < nc; c++) cJSON_AddItemToArray(ch, cJSON_CreateNumber(n->children[c]));
+                cJSON_AddItemToObject(no, "Children", ch);
+                cJSON_AddItemToArray(nodes, no);
+            }
+            cJSON_AddItemToObject(root, "nodes", nodes);
+            break;
+        }
         default:
             cJSON_Delete(root);
             return NULL;
@@ -237,31 +258,55 @@ static int json_to_fx(cJSON *root, test_fixture_t *out, test_data_kind_t kind) {
             }
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            cJSON *root_i = cJSON_GetObjectItemCaseSensitive(root, "root");
+            out->graph.root = cJSON_IsNumber(root_i) ? (int)root_i->valuedouble : 0;
+            cJSON *nodes = cJSON_GetObjectItemCaseSensitive(root, "nodes");
+            if (!cJSON_IsArray(nodes)) return -1;
+            int nn = cJSON_GetArraySize(nodes); if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            out->graph.node_count = nn;
+            for (int i = 0; i < nn; i++) {
+                cJSON *no = cJSON_GetArrayItem(nodes, i);
+                graph_node_t *n = &out->graph.nodes[i];
+                cJSON *nm = no ? cJSON_GetObjectItemCaseSensitive(no, "Name") : NULL;
+                if (cJSON_IsString(nm)) snprintf(n->name, sizeof n->name, "%s", nm->valuestring);
+                cJSON *par = no ? cJSON_GetObjectItemCaseSensitive(no, "Parent") : NULL;
+                n->parent = cJSON_IsNumber(par) ? (int)par->valuedouble : GRAPH_NULL_IDX;
+                cJSON *rel = no ? cJSON_GetObjectItemCaseSensitive(no, "Related") : NULL;
+                n->related = cJSON_IsNumber(rel) ? (int)rel->valuedouble : GRAPH_NULL_IDX;
+                cJSON *ch = no ? cJSON_GetObjectItemCaseSensitive(no, "Children") : NULL;
+                int nc = cJSON_IsArray(ch) ? cJSON_GetArraySize(ch) : 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                n->child_count = nc;
+                for (int c = 0; c < nc; c++) {
+                    cJSON *ci = cJSON_GetArrayItem(ch, c);
+                    n->children[c] = cJSON_IsNumber(ci) ? (int)ci->valuedouble : GRAPH_NULL_IDX;
+                }
+            }
+            break;
+        }
         default: return -1;
     }
     return 0;
 }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    /* Optimal: cJSON_PrintPreallocated writes into the caller's buffer (no malloc+memcpy). */
     cJSON *root = fx_to_json(fx);
     if (!root) return -1;
-    char *s = cJSON_PrintUnformatted(root);
+    if (cap < 2) { cJSON_Delete(root); return -1; }
+    if (!cJSON_PrintPreallocated(root, (char *)buf, (int)cap, 0 /* unformatted */)) {
+        cJSON_Delete(root);
+        return -1;
+    }
+    *ol = strlen((const char *)buf);
     cJSON_Delete(root);
-    if (!s) return -1;
-    size_t n = strlen(s);
-    if (n >= cap) { free(s); return -1; }
-    memcpy(buf, s, n);
-    *ol = n;
-    free(s);
     return 0;
 }
 
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
-    char *tmp = (char *)malloc(len + 1);
-    if (!tmp) return -1;
-    memcpy(tmp, buf, len); tmp[len] = 0;
-    cJSON *root = cJSON_Parse(tmp);
-    free(tmp);
+    /* Optimal: ParseWithLength avoids an extra null-terminated copy of the input. */
+    cJSON *root = cJSON_ParseWithLength((const char *)buf, len);
     if (!root) return -1;
     int rc = json_to_fx(root, out, kind);
     cJSON_Delete(root);

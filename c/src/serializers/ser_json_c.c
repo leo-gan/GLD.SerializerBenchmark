@@ -98,6 +98,27 @@ static struct json_object *fx_to_obj(const test_fixture_t *fx) {
             json_object_object_add(root, "Claims", claims);
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            const object_graph_t *g = &fx->graph;
+            json_object_object_add(root, "root", json_object_new_int(g->root));
+            struct json_object *nodes = json_object_new_array();
+            int nn = g->node_count; if (nn < 0) nn = 0; if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            for (int i = 0; i < nn; i++) {
+                const graph_node_t *n = &g->nodes[i];
+                struct json_object *no = json_object_new_object();
+                json_object_object_add(no, "Name", json_object_new_string(n->name));
+                json_object_object_add(no, "Parent", json_object_new_int(n->parent));
+                json_object_object_add(no, "Related", json_object_new_int(n->related));
+                struct json_object *ch = json_object_new_array();
+                int nc = n->child_count; if (nc < 0) nc = 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                for (int c = 0; c < nc; c++) json_object_array_add(ch, json_object_new_int(n->children[c]));
+                json_object_object_add(no, "Children", ch);
+                json_object_array_add(nodes, no);
+            }
+            json_object_object_add(root, "nodes", nodes);
+            break;
+        }
         default:
             json_object_put(root);
             return NULL;
@@ -246,18 +267,42 @@ static int obj_to_fx(struct json_object *root, test_fixture_t *out, test_data_ki
             }
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            out->graph.root = jo_int(root, "root", 0);
+            struct json_object *nodes;
+            if (!json_object_object_get_ex(root, "nodes", &nodes) || !json_object_is_type(nodes, json_type_array)) return -1;
+            int nn = json_object_array_length(nodes); if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            out->graph.node_count = nn;
+            for (int i = 0; i < nn; i++) {
+                struct json_object *no = json_object_array_get_idx(nodes, i);
+                graph_node_t *n = &out->graph.nodes[i];
+                const char *nm = jo_str(no, "Name");
+                if (nm) snprintf(n->name, sizeof n->name, "%s", nm);
+                n->parent = jo_int(no, "Parent", GRAPH_NULL_IDX);
+                n->related = jo_int(no, "Related", GRAPH_NULL_IDX);
+                struct json_object *ch;
+                int nc = 0;
+                if (json_object_object_get_ex(no, "Children", &ch) && json_object_is_type(ch, json_type_array)) {
+                    nc = json_object_array_length(ch); if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                    for (int c = 0; c < nc; c++) n->children[c] = json_object_get_int(json_object_array_get_idx(ch, c));
+                }
+                n->child_count = nc;
+            }
+            break;
+        }
         default: return -1;
     }
     return 0;
 }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    /* Optimal: to_json_string_length returns length without a second strlen. */
     struct json_object *root = fx_to_obj(fx);
     if (!root) return -1;
-    const char *s = json_object_to_json_string_ext(root, JSON_C_TO_STRING_PLAIN);
-    if (!s) { json_object_put(root); return -1; }
-    size_t n = strlen(s);
-    if (n >= cap) { json_object_put(root); return -1; }
+    size_t n = 0;
+    const char *s = json_object_to_json_string_length(root, JSON_C_TO_STRING_PLAIN, &n);
+    if (!s || n >= cap) { json_object_put(root); return -1; }
     memcpy(buf, s, n);
     *ol = n;
     json_object_put(root);

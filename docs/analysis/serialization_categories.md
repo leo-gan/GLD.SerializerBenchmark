@@ -102,7 +102,8 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **JavaScript:** `v8-serializer`, `devalue`  
   - **Go:** `encoding/gob`  
   - **C#:** legacy / graph-oriented binaries (e.g. `MS Binary`)—see Overview  
-  - **Rust / C:** no pickle-equivalent; **`ObjectGraph` skipped** for almost all formats  
+  - **Rust:** no pickle-equivalent; **`ObjectGraph` skipped** for almost all formats
+  - **C:** ObjectGraph present for **all** registered codecs via flat node table + index edges (not pointer chasing)
 
 ---
 

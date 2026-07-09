@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+/* All fixtures including ObjectGraph (encoded as flat node table + index edges). */
 static inline bool supports_all(test_data_kind_t k) { (void)k; return true; }
 
 static inline bool f64_close(double a, double b) {
@@ -66,6 +67,28 @@ static inline bool fidelity_edi(const edi835_t *a, const edi835_t *b) {
     return true;
 }
 
+static inline bool fidelity_graph(const object_graph_t *a, const object_graph_t *b) {
+    if (a->node_count != b->node_count || a->root != b->root) return false;
+    if (a->node_count < 0 || a->node_count > GRAPH_MAX_NODES) return false;
+    if (a->root < 0 || a->root >= a->node_count) return false;
+    for (int i = 0; i < a->node_count; i++) {
+        const graph_node_t *na = &a->nodes[i], *nb = &b->nodes[i];
+        if (strcmp(na->name, nb->name)) return false;
+        if (na->parent != nb->parent || na->related != nb->related) return false;
+        if (na->child_count != nb->child_count) return false;
+        for (int c = 0; c < na->child_count && c < GRAPH_MAX_CHILDREN; c++)
+            if (na->children[c] != nb->children[c]) return false;
+    }
+    /* Structural cycle checks on decoded graph (same topology as source fixture). */
+    const graph_node_t *root = &a->nodes[a->root];
+    if (root->child_count < 2) return false;
+    int i1 = root->children[0], i2 = root->children[1];
+    if (i1 < 0 || i1 >= a->node_count || i2 < 0 || i2 >= a->node_count) return false;
+    if (a->nodes[i1].parent != a->root || a->nodes[i2].parent != a->root) return false;
+    if (a->nodes[i1].related != i2 || a->nodes[i2].related != i1) return false;
+    return true;
+}
+
 static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b) {
     if (a->kind != b->kind) return false;
     switch (a->kind) {
@@ -75,6 +98,7 @@ static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b)
         case TD_SIMPLE: return fidelity_simple(&a->simple, &b->simple);
         case TD_STRING_ARRAY: return fidelity_strarr(&a->string_array, &b->string_array);
         case TD_EDI835: return fidelity_edi(&a->edi, &b->edi);
+        case TD_OBJECT_GRAPH: return fidelity_graph(&a->graph, &b->graph);
         default: return false;
     }
 }
@@ -92,6 +116,9 @@ static inline bool fidelity_fx(const test_fixture_t *a, const test_fixture_t *b)
 #define BIN_EDI_LINE_BYTES       32
 /* claim fixed: id(16)+patient(32)+total_charge(8)+payment(8)+line_count(4) */
 #define BIN_EDI_CLAIM_FIXED      68
+/* ObjectGraph: root(4)+node_count(4) + per node: name(32)+parent(4)+related(4)+child_count(4)+children[4](16) */
+#define BIN_GRAPH_HDR_BYTES      8
+#define BIN_GRAPH_NODE_BYTES     60
 
 static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *out_len) {
     if (cap < 1) return -1;
@@ -204,6 +231,36 @@ static inline int bin_write_fixture(const test_fixture_t *fx, uint8_t *buf, size
             }
             break;
         }
+        case TD_OBJECT_GRAPH: {
+            const object_graph_t *g = &fx->graph;
+            int nn = g->node_count;
+            if (nn < 0) nn = 0;
+            if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            size_t need = (size_t)BIN_GRAPH_HDR_BYTES + (size_t)nn * BIN_GRAPH_NODE_BYTES;
+            if (o + need > cap) return -1;
+            int32_t root_wire = (int32_t)g->root;
+            int32_t nn_wire = (int32_t)nn;
+            memcpy(buf + o, &root_wire, 4); o += 4;
+            memcpy(buf + o, &nn_wire, 4); o += 4;
+            for (int i = 0; i < nn; i++) {
+                const graph_node_t *n = &g->nodes[i];
+                int nc = n->child_count;
+                if (nc < 0) nc = 0;
+                if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                memcpy(buf + o, n->name, 32); o += 32;
+                int32_t parent = (int32_t)n->parent;
+                int32_t related = (int32_t)n->related;
+                int32_t child_count = (int32_t)nc;
+                memcpy(buf + o, &parent, 4); o += 4;
+                memcpy(buf + o, &related, 4); o += 4;
+                memcpy(buf + o, &child_count, 4); o += 4;
+                for (int c = 0; c < GRAPH_MAX_CHILDREN; c++) {
+                    int32_t ch = c < nc ? (int32_t)n->children[c] : (int32_t)GRAPH_NULL_IDX;
+                    memcpy(buf + o, &ch, 4); o += 4;
+                }
+            }
+            break;
+        }
         default: return -1;
     }
     *out_len = o;
@@ -308,11 +365,43 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
             }
             break;
         }
+        case TD_OBJECT_GRAPH: {
+            object_graph_t *g = &out->graph;
+            memset(g, 0, sizeof *g);
+            if (o + BIN_GRAPH_HDR_BYTES > len) return -1;
+            int32_t root_wire = 0, nn_wire = 0;
+            memcpy(&root_wire, buf + o, 4); o += 4;
+            memcpy(&nn_wire, buf + o, 4); o += 4;
+            if (nn_wire < 0 || nn_wire > GRAPH_MAX_NODES) return -1;
+            if (root_wire < 0 || root_wire >= nn_wire) return -1;
+            g->root = (int)root_wire;
+            g->node_count = (int)nn_wire;
+            for (int i = 0; i < g->node_count; i++) {
+                if (o + BIN_GRAPH_NODE_BYTES > len) return -1;
+                graph_node_t *n = &g->nodes[i];
+                memcpy(n->name, buf + o, 32); o += 32;
+                int32_t parent = 0, related = 0, child_count = 0;
+                memcpy(&parent, buf + o, 4); o += 4;
+                memcpy(&related, buf + o, 4); o += 4;
+                memcpy(&child_count, buf + o, 4); o += 4;
+                n->parent = (int)parent;
+                n->related = (int)related;
+                if (child_count < 0 || child_count > GRAPH_MAX_CHILDREN) return -1;
+                n->child_count = (int)child_count;
+                for (int c = 0; c < GRAPH_MAX_CHILDREN; c++) {
+                    int32_t ch = 0;
+                    memcpy(&ch, buf + o, 4); o += 4;
+                    n->children[c] = (int)ch;
+                }
+            }
+            break;
+        }
         default: return -1;
     }
     return 0;
 }
 
+/* Register a serializer for all fixtures (including ObjectGraph). */
 #define BENCH_ADD(out, count, nm, ver, cat, prep, ser, de, fid) do { \
     (out)[*(count)].name = (nm); \
     (out)[*(count)].version = (ver); \
