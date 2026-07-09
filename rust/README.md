@@ -2,6 +2,18 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
+## Module layout
+
+```text
+rust/src/serializers/
+  mod.rs           # trait, helpers, all_serializers()
+  kinded.rs        # shared kind-tracked direct codec macro
+  json.rs          # serde_json, simd-json, sonic-rs
+  binary_serde.rs  # rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson
+  direct.rs        # minicbor, rkyv, nanoserde, speedy
+  prost_ser.rs     # prost + fixture conversion + flat ObjectGraph
+```
+
 ## Serializers (15)
 
 | Name | Category | Call path notes |
@@ -27,6 +39,11 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 1. `prepare(&fixture)` — untimed (codec config, kind tracking, prost message build)
 2. `serialize_bytes` / `deserialize_bytes` — timed
 3. Stream mode: **native** or **adapted** (see `StreamMode` on each impl)
+
+### ObjectGraph
+
+All registered serializers support **ObjectGraph** using a flat node table + integer edges
+(Root / Child1 / Child2 with sibling cycle), not live `Rc` pointer graphs.
 
 ### Not yet in suite (Priority B remaining)
 

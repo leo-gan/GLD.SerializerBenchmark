@@ -7,7 +7,7 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 - Directory: `rust/` (repository root)
 - Output: monorepo `logs/rust/YYYY-MM-DD-HHMMSS.csv` (`Language=rust`, times in **nanoseconds**)
 - Runner: `rust/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `cargo run --release -- <reps>`
-- Registration: [`rust/src/serializers.rs`](../../rust/src/serializers.rs)
+- Registration: [`rust/src/serializers/mod.rs`](../../rust/src/serializers/mod.rs) (family modules under `serializers/`)
 
 ## Serializers (15)
 
@@ -41,7 +41,7 @@ for rep:
 
 ### Caveats
 
-- **ObjectGraph:** skipped (cycles).
+- **ObjectGraph:** supported by **all** registered codecs via a flat node table + integer edges (same topology as C#/Python; no live pointer cycles).
 - **Integer:** skipped for `prost` (no bare scalar message in schema).
 - **simd-json serialize** is `serde_json` (crate optimizes parse).
 - **rkyv:** access-only (zero-copy without materialize) would be faster; suite materializes for a fair owned-value fidelity check.

@@ -6,8 +6,9 @@ use nanoserde::{DeBin, SerBin};
 use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 use serde::{Deserialize, Serialize};
 use speedy::{Readable, Writable};
-use std::cell::RefCell;
-use std::rc::Rc;
+
+/// Null edge index for ObjectGraph (matches C harness `GRAPH_NULL_IDX`).
+pub const GRAPH_NULL: i32 = -1;
 
 #[derive(
     Debug,
@@ -313,13 +314,64 @@ pub struct Edi835 {
     pub claims: Vec<Claim>,
 }
 
-/// Graph node with optional back-reference (cycle tests; most formats skip).
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct GraphNode {
+/// One node in a flat ObjectGraph. Edges are **indices into `ObjectGraph.nodes`**
+/// (`GRAPH_NULL` = no edge). This is the portable cycle encoding used by every
+/// format: no live pointer chasing, no infinite recursion.
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
+pub struct GraphNodeData {
+    #[n(0)]
     pub name: String,
-    pub children: Vec<Rc<RefCell<GraphNode>>>,
-    pub parent: Option<Rc<RefCell<GraphNode>>>,
+    /// Parent node index, or `GRAPH_NULL`.
+    #[n(1)]
+    pub parent: i32,
+    /// Related node index, or `GRAPH_NULL`.
+    #[n(2)]
+    pub related: i32,
+    /// Child node indices.
+    #[n(3)]
+    pub children: Vec<i32>,
+}
+
+/// Object graph with circular references encoded via integer edges.
+/// Topology matches C#/Python: Root → Child1, Child2; Child1.Related ↔ Child2.
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
+pub struct ObjectGraph {
+    #[n(0)]
+    pub root: i32,
+    #[n(1)]
+    pub nodes: Vec<GraphNodeData>,
 }
 
 /// Deterministic pseudo-random generator matching seed=42 intent.
@@ -448,20 +500,31 @@ pub fn make_edi(rng: &mut Rng) -> Edi835 {
     }
 }
 
-#[allow(dead_code)]
-pub fn make_graph() -> Rc<RefCell<GraphNode>> {
-    let root = Rc::new(RefCell::new(GraphNode {
-        name: "root".into(),
-        children: vec![],
-        parent: None,
-    }));
-    let child = Rc::new(RefCell::new(GraphNode {
-        name: "child".into(),
-        children: vec![],
-        parent: Some(Rc::clone(&root)),
-    }));
-    root.borrow_mut().children.push(Rc::clone(&child));
-    root
+/// Same topology as C# `ObjectGraphDescription` / Python `generate_object_graph`.
+pub fn make_object_graph() -> ObjectGraph {
+    ObjectGraph {
+        root: 0,
+        nodes: vec![
+            GraphNodeData {
+                name: "Root".into(),
+                parent: GRAPH_NULL,
+                related: GRAPH_NULL,
+                children: vec![1, 2],
+            },
+            GraphNodeData {
+                name: "Child1".into(),
+                parent: 0,
+                related: 2,
+                children: vec![],
+            },
+            GraphNodeData {
+                name: "Child2".into(),
+                parent: 0,
+                related: 1,
+                children: vec![],
+            },
+        ],
+    }
 }
 
 /// Holder for harness fixtures (externally tagged for Serde formats).
@@ -473,6 +536,7 @@ pub enum Fixture {
     Simple(SimpleObject),
     StringArray(StringArrayObject),
     Edi(Edi835),
+    ObjectGraph(ObjectGraph),
 }
 
 impl Fixture {
@@ -484,8 +548,47 @@ impl Fixture {
             Fixture::Simple(_) => "SimpleObject",
             Fixture::StringArray(_) => "StringArray",
             Fixture::Edi(_) => "EDI_835",
+            Fixture::ObjectGraph(_) => "ObjectGraph",
         }
     }
+}
+
+/// Structural fidelity for ObjectGraph (names + index edges + sibling cycle).
+pub fn object_graph_fidelity(a: &ObjectGraph, b: &ObjectGraph) -> bool {
+    if a.root != b.root || a.nodes.len() != b.nodes.len() {
+        return false;
+    }
+    if a.nodes.is_empty() {
+        return true;
+    }
+    if a.root < 0 || a.root as usize >= a.nodes.len() {
+        return false;
+    }
+    for (na, nb) in a.nodes.iter().zip(b.nodes.iter()) {
+        if na.name != nb.name
+            || na.parent != nb.parent
+            || na.related != nb.related
+            || na.children != nb.children
+        {
+            return false;
+        }
+    }
+    // Sibling cycle on the standard fixture (Root with ≥2 children).
+    let root = &a.nodes[a.root as usize];
+    if root.children.len() >= 2 {
+        let i1 = root.children[0] as usize;
+        let i2 = root.children[1] as usize;
+        if i1 >= a.nodes.len() || i2 >= a.nodes.len() {
+            return false;
+        }
+        if a.nodes[i1].parent != a.root || a.nodes[i2].parent != a.root {
+            return false;
+        }
+        if a.nodes[i1].related != root.children[1] || a.nodes[i2].related != root.children[0] {
+            return false;
+        }
+    }
+    true
 }
 
 pub fn all_fixtures(seed: u64) -> Vec<Fixture> {
@@ -497,5 +600,32 @@ pub fn all_fixtures(seed: u64) -> Vec<Fixture> {
         Fixture::Simple(make_simple(&mut rng)),
         Fixture::StringArray(make_string_array(&mut rng)),
         Fixture::Edi(make_edi(&mut rng)),
+        Fixture::ObjectGraph(make_object_graph()),
     ]
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn object_graph_topology() {
+        let g = make_object_graph();
+        assert_eq!(g.root, 0);
+        assert_eq!(g.nodes.len(), 3);
+        assert_eq!(g.nodes[0].name, "Root");
+        assert_eq!(g.nodes[0].children, vec![1, 2]);
+        assert_eq!(g.nodes[1].parent, 0);
+        assert_eq!(g.nodes[1].related, 2);
+        assert_eq!(g.nodes[2].related, 1);
+        assert!(object_graph_fidelity(&g, &g));
+    }
+
+    #[test]
+    fn all_fixtures_include_object_graph() {
+        let names: Vec<_> = all_fixtures(42).iter().map(|f| f.name()).collect();
+        assert!(names.contains(&"ObjectGraph"));
+        assert_eq!(names.len(), 7);
+    }
 }

@@ -5,7 +5,7 @@ mod data;
 mod serializers;
 
 use crate::csv_log::CsvLogger;
-use crate::data::{all_fixtures, Fixture};
+use crate::data::{all_fixtures, object_graph_fidelity, Fixture};
 use crate::serializers::{all_serializers, BenchSerializer, StreamMode};
 use clap::Parser;
 use std::io::Cursor;
@@ -118,6 +118,7 @@ fn fidelity(a: &Fixture, b: &Fixture) -> bool {
         (Fixture::Simple(x), Fixture::Simple(y)) => {
             x.id == y.id && x.name == y.name && x.is_active == y.is_active
         }
+        (Fixture::ObjectGraph(x), Fixture::ObjectGraph(y)) => object_graph_fidelity(x, y),
         _ => {
             let ja = serde_json::to_string(a).unwrap_or_default();
             let jb = serde_json::to_string(b).unwrap_or_default();
