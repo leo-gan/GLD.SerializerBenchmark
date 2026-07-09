@@ -1,6 +1,7 @@
 package serializers
 
 import (
+	"bytes"
 	"io"
 
 	"github.com/vmihailenco/msgpack/v5"
@@ -9,14 +10,20 @@ import (
 )
 
 // vmihailencoMsgpack — most popular MessagePack library for Go.
-// Recommended: msgpack.Marshal / msgpack.Unmarshal; reuse Encoder/Decoder with
-// SetCustomStructTag("json") optional. We use default struct tags (msgpack / field names).
+// Recommended hot path: reuse Encoder via Reset (avoids per-call encoder setup
+// that Marshal's pool still pays for buffer ownership). Unmarshal for bytes decode.
 // https://github.com/vmihailenco/msgpack
 type vmihailencoMsgpack struct {
 	proto any
+	buf   bytes.Buffer
+	enc   *msgpack.Encoder
 }
 
-func newVmihailencoMsgpack() *vmihailencoMsgpack { return &vmihailencoMsgpack{} }
+func newVmihailencoMsgpack() *vmihailencoMsgpack {
+	s := &vmihailencoMsgpack{}
+	s.enc = msgpack.NewEncoder(&s.buf)
+	return s
+}
 
 func (s *vmihailencoMsgpack) Name() string           { return "vmihailenco/msgpack" }
 func (s *vmihailencoMsgpack) Version() string        { return ModuleVersion("github.com/vmihailenco/msgpack/v5") }
@@ -26,11 +33,21 @@ func (s *vmihailencoMsgpack) Supports(n string) bool { return DefaultSupports(n)
 
 func (s *vmihailencoMsgpack) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
+	s.buf.Reset()
+	s.enc.Reset(&s.buf)
 	return nil
 }
 
 func (s *vmihailencoMsgpack) SerializeBytes(fx model.Fixture) ([]byte, error) {
-	return msgpack.Marshal(fx.Value)
+	s.buf.Reset()
+	s.enc.Reset(&s.buf)
+	if err := s.enc.Encode(fx.Value); err != nil {
+		return nil, err
+	}
+	// Copy: internal buffer is reused on the next call.
+	out := make([]byte, s.buf.Len())
+	copy(out, s.buf.Bytes())
+	return out, nil
 }
 
 func (s *vmihailencoMsgpack) DeserializeBytes(buf []byte) (any, error) {
@@ -43,8 +60,8 @@ func (s *vmihailencoMsgpack) DeserializeBytes(buf []byte) (any, error) {
 
 func (s *vmihailencoMsgpack) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	cw := &countWriter{w: w}
-	enc := msgpack.NewEncoder(cw)
-	if err := enc.Encode(fx.Value); err != nil {
+	s.enc.Reset(cw)
+	if err := s.enc.Encode(fx.Value); err != nil {
 		return 0, err
 	}
 	return cw.n, nil

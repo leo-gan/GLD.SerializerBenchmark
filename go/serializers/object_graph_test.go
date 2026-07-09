@@ -46,6 +46,12 @@ func TestObjectGraphRoundtripBytesAndStream(t *testing.T) {
 			if err != nil {
 				t.Fatalf("deserialize bytes: %v", err)
 			}
+			if conv, ok := ser.(DomainConverter); ok {
+				out, err = conv.ToDomain(out)
+				if err != nil {
+					t.Fatalf("ToDomain: %v", err)
+				}
+			}
 			if !model.Fidelity(fx.Value, out) {
 				t.Fatalf("bytes fidelity failed: got %#v", out)
 			}
@@ -61,6 +67,12 @@ func TestObjectGraphRoundtripBytesAndStream(t *testing.T) {
 			out2, err := ser.DeserializeStream(bytes.NewReader(stream.Bytes()))
 			if err != nil {
 				t.Fatalf("deserialize stream: %v", err)
+			}
+			if conv, ok := ser.(DomainConverter); ok {
+				out2, err = conv.ToDomain(out2)
+				if err != nil {
+					t.Fatalf("ToDomain stream: %v", err)
+				}
 			}
 			if !model.Fidelity(fx.Value, out2) {
 				t.Fatalf("stream fidelity failed: got %#v", out2)
@@ -91,6 +103,12 @@ func TestPersonStillRoundtrips(t *testing.T) {
 		out, err := ser.DeserializeBytes(buf)
 		if err != nil {
 			t.Fatalf("%s deser: %v", ser.Name(), err)
+		}
+		if conv, ok := ser.(DomainConverter); ok {
+			out, err = conv.ToDomain(out)
+			if err != nil {
+				t.Fatalf("%s ToDomain: %v", ser.Name(), err)
+			}
 		}
 		if !model.Fidelity(fx.Value, out) {
 			t.Fatalf("%s person fidelity", ser.Name())

@@ -56,6 +56,13 @@ type BenchSerializer interface {
 	DeserializeStream(r io.Reader) (any, error)
 }
 
+// DomainConverter is optional. When implemented, timed deserialize may return a
+// library-native value (e.g. protobuf Message); the runner calls ToDomain
+// *outside* the timer for fidelity (same fair call-path as Python/Rust).
+type DomainConverter interface {
+	ToDomain(decoded any) (any, error)
+}
+
 // DefaultSupports: flat ObjectGraph (index edges) is portable — every codec can encode it.
 func DefaultSupports(testDataName string) bool {
 	return true

@@ -66,6 +66,15 @@ func saveErrors(path string, errors []benchError) error {
 	return nil
 }
 
+// toDomain runs optional untimed library-native → suite-domain conversion
+// (e.g. protobuf Message → model.Person) after the timed deserialize path.
+func toDomain(ser serializers.BenchSerializer, out any) (any, error) {
+	if conv, ok := ser.(serializers.DomainConverter); ok {
+		return conv.ToDomain(out)
+	}
+	return out, nil
+}
+
 func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, deserNs uint64, size int, err error) {
 	t0 := time.Now()
 	buf, err := ser.SerializeBytes(fx)
@@ -78,6 +87,11 @@ func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, des
 	t1 := time.Now()
 	out, err := ser.DeserializeBytes(buf)
 	deserNs = uint64(time.Since(t1).Nanoseconds())
+	if err != nil {
+		return
+	}
+	// Domain conversion is intentionally outside the timer (fair codec measurement).
+	out, err = toDomain(ser, out)
 	if err != nil {
 		return
 	}
@@ -103,6 +117,10 @@ func measureStream(ser serializers.BenchSerializer, fx model.Fixture) (serNs, de
 	t1 := time.Now()
 	out, err := ser.DeserializeStream(r)
 	deserNs = uint64(time.Since(t1).Nanoseconds())
+	if err != nil {
+		return
+	}
+	out, err = toDomain(ser, out)
 	if err != nil {
 		return
 	}
