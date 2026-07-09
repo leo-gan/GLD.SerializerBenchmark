@@ -28,7 +28,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 | **Person** | **POCO Complexity**: Nesting, enums, and strings — gold standard for general use. |
 | **Telemetry** | **Binary Efficiency**: Numeric arrays and high-frequency data. |
 | **StringArray** | **GC Pressure**: Many strings — allocation and encoding efficiency. |
-| **ObjectGraph** | **Cyclicity**: Circular references; exposes libraries without reference tracking. |
+| **ObjectGraph** | **Cyclicity (portable)**: Flat node table + integer edges (`Parent`/`Related`/`Children` indices). Same model as C/Rust/JS/Python/Go — not live pointer cycles. |
 | **EDI_835** | **Real-world Depth**: Deeply nested health-care claim document. |
 | **Integer** | **Primitive Speed**: Raw throughput of a single primitive (`IntDescription` → name `Integer`). |
 

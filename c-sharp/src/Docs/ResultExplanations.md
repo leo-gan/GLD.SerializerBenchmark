@@ -39,7 +39,7 @@ The serializer performance depends on the serialized data a lot. A lot! There ar
 - **Person** and **SimpleObject** types. They are typical small objects with shallow nesting. If the serializer cannot work even with such simple data, do not use it!
 - **EDI_X12_835** type. It is the EDI message with hundreds of nested objects and fields and deep object nesting.
 - **EDI_X12_835_NoAttributes** type. A copy of the EDI_X12_835 but without the serialization attributes.
-- **ObjectGraph** type. A rich object with cyclic references. It is a very hard task for a serializer and almost none of them can do the work properly.
+- **ObjectGraph** type. Circular topology encoded as a flat node table + integer edges (portable across codecs). Live pointer cycles are no longer used.
 - **MsgBatching** type. Some serializers can automatically bind several identical objects in a package (the batch) and process it in a very efficient way. In some cases, the speed can increase substantially.
 
 ---

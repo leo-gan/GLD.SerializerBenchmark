@@ -10,12 +10,6 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         public override string Name => "SpanJson";
 
-        public override bool Supports(string testDataName)
-        {
-            // SpanJson does not support circular references in ObjectGraph
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable) => SpanJson.JsonSerializer.Generic.Utf16.Serialize(serializable);
 
         public override object Deserialize(string serialized)

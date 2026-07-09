@@ -30,4 +30,26 @@ namespace GLD.SerializerBenchmark.ZFmt
         [Index(0)]
         public virtual int Value { get; set; }
     }
+
+    [ZeroFormattable]
+    public class GraphNodeData
+    {
+        [Index(0)]
+        public virtual string Name { get; set; }
+        [Index(1)]
+        public virtual int Parent { get; set; }
+        [Index(2)]
+        public virtual int Related { get; set; }
+        [Index(3)]
+        public virtual IList<int> Children { get; set; }
+    }
+
+    [ZeroFormattable]
+    public class ObjectGraph
+    {
+        [Index(0)]
+        public virtual int Root { get; set; }
+        [Index(1)]
+        public virtual IList<GraphNodeData> Nodes { get; set; }
+    }
 }

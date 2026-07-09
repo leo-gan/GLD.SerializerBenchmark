@@ -12,12 +12,6 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "NetJSON"; }
         }
 
-        public override bool Supports(string testDataName)
-        {
-            // NetJSON does not support circular references in ObjectGraph
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable)
         {
             return NetJSON.NetJSON.Serialize(serializable);

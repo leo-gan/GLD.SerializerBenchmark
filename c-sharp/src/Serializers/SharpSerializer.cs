@@ -28,9 +28,9 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override bool Supports(string testDataName)
         {
-            // SharpSerializer has issues with Person and Telemetry test data
-            // causing NullReferenceException during serialization
-            return testDataName != "Person" && testDataName != "Telemetry";
+            // SharpSerializer has issues with Person and Telemetry (NRE) and flat ObjectGraph
+            // (deserialization fails on nested List&lt;GraphNodeData&gt;).
+            return testDataName is not ("Person" or "Telemetry" or "ObjectGraph");
         }
 
         public override string Serialize(object serializable)

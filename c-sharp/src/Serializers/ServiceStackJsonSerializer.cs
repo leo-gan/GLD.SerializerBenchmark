@@ -12,12 +12,6 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "ServiceStack Json"; }
         }
 
-        public override bool Supports(string testDataName)
-        {
-            // ServiceStack Json can have issues with circular references in some versions
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable)
         {
             return JsonSerializer.SerializeToString(serializable);

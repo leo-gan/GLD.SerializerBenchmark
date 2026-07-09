@@ -23,12 +23,6 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "MS XmlSerializer"; }
         }
 
-        public override bool Supports(string testDataName)
-        {
-            // XmlSerializer does not support circular references in ObjectGraph
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable)
         {
             Initialize();

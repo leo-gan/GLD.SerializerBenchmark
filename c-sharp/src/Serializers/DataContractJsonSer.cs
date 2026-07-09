@@ -22,12 +22,6 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "MS DataContract Json"; }
         }
 
-        public override bool Supports(string testDataName)
-        {
-            // DataContractJsonSerializer often struggles with circular references
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable)
         {
             Initialize();

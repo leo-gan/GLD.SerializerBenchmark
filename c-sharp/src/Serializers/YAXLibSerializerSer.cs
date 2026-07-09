@@ -10,14 +10,6 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class YAXLibSerializerSer : SerDeser
     {
         public override string Name => "YAXLib";
-
-        public override bool Supports(string testDataName)
-        {
-            // YAXLib has TargetInvocationException on Stream operations
-            // Also has comparison errors on ObjectGraph
-            // Note: This is checked in TestOnSerializer, we need additional logic for Stream in the test itself
-            return testDataName != "ObjectGraph";
-        }
         public override string Serialize(object serializable) {
             var serializer = new YAXLib.YAXSerializer(serializable.GetType());
             return serializer.Serialize(serializable);

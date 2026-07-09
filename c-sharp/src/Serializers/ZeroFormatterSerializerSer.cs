@@ -14,14 +14,14 @@ namespace GLD.SerializerBenchmark.Serializers
     ///
     /// Strategy: map suite fixtures to built-in-serializable shapes, then convert back
     /// for fidelity comparison against the original POCOs / primitives.
-    /// Supported fixtures: Integer, SimpleObject, StringArray.
+    /// Supported fixtures: Integer, SimpleObject, StringArray, ObjectGraph (flat index edges).
     /// </summary>
     internal class ZeroFormatterSerializerSer : SerDeser
     {
         public override string Name => "ZeroFormatter";
 
         public override bool Supports(string testDataName) =>
-            testDataName is "Integer" or "SimpleObject" or "StringArray";
+            testDataName is "Integer" or "SimpleObject" or "StringArray" or "ObjectGraph";
 
         public override string Serialize(object serializable) =>
             Convert.ToBase64String(SerializeBytes(serializable));
@@ -69,6 +69,21 @@ namespace GLD.SerializerBenchmark.Serializers
                 return ZeroFormatterSerializer.Serialize(items);
             }
 
+            if (_primaryType == typeof(ObjectGraph))
+            {
+                var g = (ObjectGraph)serializable;
+                // Built-in formatters only: root + nodes as KeyTuple rows (name, parent, related, children).
+                var nodes = (g.Nodes ?? new List<GraphNodeData>())
+                    .Select(n => KeyTuple.Create(
+                        n.Name ?? "",
+                        n.Parent,
+                        n.Related,
+                        n.Children != null ? n.Children.ToList() : new List<int>()))
+                    .ToList();
+                var payload = KeyTuple.Create(g.Root, nodes);
+                return ZeroFormatterSerializer.Serialize(payload);
+            }
+
             throw new NotSupportedException(
                 $"ZeroFormatter does not support primary type {_primaryType?.FullName ?? "(null)"}.");
         }
@@ -94,6 +109,24 @@ namespace GLD.SerializerBenchmark.Serializers
             {
                 var items = ZeroFormatterSerializer.Deserialize<List<string>>(bytes);
                 return new StringArrayObject { Items = items };
+            }
+
+            if (_primaryType == typeof(ObjectGraph))
+            {
+                var payload = ZeroFormatterSerializer
+                    .Deserialize<KeyTuple<int, List<KeyTuple<string, int, int, List<int>>>>>(bytes);
+                return new ObjectGraph
+                {
+                    Root = payload.Item1,
+                    Nodes = (payload.Item2 ?? new List<KeyTuple<string, int, int, List<int>>>())
+                        .Select(n => new GraphNodeData
+                        {
+                            Name = n.Item1,
+                            Parent = n.Item2,
+                            Related = n.Item3,
+                            Children = n.Item4 ?? new List<int>()
+                        }).ToList()
+                };
             }
 
             throw new NotSupportedException(

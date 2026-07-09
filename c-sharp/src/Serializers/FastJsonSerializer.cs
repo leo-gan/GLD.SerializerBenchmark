@@ -12,12 +12,6 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "fastJson"; }
         }
 
-        public override bool Supports(string testDataName)
-        {
-            // fastJson does not support circular references in ObjectGraph
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable)
         {
             return fastJSON.JSON.ToJSON(serializable);

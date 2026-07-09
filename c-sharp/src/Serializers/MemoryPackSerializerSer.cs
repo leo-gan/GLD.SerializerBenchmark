@@ -11,8 +11,8 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override bool Supports(string testDataName)
         {
-            // MemoryPack works with annotated types: Integer, SimpleObject, StringArray
-            return testDataName == "Integer" || testDataName == "SimpleObject" || testDataName == "StringArray";
+            // MemoryPack works with annotated types (+ flat ObjectGraph)
+            return testDataName is "Integer" or "SimpleObject" or "StringArray" or "ObjectGraph";
         }
 
         public override string Serialize(object serializable)
@@ -54,6 +54,8 @@ namespace GLD.SerializerBenchmark.Serializers
                 return MemoryPackTypeConverter.ToMemoryPack((SimpleObject)obj);
             if (_primaryType == typeof(StringArrayObject))
                 return MemoryPackTypeConverter.ToMemoryPack((StringArrayObject)obj);
+            if (_primaryType == typeof(ObjectGraph))
+                return MemoryPackTypeConverter.ToMemoryPack((ObjectGraph)obj);
             return obj;
         }
 
@@ -65,6 +67,8 @@ namespace GLD.SerializerBenchmark.Serializers
                 return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.SimpleObject>(bytes);
             if (_primaryType == typeof(StringArrayObject))
                 return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.StringArrayObject>(bytes);
+            if (_primaryType == typeof(ObjectGraph))
+                return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.ObjectGraph>(bytes);
             return null;
         }
 
@@ -76,6 +80,8 @@ namespace GLD.SerializerBenchmark.Serializers
                 return MemoryPackTypeConverter.FromMemoryPack(simpleObj);
             if (annotated is MPack.StringArrayObject arrayObj)
                 return MemoryPackTypeConverter.FromMemoryPack(arrayObj);
+            if (annotated is MPack.ObjectGraph graph)
+                return MemoryPackTypeConverter.FromMemoryPack(graph);
             return annotated;
         }
     }

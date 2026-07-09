@@ -24,12 +24,6 @@ namespace GLD.SerializerBenchmark.Serializers
             }
         }
 
-        public override bool Supports(string testDataName)
-        {
-            // NetSerializer crashes on circular references
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable) {
             if (_serializer == null) return "";
             using var ms = new MemoryStream();

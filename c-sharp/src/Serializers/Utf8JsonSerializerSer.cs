@@ -10,12 +10,6 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         public override string Name => "Utf8Json";
 
-        public override bool Supports(string testDataName)
-        {
-            // Utf8Json does not support circular references in ObjectGraph
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable) => Utf8Json.JsonSerializer.ToJsonString(serializable);
         public override object Deserialize(string serialized)
         {

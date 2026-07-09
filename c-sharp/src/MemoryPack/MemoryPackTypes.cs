@@ -24,4 +24,20 @@ namespace GLD.SerializerBenchmark.MPack
     {
         public int Value { get; set; }
     }
+
+    [MemoryPackable]
+    public partial class GraphNodeData
+    {
+        public string Name { get; set; }
+        public int Parent { get; set; }
+        public int Related { get; set; }
+        public List<int> Children { get; set; }
+    }
+
+    [MemoryPackable]
+    public partial class ObjectGraph
+    {
+        public int Root { get; set; }
+        public List<GraphNodeData> Nodes { get; set; }
+    }
 }

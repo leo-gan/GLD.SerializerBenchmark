@@ -13,14 +13,6 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "Jil"; }
         }
 
-        public override bool Supports(string testDataName)
-        {
-            // Jil does not support circular references in ObjectGraph
-            bool isObjectGraph = testDataName == "ObjectGraph";
-            // Console.WriteLine($"[DEBUG] Jil.Supports({testDataName}) -> {!isObjectGraph}");
-            return !isObjectGraph;
-        }
-
         public override string Serialize(object serializable)
         {
             using (var sw = new StringWriter())
