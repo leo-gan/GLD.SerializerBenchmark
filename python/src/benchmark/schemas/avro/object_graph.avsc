@@ -1,11 +1,24 @@
 {
   "type": "record",
-  "name": "GraphNode",
+  "name": "ObjectGraph",
   "namespace": "benchmark_data",
   "fields": [
-    {"name": "Name", "type": "string"},
-    {"name": "Parent", "type": ["null", "GraphNode"]},
-    {"name": "Children", "type": {"type": "array", "items": "GraphNode"}},
-    {"name": "Related", "type": ["null", "GraphNode"]}
+    {"name": "root", "type": "int"},
+    {
+      "name": "nodes",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "GraphNodeData",
+          "fields": [
+            {"name": "Name", "type": "string"},
+            {"name": "Parent", "type": "int"},
+            {"name": "Related", "type": "int"},
+            {"name": "Children", "type": {"type": "array", "items": "int"}}
+          ]
+        }
+      }
+    }
   ]
 }

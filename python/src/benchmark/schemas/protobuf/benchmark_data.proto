@@ -73,12 +73,16 @@ message EDI835 {
   repeated Claim Claims = 6;
 }
 
-// Object graph with circular references isn't naturally supported by standard Protobuf,
-// but for the sake of completeness we can define the schema.
-// Be careful with circular references when serializing.
-message GraphNode {
+// Flat ObjectGraph: cycles encoded as integer node indices (GRAPH_NULL = -1).
+// Matches C/Rust/JS portable graph encoding — no recursive messages.
+message GraphNodeData {
   string Name = 1;
-  GraphNode Parent = 2;
-  repeated GraphNode Children = 3;
-  GraphNode Related = 4;
+  int32 Parent = 2;   // index into ObjectGraph.nodes, or -1
+  int32 Related = 3;  // index into ObjectGraph.nodes, or -1
+  repeated int32 Children = 4;
+}
+
+message ObjectGraph {
+  int32 root = 1;
+  repeated GraphNodeData nodes = 2;
 }

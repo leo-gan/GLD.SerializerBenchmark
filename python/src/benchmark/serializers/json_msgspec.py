@@ -30,7 +30,8 @@ from .base import Serializer
 from ..data import models
 
 
-_UNSUPPORTED_STRUCT_TYPES: set[type[Any]] = {models.GraphNode}
+# Flat ObjectGraph/GraphNodeData are non-recursive and included in Struct generation.
+_UNSUPPORTED_STRUCT_TYPES: set[type[Any]] = set()
 _STRUCT_TYPES: dict[type[Any], type[msgspec.Struct]] = {}
 
 
@@ -139,9 +140,6 @@ class _MsgspecStructSerializer(Serializer):
     @property
     def name(self) -> str:
         return self.codec_name
-
-    def supports(self, test_data_name: str) -> bool:
-        return test_data_name != "ObjectGraph"
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)

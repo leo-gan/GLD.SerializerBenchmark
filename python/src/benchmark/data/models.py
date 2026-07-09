@@ -95,9 +95,28 @@ class EDI835:
     Claims: List[Claim] = field(default_factory=list)
 
 
+# Null edge index for ObjectGraph (matches C/Rust/JS GRAPH_NULL).
+GRAPH_NULL = -1
+
+
 @dataclass
-class GraphNode:
+class GraphNodeData:
+    """One node in a flat ObjectGraph. Edges are indices into ObjectGraph.nodes."""
+
     Name: str = ""
-    Parent: Optional[GraphNode] = None
-    Children: List[GraphNode] = field(default_factory=list)
-    Related: Optional[GraphNode] = None
+    Parent: int = GRAPH_NULL  # node index or GRAPH_NULL
+    Related: int = GRAPH_NULL  # node index or GRAPH_NULL
+    Children: List[int] = field(default_factory=list)
+
+
+@dataclass
+class ObjectGraph:
+    """
+    Object graph with circular references encoded via integer edges.
+
+    Same topology as C#/C/Rust/JS: Root → Child1, Child2; Child1.Related ↔ Child2.
+    Portable across every codec — no live pointer cycles, no infinite recursion.
+    """
+
+    root: int = 0
+    nodes: List[GraphNodeData] = field(default_factory=list)

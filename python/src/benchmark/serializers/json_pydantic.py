@@ -15,9 +15,12 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from .base import Serializer
 from ..data.models import (
+    GRAPH_NULL,
     Claim,
     EDI835,
     Gender as GenderEnum,
+    GraphNodeData,
+    ObjectGraph,
     Passport,
     Person,
     PoliceRecord,
@@ -100,6 +103,18 @@ class EDI835Model(_Cfg):
     Claims: List[ClaimModel] = []
 
 
+class GraphNodeDataModel(_Cfg):
+    Name: str = ""
+    Parent: int = GRAPH_NULL
+    Related: int = GRAPH_NULL
+    Children: List[int] = []
+
+
+class ObjectGraphModel(_Cfg):
+    root: int = 0
+    nodes: List[GraphNodeDataModel] = []
+
+
 _MODEL_MAP: Dict[Type[Any], Type[BaseModel]] = {
     Person: PersonModel,
     SimpleObject: SimpleObjectModel,
@@ -110,6 +125,8 @@ _MODEL_MAP: Dict[Type[Any], Type[BaseModel]] = {
     ServiceLine: ServiceLineModel,
     Passport: PassportModel,
     PoliceRecord: PoliceRecordModel,
+    GraphNodeData: GraphNodeDataModel,
+    ObjectGraph: ObjectGraphModel,
 }
 
 
@@ -126,9 +143,6 @@ class PydanticSerializer(Serializer):
     @property
     def name(self) -> str:
         return "pydantic"
-
-    def supports(self, test_data_name: str) -> bool:
-        return test_data_name != "ObjectGraph"
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)

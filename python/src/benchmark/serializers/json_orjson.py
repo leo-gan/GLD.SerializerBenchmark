@@ -3,6 +3,10 @@ orjson benchmark wrapper.
 
 Call-path: prepare_data converts dataclasses to JSON-friendly dicts (untimed).
 Timed path only runs orjson.dumps / orjson.loads on native dict/list/scalars.
+
+orjson's documented high-performance path is dumps/loads on plain dicts (Rust
+core). OPT_SERIALIZE_DATACLASS is slower for our fixtures once conversion is
+untimed, so we keep the dict path.
 """
 
 from __future__ import annotations
@@ -24,10 +28,8 @@ class OrjsonSerializer(Serializer):
     def name(self) -> str:
         return "orjson"
 
-    def supports(self, test_data_name: str) -> bool:
-        return test_data_name != "ObjectGraph"
-
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
+        # Flat ObjectGraph (index edges) serializes as a plain dict like other fixtures.
         return to_dict(obj)
 
     def serialize_bytes(self, obj: Any) -> bytes:

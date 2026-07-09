@@ -83,18 +83,18 @@ def test_dill_supports_object_graph():
     assert DillSerializer().supports("ObjectGraph") is True
     original = generate_test_data("ObjectGraph")
     ser = DillSerializer()
-    from benchmark.data.models import GraphNode
-    ser.prepare("ObjectGraph", GraphNode)
-    native = ser.prepare_data(original, "ObjectGraph", GraphNode)
+    from benchmark.data.models import ObjectGraph
+    ser.prepare("ObjectGraph", ObjectGraph)
+    native = ser.prepare_data(original, "ObjectGraph", ObjectGraph)
     data = ser.serialize_bytes(native)
     out = ser.deserialize_bytes(data)
     ok, err = compare(original, out)
     assert ok, err
 
 
-def test_serpyco_rejects_object_graph_and_integer():
+def test_serpyco_supports_object_graph_rejects_integer():
     ser = SerpycoSerializer()
-    assert ser.supports("ObjectGraph") is False
+    assert ser.supports("ObjectGraph") is True
     assert ser.supports("Integer") is False
 
 

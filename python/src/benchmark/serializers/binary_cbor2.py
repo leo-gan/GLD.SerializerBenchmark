@@ -33,11 +33,8 @@ class Cbor2Serializer(Serializer):
     def name(self) -> str:
         return "cbor2"
 
-    def supports(self, test_data_name: str) -> bool:
-        # Reconstructing cyclic dataclasses from schemaless CBOR is out of scope.
-        return test_data_name != "ObjectGraph"
-
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
+        # Flat ObjectGraph (index edges) is a plain dict tree after to_dict.
         return to_dict(obj)
 
     def serialize_bytes(self, obj: Any) -> bytes:

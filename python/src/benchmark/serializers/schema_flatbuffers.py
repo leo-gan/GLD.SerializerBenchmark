@@ -30,9 +30,12 @@ import flatbuffers
 
 from .base import Serializer
 from ..data.models import (
+    GRAPH_NULL,
     Claim,
     EDI835,
     Gender,
+    GraphNodeData,
+    ObjectGraph,
     Passport,
     Person,
     PoliceRecord,
@@ -49,6 +52,8 @@ if str(_GEN) not in sys.path:
 import BenchmarkFB.Claim as FBClaim  # noqa: E402
 import BenchmarkFB.EDI835 as FBEDI835  # noqa: E402
 import BenchmarkFB.Gender as FBGender  # noqa: E402
+import BenchmarkFB.GraphNodeData as FBGraphNodeData  # noqa: E402
+import BenchmarkFB.ObjectGraph as FBObjectGraph  # noqa: E402
 import BenchmarkFB.Passport as FBPassport  # noqa: E402
 import BenchmarkFB.Person as FBPerson  # noqa: E402
 import BenchmarkFB.PoliceRecord as FBPoliceRecord  # noqa: E402
@@ -81,7 +86,7 @@ class FlatBuffersSerializer(Serializer):
         return "flatbuffers"
 
     def supports(self, test_data_name: str) -> bool:
-        return test_data_name not in ("ObjectGraph", "Integer")
+        return test_data_name != "Integer"
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
@@ -92,6 +97,7 @@ class FlatBuffersSerializer(Serializer):
             StringArrayObject: (_encode_string_array, _decode_string_array),
             TelemetryData: (_encode_telemetry, _decode_telemetry),
             EDI835: (_encode_edi835, _decode_edi835),
+            ObjectGraph: (_encode_object_graph, _decode_object_graph),
         }
         pair = encoders.get(test_data_type)
         if pair is None:
@@ -280,6 +286,42 @@ def _encode_edi835(builder: flatbuffers.Builder, obj: EDI835) -> bytes:
     builder.Finish(root)
     return bytes(builder.Output())
 
+
+def _encode_graph_node(builder: flatbuffers.Builder, obj: GraphNodeData) -> int:
+    name = builder.CreateString(obj.Name)
+    if obj.Children:
+        FBGraphNodeData.StartChildrenVector(builder, len(obj.Children))
+        for c in reversed(obj.Children):
+            builder.PrependInt32(c)
+        children = builder.EndVector()
+    else:
+        children = None
+    FBGraphNodeData.Start(builder)
+    FBGraphNodeData.AddName(builder, name)
+    FBGraphNodeData.AddParent(builder, obj.Parent)
+    FBGraphNodeData.AddRelated(builder, obj.Related)
+    if children is not None:
+        FBGraphNodeData.AddChildren(builder, children)
+    return FBGraphNodeData.End(builder)
+
+
+def _encode_object_graph(builder: flatbuffers.Builder, obj: ObjectGraph) -> bytes:
+    _reset(builder)
+    node_offs = [_encode_graph_node(builder, n) for n in obj.nodes]
+    if node_offs:
+        FBObjectGraph.StartNodesVector(builder, len(node_offs))
+        for off in reversed(node_offs):
+            builder.PrependUOffsetTRelative(off)
+        nodes = builder.EndVector()
+    else:
+        nodes = None
+    FBObjectGraph.Start(builder)
+    FBObjectGraph.AddRoot(builder, obj.root)
+    if nodes is not None:
+        FBObjectGraph.AddNodes(builder, nodes)
+    root = FBObjectGraph.End(builder)
+    builder.Finish(root)
+    return bytes(builder.Output())
 
 
 # ---------------------------------------------------------------------------
@@ -521,6 +563,48 @@ class _EDI835View:
         return [_ClaimView(r.Claims(i)) for i in range(r.ClaimsLength())]
 
 
+class _GraphNodeDataView:
+    __slots__ = ("_r",)
+
+    def __init__(self, root: Any) -> None:
+        self._r = root
+
+    @property
+    def Name(self) -> Any:
+        return _fb_str(self._r.Name())
+
+    @property
+    def Parent(self) -> int:
+        return self._r.Parent()
+
+    @property
+    def Related(self) -> int:
+        return self._r.Related()
+
+    @property
+    def Children(self) -> list:
+        r = self._r
+        return [r.Children(i) for i in range(r.ChildrenLength())]
+
+
+class _ObjectGraphView:
+    """FlatBuffers view with dataclass-compatible field names (root / nodes)."""
+
+    __slots__ = ("_r",)
+
+    def __init__(self, root: Any) -> None:
+        self._r = root
+
+    @property
+    def root(self) -> int:
+        return self._r.Root()
+
+    @property
+    def nodes(self) -> list:
+        r = self._r
+        return [_GraphNodeDataView(r.Nodes(i)) for i in range(r.NodesLength())]
+
+
 def _decode_person(data: bytes) -> _PersonView:
     return _PersonView(FBPerson.Person.GetRootAs(data, 0))
 
@@ -539,3 +623,7 @@ def _decode_telemetry(data: bytes) -> _TelemetryView:
 
 def _decode_edi835(data: bytes) -> _EDI835View:
     return _EDI835View(FBEDI835.EDI835.GetRootAs(data, 0))
+
+
+def _decode_object_graph(data: bytes) -> _ObjectGraphView:
+    return _ObjectGraphView(FBObjectGraph.ObjectGraph.GetRootAs(data, 0))

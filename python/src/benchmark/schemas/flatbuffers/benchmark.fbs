@@ -71,4 +71,17 @@ table EDI835 {
   claims:[Claim];
 }
 
+// Flat ObjectGraph: integer edges (GRAPH_NULL = -1). Matches C/Rust/JS.
+table GraphNodeData {
+  name:string;
+  parent:int = -1;
+  related:int = -1;
+  children:[int];
+}
+
+table ObjectGraph {
+  root:int;
+  nodes:[GraphNodeData];
+}
+
 root_type Person;

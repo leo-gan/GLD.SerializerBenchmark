@@ -1,1 +1,0 @@
-# flatc-generated package
