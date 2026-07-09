@@ -46,13 +46,18 @@ This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | Utf8Json | JSON | Utf8Json |
 | YamlDotNet | YAML | YamlDotNet |
 | YAXLib | XML | YAXLib |
-| ZeroFormatter | Binary | ZeroFormatter; Integer / SimpleObject / StringArray via built-in formatters (`int`, `KeyTuple`, `List<string>`) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
+| ZeroFormatter | Binary | ZeroFormatter; **all fixtures** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
 
 ### Caveats
 
 - **ObjectGraph** is a **flat** `{Root, Nodes[]}` with integer edges (`Parent`/`Related`/`Children` indices, null = `-1`) — same portable model as C/Rust/JS/Python/Go. Live pointer cycles are not used.
 - Still skipped (not capable / suite constraints): CsvHelper (tabular), Google.Protobuf (no generated IMessage), FluentSerializer (profiles), BinaryPack, Apex, ExtendedXml, Migrant (net8 IL), SharpSerializer, GroBuf (fidelity).
-- MemoryPack / FlatSharp / ZeroFormatter map ObjectGraph via annotated / KeyTuple helpers.
+- MemoryPack / FlatSharp map supported fixtures via annotated models in `PrepareData` (timed path is codec-only; `ToDomain` untimed).
+- ZeroFormatter maps **all** suite fixtures to `KeyTuple` graphs (max arity 8; Telemetry nested).
+- SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
+- Jil reuses a single static `Options` instance.
+- Harness no longer prints per-repetition DEBUG lines (measurement noise).
+
 - Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.
 

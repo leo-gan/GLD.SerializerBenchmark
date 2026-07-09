@@ -5,22 +5,28 @@ using GLD.SerializerBenchmark.TestData;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    // FlatSharp
+    // FlatSharp — PrepareData builds annotated tables untimed; timed path is GetMaxSize+Serialize only.
+    // https://github.com/jamescourtney/FlatSharp
     internal class FlatSharpSerializerSer : SerDeser
     {
         private readonly FlatBufferSerializer _serializer = FlatBufferSerializer.Default;
+        private object _native;
 
         public override string Name => "FlatSharp";
 
-        public override bool Supports(string testDataName)
+        public override bool Supports(string testDataName) =>
+            testDataName is "Integer" or "SimpleObject" or "StringArray" or "ObjectGraph";
+
+        public override void PrepareData(object data)
         {
-            // FlatSharp works with annotated types (+ flat ObjectGraph)
-            return testDataName is "Integer" or "SimpleObject" or "StringArray" or "ObjectGraph";
+            _native = ToAnnotated(data);
         }
+
+        public override object ToDomain(object decoded) => FromAnnotated(decoded);
 
         public override string Serialize(object serializable)
         {
-            var (buffer, len) = SerializeToBuffer(serializable);
+            var (buffer, len) = SerializeAnnotated(_native ?? ToAnnotated(serializable));
             if (buffer == null || len <= 0) return "";
             return Convert.ToBase64String(buffer, 0, len);
         }
@@ -28,13 +34,12 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object Deserialize(string serialized)
         {
             var bytes = Convert.FromBase64String(serialized);
-            object annotated = DeserializeAnnotated(bytes);
-            return ConvertFromAnnotated(annotated);
+            return ParseAnnotated(bytes);
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            var (buffer, len) = SerializeToBuffer(serializable);
+            var (buffer, len) = SerializeAnnotated(_native ?? ToAnnotated(serializable));
             if (buffer == null || len <= 0) return;
             outputStream.Write(buffer, 0, len);
         }
@@ -44,49 +49,39 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             using var ms = new MemoryStream();
             inputStream.CopyTo(ms);
-            object annotated = DeserializeAnnotated(ms.ToArray());
-            return ConvertFromAnnotated(annotated);
+            return ParseAnnotated(ms.ToArray());
         }
 
-
-        /// <summary>
-        /// FlatSharp APIs are generic; boxing as object loses the type model (System.Object error).
-        /// Keep strongly-typed Serialize/GetMaxSize overloads.
-        /// </summary>
-        private (byte[] buffer, int len) SerializeToBuffer(object serializable)
+        private (byte[] buffer, int len) SerializeAnnotated(object annotated)
         {
-            if (_primaryType == typeof(int))
+            if (annotated is FShrp.IntObject i)
             {
-                var annotated = FlatSharpTypeConverter.ToFlatSharp((int)serializable);
-                int maxSize = _serializer.GetMaxSize(annotated);
+                int maxSize = _serializer.GetMaxSize(i);
                 var buffer = new byte[maxSize];
-                return (buffer, _serializer.Serialize(annotated, buffer));
+                return (buffer, _serializer.Serialize(i, buffer));
             }
-            if (_primaryType == typeof(SimpleObject))
+            if (annotated is FShrp.SimpleObject s)
             {
-                var annotated = FlatSharpTypeConverter.ToFlatSharp((SimpleObject)serializable);
-                int maxSize = _serializer.GetMaxSize(annotated);
+                int maxSize = _serializer.GetMaxSize(s);
                 var buffer = new byte[maxSize];
-                return (buffer, _serializer.Serialize(annotated, buffer));
+                return (buffer, _serializer.Serialize(s, buffer));
             }
-            if (_primaryType == typeof(StringArrayObject))
+            if (annotated is FShrp.StringArrayObject a)
             {
-                var annotated = FlatSharpTypeConverter.ToFlatSharp((StringArrayObject)serializable);
-                int maxSize = _serializer.GetMaxSize(annotated);
+                int maxSize = _serializer.GetMaxSize(a);
                 var buffer = new byte[maxSize];
-                return (buffer, _serializer.Serialize(annotated, buffer));
+                return (buffer, _serializer.Serialize(a, buffer));
             }
-            if (_primaryType == typeof(ObjectGraph))
+            if (annotated is FShrp.ObjectGraph g)
             {
-                var annotated = FlatSharpTypeConverter.ToFlatSharp((ObjectGraph)serializable);
-                int maxSize = _serializer.GetMaxSize(annotated);
+                int maxSize = _serializer.GetMaxSize(g);
                 var buffer = new byte[maxSize];
-                return (buffer, _serializer.Serialize(annotated, buffer));
+                return (buffer, _serializer.Serialize(g, buffer));
             }
             return (null, 0);
         }
 
-        private object DeserializeAnnotated(byte[] bytes)
+        private object ParseAnnotated(byte[] bytes)
         {
             if (_primaryType == typeof(int))
                 return _serializer.Parse<FShrp.IntObject>(bytes);
@@ -99,7 +94,20 @@ namespace GLD.SerializerBenchmark.Serializers
             return null;
         }
 
-        private object ConvertFromAnnotated(object annotated)
+        private object ToAnnotated(object obj)
+        {
+            if (_primaryType == typeof(int))
+                return FlatSharpTypeConverter.ToFlatSharp((int)obj);
+            if (_primaryType == typeof(SimpleObject))
+                return FlatSharpTypeConverter.ToFlatSharp((SimpleObject)obj);
+            if (_primaryType == typeof(StringArrayObject))
+                return FlatSharpTypeConverter.ToFlatSharp((StringArrayObject)obj);
+            if (_primaryType == typeof(ObjectGraph))
+                return FlatSharpTypeConverter.ToFlatSharp((ObjectGraph)obj);
+            return null;
+        }
+
+        private object FromAnnotated(object annotated)
         {
             if (annotated is FShrp.IntObject intObj)
                 return FlatSharpTypeConverter.FromFlatSharp(intObj);

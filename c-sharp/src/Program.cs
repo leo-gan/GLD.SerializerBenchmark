@@ -17,6 +17,12 @@ namespace GLD.SerializerBenchmark
                 return;
             }
 
+            if (args.Length > 0 && args[0].Equals("selfcheck", System.StringComparison.OrdinalIgnoreCase))
+            {
+                System.Environment.Exit(SelfCheck.Run());
+                return;
+            }
+
             var repetitions = args.Length > 0 ? int.Parse(args[0]) : 100;
             var serializerFilter = args.Length > 1 ? args[1] : null;
             var testDataFilter = args.Length > 2 ? args[2] : null;
