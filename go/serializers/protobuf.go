@@ -63,9 +63,10 @@ func (s *googleProtobuf) DeserializeBytes(buf []byte) (any, error) {
 	if s.dst == nil {
 		return nil, fmt.Errorf("prepare() required before deserialize")
 	}
-	// Reset by replacing with empty then unmarshal into it — Unmarshal merges into
-	// existing messages; reusing a fresh emptyProto avoids field residue.
-	s.dst = emptyProto(s.fxName)
+	// Reuse dst: Unmarshal merges into the message, so clear first. Reset avoids
+	// allocating a new Message (and nested slices) on every timed deser call.
+	// https://pkg.go.dev/google.golang.org/protobuf/proto#Reset
+	proto.Reset(s.dst)
 	if err := proto.Unmarshal(buf, s.dst); err != nil {
 		return nil, err
 	}

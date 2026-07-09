@@ -66,6 +66,14 @@ func TestProtobufTimedPathReturnsMessage(t *testing.T) {
 	if _, ok := decoded.(proto.Message); !ok {
 		t.Fatalf("deserialize should return proto.Message for timed path, got %T", decoded)
 	}
+	// Same dst instance must be reused across deserializations (proto.Reset path).
+	decoded2, err := s.DeserializeBytes(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if decoded != decoded2 {
+		t.Fatal("expected reused protobuf dst message across DeserializeBytes calls")
+	}
 	domain, err := s.ToDomain(decoded)
 	if err != nil {
 		t.Fatal(err)
