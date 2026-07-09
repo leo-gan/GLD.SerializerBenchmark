@@ -29,7 +29,11 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 - **easyjson / gogen**: require per-type codegen comments beyond shared models
 - **flatbuffers / cap’n proto**: heavy IDL + zero-copy fidelity model (same deferral as other harnesses)
-- **ObjectGraph**: cycles unsupported by most formats
+
+### ObjectGraph
+
+All registered serializers support **ObjectGraph** using a flat node table + integer edges
+(`GRAPH_NULL = -1`), matching C/Rust/JS/Python — not live pointer cycles.
 
 ## Run
 

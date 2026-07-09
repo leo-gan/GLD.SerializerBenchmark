@@ -56,8 +56,9 @@ type BenchSerializer interface {
 	DeserializeStream(r io.Reader) (any, error)
 }
 
+// DefaultSupports: flat ObjectGraph (index edges) is portable — every codec can encode it.
 func DefaultSupports(testDataName string) bool {
-	return testDataName != "ObjectGraph"
+	return true
 }
 
 func AdaptedSerializeStream(s BenchSerializer, fx model.Fixture, w io.Writer) (int, error) {

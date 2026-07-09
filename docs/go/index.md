@@ -38,7 +38,7 @@ for rep:
 
 ### Caveats
 
-- **ObjectGraph:** skipped (cycles).
+- **ObjectGraph:** flat `{root, nodes[]}` with integer edges (`parent`/`related`/`children` indices, `GRAPH_NULL = -1`). Every registered serializer supports it (same portable encoding as C/Rust/JS/Python).
 - **Integer:** skipped for `protobuf` (no bare scalar message in shared schema).
 - **protobuf** date fields go through millisecond timestamps; fidelity compares identity fields and allows date-string drift on Person passport expiration / timestamps where unchecked.
 - **encoding/gob** is not a cross-language wire format.

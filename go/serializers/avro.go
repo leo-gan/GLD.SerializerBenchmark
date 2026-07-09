@@ -130,6 +130,18 @@ func schemaFor(name string) (avro.Schema, error) {
 				]
 			}}}
 		]}`
+	case "ObjectGraph":
+		raw = `{"type":"record","name":"ObjectGraph","fields":[
+			{"name":"root","type":"int"},
+			{"name":"nodes","type":{"type":"array","items":{
+				"type":"record","name":"GraphNodeData","fields":[
+					{"name":"name","type":"string"},
+					{"name":"parent","type":"int"},
+					{"name":"related","type":"int"},
+					{"name":"children","type":{"type":"array","items":"int"}}
+				]
+			}}}
+		]}`
 	default:
 		return nil, fmt.Errorf("avro: no schema for %s", name)
 	}

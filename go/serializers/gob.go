@@ -23,6 +23,8 @@ func newEncodingGob() *encodingGob {
 	gob.Register(model.SimpleObject{})
 	gob.Register(model.StringArrayObject{})
 	gob.Register(model.Edi835{})
+	gob.Register(model.ObjectGraph{})
+	gob.Register(model.GraphNodeData{})
 	gob.Register(model.Passport{})
 	gob.Register(model.PoliceRecord{})
 	gob.Register(model.Claim{})

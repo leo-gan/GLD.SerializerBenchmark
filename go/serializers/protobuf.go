@@ -29,10 +29,8 @@ func (s *googleProtobuf) StreamMode() StreamMode { return StreamAdapted }
 func (s *googleProtobuf) NativeKind() NativeKind { return NativeMessage }
 func (s *googleProtobuf) Supports(n string) bool {
 	// No bare Integer message in shared schema (aligned with Rust prost).
-	if n == "Integer" || n == "ObjectGraph" {
-		return false
-	}
-	return true
+	// Flat ObjectGraph is supported via GraphNodeData index edges.
+	return n != "Integer"
 }
 
 func (s *googleProtobuf) Prepare(fx model.Fixture) error {
@@ -155,6 +153,17 @@ func toProto(fx model.Fixture) (proto.Message, error) {
 			TransactionControlNumber: v.TransactionControlNumber,
 			Claims:                   claims,
 		}, nil
+	case model.ObjectGraph:
+		nodes := make([]*pb.GraphNodeData, len(v.Nodes))
+		for i, n := range v.Nodes {
+			nodes[i] = &pb.GraphNodeData{
+				Name:     n.Name,
+				Parent:   n.Parent,
+				Related:  n.Related,
+				Children: append([]int32(nil), n.Children...),
+			}
+		}
+		return &pb.ObjectGraph{Root: v.Root, Nodes: nodes}, nil
 	default:
 		return nil, fmt.Errorf("protobuf: unsupported type %T", fx.Value)
 	}
@@ -172,6 +181,8 @@ func emptyProto(name string) proto.Message {
 		return &pb.TelemetryData{}
 	case "EDI_835":
 		return &pb.EDI835{}
+	case "ObjectGraph":
+		return &pb.ObjectGraph{}
 	default:
 		return nil
 	}
@@ -253,6 +264,22 @@ func fromProto(name string, msg proto.Message) (any, error) {
 			TransactionControlNumber: p.TransactionControlNumber,
 			Claims:                   claims,
 		}, nil
+	case "ObjectGraph":
+		p := msg.(*pb.ObjectGraph)
+		nodes := make([]model.GraphNodeData, len(p.Nodes))
+		for i, n := range p.Nodes {
+			ch := n.Children
+			if ch == nil {
+				ch = []int32{}
+			}
+			nodes[i] = model.GraphNodeData{
+				Name:     n.Name,
+				Parent:   n.Parent,
+				Related:  n.Related,
+				Children: append([]int32(nil), ch...),
+			}
+		}
+		return model.ObjectGraph{Root: p.Root, Nodes: nodes}, nil
 	default:
 		return nil, fmt.Errorf("fromProto: %s", name)
 	}
