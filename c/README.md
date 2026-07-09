@@ -21,4 +21,13 @@ Requires: `cmake`, `curl`, `pkg-config`, `libjson-c-dev` (or equivalent), `zlib`
 ./scripts/run-benchmarks.sh full
 ```
 
+## Tests
+
+```bash
+cmake -S c -B c/build -DCMAKE_BUILD_TYPE=Release
+cmake --build c/build --target c_serializer_tests
+./c/build/c_serializer_tests
+# or: ctest --test-dir c/build -R c_serializer
+```
+
 Analysis: install `analysis/`, then `analyze-benchmarks -l c` (see root README).

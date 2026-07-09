@@ -12,6 +12,16 @@ namespace GLD.SerializerBenchmark
         bool Supports(string testDataName);
         void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null);
 
+        /// <summary>
+        /// Untimed preparation of the native value for the timed path (convert to
+        /// annotated models, cache formatters, etc.). Called once per fixture after
+        /// <see cref="Initialize"/>.
+        /// </summary>
+        void PrepareData(object data);
+
+        /// <summary>Untimed domain conversion after timed deserialize.</summary>
+        object ToDomain(object decoded);
+
         string Serialize(object serializable);
         object Deserialize(string serialized);
 

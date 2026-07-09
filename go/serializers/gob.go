@@ -9,10 +9,12 @@ import (
 )
 
 // encodingGob — Go-native binary format (stdlib encoding/gob).
-// Recommended: register types once; reuse Encoder/Decoder on streams; for bytes use buffer.
+// Recommended: register types once; each independent payload needs NewEncoder
+// (type headers); reuse the backing Buffer with Reset to cut allocs.
 // https://pkg.go.dev/encoding/gob
 type encodingGob struct {
 	proto any
+	buf   bytes.Buffer
 }
 
 func newEncodingGob() *encodingGob {
@@ -23,6 +25,8 @@ func newEncodingGob() *encodingGob {
 	gob.Register(model.SimpleObject{})
 	gob.Register(model.StringArrayObject{})
 	gob.Register(model.Edi835{})
+	gob.Register(model.ObjectGraph{})
+	gob.Register(model.GraphNodeData{})
 	gob.Register(model.Passport{})
 	gob.Register(model.PoliceRecord{})
 	gob.Register(model.Claim{})
@@ -38,15 +42,18 @@ func (s *encodingGob) Supports(n string) bool { return DefaultSupports(n) }
 
 func (s *encodingGob) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
+	s.buf.Reset()
 	return nil
 }
 
 func (s *encodingGob) SerializeBytes(fx model.Fixture) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(fx.Value); err != nil {
+	s.buf.Reset()
+	if err := gob.NewEncoder(&s.buf).Encode(fx.Value); err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	out := make([]byte, s.buf.Len())
+	copy(out, s.buf.Bytes())
+	return out, nil
 }
 
 func (s *encodingGob) DeserializeBytes(buf []byte) (any, error) {

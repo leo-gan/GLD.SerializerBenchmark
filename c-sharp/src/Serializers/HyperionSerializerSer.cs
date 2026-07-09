@@ -11,12 +11,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "Hyperion";
 
-        public override bool Supports(string testDataName)
-        {
-            // Hyperion can crash with StackOverflow/SegFault on very deep circular references like ObjectGraph
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable)
         {
             using (var ms = new MemoryStream())

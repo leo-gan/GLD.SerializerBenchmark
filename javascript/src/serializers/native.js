@@ -1,17 +1,19 @@
 import v8 from 'node:v8';
+import { asBuffer } from './common.js';
 
 export const v8Ser = {
   name: 'v8-serializer',
   version: `v8-${process.versions.v8}`,
   category: 'native',
-  // Supports ObjectGraph (cycles) via V8 serializer
+  // Flat ObjectGraph + live cycles both work; suite uses flat index edges.
   supports: () => true,
   prepare() {},
   serialize(value) {
     return v8.serialize(value);
   },
   deserialize(buf) {
-    return v8.deserialize(Buffer.from(buf));
+    // v8.deserialize accepts Buffer; avoid double-wrap.
+    return v8.deserialize(asBuffer(buf));
   },
 };
 

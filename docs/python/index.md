@@ -52,7 +52,7 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 ### Other caveats
 
 
-- **ObjectGraph:** only `pickle` / `cloudpickle` / `dill` expected to succeed.
+- **ObjectGraph:** flat `{root, nodes[]}` with integer edges (`Parent`/`Related`/`Children` indices, `GRAPH_NULL = -1`). Every registered serializer supports it — same portable encoding as C/Rust/JS (no live pointer cycles).
 - **Integer:** protobuf / avro / flatbuffers / serpyco-rs typically exclude bare scalars.
 - `tracemalloc` under-counts C/Rust extension allocations.
 - Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).

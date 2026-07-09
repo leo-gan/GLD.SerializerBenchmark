@@ -6,7 +6,7 @@ Goals:
 - Inventory consistency (docs/registry/modules)
 - Roundtrip matrix for *all* registered serializers on a fixed fixture
 - Invariants: serialize of same native input is deterministic for pure codecs
-- Negative: ObjectGraph only on native family
+- ObjectGraph (flat index edges) on every registered serializer
 - prepare must be called before schema deserializers work
 """
 from __future__ import annotations
@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT))
 
 from benchmark.comparer import compare
 from benchmark.data.generator import generate_test_data
-from benchmark.data.models import GraphNode, Person
+from benchmark.data.models import GRAPH_NULL, ObjectGraph, Person
 from benchmark.runner import ALL_SERIALIZERS, ALL_TEST_DATA
 
 
@@ -58,30 +58,35 @@ def test_all_serializers_person_or_skip(ser):
     assert ok, f"{ser.name}: {err}"
 
 
-def test_object_graph_only_native_family_succeeds():
+def test_object_graph_all_serializers_roundtrip():
+    """Flat ObjectGraph is portable — every registered codec must roundtrip it."""
     original = generate_test_data("ObjectGraph")
-    successes = []
+    assert isinstance(original, ObjectGraph)
+    assert original.root == 0
+    assert len(original.nodes) == 3
+    assert original.nodes[0].Children == [1, 2]
+    assert original.nodes[1].Related == 2 and original.nodes[2].Related == 1
+    assert original.nodes[0].Parent == GRAPH_NULL
+
     failures = []
+    successes = []
     for ser in ALL_SERIALIZERS:
-        if not ser.supports("ObjectGraph"):
-            failures.append(ser.name)
-            continue
+        assert ser.supports("ObjectGraph"), f"{ser.name} must support ObjectGraph"
         try:
-            ser.prepare("ObjectGraph", GraphNode)
-            native = ser.prepare_data(original, "ObjectGraph", GraphNode)
+            ser.prepare("ObjectGraph", ObjectGraph)
+            native = ser.prepare_data(original, "ObjectGraph", ObjectGraph)
             data = ser.serialize_bytes(native)
+            assert isinstance(data, (bytes, bytearray)) and len(data) > 0
             out = ser.deserialize_bytes(data)
-            ok, _ = compare(original, out)
+            ok, err = compare(original, out)
             if ok:
                 successes.append(ser.name)
             else:
-                failures.append(ser.name)
-        except Exception:
-            failures.append(ser.name)
-    # Only language-native serializers are expected to pass cycles
-    for name in successes:
-        assert name in {"pickle", "cloudpickle", "dill"}, f"unexpected ObjectGraph success: {name}"
-    assert set(successes) >= {"pickle", "cloudpickle", "dill"}
+                failures.append(f"{ser.name}: {err}")
+        except Exception as exc:
+            failures.append(f"{ser.name}: {type(exc).__name__}: {exc}")
+    assert not failures, "ObjectGraph failures:\n" + "\n".join(failures)
+    assert len(successes) == len(ALL_SERIALIZERS)
 
 
 def test_schema_deserialize_requires_prepare():

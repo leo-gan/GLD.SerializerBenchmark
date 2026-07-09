@@ -17,8 +17,18 @@ from typing import Any, Dict, Type
 
 from .base import Serializer
 from ..data.models import (
-    Claim, EDI835, Gender, Passport, Person,
-    PoliceRecord, ServiceLine, SimpleObject, StringArrayObject, TelemetryData,
+    Claim,
+    EDI835,
+    Gender,
+    GraphNodeData,
+    ObjectGraph,
+    Passport,
+    Person,
+    PoliceRecord,
+    ServiceLine,
+    SimpleObject,
+    StringArrayObject,
+    TelemetryData,
 )
 
 
@@ -46,6 +56,8 @@ _TYPE_MAP: Dict[Type[Any], Type[Any]] = {
     ServiceLine: pb2.ServiceLine,
     Passport: pb2.Passport,
     PoliceRecord: pb2.PoliceRecord,
+    ObjectGraph: pb2.ObjectGraph,
+    GraphNodeData: pb2.GraphNodeData,
 }
 
 
@@ -63,7 +75,7 @@ class ProtobufSerializer(Serializer):
         return "protobuf"
 
     def supports(self, test_data_name: str) -> bool:
-        return test_data_name not in ("ObjectGraph", "Integer")
+        return test_data_name != "Integer"
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
@@ -175,6 +187,22 @@ def _to_protobuf(obj: Any) -> Any:
         for claim in obj.Claims:
             c = p.Claims.add()
             c.CopyFrom(_to_protobuf(claim))
+        return p
+
+    if isinstance(obj, GraphNodeData):
+        p = pb2.GraphNodeData()
+        p.Name = obj.Name
+        p.Parent = obj.Parent
+        p.Related = obj.Related
+        p.Children.extend(obj.Children)
+        return p
+
+    if isinstance(obj, ObjectGraph):
+        p = pb2.ObjectGraph()
+        p.root = obj.root
+        for node in obj.nodes:
+            n = p.nodes.add()
+            n.CopyFrom(_to_protobuf(node))
         return p
 
     raise TypeError(f"Unsupported type for protobuf conversion: {type(obj)}")

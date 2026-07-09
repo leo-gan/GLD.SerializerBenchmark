@@ -31,8 +31,18 @@ import fastavro
 
 from .base import Serializer
 from ..data.models import (
-    Claim, EDI835, Gender, Passport, Person,
-    PoliceRecord, ServiceLine, SimpleObject, StringArrayObject, TelemetryData,
+    Claim,
+    EDI835,
+    Gender,
+    GraphNodeData,
+    ObjectGraph,
+    Passport,
+    Person,
+    PoliceRecord,
+    ServiceLine,
+    SimpleObject,
+    StringArrayObject,
+    TelemetryData,
 )
 
 
@@ -55,6 +65,7 @@ _SCHEMAS = {
     "StringArray": _load_schema("string_array"),
     "Telemetry": _load_schema("telemetry"),
     "EDI_835": _load_schema("edi835"),
+    "ObjectGraph": _load_schema("object_graph"),
 }
 
 # parse_schema once at import — critical for performance (never re-parse in the loop).
@@ -66,6 +77,7 @@ _TYPE_NAMES: Dict[Type[Any], str] = {
     StringArrayObject: "StringArray",
     TelemetryData: "Telemetry",
     EDI835: "EDI_835",
+    ObjectGraph: "ObjectGraph",
 }
 
 
@@ -85,7 +97,7 @@ class AvroSerializer(Serializer):
         return "avro"
 
     def supports(self, test_data_name: str) -> bool:
-        return test_data_name not in ("ObjectGraph", "Integer") and test_data_name in _PARSERS
+        return test_data_name != "Integer" and test_data_name in _PARSERS
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
@@ -186,6 +198,20 @@ def _to_avro(obj: Any) -> Any:
             "TotalActualAmount": obj.TotalActualAmount,
             "TransactionControlNumber": obj.TransactionControlNumber,
             "Claims": [_to_avro(c) for c in obj.Claims],
+        }
+
+    if isinstance(obj, GraphNodeData):
+        return {
+            "Name": obj.Name,
+            "Parent": obj.Parent,
+            "Related": obj.Related,
+            "Children": list(obj.Children),
+        }
+
+    if isinstance(obj, ObjectGraph):
+        return {
+            "root": obj.root,
+            "nodes": [_to_avro(n) for n in obj.nodes],
         }
 
     raise TypeError(f"Unsupported type for Avro conversion: {type(obj)}")

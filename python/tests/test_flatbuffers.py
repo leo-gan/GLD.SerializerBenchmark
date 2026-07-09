@@ -37,10 +37,23 @@ def test_flatbuffers_roundtrip(td_name, td_type):
     assert ok, err
 
 
-def test_flatbuffers_rejects_integer_and_graph():
+def test_flatbuffers_rejects_integer_supports_object_graph():
     ser = FlatBuffersSerializer()
     assert ser.supports("Integer") is False
-    assert ser.supports("ObjectGraph") is False
+    assert ser.supports("ObjectGraph") is True
+
+
+def test_flatbuffers_object_graph_roundtrip():
+    from benchmark.data.models import ObjectGraph
+
+    ser = FlatBuffersSerializer()
+    original = generate_test_data("ObjectGraph")
+    ser.prepare("ObjectGraph", ObjectGraph)
+    native = ser.prepare_data(original, "ObjectGraph", ObjectGraph)
+    data = ser.serialize_bytes(native)
+    out = ser.deserialize_bytes(data)
+    ok, err = compare(original, out)
+    assert ok, err
 
 
 def test_flatbuffers_in_runner_registry():

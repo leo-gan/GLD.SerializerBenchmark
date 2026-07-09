@@ -31,6 +31,7 @@ const char *test_data_name(test_data_kind_t k) {
         case TD_SIMPLE: return "SimpleObject";
         case TD_STRING_ARRAY: return "StringArray";
         case TD_EDI835: return "EDI_835";
+        case TD_OBJECT_GRAPH: return "ObjectGraph";
         default: return "Unknown";
     }
 }
@@ -101,6 +102,38 @@ static void fill_edi(edi835_t *e) {
     }
 }
 
+/* Same topology as C# ObjectGraphDescription / Python generate_object_graph:
+ * Root --children--> Child1, Child2
+ * Child1.Parent = Root, Child2.Parent = Root
+ * Child1.Related <-> Child2 (sibling cycle)
+ */
+static void fill_object_graph(object_graph_t *g) {
+    memset(g, 0, sizeof(*g));
+    g->node_count = 3;
+    g->root = 0;
+
+    graph_node_t *root = &g->nodes[0];
+    graph_node_t *c1 = &g->nodes[1];
+    graph_node_t *c2 = &g->nodes[2];
+
+    snprintf(root->name, sizeof root->name, "Root");
+    root->parent = GRAPH_NULL_IDX;
+    root->related = GRAPH_NULL_IDX;
+    root->child_count = 2;
+    root->children[0] = 1;
+    root->children[1] = 2;
+
+    snprintf(c1->name, sizeof c1->name, "Child1");
+    c1->parent = 0;
+    c1->related = 2;
+    c1->child_count = 0;
+
+    snprintf(c2->name, sizeof c2->name, "Child2");
+    c2->parent = 0;
+    c2->related = 1;
+    c2->child_count = 0;
+}
+
 void data_init_all(test_fixture_t *out, int count, uint64_t seed) {
     rng_state = seed ? seed : 42;
     for (int i = 0; i < count && i < TD_COUNT; i++) {
@@ -114,6 +147,7 @@ void data_init_all(test_fixture_t *out, int count, uint64_t seed) {
             case TD_SIMPLE: fill_simple(&out[i].simple); break;
             case TD_STRING_ARRAY: fill_strarr(&out[i].string_array); break;
             case TD_EDI835: fill_edi(&out[i].edi); break;
+            case TD_OBJECT_GRAPH: fill_object_graph(&out[i].graph); break;
             default: break;
         }
     }

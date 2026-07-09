@@ -22,9 +22,6 @@ class StdlibJsonSerializer(Serializer):
     def name(self) -> str:
         return "json"
 
-    def supports(self, test_data_name: str) -> bool:
-        return test_data_name != "ObjectGraph"
-
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
         return to_dict(obj)
 

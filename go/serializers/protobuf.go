@@ -12,12 +12,14 @@ import (
 )
 
 // googleProtobuf — official google.golang.org/protobuf (protoimpl API).
-// Recommended: proto.Marshal / proto.Unmarshal on generated messages;
-// convert domain types in Prepare (untimed).
+// Recommended: convert domain→Message in Prepare (untimed); timed path is only
+// MarshalAppend / Unmarshal. Domain conversion after deser is untimed (ToDomain).
 // https://protobuf.dev/getting-started/gotutorial/
+// https://pkg.go.dev/google.golang.org/protobuf/proto#MarshalOptions.MarshalAppend
 type googleProtobuf struct {
-	name   string
-	msg    proto.Message // prepared native message
+	msg    proto.Message // prepared native message (serialize)
+	dst    proto.Message // reusable unmarshal target
+	serBuf []byte        // MarshalAppend scratch (reused)
 	fxName string
 }
 
@@ -29,10 +31,8 @@ func (s *googleProtobuf) StreamMode() StreamMode { return StreamAdapted }
 func (s *googleProtobuf) NativeKind() NativeKind { return NativeMessage }
 func (s *googleProtobuf) Supports(n string) bool {
 	// No bare Integer message in shared schema (aligned with Rust prost).
-	if n == "Integer" || n == "ObjectGraph" {
-		return false
-	}
-	return true
+	// Flat ObjectGraph is supported via GraphNodeData index edges.
+	return n != "Integer"
 }
 
 func (s *googleProtobuf) Prepare(fx model.Fixture) error {
@@ -42,20 +42,43 @@ func (s *googleProtobuf) Prepare(fx model.Fixture) error {
 		return err
 	}
 	s.msg = msg
+	s.dst = emptyProto(fx.Name)
+	s.serBuf = s.serBuf[:0]
 	return nil
 }
 
 func (s *googleProtobuf) SerializeBytes(_ model.Fixture) ([]byte, error) {
-	return proto.Marshal(s.msg)
+	var err error
+	// MarshalAppend reuses serBuf (0 alloc steady-state); copy for caller ownership.
+	s.serBuf, err = proto.MarshalOptions{}.MarshalAppend(s.serBuf[:0], s.msg)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]byte, len(s.serBuf))
+	copy(out, s.serBuf)
+	return out, nil
 }
 
 func (s *googleProtobuf) DeserializeBytes(buf []byte) (any, error) {
-	msg := emptyProto(s.fxName)
-	if msg == nil {
-		return nil, fmt.Errorf("unknown fixture %s", s.fxName)
+	if s.dst == nil {
+		return nil, fmt.Errorf("prepare() required before deserialize")
 	}
-	if err := proto.Unmarshal(buf, msg); err != nil {
+	// Reuse dst: Unmarshal merges into the message, so clear first. Reset avoids
+	// allocating a new Message (and nested slices) on every timed deser call.
+	// https://pkg.go.dev/google.golang.org/protobuf/proto#Reset
+	proto.Reset(s.dst)
+	if err := proto.Unmarshal(buf, s.dst); err != nil {
 		return nil, err
+	}
+	// Timed path ends here — Message only (domain conversion via ToDomain).
+	return s.dst, nil
+}
+
+// ToDomain converts a protobuf Message to suite model types (untimed fidelity path).
+func (s *googleProtobuf) ToDomain(decoded any) (any, error) {
+	msg, ok := decoded.(proto.Message)
+	if !ok {
+		return decoded, nil
 	}
 	return fromProto(s.fxName, msg)
 }
@@ -155,6 +178,17 @@ func toProto(fx model.Fixture) (proto.Message, error) {
 			TransactionControlNumber: v.TransactionControlNumber,
 			Claims:                   claims,
 		}, nil
+	case model.ObjectGraph:
+		nodes := make([]*pb.GraphNodeData, len(v.Nodes))
+		for i, n := range v.Nodes {
+			nodes[i] = &pb.GraphNodeData{
+				Name:     n.Name,
+				Parent:   n.Parent,
+				Related:  n.Related,
+				Children: append([]int32(nil), n.Children...),
+			}
+		}
+		return &pb.ObjectGraph{Root: v.Root, Nodes: nodes}, nil
 	default:
 		return nil, fmt.Errorf("protobuf: unsupported type %T", fx.Value)
 	}
@@ -172,6 +206,8 @@ func emptyProto(name string) proto.Message {
 		return &pb.TelemetryData{}
 	case "EDI_835":
 		return &pb.EDI835{}
+	case "ObjectGraph":
+		return &pb.ObjectGraph{}
 	default:
 		return nil
 	}
@@ -253,6 +289,22 @@ func fromProto(name string, msg proto.Message) (any, error) {
 			TransactionControlNumber: p.TransactionControlNumber,
 			Claims:                   claims,
 		}, nil
+	case "ObjectGraph":
+		p := msg.(*pb.ObjectGraph)
+		nodes := make([]model.GraphNodeData, len(p.Nodes))
+		for i, n := range p.Nodes {
+			ch := n.Children
+			if ch == nil {
+				ch = []int32{}
+			}
+			nodes[i] = model.GraphNodeData{
+				Name:     n.Name,
+				Parent:   n.Parent,
+				Related:  n.Related,
+				Children: append([]int32(nil), ch...),
+			}
+		}
+		return model.ObjectGraph{Root: p.Root, Nodes: nodes}, nil
 	default:
 		return nil, fmt.Errorf("fromProto: %s", name)
 	}

@@ -6,8 +6,19 @@ import uuid
 from typing import Any, List, Optional
 
 from .models import (
-    Claim, EDI835, Gender, GraphNode, Passport, Person,
-    PoliceRecord, ServiceLine, SimpleObject, StringArrayObject, TelemetryData,
+    GRAPH_NULL,
+    Claim,
+    EDI835,
+    Gender,
+    GraphNodeData,
+    ObjectGraph,
+    Passport,
+    Person,
+    PoliceRecord,
+    ServiceLine,
+    SimpleObject,
+    StringArrayObject,
+    TelemetryData,
 )
 
 
@@ -215,16 +226,21 @@ def generate_edi_835() -> EDI835:
     return doc
 
 
-def generate_object_graph() -> GraphNode:
-    """Builds a small graph with circular references."""
-    root = GraphNode(Name="Root")
-    child1 = GraphNode(Name="Child1", Parent=root)
-    child2 = GraphNode(Name="Child2", Parent=root)
-    root.Children = [child1, child2]
-    # Circularity: cross-reference siblings
-    child1.Related = child2
-    child2.Related = child1
-    return root
+def generate_object_graph() -> ObjectGraph:
+    """
+    Flat ObjectGraph with the same topology as C#/C/Rust/JS.
+
+    Edges are node indices (not live parent pointers) so every codec can encode
+    the sibling cycle without infinite recursion.
+    """
+    return ObjectGraph(
+        root=0,
+        nodes=[
+            GraphNodeData(Name="Root", Parent=GRAPH_NULL, Related=GRAPH_NULL, Children=[1, 2]),
+            GraphNodeData(Name="Child1", Parent=0, Related=2, Children=[]),
+            GraphNodeData(Name="Child2", Parent=0, Related=1, Children=[]),
+        ],
+    )
 
 
 def generate_integer() -> int:

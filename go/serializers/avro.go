@@ -3,6 +3,7 @@ package serializers
 import (
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/hamba/avro/v2"
 
@@ -10,15 +11,25 @@ import (
 )
 
 // hambaAvro — modern, fast Apache Avro for Go (codegen-free struct binding).
-// Recommended: parse schema once, avro.Marshal(schema, v) / avro.Unmarshal(schema, b, &v).
+// Recommended: parse schema once (cached), avro.Marshal/Unmarshal with frozen API.
 // https://github.com/hamba/avro
 type hambaAvro struct {
 	proto  any
 	schema avro.Schema
+	api    avro.API
 	fxName string
 }
 
-func newHambaAvro() *hambaAvro { return &hambaAvro{} }
+// Package-level schema cache — Parse is not free; Prepare must not re-parse.
+var (
+	avroSchemaMu    sync.Mutex
+	avroSchemaCache = map[string]avro.Schema{}
+	avroAPI         = avro.Config{}.Freeze()
+)
+
+func newHambaAvro() *hambaAvro {
+	return &hambaAvro{api: avroAPI}
+}
 
 func (s *hambaAvro) Name() string           { return "hamba/avro" }
 func (s *hambaAvro) Version() string        { return ModuleVersion("github.com/hamba/avro/v2") }
@@ -38,12 +49,12 @@ func (s *hambaAvro) Prepare(fx model.Fixture) error {
 }
 
 func (s *hambaAvro) SerializeBytes(fx model.Fixture) ([]byte, error) {
-	return avro.Marshal(s.schema, fx.Value)
+	return s.api.Marshal(s.schema, fx.Value)
 }
 
 func (s *hambaAvro) DeserializeBytes(buf []byte) (any, error) {
 	dst := model.NewEmptyPtr(s.proto)
-	if err := avro.Unmarshal(s.schema, buf, dst); err != nil {
+	if err := s.api.Unmarshal(s.schema, buf, dst); err != nil {
 		return nil, err
 	}
 	return model.Deref(dst), nil
@@ -58,7 +69,13 @@ func (s *hambaAvro) DeserializeStream(r io.Reader) (any, error) {
 }
 
 // Schemas use field names matching avro struct tags on data types.
+// Parsed schemas are cached for the process lifetime.
 func schemaFor(name string) (avro.Schema, error) {
+	avroSchemaMu.Lock()
+	defer avroSchemaMu.Unlock()
+	if sch, ok := avroSchemaCache[name]; ok {
+		return sch, nil
+	}
 	var raw string
 	switch name {
 	case "Person":
@@ -130,8 +147,25 @@ func schemaFor(name string) (avro.Schema, error) {
 				]
 			}}}
 		]}`
+	case "ObjectGraph":
+		raw = `{"type":"record","name":"ObjectGraph","fields":[
+			{"name":"root","type":"int"},
+			{"name":"nodes","type":{"type":"array","items":{
+				"type":"record","name":"GraphNodeData","fields":[
+					{"name":"name","type":"string"},
+					{"name":"parent","type":"int"},
+					{"name":"related","type":"int"},
+					{"name":"children","type":{"type":"array","items":"int"}}
+				]
+			}}}
+		]}`
 	default:
 		return nil, fmt.Errorf("avro: no schema for %s", name)
 	}
-	return avro.Parse(raw)
+	sch, err := avro.Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+	avroSchemaCache[name] = sch
+	return sch, nil
 }

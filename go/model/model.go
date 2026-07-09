@@ -85,6 +85,24 @@ type IntegerValue struct {
 	Value int32 `json:"value" msgpack:"value" bson:"value" cbor:"value" avro:"value"`
 }
 
+// GRAPH_NULL is the null edge index for ObjectGraph (matches C/Rust/JS/Python).
+const GRAPH_NULL int32 = -1
+
+// GraphNodeData is one node in a flat ObjectGraph. Edges are indices into ObjectGraph.Nodes.
+type GraphNodeData struct {
+	Name     string  `json:"name" msgpack:"name" bson:"name" cbor:"name" avro:"name"`
+	Parent   int32   `json:"parent" msgpack:"parent" bson:"parent" cbor:"parent" avro:"parent"`
+	Related  int32   `json:"related" msgpack:"related" bson:"related" cbor:"related" avro:"related"`
+	Children []int32 `json:"children" msgpack:"children" bson:"children" cbor:"children" avro:"children"`
+}
+
+// ObjectGraph encodes circular topology via integer edges (portable across all codecs).
+// Topology matches C#/C/Rust/JS/Python: Root → Child1, Child2; Child1.Related ↔ Child2.
+type ObjectGraph struct {
+	Root  int32           `json:"root" msgpack:"root" bson:"root" cbor:"root" avro:"root"`
+	Nodes []GraphNodeData `json:"nodes" msgpack:"nodes" bson:"nodes" cbor:"nodes" avro:"nodes"`
+}
+
 // Fixture is one named payload used by the runner.
 type Fixture struct {
 	Name  string
@@ -226,7 +244,19 @@ func makeEDI(rng *Rng) Edi835 {
 	}
 }
 
-// AllFixtures returns the standard suite (ObjectGraph omitted — cycles unsupported by most formats).
+// makeObjectGraph builds the portable flat ObjectGraph (same topology as other harnesses).
+func makeObjectGraph() ObjectGraph {
+	return ObjectGraph{
+		Root: 0,
+		Nodes: []GraphNodeData{
+			{Name: "Root", Parent: GRAPH_NULL, Related: GRAPH_NULL, Children: []int32{1, 2}},
+			{Name: "Child1", Parent: 0, Related: 2, Children: []int32{}},
+			{Name: "Child2", Parent: 0, Related: 1, Children: []int32{}},
+		},
+	}
+}
+
+// AllFixtures returns the standard suite including flat ObjectGraph (index edges, not live cycles).
 func AllFixtures(seed uint64) []Fixture {
 	rng := NewRng(seed)
 	return []Fixture{
@@ -236,6 +266,7 @@ func AllFixtures(seed uint64) []Fixture {
 		{Name: "SimpleObject", Value: makeSimple(rng)},
 		{Name: "StringArray", Value: makeStringArray(rng)},
 		{Name: "EDI_835", Value: makeEDI(rng)},
+		{Name: "ObjectGraph", Value: makeObjectGraph()},
 	}
 }
 
@@ -334,9 +365,47 @@ func Fidelity(expected, actual any) bool {
 			}
 		}
 		return true
+	case ObjectGraph:
+		bv, ok := actual.(ObjectGraph)
+		return ok && ObjectGraphFidelity(av, bv)
 	default:
 		return fmt.Sprintf("%#v", expected) == fmt.Sprintf("%#v", actual)
 	}
+}
+
+// ObjectGraphFidelity checks names + index edges + sibling cycle topology.
+func ObjectGraphFidelity(a, b ObjectGraph) bool {
+	if a.Root != b.Root || len(a.Nodes) != len(b.Nodes) {
+		return false
+	}
+	for i := range a.Nodes {
+		na, nb := a.Nodes[i], b.Nodes[i]
+		if na.Name != nb.Name || na.Parent != nb.Parent || na.Related != nb.Related {
+			return false
+		}
+		if len(na.Children) != len(nb.Children) {
+			return false
+		}
+		for j := range na.Children {
+			if na.Children[j] != nb.Children[j] {
+				return false
+			}
+		}
+	}
+	// Topology invariant: Root children 1,2 with sibling Related cycle.
+	if len(a.Nodes) >= 3 && a.Root == 0 {
+		root := a.Nodes[0]
+		if len(root.Children) >= 2 {
+			i1, i2 := root.Children[0], root.Children[1]
+			if a.Nodes[i1].Parent != 0 || a.Nodes[i2].Parent != 0 {
+				return false
+			}
+			if a.Nodes[i1].Related != i2 || a.Nodes[i2].Related != i1 {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // NewEmptyPtr allocates a pointer to a zero value of the same concrete type as v.
@@ -354,6 +423,8 @@ func NewEmptyPtr(v any) any {
 		return &StringArrayObject{}
 	case Edi835:
 		return &Edi835{}
+	case ObjectGraph:
+		return &ObjectGraph{}
 	default:
 		return nil
 	}
@@ -373,6 +444,8 @@ func Deref(ptr any) any {
 	case *StringArrayObject:
 		return *p
 	case *Edi835:
+		return *p
+	case *ObjectGraph:
 		return *p
 	default:
 		return ptr

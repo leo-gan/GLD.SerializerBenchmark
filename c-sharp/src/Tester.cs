@@ -78,10 +78,14 @@ namespace GLD.SerializerBenchmark
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,
             List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
         {
+            // Untimed: Initialize + PrepareData once per fixture (not inside Stopwatch).
             foreach (var serializer in serializers)
             {
+                if (!serializer.Supports(testDataDescription.Name))
+                    continue;
                 Console.WriteLine($"[DEBUG] Initializing {serializer.Name}");
                 serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
+                serializer.PrepareData(testDataDescription.Data);
             }
 
             TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors);
@@ -117,7 +121,7 @@ namespace GLD.SerializerBenchmark
                 
                 if (!serializer.Supports(original.Name)) continue;
 
-                Console.WriteLine($"[DEBUG] Starting {serializer.Name} ({(streaming ? "Stream" : "string")})");
+                // Do not Console.WriteLine per rep — that dominates short codec timings.
                 SingleTest(serializer, original, errors, streaming, log,
                     logStorage, out bool isRepeatedError);
                 if (isRepeatedError) wasError[serializer.Name] = true;
@@ -166,6 +170,8 @@ namespace GLD.SerializerBenchmark
                     : serializer.Deserialize(serializedString);
                 log.TimeDeser = ElapsedNanoseconds(sw) - log.TimeSer;
                 sw.Stop();
+                // Untimed domain conversion (annotated/KeyTuple → suite POCO).
+                processed = serializer.ToDomain(processed);
             }
             catch (Exception ex)
             {

@@ -92,6 +92,27 @@ static yyjson_mut_doc *fx_to_doc(const test_fixture_t *fx) {
             yyjson_mut_obj_add_val(doc, root, "Claims", claims);
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            const object_graph_t *g = &fx->graph;
+            yyjson_mut_obj_add_int(doc, root, "root", g->root);
+            yyjson_mut_val *nodes = yyjson_mut_arr(doc);
+            int nn = g->node_count; if (nn < 0) nn = 0; if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            for (int i = 0; i < nn; i++) {
+                const graph_node_t *n = &g->nodes[i];
+                yyjson_mut_val *no = yyjson_mut_obj(doc);
+                yyjson_mut_obj_add_strcpy(doc, no, "Name", n->name);
+                yyjson_mut_obj_add_int(doc, no, "Parent", n->parent);
+                yyjson_mut_obj_add_int(doc, no, "Related", n->related);
+                yyjson_mut_val *ch = yyjson_mut_arr(doc);
+                int nc = n->child_count; if (nc < 0) nc = 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                for (int c = 0; c < nc; c++) yyjson_mut_arr_add_int(doc, ch, n->children[c]);
+                yyjson_mut_obj_add_val(doc, no, "Children", ch);
+                yyjson_mut_arr_add_val(nodes, no);
+            }
+            yyjson_mut_obj_add_val(doc, root, "nodes", nodes);
+            break;
+        }
         default:
             yyjson_mut_doc_free(doc);
             return NULL;
@@ -232,19 +253,49 @@ static int doc_to_fx(yyjson_val *root, test_fixture_t *out, test_data_kind_t kin
             }
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            out->graph.root = (int)yyjson_get_int(yyjson_obj_get(root, "root"));
+            yyjson_val *nodes = yyjson_obj_get(root, "nodes");
+            if (!yyjson_is_arr(nodes)) return -1;
+            size_t idx, max; yyjson_val *no; int i = 0;
+            yyjson_arr_foreach(nodes, idx, max, no) {
+                if (i >= GRAPH_MAX_NODES) break;
+                graph_node_t *n = &out->graph.nodes[i];
+                const char *nm = yyjson_get_str(yyjson_obj_get(no, "Name"));
+                if (nm) snprintf(n->name, sizeof n->name, "%s", nm);
+                n->parent = (int)yyjson_get_int(yyjson_obj_get(no, "Parent"));
+                n->related = (int)yyjson_get_int(yyjson_obj_get(no, "Related"));
+                yyjson_val *ch = yyjson_obj_get(no, "Children");
+                int c = 0;
+                if (yyjson_is_arr(ch)) {
+                    size_t i2, m2; yyjson_val *ci;
+                    yyjson_arr_foreach(ch, i2, m2, ci) {
+                        if (c >= GRAPH_MAX_CHILDREN) break;
+                        n->children[c++] = (int)yyjson_get_int(ci);
+                    }
+                }
+                n->child_count = c;
+                i++;
+            }
+            out->graph.node_count = i;
+            break;
+        }
         default: return -1;
     }
     return 0;
 }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    /* Optimal path: build mut doc, write minified JSON (flag 0 = YYJSON_WRITE_NOFLAG).
+     * yyjson has no write-into-external-buffer API; mut_write is the recommended export. */
     yyjson_mut_doc *doc = fx_to_doc(fx);
     if (!doc) return -1;
     size_t len = 0;
-    char *s = yyjson_mut_write(doc, 0, &len);
+    char *s = yyjson_mut_write(doc, YYJSON_WRITE_NOFLAG, &len);
     yyjson_mut_doc_free(doc);
     if (!s) return -1;
-    if (len >= cap) { free(s); return -1; }
+    if (len > cap) { free(s); return -1; }
     memcpy(buf, s, len);
     *ol = len;
     free(s);
@@ -252,7 +303,8 @@ static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
 }
 
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
-    yyjson_doc *doc = yyjson_read((const char *)buf, len, 0);
+    /* Optimal: yyjson_read on the raw buffer (no copy); INSITU would mutate input. */
+    yyjson_doc *doc = yyjson_read((const char *)buf, len, YYJSON_READ_NOFLAG);
     if (!doc) return -1;
     int rc = doc_to_fx(yyjson_doc_get_root(doc), out, kind);
     yyjson_doc_free(doc);

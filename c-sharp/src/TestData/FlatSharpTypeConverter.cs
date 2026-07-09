@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace GLD.SerializerBenchmark.TestData
@@ -49,6 +50,38 @@ namespace GLD.SerializerBenchmark.TestData
         public static int FromFlatSharp(FShrp.IntObject obj)
         {
             return obj?.Value ?? 0;
+        }
+
+        public static FShrp.ObjectGraph ToFlatSharp(ObjectGraph obj)
+        {
+            if (obj == null) return null;
+            return new FShrp.ObjectGraph
+            {
+                Root = obj.Root,
+                Nodes = obj.Nodes?.Select(n => new FShrp.GraphNodeData
+                {
+                    Name = n.Name,
+                    Parent = n.Parent,
+                    Related = n.Related,
+                    Children = n.Children?.ToList() ?? new List<int>()
+                }).ToList() ?? new List<FShrp.GraphNodeData>()
+            };
+        }
+
+        public static ObjectGraph FromFlatSharp(FShrp.ObjectGraph obj)
+        {
+            if (obj == null) return null;
+            return new ObjectGraph
+            {
+                Root = obj.Root,
+                Nodes = obj.Nodes?.Select(n => new GraphNodeData
+                {
+                    Name = n.Name,
+                    Parent = n.Parent,
+                    Related = n.Related,
+                    Children = n.Children?.ToList() ?? new List<int>()
+                }).ToList() ?? new List<GraphNodeData>()
+            };
         }
     }
 }

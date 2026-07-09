@@ -43,6 +43,8 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 - **flexbuffers:** full fixture support. flatbuffers 24.x `toObject` bugs on large vectors / mixed float maps are worked around by encoding arrays as maps and non-integer floats as `{__f}` wrappers (still real FlexBuffers wire; restore is exact).
 - **bebop** / **sia** encode a JSON data model via each library’s primitive writers (no separate IDL codegen in-tree for bebop; full Bebop would use `.bop` + `bebopc`).
 - **bson** / **bser** skip bare `Integer`.
+- **ObjectGraph:** supported by **all** registered codecs via a flat node table + integer edges (Root/Child1/Child2 sibling cycle; same model as C/Rust). Not live parent-pointer cycles (except v8/devalue could also handle those).
 - **devalue** is a framework-oriented value codec (SvelteKit), not a portable wire standard.
+- **prepare()** builds native messages (protobufjs/protobuf-es) and compiles schemas outside the timed path.
 
 Also: [`javascript/README.md`](../../javascript/README.md).

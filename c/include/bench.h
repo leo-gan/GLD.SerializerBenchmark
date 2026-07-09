@@ -71,6 +71,26 @@ typedef struct {
     claim_t claims[6];
 } edi835_t;
 
+/* ObjectGraph: fixed 3-node circular graph matching C#/Python fixtures.
+ * Edges stored as node indices (-1 = null). Storage is dense nodes[0..node_count). */
+#define GRAPH_MAX_NODES 8
+#define GRAPH_MAX_CHILDREN 4
+#define GRAPH_NULL_IDX (-1)
+
+typedef struct {
+    char name[32];
+    int parent;                          /* index or GRAPH_NULL_IDX */
+    int related;                         /* index or GRAPH_NULL_IDX */
+    int child_count;
+    int children[GRAPH_MAX_CHILDREN];    /* indices into nodes[] */
+} graph_node_t;
+
+typedef struct {
+    int root;                            /* index of root node */
+    int node_count;
+    graph_node_t nodes[GRAPH_MAX_NODES];
+} object_graph_t;
+
 typedef enum {
     TD_PERSON = 0,
     TD_INTEGER,
@@ -78,6 +98,7 @@ typedef enum {
     TD_SIMPLE,
     TD_STRING_ARRAY,
     TD_EDI835,
+    TD_OBJECT_GRAPH,
     TD_COUNT
 } test_data_kind_t;
 
@@ -90,6 +111,7 @@ typedef struct {
     simple_object_t simple;
     string_array_t string_array;
     edi835_t edi;
+    object_graph_t graph;
 } test_fixture_t;
 
 typedef struct {

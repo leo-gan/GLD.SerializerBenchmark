@@ -41,7 +41,11 @@ func (s *encodingJSON) DeserializeBytes(buf []byte) (any, error) {
 
 func (s *encodingJSON) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
 	cw := &countWriter{w: w}
-	if err := json.NewEncoder(cw).Encode(fx.Value); err != nil {
+	enc := json.NewEncoder(cw)
+	// SetEscapeHTML(false): match high-throughput JSON practice; Marshal already
+	// does not HTML-escape the same way Encoder defaults do for <>& .
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(fx.Value); err != nil {
 		return 0, err
 	}
 	return cw.n, nil

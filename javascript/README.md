@@ -7,6 +7,8 @@ Binary: `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `
 Schema: `avsc`, `protobufjs`, `protobuf-es`, `flatbuffers`, `flexbuffers`, `bebop`  
 Native: `v8-serializer`, `devalue`
 
+**ObjectGraph** is included for every codec (flat node indices, not live cycles).
+
 See [docs/javascript/index.md](../docs/javascript/index.md).
 
 ## Setup

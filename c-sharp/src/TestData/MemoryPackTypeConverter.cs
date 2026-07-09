@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace GLD.SerializerBenchmark.TestData
@@ -49,6 +50,38 @@ namespace GLD.SerializerBenchmark.TestData
         public static int FromMemoryPack(MPack.IntObject obj)
         {
             return obj?.Value ?? 0;
+        }
+
+        public static MPack.ObjectGraph ToMemoryPack(ObjectGraph obj)
+        {
+            if (obj == null) return null;
+            return new MPack.ObjectGraph
+            {
+                Root = obj.Root,
+                Nodes = obj.Nodes?.Select(n => new MPack.GraphNodeData
+                {
+                    Name = n.Name,
+                    Parent = n.Parent,
+                    Related = n.Related,
+                    Children = n.Children?.ToList() ?? new List<int>()
+                }).ToList() ?? new List<MPack.GraphNodeData>()
+            };
+        }
+
+        public static ObjectGraph FromMemoryPack(MPack.ObjectGraph obj)
+        {
+            if (obj == null) return null;
+            return new ObjectGraph
+            {
+                Root = obj.Root,
+                Nodes = obj.Nodes?.Select(n => new GraphNodeData
+                {
+                    Name = n.Name,
+                    Parent = n.Parent,
+                    Related = n.Related,
+                    Children = n.Children?.ToList() ?? new List<int>()
+                }).ToList() ?? new List<GraphNodeData>()
+            };
         }
     }
 }

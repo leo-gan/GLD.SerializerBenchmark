@@ -89,6 +89,27 @@ static json_t *fx_to_json(const test_fixture_t *fx) {
             json_object_set_new(root, "Claims", claims);
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            const object_graph_t *g = &fx->graph;
+            json_object_set_new(root, "root", json_integer(g->root));
+            json_t *nodes = json_array();
+            int nn = g->node_count; if (nn < 0) nn = 0; if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            for (int i = 0; i < nn; i++) {
+                const graph_node_t *n = &g->nodes[i];
+                json_t *no = json_object();
+                json_object_set_new(no, "Name", json_string(n->name));
+                json_object_set_new(no, "Parent", json_integer(n->parent));
+                json_object_set_new(no, "Related", json_integer(n->related));
+                json_t *ch = json_array();
+                int nc = n->child_count; if (nc < 0) nc = 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                for (int c = 0; c < nc; c++) json_array_append_new(ch, json_integer(n->children[c]));
+                json_object_set_new(no, "Children", ch);
+                json_array_append_new(nodes, no);
+            }
+            json_object_set_new(root, "nodes", nodes);
+            break;
+        }
         default:
             json_decref(root);
             return NULL;
@@ -217,22 +238,40 @@ static int json_to_fx(json_t *root, test_fixture_t *out, test_data_kind_t kind) 
             }
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            out->graph.root = (int)json_integer_value(json_object_get(root, "root"));
+            json_t *nodes = json_object_get(root, "nodes");
+            if (!json_is_array(nodes)) return -1;
+            size_t nn = json_array_size(nodes); if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            out->graph.node_count = (int)nn;
+            for (size_t i = 0; i < nn; i++) {
+                json_t *no = json_array_get(nodes, i);
+                graph_node_t *n = &out->graph.nodes[i];
+                const char *nm = json_string_value(json_object_get(no, "Name"));
+                if (nm) snprintf(n->name, sizeof n->name, "%s", nm);
+                n->parent = (int)json_integer_value(json_object_get(no, "Parent"));
+                n->related = (int)json_integer_value(json_object_get(no, "Related"));
+                json_t *ch = json_object_get(no, "Children");
+                size_t nc = json_is_array(ch) ? json_array_size(ch) : 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                n->child_count = (int)nc;
+                for (size_t c = 0; c < nc; c++) n->children[c] = (int)json_integer_value(json_array_get(ch, c));
+            }
+            break;
+        }
         default: return -1;
     }
     return 0;
 }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    /* Optimal: json_dumpb writes compact JSON into the caller buffer (no dumps malloc). */
     json_t *root = fx_to_json(fx);
     if (!root) return -1;
-    char *s = json_dumps(root, JSON_COMPACT);
+    size_t n = json_dumpb(root, (char *)buf, cap, JSON_COMPACT);
     json_decref(root);
-    if (!s) return -1;
-    size_t n = strlen(s);
-    if (n >= cap) { free(s); return -1; }
-    memcpy(buf, s, n);
+    if (n == 0 || n > cap) return -1;
     *ol = n;
-    free(s);
     return 0;
 }
 

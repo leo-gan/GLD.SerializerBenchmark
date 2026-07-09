@@ -29,12 +29,6 @@ namespace GLD.SerializerBenchmark.Serializers
             get { return "MS Bond Json"; }
         }
 
-        public override bool Supports(string testDataName)
-        {
-            // Bond requires schema attributes for complex types like ObjectGraph
-            return testDataName != "ObjectGraph";
-        }
-
         public override string Serialize(object serializable)
         {
             Initialize();

@@ -4,36 +4,42 @@ using GLD.SerializerBenchmark.TestData;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    // MemoryPack
+    // MemoryPack — convert to [MemoryPackable] models in PrepareData (untimed).
+    // Timed path: Serialize(annotated) only. ToDomain converts back after deser.
+    // https://github.com/Cysharp/MemoryPack
     internal class MemoryPackSerializerSer : SerDeser
     {
+        private object _native; // annotated model
+        private Type _nativeType;
+
         public override string Name => "MemoryPack";
 
-        public override bool Supports(string testDataName)
+        public override bool Supports(string testDataName) =>
+            testDataName is "Integer" or "SimpleObject" or "StringArray" or "ObjectGraph";
+
+        public override void PrepareData(object data)
         {
-            // MemoryPack works with annotated types: Integer, SimpleObject, StringArray
-            return testDataName == "Integer" || testDataName == "SimpleObject" || testDataName == "StringArray";
+            _native = ConvertToAnnotated(data);
+            _nativeType = _native?.GetType();
         }
 
         public override string Serialize(object serializable)
         {
-            // Convert to annotated type and serialize
-            object annotated = ConvertToAnnotated(serializable);
-            return Convert.ToBase64String(MemoryPack.MemoryPackSerializer.Serialize(annotated.GetType(), annotated));
+            var annotated = _native ?? ConvertToAnnotated(serializable);
+            var bytes = MemoryPack.MemoryPackSerializer.Serialize(_nativeType ?? annotated.GetType(), annotated);
+            return Convert.ToBase64String(bytes);
         }
 
         public override object Deserialize(string serialized)
         {
             var bytes = Convert.FromBase64String(serialized);
-            // Deserialize annotated type and convert back
-            object annotated = DeserializeAnnotated(bytes);
-            return ConvertFromAnnotated(annotated);
+            return DeserializeAnnotated(bytes);
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            object annotated = ConvertToAnnotated(serializable);
-            var bytes = MemoryPack.MemoryPackSerializer.Serialize(annotated.GetType(), annotated);
+            var annotated = _native ?? ConvertToAnnotated(serializable);
+            var bytes = MemoryPack.MemoryPackSerializer.Serialize(_nativeType ?? annotated.GetType(), annotated);
             outputStream.Write(bytes, 0, bytes.Length);
         }
 
@@ -42,9 +48,10 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             using var ms = new MemoryStream();
             inputStream.CopyTo(ms);
-            object annotated = DeserializeAnnotated(ms.ToArray());
-            return ConvertFromAnnotated(annotated);
+            return DeserializeAnnotated(ms.ToArray());
         }
+
+        public override object ToDomain(object decoded) => ConvertFromAnnotated(decoded);
 
         private object ConvertToAnnotated(object obj)
         {
@@ -54,6 +61,8 @@ namespace GLD.SerializerBenchmark.Serializers
                 return MemoryPackTypeConverter.ToMemoryPack((SimpleObject)obj);
             if (_primaryType == typeof(StringArrayObject))
                 return MemoryPackTypeConverter.ToMemoryPack((StringArrayObject)obj);
+            if (_primaryType == typeof(ObjectGraph))
+                return MemoryPackTypeConverter.ToMemoryPack((ObjectGraph)obj);
             return obj;
         }
 
@@ -65,6 +74,8 @@ namespace GLD.SerializerBenchmark.Serializers
                 return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.SimpleObject>(bytes);
             if (_primaryType == typeof(StringArrayObject))
                 return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.StringArrayObject>(bytes);
+            if (_primaryType == typeof(ObjectGraph))
+                return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.ObjectGraph>(bytes);
             return null;
         }
 
@@ -76,6 +87,8 @@ namespace GLD.SerializerBenchmark.Serializers
                 return MemoryPackTypeConverter.FromMemoryPack(simpleObj);
             if (annotated is MPack.StringArrayObject arrayObj)
                 return MemoryPackTypeConverter.FromMemoryPack(arrayObj);
+            if (annotated is MPack.ObjectGraph graph)
+                return MemoryPackTypeConverter.FromMemoryPack(graph);
             return annotated;
         }
     }

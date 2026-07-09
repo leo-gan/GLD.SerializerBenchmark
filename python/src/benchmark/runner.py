@@ -66,8 +66,17 @@ def _default_log_dir() -> Path:
 from .comparer import compare
 from .data.generator import generate_test_data
 from .data.models import (
-    Claim, EDI835, Gender, GraphNode, Passport, Person,
-    PoliceRecord, ServiceLine, SimpleObject, StringArrayObject, TelemetryData,
+    Claim,
+    EDI835,
+    Gender,
+    ObjectGraph,
+    Passport,
+    Person,
+    PoliceRecord,
+    ServiceLine,
+    SimpleObject,
+    StringArrayObject,
+    TelemetryData,
 )
 from .report import (
     AggregateResult,
@@ -132,7 +141,7 @@ ALL_TEST_DATA = [
     ("SimpleObject", SimpleObject),
     ("StringArray", StringArrayObject),
     ("EDI_835", EDI835),
-    ("ObjectGraph", GraphNode),
+    ("ObjectGraph", ObjectGraph),
 ]
 
 

@@ -2,7 +2,8 @@
 pickle benchmark wrapper.
 
 Python's native `pickle` is the baseline for Python-native serialization.
-It handles dataclasses, enums, datetime, and even circular references natively.
+It handles dataclasses, enums, datetime natively. Suite ObjectGraph uses flat
+index edges (portable); pickle can also pickle live cycles if needed.
 """
 
 from __future__ import annotations

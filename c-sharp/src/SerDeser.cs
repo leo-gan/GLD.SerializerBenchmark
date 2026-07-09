@@ -24,6 +24,16 @@ namespace GLD.SerializerBenchmark
             JustInitialized = true;
         }
 
+        /// <summary>
+        /// Untimed: convert suite fixtures to library-native forms / cache formatters.
+        /// Called once per fixture after <see cref="Initialize"/>.
+        /// </summary>
+        public virtual void PrepareData(object data)
+        {
+        }
+
+        public virtual object ToDomain(object decoded) => decoded;
+
         public abstract string Serialize(object serializable);
         public abstract object Deserialize(string serialized);
 

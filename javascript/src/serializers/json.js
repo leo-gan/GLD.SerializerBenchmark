@@ -1,5 +1,5 @@
 import fastJson from 'fast-json-stringify';
-import { pkgVersion, baseSupports } from './common.js';
+import { pkgVersion, baseSupports, bufToUtf8 } from './common.js';
 
 let simdjson = null;
 try {
@@ -34,6 +34,26 @@ const personSchema = {
   },
 };
 
+const objectGraphSchema = {
+  title: 'ObjectGraph',
+  type: 'object',
+  properties: {
+    root: { type: 'integer' },
+    nodes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          Name: { type: 'string' },
+          Parent: { type: 'integer' },
+          Related: { type: 'integer' },
+          Children: { type: 'array', items: { type: 'integer' } },
+        },
+      },
+    },
+  },
+};
+
 export const jsonBuiltin = {
   name: 'JSON.stringify',
   version: `node-${process.versions.node}`,
@@ -41,10 +61,12 @@ export const jsonBuiltin = {
   supports: baseSupports,
   prepare() {},
   serialize(value) {
+    // Optimal: single stringify; Buffer.from(string) is the Node wire representation.
     return Buffer.from(JSON.stringify(value), 'utf8');
   },
   deserialize(buf) {
-    return JSON.parse(Buffer.from(buf).toString('utf8'));
+    // Optimal: avoid double Buffer wrap when already a Buffer.
+    return JSON.parse(bufToUtf8(buf));
   },
 };
 
@@ -55,8 +77,11 @@ export const fastJsonSer = {
   category: 'json',
   supports: baseSupports,
   prepare(dataName, value) {
+    // Compile once per fixture outside the timed path (package contract).
     if (dataName === 'Person') {
       fjsStringify = fastJson(personSchema);
+    } else if (dataName === 'ObjectGraph') {
+      fjsStringify = fastJson(objectGraphSchema);
     } else if (dataName === 'Integer') {
       fjsStringify = fastJson({ type: 'integer' });
     } else {
@@ -70,7 +95,7 @@ export const fastJsonSer = {
     return Buffer.from(fjsStringify(value), 'utf8');
   },
   deserialize(buf) {
-    return JSON.parse(Buffer.from(buf).toString('utf8'));
+    return JSON.parse(bufToUtf8(buf));
   },
 };
 
@@ -82,13 +107,13 @@ export const simdjsonSer = {
   supports: (n) => baseSupports(n) && !!simdjson,
   prepare() {},
   serialize(value) {
-    // Timed path intentionally uses stdlib stringify (simdjson is parse-oriented).
     return Buffer.from(JSON.stringify(value), 'utf8');
   },
   deserialize(buf) {
     if (!simdjson) throw new Error('simdjson not installed');
     const mod = simdjson.default || simdjson;
-    return mod.parse(Buffer.from(buf).toString('utf8'));
+    // simdjson parse expects a string
+    return mod.parse(bufToUtf8(buf));
   },
 };
 

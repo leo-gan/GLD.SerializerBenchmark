@@ -28,9 +28,6 @@ class MashumaroSerializer(Serializer):
     def name(self) -> str:
         return "mashumaro"
 
-    def supports(self, test_data_name: str) -> bool:
-        return test_data_name != "ObjectGraph"
-
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
         self._encoder = ORJSONEncoder(test_data_type)

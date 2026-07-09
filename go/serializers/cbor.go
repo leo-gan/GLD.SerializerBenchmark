@@ -18,8 +18,11 @@ type fxamackerCBOR struct {
 }
 
 func newFxamackerCBOR() *fxamackerCBOR {
-	// CoreDetEncOptions: deterministic encoding; good default for benchmarks/interop.
-	em, err := cbor.CoreDetEncOptions().EncMode()
+	// Default EncOptions (not CoreDet): CoreDet sorts / normalizes for deterministic
+	// encoding and is slower on struct payloads without map keys. Throughput path
+	// reuses immutable EncMode/DecMode (library-recommended).
+	// https://github.com/fxamacker/cbor#usage
+	em, err := cbor.EncOptions{}.EncMode()
 	if err != nil {
 		panic(err)
 	}

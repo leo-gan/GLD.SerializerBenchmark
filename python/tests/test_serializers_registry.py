@@ -40,14 +40,12 @@ def test_core_serializers_constructible_without_optional_schema_deps():
         assert s.name
 
 
-def test_object_graph_unsupported_by_json_serializers():
-    from benchmark.serializers.json_orjson import OrjsonSerializer
-    from benchmark.serializers.json_msgspec import MsgspecSerializer
-    from benchmark.serializers.json_stdlib import StdlibJsonSerializer
-    from benchmark.serializers.json_pydantic import PydanticSerializer
+def test_object_graph_supported_by_all_capable_serializers():
+    """Flat ObjectGraph (index edges) is portable — every registered codec supports it."""
+    from benchmark.runner import ALL_SERIALIZERS
 
-    for cls in (OrjsonSerializer, MsgspecSerializer, StdlibJsonSerializer, PydanticSerializer):
-        assert cls().supports("ObjectGraph") is False
+    for ser in ALL_SERIALIZERS:
+        assert ser.supports("ObjectGraph") is True, f"{ser.name} should support flat ObjectGraph"
 
 
 def test_full_runner_registry_size():
@@ -65,6 +63,6 @@ def test_full_runner_registry_size():
 
 if __name__ == "__main__":
     test_core_serializers_constructible_without_optional_schema_deps()
-    test_object_graph_unsupported_by_json_serializers()
+    test_object_graph_supported_by_all_capable_serializers()
     test_full_runner_registry_size()
     print("ok")

@@ -1,10 +1,6 @@
-///
-/// See here https://github.com/mgravell/protobuf-net
-/// >PM Install-Package protobuf-net
-///     NOTE: I use the protobuf-net NuGet package because of
-///     [http://stackoverflow.com/questions/2522376/how-to-choose-between-protobuf-csharp-port-and-protobuf-net]
-/// 
-
+/// protobuf-net — RuntimeTypeModel compiled once; reuse MemoryStream for string mode.
+using System.Collections.Generic;
+/// https://github.com/protobuf-net/protobuf-net
 using System;
 using System.IO;
 using ProtoBuf.Meta;
@@ -13,58 +9,62 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     internal class ProtoBufSerializer : SerDeser
     {
-         private readonly RuntimeTypeModel _Model = RuntimeTypeModel.Create();
+        private readonly RuntimeTypeModel _model = RuntimeTypeModel.Create();
+        private readonly MemoryStream _serMs = new MemoryStream(4096);
+        private bool _compiled;
 
-        private void Initialize()
+        private void EnsureCompiled()
         {
-            if (_Model.GetTypes() != null) return;
-
-            _Model.Add(_primaryType, true);
-            foreach (var knownType in _secondaryTypes)
-                _Model.Add(knownType, true);
-
-            _Model.CompileInPlace();
+            if (_compiled) return;
+            _model.Add(_primaryType, true);
+            if (_secondaryTypes != null)
+            {
+                foreach (var knownType in _secondaryTypes)
+                    _model.Add(knownType, true);
+            }
+            _model.CompileInPlace();
+            _compiled = true;
         }
 
-        #region ISerDeser Members
+        public override string Name => "ProtoBuf";
 
-        public override string Name
+        // protobuf-net rejects System.Int32 as a model root (inbuilt).
+        public override bool Supports(string testDataName) => testDataName != "Integer";
+
+        public override void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {
-            get { return "ProtoBuf"; }
+            base.Initialize(serializablePrimaryType, serializableSecondaryTypes);
+            _compiled = false;
+            EnsureCompiled();
         }
 
         public override string Serialize(object serializable)
         {
-            Initialize();
-            var ms = new MemoryStream();
-            _Model.Serialize(ms, serializable);
-            ms.Flush();
-            ms.Position = 0;
-            return Convert.ToBase64String(ms.ToArray());
+            EnsureCompiled();
+            _serMs.SetLength(0);
+            _model.Serialize(_serMs, serializable);
+            return Convert.ToBase64String(_serMs.GetBuffer(), 0, (int)_serMs.Length);
         }
 
         public override object Deserialize(string serialized)
         {
-            Initialize();
+            EnsureCompiled();
             var b = Convert.FromBase64String(serialized);
-            var stream = new MemoryStream(b);
-            stream.Seek(0, SeekOrigin.Begin);
-            return _Model.Deserialize(stream, null, _primaryType);
+            using var stream = new MemoryStream(b);
+            return _model.Deserialize(stream, null, _primaryType);
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            Initialize();
-            _Model.Serialize(outputStream, serializable);
+            EnsureCompiled();
+            _model.Serialize(outputStream, serializable);
         }
 
         public override object Deserialize(Stream inputStream)
         {
-            Initialize();
+            EnsureCompiled();
             inputStream.Seek(0, SeekOrigin.Begin);
-            return _Model.Deserialize(inputStream, null, _primaryType);
+            return _model.Deserialize(inputStream, null, _primaryType);
         }
-
-        #endregion
     }
 }

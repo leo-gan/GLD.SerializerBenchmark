@@ -182,3 +182,12 @@ def test_stream_mode_metadata_declared():
     assert ProtobufSerializer.stream_mode == "adapted"
     assert MsgspecSerializer.native_kind == "struct"
     assert OrjsonSerializer.native_kind == "dict"
+
+
+def test_msgpack_uses_reused_packer_not_packb():
+    """Documented optimal path: Packer.pack reuses encoder state (~25% faster than packb)."""
+    src = inspect.getsource(MsgpackSerializer.serialize_bytes)
+    assert "packb" not in src
+    assert "pack" in src
+    ser = MsgpackSerializer()
+    assert hasattr(ser, "_packer")

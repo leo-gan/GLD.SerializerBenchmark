@@ -32,7 +32,7 @@ class SerpycoSerializer(Serializer):
 
     def supports(self, test_data_name: str) -> bool:
         # serpyco-rs targets structured types; bare int is not a useful case
-        return test_data_name not in ("ObjectGraph", "Integer")
+        return test_data_name != "Integer"
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)

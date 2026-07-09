@@ -11,7 +11,7 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 | **JSON** | `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs` | Text-based; typed stacks use prepare/prepare_data. |
 | **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2` | Compact binary, schema-optional. |
 | **Schema** | `protobuf`, `avro`, `flatbuffers` | Requires schemas / codegen (flatc for FlatBuffers). |
-| **Python-native** | `pickle`, `cloudpickle`, `dill` | Language-native; cycles only here. |
+| **Python-native** | `pickle`, `cloudpickle`, `dill` | Language-native pickle family. |
 
 
 ## Test Data Scenarios
@@ -24,7 +24,7 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 | **SimpleObject** | Minimal overhead baseline. |
 | **StringArray** | Array of 100 strings; tests memory allocation and string encoding. |
 | **EDI_835** | Deeply nested health-care claim document; tests recursion depth. |
-| **ObjectGraph** | Circular references; only `pickle`, `cloudpickle`, and `dill` are expected to pass. |
+| **ObjectGraph** | Circular topology via **flat node table + integer edges** (not live pointer cycles). Supported by every codec in this suite (same model as C/Rust/JS). |
 
 ## Benchmark Dimensions
 

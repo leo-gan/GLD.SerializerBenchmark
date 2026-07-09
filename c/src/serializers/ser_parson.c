@@ -106,6 +106,30 @@ static JSON_Value *fx_to_val(const test_fixture_t *fx) {
             json_object_set_value(root, "Claims", claims_v);
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            const object_graph_t *g = &fx->graph;
+            json_object_set_number(root, "root", (double)g->root);
+            JSON_Value *nodes_v = json_value_init_array();
+            JSON_Array *nodes = json_value_get_array(nodes_v);
+            int nn = g->node_count; if (nn < 0) nn = 0; if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            for (int i = 0; i < nn; i++) {
+                const graph_node_t *n = &g->nodes[i];
+                JSON_Value *no_v = json_value_init_object();
+                JSON_Object *no = json_value_get_object(no_v);
+                json_object_set_string(no, "Name", n->name);
+                json_object_set_number(no, "Parent", (double)n->parent);
+                json_object_set_number(no, "Related", (double)n->related);
+                JSON_Value *ch_v = json_value_init_array();
+                JSON_Array *ch = json_value_get_array(ch_v);
+                int nc = n->child_count; if (nc < 0) nc = 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                for (int c = 0; c < nc; c++) json_array_append_number(ch, (double)n->children[c]);
+                json_object_set_value(no, "Children", ch_v);
+                json_array_append_value(nodes, no_v);
+            }
+            json_object_set_value(root, "nodes", nodes_v);
+            break;
+        }
         default:
             json_value_free(root_v);
             return NULL;
@@ -232,26 +256,50 @@ static int val_to_fx(JSON_Value *root_v, test_fixture_t *out, test_data_kind_t k
             }
             break;
         }
+
+        case TD_OBJECT_GRAPH: {
+            out->graph.root = (int)json_object_get_number(root, "root");
+            JSON_Array *nodes = json_object_get_array(root, "nodes");
+            if (!nodes) return -1;
+            size_t nn = json_array_get_count(nodes); if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
+            out->graph.node_count = (int)nn;
+            for (size_t i = 0; i < nn; i++) {
+                JSON_Object *no = json_array_get_object(nodes, i);
+                graph_node_t *n = &out->graph.nodes[i];
+                const char *nm = json_object_get_string(no, "Name");
+                if (nm) snprintf(n->name, sizeof n->name, "%s", nm);
+                n->parent = (int)json_object_get_number(no, "Parent");
+                n->related = (int)json_object_get_number(no, "Related");
+                JSON_Array *ch = json_object_get_array(no, "Children");
+                size_t nc = ch ? json_array_get_count(ch) : 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
+                n->child_count = (int)nc;
+                for (size_t c = 0; c < nc; c++) n->children[c] = (int)json_array_get_number(ch, c);
+            }
+            break;
+        }
         default: return -1;
     }
     return 0;
 }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    /* Optimal: json_serialize_to_buffer avoids intermediate malloc of the JSON string. */
     JSON_Value *v = fx_to_val(fx);
     if (!v) return -1;
-    char *s = json_serialize_to_string(v);
+    size_t need = json_serialization_size(v);
+    if (need == 0 || need > cap) { json_value_free(v); return -1; }
+    if (json_serialize_to_buffer(v, (char *)buf, cap) != JSONSuccess) {
+        json_value_free(v);
+        return -1;
+    }
+    /* serialization_size includes the trailing NUL; reported payload is bytes without it. */
+    *ol = need > 0 ? need - 1 : 0;
     json_value_free(v);
-    if (!s) return -1;
-    size_t n = strlen(s);
-    if (n >= cap) { json_free_serialized_string(s); return -1; }
-    memcpy(buf, s, n);
-    *ol = n;
-    json_free_serialized_string(s);
     return 0;
 }
 
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
+    /* Parson only exposes null-terminated parse; keep a single contiguous copy. */
     char *tmp = (char *)malloc(len + 1);
     if (!tmp) return -1;
     memcpy(tmp, buf, len); tmp[len] = 0;
