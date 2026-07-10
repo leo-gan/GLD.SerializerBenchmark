@@ -1,5 +1,5 @@
-// Data Model v2 descriptions that reuse existing POCO shapes so all serializers run.
-// TestDataName is the v2 type_id; payload is a structural proxy of the same shape class.
+// Data Model v2 fixtures. TestDataName is the v2 type_id.
+// Payload POCOs are structural proxies under TestData/ (not V1 suite names).
 using System;
 using System.Collections.Generic;
 
@@ -31,10 +31,10 @@ namespace GLD.SerializerBenchmark.TestData.V2
         private readonly EDI835 _data;
         public DocumentDescription(int seed = 42)
         {
-            _data = (EDI835)new EDI_X12_835Description().Data;
+            _data = EDI835.Generate();
         }
         public string Name => "document";
-        public string Description => "v2 document (EDI_835 proxy)";
+        public string Description => "v2 document (EDI835 proxy)";
         public Type DataType => typeof(EDI835);
         public List<Type> SecondaryDataTypes => new List<Type> { typeof(Claim), typeof(ServiceLine) };
         public object Data => _data;
@@ -42,10 +42,10 @@ namespace GLD.SerializerBenchmark.TestData.V2
 
     public sealed class TelemetryV2Description : ITestDataDescription
     {
-        private readonly object _data;
+        private readonly TelemetryData _data;
         public TelemetryV2Description(int seed = 42)
         {
-            _data = new TelemetryDescription().Data;
+            _data = TelemetryData.Generate(Randomizer.Settings.CollectionOptions.TelemetryMeasurementsCount);
         }
         public string Name => "telemetry";
         public string Description => "v2 telemetry";

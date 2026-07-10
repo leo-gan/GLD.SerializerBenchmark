@@ -58,8 +58,20 @@ namespace GLD.SerializerBenchmark
             return error != null ? error.ErrorText : null;
         }
 
+        /// <summary>
+        /// Write per-run error CSV, or remove any existing file when there are no errors.
+        /// Clean runs must not leave a header-only <c>*.errors.csv</c> on disk
+        /// (same convention as Python <c>save_errors</c> / Go <c>saveErrors</c>).
+        /// </summary>
         public static void SaveErrors(List<Error> errors, string fileName)
         {
+            if (errors == null || errors.Count == 0)
+            {
+                if (File.Exists(fileName))
+                    File.Delete(fileName);
+                return;
+            }
+
             using var fileStreamWriter = File.CreateText(fileName);
             var header = string.Join(",", "TestDataName", "SerializerName", "StringOrStream", "Repetition", "ErrorText");
             fileStreamWriter.WriteLine(header);

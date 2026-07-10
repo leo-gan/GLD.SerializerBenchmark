@@ -27,9 +27,9 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override bool Supports(string testDataName)
         {
-            // ExtendedXmlSerializer requires special configuration for circular references
-            // and has comparison errors on most types
-            return testDataName == "Integer";
+            // ExtendedXmlSerializer needs special config; fails fidelity on suite types.
+            // V1 Integer fixture is gone — no capable v2 type currently.
+            return false;
         }
 
         public override string Serialize(object serializable)

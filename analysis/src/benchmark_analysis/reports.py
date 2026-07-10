@@ -1073,7 +1073,8 @@ def generate_language_results_pages(
                 lines.append("")
                 lines.append(
                     "- **prost** maps ISO timestamps through millisecond integers; "
-                    "harness fidelity allows date-string drift on Person/Simple/Telemetry/EDI."
+                    "harness fidelity allows date-string drift on v2 types that carry timestamps "
+                    "(e.g. message/event/document/telemetry)."
                 )
                 lines.append(
                     "- **rkyv** timed deserialize **materializes** owned values for comparison; "

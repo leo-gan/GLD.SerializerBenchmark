@@ -1,31 +1,27 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using GLD.SerializerBenchmark.Serializers;
-using GLD.SerializerBenchmark.TestData;
+using GLD.SerializerBenchmark.TestData.V2;
 
 namespace GLD.SerializerBenchmark
 {
-    /// <summary>Lightweight in-process checks (run: app selfcheck).</summary>
+    /// <summary>Lightweight in-process checks (run: app selfcheck) — Data Model v2 only.</summary>
     internal static class SelfCheck
     {
         public static int Run()
         {
             var fixtures = new List<ITestDataDescription>
             {
-                new PersonDescription(),
-                new IntDescription(),
-                new TelemetryDescription(),
-                new SimpleObjectDescription(),
-                new StringArrayDescription(),
-                new EDI_X12_835Description(),
-                new ObjectGraphDescription()
+                new MessageDescription(),
+                new DocumentDescription(),
+                new TelemetryV2Description(),
+                new StringsDescription(),
+                new EventDescription(),
             };
 
             int failures = 0;
 
-            // ZeroFormatter must support every fixture.
             var zf = new ZeroFormatterSerializerSer();
             foreach (var fx in fixtures)
             {
@@ -56,10 +52,10 @@ namespace GLD.SerializerBenchmark
                 }
             }
 
-            // SpanJson/Utf8Json must not throw after Initialize and roundtrip Person.
+            // SpanJson/Utf8Json/Jil on a simple v2 message fixture
             foreach (ISerDeser ser in new ISerDeser[] { new SpanJsonSerializerSer(), new Utf8JsonSerializerSer(), new JilSerializer() })
             {
-                var fx = fixtures.First(f => f.Name == "Person");
+                var fx = fixtures.First(f => f.Name == "message");
                 try
                 {
                     ser.Initialize(fx.DataType, fx.SecondaryDataTypes);
@@ -68,11 +64,11 @@ namespace GLD.SerializerBenchmark
                     var d = ser.ToDomain(ser.Deserialize(s));
                     if (!Comparer.Compare(fx.Data, d, out var err, new Log { Size = s?.Length ?? 1 }, false))
                     {
-                        Console.WriteLine($"FAIL {ser.Name} Person: {err}");
+                        Console.WriteLine($"FAIL {ser.Name} message: {err}");
                         failures++;
                     }
                     else
-                        Console.WriteLine($"OK   {ser.Name} Person");
+                        Console.WriteLine($"OK   {ser.Name} message");
                 }
                 catch (Exception ex)
                 {

@@ -2,7 +2,7 @@
 
 namespace GLD.SerializerBenchmark.TestData
 {
-    public static class BondTypeAlliasConverter
+    public static class BondTypeAliasConverter
     {
         public static long Convert(DateTime value, long unused)
         {

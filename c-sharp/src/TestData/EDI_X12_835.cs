@@ -1,3 +1,5 @@
+// V2 payload proxy: document → EDI835 (+ Claim, ServiceLine).
+// V1 EDI_X12_835Description fixture removed.
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -6,20 +8,11 @@ using Bond;
 
 namespace GLD.SerializerBenchmark.TestData
 {
-    public class EDI_X12_835Description : ITestDataDescription
-    {
-        private readonly EDI835 _data = EDI835.Generate();
-
-        public string Name => "EDI_835";
-        public string Description => "Represents a complex Health Care Claim Payment/Advice (X12 835) document.";
-        public Type DataType => typeof(EDI835);
-        public List<Type> SecondaryDataTypes => new List<Type> { typeof(Claim), typeof(ServiceLine) };
-        public object Data => _data;
-    }
-
     [ProtoContract] [DataContract] [Serializable] [Schema]
     public class EDI835
     {
+        public EDI835() { }
+
         [ProtoMember(1)] [DataMember] [Id(0)] public string PayerName { get; set; }
         [ProtoMember(2)] [DataMember] [Id(1)] public string PayeeName { get; set; }
         [ProtoMember(3)] [DataMember] [Id(2), Type(typeof(long))] public DateTime PaymentDate { get; set; }
@@ -65,6 +58,7 @@ namespace GLD.SerializerBenchmark.TestData
     [ProtoContract] [DataContract] [Serializable] [Schema]
     public class Claim
     {
+        public Claim() { }
         [ProtoMember(1)] [DataMember] [Id(0)] public string ClaimId { get; set; }
         [ProtoMember(2)] [DataMember] [Id(1)] public string PatientName { get; set; }
         [ProtoMember(3)] [DataMember] [Id(2)] public double TotalCharge { get; set; }
@@ -75,6 +69,7 @@ namespace GLD.SerializerBenchmark.TestData
     [ProtoContract] [DataContract] [Serializable] [Schema]
     public class ServiceLine
     {
+        public ServiceLine() { }
         [ProtoMember(1)] [DataMember] [Id(0)] public string ServiceCode { get; set; }
         [ProtoMember(2)] [DataMember] [Id(1)] public double ChargeAmount { get; set; }
         [ProtoMember(3)] [DataMember] [Id(2)] public double AdjudicatedAmount { get; set; }

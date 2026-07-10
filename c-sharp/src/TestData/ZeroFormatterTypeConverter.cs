@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 
 namespace GLD.SerializerBenchmark.TestData
@@ -39,16 +38,6 @@ namespace GLD.SerializerBenchmark.TestData
         {
             if (obj == null) return null;
             return new StringArrayObject { Items = obj.Items.ToList() };
-        }
-
-        public static ZFmt.IntObject ToZeroFormatter(int value)
-        {
-            return new ZFmt.IntObject { Value = value };
-        }
-
-        public static int FromZeroFormatter(ZFmt.IntObject obj)
-        {
-            return obj?.Value ?? 0;
         }
     }
 }

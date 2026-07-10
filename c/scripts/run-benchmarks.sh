@@ -16,13 +16,17 @@ FILTER_DATA="${3:-}"
 VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
 case " $VALID_MODES " in
   *" $MODE "*) ;;
-  *) echo "Usage: $0 [smoke|all-single|full|research] [serializerFilter] [dataFilter]"; exit 1 ;;
+  *)
+    echo "Usage: $0 [smoke|all-single|full|research] [serializerFilter] [dataFilter]"
+    echo "  dataFilter type_ids: message|document|telemetry|strings|event (smoke default: message)"
+    exit 1
+    ;;
 esac
 
 REPS="$(bench_mode_reps "$MODE")"
 if [[ "$MODE" == "smoke" ]]; then
   FILTER_SER="${FILTER_SER:-cJSON}"
-  FILTER_DATA="${FILTER_DATA:-Person}"
+  FILTER_DATA="${FILTER_DATA:-message}"
 fi
 
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"

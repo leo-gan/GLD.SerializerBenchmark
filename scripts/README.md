@@ -5,8 +5,9 @@ Scripts for running harnesses and analysis **locally**. GitHub Actions may smoke
 Each benchmark run creates timestamped artifacts with the **same stem** (never overwritten):
 
 - `YYYY-MM-DD-HHMMSS.csv` — timings
-- `YYYY-MM-DD-HHMMSS.errors.csv` — fidelity / harness failures for that run
-- `YYYY-MM-DD-HHMMSS.environment.json` — host/runtime metadata
+- `YYYY-MM-DD-HHMMSS.errors.csv` — fidelity / harness failures (only when errors occur)
+- `YYYY-MM-DD-HHMMSS.configs.json` — run config + environment sidecar
+- `YYYY-MM-DD-HHMMSS.environment.json` — legacy env sidecar (still loaded if present)
 
 ## Scripts
 
@@ -91,7 +92,7 @@ from that file via [`read-config.py`](read-config.py) / [`lib/config.sh`](lib/co
 
 Console script from the `analysis/` package. Analyzes benchmark CSV outputs and generates reports.
 
-Each benchmark run creates timestamped `YYYY-MM-DD-HHMMSS.{csv,errors.csv,environment.json}` files — never overwritten. When run via `run-all-benchmarks.sh`, all languages share the same timestamp stem.
+Each benchmark run creates timestamped `YYYY-MM-DD-HHMMSS.{csv,configs.json}` files (plus `.errors.csv` only on failures) — never overwritten. When run via `run-all-benchmarks.sh`, all languages share the same timestamp stem. Suite default is **Data Model v2** type_ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
 **Usage (after installing analysis package):**
 ```bash
@@ -184,3 +185,5 @@ CI does not write these files.
 | `all-single` | 10 | same |
 | `full` | 100 | same |
 | `research` | 500 | same |
+
+Smoke mode language runners filter to a cheap V2 cell (typically `message`) rather than legacy V1 names (`Person`, etc.).

@@ -589,7 +589,9 @@ function processStatsData(statsObj) {
 
   // Prefer saved filters when still valid for this dataset
   if (!testDataOptions.includes(state.currentTestData)) {
-    state.currentTestData = testDataOptions[0] || '';
+    const preferred = ['message', 'document', 'telemetry', 'strings', 'event'];
+    state.currentTestData =
+      preferred.find((t) => testDataOptions.includes(t)) || testDataOptions[0] || '';
   }
   if (!modeOptions.includes(state.currentMode)) {
     state.currentMode = modeOptions[0] || '';
@@ -810,8 +812,8 @@ function initCrossLangControls() {
     modeSel.appendChild(opt);
   });
 
-  // Prefer saved / common defaults
-  const preferredTd = ['Person', 'SimpleObject', 'Integer'];
+  // Prefer saved / common V2 type_ids (legacy V1 names no longer in suite logs)
+  const preferredTd = ['message', 'document', 'telemetry', 'strings', 'event'];
   if (!testDataOptions.includes(state.xlTestData)) {
     state.xlTestData =
       preferredTd.find((t) => testDataOptions.includes(t)) || testDataOptions[0] || '';

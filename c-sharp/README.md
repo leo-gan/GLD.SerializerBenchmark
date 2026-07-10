@@ -13,24 +13,21 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 ## Key Features
 
 - **Extensive Library Support**: Benchmarks for **37 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, MemoryPack, Ceras, FlatSharp, Hyperion, and more). **Not** included: System.Text.Json, MessagePack-CSharp, Wire.
-- **Diverse Test Data**: Realistic data structures including Telemetry, EDI documents, Object Graphs, and simple POCOs.
+- **Diverse Test Data**: Data Model v2 type_ids (`message`, `document`, `telemetry`, `strings`, `event`) with POCO payload proxies.
 - **Dual Mode Testing**: Every serializer is tested in both **String** and **Stream** serialization modes.
 - **Detailed Reporting**: Generates raw metrics and error tracking in `.csv` format for deep analysis.
-- **Fail-Fast Visibility**: Explicitly reports failures for serializers that cannot handle complex types (like circular references).
+- **Fail-Fast Visibility**: Explicitly reports failures for serializers that cannot handle a given type (see `Supports` and `*.errors.csv`).
 
 ---
 
 ## Test Data Scenarios
 
-| Test Class | Purpose & Stress Points |
+| V2 type_id | Purpose & payload proxy |
 | :--- | :--- |
-| **SimpleObject** | **Baseline Metrics**: Minimal overhead before data volume dominates. |
-| **Person** | **POCO Complexity**: Nesting, enums, and strings — gold standard for general use. |
-| **Telemetry** | **Binary Efficiency**: Numeric arrays and high-frequency data. |
-| **StringArray** | **GC Pressure**: Many strings — allocation and encoding efficiency. |
-| **ObjectGraph** | **Cyclicity (portable)**: Flat node table + integer edges (`Parent`/`Related`/`Children` indices). Same model as C/Rust/JS/Python/Go — not live pointer cycles. |
-| **EDI_835** | **Real-world Depth**: Deeply nested health-care claim document. |
-| **Integer** | **Primitive Speed**: Raw throughput of a single primitive (`IntDescription` → name `Integer`). |
+| **message** / **event** | Flat mixed POCO (`SimpleObject` proxy). |
+| **document** | Nested claims document (`EDI835` proxy). |
+| **telemetry** | Numeric arrays (`TelemetryData` proxy). |
+| **strings** | Bulk string list (`StringArrayObject` proxy). |
 
 ---
 
@@ -56,11 +53,11 @@ Modes match [`config/benchmark_config.yaml`](../config/benchmark_config.yaml).
 
 | Mode | Command | Description |
 | :--- | :--- | :--- |
-| **Smoke** | `./scripts/run-benchmarks.sh smoke` | 2 repetitions of BinarySerializer on Person. |
+| **Smoke** | `./scripts/run-benchmarks.sh smoke` | Short run (reps from config) on Data Model v2. |
 | **Verify All** | `./scripts/run-benchmarks.sh all-single` | 10 repetitions of all serializers on all data. |
 | **Full Run** | `./scripts/run-benchmarks.sh full` | 100 repetitions of all serializers. |
 | **Research** | `./scripts/run-benchmarks.sh research` | 500 repetitions of all serializers. |
-| **Custom** | `./scripts/run-benchmarks.sh custom 50 "Json" "Person"` | Custom reps and name filters. |
+| **Custom** | `./scripts/run-benchmarks.sh custom 50 "Json" "message"` | Custom reps and name filters (v2 type_ids). |
 
 ### 3. Monitoring Progress
 ```bash
@@ -70,7 +67,7 @@ docker logs -f $(docker ps -lq)
 ### 4. Results
 Benchmark logs are saved to the `logs/csharp/` directory:
 - `2026-06-12-123415.csv` (timestamped): Performance metrics (times in **nanoseconds**). Each run creates a new file — results are never overwritten.
-- `*.environment.json`: Hardware/OS metadata sidecar for that run.
+- `*.configs.json`: Run config / environment sidecar for that run.
 
 ---
 

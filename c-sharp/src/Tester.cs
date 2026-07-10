@@ -23,7 +23,7 @@ namespace GLD.SerializerBenchmark
             if (string.IsNullOrEmpty(ts))
                 ts = DateTime.Now.ToString("yyyy-MM-dd-HHmmss");
             var logPath = Path.Combine(logDir, $"{ts}.csv");
-            // Per-run errors beside the result CSV (same stem as .environment.json)
+            // Per-run errors beside the result CSV (same stem as .configs.json)
             var errorsPath = Path.Combine(logDir, $"{ts}.errors.csv");
 
             var logStorage = new LogStorage(logPath);
@@ -44,7 +44,7 @@ namespace GLD.SerializerBenchmark
         }
 
         /// <summary>
-        /// Write logs/csharp/&lt;ts&gt;.environment.json via analysis package when available on host.
+        /// Write logs/csharp/&lt;ts&gt;.configs.json via analysis package when available on host.
         /// Docker images often lack it; run-all-benchmarks.sh also captures on the host.
         /// </summary>
         private static void TryCaptureEnvironment(string logPath)
@@ -181,7 +181,12 @@ namespace GLD.SerializerBenchmark
             }
             catch (Exception ex)
             {
-                error.ErrorText = (serSuccessful ? "Deserialization" : "Serialization") + " " + ex.GetType().Name + ": " + ex.Message;
+                {
+                    var parts = new System.Collections.Generic.List<string>();
+                    for (var e = ex; e != null; e = e.InnerException)
+                        parts.Add(e.GetType().Name + ": " + e.Message);
+                    error.ErrorText = (serSuccessful ? "Deserialization" : "Serialization") + " " + string.Join(" || ", parts);
+                }
                 isRepeatedError = !error.TryAddTo(errors);
                 return;
             }

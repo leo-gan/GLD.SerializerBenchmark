@@ -12,7 +12,7 @@ namespace GLD.SerializerBenchmark.Serializers
     /// <c>[ZeroFormattable]</c> classes (BadImageFormatException). Built-in
     /// formatters still work: primitives, arrays, lists, and <see cref="KeyTuple"/>.
     ///
-    /// All suite fixtures map to KeyTuple / List&lt;KeyTuple&gt; shapes in
+    /// V2 suite fixtures map to KeyTuple / List&lt;KeyTuple&gt; shapes in
     /// <see cref="PrepareData"/> (untimed); timed path is pure Serialize/Deserialize.
     /// </summary>
     internal class ZeroFormatterSerializerSer : SerDeser
@@ -62,16 +62,10 @@ namespace GLD.SerializerBenchmark.Serializers
             // Dispatch by prepared native shape (KeyTuple / List / int).
             switch (native)
             {
-                case int i:
-                    return ZeroFormatterSerializer.Serialize(i);
                 case KeyTuple<int, string, DateTime, bool> simple:
                     return ZeroFormatterSerializer.Serialize(simple);
                 case List<string> strings:
                     return ZeroFormatterSerializer.Serialize(strings);
-                case KeyTuple<int, List<KeyTuple<string, int, int, List<int>>>> graph:
-                    return ZeroFormatterSerializer.Serialize(graph);
-                case KeyTuple<string, string, uint, int, KeyTuple<string, string, DateTime>, List<KeyTuple<int, string>>> person:
-                    return ZeroFormatterSerializer.Serialize(person);
                 // Telemetry nested: KeyTuple max arity is 8.
                 case KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>> telemetry:
                     return ZeroFormatterSerializer.Serialize(telemetry);
@@ -85,22 +79,11 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private object DeserializeBytes(byte[] bytes)
         {
-            if (_primaryType == typeof(int))
-                return ZeroFormatterSerializer.Deserialize<int>(bytes);
-
             if (_primaryType == typeof(SimpleObject))
                 return ZeroFormatterSerializer.Deserialize<KeyTuple<int, string, DateTime, bool>>(bytes);
 
             if (_primaryType == typeof(StringArrayObject))
                 return ZeroFormatterSerializer.Deserialize<List<string>>(bytes);
-
-            if (_primaryType == typeof(ObjectGraph))
-                return ZeroFormatterSerializer
-                    .Deserialize<KeyTuple<int, List<KeyTuple<string, int, int, List<int>>>>>(bytes);
-
-            if (_primaryType == typeof(Person))
-                return ZeroFormatterSerializer
-                    .Deserialize<KeyTuple<string, string, uint, int, KeyTuple<string, string, DateTime>, List<KeyTuple<int, string>>>>(bytes);
 
             if (_primaryType == typeof(TelemetryData))
                 return ZeroFormatterSerializer
@@ -116,41 +99,11 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private object ToNative(object data)
         {
-            if (data is int i)
-                return i;
-
             if (data is SimpleObject o)
                 return KeyTuple.Create(o.Id, o.Name ?? "", o.Timestamp, o.IsActive);
 
             if (data is StringArrayObject sa)
                 return sa.Items != null ? sa.Items.ToList() : new List<string>();
-
-            if (data is ObjectGraph g)
-            {
-                var nodes = (g.Nodes ?? new List<GraphNodeData>())
-                    .Select(n => KeyTuple.Create(
-                        n.Name ?? "",
-                        n.Parent,
-                        n.Related,
-                        n.Children != null ? n.Children.ToList() : new List<int>()))
-                    .ToList();
-                return KeyTuple.Create(g.Root, nodes);
-            }
-
-            if (data is Person p)
-            {
-                var pass = p.Passport ?? new Passport();
-                var records = (p.PoliceRecords ?? Array.Empty<PoliceRecord>())
-                    .Select(r => KeyTuple.Create(r.Id, r.CrimeCode ?? ""))
-                    .ToList();
-                return KeyTuple.Create(
-                    p.FirstName ?? "",
-                    p.LastName ?? "",
-                    p.Age,
-                    (int)p.Gender,
-                    KeyTuple.Create(pass.Number ?? "", pass.Authority ?? "", pass.ExpirationDate),
-                    records);
-            }
 
             if (data is TelemetryData t)
             {
@@ -202,9 +155,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private object FromNative(object native)
         {
-            if (_primaryType == typeof(int))
-                return native;
-
             if (_primaryType == typeof(SimpleObject))
             {
                 var t = (KeyTuple<int, string, DateTime, bool>)native;
@@ -219,45 +169,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
             if (_primaryType == typeof(StringArrayObject))
                 return new StringArrayObject { Items = (List<string>)native };
-
-            if (_primaryType == typeof(ObjectGraph))
-            {
-                var t = (KeyTuple<int, List<KeyTuple<string, int, int, List<int>>>>)native;
-                return new ObjectGraph
-                {
-                    Root = t.Item1,
-                    Nodes = (t.Item2 ?? new List<KeyTuple<string, int, int, List<int>>>())
-                        .Select(n => new GraphNodeData
-                        {
-                            Name = n.Item1,
-                            Parent = n.Item2,
-                            Related = n.Item3,
-                            Children = n.Item4 ?? new List<int>()
-                        }).ToList()
-                };
-            }
-
-            if (_primaryType == typeof(Person))
-            {
-                var t = (KeyTuple<string, string, uint, int, KeyTuple<string, string, DateTime>, List<KeyTuple<int, string>>>)native;
-                var pass = t.Item5;
-                return new Person
-                {
-                    FirstName = t.Item1,
-                    LastName = t.Item2,
-                    Age = t.Item3,
-                    Gender = (Gender)t.Item4,
-                    Passport = new Passport
-                    {
-                        Number = pass.Item1,
-                        Authority = pass.Item2,
-                        ExpirationDate = pass.Item3
-                    },
-                    PoliceRecords = (t.Item6 ?? new List<KeyTuple<int, string>>())
-                        .Select(r => new PoliceRecord { Id = r.Item1, CrimeCode = r.Item2 })
-                        .ToArray()
-                };
-            }
 
             if (_primaryType == typeof(TelemetryData))
             {

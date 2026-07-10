@@ -39,10 +39,14 @@ while IFS='|' read -r id _runner_dir _script; do
     continue
   fi
   err="${f%.csv}.errors.csv"
+  cfg="${f%.csv}.configs.json"
   extra=""
   if [[ -f "$err" ]]; then
     ec=$(($(wc -l < "$err") - 1))
     [[ "$ec" -gt 0 ]] && extra=" ${YELLOW}(${ec} errors in $(basename "$err"))${NC}"
+  fi
+  if [[ ! -f "$cfg" && ! -f "${f%.csv}.environment.json" ]]; then
+    extra="${extra} ${YELLOW}(no configs.json)${NC}"
   fi
   echo -e "  $id: ${GREEN}$((lines - 1)) records${NC} ($(basename "$f"))$extra"
   ok=$((ok + 1))

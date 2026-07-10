@@ -19,11 +19,10 @@ COPY schemas/data_catalog_v2.yaml ./schemas/data_catalog_v2.yaml
 # analysis package for resolve_run_config / environment capture (optional import)
 COPY analysis/src/benchmark_analysis/ ./analysis_src/benchmark_analysis/
 
-# Smoke test: v1 pickle + v2 smoke cell
-RUN uv run python -m benchmark.runner 1 pickle Person
+# Smoke test: Data Model v2 only (type_ids message/document/telemetry/strings/event)
 ENV PYTHONPATH=/app/src:/app:/app/analysis_src
 RUN BENCHMARK_DATA_MODEL=v2 BENCHMARK_RUN_CONFIG=/app/config/library/smoke.yaml \
-    uv run python -m benchmark.runner 1 json
+    uv run python -m benchmark.runner 1
 
 # Final Runtime Stage
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm AS final

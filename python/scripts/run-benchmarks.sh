@@ -2,6 +2,7 @@
 set -e
 
 # Modes / seed from config/benchmark_config.yaml
+# Suite is Data Model v2 only (message/document/telemetry/strings/event).
 IMAGE_NAME="python-serializer-benchmark"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -11,12 +12,13 @@ source "$PROJECT_ROOT/scripts/lib/config.sh"
 LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
-# Data Model: v1 (Person/EDI) or v2 (message/document/…). Default v1 until full cutover.
-DATA_MODEL="${BENCHMARK_DATA_MODEL:-v2}"
+# Optional override: path to run-config YAML (host path mounted as /app/config/...).
 RUN_CONFIG_HOST="${BENCHMARK_RUN_CONFIG:-$PROJECT_ROOT/config/library/default.yaml}"
-if [[ "$DATA_MODEL" == "v2" && "${1:-}" == "smoke" ]]; then
+if [[ "${1:-}" == "smoke" ]]; then
   RUN_CONFIG_HOST="${BENCHMARK_RUN_CONFIG:-$PROJECT_ROOT/config/library/smoke.yaml}"
 fi
+# Container path for the same file under the config/ mount.
+RUN_CONFIG_CONTAINER="/app/config/library/$(basename "$RUN_CONFIG_HOST")"
 
 print_usage() {
     echo "Usage: ./scripts/run-benchmarks.sh [smoke | all-single | full | research | custom]"
@@ -25,9 +27,10 @@ print_usage() {
     echo "  smoke | all-single | full | research — reps from modes.<name>.repetitions"
     echo "  custom — Manual: ./scripts/run-benchmarks.sh custom <reps> [serializerFilter] [dataFilter]"
     echo ""
-    echo "Data model (env):"
-    echo "  BENCHMARK_DATA_MODEL=v1|v2   (default v2)"
-    echo "  BENCHMARK_RUN_CONFIG=path    (v2 run config YAML)"
+    echo "Data Model v2 (env):"
+    echo "  BENCHMARK_RUN_CONFIG=path    (run config YAML; default library/default.yaml,"
+    echo "                               smoke uses library/smoke.yaml)"
+    echo "  Type filters: message | document | telemetry | strings | event"
 }
 
 echo "[INFO] Ensuring Docker image is up to date..."
@@ -40,50 +43,35 @@ MODE="${1:-}"
 case "$MODE" in
     smoke)
         REPS="$(bench_mode_reps smoke)"
-        if [[ "$DATA_MODEL" == "v2" ]]; then
-          echo "[INFO] Running Smoke Test v2 ($REPS reps) run_config=$RUN_CONFIG_HOST..."
-          docker run --rm \
-            -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-            -e BENCHMARK_DATA_MODEL=v2 \
-            -e BENCHMARK_RUN_CONFIG=/app/config/library/smoke.yaml \
-            -e LOG_DIR=/app/logs \
-            -v "$LOG_DIR":/app/logs \
-            -v "$PROJECT_ROOT/schemas":/app/schemas \
-            -v "$PROJECT_ROOT/config":/app/config:ro \
-            $IMAGE_NAME "$REPS"
-        else
-          echo "[INFO] Running Smoke Test ($REPS reps, pickle, Person) [config modes.smoke]..."
-          # Inside the container LOG_DIR must be the mount path (/app/logs), not the host path.
-          docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-            -e LOG_DIR=/app/logs -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
-            $IMAGE_NAME "$REPS" pickle Person
-        fi
+        echo "[INFO] Running Smoke Test v2 ($REPS reps) run_config=$RUN_CONFIG_HOST..."
+        docker run --rm \
+          -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
+          -e BENCHMARK_DATA_MODEL=v2 \
+          -e BENCHMARK_RUN_CONFIG="$RUN_CONFIG_CONTAINER" \
+          -e LOG_DIR=/app/logs \
+          -v "$LOG_DIR":/app/logs \
+          -v "$PROJECT_ROOT/schemas":/app/schemas \
+          -v "$PROJECT_ROOT/config":/app/config:ro \
+          $IMAGE_NAME "$REPS"
         ;;
     all-single|full|research)
         REPS="$(bench_mode_reps "$MODE")"
-        if [[ "$DATA_MODEL" == "v2" ]]; then
-          echo "[INFO] Running $MODE v2 ($REPS reps) [config modes.$MODE]..."
-          docker run --rm \
-            -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-            -e BENCHMARK_DATA_MODEL=v2 \
-            -e BENCHMARK_RUN_CONFIG=/app/config/library/default.yaml \
-            -e LOG_DIR=/app/logs \
-            -v "$LOG_DIR":/app/logs \
-            -v "$PROJECT_ROOT/schemas":/app/schemas \
-            -v "$PROJECT_ROOT/config":/app/config:ro \
-            $IMAGE_NAME "$REPS"
-        else
-          echo "[INFO] Running $MODE ($REPS reps, all serializers) [config modes.$MODE]..."
-          docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-            -e LOG_DIR=/app/logs -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
-            $IMAGE_NAME "$REPS"
-        fi
+        echo "[INFO] Running $MODE v2 ($REPS reps) [config modes.$MODE]..."
+        docker run --rm \
+          -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
+          -e BENCHMARK_DATA_MODEL=v2 \
+          -e BENCHMARK_RUN_CONFIG=/app/config/library/default.yaml \
+          -e LOG_DIR=/app/logs \
+          -v "$LOG_DIR":/app/logs \
+          -v "$PROJECT_ROOT/schemas":/app/schemas \
+          -v "$PROJECT_ROOT/config":/app/config:ro \
+          $IMAGE_NAME "$REPS"
         ;;
     custom)
         shift
-        echo "[INFO] Running Custom Benchmark (Args: $*) DATA_MODEL=$DATA_MODEL..."
+        echo "[INFO] Running Custom Benchmark (Args: $*) v2..."
         docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-          -e BENCHMARK_DATA_MODEL="${DATA_MODEL}" \
+          -e BENCHMARK_DATA_MODEL=v2 \
           -e BENCHMARK_RUN_CONFIG=/app/config/library/default.yaml \
           -e LOG_DIR=/app/logs -v "$LOG_DIR":/app/logs -v "$PROJECT_ROOT/schemas":/app/schemas \
           -v "$PROJECT_ROOT/config":/app/config:ro \

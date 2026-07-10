@@ -50,8 +50,8 @@ This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 
 ### Caveats
 
-- **ObjectGraph** is a **flat** `{Root, Nodes[]}` with integer edges (`Parent`/`Related`/`Children` indices, null = `-1`) — same portable model as C/Rust/JS/Python/Go. Live pointer cycles are not used.
-- Still skipped (not capable / suite constraints): CsvHelper (tabular), Google.Protobuf (no generated IMessage), FluentSerializer (profiles), BinaryPack, Apex, ExtendedXml, Migrant (net8 IL), SharpSerializer, GroBuf (fidelity).
+- Suite fixtures are **Data Model v2** type_ids only (`message`, `document`, `telemetry`, `strings`, `event`). Payload POCOs are structural proxies (not V1 Person/ObjectGraph/Integer fixtures).
+- Still skipped (not capable / suite constraints): CsvHelper (tabular only on message/event), Google.Protobuf (no generated IMessage), FluentSerializer (profiles), BinaryPack, Apex, ExtendedXml, Migrant (net8 IL except message/event), GroBuf (message/event only).
 - MemoryPack / FlatSharp map supported fixtures via annotated models in `PrepareData` (timed path is codec-only; `ToDomain` untimed).
 - ZeroFormatter maps **all** suite fixtures to `KeyTuple` graphs (max arity 8; Telemetry nested).
 - SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
