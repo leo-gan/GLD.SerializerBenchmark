@@ -13,7 +13,7 @@ This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | System.Text.Json | JSON | System.Text.Json (net8 built-in) |
 | BinaryPack | Binary | BinaryPack (`T : new()` constraints) |
 | Ceras | Binary | Ceras |
-| CsvHelper | CSV | Flat tabular only |
+| CsvHelper | CSV | Tabular projection of suite types in `PrepareData` |
 | ExtendedXmlSerializer | XML | ExtendedXmlSerializer |
 | fastJson | JSON | FastJson |
 | FlatSharp | Schema / FlatBuffers | FlatSharp (+ generated models for some fixtures) |

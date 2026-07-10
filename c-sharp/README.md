@@ -12,7 +12,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 - **Suite fixtures**: `message`, `document`, `telemetry`, `strings`, `event` (POCO payload shapes under `TestData/`).
 - **Dual mode**: string (base64 buffer) and Stream for every capable serializer.
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
-- **Supports(type_id)** skips codecs that cannot handle a fixture (no silent crash).
+- All registered codecs run on all suite fixtures (`message`, `document`, `telemetry`, `strings`, `event`); some use untimed `PrepareData` projections (see [inventory](../docs/c-sharp/index.md)).
 
 ---
 
