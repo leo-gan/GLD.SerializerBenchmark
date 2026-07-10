@@ -4,6 +4,9 @@ name: Benchmark CI
 # or shared config/scripts change. Shared schemas/** still fan out to all language
 # jobs (fixture contract). Summaries/plots are committed under docs/ — not built here.
 #
+# Harnesses run natively (no Docker): each job installs the language toolchain
+# (dotnet / uv / rustup / go / node / cmake) before scripts/run-benchmarks.sh.
+#
 # Why a C#-only commit on a mixed PR still showed every language job:
 # dorny/paths-filter on pull_request compares the *whole PR* to the base branch.
 # Older filters also listed config/scripts/workflow on *every* language, so any
@@ -88,6 +91,8 @@ jobs:
               - 'scripts/read-config.py'
               - 'scripts/run-all-benchmarks.sh'
               - 'scripts/verify-results.sh'
+              - 'scripts/check-host-requirements.sh'
+              - 'scripts/install-host-requirements.sh'
               - '.github/workflows/benchmark-ci.yml'
 
   csharp-benchmark:
@@ -98,6 +103,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # resolve_run_config.py (v2 cells) needs PyYAML; analysis package optional for sidecars
+      - name: Setup Python for run-config resolution
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML (resolve_run_config)
+        run: pip install pyyaml
+
+      - name: Check host requirements (csharp)
+        run: ./scripts/check-host-requirements.sh csharp
 
       - name: Run C# Benchmark
         run: |
@@ -112,6 +134,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'python/uv.lock'
+
+      - name: Setup Python 3.12 (via uv)
+        run: uv python install 3.12
+
+      - name: Check host requirements (python)
+        run: ./scripts/check-host-requirements.sh python
 
       - name: Run Python Benchmark
         run: |
@@ -130,6 +164,9 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Check host requirements (rust)
+        run: ./scripts/check-host-requirements.sh rust
+
       - name: Run Rust Benchmark
         run: |
           cd rust
@@ -144,8 +181,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install CMake
-        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+      - name: Install C build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential pkg-config curl libjson-c-dev zlib1g-dev liblzma-dev
+
+      - name: Check host requirements (c)
+        run: ./scripts/check-host-requirements.sh c
 
       - name: Run C Benchmark
         run: |
@@ -173,6 +213,9 @@ jobs:
           cd javascript
           npm ci
 
+      - name: Check host requirements (javascript)
+        run: ./scripts/check-host-requirements.sh javascript
+
       - name: Run JavaScript Benchmark
         run: |
           cd javascript
@@ -190,7 +233,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23.x'
+          # Match go/go.mod (go 1.24.0 / toolchain go1.24.13)
+          go-version: '1.24.x'
           cache-dependency-path: go/go.sum
 
       - name: Install protoc (optional regen of committed gen/pb)
@@ -200,7 +244,12 @@ jobs:
           go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.1
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
+      - name: Check host requirements (go)
+        run: ./scripts/check-host-requirements.sh go
+
       - name: Run Go Benchmark
+        env:
+          GOTOOLCHAIN: auto
         run: |
           cd go
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
