@@ -156,13 +156,13 @@ def batch_axis_flags(groups: list[dict], fixture: str) -> list[str]:
                 continue
             ratio = sn / s1
             # Expect roughly proportional to N (framing may add a bit).
-            # Flag if ratio is far below N/2 (e.g. N=100, ratio < 10).
-            if ratio < max(2.0, n / 10.0):
+            # Flag if ratio is far below N/10, with floor 1.5 so small N (e.g. n=2)
+            # is not a false positive when ratio is ~1.95 from shared framing.
+            if ratio < max(1.5, n / 10.0):
                 msgs.append(
                     f"{ser} | {fixture} | {mode}: size(n={n})={sn:.0f} vs size(n=1)={s1:.0f} "
                     f"ratio={ratio:.2f} (expected ~{n}) → LABEL≠WORK / missing batch encode"
                 )
-            # Also flag if ops/sec identical within 5% for n=1 and n=N (same work)
     # ops check
     by_ops: dict[tuple, dict[int, float]] = defaultdict(dict)
     for g in groups:
@@ -188,8 +188,9 @@ def batch_axis_flags(groups: list[dict], fixture: str) -> list[str]:
         for n, on in sorted(nops.items()):
             if n <= 1 or o1 <= 0:
                 continue
-            # If n=100 but ops stays within 20% of n=1, work didn't scale
-            if on > o1 * 0.5:
+            # Flag if ops stays within ~20% of n=1 (work barely scaled).
+            # 0.8 avoids false positives for small N where ratio may be ~0.5–0.6.
+            if on > o1 * 0.8:
                 msgs.append(
                     f"{ser} | {fixture} | {mode}: ops(n={n})={on:.0f} ≈ ops(n=1)={o1:.0f} "
                     f"(ratio {on/o1:.2f}; expect ≪1 if N items encoded) → LABEL≠WORK"

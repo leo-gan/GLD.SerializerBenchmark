@@ -114,7 +114,7 @@ Harness bug in `rust/src/run_v2.rs` (batch cell construction), **not** Speedy:
 1. Run `scan-outliers.py` and **read** sections: within-group, **BATCH-AXIS / LABEL≠WORK**, **CROSS-LANGUAGE**.
 2. For every language that has both `n=1` and `n>1` rows: require roughly  
    `size(n=N) / size(n=1) ≳ N/10` (flag if ≪, e.g. ratio ~1 for N=100).  
-   Also flag if `ops(n=N) / ops(n=1) ≳ 0.5` when N is large (work did not scale).
+   Also flag if `ops(n=N) / ops(n=1) ≳ 0.8` when N is large (work did not scale).
 3. Cross-lang: if one language’s median size for `fixture@n=N` is **≪ peer median / 5**, treat the **entire language harness** as suspect (runner/batch), not one serializer.
 4. Always open **runner + batch cell** code paths (table below), not only `serializers/*`.
 5. Dashboard “too fast at high n” screenshots are first-class evidence — do not dismiss because within-lang scan is clean.
@@ -181,8 +181,8 @@ The script prints **three** classes of findings. **All three are mandatory to ac
 
 | Signal | Typical threshold | Meaning |
 |--------|-------------------|---------|
-| **size ratio too small** | `size(N)/size(1) < max(2, N/10)` e.g. N=100 and ratio &lt; 10 | Not encoding N instances |
-| **ops do not drop** | `ops(N)/ops(1) > 0.5` for large N | Same work as n=1 despite label N |
+| **size ratio too small** | `size(N)/size(1) < max(1.5, N/10)` e.g. N=100 and ratio &lt; 10 | Not encoding N instances |
+| **ops do not drop** | `ops(N)/ops(1) > 0.8` for large N | Same work as n=1 despite label N |
 
 These fire even when **every** serializer in the language is equally wrong.
 
