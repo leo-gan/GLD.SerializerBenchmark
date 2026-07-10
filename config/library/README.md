@@ -1,6 +1,7 @@
 # Run config library (Data Model v2)
 
-Named **run configs** select the measurement matrix:
+Named **run configs** select the measurement matrix. The suite is **v2-only**
+(`type_id` values from `schemas/data_catalog_v2.yaml` — not V1 Person/EDI names).
 
 - `types` (axis W): `type_id` + `type_config`
 - `data_type_instance_count` (axis C): instances per serialize/deserialize call
@@ -10,8 +11,12 @@ Named **run configs** select the measurement matrix:
 
 | File | Purpose |
 |------|---------|
-| `smoke.yaml` | CI / quick sanity |
-| `default.yaml` | Publication default matrix |
+| `smoke.yaml` | CI / quick sanity (`message` + `telemetry`, n=1) |
+| `default.yaml` | Publication matrix (all five type_ids × [1, 100]) |
+
+## Type ids
+
+`message` · `document` · `telemetry` · `strings` · `event`
 
 ## Usage
 

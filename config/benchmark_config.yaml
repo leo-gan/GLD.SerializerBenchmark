@@ -79,15 +79,15 @@ test_data:
       description: "Nested document with items"
       supports_circular: false
     - name: telemetry
-      category: numeric_arrays
-      description: "Numeric arrays / tags"
+      category: numeric_bulk
+      description: "Numeric bulk / tags (points axis in type_config)"
       supports_circular: false
     - name: strings
       category: text_bulk
       description: "String bulk / memory pressure"
       supports_circular: false
     - name: event
-      category: event
+      category: envelope
       description: "Event envelope with attributes"
       supports_circular: false
 
@@ -197,9 +197,7 @@ paths:
   reports_root: reports
   schemas_root: schemas
   config_root: config
-  # NOTE: language_log_dirs / environment_filename are not read by the
-  # current CLI. The analyzer auto-discovers logs/<lang>/ and environment
-  # files use a sibling sidecar pattern next to the result CSV.
+  # language_log_dirs: discovery order / docs; CLI still auto-discovers logs/<lang>/.
   language_log_dirs:
     csharp: logs/csharp
     python: logs/python
@@ -210,13 +208,14 @@ paths:
   # Result files are timestamped to preserve history across runs.
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
-  #   YYYY-MM-DD-HHMMSS.errors.csv      (fidelity / harness failures for that run)
   #   YYYY-MM-DD-HHMMSS.configs.json    (environment + optional dataset/serializer metadata)
+  #   YYYY-MM-DD-HHMMSS.errors.csv      (only when there are fidelity/harness failures)
   #   (legacy) YYYY-MM-DD-HHMMSS.environment.json still readable by analysis
   # Analysis auto-selects the most recent timestamped result CSV per language.
   log_filename: "YYYY-MM-DD-HHMMSS.csv"
-  errors_filename: "YYYY-MM-DD-HHMMSS.errors.csv"
   configs_filename: "YYYY-MM-DD-HHMMSS.configs.json"
+  errors_filename: "YYYY-MM-DD-HHMMSS.errors.csv"
+  baseline_filename: reports/baseline.json
 
 # -----------------------------------------------------------------------------
 # Run sidecar (configs.json written beside each result CSV)
@@ -277,9 +276,6 @@ metrics:
     p_value: medium
     p_value_holm: medium
 
-  environment_filename: "YYYY-MM-DD-HHMMSS.environment.json"
-  baseline_filename: reports/baseline.json
-
 # -----------------------------------------------------------------------------
 # Regression gates (CI)
 # -----------------------------------------------------------------------------
@@ -301,7 +297,10 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 37 serializers — see docs/c-sharp/index.md
+    # 37 serializers registered (Program.cs); ~32 produce V2 log rows.
+    # Supports=false for all V2 types: Apex, BinaryPack, ExtendedXml, FluentSerializer, Google.Protobuf.
+    # Partial V2: CsvHelper/GroBuf/Migrant (message|event); FlatSharp/MemoryPack (+strings).
+    # See docs/c-sharp/index.md
 
   python:
     display_name: Python
@@ -729,11 +728,14 @@ languages:
 #   - reproducibility.random_seed → BENCHMARK_SEED env for harnesses
 #   - paths.* / regression.* → analysis CLI defaults
 #
-# Required harness contract:
+# Required harness contract (Data Model v2):
 #   1. Prefer modes/seed from this file (via scripts/lib/config.sh + BENCHMARK_SEED)
 #   2. Emit logs/<id>/<timestamp>.csv (YYYY-MM-DD-HHMMSS.csv)
 #      with Language=<id> and times in nanoseconds. Never overwrite previous runs.
 #   3. Implement prepare() outside timed loop; timed section = serialize + deserialize only
 #   4. Support bytes + stream modes where the library allows
-#   5. Round-trip fidelity check; skip ObjectGraph if unsupported
-#   6. scripts/run-benchmarks.sh accepts smoke|all-single|full|research
+#   5. Round-trip fidelity on v2 type_ids (message|document|telemetry|strings|event);
+#      Supports(type_id)=false may skip incapable codecs (no empty .errors.csv on clean runs)
+#   6. Write *.configs.json sidecar (or let run-benchmarks.sh capture it)
+#   7. scripts/run-benchmarks.sh accepts smoke|all-single|full|research;
+#      smoke dataFilter defaults to a cheap v2 cell (typically message)

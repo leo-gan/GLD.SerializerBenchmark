@@ -1,6 +1,6 @@
-# Run config: smoke (CI / fast path)
+# Run config: smoke (CI / fast path) — Data Model v2 only
 id: smoke
-description: "Minimal matrix — two types, single instance"
+description: "Minimal v2 matrix — message + telemetry, single instance"
 data_model_version: 2
 
 types:
@@ -17,3 +17,4 @@ compression:
 execution:
   mode: smoke
   io_modes: [bytes]
+
