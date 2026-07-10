@@ -37,11 +37,22 @@ fi
 
 # Shared docker env/mounts for all modes
 docker_run() {
+    # Map host run-config path into the /src mount
+    local run_cfg_host="${BENCHMARK_RUN_CONFIG:-$PROJECT_ROOT/config/library/default.yaml}"
+    local run_cfg_ctr="/src/config/library/default.yaml"
+    if [[ "$run_cfg_host" == "$PROJECT_ROOT"/* ]]; then
+        run_cfg_ctr="/src/${run_cfg_host#"$PROJECT_ROOT"/}"
+    elif [[ "$run_cfg_host" == /* ]]; then
+        # absolute path outside repo: copy not supported; use default
+        run_cfg_ctr="/src/config/library/default.yaml"
+    else
+        run_cfg_ctr="/src/${run_cfg_host}"
+    fi
     docker run --rm \
       -e BENCHMARK_TS="${BENCHMARK_TS}" \
       -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
       -e BENCHMARK_REPO_ROOT=/src \
-      -e BENCHMARK_RUN_CONFIG="${BENCHMARK_RUN_CONFIG:-/src/config/library/default.yaml}" \
+      -e BENCHMARK_RUN_CONFIG="$run_cfg_ctr" \
       -e LOG_DIR=/app/logs \
       -e PYTHONPATH=/src/analysis/src \
       -v "$LOG_DIR":/app/logs \
