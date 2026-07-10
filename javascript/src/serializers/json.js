@@ -84,9 +84,15 @@ export const fastJsonSer = {
       fjsStringify = fastJson(objectGraphSchema);
     } else if (dataName === 'Integer') {
       fjsStringify = fastJson({ type: 'integer' });
+    } else if (Array.isArray(value)) {
+      // Batch N>1: array of objects (Data Model v2)
+      fjsStringify = fastJson({
+        type: 'array',
+        items: { type: 'object', additionalProperties: true },
+      });
     } else {
       fjsStringify = fastJson({
-        type: typeof value === 'object' && !Array.isArray(value) ? 'object' : 'integer',
+        type: typeof value === 'object' && value !== null ? 'object' : 'integer',
         additionalProperties: true,
       });
     }

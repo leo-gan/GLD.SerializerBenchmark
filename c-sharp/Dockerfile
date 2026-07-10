@@ -17,7 +17,7 @@ RUN dotnet build src/GLD.SerializerBenchmark.csproj -c Release -o /app/build
 
 # Build-time verification (Smoke Test)
 # This fails the build if the application cannot run or basic serialization fails.
-RUN dotnet run --project src/GLD.SerializerBenchmark.csproj -c Release -- 1 Binary Person
+RUN dotnet run --project src/GLD.SerializerBenchmark.csproj -c Release -- 1 Binary message
 
 # Publish Stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS publish

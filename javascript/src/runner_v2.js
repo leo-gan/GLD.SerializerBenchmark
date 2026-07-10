@@ -70,19 +70,9 @@ if (dataFilter) {
 const modes =
   resolved.execution?.io_modes?.length > 0 ? resolved.execution.io_modes : ['bytes'];
 
-// Skip schema/codecs without v2 schemas or known incompatible with v2 shapes
-const skip = new Set([
-  'avro',
-  'avsc',
-  'protobuf',
-  'protobufjs',
-  'protobuf-es',
-  'flexbuffers',
-]);
+// Full registry — schema codecs must support v2 type_ids or skip via supports().
 const serializers = ALL_SERIALIZERS.filter(
-  (s) =>
-    (!serFilter || s.name.toLowerCase().includes(serFilter)) &&
-    !skip.has(s.name.toLowerCase()),
+  (s) => !serFilter || s.name.toLowerCase().includes(serFilter),
 );
 
 console.log(

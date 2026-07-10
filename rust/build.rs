@@ -8,13 +8,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::env::set_var("PROTOC", path);
     }
     let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR")?);
-    // V1 benchmark_data.proto removed. Optional v2 codegen when prost_ser is re-wired.
-    let proto_v2 = manifest.join("../schemas/v2/protobuf/benchmark_v2.proto");
-    if proto_v2.is_file() {
-        let includes = manifest.join("../schemas/v2/protobuf");
-        // Generate for future prost_ser v2 mapping (not required to link stub).
-        let _ = prost_build::Config::new().compile_protos(&[&proto_v2], &[&includes]);
-        println!("cargo:rerun-if-changed={}", proto_v2.display());
+    // Prost still uses fixture-shaped messages (suite run maps v2 → Fixture variants).
+    let proto = manifest.join("proto/benchmark_data.proto");
+    if proto.is_file() {
+        prost_build::Config::new().compile_protos(&[&proto], &[manifest.join("proto")])?;
+        println!("cargo:rerun-if-changed={}", proto.display());
+    } else {
+        return Err("missing rust/proto/benchmark_data.proto for prost".into());
     }
 
     // Emit locked crate versions for CSV SerializerVersion (from Cargo.lock).

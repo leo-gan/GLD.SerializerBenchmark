@@ -10,15 +10,21 @@ namespace GLD.SerializerBenchmark
         public static void Tests(List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions,
             int repetitions)
         {
-            Directory.CreateDirectory("logs/csharp");
+            // Prefer LOG_DIR (orchestrator) so monorepo logs/csharp stays consistent.
+            var logDir = Environment.GetEnvironmentVariable("LOG_DIR");
+            if (string.IsNullOrEmpty(logDir))
+                logDir = "logs/csharp";
+            else if (!logDir.EndsWith("csharp") && !logDir.EndsWith("c-sharp"))
+                logDir = Path.Combine(logDir, "csharp");
+            Directory.CreateDirectory(logDir);
 
             // Timestamped result file — each run creates YYYY-MM-DD-HHMMSS.csv, never overwritten.
             var ts = Environment.GetEnvironmentVariable("BENCHMARK_TS");
             if (string.IsNullOrEmpty(ts))
                 ts = DateTime.Now.ToString("yyyy-MM-dd-HHmmss");
-            var logPath = $"logs/csharp/{ts}.csv";
+            var logPath = Path.Combine(logDir, $"{ts}.csv");
             // Per-run errors beside the result CSV (same stem as .environment.json)
-            var errorsPath = $"logs/csharp/{ts}.errors.csv";
+            var errorsPath = Path.Combine(logDir, $"{ts}.errors.csv");
 
             var logStorage = new LogStorage(logPath);
             var errors = new List<Error>();

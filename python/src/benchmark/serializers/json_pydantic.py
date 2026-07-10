@@ -1,34 +1,82 @@
-"""Pydantic v2 models derived from data_v2 dataclasses."""
+"""Pydantic v2 — explicit models for data_v2 types (nested-safe)."""
 
 from __future__ import annotations
 
 import io
 import json
-from dataclasses import fields, is_dataclass
-from typing import Any, Dict, Type
+from typing import Any, Dict, List, Type
 
-from pydantic import BaseModel, ConfigDict, create_model
+from pydantic import BaseModel, ConfigDict
 
 from .base import Serializer
 from ..converters import to_dict
-from ..data_v2 import models as v2models
+from ..data_v2.models import Document, Event, Message, Strings, Telemetry
 
 
 class _Cfg(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-def _models_from_dataclasses() -> Dict[Type[Any], Type[BaseModel]]:
-    out: Dict[Type[Any], Type[BaseModel]] = {}
-    for name, cls in vars(v2models).items():
-        if not (isinstance(cls, type) and is_dataclass(cls) and cls.__module__ == v2models.__name__):
-            continue
-        field_defs = {f.name: (f.type, ...) for f in fields(cls)}
-        out[cls] = create_model(f"{name}Model", __base__=_Cfg, **field_defs)  # type: ignore[arg-type]
-    return out
+class MessageModel(_Cfg):
+    f_bool: bool
+    f_int32: int
+    f_int64: int
+    f_float64: float
+    f_string: str
+    f_bool_2: bool
+    f_int32_2: int
+    f_string_2: str
 
 
-_MODEL_MAP = _models_from_dataclasses()
+class DocumentMetaModel(_Cfg):
+    region: str
+    version: int
+
+
+class DocumentItemModel(_Cfg):
+    sku: str
+    qty: int
+    price_minor: int
+
+
+class DocumentModel(_Cfg):
+    id: str
+    status: int
+    meta: DocumentMetaModel
+    items: List[DocumentItemModel]
+
+
+class TelemetryModel(_Cfg):
+    source: str
+    ts: int
+    tags: List[str]
+    values: List[float]
+
+
+class StringsModel(_Cfg):
+    items: List[str]
+
+
+class EventAttrModel(_Cfg):
+    key: str
+    value: str
+
+
+class EventModel(_Cfg):
+    event_id: str
+    event_type: str
+    occurred_at: int
+    producer: str
+    attrs: List[EventAttrModel]
+
+
+_MODEL_MAP: Dict[type, Type[BaseModel]] = {
+    Message: MessageModel,
+    Document: DocumentModel,
+    Telemetry: TelemetryModel,
+    Strings: StringsModel,
+    Event: EventModel,
+}
 
 
 class PydanticSerializer(Serializer):

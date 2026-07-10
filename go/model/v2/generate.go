@@ -7,56 +7,56 @@ package v2
 
 // Message is a single-level mixed-primitive record.
 type Message struct {
-	FBool    bool    `json:"f_bool"`
-	FInt32   int32   `json:"f_int32"`
-	FInt64   int64   `json:"f_int64"`
-	FFloat64 float64 `json:"f_float64"`
-	FString  string  `json:"f_string"`
-	FBool2   bool    `json:"f_bool_2"`
-	FInt32_2 int32   `json:"f_int32_2"`
-	FString2 string  `json:"f_string_2"`
+	FBool    bool    `json:"f_bool" avro:"f_bool"`
+	FInt32   int32   `json:"f_int32" avro:"f_int32"`
+	FInt64   int64   `json:"f_int64" avro:"f_int64"`
+	FFloat64 float64 `json:"f_float64" avro:"f_float64"`
+	FString  string  `json:"f_string" avro:"f_string"`
+	FBool2   bool    `json:"f_bool_2" avro:"f_bool_2"`
+	FInt32_2 int32   `json:"f_int32_2" avro:"f_int32_2"`
+	FString2 string  `json:"f_string_2" avro:"f_string_2"`
 }
 
 type DocumentMeta struct {
-	Region  string `json:"region"`
-	Version int32  `json:"version"`
+	Region  string `json:"region" avro:"region"`
+	Version int32  `json:"version" avro:"version"`
 }
 
 type DocumentItem struct {
-	SKU        string `json:"sku"`
-	Qty        int32  `json:"qty"`
-	PriceMinor int64  `json:"price_minor"`
+	SKU        string `json:"sku" avro:"sku"`
+	Qty        int32  `json:"qty" avro:"qty"`
+	PriceMinor int64  `json:"price_minor" avro:"price_minor"`
 }
 
 type Document struct {
-	ID     string         `json:"id"`
-	Status int32          `json:"status"`
-	Meta   DocumentMeta   `json:"meta"`
-	Items  []DocumentItem `json:"items"`
+	ID     string         `json:"id" avro:"id"`
+	Status int32          `json:"status" avro:"status"`
+	Meta   DocumentMeta   `json:"meta" avro:"meta"`
+	Items  []DocumentItem `json:"items" avro:"items"`
 }
 
 type Telemetry struct {
-	Source string    `json:"source"`
-	TS     int64     `json:"ts"`
-	Tags   []string  `json:"tags"`
-	Values []float64 `json:"values"`
+	Source string    `json:"source" avro:"source"`
+	TS     int64     `json:"ts" avro:"ts"`
+	Tags   []string  `json:"tags" avro:"tags"`
+	Values []float64 `json:"values" avro:"values"`
 }
 
 type Strings struct {
-	Items []string `json:"items"`
+	Items []string `json:"items" avro:"items"`
 }
 
 type EventAttr struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key   string `json:"key" avro:"key"`
+	Value string `json:"value" avro:"value"`
 }
 
 type Event struct {
-	EventID     string      `json:"event_id"`
-	EventType   string      `json:"event_type"`
-	OccurredAt  int64       `json:"occurred_at"`
-	Producer    string      `json:"producer"`
-	Attrs       []EventAttr `json:"attrs"`
+	EventID     string      `json:"event_id" avro:"event_id"`
+	EventType   string      `json:"event_type" avro:"event_type"`
+	OccurredAt  int64       `json:"occurred_at" avro:"occurred_at"`
+	Producer    string      `json:"producer" avro:"producer"`
+	Attrs       []EventAttr `json:"attrs" avro:"attrs"`
 }
 
 const baseTSMS int64 = 1704067200000

@@ -20,7 +20,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override bool Supports(string testDataName)
         {
             // Migrant throws BadImageFormatException on net8 for non-trivial types (incl. ObjectGraph).
-            return testDataName is "Integer" or "SimpleObject";
+            return testDataName is "Integer" or "SimpleObject" or "message" or "event";
         }
 
         public override string Serialize(object serializable)

@@ -28,9 +28,8 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override bool Supports(string testDataName)
         {
-            // SharpSerializer has issues with Person and Telemetry (NRE) and flat ObjectGraph
-            // (deserialization fails on nested List&lt;GraphNodeData&gt;).
-            return testDataName is not ("Person" or "Telemetry" or "ObjectGraph");
+            // Disabled for Data Model v2 (deserialization fails on SimpleObject proxies).
+            return false;
         }
 
         public override string Serialize(object serializable)

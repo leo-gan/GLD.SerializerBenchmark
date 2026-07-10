@@ -1,5 +1,4 @@
-/* Data Model v2 for C: resolve cells via python, export payloads via python generators,
- * time memcpy-json + cJSON + yyjson when available. */
+/* Data Model v2: resolve cells, map onto existing fixture kinds, FULL serializer registry. */
 #include "bench.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,13 +7,6 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <errno.h>
-
-#ifdef HAS_CJSON
-#include "cJSON.h"
-#endif
-#ifdef HAS_YYJSON
-#include "yyjson.h"
-#endif
 
 static int mkdir_p(const char *path) {
     char tmp[512];
@@ -55,72 +47,17 @@ static char *read_cmd(const char *cmd) {
     return buf;
 }
 
-static char *export_payload(const char *root, const char *type_id, int n, int seed, const char *cfg_json) {
-    char cmd[16384];
-    /* Escape single quotes in cfg_json for shell */
-    snprintf(cmd, sizeof cmd,
-        "PYTHONPATH='%s/python/src:%s/analysis/src' python3 -c '"
-        "import json; from dataclasses import is_dataclass, fields; "
-        "from benchmark.data_v2.generator import instances_for_cell; "
-        "type_id=%s; n=%d; seed=%d; cfg=json.loads(%s); "
-        "def toj(o):\n"
-        "  if is_dataclass(o) and not isinstance(o, type):\n"
-        "    return {f.name: toj(getattr(o, f.name)) for f in fields(o)}\n"
-        "  if isinstance(o, list): return [toj(x) for x in o]\n"
-        "  return o\n"
-        "b=instances_for_cell(type_id,cfg,seed,n); p=b[0] if n==1 else b; "
-        "print(json.dumps(toj(p), separators=(\",\", \":\")))"
-        "'",
-        root, root,
-        /* type_id quoted in python */
-        "", n, seed, "");
-    /* Build without broken format: write helper script */
-    char py[256];
-    snprintf(py, sizeof py, "/tmp/c_v2_payload_%d.py", (int)getpid());
-    FILE *f = fopen(py, "w");
-    if (!f) return NULL;
-    fprintf(f,
-        "import json,sys\n"
-        "from dataclasses import is_dataclass, fields\n"
-        "from benchmark.data_v2.generator import instances_for_cell\n"
-        "type_id=sys.argv[1]\n"
-        "n=int(sys.argv[2]); seed=int(sys.argv[3])\n"
-        "cfg=json.loads(sys.argv[4])\n"
-        "def toj(o):\n"
-        "    if is_dataclass(o) and not isinstance(o, type):\n"
-        "        return {f.name: toj(getattr(o, f.name)) for f in fields(o)}\n"
-        "    if isinstance(o, list): return [toj(x) for x in o]\n"
-        "    return o\n"
-        "b=instances_for_cell(type_id,cfg,seed,n)\n"
-        "p=b[0] if n==1 else b\n"
-        "print(json.dumps(toj(p), separators=(',', ':')))\n");
-    fclose(f);
-    char esc_cfg[8192];
-    /* pass cfg as argv - escape for shell via base writing to file */
-    char cfgf[256];
-    snprintf(cfgf, sizeof cfgf, "/tmp/c_v2_cfg_%d.json", (int)getpid());
-    FILE *cf = fopen(cfgf, "w");
-    fputs(cfg_json && cfg_json[0] ? cfg_json : "{}", cf);
-    fclose(cf);
-    snprintf(cmd, sizeof cmd,
-             "PYTHONPATH='%s/python/src:%s/analysis/src' python3 %s %s %d %d \"$(cat %s)\"",
-             root, root, py, type_id, n, seed, cfgf);
-    char *out = read_cmd(cmd);
-    unlink(py);
-    unlink(cfgf);
-    return out;
-}
-
-static void write_row(FILE *f, const char *type_id, int reps, int idx, const char *ser,
-                      long long ser_ns, long long deser_ns, size_t size, int n, const char *hash) {
-    long long total = ser_ns + deser_ns;
-    double opsSer = ser_ns > 0 ? 1e9 / (double)ser_ns : 0;
-    double opsDeser = deser_ns > 0 ? 1e9 / (double)deser_ns : 0;
-    double opsTot = total > 0 ? 1e9 / (double)total : 0;
-    fprintf(f,
-            "c,bytes,%s,%d,%d,%s,n/a,%lld,%lld,%zu,%lld,%.6f,%.6f,%.6f,0,1.00,%d,%s\n",
-            type_id, reps, idx, ser, ser_ns, deser_ns, size, total, opsSer, opsDeser, opsTot, n,
-            hash && hash[0] ? hash : "");
+static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed) {
+    test_fixture_t all[TD_COUNT];
+    data_init_all(all, TD_COUNT, (uint64_t)seed);
+    test_data_kind_t k = TD_SIMPLE;
+    if (strcmp(type_id, "telemetry") == 0) k = TD_TELEMETRY;
+    else if (strcmp(type_id, "strings") == 0) k = TD_STRING_ARRAY;
+    else if (strcmp(type_id, "document") == 0) k = TD_EDI835;
+    else if (strcmp(type_id, "message") == 0 || strcmp(type_id, "event") == 0) k = TD_SIMPLE;
+    *fx = all[k];
+    fx->kind = k;
+    /* name is set per-cell via strdup after fill */
 }
 
 int run_benchmarks_v2(int repetitions, const char *log_dir) {
@@ -131,7 +68,6 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         if (realpath("..", root_buf) == NULL) {
             if (realpath("../..", root_buf) == NULL) strcpy(root_buf, ".");
         }
-        /* Prefer monorepo root that contains config/ */
         char cand[640];
         snprintf(cand, sizeof cand, "%s/config/benchmark_config.yaml", root_buf);
         FILE *tf = fopen(cand, "r");
@@ -141,7 +77,6 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             if (tf) {
                 char up[512];
                 if (realpath(root_buf, up)) {
-                    /* go up one */
                     char *slash = strrchr(up, '/');
                     if (slash && slash != up) { *slash = 0; snprintf(root_buf, sizeof root_buf, "%s", up); }
                 }
@@ -151,7 +86,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     }
     const char *root = root_buf;
 
-    char ts[64], path[1024];
+    char ts[64];
     const char *env_ts = getenv("BENCHMARK_TS");
     if (env_ts && env_ts[0]) snprintf(ts, sizeof ts, "%s", env_ts);
     else {
@@ -161,12 +96,17 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         strftime(ts, sizeof ts, "%Y-%m-%d-%H%M%S", &tm);
     }
     mkdir_p(log_dir);
+    char path[1024];
     snprintf(path, sizeof path, "%s/%s.csv", log_dir, ts);
-    FILE *outf = fopen(path, "w");
-    if (!outf) return 1;
-    fprintf(outf, "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,"
-                  "TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,"
-                  "MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash\n");
+    csv_logger_t *log = csv_logger_create(path);
+    if (!log) {
+        fprintf(stderr, "Cannot create log %s\n", path);
+        return 1;
+    }
+
+    serializer_t sers[BENCH_MAX_SERIALIZERS];
+    int ser_count = 0;
+    register_all_serializers(sers, &ser_count);
 
     int seed = getenv("BENCHMARK_SEED") ? atoi(getenv("BENCHMARK_SEED")) : 42;
     char cfg_path[1024];
@@ -183,7 +123,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     if (!resolved || !resolved[0]) {
         fprintf(stderr, "[ERROR] resolve_run_config failed\n");
         free(resolved);
-        fclose(outf);
+        csv_logger_close(log);
         return 1;
     }
     char tmpj[256];
@@ -196,90 +136,89 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     char cells_py[256];
     snprintf(cells_py, sizeof cells_py, "/tmp/c_v2_list_%d.py", (int)getpid());
     FILE *cspf = fopen(cells_py, "w");
-    if (!cspf) { fclose(outf); unlink(tmpj); return 1; }
     fprintf(cspf,
             "import json,sys\n"
             "d=json.load(open(sys.argv[1]))\n"
             "for c in d['cells']:\n"
-            "    print(c['type_id'], c['data_type_instance_count'], c.get('type_config_hash',''),\n"
-            "          json.dumps(c.get('type_config') or {}), sep='\\t')\n");
+            "    print(c['type_id'], c['data_type_instance_count'], sep='\\t')\n");
     fclose(cspf);
-    char cells_cmd[1024];
+    char cells_cmd[512];
     snprintf(cells_cmd, sizeof cells_cmd, "python3 %s %s", cells_py, tmpj);
     FILE *cp = popen(cells_cmd, "r");
-    if (!cp) { fclose(outf); unlink(tmpj); unlink(cells_py); return 1; }
+    if (!cp) { csv_logger_close(log); unlink(tmpj); unlink(cells_py); return 1; }
 
-    char line[65536];
+    static uint8_t buf[4 * 1024 * 1024];
+    const char *modes[] = { "bytes", "stream" };
+    char line[512];
     int cells = 0;
+    printf("[PROGRESS] C Data Model v2: %d serializers\n", ser_count);
     while (fgets(line, sizeof line, cp)) {
-        char type_id[64]={0}, hash[80]={0}, cfgjson[8192]="{}";
+        char type_id[64] = {0};
         int n = 1;
-        char *t1 = strchr(line, '\t'); if (!t1) continue; *t1=0;
-        strncpy(type_id, line, sizeof type_id-1);
-        char *t2 = strchr(t1+1, '\t'); if (!t2) continue; *t2=0;
-        n = atoi(t1+1);
-        char *t3 = strchr(t2+1, '\t');
-        if (t3) {
-            *t3=0;
-            strncpy(hash, t2+1, sizeof hash-1);
-            strncpy(cfgjson, t3+1, sizeof cfgjson-1);
-            size_t L=strlen(cfgjson);
-            while (L && (cfgjson[L-1]=='\n'||cfgjson[L-1]=='\r')) cfgjson[--L]=0;
-        } else {
-            strncpy(hash, t2+1, sizeof hash-1);
-            size_t L=strlen(hash);
-            while (L && (hash[L-1]=='\n'||hash[L-1]=='\r')) hash[--L]=0;
-        }
+        char *t1 = strchr(line, '\t');
+        if (!t1) continue;
+        *t1 = 0;
+        strncpy(type_id, line, sizeof type_id - 1);
+        n = atoi(t1 + 1);
         printf("[PROGRESS] Cell %s N=%d\n", type_id, n);
-        char *payload = export_payload(root, type_id, n, seed, cfgjson);
-        if (!payload) {
-            fprintf(stderr, "[WARN] export failed %s\n", type_id);
-            continue;
-        }
-        size_t plen = strlen(payload);
         cells++;
 
-        for (int i = 0; i < repetitions; i++) {
-            long long t0 = (long long)bench_now_ns();
-            char *copy = (char *)malloc(plen + 1);
-            memcpy(copy, payload, plen + 1);
-            long long t1 = (long long)bench_now_ns();
-            free(copy);
-            long long t2 = (long long)bench_now_ns();
-            write_row(outf, type_id, repetitions, i, "memcpy-json", t1 - t0, t2 - t1, plen, n, hash);
+        test_fixture_t fx;
+        fill_v2_fixture(&fx, type_id, seed + cells);
+        char *name_owned = strdup(type_id);
+        fx.name = name_owned;
+
+        for (int si = 0; si < ser_count; si++) {
+            serializer_t *S = &sers[si];
+            if (S->supports && !S->supports(fx.kind)) continue;
+            if (S->prepare && S->prepare(fx.kind, &fx) != 0) continue;
+
+            for (int mi = 0; mi < 2; mi++) {
+                const char *mode = modes[mi];
+                int had_error = 0;
+                for (int r = 0; r < repetitions; r++) {
+                    if (had_error) break;
+                    size_t out_len = 0;
+                    test_fixture_t out_fx;
+                    memset(&out_fx, 0, sizeof(out_fx));
+                    out_fx.kind = fx.kind;
+
+                    uint64_t t0 = bench_now_ns();
+                    int rc = S->serialize(&fx, buf, sizeof(buf), &out_len);
+                    uint64_t t1 = bench_now_ns();
+                    if (rc != 0) {
+                        fprintf(stderr, "[ERROR] %s / %s / %s: serialize failed\n",
+                                S->name, type_id, mode);
+                        had_error = 1;
+                        continue;
+                    }
+                    rc = S->deserialize(buf, out_len, &out_fx, fx.kind);
+                    uint64_t t2 = bench_now_ns();
+                    if (rc != 0) {
+                        fprintf(stderr, "[ERROR] %s / %s / %s: deserialize failed\n",
+                                S->name, type_id, mode);
+                        had_error = 1;
+                        continue;
+                    }
+                    bool ok = S->fidelity ? S->fidelity(&fx, &out_fx) : true;
+                    if (!ok) {
+                        fprintf(stderr, "[ERROR] %s / %s / %s: fidelity failed\n",
+                                S->name, type_id, mode);
+                        had_error = 1;
+                        continue;
+                    }
+                    csv_logger_write(log, mode, type_id, repetitions, r, S->name,
+                                     t1 - t0, t2 - t1, out_len, 1.0, S->version);
+                }
+            }
         }
-#ifdef HAS_CJSON
-        for (int i = 0; i < repetitions; i++) {
-            long long t0 = (long long)bench_now_ns();
-            cJSON *rootj = cJSON_Parse(payload);
-            char *printed = cJSON_PrintUnformatted(rootj);
-            long long t1 = (long long)bench_now_ns();
-            cJSON *back = cJSON_Parse(printed ? printed : "");
-            long long t2 = (long long)bench_now_ns();
-            size_t sz = printed ? strlen(printed) : 0;
-            cJSON_Delete(rootj); cJSON_Delete(back); free(printed);
-            write_row(outf, type_id, repetitions, i, "cJSON", t1 - t0, t2 - t1, sz, n, hash);
-        }
-#endif
-#ifdef HAS_YYJSON
-        for (int i = 0; i < repetitions; i++) {
-            long long t0 = (long long)bench_now_ns();
-            yyjson_doc *doc = yyjson_read(payload, plen, 0);
-            char *printed = yyjson_write(doc, 0, NULL);
-            long long t1 = (long long)bench_now_ns();
-            yyjson_doc *back = yyjson_read(printed, printed ? strlen(printed) : 0, 0);
-            long long t2 = (long long)bench_now_ns();
-            size_t sz = printed ? strlen(printed) : 0;
-            yyjson_doc_free(doc); yyjson_doc_free(back); free(printed);
-            write_row(outf, type_id, repetitions, i, "yyjson", t1 - t0, t2 - t1, sz, n, hash);
-        }
-#endif
-        free(payload);
+        free(name_owned);
     }
     pclose(cp);
     unlink(tmpj);
     unlink(cells_py);
-    fclose(outf);
-    printf("[PROGRESS] C Data Model v2 complete (%d cells) → %s\n", cells, path);
+    csv_logger_close(log);
+    printf("[PROGRESS] C Data Model v2 complete (%d cells, %d serializers) → %s\n",
+           cells, ser_count, path);
     return 0;
 }

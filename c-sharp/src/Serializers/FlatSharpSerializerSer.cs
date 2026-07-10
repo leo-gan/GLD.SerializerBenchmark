@@ -15,7 +15,8 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Name => "FlatSharp";
 
         public override bool Supports(string testDataName) =>
-            testDataName is "Integer" or "SimpleObject" or "StringArray" or "ObjectGraph";
+            testDataName is "Integer" or "SimpleObject" or "StringArray" or "ObjectGraph"
+            or "message" or "event" or "strings";
 
         public override void PrepareData(object data)
         {

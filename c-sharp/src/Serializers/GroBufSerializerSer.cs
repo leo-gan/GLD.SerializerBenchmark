@@ -15,7 +15,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override bool Supports(string testDataName)
         {
             // GroBuf fidelity/comparison issues on complex types (incl. ObjectGraph lists).
-            return testDataName is "Integer" or "SimpleObject";
+            return testDataName is "Integer" or "SimpleObject" or "message" or "event";
         }
 
         public override string Serialize(object serializable)

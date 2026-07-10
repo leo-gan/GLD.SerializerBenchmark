@@ -18,7 +18,7 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             // CsvHelper only works with simple flat objects (Integer, SimpleObject)
             // Cannot handle nested objects, arrays, or circular references
-            return testDataName == "Integer" || testDataName == "SimpleObject";
+            return testDataName is "Integer" or "SimpleObject" or "message" or "event";
         }
 
         public override string Serialize(object serializable)
