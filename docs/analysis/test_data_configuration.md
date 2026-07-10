@@ -1,5 +1,7 @@
 # Test data types
 
+> **v1 fixtures.** For the new data plane see [Data Model v2](data_model_v2.md).
+
 **Job of this page:** shared conceptual fixtures (`TestDataName` values), why each exists, and where size/seed knobs live. Not serializer categories ([Serialization categories](serialization_categories.md)) and not harness timing ([architecture](architecture.md)).
 
 Conceptual fixtures every language harness implements as language-native models. Definitions are the suite SoT in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml) under `test_data.types`. Shape/size knobs and seed live in [`schemas/test_data_config.json`](../../schemas/test_data_config.json) (`test_data.config_file` in master config). That file allows `//` line comments (JSONC-style); canonical keys today are `StringOptions`, `CollectionOptions`, and `RandomSeed` (**42**).

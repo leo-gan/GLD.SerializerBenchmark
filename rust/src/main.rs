@@ -2,6 +2,7 @@
 
 mod csv_log;
 mod data;
+mod data_v2; // Data Model v2 generators (not default harness path yet)
 mod serializers;
 
 use crate::csv_log::CsvLogger;

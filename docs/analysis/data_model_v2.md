@@ -1,6 +1,6 @@
 # Data Model v2
 
-**Status:** normative for the v2 data plane (in progress; v1 fixtures still default in harnesses)  
+**Status:** normative for the v2 data plane. **Python pilot is runnable** (`BENCHMARK_DATA_MODEL=v2`). Other languages have generators; harness default remains **v1** until per-language cutover.  
 **Plan:** [`plans/DATA_MODEL_V2_PLAN.md`](../../plans/DATA_MODEL_V2_PLAN.md)  
 **Catalog:** [`schemas/data_catalog_v2.yaml`](../../schemas/data_catalog_v2.yaml)  
 **Run configs:** [`config/library/`](../../config/library/)

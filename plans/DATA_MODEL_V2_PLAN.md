@@ -1,6 +1,7 @@
 # Data Model v2 — Implementation Plan
 
-**Status:** draft for implementation (revised after design review)  
+**Status:** implementation in progress on `refactor/data-type-config`  
+**Progress:** Phases 0–3 done (Python pilot E2E). Phase 4 generators in all langs (runners TBD except Python). Phase 5 analysis keys done. Phase 6 (delete v1) **blocked** until every language defaults to v2.
 **Audience:** maintainers  
 **Scope:** greenfield **data types / generators / catalog** + runner measurement extensions; **not** a rewrite of serializer libraries, Docker, or analysis math  
 **Related:** `docs/analysis/test_data_configuration.md` (v1, to be replaced), `docs/theory/201/compression-is-not-a-format.md`, `config/benchmark_config.yaml`
