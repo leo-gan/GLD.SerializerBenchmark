@@ -36,8 +36,11 @@ fi
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
 
-export PATH="${HOME}/.local/go/bin:${HOME}/.local/bin:${PATH:-}"
-export PATH="$(go env GOPATH 2>/dev/null)/bin:${PATH}"
+if ! command -v go >/dev/null 2>&1; then
+  echo "[ERROR] go not found. Run: ./scripts/install-host-requirements.sh go" >&2
+  exit 1
+fi
+export PATH="$(go env GOPATH 2>/dev/null)/bin:${PATH:-}"
 
 echo "[INFO] Building Go benchmark (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)..."
 cd "$GO_DIR"

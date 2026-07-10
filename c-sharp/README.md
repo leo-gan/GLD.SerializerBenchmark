@@ -29,7 +29,11 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Requirements
 
-- **.NET SDK 8.0+** ([download](https://dotnet.microsoft.com/download) or `curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0`)
+- **.NET SDK 8.0+** (host toolchain — prepare once):
+  ```bash
+  ../scripts/install-host-requirements.sh csharp
+  ../scripts/check-host-requirements.sh csharp
+  ```
 - Optional: `python3` + analysis package for `configs.json` sidecars
 
 ---

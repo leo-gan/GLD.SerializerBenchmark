@@ -48,11 +48,9 @@ if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
   fi
 fi
 
-# Prefer user-local installs (e.g. ~/.dotnet)
-export PATH="${HOME}/.dotnet:${HOME}/.local/share/dotnet:${PATH:-}"
 if ! command -v dotnet >/dev/null 2>&1; then
-  echo "[ERROR] dotnet not found. Install .NET SDK 8.0+: https://dotnet.microsoft.com/download" >&2
-  echo "        Or: curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0" >&2
+  echo "[ERROR] dotnet not found. Run: ./scripts/install-host-requirements.sh csharp" >&2
+  echo "        Or install .NET SDK 8.0+: https://dotnet.microsoft.com/download" >&2
   exit 1
 fi
 

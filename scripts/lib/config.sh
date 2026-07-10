@@ -9,6 +9,30 @@ _BENCH_REPO_ROOT="$(cd "$_BENCH_CONFIG_SH_DIR/../.." && pwd)"
 _BENCH_READ_CONFIG="${_BENCH_REPO_ROOT}/scripts/read-config.py"
 _BENCH_CONFIG_FILE="${BENCH_CONFIG:-${_BENCH_REPO_ROOT}/config/benchmark_config.yaml}"
 
+# User-local toolchains (dotnet-install, go tarball, cargo, uv) often live outside
+# a login shell PATH. Extend once when this file is sourced by runners.
+bench_extend_host_path() {
+  local extras=()
+  [[ -d "${HOME}/.dotnet" ]] && extras+=("${HOME}/.dotnet")
+  [[ -d "${HOME}/.local/go/bin" ]] && extras+=("${HOME}/.local/go/bin")
+  [[ -d "${HOME}/.local/bin" ]] && extras+=("${HOME}/.local/bin")
+  [[ -d "${HOME}/.cargo/bin" ]] && extras+=("${HOME}/.cargo/bin")
+  if ((${#extras[@]})); then
+    local joined
+    joined="$(IFS=:; echo "${extras[*]}")"
+    case ":${PATH:-}:" in
+      *":${extras[0]}:"*) ;;
+      *) export PATH="${joined}${PATH:+:$PATH}" ;;
+    esac
+  fi
+  if [[ -d "${HOME}/.dotnet" && -z "${DOTNET_ROOT:-}" ]]; then
+    export DOTNET_ROOT="${HOME}/.dotnet"
+  fi
+  # Go module may request a newer toolchain than the host bootstrap (go.mod).
+  export GOTOOLCHAIN="${GOTOOLCHAIN:-auto}"
+}
+bench_extend_host_path
+
 bench_config_py() {
   # Prefer analysis venv python if present, else python3
   if [[ -x "${_BENCH_REPO_ROOT}/analysis/.venv/bin/python" ]]; then

@@ -57,8 +57,11 @@ Serializers differ in type fidelity (JSON date strings, msgpack list vs tuple, s
 
 ## Requirements
 
-- **Python 3.12+**
-- **[uv](https://docs.astral.sh/uv/)** (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **[uv](https://docs.astral.sh/uv/)** (provisions Python 3.12+). Prepare once:
+  ```bash
+  ../scripts/install-host-requirements.sh python
+  ../scripts/check-host-requirements.sh python
+  ```
 - Optional: analysis package on `PYTHONPATH` for `configs.json` sidecars
 
 ## Running the Benchmarks

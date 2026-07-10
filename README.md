@@ -34,10 +34,15 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 
 ## Quick start
 
-Harnesses run **natively on the host** (no Docker): install each language’s toolchain (.NET 8 SDK, Python 3.12 + [uv](https://docs.astral.sh/uv/), Go, Rust/cargo, Node, CMake, …), then:
+Harnesses run **natively on the host** (no Docker). **Prepare toolchains once**, then run benchmarks (project deps like `uv sync` / `npm install` still happen inside each runner).
 
 ```bash
-# Smoke one language
+# 1) Host toolchains (separate step — compilers/runtimes only)
+./scripts/check-host-requirements.sh          # verify
+./scripts/install-host-requirements.sh        # user-local install (no sudo) where possible
+./scripts/install-host-requirements.sh csharp # one language
+
+# 2) Smoke one language
 ./<lang>/scripts/run-benchmarks.sh smoke
 
 # Orchestrator: all languages or one language
