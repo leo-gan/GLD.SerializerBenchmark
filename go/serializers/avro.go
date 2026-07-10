@@ -35,7 +35,14 @@ func (s *hambaAvro) Name() string           { return "hamba/avro" }
 func (s *hambaAvro) Version() string        { return ModuleVersion("github.com/hamba/avro/v2") }
 func (s *hambaAvro) StreamMode() StreamMode { return StreamAdapted }
 func (s *hambaAvro) NativeKind() NativeKind { return NativeSchema }
-func (s *hambaAvro) Supports(n string) bool { return DefaultSupports(n) }
+func (s *hambaAvro) Supports(n string) bool {
+	switch n {
+	case "message", "document", "telemetry", "strings", "event":
+		return false // v2 Avro schemas not generated yet
+	default:
+		return DefaultSupports(n)
+	}
+}
 
 func (s *hambaAvro) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value

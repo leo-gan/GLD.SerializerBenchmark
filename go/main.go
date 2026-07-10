@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"serializer-benchmark-go/model"
+	modelv2 "serializer-benchmark-go/model/v2"
 	"serializer-benchmark-go/serializers"
 )
 
@@ -194,21 +195,54 @@ func main() {
 		}
 	}
 
-	var fxs []model.Fixture
-	for _, fx := range model.AllFixtures(seed) {
-		if df != "" && !strings.Contains(strings.ToLower(fx.Name), strings.ToLower(df)) {
-			continue
-		}
-		fxs = append(fxs, fx)
-	}
-
+	dataModel := strings.ToLower(strings.TrimSpace(os.Getenv("BENCHMARK_DATA_MODEL")))
 	modes := []string{"bytes", "stream"}
-	fmt.Printf("[PROGRESS] Go benchmark: %d serializers, %d data types, %d reps\n", len(sers), len(fxs), repetitions)
+
+	type workItem struct {
+		fx            model.Fixture
+		instanceCount int
+		typeConfigHash string
+	}
+	var work []workItem
+
+	if dataModel == "v2" || dataModel == "2" {
+		runCfg := os.Getenv("BENCHMARK_RUN_CONFIG")
+		resolved, err := modelv2.LoadResolved(runCfg, seed)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "v2 resolve: %v\n", err)
+			os.Exit(1)
+		}
+		if len(resolved.Execution.IOModes) > 0 {
+			modes = resolved.Execution.IOModes
+		}
+		for _, c := range resolved.Cells {
+			if df != "" && !strings.Contains(strings.ToLower(c.TypeID), strings.ToLower(df)) {
+				continue
+			}
+			name, val := modelv2.FixtureFromCell(c, seed)
+			work = append(work, workItem{
+				fx:             model.Fixture{Name: name, Value: val},
+				instanceCount:  c.DataTypeInstanceCount,
+				typeConfigHash: c.TypeConfigHash,
+			})
+		}
+		fmt.Printf("[PROGRESS] Go Data Model v2: %d serializers, %d cells, %d reps, modes=%v\n",
+			len(sers), len(work), repetitions, modes)
+	} else {
+		for _, fx := range model.AllFixtures(seed) {
+			if df != "" && !strings.Contains(strings.ToLower(fx.Name), strings.ToLower(df)) {
+				continue
+			}
+			work = append(work, workItem{fx: fx})
+		}
+		fmt.Printf("[PROGRESS] Go benchmark: %d serializers, %d data types, %d reps\n", len(sers), len(work), repetitions)
+	}
 
 	var errors []benchError
 
-	for _, fx := range fxs {
-		fmt.Printf("[PROGRESS] Testing Data: %s\n", fx.Name)
+	for _, w := range work {
+		fx := w.fx
+		fmt.Printf("[PROGRESS] Testing Data: %s (N=%d)\n", fx.Name, w.instanceCount)
 		for _, ser := range sers {
 			if !ser.Supports(fx.Name) {
 				continue
@@ -251,6 +285,7 @@ func main() {
 						mode, fx.Name, repetitions, i, ser.Name(),
 						serNs, deserNs, size, 1.0,
 						ser.Version(), ser.NativeKind().String(), ser.StreamMode().String(),
+						w.instanceCount, w.typeConfigHash,
 					)
 				}
 			}

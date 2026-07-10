@@ -1,6 +1,17 @@
 # Data Model v2
 
-**Status:** normative for the v2 data plane. **Python pilot is runnable** (`BENCHMARK_DATA_MODEL=v2`). Other languages have generators; harness default remains **v1** until per-language cutover.  
+**Status:** normative for the v2 data plane. **All suite languages accept `BENCHMARK_DATA_MODEL=v2`.**  
+
+| Language | v2 coverage |
+|----------|-------------|
+| Python | Full serializer matrix (minus avro/flatbuffers) |
+| Go | Schemaless + most codecs (protobuf/avro skipped until schemas/v2 codegen) |
+| JavaScript | Most codecs (schema codecs without v2 IDL skipped) |
+| Rust | JSON-family subset (`serde_json`, `rmp-serde`, `ciborium`) |
+| C | Minimal path (`memcpy-json` smoke) |
+| C# | `System.Text.Json` path (requires `dotnet` + python resolver) |
+
+Default harness path remains **v1** unless `BENCHMARK_DATA_MODEL=v2`.  
 **Plan:** [`plans/DATA_MODEL_V2_PLAN.md`](../../plans/DATA_MODEL_V2_PLAN.md)  
 **Catalog:** [`schemas/data_catalog_v2.yaml`](../../schemas/data_catalog_v2.yaml)  
 **Run configs:** [`config/library/`](../../config/library/)

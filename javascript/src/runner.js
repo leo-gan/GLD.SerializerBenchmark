@@ -13,6 +13,13 @@ import { ALL_SERIALIZERS, performance } from './serializers/index.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '../..');
 
+
+// Data Model v2 dispatch
+if (['v2', '2', 'data_v2'].includes((process.env.BENCHMARK_DATA_MODEL || 'v1').toLowerCase())) {
+  await import('./runner_v2.js');
+  process.exit(0);
+}
+
 const repetitions = parseInt(process.argv[2] || '10', 10);
 const serFilter = (process.argv[3] || '').toLowerCase();
 const dataFilter = (process.argv[4] || '').toLowerCase();

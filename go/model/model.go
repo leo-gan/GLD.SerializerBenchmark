@@ -5,6 +5,7 @@ package model
 import (
 	"fmt"
 	"math"
+	"reflect"
 )
 
 type Gender int32
@@ -369,7 +370,8 @@ func Fidelity(expected, actual any) bool {
 		bv, ok := actual.(ObjectGraph)
 		return ok && ObjectGraphFidelity(av, bv)
 	default:
-		return fmt.Sprintf("%#v", expected) == fmt.Sprintf("%#v", actual)
+		// Data Model v2 and other concrete types: structural equality.
+		return reflect.DeepEqual(expected, actual)
 	}
 }
 
@@ -409,45 +411,26 @@ func ObjectGraphFidelity(a, b ObjectGraph) bool {
 }
 
 // NewEmptyPtr allocates a pointer to a zero value of the same concrete type as v.
+// Uses reflection so Data Model v2 structs/slices work without a switch per type.
 func NewEmptyPtr(v any) any {
-	switch v.(type) {
-	case Person:
-		return &Person{}
-	case IntegerValue:
-		return &IntegerValue{}
-	case TelemetryData:
-		return &TelemetryData{}
-	case SimpleObject:
-		return &SimpleObject{}
-	case StringArrayObject:
-		return &StringArrayObject{}
-	case Edi835:
-		return &Edi835{}
-	case ObjectGraph:
-		return &ObjectGraph{}
-	default:
+	if v == nil {
 		return nil
 	}
+	t := reflect.TypeOf(v)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return reflect.New(t).Interface()
 }
 
 // Deref converts an unmarshal target pointer back to a value.
 func Deref(ptr any) any {
-	switch p := ptr.(type) {
-	case *Person:
-		return *p
-	case *IntegerValue:
-		return *p
-	case *TelemetryData:
-		return *p
-	case *SimpleObject:
-		return *p
-	case *StringArrayObject:
-		return *p
-	case *Edi835:
-		return *p
-	case *ObjectGraph:
-		return *p
-	default:
-		return ptr
+	if ptr == nil {
+		return nil
 	}
+	rv := reflect.ValueOf(ptr)
+	if rv.Kind() == reflect.Ptr {
+		return rv.Elem().Interface()
+	}
+	return ptr
 }

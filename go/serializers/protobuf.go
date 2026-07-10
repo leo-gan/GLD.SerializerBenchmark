@@ -32,7 +32,13 @@ func (s *googleProtobuf) NativeKind() NativeKind { return NativeMessage }
 func (s *googleProtobuf) Supports(n string) bool {
 	// No bare Integer message in shared schema (aligned with Rust prost).
 	// Flat ObjectGraph is supported via GraphNodeData index edges.
-	return n != "Integer"
+	// Data Model v2 types need schemas/v2 codegen (not wired yet).
+	switch n {
+	case "Integer", "message", "document", "telemetry", "strings", "event":
+		return false
+	default:
+		return true
+	}
 }
 
 func (s *googleProtobuf) Prepare(fx model.Fixture) error {

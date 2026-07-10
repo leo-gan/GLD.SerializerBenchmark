@@ -19,8 +19,7 @@ func NewCsvLogger(path string) (*CsvLogger, error) {
 	if err != nil {
 		return nil, err
 	}
-	// SerializerVersion immediately follows SerializerName.
-	header := "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode\n"
+	header := "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,DataTypeInstanceCount,TypeConfigHash\n"
 	if _, err := f.WriteString(header); err != nil {
 		_ = f.Close()
 		return nil, err
@@ -36,6 +35,8 @@ func (c *CsvLogger) WriteRow(
 	size int,
 	fidelity float64,
 	version, nativeKind, streamMode string,
+	instanceCount int,
+	typeConfigHash string,
 ) error {
 	total := timeSerNs + timeDeserNs
 	opsSer, opsDeser, opsTot := 0.0, 0.0, 0.0
@@ -48,20 +49,19 @@ func (c *CsvLogger) WriteRow(
 	if total > 0 {
 		opsTot = 1e9 / float64(total)
 	}
-	// Escape commas in version (should not appear in semver).
+	ic := ""
+	if instanceCount > 0 {
+		ic = fmt.Sprintf("%d", instanceCount)
+	}
 	_, err := fmt.Fprintf(c.f,
-		"go,%s,%s,%d,%d,%s,%s,%d,%d,%d,%d,%.6f,%.6f,%.6f,0,%.1f,%s,%s\n",
+		"go,%s,%s,%d,%d,%s,%s,%d,%d,%d,%d,%.6f,%.6f,%.6f,0,%.1f,%s,%s,%s,%s\n",
 		mode, testData, repetitions, repIndex, serializer, version,
 		timeSerNs, timeDeserNs, size, total,
 		opsSer, opsDeser, opsTot, fidelity, nativeKind, streamMode,
+		ic, typeConfigHash,
 	)
 	return err
 }
 
-func (c *CsvLogger) Flush() error {
-	return c.f.Sync()
-}
-
-func (c *CsvLogger) Close() error {
-	return c.f.Close()
-}
+func (c *CsvLogger) Flush() error { return c.f.Sync() }
+func (c *CsvLogger) Close() error { return c.f.Close() }

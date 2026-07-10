@@ -23,6 +23,27 @@ namespace GLD.SerializerBenchmark
                 return;
             }
 
+            var dataModel = (System.Environment.GetEnvironmentVariable("BENCHMARK_DATA_MODEL") ?? "v1").ToLowerInvariant();
+            if (dataModel == "v2" || dataModel == "2")
+            {
+                var reps = args.Length > 0 ? int.Parse(args[0]) : 10;
+                var logDir = System.Environment.GetEnvironmentVariable("LOG_DIR") ?? "logs/csharp";
+                if (!logDir.EndsWith("csharp") && !logDir.EndsWith("c-sharp"))
+                    logDir = System.IO.Path.Combine(logDir, "csharp");
+                var seed = int.TryParse(System.Environment.GetEnvironmentVariable("BENCHMARK_SEED"), out var s) ? s : 42;
+                var runCfg = System.Environment.GetEnvironmentVariable("BENCHMARK_RUN_CONFIG");
+                if (string.IsNullOrEmpty(runCfg))
+                {
+                    // walk to repo
+                    var dir = new System.IO.DirectoryInfo(System.IO.Directory.GetCurrentDirectory());
+                    while (dir != null && !System.IO.File.Exists(System.IO.Path.Combine(dir.FullName, "config", "benchmark_config.yaml")))
+                        dir = dir.Parent;
+                    runCfg = System.IO.Path.Combine(dir?.FullName ?? ".", "config", "library", "default.yaml");
+                }
+                System.Environment.Exit(GLD.SerializerBenchmark.TestData.V2.DataV2.RunSystemTextJsonBenchmark(reps, logDir, runCfg, seed));
+                return;
+            }
+
             var repetitions = args.Length > 0 ? int.Parse(args[0]) : 100;
             var serializerFilter = args.Length > 1 ? args[1] : null;
             var testDataFilter = args.Length > 2 ? args[2] : null;

@@ -13,6 +13,8 @@ set(TP_PREFIX ${TP}/_prefix)
 set(BENCH_SOURCES
   src/main.c
   src/data.c
+  src/data_v2.c
+  src/run_v2.c
   src/csv_log.c
   src/runner.c
   src/register_serializers.c
