@@ -1,0 +1,89 @@
+// Data Model v2 — Protocol Buffers schema
+// Align field sets with docs/analysis/data_model_v2.md and schemas/data_catalog_v2.yaml
+syntax = "proto3";
+
+package benchmark.v2;
+
+option java_package = "benchmark.v2";
+option csharp_namespace = "Benchmark.V2";
+option go_package = "benchmark/v2;benchmarkv2";
+
+// --- message: single-level mixed primitives (fixed 8 fields for default field_count) ---
+// Dynamic field_count in generators maps onto these slots; extra slots unused when count < 8.
+message Message {
+  bool f_bool = 1;
+  int32 f_int32 = 2;
+  int64 f_int64 = 3;
+  double f_float64 = 4;
+  string f_string = 5;
+  // Additional mixed slots for field_count up to 8 (cycled types in generator).
+  bool f_bool_2 = 6;
+  int32 f_int32_2 = 7;
+  string f_string_2 = 8;
+}
+
+message BatchMessage {
+  repeated Message items = 1;
+}
+
+// --- document ---
+message DocumentMeta {
+  string region = 1;
+  int32 version = 2;
+}
+
+message DocumentItem {
+  string sku = 1;
+  int32 qty = 2;
+  int64 price_minor = 3;
+}
+
+message Document {
+  string id = 1;
+  int32 status = 2;
+  DocumentMeta meta = 3;
+  repeated DocumentItem items = 4;
+}
+
+message BatchDocument {
+  repeated Document items = 1;
+}
+
+// --- telemetry ---
+message Telemetry {
+  string source = 1;
+  int64 ts = 2;  // epoch ms
+  repeated string tags = 3;
+  repeated double values = 4;  // number_type float64 default
+}
+
+message BatchTelemetry {
+  repeated Telemetry items = 1;
+}
+
+// --- strings ---
+message Strings {
+  repeated string items = 1;
+}
+
+message BatchStrings {
+  repeated Strings items = 1;
+}
+
+// --- event ---
+message EventAttr {
+  string key = 1;
+  string value = 2;
+}
+
+message Event {
+  string event_id = 1;
+  string event_type = 2;
+  int64 occurred_at = 3;  // epoch ms
+  string producer = 4;
+  repeated EventAttr attrs = 5;
+}
+
+message BatchEvent {
+  repeated Event items = 1;
+}
