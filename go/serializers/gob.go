@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"serializer-benchmark-go/model"
+	modelv2 "serializer-benchmark-go/model/v2"
 )
 
 // encodingGob — Go-native binary format (stdlib encoding/gob).
@@ -31,6 +32,15 @@ func newEncodingGob() *encodingGob {
 	gob.Register(model.PoliceRecord{})
 	gob.Register(model.Claim{})
 	gob.Register(model.ServiceLine{})
+	// Data Model v2 types (suite default fixtures).
+	gob.Register(modelv2.Message{})
+	gob.Register(modelv2.Document{})
+	gob.Register(modelv2.DocumentMeta{})
+	gob.Register(modelv2.DocumentItem{})
+	gob.Register(modelv2.Telemetry{})
+	gob.Register(modelv2.Strings{})
+	gob.Register(modelv2.Event{})
+	gob.Register(modelv2.EventAttr{})
 	return &encodingGob{}
 }
 

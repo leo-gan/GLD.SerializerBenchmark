@@ -103,7 +103,7 @@ Two messages with the same logical “size in fields” can behave very differen
 | One flat record: a few large integers and one large binary blob | Fewer objects; more bulk memory copy bandwidth |
 | A deep tree: hundreds of small nested objects and short strings | Many allocations; poor locality (scattered memory access) |
 
-**Shape can matter as much as the choice of format family.** This suite uses controlled fixtures so comparisons remain interpretable within a language; see [Test data configuration](../../analysis/test_data_configuration.md).
+**Shape can matter as much as the choice of format family.** This suite uses controlled fixtures so comparisons remain interpretable within a language; see [Test Data](../../analysis/test_data_configuration.md).
 
 ### Implementation quality
 

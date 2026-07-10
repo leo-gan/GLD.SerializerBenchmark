@@ -1,0 +1,20 @@
+# Run config: smoke (CI / fast path) — suite fixtures
+id: smoke
+description: "Minimal matrix — message + telemetry, single instance"
+data_model_version: 2
+
+types:
+  - type_id: message
+    type_config: {}
+  - type_id: telemetry
+    type_config: {}
+
+data_type_instance_count: [1]
+
+compression:
+  mode: none
+
+execution:
+  mode: smoke
+  io_modes: [bytes]
+

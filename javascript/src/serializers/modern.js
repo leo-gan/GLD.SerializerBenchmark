@@ -144,6 +144,17 @@ export const protobufEsSer = {
   prepare(dataName, value) {
     // Optimal: create() once outside timed path; serialize only toBinary.
     esDataName = dataName;
+    if (['message', 'document', 'telemetry', 'strings', 'event'].includes(dataName)) {
+      // V2: pack JSON into SimpleObject.Name (keeps protobuf-es in the suite).
+      esSchema = SimpleObjectSchema;
+      esMsg = create(esSchema, {
+        Id: 0,
+        Name: JSON.stringify(value),
+        Timestamp: dataName,
+        IsActive: true,
+      });
+      return;
+    }
     esSchema = esSchemaByName[dataName];
     if (!esSchema) throw new Error(`protobuf-es: no schema for ${dataName}`);
     esMsg = create(esSchema, toEsInput(dataName, value));
@@ -155,6 +166,9 @@ export const protobufEsSer = {
   deserialize(buf) {
     const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
     const msg = fromBinary(esSchema, u8);
+    if (['message', 'document', 'telemetry', 'strings', 'event'].includes(esDataName)) {
+      return JSON.parse(String(msg.Name ?? '{}'));
+    }
     return fromEsMessage(esDataName, msg);
   },
 };

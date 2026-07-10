@@ -23,33 +23,4 @@ namespace GLD.SerializerBenchmark.FShrp
         [FlatBufferItem(0)]
         public virtual IList<string> Items { get; set; }
     }
-
-    [FlatBufferTable]
-    public class IntObject
-    {
-        [FlatBufferItem(0)]
-        public virtual int Value { get; set; }
-    }
-
-    [FlatBufferTable]
-    public class GraphNodeData
-    {
-        [FlatBufferItem(0)]
-        public virtual string Name { get; set; }
-        [FlatBufferItem(1)]
-        public virtual int Parent { get; set; }
-        [FlatBufferItem(2)]
-        public virtual int Related { get; set; }
-        [FlatBufferItem(3)]
-        public virtual IList<int> Children { get; set; }
-    }
-
-    [FlatBufferTable]
-    public class ObjectGraph
-    {
-        [FlatBufferItem(0)]
-        public virtual int Root { get; set; }
-        [FlatBufferItem(1)]
-        public virtual IList<GraphNodeData> Nodes { get; set; }
-    }
 }

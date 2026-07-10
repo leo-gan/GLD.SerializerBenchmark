@@ -37,31 +37,27 @@ Assumes [wire format](protobuf-wire-format.md). Package: `protobuf` ([Python tut
 ### 1. Codegen
 
 ```bash
-protoc -I schemas --python_out=python/generated schemas/benchmark_data.proto
+protoc -I schemas --python_out=python/generated schemas/v2/protobuf/benchmark_v2.proto
 ```
 
-Generated modules define classes such as `Person` with field numbers from the `.proto`—Python attribute names are bindings, not wire identity.
+Generated modules define message classes with field numbers from the `.proto`—Python attribute names are bindings, not wire identity.
 
-### 2. Build a message (suite schema)
+### 2. Build a message (generated class)
 
 ```python
-import benchmark_data_pb2 as pb2
+import benchmark_v2_pb2 as pb2  # illustrative import
 
-msg = pb2.Person()
-msg.FirstName = "Ada"
-msg.LastName = "Lovelace"
-msg.Age = 36
-msg.Passport.Number = "X1"
-rec = msg.PoliceRecords.add()
-rec.Id = 1
-rec.CrimeCode = "A"
+msg = pb2.Message()  # any generated message class
+msg.f_string = "Ada"
+msg.f_int32 = 36
+msg.f_bool = True
 ```
 
 proto3: unset scalars with default values are typically **omitted** on the wire.
 
 ### 3. Teaching MiniUser (not suite codegen)
 
-`MiniUser` is the [wire](protobuf-wire-format.md) / [lab](lab-mini-protobuf-encoder.md) teaching message. It is **not** in `schemas/benchmark_data.proto`. Generate from a local `mini.proto`:
+`MiniUser` is the [wire](protobuf-wire-format.md) / [lab](lab-mini-protobuf-encoder.md) teaching message. It is **not** part of the suite wire schema. Generate from a local `mini.proto`:
 
 ```bash
 protoc --python_out=. mini.proto   # defines message MiniUser
@@ -78,17 +74,17 @@ data = msg.SerializeToString()   # b'\x08\x01\x12\x03Ada'
 
 ### 4. Encode / decode (API)
 
-Using the suite `Person` from step 2 (same APIs on any generated message, including teaching MiniUser):
+Same APIs on any generated message (including teaching MiniUser):
 
 ```python
 data: bytes = msg.SerializeToString()
 
 # Replace semantics: clear message, then parse
-out = pb2.Person()
+out = pb2.Message()  # illustrative
 out.ParseFromString(data)
 
 # Or construct fresh:
-out = pb2.Person.FromString(data)
+out = type(msg).FromString(data)
 
 # True merge into an existing message (does not clear first):
 # out.MergeFromString(data)
@@ -233,7 +229,7 @@ input bytes (or memoryview — underlying buffer must remain valid for the call)
 | Location | Role |
 |----------|------|
 | `python/src/benchmark/serializers/schema_protobuf.py` | `prepare_data` → Message; `serialize_bytes` → `SerializeToString` |
-| `python/generated/benchmark_data_pb2.py` | Generated types (Person, …)—not MiniUser |
+| suite generated `*_pb2.py` modules | Generated suite messages—not MiniUser |
 | Log name | `protobuf` |
 | Pin | `protobuf>=7.34.1,<8` |
 | [Python Results](../../python/results.md) | Cost under whatever backend the environment selected |
@@ -248,7 +244,7 @@ Harness keeps conversion **out** of the timed path so Results compare codec work
 - Mutating a message while another thread serializes it.  
 - Parsing untrusted bytes without size limits.  
 - Hand-editing `*_pb2.py`.  
-- Expecting `MiniUser` in suite `benchmark_data_pb2` (teaching schema only).
+- Expecting `MiniUser` in suite generated modules (teaching schema only).
 
 ## What this article is not
 

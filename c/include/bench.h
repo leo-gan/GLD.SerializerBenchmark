@@ -102,7 +102,8 @@ typedef enum {
     TD_COUNT
 } test_data_kind_t;
 
-typedef struct {
+typedef struct test_fixture test_fixture_t;
+struct test_fixture {
     test_data_kind_t kind;
     const char *name;
     person_t person;
@@ -112,7 +113,11 @@ typedef struct {
     string_array_t string_array;
     edi835_t edi;
     object_graph_t graph;
-} test_fixture_t;
+    /* Batch cell (data_type_instance_count): batch_n==1 uses fields above;
+     * batch_n>1 uses heap array batch[0..batch_n) of single-instance fixtures. */
+    int batch_n;
+    test_fixture_t *batch;
+};
 
 typedef struct {
     const char *name;
@@ -133,8 +138,18 @@ csv_logger_t *csv_logger_create(const char *path);
 void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
                       int reps, int rep_idx, const char *ser,
                       uint64_t ser_ns, uint64_t deser_ns, size_t size,
-                      double fidelity, const char *version);
+                      double fidelity, const char *version,
+                      int instance_count, const char *type_config_hash);
 void csv_logger_close(csv_logger_t *L);
+
+/* Batch-aware encode/decode: when fx->batch_n > 1, frames N single-item
+ * codec outputs (u32 n + for each: u32 len + bytes). N=1 is a thin passthrough. */
+int bench_serialize_cell(const serializer_t *S, const test_fixture_t *fx,
+                         uint8_t *buf, size_t buf_cap, size_t *out_len);
+int bench_deserialize_cell(const serializer_t *S, const uint8_t *buf, size_t len,
+                           test_fixture_t *out_fx, test_data_kind_t kind);
+bool bench_fidelity_cell(const serializer_t *S, const test_fixture_t *a,
+                         const test_fixture_t *b);
 
 int run_benchmarks(int repetitions, const char *ser_filter, const char *data_filter,
                    const char *log_dir);

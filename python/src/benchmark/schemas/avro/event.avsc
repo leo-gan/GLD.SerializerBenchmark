@@ -1,0 +1,5 @@
+{"type":"record","name":"Event","fields":[
+ {"name":"event_id","type":"string"},{"name":"event_type","type":"string"},
+ {"name":"occurred_at","type":"long"},{"name":"producer","type":"string"},
+ {"name":"attrs","type":{"type":"array","items":{"type":"record","name":"EventAttr",
+  "fields":[{"name":"key","type":"string"},{"name":"value","type":"string"}]}}}]}

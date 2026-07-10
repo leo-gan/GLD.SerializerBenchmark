@@ -39,15 +39,17 @@ for rep:
   fidelity(expected, actual)     # untimed
 ```
 
+### Suite fixtures
+
+Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
+
 ### Caveats
 
-- **ObjectGraph:** supported by **all** registered codecs via a flat node table + integer edges (same topology as C#/Python; no live pointer cycles).
-- **Integer:** skipped for `prost` (no bare scalar message in schema).
 - **simd-json serialize** is `serde_json` (crate optimizes parse).
 - **rkyv:** access-only (zero-copy without materialize) would be faster; suite materializes for a fair owned-value fidelity check.
-- **prost** date fields go through millisecond timestamps; fidelity allows date string drift on Person/Simple/Telemetry/EDI.
+- **prost** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
 - **flatbuffers / capnp:** not registered yet (codegen weight); flexbuffers partially covers FB-family schemaless use.
-- Stream mode is **native** only where noted; others are adapted bytes+cursor (same honesty model as Python).
+- Stream mode is **native** only where noted; others are adapted bytes+cursor.
 
 Also: [`rust/README.md`](../../rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 

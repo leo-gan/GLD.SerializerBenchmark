@@ -1,4 +1,4 @@
-"""Regression: cbor2 stream path on StringArray (and similar string-heavy payloads)."""
+"""cbor2 stream path on v2 strings fixture."""
 from __future__ import annotations
 
 import io
@@ -7,42 +7,31 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT))
 
 from benchmark.comparer import compare
-from benchmark.data.generator import generate_test_data
-from benchmark.data.models import Person, StringArrayObject, TelemetryData
+from benchmark.data_v2 import make_one
+from benchmark.data_v2.models import Message, Strings
 from benchmark.serializers.binary_cbor2 import Cbor2Serializer
 
 
-def _roundtrip_stream(td_name: str, td_type: type) -> None:
-    original = generate_test_data(td_name)
+def test_cbor2_bytes_message():
+    msg = make_one("message", {}, 1)
     ser = Cbor2Serializer()
-    ser.prepare(td_name, td_type)
-    native = ser.prepare_data(original, td_name, td_type)
-    stream = io.BytesIO()
-    ser.serialize_stream(native, stream)
-    assert stream.tell() > 0
-    out = ser.deserialize_stream(stream)
-    ok, err = compare(original, out)
+    ser.prepare("message", Message)
+    native = ser.prepare_data(msg, "message", Message)
+    data = ser.serialize_bytes(native)
+    out = ser.deserialize_bytes(data)
+    ok, err = compare(msg, out)
     assert ok, err
 
 
-def test_cbor2_stream_string_array():
-    _roundtrip_stream("StringArray", StringArrayObject)
-
-
-def test_cbor2_stream_person_and_telemetry():
-    _roundtrip_stream("Person", Person)
-    _roundtrip_stream("Telemetry", TelemetryData)
-
-
-def test_cbor2_bytes_and_stream_payloads_match_for_string_array():
-    original = generate_test_data("StringArray")
+def test_cbor2_stream_strings():
+    s = make_one("strings", {"count": 16}, 2)
     ser = Cbor2Serializer()
-    ser.prepare("StringArray", StringArrayObject)
-    native = ser.prepare_data(original, "StringArray", StringArrayObject)
-    b = ser.serialize_bytes(native)
-    stream = io.BytesIO()
-    ser.serialize_stream(native, stream)
-    assert stream.getvalue() == b
+    ser.prepare("strings", Strings)
+    native = ser.prepare_data(s, "strings", Strings)
+    buf = io.BytesIO()
+    ser.serialize_stream(native, buf)
+    out = ser.deserialize_stream(buf)
+    ok, err = compare(s, out)
+    assert ok, err

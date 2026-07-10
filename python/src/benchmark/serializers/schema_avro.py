@@ -1,54 +1,16 @@
-"""
-Avro (fastavro) benchmark wrapper.
-
-Call-path: prepare_data converts dataclasses to Avro-compatible dict records
-(untimed). Timed path only runs schemaless_writer / schemaless_reader on that
-dict with a parse_schema()-cached schema.
-
-Why size looks great but ops/s lag protobuf
--------------------------------------------
-* **Size:** schemaless Avro omits field names (schema is shared out-of-band), so
-  payloads are often the smallest in the suite — that part is real.
-* **Speed:** fastavro is Cython and already the fast Python Avro stack, but it
-  still walks **Python dicts** with per-field union/enum resolution. Protobuf
-  ``SerializeToString`` on a filled C++ message is typically 20–30× faster on
-  nested fixtures (Person/EDI). That gap is library/runtime, not a missing
-  prepare_data conversion (conversion is already untimed).
-* Nested ``["null", record]`` unions (e.g. Person.Passport) add branch cost on
-  every encode/decode versus protobuf optional fields.
-"""
+"""Avro (fastavro) — Data Model v2 schemas. Serializer kept; V1 Person schemas removed."""
 
 from __future__ import annotations
 
-import calendar
-import datetime
 import io
 import json
 import os
-from typing import Any, Dict, Type
+from typing import Any, Dict, List, Optional
 
 import fastavro
 
 from .base import Serializer
-from ..data.models import (
-    Claim,
-    EDI835,
-    Gender,
-    GraphNodeData,
-    ObjectGraph,
-    Passport,
-    Person,
-    PoliceRecord,
-    ServiceLine,
-    SimpleObject,
-    StringArrayObject,
-    TelemetryData,
-)
-
-
-def _dt_to_ms(dt: datetime.datetime) -> int:
-    return int(calendar.timegm(dt.utctimetuple()) * 1000 + dt.microsecond // 1000)
-
+from ..converters import to_dict
 
 _SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "..", "schemas", "avro")
 
@@ -60,158 +22,65 @@ def _load_schema(name: str) -> Dict[str, Any]:
 
 
 _SCHEMAS = {
-    "Person": _load_schema("person"),
-    "SimpleObject": _load_schema("simple_object"),
-    "StringArray": _load_schema("string_array"),
-    "Telemetry": _load_schema("telemetry"),
-    "EDI_835": _load_schema("edi835"),
-    "ObjectGraph": _load_schema("object_graph"),
+    "message": _load_schema("message"),
+    "document": _load_schema("document"),
+    "telemetry": _load_schema("telemetry"),
+    "strings": _load_schema("strings"),
+    "event": _load_schema("event"),
 }
-
-# parse_schema once at import — critical for performance (never re-parse in the loop).
-_PARSERS = {k: fastavro.parse_schema(v) for k, v in _SCHEMAS.items()}
-
-_TYPE_NAMES: Dict[Type[Any], str] = {
-    Person: "Person",
-    SimpleObject: "SimpleObject",
-    StringArrayObject: "StringArray",
-    TelemetryData: "Telemetry",
-    EDI835: "EDI_835",
-    ObjectGraph: "ObjectGraph",
-}
+_PARSED = {k: fastavro.parse_schema(v) for k, v in _SCHEMAS.items()}
 
 
 class AvroSerializer(Serializer):
     package_name = "fastavro"
     native_kind = "dict"
-    stream_mode = "native"  # schemaless_writer/reader on the provided stream
+    stream_mode = "adapted"
 
     def __init__(self) -> None:
         super().__init__()
-        self._schema: Any = None
-        self._td_name: str | None = None
-        self._ser_buf = io.BytesIO()
+        self._schema = None
+        self._batch = False
 
     @property
     def name(self) -> str:
         return "avro"
 
     def supports(self, test_data_name: str) -> bool:
-        return test_data_name != "Integer" and test_data_name in _PARSERS
+        return test_data_name in _PARSED
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
-        self._td_name = test_data_name
-        self._schema = _PARSERS[test_data_name]
-        # Reuse one buffer for bytes-mode encode; seek/truncate avoids realloc churn.
-        self._ser_buf = io.BytesIO()
+        self._schema = _PARSED[test_data_name]
+        self._name = test_data_name
 
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
-        return _to_avro(obj)
+        self._batch = isinstance(obj, list)
+        if self._batch:
+            return [to_dict(x) for x in obj]
+        return to_dict(obj)
 
     def serialize_bytes(self, obj: Any) -> bytes:
-        # obj is already an Avro record dict from prepare_data
-        buf = self._ser_buf
-        buf.seek(0)
-        buf.truncate(0)
-        fastavro.schemaless_writer(buf, self._schema, obj)
+        buf = io.BytesIO()
+        if self._batch:
+            # array of records: write count + records
+            for rec in obj:
+                fastavro.schemaless_writer(buf, self._schema, rec)
+        else:
+            fastavro.schemaless_writer(buf, self._schema, obj)
         return buf.getvalue()
 
     def deserialize_bytes(self, data: bytes) -> Any:
-        # BytesIO(data) is the supported file-like entry; reader needs .read()
-        return fastavro.schemaless_reader(io.BytesIO(data), self._schema)
+        bio = io.BytesIO(data)
+        if self._batch:
+            out: List[Any] = []
+            while bio.tell() < len(data):
+                out.append(fastavro.schemaless_reader(bio, self._schema))
+            return out
+        return fastavro.schemaless_reader(bio, self._schema)
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
-        fastavro.schemaless_writer(stream, self._schema, obj)
+        stream.write(self.serialize_bytes(obj))
 
     def deserialize_stream(self, stream: io.BytesIO) -> Any:
         stream.seek(0)
-        return fastavro.schemaless_reader(stream, self._schema)
-
-
-def _to_avro(obj: Any) -> Any:
-    if isinstance(obj, Person):
-        return {
-            "FirstName": obj.FirstName,
-            "LastName": obj.LastName,
-            "Age": obj.Age,
-            "Gender": obj.Gender.name,
-            "Passport": _to_avro(obj.Passport) if obj.Passport else None,
-            "PoliceRecords": [_to_avro(r) for r in obj.PoliceRecords],
-        }
-
-    if isinstance(obj, Passport):
-        return {
-            "Number": obj.Number,
-            "Authority": obj.Authority,
-            "ExpirationDate": _dt_to_ms(obj.ExpirationDate),
-        }
-
-    if isinstance(obj, PoliceRecord):
-        return {"Id": obj.Id, "CrimeCode": obj.CrimeCode}
-
-    if isinstance(obj, SimpleObject):
-        return {
-            "Id": obj.Id,
-            "Name": obj.Name,
-            "Timestamp": _dt_to_ms(obj.Timestamp),
-            "IsActive": obj.IsActive,
-        }
-
-    if isinstance(obj, StringArrayObject):
-        return {"Items": obj.Items}
-
-    if isinstance(obj, TelemetryData):
-        return {
-            "Id": obj.Id,
-            "DataSource": obj.DataSource,
-            "TimeStamp": _dt_to_ms(obj.TimeStamp),
-            "Param1": obj.Param1,
-            "Param2": obj.Param2,
-            "Measurements": obj.Measurements,
-            "AssociatedProblemID": obj.AssociatedProblemID,
-            "AssociatedLogID": obj.AssociatedLogID,
-            "WasProcessed": obj.WasProcessed,
-        }
-
-    if isinstance(obj, ServiceLine):
-        return {
-            "ServiceCode": obj.ServiceCode,
-            "ChargeAmount": obj.ChargeAmount,
-            "AdjudicatedAmount": obj.AdjudicatedAmount,
-        }
-
-    if isinstance(obj, Claim):
-        return {
-            "ClaimId": obj.ClaimId,
-            "PatientName": obj.PatientName,
-            "TotalCharge": obj.TotalCharge,
-            "PaymentAmount": obj.PaymentAmount,
-            "Lines": [_to_avro(l) for l in obj.Lines],
-        }
-
-    if isinstance(obj, EDI835):
-        return {
-            "PayerName": obj.PayerName,
-            "PayeeName": obj.PayeeName,
-            "PaymentDate": _dt_to_ms(obj.PaymentDate),
-            "TotalActualAmount": obj.TotalActualAmount,
-            "TransactionControlNumber": obj.TransactionControlNumber,
-            "Claims": [_to_avro(c) for c in obj.Claims],
-        }
-
-    if isinstance(obj, GraphNodeData):
-        return {
-            "Name": obj.Name,
-            "Parent": obj.Parent,
-            "Related": obj.Related,
-            "Children": list(obj.Children),
-        }
-
-    if isinstance(obj, ObjectGraph):
-        return {
-            "root": obj.root,
-            "nodes": [_to_avro(n) for n in obj.nodes],
-        }
-
-    raise TypeError(f"Unsupported type for Avro conversion: {type(obj)}")
+        return self.deserialize_bytes(stream.read())

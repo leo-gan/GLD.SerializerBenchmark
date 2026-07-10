@@ -88,7 +88,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 - **Examples in suite:**  
   - **C#:** `ProtoBuf` (protobuf-net), `Google.Protobuf`, `MS Bond Fast` / `Compact`, `FlatSharp`, `ZeroFormatter`, `MemoryPack` (model/generator path)  
   - **Python:** `protobuf`, `avro` (fastavro), `flatbuffers`  
-  - **Rust:** `prost` (shared `.proto`; **Integer** unsupported), `rkyv` (timed deser **materializes** owned values), `flexbuffers`  
+  - **Rust:** `prost` (shared `.proto`), `rkyv` (timed deser **materializes** owned values), `flexbuffers`  
   - **C:** `nanopb`, `protobuf-c`, `upb` (in-tree wire), `flatcc`, `avro-c`, `zcbor`  
   - **JavaScript:** `avsc`, `protobufjs`, `protobuf-es`, `flatbuffers`, `flexbuffers`, `bebop`  
   - **Go:** `protobuf`, `hamba/avro`  
@@ -102,7 +102,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **JavaScript:** `v8-serializer`, `devalue`  
   - **Go:** `encoding/gob`  
   - **C#:** legacy / graph-oriented binaries (e.g. `MS Binary`)—see Overview  
-  - **Rust / C:** ObjectGraph present for **all** registered codecs via flat node table + index edges (not pointer chasing); no pickle-equivalent native graph codec required
+  - **Rust / C:** no pickle-equivalent native graph codec; use language-native stacks only where listed above
 
 ---
 

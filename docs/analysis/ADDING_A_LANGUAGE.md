@@ -3,7 +3,7 @@
 **Job of this page:** implementer checklist to grow a language harness **without** changing the analysis core.
 
 Background (layout, timing model, contract summary): [Benchmark architecture](architecture.md).  
-Fixtures: [Test data types](test_data_configuration.md).  
+Fixtures: [Test Data](test_data_configuration.md).  
 Stats after you have CSVs: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
 ---
@@ -40,16 +40,19 @@ Meet the [harness contract summary](architecture.md#harness-contract-summary) an
 | Warmup | Repetition index 0 excluded by analysis |
 | Prepare outside loop | Schema compile, type registration, buffer pools — not timed |
 | Timed section | Serialize + deserialize only |
-| Fidelity | Round-trip semantic check; errors in `logs/<lang>/<ts>.errors.csv` (same timestamp stem as the result CSV) |
-| Optional sidecars | `*.configs.json` (environment + optional dataset/serializer metadata; legacy `*.environment.json` still readable) |
-| ObjectGraph | Skip serializers without cycle support |
-| Seed | From `schemas/test_data_config.json` / config `reproducibility.random_seed` |
+| Fidelity | Round-trip semantic check; write `logs/<lang>/<ts>.errors.csv` only when errors occur |
+| Optional sidecars | `*.configs.json` (environment + optional dataset/serializer metadata) |
+| Seed | Master config `reproducibility.random_seed` / `BENCHMARK_SEED` |
 
 ## 3. Test data types
 
-Implement equivalents of: `Person`, `Integer`, `Telemetry`, `SimpleObject`, `StringArray`, `EDI_835`, `ObjectGraph`.
+Implement `make_one` / run-config cells for suite type ids: `message`, `document`, `telemetry`, `strings`, `event` — see [Test Data](test_data_configuration.md).
 
-Use collection sizes from `schemas/test_data_config.json` — [Test data types](test_data_configuration.md).
+- Expand cells with `./scripts/resolve_run_config.py`
+- Emit CSV columns `DataTypeInstanceCount` and `TypeConfigHash` when measuring batch cells
+- Generators live under language trees (e.g. `python/.../data_v2`, `go/model/v2`, `rust/src/data_v2.rs`, `javascript/src/data_v2.js`)
+- Wire schemas: `schemas/v2/` + `scripts/schemas/generate-all.sh`
+- Catalog defaults: `schemas/data_catalog_v2.yaml`
 
 ## 4. Runner script
 

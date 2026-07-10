@@ -102,6 +102,17 @@ def main():
             except Exception as e:
                 print(f"Error loading stats JSON: {e}")
 
+        # Plain stats JSON for cross-lang fetch (must stay in sync with reports/)
+        dest_stats_path = os.path.join(target_data_dir, f"stats_{lang}_latest.json")
+        if stats_data:
+            print(f"Copying stats JSON to: {dest_stats_path}")
+            with open(dest_stats_path, "w", encoding="utf-8") as f:
+                json.dump(stats_data, f, indent=None)
+        elif os.path.exists(dest_stats_path):
+            # Avoid serving stale V1 stats when reports has no file for this lang
+            print(f"Removing stale stats file: {dest_stats_path}")
+            os.remove(dest_stats_path)
+
         # Assemble compact payload
         payload = {
             "language": lang,

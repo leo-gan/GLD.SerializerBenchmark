@@ -28,6 +28,11 @@ class BenchmarkLog:
     size_bytes: int = 0
     memory_peak_bytes: int = 0
     fidelity_score: float = 0.0
+    # Data Model v2 (optional; empty/0 for v1 rows)
+    data_type_instance_count: int = 0
+    type_config_hash: str = ""
+    size_gzip_bytes: int = 0
+    size_zstd_bytes: int = 0
 
     @property
     def time_ser_and_deser_ns(self) -> int:
@@ -48,6 +53,7 @@ class BenchmarkLog:
 
 
 # Full harness CSV schema (SerializerVersion immediately after SerializerName).
+# Trailing columns are optional Data Model v2 fields (blank/0 on v1 runs).
 CSV_HEADER = [
     "Language",
     "StringOrStream",
@@ -65,6 +71,10 @@ CSV_HEADER = [
     "OpPerSecSerAndDeser",
     "MemoryPeakBytes",
     "FidelityScore",
+    "DataTypeInstanceCount",
+    "TypeConfigHash",
+    "SizeGzip",
+    "SizeZstd",
 ]
 
 
@@ -109,6 +119,10 @@ class LogStorage:
             f"{log.op_per_sec_ser_and_deser:.6f}",
             log.memory_peak_bytes,
             f"{log.fidelity_score:.2f}",
+            log.data_type_instance_count or "",
+            log.type_config_hash or "",
+            log.size_gzip_bytes or "",
+            log.size_zstd_bytes or "",
         ])
         self._file_handle.flush()
 
@@ -123,11 +137,22 @@ class LogStorage:
                     repetitions=int(row["Repetitions"]),
                     repetition_index=int(row["RepetitionIndex"]),
                     serializer_name=row["SerializerName"],
+                    serializer_version=row.get("SerializerVersion") or "",
                     time_ser_ns=int(row["TimeSer"]),
                     time_deser_ns=int(row["TimeDeser"]),
                     size_bytes=int(row["Size"]),
-                    memory_peak_bytes=int(row["MemoryPeakBytes"]),
-                    fidelity_score=float(row["FidelityScore"]),
+                    memory_peak_bytes=int(float(row["MemoryPeakBytes"] or 0)),
+                    fidelity_score=float(row["FidelityScore"] or 0),
+                    data_type_instance_count=int(float(row["DataTypeInstanceCount"] or 0))
+                    if row.get("DataTypeInstanceCount") not in (None, "")
+                    else 0,
+                    type_config_hash=row.get("TypeConfigHash") or "",
+                    size_gzip_bytes=int(float(row["SizeGzip"] or 0))
+                    if row.get("SizeGzip") not in (None, "")
+                    else 0,
+                    size_zstd_bytes=int(float(row["SizeZstd"] or 0))
+                    if row.get("SizeZstd") not in (None, "")
+                    else 0,
                 ))
         return logs
 
@@ -241,7 +266,23 @@ def print_report(
         print("=" * 95)
 
         for ser_name in serializer_names:
-            for mode in ("bytes", "stream"):
+            # Only show modes that were actually run (or errors recorded).
+            modes_present = sorted(
+                {
+                    m
+                    for (td, sn, m) in results
+                    if td == td_name and sn == ser_name
+                }
+                | {
+                    e.string_or_stream
+                    for e in errors
+                    if e.test_data_name == td_name and e.serializer_name == ser_name
+                }
+            )
+            if not modes_present:
+                # No data and no errors for this pair — skip row (e.g. unsupported).
+                continue
+            for mode in modes_present:
                 key = (td_name, ser_name, mode)
                 if key in results:
                     r = results[key]
@@ -255,7 +296,11 @@ def print_report(
                         f"{r.fidelity_avg:>8.2f}"
                     )
                 else:
-                    print(f"{ser_name:<21} {mode:<6}   {'FAILED':>12} {'FAILED':>10} {'FAILED':>10} {'FAILED':>10} {'FAILED':>8} {'FAILED':>8}")
+                    print(
+                        f"{ser_name:<21} {mode:<6}   "
+                        f"{'FAILED':>12} {'FAILED':>10} {'FAILED':>10} "
+                        f"{'FAILED':>10} {'FAILED':>8} {'FAILED':>8}"
+                    )
 
         # Print errors for this test data
         td_errors = [e for e in errors if e.test_data_name == td_name]

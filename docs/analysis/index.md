@@ -12,7 +12,7 @@ This page is the **hub** for the Benchmarks section: what each analysis page is 
 |------|------------|-------------------------|
 | **[Benchmark architecture](architecture.md)** | Suite layout, audiences, harness timing model, config locations | How measurements are *collected* |
 | **[Serialization categories](serialization_categories.md)** | Four paradigms and which suite entries fall where | Fair within-paradigm comparisons |
-| **[Test data types](test_data_configuration.md)** | Shared fixtures (`Person`, `Telemetry`, …) and size knobs | What `TestDataName` means |
+| **[Test Data](test_data_configuration.md)** | Type ids, shapes, run configs, cells, generators | Catalog / `config/library` |
 | **[Analysis methodology](ANALYSIS_METHODOLOGY.md)** | Stats pipeline: warmup, outliers, CIs, effect sizes, outputs | How CSVs become tables/plots |
 | **[Metrics catalog](METRICS.md)** | Every metric, importance tier, multi-way vs pairwise | What each published number means |
 | **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to register a new harness | Extending the matrix |
@@ -31,11 +31,11 @@ Counts match the **registered inventories on each language Overview** (hand-writ
 | C# | **37** | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
 | Python | **16** | [Overview](../python/index.md) | [Results](../python/results.md) |
 | Rust | **15** | [Overview](../rust/index.md) | [Results](../rust/results.md) |
-| C | **12** | [Overview](../c/index.md) | [Results](../c/results.md) |
-| JavaScript | **12** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
+| C | **19** | [Overview](../c/index.md) | [Results](../c/results.md) |
+| JavaScript | **19** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 | Go | **12** | [Overview](../go/index.md) | [Results](../go/results.md) |
 
-† **JavaScript:** `simdjson` is optional (native addon). If it fails to build, the run still has the other **11** serializers.
+† **JavaScript:** `simdjson` is optional (native addon). If it fails to build, that codec is omitted from the run.
 
 - **Inventories** (`docs/<lang>/index.md`) — log names, categories, caveats.  
 - **Results** (`docs/<lang>/results.md`) — local pivots and violin embeds; machine-dependent.  

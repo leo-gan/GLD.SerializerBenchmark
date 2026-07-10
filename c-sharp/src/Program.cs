@@ -27,16 +27,34 @@ namespace GLD.SerializerBenchmark
             var serializerFilter = args.Length > 1 ? args[1] : null;
             var testDataFilter = args.Length > 2 ? args[2] : null;
 
-            var allTestDataDescriptions = new List<ITestDataDescription>
+            // Expand run-config cells (type_id × data_type_instance_count).
+            var seed = 42;
+            var seedEnv = System.Environment.GetEnvironmentVariable("BENCHMARK_SEED");
+            if (!string.IsNullOrEmpty(seedEnv) && int.TryParse(seedEnv, out var seedParsed))
+                seed = seedParsed;
+
+            List<ITestDataDescription> allTestDataDescriptions;
+            try
             {
-                new PersonDescription(),
-                new IntDescription(),
-                new TelemetryDescription(),
-                new SimpleObjectDescription(),
-                new StringArrayDescription(),
-                new EDI_X12_835Description(),
-                new ObjectGraphDescription()
-            };
+                var cells = GLD.SerializerBenchmark.TestData.V2.RunCells.Load(
+                    runConfigPath: null, seed: seed, dataFilter: testDataFilter);
+                allTestDataDescriptions = new List<ITestDataDescription>(cells);
+                System.Console.WriteLine(
+                    $"[PROGRESS] Run-config cells: {cells.Count} (seed={seed})");
+            }
+            catch (System.Exception ex)
+            {
+                System.Console.WriteLine(
+                    $"[WARN] resolve_run_config unavailable ({ex.Message}); falling back to N=1 fixtures");
+                allTestDataDescriptions = new List<ITestDataDescription>
+                {
+                    new GLD.SerializerBenchmark.TestData.V2.MessageDescription(seed),
+                    new GLD.SerializerBenchmark.TestData.V2.DocumentDescription(seed),
+                    new GLD.SerializerBenchmark.TestData.V2.TelemetryV2Description(seed),
+                    new GLD.SerializerBenchmark.TestData.V2.StringsDescription(seed),
+                    new GLD.SerializerBenchmark.TestData.V2.EventDescription(seed),
+                };
+            }
 
             var allSerializers = new List<ISerDeser>
             {

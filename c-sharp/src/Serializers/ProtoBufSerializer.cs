@@ -28,8 +28,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Name => "ProtoBuf";
 
-        // protobuf-net rejects System.Int32 as a model root (inbuilt).
-        public override bool Supports(string testDataName) => testDataName != "Integer";
+        public override bool Supports(string testDataName) => true;
 
         public override void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)
         {

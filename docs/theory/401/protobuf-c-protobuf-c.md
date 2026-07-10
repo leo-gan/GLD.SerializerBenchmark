@@ -21,7 +21,7 @@ Assumes [wire format](protobuf-wire-format.md).
 ## Mental model
 
 ```text
-  .proto ──protoc-gen-c──►  struct Person { ... };
+  .proto ──protoc-gen-c──►  struct MessageV2 { ... };  /* illustrative */
                             ProtobufCMessageDescriptor person_descriptor
                                       │
    message* + descriptor ──get_packed_size / pack──► uint8_t[]
@@ -34,7 +34,7 @@ Every message instance begins with descriptor linkage so the runtime can treat i
 
 ```c
 /* names are illustrative—generators apply their own prefixing */
-BenchmarkData__Person person = BENCHMARK_DATA__PERSON__INIT;
+/* illustrative */ Suite__Message msg = SUITE__MESSAGE__INIT;
 person.first_name = "Ada";
 person.age = 36;
 
@@ -42,7 +42,7 @@ size_t sz = protobuf_c_message_get_packed_size((const ProtobufCMessage *)&person
 uint8_t *buf = malloc(sz);
 size_t n = protobuf_c_message_pack((const ProtobufCMessage *)&person, buf);
 
-BenchmarkData__Person *out =
+Suite__Message *out =
     benchmark_data__person__unpack(NULL, n, buf);
 /* use out */
 benchmark_data__person__free_unpacked(out, NULL);
@@ -52,7 +52,7 @@ free(buf);
 Codegen:
 
 ```bash
-protoc --c_out=gen -I schemas schemas/benchmark_data.proto
+protoc --c_out=gen -I schemas schemas/v2/protobuf/benchmark_v2.proto
 ```
 
 Alternatively **`protobuf_c_message_pack_to_buffer`** streams chunks through a `ProtobufCBuffer` vtable (append callback) without precomputing a single allocation size.

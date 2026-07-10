@@ -39,12 +39,10 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 - **simdjson-parse+JSON.stringify** (optional native addon; omitted from the run if not installed): only **deserialize** uses SIMD; serialize is stdlib `JSON.stringify` (honest leaderboard label).
 - **protobuf-es** uses generated code from `javascript/schemas/js_fixtures.proto` (field shapes match JS fixtures; string timestamps).
-- **flatbuffers:** Integer / SimpleObject use a **compact table** (no JSON blob) for fair small-object sizes; larger fixtures store a JSON payload string in a FlatBuffer table.
-- **flexbuffers:** full fixture support. flatbuffers 24.x `toObject` bugs on large vectors / mixed float maps are worked around by encoding arrays as maps and non-integer floats as `{__f}` wrappers (still real FlexBuffers wire; restore is exact).
-- **bebop** / **sia** encode a JSON data model via each library’s primitive writers (no separate IDL codegen in-tree for bebop; full Bebop would use `.bop` + `bebopc`).
-- **bson** / **bser** skip bare `Integer`.
-- **ObjectGraph:** supported by **all** registered codecs via a flat node table + integer edges (Root/Child1/Child2 sibling cycle; same model as C/Rust). Not live parent-pointer cycles (except v8/devalue could also handle those).
+- Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`.
+- **flatbuffers / flexbuffers:** fixture support via tables / FlexBuffers; see harness for float/array workarounds.
+- **bebop** / **sia** encode a JSON-shaped model via each library’s primitive writers.
 - **devalue** is a framework-oriented value codec (SvelteKit), not a portable wire standard.
-- **prepare()** builds native messages (protobufjs/protobuf-es) and compiles schemas outside the timed path.
+- **prepare()** builds native messages and compiles schemas outside the timed path.
 
 Also: [`javascript/README.md`](../../javascript/README.md).

@@ -1,3 +1,5 @@
+// V2 payload proxies: message/event → SimpleObject, strings → StringArrayObject.
+// V1 fixture descriptions (SimpleObject / StringArray names) removed.
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -6,44 +8,18 @@ using Bond;
 
 namespace GLD.SerializerBenchmark.TestData
 {
-    public class SimpleObjectDescription : ITestDataDescription
-    {
-        private readonly SimpleObject _data = new SimpleObject
-        {
-            Id = 12345,
-            Name = "Simple Benchmark Object",
-            Timestamp = DateTime.UtcNow,
-            IsActive = true
-        };
-
-        public string Name => "SimpleObject";
-        public string Description => "Minimal overhead test: a few basic properties.";
-        public Type DataType => typeof(SimpleObject);
-        public List<Type> SecondaryDataTypes => new List<Type>();
-        public object Data => _data;
-    }
-
     [ProtoContract]
     [DataContract]
     [Serializable]
     [Schema]
     public class SimpleObject
     {
+        public SimpleObject() { }
+
         [ProtoMember(1)] [DataMember] [Id(0)] public int Id { get; set; }
         [ProtoMember(2)] [DataMember] [Id(1)] public string Name { get; set; }
         [ProtoMember(3)] [DataMember] [Id(2), Type(typeof(long))] public DateTime Timestamp { get; set; }
         [ProtoMember(4)] [DataMember] [Id(3)] public bool IsActive { get; set; }
-    }
-
-    public class StringArrayDescription : ITestDataDescription
-    {
-        private readonly StringArrayObject _data = StringArrayObject.Generate(Randomizer.Settings.CollectionOptions.StringArrayCount);
-
-        public string Name => "StringArray";
-        public string Description => "Tests memory allocation and string handling with an array of many strings.";
-        public Type DataType => typeof(StringArrayObject);
-        public List<Type> SecondaryDataTypes => new List<Type>();
-        public object Data => _data;
     }
 
     [ProtoContract]
@@ -52,6 +28,8 @@ namespace GLD.SerializerBenchmark.TestData
     [Schema]
     public class StringArrayObject
     {
+        public StringArrayObject() { }
+
         [ProtoMember(1)] [DataMember] [Id(0)] public List<string> Items { get; set; }
 
         public static StringArrayObject Generate(int count)

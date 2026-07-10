@@ -185,7 +185,7 @@ assert msgpack.unpackb(packed) == {"nums": [1, 2, 3]}
 ### Protobuf-style (after codegen)
 
 ```python
-# Generated module provides Person (illustrative names).
+# Generated module provides message classes (illustrative Google tutorial names).
 person = addressbook_pb2.Person(id=1234, name="Alice")
 data = person.SerializeToString()
 person2 = addressbook_pb2.Person()

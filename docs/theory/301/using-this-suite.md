@@ -27,7 +27,7 @@ Use this checklist **before** quoting a Result:
 
 1. **Same language?** If no, stop—use numbers only as rough orientation, not as a pick.  
 2. **Same paradigm?** Prefer [Serialization categories](../../analysis/serialization_categories.md) families. Cross-family only when the product decision is “which family,” and then treat speed as one axis among many.  
-3. **Same fixture?** `Person` vs `Telemetry` vs other `TestDataName` values are different jobs.  
+3. **Same fixture?** `message` vs `telemetry` (and other type ids) are different jobs.  
 4. **Same mode?** String vs stream (and any stream-mode caveats on the language Overview) must match.  
 5. **Which metric?** Mean encode, mean decode, size, ops/s, tails—pick the one your SLO cares about; do not swap them mid-argument.  
 6. **Still missing?** Compression on the wire, auth, schema registry, multi-hop fan-out—outside core tables unless you design a separate experiment.
@@ -73,7 +73,7 @@ A team sees that a schema-driven library is fastest on **Rust** Results for a de
 | Language **Results** | Published timings and sizes for that language |
 | [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | Warmup, outliers, grouping keys, units |
 | [Metrics catalog](../../analysis/METRICS.md) | What each field means |
-| [Test data configuration](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
+| [Test Data](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
 | [Benchmark architecture](../../analysis/architecture.md) | What the harness times |
 | Dashboard (Benchmarks nav) | Interactive slices of the same analysis story |
 
@@ -88,7 +88,7 @@ A team sees that a schema-driven library is fastest on **Rust** Results for a de
 **Question:** Am I about to quote a **fair** suite comparison for a real decision—or a misaligned chart?
 
 ### Setup
-1. Write the decision question in one sentence (e.g. “Which JSON library in Python for Person-shaped RPC?”).  
+1. Write the decision question in one sentence (e.g. “Which JSON library in Python for message-shaped RPC?”).  
 2. Open [categories](../../analysis/serialization_categories.md) and the language **Results** / Overview for the runtime you will ship.  
 3. Note analysis config (warmup, outlier policy) from [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) if you will re-derive tables.
 
@@ -116,7 +116,7 @@ A team sees that a schema-driven library is fastest on **Rust** Results for a de
 | `runs` / warmup / outliers removed | Trust in the statistic |
 | Dashboard / CSV **filter state** | Document what you hid |
 
-**Conclusion style:** “Under Python + JSON family + Person + bytes mode, A beats B on deser median; size similar; fidelity 1.0.”  
+**Conclusion style:** “Under Python + JSON family + message + bytes mode, A beats B on deser median; size similar; fidelity 1.0.”  
 **Not decision metrics:** mixed-paradigm leaderboards; cross-language “champions.”
 
 ## What this suite cannot tell you

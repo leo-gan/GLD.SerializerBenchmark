@@ -5,15 +5,14 @@
 
 int main(int argc, char **argv) {
     int reps = 10;
-    const char *ser_f = NULL;
-    const char *data_f = NULL;
     const char *log_dir = getenv("LOG_DIR");
     if (!log_dir) log_dir = "../logs/c";
 
     if (argc > 1) reps = atoi(argv[1]);
-    if (argc > 2) ser_f = argv[2];
-    if (argc > 3) data_f = argv[3];
     if (argc > 4) log_dir = argv[4];
+    /* argv[2]/argv[3] ser/data filters reserved for future v2 filtering */
 
-    return run_benchmarks(reps, ser_f, data_f, log_dir);
+    /* Data Model v2 only (V1 Person/EDI fixtures removed from the run path). */
+    extern int run_benchmarks_v2(int repetitions, const char *log_dir);
+    return run_benchmarks_v2(reps, log_dir);
 }

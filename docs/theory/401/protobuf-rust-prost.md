@@ -34,7 +34,7 @@ Assumes [wire format](protobuf-wire-format.md). Crate: [tokio-rs/prost](https://
 ```rust
 prost_build::Config::new()
     .compile_protos(
-        &["../schemas/benchmark_data.proto"],
+        &["../schemas/v2/protobuf/benchmark_v2.proto"],
         &["../schemas"],
     )?;
 ```
@@ -54,14 +54,14 @@ pub mod pb {
 ```rust
 use prost::Message;
 
-let person = pb::Person {
+let person = pb::MiniUser {  // teaching type; suite uses message/document/…
     first_name: "Ada".into(),
     last_name: "Lovelace".into(),
     age: 36,
     ..Default::default()
 };
 let buf = person.encode_to_vec();
-let parsed = pb::Person::decode(&buf[..])?;
+let parsed = pb::MiniUser::decode(&buf[..])?;
 ```
 
 Field names are Rust-ified; **tags** still come from `.proto` numbers. For the teaching [MiniUser](lab-mini-protobuf-encoder.md) message, compile a separate tiny `mini.proto`—it is not part of suite `benchmark_data.proto`.

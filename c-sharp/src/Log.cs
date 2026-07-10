@@ -89,6 +89,12 @@ namespace GLD.SerializerBenchmark
 
         /// <summary>Optional package/library version string.</summary>
         public string SerializerVersion { get; set; } = "";
+
+        /// <summary>Batch cardinality for this cell (1 = single instance).</summary>
+        public int DataTypeInstanceCount { get; set; } = 1;
+
+        /// <summary>Hash of resolved type_config for this cell.</summary>
+        public string TypeConfigHash { get; set; } = "";
     }
 
     public class LogStorage
@@ -124,7 +130,7 @@ namespace GLD.SerializerBenchmark
             var fileHeaderLine =
                 "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName," +
                 "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser," +
-                "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore";
+                "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash";
             fileHeaderLine = fileHeaderLine.Replace(",", _separator);
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
@@ -142,7 +148,9 @@ namespace GLD.SerializerBenchmark
                 log.SerializerName, log.SerializerVersion ?? "",
                 log.TimeSer, log.TimeDeser, log.Size, log.TimeSerAndDeser,
                 log.OpPerSecSer, log.OpPerSecDeser, log.OpPerSecSerAndDeser,
-                log.MemoryPeakBytes, log.FidelityScore.ToString("F2")
+                log.MemoryPeakBytes, log.FidelityScore.ToString("F2"),
+                log.DataTypeInstanceCount > 0 ? log.DataTypeInstanceCount : 1,
+                log.TypeConfigHash ?? ""
                 );
             _logFileStreamWriter.WriteLine(line);
         }
@@ -175,6 +183,8 @@ namespace GLD.SerializerBenchmark
             var iSize = Idx("Size");
             var iMem = Idx("MemoryPeakBytes");
             var iFid = Idx("FidelityScore");
+            var iInst = Idx("DataTypeInstanceCount");
+            var iHash = Idx("TypeConfigHash");
 
             // Legacy fixed layout fallback (pre-version-column reorder)
             if (iName < 0)
@@ -220,6 +230,9 @@ namespace GLD.SerializerBenchmark
                     double.TryParse(fields[iFid], System.Globalization.NumberStyles.Float,
                         System.Globalization.CultureInfo.InvariantCulture, out var fid))
                     log.FidelityScore = fid;
+                log.DataTypeInstanceCount = iInst >= 0 ? ParseInt(fields, iInst) : 1;
+                if (log.DataTypeInstanceCount < 1) log.DataTypeInstanceCount = 1;
+                log.TypeConfigHash = Field(fields, iHash);
                 logs.Add(log);
             }
             return logs;

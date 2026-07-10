@@ -166,7 +166,13 @@ def _dataset_block() -> Dict[str, Any]:
 
         cfg = load_master_config()
         block["config_path"] = "config/benchmark_config.yaml"
-        block["test_data_config"] = dig(cfg, "test_data.config_file", "schemas/test_data_config.json")
+        # Catalog is normative for suite fixtures.
+        block["catalog_file"] = dig(
+            cfg, "test_data.catalog_file",
+            dig(cfg, "data_model_v2.catalog_file", "schemas/data_catalog_v2.yaml"),
+        )
+        # Legacy key kept for older readers of configs.json sidecars.
+        block["test_data_config"] = block["catalog_file"]
         types = dig(cfg, "test_data.types") or []
         if isinstance(types, list) and types:
             block["fixtures"] = [

@@ -11,63 +11,57 @@ rust/src/serializers/
   json.rs          # serde_json, simd-json, sonic-rs
   binary_serde.rs  # rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson
   direct.rs        # minicbor, rkyv, nanoserde, speedy
-  prost_ser.rs     # prost + fixture conversion + flat ObjectGraph
+  prost_ser.rs     # prost + fixture conversion
 ```
 
 ## Serializers (15)
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
-| serde_json | JSON | `to_vec` / `from_slice`; **native** stream via `to_writer` / `from_reader` |
-| simd-json | JSON | **deser** via SIMD; **ser** uses `serde_json` (crate focus is parsing) |
+| serde_json | JSON | `to_vec` / `from_slice`; native stream |
+| simd-json | JSON | SIMD parse; ser via `serde_json` |
 | sonic-rs | JSON | `to_vec` / `from_slice` |
 | rmp-serde | MessagePack | `to_vec_named` / `from_slice` |
-| ciborium | CBOR | reusable buffer; **native** stream write/read |
-| bincode | Binary | bincode 2 config **reused** in `prepare` |
+| ciborium | CBOR | reusable buffer; native stream |
+| bincode | Binary | config reused in `prepare` |
 | postcard | Binary | `to_allocvec` / `from_bytes` |
 | bitcode | Binary | `serialize` / `deserialize` |
 | flexbuffers | FlexBuffers | Serde flexbuffers path |
 | bson | Document binary | `bson::to_vec` / `from_slice` |
-| minicbor | CBOR | **direct** `Encode`/`Decode` on concrete types (no envelope) |
-| rkyv | Zero-copy | **full** `Archive` on concrete types; timed path materializes owned `T` for fidelity |
-| prost | Protobuf | **`prost-build`** from `schemas/benchmark_data.proto`; convert in `prepare` |
-| nanoserde | Binary | `SerBin` / `DeBin` on concrete types |
-| speedy | Binary | `Writable` / `Readable` on concrete types |
+| minicbor | CBOR | direct `Encode`/`Decode` |
+| rkyv | Zero-copy | timed path materializes owned `T` for fidelity |
+| prost | Protobuf | convert in `prepare`; timed codec only |
+| nanoserde | Binary | `SerBin` / `DeBin` |
+| speedy | Binary | `Writable` / `Readable` |
 
-### Call-path contract (aligned with Python)
+### Call-path contract
 
-1. `prepare(&fixture)` — untimed (codec config, kind tracking, prost message build)
-2. `serialize_bytes` / `deserialize_bytes` — timed
-3. Stream mode: **native** or **adapted** (see `StreamMode` on each impl)
+1. `prepare` — untimed  
+2. `serialize_bytes` / `deserialize_bytes` — timed  
+3. Stream: **native** or **adapted**
 
-### ObjectGraph
+### Not yet in suite
 
-All registered serializers support **ObjectGraph** using a flat node table + integer edges
-(Root / Child1 / Child2 with sibling cycle), not live `Rc` pointer graphs.
+- **flatbuffers** / **capnp** (separate IDL codegen)  
+- **miniserde** (JSON-only niche)
 
-### Not yet in suite (Priority B remaining)
+## Test data
 
-- **flatbuffers** / **capnp**: multi-lang zero-copy IDL with separate codegen (flexbuffers covers schemaless FB-family partially)
-- **miniserde**: JSON-only alternative to full Serde (overlap with nanoserde/sonic story)
+Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
 ## Run
 
 ```bash
 ./scripts/run-benchmarks.sh smoke
 ./scripts/run-benchmarks.sh full
-```
-
-Or directly (writes under monorepo `logs/rust/`):
-
-```bash
 cargo run --release -- 100
 ```
 
-`LOG_DIR` may point at a logs **root** (results go to `$LOG_DIR/rust/`).
+`LOG_DIR` may be a logs **root** (results under `$LOG_DIR/rust/`).
 
-Analysis: `analyze-benchmarks -l rust` (see root README).
+Analysis: `analyze-benchmarks -l rust`.
 
 ## Build notes
 
-- `build.rs` uses **protoc-bin-vendored** + `prost-build` on `../schemas/benchmark_data.proto`.
-- Requires network once to fetch crates/protoc; offline builds need a populated `target/`.
+- `build.rs` + prost from the suite protobuf schema under `schemas/` / `rust/proto/`.  
+- Offline builds need a populated `target/` / vendor cache.

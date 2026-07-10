@@ -10,23 +10,33 @@ namespace GLD.SerializerBenchmark
         public static void Tests(List<ISerDeser> serializers, List<ITestDataDescription> testDataDescriptions,
             int repetitions)
         {
-            Directory.CreateDirectory("logs/csharp");
+            // Prefer LOG_DIR (orchestrator) so monorepo logs/csharp stays consistent.
+            var logDir = Environment.GetEnvironmentVariable("LOG_DIR");
+            if (string.IsNullOrEmpty(logDir))
+                logDir = "logs/csharp";
+            else if (!logDir.EndsWith("csharp") && !logDir.EndsWith("c-sharp"))
+                logDir = Path.Combine(logDir, "csharp");
+            Directory.CreateDirectory(logDir);
 
             // Timestamped result file — each run creates YYYY-MM-DD-HHMMSS.csv, never overwritten.
             var ts = Environment.GetEnvironmentVariable("BENCHMARK_TS");
             if (string.IsNullOrEmpty(ts))
                 ts = DateTime.Now.ToString("yyyy-MM-dd-HHmmss");
-            var logPath = $"logs/csharp/{ts}.csv";
-            // Per-run errors beside the result CSV (same stem as .environment.json)
-            var errorsPath = $"logs/csharp/{ts}.errors.csv";
+            var logPath = Path.Combine(logDir, $"{ts}.csv");
+            // Per-run errors beside the result CSV (same stem as .configs.json)
+            var errorsPath = Path.Combine(logDir, $"{ts}.errors.csv");
 
             var logStorage = new LogStorage(logPath);
             var errors = new List<Error>();
 
             foreach (var testDataDescription in testDataDescriptions)
             {
-                Console.WriteLine($"\n[PROGRESS] Testing Data: {testDataDescription.Name} (Targeting {serializers.Count} serializers, {repetitions} reps)");
-                TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
+                var n = GetInstanceCount(testDataDescription);
+                var hash = GetTypeConfigHash(testDataDescription);
+                Console.WriteLine(
+                    $"\n[PROGRESS] Testing Data: {testDataDescription.Name} N={n} " +
+                    $"(Targeting {serializers.Count} serializers, {repetitions} reps)");
+                TestOnData(testDataDescription, repetitions, serializers, logStorage, errors, n, hash);
                 Error.SaveErrors(errors, errorsPath);
             }
 
@@ -38,7 +48,7 @@ namespace GLD.SerializerBenchmark
         }
 
         /// <summary>
-        /// Write logs/csharp/&lt;ts&gt;.environment.json via analysis package when available on host.
+        /// Write logs/csharp/&lt;ts&gt;.configs.json via analysis package when available on host.
         /// Docker images often lack it; run-all-benchmarks.sh also captures on the host.
         /// </summary>
         private static void TryCaptureEnvironment(string logPath)
@@ -76,26 +86,55 @@ namespace GLD.SerializerBenchmark
         }
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,
-            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
+            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors,
+            int instanceCount = 1, string typeConfigHash = "")
         {
             // Untimed: Initialize + PrepareData once per fixture (not inside Stopwatch).
+            var prepareFailed = new Dictionary<string, bool>();
             foreach (var serializer in serializers)
             {
                 if (!serializer.Supports(testDataDescription.Name))
                     continue;
                 Console.WriteLine($"[DEBUG] Initializing {serializer.Name}");
-                serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
-                serializer.PrepareData(testDataDescription.Data);
+                try
+                {
+                    serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
+                    serializer.PrepareData(testDataDescription.Data);
+                }
+                catch (Exception ex)
+                {
+                    prepareFailed[serializer.Name] = true;
+                    var error = new Error
+                    {
+                        StringOrStream = "prepare",
+                        TestDataName = testDataDescription.Name,
+                        SerializerName = serializer.Name,
+                        Run = 1,
+                        Repetition = 0,
+                        ErrorText = $"PrepareData: {ex.GetType().Name}: {ex.Message}",
+                    };
+                    error.TryAddTo(errors);
+                    Console.WriteLine($"[ERROR] {serializer.Name} prepare: {ex.GetType().Name}: {ex.Message}");
+                }
             }
 
-            TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors);
-            TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors);
+            TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors,
+                instanceCount, typeConfigHash, prepareFailed);
+            TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors,
+                instanceCount, typeConfigHash, prepareFailed);
         }
 
         public static void TestsOnRepetition(ITestDataDescription testDataDescription, bool streaming, int repetitions,
-            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
+            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors,
+            int instanceCount = 1, string typeConfigHash = "",
+            Dictionary<string, bool> prepareFailed = null)
         {
             var wasError = new Dictionary<string, bool>();
+            if (prepareFailed != null)
+            {
+                foreach (var kv in prepareFailed)
+                    wasError[kv.Key] = true;
+            }
             var original = testDataDescription;
 
             for (var i = 0; i < repetitions; i++)
@@ -106,10 +145,26 @@ namespace GLD.SerializerBenchmark
                     TestDataName = original.Name,
                     Repetitions = repetitions,
                     RepetitionIndex = i,
-                    StringOrStream = streaming ? "Stream" : "string"
+                    StringOrStream = streaming ? "Stream" : "string",
+                    DataTypeInstanceCount = instanceCount < 1 ? 1 : instanceCount,
+                    TypeConfigHash = typeConfigHash ?? "",
                 };
                 TestOnSerializer(serializers, original, errors, streaming, logStorage, log, wasError);
             }
+        }
+
+        private static int GetInstanceCount(ITestDataDescription d)
+        {
+            if (d is TestData.V2.RunCellDescription cell)
+                return cell.InstanceCount;
+            return 1;
+        }
+
+        private static string GetTypeConfigHash(ITestDataDescription d)
+        {
+            if (d is TestData.V2.RunCellDescription cell)
+                return cell.TypeConfigHash ?? "";
+            return "";
         }
 
         private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original,
@@ -175,7 +230,12 @@ namespace GLD.SerializerBenchmark
             }
             catch (Exception ex)
             {
-                error.ErrorText = (serSuccessful ? "Deserialization" : "Serialization") + " " + ex.GetType().Name + ": " + ex.Message;
+                {
+                    var parts = new System.Collections.Generic.List<string>();
+                    for (var e = ex; e != null; e = e.InnerException)
+                        parts.Add(e.GetType().Name + ": " + e.Message);
+                    error.ErrorText = (serSuccessful ? "Deserialization" : "Serialization") + " " + string.Join(" || ", parts);
+                }
                 isRepeatedError = !error.TryAddTo(errors);
                 return;
             }

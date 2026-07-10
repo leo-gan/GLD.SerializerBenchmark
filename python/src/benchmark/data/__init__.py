@@ -1,33 +1,24 @@
-from .models import (
-    GRAPH_NULL,
-    Person,
-    Gender,
-    Passport,
-    PoliceRecord,
-    SimpleObject,
-    StringArrayObject,
-    TelemetryData,
-    EDI835,
-    Claim,
-    ServiceLine,
-    GraphNodeData,
-    ObjectGraph,
+"""Data fixtures — Data Model v2 only (V1 Person/EDI removed)."""
+from ..data_v2 import (
+    Document,
+    Event,
+    Message,
+    Strings,
+    Telemetry,
+    instances_for_cell,
+    make_one,
 )
-from .generator import generate_test_data
+from ..data_v2.models import DocumentItem, DocumentMeta, EventAttr
 
 __all__ = [
-    "GRAPH_NULL",
-    "Person",
-    "Gender",
-    "Passport",
-    "PoliceRecord",
-    "SimpleObject",
-    "StringArrayObject",
-    "TelemetryData",
-    "EDI835",
-    "Claim",
-    "ServiceLine",
-    "GraphNodeData",
-    "ObjectGraph",
-    "generate_test_data",
+    "Message",
+    "Document",
+    "Telemetry",
+    "Strings",
+    "Event",
+    "DocumentItem",
+    "DocumentMeta",
+    "EventAttr",
+    "make_one",
+    "instances_for_cell",
 ]

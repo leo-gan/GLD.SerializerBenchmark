@@ -12,7 +12,7 @@ namespace GLD.SerializerBenchmark.Serializers
     /// <c>[ZeroFormattable]</c> classes (BadImageFormatException). Built-in
     /// formatters still work: primitives, arrays, lists, and <see cref="KeyTuple"/>.
     ///
-    /// All suite fixtures map to KeyTuple / List&lt;KeyTuple&gt; shapes in
+    /// V2 suite fixtures map to KeyTuple / List&lt;KeyTuple&gt; shapes in
     /// <see cref="PrepareData"/> (untimed); timed path is pure Serialize/Deserialize.
     /// </summary>
     internal class ZeroFormatterSerializerSer : SerDeser
@@ -62,21 +62,23 @@ namespace GLD.SerializerBenchmark.Serializers
             // Dispatch by prepared native shape (KeyTuple / List / int).
             switch (native)
             {
-                case int i:
-                    return ZeroFormatterSerializer.Serialize(i);
                 case KeyTuple<int, string, DateTime, bool> simple:
                     return ZeroFormatterSerializer.Serialize(simple);
                 case List<string> strings:
                     return ZeroFormatterSerializer.Serialize(strings);
-                case KeyTuple<int, List<KeyTuple<string, int, int, List<int>>>> graph:
-                    return ZeroFormatterSerializer.Serialize(graph);
-                case KeyTuple<string, string, uint, int, KeyTuple<string, string, DateTime>, List<KeyTuple<int, string>>> person:
-                    return ZeroFormatterSerializer.Serialize(person);
                 // Telemetry nested: KeyTuple max arity is 8.
                 case KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>> telemetry:
                     return ZeroFormatterSerializer.Serialize(telemetry);
                 case KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>> edi:
                     return ZeroFormatterSerializer.Serialize(edi);
+                case List<KeyTuple<int, string, DateTime, bool>> simpleBatch:
+                    return ZeroFormatterSerializer.Serialize(simpleBatch);
+                case List<List<string>> stringsBatch:
+                    return ZeroFormatterSerializer.Serialize(stringsBatch);
+                case List<KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>> telemBatch:
+                    return ZeroFormatterSerializer.Serialize(telemBatch);
+                case List<KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>> ediBatch:
+                    return ZeroFormatterSerializer.Serialize(ediBatch);
                 default:
                     throw new NotSupportedException(
                         $"ZeroFormatter native shape not registered: {native.GetType().FullName}");
@@ -85,30 +87,29 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private object DeserializeBytes(byte[] bytes)
         {
-            if (_primaryType == typeof(int))
-                return ZeroFormatterSerializer.Deserialize<int>(bytes);
-
             if (_primaryType == typeof(SimpleObject))
                 return ZeroFormatterSerializer.Deserialize<KeyTuple<int, string, DateTime, bool>>(bytes);
+            if (_primaryType == typeof(List<SimpleObject>))
+                return ZeroFormatterSerializer.Deserialize<List<KeyTuple<int, string, DateTime, bool>>>(bytes);
 
             if (_primaryType == typeof(StringArrayObject))
                 return ZeroFormatterSerializer.Deserialize<List<string>>(bytes);
-
-            if (_primaryType == typeof(ObjectGraph))
-                return ZeroFormatterSerializer
-                    .Deserialize<KeyTuple<int, List<KeyTuple<string, int, int, List<int>>>>>(bytes);
-
-            if (_primaryType == typeof(Person))
-                return ZeroFormatterSerializer
-                    .Deserialize<KeyTuple<string, string, uint, int, KeyTuple<string, string, DateTime>, List<KeyTuple<int, string>>>>(bytes);
+            if (_primaryType == typeof(List<StringArrayObject>))
+                return ZeroFormatterSerializer.Deserialize<List<List<string>>>(bytes);
 
             if (_primaryType == typeof(TelemetryData))
                 return ZeroFormatterSerializer
                     .Deserialize<KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>>(bytes);
+            if (_primaryType == typeof(List<TelemetryData>))
+                return ZeroFormatterSerializer
+                    .Deserialize<List<KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>>>(bytes);
 
             if (_primaryType == typeof(EDI835))
                 return ZeroFormatterSerializer
                     .Deserialize<KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>>(bytes);
+            if (_primaryType == typeof(List<EDI835>))
+                return ZeroFormatterSerializer
+                    .Deserialize<List<KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>>>(bytes);
 
             throw new NotSupportedException(
                 $"ZeroFormatter does not support primary type {_primaryType?.FullName ?? "(null)"}.");
@@ -116,41 +117,24 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private object ToNative(object data)
         {
-            if (data is int i)
-                return i;
+            if (data is List<SimpleObject> simpleList)
+                return simpleList.Select(o => KeyTuple.Create(o.Id, o.Name ?? "", o.Timestamp, o.IsActive)).ToList();
+            if (data is List<StringArrayObject> saList)
+                return saList.Select(sa => sa.Items != null ? sa.Items.ToList() : new List<string>()).ToList();
+            if (data is List<TelemetryData> tList)
+                return tList
+                    .Select(t => (KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>)ToNative(t))
+                    .ToList();
+            if (data is List<EDI835> eList)
+                return eList
+                    .Select(e => (KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>)ToNative(e))
+                    .ToList();
 
             if (data is SimpleObject o)
                 return KeyTuple.Create(o.Id, o.Name ?? "", o.Timestamp, o.IsActive);
 
             if (data is StringArrayObject sa)
                 return sa.Items != null ? sa.Items.ToList() : new List<string>();
-
-            if (data is ObjectGraph g)
-            {
-                var nodes = (g.Nodes ?? new List<GraphNodeData>())
-                    .Select(n => KeyTuple.Create(
-                        n.Name ?? "",
-                        n.Parent,
-                        n.Related,
-                        n.Children != null ? n.Children.ToList() : new List<int>()))
-                    .ToList();
-                return KeyTuple.Create(g.Root, nodes);
-            }
-
-            if (data is Person p)
-            {
-                var pass = p.Passport ?? new Passport();
-                var records = (p.PoliceRecords ?? Array.Empty<PoliceRecord>())
-                    .Select(r => KeyTuple.Create(r.Id, r.CrimeCode ?? ""))
-                    .ToList();
-                return KeyTuple.Create(
-                    p.FirstName ?? "",
-                    p.LastName ?? "",
-                    p.Age,
-                    (int)p.Gender,
-                    KeyTuple.Create(pass.Number ?? "", pass.Authority ?? "", pass.ExpirationDate),
-                    records);
-            }
 
             if (data is TelemetryData t)
             {
@@ -202,9 +186,13 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private object FromNative(object native)
         {
-            if (_primaryType == typeof(int))
-                return native;
-
+            if (_primaryType == typeof(List<SimpleObject>) && native is List<KeyTuple<int, string, DateTime, bool>> simpleBatch)
+            {
+                return simpleBatch.Select(t => new SimpleObject
+                {
+                    Id = t.Item1, Name = t.Item2, Timestamp = t.Item3, IsActive = t.Item4
+                }).ToList();
+            }
             if (_primaryType == typeof(SimpleObject))
             {
                 var t = (KeyTuple<int, string, DateTime, bool>)native;
@@ -217,48 +205,20 @@ namespace GLD.SerializerBenchmark.Serializers
                 };
             }
 
+            if (_primaryType == typeof(List<StringArrayObject>) && native is List<List<string>> saBatch)
+                return saBatch.Select(items => new StringArrayObject { Items = items }).ToList();
             if (_primaryType == typeof(StringArrayObject))
                 return new StringArrayObject { Items = (List<string>)native };
 
-            if (_primaryType == typeof(ObjectGraph))
+            if (_primaryType == typeof(List<TelemetryData>) &&
+                native is List<KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>> tBatch)
             {
-                var t = (KeyTuple<int, List<KeyTuple<string, int, int, List<int>>>>)native;
-                return new ObjectGraph
-                {
-                    Root = t.Item1,
-                    Nodes = (t.Item2 ?? new List<KeyTuple<string, int, int, List<int>>>())
-                        .Select(n => new GraphNodeData
-                        {
-                            Name = n.Item1,
-                            Parent = n.Item2,
-                            Related = n.Item3,
-                            Children = n.Item4 ?? new List<int>()
-                        }).ToList()
-                };
+                var prev = _primaryType;
+                _primaryType = typeof(TelemetryData);
+                var list = tBatch.Select(x => (TelemetryData)FromNative(x)).ToList();
+                _primaryType = prev;
+                return list;
             }
-
-            if (_primaryType == typeof(Person))
-            {
-                var t = (KeyTuple<string, string, uint, int, KeyTuple<string, string, DateTime>, List<KeyTuple<int, string>>>)native;
-                var pass = t.Item5;
-                return new Person
-                {
-                    FirstName = t.Item1,
-                    LastName = t.Item2,
-                    Age = t.Item3,
-                    Gender = (Gender)t.Item4,
-                    Passport = new Passport
-                    {
-                        Number = pass.Item1,
-                        Authority = pass.Item2,
-                        ExpirationDate = pass.Item3
-                    },
-                    PoliceRecords = (t.Item6 ?? new List<KeyTuple<int, string>>())
-                        .Select(r => new PoliceRecord { Id = r.Item1, CrimeCode = r.Item2 })
-                        .ToArray()
-                };
-            }
-
             if (_primaryType == typeof(TelemetryData))
             {
                 var t = (KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>)native;
@@ -278,6 +238,15 @@ namespace GLD.SerializerBenchmark.Serializers
                 };
             }
 
+            if (_primaryType == typeof(List<EDI835>) &&
+                native is List<KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>> eBatch)
+            {
+                var prev = _primaryType;
+                _primaryType = typeof(EDI835);
+                var list = eBatch.Select(x => (EDI835)FromNative(x)).ToList();
+                _primaryType = prev;
+                return list;
+            }
             if (_primaryType == typeof(EDI835))
             {
                 var t = (KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>)native;

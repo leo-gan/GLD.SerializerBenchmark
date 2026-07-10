@@ -2,6 +2,13 @@
 
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
+
+## Suite fixtures
+
+Type ids: `message`, `document`, `telemetry`, `strings`, `event`.  
+Run configs: `config/library/`. Results may label batch cells as `type@n=<instance_count>`.  
+See [Test Data](../analysis/test_data_configuration.md).
+
 ## Serializers in this suite (16)
 
 Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py). Log names in `logs/python/YYYY-MM-DD-HHMMSS.csv` (nanoseconds). Modes: `bytes` and `stream`.
@@ -20,8 +27,8 @@ Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runn
 | msgspec-msgpack | Binary | `msgspec` | Struct | native | Same Struct path, MessagePack |
 | orjson | JSON | `orjson` | dict | adapted | Rust core; conversion untimed |
 | pickle | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
-| protobuf | Schema | `protobuf` | Message | adapted | From `schemas/benchmark_data.proto` |
-| pydantic | JSON | `pydantic` v2 | BaseModel | adapted | Validation-oriented API models |
+| protobuf | Schema | `protobuf` | Message | adapted | From suite protobuf schemas under `schemas/v2/` / language generated modules |
+| pydantic | JSON | `pydantic` | BaseModel | adapted | Validation-oriented API models |
 | rapidjson | JSON | `python-rapidjson` | dict | adapted | C++ RapidJSON bindings |
 | serpyco-rs | JSON | `serpyco-rs` + `orjson` | dataclass | adapted | dump/load + orjson wire |
 
@@ -52,8 +59,6 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 ### Other caveats
 
 
-- **ObjectGraph:** flat `{root, nodes[]}` with integer edges (`Parent`/`Related`/`Children` indices, `GRAPH_NULL = -1`). Every registered serializer supports it — same portable encoding as C/Rust/JS (no live pointer cycles).
-- **Integer:** protobuf / avro / flatbuffers / serpyco-rs typically exclude bare scalars.
 - `tracemalloc` under-counts C/Rust extension allocations.
 - Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).
 

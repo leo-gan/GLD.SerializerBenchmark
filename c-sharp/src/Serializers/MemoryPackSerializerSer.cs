@@ -6,16 +6,16 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     // MemoryPack — convert to [MemoryPackable] models in PrepareData (untimed).
     // Timed path: Serialize(annotated) only. ToDomain converts back after deser.
-    // https://github.com/Cysharp/MemoryPack
     internal class MemoryPackSerializerSer : SerDeser
     {
-        private object _native; // annotated model
+        private object _native;
         private Type _nativeType;
 
         public override string Name => "MemoryPack";
 
+        // V2: message/event (SimpleObject), strings (StringArrayObject)
         public override bool Supports(string testDataName) =>
-            testDataName is "Integer" or "SimpleObject" or "StringArray" or "ObjectGraph";
+            testDataName is "message" or "event" or "strings";
 
         public override void PrepareData(object data)
         {
@@ -55,40 +55,28 @@ namespace GLD.SerializerBenchmark.Serializers
 
         private object ConvertToAnnotated(object obj)
         {
-            if (_primaryType == typeof(int))
-                return MemoryPackTypeConverter.ToMemoryPack((int)obj);
             if (_primaryType == typeof(SimpleObject))
                 return MemoryPackTypeConverter.ToMemoryPack((SimpleObject)obj);
             if (_primaryType == typeof(StringArrayObject))
                 return MemoryPackTypeConverter.ToMemoryPack((StringArrayObject)obj);
-            if (_primaryType == typeof(ObjectGraph))
-                return MemoryPackTypeConverter.ToMemoryPack((ObjectGraph)obj);
             return obj;
         }
 
         private object DeserializeAnnotated(byte[] bytes)
         {
-            if (_primaryType == typeof(int))
-                return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.IntObject>(bytes);
             if (_primaryType == typeof(SimpleObject))
                 return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.SimpleObject>(bytes);
             if (_primaryType == typeof(StringArrayObject))
                 return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.StringArrayObject>(bytes);
-            if (_primaryType == typeof(ObjectGraph))
-                return global::MemoryPack.MemoryPackSerializer.Deserialize<MPack.ObjectGraph>(bytes);
             return null;
         }
 
         private object ConvertFromAnnotated(object annotated)
         {
-            if (annotated is MPack.IntObject intObj)
-                return MemoryPackTypeConverter.FromMemoryPack(intObj);
             if (annotated is MPack.SimpleObject simpleObj)
                 return MemoryPackTypeConverter.FromMemoryPack(simpleObj);
             if (annotated is MPack.StringArrayObject arrayObj)
                 return MemoryPackTypeConverter.FromMemoryPack(arrayObj);
-            if (annotated is MPack.ObjectGraph graph)
-                return MemoryPackTypeConverter.FromMemoryPack(graph);
             return annotated;
         }
     }

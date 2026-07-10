@@ -1,0 +1,6 @@
+{"type":"record","name":"Document","fields":[
+ {"name":"id","type":"string"},{"name":"status","type":"int"},
+ {"name":"meta","type":{"type":"record","name":"DocumentMeta","fields":[
+   {"name":"region","type":"string"},{"name":"version","type":"int"}]}},
+ {"name":"items","type":{"type":"array","items":{"type":"record","name":"DocumentItem",
+  "fields":[{"name":"sku","type":"string"},{"name":"qty","type":"int"},{"name":"price_minor","type":"long"}]}}}]}

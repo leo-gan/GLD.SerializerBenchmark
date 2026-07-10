@@ -2,6 +2,8 @@
 
 mod csv_log;
 mod data;
+mod data_v2;
+mod run_v2;
 mod serializers;
 
 use crate::csv_log::CsvLogger;
@@ -129,6 +131,29 @@ fn fidelity(a: &Fixture, b: &Fixture) -> bool {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    // Data Model v2 only (V1 Person/EDI fixtures removed from the run path).
+    {
+        let log_dir = if !args.log_dir.is_empty() {
+            PathBuf::from(&args.log_dir)
+        } else {
+            default_log_dir()
+        };
+        std::fs::create_dir_all(&log_dir)?;
+        let log_name = if let Ok(ts) = std::env::var("BENCHMARK_TS") {
+            format!("{}.csv", ts)
+        } else {
+            format!("{}.csv", chrono::Local::now().format("%Y-%m-%d-%H%M%S"))
+        };
+        let log_path = log_dir.join(log_name);
+        return run_v2::run_v2(
+            args.repetitions,
+            &log_path,
+            args.serializer_filter.as_deref(),
+            args.data_filter.as_deref(),
+        );
+    }
+    #[allow(unreachable_code)]
+
     let log_dir = if !args.log_dir.is_empty() {
         PathBuf::from(&args.log_dir)
     } else {

@@ -78,14 +78,22 @@ export const bsonSer = {
   category: 'binary',
   // BSON top-level must be a document
   supports: (n) => baseSupports(n) && n !== 'Integer',
-  prepare() {},
+  _wrapped: false,
+  prepare(_dataName, value) {
+    this._wrapped = Array.isArray(value) || typeof value !== 'object' || value === null;
+  },
   serialize(value) {
-    const doc = typeof value === 'object' && value !== null && !Array.isArray(value) ? value : { v: value };
+    const doc =
+      typeof value === 'object' && value !== null && !Array.isArray(value) ? value : { v: value };
     return BSON.serialize(doc);
   },
   deserialize(buf) {
     // BSON.serialize returns Buffer; deserialize accepts Buffer/Uint8Array.
-    return BSON.deserialize(asBuffer(buf));
+    const doc = BSON.deserialize(asBuffer(buf));
+    if (this._wrapped && doc && Object.prototype.hasOwnProperty.call(doc, 'v')) {
+      return doc.v;
+    }
+    return doc;
   },
 };
 

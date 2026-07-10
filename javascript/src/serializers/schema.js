@@ -7,6 +7,94 @@ import { pkgVersion, baseSupports, jsonClone } from './common.js';
 /* ---------- shared Avro / protobuf field models matching JS fixtures ---------- */
 
 const avroSchemas = {
+  // Data Model v2 (doubles must be explicit — forValue infers float32 and fails fidelity)
+  message: {
+    type: 'record',
+    name: 'MessageV2',
+    fields: [
+      { name: 'f_bool', type: 'boolean' },
+      { name: 'f_int32', type: 'int' },
+      { name: 'f_int64', type: 'long' },
+      { name: 'f_float64', type: 'double' },
+      { name: 'f_string', type: 'string' },
+      { name: 'f_bool_2', type: 'boolean' },
+      { name: 'f_int32_2', type: 'int' },
+      { name: 'f_string_2', type: 'string' },
+    ],
+  },
+  document: {
+    type: 'record',
+    name: 'DocumentV2',
+    fields: [
+      { name: 'id', type: 'string' },
+      { name: 'status', type: 'int' },
+      {
+        name: 'meta',
+        type: {
+          type: 'record',
+          name: 'DocumentMetaV2',
+          fields: [
+            { name: 'region', type: 'string' },
+            { name: 'version', type: 'int' },
+          ],
+        },
+      },
+      {
+        name: 'items',
+        type: {
+          type: 'array',
+          items: {
+            type: 'record',
+            name: 'DocumentItemV2',
+            fields: [
+              { name: 'sku', type: 'string' },
+              { name: 'qty', type: 'int' },
+              { name: 'price_minor', type: 'long' },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  telemetry: {
+    type: 'record',
+    name: 'TelemetryV2',
+    fields: [
+      { name: 'source', type: 'string' },
+      { name: 'ts', type: 'long' },
+      { name: 'tags', type: { type: 'array', items: 'string' } },
+      { name: 'values', type: { type: 'array', items: 'double' } },
+    ],
+  },
+  strings: {
+    type: 'record',
+    name: 'StringsV2',
+    fields: [{ name: 'items', type: { type: 'array', items: 'string' } }],
+  },
+  event: {
+    type: 'record',
+    name: 'EventV2',
+    fields: [
+      { name: 'event_id', type: 'string' },
+      { name: 'event_type', type: 'string' },
+      { name: 'occurred_at', type: 'long' },
+      { name: 'producer', type: 'string' },
+      {
+        name: 'attrs',
+        type: {
+          type: 'array',
+          items: {
+            type: 'record',
+            name: 'EventAttrV2',
+            fields: [
+              { name: 'key', type: 'string' },
+              { name: 'value', type: 'string' },
+            ],
+          },
+        },
+      },
+    ],
+  },
   Person: {
     type: 'record',
     name: 'Person',
@@ -159,17 +247,29 @@ export const avscSer = {
   prepare(dataName, value) {
     avroDataName = dataName;
     const schema = avroSchemas[dataName];
+    let base;
     if (!schema) {
-      avroType = avro.Type.forValue(jsonClone(value));
+      base = avro.Type.forValue(jsonClone(Array.isArray(value) ? value[0] : value));
     } else {
-      avroType = avro.Type.forSchema(schema);
+      base = avro.Type.forSchema(schema);
+    }
+    // Batch N>1: array of records
+    if (Array.isArray(value)) {
+      avroType = avro.Type.forSchema({ type: 'array', items: base });
+    } else {
+      avroType = base;
     }
   },
   serialize(value) {
-    return avroType.toBuffer(avroPrepareValue(avroDataName, value));
+    const payload = Array.isArray(value)
+      ? value.map((v) => avroPrepareValue(avroDataName, v))
+      : avroPrepareValue(avroDataName, value);
+    return avroType.toBuffer(payload);
   },
   deserialize(buf) {
-    return avroType.fromBuffer(Buffer.from(buf));
+    // Normalize Avro types (Long/ints) to plain JSON for suite fidelity compare.
+    const raw = avroType.fromBuffer(Buffer.from(buf));
+    return JSON.parse(JSON.stringify(raw));
   },
 };
 
@@ -271,6 +371,12 @@ const pbRoot = protobuf.Root.fromJSON({
         nodes: { rule: 'repeated', type: 'GraphNodeData', id: 2 },
       },
     },
+    // Data Model v2 — JSON envelope for schemaless-shaped payloads
+    V2JsonPayload: {
+      fields: {
+        json: { type: 'string', id: 1 },
+      },
+    },
   },
 });
 
@@ -282,6 +388,11 @@ const pbTypeByName = {
   EDI_835: 'EDI835',
   Integer: 'IntegerValue',
   ObjectGraph: 'ObjectGraph',
+  message: 'V2JsonPayload',
+  document: 'V2JsonPayload',
+  telemetry: 'V2JsonPayload',
+  strings: 'V2JsonPayload',
+  event: 'V2JsonPayload',
 };
 
 let pbType = null;
@@ -291,6 +402,9 @@ let pbMsg = null;
 
 function toPbValue(dataName, value) {
   if (dataName === 'Integer') return { value: value | 0 };
+  if (['message', 'document', 'telemetry', 'strings', 'event'].includes(dataName)) {
+    return { json: JSON.stringify(value) };
+  }
   // protobufjs Long fields: use numbers (fits our fixture ranges)
   const v = jsonClone(value);
   if (dataName === 'Telemetry') {
@@ -313,6 +427,10 @@ function toPbValue(dataName, value) {
 
 function fromPbValue(dataName, decoded) {
   if (dataName === 'Integer') return decoded.value;
+  if (['message', 'document', 'telemetry', 'strings', 'event'].includes(dataName)) {
+    const o = decoded.toJSON ? decoded.toJSON() : { ...decoded };
+    return JSON.parse(o.json || '{}');
+  }
   const o = decoded.toJSON ? decoded.toJSON() : { ...decoded };
   // protobufjs toJSON may stringify int64
   if (dataName === 'Telemetry') {
@@ -512,8 +630,8 @@ function flexSanitize(value) {
   if (value === null || value === undefined) return null;
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) return 0;
-    if (!Number.isInteger(value)) return { __f: String(value) };
-    return value;
+    // Always box numbers — flexbuffers 24.x mixes BigInt with float vectors otherwise.
+    return { __f: String(value) };
   }
   if (typeof value === 'string' || typeof value === 'boolean') return value;
   if (Array.isArray(value)) {

@@ -8,18 +8,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::env::set_var("PROTOC", path);
     }
     let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR")?);
-    let proto = manifest.join("../schemas/benchmark_data.proto");
-    let includes = manifest.join("../schemas");
+    // Prost still uses fixture-shaped messages (suite run maps v2 → Fixture variants).
+    let proto = manifest.join("proto/benchmark_data.proto");
     if proto.is_file() {
-        prost_build::Config::new()
-            // Keep field names close to the shared .proto for fidelity mapping.
-            .compile_protos(&[&proto], &[&includes])?;
+        prost_build::Config::new().compile_protos(&[&proto], &[manifest.join("proto")])?;
         println!("cargo:rerun-if-changed={}", proto.display());
     } else {
-        let proto = PathBuf::from("../schemas/benchmark_data.proto");
-        let includes = PathBuf::from("../schemas");
-        prost_build::Config::new().compile_protos(&[&proto], &[&includes])?;
-        println!("cargo:rerun-if-changed=../schemas/benchmark_data.proto");
+        return Err("missing rust/proto/benchmark_data.proto for prost".into());
     }
 
     // Emit locked crate versions for CSV SerializerVersion (from Cargo.lock).

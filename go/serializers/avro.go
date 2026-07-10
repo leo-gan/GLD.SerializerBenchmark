@@ -2,6 +2,7 @@ package serializers
 
 import (
 	"fmt"
+	"reflect"
 	"io"
 	"sync"
 
@@ -35,7 +36,15 @@ func (s *hambaAvro) Name() string           { return "hamba/avro" }
 func (s *hambaAvro) Version() string        { return ModuleVersion("github.com/hamba/avro/v2") }
 func (s *hambaAvro) StreamMode() StreamMode { return StreamAdapted }
 func (s *hambaAvro) NativeKind() NativeKind { return NativeSchema }
-func (s *hambaAvro) Supports(n string) bool { return DefaultSupports(n) }
+func (s *hambaAvro) Supports(n string) bool {
+	switch n {
+	case "message", "document", "telemetry", "strings", "event",
+		"Person", "Integer", "SimpleObject", "StringArray", "Telemetry", "EDI_835", "ObjectGraph":
+		return true
+	default:
+		return DefaultSupports(n)
+	}
+}
 
 func (s *hambaAvro) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
@@ -44,8 +53,28 @@ func (s *hambaAvro) Prepare(fx model.Fixture) error {
 	if err != nil {
 		return err
 	}
+	// Batch N>1: array of records
+	if isSlice(fx.Value) {
+		raw := `{"type":"array","items":` + sch.String() + `}`
+		sch, err = avro.Parse(raw)
+		if err != nil {
+			return err
+		}
+	}
 	s.schema = sch
 	return nil
+}
+
+func isSlice(v any) bool {
+	if v == nil {
+		return false
+	}
+	switch reflect.TypeOf(v).Kind() {
+	case reflect.Slice, reflect.Array:
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *hambaAvro) SerializeBytes(fx model.Fixture) ([]byte, error) {
@@ -158,6 +187,42 @@ func schemaFor(name string) (avro.Schema, error) {
 					{"name":"children","type":{"type":"array","items":"int"}}
 				]
 			}}}
+		]}`
+	// Data Model v2 type_ids (JSON field names match model/v2 struct tags)
+	case "message":
+		raw = `{"type":"record","name":"Message","fields":[
+			{"name":"f_bool","type":"boolean"},{"name":"f_int32","type":"int"},
+			{"name":"f_int64","type":"long"},{"name":"f_float64","type":"double"},
+			{"name":"f_string","type":"string"},{"name":"f_bool_2","type":"boolean"},
+			{"name":"f_int32_2","type":"int"},{"name":"f_string_2","type":"string"}
+		]}`
+	case "document":
+		raw = `{"type":"record","name":"Document","fields":[
+			{"name":"id","type":"string"},{"name":"status","type":"int"},
+			{"name":"meta","type":{"type":"record","name":"DocumentMeta","fields":[
+				{"name":"region","type":"string"},{"name":"version","type":"int"}
+			]}},
+			{"name":"items","type":{"type":"array","items":{"type":"record","name":"DocumentItem","fields":[
+				{"name":"sku","type":"string"},{"name":"qty","type":"int"},{"name":"price_minor","type":"long"}
+			]}}}
+		]}`
+	case "telemetry":
+		raw = `{"type":"record","name":"TelemetryV2","fields":[
+			{"name":"source","type":"string"},{"name":"ts","type":"long"},
+			{"name":"tags","type":{"type":"array","items":"string"}},
+			{"name":"values","type":{"type":"array","items":"double"}}
+		]}`
+	case "strings":
+		raw = `{"type":"record","name":"Strings","fields":[
+			{"name":"items","type":{"type":"array","items":"string"}}
+		]}`
+	case "event":
+		raw = `{"type":"record","name":"Event","fields":[
+			{"name":"event_id","type":"string"},{"name":"event_type","type":"string"},
+			{"name":"occurred_at","type":"long"},{"name":"producer","type":"string"},
+			{"name":"attrs","type":{"type":"array","items":{"type":"record","name":"EventAttr","fields":[
+				{"name":"key","type":"string"},{"name":"value","type":"string"}
+			]}}}
 		]}`
 	default:
 		return nil, fmt.Errorf("avro: no schema for %s", name)

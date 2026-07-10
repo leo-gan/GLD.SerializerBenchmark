@@ -76,6 +76,15 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
                     record["NativeKind"] = str(row["NativeKind"]).strip()
                 if "StreamMode" in row and row["StreamMode"] not in (None, ""):
                     record["StreamMode"] = str(row["StreamMode"]).strip()
+                # Optional batch columns
+                if "DataTypeInstanceCount" in row and row["DataTypeInstanceCount"] not in (None, ""):
+                    record["DataTypeInstanceCount"] = int(float(row["DataTypeInstanceCount"]))
+                if "TypeConfigHash" in row and row["TypeConfigHash"] not in (None, ""):
+                    record["TypeConfigHash"] = str(row["TypeConfigHash"]).strip()
+                if "SizeGzip" in row and row["SizeGzip"] not in (None, ""):
+                    record["SizeGzip"] = int(float(row["SizeGzip"]))
+                if "SizeZstd" in row and row["SizeZstd"] not in (None, ""):
+                    record["SizeZstd"] = int(float(row["SizeZstd"]))
                 records.append(record)
             except (ValueError, KeyError, TypeError) as e:
                 skipped += 1

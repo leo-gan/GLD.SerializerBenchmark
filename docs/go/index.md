@@ -37,13 +37,15 @@ for rep:
   fidelity(expected, actual)     # untimed
 ```
 
+### Suite fixtures
+
+Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
+
 ### Caveats
 
-- **ObjectGraph:** flat `{root, nodes[]}` with integer edges (`parent`/`related`/`children` indices, `GRAPH_NULL = -1`). Every registered serializer supports it (same portable encoding as C/Rust/JS/Python).
-- **Integer:** skipped for `protobuf` (no bare scalar message in shared schema).
-- **protobuf** date fields go through millisecond timestamps; fidelity compares identity fields and allows date-string drift on Person passport expiration / timestamps where unchecked.
+- **protobuf** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
 - **encoding/gob** is not a cross-language wire format.
-- Stream mode is **native** only where noted; others are adapted bytes+buffer (same honesty model as other harnesses).
+- Stream mode is **native** only where noted; others are adapted bytes+buffer.
 
 Also: [`go/README.md`](../../go/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 

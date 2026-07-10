@@ -16,17 +16,30 @@ FILTER_DATA="${3:-}"
 VALID_MODES="$(bench_read_config --valid-modes 2>/dev/null || echo 'smoke all-single full research')"
 case " $VALID_MODES " in
   *" $MODE "*) ;;
-  *) echo "Usage: $0 [smoke|all-single|full|research] [serializerFilter] [dataFilter]"; exit 1 ;;
+  *)
+    echo "Usage: $0 [smoke|all-single|full|research] [serializerFilter] [dataFilter]"
+    echo "  dataFilter type_ids: message|document|telemetry|strings|event (smoke default: message)"
+    exit 1
+    ;;
 esac
 
 REPS="$(bench_mode_reps "$MODE")"
 if [[ "$MODE" == "smoke" ]]; then
   FILTER_SER="${FILTER_SER:-cJSON}"
-  FILTER_DATA="${FILTER_DATA:-Person}"
+  FILTER_DATA="${FILTER_DATA:-message}"
 fi
 
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
+export BENCHMARK_REPO_ROOT="${BENCHMARK_REPO_ROOT:-$PROJECT_ROOT}"
+# default.yaml → N∈{1,100}; smoke.yaml → N=1 only
+if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+  if [[ "$MODE" == "smoke" ]]; then
+    export BENCHMARK_RUN_CONFIG="$PROJECT_ROOT/config/library/smoke.yaml"
+  else
+    export BENCHMARK_RUN_CONFIG="$PROJECT_ROOT/config/library/default.yaml"
+  fi
+fi
 
 if [[ ! -f "$C_DIR/third_party/_prefix/lib/libjansson.a" ]]; then
   echo "[INFO] C third_party deps missing; running fetch-and-build-deps.sh (first run may take several minutes)..."

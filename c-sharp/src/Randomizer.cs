@@ -19,7 +19,6 @@ namespace GLD.SerializerBenchmark
 
     public class CollectionOptions
     {
-        public int PersonPoliceRecordsCount { get; set; }
         public int TelemetryMeasurementsCount { get; set; }
         public int StringArrayCount { get; set; }
         public int EdiClaimsCount { get; set; }
@@ -101,7 +100,6 @@ namespace GLD.SerializerBenchmark
                 },
                 CollectionOptions = new CollectionOptions
                 {
-                    PersonPoliceRecordsCount = 5,
                     TelemetryMeasurementsCount = 100,
                     StringArrayCount = 100,
                     EdiClaimsCount = 5,

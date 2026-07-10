@@ -79,11 +79,14 @@ def main():
 
         for run_id in runs_to_delete:
             # Files to delete for this run (main data, error CSV, configs JSON, errors JSON)
+            # Sidecars use the same stem as the result CSV:
+            #   <ts>.csv, <ts>.errors.csv, <ts>.configs.json
+            # Legacy: <ts>.environment.json (pre-configs.json)
             patterns = [
                 os.path.join(lang_dir, f"{run_id}.csv"),
                 os.path.join(lang_dir, f"{run_id}.errors.csv"),
-                os.path.join(lang_dir, f"{run_id}_configs.json"),
-                os.path.join(lang_dir, f"{run_id}_errors.json")
+                os.path.join(lang_dir, f"{run_id}.configs.json"),
+                os.path.join(lang_dir, f"{run_id}.environment.json"),
             ]
 
             for file_path in patterns:
