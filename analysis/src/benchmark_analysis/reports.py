@@ -259,14 +259,29 @@ VIOLIN_TOP_N_SERIALIZERS = 5
 _MODE_DISPLAY = {
     "bytes": "bytes mode",
     "stream": "stream mode",
-    "string": "string mode",
+    "string": "bytes mode",  # C#/some harnesses log "string" for the buffer API
+    "buffer": "bytes mode",
 }
+
+
+def _normalize_mode(mode: str) -> str:
+    """Canonical harness API mode: bytes (in-memory buffer) | stream.
+
+    Aligns with dashboard ``normalizeMode``: CSV may say ``string`` / ``Stream``
+    / ``bytes`` / ``buffer`` depending on language harness.
+    """
+    key = (mode or "").strip().lower()
+    if key in ("bytes", "string", "buffer"):
+        return "bytes"
+    if key == "stream":
+        return "stream"
+    return key
 
 
 def _display_mode(mode: str) -> str:
     """Label harness API mode so it is not confused with payload size."""
-    key = (mode or "").strip().lower()
-    return _MODE_DISPLAY.get(key, mode)
+    key = _normalize_mode(mode)
+    return _MODE_DISPLAY.get(key, mode or key)
 
 
 def _pick_column_unit(values: list) -> tuple:
@@ -577,7 +592,7 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
     for e in entries:
         if not isinstance(e, dict):
             continue
-        mode = (e.get("mode") or e.get("StringOrStream") or "").lower()
+        mode = _normalize_mode(e.get("mode") or e.get("StringOrStream") or "")
         if mode != "bytes":
             continue
         ser = e.get("serializer") or e.get("SerializerName") or ""
@@ -788,6 +803,13 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
         if vals_in_col:
             col_bests[field_id] = max(vals_in_col) if hib else min(vals_in_col)
 
+    # Shared K/M scale per column (same rule as ops/s and pivot tables)
+    col_units: Dict[str, tuple] = {}
+    for field_id in ("avg_ops_per_sec", "median_size_bytes"):
+        vals_in_col = [cell_vals[(ser, field_id)] for ser in serializers if (ser, field_id) in cell_vals]
+        if vals_in_col:
+            col_units[field_id] = _pick_column_unit(vals_in_col)
+
     # 3. Render rows
     for ser in serializers:
         entries = by_ser[ser]
@@ -829,13 +851,12 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
                 text = str(int(num))
             elif is_time:
                 text = f"{num / 1000.0:.3g}"  # ns → µs
-            elif field_id == "avg_ops_per_sec":
-                div, unit = _pick_column_unit([num])
+            elif field_id in ("avg_ops_per_sec", "median_size_bytes"):
+                # 3 significant digits + shared column K/M (thousands / millions)
+                div, unit = col_units.get(field_id) or _pick_column_unit([num])
                 text = _format_in_unit(num, div, unit, sig=3)
             elif field_id == "mean_fidelity":
                 text = f"{num:.2f}"
-            elif field_id == "median_size_bytes":
-                text = f"{num:.4g}"
             else:
                 text = f"{num:.4g}"
                 
@@ -897,10 +918,16 @@ def _total_time_pivot_table_md(stats: Dict) -> str:
             return float(v) / 1000.0
         return None
 
+    def _entry_for_mode(entries, want: str):
+        return next(
+            (e for e in entries if _normalize_mode(str(e.get("mode") or "")) == want),
+            None,
+        )
+
     for ser in serializers:
         entries = by_ser[ser]
-        bytes_entry = next((e for e in entries if str(e.get("mode")).lower() == "bytes"), None)
-        stream_entry = next((e for e in entries if str(e.get("mode")).lower() == "stream"), None)
+        bytes_entry = _entry_for_mode(entries, "bytes")
+        stream_entry = _entry_for_mode(entries, "stream")
 
         bm_val = _get_val(bytes_entry, "avg_time_total_ns")
         bmed_val = _get_val(bytes_entry, "total_median_ns")
@@ -929,8 +956,8 @@ def _total_time_pivot_table_md(stats: Dict) -> str:
                 break
         display_name = f"{ser}:{version}" if version else ser
 
-        bytes_entry = next((e for e in entries if str(e.get("mode")).lower() == "bytes"), None)
-        stream_entry = next((e for e in entries if str(e.get("mode")).lower() == "stream"), None)
+        bytes_entry = _entry_for_mode(entries, "bytes")
+        stream_entry = _entry_for_mode(entries, "stream")
 
         bm_val = _get_val(bytes_entry, "avg_time_total_ns")
         bmed_val = _get_val(bytes_entry, "total_median_ns")

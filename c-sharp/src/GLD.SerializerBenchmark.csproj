@@ -16,12 +16,10 @@
     (NuGet "N.*" = latest N.x at restore). That tracks non-breaking minor/patch
     updates automatically — same intent as Python ">=X,<X+1" ranges.
     Keep co-versioned pairs aligned (Bond, FlatSharp, FluentSerializer, MemoryPack, FsPickler).
-    Legacy packages.config is unused by this SDK-style project (net8.0).
   -->
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />
     <PackageReference Include="protobuf-net" Version="2.*" />
-    <PackageReference Include="MessagePack" Version="2.*" />
     <PackageReference Include="Jil" Version="2.*" />
     <PackageReference Include="ServiceStack.Text" Version="6.*" />
     <PackageReference Include="Bond.Core.CSharp" Version="9.*" />
@@ -34,7 +32,6 @@
     <PackageReference Include="System.ServiceModel.Primitives" Version="6.*" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.*" />
-    <PackageReference Include="Apex.Serialization" Version="1.*" />
     <PackageReference Include="Ceras" Version="4.*" />
     <PackageReference Include="CsvHelper" Version="33.*" />
     <PackageReference Include="ExtendedXmlSerializer" Version="3.*" />
@@ -44,8 +41,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FluentSerializer.Core" Version="3.*" />
-    <PackageReference Include="FluentSerializer.Json" Version="3.*" />
     <PackageReference Include="Google.Protobuf" Version="3.*" />
     <PackageReference Include="GroBuf" Version="1.*" />
     <!-- 0.x: float only within the current minor (0.12.*) -->
@@ -64,11 +59,5 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Migrant" Version="0.13.*" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="logs\csharp\benchmark-log.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>

@@ -7,7 +7,6 @@ using System.Text.Json;
 
 namespace GLD.SerializerBenchmark.TestData.V2
 {
-    /// <summary>One expanded cell from resolve_run_config.py.</summary>
     public sealed class RunCellDescription : ITestDataDescription
     {
         private readonly object _data;
@@ -95,97 +94,11 @@ namespace GLD.SerializerBenchmark.TestData.V2
                 var n = cell.GetProperty("data_type_instance_count").GetInt32();
                 if (n < 1) n = 1;
                 var hash = cell.TryGetProperty("type_config_hash", out var h) ? h.GetString() ?? "" : "";
-                var (data, dataType, secondary) = BuildPayload(typeId, n, seed);
+                var typeConfig = cell.TryGetProperty("type_config", out var tc) ? tc : default;
+                var (data, dataType, secondary) = Generator.BuildPayload(typeId, typeConfig, n, seed);
                 cells.Add(new RunCellDescription(typeId, n, hash, data, dataType, secondary));
             }
             return cells;
-        }
-
-        /// <summary>Typed single instance or List&lt;T&gt; batch for serializers.</summary>
-        public static (object data, Type dataType, List<Type> secondary) BuildPayload(
-            string typeId, int n, int seed)
-        {
-            switch (typeId)
-            {
-                case "message":
-                case "event":
-                {
-                    var list = new List<SimpleObject>(n);
-                    for (int i = 0; i < n; i++)
-                        list.Add(MakeSimple(typeId, seed, i));
-                    if (n == 1) return (list[0], typeof(SimpleObject), new List<Type>());
-                    return (list, typeof(List<SimpleObject>), new List<Type>());
-                }
-                case "document":
-                {
-                    var list = new List<EDI835>(n);
-                    for (int i = 0; i < n; i++)
-                        list.Add(MakeDocument(seed, i));
-                    var sec = new List<Type> { typeof(Claim), typeof(ServiceLine) };
-                    if (n == 1) return (list[0], typeof(EDI835), sec);
-                    return (list, typeof(List<EDI835>), sec);
-                }
-                case "telemetry":
-                {
-                    var list = new List<TelemetryData>(n);
-                    int meas = Randomizer.Settings.CollectionOptions.TelemetryMeasurementsCount;
-                    for (int i = 0; i < n; i++)
-                        list.Add(MakeTelemetry(seed, i, meas));
-                    if (n == 1) return (list[0], typeof(TelemetryData), new List<Type>());
-                    return (list, typeof(List<TelemetryData>), new List<Type>());
-                }
-                case "strings":
-                {
-                    var list = new List<StringArrayObject>(n);
-                    for (int i = 0; i < n; i++)
-                        list.Add(StringArrayObject.Generate(32));
-                    if (n == 1) return (list[0], typeof(StringArrayObject), new List<Type>());
-                    return (list, typeof(List<StringArrayObject>), new List<Type>());
-                }
-                default:
-                    throw new ArgumentException($"unknown type_id: {typeId}");
-            }
-        }
-
-        static SimpleObject MakeSimple(string typeId, int seed, int idx)
-        {
-            var r = new Random(unchecked(seed * 397 ^ idx * 7919 ^ typeId.GetHashCode()));
-            return new SimpleObject
-            {
-                Id = r.Next(0, 1_000_000),
-                Name = (typeId == "event" ? "evt-" : "msg-") + r.Next(1000, 9999),
-                Timestamp = DateTime.UtcNow.AddSeconds(-r.Next(0, 86400)),
-                IsActive = r.Next(0, 2) == 1,
-            };
-        }
-
-        static EDI835 MakeDocument(int seed, int idx)
-        {
-            // Deterministic-ish: reseeding Randomizer is global; use EDI835.Generate then tweak.
-            var doc = EDI835.Generate();
-            doc.TransactionControlNumber = $"TRN-{seed:x}-{idx}";
-            doc.TotalActualAmount = 1000 + (seed % 100) + idx;
-            return doc;
-        }
-
-        static TelemetryData MakeTelemetry(int seed, int idx, int measCount)
-        {
-            var r = new Random(unchecked(seed * 911 ^ idx * 1301));
-            var t = new TelemetryData
-            {
-                Id = "tel-" + r.Next(100000, 999999),
-                DataSource = "src-" + r.Next(1000, 9999),
-                TimeStamp = DateTime.UtcNow.AddMilliseconds(-r.Next(0, 86400000)),
-                Param1 = r.Next(int.MinValue / 4, int.MaxValue / 4),
-                Param2 = (uint)r.Next(0, int.MaxValue / 2),
-                Measurements = new double[measCount],
-                AssociatedProblemID = 1000 + idx,
-                AssociatedLogID = 2000 + idx,
-                WasProcessed = (idx % 2) == 0,
-            };
-            for (int i = 0; i < measCount; i++)
-                t.Measurements[i] = r.NextDouble() * 100.0;
-            return t;
         }
 
         public static string FindRepoRoot()
@@ -199,7 +112,6 @@ namespace GLD.SerializerBenchmark.TestData.V2
                      {
                          Directory.GetCurrentDirectory(),
                          AppContext.BaseDirectory,
-                         // Common when binary is under c-sharp/src/bin/.../net8.0/
                          Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")),
                          Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..")),
                          Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..")),

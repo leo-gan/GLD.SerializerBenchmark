@@ -10,7 +10,7 @@
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview SoT): C# **37** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **12**.
+Registered counts (Overview SoT): C# **36** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **12**.
 
 ---
 
@@ -54,7 +54,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 - **Prefer when:** public APIs, human-edited config, multi-vendor clients without an IDL.  
 - **Trade-offs:** readable; larger payloads; performance varies sharply by implementation.  
 - **Examples in suite:**  
-  - **C#:** `Json.Net`, `Json.Net (Helper)`, `SpanJson`, `Utf8Json`, `Jil`, `NetJSON`, `ServiceStack Json`, …  
+  - **C#:** `Json.Net`, `Json.Net (Helper)`, `System.Text.Json`, `SpanJson`, `Utf8Json`, `Jil`, `NetJSON`, `ServiceStack Json`, …  
   - **Python:** `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs`  
   - **Rust:** `serde_json`, `simd-json`, `sonic-rs`  
   - **C:** `cJSON`, `yyjson`, `jansson`, `parson`, `json-c`  

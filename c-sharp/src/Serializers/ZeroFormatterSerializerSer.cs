@@ -2,42 +2,35 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using GLD.SerializerBenchmark.TestData;
+using GLD.SerializerBenchmark.TestData.V2;
 using ZeroFormatter;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
     /// <summary>
-    /// ZeroFormatter on modern .NET cannot emit dynamic formatters for
-    /// <c>[ZeroFormattable]</c> classes (BadImageFormatException). Built-in
-    /// formatters still work: primitives, arrays, lists, and <see cref="KeyTuple"/>.
-    ///
-    /// V2 suite fixtures map to KeyTuple / List&lt;KeyTuple&gt; shapes in
-    /// <see cref="PrepareData"/> (untimed); timed path is pure Serialize/Deserialize.
+    /// ZeroFormatter cannot emit dynamic formatters on net8. Timed path uses KeyTuple
+    /// built from V2 domain types in PrepareData (codec preparation, not legacy mapping).
     /// </summary>
     internal class ZeroFormatterSerializerSer : SerDeser
     {
-        private object _native; // KeyTuple / list / int prepared form
+        private object _native;
 
         public override string Name => "ZeroFormatter";
-
         public override bool Supports(string testDataName) => true;
 
-        public override void PrepareData(object data)
-        {
-            _native = ToNative(data);
-        }
+        public override void PrepareData(object data) => _native = ToWire(data);
+
+        public override object ToDomain(object decoded) => FromWire(decoded);
 
         public override string Serialize(object serializable) =>
-            Convert.ToBase64String(SerializeBytes(Native(serializable)));
+            Convert.ToBase64String(SerializeBytes(_native ?? ToWire(serializable)));
 
-        // Timed path returns KeyTuple / list native shapes; ToDomain is untimed.
         public override object Deserialize(string serialized) =>
             DeserializeBytes(Convert.FromBase64String(serialized));
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            var bytes = SerializeBytes(Native(serializable));
+            var bytes = SerializeBytes(_native ?? ToWire(serializable));
             outputStream.Write(bytes, 0, bytes.Length);
         }
 
@@ -49,232 +42,131 @@ namespace GLD.SerializerBenchmark.Serializers
             return DeserializeBytes(ms.ToArray());
         }
 
-        public override object ToDomain(object decoded) => FromNative(decoded);
-
-        private object Native(object serializable) =>
-            _native ?? ToNative(serializable);
-
-        private byte[] SerializeBytes(object native)
+        byte[] SerializeBytes(object native) => native switch
         {
-            if (native == null)
-                throw new ArgumentNullException(nameof(native));
+            KeyTuple<KeyTuple<bool, int, long, double>, KeyTuple<string, bool, int, string>> m => ZeroFormatterSerializer.Serialize(m),
+            KeyTuple<string, int, KeyTuple<string, int>, List<KeyTuple<string, int, long>>> d => ZeroFormatterSerializer.Serialize(d),
+            KeyTuple<string, long, List<string>, List<double>> t => ZeroFormatterSerializer.Serialize(t),
+            List<string> s => ZeroFormatterSerializer.Serialize(s),
+            KeyTuple<string, string, long, string, List<KeyTuple<string, string>>> e => ZeroFormatterSerializer.Serialize(e),
+            List<KeyTuple<KeyTuple<bool, int, long, double>, KeyTuple<string, bool, int, string>>> mb => ZeroFormatterSerializer.Serialize(mb),
+            List<KeyTuple<string, int, KeyTuple<string, int>, List<KeyTuple<string, int, long>>>> db => ZeroFormatterSerializer.Serialize(db),
+            List<KeyTuple<string, long, List<string>, List<double>>> tb => ZeroFormatterSerializer.Serialize(tb),
+            List<List<string>> sb => ZeroFormatterSerializer.Serialize(sb),
+            List<KeyTuple<string, string, long, string, List<KeyTuple<string, string>>>> eb => ZeroFormatterSerializer.Serialize(eb),
+            _ => throw new NotSupportedException($"ZF wire {native?.GetType()}")
+        };
 
-            // Dispatch by prepared native shape (KeyTuple / List / int).
-            switch (native)
-            {
-                case KeyTuple<int, string, DateTime, bool> simple:
-                    return ZeroFormatterSerializer.Serialize(simple);
-                case List<string> strings:
-                    return ZeroFormatterSerializer.Serialize(strings);
-                // Telemetry nested: KeyTuple max arity is 8.
-                case KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>> telemetry:
-                    return ZeroFormatterSerializer.Serialize(telemetry);
-                case KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>> edi:
-                    return ZeroFormatterSerializer.Serialize(edi);
-                case List<KeyTuple<int, string, DateTime, bool>> simpleBatch:
-                    return ZeroFormatterSerializer.Serialize(simpleBatch);
-                case List<List<string>> stringsBatch:
-                    return ZeroFormatterSerializer.Serialize(stringsBatch);
-                case List<KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>> telemBatch:
-                    return ZeroFormatterSerializer.Serialize(telemBatch);
-                case List<KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>> ediBatch:
-                    return ZeroFormatterSerializer.Serialize(ediBatch);
-                default:
-                    throw new NotSupportedException(
-                        $"ZeroFormatter native shape not registered: {native.GetType().FullName}");
-            }
-        }
-
-        private object DeserializeBytes(byte[] bytes)
+        object DeserializeBytes(byte[] bytes)
         {
-            if (_primaryType == typeof(SimpleObject))
-                return ZeroFormatterSerializer.Deserialize<KeyTuple<int, string, DateTime, bool>>(bytes);
-            if (_primaryType == typeof(List<SimpleObject>))
-                return ZeroFormatterSerializer.Deserialize<List<KeyTuple<int, string, DateTime, bool>>>(bytes);
-
-            if (_primaryType == typeof(StringArrayObject))
+            if (_primaryType == typeof(Message))
+                return ZeroFormatterSerializer.Deserialize<KeyTuple<KeyTuple<bool, int, long, double>, KeyTuple<string, bool, int, string>>>(bytes);
+            if (_primaryType == typeof(BatchMessage))
+                return ZeroFormatterSerializer.Deserialize<List<KeyTuple<KeyTuple<bool, int, long, double>, KeyTuple<string, bool, int, string>>>>(bytes);
+            if (_primaryType == typeof(Document))
+                return ZeroFormatterSerializer.Deserialize<KeyTuple<string, int, KeyTuple<string, int>, List<KeyTuple<string, int, long>>>>(bytes);
+            if (_primaryType == typeof(BatchDocument))
+                return ZeroFormatterSerializer.Deserialize<List<KeyTuple<string, int, KeyTuple<string, int>, List<KeyTuple<string, int, long>>>>>(bytes);
+            if (_primaryType == typeof(Telemetry))
+                return ZeroFormatterSerializer.Deserialize<KeyTuple<string, long, List<string>, List<double>>>(bytes);
+            if (_primaryType == typeof(BatchTelemetry))
+                return ZeroFormatterSerializer.Deserialize<List<KeyTuple<string, long, List<string>, List<double>>>>(bytes);
+            if (_primaryType == typeof(Strings))
                 return ZeroFormatterSerializer.Deserialize<List<string>>(bytes);
-            if (_primaryType == typeof(List<StringArrayObject>))
+            if (_primaryType == typeof(BatchStrings))
                 return ZeroFormatterSerializer.Deserialize<List<List<string>>>(bytes);
-
-            if (_primaryType == typeof(TelemetryData))
-                return ZeroFormatterSerializer
-                    .Deserialize<KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>>(bytes);
-            if (_primaryType == typeof(List<TelemetryData>))
-                return ZeroFormatterSerializer
-                    .Deserialize<List<KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>>>(bytes);
-
-            if (_primaryType == typeof(EDI835))
-                return ZeroFormatterSerializer
-                    .Deserialize<KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>>(bytes);
-            if (_primaryType == typeof(List<EDI835>))
-                return ZeroFormatterSerializer
-                    .Deserialize<List<KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>>>(bytes);
-
-            throw new NotSupportedException(
-                $"ZeroFormatter does not support primary type {_primaryType?.FullName ?? "(null)"}.");
+            if (_primaryType == typeof(Event))
+                return ZeroFormatterSerializer.Deserialize<KeyTuple<string, string, long, string, List<KeyTuple<string, string>>>>(bytes);
+            if (_primaryType == typeof(BatchEvent))
+                return ZeroFormatterSerializer.Deserialize<List<KeyTuple<string, string, long, string, List<KeyTuple<string, string>>>>>(bytes);
+            throw new NotSupportedException($"ZF primary {_primaryType}");
         }
 
-        private object ToNative(object data)
+        static object ToWire(object data) => data switch
         {
-            if (data is List<SimpleObject> simpleList)
-                return simpleList.Select(o => KeyTuple.Create(o.Id, o.Name ?? "", o.Timestamp, o.IsActive)).ToList();
-            if (data is List<StringArrayObject> saList)
-                return saList.Select(sa => sa.Items != null ? sa.Items.ToList() : new List<string>()).ToList();
-            if (data is List<TelemetryData> tList)
-                return tList
-                    .Select(t => (KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>)ToNative(t))
-                    .ToList();
-            if (data is List<EDI835> eList)
-                return eList
-                    .Select(e => (KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>)ToNative(e))
-                    .ToList();
+            Message m => KeyTuple.Create(
+                KeyTuple.Create(m.FBool, m.FInt32, m.FInt64, m.FFloat64),
+                KeyTuple.Create(m.FString ?? "", m.FBool2, m.FInt322, m.FString2 ?? "")),
+            BatchMessage b => b.Items.Select(x => (KeyTuple<KeyTuple<bool, int, long, double>, KeyTuple<string, bool, int, string>>)ToWire(x)).ToList(),
+            Document d => KeyTuple.Create(
+                d.Id ?? "", d.Status,
+                KeyTuple.Create(d.Meta?.Region ?? "", d.Meta?.Version ?? 0),
+                (d.Items ?? new List<DocumentItem>()).Select(i => KeyTuple.Create(i.Sku ?? "", i.Qty, i.PriceMinor)).ToList()),
+            BatchDocument b => b.Items.Select(x => (KeyTuple<string, int, KeyTuple<string, int>, List<KeyTuple<string, int, long>>>)ToWire(x)).ToList(),
+            Telemetry t => KeyTuple.Create(t.Source ?? "", t.Ts, t.Tags?.ToList() ?? new List<string>(), t.Values?.ToList() ?? new List<double>()),
+            BatchTelemetry b => b.Items.Select(x => (KeyTuple<string, long, List<string>, List<double>>)ToWire(x)).ToList(),
+            Strings s => s.Items?.ToList() ?? new List<string>(),
+            BatchStrings b => b.Items.Select(x => x.Items?.ToList() ?? new List<string>()).ToList(),
+            Event e => KeyTuple.Create(e.EventId ?? "", e.EventType ?? "", e.OccurredAt, e.Producer ?? "",
+                (e.Attrs ?? new List<EventAttr>()).Select(a => KeyTuple.Create(a.Key ?? "", a.Value ?? "")).ToList()),
+            BatchEvent b => b.Items.Select(x => (KeyTuple<string, string, long, string, List<KeyTuple<string, string>>>)ToWire(x)).ToList(),
+            _ => throw new NotSupportedException($"ZF ToWire {data?.GetType()}")
+        };
 
-            if (data is SimpleObject o)
-                return KeyTuple.Create(o.Id, o.Name ?? "", o.Timestamp, o.IsActive);
-
-            if (data is StringArrayObject sa)
-                return sa.Items != null ? sa.Items.ToList() : new List<string>();
-
-            if (data is TelemetryData t)
-            {
-                var meas = t.Measurements != null
-                    ? t.Measurements.ToList()
-                    : new List<double>();
-                // Nest because KeyTuple.Create supports at most 8 type args.
-                return KeyTuple.Create(
-                    KeyTuple.Create(
-                        t.Id ?? "",
-                        t.DataSource ?? "",
-                        t.TimeStamp,
-                        t.Param1,
-                        t.Param2),
-                    KeyTuple.Create(
-                        meas,
-                        t.AssociatedProblemID,
-                        t.AssociatedLogID,
-                        t.WasProcessed));
-            }
-
-            if (data is EDI835 e)
-            {
-                var claims = (e.Claims ?? new List<Claim>())
-                    .Select(c => KeyTuple.Create(
-                        c.ClaimId ?? "",
-                        c.PatientName ?? "",
-                        c.TotalCharge,
-                        c.PaymentAmount,
-                        (c.Lines ?? new List<ServiceLine>())
-                            .Select(l => KeyTuple.Create(
-                                l.ServiceCode ?? "",
-                                l.ChargeAmount,
-                                l.AdjudicatedAmount))
-                            .ToList()))
-                    .ToList();
-                return KeyTuple.Create(
-                    e.PayerName ?? "",
-                    e.PayeeName ?? "",
-                    e.PaymentDate,
-                    e.TotalActualAmount,
-                    e.TransactionControlNumber ?? "",
-                    claims);
-            }
-
-            throw new NotSupportedException(
-                $"ZeroFormatter ToNative unsupported: {data?.GetType().FullName ?? "null"}");
-        }
-
-        private object FromNative(object native)
+        object FromWire(object native)
         {
-            if (_primaryType == typeof(List<SimpleObject>) && native is List<KeyTuple<int, string, DateTime, bool>> simpleBatch)
+            if (_primaryType == typeof(Message))
             {
-                return simpleBatch.Select(t => new SimpleObject
-                {
-                    Id = t.Item1, Name = t.Item2, Timestamp = t.Item3, IsActive = t.Item4
-                }).ToList();
+                var t = (KeyTuple<KeyTuple<bool, int, long, double>, KeyTuple<string, bool, int, string>>)native;
+                var a = t.Item1; var b = t.Item2;
+                return new Message { FBool = a.Item1, FInt32 = a.Item2, FInt64 = a.Item3, FFloat64 = a.Item4, FString = b.Item1, FBool2 = b.Item2, FInt322 = b.Item3, FString2 = b.Item4 };
             }
-            if (_primaryType == typeof(SimpleObject))
+            if (_primaryType == typeof(BatchMessage) && native is List<KeyTuple<KeyTuple<bool, int, long, double>, KeyTuple<string, bool, int, string>>> mb)
             {
-                var t = (KeyTuple<int, string, DateTime, bool>)native;
-                return new SimpleObject
+                _primaryType = typeof(Message);
+                var list = mb.Select(x => (Message)FromWire(x)).ToList();
+                _primaryType = typeof(BatchMessage);
+                return new BatchMessage { Items = list };
+            }
+            if (_primaryType == typeof(Document))
+            {
+                var t = (KeyTuple<string, int, KeyTuple<string, int>, List<KeyTuple<string, int, long>>>)native;
+                return new Document
                 {
-                    Id = t.Item1,
-                    Name = t.Item2,
-                    Timestamp = t.Item3,
-                    IsActive = t.Item4
+                    Id = t.Item1, Status = t.Item2,
+                    Meta = new DocumentMeta { Region = t.Item3.Item1, Version = t.Item3.Item2 },
+                    Items = t.Item4.Select(i => new DocumentItem { Sku = i.Item1, Qty = i.Item2, PriceMinor = i.Item3 }).ToList()
                 };
             }
-
-            if (_primaryType == typeof(List<StringArrayObject>) && native is List<List<string>> saBatch)
-                return saBatch.Select(items => new StringArrayObject { Items = items }).ToList();
-            if (_primaryType == typeof(StringArrayObject))
-                return new StringArrayObject { Items = (List<string>)native };
-
-            if (_primaryType == typeof(List<TelemetryData>) &&
-                native is List<KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>> tBatch)
+            if (_primaryType == typeof(BatchDocument) && native is List<KeyTuple<string, int, KeyTuple<string, int>, List<KeyTuple<string, int, long>>>> db)
             {
-                var prev = _primaryType;
-                _primaryType = typeof(TelemetryData);
-                var list = tBatch.Select(x => (TelemetryData)FromNative(x)).ToList();
-                _primaryType = prev;
-                return list;
+                _primaryType = typeof(Document);
+                var list = db.Select(x => (Document)FromWire(x)).ToList();
+                _primaryType = typeof(BatchDocument);
+                return new BatchDocument { Items = list };
             }
-            if (_primaryType == typeof(TelemetryData))
+            if (_primaryType == typeof(Telemetry))
             {
-                var t = (KeyTuple<KeyTuple<string, string, DateTime, int, uint>, KeyTuple<List<double>, long, long, bool>>)native;
-                var a = t.Item1;
-                var b = t.Item2;
-                return new TelemetryData
+                var t = (KeyTuple<string, long, List<string>, List<double>>)native;
+                return new Telemetry { Source = t.Item1, Ts = t.Item2, Tags = t.Item3, Values = t.Item4 };
+            }
+            if (_primaryType == typeof(BatchTelemetry) && native is List<KeyTuple<string, long, List<string>, List<double>>> tb)
+            {
+                _primaryType = typeof(Telemetry);
+                var list = tb.Select(x => (Telemetry)FromWire(x)).ToList();
+                _primaryType = typeof(BatchTelemetry);
+                return new BatchTelemetry { Items = list };
+            }
+            if (_primaryType == typeof(Strings))
+                return new Strings { Items = (List<string>)native };
+            if (_primaryType == typeof(BatchStrings) && native is List<List<string>> sb)
+                return new BatchStrings { Items = sb.Select(x => new Strings { Items = x }).ToList() };
+            if (_primaryType == typeof(Event))
+            {
+                var t = (KeyTuple<string, string, long, string, List<KeyTuple<string, string>>>)native;
+                return new Event
                 {
-                    Id = a.Item1,
-                    DataSource = a.Item2,
-                    TimeStamp = a.Item3,
-                    Param1 = a.Item4,
-                    Param2 = a.Item5,
-                    Measurements = b.Item1?.ToArray() ?? Array.Empty<double>(),
-                    AssociatedProblemID = b.Item2,
-                    AssociatedLogID = b.Item3,
-                    WasProcessed = b.Item4
+                    EventId = t.Item1, EventType = t.Item2, OccurredAt = t.Item3, Producer = t.Item4,
+                    Attrs = t.Item5.Select(a => new EventAttr { Key = a.Item1, Value = a.Item2 }).ToList()
                 };
             }
-
-            if (_primaryType == typeof(List<EDI835>) &&
-                native is List<KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>> eBatch)
+            if (_primaryType == typeof(BatchEvent) && native is List<KeyTuple<string, string, long, string, List<KeyTuple<string, string>>>> eb)
             {
-                var prev = _primaryType;
-                _primaryType = typeof(EDI835);
-                var list = eBatch.Select(x => (EDI835)FromNative(x)).ToList();
-                _primaryType = prev;
-                return list;
+                _primaryType = typeof(Event);
+                var list = eb.Select(x => (Event)FromWire(x)).ToList();
+                _primaryType = typeof(BatchEvent);
+                return new BatchEvent { Items = list };
             }
-            if (_primaryType == typeof(EDI835))
-            {
-                var t = (KeyTuple<string, string, DateTime, double, string, List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>>)native;
-                return new EDI835
-                {
-                    PayerName = t.Item1,
-                    PayeeName = t.Item2,
-                    PaymentDate = t.Item3,
-                    TotalActualAmount = t.Item4,
-                    TransactionControlNumber = t.Item5,
-                    Claims = (t.Item6 ?? new List<KeyTuple<string, string, double, double, List<KeyTuple<string, double, double>>>>())
-                        .Select(c => new Claim
-                        {
-                            ClaimId = c.Item1,
-                            PatientName = c.Item2,
-                            TotalCharge = c.Item3,
-                            PaymentAmount = c.Item4,
-                            Lines = (c.Item5 ?? new List<KeyTuple<string, double, double>>())
-                                .Select(l => new ServiceLine
-                                {
-                                    ServiceCode = l.Item1,
-                                    ChargeAmount = l.Item2,
-                                    AdjudicatedAmount = l.Item3
-                                }).ToList()
-                        }).ToList()
-                };
-            }
-
             return native;
         }
     }

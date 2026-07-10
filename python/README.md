@@ -1,6 +1,6 @@
 # Python Serializer Benchmark
 
-Dockerized harness evaluating **16 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
+Host harness evaluating **16 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
@@ -55,9 +55,18 @@ Every serializer is tested in **both modes**. Libraries without a native stream 
 
 Serializers differ in type fidelity (JSON date strings, msgpack list vs tuple, schema classes). The comparer treats logically equal values as success while still catching data loss.
 
+## Requirements
+
+- **[uv](https://docs.astral.sh/uv/)** (provisions Python 3.12+). Prepare once:
+  ```bash
+  ../scripts/install-host-requirements.sh python
+  ../scripts/check-host-requirements.sh python
+  ```
+- Optional: analysis package on `PYTHONPATH` for `configs.json` sidecars
+
 ## Running the Benchmarks
 
-### Docker (recommended)
+Modes match [`config/benchmark_config.yaml`](../config/benchmark_config.yaml). Native host run (same pattern as Go/Rust/JS/C — no Docker).
 
 ```bash
 cd python
@@ -72,35 +81,26 @@ cd python
 | **Research** | `./scripts/run-benchmarks.sh research` | 500 repetitions. |
 | **Custom** | `./scripts/run-benchmarks.sh custom 50 "json" "message"` | Custom reps and name filters. |
 
+Direct `uv` invocation (package lives under `src/` — set `PYTHONPATH`):
+
+```bash
+cd python
+uv sync
+export PYTHONPATH=$PWD/src${PYTHONPATH:+:$PYTHONPATH}
+export BENCHMARK_RUN_CONFIG=$PWD/../config/library/default.yaml
+export BENCHMARK_SEED=42
+export LOG_DIR=$PWD/../logs/python
+uv run python -m benchmark.runner 100
+uv run python -m benchmark.runner 10 "json" "message"
+```
+
 Logs under monorepo `logs/python/`:
 
 - `YYYY-MM-DD-HHMMSS.csv` — per-repetition metrics
 - `YYYY-MM-DD-HHMMSS.errors.csv` — only when errors occur
 - `YYYY-MM-DD-HHMMSS.configs.json` — run config / environment sidecar
 
-Override logs root with `LOG_DIR` / `BENCHMARK_LOG_DIR` (results go to `$LOG_DIR/python/`).
-
-### Local (without Docker)
-
-Python 3.12+ and [uv](https://docs.astral.sh/uv/):
-
-```bash
-cd python
-uv sync
-uv run python -m benchmark.runner 100
-```
-
-```
-python -m benchmark.runner <repetitions> [serializerFilter] [dataFilter]
-```
-
-Examples:
-
-```bash
-uv run python -m benchmark.runner 100
-uv run python -m benchmark.runner 10 "json" "message"
-uv run python -m benchmark.runner 1 "msgpack" ""
-```
+Override with `LOG_DIR` (if the path does not end in `python`, results go to `$LOG_DIR/python/`).
 
 ## Extending the Suite
 

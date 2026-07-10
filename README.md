@@ -21,7 +21,7 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 
 ## Supported languages
 
-- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 37 serializers registered
+- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 36 serializers registered
 - [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 16
 - [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 15
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 19
@@ -34,8 +34,15 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 
 ## Quick start
 
+Harnesses run **natively on the host** (no Docker). **Prepare toolchains once**, then run benchmarks (project deps like `uv sync` / `npm install` still happen inside each runner).
+
 ```bash
-# Smoke one language
+# 1) Host toolchains (separate step — compilers/runtimes only)
+./scripts/check-host-requirements.sh          # verify
+./scripts/install-host-requirements.sh        # user-local install (no sudo) where possible
+./scripts/install-host-requirements.sh csharp # one language
+
+# 2) Smoke one language
 ./<lang>/scripts/run-benchmarks.sh smoke
 
 # Orchestrator: all languages or one language

@@ -297,10 +297,9 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 37 serializers registered (Program.cs); ~32 produce V2 log rows.
-    # Supports=false for all V2 types: Apex, BinaryPack, ExtendedXml, FluentSerializer, Google.Protobuf.
-    # Partial V2: CsvHelper/GroBuf/Migrant (message|event); FlatSharp/MemoryPack (+strings).
-    # See docs/c-sharp/index.md
+    # 36 serializers registered (Program.cs); all run on all V2 fixtures.
+    # Dropped: Apex.Serialization (net8 FieldInfoModifier crash), FluentSerializer (unsuitable graphs).
+    # Added: System.Text.Json. See docs/c-sharp/index.md for inventory + PrepareData projections.
 
   python:
     display_name: Python

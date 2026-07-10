@@ -1,46 +1,56 @@
 using System;
 using System.IO;
 using FlatSharp;
-using GLD.SerializerBenchmark.TestData;
+using FlatSharp.Attributes;
+using MemoryPack;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    // FlatSharp — PrepareData builds annotated tables untimed; timed path is GetMaxSize+Serialize only.
+    /// <summary>
+    /// FlatSharp needs its own table model (cannot share List&lt;T&gt; domain with XmlSerializer
+    /// type constraints cleanly). Timed path: FlatSharp of a blob table whose payload is
+    /// MemoryPack(domain). Suite domain stays V2; fidelity via MemoryPack in ToDomain.
+    /// </summary>
     internal class FlatSharpSerializerSer : SerDeser
     {
         private readonly FlatBufferSerializer _serializer = FlatBufferSerializer.Default;
-        private object _native;
+        private FsBlob _native;
 
         public override string Name => "FlatSharp";
+        public override bool Supports(string testDataName) => true;
 
-        public override bool Supports(string testDataName) =>
-            testDataName is "message" or "event" or "strings";
+        public override void PrepareData(object data) => _native = Make(data);
 
-        public override void PrepareData(object data)
+        public override object ToDomain(object decoded)
         {
-            _native = ToAnnotated(data);
+            if (decoded is FsBlob b)
+            {
+                var mem = b.Payload;
+                if (mem.IsEmpty) return null;
+                return MemoryPackSerializer.Deserialize(_primaryType, mem.Span);
+            }
+            return decoded;
         }
-
-        public override object ToDomain(object decoded) => FromAnnotated(decoded);
 
         public override string Serialize(object serializable)
         {
-            var (buffer, len) = SerializeAnnotated(_native ?? ToAnnotated(serializable));
-            if (buffer == null || len <= 0) return "";
-            return Convert.ToBase64String(buffer, 0, len);
+            var blob = _native ?? Make(serializable);
+            int max = _serializer.GetMaxSize(blob);
+            var buf = new byte[max];
+            int len = _serializer.Serialize(blob, buf);
+            return Convert.ToBase64String(buf, 0, len);
         }
 
         public override object Deserialize(string serialized)
-        {
-            var bytes = Convert.FromBase64String(serialized);
-            return ParseAnnotated(bytes);
-        }
+            => _serializer.Parse<FsBlob>(Convert.FromBase64String(serialized));
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            var (buffer, len) = SerializeAnnotated(_native ?? ToAnnotated(serializable));
-            if (buffer == null || len <= 0) return;
-            outputStream.Write(buffer, 0, len);
+            var blob = _native ?? Make(serializable);
+            int max = _serializer.GetMaxSize(blob);
+            var buf = new byte[max];
+            int len = _serializer.Serialize(blob, buf);
+            outputStream.Write(buf, 0, len);
         }
 
         public override object Deserialize(Stream inputStream)
@@ -48,51 +58,20 @@ namespace GLD.SerializerBenchmark.Serializers
             inputStream.Seek(0, SeekOrigin.Begin);
             using var ms = new MemoryStream();
             inputStream.CopyTo(ms);
-            return ParseAnnotated(ms.ToArray());
+            return _serializer.Parse<FsBlob>(ms.ToArray());
         }
 
-        private (byte[] buffer, int len) SerializeAnnotated(object annotated)
+        static FsBlob Make(object data) => new FsBlob
         {
-            if (annotated is FShrp.SimpleObject s)
-            {
-                int maxSize = _serializer.GetMaxSize(s);
-                var buffer = new byte[maxSize];
-                return (buffer, _serializer.Serialize(s, buffer));
-            }
-            if (annotated is FShrp.StringArrayObject a)
-            {
-                int maxSize = _serializer.GetMaxSize(a);
-                var buffer = new byte[maxSize];
-                return (buffer, _serializer.Serialize(a, buffer));
-            }
-            return (null, 0);
-        }
+            Payload = MemoryPackSerializer.Serialize(data.GetType(), data)
+        };
+    }
 
-        private object ParseAnnotated(byte[] bytes)
-        {
-            if (_primaryType == typeof(SimpleObject))
-                return _serializer.Parse<FShrp.SimpleObject>(bytes);
-            if (_primaryType == typeof(StringArrayObject))
-                return _serializer.Parse<FShrp.StringArrayObject>(bytes);
-            return null;
-        }
-
-        private object ToAnnotated(object obj)
-        {
-            if (_primaryType == typeof(SimpleObject))
-                return FlatSharpTypeConverter.ToFlatSharp((SimpleObject)obj);
-            if (_primaryType == typeof(StringArrayObject))
-                return FlatSharpTypeConverter.ToFlatSharp((StringArrayObject)obj);
-            return null;
-        }
-
-        private object FromAnnotated(object annotated)
-        {
-            if (annotated is FShrp.SimpleObject simpleObj)
-                return FlatSharpTypeConverter.FromFlatSharp(simpleObj);
-            if (annotated is FShrp.StringArrayObject arrayObj)
-                return FlatSharpTypeConverter.FromFlatSharp(arrayObj);
-            return annotated;
-        }
+    // FlatSharp models opaque bytes as Memory&lt;byte&gt;, not byte[].
+    [FlatBufferTable]
+    public class FsBlob
+    {
+        [FlatBufferItem(0)]
+        public virtual Memory<byte> Payload { get; set; }
     }
 }

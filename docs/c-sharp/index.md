@@ -4,32 +4,31 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 ## What this benchmark measures vs the wider ecosystem
 
-This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
+This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
 
-**Not in this suite:** System.Text.Json, MessagePack-CSharp, Wire (ecosystem context only).
+**Not in this suite:** MessagePack-CSharp, Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs).
 
 | Log name | Category | Library / notes |
 |----------|----------|-----------------|
-| Apex.Serialization | Binary | Apex.Serialization |
+| System.Text.Json | JSON | System.Text.Json (net8 built-in) |
 | BinaryPack | Binary | BinaryPack (`T : new()` constraints) |
 | Ceras | Binary | Ceras |
-| CsvHelper | CSV | Flat tabular only |
+| CsvHelper | CSV | Tabular projection of suite types in `PrepareData` |
 | ExtendedXmlSerializer | XML | ExtendedXmlSerializer |
 | fastJson | JSON | FastJson |
-| FlatSharp | Schema / FlatBuffers | FlatSharp (+ generated models for some fixtures) |
-| FluentSerializer | JSON | FluentSerializer (needs profiles) |
+| FlatSharp | Schema / FlatBuffers | FlatSharp (blob table + MemoryPack payload of V2 domain) |
 | FsPickler | Binary | FsPickler binary |
 | FsPicklerJson | JSON | FsPickler JSON |
-| Google.Protobuf | Schema | Official Google.Protobuf (`IMessage` / `.proto`) |
+| Google.Protobuf | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
 | GroBuf | Binary | GroBuf |
 | Hyperion | Binary | Hyperion (Akka.NET lineage) |
 | Jil | JSON | Jil (Sigil) |
 | Json.Net | JSON | Newtonsoft.Json |
 | Json.Net (Helper) | JSON | Newtonsoft.Json helper path |
-| MemoryPack | Binary | MemoryPack (+ generator / models for some fixtures) |
+| MemoryPack | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
 | Migrant | Binary | Migrant |
 | MS Binary | Binary (native) | Legacy `BinaryFormatter` path |
-| MS Bond Compact | Schema / Bond | Bond Compact Binary; types under `src/Bond/` |
+| MS Bond Compact | Schema / Bond | Bond Compact Binary; V2 domain marked `[Schema]` |
 | MS Bond Fast | Schema / Bond | Bond Fast Binary |
 | MS Bond Json | JSON / Bond | Bond JSON protocol |
 | MS DataContract | XML | `DataContractSerializer` |
@@ -50,10 +49,10 @@ This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 
 ### Caveats
 
-- Suite fixtures: `message`, `document`, `telemetry`, `strings`, `event` (payload POCOs under `TestData/`).
-- Still skipped (not capable / suite constraints): CsvHelper (tabular only on message/event), Google.Protobuf (no generated IMessage), FluentSerializer (profiles), BinaryPack, Apex, ExtendedXml, Migrant (net8 IL except message/event), GroBuf (message/event only).
-- MemoryPack / FlatSharp map supported fixtures via annotated models in `PrepareData` (timed path is codec-only; `ToDomain` untimed).
-- ZeroFormatter maps **all** suite fixtures to `KeyTuple` graphs (max arity 8; Telemetry nested).
+- **Domain is Data Model v2 only**: types `Message`, `Document`, `Telemetry`, `Strings`, `Event` (+ batch wrappers) in [`c-sharp/src/TestData/V2/Models.cs`](../../c-sharp/src/TestData/V2/Models.cs). There are no legacy suite types (`SimpleObject`, `EDI835`, etc.) and no rename/proxy layer.
+- All registered serializers run on all suite fixtures. Most serialize domain types **directly** (attributes on the V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …).
+- A few codecs still need untimed `PrepareData` / `ToDomain` for **library wire format** (not old→new type mapping): Google.Protobuf (`IMessage` from `.proto`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (blob + MemoryPack payload), CsvHelper / BinaryPack / ExtendedXml / Migrant (string envelopes where the library cannot hold nested graphs on net8). See serializer source comments.
+- **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.
 - SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
 - Jil reuses a single static `Options` instance.
 - Harness no longer prints per-repetition DEBUG lines (measurement noise).

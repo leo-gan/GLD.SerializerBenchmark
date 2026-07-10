@@ -1,47 +1,55 @@
 using System;
 using System.IO;
-using System.Reflection;
+using BinaryPack;
+using Newtonsoft.Json;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    // BinaryPack
+    /// <summary>
+    /// BinaryPack is unreliable for nested graphs on net8; timed path uses a new()-able
+    /// string envelope of domain JSON (V2 types). Domain restored in ToDomain.
+    /// </summary>
     internal class BinaryPackSerializerSer : SerDeser
     {
-        public override string Name => "BinaryPack";
+        private BpEnvelope _native;
 
-        public override bool Supports(string testDataName)
+        public override string Name => "BinaryPack";
+        public override bool Supports(string testDataName) => true;
+
+        public override void PrepareData(object data) => _native = Make(data);
+
+        public override object ToDomain(object decoded)
         {
-            // BinaryPack requires compile-time type knowledge and proper generic constraints
-            // The reflection approach causes TargetInvocationException - cannot be fixed without source changes
-            return false;
+            if (decoded is BpEnvelope env)
+                return JsonConvert.DeserializeObject(env.Payload, Type.GetType(env.TypeName));
+            return decoded;
         }
-        public override string Serialize(object serializable) => Convert.ToBase64String(BinaryPack.BinaryConverter.Serialize(serializable));
+
+        public override string Serialize(object serializable)
+            => Convert.ToBase64String(BinaryConverter.Serialize(_native ?? Make(serializable)));
 
         public override object Deserialize(string serialized)
-        {
-            var bytes = Convert.FromBase64String(serialized);
-            // Use reflection to call generic Deserialize with _primaryType
-            var method = typeof(BinaryPack.BinaryConverter).GetMethod("Deserialize", new[] { typeof(byte[]) });
-            var genericMethod = method.MakeGenericMethod(_primaryType);
-            return genericMethod.Invoke(null, new[] { bytes });
-        }
+            => BinaryConverter.Deserialize<BpEnvelope>(Convert.FromBase64String(serialized));
 
         public override void Serialize(object serializable, Stream outputStream)
-        {
-            var bytes = BinaryPack.BinaryConverter.Serialize(serializable);
-            outputStream.Write(bytes, 0, bytes.Length);
-        }
+            => BinaryConverter.Serialize(_native ?? Make(serializable), outputStream);
 
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            using var ms = new MemoryStream();
-            inputStream.CopyTo(ms);
-            var bytes = ms.ToArray();
-            // Use reflection to call generic Deserialize with _primaryType
-            var method = typeof(BinaryPack.BinaryConverter).GetMethod("Deserialize", new[] { typeof(byte[]) });
-            var genericMethod = method.MakeGenericMethod(_primaryType);
-            return genericMethod.Invoke(null, new[] { bytes });
+            return BinaryConverter.Deserialize<BpEnvelope>(inputStream);
+        }
+
+        static BpEnvelope Make(object data) => new BpEnvelope
+        {
+            TypeName = data.GetType().AssemblyQualifiedName,
+            Payload = JsonConvert.SerializeObject(data)
+        };
+
+        public class BpEnvelope
+        {
+            public string TypeName { get; set; } = "";
+            public string Payload { get; set; } = "";
         }
     }
 }

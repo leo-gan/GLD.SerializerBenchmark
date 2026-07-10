@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-Extensible suite evaluating **37 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
+Extensible suite evaluating **36 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
 
 Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
@@ -8,59 +8,69 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **37 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: System.Text.Json, MessagePack-CSharp, Wire.
-- **Suite fixtures**: `message`, `document`, `telemetry`, `strings`, `event` (POCO payload shapes under `TestData/`).
+- **36 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
+- **Suite fixtures**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs` (no legacy proxies).
 - **Dual mode**: string (base64 buffer) and Stream for every capable serializer.
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
-- **Supports(type_id)** skips codecs that cannot handle a fixture (no silent crash).
+- All registered codecs run on all suite fixtures; some libraries use untimed `PrepareData` for **library wire forms** only (Protobuf `IMessage`, ZeroFormatter `KeyTuple`, envelopes) — see [inventory](../docs/c-sharp/index.md).
 
 ---
 
 ## Test data
 
-| Type id | Purpose & payload shape |
-| :--- | :--- |
-| **message** / **event** | Flat mixed POCO (`SimpleObject`). |
-| **document** | Nested claims document (`EDI835`). |
-| **telemetry** | Numeric measurements (`TelemetryData`). |
-| **strings** | String list (`StringArrayObject`). |
+Domain types live under `TestData/V2/` and match `schemas/data_catalog_v2.yaml` / `benchmark_v2.proto`.
+
+| Type id | Domain type | Shape |
+| :--- | :--- | :--- |
+| **message** | `Message` | Flat mixed scalars + strings |
+| **document** | `Document` | Nested meta + item list |
+| **telemetry** | `Telemetry` | Source, timestamp, tags, numeric series |
+| **strings** | `Strings` | String list |
+| **event** | `Event` | Id/type/time/producer + attribute list |
+
+For `N>1`, payloads use batch wrappers (`BatchMessage`, …) so codecs that need a single root object stay happy.
 
 ---
 
-## Tech Stack
+## Requirements
 
-- **Framework**: .NET 8 (`net8.0`)
-- **Build**: Docker / .NET SDK 8.0
-- **Platforms**: Linux (Docker recommended), Windows, macOS
+- **.NET SDK 8.0+** (host toolchain — prepare once):
+  ```bash
+  ../scripts/install-host-requirements.sh csharp
+  ../scripts/check-host-requirements.sh csharp
+  ```
+- Optional: `python3` + analysis package for `configs.json` sidecars
 
 ---
 
-## Getting Started (Docker)
+## Running the benchmarks
 
-Modes match [`config/benchmark_config.yaml`](../config/benchmark_config.yaml).
+Modes match [`config/benchmark_config.yaml`](../config/benchmark_config.yaml). Same layout as other language harnesses (native host run, no Docker).
 
 ```bash
+cd c-sharp
 ./scripts/run-benchmarks.sh smoke
 ```
 
 | Mode | Command | Description |
 | :--- | :--- | :--- |
-| **Smoke** | `./scripts/run-benchmarks.sh smoke` | Short run (reps from config). |
+| **Smoke** | `./scripts/run-benchmarks.sh smoke` | Short run (reps from config; default filter Json.Net / message). |
 | **Verify All** | `./scripts/run-benchmarks.sh all-single` | 10 reps, all serializers. |
 | **Full Run** | `./scripts/run-benchmarks.sh full` | 100 reps. |
 | **Research** | `./scripts/run-benchmarks.sh research` | 500 reps. |
 | **Custom** | `./scripts/run-benchmarks.sh custom 50 "Json" "message"` | Custom reps / filters. |
 
-Logs: `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (+ `.configs.json`; `.errors.csv` only on failures). Times in **nanoseconds**.
-
----
-
-## Local Development (Without Docker)
+Direct `dotnet` (same env vars the script sets):
 
 ```bash
+export BENCHMARK_RUN_CONFIG=$PWD/../config/library/smoke.yaml
+export BENCHMARK_SEED=42
+export LOG_DIR=$PWD/../logs/csharp
 dotnet build src/GLD.SerializerBenchmark.csproj -c Release
 dotnet run --project src -c Release -- <repetitions> [serializerFilter] [dataFilter]
 ```
+
+Logs: `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (+ `.configs.json`; `.errors.csv` only on failures). Times in **nanoseconds**.
 
 ---
 
@@ -84,9 +94,9 @@ See root README and [Benchmark architecture](../docs/analysis/architecture.md).
 
 ### Add a fixture type
 
-1. Description under `TestData/` (or `TestData/V2/`) implementing `ITestDataDescription`.
-2. Register in `Program.cs`.
-3. Add catalog / run-config cells if part of the multi-lang matrix.
+1. Add a domain model + generator branch under `TestData/V2/`.
+2. Wire `RunCells` / fallback descriptions; ensure `type_id` is in the run-config catalog.
+3. Register any library-specific wire conversion only if the codec cannot serialize the domain type directly.
 
 ---
 

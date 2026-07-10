@@ -1,88 +1,88 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
+using GLD.SerializerBenchmark.TestData.V2;
+using Newtonsoft.Json;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    // CsvHelper
+    /// <summary>
+    /// CSV is tabular: timed path writes/reads a single-column envelope of domain JSON.
+    /// (CsvHelper cannot express nested V2 graphs as columns without lossy projection.)
+    /// </summary>
     internal class CsvHelperSerializerSer : SerDeser
     {
-        public override string Name => "CsvHelper";
+        private List<CsvRow> _rows;
 
-        public override bool Supports(string testDataName)
+        public override string Name => "CsvHelper";
+        public override bool Supports(string testDataName) => true;
+
+        public override void PrepareData(object data)
         {
-            // CsvHelper only works with simple flat objects (message/event proxies).
-            return testDataName is "message" or "event";
+            _rows = new List<CsvRow>
+            {
+                new CsvRow
+                {
+                    TypeName = data.GetType().AssemblyQualifiedName,
+                    Payload = JsonConvert.SerializeObject(data)
+                }
+            };
+        }
+
+        public override object ToDomain(object decoded)
+        {
+            var rows = ((IEnumerable)decoded).Cast<CsvRow>().ToList();
+            var r = rows[0];
+            return JsonConvert.DeserializeObject(r.Payload, Type.GetType(r.TypeName));
         }
 
         public override string Serialize(object serializable)
         {
-            using var writer = new StringWriter();
-            using var csv = new CsvWriter(writer, new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture));
-            
-            // Serialize as a single-item list
-            var listType = typeof(List<>).MakeGenericType(_primaryType);
-            var list = (IList)Activator.CreateInstance(listType);
-            list.Add(serializable);
-            
-            csv.WriteRecords(list);
-            return writer.ToString();
+            var rows = _rows ?? Make(serializable);
+            using var w = new StringWriter();
+            using var csv = new CsvWriter(w, new CsvConfiguration(CultureInfo.InvariantCulture));
+            csv.WriteRecords(rows);
+            return w.ToString();
         }
-        
+
         public override object Deserialize(string serialized)
         {
-            using var reader = new StringReader(serialized);
-            using var csv = new CsvReader(reader, new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture));
-            
-            // Use reflection to call GetRecords<T>() with _primaryType
-            var method = typeof(CsvReader).GetMethods()
-                .First(m => m.Name == "GetRecords" && m.IsGenericMethod && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 0);
-            var genericMethod = method.MakeGenericMethod(_primaryType);
-            var records = genericMethod.Invoke(csv, null);
-            
-            // Get first record or default
-            var enumerable = records as IEnumerable;
-            foreach (var record in enumerable)
-            {
-                return record;
-            }
-            return null;
+            using var r = new StringReader(serialized);
+            using var csv = new CsvReader(r, new CsvConfiguration(CultureInfo.InvariantCulture));
+            return csv.GetRecords<CsvRow>().ToList();
         }
-        
+
         public override void Serialize(object serializable, Stream outputStream)
         {
-            using var writer = new StreamWriter(outputStream, System.Text.Encoding.UTF8, 1024, true);
-            using var csv = new CsvWriter(writer, new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture));
-            
-            var listType = typeof(List<>).MakeGenericType(_primaryType);
-            var list = (IList)Activator.CreateInstance(listType);
-            list.Add(serializable);
-            
-            csv.WriteRecords(list);
+            using var w = new StreamWriter(outputStream, Encoding.UTF8, 1024, true);
+            using var csv = new CsvWriter(w, new CsvConfiguration(CultureInfo.InvariantCulture));
+            csv.WriteRecords(_rows ?? Make(serializable));
+            w.Flush();
         }
-        
+
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            using var reader = new StreamReader(inputStream, System.Text.Encoding.UTF8, false, 1024, true);
-            using var csv = new CsvReader(reader, new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture));
-            
-            var method = typeof(CsvReader).GetMethods()
-                .First(m => m.Name == "GetRecords" && m.IsGenericMethod && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 0);
-            var genericMethod = method.MakeGenericMethod(_primaryType);
-            var records = genericMethod.Invoke(csv, null);
-            
-            var enumerable = records as IEnumerable;
-            foreach (var record in enumerable)
-            {
-                return record;
-            }
-            return null;
+            using var r = new StreamReader(inputStream, Encoding.UTF8, false, 1024, true);
+            using var csv = new CsvReader(r, new CsvConfiguration(CultureInfo.InvariantCulture));
+            return csv.GetRecords<CsvRow>().ToList();
+        }
+
+        static List<CsvRow> Make(object data) => new List<CsvRow>
+        {
+            new CsvRow { TypeName = data.GetType().AssemblyQualifiedName, Payload = JsonConvert.SerializeObject(data) }
+        };
+
+        public class CsvRow
+        {
+            public string TypeName { get; set; }
+            public string Payload { get; set; }
         }
     }
 }

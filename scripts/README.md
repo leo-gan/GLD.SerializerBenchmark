@@ -9,6 +9,34 @@ Each benchmark run creates timestamped artifacts with the **same stem** (never o
 - `YYYY-MM-DD-HHMMSS.configs.json` — run config + environment sidecar
 - `YYYY-MM-DD-HHMMSS.environment.json` — older env-only sidecar (still loaded if present)
 
+## Host toolchains (prepare once)
+
+Benchmark runners assume compilers/runtimes are already on the machine. That is **intentionally separate** from `run-benchmarks.sh` (which only builds project deps and runs the harness).
+
+| Script | Role |
+|--------|------|
+| `check-host-requirements.sh` | Verify tools for enabled languages (or listed ids). Exit 1 if missing. |
+| `install-host-requirements.sh` | Install **user-local** toolchains (dotnet → `~/.dotnet`, Go → `~/.local/go`, uv, rustup). Hints only for Node/CMake (no sudo apt). |
+
+```bash
+./scripts/check-host-requirements.sh
+./scripts/install-host-requirements.sh
+./scripts/check-host-requirements.sh csharp python
+./scripts/install-host-requirements.sh go rust
+```
+
+`scripts/lib/config.sh` (sourced by every runner) prepends common user-local bins to `PATH` and sets `GOTOOLCHAIN=auto` for Go.
+
+| Language | Host toolchain | Project deps (inside runner) |
+|----------|----------------|------------------------------|
+| csharp | .NET SDK 8+ | `dotnet restore/build` |
+| python | [uv](https://docs.astral.sh/uv/) | `uv sync` |
+| go | Go bootstrap 1.22+ | `go build` (+ module toolchain) |
+| rust | rustc/cargo | `cargo build --release` |
+| javascript | Node.js + npm | `npm install` |
+| c | cmake, curl, … | `fetch-and-build-deps.sh` + cmake |
+| analysis | python3 + uv | `uv pip install -e analysis/` |
+
 ## Scripts
 
 ### `resolve_run_config.py`

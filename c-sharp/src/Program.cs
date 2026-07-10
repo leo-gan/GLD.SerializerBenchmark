@@ -2,7 +2,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using GLD.SerializerBenchmark.Serializers;
-using GLD.SerializerBenchmark.TestData;
 
 namespace GLD.SerializerBenchmark
 {
@@ -79,7 +78,6 @@ namespace GLD.SerializerBenchmark
                 new CerasSerializerSer(),
                 new CsvHelperSerializerSer(),
                 new FlatSharpSerializerSer(),
-                new FluentSerializerJsonSer(),
                 new GoogleProtobufSerializerSer(),
                 new HyperionSerializerSer(),
                 new NetSerializerSer(),
@@ -94,7 +92,7 @@ namespace GLD.SerializerBenchmark
                 new GroBufSerializerSer(),
                 new ExtendedXmlSerializerSer(),
                 new MigrantSerializerSer(),
-                new ApexSerializerSer() // Moved to end
+                new SystemTextJsonSerializerSer()
             };
 
             var testDataDescriptions = allTestDataDescriptions
