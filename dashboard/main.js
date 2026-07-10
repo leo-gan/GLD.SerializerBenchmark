@@ -5,6 +5,54 @@ const SETTINGS_KEY = 'serializer-dashboard-settings-v1';
 /** Keys that identify a group, not metrics. */
 const GROUP_META_KEYS = new Set(['serializer', 'test_data', 'mode', 'language']);
 
+/** Suite fixture base names (no Person/ObjectGraph legacy). */
+const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
+
+/**
+ * Display / filter key: "message@n=1" when batch axis is present.
+ * Idempotent: safe if test_data is already labeled (or even doubled like "x@n=1@n=1").
+ */
+function fixtureKey(g) {
+  const raw = String(g?.test_data ?? '');
+  // Strip one or more trailing @n=<int> segments so re-labeling never stacks.
+  const base = raw.replace(/(@n=\d+)+$/i, '') || raw;
+  let n = g?.data_type_instance_count;
+  if (n == null || n === '') {
+    const m = raw.match(/@n=(\d+)(?:@n=\d+)*$/i);
+    if (m) n = Number(m[1]);
+  }
+  if (n != null && n !== '' && Number(n) > 0) {
+    return `${base}@n=${Number(n)}`;
+  }
+  return base;
+}
+
+function baseTypeId(key) {
+  if (!key) return '';
+  // First @n= starts the batch suffix (handles accidental doubles).
+  const i = String(key).indexOf('@n=');
+  return i >= 0 ? String(key).slice(0, i) : String(key);
+}
+
+/** Prefer message@n=1, then message, then any suite type. */
+function pickPreferredFixture(options) {
+  if (!options || !options.length) return '';
+  const preferred = [];
+  for (const id of SUITE_TYPE_IDS) {
+    preferred.push(`${id}@n=1`, id, `${id}@n=100`);
+  }
+  for (const p of preferred) {
+    if (options.includes(p)) return p;
+  }
+  // Drop legacy V1 names if somehow present
+  const cleaned = options.filter((o) => {
+    const b = baseTypeId(o);
+    return SUITE_TYPE_IDS.includes(b);
+  });
+  return (cleaned[0] || options[0] || '');
+}
+
+
 const LANGUAGE_CATALOG = [
   { id: 'csharp', label: 'C#' },
   { id: 'rust', label: 'Rust' },
@@ -577,21 +625,29 @@ async function loadHistoricalRunIntoDashboard(runId) {
 }
 
 function processStatsData(statsObj) {
-  state.allGroups = statsObj.groups || [];
+  // Normalize groups to display fixture keys (type@n=N when batch axis present)
+  state.allGroups = (statsObj.groups || []).map((g) => ({
+    ...g,
+    test_data: fixtureKey(g),
+  }));
 
-  // Extract unique Test Data and Modes
-  const testDataOptions = [...new Set(state.allGroups.map(g => g.test_data))];
+  // Suite fixtures only in the data-type dropdown (hide legacy Person/ObjectGraph/etc.)
+  const testDataOptions = [
+    ...new Set(
+      state.allGroups
+        .map((g) => g.test_data)
+        .filter((k) => k && SUITE_TYPE_IDS.includes(baseTypeId(k)))
+    ),
+  ].sort();
   const modeOptions = [...new Set(state.allGroups.map(g => g.mode))];
 
   // Populate Dropdowns
   populateSelect('data-select', testDataOptions);
   populateSelect('mode-select', modeOptions);
 
-  // Prefer saved filters when still valid for this dataset
+  // Prefer saved filters when still valid; migrate legacy V1 names
   if (!testDataOptions.includes(state.currentTestData)) {
-    const preferred = ['message', 'document', 'telemetry', 'strings', 'event'];
-    state.currentTestData =
-      preferred.find((t) => testDataOptions.includes(t)) || testDataOptions[0] || '';
+    state.currentTestData = pickPreferredFixture(testDataOptions);
   }
   if (!modeOptions.includes(state.currentMode)) {
     state.currentMode = modeOptions[0] || '';
@@ -755,9 +811,11 @@ async function fetchStatsGroups(langId) {
 
       const groups = payload.groups || payload.stats?.groups || [];
       if (Array.isArray(groups) && groups.length) {
+        // Normalize fixture keys so cross-lang filters match type@n=N options
         return groups.map((g) => ({
           ...g,
           language: g.language || langId,
+          test_data: fixtureKey(g),
         }));
       }
     } catch (e) {
@@ -797,9 +855,25 @@ function allCrossLangGroups() {
   return Object.values(state.crossLangGroupsByLang).flat();
 }
 
+/** How many catalog languages have at least one group in this (normalized) mode. */
+function languageCountForMode(mode) {
+  if (!mode) return 0;
+  return LANGUAGE_CATALOG.filter((lang) => {
+    const groups = state.crossLangGroupsByLang[lang.id] || [];
+    return groups.some((g) => normalizeMode(g.mode) === mode);
+  }).length;
+}
+
 function initCrossLangControls() {
   const all = allCrossLangGroups();
-  const testDataOptions = [...new Set(all.map((g) => g.test_data).filter(Boolean))].sort();
+  // Groups normalized with fixtureKey on load; keep suite fixtures only (drop legacy V1 names)
+  const testDataOptions = [
+    ...new Set(
+      all
+        .map((g) => fixtureKey(g))
+        .filter((k) => k && SUITE_TYPE_IDS.includes(baseTypeId(k)))
+    ),
+  ].sort();
   const modeOptions = [...new Set(all.map((g) => normalizeMode(g.mode)).filter(Boolean))].sort();
 
   populateSelect('xl-data-select', testDataOptions);
@@ -812,13 +886,21 @@ function initCrossLangControls() {
     modeSel.appendChild(opt);
   });
 
-  // Prefer saved / common V2 type_ids (legacy V1 names no longer in suite logs)
-  const preferredTd = ['message', 'document', 'telemetry', 'strings', 'event'];
+  // Prefer message@n=1; drop stale localStorage / doubled labels (e.g. type@n=100@n=100)
   if (!testDataOptions.includes(state.xlTestData)) {
-    state.xlTestData =
-      preferredTd.find((t) => testDataOptions.includes(t)) || testDataOptions[0] || '';
+    state.xlTestData = pickPreferredFixture(testDataOptions);
   }
-  if (!modeOptions.includes(state.xlMode)) {
+
+  // Prefer a mode available in as many languages as possible (bytes). Stream exists
+  // only for C/C# today — keep it selectable, but don't restore it as default when
+  // it would hide every other language on load.
+  const bytesCount = languageCountForMode('bytes');
+  const currentCount = languageCountForMode(state.xlMode);
+  if (
+    !modeOptions.includes(state.xlMode) ||
+    !state.xlMode ||
+    (bytesCount > currentCount && modeOptions.includes('bytes'))
+  ) {
     state.xlMode = modeOptions.includes('bytes')
       ? 'bytes'
       : modeOptions[0] || '';
@@ -845,7 +927,7 @@ function initCrossLangControls() {
 function filterGroupsForCrossLang(groups) {
   return groups.filter(
     (g) =>
-      g.test_data === state.xlTestData &&
+      fixtureKey(g) === state.xlTestData &&
       normalizeMode(g.mode) === state.xlMode
   );
 }

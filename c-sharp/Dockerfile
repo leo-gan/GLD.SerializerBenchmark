@@ -30,8 +30,8 @@ RUN dotnet publish src/GLD.SerializerBenchmark.csproj -c Release -o /app/publish
 # Final Runtime Stage
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS final
 WORKDIR /app
-# python3 for resolve_run_config.py (W×C cells) when repo is mounted at /src
-RUN apt-get update && apt-get install -y --no-install-recommends python3 \
+# python3 + PyYAML for resolve_run_config.py (W×C cells) when repo is mounted at /src
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-yaml \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=publish /app/publish .
 

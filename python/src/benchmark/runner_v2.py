@@ -71,8 +71,19 @@ ALL_SERIALIZERS = [
 
 
 def _repo_root():
+    env = (os.environ.get("BENCHMARK_REPO_ROOT") or "").strip()
+    if env:
+        ep = Path(env).expanduser().resolve()
+        if (ep / "schemas" / "data_catalog_v2.yaml").is_file() or (
+            ep / "config" / "benchmark_config.yaml"
+        ).is_file():
+            return ep
     for p in Path(__file__).resolve().parents:
         if (p / "config" / "benchmark_config.yaml").is_file():
+            return p
+        if (p / "schemas" / "data_catalog_v2.yaml").is_file() and (
+            p / "config" / "library"
+        ).is_dir():
             return p
     return None
 

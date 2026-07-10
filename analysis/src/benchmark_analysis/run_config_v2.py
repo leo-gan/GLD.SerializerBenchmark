@@ -10,7 +10,17 @@ from typing import Any
 
 import yaml
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+def _find_repo_root() -> Path:
+    """Walk parents for schemas/data_catalog_v2.yaml (works in-repo and Docker layouts)."""
+    here = Path(__file__).resolve()
+    for p in here.parents:
+        if (p / "schemas" / "data_catalog_v2.yaml").is_file():
+            return p
+    # Fallback: analysis/src/benchmark_analysis → repo root in standard layout
+    return here.parents[3]
+
+
+_REPO_ROOT = _find_repo_root()
 DEFAULT_CATALOG = _REPO_ROOT / "schemas" / "data_catalog_v2.yaml"
 DEFAULT_LIBRARY = _REPO_ROOT / "config" / "library"
 

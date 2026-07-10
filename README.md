@@ -58,7 +58,7 @@ After regenerating results into `docs/analysis/`, review and commit before `publ
 
 ## Test data
 
-Suite fixtures (type ids): **message**, **document**, **telemetry**, **strings**, and **event**.
+Test data types: **message**, **document**, **telemetry**, **strings**, and **event**.
 
 Catalog and defaults: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.  
 Docs: [Test Data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).

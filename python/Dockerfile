@@ -15,6 +15,8 @@ COPY python/generated/ ./generated/
 COPY python/src/ ./src/
 COPY schemas/ ./schemas/
 COPY config/library/ ./config/library/
+# Master config so _repo_root() finds /app (looks for config/benchmark_config.yaml)
+COPY config/benchmark_config.yaml ./config/benchmark_config.yaml
 COPY schemas/data_catalog_v2.yaml ./schemas/data_catalog_v2.yaml
 # analysis package for resolve_run_config / environment capture (optional import)
 COPY analysis/src/benchmark_analysis/ ./analysis_src/benchmark_analysis/

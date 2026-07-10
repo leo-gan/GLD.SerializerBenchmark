@@ -90,26 +90,51 @@ namespace GLD.SerializerBenchmark
             int instanceCount = 1, string typeConfigHash = "")
         {
             // Untimed: Initialize + PrepareData once per fixture (not inside Stopwatch).
+            var prepareFailed = new Dictionary<string, bool>();
             foreach (var serializer in serializers)
             {
                 if (!serializer.Supports(testDataDescription.Name))
                     continue;
                 Console.WriteLine($"[DEBUG] Initializing {serializer.Name}");
-                serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
-                serializer.PrepareData(testDataDescription.Data);
+                try
+                {
+                    serializer.Initialize(testDataDescription.DataType, testDataDescription.SecondaryDataTypes);
+                    serializer.PrepareData(testDataDescription.Data);
+                }
+                catch (Exception ex)
+                {
+                    prepareFailed[serializer.Name] = true;
+                    var error = new Error
+                    {
+                        StringOrStream = "prepare",
+                        TestDataName = testDataDescription.Name,
+                        SerializerName = serializer.Name,
+                        Run = 1,
+                        Repetition = 0,
+                        ErrorText = $"PrepareData: {ex.GetType().Name}: {ex.Message}",
+                    };
+                    error.TryAddTo(errors);
+                    Console.WriteLine($"[ERROR] {serializer.Name} prepare: {ex.GetType().Name}: {ex.Message}");
+                }
             }
 
             TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors,
-                instanceCount, typeConfigHash);
+                instanceCount, typeConfigHash, prepareFailed);
             TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors,
-                instanceCount, typeConfigHash);
+                instanceCount, typeConfigHash, prepareFailed);
         }
 
         public static void TestsOnRepetition(ITestDataDescription testDataDescription, bool streaming, int repetitions,
             List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors,
-            int instanceCount = 1, string typeConfigHash = "")
+            int instanceCount = 1, string typeConfigHash = "",
+            Dictionary<string, bool> prepareFailed = null)
         {
             var wasError = new Dictionary<string, bool>();
+            if (prepareFailed != null)
+            {
+                foreach (var kv in prepareFailed)
+                    wasError[kv.Key] = true;
+            }
             var original = testDataDescription;
 
             for (var i = 0; i < repetitions; i++)
