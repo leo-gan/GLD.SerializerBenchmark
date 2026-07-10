@@ -1,0 +1,2 @@
+{"type":"record","name":"Strings","fields":[
+ {"name":"items","type":{"type":"array","items":"string"}}]}

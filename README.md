@@ -58,7 +58,7 @@ After regenerating results into `docs/analysis/`, review and commit before `publ
 
 ## Test data
 
-Data sets include **Person**, **Integer**, **Telemetry**, **SimpleObject**, **StringArray**, **EDI_835**, and **ObjectGraph** (cycles; only graph-capable serializers).
+Data sets use **Data Model v2** type_ids: **message**, **document**, **telemetry**, **strings**, and **event** (see `docs/analysis/data_model_v2.md`).
 
 [Test data configuration](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).
 

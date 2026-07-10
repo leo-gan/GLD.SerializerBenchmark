@@ -1,6 +1,6 @@
 # Data Model v2
 
-**Status:** normative for the v2 data plane. **Suite default is v2** (`BENCHMARK_DATA_MODEL` defaults to `v2`). Use `BENCHMARK_DATA_MODEL=v1` for legacy Person/EDI fixtures.
+**Status:** normative for the suite data plane. **V1 Person/EDI fixtures removed** — only Data Model v2 type_ids run.
 
 | Language | v2 coverage |
 |----------|-------------|
@@ -226,4 +226,4 @@ SHA-256 of canonical JSON (sorted keys, no whitespace variance) of **resolved** 
 
 ## v1 note
 
-Until harnesses cut over, [Test data types (v1)](test_data_configuration.md) still describes live `TestDataName` values (`Person`, `EDI_835`, …).
+V1 fixtures (`Person`, `EDI_835`, …) are removed. See [Test data types](test_data_configuration.md) for the redirect to this document.

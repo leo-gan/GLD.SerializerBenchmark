@@ -27,7 +27,6 @@ from typing import Any, Union, get_args, get_origin, get_type_hints
 import msgspec
 
 from .base import Serializer
-from ..data import models
 from ..data_v2 import models as models_v2
 
 
@@ -38,7 +37,7 @@ _STRUCT_TYPES: dict[type[Any], type[msgspec.Struct]] = {}
 
 def _model_dataclasses() -> set[type[Any]]:
     found: set[type[Any]] = set()
-    for mod in (models, models_v2):
+    for mod in (models_v2,):
         for value in vars(mod).values():
             if (
                 isinstance(value, type)

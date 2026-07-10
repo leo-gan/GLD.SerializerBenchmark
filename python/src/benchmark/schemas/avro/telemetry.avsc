@@ -1,16 +1,5 @@
-{
-  "type": "record",
-  "name": "TelemetryData",
-  "namespace": "benchmark_data",
-  "fields": [
-    {"name": "Id", "type": "string"},
-    {"name": "DataSource", "type": "string"},
-    {"name": "TimeStamp", "type": "long"},
-    {"name": "Param1", "type": "int"},
-    {"name": "Param2", "type": "long"},
-    {"name": "Measurements", "type": {"type": "array", "items": "double"}},
-    {"name": "AssociatedProblemID", "type": "long"},
-    {"name": "AssociatedLogID", "type": "long"},
-    {"name": "WasProcessed", "type": "boolean"}
-  ]
-}
+{"type":"record","name":"Telemetry","fields":[
+ {"name":"source","type":"string"},
+ {"name":"ts","type":"long"},
+ {"name":"tags","type":{"type":"array","items":"string"}},
+ {"name":"values","type":{"type":"array","items":"double"}}]}

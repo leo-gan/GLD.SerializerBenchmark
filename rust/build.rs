@@ -8,18 +8,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::env::set_var("PROTOC", path);
     }
     let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR")?);
-    let proto = manifest.join("../schemas/benchmark_data.proto");
-    let includes = manifest.join("../schemas");
-    if proto.is_file() {
-        prost_build::Config::new()
-            // Keep field names close to the shared .proto for fidelity mapping.
-            .compile_protos(&[&proto], &[&includes])?;
-        println!("cargo:rerun-if-changed={}", proto.display());
-    } else {
-        let proto = PathBuf::from("../schemas/benchmark_data.proto");
-        let includes = PathBuf::from("../schemas");
-        prost_build::Config::new().compile_protos(&[&proto], &[&includes])?;
-        println!("cargo:rerun-if-changed=../schemas/benchmark_data.proto");
+    // V1 benchmark_data.proto removed. Optional v2 codegen when prost_ser is re-wired.
+    let proto_v2 = manifest.join("../schemas/v2/protobuf/benchmark_v2.proto");
+    if proto_v2.is_file() {
+        let includes = manifest.join("../schemas/v2/protobuf");
+        // Generate for future prost_ser v2 mapping (not required to link stub).
+        let _ = prost_build::Config::new().compile_protos(&[&proto_v2], &[&includes]);
+        println!("cargo:rerun-if-changed={}", proto_v2.display());
     }
 
     // Emit locked crate versions for CSV SerializerVersion (from Cargo.lock).

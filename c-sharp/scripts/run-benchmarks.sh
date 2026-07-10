@@ -29,9 +29,9 @@ MODE="${1:-}"
 case "$MODE" in
     smoke)
         REPS="$(bench_mode_reps smoke)"
-        echo "[INFO] Running Smoke Test ($REPS reps, Binary, Person) [config modes.smoke]..."
+        echo "[INFO] Running Smoke Test ($REPS reps, Data Model v2 (STJ)) [config modes.smoke]..."
         docker run --rm -e BENCHMARK_TS="${BENCHMARK_TS}" -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
-          -v "$LOG_DIR":/app/logs $IMAGE_NAME "$REPS" Binary Person
+          -v "$LOG_DIR":/app/logs $IMAGE_NAME "$REPS"
         ;;
     all-single|full|research)
         REPS="$(bench_mode_reps "$MODE")"

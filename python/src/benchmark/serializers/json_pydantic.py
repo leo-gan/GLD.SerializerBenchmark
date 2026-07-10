@@ -1,144 +1,44 @@
-"""
-Pydantic v2 benchmark wrapper.
-
-Uses library-native BaseModel / TypeAdapter paths. prepare_data converts shared
-dataclasses into Pydantic models (untimed). Timed path is dump_json / validate_json.
-"""
+"""Pydantic v2 models derived from data_v2 dataclasses."""
 
 from __future__ import annotations
 
 import io
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Type
+import json
+from dataclasses import fields, is_dataclass
+from typing import Any, Dict, Type
 
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import BaseModel, ConfigDict, create_model
 
 from .base import Serializer
-from ..data.models import (
-    GRAPH_NULL,
-    Claim,
-    EDI835,
-    Gender as GenderEnum,
-    GraphNodeData,
-    ObjectGraph,
-    Passport,
-    Person,
-    PoliceRecord,
-    ServiceLine,
-    SimpleObject,
-    StringArrayObject,
-    TelemetryData,
-)
+from ..converters import to_dict
+from ..data_v2 import models as v2models
 
 
 class _Cfg(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class PassportModel(_Cfg):
-    Number: str = ""
-    Authority: str = ""
-    ExpirationDate: datetime
+def _models_from_dataclasses() -> Dict[Type[Any], Type[BaseModel]]:
+    out: Dict[Type[Any], Type[BaseModel]] = {}
+    for name, cls in vars(v2models).items():
+        if not (isinstance(cls, type) and is_dataclass(cls) and cls.__module__ == v2models.__name__):
+            continue
+        field_defs = {f.name: (f.type, ...) for f in fields(cls)}
+        out[cls] = create_model(f"{name}Model", __base__=_Cfg, **field_defs)  # type: ignore[arg-type]
+    return out
 
 
-class PoliceRecordModel(_Cfg):
-    Id: int = 0
-    CrimeCode: str = ""
-
-
-class PersonModel(_Cfg):
-    # Annotation must not be named `Gender` in the same scope as the field
-    # (Pydantic treats that as a name clash). Import alias GenderEnum avoids it.
-    FirstName: str = ""
-    LastName: str = ""
-    Age: int = 0
-    Gender: GenderEnum = GenderEnum.Male
-    Passport: Optional[PassportModel] = None
-    PoliceRecords: List[PoliceRecordModel] = []
-
-
-class SimpleObjectModel(_Cfg):
-    Id: int = 0
-    Name: str = ""
-    Timestamp: datetime
-    IsActive: bool = False
-
-
-class StringArrayObjectModel(_Cfg):
-    Items: List[str] = []
-
-
-class TelemetryDataModel(_Cfg):
-    Id: str = ""
-    DataSource: str = ""
-    TimeStamp: datetime
-    Param1: int = 0
-    Param2: int = 0
-    Measurements: List[float] = []
-    AssociatedProblemID: int = 0
-    AssociatedLogID: int = 0
-    WasProcessed: bool = False
-
-
-class ServiceLineModel(_Cfg):
-    ServiceCode: str = ""
-    ChargeAmount: float = 0.0
-    AdjudicatedAmount: float = 0.0
-
-
-class ClaimModel(_Cfg):
-    ClaimId: str = ""
-    PatientName: str = ""
-    TotalCharge: float = 0.0
-    PaymentAmount: float = 0.0
-    Lines: List[ServiceLineModel] = []
-
-
-class EDI835Model(_Cfg):
-    PayerName: str = ""
-    PayeeName: str = ""
-    PaymentDate: datetime
-    TotalActualAmount: float = 0.0
-    TransactionControlNumber: str = ""
-    Claims: List[ClaimModel] = []
-
-
-class GraphNodeDataModel(_Cfg):
-    Name: str = ""
-    Parent: int = GRAPH_NULL
-    Related: int = GRAPH_NULL
-    Children: List[int] = []
-
-
-class ObjectGraphModel(_Cfg):
-    root: int = 0
-    nodes: List[GraphNodeDataModel] = []
-
-
-_MODEL_MAP: Dict[Type[Any], Type[BaseModel]] = {
-    Person: PersonModel,
-    SimpleObject: SimpleObjectModel,
-    StringArrayObject: StringArrayObjectModel,
-    TelemetryData: TelemetryDataModel,
-    EDI835: EDI835Model,
-    Claim: ClaimModel,
-    ServiceLine: ServiceLineModel,
-    Passport: PassportModel,
-    PoliceRecord: PoliceRecordModel,
-    GraphNodeData: GraphNodeDataModel,
-    ObjectGraph: ObjectGraphModel,
-}
+_MODEL_MAP = _models_from_dataclasses()
 
 
 class PydanticSerializer(Serializer):
+    package_name = "pydantic"
     native_kind = "model"
     stream_mode = "adapted"
 
     def __init__(self) -> None:
         super().__init__()
-        self._adapter: TypeAdapter[Any] | None = None
-        self._model_cls: Type[BaseModel] | None = None
-        self._is_scalar = False
+        self._model: Type[BaseModel] | None = None
 
     @property
     def name(self) -> str:
@@ -146,30 +46,37 @@ class PydanticSerializer(Serializer):
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
-        model_cls = _MODEL_MAP.get(test_data_type)
-        if model_cls is not None:
-            self._model_cls = model_cls
-            self._adapter = TypeAdapter(model_cls)
-            self._is_scalar = False
-        else:
-            # int / other scalars
-            self._model_cls = None
-            self._adapter = TypeAdapter(test_data_type)
-            self._is_scalar = True
+        self._model = None if test_data_type is list else _MODEL_MAP.get(test_data_type)
 
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
-        if self._is_scalar:
-            return obj
-        assert self._model_cls is not None
-        return self._model_cls.model_validate(obj)
+        if isinstance(obj, list):
+            if obj and self._model is None:
+                self._model = _MODEL_MAP.get(type(obj[0]))
+            if self._model:
+                return [self._model.model_validate(to_dict(x)) for x in obj]
+            return to_dict(obj)
+        if self._model is None:
+            self._model = _MODEL_MAP.get(type(obj))
+        if self._model is None:
+            return to_dict(obj)
+        return self._model.model_validate(to_dict(obj))
 
     def serialize_bytes(self, obj: Any) -> bytes:
-        assert self._adapter is not None
-        return self._adapter.dump_json(obj)
+        if isinstance(obj, list):
+            return json.dumps(
+                [x.model_dump() if isinstance(x, BaseModel) else x for x in obj]
+            ).encode()
+        if isinstance(obj, BaseModel):
+            return obj.model_dump_json().encode()
+        return json.dumps(obj).encode()
 
     def deserialize_bytes(self, data: bytes) -> Any:
-        assert self._adapter is not None
-        return self._adapter.validate_json(data)
+        raw = json.loads(data)
+        if self._model is None:
+            return raw
+        if isinstance(raw, list):
+            return [self._model.model_validate(x) for x in raw]
+        return self._model.model_validate(raw)
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
         stream.write(self.serialize_bytes(obj))

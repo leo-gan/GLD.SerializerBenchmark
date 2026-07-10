@@ -1,4 +1,4 @@
-"""Ensure Python serializer registry stays intact (imports that do not need protos)."""
+"""Ensure Python serializer registry stays intact."""
 from __future__ import annotations
 
 import sys
@@ -6,7 +6,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "generated" / "flatbuffers_gen"))
 sys.path.insert(0, str(ROOT))
 
 
@@ -40,12 +39,20 @@ def test_core_serializers_constructible_without_optional_schema_deps():
         assert s.name
 
 
-def test_object_graph_supported_by_all_capable_serializers():
-    """Flat ObjectGraph (index edges) is portable — every registered codec supports it."""
+def test_v2_types_supported_by_schemaless_serializers():
+    """Schemaless codecs support all v2 type_ids."""
     from benchmark.runner import ALL_SERIALIZERS
 
+    v2_types = ("message", "document", "telemetry", "strings", "event")
+    schemaless = {
+        "json", "orjson", "msgspec", "rapidjson", "msgpack", "cbor2",
+        "pickle", "cloudpickle", "dill", "pydantic", "mashumaro",
+    }
     for ser in ALL_SERIALIZERS:
-        assert ser.supports("ObjectGraph") is True, f"{ser.name} should support flat ObjectGraph"
+        if ser.name not in schemaless:
+            continue
+        for t in v2_types:
+            assert ser.supports(t) is True, f"{ser.name} should support {t}"
 
 
 def test_full_runner_registry_size():
@@ -63,6 +70,6 @@ def test_full_runner_registry_size():
 
 if __name__ == "__main__":
     test_core_serializers_constructible_without_optional_schema_deps()
-    test_object_graph_supported_by_all_capable_serializers()
+    test_v2_types_supported_by_schemaless_serializers()
     test_full_runner_registry_size()
     print("ok")

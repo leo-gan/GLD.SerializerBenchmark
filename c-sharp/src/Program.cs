@@ -23,8 +23,8 @@ namespace GLD.SerializerBenchmark
                 return;
             }
 
-            var dataModel = (System.Environment.GetEnvironmentVariable("BENCHMARK_DATA_MODEL") ?? "v2").ToLowerInvariant();
-            if (dataModel == "v2" || dataModel == "2" || dataModel == "data_v2")
+            // Data Model v2 only (V1 Person/EDI fixtures removed from the run path).
+            // Full multi-serializer suite still compiles; default run is STJ + v2 cells.
             {
                 var reps = args.Length > 0 ? int.Parse(args[0]) : 10;
                 var logDir = System.Environment.GetEnvironmentVariable("LOG_DIR") ?? "logs/csharp";
@@ -34,7 +34,6 @@ namespace GLD.SerializerBenchmark
                 var runCfg = System.Environment.GetEnvironmentVariable("BENCHMARK_RUN_CONFIG");
                 if (string.IsNullOrEmpty(runCfg))
                 {
-                    // walk to repo
                     var dir = new System.IO.DirectoryInfo(System.IO.Directory.GetCurrentDirectory());
                     while (dir != null && !System.IO.File.Exists(System.IO.Path.Combine(dir.FullName, "config", "benchmark_config.yaml")))
                         dir = dir.Parent;
@@ -43,6 +42,7 @@ namespace GLD.SerializerBenchmark
                 System.Environment.Exit(GLD.SerializerBenchmark.TestData.V2.DataV2.RunSystemTextJsonBenchmark(reps, logDir, runCfg, seed));
                 return;
             }
+            #pragma warning disable CS0162 // unreachable V1 harness kept for compile of serializers
 
             var repetitions = args.Length > 0 ? int.Parse(args[0]) : 100;
             var serializerFilter = args.Length > 1 ? args[1] : null;

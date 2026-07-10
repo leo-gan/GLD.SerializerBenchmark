@@ -54,8 +54,7 @@ modes:
     description: "High-power statistical study"
 
 # -----------------------------------------------------------------------------
-# Data Model v2 — suite default (plan: plans/DATA_MODEL_V2_PLAN.md)
-# Set BENCHMARK_DATA_MODEL=v1 for legacy Person/EDI fixtures.
+# Data Model v2 only (V1 Person/EDI fixtures removed)
 # -----------------------------------------------------------------------------
 data_model_v2:
   enabled: true
@@ -66,50 +65,31 @@ data_model_v2:
   smoke_run_config: "config/library/smoke.yaml"
   schemas_root: "schemas/v2"
   generate_script: "scripts/schemas/generate-all.sh"
-  migration:
-    python: default_v2
-    go: default_v2
-    rust: default_v2
-    javascript: default_v2
-    c: default_v2
-    csharp: default_v2
 
-# -----------------------------------------------------------------------------
-# Shared test data v1 (LEGACY — only when BENCHMARK_DATA_MODEL=v1)
-# Key kept as test_data for backward-compatible environment capture.
-# -----------------------------------------------------------------------------
+# Shared test data — v2 catalog is normative; names mirror type_id values.
 test_data:
-  config_file: "schemas/test_data_config.json"
-  legacy: true
+  catalog_file: "schemas/data_catalog_v2.yaml"
   types:
-    - name: Person
-      category: nested_object
-      description: "Nested POCO with enums, strings, and arrays"
+    - name: message
+      category: flat_mixed
+      description: "Single-level mixed primitives"
       supports_circular: false
-    - name: Integer
-      category: primitive
-      description: "Primitive throughput baseline"
+    - name: document
+      category: nested
+      description: "Nested document with items"
       supports_circular: false
-    - name: Telemetry
+    - name: telemetry
       category: numeric_arrays
-      description: "Numeric arrays testing binary efficiency"
+      description: "Numeric arrays / tags"
       supports_circular: false
-    - name: SimpleObject
-      category: minimal
-      description: "Minimal object overhead"
+    - name: strings
+      category: text_bulk
+      description: "String bulk / memory pressure"
       supports_circular: false
-    - name: StringArray
-      category: memory_pressure
-      description: "GC/memory pressure via large string arrays"
+    - name: event
+      category: event
+      description: "Event envelope with attributes"
       supports_circular: false
-    - name: EDI_835
-      category: real_world
-      description: "Deeply nested healthcare remittance document"
-      supports_circular: false
-    - name: ObjectGraph
-      category: circular
-      description: "Circular references (only graph-capable serializers pass)"
-      supports_circular: true
 
 # -----------------------------------------------------------------------------
 # Dual-mode I/O contract (every language implements both when applicable)

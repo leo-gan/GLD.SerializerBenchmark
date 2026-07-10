@@ -42,12 +42,12 @@ Meet the [harness contract summary](architecture.md#harness-contract-summary) an
 | Timed section | Serialize + deserialize only |
 | Fidelity | Round-trip semantic check; errors in `logs/<lang>/<ts>.errors.csv` (same timestamp stem as the result CSV) |
 | Optional sidecars | `*.configs.json` (environment + optional dataset/serializer metadata; legacy `*.environment.json` still readable) |
-| ObjectGraph | Skip serializers without cycle support |
+| event | Attribute map / envelope |
 | Seed | From `schemas/test_data_config.json` / config `reproducibility.random_seed` |
 
 ## 3. Test data types
 
-**v1 fixtures (default today):** implement equivalents of `Person`, `Integer`, `Telemetry`, `SimpleObject`, `StringArray`, `EDI_835`, `ObjectGraph`.
+**Data Model v2 (suite default):** implement `make_one` / cells for `message`, `document`, `telemetry`, `strings`, `event` (see data_model_v2.md).
 
 **Data Model v2 (cutover path):** see [Data Model v2](data_model_v2.md). Implement `make_one` for `message`, `document`, `telemetry`, `strings`, `event`; expand cells from `./scripts/resolve_run_config.py`; emit `DataTypeInstanceCount` and `TypeConfigHash`. Generators exist under language trees (`python/.../data_v2`, `go/model/v2`, `rust/src/data_v2.rs`, `javascript/src/data_v2.js`, …). Schema artifacts: `schemas/v2/` + `scripts/schemas/generate-all.sh`.
 

@@ -1,0 +1,5 @@
+{"type":"record","name":"Message","fields":[
+ {"name":"f_bool","type":"boolean"},{"name":"f_int32","type":"int"},
+ {"name":"f_int64","type":"long"},{"name":"f_float64","type":"double"},
+ {"name":"f_string","type":"string"},{"name":"f_bool_2","type":"boolean"},
+ {"name":"f_int32_2","type":"int"},{"name":"f_string_2","type":"string"}]}

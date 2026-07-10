@@ -29,11 +29,65 @@ from .data_v2.fidelity import fidelity_v2
 from .data_v2.generator import instances_for_cell
 from .data_v2 import protobuf_bridge
 from .report import BenchmarkError, BenchmarkLog, LogStorage, aggregate_logs, print_report, save_errors
-from .runner import ALL_SERIALIZERS, _default_log_dir, _repo_root
-from .serializers.base import Serializer
+from .serializers import (
+    AvroSerializer,
+    Cbor2Serializer,
+    CloudpickleSerializer,
+    DillSerializer,
+    FlatBuffersSerializer,
+    MashumaroSerializer,
+    MsgpackSerializer,
+    MsgspecMessagePackSerializer,
+    MsgspecSerializer,
+    OrjsonSerializer,
+    PickleSerializer,
+    ProtobufSerializer,
+    PydanticSerializer,
+    RapidjsonSerializer,
+    SerpycoSerializer,
+    Serializer,
+    StdlibJsonSerializer,
+)
 
-# Schema codecs not yet on v2 IDL (except protobuf)
-_V2_SKIP = frozenset({"avro", "flatbuffers"})
+# Keep all serializers registered; Avro/FlatBuffers need v2 schemas (supports may skip).
+ALL_SERIALIZERS = [
+    StdlibJsonSerializer(),
+    OrjsonSerializer(),
+    MsgspecSerializer(),
+    RapidjsonSerializer(),
+    PydanticSerializer(),
+    MashumaroSerializer(),
+    SerpycoSerializer(),
+    MsgspecMessagePackSerializer(),
+    MsgpackSerializer(),
+    Cbor2Serializer(),
+    ProtobufSerializer(),
+    AvroSerializer(),
+    FlatBuffersSerializer(),
+    PickleSerializer(),
+    CloudpickleSerializer(),
+    DillSerializer(),
+]
+
+
+def _repo_root():
+    for p in Path(__file__).resolve().parents:
+        if (p / "config" / "benchmark_config.yaml").is_file():
+            return p
+    return None
+
+
+def _default_log_dir():
+    env_root = (os.environ.get("LOG_DIR") or os.environ.get("BENCHMARK_LOG_DIR") or "").strip()
+    if env_root:
+        root = Path(env_root).expanduser()
+        if root.name == "python":
+            return root.resolve()
+        return (root / "python").resolve()
+    repo = _repo_root()
+    if repo is not None:
+        return (repo / "logs" / "python").resolve()
+    return (Path.cwd() / "logs" / "python").resolve()
 
 
 def _load_resolved(run_config: Path, seed: int) -> dict:
@@ -126,8 +180,7 @@ def run_v2(
     serializers = [
         s
         for s in ALL_SERIALIZERS
-        if (serializer_filter is None or serializer_filter.lower() in s.name.lower())
-        and s.name.lower() not in _V2_SKIP
+        if serializer_filter is None or serializer_filter.lower() in s.name.lower()
     ]
 
     if not serializers or not cells:
@@ -173,6 +226,8 @@ def run_v2(
             if time.monotonic() - t_start > hard:
                 print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
                 break
+            if not serializer.supports(type_id):
+                continue
             try:
                 serializable, expected, tip = _prepare_for_serializer(
                     serializer, type_id, instances, n
