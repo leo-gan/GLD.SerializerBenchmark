@@ -27,40 +27,41 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ---
 
-## Tech Stack
+## Requirements
 
-- **Framework**: .NET 8 (`net8.0`)
-- **Build**: Docker / .NET SDK 8.0
-- **Platforms**: Linux (Docker recommended), Windows, macOS
+- **.NET SDK 8.0+** ([download](https://dotnet.microsoft.com/download) or `curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0`)
+- Optional: `python3` + analysis package for `configs.json` sidecars
 
 ---
 
-## Getting Started (Docker)
+## Running the benchmarks
 
-Modes match [`config/benchmark_config.yaml`](../config/benchmark_config.yaml).
+Modes match [`config/benchmark_config.yaml`](../config/benchmark_config.yaml). Same layout as other language harnesses (native host run, no Docker).
 
 ```bash
+cd c-sharp
 ./scripts/run-benchmarks.sh smoke
 ```
 
 | Mode | Command | Description |
 | :--- | :--- | :--- |
-| **Smoke** | `./scripts/run-benchmarks.sh smoke` | Short run (reps from config). |
+| **Smoke** | `./scripts/run-benchmarks.sh smoke` | Short run (reps from config; default filter Json.Net / message). |
 | **Verify All** | `./scripts/run-benchmarks.sh all-single` | 10 reps, all serializers. |
 | **Full Run** | `./scripts/run-benchmarks.sh full` | 100 reps. |
 | **Research** | `./scripts/run-benchmarks.sh research` | 500 reps. |
 | **Custom** | `./scripts/run-benchmarks.sh custom 50 "Json" "message"` | Custom reps / filters. |
 
-Logs: `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (+ `.configs.json`; `.errors.csv` only on failures). Times in **nanoseconds**.
-
----
-
-## Local Development (Without Docker)
+Direct `dotnet` (same env vars the script sets):
 
 ```bash
+export BENCHMARK_RUN_CONFIG=$PWD/../config/library/smoke.yaml
+export BENCHMARK_SEED=42
+export LOG_DIR=$PWD/../logs/csharp
 dotnet build src/GLD.SerializerBenchmark.csproj -c Release
 dotnet run --project src -c Release -- <repetitions> [serializerFilter] [dataFilter]
 ```
+
+Logs: `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (+ `.configs.json`; `.errors.csv` only on failures). Times in **nanoseconds**.
 
 ---
 

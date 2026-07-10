@@ -48,8 +48,8 @@ namespace GLD.SerializerBenchmark
         }
 
         /// <summary>
-        /// Write logs/csharp/&lt;ts&gt;.configs.json via analysis package when available on host.
-        /// Docker images often lack it; run-all-benchmarks.sh also captures on the host.
+        /// Write logs/csharp/&lt;ts&gt;.configs.json via analysis package when available on PATH.
+        /// run-benchmarks.sh / run-all-benchmarks.sh also capture sidecars on the host.
         /// </summary>
         private static void TryCaptureEnvironment(string logPath)
         {
