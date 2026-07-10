@@ -395,6 +395,21 @@ def _single_test(
 
 def main() -> None:
     args = sys.argv[1:]
+    # Data Model v2: env BENCHMARK_DATA_MODEL=v2 or --data-model v2
+    data_model = (os.environ.get("BENCHMARK_DATA_MODEL") or "v1").strip().lower()
+    if "--data-model" in args:
+        i = args.index("--data-model")
+        if i + 1 < len(args):
+            data_model = args[i + 1].strip().lower()
+            args = args[:i] + args[i + 2 :]
+    if data_model in ("v2", "2", "data_v2"):
+        from .runner_v2 import main as main_v2
+
+        # re-exec remaining argv for v2 CLI
+        sys.argv = [sys.argv[0]] + args
+        main_v2()
+        return
+
     repetitions = int(args[0]) if args else 100
     serializer_filter = args[1] if len(args) > 1 else None
     data_filter = args[2] if len(args) > 2 else None

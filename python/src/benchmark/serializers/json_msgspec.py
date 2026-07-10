@@ -28,6 +28,7 @@ import msgspec
 
 from .base import Serializer
 from ..data import models
+from ..data_v2 import models as models_v2
 
 
 # Flat ObjectGraph/GraphNodeData are non-recursive and included in Struct generation.
@@ -36,14 +37,17 @@ _STRUCT_TYPES: dict[type[Any], type[msgspec.Struct]] = {}
 
 
 def _model_dataclasses() -> set[type[Any]]:
-    return {
-        value
-        for value in vars(models).values()
-        if isinstance(value, type)
-        and is_dataclass(value)
-        and value.__module__ == models.__name__
-        and value not in _UNSUPPORTED_STRUCT_TYPES
-    }
+    found: set[type[Any]] = set()
+    for mod in (models, models_v2):
+        for value in vars(mod).values():
+            if (
+                isinstance(value, type)
+                and is_dataclass(value)
+                and value.__module__ == mod.__name__
+                and value not in _UNSUPPORTED_STRUCT_TYPES
+            ):
+                found.add(value)
+    return found
 
 
 def _dataclass_dependencies(typ: Any, candidates: set[type[Any]]) -> set[type[Any]]:

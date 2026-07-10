@@ -347,6 +347,28 @@ def paired_keep_mask(
 # Unified sanitize pipeline (feeds both tables and plots)
 # ---------------------------------------------------------------------------
 
+def analysis_group_key(r: Dict[str, Any], language_hint: Optional[str] = None) -> Tuple:
+    """Group key for v1 and v2 CSVs.
+
+    v1: (SerializerName, TestDataName, "", "", StringOrStream, Language)
+    v2: includes TypeConfigHash and DataTypeInstanceCount when present.
+    """
+    lang = r.get("Language") or language_hint or "unknown"
+    ic = r.get("DataTypeInstanceCount")
+    if ic is None or ic == "":
+        ic_key: Any = ""
+    else:
+        ic_key = ic
+    return (
+        r["SerializerName"],
+        r["TestDataName"],
+        r.get("TypeConfigHash") or "",
+        ic_key,
+        r["StringOrStream"],
+        lang,
+    )
+
+
 def prepare_analysis_records(
     records: List[Dict],
     config: Optional[Dict[str, Any]] = None,
@@ -393,7 +415,7 @@ def prepare_analysis_records(
 
     for r in records:
         lang = (r.get("Language") or language_hint or "unknown") or "unknown"
-        key = (r["SerializerName"], r["TestDataName"], r["StringOrStream"], lang)
+        key = analysis_group_key(r, lang)
         group_meta[key]["runs_raw"] += 1
 
         if exclude_warmup and r.get("RepetitionIndex", 0) == 0:
@@ -774,7 +796,7 @@ def compute_statistics(
 
     for r in clean:
         lang = r.get("Language") or language_hint or "unknown"
-        key = (r["SerializerName"], r["TestDataName"], r["StringOrStream"], lang)
+        key = analysis_group_key(r, lang)
         # Times are already normalized to ns by prepare_analysis_records
         stats[key]["times_ser"].append(float(r["TimeSer"]))
         stats[key]["times_deser"].append(float(r["TimeDeser"]))
@@ -800,7 +822,7 @@ def compute_statistics(
     for key, m in meta.items():
         if key not in stats and m.get("runs_raw", 0) > 0:
             _ = stats[key]  # create empty bucket
-            stats[key]["language"] = key[3]
+            stats[key]["language"] = key[5]
 
     total_outliers = 0
     results: Dict = {}
@@ -825,11 +847,14 @@ def compute_statistics(
         max_ops = 1e9 / total_stats["total_min_ns"] if total_stats["total_min_ns"] > 0 else 0.0
 
         sizes = data["sizes"]
+        # key: (serializer, test_data, type_config_hash, instance_count, mode, language)
         entry = {
             "serializer": key[0],
             "test_data": key[1],
-            "mode": key[2],
-            "language": key[3],
+            "type_config_hash": key[2] or None,
+            "data_type_instance_count": key[3] if key[3] != "" else None,
+            "mode": key[4],
+            "language": key[5],
             "serializer_version": data["serializer_version"],
             # Backward-compatible primary metrics
             "avg_time_ser_ns": ser_stats["ser_mean_ns"],
@@ -870,11 +895,17 @@ def compute_statistics(
 
 
 def _attach_effect_sizes(results: Dict, cfg: Dict[str, Any]) -> None:
-    """Attach effect size vs fastest serializer in same (lang, data, mode) group."""
+    """Attach effect size vs fastest serializer in same (lang, data, instance, mode) group."""
     thr = (cfg.get("effect_sizes") or {}).get("cliffs_delta_thresholds")
     groups: Dict[Tuple, List[Any]] = defaultdict(list)
     for key, entry in results.items():
-        gkey = (entry["language"], entry["test_data"], entry["mode"])
+        gkey = (
+            entry["language"],
+            entry["test_data"],
+            entry.get("type_config_hash"),
+            entry.get("data_type_instance_count"),
+            entry["mode"],
+        )
         groups[gkey].append((key, entry))
 
     for gkey, items in groups.items():
