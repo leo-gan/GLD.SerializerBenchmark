@@ -16,11 +16,10 @@ namespace GLD.SerializerBenchmark.Serializers
         private void Ensure()
         {
             if (!JustInitialized) return;
-            var t = _bondType ?? _primaryType;
-            _serializer = new Serializer<FastBinaryWriter<OutputBuffer>>(t);
-            _deserializer = new Deserializer<FastBinaryReader<InputBuffer>>(t);
-            _serializerStream = new Serializer<FastBinaryWriter<OutputStream>>(t);
-            _deserializerStream = new Deserializer<FastBinaryReader<InputStream>>(t);
+            _serializer = new Serializer<FastBinaryWriter<OutputBuffer>>(_primaryType);
+            _deserializer = new Deserializer<FastBinaryReader<InputBuffer>>(_primaryType);
+            _serializerStream = new Serializer<FastBinaryWriter<OutputStream>>(_primaryType);
+            _deserializerStream = new Deserializer<FastBinaryReader<InputStream>>(_primaryType);
             JustInitialized = false;
         }
 
@@ -30,26 +29,22 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             Ensure();
             var output = new OutputBuffer(2 * 1024);
-            var writer = new FastBinaryWriter<OutputBuffer>(output);
-            _serializer.Serialize(Payload(serializable), writer);
+            _serializer.Serialize(serializable, new FastBinaryWriter<OutputBuffer>(output));
             return Convert.ToBase64String(output.Data.Array, output.Data.Offset, output.Data.Count);
         }
 
         public override object Deserialize(string serialized)
         {
             Ensure();
-            var bytes = Convert.FromBase64String(serialized);
-            var input = new InputBuffer(bytes);
-            var reader = new FastBinaryReader<InputBuffer>(input);
-            return _deserializer.Deserialize(reader);
+            var input = new InputBuffer(Convert.FromBase64String(serialized));
+            return _deserializer.Deserialize(new FastBinaryReader<InputBuffer>(input));
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
             Ensure();
             var output = new OutputStream(outputStream);
-            var writer = new FastBinaryWriter<OutputStream>(output);
-            _serializerStream.Serialize(Payload(serializable), writer);
+            _serializerStream.Serialize(serializable, new FastBinaryWriter<OutputStream>(output));
             output.Flush();
         }
 
@@ -57,9 +52,7 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             Ensure();
             inputStream.Seek(0, SeekOrigin.Begin);
-            var input = new InputStream(inputStream);
-            var reader = new FastBinaryReader<InputStream>(input);
-            return _deserializerStream.Deserialize(reader);
+            return _deserializerStream.Deserialize(new FastBinaryReader<InputStream>(new InputStream(inputStream)));
         }
     }
 }

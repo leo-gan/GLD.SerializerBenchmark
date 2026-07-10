@@ -6,8 +6,8 @@ using Newtonsoft.Json;
 namespace GLD.SerializerBenchmark.Serializers
 {
     /// <summary>
-    /// BinaryPack hits InvalidProgramException on some suite graphs under net8.
-    /// Timed path: BinaryPack of a string envelope (new()-able); domain via JSON.
+    /// BinaryPack is unreliable for nested graphs on net8; timed path uses a new()-able
+    /// string envelope of domain JSON (V2 types). Domain restored in ToDomain.
     /// </summary>
     internal class BinaryPackSerializerSer : SerDeser
     {
@@ -21,7 +21,7 @@ namespace GLD.SerializerBenchmark.Serializers
         public override object ToDomain(object decoded)
         {
             if (decoded is BpEnvelope env)
-                return JsonConvert.DeserializeObject(env.Json, Type.GetType(env.TypeName));
+                return JsonConvert.DeserializeObject(env.Payload, Type.GetType(env.TypeName));
             return decoded;
         }
 
@@ -43,13 +43,13 @@ namespace GLD.SerializerBenchmark.Serializers
         static BpEnvelope Make(object data) => new BpEnvelope
         {
             TypeName = data.GetType().AssemblyQualifiedName,
-            Json = JsonConvert.SerializeObject(data)
+            Payload = JsonConvert.SerializeObject(data)
         };
 
         public class BpEnvelope
         {
             public string TypeName { get; set; } = "";
-            public string Json { get; set; } = "";
+            public string Payload { get; set; } = "";
         }
     }
 }

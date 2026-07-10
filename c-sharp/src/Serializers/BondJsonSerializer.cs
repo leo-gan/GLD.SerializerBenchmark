@@ -12,9 +12,8 @@ namespace GLD.SerializerBenchmark.Serializers
         private void Ensure()
         {
             if (!JustInitialized) return;
-            var t = _bondType ?? _primaryType;
-            _serializer = new Serializer<SimpleJsonWriter>(t);
-            _deserializer = new Deserializer<SimpleJsonReader>(t);
+            _serializer = new Serializer<SimpleJsonWriter>(_primaryType);
+            _deserializer = new Deserializer<SimpleJsonReader>(_primaryType);
             JustInitialized = false;
         }
 
@@ -23,29 +22,23 @@ namespace GLD.SerializerBenchmark.Serializers
         public override string Serialize(object serializable)
         {
             Ensure();
-            using (var tw = new StringWriter())
-            {
-                var writer = new SimpleJsonWriter(tw);
-                _serializer.Serialize(Payload(serializable), writer);
-                return tw.ToString();
-            }
+            using var tw = new StringWriter();
+            _serializer.Serialize(serializable, new SimpleJsonWriter(tw));
+            return tw.ToString();
         }
 
         public override object Deserialize(string serialized)
         {
             Ensure();
-            using (var tr = new StringReader(serialized))
-            {
-                var reader = new SimpleJsonReader(tr);
-                return _deserializer.Deserialize(reader);
-            }
+            using var tr = new StringReader(serialized);
+            return _deserializer.Deserialize(new SimpleJsonReader(tr));
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
             Ensure();
             var writer = new SimpleJsonWriter(outputStream);
-            _serializer.Serialize(Payload(serializable), writer);
+            _serializer.Serialize(serializable, writer);
             writer.Flush();
         }
 
@@ -53,8 +46,7 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             Ensure();
             inputStream.Seek(0, SeekOrigin.Begin);
-            var reader = new SimpleJsonReader(inputStream);
-            return _deserializer.Deserialize(reader);
+            return _deserializer.Deserialize(new SimpleJsonReader(inputStream));
         }
     }
 }

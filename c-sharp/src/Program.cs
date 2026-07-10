@@ -2,7 +2,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using GLD.SerializerBenchmark.Serializers;
-using GLD.SerializerBenchmark.TestData;
 
 namespace GLD.SerializerBenchmark
 {

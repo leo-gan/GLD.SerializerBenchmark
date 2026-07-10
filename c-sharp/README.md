@@ -9,21 +9,26 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 ## Key Features
 
 - **36 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
-- **Suite fixtures**: `message`, `document`, `telemetry`, `strings`, `event` (POCO payload shapes under `TestData/`).
+- **Suite fixtures**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs` (no legacy proxies).
 - **Dual mode**: string (base64 buffer) and Stream for every capable serializer.
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
-- All registered codecs run on all suite fixtures (`message`, `document`, `telemetry`, `strings`, `event`); some use untimed `PrepareData` projections (see [inventory](../docs/c-sharp/index.md)).
+- All registered codecs run on all suite fixtures; some libraries use untimed `PrepareData` for **library wire forms** only (Protobuf `IMessage`, ZeroFormatter `KeyTuple`, envelopes) — see [inventory](../docs/c-sharp/index.md).
 
 ---
 
 ## Test data
 
-| Type id | Purpose & payload shape |
-| :--- | :--- |
-| **message** / **event** | Flat mixed POCO (`SimpleObject`). |
-| **document** | Nested claims document (`EDI835`). |
-| **telemetry** | Numeric measurements (`TelemetryData`). |
-| **strings** | String list (`StringArrayObject`). |
+Domain types live under `TestData/V2/` and match `schemas/data_catalog_v2.yaml` / `benchmark_v2.proto`.
+
+| Type id | Domain type | Shape |
+| :--- | :--- | :--- |
+| **message** | `Message` | Flat mixed scalars + strings |
+| **document** | `Document` | Nested meta + item list |
+| **telemetry** | `Telemetry` | Source, timestamp, tags, numeric series |
+| **strings** | `Strings` | String list |
+| **event** | `Event` | Id/type/time/producer + attribute list |
+
+For `N>1`, payloads use batch wrappers (`BatchMessage`, …) so codecs that need a single root object stay happy.
 
 ---
 
@@ -89,9 +94,9 @@ See root README and [Benchmark architecture](../docs/analysis/architecture.md).
 
 ### Add a fixture type
 
-1. Description under `TestData/` (or `TestData/V2/`) implementing `ITestDataDescription`.
-2. Register in `Program.cs`.
-3. Add catalog / run-config cells if part of the multi-lang matrix.
+1. Add a domain model + generator branch under `TestData/V2/`.
+2. Wire `RunCells` / fallback descriptions; ensure `type_id` is in the run-config catalog.
+3. Register any library-specific wire conversion only if the codec cannot serialize the domain type directly.
 
 ---
 

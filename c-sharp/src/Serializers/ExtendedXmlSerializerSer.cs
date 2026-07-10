@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using ExtendedXmlSerializer;
 using ExtendedXmlSerializer.Configuration;
-using GLD.SerializerBenchmark.TestData;
 using Newtonsoft.Json;
 
 namespace GLD.SerializerBenchmark.Serializers
