@@ -21,7 +21,14 @@ struct Cell {
     type_id: String,
     type_config_hash: String,
     instance_count: i32,
-    fixture: Fixture,
+    /// One fixture per instance (length == instance_count). N=1 is a single-element vec.
+    fixtures: Vec<Fixture>,
+}
+
+impl Cell {
+    fn primary(&self) -> &Fixture {
+        &self.fixtures[0]
+    }
 }
 
 fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
@@ -78,14 +85,19 @@ fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
         let points = c["type_config"]["points"].as_i64().unwrap_or(32) as i32;
         let count = c["type_config"]["count"].as_i64().unwrap_or(32) as i32;
         let attrs = c["type_config"]["attr_count"].as_i64().unwrap_or(4) as i32;
-        // For batch N>1 use first instance for typed codecs (same as single-shape timing).
-        let value = data_v2::make_one(&type_id, seed, 0, children, points, count, attrs);
-        let fixture = value_to_fixture(&type_id, &value)?;
+        let n = n.max(1);
+        // Build all N instances (W×C batch axis). Must not collapse N>1 to a single item
+        // while still labeling CSV DataTypeInstanceCount=N (that made Rust look 100× too fast).
+        let mut fixtures = Vec::with_capacity(n as usize);
+        for i in 0..n {
+            let value = data_v2::make_one(&type_id, seed, i, children, points, count, attrs);
+            fixtures.push(value_to_fixture(&type_id, &value)?);
+        }
         out_cells.push(Cell {
             type_id,
             type_config_hash: hash,
-            instance_count: n.max(1),
-            fixture,
+            instance_count: n,
+            fixtures,
         });
     }
     Ok((out_cells, modes))
@@ -161,6 +173,97 @@ fn value_to_fixture(type_id: &str, v: &Value) -> Result<Fixture> {
     }
 }
 
+/// Encode one cell: N=1 → raw codec bytes; N>1 → u32 LE count + (u32 LE len + payload)×N.
+/// Matches C `bench_serialize_cell` so DataTypeInstanceCount reflects real batch work.
+fn serialize_cell_bytes(
+    ser: &mut dyn BenchSerializer,
+    fixtures: &[Fixture],
+) -> Result<Vec<u8>> {
+    if fixtures.is_empty() {
+        anyhow::bail!("empty batch");
+    }
+    if fixtures.len() == 1 {
+        return ser.serialize_bytes(&fixtures[0]);
+    }
+    let n = fixtures.len() as u32;
+    let mut out = Vec::with_capacity(4 + fixtures.len() * 64);
+    out.extend_from_slice(&n.to_le_bytes());
+    for fx in fixtures {
+        let part = ser.serialize_bytes(fx)?;
+        let len = part.len() as u32;
+        out.extend_from_slice(&len.to_le_bytes());
+        out.extend_from_slice(&part);
+    }
+    Ok(out)
+}
+
+fn deserialize_cell_bytes(
+    ser: &mut dyn BenchSerializer,
+    buf: &[u8],
+    expected: &[Fixture],
+) -> Result<Vec<Fixture>> {
+    if expected.len() == 1 {
+        return Ok(vec![ser.deserialize_bytes(buf)?]);
+    }
+    if buf.len() < 4 {
+        anyhow::bail!("batch frame too short");
+    }
+    let n = u32::from_le_bytes(buf[0..4].try_into()? ) as usize;
+    if n != expected.len() {
+        anyhow::bail!("batch count {n} != expected {}", expected.len());
+    }
+    let mut o = 4usize;
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        if o + 4 > buf.len() {
+            anyhow::bail!("truncated batch frame");
+        }
+        let item_len = u32::from_le_bytes(buf[o..o + 4].try_into()?) as usize;
+        o += 4;
+        if o + item_len > buf.len() {
+            anyhow::bail!("truncated batch payload");
+        }
+        out.push(ser.deserialize_bytes(&buf[o..o + item_len])?);
+        o += item_len;
+    }
+    Ok(out)
+}
+
+fn serialize_cell_stream(
+    ser: &mut dyn BenchSerializer,
+    fixtures: &[Fixture],
+    w: &mut dyn std::io::Write,
+) -> Result<usize> {
+    // Adapted: build full cell bytes then write (stream size = framed payload length).
+    let data = serialize_cell_bytes(ser, fixtures)?;
+    w.write_all(&data)?;
+    Ok(data.len())
+}
+
+fn deserialize_cell_stream(
+    ser: &mut dyn BenchSerializer,
+    buf: &[u8],
+    expected: &[Fixture],
+) -> Result<Vec<Fixture>> {
+    deserialize_cell_bytes(ser, buf, expected)
+}
+
+fn check_batch_fidelity(expected: &[Fixture], got: &[Fixture]) -> Result<()> {
+    if expected.len() != got.len() {
+        anyhow::bail!(
+            "fidelity batch len {} != {}",
+            got.len(),
+            expected.len()
+        );
+    }
+    for (a, b) in expected.iter().zip(got.iter()) {
+        if a.name() != b.name() {
+            anyhow::bail!("fidelity kind mismatch {} vs {}", a.name(), b.name());
+        }
+    }
+    Ok(())
+}
+
 pub fn run_v2(
     repetitions: u32,
     log_path: &Path,
@@ -197,14 +300,16 @@ pub fn run_v2(
             "[PROGRESS] Cell {} N={}",
             cell.type_id, cell.instance_count
         );
+        let primary = cell.primary();
         for ser in serializers.iter_mut() {
-            if !ser.supports(cell.fixture.name()) {
+            if !ser.supports(primary.name()) {
                 // still try — some support by type_id only
                 if !ser.supports(&cell.type_id) {
                     continue;
                 }
             }
-            if let Err(e) = ser.prepare(&cell.fixture) {
+            // Prepare on first instance shape (codecs cache type state).
+            if let Err(e) = ser.prepare(primary) {
                 eprintln!("[ERROR] prepare {} / {} : {}", ser.name(), cell.type_id, e);
                 continue;
             }
@@ -220,28 +325,26 @@ pub fn run_v2(
                         break;
                     }
                     let measured = (|| -> Result<(u128, u128, usize)> {
+                        // Batch cells: frame N single-item payloads (same as C harness).
+                        // N=1 is a thin passthrough — no framing overhead.
                         if mode == "stream" {
                             let mut buf = Vec::new();
                             let t0 = Instant::now();
-                            let size = ser.serialize_stream(&cell.fixture, &mut buf)?;
+                            let size = serialize_cell_stream(ser.as_mut(), &cell.fixtures, &mut buf)?;
                             let ser_ns = t0.elapsed().as_nanos();
                             let t1 = Instant::now();
-                            let out = ser.deserialize_stream(&mut buf.as_slice())?;
+                            let outs = deserialize_cell_stream(ser.as_mut(), &buf, &cell.fixtures)?;
                             let deser_ns = t1.elapsed().as_nanos();
-                            if out.name() != cell.fixture.name() {
-                                anyhow::bail!("fidelity kind mismatch");
-                            }
+                            check_batch_fidelity(&cell.fixtures, &outs)?;
                             Ok((ser_ns, deser_ns, size))
                         } else {
                             let t0 = Instant::now();
-                            let buf = ser.serialize_bytes(&cell.fixture)?;
+                            let buf = serialize_cell_bytes(ser.as_mut(), &cell.fixtures)?;
                             let ser_ns = t0.elapsed().as_nanos();
                             let t1 = Instant::now();
-                            let out = ser.deserialize_bytes(&buf)?;
+                            let outs = deserialize_cell_bytes(ser.as_mut(), &buf, &cell.fixtures)?;
                             let deser_ns = t1.elapsed().as_nanos();
-                            if out.name() != cell.fixture.name() {
-                                anyhow::bail!("fidelity kind mismatch");
-                            }
+                            check_batch_fidelity(&cell.fixtures, &outs)?;
                             Ok((ser_ns, deser_ns, buf.len()))
                         }
                     })();
