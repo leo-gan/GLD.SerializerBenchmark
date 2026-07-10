@@ -1,6 +1,6 @@
 # Analysis methodology
 
-**Job of this page:** how the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and violin plots.
+**Job of this page:** how the `analysis` package turns harness CSVs into group statistics, effect sizes, published **Results** tables, and latency distributions.
 
 **Metric definitions, importance tiers (multi-way vs pairwise), and CSV field catalog:** [Metrics catalog](METRICS.md).
 
@@ -31,7 +31,7 @@ Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`
 
 Processing is **per group**: `(Language, SerializerName, TestDataName, StringOrStream)` unless noted.
 
-A single function, `prepare_analysis_records` in `stats.py`, performs steps 1–3 and feeds **both** summary tables and violin plots so they cannot diverge on sample membership or units.
+A single function, `prepare_analysis_records` in `stats.py`, performs steps 1–3 and feeds **both** summary tables and latency distributions so they cannot diverge on sample membership or units.
 
 1. Load CSV → normalize times via central config (`csv_schema.time_unit`, optional `languages.<id>.time_unit`)  
 2. Drop warmup (`RepetitionIndex == 0` when enabled)  
@@ -45,7 +45,7 @@ A single function, `prepare_analysis_records` in `stats.py`, performs steps 1–
 
 All language harnesses (including **C#**) write `TimeSer` / `TimeDeser` / `TimeSerAndDeser` in **nanoseconds**. The analysis package resolves the scale once from master config (`csv_schema.time_unit`, overridable per language) and applies the same factor everywhere — never a median heuristic or ad-hoc language name match.
 
-Published **latency** pivots on language Results use **microseconds** (µs = ns ÷ 1000). Violin plots use **µs** and show the **top 5 serializers** by mean total time per fixture.
+Published **latency** pivots on language Results use **microseconds** (µs = ns ÷ 1000). Latency distributions use **µs** and show the **top 5 serializers** by mean total time per fixture.
 
 
 ### Warmup exclusion
@@ -125,13 +125,13 @@ Regression gates: `analyze-benchmarks --check-regression` against `paths.baselin
 
 | Output | Content |
 |--------|---------|
-| `docs/<lang>/results.md` | Pivot tables + violin embeds for one language |
-| `docs/analysis/plots/violin/*.png` | Split violins: ser vs deser (µs; top 5 by mean total; log scale when medians span ≥5×) |
+| `docs/<lang>/results.md` | Pivot tables + latency-distribution embeds for one language |
+| `docs/analysis/plots/violin/*.png` | Combined mean bars (ser/deser) + split violins (µs, linear from 0; top 5 by mean total) |
 | `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** hub of links (not regenerated) |
 | `logs/<lang>/*.configs.json` | Run sidecar: environment + optional dataset/serializer metadata (legacy `*.environment.json` still readable) |
 | Console | Load counts, warmup/outlier tallies |
 
-Violins consume the **same** sanitized records as the summary tables (shared `prepare_analysis_records` output). No separate q99 tail clip or independent per-operation IQR. Display may still limit to the top 5 serializers by mean time for readability; that does not change table membership.
+Latency distributions consume the **same** sanitized records as the summary tables (shared `prepare_analysis_records` output). No separate q99 tail clip or independent per-operation IQR. Display may still limit to the top 5 serializers by mean time for readability; that does not change table membership.
 
 How to run the CLI: [Benchmark Results — regenerating](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
 

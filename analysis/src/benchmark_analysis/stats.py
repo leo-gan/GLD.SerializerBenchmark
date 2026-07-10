@@ -156,7 +156,7 @@ def resolve_time_scale_to_ns(
     2. ``csv_schema.time_unit`` (suite baseline; default ``nanoseconds``)
 
     All current harnesses emit nanoseconds; this central resolution guarantees
-    stats tables and violin plots apply the *same* conversion.
+    stats tables and latency distributions apply the *same* conversion.
     """
     cache_key = f"{language or ''}|{config_path or ''}"
     if cache_key in _time_scale_cache:
@@ -767,7 +767,7 @@ def compute_statistics(
     """Compute aggregate statistics by (serializer, test_data, mode) [+ language].
 
     By default runs the unified :func:`prepare_analysis_records` pipeline so
-    summary tables and violin plots share the same sample population. Pass
+    summary tables and latency distributions share the same sample population. Pass
     ``pre_sanitized=True`` with already-cleaned records (and optional
     ``group_meta`` from that prepare call) to avoid double-filtering when the
     CLI sanitizes once and fans out to multiple consumers.

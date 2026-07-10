@@ -1,6 +1,8 @@
 """Report generation (Markdown and HTML)."""
 
+import math
 import os
+import re
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
@@ -14,6 +16,43 @@ import seaborn as sns
 from .stats import prepare_analysis_records
 
 
+# Machine key: type_id@n=<DataTypeInstanceCount> (filenames / join keys).
+_FIXTURE_KEY_RE = re.compile(r"^(.*?)(?:@n=(\d+))+$", re.IGNORECASE)
+
+
+def _format_fixture_display(label: str) -> str:
+    """Decode cryptic ``message@n=100`` keys for titles and table headers.
+
+    Examples:
+      ``message@n=1``   → ``Message · 1 instance``
+      ``message@n=100`` → ``Message · 100 instances``
+      ``Person``        → ``Person``
+    """
+    s = str(label or "").strip()
+    if not s:
+        return s
+    m = _FIXTURE_KEY_RE.match(s)
+    if m:
+        base = (m.group(1) or "").strip() or s
+        try:
+            n = int(m.group(2))
+        except (TypeError, ValueError):
+            n = None
+    else:
+        base, n = s, None
+
+    # Suite type_ids are lowercase words; legacy fixtures are already Title/Pascal.
+    if base and base == base.lower() and re.fullmatch(r"[a-z][a-z0-9_]*", base):
+        pretty = base.replace("_", " ").title()
+    else:
+        pretty = base
+
+    if n is None:
+        return pretty
+    unit = "instance" if n == 1 else "instances"
+    return f"{pretty} · {n} {unit}"
+
+
 def _records_to_melted_df(
     records: List[Dict],
     language: str,
@@ -22,11 +61,11 @@ def _records_to_melted_df(
     pre_sanitized: bool = False,
     language_hint: Optional[str] = None,
 ) -> pd.DataFrame:
-    """Convert records to a melted dataframe for violin plots.
+    """Convert records to a melted dataframe for latency-distribution plots.
 
     Uses the unified :func:`prepare_analysis_records` pipeline (warmup drop,
-    config time-unit normalization, all-or-nothing paired IQR) so violin
-    plots reflect the *exact* sample population used for summary tables.
+    config time-unit normalization, all-or-nothing paired IQR) so latency
+    distributions reflect the *exact* sample population used for summary tables.
     Pass ``pre_sanitized=True`` when *records* already came from that pipeline.
     """
     if not records:
@@ -116,7 +155,11 @@ def _generate_violin_plot(
     top_n: Optional[int] = None,
     data_source: str = "",
 ) -> Optional[str]:
-    """Generate violin plot for a specific data type, returning image filename.
+    """Generate combined mean-bar + violin figure for one fixture.
+
+    Layout (shared Y = serializer rank, both linear µs from 0):
+      left  — horizontal bars at **mean** ser / deser (easy ranking; aligns with ops/s)
+      right — split violins of full sample density (spread / shape)
 
     Embeds mapping metadata (fixture, language id, log path, modes, n) in the
     title/footer so plots can be tied back to CSV results.
@@ -150,28 +193,94 @@ def _generate_violin_plot(
     # observed data range, and tables/plots must share the same sample values.
 
     order = subset.groupby('SerializerName')['Time_us'].mean().sort_values().index.tolist()
-    # Wide dynamic range (e.g. cbor ~20× faster peers) → log x so small violins stay readable.
-    med_by_ser = subset.groupby('SerializerName')['Time_us'].median()
-    dyn_ratio = float(med_by_ser.max() / med_by_ser.min()) if len(med_by_ser) and med_by_ser.min() > 0 else 1.0
-    use_log = dyn_ratio >= 5.0
+    # Always linear X from 0 (no log): absolute µs stay comparable.
 
-    # Use catplot (modern seaborn name for factorplot)
     try:
-        g = sns.catplot(
-            data=subset,
-            x='Time_us',
-            y='SerializerName',
-            hue='Operation',
-            kind='violin',
-            split=True,
-            # cut=0: do not extend KDE past observed data (avoids fake negative times)
-            cut=0,
-            inner=None,  # Remove box plot inner lines for cleaner violin appearance
-            height=max(6, 0.35 * len(order) + 2),
-            aspect=1.35,
-            legend_out=False,
-            order=order,
+        # Per-serializer mean ser / deser for the bar panel (same family as ops/s).
+        means = (
+            subset.groupby(["SerializerName", "Operation"], as_index=False)["Time_us"]
+            .mean()
+            .rename(columns={"Time_us": "Mean_us"})
         )
+        hue_order = ["Serialize", "Deserialize"]
+        # Stable palette matching historical violin hues (blue / orange).
+        palette = {"Serialize": "#4c72b0", "Deserialize": "#dd8452"}
+
+        n_ser = max(len(order), 1)
+        fig_h = max(5.5, 0.55 * n_ser + 2.2)
+        fig_w = 12.0
+        # Left bars (ranking) narrower; right violins (density) wider.
+        fig, (ax_bar, ax_vio) = plt.subplots(
+            1,
+            2,
+            sharey=True,
+            figsize=(fig_w, fig_h),
+            gridspec_kw={"width_ratios": [1.0, 1.55], "wspace": 0.08},
+        )
+
+        sns.barplot(
+            data=means,
+            x="Mean_us",
+            y="SerializerName",
+            hue="Operation",
+            order=order,
+            hue_order=hue_order,
+            palette=palette,
+            ax=ax_bar,
+            errorbar=None,
+            edgecolor="white",
+            linewidth=0.4,
+        )
+        ax_bar.set_xlabel("Mean time (µs)")
+        ax_bar.set_ylabel("Serializer")
+        ax_bar.set_title("Mean (rank)", fontsize=11)
+        bar_hi = float(means["Mean_us"].max()) if len(means) else 0.0
+        ax_bar.set_xlim(0, bar_hi * 1.12 if bar_hi > 0 else None)
+        ax_bar.grid(axis="x", linestyle=":", alpha=0.45)
+        ax_bar.set_axisbelow(True)
+        # Shared legend above both panels (avoids covering the slowest bars).
+        handles, labels = ax_bar.get_legend_handles_labels()
+        leg = ax_bar.get_legend()
+        if leg is not None:
+            leg.remove()
+        if handles:
+            fig.legend(
+                handles,
+                labels,
+                title="Operation",
+                loc="upper center",
+                bbox_to_anchor=(0.5, 0.98),
+                ncol=2,
+                frameon=True,
+                fontsize=9,
+            )
+
+        sns.violinplot(
+            data=subset,
+            x="Time_us",
+            y="SerializerName",
+            hue="Operation",
+            order=order,
+            hue_order=hue_order,
+            palette=palette,
+            split=True,
+            cut=0,
+            inner=None,
+            ax=ax_vio,
+            density_norm="width",
+        )
+        ax_vio.set_xlabel("Time (µs)")
+        ax_vio.set_ylabel("")
+        ax_vio.set_title("Distribution (density)", fontsize=11)
+        vio_hi = float(subset["Time_us"].max())
+        ax_vio.set_xlim(0, vio_hi * 1.05 if vio_hi > 0 else None)
+        ax_vio.grid(axis="x", linestyle=":", alpha=0.45)
+        ax_vio.set_axisbelow(True)
+        # Avoid duplicate legend on the violin panel.
+        leg_v = ax_vio.get_legend()
+        if leg_v is not None:
+            leg_v.remove()
+
         lang_key = (lang_id or _lang_file_key("", language)).lower().replace("#", "sharp")
         safe_fixture = data_type.replace(" ", "_")
         img_name = f"{lang_key}_{safe_fixture}.png"
@@ -183,23 +292,11 @@ def _generate_violin_plot(
         n_pts = len(subset)
         top_note = f" · Top {int(top_n)}" if top_n and int(top_n) > 0 else ""
 
-        # Title: language · fixture · Top N (scale on x-axis label).
-        g.fig.suptitle(
-            f"{language or lang_key} · {data_type}{top_note}",
+        fig.suptitle(
+            f"{language or lang_key} · {_format_fixture_display(data_type)}{top_note}",
             fontsize=12,
             y=1.02,
         )
-        if use_log:
-            g.set_axis_labels('Time (µs, log scale)', 'Serializer')
-            for ax in g.axes.flat:
-                ax.set_xscale('log')
-                # Log axes cannot include 0; pad within positive data range.
-                lo = float(subset['Time_us'].min())
-                hi = float(subset['Time_us'].max())
-                ax.set_xlim(lo * 0.85, hi * 1.15)
-        else:
-            g.set_axis_labels('Time (µs)', 'Serializer')
-            g.set(xlim=(0, None))
 
         # Footer: file + CSV + samples + mode (+ optional run id). No seed.
         run_bit = ""
@@ -230,7 +327,7 @@ def _generate_violin_plot(
                     run_bit = f"  |  run={ts}"
         except Exception:
             run_bit = ""
-        g.fig.text(
+        fig.text(
             0.5,
             -0.02,
             f"{img_name}  |  {src}  |  samples={n_pts}  |  mode={modes_s}{run_bit}",
@@ -242,8 +339,8 @@ def _generate_violin_plot(
         )
 
         img_path = os.path.join(output_dir, img_name)
-        plt.savefig(img_path, dpi=150, bbox_inches="tight")
-        plt.close(g.fig)
+        fig.savefig(img_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
         return os.path.basename(img_path)
     except Exception as e:
         lang_info = f" ({language})" if language else ""
@@ -252,7 +349,7 @@ def _generate_violin_plot(
         return None
 
 
-# Violin plots: always show this many fastest serializers per fixture (all languages).
+# Latency distributions: always show this many fastest serializers per fixture (all languages).
 VIOLIN_TOP_N_SERIALIZERS = 5
 
 # CSV StringOrStream values → human labels (not "number of bytes")
@@ -347,6 +444,41 @@ def _column_best(values: list, *, higher_is_better: bool) -> Optional[float]:
     return max(nums) if higher_is_better else min(nums)
 
 
+def _format_sig(val: float, *, sig: int = 3) -> str:
+    """Format *val* with ~*sig* significant digits for results tables.
+
+    Rules:
+    - Never scientific notation (``1.17e+03`` → bad; use fixed-point).
+    - Thousands separators on the integer part: ``1230`` → ``1,230``.
+    - Fractional part kept without grouping (``0.581``, ``18.4``).
+    """
+    try:
+        v = float(val)
+    except (TypeError, ValueError):
+        return str(val)
+    if v != v:  # NaN
+        return "-"
+    if v == 0:
+        return "0"
+
+    sign = "-" if v < 0 else ""
+    a = abs(v)
+    order = int(math.floor(math.log10(a))) if a > 0 else 0
+    scale = 10 ** (order - sig + 1)
+    # Round to sig significant figures (scale may be < 1 for small values).
+    rounded = round(a / scale) * scale if scale != 0 else a
+    # Rounding can bump order (e.g. 999 → 1000 with 3 sig).
+    if rounded > 0:
+        order = int(math.floor(math.log10(rounded)))
+    decimals = max(0, sig - 1 - order)
+    if decimals == 0:
+        text = f"{int(round(rounded)):,}"
+    else:
+        # Comma on integer part only; strip trailing fractional zeros.
+        text = f"{rounded:,.{decimals}f}".rstrip("0").rstrip(".")
+    return sign + (text if text else "0")
+
+
 def _format_in_unit(
     val: float,
     divisor: float,
@@ -355,7 +487,7 @@ def _format_in_unit(
     sig: int = 2,
     bold: bool = False,
 ) -> str:
-    """Format ``val`` in a fixed column unit with 2 significant digits."""
+    """Format ``val`` in a fixed column unit with *sig* significant digits."""
     try:
         v = float(val)
     except (TypeError, ValueError):
@@ -366,9 +498,7 @@ def _format_in_unit(
         text = "0"
     else:
         scaled = v / divisor if divisor else v
-        text = f"{float(f'%.{sig}g' % scaled)}"
-        if text.endswith(".0") and "e" not in text.lower():
-            text = text[:-2]
+        text = _format_sig(scaled, sig=sig)
         text = f"{text}{unit}" if unit else text
     return f"**{text}**" if bold else text
 
@@ -850,7 +980,8 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
             if field_id == "runs":
                 text = str(int(num))
             elif is_time:
-                text = f"{num / 1000.0:.3g}"  # ns → µs
+                # ns → µs; fixed-point only (never 1.17e+03)
+                text = _format_sig(num / 1000.0, sig=3)
             elif field_id in ("avg_ops_per_sec", "median_size_bytes"):
                 # 3 significant digits + shared column K/M (thousands / millions)
                 div, unit = col_units.get(field_id) or _pick_column_unit([num])
@@ -858,7 +989,7 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
             elif field_id == "mean_fidelity":
                 text = f"{num:.2f}"
             else:
-                text = f"{num:.4g}"
+                text = _format_sig(num, sig=4)
                 
             best_val = col_bests.get(field_id)
             is_best_col = (best_val is not None and abs(num - best_val) < 1e-9)
@@ -970,7 +1101,7 @@ def _total_time_pivot_table_md(stats: Dict) -> str:
                 row_cells.append("-")
             else:
                 is_best = bests[key] is not None and abs(val - bests[key]) < 1e-9
-                text = f"{val:.3g}"
+                text = _format_sig(val, sig=3)  # already µs; fixed-point only
                 if is_best:
                     text = f"**{text}**"
                 row_cells.append(text)
@@ -1054,8 +1185,14 @@ def generate_language_results_pages(
                     continue
                 e2 = dict(e)
                 n = e2.get("data_type_instance_count")
+                base = str(e2.get("test_data") or "")
                 if n not in (None, ""):
-                    e2["test_data"] = f"{e2.get('test_data', '')}@n={n}"
+                    try:
+                        e2["test_data"] = _format_fixture_display(f"{base}@n={int(n)}")
+                    except (TypeError, ValueError):
+                        e2["test_data"] = _format_fixture_display(base)
+                else:
+                    e2["test_data"] = _format_fixture_display(base)
                 display_stats[k] = e2
 
             lines.append("## Pivot tables")
@@ -1069,7 +1206,8 @@ def generate_language_results_pages(
                 "In each table, **bold** marks the semantic best value in that column "
                 "(lowest time; highest ops/s). Ties are all bolded. "
                 "Latency tables are in **microseconds** (µs). "
-                "Batch cells use `type@n=<DataTypeInstanceCount>` labels."
+                "Batch fixtures show as **Type · N instances** "
+                "(from `DataTypeInstanceCount`; e.g. Message · 100 instances)."
             )
             lines.append("")
             sci = _scientific_summary_md(
@@ -1117,22 +1255,23 @@ def generate_language_results_pages(
 
         items = plots_by_lang.get(lang_id) or []
         if items:
-            lines.append("## Violin plots")
+            lines.append("## Latency distributions")
             lines.append("")
             lines.append(
-                "Density of serialize / deserialize timings (µs; log scale when medians span ≥5×). "
-                "**Each plot shows only the top 5 serializers by mean total time** for that fixture "
-                "(same rule for every language). Full rankings are in the pivot tables above. "
+                "Each figure pairs **mean bars** (left: ser / deser mean µs, linear from 0) "
+                "with **split violins** (right: full sample density, linear from 0). "
+                "**Top 5 serializers by mean total time** per fixture (display only; tables list all). "
                 "Provenance (fixture, CSV path, modes, *n*) is printed on each image."
             )
             lines.append("")
             for dtype, fname in items:
-                lines.append(f"### {dtype}")
+                pretty = _format_fixture_display(dtype)
+                lines.append(f"### {pretty}")
                 lines.append("")
-                lines.append(f"![{dtype}]({plot_rel_from_lang}/{fname}){{ width=\"80%\" }}")
+                lines.append(f"![{pretty}]({plot_rel_from_lang}/{fname}){{ width=\"80%\" }}")
                 lines.append("")
         else:
-            lines.append("*No violin plots for this language in the current snapshot.*")
+            lines.append("*No latency distributions for this language in the current snapshot.*")
             lines.append("")
 
         lines.append("## Regenerate")
@@ -1148,7 +1287,7 @@ def generate_language_results_pages(
         lines.append("```")
         lines.append("")
         lines.append(
-            "That refreshes this language's results tables and violin plots under "
+            "That refreshes this language's results tables and latency distributions under "
             "`docs/analysis/plots/violin/`. The hub "
             "[Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) is a **static** index "
             "and is not rewritten. Commit the updated `results.md` / plot paths as needed."
@@ -1254,7 +1393,7 @@ def generate_violin_plots(
 
     generated = list(violin_images.values())
     if generated:
-        print(f"Generated {len(generated)} violin plots in: {output_dir}")
+        print(f"Generated {len(generated)} latency distributions in: {output_dir}")
     # Attach meta for callers (results pages) without breaking dict return type
     violin_images["_meta"] = plot_meta  # type: ignore[assignment]
     return violin_images

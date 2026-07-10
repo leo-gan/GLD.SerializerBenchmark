@@ -423,7 +423,7 @@ languages:
         optimal_api: "hand wire field-1 over MessagePack payload"
 
   c:
-    display_name: "C (native)"
+    display_name: C
     enabled: true
     runner_dir: c
     runner_script: scripts/run-benchmarks.sh
