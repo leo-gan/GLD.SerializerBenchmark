@@ -130,7 +130,7 @@ A team sees that a schema-driven library is fastest on **Rust** Results for a de
 
 ## Common mistakes
 
-- Screenshotting one violin plot into an ADR without stating language, fixture, and paradigm.  
+- Screenshotting one latency distribution into an ADR without stating language, fixture, and paradigm.  
 - Averaging ranks across languages “to be fair.”  
 - Changing fixture generation parameters and comparing to old published snapshots without regenerating both sides.  
 - Using language-native serializers’ speed as an argument for **network** interchange.

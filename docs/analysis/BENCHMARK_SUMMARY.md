@@ -2,7 +2,7 @@
 
 **Job of this page:** static **index of published result snapshots** and the **maintainer commands** to regenerate them.
 
-Pivot tables and violin plots live on each language **Results** page (generated locally; not rewritten by CI). Numbers depend on the machine and CSV used—re-running elsewhere may differ.
+Pivot tables and latency distributions live on each language **Results** page (generated locally; not rewritten by CI). Numbers depend on the machine and CSV used—re-running elsewhere may differ.
 
 Hub of analysis docs: [Benchmarks overview](index.md).
 
@@ -32,7 +32,7 @@ Requires local CSVs at `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` (gitignored; from har
 ```bash
 cd analysis && pip install -e .   # once
 
-# All languages (tables + violin plots; this hub stays static)
+# All languages (tables + latency distributions; this hub stays static)
 analyze-benchmarks
 
 # One language only
@@ -46,7 +46,7 @@ analyze-benchmarks -l python --logs python/logs/python
 | Output | Role |
 |--------|------|
 | `docs/<lang>/results.md` | Per-language pivots + plot embeds |
-| `docs/analysis/plots/violin/<lang>_*.png` | Shared violin assets |
+| `docs/analysis/plots/violin/<lang>_*.png` | Shared latency-distribution assets |
 
 By default the CLI writes **both** tables and plots. Commit updated `results.md` and plot paths as needed.
 
@@ -58,7 +58,7 @@ How stats are computed: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
 | Output | Where |
 |--------|--------|
-| Language Results + violins | `docs/<lang>/results.md`, `docs/analysis/plots/violin/` |
+| Language Results + latency distributions | `docs/<lang>/results.md`, `docs/analysis/plots/violin/` |
 | Version A/B report | `reports/VERSION_COMPARE.md` (`--compare-a` / `--compare-b`) |
 | Regression baseline | `reports/baseline.json` by default (`--save-baseline` / `--check-regression`) |
 

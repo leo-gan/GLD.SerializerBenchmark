@@ -23,7 +23,8 @@ compression:
 
 execution:
   mode: full
-  io_modes: [bytes]
+  # bytes = in-memory buffer API; stream = stream-like write/read path (adapted where needed)
+  io_modes: [bytes, stream]
 
 budget:
   # soft_budget_seconds = 60 * ceil(n_serializers / 10); hard_cap_seconds = 600

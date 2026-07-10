@@ -38,7 +38,7 @@ Counts match the **registered inventories on each language Overview** (hand-writ
 † **JavaScript:** `simdjson` is optional (native addon). If it fails to build, that codec is omitted from the run.
 
 - **Inventories** (`docs/<lang>/index.md`) — log names, categories, caveats.  
-- **Results** (`docs/<lang>/results.md`) — local pivots and violin embeds; machine-dependent.  
+- **Results** (`docs/<lang>/results.md`) — local pivots and latency-distribution embeds; machine-dependent.  
 - **Log ids:** harness `Language` column uses `csharp`, `python`, `rust`, `c`, `javascript`, `go` (docs folders may differ, e.g. `c-sharp` for C#).  
 - **Regeneration** — [Benchmark Results](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
 

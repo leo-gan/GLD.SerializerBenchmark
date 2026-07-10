@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Scan latest benchmark stats/CSVs for suspicious size/ops outliers.
 
+Catches within-group outliers AND batch-axis / cross-language consistency bugs
+(e.g. DataTypeInstanceCount=N labeled but only one instance encoded).
+
 Usage:
   python3 scan-outliers.py [--langs c python ...] [--fixture message]
   python3 scan-outliers.py --langs all
@@ -98,7 +101,6 @@ def flag_group(groups: list[dict], *, size_ratio: float, ops_ratio: float) -> li
 
 
 def stream_vs_bytes(groups: list[dict]) -> list[str]:
-    """Flag serializers where stream and bytes look identical."""
     by_ser: dict[str, dict[str, float]] = defaultdict(dict)
     for g in groups:
         ser = g.get("serializer")
@@ -108,13 +110,133 @@ def stream_vs_bytes(groups: list[dict]) -> list[str]:
             by_ser[ser][mode] = float(total)
     msgs = []
     for ser, modes in by_ser.items():
-        # normalize
         b = modes.get("bytes") or modes.get("string") or modes.get("buffer")
         s = modes.get("stream")
         if b and s and b > 0:
             rel = abs(b - s) / b
             if rel < 0.05:
-                msgs.append(f"{ser}: stream≈bytes (rel diff {rel:.1%}, bytes={b:.0f}ns stream={s:.0f}ns)")
+                msgs.append(
+                    f"{ser}: stream≈bytes (rel diff {rel:.1%}, bytes={b:.0f}ns stream={s:.0f}ns)"
+                )
+    return msgs
+
+
+def batch_axis_flags(groups: list[dict], fixture: str) -> list[str]:
+    """Compare n=1 vs n=N sizes for same serializer+mode.
+
+    If DataTypeInstanceCount claims N but size(n=N)/size(n=1) ≈ 1, the harness
+    almost certainly is not encoding N instances (Rust speedy n=100 bug class).
+    """
+    # key: (serializer, mode) -> {n: size}
+    by: dict[tuple, dict[int, float]] = defaultdict(dict)
+    for g in groups:
+        if g.get("test_data") != fixture:
+            continue
+        n = g.get("data_type_instance_count")
+        if n is None or n == "":
+            continue
+        try:
+            ni = int(n)
+        except (TypeError, ValueError):
+            continue
+        sz = g.get("median_size_bytes") or 0
+        if sz <= 0:
+            continue
+        mode = str(g.get("mode") or "").lower()
+        ser = g.get("serializer") or "?"
+        by[(ser, mode)][ni] = float(sz)
+
+    msgs = []
+    for (ser, mode), nsizes in sorted(by.items()):
+        if 1 not in nsizes:
+            continue
+        s1 = nsizes[1]
+        for n, sn in sorted(nsizes.items()):
+            if n <= 1 or s1 <= 0:
+                continue
+            ratio = sn / s1
+            # Expect roughly proportional to N (framing may add a bit).
+            # Flag if ratio is far below N/10, with floor 1.5 so small N (e.g. n=2)
+            # is not a false positive when ratio is ~1.95 from shared framing.
+            if ratio < max(1.5, n / 10.0):
+                msgs.append(
+                    f"{ser} | {fixture} | {mode}: size(n={n})={sn:.0f} vs size(n=1)={s1:.0f} "
+                    f"ratio={ratio:.2f} (expected ~{n}) → LABEL≠WORK / missing batch encode"
+                )
+    # ops check
+    by_ops: dict[tuple, dict[int, float]] = defaultdict(dict)
+    for g in groups:
+        if g.get("test_data") != fixture:
+            continue
+        n = g.get("data_type_instance_count")
+        try:
+            ni = int(n) if n is not None and n != "" else None
+        except (TypeError, ValueError):
+            ni = None
+        if ni is None:
+            continue
+        o = g.get("avg_ops_per_sec") or 0
+        if o <= 0:
+            continue
+        mode = str(g.get("mode") or "").lower()
+        ser = g.get("serializer") or "?"
+        by_ops[(ser, mode)][ni] = float(o)
+    for (ser, mode), nops in sorted(by_ops.items()):
+        if 1 not in nops:
+            continue
+        o1 = nops[1]
+        for n, on in sorted(nops.items()):
+            if n <= 1 or o1 <= 0:
+                continue
+            # Flag if ops stays within ~20% of n=1 (work barely scaled).
+            # 0.8 avoids false positives for small N where ratio may be ~0.5–0.6.
+            if on > o1 * 0.8:
+                msgs.append(
+                    f"{ser} | {fixture} | {mode}: ops(n={n})={on:.0f} ≈ ops(n=1)={o1:.0f} "
+                    f"(ratio {on/o1:.2f}; expect ≪1 if N items encoded) → LABEL≠WORK"
+                )
+    return msgs
+
+
+def cross_lang_size_flags(
+    all_lang_groups: dict[str, list[dict]], fixture: str, n: int = 100
+) -> list[str]:
+    """Flag languages whose median size for fixture@n is tiny vs peers.
+
+    Catches whole-language harness bugs (all codecs under-encode N) that
+    within-language relative scans miss because every peer is equally wrong.
+    """
+    # lang -> list of sizes for that fixture@n (any mode, prefer bytes)
+    lang_sizes: dict[str, list[float]] = defaultdict(list)
+    for lang, groups in all_lang_groups.items():
+        for g in groups:
+            if g.get("test_data") != fixture:
+                continue
+            try:
+                ni = int(g.get("data_type_instance_count") or 0)
+            except (TypeError, ValueError):
+                continue
+            if ni != n:
+                continue
+            sz = g.get("median_size_bytes") or 0
+            if sz > 0:
+                lang_sizes[lang].append(float(sz))
+    if len(lang_sizes) < 2:
+        return []
+    med_by_lang = {lang: st.median(szs) for lang, szs in lang_sizes.items()}
+    peer_med = st.median(list(med_by_lang.values()))
+    msgs = []
+    for lang, m in sorted(med_by_lang.items()):
+        if peer_med > 0 and m < peer_med / 5.0:
+            msgs.append(
+                f"{lang}: median size({fixture}@n={n})={m:.0f}B ≪ peer median {peer_med:.0f}B "
+                f"(ratio {m/peer_med:.2f}) → likely missing batch / wrong N for whole language"
+            )
+        if peer_med > 0 and m > peer_med * 5.0:
+            msgs.append(
+                f"{lang}: median size({fixture}@n={n})={m:.0f}B ≫ peer median {peer_med:.0f}B "
+                f"(ratio {m/peer_med:.2f}) → possible envelope or over-counting"
+            )
     return msgs
 
 
@@ -126,7 +248,7 @@ def main() -> int:
         default=None,
         help="Language ids (default: all). Use 'all' for default set.",
     )
-    ap.add_argument("--fixture", default="message", help="Primary fixture for TOP/BOT print")
+    ap.add_argument("--fixture", default="message", help="Primary fixture for TOP/BOT + batch checks")
     ap.add_argument("--size-ratio", type=float, default=40.0)
     ap.add_argument("--ops-ratio", type=float, default=25.0)
     args = ap.parse_args()
@@ -141,6 +263,8 @@ def main() -> int:
     print(f"Thresholds: size ×/{args.size_ratio}, ops ×/{args.ops_ratio}")
     print()
 
+    all_groups: dict[str, list[dict]] = {}
+
     for lang in langs:
         print(f"########## {lang.upper()} ##########")
         stats = load_stats(root, lang)
@@ -151,7 +275,6 @@ def main() -> int:
             print(f"  latest CSV: {csv_path.name} rows={len(rows)}")
             if len(rows) < 100:
                 print("  WARN: tiny CSV — may be smoke; prefer a full-sized run for conclusions")
-            # size<=3 samples
             tiny = [
                 r
                 for r in rows
@@ -186,11 +309,11 @@ def main() -> int:
             continue
 
         groups = stats["groups"]
+        all_groups[lang] = groups
         by = defaultdict(list)
         for g in groups:
             by[(g.get("test_data"), g.get("data_type_instance_count"), g.get("mode"))].append(g)
 
-        # Fixture focus TOP/BOT
         for key in sorted(by.keys()):
             td, n, mode = key
             if td != args.fixture or n not in (1, None, "1"):
@@ -216,13 +339,12 @@ def main() -> int:
                 suspects.append((key, row))
 
         if suspects:
-            print(f"  SUSPECTS ({len(suspects)}):")
+            print(f"  SUSPECTS within-group ({len(suspects)}):")
             for key, (ser, mode, td, n, flags, sz, o) in suspects[:40]:
                 print(f"    {ser} | {td}@n={n} | {mode} | {', '.join(flags)}")
         else:
-            print("  SUSPECTS: (none by threshold)")
+            print("  SUSPECTS within-group: (none by threshold)")
 
-        # stream vs bytes on preferred fixture n=1
         focus = [
             g
             for g in groups
@@ -234,8 +356,28 @@ def main() -> int:
             print("  stream≈bytes:")
             for m in svb[:15]:
                 print(f"    {m}")
+
+        # --- critical: batch axis label≠work ---
+        bflags = batch_axis_flags(groups, args.fixture)
+        if bflags:
+            print(f"  BATCH-AXIS / LABEL≠WORK ({len(bflags)}):")
+            for m in bflags[:30]:
+                print(f"    {m}")
+        else:
+            print("  BATCH-AXIS: ok (or no n=1 & n>1 pair)")
         print()
 
+    # Cross-language after all langs loaded
+    print("########## CROSS-LANGUAGE ##########")
+    for n in (1, 100):
+        xl = cross_lang_size_flags(all_groups, args.fixture, n=n)
+        if xl:
+            print(f"  size peer outliers @ n={n}:")
+            for m in xl:
+                print(f"    {m}")
+        else:
+            print(f"  size peer check @ n={n}: ok (or <2 langs)")
+    print()
     return 0
 
 

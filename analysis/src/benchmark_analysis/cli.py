@@ -275,7 +275,7 @@ def _generate_artifacts(
     stats_config: Optional[Dict] = None,
     pre_sanitized: bool = True,
 ) -> None:
-    """Write hub index, per-language results tables, and violin plots.
+    """Write hub index, per-language results tables, and latency distributions.
 
     ``all_records`` should be the *same* sanitized population used to build
     ``all_stats`` (see :func:`prepare_analysis_records`) so plots and tables
@@ -327,7 +327,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=(
             "Analyze serializer benchmarks and publish site artifacts "
-            "(results tables + violin plots)."
+            "(results tables + latency distributions)."
         ),
         epilog=(
             "By default, loads the latest timestamped CSV under logs/<lang>/ and writes:\n"
@@ -488,7 +488,7 @@ def main():
         recs, skipped = parse_csv_file(path, language_hint=lang)
         total_loaded += len(recs)
         if recs:
-            # One sanitize pass → same population for tables and violin plots.
+            # One sanitize pass → same population for tables and latency distributions.
             clean, meta = prepare_analysis_records(
                 recs, config=stats_cfg, language_hint=lang
             )
