@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 def _find_repo_root() -> Path:
-    """Walk parents for schemas/data_catalog_v2.yaml (works in-repo and Docker layouts)."""
+    """Walk parents for schemas/data_catalog_v2.yaml (works from any in-repo cwd)."""
     here = Path(__file__).resolve()
     for p in here.parents:
         if (p / "schemas" / "data_catalog_v2.yaml").is_file():

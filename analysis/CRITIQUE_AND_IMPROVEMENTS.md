@@ -79,7 +79,7 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 4. **`environment.json` capture** + document hardware/OS in every report header.
 5. **Bayesian hierarchical model** (optional) for multi-run meta-analysis across machines.
 6. **Go + Java** harnesses using the same contract (highest ecosystem value after C#/Python/Rust).
-7. **CI matrix** running smoke for all five languages without requiring Docker for Python (local `uv run` path).
+7. **CI matrix** running smoke for all languages via native toolchains (`uv` / `dotnet` / etc.).
 
 ## Bottom line
 
