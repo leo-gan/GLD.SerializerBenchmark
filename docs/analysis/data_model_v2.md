@@ -1,17 +1,17 @@
 # Data Model v2
 
-**Status:** normative for the v2 data plane. **All suite languages accept `BENCHMARK_DATA_MODEL=v2`.**  
+**Status:** normative for the v2 data plane. **Suite default is v2** (`BENCHMARK_DATA_MODEL` defaults to `v2`). Use `BENCHMARK_DATA_MODEL=v1` for legacy Person/EDI fixtures.
 
 | Language | v2 coverage |
 |----------|-------------|
 | Python | Full serializer matrix (minus avro/flatbuffers) |
-| Go | Schemaless + most codecs (protobuf/avro skipped until schemas/v2 codegen) |
+| Go | Schemaless matrix (protobuf/avro skipped until schemas/v2 codegen) |
 | JavaScript | Most codecs (schema codecs without v2 IDL skipped) |
-| Rust | JSON-family subset (`serde_json`, `rmp-serde`, `ciborium`) |
-| C | Minimal path (`memcpy-json` smoke) |
-| C# | `System.Text.Json` path (requires `dotnet` + python resolver) |
+| Rust | `serde_json`, `sonic-rs`, `rmp-serde`, `ciborium`, `bson` |
+| C | `memcpy-json`, `cJSON`, `yyjson` (payloads via Python generators) |
+| C# | Standalone `c-sharp/v2bench` (`System.Text.Json`; main project may need root-owned `obj/` fixed) |
 
-Default harness path remains **v1** unless `BENCHMARK_DATA_MODEL=v2`.  
+Legacy v1 models remain in-tree for `BENCHMARK_DATA_MODEL=v1` only.  
 **Plan:** [`plans/DATA_MODEL_V2_PLAN.md`](../../plans/DATA_MODEL_V2_PLAN.md)  
 **Catalog:** [`schemas/data_catalog_v2.yaml`](../../schemas/data_catalog_v2.yaml)  
 **Run configs:** [`config/library/`](../../config/library/)

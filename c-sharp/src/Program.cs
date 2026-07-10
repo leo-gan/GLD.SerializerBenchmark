@@ -23,8 +23,8 @@ namespace GLD.SerializerBenchmark
                 return;
             }
 
-            var dataModel = (System.Environment.GetEnvironmentVariable("BENCHMARK_DATA_MODEL") ?? "v1").ToLowerInvariant();
-            if (dataModel == "v2" || dataModel == "2")
+            var dataModel = (System.Environment.GetEnvironmentVariable("BENCHMARK_DATA_MODEL") ?? "v2").ToLowerInvariant();
+            if (dataModel == "v2" || dataModel == "2" || dataModel == "data_v2")
             {
                 var reps = args.Length > 0 ? int.Parse(args[0]) : 10;
                 var logDir = System.Environment.GetEnvironmentVariable("LOG_DIR") ?? "logs/csharp";

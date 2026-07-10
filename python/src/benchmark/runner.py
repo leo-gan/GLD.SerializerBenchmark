@@ -396,7 +396,7 @@ def _single_test(
 def main() -> None:
     args = sys.argv[1:]
     # Data Model v2: env BENCHMARK_DATA_MODEL=v2 or --data-model v2
-    data_model = (os.environ.get("BENCHMARK_DATA_MODEL") or "v1").strip().lower()
+    data_model = (os.environ.get("BENCHMARK_DATA_MODEL") or "v2").strip().lower()
     if "--data-model" in args:
         i = args.index("--data-model")
         if i + 1 < len(args):

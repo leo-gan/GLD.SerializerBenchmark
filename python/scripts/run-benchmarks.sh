@@ -12,7 +12,7 @@ LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
 # Data Model: v1 (Person/EDI) or v2 (message/document/…). Default v1 until full cutover.
-DATA_MODEL="${BENCHMARK_DATA_MODEL:-v1}"
+DATA_MODEL="${BENCHMARK_DATA_MODEL:-v2}"
 RUN_CONFIG_HOST="${BENCHMARK_RUN_CONFIG:-$PROJECT_ROOT/config/library/default.yaml}"
 if [[ "$DATA_MODEL" == "v2" && "${1:-}" == "smoke" ]]; then
   RUN_CONFIG_HOST="${BENCHMARK_RUN_CONFIG:-$PROJECT_ROOT/config/library/smoke.yaml}"
@@ -26,7 +26,7 @@ print_usage() {
     echo "  custom — Manual: ./scripts/run-benchmarks.sh custom <reps> [serializerFilter] [dataFilter]"
     echo ""
     echo "Data model (env):"
-    echo "  BENCHMARK_DATA_MODEL=v1|v2   (default v1)"
+    echo "  BENCHMARK_DATA_MODEL=v1|v2   (default v2)"
     echo "  BENCHMARK_RUN_CONFIG=path    (v2 run config YAML)"
 }
 

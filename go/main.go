@@ -196,6 +196,9 @@ func main() {
 	}
 
 	dataModel := strings.ToLower(strings.TrimSpace(os.Getenv("BENCHMARK_DATA_MODEL")))
+	if dataModel == "" {
+		dataModel = "v2" // suite default
+	}
 	modes := []string{"bytes", "stream"}
 
 	type workItem struct {

@@ -131,7 +131,7 @@ fn fidelity(a: &Fixture, b: &Fixture) -> bool {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let dm = std::env::var("BENCHMARK_DATA_MODEL").unwrap_or_else(|_| "v1".into());
+    let dm = std::env::var("BENCHMARK_DATA_MODEL").unwrap_or_else(|_| "v2".into());
     if matches!(dm.to_lowercase().as_str(), "v2" | "2" | "data_v2") {
         let log_dir = if !args.log_dir.is_empty() {
             PathBuf::from(&args.log_dir)

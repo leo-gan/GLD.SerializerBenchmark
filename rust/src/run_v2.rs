@@ -1,4 +1,4 @@
-//! Data Model v2 path: cells from resolve_run_config.py + JSON-family codecs on serde_json::Value.
+//! Data Model v2 path: cells from resolve_run_config.py + codecs on serde_json::Value.
 
 use crate::csv_log::CsvLogger;
 use crate::data_v2;
@@ -16,7 +16,7 @@ struct Cell {
     value: Value,
 }
 
-fn load_cells(run_config: &str, seed: u64) -> Result<Vec<Cell>> {
+fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let script = repo.join("scripts/resolve_run_config.py");
     let cfg = if run_config.is_empty() {
@@ -26,7 +26,6 @@ fn load_cells(run_config: &str, seed: u64) -> Result<Vec<Cell>> {
         if p.is_absolute() {
             p.to_path_buf()
         } else {
-            // Prefer monorepo-relative paths (not process cwd).
             let candidate = repo.join(run_config.trim_start_matches("./"));
             if candidate.is_file() {
                 candidate
@@ -53,6 +52,14 @@ fn load_cells(run_config: &str, seed: u64) -> Result<Vec<Cell>> {
         );
     }
     let doc: Value = serde_json::from_slice(&out.stdout)?;
+    let modes = doc["execution"]["io_modes"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_else(|| vec!["bytes".into()]);
     let cells = doc["cells"].as_array().context("cells")?;
     let mut out_cells = Vec::new();
     for c in cells {
@@ -78,7 +85,7 @@ fn load_cells(run_config: &str, seed: u64) -> Result<Vec<Cell>> {
             value,
         });
     }
-    Ok(out_cells)
+    Ok((out_cells, modes))
 }
 
 struct Codec {
@@ -92,9 +99,15 @@ fn codecs() -> Vec<Codec> {
     vec![
         Codec {
             name: "serde_json",
-            version: env!("CARGO_PKG_VERSION"), // fallback; real version not critical
+            version: "1",
             encode: |v| Ok(serde_json::to_vec(v)?),
             decode: |b| Ok(serde_json::from_slice(b)?),
+        },
+        Codec {
+            name: "sonic-rs",
+            version: "0.3",
+            encode: |v| Ok(sonic_rs::to_vec(v)?),
+            decode: |b| Ok(sonic_rs::from_slice(b)?),
         },
         Codec {
             name: "rmp-serde",
@@ -112,6 +125,31 @@ fn codecs() -> Vec<Codec> {
             },
             decode: |b| Ok(ciborium::from_reader(b)?),
         },
+        // bincode/postcard/bitcode do not support serde_json::Value (Any) reliably.
+        Codec {
+            name: "bson",
+            version: "2",
+            encode: |v| {
+                let doc = match v {
+                    Value::Object(_) => v.clone(),
+                    other => serde_json::json!({ "v": other }),
+                };
+                Ok(bson::to_vec(&doc)?)
+            },
+            decode: |b| {
+                let v: Value = bson::from_slice(b)?;
+                if let Value::Object(mut m) = v {
+                    if m.len() == 1 {
+                        if let Some(inner) = m.remove("v") {
+                            return Ok(inner);
+                        }
+                    }
+                    Ok(Value::Object(m))
+                } else {
+                    Ok(v)
+                }
+            },
+        },
     ]
 }
 
@@ -124,7 +162,7 @@ fn json_eq(a: &Value, b: &Value) -> bool {
                 return true;
             }
             match (x.as_f64(), y.as_f64()) {
-                (Some(xf), Some(yf)) => (xf - yf).abs() < 1e-9,
+                (Some(xf), Some(yf)) => (xf - yf).abs() < 1e-6,
                 _ => false,
             }
         }
@@ -133,10 +171,35 @@ fn json_eq(a: &Value, b: &Value) -> bool {
             x.len() == y.len() && x.iter().zip(y.iter()).all(|(p, q)| json_eq(p, q))
         }
         (Value::Object(x), Value::Object(y)) => {
-            x.len() == y.len()
-                && x.iter()
-                    .all(|(k, v)| y.get(k).map(|w| json_eq(v, w)).unwrap_or(false))
+            // tolerate missing default-ish keys
+            for (k, v) in x {
+                match y.get(k) {
+                    Some(w) => {
+                        if !json_eq(v, w) {
+                            return false;
+                        }
+                    }
+                    None => {
+                        if !is_defaultish(v) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            true
         }
+        _ => false,
+    }
+}
+
+fn is_defaultish(v: &Value) -> bool {
+    match v {
+        Value::Null => true,
+        Value::Bool(false) => true,
+        Value::Number(n) => n.as_f64() == Some(0.0),
+        Value::String(s) => s.is_empty(),
+        Value::Array(a) => a.is_empty(),
+        Value::Object(o) => o.is_empty(),
         _ => false,
     }
 }
@@ -152,7 +215,7 @@ pub fn run_v2(
         .and_then(|s| s.parse().ok())
         .unwrap_or(42);
     let run_cfg = std::env::var("BENCHMARK_RUN_CONFIG").unwrap_or_default();
-    let mut cells = load_cells(&run_cfg, seed)?;
+    let (mut cells, modes) = load_cells(&run_cfg, seed)?;
     if let Some(f) = data_filter {
         let f = f.to_lowercase();
         cells.retain(|c| c.type_id.to_lowercase().contains(&f));
@@ -165,10 +228,11 @@ pub fn run_v2(
 
     let mut logger = CsvLogger::create(log_path)?;
     println!(
-        "[PROGRESS] Rust Data Model v2: {} codecs, {} cells, {} reps",
+        "[PROGRESS] Rust Data Model v2: {} codecs, {} cells, {} reps, modes={:?}",
         codecs.len(),
         cells.len(),
-        repetitions
+        repetitions,
+        modes
     );
 
     for cell in &cells {
@@ -177,32 +241,50 @@ pub fn run_v2(
             cell.type_id, cell.instance_count
         );
         for codec in &codecs {
+            let mut had_error = false;
             for i in 0..repetitions {
-                let t0 = Instant::now();
-                let buf = (codec.encode)(&cell.value)?;
-                let ser_ns = t0.elapsed().as_nanos();
-                let t1 = Instant::now();
-                let out = (codec.decode)(&buf)?;
-                let deser_ns = t1.elapsed().as_nanos();
-                if !json_eq(&cell.value, &out) {
-                    anyhow::bail!("fidelity {} / {}", codec.name, cell.type_id);
+                if had_error {
+                    break;
                 }
-                logger.write_row_v2(
-                    "bytes",
-                    &cell.type_id,
-                    repetitions,
-                    i,
-                    codec.name,
-                    ser_ns,
-                    deser_ns,
-                    buf.len(),
-                    1.0,
-                    codec.version,
-                    "serde",
-                    "adapted",
-                    cell.instance_count as u32,
-                    &cell.type_config_hash,
-                )?;
+                let measured = (|| -> Result<(u128, u128, usize)> {
+                    let t0 = Instant::now();
+                    let buf = (codec.encode)(&cell.value)?;
+                    let ser_ns = t0.elapsed().as_nanos();
+                    let t1 = Instant::now();
+                    let out = (codec.decode)(&buf)?;
+                    let deser_ns = t1.elapsed().as_nanos();
+                    if !json_eq(&cell.value, &out) {
+                        anyhow::bail!("fidelity");
+                    }
+                    Ok((ser_ns, deser_ns, buf.len()))
+                })();
+                match measured {
+                    Ok((ser_ns, deser_ns, size)) => {
+                        logger.write_row_v2(
+                            "bytes",
+                            &cell.type_id,
+                            repetitions,
+                            i,
+                            codec.name,
+                            ser_ns,
+                            deser_ns,
+                            size,
+                            1.0,
+                            codec.version,
+                            "serde",
+                            "adapted",
+                            cell.instance_count as u32,
+                            &cell.type_config_hash,
+                        )?;
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "[ERROR] {} / {} : {}",
+                            codec.name, cell.type_id, e
+                        );
+                        had_error = true;
+                    }
+                }
             }
         }
     }

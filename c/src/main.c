@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
     if (argc > 4) log_dir = argv[4];
 
     const char *dm = getenv("BENCHMARK_DATA_MODEL");
-    if (dm && (strcmp(dm, "v2") == 0 || strcmp(dm, "2") == 0)) {
-        /* declare in run_v2.c */
+    /* Suite default is v2; set BENCHMARK_DATA_MODEL=v1 for legacy fixtures. */
+    if (!dm || dm[0] == '\0' || strcmp(dm, "v2") == 0 || strcmp(dm, "2") == 0) {
         extern int run_benchmarks_v2(int repetitions, const char *log_dir);
         return run_benchmarks_v2(reps, log_dir);
     }

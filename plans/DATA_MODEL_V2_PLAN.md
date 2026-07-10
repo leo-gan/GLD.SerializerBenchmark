@@ -1,7 +1,7 @@
 # Data Model v2 — Implementation Plan
 
-**Status:** implementation in progress on `refactor/data-type-config`  
-**Progress:** Phases 0–5 substantially done. All languages have a v2 runner path (coverage varies; see `docs/analysis/data_model_v2.md`). Phase 6 (delete v1) still **blocked** until suite default flips to v2 and full codec matrices exist everywhere.
+**Status:** suite default is **v2** on `refactor/data-type-config`.  
+**Progress:** Phases 0–6 operational: default flipped; multi-lang v2 runners; analysis publishes `type@n=` Results. Legacy v1 remains opt-in via `BENCHMARK_DATA_MODEL=v1` (models not mass-deleted to preserve opt-in). Full codec parity (e.g. Rust prost on v2, C# full matrix) is incremental.
 **Audience:** maintainers  
 **Scope:** greenfield **data types / generators / catalog** + runner measurement extensions; **not** a rewrite of serializer libraries, Docker, or analysis math  
 **Related:** `docs/analysis/test_data_configuration.md` (v1, to be replaced), `docs/theory/201/compression-is-not-a-format.md`, `config/benchmark_config.yaml`

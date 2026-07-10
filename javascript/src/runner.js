@@ -15,7 +15,7 @@ const projectRoot = path.resolve(__dirname, '../..');
 
 
 // Data Model v2 dispatch
-if (['v2', '2', 'data_v2'].includes((process.env.BENCHMARK_DATA_MODEL || 'v1').toLowerCase())) {
+if (['v2', '2', 'data_v2'].includes((process.env.BENCHMARK_DATA_MODEL || 'v2').toLowerCase())) {
   await import('./runner_v2.js');
   process.exit(0);
 }
