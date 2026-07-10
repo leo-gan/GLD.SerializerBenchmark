@@ -347,22 +347,6 @@ def _column_best(values: list, *, higher_is_better: bool) -> Optional[float]:
     return max(nums) if higher_is_better else min(nums)
 
 
-def _format_size_bytes(val: float) -> str:
-    """Format payload size in bytes without scientific notation.
-
-    Rounds to nearest whole byte and uses thousands separators so values like
-    16610 render as ``16,610`` rather than ``1.661e+04`` (Python ``.4g``).
-    """
-    try:
-        v = float(val)
-    except (TypeError, ValueError):
-        return str(val)
-    if v != v:  # NaN
-        return "-"
-    n = int(round(v))
-    return f"{n:,}"
-
-
 def _format_in_unit(
     val: float,
     divisor: float,
@@ -819,6 +803,13 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
         if vals_in_col:
             col_bests[field_id] = max(vals_in_col) if hib else min(vals_in_col)
 
+    # Shared K/M scale per column (same rule as ops/s and pivot tables)
+    col_units: Dict[str, tuple] = {}
+    for field_id in ("avg_ops_per_sec", "median_size_bytes"):
+        vals_in_col = [cell_vals[(ser, field_id)] for ser in serializers if (ser, field_id) in cell_vals]
+        if vals_in_col:
+            col_units[field_id] = _pick_column_unit(vals_in_col)
+
     # 3. Render rows
     for ser in serializers:
         entries = by_ser[ser]
@@ -860,13 +851,12 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
                 text = str(int(num))
             elif is_time:
                 text = f"{num / 1000.0:.3g}"  # ns → µs
-            elif field_id == "avg_ops_per_sec":
-                div, unit = _pick_column_unit([num])
+            elif field_id in ("avg_ops_per_sec", "median_size_bytes"):
+                # 3 significant digits + shared column K/M (thousands / millions)
+                div, unit = col_units.get(field_id) or _pick_column_unit([num])
                 text = _format_in_unit(num, div, unit, sig=3)
             elif field_id == "mean_fidelity":
                 text = f"{num:.2f}"
-            elif field_id == "median_size_bytes":
-                text = _format_size_bytes(num)
             else:
                 text = f"{num:.4g}"
                 
