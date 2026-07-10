@@ -128,6 +128,8 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             if (decoded is TelemetrySsDto dto)
                 return dto.ToDomain();
+            if (decoded is List<TelemetrySsDto> list)
+                return list.Select(x => x.ToDomain()).ToList();
             return decoded;
         }
 
@@ -135,6 +137,8 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             if (data is TelemetryData td)
                 return TelemetrySsDto.FromDomain(td);
+            if (data is List<TelemetryData> list)
+                return list.Select(TelemetrySsDto.FromDomain).ToList();
             return data;
         }
 

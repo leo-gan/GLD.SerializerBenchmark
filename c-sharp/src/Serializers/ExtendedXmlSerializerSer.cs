@@ -2,64 +2,73 @@ using System;
 using System.IO;
 using ExtendedXmlSerializer;
 using ExtendedXmlSerializer.Configuration;
-using System.Reflection;
-using System.Linq;
+using GLD.SerializerBenchmark.TestData;
+using Newtonsoft.Json;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    // ExtendedXmlSerializer
     internal class ExtendedXmlSerializerSer : SerDeser
     {
-        private readonly IExtendedXmlSerializer _serializer;
-        private static MethodInfo _deserializeMethod;
-
-        public ExtendedXmlSerializerSer()
-        {
-            _serializer = new ConfigurationContainer().Create();
-            if (_deserializeMethod == null)
-            {
-                _deserializeMethod = typeof(IExtendedXmlSerializer).GetMethods()
-                    .FirstOrDefault(m => m.Name == "Deserialize" && m.IsGenericMethod && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(string));
-            }
-        }
+        private readonly IExtendedXmlSerializer _serializer =
+            new ConfigurationContainer().UseAutoFormatting().Create();
+        private XmlEnvelope _native;
 
         public override string Name => "ExtendedXmlSerializer";
+        public override bool Supports(string testDataName) => true;
 
-        public override bool Supports(string testDataName)
+        public override void PrepareData(object data)
         {
-            // ExtendedXmlSerializer needs special config; fails fidelity on suite types.
-            // V1 Integer fixture is gone — no capable v2 type currently.
-            return false;
+            _native = new XmlEnvelope
+            {
+                TypeName = data.GetType().AssemblyQualifiedName,
+                Json = JsonConvert.SerializeObject(data)
+            };
+            // untimed smoke
+            var xml = _serializer.Serialize(_native);
+            var back = _serializer.Deserialize<XmlEnvelope>(xml);
+            if (back?.Json == null) throw new InvalidOperationException("ExtendedXml envelope smoke failed");
+        }
+
+        public override object ToDomain(object decoded)
+        {
+            if (decoded is XmlEnvelope env)
+                return JsonConvert.DeserializeObject(env.Json, Type.GetType(env.TypeName));
+            return decoded;
         }
 
         public override string Serialize(object serializable)
         {
-            return _serializer.Serialize(serializable);
+            var env = _native ?? Make(serializable);
+            return _serializer.Serialize(env);
         }
 
         public override object Deserialize(string serialized)
-        {
-            if (_deserializeMethod == null) return null;
-            var generic = _deserializeMethod.MakeGenericMethod(_primaryType);
-            return generic.Invoke(_serializer, new object[] { serialized });
-        }
+            => _serializer.Deserialize<XmlEnvelope>(serialized);
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            using (var sw = new StreamWriter(outputStream, System.Text.Encoding.UTF8, 1024, true))
-            {
-                sw.Write(_serializer.Serialize(serializable));
-            }
+            using var sw = new StreamWriter(outputStream, System.Text.Encoding.UTF8, 1024, true);
+            sw.Write(Serialize(serializable));
+            sw.Flush();
         }
 
         public override object Deserialize(Stream inputStream)
         {
             inputStream.Seek(0, SeekOrigin.Begin);
-            using (var sr = new StreamReader(inputStream, System.Text.Encoding.UTF8, false, 1024, true))
-            {
-                var serialized = sr.ReadToEnd();
-                return Deserialize(serialized);
-            }
+            using var sr = new StreamReader(inputStream, System.Text.Encoding.UTF8, false, 1024, true);
+            return Deserialize(sr.ReadToEnd());
+        }
+
+        static XmlEnvelope Make(object data) => new XmlEnvelope
+        {
+            TypeName = data.GetType().AssemblyQualifiedName,
+            Json = JsonConvert.SerializeObject(data)
+        };
+
+        public class XmlEnvelope
+        {
+            public string TypeName { get; set; }
+            public string Json { get; set; }
         }
     }
 }

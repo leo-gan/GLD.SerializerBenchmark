@@ -79,7 +79,6 @@ namespace GLD.SerializerBenchmark
                 new CerasSerializerSer(),
                 new CsvHelperSerializerSer(),
                 new FlatSharpSerializerSer(),
-                new FluentSerializerJsonSer(),
                 new GoogleProtobufSerializerSer(),
                 new HyperionSerializerSer(),
                 new NetSerializerSer(),
@@ -94,7 +93,7 @@ namespace GLD.SerializerBenchmark
                 new GroBufSerializerSer(),
                 new ExtendedXmlSerializerSer(),
                 new MigrantSerializerSer(),
-                new ApexSerializerSer() // Moved to end
+                new SystemTextJsonSerializerSer()
             };
 
             var testDataDescriptions = allTestDataDescriptions

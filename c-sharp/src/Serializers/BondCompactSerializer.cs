@@ -1,8 +1,3 @@
-///
-/// See here https://github.com/Microsoft/bond/
-/// >PM Install-Package Microsoft.Hadoop.Avro
-/// 
-
 using System;
 using System.IO;
 using Bond;
@@ -11,42 +6,38 @@ using Bond.Protocols;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
-    internal class BondCompactSerializer : SerDeser
+    internal class BondCompactSerializer : BondSerDeserBase
     {
         private Deserializer<CompactBinaryReader<InputBuffer>> _deserializer;
         private Deserializer<CompactBinaryReader<InputStream>> _deserializerStream;
         private Serializer<CompactBinaryWriter<OutputBuffer>> _serializer;
         private Serializer<CompactBinaryWriter<OutputStream>> _serializerStream;
 
-        private void Initialize()
+        private void Ensure()
         {
             if (!JustInitialized) return;
-            _serializer = new Serializer<CompactBinaryWriter<OutputBuffer>>(_primaryType);
-            _deserializer = new Deserializer<CompactBinaryReader<InputBuffer>>(_primaryType);
-            _serializerStream = new Serializer<CompactBinaryWriter<OutputStream>>(_primaryType);
-            _deserializerStream = new Deserializer<CompactBinaryReader<InputStream>>(_primaryType);
+            var t = _bondType ?? _primaryType;
+            _serializer = new Serializer<CompactBinaryWriter<OutputBuffer>>(t);
+            _deserializer = new Deserializer<CompactBinaryReader<InputBuffer>>(t);
+            _serializerStream = new Serializer<CompactBinaryWriter<OutputStream>>(t);
+            _deserializerStream = new Deserializer<CompactBinaryReader<InputStream>>(t);
             JustInitialized = false;
         }
 
-        #region ISerDeser Members
-
-        public override string Name
-        {
-            get { return "MS Bond Compact"; }
-        }
+        public override string Name => "MS Bond Compact";
 
         public override string Serialize(object serializable)
         {
-            Initialize();
-            var output = new OutputBuffer(2*1024);
+            Ensure();
+            var output = new OutputBuffer(2 * 1024);
             var writer = new CompactBinaryWriter<OutputBuffer>(output);
-            _serializer.Serialize(serializable, writer);
+            _serializer.Serialize(Payload(serializable), writer);
             return Convert.ToBase64String(output.Data.Array, output.Data.Offset, output.Data.Count);
         }
 
         public override object Deserialize(string serialized)
         {
-            Initialize();
+            Ensure();
             var bytes = Convert.FromBase64String(serialized);
             var input = new InputBuffer(bytes);
             var reader = new CompactBinaryReader<InputBuffer>(input);
@@ -55,23 +46,20 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            Initialize();
-            //outputStream.Seek(0, SeekOrigin.Begin);
+            Ensure();
             var output = new OutputStream(outputStream);
             var writer = new CompactBinaryWriter<OutputStream>(output);
-            _serializerStream.Serialize(serializable, writer);
-             output.Flush();
-      }
+            _serializerStream.Serialize(Payload(serializable), writer);
+            output.Flush();
+        }
 
         public override object Deserialize(Stream inputStream)
         {
-            Initialize();
+            Ensure();
             inputStream.Seek(0, SeekOrigin.Begin);
             var input = new InputStream(inputStream);
             var reader = new CompactBinaryReader<InputStream>(input);
             return _deserializerStream.Deserialize(reader);
         }
-
-        #endregion
     }
 }

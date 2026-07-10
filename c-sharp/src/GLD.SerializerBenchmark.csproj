@@ -32,7 +32,6 @@
     <PackageReference Include="System.ServiceModel.Primitives" Version="6.*" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.*" />
-    <PackageReference Include="Apex.Serialization" Version="1.*" />
     <PackageReference Include="Ceras" Version="4.*" />
     <PackageReference Include="CsvHelper" Version="33.*" />
     <PackageReference Include="ExtendedXmlSerializer" Version="3.*" />
@@ -42,8 +41,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FluentSerializer.Core" Version="3.*" />
-    <PackageReference Include="FluentSerializer.Json" Version="3.*" />
     <PackageReference Include="Google.Protobuf" Version="3.*" />
     <PackageReference Include="GroBuf" Version="1.*" />
     <!-- 0.x: float only within the current minor (0.12.*) -->

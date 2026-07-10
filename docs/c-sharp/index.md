@@ -4,20 +4,19 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 ## What this benchmark measures vs the wider ecosystem
 
-This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
+This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
 
-**Not in this suite:** System.Text.Json, MessagePack-CSharp, Wire (ecosystem context only).
+**Not in this suite:** MessagePack-CSharp, Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs).
 
 | Log name | Category | Library / notes |
 |----------|----------|-----------------|
-| Apex.Serialization | Binary | Apex.Serialization |
+| System.Text.Json | JSON | System.Text.Json (net8 built-in) |
 | BinaryPack | Binary | BinaryPack (`T : new()` constraints) |
 | Ceras | Binary | Ceras |
 | CsvHelper | CSV | Flat tabular only |
 | ExtendedXmlSerializer | XML | ExtendedXmlSerializer |
 | fastJson | JSON | FastJson |
 | FlatSharp | Schema / FlatBuffers | FlatSharp (+ generated models for some fixtures) |
-| FluentSerializer | JSON | FluentSerializer (needs profiles) |
 | FsPickler | Binary | FsPickler binary |
 | FsPicklerJson | JSON | FsPickler JSON |
 | Google.Protobuf | Schema | Official Google.Protobuf (`IMessage` / `.proto`) |
@@ -51,7 +50,7 @@ This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 ### Caveats
 
 - Suite fixtures: `message`, `document`, `telemetry`, `strings`, `event` (payload POCOs under `TestData/`).
-- Still skipped (not capable / suite constraints): CsvHelper (tabular only on message/event), Google.Protobuf (no generated IMessage), FluentSerializer (profiles), BinaryPack, Apex, ExtendedXml, Migrant (net8 IL except message/event), GroBuf (message/event only).
+- All registered serializers run on all suite fixtures. Some codecs project suite graphs to library-native or envelope forms in untimed `PrepareData` (see serializer source comments): CsvHelper (tabular projection), Google.Protobuf (v2 proto mapping), Bond/MemoryPack/FlatSharp (annotated models), ExtendedXml/BinaryPack/Migrant (string envelopes for net8 compatibility). **Apex.Serialization** was removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** added.
 - MemoryPack / FlatSharp map supported fixtures via annotated models in `PrepareData` (timed path is codec-only; `ToDomain` untimed).
 - ZeroFormatter maps **all** suite fixtures to `KeyTuple` graphs (max arity 8; Telemetry nested).
 - SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
