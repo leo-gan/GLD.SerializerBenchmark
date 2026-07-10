@@ -4,7 +4,11 @@ Native C harness emitting timestamped `logs/c/YYYY-MM-DD-HHMMSS.csv` (nanosecond
 
 ## Serializers (19)
 
-See [docs/c/index.md](../docs/c/index.md) for the full inventory (JSON / binary / schema). All registered entries use **real library APIs** (or documented in-tree codecs for `ubj` and `upb` wire).
+See [docs/c/index.md](../docs/c/index.md) for the inventory (JSON / binary / schema). Registered entries use real library APIs (or documented in-tree codecs where noted).
+
+## Test data
+
+Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
 ## Dependencies
 
@@ -27,7 +31,6 @@ Requires: `cmake`, `curl`, `pkg-config`, `libjson-c-dev` (or equivalent), `zlib`
 cmake -S c -B c/build -DCMAKE_BUILD_TYPE=Release
 cmake --build c/build --target c_serializer_tests
 ./c/build/c_serializer_tests
-# or: ctest --test-dir c/build -R c_serializer
 ```
 
-Analysis: install `analysis/`, then `analyze-benchmarks -l c` (see root README).
+Analysis: `analyze-benchmarks -l c` (see root README).

@@ -1,4 +1,4 @@
-# Schemas v2 (Data Model v2)
+# Wire schemas
 
 Canonical **wire** definitions for schema-driven serializers. Logical field meaning is in [`docs/analysis/data_model_v2.md`](../../docs/analysis/data_model_v2.md).
 

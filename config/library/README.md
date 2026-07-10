@@ -1,22 +1,20 @@
-# Run config library (Data Model v2)
+# Run config library
 
-Named **run configs** select the measurement matrix. The suite is **v2-only**
-(`type_id` values from `schemas/data_catalog_v2.yaml` — not V1 Person/EDI names).
+Named **run configs** select the measurement matrix:
 
 - `types` (axis W): `type_id` + `type_config`
 - `data_type_instance_count` (axis C): instances per serialize/deserialize call
 - compression / execution knobs
+
+Type ids: `message` · `document` · `telemetry` · `strings` · `event`  
+(catalog: `schemas/data_catalog_v2.yaml`).
 
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `smoke.yaml` | CI / quick sanity (`message` + `telemetry`, n=1) |
-| `default.yaml` | Publication matrix (all five type_ids × [1, 100]) |
-
-## Type ids
-
-`message` · `document` · `telemetry` · `strings` · `event`
+| `default.yaml` | Publication matrix (all five types × [1, 100]) |
 
 ## Usage
 
@@ -30,4 +28,4 @@ Named **run configs** select the measurement matrix. The suite is **v2-only**
 
 Pin runs by **path + content hash** (sidecar). Do not edit published files in place for experiments—copy to a new file.
 
-See `docs/analysis/data_model_v2.md` and `plans/DATA_MODEL_V2_PLAN.md`.
+See `docs/analysis/data_model_v2.md`.
