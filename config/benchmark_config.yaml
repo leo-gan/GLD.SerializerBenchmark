@@ -54,7 +54,20 @@ modes:
     description: "High-power statistical study"
 
 # -----------------------------------------------------------------------------
-# Shared test data (conceptual types — each language implements equivalents)
+# Data Model v2 (in progress — harnesses still use v1 fixtures until cutover)
+# Plan: plans/DATA_MODEL_V2_PLAN.md
+# -----------------------------------------------------------------------------
+data_model_v2:
+  enabled: false
+  catalog_file: "schemas/data_catalog_v2.yaml"
+  library_root: "config/library"
+  default_run_config: "config/library/default.yaml"
+  smoke_run_config: "config/library/smoke.yaml"
+  schemas_root: "schemas/v2"
+  generate_script: "scripts/schemas/generate-all.sh"
+
+# -----------------------------------------------------------------------------
+# Shared test data v1 (conceptual types — each language implements equivalents)
 # -----------------------------------------------------------------------------
 test_data:
   config_file: "schemas/test_data_config.json"

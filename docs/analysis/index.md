@@ -12,7 +12,8 @@ This page is the **hub** for the Benchmarks section: what each analysis page is 
 |------|------------|-------------------------|
 | **[Benchmark architecture](architecture.md)** | Suite layout, audiences, harness timing model, config locations | How measurements are *collected* |
 | **[Serialization categories](serialization_categories.md)** | Four paradigms and which suite entries fall where | Fair within-paradigm comparisons |
-| **[Test data types](test_data_configuration.md)** | Shared fixtures (`Person`, `Telemetry`, …) and size knobs | What `TestDataName` means |
+| **[Test data types](test_data_configuration.md)** | Shared fixtures (`Person`, `Telemetry`, …) and size knobs (v1) | What `TestDataName` means today |
+| **[Data Model v2](data_model_v2.md)** | New data plane: types, run configs, cells (in progress) | v2 catalog / `config/library` |
 | **[Analysis methodology](ANALYSIS_METHODOLOGY.md)** | Stats pipeline: warmup, outliers, CIs, effect sizes, outputs | How CSVs become tables/plots |
 | **[Metrics catalog](METRICS.md)** | Every metric, importance tier, multi-way vs pairwise | What each published number means |
 | **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to register a new harness | Extending the matrix |

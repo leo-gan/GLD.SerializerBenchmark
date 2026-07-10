@@ -10,6 +10,26 @@ Each benchmark run creates timestamped artifacts with the **same stem** (never o
 
 ## Scripts
 
+### `resolve_run_config.py` (Data Model v2)
+
+Expand a **run config** into resolved cells (type_id × type_config × `data_type_instance_count`):
+
+```bash
+./scripts/resolve_run_config.py config/library/default.yaml --pretty
+./scripts/resolve_run_config.py config/library/smoke.yaml --seed 42
+```
+
+Catalog: `schemas/data_catalog_v2.yaml`. Docs: `docs/analysis/data_model_v2.md`.
+
+### Schema codegen (`scripts/schemas/`)
+
+```bash
+./scripts/schemas/generate-all.sh      # protoc (and future IDLs) → language artifacts
+./scripts/schemas/check-generated.sh   # drift check for CI
+```
+
+Sources: `schemas/v2/`.
+
 ### `read-config.py` / `lib/config.sh`
 
 Query the master config from shell:

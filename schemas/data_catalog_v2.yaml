@@ -1,0 +1,79 @@
+# Data Model v2 — type catalog (logical definitions + default type_config)
+# SoT for empty type_config: {}. See docs/analysis/data_model_v2.md
+data_model_version: 2
+
+primitives:
+  all_available:
+    - bool
+    - int32
+    - int64
+    - float64
+    - utf8_string
+  datetime: int64_epoch_ms
+
+# Keys forbidden inside type_config (owned by other layers)
+forbidden_type_config_keys:
+  - seed
+  - type_id
+  - data_type_instance_count
+  - instance_count
+  - batch_size
+  - n
+  - return_array_even_for_1_instance
+
+types:
+  message:
+    description: "Single-level map/struct of mixed primitives"
+    category: flat_mixed
+    default_type_config:
+      field_count: 8
+      primitive_types: all_available
+      string_len:
+        min: 3
+        max: 16
+      int_range:
+        min: 0
+        max: 1000000
+    # size axis for make_one: fixed field set from field_count + primitive set
+
+  document:
+    description: "Nested structure; structure dominates cost"
+    category: nested
+    default_type_config:
+      children: 8
+      fields_per_child: 3
+      max_depth: 2
+      string_len:
+        min: 3
+        max: 12
+
+  telemetry:
+    description: "Mostly numeric bulk inside one instance"
+    category: numeric_bulk
+    default_type_config:
+      points: 32
+      number_type: float64
+      tag_count: 2
+      string_len:
+        min: 3
+        max: 10
+
+  strings:
+    description: "Homogeneous text bulk; trivial shell"
+    category: text_bulk
+    default_type_config:
+      count: 32
+      string_len:
+        min: 3
+        max: 16
+      duplication: 0.1
+
+  event:
+    description: "Stream envelope; batch via data_type_instance_count"
+    category: envelope
+    default_type_config:
+      attr_count: 4
+      string_len:
+        min: 3
+        max: 12
+      include_payload_bytes: 0
