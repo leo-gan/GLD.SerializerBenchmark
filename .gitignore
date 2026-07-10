@@ -68,15 +68,11 @@ TestResults/
 *.userprefs
 *.vs/
 .vs/
-# NuGet packages folder if restore ever dumps here (legacy packages.config keeps packages.config tracked)
+# NuGet packages folder if restore ever dumps here
 c-sharp/packages/
 # Local build/publish output
 c-sharp/**/bin/
 c-sharp/**/obj/
-# Optional: do not ignore c-sharp/.nuget/NuGet.exe — required by some legacy restore scripts
-# Tool/AI export dumps in Docs (keep .md/.txt; drop bulky binaries)
-c-sharp/src/Docs/*.pdf
-c-sharp/src/Docs/*.PDF
 
 # Misc local data dumps
 data/

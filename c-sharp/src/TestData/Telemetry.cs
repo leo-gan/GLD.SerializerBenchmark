@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Bond;
-using NFX;
 using ProtoBuf;
 
 namespace GLD.SerializerBenchmark.TestData

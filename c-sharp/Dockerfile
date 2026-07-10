@@ -45,13 +45,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 ENTRYPOINT ["dotnet", "GLD.SerializerBenchmark.dll"]
 CMD ["100"]
-# rebuild 1783652345
-# force 1783652460644059000
-# 1783652592
-# 1783652696
-# 1783652979
-# 1783653167
-# 1783653471
-# 1783653634
-# 1783653821
-# rebuild 1783654766
