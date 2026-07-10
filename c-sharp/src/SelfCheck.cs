@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GLD.SerializerBenchmark.Serializers;
 using GLD.SerializerBenchmark.TestData.V2;
+using GLD.SerializerBenchmark.TestData.V2.Maps;
 
 namespace GLD.SerializerBenchmark
 {
@@ -11,6 +12,28 @@ namespace GLD.SerializerBenchmark
     {
         public static int Run()
         {
+            // Architecture: Serializers/* must not import suite domain types.
+            var serDir = System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Serializers");
+            if (!System.IO.Directory.Exists(serDir))
+                serDir = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "src", "Serializers"));
+            if (System.IO.Directory.Exists(serDir))
+            {
+                foreach (var file in System.IO.Directory.EnumerateFiles(serDir, "*.cs", System.IO.SearchOption.AllDirectories))
+                {
+                    var name = System.IO.Path.GetFileName(file);
+                    if (name is "DomainNativeMap.cs") continue; // interface docs only
+                    var text = System.IO.File.ReadAllText(file);
+                    if (text.Contains("using GLD.SerializerBenchmark.TestData")
+                        || text.Contains("TestData.V2.Message")
+                        || text.Contains("TestData.V2.Telemetry"))
+                    {
+                        Console.WriteLine($"FAIL isolation: {name} references suite TestData");
+                        return 1;
+                    }
+                }
+                Console.WriteLine("OK   serializer isolation (no suite TestData imports)");
+            }
+
             var fixtures = new List<ITestDataDescription>
             {
                 new MessageDescription(),
@@ -22,7 +45,7 @@ namespace GLD.SerializerBenchmark
 
             int failures = 0;
 
-            var zf = new ZeroFormatterSerializerSer();
+            var zf = new ZeroFormatterSerializerSer(new ZeroFormatterDomainMap());
             foreach (var fx in fixtures)
             {
                 if (!zf.Supports(fx.Name))

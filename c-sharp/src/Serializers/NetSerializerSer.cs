@@ -5,6 +5,10 @@ using System.Linq;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
+    /// <summary>
+    /// NetSerializer: register graph types discovered from primary+secondary only
+    /// (no hard-coded suite type list).
+    /// </summary>
     internal class NetSerializerSer : SerDeser
     {
         private NetSerializer.Serializer _serializer;
@@ -15,29 +19,11 @@ namespace GLD.SerializerBenchmark.Serializers
         public override void Initialize(Type type, List<Type> secondaryTypes)
         {
             base.Initialize(type, secondaryTypes);
-            var types = new List<Type> { type };
-            if (secondaryTypes != null) types.AddRange(secondaryTypes);
-            // Nested collection element types
-            types.AddRange(new[]
-            {
-                typeof(List<>).MakeGenericType(type),
-            });
-            // Common V2 nested
-            types.Add(typeof(GLD.SerializerBenchmark.TestData.V2.DocumentMeta));
-            types.Add(typeof(GLD.SerializerBenchmark.TestData.V2.DocumentItem));
-            types.Add(typeof(GLD.SerializerBenchmark.TestData.V2.EventAttr));
-            types.Add(typeof(List<GLD.SerializerBenchmark.TestData.V2.DocumentItem>));
-            types.Add(typeof(List<GLD.SerializerBenchmark.TestData.V2.EventAttr>));
-            types.Add(typeof(List<GLD.SerializerBenchmark.TestData.V2.Message>));
-            types.Add(typeof(List<GLD.SerializerBenchmark.TestData.V2.Document>));
-            types.Add(typeof(List<GLD.SerializerBenchmark.TestData.V2.Telemetry>));
-            types.Add(typeof(List<GLD.SerializerBenchmark.TestData.V2.Strings>));
-            types.Add(typeof(List<GLD.SerializerBenchmark.TestData.V2.Event>));
-            types.Add(typeof(List<string>));
-            types.Add(typeof(List<double>));
+            var extras = secondaryTypes?.ToArray() ?? Array.Empty<Type>();
+            var types = TypedSer.CollectGraphTypes(type, extras);
             try
             {
-                _serializer = new NetSerializer.Serializer(types.Distinct());
+                _serializer = new NetSerializer.Serializer(types);
             }
             catch (Exception ex)
             {

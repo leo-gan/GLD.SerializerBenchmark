@@ -2,6 +2,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using GLD.SerializerBenchmark.Serializers;
+using GLD.SerializerBenchmark.TestData.V2.Maps;
 
 namespace GLD.SerializerBenchmark
 {
@@ -76,16 +77,16 @@ namespace GLD.SerializerBenchmark
                 new ServiceStackJsonSerializer(), 
                 new ServiceStackTypeSerializer(), 
                 new CerasSerializerSer(),
-                new CsvHelperSerializerSer(),
-                new FlatSharpSerializerSer(),
-                new GoogleProtobufSerializerSer(),
+                new CsvHelperSerializerSer(new CsvHelperDomainMap()),
+                new FlatSharpSerializerSer(new FlatSharpDomainMap()),
+                new GoogleProtobufSerializerSer(new GoogleProtobufDomainMap()),
                 new HyperionSerializerSer(),
                 new NetSerializerSer(),
                 new SpanJsonSerializerSer(),
                 new Utf8JsonSerializerSer(),
                 new YamlDotNetSerializerSer(),
                 new YAXLibSerializerSer(),
-                new ZeroFormatterSerializerSer(),
+                new ZeroFormatterSerializerSer(new ZeroFormatterDomainMap()),
                 new BinaryPackSerializerSer(),
                 new MemoryPackSerializerSer(),
                 new SharpYamlSerializerSer(),
