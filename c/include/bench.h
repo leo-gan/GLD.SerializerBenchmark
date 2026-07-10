@@ -180,3 +180,7 @@ void bench_register_avro_c(serializer_t *out, int *count);
 void bench_register_zcbor(serializer_t *out, int *count);
 
 #endif
+
+/* Adapted stream sink (Python stream_mode=adapted parity): not a free alias of bytes. */
+int bench_stream_write_all(const uint8_t *buf, size_t len);
+int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len);

@@ -1,4 +1,6 @@
+#define _POSIX_C_SOURCE 200809L
 #include "bench.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -45,8 +47,6 @@ int bench_serialize_cell(const serializer_t *S, const test_fixture_t *fx,
 int bench_deserialize_cell(const serializer_t *S, const uint8_t *buf, size_t len,
                            test_fixture_t *out_fx, test_data_kind_t kind) {
     if (!S || !S->deserialize || !buf || !out_fx) return -1;
-    /* Single-item (no frame): length-prefixed header absent when original was N=1.
-     * Caller sets out_fx->batch_n before call for expected N. */
     int expect_n = out_fx->batch_n > 0 ? out_fx->batch_n : 1;
     if (expect_n <= 1) {
         out_fx->batch_n = 1;
@@ -73,13 +73,11 @@ int bench_deserialize_cell(const serializer_t *S, const uint8_t *buf, size_t len
         }
         o += item_len;
     }
-    /* Represent batch on out_fx: copy first for kind fields, attach array. */
     memset(out_fx, 0, sizeof(*out_fx));
     out_fx->kind = kind;
     out_fx->batch_n = (int)n;
     out_fx->batch = items;
     if (n > 0) {
-        /* keep a copy of first item fields for code that peeks kind-only */
         out_fx->simple = items[0].simple;
         out_fx->telemetry = items[0].telemetry;
         out_fx->string_array = items[0].string_array;
@@ -106,4 +104,32 @@ bool bench_fidelity_cell(const serializer_t *S, const test_fixture_t *a,
             return false;
     }
     return true;
+}
+
+/* Adapted stream (parity with Python stream_mode=adapted): write/read encoded
+ * bytes through a FILE* memory stream so "stream" is not a free alias of "bytes". */
+static uint8_t g_stream_mem[8 * 1024 * 1024];
+static size_t g_stream_len = 0;
+
+int bench_stream_write_all(const uint8_t *buf, size_t len)
+{
+    if (!buf || len > sizeof(g_stream_mem)) return -1;
+    FILE *f = fmemopen(g_stream_mem, sizeof(g_stream_mem), "w+");
+    if (!f) return -1;
+    size_t n = fwrite(buf, 1, len, f);
+    if (fflush(f) != 0) { fclose(f); return -1; }
+    fclose(f);
+    if (n != len) return -1;
+    g_stream_len = len;
+    return 0;
+}
+
+int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len)
+{
+    if (!buf || expect_len > cap || expect_len > g_stream_len) return -1;
+    FILE *f = fmemopen(g_stream_mem, g_stream_len ? g_stream_len : 1, "r");
+    if (!f) return -1;
+    size_t n = fread(buf, 1, expect_len, f);
+    fclose(f);
+    return (n == expect_len) ? 0 : -1;
 }

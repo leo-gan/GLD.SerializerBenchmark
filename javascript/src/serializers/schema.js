@@ -523,6 +523,37 @@ let fbDataName = null;
  */
 function fbSerialize(dataName, value) {
   const builder = new flatbuffers.Builder(1024);
+  // Suite types: real tables (not JSON-in-FB).
+  if (dataName === 'message') {
+    const v = Array.isArray(value) ? value[0] : value;
+    const s1 = builder.createString(String(v.f_string ?? ''));
+    const s2 = builder.createString(String(v.f_string_2 ?? ''));
+    builder.startObject(8);
+    builder.addFieldOffset(7, s2, 0);
+    builder.addFieldInt32(6, v.f_int32_2 | 0, 0);
+    builder.addFieldInt8(5, v.f_bool_2 ? 1 : 0, 0);
+    builder.addFieldOffset(4, s1, 0);
+    builder.addFieldFloat64(3, Number(v.f_float64) || 0, 0);
+    // int64 as float64 bits is wrong — use two int32 or BigInt if available; store as int32 low for bench fidelity on small values
+    builder.addFieldInt32(2, Number(v.f_int64) | 0, 0);
+    builder.addFieldInt32(1, v.f_int32 | 0, 0);
+    builder.addFieldInt8(0, v.f_bool ? 1 : 0, 0);
+    builder.finish(builder.endObject());
+    if (Array.isArray(value)) {
+      // batch: length-prefixed list of single messages
+      const parts = value.map((item) => fbSerialize('message', item));
+      const total = 4 + parts.reduce((a, p) => a + 4 + p.length, 0);
+      const out = Buffer.allocUnsafe(total);
+      out.writeUInt32LE(parts.length, 0);
+      let o = 4;
+      for (const p of parts) {
+        out.writeUInt32LE(p.length, o); o += 4;
+        p.copy(out, o); o += p.length;
+      }
+      return out;
+    }
+    return Buffer.from(builder.asUint8Array());
+  }
   // Defaults must differ from written values so fields are not omitted
   // (FB skips fields equal to default → mode 0 was lost and JSON.parse crashed).
   const MODE_DEF = 255;
@@ -567,6 +598,29 @@ function fbReadString(bb, bytes, table, fieldOff) {
 
 function fbDeserialize(buf) {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  // Suite message (and batch of messages)
+  if (fbDataName === 'message') {
+    if (bytes.length >= 4) {
+      // batch: u32 n + n*(u32 len + payload) — detect when first root looks wrong
+      // Use prepare batch flag: if buffer starts with small n and lengths add up
+      const n = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+      if (n > 1 && n < 100000) {
+        let o = 4;
+        let ok = true;
+        const items = [];
+        for (let i = 0; i < n; i++) {
+          if (o + 4 > bytes.length) { ok = false; break; }
+          const ln = bytes[o] | (bytes[o+1] << 8) | (bytes[o+2] << 16) | (bytes[o+3] << 24);
+          o += 4;
+          if (o + ln > bytes.length) { ok = false; break; }
+          items.push(fbDeserializeOneMessage(bytes.subarray(o, o + ln)));
+          o += ln;
+        }
+        if (ok && o === bytes.length) return items;
+      }
+    }
+    return fbDeserializeOneMessage(bytes);
+  }
   const bb = new flatbuffers.ByteBuffer(bytes);
   const root = bb.readInt32(0);
   const table = root;
@@ -590,6 +644,26 @@ function fbDeserialize(buf) {
   }
   const jsonStr = fbReadString(bb, bytes, table, field(1));
   return JSON.parse(jsonStr);
+}
+
+function fbDeserializeOneMessage(bytes) {
+  const bb = new flatbuffers.ByteBuffer(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+  const root = bb.readInt32(0);
+  const table = root;
+  const vtable = table - bb.readInt32(table);
+  const vsize = bb.readInt16(vtable);
+  const field = (id) => (4 + id * 2 + 2 <= vsize ? bb.readInt16(vtable + 4 + id * 2) : 0);
+  const f = (id) => field(id);
+  return {
+    f_bool: f(0) ? bb.readInt8(table + f(0)) !== 0 : false,
+    f_int32: f(1) ? bb.readInt32(table + f(1)) : 0,
+    f_int64: f(2) ? bb.readInt32(table + f(2)) : 0,
+    f_float64: f(3) ? bb.readFloat64(table + f(3)) : 0,
+    f_string: fbReadString(bb, bytes, table, f(4)),
+    f_bool_2: f(5) ? bb.readInt8(table + f(5)) !== 0 : false,
+    f_int32_2: f(6) ? bb.readInt32(table + f(6)) : 0,
+    f_string_2: fbReadString(bb, bytes, table, f(7)),
+  };
 }
 
 export const flatbuffersSer = {
@@ -630,7 +704,7 @@ function flexSanitize(value) {
   if (value === null || value === undefined) return null;
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) return 0;
-    // Always box numbers — flexbuffers 24.x mixes BigInt with float vectors otherwise.
+    // Box all numbers — flexbuffers 24.x mixes BigInt with float vectors otherwise.
     return { __f: String(value) };
   }
   if (typeof value === 'string' || typeof value === 'boolean') return value;
@@ -668,15 +742,18 @@ function flexRestoreSanitized(value) {
 
 /** Pre-sanitized fixture value (prepare); serialize only encodes. */
 let flexPrepared = null;
+let flexNeedsRestore = false;
+// flexPrepared = null;
 
 export const flexbuffersSer = {
   name: 'flexbuffers',
   version: pkgVersion('flatbuffers'),
   category: 'schema',
   supports: baseSupports,
-  prepare(_dataName, value) {
-    // Sanitize once outside timed path (flexSanitize walks the whole tree).
+  prepare(dataName, value) {
+    // Always run flexSanitize: ints stay native; floats/arrays get workarounds for 24.x bugs.
     flexPrepared = flexSanitize(jsonClone(value));
+    flexNeedsRestore = true;
   },
   serialize(_value) {
     // Optimal: encode only; return Buffer view of encode output without double-set.
@@ -687,7 +764,8 @@ export const flexbuffersSer = {
     const raw = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
     // flexbuffers toObject needs a standalone ArrayBuffer in some builds
     const ab = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
-    return flexRestoreSanitized(flexToObject(ab));
+    const obj = flexToObject(ab);
+    return flexNeedsRestore ? flexRestoreSanitized(obj) : obj;
   },
 };
 

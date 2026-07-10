@@ -234,12 +234,24 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
 
                     uint64_t t0 = bench_now_ns();
                     int rc = bench_serialize_cell(S, &fx, buf, sizeof(buf), &out_len);
+                    if (rc == 0 && mode[0] == 's') { /* stream: adapted FILE* write */
+                        rc = bench_stream_write_all(buf, out_len);
+                    }
                     uint64_t t1 = bench_now_ns();
                     if (rc != 0) {
                         fprintf(stderr, "[ERROR] %s / %s N=%d / %s: serialize failed\n",
                                 S->name, type_id, n, mode);
                         had_error = 1;
                         continue;
+                    }
+                    if (mode[0] == 's') {
+                        rc = bench_stream_read_all(buf, sizeof(buf), out_len);
+                        if (rc != 0) {
+                            fprintf(stderr, "[ERROR] %s / %s N=%d / %s: stream read failed\n",
+                                    S->name, type_id, n, mode);
+                            had_error = 1;
+                            continue;
+                        }
                     }
                     rc = bench_deserialize_cell(S, buf, out_len, &out_fx, fx.kind);
                     uint64_t t2 = bench_now_ns();

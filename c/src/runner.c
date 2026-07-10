@@ -101,6 +101,8 @@ int run_benchmarks(int repetitions, const char *ser_filter, const char *data_fil
 
                     uint64_t t0 = bench_now_ns();
                     int rc = S->serialize(fx, buf, sizeof(buf), &out_len);
+                    if (rc == 0 && mode[0] == 's')
+                        rc = bench_stream_write_all(buf, out_len);
                     uint64_t t1 = bench_now_ns();
                     if (rc != 0) {
                         if (!had_error) {
@@ -109,6 +111,16 @@ int run_benchmarks(int repetitions, const char *ser_filter, const char *data_fil
                             had_error = 1;
                         }
                         continue;
+                    }
+                    if (mode[0] == 's') {
+                        if (bench_stream_read_all(buf, sizeof(buf), out_len) != 0) {
+                            if (!had_error) {
+                                fprintf(stderr, "[ERROR] %s / %s / %s: stream read failed\n",
+                                        S->name, fx->name, mode);
+                                had_error = 1;
+                            }
+                            continue;
+                        }
                     }
                     rc = S->deserialize(buf, out_len, &out_fx, fx->kind);
                     uint64_t t2 = bench_now_ns();

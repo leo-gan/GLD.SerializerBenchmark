@@ -64,11 +64,14 @@ export const cborSer = {
   supports: baseSupports,
   prepare() {},
   serialize(value) {
-    return cbor.encode(value);
+    // encodeOne: single-value encode (avoids accidental multi-value framing).
+    // https://github.com/hildjj/node-cbor
+    return typeof cbor.encodeOne === 'function' ? cbor.encodeOne(value) : cbor.encode(value);
   },
   deserialize(buf) {
+    const b = asBuffer(buf);
     // decodeFirstSync is the recommended sync path for a complete buffer.
-    return cbor.decodeFirstSync(asBuffer(buf));
+    return cbor.decodeFirstSync(b);
   },
 };
 
