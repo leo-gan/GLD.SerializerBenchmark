@@ -347,6 +347,22 @@ def _column_best(values: list, *, higher_is_better: bool) -> Optional[float]:
     return max(nums) if higher_is_better else min(nums)
 
 
+def _format_size_bytes(val: float) -> str:
+    """Format payload size in bytes without scientific notation.
+
+    Rounds to nearest whole byte and uses thousands separators so values like
+    16610 render as ``16,610`` rather than ``1.661e+04`` (Python ``.4g``).
+    """
+    try:
+        v = float(val)
+    except (TypeError, ValueError):
+        return str(val)
+    if v != v:  # NaN
+        return "-"
+    n = int(round(v))
+    return f"{n:,}"
+
+
 def _format_in_unit(
     val: float,
     divisor: float,
@@ -850,7 +866,7 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
             elif field_id == "mean_fidelity":
                 text = f"{num:.2f}"
             elif field_id == "median_size_bytes":
-                text = f"{num:.4g}"
+                text = _format_size_bytes(num)
             else:
                 text = f"{num:.4g}"
                 
