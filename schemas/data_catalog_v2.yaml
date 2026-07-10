@@ -1,5 +1,5 @@
 # Suite type catalog (logical definitions + default type_config)
-# SoT for empty type_config: {}. See docs/analysis/data_model_v2.md
+# SoT for empty type_config: {}. See docs/analysis/test_data_configuration.md
 data_model_version: 2
 
 primitives:

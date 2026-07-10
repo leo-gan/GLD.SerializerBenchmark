@@ -5,7 +5,7 @@
 | For this instead… | Go here |
 |-------------------|---------|
 | Statistics (warmup, IQR, bootstrap, effect sizes) | [Analysis methodology](ANALYSIS_METHODOLOGY.md) |
-| Fixtures and size knobs | [Test data types](test_data_configuration.md) |
+| Fixtures and size knobs | [Test data](test_data_configuration.md) |
 | Paradigms / registered families | [Serialization categories](serialization_categories.md) |
 | Extending the matrix | [Adding a language](ADDING_A_LANGUAGE.md) |
 | Published numbers | [Benchmark Results](BENCHMARK_SUMMARY.md) · language **Results** |
@@ -104,5 +104,5 @@ Warmup policy: harnesses **always log** every successful rep (including index 0)
 | Concern | File / page |
 |---------|-------------|
 | Run modes, stats, languages, paths | `config/benchmark_config.yaml` |
-| Payload shape and seed | `schemas/test_data_config.json` — [Test data types](test_data_configuration.md) |
+| Payload shape and seed | `schemas/data_catalog_v2.yaml` + `config/library/` — [Test data](test_data_configuration.md) |
 | Paradigm inventories | [Serialization categories](serialization_categories.md) + language **Overview** pages |

@@ -28,4 +28,4 @@ Type ids: `message` · `document` · `telemetry` · `strings` · `event`
 
 Pin runs by **path + content hash** (sidecar). Do not edit published files in place for experiments—copy to a new file.
 
-See `docs/analysis/data_model_v2.md`.
+See `docs/analysis/test_data_configuration.md`.

@@ -147,6 +147,5 @@ nav:
       - Categories: analysis/serialization_categories.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Metrics: analysis/METRICS.md
-      - Test Data: analysis/test_data_configuration.md
-      - Suite data model: analysis/data_model_v2.md
+      - Test data: analysis/test_data_configuration.md
       - Results Summary: analysis/BENCHMARK_SUMMARY.md

@@ -3,7 +3,7 @@
 **Job of this page:** implementer checklist to grow a language harness **without** changing the analysis core.
 
 Background (layout, timing model, contract summary): [Benchmark architecture](architecture.md).  
-Fixtures: [Test data types](test_data_configuration.md).  
+Fixtures: [Test data](test_data_configuration.md).  
 Stats after you have CSVs: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
 ---
@@ -46,13 +46,13 @@ Meet the [harness contract summary](architecture.md#harness-contract-summary) an
 
 ## 3. Test data types
 
-Implement `make_one` / run-config cells for suite type ids: `message`, `document`, `telemetry`, `strings`, `event` — see [Suite data model](data_model_v2.md).
+Implement `make_one` / run-config cells for suite type ids: `message`, `document`, `telemetry`, `strings`, `event` — see [Test data](test_data_configuration.md).
 
 - Expand cells with `./scripts/resolve_run_config.py`
 - Emit CSV columns `DataTypeInstanceCount` and `TypeConfigHash` when measuring batch cells
 - Generators live under language trees (e.g. `python/.../data_v2`, `go/model/v2`, `rust/src/data_v2.rs`, `javascript/src/data_v2.js`)
 - Wire schemas: `schemas/v2/` + `scripts/schemas/generate-all.sh`
-- Catalog defaults: `schemas/data_catalog_v2.yaml` — [Test data types](test_data_configuration.md)
+- Catalog defaults: `schemas/data_catalog_v2.yaml`
 
 ## 4. Runner script
 

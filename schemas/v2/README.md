@@ -1,6 +1,6 @@
 # Wire schemas
 
-Canonical **wire** definitions for schema-driven serializers. Logical field meaning is in [`docs/analysis/data_model_v2.md`](../../docs/analysis/data_model_v2.md).
+Canonical **wire** definitions for schema-driven serializers. Logical field meaning is in [`docs/analysis/test_data_configuration.md`](../../docs/analysis/test_data_configuration.md).
 
 ## Layout
 

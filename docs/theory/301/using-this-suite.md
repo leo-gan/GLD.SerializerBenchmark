@@ -73,7 +73,7 @@ A team sees that a schema-driven library is fastest on **Rust** Results for a de
 | Language **Results** | Published timings and sizes for that language |
 | [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | Warmup, outliers, grouping keys, units |
 | [Metrics catalog](../../analysis/METRICS.md) | What each field means |
-| [Test data configuration](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
+| [Test data](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
 | [Benchmark architecture](../../analysis/architecture.md) | What the harness times |
 | Dashboard (Benchmarks nav) | Interactive slices of the same analysis story |
 

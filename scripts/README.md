@@ -20,7 +20,7 @@ Expand a **run config** into resolved cells (type_id × type_config × `data_typ
 ./scripts/resolve_run_config.py config/library/smoke.yaml --seed 42
 ```
 
-Catalog: `schemas/data_catalog_v2.yaml`. Docs: `docs/analysis/data_model_v2.md`.
+Catalog: `schemas/data_catalog_v2.yaml`. Docs: `docs/analysis/test_data_configuration.md`.
 
 ### Schema codegen (`scripts/schemas/`)
 

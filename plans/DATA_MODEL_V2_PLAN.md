@@ -138,7 +138,7 @@ Adapters declare capability (conceptually): `prefers_scalar`, `supports_batch`. 
 | **event** | Stream envelope | id/type/ts/attrs; batch via `data_type_instance_count` |
 
 **document vs strings:** nested structure vs flat text pile.  
-Exact default field lists and default `type_config` values are frozen in Phase 0 (normative tables in `docs/analysis/data_model_v2.md`).
+Exact default field lists and default `type_config` values are frozen in Phase 0 (normative tables in `docs/analysis/test_data_configuration.md`).
 
 Empty `type_config: {}` ⇒ catalog defaults for that `type_id`.
 
@@ -231,7 +231,7 @@ Also generate or document:
 #### Source of truth order
 
 ```text
-1. docs/analysis/data_model_v2.md + data_catalog_v2.yaml   (logical fields, types)
+1. docs/analysis/test_data_configuration.md + data_catalog_v2.yaml   (logical fields, types)
 2. schemas/v2/*.proto (etc.)                              (wire field numbers / layout)
 3. scripts/schemas/generate-all.sh                        (artifacts)
 4. language generators (make_one)                         (runtime values fitting the model)
@@ -470,7 +470,7 @@ Do not require rewriting prepare-pr before Phase 3; update scripts when pilot la
 ### Phase 0 — Spec freeze
 
 - Approve this plan  
-- Normative `docs/analysis/data_model_v2.md`: field lists for five types, default type_config, primitives, datetime, generator determinism note (within-language only), budget ladder  
+- Normative `docs/analysis/test_data_configuration.md`: field lists for five types, default type_config, primitives, datetime, generator determinism note (within-language only), budget ladder  
 - Freeze **batch wire shape** for schema codecs (`repeated T` vs wrapper message)  
 - No harness code required  
 
