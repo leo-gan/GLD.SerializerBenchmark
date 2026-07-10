@@ -3,7 +3,7 @@
 import os
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib
 matplotlib.use('Agg')
@@ -46,6 +46,20 @@ def _records_to_melted_df(
     df = pd.DataFrame(clean)
     if "Language" not in df.columns:
         df["Language"] = language_hint or language
+
+    # Data Model v2: split violins by instance count (N=1 vs N=100, …).
+    if "DataTypeInstanceCount" in df.columns and "TestDataName" in df.columns:
+        def _td_label(row: Any) -> str:
+            n = row.get("DataTypeInstanceCount")
+            base = row.get("TestDataName") or ""
+            if n is None or (isinstance(n, float) and pd.isna(n)) or n == "":
+                return str(base)
+            try:
+                return f"{base}@n={int(n)}"
+            except (TypeError, ValueError):
+                return str(base)
+
+        df["TestDataName"] = df.apply(_td_label, axis=1)
 
     # Melt serialize/deserialize into Operation column. Times are already ns.
     need = [
@@ -1005,6 +1019,18 @@ def generate_language_results_pages(
         ]
 
         if stats:
+            # Data Model v2: show type@n=<instance_count> so N=1 vs N=100 do not collapse.
+            display_stats = {}
+            for k, e in (stats.items() if isinstance(stats, dict) else enumerate(stats)):
+                if not isinstance(e, dict):
+                    display_stats[k] = e
+                    continue
+                e2 = dict(e)
+                n = e2.get("data_type_instance_count")
+                if n not in (None, ""):
+                    e2["test_data"] = f"{e2.get('test_data', '')}@n={n}"
+                display_stats[k] = e2
+
             lines.append("## Pivot tables")
             lines.append("")
             lines.append(
@@ -1015,19 +1041,20 @@ def generate_language_results_pages(
                 "These names are *not* payload sizes. "
                 "In each table, **bold** marks the semantic best value in that column "
                 "(lowest time; highest ops/s). Ties are all bolded. "
-                "Latency tables are in **microseconds** (µs)."
+                "Latency tables are in **microseconds** (µs). "
+                "Data Model v2 fixtures use `type@n=<DataTypeInstanceCount>` labels."
             )
             lines.append("")
             sci = _scientific_summary_md(
-                stats,
+                display_stats,
                 profile=metrics_profile or "multi_way",
             )
             if sci:
                 lines.append(sci)
-            lines.append(_total_time_pivot_table_md(stats))
+            lines.append(_total_time_pivot_table_md(display_stats))
             lines.append(
                 _pivot_table_md(
-                    stats,
+                    display_stats,
                     "serializer",
                     "test_data",
                     "avg_ops_per_sec",
@@ -1035,7 +1062,7 @@ def generate_language_results_pages(
                 )
             )
             cat_md = _category_pivot_md(
-                stats,
+                display_stats,
                 lang_id,
                 "Within-category ranking",
             )

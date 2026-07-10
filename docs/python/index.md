@@ -2,6 +2,17 @@
 
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
+
+## Data Model v2 (pilot)
+
+Python can run the new data plane (`message`, `document`, `telemetry`, `strings`, `event`):
+
+```bash
+BENCHMARK_DATA_MODEL=v2 BENCHMARK_RUN_CONFIG=config/library/default.yaml \
+  python -m benchmark.runner 50
+```
+
+Results snapshots from v2 runs label fixtures as `type@n=<instance_count>`. See [Data Model v2](../analysis/data_model_v2.md). Default harness path remains v1 until suite-wide cutover.
 ## Serializers in this suite (16)
 
 Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py). Log names in `logs/python/YYYY-MM-DD-HHMMSS.csv` (nanoseconds). Modes: `bytes` and `stream`.
