@@ -55,7 +55,7 @@ This course teaches **wire encoding, runtime paths, and a thin subset lab**—no
 4. [nanopb compare](protobuf-c-nanopb-compare.md)  
 5. [Cross-language fidelity](protobuf-cross-language-fidelity.md)  
 
-Flagship schema in the suite: `schemas/benchmark_data.proto`. Teaching pages use a smaller **MiniUser** message (not the suite Person schema).
+Flagship schema in the suite: `schemas/v2/protobuf/benchmark_v2.proto`. Teaching pages use a smaller **MiniUser** message (not the suite schema).
 
 ## Three engines at a glance
 
@@ -93,4 +93,4 @@ Program rules (no universal winners; implementation beats brand; suite Results o
 
 - [Serialization 201](../201/index.md) if schema-dependent concepts are rusty.  
 - [Serialization 301](../301/index.md) for multi-constraint product choices.  
-- Shared schema: repository `schemas/benchmark_data.proto`.
+- Shared schema: repository `schemas/v2/protobuf/benchmark_v2.proto`.

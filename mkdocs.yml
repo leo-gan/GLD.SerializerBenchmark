@@ -148,5 +148,5 @@ nav:
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Metrics: analysis/METRICS.md
       - Test Data: analysis/test_data_configuration.md
-      - Data Model v2: analysis/data_model_v2.md
+      - Suite data model: analysis/data_model_v2.md
       - Results Summary: analysis/BENCHMARK_SUMMARY.md

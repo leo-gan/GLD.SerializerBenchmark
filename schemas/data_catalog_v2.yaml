@@ -1,4 +1,4 @@
-# Data Model v2 — type catalog (logical definitions + default type_config)
+# Suite type catalog (logical definitions + default type_config)
 # SoT for empty type_config: {}. See docs/analysis/data_model_v2.md
 data_model_version: 2
 

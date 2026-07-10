@@ -1,6 +1,6 @@
-# Run config: default (publication matrix) — Data Model v2 only
+# Run config: default (publication matrix) — suite fixtures
 id: default
-description: "Five v2 type_ids × [1, 100] instances; size_only compression metrics once per cell"
+description: "Five type ids × [1, 100] instances; size_only compression metrics once per cell"
 data_model_version: 2
 
 types:

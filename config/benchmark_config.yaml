@@ -54,11 +54,11 @@ modes:
     description: "High-power statistical study"
 
 # -----------------------------------------------------------------------------
-# Data Model v2 only (V1 Person/EDI fixtures removed)
+# Suite data model
 # -----------------------------------------------------------------------------
 data_model_v2:
   enabled: true
-  default: v2
+  default: current
   catalog_file: "schemas/data_catalog_v2.yaml"
   library_root: "config/library"
   default_run_config: "config/library/default.yaml"
@@ -66,7 +66,7 @@ data_model_v2:
   schemas_root: "schemas/v2"
   generate_script: "scripts/schemas/generate-all.sh"
 
-# Shared test data — v2 catalog is normative; names mirror type_id values.
+# Shared test data — catalog is normative; names are type_id values.
 test_data:
   catalog_file: "schemas/data_catalog_v2.yaml"
   types:
@@ -728,7 +728,7 @@ languages:
 #   - reproducibility.random_seed → BENCHMARK_SEED env for harnesses
 #   - paths.* / regression.* → analysis CLI defaults
 #
-# Required harness contract (Data Model v2):
+# Required harness contract:
 #   1. Prefer modes/seed from this file (via scripts/lib/config.sh + BENCHMARK_SEED)
 #   2. Emit logs/<id>/<timestamp>.csv (YYYY-MM-DD-HHMMSS.csv)
 #      with Language=<id> and times in nanoseconds. Never overwrite previous runs.
@@ -738,4 +738,4 @@ languages:
 #      Supports(type_id)=false may skip incapable codecs (no empty .errors.csv on clean runs)
 #   6. Write *.configs.json sidecar (or let run-benchmarks.sh capture it)
 #   7. scripts/run-benchmarks.sh accepts smoke|all-single|full|research;
-#      smoke dataFilter defaults to a cheap v2 cell (typically message)
+#      smoke dataFilter defaults to a cheap cell (typically message)

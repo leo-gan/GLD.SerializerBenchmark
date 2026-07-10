@@ -1,6 +1,6 @@
-# Run config: smoke (CI / fast path) — Data Model v2 only
+# Run config: smoke (CI / fast path) — suite fixtures
 id: smoke
-description: "Minimal v2 matrix — message + telemetry, single instance"
+description: "Minimal matrix — message + telemetry, single instance"
 data_model_version: 2
 
 types:

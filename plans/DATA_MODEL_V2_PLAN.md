@@ -1,10 +1,9 @@
-# Data Model v2 — Implementation Plan
+# Suite data model — implementation plan (historical)
 
-**Status:** suite default is **v2** on `refactor/data-type-config`.  
-**Progress:** Phases 0–6 operational: default flipped; multi-lang v2 runners; analysis publishes `type@n=` Results. Legacy v1 remains opt-in via `BENCHMARK_DATA_MODEL=v1` (models not mass-deleted to preserve opt-in). Full codec parity (e.g. Rust prost on v2, C# full matrix) is incremental.
+**Status:** historical design record; the suite **only** measures the five type ids (`message`, `document`, `telemetry`, `strings`, `event`). There is no separate legacy data plane.
 **Audience:** maintainers  
 **Scope:** greenfield **data types / generators / catalog** + runner measurement extensions; **not** a rewrite of serializer libraries, Docker, or analysis math  
-**Related:** `docs/analysis/test_data_configuration.md` (v1, to be replaced), `docs/theory/201/compression-is-not-a-format.md`, `config/benchmark_config.yaml`
+**Related:** `docs/analysis/test_data_configuration.md` / `data_model_v2.md`, `docs/theory/201/compression-is-not-a-format.md`, `config/benchmark_config.yaml`
 
 ---
 

@@ -1,12 +1,14 @@
 # Test data types
 
-**V1 fixtures removed.** The suite uses **Data Model v2** only.
+Suite fixtures (type ids): **message**, **document**, **telemetry**, **strings**, **event**.
 
-See **[Data Model v2](data_model_v2.md)** for:
+See **[Suite data model](data_model_v2.md)** for:
 
-- type_ids: `message`, `document`, `telemetry`, `strings`, `event`
+- Logical shapes and default `type_config`
 - `data_type_instance_count` (batch cardinality)
-- `type_config` / `TypeConfigHash`
-- run config library under `config/library/`
+- `TypeConfigHash`
+- Run config library under `config/library/`
 
-Catalog: `schemas/data_catalog_v2.yaml`.
+**Catalog:** `schemas/data_catalog_v2.yaml`  
+**Defaults matrix:** `config/library/default.yaml`  
+**Smoke matrix:** `config/library/smoke.yaml`

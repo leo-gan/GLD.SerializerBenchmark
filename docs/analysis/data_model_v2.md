@@ -1,22 +1,14 @@
-# Data Model v2
+# Suite data model
 
-**Status:** normative for the suite data plane. **V1 Person/EDI fixtures removed** — only Data Model v2 type_ids run.
+Normative description of **logical** instance shapes, config axes, and generator conventions for all language harnesses.
 
-| Language | v2 coverage |
-|----------|-------------|
-| Python | Full serializer matrix (minus avro/flatbuffers) |
-| Go | Schemaless matrix (protobuf/avro skipped until schemas/v2 codegen) |
-| JavaScript | Most codecs (schema codecs without v2 IDL skipped) |
-| Rust | `serde_json`, `sonic-rs`, `rmp-serde`, `ciborium`, `bson` |
-| C | `memcpy-json`, `cJSON`, `yyjson` (payloads via Python generators) |
-| C# | Standalone `c-sharp/v2bench` (`System.Text.Json`; main project may need root-owned `obj/` fixed) |
-
-Legacy v1 models remain in-tree for `BENCHMARK_DATA_MODEL=v1` only.  
-**Plan:** [`plans/DATA_MODEL_V2_PLAN.md`](../../plans/DATA_MODEL_V2_PLAN.md)  
 **Catalog:** [`schemas/data_catalog_v2.yaml`](../../schemas/data_catalog_v2.yaml)  
-**Run configs:** [`config/library/`](../../config/library/)
+**Run configs:** [`config/library/`](../../config/library/)  
+**Wire schemas:** [`schemas/v2/`](../../schemas/v2/)
 
-This page freezes the **logical** instance shapes, config axes, and conventions for generators and schema IDLs. It does **not** replace language Results methodology ([ANALYSIS_METHODOLOGY](ANALYSIS_METHODOLOGY.md)).
+Type ids: **message**, **document**, **telemetry**, **strings**, **event**.
+
+This page does **not** replace language Results methodology ([ANALYSIS_METHODOLOGY](ANALYSIS_METHODOLOGY.md)).
 
 ---
 
@@ -213,7 +205,7 @@ If needed: reduce reps 100 → 50. Hard cap: **600 seconds** per language run.
 
 ## Schema sources
 
-IDL and codegen: `schemas/v2/` + `scripts/schemas/generate-all.sh` (see plan §3.6).  
+IDL and codegen: `schemas/v2/` + `scripts/schemas/generate-all.sh`.  
 Logical fields on this page must stay aligned with `.proto` / `.avsc` field sets.
 
 ---
@@ -224,6 +216,3 @@ SHA-256 of canonical JSON (sorted keys, no whitespace variance) of **resolved** 
 
 ---
 
-## v1 note
-
-V1 fixtures (`Person`, `EDI_835`, …) are removed. See [Test data types](test_data_configuration.md) for the redirect to this document.

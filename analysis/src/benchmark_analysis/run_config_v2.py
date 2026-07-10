@@ -1,4 +1,4 @@
-"""Data Model v2: load type catalog + run config, expand W×C cells, resolve type_config."""
+"""Load type catalog + run config, expand W×C cells, resolve type_config."""
 
 from __future__ import annotations
 

@@ -166,7 +166,7 @@ def _dataset_block() -> Dict[str, Any]:
 
         cfg = load_master_config()
         block["config_path"] = "config/benchmark_config.yaml"
-        # Data Model v2: catalog is normative (V1 schemas/test_data_config.json removed).
+        # Catalog is normative for suite fixtures.
         block["catalog_file"] = dig(
             cfg, "test_data.catalog_file",
             dig(cfg, "data_model_v2.catalog_file", "schemas/data_catalog_v2.yaml"),

@@ -40,18 +40,19 @@ Meet the [harness contract summary](architecture.md#harness-contract-summary) an
 | Warmup | Repetition index 0 excluded by analysis |
 | Prepare outside loop | Schema compile, type registration, buffer pools — not timed |
 | Timed section | Serialize + deserialize only |
-| Fidelity | Round-trip semantic check; errors in `logs/<lang>/<ts>.errors.csv` (same timestamp stem as the result CSV) |
-| Optional sidecars | `*.configs.json` (environment + optional dataset/serializer metadata; legacy `*.environment.json` still readable) |
-| event | Attribute map / envelope |
-| Seed | From `schemas/test_data_config.json` / config `reproducibility.random_seed` |
+| Fidelity | Round-trip semantic check; write `logs/<lang>/<ts>.errors.csv` only when errors occur |
+| Optional sidecars | `*.configs.json` (environment + optional dataset/serializer metadata) |
+| Seed | Master config `reproducibility.random_seed` / `BENCHMARK_SEED` |
 
 ## 3. Test data types
 
-**Data Model v2 (suite default):** implement `make_one` / cells for `message`, `document`, `telemetry`, `strings`, `event` (see data_model_v2.md).
+Implement `make_one` / run-config cells for suite type ids: `message`, `document`, `telemetry`, `strings`, `event` — see [Suite data model](data_model_v2.md).
 
-**Data Model v2 (cutover path):** see [Data Model v2](data_model_v2.md). Implement `make_one` for `message`, `document`, `telemetry`, `strings`, `event`; expand cells from `./scripts/resolve_run_config.py`; emit `DataTypeInstanceCount` and `TypeConfigHash`. Generators exist under language trees (`python/.../data_v2`, `go/model/v2`, `rust/src/data_v2.rs`, `javascript/src/data_v2.js`, …). Schema artifacts: `schemas/v2/` + `scripts/schemas/generate-all.sh`.
-
-Use collection sizes from `schemas/test_data_config.json` — [Test data types](test_data_configuration.md).
+- Expand cells with `./scripts/resolve_run_config.py`
+- Emit CSV columns `DataTypeInstanceCount` and `TypeConfigHash` when measuring batch cells
+- Generators live under language trees (e.g. `python/.../data_v2`, `go/model/v2`, `rust/src/data_v2.rs`, `javascript/src/data_v2.js`)
+- Wire schemas: `schemas/v2/` + `scripts/schemas/generate-all.sh`
+- Catalog defaults: `schemas/data_catalog_v2.yaml` — [Test data types](test_data_configuration.md)
 
 ## 4. Runner script
 

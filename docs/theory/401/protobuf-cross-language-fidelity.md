@@ -14,7 +14,7 @@ This monorepo already has Python, Rust, and C Protobuf entries—use them when a
 
 ## Prerequisites
 
-- Shared schema discipline (`schemas/benchmark_data.proto` in this repo, or a tiny shared `mini.proto`).  
+- Shared schema discipline (`schemas/v2/protobuf/benchmark_v2.proto` in this repo, or a tiny shared `mini.proto`).  
 - Soft: [301 using this suite](../301/using-this-suite.md)—do not use Results as fidelity proofs.
 
 ## Mental model
@@ -109,7 +109,7 @@ This suite may:
 
 - Convert fixtures to native messages **outside** timed paths.  
 - Apply language-specific compare callbacks (in C, the per-serializer compare function often named something like `fidelity_fx`—**suite-local round-trip check**, not multi-language proof).  
-- Exclude types Protobuf cannot express (`ObjectGraph`, bare `Integer` in some langs).
+- Exclude fixtures a given language schema does not define.
 
 Passing suite fidelity means **that language entry** round-trips under **that** compare function—not that three languages share bytes.
 
@@ -153,7 +153,7 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 
 | Asset | Fidelity role |
 |-------|----------------|
-| `schemas/benchmark_data.proto` | Shared field numbers for suite types |
+| `schemas/v2/protobuf/benchmark_v2.proto` | Shared field numbers for suite types |
 | Python `protobuf` / Rust `prost` / C `protobuf-c` & `nanopb` | Separate encode paths (pins on language articles) |
 | Per-language fidelity hooks | Local round-trip checks only |
 | Results / ops | **Not** interoperability proofs |
@@ -166,7 +166,7 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 - Comparing floats with `==` across languages without a policy.  
 - Mixing nanopb static limits with “full” protobuf-c fixtures and calling it a wire bug.  
 - Editing generated code in one language only (schema drift).  
-- Using suite Person for a first matrix when MiniUser goldens are enough.
+- Using suite fixtures for a first matrix when MiniUser goldens are enough.
 
 ## What this article is not
 

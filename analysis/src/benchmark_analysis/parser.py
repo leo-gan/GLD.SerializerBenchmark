@@ -76,7 +76,7 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
                     record["NativeKind"] = str(row["NativeKind"]).strip()
                 if "StreamMode" in row and row["StreamMode"] not in (None, ""):
                     record["StreamMode"] = str(row["StreamMode"]).strip()
-                # Data Model v2 optional columns
+                # Optional batch columns
                 if "DataTypeInstanceCount" in row and row["DataTypeInstanceCount"] not in (None, ""):
                     record["DataTypeInstanceCount"] = int(float(row["DataTypeInstanceCount"]))
                 if "TypeConfigHash" in row and row["TypeConfigHash"] not in (None, ""):

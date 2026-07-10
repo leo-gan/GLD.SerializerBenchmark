@@ -16,7 +16,7 @@ Official encoding reference: [Protocol Buffers encoding](https://protobuf.dev/pr
 
 - Comfort with hex and unsigned integers.  
 - 201 vocabulary: schema-dependent wire, additive field numbers.  
-- Optional: skim shared suite schema `schemas/benchmark_data.proto` for real field numbers (this page uses a **teaching mini-message**, not suite `Person`).
+- Optional: skim shared suite schema `schemas/v2/protobuf/benchmark_v2.proto` for real field numbers (this page uses a **teaching mini-message**, not a full suite fixture).
 
 ## Mental model
 
@@ -57,7 +57,7 @@ outer key = (3<<3)|2 = 0x1a (field 3, LEN)
 
 (Wire types 3/4 are legacy group markers — avoid.)
 
-**Teaching mini-message** (not the suite `Person` / `benchmark_data.proto`):
+**Teaching mini-message** (not a full suite fixture / `benchmark_data.proto`):
 
 ```protobuf
 syntax = "proto3";
@@ -224,7 +224,7 @@ Verify with any official parser that loads an equivalent `.proto` (see [lab](lab
 
 | Asset | Role |
 |-------|------|
-| `schemas/benchmark_data.proto` | Real multi-message schema (Person, Telemetry, …)—larger than MiniUser |
+| `schemas/v2/protobuf/benchmark_v2.proto` | Real multi-message suite schema—larger than MiniUser |
 | [Python](protobuf-python.md) / [Rust](protobuf-rust-prost.md) / [C](protobuf-c-protobuf-c.md) | Language runtime implementations of **this** wire format |
 | [301 using this suite](../301/using-this-suite.md) | How not to misuse Results when comparing libs |
 

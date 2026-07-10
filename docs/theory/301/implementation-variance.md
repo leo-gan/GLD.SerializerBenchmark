@@ -102,7 +102,7 @@ When multiple JSON (or multiple schema-driven) entries exist, **that spread is t
 | Effect sizes vs fastest (Cliff’s δ, if multi-way) | “Is the gap real?” |
 | Overview caveats / error CSV | Disqualify unsafe paths |
 
-**Conclusion style:** “Pin `orjson@x` for Python JSON Person bytes—lowest deser median, fidelity 1.0.”
+**Conclusion style:** “Pin `orjson@x` for Python JSON **message** fixture, bytes mode—lowest deser median, fidelity 1.0.”
 
 ## What this suite cannot tell you
 

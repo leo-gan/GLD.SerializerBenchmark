@@ -50,7 +50,7 @@ This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 
 ### Caveats
 
-- Suite fixtures are **Data Model v2** type_ids only (`message`, `document`, `telemetry`, `strings`, `event`). Payload POCOs are structural proxies (not V1 Person/ObjectGraph/Integer fixtures).
+- Suite fixtures: `message`, `document`, `telemetry`, `strings`, `event` (payload POCOs under `TestData/`).
 - Still skipped (not capable / suite constraints): CsvHelper (tabular only on message/event), Google.Protobuf (no generated IMessage), FluentSerializer (profiles), BinaryPack, Apex, ExtendedXml, Migrant (net8 IL except message/event), GroBuf (message/event only).
 - MemoryPack / FlatSharp map supported fixtures via annotated models in `PrepareData` (timed path is codec-only; `ToDomain` untimed).
 - ZeroFormatter maps **all** suite fixtures to `KeyTuple` graphs (max arity 8; Telemetry nested).

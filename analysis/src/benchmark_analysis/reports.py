@@ -47,7 +47,7 @@ def _records_to_melted_df(
     if "Language" not in df.columns:
         df["Language"] = language_hint or language
 
-    # Data Model v2: split violins by instance count (N=1 vs N=100, …).
+    # Split violins by instance count (N=1 vs N=100, …).
     if "DataTypeInstanceCount" in df.columns and "TestDataName" in df.columns:
         def _td_label(row: Any) -> str:
             n = row.get("DataTypeInstanceCount")
@@ -1019,7 +1019,7 @@ def generate_language_results_pages(
         ]
 
         if stats:
-            # Data Model v2: show type@n=<instance_count> so N=1 vs N=100 do not collapse.
+            # Show type@n=<instance_count> so N=1 vs N=100 do not collapse.
             display_stats = {}
             for k, e in (stats.items() if isinstance(stats, dict) else enumerate(stats)):
                 if not isinstance(e, dict):
@@ -1042,7 +1042,7 @@ def generate_language_results_pages(
                 "In each table, **bold** marks the semantic best value in that column "
                 "(lowest time; highest ops/s). Ties are all bolded. "
                 "Latency tables are in **microseconds** (µs). "
-                "Data Model v2 fixtures use `type@n=<DataTypeInstanceCount>` labels."
+                "Batch cells use `type@n=<DataTypeInstanceCount>` labels."
             )
             lines.append("")
             sci = _scientific_summary_md(
@@ -1073,7 +1073,7 @@ def generate_language_results_pages(
                 lines.append("")
                 lines.append(
                     "- **prost** maps ISO timestamps through millisecond integers; "
-                    "harness fidelity allows date-string drift on v2 types that carry timestamps "
+                    "harness fidelity allows date-string drift on types that carry timestamps "
                     "(e.g. message/event/document/telemetry)."
                 )
                 lines.append(

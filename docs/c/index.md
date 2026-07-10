@@ -40,10 +40,10 @@ Pins: [`c/third_party/VERSIONS.md`](../../c/third_party/VERSIONS.md).
 
 - **Real APIs only:** a serializer is registered only when its library is linked (see CMake configure log `serializer: … REAL`).
 - **Symbol prefixing:** `parson` and `tinycbor` are linked with renamed symbols so they co-exist with `jansson` and `libcbor`.
-- **Full nested fidelity:** JSON, mpack, msgpack-c, tinycbor, libcbor (`cbor-encode`), qcbor, libbson, zcbor, and nanopb encode Person passport/police, Telemetry measurements, and EDI claims/lines with **library-native field structure**. That is slower than wrapping `bin_write_fixture` opaque bytes, but it measures real encode/decode cost.
-- **Still payload-wrapped:** `ubj`, `flatcc`, and `avro-c` keep a compact kind + binary payload (or builder vector) for multi-type fidelity without full schema codegen. Avro and flatcc still apply the optimal **cached iface / reused builder** call path.
-- **`nanopb` vs `protobuf-c` / `upb`:** nanopb uses real `pb_ostream`/`pb_istream` helpers. `protobuf-c` and `upb` share the in-tree wire codec (`fixture_pb_full.h`); Google upb is not linked.
-- **ObjectGraph:** included (same Root/Child1/Child2 cycle topology as C#/Python). Encoded as a **flat node table** with integer edge indices (`Parent` / `Related` / `Children`), never by chasing live pointers—so every registered serializer can round-trip cycles without infinite recursion.
+- Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`.
+- **Full nested fidelity:** JSON, mpack, msgpack-c, tinycbor, libcbor (`cbor-encode`), qcbor, libbson, zcbor, and nanopb encode suite fixtures with **library-native field structure** where implemented.
+- **Still payload-wrapped:** `ubj`, `flatcc`, and `avro-c` may keep a compact kind + binary payload (or builder vector) without full schema codegen. Avro and flatcc still apply cached iface / reused builder call paths.
+- **`nanopb` vs `protobuf-c` / `upb`:** nanopb uses real `pb_ostream`/`pb_istream` helpers. `protobuf-c` and `upb` share the in-tree wire codec; Google upb is not linked.
 
 ## Tests
 

@@ -1,6 +1,6 @@
 # Lab: mini Protobuf subset encoder/decoder
 
-> Build a **deliberately small** Protobuf binary codec for a teaching message—not production Protobuf, not suite `Person`.
+> Build a **deliberately small** Protobuf binary codec for a teaching message—not production Protobuf, not a full suite fixture.
 
 ## Goal
 
@@ -20,7 +20,7 @@ Implement a MiniUser subset encoder/decoder, validate against **golden bytes** a
 
 ### Teaching schema
 
-Not the suite `schemas/benchmark_data.proto`. Use a tiny local `mini.proto` (or equivalent) when you need an official oracle:
+Not the suite `schemas/v2/protobuf/benchmark_v2.proto`. Use a tiny local `mini.proto` (or equivalent) when you need an official oracle:
 
 ```protobuf
 syntax = "proto3";
@@ -197,7 +197,7 @@ As in **Done when**.
 ## What this lab is not
 
 - Production-grade Protobuf.  
-- Full fidelity to suite `Person` fixtures.  
+- Full fidelity to suite fixtures.  
 - A replacement for language runtimes in [Python](protobuf-python.md) / [Rust](protobuf-rust-prost.md) / [C](protobuf-c-protobuf-c.md).
 
 ## Key takeaways
