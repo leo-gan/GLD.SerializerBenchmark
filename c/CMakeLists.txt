@@ -16,6 +16,7 @@ set(BENCH_SOURCES
   src/data_v2.c
   src/run_v2.c
   src/csv_log.c
+  src/batch_cell.c
   src/runner.c
   src/register_serializers.c
   src/serializers/ser_custom_binary.c

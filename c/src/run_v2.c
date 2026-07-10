@@ -140,38 +140,86 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             "import json,sys\n"
             "d=json.load(open(sys.argv[1]))\n"
             "for c in d['cells']:\n"
-            "    print(c['type_id'], c['data_type_instance_count'], sep='\\t')\n");
+            "    print(c['type_id'], c['data_type_instance_count'], "
+            "c.get('type_config_hash',''), sep='\\t')\n");
     fclose(cspf);
     char cells_cmd[512];
     snprintf(cells_cmd, sizeof cells_cmd, "python3 %s %s", cells_py, tmpj);
     FILE *cp = popen(cells_cmd, "r");
     if (!cp) { csv_logger_close(log); unlink(tmpj); unlink(cells_py); return 1; }
 
-    static uint8_t buf[4 * 1024 * 1024];
+    static uint8_t buf[8 * 1024 * 1024];
     const char *modes[] = { "bytes", "stream" };
     char line[512];
     int cells = 0;
-    printf("[PROGRESS] C Data Model v2: %d serializers\n", ser_count);
+    printf("[PROGRESS] C suite cells: %d serializers\n", ser_count);
     while (fgets(line, sizeof line, cp)) {
         char type_id[64] = {0};
+        char type_hash[128] = {0};
         int n = 1;
-        char *t1 = strchr(line, '\t');
-        if (!t1) continue;
-        *t1 = 0;
+        /* type_id \t N \t hash */
+        char *p1 = strchr(line, '\t');
+        if (!p1) continue;
+        *p1 = 0;
         strncpy(type_id, line, sizeof type_id - 1);
-        n = atoi(t1 + 1);
-        printf("[PROGRESS] Cell %s N=%d\n", type_id, n);
+        char *p2 = strchr(p1 + 1, '\t');
+        if (p2) {
+            *p2 = 0;
+            n = atoi(p1 + 1);
+            char *hash_s = p2 + 1;
+            while (*hash_s == ' ' || *hash_s == '\t') hash_s++;
+            size_t hl = strcspn(hash_s, "\r\n");
+            if (hl >= sizeof type_hash) hl = sizeof type_hash - 1;
+            memcpy(type_hash, hash_s, hl);
+            type_hash[hl] = 0;
+        } else {
+            n = atoi(p1 + 1);
+        }
+        if (n < 1) n = 1;
+        printf("[PROGRESS] Cell %s N=%d hash=%s\n", type_id, n, type_hash);
         cells++;
 
+        /* Build N single-instance fixtures (seeded per index). */
+        test_fixture_t *items = (test_fixture_t *)calloc((size_t)n, sizeof(test_fixture_t));
+        if (!items) {
+            fprintf(stderr, "[ERROR] OOM batch N=%d\n", n);
+            continue;
+        }
+        for (int i = 0; i < n; i++) {
+            fill_v2_fixture(&items[i], type_id, seed + cells * 1000 + i);
+            items[i].batch_n = 1;
+            items[i].batch = NULL;
+            items[i].name = type_id;
+        }
+
         test_fixture_t fx;
-        fill_v2_fixture(&fx, type_id, seed + cells);
+        memset(&fx, 0, sizeof(fx));
         char *name_owned = strdup(type_id);
         fx.name = name_owned;
+        fx.kind = items[0].kind;
+        fx.batch_n = n;
+        if (n == 1) {
+            fx = items[0];
+            fx.name = name_owned;
+            fx.batch_n = 1;
+            fx.batch = NULL;
+            free(items);
+            items = NULL;
+        } else {
+            fx.batch = items;
+            /* peek fields from first */
+            fx.simple = items[0].simple;
+            fx.telemetry = items[0].telemetry;
+            fx.string_array = items[0].string_array;
+            fx.edi = items[0].edi;
+        }
 
         for (int si = 0; si < ser_count; si++) {
             serializer_t *S = &sers[si];
             if (S->supports && !S->supports(fx.kind)) continue;
-            if (S->prepare && S->prepare(fx.kind, &fx) != 0) continue;
+            /* prepare on first item (or single) */
+            const test_fixture_t *prep_fx = (n > 1 && fx.batch) ? &fx.batch[0] : &fx;
+            if (S->prepare && S->prepare(fx.kind, prep_fx) != 0) continue;
 
             for (int mi = 0; mi < 2; mi++) {
                 const char *mode = modes[mi];
@@ -182,43 +230,50 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
                     test_fixture_t out_fx;
                     memset(&out_fx, 0, sizeof(out_fx));
                     out_fx.kind = fx.kind;
+                    out_fx.batch_n = n;
 
                     uint64_t t0 = bench_now_ns();
-                    int rc = S->serialize(&fx, buf, sizeof(buf), &out_len);
+                    int rc = bench_serialize_cell(S, &fx, buf, sizeof(buf), &out_len);
                     uint64_t t1 = bench_now_ns();
                     if (rc != 0) {
-                        fprintf(stderr, "[ERROR] %s / %s / %s: serialize failed\n",
-                                S->name, type_id, mode);
+                        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: serialize failed\n",
+                                S->name, type_id, n, mode);
                         had_error = 1;
                         continue;
                     }
-                    rc = S->deserialize(buf, out_len, &out_fx, fx.kind);
+                    rc = bench_deserialize_cell(S, buf, out_len, &out_fx, fx.kind);
                     uint64_t t2 = bench_now_ns();
                     if (rc != 0) {
-                        fprintf(stderr, "[ERROR] %s / %s / %s: deserialize failed\n",
-                                S->name, type_id, mode);
+                        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: deserialize failed\n",
+                                S->name, type_id, n, mode);
                         had_error = 1;
+                        if (out_fx.batch) { free(out_fx.batch); out_fx.batch = NULL; }
                         continue;
                     }
-                    bool ok = S->fidelity ? S->fidelity(&fx, &out_fx) : true;
+                    bool ok = bench_fidelity_cell(S, &fx, &out_fx);
+                    if (out_fx.batch) { free(out_fx.batch); out_fx.batch = NULL; }
                     if (!ok) {
-                        fprintf(stderr, "[ERROR] %s / %s / %s: fidelity failed\n",
-                                S->name, type_id, mode);
+                        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: fidelity failed\n",
+                                S->name, type_id, n, mode);
                         had_error = 1;
                         continue;
                     }
                     csv_logger_write(log, mode, type_id, repetitions, r, S->name,
-                                     t1 - t0, t2 - t1, out_len, 1.0, S->version);
+                                     t1 - t0, t2 - t1, out_len, 1.0, S->version,
+                                     n, type_hash);
                 }
             }
         }
         free(name_owned);
+        if (items) free(items);
+        else if (fx.batch) free(fx.batch);
     }
     pclose(cp);
     unlink(tmpj);
     unlink(cells_py);
     csv_logger_close(log);
-    printf("[PROGRESS] C Data Model v2 complete (%d cells, %d serializers) → %s\n",
+    printf("[PROGRESS] C suite complete (%d cells, %d serializers) → %s\n",
            cells, ser_count, path);
     return 0;
 }
+

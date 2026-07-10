@@ -26,14 +26,26 @@ docker build -t $IMAGE_NAME "$SCRIPT_DIR/.."
 
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
+export BENCHMARK_REPO_ROOT="${BENCHMARK_REPO_ROOT:-$PROJECT_ROOT}"
+if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+  if [[ "${1:-}" == "smoke" ]]; then
+    export BENCHMARK_RUN_CONFIG="$PROJECT_ROOT/config/library/smoke.yaml"
+  else
+    export BENCHMARK_RUN_CONFIG="$PROJECT_ROOT/config/library/default.yaml"
+  fi
+fi
 
 # Shared docker env/mounts for all modes
 docker_run() {
     docker run --rm \
       -e BENCHMARK_TS="${BENCHMARK_TS}" \
       -e BENCHMARK_SEED="${BENCHMARK_SEED}" \
+      -e BENCHMARK_REPO_ROOT=/src \
+      -e BENCHMARK_RUN_CONFIG="${BENCHMARK_RUN_CONFIG:-/src/config/library/default.yaml}" \
       -e LOG_DIR=/app/logs \
+      -e PYTHONPATH=/src/analysis/src \
       -v "$LOG_DIR":/app/logs \
+      -v "$PROJECT_ROOT":/src:ro \
       $IMAGE_NAME "$@"
 }
 

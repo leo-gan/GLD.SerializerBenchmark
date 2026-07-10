@@ -31,6 +31,15 @@ fi
 
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
+export BENCHMARK_REPO_ROOT="${BENCHMARK_REPO_ROOT:-$PROJECT_ROOT}"
+# default.yaml → N∈{1,100}; smoke.yaml → N=1 only
+if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+  if [[ "$MODE" == "smoke" ]]; then
+    export BENCHMARK_RUN_CONFIG="$PROJECT_ROOT/config/library/smoke.yaml"
+  else
+    export BENCHMARK_RUN_CONFIG="$PROJECT_ROOT/config/library/default.yaml"
+  fi
+fi
 
 if [[ ! -f "$C_DIR/third_party/_prefix/lib/libjansson.a" ]]; then
   echo "[INFO] C third_party deps missing; running fetch-and-build-deps.sh (first run may take several minutes)..."

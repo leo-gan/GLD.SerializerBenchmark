@@ -31,8 +31,12 @@ namespace GLD.SerializerBenchmark
 
             foreach (var testDataDescription in testDataDescriptions)
             {
-                Console.WriteLine($"\n[PROGRESS] Testing Data: {testDataDescription.Name} (Targeting {serializers.Count} serializers, {repetitions} reps)");
-                TestOnData(testDataDescription, repetitions, serializers, logStorage, errors);
+                var n = GetInstanceCount(testDataDescription);
+                var hash = GetTypeConfigHash(testDataDescription);
+                Console.WriteLine(
+                    $"\n[PROGRESS] Testing Data: {testDataDescription.Name} N={n} " +
+                    $"(Targeting {serializers.Count} serializers, {repetitions} reps)");
+                TestOnData(testDataDescription, repetitions, serializers, logStorage, errors, n, hash);
                 Error.SaveErrors(errors, errorsPath);
             }
 
@@ -82,7 +86,8 @@ namespace GLD.SerializerBenchmark
         }
 
         private static void TestOnData(ITestDataDescription testDataDescription, int repetitions,
-            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
+            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors,
+            int instanceCount = 1, string typeConfigHash = "")
         {
             // Untimed: Initialize + PrepareData once per fixture (not inside Stopwatch).
             foreach (var serializer in serializers)
@@ -94,12 +99,15 @@ namespace GLD.SerializerBenchmark
                 serializer.PrepareData(testDataDescription.Data);
             }
 
-            TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors);
-            TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors);
+            TestsOnRepetition(testDataDescription, false, repetitions, serializers, logStorage, errors,
+                instanceCount, typeConfigHash);
+            TestsOnRepetition(testDataDescription, true, repetitions, serializers, logStorage, errors,
+                instanceCount, typeConfigHash);
         }
 
         public static void TestsOnRepetition(ITestDataDescription testDataDescription, bool streaming, int repetitions,
-            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors)
+            List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors,
+            int instanceCount = 1, string typeConfigHash = "")
         {
             var wasError = new Dictionary<string, bool>();
             var original = testDataDescription;
@@ -112,10 +120,26 @@ namespace GLD.SerializerBenchmark
                     TestDataName = original.Name,
                     Repetitions = repetitions,
                     RepetitionIndex = i,
-                    StringOrStream = streaming ? "Stream" : "string"
+                    StringOrStream = streaming ? "Stream" : "string",
+                    DataTypeInstanceCount = instanceCount < 1 ? 1 : instanceCount,
+                    TypeConfigHash = typeConfigHash ?? "",
                 };
                 TestOnSerializer(serializers, original, errors, streaming, logStorage, log, wasError);
             }
+        }
+
+        private static int GetInstanceCount(ITestDataDescription d)
+        {
+            if (d is TestData.V2.RunCellDescription cell)
+                return cell.InstanceCount;
+            return 1;
+        }
+
+        private static string GetTypeConfigHash(ITestDataDescription d)
+        {
+            if (d is TestData.V2.RunCellDescription cell)
+                return cell.TypeConfigHash ?? "";
+            return "";
         }
 
         private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original,

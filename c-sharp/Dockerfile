@@ -15,8 +15,7 @@ COPY . .
 # Build the application
 RUN dotnet build src/GLD.SerializerBenchmark.csproj -c Release -o /app/build
 
-# Build-time verification (Smoke Test)
-# This fails the build if the application cannot run or basic serialization fails.
+# Build-time verification (fallback N=1 fixtures when resolve_run_config is not wired in build stage).
 # Include SharpSerializer: net8 needs custom IInstanceCreator (see Serializers/SharpSerializer.cs).
 RUN dotnet run --project src/GLD.SerializerBenchmark.csproj -c Release -- 1 Binary message \
  && dotnet run --project src/GLD.SerializerBenchmark.csproj -c Release -- 1 SharpSerializer message \
@@ -31,6 +30,9 @@ RUN dotnet publish src/GLD.SerializerBenchmark.csproj -c Release -o /app/publish
 # Final Runtime Stage
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS final
 WORKDIR /app
+# python3 for resolve_run_config.py (W×C cells) when repo is mounted at /src
+RUN apt-get update && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=publish /app/publish .
 
 # Create a volume for persistent logs
