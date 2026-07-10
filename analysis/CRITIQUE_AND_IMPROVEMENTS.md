@@ -5,38 +5,38 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 ## What is solid
 
 1. **Unified config** (`config/benchmark_config.yaml`) — parameters are no longer scattered magic numbers.
-2. **CSV contract with `Language`** — analysis is language-agnostic; adding Go/Java is documentation + harness, not analysis rewrites.
+2. **CSV contract with `Language`** — analysis is language-agnostic; adding Java (or another language) is documentation + harness, not analysis rewrites.
 3. **Scientific stats** — bootstrap CI, Cliff's δ, Hedges' g, Mann–Whitney + Holm are appropriate for non-normal latency data; means-only reporting is insufficient for a paper.
 4. **A/B path** — serializer authors have a first-class comparison mode, not a spreadsheet exercise.
-5. **Three new harnesses** (Rust/C/JS) with ≥10 serializers each, docs, and runner scripts aligned with C#/Python modes.
+5. **Six language harnesses** (C#, Python, Rust, C, JavaScript, Go) with runner scripts, docs, and native host execution (no Docker).
+6. **Host prepare step** — `scripts/check-host-requirements.sh` / `install-host-requirements.sh` separate toolchains from benchmark runs.
+7. **CI smoke matrix** — path-filtered jobs install native toolchains (`dotnet`, `uv`, `setup-go` 1.24, etc.) before `run-benchmarks.sh`.
 
-## What was weak (and partially fixed)
+## What was weak (status)
 
-### 1. C benchmark honesty (HIGH severity for a paper)
+### 1. C benchmark honesty (HIGH) — **fixed**
 
-**Problem:** Default C build uses minimal JSON/binary *stand-ins* labeled with real library names (`cJSON`, `yyjson`, …). Citing those numbers as "yyjson vs cJSON" would be **misleading**.
+**Problem (historical):** Default C build once used minimal JSON/binary *stand-ins* labeled with real library names.
 
-**Fixed in docs:** Prominent caveats in `c/README.md`, `docs/c/*`, and methodology limitations.
+**Fixed:** Vendored libraries under `c/third_party/` (cJSON, yyjson, mpack, tinycbor, …), built via `c/scripts/fetch-and-build-deps.sh`, registered through real `HAS_*` paths in `register_serializers.c`. Pins in `c/third_party/VERSIONS.md`. Residual: a few **in-tree** codecs (minimal UBJSON, wire-1.0 “upb”) — document, do not mislabel as third-party Google upb.
 
-**Not fully fixed in code:** Real library linkage is opt-in (vendoring + replace `register_serializers.c` bodies). For publication, **must** vendor yyjson/cJSON/mpack/tinycbor and time their optimal APIs. Until then, treat C results as **pipeline validation**, not library ranking.
+### 2. Rust schema/zero-copy intermediate payloads (MEDIUM) — **fixed**
 
-### 2. Rust schema/zero-copy serializers are intermediate-payload based (MEDIUM) — fixed on `refactor/rust-serializers`
+**Problem (historical):** `rkyv` / `prost` / `minicbor` once wrapped intermediate MessagePack.
 
-**Problem (historical):** `rkyv` / `prost` / `minicbor` once wrapped intermediate MessagePack (or similar) because untagged multi-type `Fixture` did not derive cleanly on all crates—measuring envelope overhead, not full native paths.
+**Fixed:** `prost-build` from `rust/proto/benchmark_data.proto`; full `rkyv` `Archive` on concrete types; direct `minicbor` `Encode`/`Decode`; inventory on [Rust overview](../docs/rust/index.md).
 
-**Fixed:** `prost-build` from `schemas/benchmark_data.proto` with convert-in-`prepare`; full `rkyv` `Archive` on concrete types (timed deser materializes owned `T` for fidelity); direct `minicbor` `Encode`/`Decode`; plus `bson` / `nanoserde` / `speedy`. Inventory and caveats on [Rust overview](../docs/rust/index.md).
-
-### 3. Stream mode is often fake (MEDIUM)
+### 3. Stream mode is often adapted (MEDIUM) — **open**
 
 **Problem:** Several harnesses time the same buffer path for both `bytes` and `stream`, so stream columns may not show real incremental I/O cost.
 
-**Remaining:** Per-serializer `Write`/`Read` / Node streams / C `FILE*` adapters. Analysis can still compare modes, but interpret with caution (documented in methodology).
+**Remaining:** Per-serializer `Write`/`Read` / Node streams / C `FILE*` where APIs exist. Prefer emitting honest `StreamMode=native|adapted`. Analysis can still compare modes; interpret with caution ([methodology](../docs/analysis/ANALYSIS_METHODOLOGY.md)).
 
 ### 4. Cross-language absolute ns comparisons (MEDIUM, conceptual)
 
-**Problem:** Comparing Rust `sonic-rs` ns to Python `orjson` ns invites invalid conclusions (different heaps, GC, safety checks).
+**Problem:** Comparing Rust `sonic-rs` ns to Python `orjson` ns invites invalid conclusions.
 
-**Mitigation:** Reports group by language; effect sizes are within (language, data, mode). Papers should emphasize **within-language ranks** and normalized ratios, not absolute cross-runtime champions.
+**Mitigation:** Reports group by language; effect sizes are within (language, data, mode). Emphasize **within-language ranks**, not absolute cross-runtime champions.
 
 ### 5. Fidelity is heuristic (LOW–MEDIUM)
 
@@ -44,19 +44,21 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 
 **Mitigation:** Errors logged; fidelity score column present. For papers, define acceptance criteria per format family.
 
-### 6. No environment pinning in default runs (MEDIUM)
+### 6. Environment capture (MEDIUM) — **mostly fixed**
 
 **Problem:** Frequency scaling, noisy neighbors, and package versions affect latency tails.
 
-**Partial fix:** Config has `reproducibility.capture_environment`; implement writers that dump `environment.json` (CPU model, governor, versions) beside logs — recommended before `research` mode runs.
+**Fixed:** `*.configs.json` sidecars via `benchmark_analysis.environment` (CPU, OS, memory, runtimes, git, dataset, serializers). Reports surface key fields. Legacy `*.environment.json` still loadable.
+
+**Still optional for research-grade isolation:** CPU governor, affinity, quiet machine — document/require for `research` mode; not automated.
 
 ### 7. Analysis dependencies not always installed (LOW)
 
 **Problem:** `numpy`/plots require the analysis package install; CLI fails on bare Python.
 
-**Mitigation:** Document `pip install -e analysis/`; tests live under `analysis/tests/`.
+**Mitigation:** Document `pip install -e analysis/` or `uv`; CI installs `analysis/.[dev]`. Host check lists `python3` / `uv`.
 
-## Improvements implemented immediately in this refactor
+## Improvements implemented in the v2 framework era
 
 | Improvement | Where |
 |-------------|--------|
@@ -65,22 +67,37 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 | Multi-lang CLI | `analysis/src/benchmark_analysis/cli.py` |
 | Parser `Language` + optional columns | `analysis/src/benchmark_analysis/parser.py` |
 | Version compare report | `--compare-a` / `--compare-b` |
-| Rust / C / JS harnesses + docs | `rust/`, `c/`, `javascript/`, `docs/*` |
+| Language harnesses + docs | `c-sharp/`, `python/`, `rust/`, `c/`, `javascript/`, `go/`, `docs/*` |
 | Orchestrator multi-lang | `scripts/run-all-benchmarks.sh` |
+| Host toolchain check/install | `scripts/check-host-requirements.sh`, `install-host-requirements.sh` |
+| Native runners (no Docker) | language `scripts/run-benchmarks.sh` |
+| CI native smoke matrix | `.github/workflows/benchmark-ci.yml` |
 | Extensibility guide | `docs/analysis/ADDING_A_LANGUAGE.md` |
 | Unit tests | `analysis/tests/`, `javascript/test/`, `python/tests/` |
-| Methodology v2 section | `docs/analysis/ANALYSIS_METHODOLOGY.md` |
+| Methodology | `docs/analysis/ANALYSIS_METHODOLOGY.md` |
+| Run sidecars | `*.configs.json` (`environment` block) |
 
 ## Recommended next PRs (priority order)
 
-1. **Vendor real C libraries** and replace stand-in codecs (blocks credible C paper section).
-2. **prost-build + rkyv derives** on concrete Rust types from shared schema.
-3. **True stream implementations** per language/library.
-4. **`environment.json` capture** + document hardware/OS in every report header.
-5. **Bayesian hierarchical model** (optional) for multi-run meta-analysis across machines.
-6. **Go + Java** harnesses using the same contract (highest ecosystem value after C#/Python/Rust).
-7. **CI matrix** running smoke for all languages via native toolchains (`uv` / `dotnet` / etc.).
+Status of the original list:
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | Vendor real C libraries | **Done** |
+| 2 | prost-build + rkyv on concrete types | **Done** |
+| 3 | True stream implementations | **Open** (main remaining MEDIUM scientific gap) |
+| 4 | Environment capture + report headers | **Done** as `*.configs.json` (+ report summary) |
+| 5 | Bayesian hierarchical model | **Open** (optional research) |
+| 6 | Go + Java harnesses | **Go done**; **Java not started** |
+| 7 | CI matrix native toolchains | **Done** (keep in sync when runners change) |
+
+**Priority from here:**
+
+1. **True stream implementations** per language/library (phased; emit `native` vs `adapted`).
+2. **Java harness** on the same CSV / run-config contract.
+3. **Research-mode environment discipline** (governor, affinity, quiet host) — docs + optional sidecar fields.
+4. **Bayesian hierarchical model** (optional) for multi-run / multi-machine meta-analysis.
 
 ## Bottom line
 
-The repo is now a **multi-language benchmark *framework*** with statistics appropriate for a methods section. It is **not yet** a turnkey source of unadjusted "world champion serializer" tables: C stand-ins, intermediate Rust schema paths, and pseudo-stream modes must be fixed or explicitly scoped before claiming library-level superiority in a peer-reviewed venue. Use within-language, within-payload comparisons, report CIs and effect sizes, and treat numbers as exploratory.
+The repo is a **multi-language benchmark framework** with statistics appropriate for a methods section, real C library linkage, honest Rust schema/zero-copy paths, Go coverage, and native CI smokes. It is **not** a source of unadjusted “world champion serializer” tables across runtimes: **adapted stream modes** and **cross-language absolute latency** still require careful scoping. Prefer within-language, within-payload comparisons; report CIs and effect sizes; treat exploratory leaderboards accordingly.
