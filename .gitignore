@@ -141,6 +141,3 @@ c/third_party/**
 !c/third_party/VERSIONS.md
 c/build/
 c-sharp/build_user/
-c-sharp/v2bench/bin/
-c-sharp/v2bench/obj/
-c-sharp/build_user/
