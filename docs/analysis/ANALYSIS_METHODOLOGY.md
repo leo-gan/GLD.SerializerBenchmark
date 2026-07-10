@@ -7,7 +7,7 @@
 | For this instead… | Go here |
 |-------------------|---------|
 | What the harness times / suite layout | [Benchmark architecture](architecture.md) |
-| Fixture meanings | [Test data](test_data_configuration.md) |
+| Fixture meanings | [Test Data](test_data_configuration.md) |
 | Paradigms | [Serialization categories](serialization_categories.md) |
 | How to regenerate site snapshots | [Benchmark Results](BENCHMARK_SUMMARY.md#regenerating-language-snapshots) |
 

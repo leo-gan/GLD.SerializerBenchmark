@@ -3,7 +3,7 @@
 **Job of this page:** implementer checklist to grow a language harness **without** changing the analysis core.
 
 Background (layout, timing model, contract summary): [Benchmark architecture](architecture.md).  
-Fixtures: [Test data](test_data_configuration.md).  
+Fixtures: [Test Data](test_data_configuration.md).  
 Stats after you have CSVs: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
 ---
@@ -46,7 +46,7 @@ Meet the [harness contract summary](architecture.md#harness-contract-summary) an
 
 ## 3. Test data types
 
-Implement `make_one` / run-config cells for suite type ids: `message`, `document`, `telemetry`, `strings`, `event` — see [Test data](test_data_configuration.md).
+Implement `make_one` / run-config cells for suite type ids: `message`, `document`, `telemetry`, `strings`, `event` — see [Test Data](test_data_configuration.md).
 
 - Expand cells with `./scripts/resolve_run_config.py`
 - Emit CSV columns `DataTypeInstanceCount` and `TypeConfigHash` when measuring batch cells

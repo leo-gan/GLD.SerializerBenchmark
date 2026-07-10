@@ -7,7 +7,7 @@ Python's dynamic nature makes serialization uniquely challenging. While it excel
 
 Type ids: `message`, `document`, `telemetry`, `strings`, `event`.  
 Run configs: `config/library/`. Results may label batch cells as `type@n=<instance_count>`.  
-See [Test data](../analysis/test_data_configuration.md).
+See [Test Data](../analysis/test_data_configuration.md).
 
 ## Serializers in this suite (16)
 

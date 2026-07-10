@@ -61,7 +61,7 @@ After regenerating results into `docs/analysis/`, review and commit before `publ
 Suite fixtures (type ids): **message**, **document**, **telemetry**, **strings**, and **event**.
 
 Catalog and defaults: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.  
-Docs: [Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).
+Docs: [Test Data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).
 
 ---
 

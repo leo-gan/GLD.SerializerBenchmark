@@ -1,4 +1,4 @@
-# Test data
+# Test Data
 
 Normative description of suite **fixtures**, logical shapes, config axes, and generator conventions for all language harnesses.
 
