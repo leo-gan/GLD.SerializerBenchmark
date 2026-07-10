@@ -117,6 +117,8 @@ javascript/.nyc_output/
 # Internal / scratch
 # -----------------------------------------------------------------------------
 .TODO.md
+# Local/private planning docs (not for the public repo)
+plans/
 
 # apt downloads
 *.deb
