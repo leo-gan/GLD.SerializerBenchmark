@@ -25,3 +25,7 @@ In-tree codecs (suite schema wire, not third-party pins):
 | protobuf | proto3 wire | `schemas/v2/protobuf/benchmark_v2.proto` field tags |
 | avro | Avro binary 1.x | zigzag/varint records + array blocks (schema-driven) |
 | custom_binary | harness | length-prefixed baseline |
+
+| Cap'n Proto | v1.0.2 | Optional (`BENCH_CPP_CAPNP=ON`, default ON when configured) |
+| Boost.Serialization | system | Optional (`libboost-serialization-dev`) |
+| avro-c | monorepo `c/third_party` | Optional if C deps built (`avro_c` codec) |

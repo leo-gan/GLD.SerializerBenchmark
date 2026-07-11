@@ -119,7 +119,10 @@ check_cpp() {
   fi
   need_cmd cmake "3.16+ for FetchContent" || true
   need_cmd git "FetchContent clones" || true
+  # Optional: libboost_serialization for boost_serialization codec; avro_c needs c/ third_party avro
+  if ldconfig -p 2>/dev/null | grep -q libboost_serialization; then ok "libboost_serialization"; else echo "  note: libboost-serialization-dev optional for boost_serialization"; fi
 }
+
 
 check_c() {
   echo "c"

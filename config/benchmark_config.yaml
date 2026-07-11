@@ -973,3 +973,24 @@ languages:
         rationale: "Apache Avro binary encoding for suite records (schema-driven wire)"
         optimal_api: "binaryEncoder-style zigzag/varint records + array blocks"
 
+      - name: thrift
+        category: schema
+        library: suite thrift-TBinaryProtocol
+        rationale: "Apache Thrift binary protocol (polyglot services staple)"
+        optimal_api: "TBinaryProtocol field headers + STOP (struct/list)"
+      - name: avro_c
+        category: schema
+        library: Apache avro-c
+        rationale: "Real Avro C library from C++ (dual with C harness avro-c)"
+        optimal_api: "cached iface + avro_value_write/read memory IO"
+      - name: capnproto
+        category: schema
+        library: capnproto
+        rationale: "Cap'n Proto zero-copy schema codec (C++ first-class)"
+        optimal_api: "MallocMessageBuilder + messageToFlatArray / FlatArrayMessageReader"
+      - name: boost_serialization
+        category: binary
+        library: Boost.Serialization
+        rationale: "Classic C++ native binary archives (medium value / historical)"
+        optimal_api: "binary_oarchive / binary_iarchive (no_header)"
+

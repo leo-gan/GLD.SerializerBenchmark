@@ -5,7 +5,6 @@
 
 namespace bench {
 
-// Factory decls (defined in ser_*.cpp)
 SerializerPtr make_nlohmann_json();
 SerializerPtr make_rapidjson();
 SerializerPtr make_simdjson();
@@ -25,39 +24,48 @@ SerializerPtr make_jsoncons_cbor();
 SerializerPtr make_jsoncons_bson();
 SerializerPtr make_jsoncons_msgpack();
 SerializerPtr make_custom_binary();
+SerializerPtr make_boost_serialization();
 SerializerPtr make_protobuf();
 SerializerPtr make_avro();
+SerializerPtr make_avro_c();
+SerializerPtr make_thrift();
+SerializerPtr make_capnproto();
 SerializerPtr make_flexbuffers();
 SerializerPtr make_flatbuffers();
 
+static void add(std::vector<SerializerPtr>& v, SerializerPtr p) {
+  if (p) v.push_back(std::move(p));
+}
+
 std::vector<SerializerPtr> all_serializers() {
   std::vector<SerializerPtr> v;
-  // JSON text
-  v.push_back(make_nlohmann_json());
-  v.push_back(make_rapidjson());
-  v.push_back(make_simdjson());
-  v.push_back(make_arduinojson());
-  v.push_back(make_yyjson());
-  // Schemaless binary
-  v.push_back(make_msgpack());
-  v.push_back(make_nlohmann_msgpack());
-  v.push_back(make_nlohmann_cbor());
-  v.push_back(make_nlohmann_ubjson());
-  v.push_back(make_nlohmann_bson());
-  v.push_back(make_cereal());
-  v.push_back(make_bitsery());
-  v.push_back(make_zpp_bits());
-  v.push_back(make_yas());
-  v.push_back(make_cista());
-  v.push_back(make_jsoncons_cbor());
-  v.push_back(make_jsoncons_bson());
-  v.push_back(make_jsoncons_msgpack());
-  v.push_back(make_custom_binary());
-  // Schema / IDL family
-  v.push_back(make_protobuf());
-  v.push_back(make_avro());
-  v.push_back(make_flexbuffers());
-  v.push_back(make_flatbuffers());
+  add(v, make_nlohmann_json());
+  add(v, make_rapidjson());
+  add(v, make_simdjson());
+  add(v, make_arduinojson());
+  add(v, make_yyjson());
+  add(v, make_msgpack());
+  add(v, make_nlohmann_msgpack());
+  add(v, make_nlohmann_cbor());
+  add(v, make_nlohmann_ubjson());
+  add(v, make_nlohmann_bson());
+  add(v, make_cereal());
+  add(v, make_bitsery());
+  add(v, make_zpp_bits());
+  add(v, make_yas());
+  add(v, make_cista());
+  add(v, make_jsoncons_cbor());
+  add(v, make_jsoncons_bson());
+  add(v, make_jsoncons_msgpack());
+  add(v, make_custom_binary());
+  add(v, make_boost_serialization());
+  add(v, make_protobuf());
+  add(v, make_avro());
+  add(v, make_avro_c());
+  add(v, make_thrift());
+  add(v, make_capnproto());
+  add(v, make_flexbuffers());
+  add(v, make_flatbuffers());
   return v;
 }
 

@@ -10,7 +10,7 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson),
 - Build: CMake **C++20**, deps via `FetchContent` → `cpp/third_party/` (pins in [`cpp/third_party/VERSIONS.md`](../../cpp/third_party/VERSIONS.md))
 - Registration: [`cpp/src/register.cpp`](../../cpp/src/register.cpp)
 
-## Serializers (23)
+## Serializers (26+)
 
 | Serializer | Category | Library | Optimal call path | Notes |
 |------------|----------|---------|-------------------|-------|
@@ -33,6 +33,10 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson),
 | jsoncons_bson | Binary | jsoncons | `bson::encode/decode` | Document binary |
 | jsoncons_msgpack | Binary | jsoncons | `msgpack::encode/decode` | DOM MessagePack |
 | custom_binary | Binary | harness | length-prefixed fields | Baseline |
+| thrift | Schema | suite TBinaryProtocol | field type+id + STOP | Apache Thrift binary |
+| avro_c | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++ |
+| capnproto | Schema | Cap'n Proto | MessageBuilder + flat array | Zero-copy schema |
+| boost_serialization | Binary | Boost.Serialization | binary_o/iarchive | Optional (system lib) |
 | protobuf | Schema | suite wire | proto3 field tags | Shared `.proto` field numbers |
 | avro | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
 | flexbuffers | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
