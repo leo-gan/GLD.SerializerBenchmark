@@ -536,9 +536,14 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
     """
     lines = [f"\n### {title}\n"]
 
-    # Extract unique row and column values
-    row_vals = sorted(set(s[rows_dim] for s in stats.values()))
-    col_vals = sorted(set(s[cols_dim] for s in stats.values()))
+    # Extract unique row and column values (case-insensitive name order for serializers)
+    def _sort_dim(vals, dim: str):
+        if dim == "serializer":
+            return sorted(vals, key=lambda x: str(x).casefold())
+        return sorted(vals)
+
+    row_vals = _sort_dim(set(s[rows_dim] for s in stats.values()), rows_dim)
+    col_vals = _sort_dim(set(s[cols_dim] for s in stats.values()), cols_dim)
 
     if not row_vals or not col_vals:
         lines.append("*No data available*\n")
@@ -637,6 +642,8 @@ def _lang_display_map() -> dict:
             "c": "C",
             "javascript": "JavaScript",
             "go": "Go",
+            "cpp": "C++",
+            "java": "Java",
         }
 
 
@@ -653,6 +660,8 @@ def _lang_docs_dir_map() -> dict:
             "c": "c",
             "javascript": "javascript",
             "go": "go",
+            "cpp": "cpp",
+            "java": "java",
         }
 
 
@@ -662,7 +671,7 @@ def _lang_order_list() -> list:
 
         return list(lang_order())
     except Exception:
-        return ["csharp", "python", "rust", "c", "javascript", "go"]
+        return ["csharp", "python", "rust", "c", "javascript", "go", "java", "cpp"]
 
 
 def _normalize_lang_id(lang: str) -> str:
@@ -745,21 +754,22 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         "Values are mean Ser+Deser **ops/s** over fixtures, using the harness "
         "**bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — "
         "not “number of bytes”). Higher is better. Stream mode is excluded here. "
+        "Rows are sorted by **serializer name**. "
         "Each numeric column uses **one** unit (K or M) for the whole column, "
         "with **2 significant digits** (display only; CSV unchanged). "
         "**Bold** = best in column (ops/s: highest).",
         "",
     ]
     for cat in sorted(by_cat.keys()):
-        # average ops per serializer across fixtures
+        # average ops per serializer across fixtures; rows sorted by name
         acc: Dict[str, List[float]] = defaultdict(list)
         for ser, ops in by_cat[cat]:
             acc[ser].append(ops)
-        ranked = sorted(
+        named = sorted(
             ((s, sum(v) / len(v)) for s, v in acc.items()),
-            key=lambda x: -x[1],
+            key=lambda x: str(x[0]).casefold(),
         )
-        col_vals = [ops for _, ops in ranked]
+        col_vals = [ops for _, ops in named]
         div, unit = _pick_column_unit(col_vals)
         best = _column_best(col_vals, higher_is_better=True)
         unit_label = f" ({unit})" if unit else ""
@@ -767,7 +777,7 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         lines.append("")
         lines.append(f"| serializer | mean ops/s (bytes mode){unit_label} |")
         lines.append("|---|---:|")
-        for ser, mean_ops in ranked:
+        for ser, mean_ops in named:
             # Find the version of this serializer in entries
             version = ""
             for e in entries:
@@ -877,13 +887,8 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
             continue
         by_ser.setdefault(str(e.get("serializer") or ""), []).append(e)
 
-    # Rank by total_median_ns (mean of medians across entries) ascending
-    def rank_key(ser: str) -> float:
-        entries = by_ser[ser]
-        vals = [float(e.get("total_median_ns") or e.get("avg_time_total_ns") or 1e300) for e in entries]
-        return sum(vals) / max(len(vals), 1)
-
-    serializers = sorted(by_ser.keys(), key=rank_key)
+    # Rows sorted by serializer name (stable lookup); bold still marks best-in-column.
+    serializers = sorted(by_ser.keys(), key=lambda s: s.casefold())
     if not serializers:
         return ""
 
@@ -892,7 +897,9 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
         "",
         "Default multi-serializer view shows **high-importance** metrics only "
         "([METRICS.md](../analysis/METRICS.md)). "
-        "**Primary rank:** median total latency (lower is better). "
+        "Rows are sorted by **serializer name**. "
+        "**Bold** marks the semantic best value in each column (lowest latency / size; "
+        "highest ops/s). "
         "Pairwise / version A/B reports use the full metric set. "
         "Latency cells are **µs** (analysis storage remains ns).",
         "",
@@ -1003,19 +1010,14 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
 
 def _total_time_pivot_table_md(stats: Dict) -> str:
     """Generate a combined Mean/Median Total Time pivot table."""
-    # Rows are serializers sorted by rank key
+    # Rows sorted by serializer name (stable lookup); bold still marks best-in-column.
     by_ser: Dict[str, List[Dict]] = {}
     for e in stats.values():
         if not isinstance(e, dict):
             continue
         by_ser.setdefault(str(e.get("serializer") or ""), []).append(e)
 
-    def rank_key(ser: str) -> float:
-        entries = by_ser[ser]
-        vals = [float(e.get("total_median_ns") or e.get("avg_time_total_ns") or 1e300) for e in entries]
-        return sum(vals) / max(len(vals), 1)
-
-    serializers = sorted(by_ser.keys(), key=rank_key)
+    serializers = sorted(by_ser.keys(), key=lambda s: s.casefold())
     if not serializers:
         return ""
 
@@ -1203,7 +1205,8 @@ def generate_language_results_pages(
                 "Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer "
                 "API; **stream mode** = write/read through a stream-like path. "
                 "These names are *not* payload sizes. "
-                "In each table, **bold** marks the semantic best value in that column "
+                "In each table, rows are sorted by **serializer name**; "
+                "**bold** marks the semantic best value in that column "
                 "(lowest time; highest ops/s). Ties are all bolded. "
                 "Latency tables are in **microseconds** (µs). "
                 "Batch fixtures show as **Type · N instances** "

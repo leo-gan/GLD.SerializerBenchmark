@@ -88,6 +88,22 @@ install_node_hint() {
 }
 
 
+
+install_cpp() {
+  echo "cpp"
+  if command -v g++ >/dev/null 2>&1 || command -v clang++ >/dev/null 2>&1; then
+    echo "[OK] C++ compiler present"
+  else
+    echo "[NOTE] Install g++ (build-essential) or clang++ via your package manager (may need sudo)."
+  fi
+  if command -v cmake >/dev/null 2>&1; then
+    echo "[OK] cmake $(cmake --version | head -1)"
+  else
+    echo "[NOTE] Install cmake >= 3.16 (or use ~/.local/bin/cmake)."
+  fi
+  echo "[NOTE] C++ third-party libs are fetched by CMake FetchContent on first build (cpp/third_party/)."
+}
+
 install_java() {
   bench_extend_host_path
   local jdk="${HOME}/.local/jdk-21"
@@ -145,7 +161,7 @@ install_c_hint() {
   echo "[NOTE] C third-party libs are built by c/scripts/fetch-and-build-deps.sh on first run."
 }
 
-KNOWN=(analysis csharp python go rust javascript c java)
+KNOWN=(analysis csharp python go rust javascript c java cpp)
 
 resolve_targets() {
   local args=("$@")
@@ -157,7 +173,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java)
+      TARGETS+=(csharp python go rust javascript c java cpp)
     fi
     return
   fi
@@ -197,6 +213,9 @@ for t in "${TARGETS[@]}"; do
       ;;
     java|jdk|jvm)
       install_java
+      ;;
+    cpp|c++|cxx|cplusplus)
+      install_cpp
       ;;
     *)
       echo "[ERROR] Unknown target: $t" >&2

@@ -59,3 +59,20 @@ def test_parse_legacy_serializer_version_at_end():
     recs, skipped = parse_csv_file(path)
     assert skipped == 0
     assert recs[0]["SerializerVersion"] == "3.11.9"
+
+
+def test_infer_language_from_path_cpp_not_c(tmp_path):
+    """logs/cpp must not be mistaken for Language=c."""
+    from benchmark_analysis.parser import parse_csv_file
+    d = tmp_path / "logs" / "cpp"
+    d.mkdir(parents=True)
+    csv = d / "2026-07-11-120000.csv"
+    # Minimal header without Language column so path inference applies
+    csv.write_text(
+        "StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,"
+        "TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser\n"
+        "bytes,message,2,0,nlohmann_json,1,2,3,3,1,1,1\n"
+    )
+    recs, _ = parse_csv_file(str(csv))
+    assert recs
+    assert recs[0]["Language"] == "cpp"

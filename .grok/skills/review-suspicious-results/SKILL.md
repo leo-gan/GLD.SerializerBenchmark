@@ -33,7 +33,7 @@ Optional overrides:
 
 | Env / flag | Meaning |
 |------------|---------|
-| `REVIEW_LANGS` | Space/comma language ids (default: all with stats/logs: `c csharp python rust javascript go java`) |
+| `REVIEW_LANGS` | Space/comma language ids (default: all with stats/logs: `c csharp python rust javascript go java cpp`) |
 | `REVIEW_FIXTURE` | Suite type focus (default: `message`; also scan all n=1 cells) |
 | `REVIEW_MODE` | Bench mode after fixes: `smoke` \| `all-single` \| `full` (default **`all-single`**) |
 | `REVIEW_FIX=0` | Report only; do not edit code or re-bench |
@@ -132,7 +132,7 @@ Harness bug in `rust/src/run_v2.rs` (batch cell construction), **not** Speedy:
 ## 1. Scope
 
 ```bash
-LANGS="${REVIEW_LANGS:-c csharp python rust javascript go java}"
+LANGS="${REVIEW_LANGS:-c csharp python rust javascript go java cpp}"
 # normalize commas → spaces
 LANGS="${LANGS//,/ }"
 echo "Review languages: $LANGS"
@@ -261,6 +261,7 @@ Open the monorepo wrapper **and** the batch/runner paths:
 | go | `go/serializers/*` | go runner / fixture batch build |
 | javascript | `javascript/src/serializers/*` | JS runner / fixture array for N |
 | java | `java/src/main/java/benchmark/serializers/*` | Main / Cells / instance count |
+| cpp | `cpp/src/serializers/*` | `register.cpp` / runner cells |
 | c | `c/src/serializers/*` | **`c/src/run_v2.c`**, **`c/src/batch_cell.c`** |
 
 Compare:
@@ -380,7 +381,7 @@ Manual sanity (optional, when scanner output is thin):
 python3 -c "
 import json, statistics as st
 from pathlib import Path
-for lang in ['c','csharp','python','rust','javascript','go','java']:
+for lang in ['c','csharp','python','rust','javascript','go','java','cpp']:
   p=Path(f'reports/stats_{lang}_latest.json')
   if not p.is_file():
     p=Path(f'dashboard/public/data/stats_{lang}_latest.json')

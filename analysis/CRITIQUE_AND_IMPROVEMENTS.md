@@ -67,7 +67,7 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 | Multi-lang CLI | `analysis/src/benchmark_analysis/cli.py` |
 | Parser `Language` + optional columns | `analysis/src/benchmark_analysis/parser.py` |
 | Version compare report | `--compare-a` / `--compare-b` |
-| Language harnesses + docs | `c-sharp/`, `python/`, `rust/`, `c/`, `javascript/`, `go/`, `docs/*` |
+| Language harnesses + docs | `c-sharp/`, `python/`, `rust/`, `c/`, `javascript/`, `go/`, `java/`, `cpp/`, `docs/*` |
 | Orchestrator multi-lang | `scripts/run-all-benchmarks.sh` |
 | Host toolchain check/install | `scripts/check-host-requirements.sh`, `install-host-requirements.sh` |
 | Native runners (no Docker) | language `scripts/run-benchmarks.sh` |

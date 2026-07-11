@@ -145,3 +145,10 @@ java/target/
 java/.classpath
 java/.project
 java/.settings/
+
+# -----------------------------------------------------------------------------
+# C++ harness (cpp/)
+# -----------------------------------------------------------------------------
+cpp/build/
+cpp/third_party/**
+!cpp/third_party/VERSIONS.md

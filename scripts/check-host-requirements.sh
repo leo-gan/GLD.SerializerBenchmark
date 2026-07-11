@@ -105,6 +105,25 @@ check_java() {
   fi
 }
 
+
+check_cpp() {
+  echo "cpp"
+  need_cmd g++ "or clang++ (C++20)" || true
+  if command -v g++ >/dev/null 2>&1; then
+    ver="$(g++ -dumpversion 2>/dev/null || true)"
+    ok "g++ $ver"
+  elif command -v clang++ >/dev/null 2>&1; then
+    ok "clang++ $(clang++ --version | head -1)"
+  else
+    miss "g++ or clang++ with C++20"
+  fi
+  need_cmd cmake "3.16+ for FetchContent" || true
+  need_cmd git "FetchContent clones" || true
+  # Optional: libboost_serialization for boost_serialization codec; avro_c needs c/ third_party avro
+  if ldconfig -p 2>/dev/null | grep -q libboost_serialization; then ok "libboost_serialization"; else echo "  note: libboost-serialization-dev optional for boost_serialization"; fi
+}
+
+
 check_c() {
   echo "c"
   need_cmd cmake "https://cmake.org/ or package manager" || true
@@ -116,7 +135,7 @@ check_c() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c java)
+KNOWN=(analysis csharp python go rust javascript c java cpp)
 
 resolve_targets() {
   local args=("$@")
@@ -129,7 +148,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java)
+      TARGETS+=(csharp python go rust javascript c java cpp)
     fi
     return
   fi
@@ -155,6 +174,7 @@ for t in "${TARGETS[@]}"; do
     javascript|js|node) check_javascript ;;
     c|native) check_c ;;
     java|jdk|jvm) check_java ;;
+    cpp|c++|cxx|cplusplus) check_cpp ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;
   esac
   echo

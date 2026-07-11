@@ -37,7 +37,7 @@ cd analysis && pip install -e .   # once
 analyze-benchmarks
 
 # One language only
-analyze-benchmarks -l python   # or rust, csharp, c, javascript, go, java
+analyze-benchmarks -l python   # or rust, csharp, c, javascript, go, java, cpp
 
 # Custom log location
 analyze-benchmarks -l python --logs python/logs/python

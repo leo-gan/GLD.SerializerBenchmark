@@ -22,6 +22,9 @@ _BUILTIN_ALIASES: Dict[str, str] = {
     "golang": "go",
     "jdk": "java",
     "jvm": "java",
+    "c++": "cpp",
+    "cxx": "cpp",
+    "cplusplus": "cpp",
 }
 
 
@@ -130,7 +133,7 @@ def known_language_ids(config_path: Optional[str | Path] = None) -> Tuple[str, .
     entries = language_entries(config_path)
     if entries:
         return tuple(sorted(entries.keys()))
-    return ("csharp", "python", "rust", "c", "javascript", "go", "java")
+    return ("csharp", "python", "rust", "c", "javascript", "go", "java", "cpp")
 
 
 def enabled_languages(config_path: Optional[str | Path] = None) -> List[Dict[str, Any]]:

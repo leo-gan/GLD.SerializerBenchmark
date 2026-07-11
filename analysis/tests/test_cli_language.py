@@ -24,6 +24,10 @@ def test_normalize_language_aliases():
     assert _normalize_language("java") == "java"
     assert _normalize_language("jdk") == "java"
     assert _normalize_language("jvm") == "java"
+    assert _normalize_language("cpp") == "cpp"
+    assert _normalize_language("c++") == "cpp"
+    assert _normalize_language("cxx") == "cpp"
+    assert _normalize_language("cplusplus") == "cpp"
 
 
 def test_normalize_language_unknown():

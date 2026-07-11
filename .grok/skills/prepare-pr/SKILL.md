@@ -81,6 +81,16 @@ Java (optional): if JDK 17+ and Maven are available:
 ( cd java && mvn -q test ) || echo "[WARN] java tests failed or skipped"
 ```
 
+C++ (optional): if `cmake` and a C++20 compiler are available:
+
+```bash
+cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
+cmake --build cpp/build -j"$(nproc 2>/dev/null || echo 2)" --target cpp_serializer_tests
+./cpp/build/cpp_serializer_tests
+```
+
+Only **fail the skill** if the toolchain is present **and** tests fail. Missing compiler → warn only.
+
 ---
 
 ## 3. Detect changed languages (**required before full bench**)
@@ -99,13 +109,14 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 
 | Path pattern | Effect |
 |--------------|--------|
-| `c/**` (not `c-sharp/**`) | → `c` |
+| `c/**` (not `c-sharp/**`, not `cpp/**`) | → `c` |
 | `c-sharp/**` | → `csharp` |
 | `python/**` | → `python` |
 | `rust/**` | → `rust` |
 | `javascript/**` | → `javascript` |
 | `go/**` | → `go` |
 | `java/**` | → `java` |
+| `cpp/**` | → `cpp` |
 | `schemas/**`, `scripts/run-all-benchmarks.sh`, `scripts/lib/**`, `config/benchmark_config.yaml` | → **all** enabled languages |
 | `docs/**`, `dashboard/public/data/**`, `logs/**`, `.grok/**` | **ignored** (regenerated / meta; do not select langs) |
 
@@ -145,7 +156,7 @@ else
 fi
 ```
 
-- Language id must match `config/benchmark_config.yaml` / `run-all-benchmarks.sh -l` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`).
+- Language id must match `config/benchmark_config.yaml` / `run-all-benchmarks.sh -l` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`, `cpp`).
 - Capture `BENCHMARK_TS` / stem from the log (`Run timestamp:`) or the newest result CSV under `logs/<lang>/` for **each** changed language.
 - Long-running: high timeout / background + monitor.
 

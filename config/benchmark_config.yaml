@@ -206,6 +206,7 @@ paths:
     javascript: logs/javascript
     go: logs/go
     java: logs/java
+    cpp: logs/cpp
   # Result files are timestamped to preserve history across runs.
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
@@ -844,3 +845,152 @@ languages:
 #   6. Write *.configs.json sidecar (or let run-benchmarks.sh capture it)
 #   7. scripts/run-benchmarks.sh accepts smoke|all-single|full|research;
 #      smoke dataFilter defaults to a cheap cell (typically message)
+
+  cpp:
+    display_name: "C++"
+    enabled: true
+    runner_dir: cpp
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/cpp
+    time_unit: nanoseconds
+    docs_dir: docs/cpp
+    build_system: cmake
+    min_cxx_standard: "20"
+    serializers:
+      - name: nlohmann_json
+        category: json
+        library: nlohmann/json
+        rationale: "De-facto standard C++ JSON library"
+        optimal_api: "json::dump / json::parse (compact, no pretty-print)"
+      - name: rapidjson
+        category: json
+        library: Tencent/rapidjson
+        rationale: "High-performance DOM/SAX JSON (games/finance staple)"
+        optimal_api: "Writer + Document::Parse"
+      - name: simdjson
+        category: json
+        library: simdjson/simdjson
+        rationale: "SIMD JSON parse (world-class deserialize)"
+        optimal_api: "dom::parser::parse; ser via prepared minified JSON"
+      - name: arduinojson
+        category: json
+        library: bblanchon/ArduinoJson
+        rationale: "Dominant embedded/IoT C++ JSON (JsonDocument API)"
+        optimal_api: "serializeJson / deserializeJson with reused JsonDocument"
+      - name: yyjson
+        category: json
+        library: ibireme/yyjson
+        rationale: "Fast C JSON usable from C++ (dual-language library)"
+        optimal_api: "yyjson_mut_write / yyjson_read"
+      - name: msgpack
+        category: binary
+        library: msgpack/msgpack-c (cpp)
+        rationale: "Official MessagePack C++ API (distinct from C API in c/)"
+        optimal_api: "msgpack::packer + sbuffer / msgpack::unpack"
+      - name: cereal
+        category: binary
+        library: USCiLab/cereal
+        rationale: "Popular C++11 binary/JSON/XML archives"
+        optimal_api: "BinaryOutputArchive / BinaryInputArchive"
+      - name: bitsery
+        category: binary
+        library: fraillt/bitsery
+        rationale: "Header-only high-performance binary with explicit schema"
+        optimal_api: "quickSerialization / quickDeserialization"
+      - name: zpp_bits
+        category: binary
+        library: eyalz800/zpp_bits
+        rationale: "Ultra-fast compile-time binary codec"
+        optimal_api: "zpp::bits::out / in on vector"
+      - name: jsoncons_cbor
+        category: binary
+        library: danielaparker/jsoncons
+        rationale: "IETF CBOR via mature multi-format C++ library"
+        optimal_api: "cbor::encode_cbor / decode_cbor"
+      - name: jsoncons_bson
+        category: binary
+        library: danielaparker/jsoncons
+        rationale: "MongoDB BSON document binary"
+        optimal_api: "bson::encode_bson / decode_bson"
+      - name: jsoncons_msgpack
+        category: binary
+        library: danielaparker/jsoncons
+        rationale: "MessagePack via jsoncons (DOM path; compare with msgpack-cxx)"
+        optimal_api: "msgpack::encode_msgpack / decode_msgpack"
+      - name: custom_binary
+        category: binary
+        library: harness
+        rationale: "Hand-packed C++ struct baseline"
+        optimal_api: "length-prefixed field writer/reader"
+      - name: protobuf
+        category: schema
+        library: in-tree wire (suite .proto)
+        rationale: "Standard proto3 wire for shared schemas/v2 protobuf"
+        optimal_api: "field-tag encode/decode (proto3)"
+      - name: flexbuffers
+        category: schema
+        library: google/flatbuffers (flexbuffers)
+        rationale: "Schemaless FlatBuffers family"
+        optimal_api: "flexbuffers::Builder / GetRoot"
+      - name: flatbuffers
+        category: schema
+        library: google/flatbuffers
+        rationale: "Zero-copy FlatBuffers builder/reader (C++ primary; C uses flatcc)"
+        optimal_api: "FlatBufferBuilder + table reader"
+      - name: nlohmann_msgpack
+        category: binary
+        library: nlohmann/json
+        rationale: "MessagePack via nlohmann binary formats (same DOM prepare as JSON)"
+        optimal_api: "json::to_msgpack / from_msgpack"
+      - name: nlohmann_cbor
+        category: binary
+        library: nlohmann/json
+        rationale: "IETF CBOR via nlohmann (widely used multi-format path)"
+        optimal_api: "json::to_cbor / from_cbor"
+      - name: nlohmann_ubjson
+        category: binary
+        library: nlohmann/json
+        rationale: "UBJSON via nlohmann (binary JSON family)"
+        optimal_api: "json::to_ubjson / from_ubjson"
+      - name: nlohmann_bson
+        category: binary
+        library: nlohmann/json
+        rationale: "BSON via nlohmann (Mongo-compatible document binary)"
+        optimal_api: "json::to_bson / from_bson"
+      - name: yas
+        category: binary
+        library: niXman/yas
+        rationale: "Yet Another Serialization — often tops C++ binary microbenchmarks"
+        optimal_api: "yas::save/load with mem|binary + YAS_OBJECT_NVP"
+      - name: cista
+        category: binary
+        library: felixguendling/cista
+        rationale: "Cista++ high-performance offset serialization (zero-copy oriented)"
+        optimal_api: "cista::serialize / deserialize on offset graphs (convert in prepare)"
+      - name: avro
+        category: schema
+        library: suite avro-binary
+        rationale: "Apache Avro binary encoding for suite records (schema-driven wire)"
+        optimal_api: "binaryEncoder-style zigzag/varint records + array blocks"
+
+      - name: thrift
+        category: schema
+        library: suite thrift-TBinaryProtocol
+        rationale: "Apache Thrift binary protocol (polyglot services staple)"
+        optimal_api: "TBinaryProtocol field headers + STOP (struct/list)"
+      - name: avro_c
+        category: schema
+        library: Apache avro-c
+        rationale: "Real Avro C library from C++ (dual with C harness avro-c)"
+        optimal_api: "cached iface + avro_value_write/read memory IO"
+      - name: capnproto
+        category: schema
+        library: capnproto
+        rationale: "Cap'n Proto zero-copy schema codec (C++ first-class)"
+        optimal_api: "MallocMessageBuilder + messageToFlatArray / FlatArrayMessageReader"
+      - name: boost_serialization
+        category: binary
+        library: Boost.Serialization
+        rationale: "Classic C++ native binary archives (medium value / historical)"
+        optimal_api: "binary_oarchive / binary_iarchive (no_header)"
+
