@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (12)
+## Serializers (18)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -10,11 +10,17 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | gson | JSON | gson | Reuse `Gson`; `disableHtmlEscaping`; stream JsonWriter/Reader |
 | fastjson2 | JSON | fastjson2 | `FieldBased` `toJSONBytes` / `parseObject` |
 | dsl-json | JSON | dsl-json | Runtime `DslJson` + reused `JsonWriter` |
+| moshi | JSON | moshi | Reuse `Moshi` + `JsonAdapter`; Okio `Buffer` |
+| jsoniter | JSON | jsoniter | DYNAMIC mode + javassist; `JsonStream` / `JsonIterator` |
 | kryo | Binary | kryo | Reuse Kryo + Output/Input; `writeClassAndObject` |
+| fory | Binary | fory-core | Apache Fory JIT; register types once; `serialize`/`deserialize` |
+| protostuff | Binary | protostuff-runtime | `RuntimeSchema` + `LinkedBuffer`; list APIs for batches |
+| hessian | Binary | hessian | Hessian2 `writeObject` / `readObject` |
 | java-serialization | Native | JDK | `ObjectOutputStream` / `ObjectInputStream` |
 | msgpack | MessagePack | jackson-dataformat-msgpack | `MessagePackMapper` typed writer/reader |
 | jackson-cbor | CBOR | jackson-dataformat-cbor | `CBORMapper` |
 | jackson-smile | Binary JSON | jackson-dataformat-smile | `SmileMapper` |
+| ion | Document binary | jackson-dataformat-ion | `IonObjectMapper` (binary Ion) |
 | bson | Document | org.mongodb:bson | DocumentCodec wire; domain Document in prepare |
 | protobuf | Schema | protobuf-java | Timed `toByteArray`/`parseFrom`; domain convert untimed |
 | avro | Schema | avro | ReflectDatumWriter/Reader + BinaryEncoder reuse |

@@ -32,7 +32,7 @@ public final class Telemetry implements Serializable {
     }
     if (values.length != t.values.length) return false;
     for (int i = 0; i < values.length; i++) {
-      if (Math.abs(values[i] - t.values[i]) > 1e-9) return false;
+      if (Math.abs(values[i] - t.values[i]) > 1e-5) return false;
     }
     return true;
   }

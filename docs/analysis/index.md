@@ -34,7 +34,7 @@ Counts match the **registered inventories on each language Overview** (hand-writ
 | C | **19** | [Overview](../c/index.md) | [Results](../c/results.md) |
 | JavaScript | **19** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 | Go | **12** | [Overview](../go/index.md) | [Results](../go/results.md) |
-| Java | **12** | [Overview](../java/index.md) | [Results](../java/results.md) |
+| Java | **18** | [Overview](../java/index.md) | [Results](../java/results.md) |
 
 † **JavaScript:** `simdjson` is optional (native addon). If it fails to build, that codec is omitted from the run.
 

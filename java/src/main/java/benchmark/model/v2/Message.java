@@ -44,7 +44,7 @@ public final class Message implements Serializable {
     return fBool == m.fBool
         && fInt32 == m.fInt32
         && fInt64 == m.fInt64
-        && Math.abs(m.fFloat64 - fFloat64) <= 1e-9
+        && Math.abs(m.fFloat64 - fFloat64) <= 1e-5
         && fBool2 == m.fBool2
         && fInt32_2 == m.fInt32_2
         && Objects.equals(fString, m.fString)

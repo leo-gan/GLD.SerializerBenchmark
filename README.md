@@ -27,7 +27,7 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 19
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 19
 - [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 12
-- [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 12
+- [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
 
 [Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/).
 

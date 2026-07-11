@@ -11,16 +11,25 @@ public final class Registry {
 
   private static final List<Entry> ENTRIES =
       List.of(
+          // JSON family
           new Entry("jackson", JacksonSer::new),
           new Entry("gson", GsonSer::new),
           new Entry("fastjson2", Fastjson2Ser::new),
           new Entry("dsl-json", DslJsonSer::new),
+          new Entry("moshi", MoshiSer::new),
+          new Entry("jsoniter", JsoniterSer::new),
+          // Binary / native
           new Entry("kryo", KryoSer::new),
+          new Entry("fory", ForySer::new),
+          new Entry("protostuff", ProtostuffSer::new),
+          new Entry("hessian", HessianSer::new),
           new Entry("java-serialization", JavaSerializationSer::new),
           new Entry("msgpack", MsgpackSer::new),
           new Entry("jackson-cbor", JacksonCborSer::new),
           new Entry("jackson-smile", JacksonSmileSer::new),
+          new Entry("ion", IonSer::new),
           new Entry("bson", BsonSer::new),
+          // Schema
           new Entry("protobuf", ProtobufSer::new),
           new Entry("avro", AvroSer::new));
 

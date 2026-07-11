@@ -738,11 +738,38 @@ languages:
         package: com.dslplatform:dsl-json
         rationale: "Among the fastest pure-Java JSON libraries"
         optimal_api: "reuse DslJson + JsonWriter buffer; serialize/deserialize"
+
+      - name: moshi
+        category: json
+        package: com.squareup.moshi:moshi
+        rationale: "Square Moshi — modern JSON (Android/JVM staple)"
+        optimal_api: "reuse Moshi + JsonAdapter; Okio Buffer toJson/fromJson"
+      - name: jsoniter
+        category: json
+        package: com.jsoniter:jsoniter
+        rationale: "json-iterator high-performance JSON (dsl-json lineage)"
+        optimal_api: "JsonStream.serialize / JsonIterator.deserialize DYNAMIC mode"
       - name: kryo
         category: binary
         package: com.esotericsoftware:kryo
         rationale: "Dominant high-performance Java binary (caches/RPC)"
         optimal_api: "reuse Kryo + Output/Input; writeClassAndObject"
+
+      - name: fory
+        category: binary
+        package: org.apache.fory:fory-core
+        rationale: "Apache Fory (ex-Fury) JIT binary — top modern Java serializer"
+        optimal_api: "Fory.builder Language.JAVA + codegen; serialize/deserialize"
+      - name: protostuff
+        category: binary
+        package: io.protostuff:protostuff-runtime
+        rationale: "Protobuf-style POJO binary without .proto (RPC staple)"
+        optimal_api: "RuntimeSchema + LinkedBuffer; ProtostuffIOUtil"
+      - name: hessian
+        category: binary
+        package: com.caucho:hessian
+        rationale: "Hessian2 binary RPC (still common in Dubbo-style stacks)"
+        optimal_api: "Hessian2Output.writeObject / Hessian2Input.readObject"
       - name: java-serialization
         category: native
         package: stdlib
@@ -763,6 +790,12 @@ languages:
         package: com.fasterxml.jackson.dataformat:jackson-dataformat-smile
         rationale: "Smile binary JSON (Elasticsearch/Jackson ecosystem)"
         optimal_api: "SmileMapper writeValueAsBytes/readValue"
+
+      - name: ion
+        category: binary
+        package: com.fasterxml.jackson.dataformat:jackson-dataformat-ion
+        rationale: "Amazon Ion binary via Jackson dataformat"
+        optimal_api: "IonObjectMapper typed writer/reader"
       - name: bson
         category: binary
         package: org.mongodb:bson
