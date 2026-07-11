@@ -14,7 +14,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 
 /**
- * Apache Fory (formerly Fury) — JIT/codegen multi-language binary serialization.
+ * Apache Fory — JIT/codegen multi-language binary serialization.
+ *
+ * <p><b>Naming:</b> the project was renamed from Apache Fury → <b>Apache Fory</b> (trademark).
+ * Current Maven coordinates: {@code org.apache.fory:fory-core} (letter <b>o</b>).
+ * The former coordinates {@code org.apache.fury:fury-core} (letter <b>u</b>) are obsolete for 1.x.
+ * See <a href="https://fory.apache.org/">fory.apache.org</a> and GitHub {@code apache/fory}.
  *
  * <p>Recommended hot path: reuse one {@link Fory} with {@code Language.JAVA} + codegen; register
  * all hot classes <em>before</em> the first serialize (registration freezes after first use);

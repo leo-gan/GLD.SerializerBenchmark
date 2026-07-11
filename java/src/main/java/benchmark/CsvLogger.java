@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 /** Writes monorepo CSV schema (Language=java, times in nanoseconds). */
 public final class CsvLogger implements AutoCloseable {
@@ -41,8 +42,11 @@ public final class CsvLogger implements AutoCloseable {
     double opsDeser = timeDeserNs > 0 ? 1e9 / timeDeserNs : 0;
     double opsTot = total > 0 ? 1e9 / total : 0;
     String ic = instanceCount > 0 ? Integer.toString(instanceCount) : "";
+    // Locale.US: decimal point must stay '.' — default locales (e.g. de_DE) use ',' and
+    // would inject extra CSV columns for OpPerSec* / FidelityScore.
     w.write(
         String.format(
+            Locale.US,
             "java,%s,%s,%d,%d,%s,%s,%d,%d,%d,%d,%.6f,%.6f,%.6f,0,%.1f,%s,%s,%s,%s\n",
             mode,
             testData,

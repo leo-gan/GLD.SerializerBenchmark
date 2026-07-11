@@ -24,6 +24,8 @@ import java.util.List;
  */
 public final class ProtostuffSer implements BenchSerializer {
   private final LinkedBuffer buffer = LinkedBuffer.allocate(LinkedBuffer.DEFAULT_BUFFER_SIZE);
+  /** Reused for batch serializeBytes so the timed path does not allocate a stream per rep. */
+  private final ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
   private Schema<Object> schema;
   private boolean batch;
   private Class<?> elementClass;
@@ -62,7 +64,7 @@ public final class ProtostuffSer implements BenchSerializer {
   public byte[] serializeBytes(Fixture fx) throws Exception {
     buffer.clear();
     if (batch) {
-      ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
+      baos.reset();
       ProtostuffIOUtil.writeListTo(baos, (List<Object>) fx.value, schema, buffer);
       return baos.toByteArray();
     }

@@ -11,15 +11,35 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RoundtripTest {
+  private static final String[] FIXTURES = {
+    "message", "document", "telemetry", "strings", "event"
+  };
+
   @Test
   void allSerializersRoundtripMessage() throws Exception {
-    Object msg = Generators.makeOne("message", Map.of(), 42L, 0);
-    Fixture fx = new Fixture("message", msg);
+    roundtripType("message");
+  }
+
+  @Test
+  void allSerializersRoundtripAllFixtures() throws Exception {
+    for (String type : FIXTURES) {
+      roundtripType(type);
+    }
+  }
+
+  private static void roundtripType(String type) throws Exception {
+    Object expected = Generators.makeOne(type, Map.of(), 42L, 0);
+    Fixture fx = new Fixture(type, expected);
     for (BenchSerializer ser : Registry.all()) {
+      if (!ser.supports(type)) {
+        continue;
+      }
       ser.prepare(fx);
       byte[] buf = ser.serializeBytes(fx);
       Object out = ser.toDomain(ser.deserializeBytes(buf));
-      assertTrue(Fidelity.check(msg, out), () -> "fidelity failed for " + ser.name());
+      assertTrue(
+          Fidelity.check(expected, out),
+          () -> "fidelity failed for " + ser.name() + " on " + type);
     }
   }
 }
