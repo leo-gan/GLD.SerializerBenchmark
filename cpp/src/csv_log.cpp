@@ -1,5 +1,6 @@
 #include "bench/csv_log.hpp"
 
+#include <cstdint>
 #include <stdexcept>
 #include <tuple>
 #include <vector>
