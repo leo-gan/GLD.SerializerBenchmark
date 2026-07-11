@@ -5,13 +5,14 @@
 #include <capnp/message.h>
 #include <capnp/serialize.h>
 #include <kj/array.h>
+#include <kj/io.h>
 #endif
 
 #include <stdexcept>
 
 // Cap'n Proto — high-value zero-copy schema codec (C++ first-class).
-// Optimal: MallocMessageBuilder + messageToFlatArray / FlatArrayMessageReader;
-// domain convert in prepare for roots; timed path is builder/reader only where possible.
+// Bytes: messageToFlatArray / FlatArrayMessageReader.
+// Stream: writeMessage(VectorOutputStream) / InputStreamMessageReader(ArrayInputStream).
 
 namespace bench {
 #if defined(HAS_CAPNP) && HAS_CAPNP
@@ -21,7 +22,7 @@ class CapnpSer final : public ISerializer {
  public:
   const char* name() const override { return "capnproto"; }
   const char* version() const override { return "1.0.x"; }
-  const char* stream_mode() const override { return "adapted"; }
+  const char* stream_mode() const override { return "native"; }
   const char* native_kind() const override { return "schema"; }
 
   void prepare(const Fixture& fx) override {
@@ -32,6 +33,41 @@ class CapnpSer final : public ISerializer {
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
     capnp::MallocMessageBuilder msg;
+    fill_root(msg);
+    kj::Array<capnp::word> words = capnp::messageToFlatArray(msg);
+    auto bytes = words.asBytes();
+    return std::vector<uint8_t>(bytes.begin(), bytes.end());
+  }
+
+  Value deserialize_bytes(const std::vector<uint8_t>& data) override {
+    if (data.size() % sizeof(capnp::word) != 0)
+      throw std::runtime_error("capnp: size not multiple of word");
+    kj::ArrayPtr<const capnp::word> words(
+        reinterpret_cast<const capnp::word*>(data.data()), data.size() / sizeof(capnp::word));
+    capnp::FlatArrayMessageReader reader(words);
+    return read_from(reader);
+  }
+
+  // Docs (capnp/serialize.h): writeMessage(OutputStream&) / InputStreamMessageReader.
+  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
+    capnp::MallocMessageBuilder msg;
+    fill_root(msg);
+    kj::VectorOutputStream vos;
+    capnp::writeMessage(vos, msg);
+    auto arr = vos.getArray();
+    out.assign(arr.begin(), arr.end());
+    return out.size();
+  }
+
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    kj::ArrayInputStream ais(kj::ArrayPtr<const kj::byte>(
+        reinterpret_cast<const kj::byte*>(data.data()), data.size()));
+    capnp::InputStreamMessageReader reader(ais);
+    return read_from(reader);
+  }
+
+ private:
+  void fill_root(capnp::MallocMessageBuilder& msg) {
     if (type_id_ == "message") {
       if (n_ > 1) {
         auto root = msg.initRoot<::BatchMessage>();
@@ -78,17 +114,9 @@ class CapnpSer final : public ISerializer {
         fill_event(msg.initRoot<::Event>(), std::get<Event>(value_));
       }
     }
-    kj::Array<capnp::word> words = capnp::messageToFlatArray(msg);
-    auto bytes = words.asBytes();
-    return std::vector<uint8_t>(bytes.begin(), bytes.end());
   }
 
-  Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    if (data.size() % sizeof(capnp::word) != 0)
-      throw std::runtime_error("capnp: size not multiple of word");
-    kj::ArrayPtr<const capnp::word> words(
-        reinterpret_cast<const capnp::word*>(data.data()), data.size() / sizeof(capnp::word));
-    capnp::FlatArrayMessageReader reader(words);
+  Value read_from(capnp::MessageReader& reader) {
     if (type_id_ == "message") {
       if (n_ > 1) {
         auto root = reader.getRoot<::BatchMessage>();
@@ -135,7 +163,6 @@ class CapnpSer final : public ISerializer {
     return read_event(reader.getRoot<::Event>());
   }
 
- private:
   static void fill_message(::Message::Builder b, const bench::Message& m) {
     b.setFBool(m.f_bool);
     b.setFInt32(m.f_int32);

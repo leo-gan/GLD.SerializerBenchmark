@@ -1,10 +1,13 @@
 #include "bench/serializer.hpp"
-#include <cstdio>
 #include "bench/nlohmann_conv.hpp"
+#include "bench/stream_util.hpp"
+
+#include <cstdio>
 
 // nlohmann/json binary formats (same library as nlohmann_json text).
 // Optimal APIs (docs): json::to_msgpack / from_msgpack, to_cbor / from_cbor,
 // to_ubjson / from_ubjson, to_bson / from_bson — operate on structured json values.
+// Stream: to_*(j, ostream) via output_adapter / from_*(istream) via input adapters.
 // Prepare builds nlohmann::json once (untimed); timed path is format conversion only.
 
 namespace bench {
@@ -23,9 +26,7 @@ class NlohmannBinBase : public ISerializer {
   int n_ = 1;
   nlohmann::json j_;
 
-  Value from_json_bytes(const std::vector<uint8_t>& /*unused*/, nlohmann::json j) {
-    return json_to_value(j, type_id_, n_);
-  }
+  Value from_json(nlohmann::json j) { return json_to_value(j, type_id_, n_); }
 };
 
 class NlohmannMsgpack final : public NlohmannBinBase {
@@ -37,11 +38,21 @@ class NlohmannMsgpack final : public NlohmannBinBase {
                   NLOHMANN_JSON_VERSION_PATCH);
     return ver;
   }
-  const char* stream_mode() const override { return "adapted"; }
+  const char* stream_mode() const override { return "native"; }
   const char* native_kind() const override { return "dom"; }
   std::vector<uint8_t> serialize_bytes(const Fixture&) override { return nlohmann::json::to_msgpack(j_); }
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    return from_json_bytes(data, nlohmann::json::from_msgpack(data));
+    return from_json(nlohmann::json::from_msgpack(data));
+  }
+  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
+    out.clear();
+    VecOutStream os(out);
+    nlohmann::json::to_msgpack(j_, os);
+    return out.size();
+  }
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    VecInStream is(data);
+    return from_json(nlohmann::json::from_msgpack(is));
   }
 };
 
@@ -54,11 +65,21 @@ class NlohmannCbor final : public NlohmannBinBase {
                   NLOHMANN_JSON_VERSION_PATCH);
     return ver;
   }
-  const char* stream_mode() const override { return "adapted"; }
+  const char* stream_mode() const override { return "native"; }
   const char* native_kind() const override { return "dom"; }
   std::vector<uint8_t> serialize_bytes(const Fixture&) override { return nlohmann::json::to_cbor(j_); }
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    return from_json_bytes(data, nlohmann::json::from_cbor(data));
+    return from_json(nlohmann::json::from_cbor(data));
+  }
+  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
+    out.clear();
+    VecOutStream os(out);
+    nlohmann::json::to_cbor(j_, os);
+    return out.size();
+  }
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    VecInStream is(data);
+    return from_json(nlohmann::json::from_cbor(is));
   }
 };
 
@@ -71,11 +92,21 @@ class NlohmannUbjson final : public NlohmannBinBase {
                   NLOHMANN_JSON_VERSION_PATCH);
     return ver;
   }
-  const char* stream_mode() const override { return "adapted"; }
+  const char* stream_mode() const override { return "native"; }
   const char* native_kind() const override { return "dom"; }
   std::vector<uint8_t> serialize_bytes(const Fixture&) override { return nlohmann::json::to_ubjson(j_); }
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    return from_json_bytes(data, nlohmann::json::from_ubjson(data));
+    return from_json(nlohmann::json::from_ubjson(data));
+  }
+  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
+    out.clear();
+    VecOutStream os(out);
+    nlohmann::json::to_ubjson(j_, os);
+    return out.size();
+  }
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    VecInStream is(data);
+    return from_json(nlohmann::json::from_ubjson(is));
   }
 };
 
@@ -88,7 +119,7 @@ class NlohmannBson final : public NlohmannBinBase {
                   NLOHMANN_JSON_VERSION_PATCH);
     return ver;
   }
-  const char* stream_mode() const override { return "adapted"; }
+  const char* stream_mode() const override { return "native"; }
   const char* native_kind() const override { return "dom"; }
   void prepare(const Fixture& fx) override {
     type_id_ = fx.type_id;
@@ -105,13 +136,25 @@ class NlohmannBson final : public NlohmannBinBase {
   }
   std::vector<uint8_t> serialize_bytes(const Fixture&) override { return nlohmann::json::to_bson(j_); }
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    auto j = nlohmann::json::from_bson(data);
-    if (wrapped_ && j.is_object() && j.contains("items")) j = j["items"];
-    return json_to_value(j, type_id_, n_);
+    return unwrap_bson(nlohmann::json::from_bson(data));
+  }
+  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
+    out.clear();
+    VecOutStream os(out);
+    nlohmann::json::to_bson(j_, os);
+    return out.size();
+  }
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    VecInStream is(data);
+    return unwrap_bson(nlohmann::json::from_bson(is));
   }
 
  private:
   bool wrapped_ = false;
+  Value unwrap_bson(nlohmann::json j) {
+    if (wrapped_ && j.is_object() && j.contains("items")) j = j["items"];
+    return json_to_value(j, type_id_, n_);
+  }
 };
 
 }  // namespace

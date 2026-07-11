@@ -14,29 +14,29 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson),
 
 | Serializer | Category | Library | Optimal call path | Notes |
 |------------|----------|---------|-------------------|-------|
-| nlohmann_json | JSON | nlohmann/json | `dump` / `parse` (compact) | De-facto C++ JSON |
-| rapidjson | JSON | Tencent/rapidjson | `Writer` + `Document::Parse` | SAX/DOM hot path |
-| simdjson | JSON | simdjson | `dom::parser::parse` | Ser = prepared minified JSON |
-| arduinojson | JSON | ArduinoJson | `serializeJson` / `deserializeJson` | Embedded/IoT |
-| yyjson | JSON | yyjson | `yyjson_mut_write` / `yyjson_read` | **Also in C suite** |
-| msgpack | Binary | msgpack-c (C++ API) | `packer` + `sbuffer` / `unpack` | Official C++ API |
-| nlohmann_msgpack | Binary | nlohmann/json | `to_msgpack` / `from_msgpack` | Multi-format nlohmann |
-| nlohmann_cbor | Binary | nlohmann/json | `to_cbor` / `from_cbor` | IETF CBOR |
-| nlohmann_ubjson | Binary | nlohmann/json | `to_ubjson` / `from_ubjson` | UBJSON |
-| nlohmann_bson | Binary | nlohmann/json | `to_bson` / `from_bson` | BSON (object root) |
-| cereal | Binary | cereal | `BinaryOutput/InputArchive` | C++-native archives |
+| nlohmann_json | JSON | nlohmann/json | `dump` / `parse`; stream `<<` / `parse(istream)` | De-facto C++ JSON; **native stream** |
+| rapidjson | JSON | Tencent/rapidjson | `Writer` + `Document::Parse`; stream O/IStreamWrapper | SAX/DOM hot path; **native stream** |
+| simdjson | JSON | simdjson | `dom::parser::parse` | Ser = prepared minified JSON; stream adapted |
+| arduinojson | JSON | ArduinoJson | `serializeJson` / `deserializeJson` (bytes + stream) | Embedded/IoT; **native stream** |
+| yyjson | JSON | yyjson | `yyjson_mut_write` / `yyjson_read` | **Also in C suite**; stream adapted |
+| msgpack | Binary | msgpack-c (C++ API) | `packer` + `sbuffer` / `unpack`; stream packer + unpacker | Official C++ API; **native stream** |
+| nlohmann_msgpack | Binary | nlohmann/json | `to_msgpack` / `from_msgpack` (+ ostream/istream) | Multi-format nlohmann; **native stream** |
+| nlohmann_cbor | Binary | nlohmann/json | `to_cbor` / `from_cbor` (+ ostream/istream) | IETF CBOR; **native stream** |
+| nlohmann_ubjson | Binary | nlohmann/json | `to_ubjson` / `from_ubjson` (+ ostream/istream) | UBJSON; **native stream** |
+| nlohmann_bson | Binary | nlohmann/json | `to_bson` / `from_bson` (+ ostream/istream) | BSON (object root); **native stream** |
+| cereal | Binary | cereal | `BinaryOutput/InputArchive` on ostream/istream | C++-native archives; **native stream** |
 | bitsery | Binary | bitsery | serializer `object`/`container` | Explicit schema |
 | zpp_bits | Binary | zpp_bits | `zpp::bits::out` / `in` | Compile-time binary |
 | yas | Binary | niXman/yas | `yas::save/load` `mem\|binary` | Top-tier microbench staple |
 | cista | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
-| jsoncons_cbor | Binary | jsoncons | `cbor::encode/decode` | DOM multi-format |
-| jsoncons_bson | Binary | jsoncons | `bson::encode/decode` | Document binary |
-| jsoncons_msgpack | Binary | jsoncons | `msgpack::encode/decode` | DOM MessagePack |
-| custom_binary | Binary | harness | length-prefixed fields | Baseline |
-| thrift | Schema | suite TBinaryProtocol | field type+id + STOP | Apache Thrift binary |
-| avro_c | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++ |
-| capnproto | Schema | Cap'n Proto | MessageBuilder + flat array | Zero-copy schema |
-| boost_serialization | Binary | Boost.Serialization | binary_o/iarchive | Optional (system lib) |
+| jsoncons_cbor | Binary | jsoncons | `cbor::encode/decode` (bytes + ostream/istream) | DOM multi-format; **native stream** |
+| jsoncons_bson | Binary | jsoncons | `bson::encode/decode` (bytes + ostream/istream) | Document binary; **native stream** |
+| jsoncons_msgpack | Binary | jsoncons | `msgpack::encode/decode` (bytes + ostream/istream) | DOM MessagePack; **native stream** |
+| custom_binary | Binary | harness | length-prefixed fields | Baseline; stream adapted |
+| thrift | Schema | suite TBinaryProtocol | field type+id + STOP | Apache Thrift binary; stream adapted |
+| avro_c | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++; stream adapted |
+| capnproto | Schema | Cap'n Proto | flat array bytes; `writeMessage` / `InputStreamMessageReader` stream | Zero-copy schema; **native stream** |
+| boost_serialization | Binary | Boost.Serialization | binary_o/iarchive (bytes + stream) | Optional (system lib); **native stream** |
 | protobuf | Schema | suite wire | proto3 field tags | Shared `.proto` field numbers |
 | avro | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
 | flexbuffers | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
@@ -115,7 +115,7 @@ Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 - **simdjson** is optimized for parse; serialize is prepared minified JSON (same honesty as Rust/JS suite entries).
 - **protobuf** uses an in-tree proto3 wire codec for the suite schema (standard tags), not a full `libprotobuf` link — field layout matches `schemas/v2/protobuf/benchmark_v2.proto`.
 - **flatbuffers** blob-root path embeds suite payload via `FlatBufferBuilder` (typed tables generated when `flatc` runs).
-- Stream mode is **native** where the library exposes streams/buffers naturally; others are **adapted** bytes+buffer.
+- Stream mode is **native** where the library exposes streams/buffers and the harness uses them (`VecOutStream`/`VecInStream`, Cap’n Proto `writeMessage`, msgpack packer/unpacker, etc.); others are **adapted** (stream path = bytes path).
 - First CMake configure downloads pinned deps into `cpp/third_party/` (network required once).
 
 Also: [`cpp/README.md`](../../cpp/README.md). [Serialization Categories](../analysis/serialization_categories.md).

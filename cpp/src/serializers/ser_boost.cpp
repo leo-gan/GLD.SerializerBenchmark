@@ -6,10 +6,13 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 
+#include "bench/stream_util.hpp"
+
 #include <sstream>
 
 // Boost.Serialization — classic C++ native archive (medium value / historical staple).
-// Optimal: binary_oarchive / binary_iarchive on stringstream; free serialize in type ns.
+// Optimal: binary_oarchive / binary_iarchive on ostream/istream; free serialize in type ns.
+// Bytes: stringstream; stream: VecOutStream / VecInStream.
 // Linked only when libboost_serialization is found (HAS_BOOST_SERIALIZATION).
 
 namespace boost {
@@ -81,7 +84,27 @@ class BoostSer final : public ISerializer {
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
     std::string s(data.begin(), data.end());
     std::istringstream iss(s, std::ios::binary);
-    boost::archive::binary_iarchive ia(iss, boost::archive::no_header);
+    return load_from(iss);
+  }
+
+  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
+    out.clear();
+    VecOutStream os(out);
+    {
+      boost::archive::binary_oarchive oa(os, boost::archive::no_header);
+      std::visit([&](auto& v) { oa << v; }, value_);
+    }
+    return out.size();
+  }
+
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    VecInStream is(data);
+    return load_from(is);
+  }
+
+ private:
+  Value load_from(std::istream& is) {
+    boost::archive::binary_iarchive ia(is, boost::archive::no_header);
     if (type_id_ == "message") {
       if (n_ > 1) {
         std::vector<Message> v;
@@ -132,7 +155,6 @@ class BoostSer final : public ISerializer {
     return m;
   }
 
- private:
   std::string type_id_;
   int n_ = 1;
   Value value_;

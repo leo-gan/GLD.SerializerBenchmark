@@ -1,9 +1,15 @@
 #include "bench/serializer.hpp"
 #include "bench/nlohmann_conv.hpp"
+#include "bench/stream_util.hpp"
+
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
+
 #include <sstream>
+
+// cereal — BinaryOutput/InputArchive are stream-native (std::ostream / std::istream).
+// Bytes path: stringstream; stream path: VecOutStream / VecInStream into the harness vector.
 
 namespace bench {
 template <class Archive>
@@ -35,40 +41,95 @@ class CerealSer final : public ISerializer {
   const char* stream_mode() const override { return "native"; }
   const char* native_kind() const override { return "struct"; }
   void prepare(const Fixture& fx) override {
-    type_id_ = fx.type_id; n_ = fx.instance_count; value_ = fx.value;
+    type_id_ = fx.type_id;
+    n_ = fx.instance_count;
+    value_ = fx.value;
   }
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
     std::ostringstream oss(std::ios::binary);
-    { cereal::BinaryOutputArchive ar(oss); std::visit([&](auto& v) { ar(v); }, value_); }
+    {
+      cereal::BinaryOutputArchive ar(oss);
+      std::visit([&](auto& v) { ar(v); }, value_);
+    }
     auto s = oss.str();
     return {s.begin(), s.end()};
   }
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
     std::string s(data.begin(), data.end());
     std::istringstream iss(s, std::ios::binary);
-    cereal::BinaryInputArchive ar(iss);
+    return load_from(iss);
+  }
+  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
+    out.clear();
+    VecOutStream os(out);
+    {
+      cereal::BinaryOutputArchive ar(os);
+      std::visit([&](auto& v) { ar(v); }, value_);
+    }
+    return out.size();
+  }
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    VecInStream is(data);
+    return load_from(is);
+  }
+
+ private:
+  Value load_from(std::istream& is) {
+    cereal::BinaryInputArchive ar(is);
     if (type_id_ == "message") {
-      if (n_ > 1) { std::vector<Message> v; ar(v); return v; }
-      Message m; ar(m); return m;
+      if (n_ > 1) {
+        std::vector<Message> v;
+        ar(v);
+        return v;
+      }
+      Message m;
+      ar(m);
+      return m;
     }
     if (type_id_ == "document") {
-      if (n_ > 1) { std::vector<Document> v; ar(v); return v; }
-      Document m; ar(m); return m;
+      if (n_ > 1) {
+        std::vector<Document> v;
+        ar(v);
+        return v;
+      }
+      Document m;
+      ar(m);
+      return m;
     }
     if (type_id_ == "telemetry") {
-      if (n_ > 1) { std::vector<Telemetry> v; ar(v); return v; }
-      Telemetry m; ar(m); return m;
+      if (n_ > 1) {
+        std::vector<Telemetry> v;
+        ar(v);
+        return v;
+      }
+      Telemetry m;
+      ar(m);
+      return m;
     }
     if (type_id_ == "strings") {
-      if (n_ > 1) { std::vector<Strings> v; ar(v); return v; }
-      Strings m; ar(m); return m;
+      if (n_ > 1) {
+        std::vector<Strings> v;
+        ar(v);
+        return v;
+      }
+      Strings m;
+      ar(m);
+      return m;
     }
-    if (n_ > 1) { std::vector<Event> v; ar(v); return v; }
-    Event m; ar(m); return m;
+    if (n_ > 1) {
+      std::vector<Event> v;
+      ar(v);
+      return v;
+    }
+    Event m;
+    ar(m);
+    return m;
   }
- private:
-  std::string type_id_; int n_ = 1; Value value_;
+
+  std::string type_id_;
+  int n_ = 1;
+  Value value_;
 };
-}
+}  // namespace
 SerializerPtr make_cereal() { return std::make_unique<CerealSer>(); }
 }  // namespace bench

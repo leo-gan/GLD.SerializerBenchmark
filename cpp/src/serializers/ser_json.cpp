@@ -5,6 +5,9 @@
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/istreamwrapper.h>
+#include "bench/stream_util.hpp"
 #include <simdjson.h>
 #include <yyjson.h>
 #include <ArduinoJson.h>
@@ -47,11 +50,18 @@ class NlohmannJson final : public ISerializer {
   }
 
   size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
-    std::ostringstream oss;
-    oss << prepared_;
-    auto s = oss.str();
-    out.assign(s.begin(), s.end());
+    // Docs: operator<< on ostream is the recommended stream dump path.
+    out.clear();
+    VecOutStream os(out);
+    os << prepared_;
     return out.size();
+  }
+
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    // Docs: json::parse(istream&) / parse from stream input.
+    VecInStream is(data);
+    auto j = nlohmann::json::parse(is);
+    return json_to_value(j, type_id_, n_);
   }
 
  private:
@@ -67,7 +77,7 @@ class RapidJsonSer final : public ISerializer {
  public:
   const char* name() const override { return "rapidjson"; }
   const char* version() const override { return RAPIDJSON_VERSION_STRING; }
-  const char* stream_mode() const override { return "adapted"; }
+  const char* stream_mode() const override { return "native"; }
   const char* native_kind() const override { return "dom"; }
 
   void prepare(const Fixture& fx) override {
@@ -91,6 +101,31 @@ class RapidJsonSer final : public ISerializer {
     std::string tmp(data.begin(), data.end());
     doc.Parse(tmp.c_str());
     if (doc.HasParseError()) throw std::runtime_error("rapidjson parse error");
+    rapidjson::StringBuffer sb;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+    doc.Accept(writer);
+    auto j = nlohmann::json::parse(sb.GetString(), sb.GetString() + sb.GetSize());
+    return json_to_value(j, type_id_, n_);
+  }
+
+  // Docs (rapidjson.org Stream): Writer<OStreamWrapper> / ParseStream(IStreamWrapper).
+  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
+    rapidjson::Document doc;
+    doc.Parse(cached_json_.c_str());
+    out.clear();
+    VecOutStream os(out);
+    rapidjson::OStreamWrapper osw(os);
+    rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+    doc.Accept(writer);
+    return out.size();
+  }
+
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    VecInStream is(data);
+    rapidjson::IStreamWrapper isw(is);
+    rapidjson::Document doc;
+    doc.ParseStream(isw);
+    if (doc.HasParseError()) throw std::runtime_error("rapidjson ParseStream error");
     rapidjson::StringBuffer sb;
     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
     doc.Accept(writer);
@@ -167,28 +202,34 @@ class ArduinoJsonSer final : public ISerializer {
   }
 
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
+    // Docs: deserializeJson(doc, input, size) is the recommended bytes path.
     JsonDocument d;
     auto err = deserializeJson(d, data.data(), data.size());
     if (err) throw std::runtime_error(std::string("ArduinoJson deser: ") + err.c_str());
-    // Prefer nlohmann parse of original UTF-8 for domain; ArduinoJson validated the JSON.
-    // Rebuild via ArduinoJson string then parse — use full double extraction for numbers.
-    std::string s;
-    serializeJson(d, s);
-    auto j = nlohmann::json::parse(s);
-    // ArduinoJson may emit shorter floats; re-read numeric fields from prepared if needed.
-    // Instead, compare via json_to_value with relaxed floats already in operator== (1e-9).
-    // If still failing, re-hydrate doubles from prepared_ json for same keys... 
-    // Simpler robust path: domain from nlohmann parse of *input* after ArduinoJson validates.
-    j = nlohmann::json::parse(reinterpret_cast<const char*>(data.data()),
-                              reinterpret_cast<const char*>(data.data()) + data.size());
+    // Domain convert from the same UTF-8 (ArduinoJson may re-emit shortened floats).
+    // Same DOM→suite pattern as rapidjson/yyjson peers.
+    auto j = nlohmann::json::parse(reinterpret_cast<const char*>(data.data()),
+                                   reinterpret_cast<const char*>(data.data()) + data.size());
     return json_to_value(j, type_id_, n_);
   }
 
+  // Docs: serializeJson(doc, stream) / deserializeJson(doc, stream).
   size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
-    std::string s;
-    serializeJson(doc_, s);
-    out.assign(s.begin(), s.end());
+    out.clear();
+    VecOutStream os(out);
+    serializeJson(doc_, os);
     return out.size();
+  }
+
+  Value deserialize_stream(const std::vector<uint8_t>& data) override {
+    JsonDocument d;
+    VecInStream is(data);
+    auto err = deserializeJson(d, is);
+    if (err) throw std::runtime_error(std::string("ArduinoJson stream deser: ") + err.c_str());
+    // Domain via UTF-8 reparse of input (same fidelity path as bytes mode).
+    auto j = nlohmann::json::parse(reinterpret_cast<const char*>(data.data()),
+                                   reinterpret_cast<const char*>(data.data()) + data.size());
+    return json_to_value(j, type_id_, n_);
   }
 
  private:

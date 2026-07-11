@@ -28,6 +28,24 @@ int main() {
         } else {
           std::cout << "OK " << ser->name() << " / " << tid << " size=" << buf.size() << "\n";
         }
+        // stream path (native or adapted) must round-trip independently of bytes
+        {
+          ser->prepare(fx);
+          std::vector<uint8_t> sbuf;
+          sbuf.reserve(buf.size() + 64);
+          size_t n = ser->serialize_stream(fx, sbuf);
+          if (n != sbuf.size()) {
+            std::cerr << "FAIL stream size " << ser->name() << " / " << tid << " n=" << n
+                      << " sbuf=" << sbuf.size() << "\n";
+            ++failures;
+          }
+          auto sout = ser->to_domain(ser->deserialize_stream(sbuf));
+          if (!fidelity(fx.value, sout)) {
+            std::cerr << "FAIL stream fidelity " << ser->name() << " / " << tid
+                      << " stream_mode=" << ser->stream_mode() << " size=" << sbuf.size() << "\n";
+            ++failures;
+          }
+        }
         // batch N=2 smoke
         Fixture batch = make_fixture(tid, cfg, 42, 2, "test");
         ser->prepare(batch);
