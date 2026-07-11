@@ -18,15 +18,15 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 | fxamacker/cbor | CBOR | cbor/v2 | reused Enc/DecMode | native | Default EncOptions (not CoreDet) |
 | goccy/go-json | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
 | goccy/go-yaml | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
-| hamba/avro | Schema | hamba/avro/v2 | frozen API + schema cache | adapted | Parse once per fixture name |
-| linkedin/goavro | Schema | goavro/v2 | BinaryFromNative maps | adapted | LinkedIn classic; map convert untimed |
+| hamba/avro | Schema | hamba/avro/v2 | frozen API + schema cache | **native** | Stream `NewEncoder`/`NewDecoder`; schema parse once |
+| linkedin/goavro | Schema | goavro/v2 | BinaryFromNative maps | **adapted** | Bytes-only codec; OCF is a different format; map convert untimed |
 | jsoniter | JSON | json-iterator/go | compatible config | native | Widely deployed |
 | kelindar/binary | Binary | kelindar/binary | Encoder.Reset | native | Go-only compact packer |
-| mongo-bson | Document | mongo-driver/bson | Encoder+JSON tags | native | Batch wrap `{items}`; no JSON bridge |
+| mongo-bson | Document | mongo-driver/bson | Encoder+JSON tags | native | Batch wrap `{items}`; length-prefixed stream read |
 | pelletier/go-toml | TOML | go-toml/v2 | Marshal/Unmarshal | native | Batch wrapped `{items}` untimed |
-| protobuf | Schema | protobuf + gen | Message in prepare | adapted | MarshalAppend; ToDomain untimed |
+| protobuf | Schema | protobuf + gen | Message in prepare | **adapted** | MarshalAppend; ToDomain untimed; no native stream API |
 | segmentio/encoding/json | JSON | segmentio/encoding | drop-in API | native | Production fork |
-| shamaton/msgpack | MessagePack | msgpack/v3 | Marshal/Unmarshal | adapted | Benchmark staple |
+| shamaton/msgpack | MessagePack | msgpack/v3 | Marshal/Unmarshal | **native** | Stream `MarshalWrite`/`UnmarshalRead` |
 | sonic | JSON | bytedance/sonic | `ConfigDefault` + Pretouch | native | SIMD-oriented hot path |
 | ugorji/cbor | CBOR | ugorji/go/codec | CborHandle + EncoderBytes | native | go-codec multi-format |
 | ugorji/json | JSON | ugorji/go/codec | JsonHandle + EncoderBytes | native | go-codec multi-format |
@@ -53,13 +53,14 @@ Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 - **protobuf** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
 - **encoding/gob** and **kelindar/binary** are not cross-language wire formats.
 - **pelletier/go-toml** wraps multi-instance cells as a TOML table with `items` (TOML cannot use bare array roots).
-- Stream mode is **native** only where noted; others are adapted bytes+buffer.
+- **Stream adapted** only for **protobuf** and **linkedin/goavro** (bytes-only libraries; OCF/gRPC would change wire format). All other registered Go codecs use **native** stream APIs.
+- **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
-Also: [`go/README.md`](../../go/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`go/README.md`](../../go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## Design choices
 
-1. **Prepare outside the loop** — configs, Pretouch, EncMode, Avro schema, protobuf messages, ugorji Handles.
-2. **Optimal APIs** — library-recommended encode/decode; no pretty-print.
-3. **Dual mode** — `bytes` and `stream` with `StreamMode` metadata.
+1. **Prepare outside the loop** — configs, Pretouch, EncMode, Avro schema, protobuf messages, ugorji Handles, goavro maps.
+2. **Optimal APIs** — library-recommended encode/decode; no pretty-print; no JSON envelopes for binary codecs.
+3. **Dual mode** — `bytes` and `stream` with honest `StreamMode` metadata (native vs adapted).
 4. **Shared domain types** in `go/model` with format struct tags for reflection codecs.

@@ -687,7 +687,7 @@ languages:
         category: binary
         package: github.com/shamaton/msgpack/v3
         rationale: "High-performance pure-Go MessagePack (benchmark staple)"
-        optimal_api: "msgpack.Marshal / Unmarshal"
+        optimal_api: "Marshal/Unmarshal; native stream MarshalWrite/UnmarshalRead"
 
       - name: ugorji/msgpack
         category: binary
@@ -728,7 +728,7 @@ languages:
         category: binary
         package: go.mongodb.org/mongo-driver/bson
         rationale: "Official MongoDB BSON codec"
-        optimal_api: "Encoder+UseJSONStructTags / Decoder; top-level arrays wrapped as {items}"
+        optimal_api: "Encoder+UseJSONStructTags / Decoder; stream length-prefixed doc; arrays as {items}"
       - name: protobuf
         category: schema
         package: google.golang.org/protobuf
@@ -738,12 +738,12 @@ languages:
         category: schema
         package: github.com/hamba/avro/v2
         rationale: "Modern high-performance Apache Avro for Go (struct binding)"
-        optimal_api: "avro.Marshal/Unmarshal with schema prepared once"
+        optimal_api: "frozen API Marshal/Unmarshal; native stream NewEncoder/NewDecoder; schema once"
       - name: linkedin/goavro
         category: schema
         package: github.com/linkedin/goavro/v2
         rationale: "Classic LinkedIn Avro (map-native; Kafka/Schema Registry lineage)"
-        optimal_api: "NewCodec once; BinaryFromNative/NativeFromBinary; domain↔map untimed"
+        optimal_api: "NewCodec once; BinaryFromNative/NativeFromBinary; stream adapted (bytes-only); domain↔map untimed"
 
 
   java:

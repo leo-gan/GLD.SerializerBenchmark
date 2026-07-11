@@ -60,6 +60,8 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **C:** `cJSON`, `yyjson`, `jansson`, `parson`, `json-c`  
   - **JavaScript:** `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)  
   - **Go:** `encoding/json`, `sonic`, `goccy/go-json`, `jsoniter`, `segmentio/encoding/json`, `ugorji/json`  
+  - **Go (adjacent text):** `goccy/go-yaml`, `pelletier/go-toml` (human-readable documents; not JSON wire)  
+
   - **Java:** `jackson`, `gson`, `fastjson2`, `dsl-json`, `moshi`, `jsoniter`  
   - **C++:** `nlohmann_json`, `rapidjson`, `simdjson`, `arduinojson`, `yyjson`  
 
@@ -107,7 +109,6 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **Python:** `pickle`, `cloudpickle`, `dill`  
   - **JavaScript:** `v8-serializer`, `devalue`  
   - **Go:** `encoding/gob`  
-  - **Go text:** `goccy/go-yaml`, `pelletier/go-toml`  
   - **Java:** `java-serialization`  
   - **C#:** legacy / graph-oriented binaries (e.g. `MS Binary`)—see Overview  
   - **Rust / C:** no pickle-equivalent native graph codec; use language-native stacks only where listed above
