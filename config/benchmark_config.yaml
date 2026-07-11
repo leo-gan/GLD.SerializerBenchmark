@@ -205,6 +205,7 @@ paths:
     c: logs/c
     javascript: logs/javascript
     go: logs/go
+    java: logs/java
   # Result files are timestamped to preserve history across runs.
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
@@ -705,6 +706,78 @@ languages:
         package: github.com/hamba/avro/v2
         rationale: "Modern high-performance Apache Avro for Go"
         optimal_api: "avro.Marshal/Unmarshal with schema prepared once"
+
+
+  java:
+    display_name: Java
+    enabled: true
+    runner_dir: java
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/java
+    time_unit: nanoseconds
+    docs_dir: docs/java
+    min_java_version: "17"
+    serializers:
+      - name: jackson
+        category: json
+        package: com.fasterxml.jackson.core:jackson-databind
+        rationale: "De-facto standard JSON for Java (Spring, etc.)"
+        optimal_api: "reuse ObjectMapper + ObjectWriter/ObjectReader; writeValueAsBytes/readValue"
+      - name: gson
+        category: json
+        package: com.google.code.gson:gson
+        rationale: "Google Gson — widely deployed JSON"
+        optimal_api: "reuse Gson; toJson/fromJson with Type; JsonWriter/JsonReader streams"
+      - name: fastjson2
+        category: json
+        package: com.alibaba.fastjson2:fastjson2
+        rationale: "High-performance JSON (Alibaba); common in high-throughput services"
+        optimal_api: "JSON.toJSONBytes/parseObject with FieldBased; ObjectWriter reuse"
+      - name: dsl-json
+        category: json
+        package: com.dslplatform:dsl-json
+        rationale: "Among the fastest pure-Java JSON libraries"
+        optimal_api: "reuse DslJson + JsonWriter buffer; serialize/deserialize"
+      - name: kryo
+        category: binary
+        package: com.esotericsoftware:kryo
+        rationale: "Dominant high-performance Java binary (caches/RPC)"
+        optimal_api: "reuse Kryo + Output/Input; writeClassAndObject"
+      - name: java-serialization
+        category: native
+        package: stdlib
+        rationale: "JDK ObjectOutputStream baseline"
+        optimal_api: "ObjectOutputStream.writeObject / ObjectInputStream.readObject"
+      - name: msgpack
+        category: binary
+        package: org.msgpack:jackson-dataformat-msgpack
+        rationale: "MessagePack via official msgpack-java Jackson binding"
+        optimal_api: "MessagePackMapper + typed writer/reader"
+      - name: jackson-cbor
+        category: binary
+        package: com.fasterxml.jackson.dataformat:jackson-dataformat-cbor
+        rationale: "IETF CBOR via Jackson binary formats"
+        optimal_api: "CBORMapper writeValueAsBytes/readValue"
+      - name: jackson-smile
+        category: binary
+        package: com.fasterxml.jackson.dataformat:jackson-dataformat-smile
+        rationale: "Smile binary JSON (Elasticsearch/Jackson ecosystem)"
+        optimal_api: "SmileMapper writeValueAsBytes/readValue"
+      - name: bson
+        category: binary
+        package: org.mongodb:bson
+        rationale: "MongoDB BSON document binary"
+        optimal_api: "DocumentCodec + BsonBinaryWriter/Reader (domain convert untimed)"
+      - name: protobuf
+        category: schema
+        package: com.google.protobuf:protobuf-java
+        rationale: "Official Protocol Buffers Java runtime"
+        optimal_api: "toByteArray/parseFrom on prepared MessageLite; domain convert untimed"
+      - name: avro
+        category: schema
+        package: org.apache.avro:avro
+        rationale: "Apache Avro reflect binding for data pipelines"
+        optimal_api: "ReflectDatumWriter/Reader + reused BinaryEncoder/Decoder"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

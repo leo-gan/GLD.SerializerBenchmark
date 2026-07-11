@@ -137,3 +137,11 @@ c/third_party/**
 !c/third_party/VERSIONS.md
 c/build/
 c-sharp/build_user/
+
+# -----------------------------------------------------------------------------
+# Java harness (java/)
+# -----------------------------------------------------------------------------
+java/target/
+java/.classpath
+java/.project
+java/.settings/

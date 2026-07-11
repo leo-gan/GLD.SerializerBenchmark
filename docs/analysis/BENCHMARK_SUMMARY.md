@@ -18,6 +18,7 @@ Hub of analysis docs: [Benchmarks overview](index.md).
 | C | [Results](../c/results.md) | [Overview](../c/index.md) |
 | JavaScript | [Results](../javascript/results.md) | [Overview](../javascript/index.md) |
 | Go | [Results](../go/results.md) | [Overview](../go/index.md) |
+| Java | [Results](../java/results.md) | [Overview](../java/index.md) |
 
 Related (not numbers): [Serialization categories](serialization_categories.md) · [Analysis methodology](ANALYSIS_METHODOLOGY.md) · [Benchmark architecture](architecture.md)
 
@@ -36,7 +37,7 @@ cd analysis && pip install -e .   # once
 analyze-benchmarks
 
 # One language only
-analyze-benchmarks -l python   # or rust, csharp, c, javascript, go
+analyze-benchmarks -l python   # or rust, csharp, c, javascript, go, java
 
 # Custom log location
 analyze-benchmarks -l python --logs python/logs/python

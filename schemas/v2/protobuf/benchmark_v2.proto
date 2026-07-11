@@ -5,6 +5,7 @@ syntax = "proto3";
 package benchmark.v2;
 
 option java_package = "benchmark.v2";
+option java_multiple_files = true;
 option csharp_namespace = "Benchmark.V2";
 option go_package = "benchmark/v2;benchmarkv2";
 

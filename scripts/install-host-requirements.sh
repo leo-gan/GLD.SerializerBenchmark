@@ -87,6 +87,50 @@ install_node_hint() {
   echo "       https://nodejs.org/ (this script does not install system Node without sudo)"
 }
 
+
+install_java() {
+  bench_extend_host_path
+  local jdk="${HOME}/.local/jdk-21"
+  local mvn_home="${HOME}/.local/maven"
+  if [[ -x "$jdk/bin/java" ]]; then
+    echo "[OK] JDK present: $($jdk/bin/java -version 2>&1 | head -1)"
+  else
+    echo "[INFO] Installing Temurin 21 to $jdk ..."
+    local arch jarch
+    arch="$(uname -m)"
+    case "$arch" in
+      x86_64) jarch=x64 ;;
+      aarch64|arm64) jarch=aarch64 ;;
+      *) echo "[ERROR] Unsupported arch: $arch" >&2; exit 1 ;;
+    esac
+    local url="https://api.adoptium.net/v3/binary/latest/21/ga/linux/${jarch}/jdk/hotspot/normal/eclipse?project=jdk"
+    curl -fsSL -o /tmp/jdk21.tar.gz "$url"
+    rm -rf "$jdk" /tmp/jdk21-extract
+    mkdir -p /tmp/jdk21-extract
+    tar -C /tmp/jdk21-extract -xzf /tmp/jdk21.tar.gz
+    local top
+    top="$(ls /tmp/jdk21-extract)"
+    mv "/tmp/jdk21-extract/$top" "$jdk"
+    echo "[OK] $($jdk/bin/java -version 2>&1 | head -1)"
+  fi
+  export JAVA_HOME="$jdk"
+  export PATH="$jdk/bin:$PATH"
+  if [[ -x "$mvn_home/bin/mvn" ]]; then
+    echo "[OK] Maven present: $($mvn_home/bin/mvn -version | head -1)"
+  else
+    echo "[INFO] Installing Maven 3.9.9 to $mvn_home ..."
+    curl -fsSL -o /tmp/maven.tgz       "https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz"
+    rm -rf "$mvn_home" /tmp/maven-extract
+    mkdir -p /tmp/maven-extract
+    tar -C /tmp/maven-extract -xzf /tmp/maven.tgz
+    local top
+    top="$(ls /tmp/maven-extract)"
+    mv "/tmp/maven-extract/$top" "$mvn_home"
+    echo "[OK] $($mvn_home/bin/mvn -version | head -1)"
+  fi
+  export PATH="$mvn_home/bin:$PATH"
+}
+
 install_c_hint() {
   if command -v cmake >/dev/null 2>&1; then
     echo "[OK] cmake $(cmake --version | head -1)"
@@ -101,7 +145,7 @@ install_c_hint() {
   echo "[NOTE] C third-party libs are built by c/scripts/fetch-and-build-deps.sh on first run."
 }
 
-KNOWN=(analysis csharp python go rust javascript c)
+KNOWN=(analysis csharp python go rust javascript c java)
 
 resolve_targets() {
   local args=("$@")
@@ -113,7 +157,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c)
+      TARGETS+=(csharp python go rust javascript c java)
     fi
     return
   fi
@@ -150,6 +194,9 @@ for t in "${TARGETS[@]}"; do
       ;;
     c|native)
       install_c_hint
+      ;;
+    java|jdk)
+      install_java
       ;;
     *)
       echo "[ERROR] Unknown target: $t" >&2

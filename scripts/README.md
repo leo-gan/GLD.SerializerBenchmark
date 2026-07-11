@@ -34,6 +34,7 @@ Benchmark runners assume compilers/runtimes are already on the machine. That is 
 | go | Go bootstrap 1.22+ | `go build` (+ module toolchain) |
 | rust | rustc/cargo | `cargo build --release` |
 | javascript | Node.js + npm | `npm install` |
+| java | JDK 17+ + Maven | `mvn package` |
 | c | cmake, curl, … | `fetch-and-build-deps.sh` + cmake |
 | analysis | python3 + uv | `uv pip install -e analysis/` |
 
@@ -82,7 +83,7 @@ Unified runner for **enabled languages** in [`config/benchmark_config.yaml`](../
 | Flag | Description |
 |------|-------------|
 | `-m, --mode MODE` | `smoke`, `all-single`, `full`, or `research` (default: `all-single`) |
-| `-l, --lang LANG` | One language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, …) |
+| `-l, --lang LANG` | One language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, …) |
 | `-a, --analyze` | Generate analysis artifacts via `analyze-benchmarks` |
 | `-r, --regression-check` | Check for performance regressions |
 | `-t, --threshold PERCENT` | Regression threshold (default from config) |
