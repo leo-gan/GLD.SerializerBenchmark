@@ -17,9 +17,9 @@ Hub of analysis docs: [Benchmarks overview](index.md).
 | Rust | [Results](../rust/results.md) | [Overview](../rust/index.md) |
 | C | [Results](../c/results.md) | [Overview](../c/index.md) |
 | JavaScript | [Results](../javascript/results.md) | [Overview](../javascript/index.md) |
-| Go (19) | [Results](../go/results.md) | [Overview](../go/index.md) |
-| Java (18) | [Results](../java/results.md) | [Overview](../java/index.md) |
-| C++ (26+) | [Results](../cpp/results.md) | [Overview](../cpp/index.md) |
+| Go | [Results](../go/results.md) | [Overview](../go/index.md) |
+| Java | [Results](../java/results.md) | [Overview](../java/index.md) |
+| C++ | [Results](../cpp/results.md) | [Overview](../cpp/index.md) |
 
 Related (not numbers): [Serialization categories](serialization_categories.md) · [Analysis methodology](ANALYSIS_METHODOLOGY.md) · [Benchmark architecture](architecture.md)
 
