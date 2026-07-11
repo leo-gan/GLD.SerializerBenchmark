@@ -60,6 +60,7 @@ const LANGUAGE_CATALOG = [
   { id: 'python', label: 'Python' },
   { id: 'javascript', label: 'JavaScript' },
   { id: 'c', label: 'C' },
+  { id: 'java', label: 'Java' },
 ];
 
 /** Metrics shown as rows in the cross-language matrix. */
