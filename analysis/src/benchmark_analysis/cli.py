@@ -52,6 +52,9 @@ def _LANG_ALIASES() -> dict:
             "c": "c",
             "go": "go",
             "golang": "go",
+            "java": "java",
+            "jdk": "java",
+            "jvm": "java",
         }
 
 
@@ -358,7 +361,7 @@ def main():
         metavar="LANG",
         help=(
             "Only load/generate artifacts for this language "
-            f"({', '.join(_KNOWN_LANGS())}; aliases: py, cs, js, golang). "
+            f"({', '.join(_KNOWN_LANGS())}; aliases: py, cs, js, golang, jdk). "
             "Repeatable. Default: all languages with logs."
         ),
     )

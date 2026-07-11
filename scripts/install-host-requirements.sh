@@ -195,7 +195,7 @@ for t in "${TARGETS[@]}"; do
     c|native)
       install_c_hint
       ;;
-    java|jdk)
+    java|jdk|jvm)
       install_java
       ;;
     *)

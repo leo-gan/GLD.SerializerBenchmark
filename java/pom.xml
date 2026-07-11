@@ -100,6 +100,14 @@
   </dependencies>
 
   <build>
+    <extensions>
+      <!-- Provides ${os.detected.classifier} for protocArtifact downloads (CI + offline-first). -->
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.7.1</version>
+      </extension>
+    </extensions>
     <resources>
       <resource>
         <directory>src/main/resources</directory>
@@ -177,7 +185,8 @@
         <artifactId>protobuf-maven-plugin</artifactId>
         <version>0.6.1</version>
         <configuration>
-          <protocExecutable>${env.PROTOC:-protoc}</protocExecutable>
+          <!-- Download protoc matching protobuf-java (CI-friendly; no system protoc required). -->
+          <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
           <protoSourceRoot>${project.basedir}/../schemas/v2/protobuf</protoSourceRoot>
           <includes>
             <include>benchmark_v2.proto</include>

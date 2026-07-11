@@ -154,7 +154,7 @@ for t in "${TARGETS[@]}"; do
     rust|rs) check_rust ;;
     javascript|js|node) check_javascript ;;
     c|native) check_c ;;
-    java|jdk) check_java ;;
+    java|jdk|jvm) check_java ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;
   esac
   echo

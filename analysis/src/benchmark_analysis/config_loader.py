@@ -20,6 +20,8 @@ _BUILTIN_ALIASES: Dict[str, str] = {
     "js": "javascript",
     "node": "javascript",
     "golang": "go",
+    "jdk": "java",
+    "jvm": "java",
 }
 
 
