@@ -2,6 +2,7 @@ package serializers
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"reflect"
@@ -17,8 +18,10 @@ import (
 // Recommended (pkg.go.dev/go.mongodb.org/mongo-driver/bson):
 //   - Bytes: bson.Marshal / bson.Unmarshal on structs
 //   - Or Encoder/Decoder with UseJSONStructTags when structs carry `json` tags
-//   - Stream: bsonrw.NewBSONValueWriter + bson.NewEncoder; Decode via
-//     bsonrw.NewBSONDocumentReader + bson.NewDecoder
+//   - Stream encode: bsonrw.NewBSONValueWriter(w) + bson.NewEncoder
+//   - Stream decode: read one length-prefixed BSON document from io.Reader,
+//     then bsonrw.NewBSONDocumentReader + bson.NewDecoder (driver has no
+//     binary-BSON ValueReader over io.Reader; framing is native BSON)
 //   - Top-level BSON value must be a document — wrap slices as {items: [...]}
 //
 // Previous harness path (json.Marshal → map → bson.Marshal, and reverse) was a
@@ -98,12 +101,32 @@ func (s *mongoBSON) SerializeStream(_ model.Fixture, w io.Writer) (int, error) {
 }
 
 func (s *mongoBSON) DeserializeStream(r io.Reader) (any, error) {
-	// Read full document (BSON is length-prefixed); still uses Decoder API.
-	data, err := io.ReadAll(r)
+	// One BSON document is length-prefixed (int32 little-endian total size).
+	// Driver ValueReaders are buffer-based; read framed bytes then Decode.
+	data, err := readBSONDocument(r)
 	if err != nil {
 		return nil, err
 	}
 	return s.DeserializeBytes(data)
+}
+
+// readBSONDocument reads exactly one BSON document from r using the standard
+// 4-byte little-endian length prefix (includes the length field itself).
+func readBSONDocument(r io.Reader) ([]byte, error) {
+	var hdr [4]byte
+	if _, err := io.ReadFull(r, hdr[:]); err != nil {
+		return nil, err
+	}
+	size := int(binary.LittleEndian.Uint32(hdr[:]))
+	if size < 5 {
+		return nil, fmt.Errorf("bson: invalid document length %d", size)
+	}
+	doc := make([]byte, size)
+	copy(doc, hdr[:])
+	if _, err := io.ReadFull(r, doc[4:]); err != nil {
+		return nil, err
+	}
+	return doc, nil
 }
 
 func encodeBSON(w io.Writer, v any) error {

@@ -16,6 +16,8 @@ import (
 // Recommended (README): NewCodec once per schema; BinaryFromNative / NativeFromBinary
 // with map[string]any records (not goavro.Record). Codec is concurrent-safe.
 // Domain struct ↔ map conversion is untimed (prepare / ToDomain).
+// Stream mode is adapted: the codec is byte-slice only; OCFReader/OCFWriter are
+// a different container format (headers/blocks) and would not match bytes sizes.
 // https://github.com/linkedin/goavro
 //
 // Note: LinkedIn's own README prefers hamba/avro for greenfield high-throughput;

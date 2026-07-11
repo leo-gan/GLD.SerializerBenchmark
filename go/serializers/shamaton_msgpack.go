@@ -9,7 +9,8 @@ import (
 )
 
 // shamatonMsgpack — high-performance pure-Go MessagePack (frequent top of go_serialization_benchmarks).
-// Recommended: msgpack.Marshal / msgpack.Unmarshal.
+// Recommended: msgpack.Marshal / msgpack.Unmarshal for bytes;
+// MarshalWrite / UnmarshalRead for streams (README "streaming" example).
 // https://github.com/shamaton/msgpack
 type shamatonMsgpack struct {
 	proto any
@@ -19,7 +20,7 @@ func newShamatonMsgpack() *shamatonMsgpack { return &shamatonMsgpack{} }
 
 func (s *shamatonMsgpack) Name() string           { return "shamaton/msgpack" }
 func (s *shamatonMsgpack) Version() string        { return ModuleVersion("github.com/shamaton/msgpack/v3") }
-func (s *shamatonMsgpack) StreamMode() StreamMode { return StreamAdapted }
+func (s *shamatonMsgpack) StreamMode() StreamMode { return StreamNative }
 func (s *shamatonMsgpack) NativeKind() NativeKind { return NativeReflect }
 func (s *shamatonMsgpack) Supports(n string) bool { return DefaultSupports(n) }
 
@@ -41,9 +42,17 @@ func (s *shamatonMsgpack) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *shamatonMsgpack) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	return AdaptedSerializeStream(s, fx, w)
+	cw := &countWriter{w: w}
+	if err := msgpack.MarshalWrite(cw, fx.Value); err != nil {
+		return 0, err
+	}
+	return cw.n, nil
 }
 
 func (s *shamatonMsgpack) DeserializeStream(r io.Reader) (any, error) {
-	return AdaptedDeserializeStream(s, r)
+	dst := model.NewEmptyPtr(s.proto)
+	if err := msgpack.UnmarshalRead(r, dst); err != nil {
+		return nil, err
+	}
+	return model.Deref(dst), nil
 }

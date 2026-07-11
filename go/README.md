@@ -13,24 +13,24 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | segmentio/encoding/json | JSON | `github.com/segmentio/encoding/json` | Segment production JSON fork |
 | ugorji/json | JSON | `github.com/ugorji/go/codec` | `JsonHandle` + `NewEncoderBytes`/`ResetBytes` |
 | vmihailenco/msgpack | MessagePack | `github.com/vmihailenco/msgpack/v5` | **reused `Encoder.Reset`** + buffer |
-| shamaton/msgpack | MessagePack | `github.com/shamaton/msgpack/v3` | high-perf pure Go |
+| shamaton/msgpack | MessagePack | `github.com/shamaton/msgpack/v3` | `Marshal`/`Unmarshal`; stream `MarshalWrite`/`UnmarshalRead` |
 | ugorji/msgpack | MessagePack | `github.com/ugorji/go/codec` | `MsgpackHandle` + EncoderBytes reuse |
 | fxamacker/cbor | CBOR | `github.com/fxamacker/cbor/v2` | reused `EncMode`/`DecMode` |
 | ugorji/cbor | CBOR | `github.com/ugorji/go/codec` | `CborHandle` + EncoderBytes reuse |
 | kelindar/binary | Binary | `github.com/kelindar/binary` | reused `Encoder.Reset`; Go-only wire |
 | encoding/gob | Native binary | stdlib | types registered once; buffer `Reset` |
-| mongo-bson | Document | `go.mongodb.org/mongo-driver/bson` | Encoder+UseJSONStructTags; batch `{items}` |
+| mongo-bson | Document | `go.mongodb.org/mongo-driver/bson` | Encoder+UseJSONStructTags; stream length-prefixed doc |
 | goccy/go-yaml | YAML | `github.com/goccy/go-yaml` | `Marshal`/`Unmarshal`; stream Encoder |
 | pelletier/go-toml | TOML | `github.com/pelletier/go-toml/v2` | batch wrapped as `{items:…}` untimed |
-| protobuf | Schema | `google.golang.org/protobuf` | timed marshal/unmarshal; domain convert untimed |
-| hamba/avro | Schema | `github.com/hamba/avro/v2` | frozen `API` + schema cache |
-| linkedin/goavro | Schema | `github.com/linkedin/goavro/v2` | `NewCodec` + BinaryFromNative; map convert untimed |
+| protobuf | Schema | `google.golang.org/protobuf` | timed marshal/unmarshal; **stream adapted** (bytes-only API) |
+| hamba/avro | Schema | `github.com/hamba/avro/v2` | frozen `API` + schema cache; stream `NewEncoder`/`NewDecoder` |
+| linkedin/goavro | Schema | `github.com/linkedin/goavro/v2` | `BinaryFromNative`; **stream adapted** (OCF is different format) |
 
 ### Call-path contract
 
 1. `Prepare(fixture)` — untimed  
 2. `SerializeBytes` / `DeserializeBytes` — timed  
-3. Stream: **native** or **adapted** (`StreamMode`)
+3. Stream: **native** (library `io.Reader`/`io.Writer` APIs) or **adapted** (`Marshal`→`Write` / `ReadAll`→`Unmarshal`) via `StreamMode`
 
 ### Not registered (by design)
 
