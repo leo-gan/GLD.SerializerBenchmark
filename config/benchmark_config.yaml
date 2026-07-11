@@ -672,6 +672,12 @@ languages:
         package: github.com/segmentio/encoding/json
         rationale: "Segment production JSON encoder"
         optimal_api: "json.Marshal / Unmarshal (segmentio fork)"
+
+      - name: ugorji/json
+        category: json
+        package: github.com/ugorji/go/codec
+        rationale: "go-codec multi-format JSON (industry classic; handle reuse)"
+        optimal_api: "JsonHandle + NewEncoderBytes/ResetBytes; DecoderBytes"
       - name: vmihailenco/msgpack
         category: binary
         package: github.com/vmihailenco/msgpack/v5
@@ -681,7 +687,33 @@ languages:
         category: binary
         package: github.com/shamaton/msgpack/v3
         rationale: "High-performance pure-Go MessagePack (benchmark staple)"
-        optimal_api: "msgpack.Marshal / Unmarshal"
+        optimal_api: "Marshal/Unmarshal; native stream MarshalWrite/UnmarshalRead"
+
+      - name: ugorji/msgpack
+        category: binary
+        package: github.com/ugorji/go/codec
+        rationale: "go-codec MessagePack handle (MsgpackHandle + EncoderBytes)"
+        optimal_api: "MsgpackHandle; NewEncoderBytes/ResetBytes; Decode ResetBytes"
+      - name: ugorji/cbor
+        category: binary
+        package: github.com/ugorji/go/codec
+        rationale: "go-codec CBOR handle (RFC 7049/8949 family)"
+        optimal_api: "CborHandle; NewEncoderBytes/ResetBytes"
+      - name: kelindar/binary
+        category: binary
+        package: github.com/kelindar/binary
+        rationale: "High-performance Go-only binary packer (varint, reflect)"
+        optimal_api: "reused Encoder.Reset + Encode; Unmarshal"
+      - name: goccy/go-yaml
+        category: text
+        package: github.com/goccy/go-yaml
+        rationale: "High-performance YAML encoder (goccy stack)"
+        optimal_api: "yaml.Marshal/Unmarshal; Encoder/Decoder streams"
+      - name: pelletier/go-toml
+        category: text
+        package: github.com/pelletier/go-toml/v2
+        rationale: "Modern TOML v1 library; batch wrapped as document root"
+        optimal_api: "toml.Marshal/Unmarshal; batch wrap items key untimed"
       - name: fxamacker/cbor
         category: binary
         package: github.com/fxamacker/cbor/v2
@@ -696,7 +728,7 @@ languages:
         category: binary
         package: go.mongodb.org/mongo-driver/bson
         rationale: "Official MongoDB BSON codec"
-        optimal_api: "bson.Marshal / Unmarshal"
+        optimal_api: "Encoder+UseJSONStructTags / Decoder; stream length-prefixed doc; arrays as {items}"
       - name: protobuf
         category: schema
         package: google.golang.org/protobuf
@@ -705,8 +737,13 @@ languages:
       - name: hamba/avro
         category: schema
         package: github.com/hamba/avro/v2
-        rationale: "Modern high-performance Apache Avro for Go"
-        optimal_api: "avro.Marshal/Unmarshal with schema prepared once"
+        rationale: "Modern high-performance Apache Avro for Go (struct binding)"
+        optimal_api: "frozen API Marshal/Unmarshal; native stream NewEncoder/NewDecoder; schema once"
+      - name: linkedin/goavro
+        category: schema
+        package: github.com/linkedin/goavro/v2
+        rationale: "Classic LinkedIn Avro (map-native; Kafka/Schema Registry lineage)"
+        optimal_api: "NewCodec once; BinaryFromNative/NativeFromBinary; stream adapted (bytes-only); domain↔map untimed"
 
 
   java:

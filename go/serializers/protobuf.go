@@ -16,6 +16,8 @@ import (
 // googleProtobuf — official google.golang.org/protobuf (protoimpl API).
 // Recommended: convert domain→Message in Prepare (untimed); timed path is only
 // MarshalAppend / Unmarshal. Domain conversion after deser is untimed (ToDomain).
+// Stream mode is adapted: proto.Marshal/Unmarshal are []byte-only (gRPC framing
+// is a different protocol, not used here).
 // https://protobuf.dev/getting-started/gotutorial/
 // https://pkg.go.dev/google.golang.org/protobuf/proto#MarshalOptions.MarshalAppend
 type googleProtobuf struct {

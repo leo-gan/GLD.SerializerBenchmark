@@ -10,7 +10,7 @@
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview SoT): C# **36** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **12** · Java **18** · C++ **26+**.
+Registered counts (Overview SoT): C# **36** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **19** · Java **18** · C++ **26+**.
 
 ---
 
@@ -59,7 +59,9 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **Rust:** `serde_json`, `simd-json`, `sonic-rs`  
   - **C:** `cJSON`, `yyjson`, `jansson`, `parson`, `json-c`  
   - **JavaScript:** `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)  
-  - **Go:** `encoding/json`, `sonic`, `goccy/go-json`, `jsoniter`, `segmentio/encoding/json`  
+  - **Go:** `encoding/json`, `sonic`, `goccy/go-json`, `jsoniter`, `segmentio/encoding/json`, `ugorji/json`  
+  - **Go (adjacent text):** `goccy/go-yaml`, `pelletier/go-toml` (human-readable documents; not JSON wire)  
+
   - **Java:** `jackson`, `gson`, `fastjson2`, `dsl-json`, `moshi`, `jsoniter`  
   - **C++:** `nlohmann_json`, `rapidjson`, `simdjson`, `arduinojson`, `yyjson`  
 
@@ -72,7 +74,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **Rust:** `rmp-serde`, `ciborium`, `minicbor`, `bson`, `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy`, `flexbuffers`  
   - **C:** `mpack`, `msgpack-c`, `tinycbor`, `cbor-encode`, `qcbor`, `ubj`, `libbson`, `custom-binary`  
   - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `bson`, `bser`, `sia`  
-  - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `fxamacker/cbor`, `mongo-bson`  
+  - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `ugorji/msgpack`, `fxamacker/cbor`, `ugorji/cbor`, `kelindar/binary`, `mongo-bson`  
   - **Java:** `kryo`, `fory`, `protostuff`, `hessian`, `msgpack`, `jackson-cbor`, `jackson-smile`, `ion`, `bson`  
   - **C++:** `msgpack`, `nlohmann_*`, `cereal`, `bitsery`, `zpp_bits`, `yas`, `cista`, `boost_serialization`, `jsoncons_*`, `custom_binary`  
   - **C#:** many binary graph/type serializers (`Ceras`, `Hyperion`, `BinaryPack`, `MemoryPack`, …)—portability and trust model vary; see [C# overview](../c-sharp/index.md). **MessagePack-CSharp is not registered.**
@@ -95,7 +97,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **Rust:** `prost` (shared `.proto`), `rkyv` (timed deser **materializes** owned values), `flexbuffers`  
   - **C:** `nanopb`, `protobuf-c`, `upb` (in-tree wire), `flatcc`, `avro-c`, `zcbor`  
   - **JavaScript:** `avsc`, `protobufjs`, `protobuf-es`, `flatbuffers`, `flexbuffers`, `bebop`  
-  - **Go:** `protobuf`, `hamba/avro`  
+  - **Go:** `protobuf`, `hamba/avro`, `linkedin/goavro`  
   - **Java:** `protobuf`, `avro`  
   - **C++:** `protobuf`, `avro`/`avro_c`, `thrift`, `capnproto`, `flatbuffers`, `flexbuffers`  
 

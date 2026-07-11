@@ -33,7 +33,7 @@ Counts match the **registered inventories on each language Overview** (hand-writ
 | Rust | **15** | [Overview](../rust/index.md) | [Results](../rust/results.md) |
 | C | **19** | [Overview](../c/index.md) | [Results](../c/results.md) |
 | JavaScript | **19** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
-| Go | **12** | [Overview](../go/index.md) | [Results](../go/results.md) |
+| Go | **19** | [Overview](../go/index.md) | [Results](../go/results.md) |
 | Java | **18** | [Overview](../java/index.md) | [Results](../java/results.md) |
 | C++ | **26+** | [Overview](../cpp/index.md) | [Results](../cpp/results.md) |
 

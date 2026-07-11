@@ -137,7 +137,7 @@ func TestRegistryHasExpectedNames(t *testing.T) {
 	for _, want := range []string{
 		"encoding/json", "sonic", "goccy/go-json", "jsoniter",
 		"vmihailenco/msgpack", "shamaton/msgpack", "fxamacker/cbor",
-		"encoding/gob", "mongo-bson", "protobuf", "hamba/avro",
+		"encoding/gob", "mongo-bson", "protobuf", "hamba/avro", "linkedin/goavro",
 	} {
 		if !names[want] {
 			t.Errorf("missing serializer %s", want)
@@ -173,5 +173,97 @@ func TestCallPathDocsMentionOptimizations(t *testing.T) {
 	// Names should be stable for analysis
 	if !strings.Contains(s.Name(), "msgpack") {
 		t.Fatal(s.Name())
+	}
+}
+
+// TestStreamModeLabels documents which codecs truly use library stream APIs.
+// Adapted = Marshal-bytes + Write / ReadAll + Unmarshal (no native io path).
+func TestStreamModeLabels(t *testing.T) {
+	want := map[string]StreamMode{
+		"encoding/json":           StreamNative,
+		"sonic":                   StreamNative,
+		"goccy/go-json":           StreamNative,
+		"jsoniter":                StreamNative,
+		"segmentio/encoding/json": StreamNative,
+		"ugorji/json":             StreamNative,
+		"vmihailenco/msgpack":     StreamNative,
+		"shamaton/msgpack":        StreamNative,
+		"ugorji/msgpack":          StreamNative,
+		"fxamacker/cbor":          StreamNative,
+		"ugorji/cbor":             StreamNative,
+		"kelindar/binary":         StreamNative,
+		"encoding/gob":            StreamNative,
+		"mongo-bson":              StreamNative,
+		"goccy/go-yaml":           StreamNative,
+		"pelletier/go-toml":       StreamNative,
+		"hamba/avro":              StreamNative,
+		// Byte-slice-only libraries (OCF would change wire format vs bytes):
+		"protobuf":        StreamAdapted,
+		"linkedin/goavro": StreamAdapted,
+	}
+	seen := map[string]bool{}
+	for _, ser := range All() {
+		seen[ser.Name()] = true
+		got := ser.StreamMode()
+		w, ok := want[ser.Name()]
+		if !ok {
+			t.Errorf("missing StreamMode expectation for %s (got %s)", ser.Name(), got)
+			continue
+		}
+		if got != w {
+			t.Errorf("%s StreamMode=%s want %s", ser.Name(), got, w)
+		}
+	}
+	for name := range want {
+		if !seen[name] {
+			t.Errorf("expected serializer %s not registered", name)
+		}
+	}
+}
+
+func TestAllSerializersPersonStreamRoundtrip(t *testing.T) {
+	fx := fixtureByName("Person")
+	for _, ser := range All() {
+		if !ser.Supports("Person") {
+			continue
+		}
+		t.Run(ser.Name(), func(t *testing.T) {
+			if err := ser.Prepare(fx); err != nil {
+				t.Fatal(err)
+			}
+			raw, err := ser.SerializeBytes(fx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var stream bytes.Buffer
+			n, err := ser.SerializeStream(fx, &stream)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if n != stream.Len() {
+				t.Fatalf("SerializeStream count %d != buffer %d", n, stream.Len())
+			}
+			// Stream payload should match bytes payload for single-value formats.
+			if !bytes.Equal(raw, stream.Bytes()) {
+				// Some codecs may differ only if stream adds framing; still require
+				// round-trip fidelity below. Log size mismatch for diagnosis.
+				if len(raw) != stream.Len() {
+					t.Logf("bytes size %d vs stream size %d (may be OK if framing differs)", len(raw), stream.Len())
+				}
+			}
+			out, err := ser.DeserializeStream(bytes.NewReader(stream.Bytes()))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if conv, ok := ser.(DomainConverter); ok {
+				out, err = conv.ToDomain(out)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			if !model.Fidelity(fx.Value, out) {
+				t.Fatalf("stream fidelity failed for %s", ser.Name())
+			}
+		})
 	}
 }

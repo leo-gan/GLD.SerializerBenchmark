@@ -12,7 +12,8 @@ import (
 )
 
 // hambaAvro — modern, fast Apache Avro for Go (codegen-free struct binding).
-// Recommended: parse schema once (cached), avro.Marshal/Unmarshal with frozen API.
+// Recommended: parse schema once (cached); API.Marshal/Unmarshal for bytes;
+// API.NewEncoder / NewDecoder for streams (schema-bound, Flush on Encode).
 // https://github.com/hamba/avro
 type hambaAvro struct {
 	proto  any
@@ -34,7 +35,7 @@ func newHambaAvro() *hambaAvro {
 
 func (s *hambaAvro) Name() string           { return "hamba/avro" }
 func (s *hambaAvro) Version() string        { return ModuleVersion("github.com/hamba/avro/v2") }
-func (s *hambaAvro) StreamMode() StreamMode { return StreamAdapted }
+func (s *hambaAvro) StreamMode() StreamMode { return StreamNative }
 func (s *hambaAvro) NativeKind() NativeKind { return NativeSchema }
 func (s *hambaAvro) Supports(n string) bool {
 	switch n {
@@ -90,11 +91,21 @@ func (s *hambaAvro) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *hambaAvro) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	return AdaptedSerializeStream(s, fx, w)
+	cw := &countWriter{w: w}
+	enc := s.api.NewEncoder(s.schema, cw)
+	if err := enc.Encode(fx.Value); err != nil {
+		return 0, err
+	}
+	return cw.n, nil
 }
 
 func (s *hambaAvro) DeserializeStream(r io.Reader) (any, error) {
-	return AdaptedDeserializeStream(s, r)
+	dst := model.NewEmptyPtr(s.proto)
+	dec := s.api.NewDecoder(s.schema, r)
+	if err := dec.Decode(dst); err != nil {
+		return nil, err
+	}
+	return model.Deref(dst), nil
 }
 
 // Schemas use field names matching avro struct tags on data types.
