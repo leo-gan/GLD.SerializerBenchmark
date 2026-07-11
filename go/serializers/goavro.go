@@ -305,11 +305,8 @@ func asBool(v any) bool {
 }
 
 func asMap(v any) map[string]any {
+	// any is an alias for interface{}; map[string]any == map[string]interface{}.
 	if m, ok := v.(map[string]any); ok {
-		return m
-	}
-	// goavro may return map[string]interface{}
-	if m, ok := v.(map[string]interface{}); ok {
 		return m
 	}
 	return nil

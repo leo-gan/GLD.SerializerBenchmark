@@ -16,9 +16,10 @@ import (
 // { items = [...] } untimed in prepare so timed path stays pure codec I/O.
 // https://github.com/pelletier/go-toml
 type pelletierTOML struct {
-	proto   any
-	batch   bool
-	wrapped any // prepared root for encode
+	proto     any
+	batch     bool
+	wrapped   any          // prepared root for encode
+	batchType reflect.Type // untimed: StructOf for {items} decode target
 }
 
 func newPelletierTOML() *pelletierTOML { return &pelletierTOML{} }
@@ -31,15 +32,17 @@ func (s *pelletierTOML) Supports(n string) bool { return DefaultSupports(n) }
 
 func (s *pelletierTOML) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
+	s.batchType = nil
 	rv := reflect.ValueOf(fx.Value)
 	s.batch = rv.IsValid() && (rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array)
 	if s.batch {
-		// Build a typed wrapper value: struct{ Items []T }
+		// Build a typed wrapper value: struct{ Items []T } (untimed StructOf).
 		st := reflect.StructOf([]reflect.StructField{{
 			Name: "Items",
 			Type: reflect.TypeOf(fx.Value),
 			Tag:  `toml:"items"`,
 		}})
+		s.batchType = st
 		wrap := reflect.New(st).Elem()
 		wrap.Field(0).Set(rv)
 		s.wrapped = wrap.Interface()
@@ -55,10 +58,10 @@ func (s *pelletierTOML) SerializeBytes(_ model.Fixture) ([]byte, error) {
 
 func (s *pelletierTOML) DeserializeBytes(buf []byte) (any, error) {
 	if s.batch {
-		wrap, err := newTomlBatchPtr(s.proto)
-		if err != nil {
-			return nil, err
+		if s.batchType == nil {
+			return nil, fmt.Errorf("toml: batchType not prepared")
 		}
+		wrap := reflect.New(s.batchType).Interface()
 		if err := toml.Unmarshal(buf, wrap); err != nil {
 			return nil, err
 		}
@@ -81,10 +84,10 @@ func (s *pelletierTOML) SerializeStream(_ model.Fixture, w io.Writer) (int, erro
 
 func (s *pelletierTOML) DeserializeStream(r io.Reader) (any, error) {
 	if s.batch {
-		wrap, err := newTomlBatchPtr(s.proto)
-		if err != nil {
-			return nil, err
+		if s.batchType == nil {
+			return nil, fmt.Errorf("toml: batchType not prepared")
 		}
+		wrap := reflect.New(s.batchType).Interface()
 		if err := toml.NewDecoder(r).Decode(wrap); err != nil {
 			return nil, err
 		}
@@ -95,18 +98,6 @@ func (s *pelletierTOML) DeserializeStream(r io.Reader) (any, error) {
 		return nil, err
 	}
 	return model.Deref(dst), nil
-}
-
-func newTomlBatchPtr(proto any) (any, error) {
-	if proto == nil {
-		return nil, fmt.Errorf("nil proto")
-	}
-	st := reflect.StructOf([]reflect.StructField{{
-		Name: "Items",
-		Type: reflect.TypeOf(proto),
-		Tag:  `toml:"items"`,
-	}})
-	return reflect.New(st).Interface(), nil
 }
 
 func itemsFromTomlBatch(wrap any) any {

@@ -28,9 +28,10 @@ import (
 // JSON envelope that inflated cost and was not the library-recommended API.
 // https://www.mongodb.com/docs/drivers/go/current/fundamentals/bson/
 type mongoBSON struct {
-	proto   any
-	wrap    bool
-	payload any // prepared root (value or typed wrap with items)
+	proto    any
+	wrap     bool
+	payload  any          // prepared root (value or typed wrap with items)
+	wrapType reflect.Type // untimed: StructOf for batch {items} decode target
 }
 
 func newMongoBSON() *mongoBSON { return &mongoBSON{} }
@@ -44,6 +45,7 @@ func (s *mongoBSON) Supports(n string) bool { return DefaultSupports(n) }
 func (s *mongoBSON) Prepare(fx model.Fixture) error {
 	s.proto = fx.Value
 	s.wrap = false
+	s.wrapType = nil
 	s.payload = fx.Value
 	if fx.Value == nil {
 		return nil
@@ -57,6 +59,7 @@ func (s *mongoBSON) Prepare(fx model.Fixture) error {
 			Type: reflect.TypeOf(fx.Value),
 			Tag:  `bson:"items" json:"items"`,
 		}})
+		s.wrapType = st
 		wrap := reflect.New(st).Elem()
 		wrap.Field(0).Set(rv)
 		s.payload = wrap.Interface()
@@ -76,10 +79,10 @@ func (s *mongoBSON) SerializeBytes(_ model.Fixture) ([]byte, error) {
 
 func (s *mongoBSON) DeserializeBytes(data []byte) (any, error) {
 	if s.wrap {
-		wrap, err := newBSONItemsWrapPtr(s.proto)
-		if err != nil {
-			return nil, err
+		if s.wrapType == nil {
+			return nil, fmt.Errorf("bson: wrapType not prepared")
 		}
+		wrap := reflect.New(s.wrapType).Interface()
 		if err := decodeBSON(data, wrap); err != nil {
 			return nil, err
 		}
@@ -151,18 +154,6 @@ func decodeBSON(data []byte, dst any) error {
 	}
 	dec.UseJSONStructTags()
 	return dec.Decode(dst)
-}
-
-func newBSONItemsWrapPtr(proto any) (any, error) {
-	if proto == nil {
-		return nil, fmt.Errorf("bson: nil proto")
-	}
-	st := reflect.StructOf([]reflect.StructField{{
-		Name: "Items",
-		Type: reflect.TypeOf(proto),
-		Tag:  `bson:"items" json:"items"`,
-	}})
-	return reflect.New(st).Interface(), nil
 }
 
 func itemsFromBSONWrap(wrap any) any {

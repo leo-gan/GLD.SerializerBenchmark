@@ -19,7 +19,6 @@ type ugorjiCodec struct {
 	enc    *codec.Encoder
 	dec    *codec.Decoder
 	proto  any
-	stream *codec.Encoder
 }
 
 func configureBasic(h *codec.BasicHandle) {
