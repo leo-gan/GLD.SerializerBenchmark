@@ -142,6 +142,9 @@ nav:
   - Java:
       - Overview: java/index.md
       - Results: java/results.md
+  - C++:
+      - Overview: cpp/index.md
+      - Results: cpp/results.md
   - Benchmarks:
       - Overview: analysis/index.md
       - 📊 Dashboard: dashboard/

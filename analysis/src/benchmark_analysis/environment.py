@@ -35,7 +35,11 @@ from typing import Any, Dict, List, Optional
 def _safe_run(cmd: list[str], **kwargs) -> str:
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=5, **kwargs)
-        return r.stdout.strip()
+        out = (r.stdout or "").strip()
+        if out:
+            return out
+        # Some tools (e.g. java -version) print only to stderr.
+        return (r.stderr or "").strip()
     except Exception:
         return ""
 
@@ -107,6 +111,13 @@ def _runtime_versions() -> Dict[str, str]:
     gcc = _safe_run(["gcc", "--version"])
     if gcc:
         versions["gcc"] = gcc.split("\n")[0]
+    gxx = _safe_run(["g++", "--version"])
+    if gxx:
+        versions["g++"] = gxx.split("\n")[0]
+    java = _safe_run(["java", "-version"])
+    # java -version writes to stderr; _safe_run may capture either stream
+    if java:
+        versions["java"] = java.split("\n")[0]
     go = _safe_run(["go", "version"])
     if go:
         versions["go"] = go
@@ -145,10 +156,15 @@ def _infer_language(result_csv_path: Optional[str]) -> str:
     if not result_csv_path:
         return (os.environ.get("BENCHMARK_LANGUAGE") or "").strip()
     low = str(result_csv_path).replace("\\", "/").lower()
-    for token in ("csharp", "python", "rust", "javascript", "go"):
+    # Longer ids first so /logs/cpp/ is not mistaken for bare c.
+    for token in ("csharp", "python", "rust", "javascript", "java", "cpp", "go"):
         if f"/{token}/" in low:
             return token
     parts = [p for p in low.split("/") if p]
+    if "cpp" in parts or "c++" in parts or "cxx" in parts:
+        return "cpp"
+    if "java" in parts:
+        return "java"
     if "c" in parts:
         return "c"
     return (os.environ.get("BENCHMARK_LANGUAGE") or "").strip()
@@ -393,6 +409,8 @@ def important_config_summary(doc: Optional[Dict[str, Any]]) -> List[str]:
             "rust": "rustc",
             "go": "go",
             "c": "gcc",
+            "cpp": "g++",
+            "java": "java",
         }
         k = key_map.get(lang_l)
         if k and runtimes.get(k):

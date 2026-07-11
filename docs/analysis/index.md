@@ -35,12 +35,13 @@ Counts match the **registered inventories on each language Overview** (hand-writ
 | JavaScript | **19** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 | Go | **12** | [Overview](../go/index.md) | [Results](../go/results.md) |
 | Java | **18** | [Overview](../java/index.md) | [Results](../java/results.md) |
+| C++ | **23** | [Overview](../cpp/index.md) | [Results](../cpp/results.md) |
 
 † **JavaScript:** `simdjson` is optional (native addon). If it fails to build, that codec is omitted from the run.
 
 - **Inventories** (`docs/<lang>/index.md`) — log names, categories, caveats.  
 - **Results** (`docs/<lang>/results.md`) — local pivots and latency-distribution embeds; machine-dependent.  
-- **Log ids:** harness `Language` column uses `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java` (docs folders may differ, e.g. `c-sharp` for C#).  
+- **Log ids:** harness `Language` column uses `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `cpp` (docs folders may differ, e.g. `c-sharp` for C#).  
 - **Regeneration** — [Benchmark Results](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
 
 Compare serializers **within one language** (and ideally one [category](serialization_categories.md)). Cross-runtime absolute times are directional only—see [methodology limitations](ANALYSIS_METHODOLOGY.md#limitations).

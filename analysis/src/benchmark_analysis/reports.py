@@ -637,6 +637,8 @@ def _lang_display_map() -> dict:
             "c": "C",
             "javascript": "JavaScript",
             "go": "Go",
+            "cpp": "C++",
+            "java": "Java",
         }
 
 
@@ -653,6 +655,8 @@ def _lang_docs_dir_map() -> dict:
             "c": "c",
             "javascript": "javascript",
             "go": "go",
+            "cpp": "cpp",
+            "java": "java",
         }
 
 
@@ -662,7 +666,7 @@ def _lang_order_list() -> list:
 
         return list(lang_order())
     except Exception:
-        return ["csharp", "python", "rust", "c", "javascript", "go"]
+        return ["csharp", "python", "rust", "c", "javascript", "go", "java", "cpp"]
 
 
 def _normalize_lang_id(lang: str) -> str:

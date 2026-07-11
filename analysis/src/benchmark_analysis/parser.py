@@ -23,6 +23,7 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
     # Infer language from path if not provided
     if language_hint is None:
         low = filepath.replace("\\", "/").lower()
+        # Longer / more specific path tokens first (cpp before c; javascript before…).
         for token, lang in (
             ("/csharp/", "csharp"),
             ("/c-sharp/", "csharp"),
@@ -31,16 +32,22 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
             ("/javascript/", "javascript"),
             ("/logs/go/", "go"),
             ("/go/", "go"),
+            ("/java/", "java"),
+            ("/cpp/", "cpp"),
             ("/logs/c/", "c"),
         ):
             if token in low:
                 language_hint = lang
                 break
         if language_hint is None:
-            # Robust C detection: require "c" as an exact path segment (prevents
-            # false positives on "compat", "case", "data/case.csv" etc).
+            # Segment-based fallback. Prefer cpp over bare "c" (logs/cpp must not
+            # become Language=c). Exact segment match avoids "compat"/"case" false hits.
             parts = [p for p in low.split("/") if p]
-            if "c" in parts:
+            if "cpp" in parts or "c++" in parts or "cxx" in parts:
+                language_hint = "cpp"
+            elif "java" in parts:
+                language_hint = "java"
+            elif "c" in parts:
                 language_hint = "c"
             elif low.endswith(("/c", "/c/", "/c.csv")):
                 language_hint = "c"

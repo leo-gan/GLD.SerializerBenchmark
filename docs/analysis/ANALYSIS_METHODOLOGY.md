@@ -19,8 +19,8 @@ Defaults: `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../c
 
 | Source | Role |
 |--------|------|
-| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output under `logs/csharp`, `logs/python`, `logs/rust`, `logs/c`, `logs/javascript`, `logs/go`, `logs/java` (gitignored) |
-| `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, …) |
+| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output under `logs/csharp`, `logs/python`, `logs/rust`, `logs/c`, `logs/javascript`, `logs/go`, `logs/java`, `logs/cpp` (gitignored) |
+| `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `cpp`, …) |
 | `csv_schema` in master config | Required / optional columns |
 
 Core columns: `StringOrStream`, `TestDataName`, `Repetitions`, `RepetitionIndex`, `SerializerName`, **`SerializerVersion`** (installed package/crate version, immediately after the name), `TimeSer`, `TimeDeser`, `Size`, `TimeSerAndDeser`, ops/sec fields. Optional: `MemoryPeakBytes`, `FidelityScore`, `NativeKind`, `StreamMode`, …

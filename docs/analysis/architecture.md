@@ -39,7 +39,7 @@ Everyone uses the **same harness contract and analysis path**; the question chan
 | `schemas/` | `test_data_config.json`, protos, shared shape knobs |
 | `logs/<language>/` | Timestamped result CSVs (`YYYY-MM-DD-HHMMSS.csv`, gitignored) |
 | `analysis/` | Python analysis package (CLI: `analyze-benchmarks`) |
-| `python/` · `c-sharp/` · `rust/` · `c/` · `javascript/` · `go/` · `java/` | Language harnesses |
+| `python/` · `c-sharp/` · `rust/` · `c/` · `javascript/` · `go/` · `java/` · `cpp/` | Language harnesses |
 | `docs/` | MkDocs site (inventories, results snapshots, analysis pages) |
 | `scripts/run-all-benchmarks.sh` | Multi-language orchestrator |
 

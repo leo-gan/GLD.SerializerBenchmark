@@ -29,7 +29,7 @@ def _KNOWN_LANGS() -> tuple:
 
         return known_language_ids()
     except Exception:
-        return ("rust", "python", "csharp", "c", "javascript", "go", "java")
+        return ("rust", "python", "csharp", "c", "javascript", "go", "java", "cpp")
 
 
 def _LANG_ALIASES() -> dict:
@@ -55,6 +55,10 @@ def _LANG_ALIASES() -> dict:
             "java": "java",
             "jdk": "java",
             "jvm": "java",
+            "cpp": "cpp",
+            "c++": "cpp",
+            "cxx": "cpp",
+            "cplusplus": "cpp",
         }
 
 
@@ -361,7 +365,7 @@ def main():
         metavar="LANG",
         help=(
             "Only load/generate artifacts for this language "
-            f"({', '.join(_KNOWN_LANGS())}; aliases: py, cs, js, golang, jdk). "
+            f"({', '.join(_KNOWN_LANGS())}; aliases: py, cs, js, golang, jdk, c++, cxx). "
             "Repeatable. Default: all languages with logs."
         ),
     )

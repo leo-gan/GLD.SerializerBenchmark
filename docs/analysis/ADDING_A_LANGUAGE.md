@@ -70,7 +70,7 @@ Source `scripts/lib/config.sh` and use `bench_mode_reps "$MODE"` (reads `modes.<
 
 ## 6. Wire orchestration
 
-Update `scripts/run-all-benchmarks.sh` to invoke the new runner.
+Update `scripts/run-all-benchmarks.sh` to invoke the new runner (usually automatic via `languages.*.enabled` in master config).
 
 Auto-discovers timestamped CSVs under `logs/<lang>/`; or pass:
 
@@ -78,9 +78,21 @@ Auto-discovers timestamped CSVs under `logs/<lang>/`; or pass:
 analyze-benchmarks --logs go=logs/go
 ```
 
-- Update `_KNOWN_LANGS` in `analysis/src/benchmark_analysis/cli.py` so `--compare-a/--compare-b` and path inference recognize the new id.  
-- Extend `generate_language_results_pages` / `_LANG_*` maps in `reports.py` (and `_LANG_DOCS_DIR`) if the docs folder id differs from the language id (e.g. `csharp` → `docs/c-sharp/`).
+- Update `_KNOWN_LANGS` fallbacks / aliases in `analysis/` if config is unreadable.  
+- Extend `generate_language_results_pages` / `_LANG_*` maps in `reports.py` (and `_LANG_DOCS_DIR`) if the docs folder id differs from the language id (e.g. `csharp` → `docs/c-sharp/`).  
+- Host scripts: `scripts/check-host-requirements.sh`, `scripts/install-host-requirements.sh`.  
+- Prepare-PR path detect: `.grok/skills/prepare-pr/scripts/detect-changed-langs.sh`.
 
-## 7. Tests
+## 7. GitHub Actions (required)
+
+Update **`.github/workflows/benchmark-ci.yml`**:
+
+1. `changes` job outputs + `dorny/paths-filter` entry for `runner_dir/**` (and `schemas/**` if shared fixtures apply).  
+2. New `*-benchmark` job: install toolchain, `check-host-requirements.sh <id>`, run `./scripts/run-benchmarks.sh` (smoke default).  
+3. Analysis smoke step: assert the new id appears in `--enabled-langs` / `--lang-runners`.
+
+Without this, PRs that only touch the new harness never run it in CI.
+
+## 8. Tests
 
 At least: smoke run produces non-empty CSV; times positive; required columns present.

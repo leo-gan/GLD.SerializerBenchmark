@@ -5,7 +5,7 @@ name: Benchmark CI
 # jobs (fixture contract). Summaries/plots are committed under docs/ — not built here.
 #
 # Harnesses run natively (no Docker): each job installs the language toolchain
-# (dotnet / uv / rustup / go / node / cmake / jdk+maven) before scripts/run-benchmarks.sh.
+# (dotnet / uv / rustup / go / node / cmake / g++ / jdk+maven) before scripts/run-benchmarks.sh.
 #
 # Why a C#-only commit on a mixed PR still showed every language job:
 # dorny/paths-filter on pull_request compares the *whole PR* to the base branch.
@@ -55,6 +55,7 @@ jobs:
       javascript: ${{ steps.filter.outputs.javascript }}
       go: ${{ steps.filter.outputs.go }}
       java: ${{ steps.filter.outputs.java }}
+      cpp: ${{ steps.filter.outputs.cpp }}
       analysis: ${{ steps.filter.outputs.analysis }}
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +87,9 @@ jobs:
               - 'schemas/**'
             java:
               - 'java/**'
+              - 'schemas/**'
+            cpp:
+              - 'cpp/**'
               - 'schemas/**'
             analysis:
               - 'analysis/**'
@@ -297,6 +301,37 @@ jobs:
           cd java
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+  cpp-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.cpp == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # C++20, CMake FetchContent (git), and resolve_run_config (PyYAML)
+      - name: Install C++ build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential git pkg-config
+
+      - name: Setup Python for run-config resolution
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML (resolve_run_config)
+        run: pip install pyyaml
+
+      - name: Check host requirements (cpp)
+        run: ./scripts/check-host-requirements.sh cpp
+
+      - name: Run C++ Benchmark
+        run: |
+          cd cpp
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
   analysis-unit-tests:
     needs: changes
     if: >-
@@ -330,5 +365,6 @@ jobs:
           PY=analysis/.venv/bin/python
           $PY scripts/read-config.py --enabled-langs | grep -qw go
           $PY scripts/read-config.py --enabled-langs | grep -qw java
-          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java)\|'
+          $PY scripts/read-config.py --enabled-langs | grep -qw cpp
+          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|cpp)\|'
           test "$($PY scripts/read-config.py --mode-reps smoke)" = "2"
