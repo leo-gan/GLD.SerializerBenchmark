@@ -1,6 +1,6 @@
 # Go
 
-Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio), **schemaless binary** (MessagePack, CBOR, BSON), and **schema/IDL** stacks (protobuf, Avro).
+Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), and **schema/IDL** stacks (protobuf, Avro).
 
 ## Benchmark harness
 
@@ -9,7 +9,7 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 - Runner: `go/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `go build && ./bin/serializer-benchmark-go <reps>`
 - Registration: [`go/serializers/registry.go`](../../go/serializers/registry.go)
 
-## Serializers (12)
+## Serializers (18)
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
@@ -17,13 +17,19 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 | encoding/json | JSON | stdlib | struct tags | native | Stream `SetEscapeHTML(false)` |
 | fxamacker/cbor | CBOR | cbor/v2 | reused Enc/DecMode | native | Default EncOptions (not CoreDet) |
 | goccy/go-json | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
+| goccy/go-yaml | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
 | hamba/avro | Schema | hamba/avro/v2 | frozen API + schema cache | adapted | Parse once per fixture name |
 | jsoniter | JSON | json-iterator/go | compatible config | native | Widely deployed |
+| kelindar/binary | Binary | kelindar/binary | Encoder.Reset | native | Go-only compact packer |
 | mongo-bson | Document | mongo-driver/bson | struct tags | adapted | MongoDB interop |
+| pelletier/go-toml | TOML | go-toml/v2 | Marshal/Unmarshal | native | Batch wrapped `{items}` untimed |
 | protobuf | Schema | protobuf + gen | Message in prepare | adapted | MarshalAppend; ToDomain untimed |
 | segmentio/encoding/json | JSON | segmentio/encoding | drop-in API | native | Production fork |
 | shamaton/msgpack | MessagePack | msgpack/v3 | Marshal/Unmarshal | adapted | Benchmark staple |
 | sonic | JSON | bytedance/sonic | `ConfigDefault` + Pretouch | native | SIMD-oriented hot path |
+| ugorji/cbor | CBOR | ugorji/go/codec | CborHandle + EncoderBytes | native | go-codec multi-format |
+| ugorji/json | JSON | ugorji/go/codec | JsonHandle + EncoderBytes | native | go-codec multi-format |
+| ugorji/msgpack | MessagePack | ugorji/go/codec | MsgpackHandle + EncoderBytes | native | go-codec multi-format |
 | vmihailenco/msgpack | MessagePack | msgpack/v5 | reused Encoder | native | `Encoder.Reset` + buffer |
 
 ### Call-path contract (same idea as Python/Rust)
@@ -44,14 +50,15 @@ Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 ### Caveats
 
 - **protobuf** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
-- **encoding/gob** is not a cross-language wire format.
+- **encoding/gob** and **kelindar/binary** are not cross-language wire formats.
+- **pelletier/go-toml** wraps multi-instance cells as a TOML table with `items` (TOML cannot use bare array roots).
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.
 
 Also: [`go/README.md`](../../go/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## Design choices
 
-1. **Prepare outside the loop** — configs, Pretouch, EncMode, Avro schema, protobuf messages.
+1. **Prepare outside the loop** — configs, Pretouch, EncMode, Avro schema, protobuf messages, ugorji Handles.
 2. **Optimal APIs** — library-recommended encode/decode; no pretty-print.
 3. **Dual mode** — `bytes` and `stream` with `StreamMode` metadata.
 4. **Shared domain types** in `go/model` with format struct tags for reflection codecs.

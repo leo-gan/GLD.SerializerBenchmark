@@ -26,7 +26,7 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 - [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 15
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 19
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 19
-- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 12
+- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 18
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
 - [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 26+
 

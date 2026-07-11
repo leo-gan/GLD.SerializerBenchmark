@@ -13,10 +13,14 @@ require (
 	github.com/bytedance/sonic v1.15.2
 	github.com/fxamacker/cbor/v2 v2.9.2
 	github.com/goccy/go-json v0.10.6
+	github.com/goccy/go-yaml v1.19.2
 	github.com/hamba/avro/v2 v2.31.0
 	github.com/json-iterator/go v1.1.12
+	github.com/kelindar/binary v1.0.19
+	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/segmentio/encoding v0.5.4
 	github.com/shamaton/msgpack/v3 v3.1.2
+	github.com/ugorji/go/codec v1.3.1
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	go.mongodb.org/mongo-driver v1.17.9
 	google.golang.org/protobuf v1.36.11
