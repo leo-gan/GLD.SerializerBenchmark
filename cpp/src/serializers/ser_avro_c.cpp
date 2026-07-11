@@ -123,19 +123,28 @@ class AvroCSer final : public ISerializer {
       avro_value_decref(&root);
       throw;
     }
-    // Write to growable buffer: avro_writer_memory needs fixed cap — use 8MB
-    std::vector<uint8_t> buf(8 * 1024 * 1024);
-    avro_writer_t w = avro_writer_memory(reinterpret_cast<char*>(buf.data()), buf.size());
-    if (avro_value_write(w, &root)) {
+    // avro_writer_memory needs a fixed capacity. Grow from a modest base — do NOT
+    // zero-fill multi-MB buffers every call (was 8MiB; dominated n=1 and fake BATCH-AXIS).
+    // Docs: https://avro.apache.org/docs/1.11.1/api/c/ (value write + memory writer)
+    if (write_buf_.capacity() < 4096) write_buf_.reserve(4096);
+    for (;;) {
+      write_buf_.resize(write_buf_.capacity() > 0 ? write_buf_.capacity() : 4096);
+      avro_writer_t w =
+          avro_writer_memory(reinterpret_cast<char*>(write_buf_.data()), write_buf_.size());
+      int rc = avro_value_write(w, &root);
+      size_t n = avro_writer_tell(w);
       avro_writer_free(w);
-      avro_value_decref(&root);
-      throw std::runtime_error(std::string("avro write: ") + avro_strerror());
+      if (rc == 0) {
+        avro_value_decref(&root);
+        return std::vector<uint8_t>(write_buf_.begin(), write_buf_.begin() + static_cast<std::ptrdiff_t>(n));
+      }
+      // grow and retry (capacity exhaustion or other write error → grow once, then surface)
+      if (write_buf_.capacity() >= 64 * 1024 * 1024) {
+        avro_value_decref(&root);
+        throw std::runtime_error(std::string("avro write: ") + avro_strerror());
+      }
+      write_buf_.reserve(write_buf_.capacity() * 2);
     }
-    size_t n = avro_writer_tell(w);
-    avro_writer_free(w);
-    avro_value_decref(&root);
-    buf.resize(n);
-    return buf;
   }
 
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
@@ -480,6 +489,7 @@ class AvroCSer final : public ISerializer {
   Value value_;
   avro_schema_t schema_ = nullptr;
   avro_value_iface_t* iface_ = nullptr;
+  std::vector<uint8_t> write_buf_;  // reused capacity across timed serializes
 };
 
 }  // namespace
