@@ -22,7 +22,7 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 | linkedin/goavro | Schema | goavro/v2 | BinaryFromNative maps | adapted | LinkedIn classic; map convert untimed |
 | jsoniter | JSON | json-iterator/go | compatible config | native | Widely deployed |
 | kelindar/binary | Binary | kelindar/binary | Encoder.Reset | native | Go-only compact packer |
-| mongo-bson | Document | mongo-driver/bson | struct tags | adapted | MongoDB interop |
+| mongo-bson | Document | mongo-driver/bson | Encoder+JSON tags | native | Batch wrap `{items}`; no JSON bridge |
 | pelletier/go-toml | TOML | go-toml/v2 | Marshal/Unmarshal | native | Batch wrapped `{items}` untimed |
 | protobuf | Schema | protobuf + gen | Message in prepare | adapted | MarshalAppend; ToDomain untimed |
 | segmentio/encoding/json | JSON | segmentio/encoding | drop-in API | native | Production fork |

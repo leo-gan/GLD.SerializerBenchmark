@@ -728,7 +728,7 @@ languages:
         category: binary
         package: go.mongodb.org/mongo-driver/bson
         rationale: "Official MongoDB BSON codec"
-        optimal_api: "bson.Marshal / Unmarshal"
+        optimal_api: "Encoder+UseJSONStructTags / Decoder; top-level arrays wrapped as {items}"
       - name: protobuf
         category: schema
         package: google.golang.org/protobuf

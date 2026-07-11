@@ -19,7 +19,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | ugorji/cbor | CBOR | `github.com/ugorji/go/codec` | `CborHandle` + EncoderBytes reuse |
 | kelindar/binary | Binary | `github.com/kelindar/binary` | reused `Encoder.Reset`; Go-only wire |
 | encoding/gob | Native binary | stdlib | types registered once; buffer `Reset` |
-| mongo-bson | Document | `go.mongodb.org/mongo-driver/bson` | official BSON |
+| mongo-bson | Document | `go.mongodb.org/mongo-driver/bson` | Encoder+UseJSONStructTags; batch `{items}` |
 | goccy/go-yaml | YAML | `github.com/goccy/go-yaml` | `Marshal`/`Unmarshal`; stream Encoder |
 | pelletier/go-toml | TOML | `github.com/pelletier/go-toml/v2` | batch wrapped as `{items:…}` untimed |
 | protobuf | Schema | `google.golang.org/protobuf` | timed marshal/unmarshal; domain convert untimed |
