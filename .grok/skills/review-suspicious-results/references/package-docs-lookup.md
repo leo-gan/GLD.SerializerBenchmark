@@ -45,6 +45,7 @@ Package docs cannot prove the harness feeds N instances.
 | rust | `rust/src/serializers/` | **`rust/src/run_v2.rs`**, `rust/src/data_v2.rs` |
 | go | `go/serializers/` | go runner fixture batch |
 | javascript | `javascript/src/serializers/` | JS runner fixture array for N |
+| java | `java/src/main/java/benchmark/serializers/` | Main work items / DataTypeInstanceCount |
 | c | `c/src/serializers/` | **`c/src/run_v2.c`**, **`c/src/batch_cell.c`** |
 
 Reference batch framing: C `batch_cell` (u32 count + per-item length + payload). Rust should match that contract when encoding N&gt;1.

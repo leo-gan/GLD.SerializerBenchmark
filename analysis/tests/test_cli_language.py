@@ -21,6 +21,9 @@ def test_normalize_language_aliases():
     assert _normalize_language("js") == "javascript"
     assert _normalize_language("go") == "go"
     assert _normalize_language("golang") == "go"
+    assert _normalize_language("java") == "java"
+    assert _normalize_language("jdk") == "java"
+    assert _normalize_language("jvm") == "java"
 
 
 def test_normalize_language_unknown():

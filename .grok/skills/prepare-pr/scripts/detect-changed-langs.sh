@@ -35,7 +35,7 @@ if [[ "${PREPARE_PR_BENCH_ALL:-0}" == "1" ]]; then
     done <<< "$runners"
     echo "${ids[*]}"
   else
-    echo "csharp python rust c javascript go"
+    echo "csharp python rust c javascript go java"
   fi
   echo "[detect-changed-langs] PREPARE_PR_BENCH_ALL=1 → all enabled" >&2
   exit 0
@@ -109,6 +109,9 @@ for p in "${PATHS[@]}"; do
     go/*)
       HIT[go]=1
       ;;
+    java/*)
+      HIT[java]=1
+      ;;
   esac
 done
 
@@ -123,14 +126,14 @@ if [[ "$SHARED_FORCE_ALL" -eq 1 ]]; then
     done <<< "$runners"
     echo "${ids[*]}"
   else
-    echo "csharp python rust c javascript go"
+    echo "csharp python rust c javascript go java"
   fi
   echo "[detect-changed-langs] shared path change vs $BASE_REF → all enabled languages" >&2
   exit 0
 fi
 
 ids=()
-for id in csharp python rust c javascript go; do
+for id in csharp python rust c javascript go java; do
   [[ -n "${HIT[$id]:-}" ]] && ids+=("$id")
 done
 

@@ -139,6 +139,9 @@ nav:
   - Go:
       - Overview: go/index.md
       - Results: go/results.md
+  - Java:
+      - Overview: java/index.md
+      - Results: java/results.md
   - Benchmarks:
       - Overview: analysis/index.md
       - 📊 Dashboard: dashboard/

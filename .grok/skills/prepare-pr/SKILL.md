@@ -75,6 +75,12 @@ Rust (optional): if `command -v cargo` succeeds:
 
 Only **fail the skill** if cargo is present **and** tests fail. Missing cargo → warn only.
 
+Java (optional): if JDK 17+ and Maven are available:
+
+```bash
+( cd java && mvn -q test ) || echo "[WARN] java tests failed or skipped"
+```
+
 ---
 
 ## 3. Detect changed languages (**required before full bench**)
@@ -99,6 +105,7 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 | `rust/**` | → `rust` |
 | `javascript/**` | → `javascript` |
 | `go/**` | → `go` |
+| `java/**` | → `java` |
 | `schemas/**`, `scripts/run-all-benchmarks.sh`, `scripts/lib/**`, `config/benchmark_config.yaml` | → **all** enabled languages |
 | `docs/**`, `dashboard/public/data/**`, `logs/**`, `.grok/**` | **ignored** (regenerated / meta; do not select langs) |
 
@@ -138,7 +145,7 @@ else
 fi
 ```
 
-- Language id must match `config/benchmark_config.yaml` / `run-all-benchmarks.sh -l` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`).
+- Language id must match `config/benchmark_config.yaml` / `run-all-benchmarks.sh -l` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`).
 - Capture `BENCHMARK_TS` / stem from the log (`Run timestamp:`) or the newest result CSV under `logs/<lang>/` for **each** changed language.
 - Long-running: high timeout / background + monitor.
 

@@ -78,6 +78,33 @@ check_javascript() {
   need_cmd npm || true
 }
 
+
+check_java() {
+  echo "java"
+  local java_bin=""
+  if [[ -x "${HOME}/.local/jdk-21/bin/java" ]]; then
+    java_bin="${HOME}/.local/jdk-21/bin/java"
+  elif command -v java >/dev/null 2>&1; then
+    java_bin="$(command -v java)"
+  fi
+  if [[ -n "$java_bin" ]]; then
+    ver="$("$java_bin" -version 2>&1 | head -1)"
+    major="$("$java_bin" -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.specification.version/ {print $2}' | tr -d ' \r' | cut -d. -f1)"
+    if [[ -n "$major" && "$major" -ge 17 ]]; then
+      ok "java $ver"
+    else
+      miss "java 17+ (found: $ver) — ./scripts/install-host-requirements.sh java"
+    fi
+  else
+    miss "java 17+ — ./scripts/install-host-requirements.sh java"
+  fi
+  if command -v mvn >/dev/null 2>&1 || [[ -x "${HOME}/.local/maven/bin/mvn" ]]; then
+    ok "mvn"
+  else
+    miss "mvn (Maven 3.9+) — ./scripts/install-host-requirements.sh java"
+  fi
+}
+
 check_c() {
   echo "c"
   need_cmd cmake "https://cmake.org/ or package manager" || true
@@ -89,7 +116,7 @@ check_c() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c)
+KNOWN=(analysis csharp python go rust javascript c java)
 
 resolve_targets() {
   local args=("$@")
@@ -102,7 +129,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c)
+      TARGETS+=(csharp python go rust javascript c java)
     fi
     return
   fi
@@ -127,6 +154,7 @@ for t in "${TARGETS[@]}"; do
     rust|rs) check_rust ;;
     javascript|js|node) check_javascript ;;
     c|native) check_c ;;
+    java|jdk|jvm) check_java ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;
   esac
   echo

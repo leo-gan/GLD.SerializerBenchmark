@@ -10,7 +10,7 @@
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview SoT): C# **36** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **12**.
+Registered counts (Overview SoT): C# **36** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **12** · Java **18**.
 
 ---
 
@@ -60,6 +60,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **C:** `cJSON`, `yyjson`, `jansson`, `parson`, `json-c`  
   - **JavaScript:** `JSON.stringify`, `fast-json-stringify`, `simdjson` (optional native)  
   - **Go:** `encoding/json`, `sonic`, `goccy/go-json`, `jsoniter`, `segmentio/encoding/json`  
+  - **Java:** `jackson`, `gson`, `fastjson2`, `dsl-json`, `moshi`, `jsoniter`  
 
 ### Schemaless binary
 
@@ -71,6 +72,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **C:** `mpack`, `msgpack-c`, `tinycbor`, `cbor-encode`, `qcbor`, `ubj`, `libbson`, `custom-binary`  
   - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `bson`, `bser`, `sia`  
   - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `fxamacker/cbor`, `mongo-bson`  
+  - **Java:** `kryo`, `fory`, `protostuff`, `hessian`, `msgpack`, `jackson-cbor`, `jackson-smile`, `ion`, `bson`  
   - **C#:** many binary graph/type serializers (`Ceras`, `Hyperion`, `BinaryPack`, `MemoryPack`, …)—portability and trust model vary; see [C# overview](../c-sharp/index.md). **MessagePack-CSharp is not registered.**
 
 ### Schema-driven
@@ -92,6 +94,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **C:** `nanopb`, `protobuf-c`, `upb` (in-tree wire), `flatcc`, `avro-c`, `zcbor`  
   - **JavaScript:** `avsc`, `protobufjs`, `protobuf-es`, `flatbuffers`, `flexbuffers`, `bebop`  
   - **Go:** `protobuf`, `hamba/avro`  
+  - **Java:** `protobuf`, `avro`  
 
 ### Language-native
 
@@ -101,6 +104,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **Python:** `pickle`, `cloudpickle`, `dill`  
   - **JavaScript:** `v8-serializer`, `devalue`  
   - **Go:** `encoding/gob`  
+  - **Java:** `java-serialization`  
   - **C#:** legacy / graph-oriented binaries (e.g. `MS Binary`)—see Overview  
   - **Rust / C:** no pickle-equivalent native graph codec; use language-native stacks only where listed above
 

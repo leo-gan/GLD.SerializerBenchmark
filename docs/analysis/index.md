@@ -1,6 +1,6 @@
 # Benchmarks
 
-Empirical comparison of serializers across **C#**, **Python**, **Rust**, **C**, **JavaScript**, and **Go**—shared conceptual payloads, one CSV contract, one analysis pipeline.
+Empirical comparison of serializers across **C#**, **Python**, **Rust**, **C**, **JavaScript**, **Go**, and **Java**—shared conceptual payloads, one CSV contract, one analysis pipeline.
 
 This page is the **hub** for the Benchmarks section: what each analysis page is for, and where language inventories and result snapshots live. It is not a second copy of architecture, methodology, or per-library inventories.
 
@@ -34,12 +34,13 @@ Counts match the **registered inventories on each language Overview** (hand-writ
 | C | **19** | [Overview](../c/index.md) | [Results](../c/results.md) |
 | JavaScript | **19** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 | Go | **12** | [Overview](../go/index.md) | [Results](../go/results.md) |
+| Java | **18** | [Overview](../java/index.md) | [Results](../java/results.md) |
 
 † **JavaScript:** `simdjson` is optional (native addon). If it fails to build, that codec is omitted from the run.
 
 - **Inventories** (`docs/<lang>/index.md`) — log names, categories, caveats.  
 - **Results** (`docs/<lang>/results.md`) — local pivots and latency-distribution embeds; machine-dependent.  
-- **Log ids:** harness `Language` column uses `csharp`, `python`, `rust`, `c`, `javascript`, `go` (docs folders may differ, e.g. `c-sharp` for C#).  
+- **Log ids:** harness `Language` column uses `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java` (docs folders may differ, e.g. `c-sharp` for C#).  
 - **Regeneration** — [Benchmark Results](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
 
 Compare serializers **within one language** (and ideally one [category](serialization_categories.md)). Cross-runtime absolute times are directional only—see [methodology limitations](ANALYSIS_METHODOLOGY.md#limitations).

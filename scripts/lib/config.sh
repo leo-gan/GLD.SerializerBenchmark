@@ -16,6 +16,11 @@ bench_extend_host_path() {
   [[ -d "${HOME}/.dotnet" ]] && extras+=("${HOME}/.dotnet")
   [[ -d "${HOME}/.local/go/bin" ]] && extras+=("${HOME}/.local/go/bin")
   [[ -d "${HOME}/.local/bin" ]] && extras+=("${HOME}/.local/bin")
+  [[ -d "${HOME}/.local/jdk-21/bin" ]] && extras+=("${HOME}/.local/jdk-21/bin")
+  [[ -d "${HOME}/.local/maven/bin" ]] && extras+=("${HOME}/.local/maven/bin")
+  if [[ -d "${HOME}/.local/jdk-21" && -z "${JAVA_HOME:-}" ]]; then
+    export JAVA_HOME="${HOME}/.local/jdk-21"
+  fi
   [[ -d "${HOME}/.cargo/bin" ]] && extras+=("${HOME}/.cargo/bin")
   if ((${#extras[@]})); then
     local joined
