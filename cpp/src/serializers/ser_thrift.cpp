@@ -1,5 +1,6 @@
 #include "bench/serializer.hpp"
 
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 
@@ -28,17 +29,20 @@ struct Tw {
   std::vector<uint8_t> b;
   void u8(uint8_t v) { b.push_back(v); }
   void i16be(int16_t v) {
-    u8(static_cast<uint8_t>((v >> 8) & 0xff));
-    u8(static_cast<uint8_t>(v & 0xff));
+    auto u = static_cast<uint16_t>(v);
+    u8(static_cast<uint8_t>((u >> 8) & 0xff));
+    u8(static_cast<uint8_t>(u & 0xff));
   }
   void i32be(int32_t v) {
-    u8(static_cast<uint8_t>((v >> 24) & 0xff));
-    u8(static_cast<uint8_t>((v >> 16) & 0xff));
-    u8(static_cast<uint8_t>((v >> 8) & 0xff));
-    u8(static_cast<uint8_t>(v & 0xff));
+    auto u = static_cast<uint32_t>(v);
+    u8(static_cast<uint8_t>((u >> 24) & 0xff));
+    u8(static_cast<uint8_t>((u >> 16) & 0xff));
+    u8(static_cast<uint8_t>((u >> 8) & 0xff));
+    u8(static_cast<uint8_t>(u & 0xff));
   }
   void i64be(int64_t v) {
-    for (int i = 7; i >= 0; --i) u8(static_cast<uint8_t>((v >> (8 * i)) & 0xff));
+    auto u = static_cast<uint64_t>(v);
+    for (int i = 7; i >= 0; --i) u8(static_cast<uint8_t>((u >> (8 * i)) & 0xff));
   }
   void f64(double d) {
     uint64_t u;
@@ -69,16 +73,16 @@ struct Tr {
   }
   int16_t i16be() {
     need(2);
-    int16_t v = (static_cast<int16_t>(p[0]) << 8) | p[1];
+    uint16_t v = (static_cast<uint16_t>(p[0]) << 8) | static_cast<uint16_t>(p[1]);
     p += 2;
-    return v;
+    return static_cast<int16_t>(v);
   }
   int32_t i32be() {
     need(4);
-    int32_t v = (static_cast<int32_t>(p[0]) << 24) | (static_cast<int32_t>(p[1]) << 16) |
-                (static_cast<int32_t>(p[2]) << 8) | p[3];
+    uint32_t v = (static_cast<uint32_t>(p[0]) << 24) | (static_cast<uint32_t>(p[1]) << 16) |
+                 (static_cast<uint32_t>(p[2]) << 8) | static_cast<uint32_t>(p[3]);
     p += 4;
-    return v;
+    return static_cast<int32_t>(v);
   }
   int64_t i64be() {
     need(8);

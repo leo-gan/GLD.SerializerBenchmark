@@ -639,10 +639,10 @@ class FlatbuffersSer final : public ISerializer {
   std::vector<uint8_t> serialize_blob_root() {
     flatbuffers::FlatBufferBuilder fbb(1024 + payload_.size());
     auto vec = fbb.CreateVector(payload_);
-    // table Root { data:[ubyte]; } field id 0
-    fbb.StartTable();
+    // table Root { data:[ubyte]; } field id 0 — EndTable needs StartTable's offset.
+    auto start = fbb.StartTable();
     fbb.AddOffset(4, vec);  // vtable offset for field 0
-    auto root = fbb.EndTable(1);
+    auto root = fbb.EndTable(start);
     fbb.Finish(flatbuffers::Offset<void>(root));
     auto* p = fbb.GetBufferPointer();
     return std::vector<uint8_t>(p, p + fbb.GetSize());

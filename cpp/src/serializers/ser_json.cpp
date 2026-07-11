@@ -83,15 +83,18 @@ class RapidJsonSer final : public ISerializer {
   void prepare(const Fixture& fx) override {
     type_id_ = fx.type_id;
     n_ = fx.instance_count;
+    // Untimed: build Document once so timed ser is Writer-only (not re-parse).
     cached_json_ = value_to_json(fx.value).dump();
+    doc_.SetNull();
+    doc_.GetAllocator().Clear();
+    doc_.Parse(cached_json_.c_str());
+    if (doc_.HasParseError()) throw std::runtime_error("rapidjson prepare parse error");
   }
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    rapidjson::Document doc;
-    doc.Parse(cached_json_.c_str());
     rapidjson::StringBuffer sb;
     rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-    doc.Accept(writer);
+    doc_.Accept(writer);
     const char* s = sb.GetString();
     return std::vector<uint8_t>(s, s + sb.GetSize());
   }
@@ -110,13 +113,11 @@ class RapidJsonSer final : public ISerializer {
 
   // Docs (rapidjson.org Stream): Writer<OStreamWrapper> / ParseStream(IStreamWrapper).
   size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
-    rapidjson::Document doc;
-    doc.Parse(cached_json_.c_str());
     out.clear();
     VecOutStream os(out);
     rapidjson::OStreamWrapper osw(os);
     rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
-    doc.Accept(writer);
+    doc_.Accept(writer);
     return out.size();
   }
 
@@ -137,6 +138,7 @@ class RapidJsonSer final : public ISerializer {
   std::string type_id_;
   int n_ = 1;
   std::string cached_json_;
+  rapidjson::Document doc_;
 };
 
 // ---------------------------------------------------------------------------
@@ -249,22 +251,23 @@ class YyjsonSer final : public ISerializer {
   const char* stream_mode() const override { return "adapted"; }
   const char* native_kind() const override { return "dom"; }
 
+  ~YyjsonSer() override { free_doc(); }
+
   void prepare(const Fixture& fx) override {
     type_id_ = fx.type_id;
     n_ = fx.instance_count;
+    // Untimed: parse once; timed ser is yyjson_write only.
+    free_doc();
     cached_json_ = value_to_json(fx.value).dump();
+    doc_ = yyjson_read(cached_json_.c_str(), cached_json_.size(), 0);
+    if (!doc_) throw std::runtime_error("yyjson_read failed in prepare");
   }
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    yyjson_doc* doc = yyjson_read(cached_json_.c_str(), cached_json_.size(), 0);
-    if (!doc) throw std::runtime_error("yyjson_read (prepare cache) failed");
-    yyjson_mut_doc* mdoc = yyjson_doc_mut_copy(doc, nullptr);
-    yyjson_doc_free(doc);
-    if (!mdoc) throw std::runtime_error("yyjson mut copy failed");
+    if (!doc_) throw std::runtime_error("yyjson: not prepared");
     size_t len = 0;
-    char* out = yyjson_mut_write(mdoc, 0, &len);
-    yyjson_mut_doc_free(mdoc);
-    if (!out) throw std::runtime_error("yyjson_mut_write failed");
+    char* out = yyjson_write(doc_, 0, &len);
+    if (!out) throw std::runtime_error("yyjson_write failed");
     std::vector<uint8_t> buf(out, out + len);
     free(out);
     return buf;
@@ -283,9 +286,17 @@ class YyjsonSer final : public ISerializer {
   }
 
  private:
+  void free_doc() {
+    if (doc_) {
+      yyjson_doc_free(doc_);
+      doc_ = nullptr;
+    }
+  }
+
   std::string type_id_;
   int n_ = 1;
   std::string cached_json_;
+  yyjson_doc* doc_ = nullptr;
 };
 
 }  // namespace
