@@ -17,6 +17,7 @@ require (
 	github.com/hamba/avro/v2 v2.31.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kelindar/binary v1.0.19
+	github.com/linkedin/goavro/v2 v2.15.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/segmentio/encoding v0.5.4
 	github.com/shamaton/msgpack/v3 v3.1.2
@@ -31,6 +32,7 @@ require (
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/golang/snappy v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.11 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

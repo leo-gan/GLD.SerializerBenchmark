@@ -25,5 +25,6 @@ func All() []BenchSerializer {
 		// Schema / IDL
 		newGoogleProtobuf(),
 		newHambaAvro(),
+		newLinkedInGoavro(),
 	}
 }

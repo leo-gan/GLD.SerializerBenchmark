@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-## Serializers (18)
+## Serializers (19)
 
 | Name | Category | Package | Call path notes |
 |------|----------|---------|-----------------|
@@ -24,6 +24,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | pelletier/go-toml | TOML | `github.com/pelletier/go-toml/v2` | batch wrapped as `{items:…}` untimed |
 | protobuf | Schema | `google.golang.org/protobuf` | timed marshal/unmarshal; domain convert untimed |
 | hamba/avro | Schema | `github.com/hamba/avro/v2` | frozen `API` + schema cache |
+| linkedin/goavro | Schema | `github.com/linkedin/goavro/v2` | `NewCodec` + BinaryFromNative; map convert untimed |
 
 ### Call-path contract
 

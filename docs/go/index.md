@@ -9,7 +9,7 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 - Runner: `go/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `go build && ./bin/serializer-benchmark-go <reps>`
 - Registration: [`go/serializers/registry.go`](../../go/serializers/registry.go)
 
-## Serializers (18)
+## Serializers (19)
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
@@ -19,6 +19,7 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 | goccy/go-json | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
 | goccy/go-yaml | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
 | hamba/avro | Schema | hamba/avro/v2 | frozen API + schema cache | adapted | Parse once per fixture name |
+| linkedin/goavro | Schema | goavro/v2 | BinaryFromNative maps | adapted | LinkedIn classic; map convert untimed |
 | jsoniter | JSON | json-iterator/go | compatible config | native | Widely deployed |
 | kelindar/binary | Binary | kelindar/binary | Encoder.Reset | native | Go-only compact packer |
 | mongo-bson | Document | mongo-driver/bson | struct tags | adapted | MongoDB interop |

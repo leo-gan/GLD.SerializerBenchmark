@@ -137,7 +137,7 @@ func TestRegistryHasExpectedNames(t *testing.T) {
 	for _, want := range []string{
 		"encoding/json", "sonic", "goccy/go-json", "jsoniter",
 		"vmihailenco/msgpack", "shamaton/msgpack", "fxamacker/cbor",
-		"encoding/gob", "mongo-bson", "protobuf", "hamba/avro",
+		"encoding/gob", "mongo-bson", "protobuf", "hamba/avro", "linkedin/goavro",
 	} {
 		if !names[want] {
 			t.Errorf("missing serializer %s", want)

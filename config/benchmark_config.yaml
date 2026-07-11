@@ -737,8 +737,13 @@ languages:
       - name: hamba/avro
         category: schema
         package: github.com/hamba/avro/v2
-        rationale: "Modern high-performance Apache Avro for Go"
+        rationale: "Modern high-performance Apache Avro for Go (struct binding)"
         optimal_api: "avro.Marshal/Unmarshal with schema prepared once"
+      - name: linkedin/goavro
+        category: schema
+        package: github.com/linkedin/goavro/v2
+        rationale: "Classic LinkedIn Avro (map-native; Kafka/Schema Registry lineage)"
+        optimal_api: "NewCodec once; BinaryFromNative/NativeFromBinary; domain↔map untimed"
 
 
   java:
