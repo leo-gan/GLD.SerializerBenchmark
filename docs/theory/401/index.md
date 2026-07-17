@@ -57,6 +57,15 @@ This course teaches **wire encoding, runtime paths, and a thin subset lab**—no
 
 Flagship schema in the suite: `schemas/v2/protobuf/benchmark_v2.proto`. Teaching pages use a smaller **MiniUser** message (not the suite schema).
 
+## Lab notebooks (Python / Colab)
+
+| Notebook | Use with |
+|----------|----------|
+| [Wire format playground](../notebooks/401/wire_format_playground.ipynb) | [Wire format](protobuf-wire-format.md) |
+| [MiniUser encoder lab](../notebooks/401/lab_mini_protobuf_encoder.ipynb) | [Lab article](lab-mini-protobuf-encoder.md) |
+
+Index and install notes: [notebooks README](../notebooks/README.md).
+
 ## Three engines at a glance
 
 Same wire format; different engineering of the codec:
