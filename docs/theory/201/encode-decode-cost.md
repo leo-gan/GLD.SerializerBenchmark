@@ -1,5 +1,9 @@
 # Encode/decode cost
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/201/encode_decode_cost.ipynb)
+**Lab notebook:** [Encode/decode cost playground](../notebooks/201/encode_decode_cost.ipynb)
+
+
 ## Problem
 
 Informal comparisons frequently declare a format “winner” from a single chart (“replace text with binary and improve performance by an order of magnitude”). Organizations then change codecs and observe little improvement—or a regression—because the limiting factor was never “text versus binary” as an abstract dichotomy. The dominant costs are typically **tokenization**, **numeric conversion**, **memory allocation**, **copying**, and **payload shape**.
