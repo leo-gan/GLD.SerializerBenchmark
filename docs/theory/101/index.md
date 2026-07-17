@@ -87,6 +87,15 @@ These axes appear in every lens. Learn the *names*; details live in the perspect
 
 ---
 
+## Lab notebooks (Python / Colab)
+
+| Notebook | Article |
+|----------|---------|
+| [Data science lab](../notebooks/101/data_science_perspective.ipynb) | [Data science perspective](data_science_perspective.md) |
+| [Engineering mini lab](../notebooks/101/engineering_perspective.ipynb) | [Engineering perspective](engineer_perspective.md) |
+
+Notes: [notebooks README](../notebooks/README.md).
+
 ## Scope and honesty
 
 - This theory track is a **map**, not an encyclopedia of every library.

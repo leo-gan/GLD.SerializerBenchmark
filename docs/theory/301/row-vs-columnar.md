@@ -1,5 +1,9 @@
 # Row vs columnar at system scale
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/301/row_vs_columnar.ipynb)
+**Lab notebook:** [Row vs columnar experiment](../notebooks/301/row_vs_columnar.ipynb)
+
+
 ## Problem
 
 The same organization often runs:

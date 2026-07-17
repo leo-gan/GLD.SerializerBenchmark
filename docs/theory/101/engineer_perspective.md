@@ -1,5 +1,8 @@
 # Engineering Perspective
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/101/engineering_perspective.ipynb)
+**Lab notebook:** [Engineering mini lab](../notebooks/101/engineering_perspective.ipynb) · JS companion: [api_decision_sketch.mjs](../notebooks/companions/js/api_decision_sketch.mjs)
+
 ## Who this page is for
 
 - Backend and platform engineers choosing API and [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> payloads  
@@ -186,6 +189,10 @@ assert msgpack.unpackb(packed) == {"nums": [1, 2, 3]}
 
 ```python
 # Generated module provides message classes (illustrative Google tutorial names).
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/101/engineering_perspective.ipynb)
+**Lab notebook:** [Engineering mini lab](../notebooks/101/engineering_perspective.ipynb)
+
 person = addressbook_pb2.Person(id=1234, name="Alice")
 data = person.SerializeToString()
 person2 = addressbook_pb2.Person()

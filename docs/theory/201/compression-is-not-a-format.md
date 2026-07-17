@@ -1,5 +1,9 @@
 # Compression vs format
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/201/compression_vs_format.ipynb)
+**Lab notebook:** [Compression vs format lab](../notebooks/201/compression_vs_format.ipynb)
+
+
 ## Problem
 
 When bandwidth or storage is expensive, a common sequence of decisions is:

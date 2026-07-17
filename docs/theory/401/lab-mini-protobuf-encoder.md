@@ -2,6 +2,9 @@
 
 > Build a **deliberately small** Protobuf binary codec for a teaching message—not production Protobuf, not a full suite fixture.
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/401/lab_mini_protobuf_encoder.ipynb)
+**Lab notebook:** [lab_mini_protobuf_encoder.ipynb](../notebooks/401/lab_mini_protobuf_encoder.ipynb) · wire playground: [wire_format_playground.ipynb](../notebooks/401/wire_format_playground.ipynb)
+
 ## Goal
 
 Implement a MiniUser subset encoder/decoder, validate against **golden bytes** and an official parser, and refuse truncated/hostile shapes. You will practice the wire rules from [Protobuf wire format](protobuf-wire-format.md)—not rebuild `protoc`.
@@ -192,7 +195,8 @@ As in **Done when**.
 - Packed `repeated uint32` (single LEN field, concatenated varints)—see wire article packed hex.  
 - `uint64` / fixed32.  
 - Reject remaining garbage after a nested length (strict nested consume).  
-- Fuzz skip paths with random unknown tags ([301 untrusted input](../301/untrusted-input.md) mindset).
+- Fuzz skip paths with random unknown tags ([301 untrusted input](../301/untrusted-input.md) mindset).  
+- **Same goldens in another language:** [Go](../notebooks/companions/go/) · [Rust](../notebooks/companions/rust/) appendices (encode MiniUser until G1–G5 match).
 
 ## What this lab is not
 

@@ -1,5 +1,9 @@
 # Dynamic vs IDL binary
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/201/dynamic_vs_idl_binary.ipynb)
+**Lab notebook:** [Dynamic vs IDL binary lab](../notebooks/201/dynamic_vs_idl_binary.ipynb)
+
+
 ## Problem
 
 Suppose text JSON is already judged unsuitable for a particular hop—payloads are large enough, or the path is sufficiently performance-sensitive, that a binary encoding is under consideration. Two frequent alternatives are:

@@ -1,5 +1,8 @@
 # Protobuf wire format step-by-step
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/401/wire_format_playground.ipynb)
+**Lab notebook:** [wire format playground](../notebooks/401/wire_format_playground.ipynb) · full MiniUser lab: [lab_mini_protobuf_encoder.ipynb](../notebooks/401/lab_mini_protobuf_encoder.ipynb)
+
 ## Problem
 
 Schema-driven formats are often described as “binary with field numbers.” That slogan does not teach you how to **read or emit bytes**, debug a hex dump, or implement a subset codec. Without the wire rules, language tutorials stay API-deep and 201’s “schema-dependent” concept never becomes operational.

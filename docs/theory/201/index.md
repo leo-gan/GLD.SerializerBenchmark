@@ -54,6 +54,18 @@ Theory alone does not decide production choices. Use these pages to build mechan
 
 ---
 
+## Lab notebooks (Python / Colab)
+
+| Notebook | Article |
+|----------|---------|
+| [Encode/decode cost](../notebooks/201/encode_decode_cost.ipynb) | [Encode/decode cost](encode-decode-cost.md) |
+| [Self-describing vs schema](../notebooks/201/self_describing_vs_schema.ipynb) | [Self-describing vs schema](self-describing-vs-schema-dependent.md) |
+| [Schema evolution](../notebooks/201/schema_evolution.ipynb) | [Schema evolution](schema-evolution.md) |
+| [Dynamic vs IDL binary](../notebooks/201/dynamic_vs_idl_binary.ipynb) | [Dynamic vs IDL binary](dynamic-vs-idl-binary.md) |
+| [Compression vs format](../notebooks/201/compression_vs_format.ipynb) | [Compression vs format](compression-is-not-a-format.md) |
+
+Install notes: [notebooks README](../notebooks/README.md).
+
 ## Where to go next
 
 - **Core path:** [Serialization 301](../301/index.md) — production judgment under constraints  
