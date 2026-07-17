@@ -195,7 +195,8 @@ As in **Done when**.
 - Packed `repeated uint32` (single LEN field, concatenated varints)—see wire article packed hex.  
 - `uint64` / fixed32.  
 - Reject remaining garbage after a nested length (strict nested consume).  
-- Fuzz skip paths with random unknown tags ([301 untrusted input](../301/untrusted-input.md) mindset).
+- Fuzz skip paths with random unknown tags ([301 untrusted input](../301/untrusted-input.md) mindset).  
+- **Same goldens in another language:** [Go](../notebooks/companions/go/) · [Rust](../notebooks/companions/rust/) appendices (encode MiniUser until G1–G5 match).
 
 ## What this lab is not
 

@@ -1,8 +1,7 @@
 # Engineering Perspective
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/101/engineering_perspective.ipynb)
-**Lab notebook:** [Engineering mini lab](../notebooks/101/engineering_perspective.ipynb)
-
+**Lab notebook:** [Engineering mini lab](../notebooks/101/engineering_perspective.ipynb) · JS companion: [api_decision_sketch.mjs](../notebooks/companions/js/api_decision_sketch.mjs)
 
 ## Who this page is for
 

@@ -64,7 +64,8 @@ Flagship schema in the suite: `schemas/v2/protobuf/benchmark_v2.proto`. Teaching
 | [Wire format playground](../notebooks/401/wire_format_playground.ipynb) | [Wire format](protobuf-wire-format.md) |
 | [MiniUser encoder lab](../notebooks/401/lab_mini_protobuf_encoder.ipynb) | [Lab article](lab-mini-protobuf-encoder.md) |
 
-Index and install notes: [notebooks README](../notebooks/README.md).
+Index and install notes: [notebooks README](../notebooks/README.md).  
+Multi-lang homework (same G1–G5 hex): [companions/go](../notebooks/companions/go/) · [companions/rust](../notebooks/companions/rust/).
 
 ## Three engines at a glance
 

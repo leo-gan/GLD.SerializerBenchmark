@@ -27,7 +27,7 @@ jupyter lab docs/theory/notebooks/
 | **P1** | [`201/`](201/) | Mechanism labs (encode cost, schema, evolution, …) |
 | **P2** | [`101/`](101/) | Data science + engineering mini labs |
 | **P3** | [`301/`](301/) | Production experiment notebooks |
-| **P4** | [`companions/`](companions/) | JS companions + multi-lang goldens appendix |
+| **P4** | [`companions/`](companions/) | [JS](companions/js/) Node snippets + [Go](companions/go/) / [Rust](companions/rust/) MiniUser goldens |
 
 ## Design rules
 
