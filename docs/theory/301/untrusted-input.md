@@ -1,5 +1,9 @@
 # Untrusted input and parser risk
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/301/untrusted_input.ipynb)
+**Lab notebook:** [Untrusted input experiment](../notebooks/301/untrusted_input.ipynb)
+
+
 ## Problem
 
 Every public or multi-tenant deserialize path accepts **attacker-controlled bytes**. Classic failures are not slow codecs—they are remote code execution via native deserializers, resource exhaustion via nested or huge payloads, and logic bugs from unvalidated schemaless data. Teams discover this after an incident, then retrofit limits that should have been part of the original boundary design.

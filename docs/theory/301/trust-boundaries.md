@@ -1,5 +1,9 @@
 # Trust boundaries: portable vs native
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/301/trust_boundaries.ipynb)
+**Lab notebook:** [Trust boundaries experiment](../notebooks/301/trust_boundaries.ipynb)
+
+
 ## Problem
 
 Language-native serializers—Python `pickle`, Java serialization, many .NET binary formatters, and similar “dump the object graph” tools—are ergonomic inside one runtime. They often win microbenchmarks on complex graphs and preserve types that portable formats handle awkwardly. Teams then place those bytes on a **queue**, a **cache shared across services**, a **file that other teams can open**, or a **network API**. The security and portability failure modes are not subtle: gadget chains, version skew that only appears at runtime, and permanent lock-in to one language.

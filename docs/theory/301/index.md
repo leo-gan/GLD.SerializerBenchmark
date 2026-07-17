@@ -96,6 +96,19 @@ Default path: **101 → 201 → 301**. Suite lab: [Benchmarks](../../analysis/in
 | [Cross-language service boundary](case-polyglot-boundary.md) | One contract, three languages |
 | [“We need it faster” postmortem](case-faster-postmortem.md) | Wrong bench vs wrong paradigm vs wrong payload |
 
+## Lab notebooks (Python / Colab)
+
+Experiment notebooks implement selected article **Experiments** (decision labs, not full harness clones):
+
+| Notebook | Article |
+|----------|---------|
+| [Trust boundaries](../notebooks/301/trust_boundaries.ipynb) | [Trust boundaries](trust-boundaries.md) |
+| [Untrusted input](../notebooks/301/untrusted_input.ipynb) | [Untrusted input](untrusted-input.md) |
+| [Two schema cultures](../notebooks/301/two_schema_cultures.ipynb) | [Two schema cultures](two-schema-cultures.md) |
+| [Row vs columnar](../notebooks/301/row_vs_columnar.ipynb) | [Row vs columnar](row-vs-columnar.md) |
+
+Notes: [notebooks README](../notebooks/README.md).
+
 ## Honesty rules
 
 Same program rules as 101 / 201:
