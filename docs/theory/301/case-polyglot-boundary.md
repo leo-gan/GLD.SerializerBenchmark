@@ -1,82 +1,83 @@
 # Case study: cross-language service boundary
 
-> Three languages must share one internal contract—how do you stop local optima from fragmenting the estate?
+> Three languages must share one internal contract. How do you stop local optima from fragmenting the estate?
 
-## Context & goals
+## Context and goals
 
-**Setting:** Edge gateway (TypeScript), core API (Go), ML feature service (Python). Private network. Need shared request/response for feature fetch at moderate QPS. Human debug of failures required for on-call.
+**Setting:** An edge gateway in TypeScript, a core API in Go, and a machine-learning feature service in Python. The network is private. The team needs a shared request and response for feature fetch at moderate QPS. On-call engineers must be able to debug failures in human-readable ways when needed.
 
-**Goals:** One portable contract, independent deploys, acceptable latency, no native codecs.
+**Goals:** One portable contract, independent deploys, acceptable latency, and no native codecs.
 
-## Non-goals / hard constraints
+## Non-goals and hard constraints
 
-- Not public third-party API (JSON may still be used at outer edge).  
-- Not analytics lake.  
-- Python cannot dictate native pickle to Go/TS.
+- This is not a public third-party API (JSON may still be used at the outer edge).
+- This is not an analytics lake.
+- Python cannot dictate native pickle to Go or TypeScript.
 
 ## Options on the table
 
 | Option | Sketch |
 |--------|--------|
-| **A. Protobuf IDL + codegen** | Shared protos; per-language libs from Results |
-| **B. JSON + JSON Schema** | Uniform text; validate each side |
-| **C. MessagePack ad hoc** | Compact; org-owned schemas |
-| **D. Each language picks favorite** | Local Results winners |
+| **A. Protobuf IDL plus code generation** | Shared protos; per-language libraries chosen from Results |
+| **B. JSON plus JSON Schema** | Uniform text; validate on each side |
+| **C. MessagePack ad hoc** | Compact; organization-owned schemas |
+| **D. Each language picks its favorite** | Local Results winners only |
 
 ## Trade-off matrix
 
 | Axis | A. Protobuf | B. JSON | C. MessagePack | D. Mixed |
 |------|-------------|---------|----------------|----------|
 | Polyglot maturity | Strong | Strong | Good if disciplined | Fail |
-| Debug | Tooling | Easy | Medium | Chaos |
-| Density | High | Lower | Medium–high | — |
-| Evolution | Field numbers + CI | Process heavy | Process heavy | None |
+| Debug | Tooling required | Easy | Medium | Chaos |
+| Density | High | Lower | Medium to high | Not meaningful |
+| Evolution | Field numbers plus CI | Process-heavy | Process-heavy | None |
 | Risk | IDL ownership | Verbosity | Schema drift | Integration hell |
 
 ## Recommendation (under these constraints)
 
-**Prefer A** if the org will own a proto monorepo and CI breaking checks ([two schema cultures](two-schema-cultures.md), [polyglot estates](polyglot-estates.md)). **Prefer B** if debug/simplicity outweigh density and QPS allows—still enforce schema ([public API contracts](public-api-contracts.md) pattern internally). **C** only with explicit schema docs and conformance tests. **Reject D**.
+**Prefer A** if the organization will own a proto monorepo and continuous-integration breaking checks ([two schema cultures](two-schema-cultures.md), [polyglot estates](polyglot-estates.md)). **Prefer B** if debug and simplicity outweigh density and QPS allows—still enforce a schema ([public API contracts](public-api-contracts.md) pattern used internally). **C** is acceptable only with explicit schema docs and conformance tests. **Reject D**.
 
 Pick **implementations per language** via suite Results within the chosen family ([implementation variance](implementation-variance.md)).
 
-
-
 ## Experiments
 
-**Question:** One contract across three languages—does the **interop matrix** pass before we optimize?
+**Question:** With one contract across three languages, does the **interop matrix** pass before we optimize performance?
 
 ### Setup
-1. Three languages from the case; shared schema.  
-2. Golden logical fixtures.  
-3. CI job skeleton for encode/decode matrix.
+
+1. The three languages from the case and a shared schema.
+2. Golden logical fixtures.
+3. A continuous-integration job skeleton for the encode/decode matrix.
 
 ### Procedure
-1. Freeze schema; implement matrix ([polyglot estates](polyglot-estates.md), [401 fidelity](../401/protobuf-cross-language-fidelity.md)).  
-2. Fix failures (defaults, field names, packing).  
-3. Then per-language library pins via suite Results.  
-4. Document version pins and CI gate.
+
+1. Freeze the schema; implement the matrix ([polyglot estates](polyglot-estates.md), [401 fidelity](../401/protobuf-cross-language-fidelity.md)).
+2. Fix failures (defaults, field names, packing).
+3. Then pin per-language libraries via suite Results.
+4. Document version pins and the CI gate.
 
 ### Decision rule
-- Matrix green required before performance work.  
-- No global “fastest language” ranking as the boundary decision.
+
+- A green matrix is required before performance work.
+- Do not use a global “fastest language” ranking as the boundary decision.
 
 ## Metrics
 
 | Metric / signal | Role |
 |-----------------|------|
 | Matrix pass rate | **Primary** |
-| Logical equality failures by pair | Debug signal |
-| Per-lang `mean_fidelity` | Local health |
-| Per-lang p99 / suite medians | Capacity after interop |
+| Logical equality failures by language pair | Debug signal |
+| Per-language `mean_fidelity` | Local health |
+| Per-language p99 and suite medians | Capacity after interop |
 | Version pin drift | Drift risk |
 
 ## What would change the answer
 
-- Browser on the same hop → JSON edge + binary internal via gateway.  
-- Extreme QPS → lean harder to A + load tests ([latency tails](latency-tails-and-gc.md)).
+- A browser on the same hop suggests JSON at the edge and binary internally via a gateway.
+- Extreme QPS leans harder toward A plus load tests ([latency tails](latency-tails-and-gc.md)).
 
 ## Key takeaways
 
-- One boundary → one portable contract → N implementations.  
-- Suite optimizes **library pins**, not politics of mixed formats.  
+- One boundary means one portable contract and N implementations.
+- The suite optimizes **library pins**, not the politics of mixed formats.
 - Conformance tests are part of the recommendation.

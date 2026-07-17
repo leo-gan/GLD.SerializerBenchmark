@@ -2,21 +2,23 @@
 
 ## Problem
 
-A structure in C, a record in Go, or an object graph in a managed language occupies a region of the process’s address space. Writing that region to disk or to a network socket appears inexpensive: no schema file, no serialization library, and high throughput on *this* machine.
+A structure in C, a record in Go, or an object graph in a managed language sits somewhere in the process’s address space—the region of memory that process can use. Writing that region to disk or to a network socket can look very cheap: you need no schema file, no serialization library, and you can get high throughput on *this* machine.
 
-A second process—implemented in another language, running on another processor architecture, or built with different structure-packing rules—may then read those bytes and obtain incorrect values, fail abruptly, or interpret numbers silently wrong. Serialization exists largely because **in-memory layout is not a contract between machines**.
+A second process may then try to read those same bytes. That second process might be written in another language, run on another processor architecture, or use different structure-packing rules. It can then obtain incorrect values, crash, or silently misread numbers. Serialization exists largely because **in-memory layout is not a contract between machines**.
 
 ---
 
 ## Short answer
 
-Compilers and language runtimes place fields in memory for **the local processor and operating environment**: native integer widths, pointer sizes, alignment padding, and often **host byte order**. Those placement rules are part of how a given platform expects machine code and data to look in RAM; they are chosen for local efficiency, not for exchange with other machines. Networks and durable storage exchange only a **linear sequence of bytes under an agreed interpretation**. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and endianness—or it must be self-describing enough that readers need not assume the writer’s in-memory layout. Raw memory dumps optimise for one process image; interchange formats optimise for a shared contract.
+Compilers and language runtimes place fields in memory for **the local processor and operating environment**. That includes native integer widths, pointer sizes, alignment padding (unused bytes inserted so fields sit on convenient addresses), and often **host byte order**—the order in which multi-byte numbers are stored. Those placement rules exist so *this* machine can run efficiently. They are not designed so that another machine can understand the same bytes.
+
+Networks and durable storage only exchange a **linear sequence of bytes under an agreed interpretation**. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and endianness (byte order for multi-byte values). Alternatively, the format must be self-describing enough that readers do not need to assume the writer’s in-memory layout. Raw memory dumps optimize for one process image. Interchange formats optimize for a shared contract.
 
 ---
 
 ## Mental model
 
-Main memory may be viewed as a linear array of **bytes** (integer values from 0 through 255), each identified by an address 0, 1, 2, …. Program variables and objects are **contiguous or linked groups of those bytes**, interpreted under a rule (“these four bytes constitute a 32-bit integer,” “these eight bytes constitute an address of further bytes,” and so on).
+Think of main memory as a linear array of **bytes** (integer values from 0 through 255). Each byte has an address: 0, 1, 2, and so on. Program variables and objects are **contiguous or linked groups of those bytes**, interpreted under a rule such as “these four bytes constitute a 32-bit integer” or “these eight bytes constitute an address of further bytes.”
 
 ```text
   In-memory (one process)              On the wire (agreed contract)
@@ -31,7 +33,7 @@ Main memory may be viewed as a linear array of **bytes** (integer values from 0 
               rebuild local objects or views
 ```
 
-A dump of process-local memory includes padding, pointer addresses, and host-specific byte order. Another machine cannot treat that sequence as the same values unless the parties **define a contract** (a serialization format).
+A dump of process-local memory includes padding, pointer addresses, and host-specific byte order. Another machine cannot treat that sequence as the same values unless both sides **define a contract**—in other words, a serialization format.
 
 ---
 
@@ -39,22 +41,22 @@ A dump of process-local memory includes padding, pointer addresses, and host-spe
 
 ### Representations of common values as bytes
 
-Detailed processor microarchitecture is unnecessary here. The essential questions are: **how many bytes does this value occupy**, and **does the variable store the value itself or a reference to bytes stored elsewhere?**
+You do not need detailed processor microarchitecture for this course. The essential questions are simpler: **how many bytes does this value occupy**, and **does the variable store the value itself or a reference to bytes stored elsewhere?**
 
-| Kind of value (typical modern desktop or server) | Width | Contents at the variable’s address |
+| Kind of value (typical modern desktop or server) | Width | What sits at the variable’s address |
 |--------------------------------------------------|-------|-------------------------------------|
 | Small integer (8-bit unsigned) | 1 byte | The integer itself (0–255) |
-| 32-bit integer (e.g. C `int32_t`) | 4 bytes | The integer, split across four bytes (order determined by endianness) |
-| 64-bit integer | 8 bytes | As above, eight bytes |
+| 32-bit integer (for example C `int32_t`) | 4 bytes | The integer, split across four bytes; the order depends on endianness |
+| 64-bit integer | 8 bytes | The same idea as above, using eight bytes |
 | 32-bit binary floating-point (`float`) | 4 bytes | An IEEE 754 bit pattern—not the decimal characters of a printed number |
-| 64-bit binary floating-point (`double`) | 8 bytes | As above, eight bytes |
+| 64-bit binary floating-point (`double`) | 8 bytes | The same idea as above, using eight bytes |
 | Fixed array of three bytes | 3 bytes (padding may follow inside a structure) | Those three bytes in order |
 | Text string in C (`char *`) | Pointer width (often 8 bytes on 64-bit processes) | An **address** of character data elsewhere—not the characters themselves |
-| Text string in Python, Java, C#, or JavaScript | A **reference** to a heap object | Length, character data, and type metadata live in that object, not as a single trivial blob at the variable |
+| Text string in Python, Java, C#, or JavaScript | A **reference** to a heap object | Length, character data, and type metadata live in that object, not as one simple blob at the variable |
 
-**Integer example (before endianness).** The integer 305 419 896 is commonly written in hexadecimal as `0x12345678`. As a 32-bit integer it occupies **four** bytes. Which address receives `0x12` versus `0x78` is a matter of **endianness** (below). The pedagogical point: **the value is not stored as the decimal characters** `3` `0` `5` … unless a text format such as JSON is used deliberately.
+**Integer example (before endianness).** The integer 305 419 896 is commonly written in hexadecimal as `0x12345678`. As a 32-bit integer it occupies **four** bytes. Which address receives `0x12` versus `0x78` is a matter of **endianness**, discussed below. The teaching point is simple: **the value is not stored as the decimal characters** `3` `0` `5` … unless you deliberately use a text format such as JSON.
 
-**Floating-point example.** The value `1.5` as a 32-bit binary float is a specific 32-bit pattern defined by IEEE 754—not the three characters `1`, `.`, and `5`. Text is appropriate for human display; processors perform arithmetic on the binary pattern.
+**Floating-point example.** The value `1.5` as a 32-bit binary float is a specific 32-bit pattern defined by IEEE 754—not the three characters `1`, `.`, and `5`. Text is appropriate for human display. Processors perform arithmetic on the binary pattern.
 
 **String example (why copying the variable fails as interchange):**
 
@@ -65,33 +67,33 @@ Detailed processor microarchitecture is unnecessary here. The essential question
   └──────────────────────────┘                 (or a richer string object)
 ```
 
-Copying only those eight bytes copies an **address that is meaningless in another process**. A serialization format must transmit the **character data** (with length or terminator rules), not the pointer.
+If you copy only those eight bytes, you copy an **address that is meaningless in another process**. A serialization format must transmit the **character data** (with length or terminator rules), not the pointer.
 
 ### Field order and padding
 
-A **structure** or **record** comprises several fields placed at successive addresses. Two facts matter for binary dumps:
+A **structure** or **record** is several fields placed at successive addresses. Two facts matter for binary dumps:
 
-1. **Order** — which field occupies the lower addresses (often declaration order in C-like languages, though not a universal law).  
+1. **Order** — which field occupies the lower addresses. In C-like languages this is often declaration order, though that is not a universal law.
 2. **Padding** — unused bytes inserted so that the *next* field begins at an address the processor can load efficiently (for example, a multiple of four or eight).
 
 #### Why padding exists
 
-Many processors load a four-byte integer most efficiently when its starting address is a **multiple of four** (and an eight-byte quantity when the address is a multiple of eight). Compilers **align** fields to such boundaries by inserting unused **padding** bytes. Those bytes do not appear in source code; they still appear in memory and in an uninterpreted memory dump.
+Many processors load a four-byte integer most efficiently when its starting address is a **multiple of four**, and an eight-byte quantity when the address is a multiple of eight. Compilers **align** fields to such boundaries by inserting unused **padding** bytes. Those bytes do not appear in your source code. They still appear in memory, and they still appear in an uninterpreted memory dump.
 
-Simplified rules used by many C compilers on common desktop and server platforms (exact rules depend on the compiler, operating system, and CPU):
+Here are simplified rules used by many C compilers on common desktop and server platforms. Exact rules depend on the compiler, operating system, and CPU:
 
-- a one-byte field may begin at any address;  
-- a four-byte field begins at an address divisible by four;  
+- a one-byte field may begin at any address;
+- a four-byte field begins at an address divisible by four;
 - an eight-byte field or pointer on a typical 64-bit platform begins at an address divisible by eight.
 
-The instructional conclusion is that **unused gaps appear** between fields.
+The instructional conclusion is that **unused gaps appear** between fields, even when you never wrote them.
 
 #### Identical fields, different layouts
 
 Consider three logical fields:
 
-- `flag` — one byte (for example 0 or 1);  
-- `id` — four-byte integer;  
+- `flag` — one byte (for example 0 or 1);
+- `id` — four-byte integer;
 - `score` — eight-byte integer (or a pointer-sized field).
 
 **Layout 1 — order `flag`, `id`, `score` (typical 64-bit C-like padding):**
@@ -116,15 +118,15 @@ Consider three logical fields:
   total size often still 16 bytes, but field positions differ
 ```
 
-Even when both layouts occupy 16 bytes, a reader that assumes Layout 1 and receives Layout 2 misinterprets `id` and `score`. If sizes differ across compilers or packing attributes (for example `#pragma pack`), offsets diverge further.
+Even when both layouts occupy 16 bytes, a reader that assumes Layout 1 and receives Layout 2 misinterprets `id` and `score`. If sizes differ across compilers or packing attributes (for example `#pragma pack`), the offsets diverge even further.
 
-**Conclusion:** agreement that both parties “have flag, id, and score” is **insufficient** for an uninterpreted binary dump. The parties need agreed **order, sizes, and padding**—or a format that encodes fields without host padding.
+**Conclusion:** agreeing that both parties “have flag, id, and score” is **not enough** for an uninterpreted binary dump. The parties need agreed **order, sizes, and padding**—or a format that encodes fields without host padding.
 
 #### Uninterpreted memory dump
 
-For Layout 1 with `flag = 1`, `id = 42`, `score = 7` on a **little-endian** host (least significant byte at the **lowest** address—the usual rule on x86 and many ARM systems). Hexadecimal byte values use two digits per byte (for example `2a` means decimal 42).
+Consider Layout 1 with `flag = 1`, `id = 42`, and `score = 7` on a **little-endian** host. Little-endian means the least significant byte sits at the **lowest** address; that is the usual rule on x86 and many ARM systems. Hexadecimal byte values use two digits per byte (for example `2a` means decimal 42).
 
-Byte-by-byte map (each row is one address; field borders cannot drift):
+Here is a byte-by-byte map. Each row is one address, and the field borders cannot drift:
 
 | Offset | Byte (hex) | Belongs to | Role in the value |
 |-------:|:----------:|------------|-------------------|
@@ -145,7 +147,7 @@ Byte-by-byte map (each row is one address; field borders cannot drift):
 | 14 | `00` | **score** | |
 | 15 | `00` | **score** | most significant byte → together **score = 7** |
 
-Compact one-line view. Each column is exactly three characters (`NN` plus a space), so the `field` markers line up under the same offsets as `byte`:
+Here is a compact one-line view. Each column is exactly three characters (`NN` plus a space), so the `field` markers line up under the same offsets as `byte`:
 
 ```text
 offset  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 
@@ -153,7 +155,7 @@ byte    01 00 00 00 2a 00 00 00 07 00 00 00 00 00 00 00
 field   F  p  p  p  I  I  I  I  S  S  S  S  S  S  S  S  
 ```
 
-Legend: **F** = `flag` (value **1** at offset 00 only) · **p** = padding · **I** = `id` little-endian (**42** from `2a 00 00 00` at 04–07) · **S** = `score` little-endian (**7** from `07` then seven `00` at 08–15). Trailing zeros on multi-byte fields are high-order bits of a small number; they do **not** mean the value is zero.
+Legend: **F** is `flag` (value **1** at offset 00 only). **p** is padding. **I** is `id` in little-endian form (**42** from `2a 00 00 00` at offsets 04–07). **S** is `score` in little-endian form (**7** from `07` followed by seven `00` bytes at offsets 08–15). Trailing zeros on multi-byte fields are high-order bits of a small number; they do **not** mean the whole value is zero.
 
 **Same layout with `id = 43`** (still `flag = 1`, `score = 7`): only the byte under the first **I** changes (`2a` → `2b`, because 43₁₀ = `2b`₁₆).
 
@@ -163,16 +165,16 @@ byte    01 00 00 00 2b 00 00 00 07 00 00 00 00 00 00 00
 field   F  p  p  p  I  I  I  I  S  S  S  S  S  S  S  S  
 ```
 
-| Decimal | Hex | Little-endian 4-byte pattern (`id`) |
+| Decimal | Hex | Little-endian 4-byte pattern for `id` |
 |--------:|-----|--------------------------------------|
 | 42 | `2a` | `2a 00 00 00` |
 | 43 | `2b` | `2b 00 00 00` |
-| 256 | `100` | `00 01 00 00` (second byte becomes non-zero) |
+| 256 | `100` | `00 01 00 00` (the second byte becomes non-zero) |
 | 7 as 64-bit `score` | `7` | `07 00 00 00 00 00 00 00` |
 
-On a **big-endian** host the multi-byte fields would reverse byte order within each field (for example `id = 42` as `00 00 00 2a`). That is why uninterpreted dumps are not portable across endianness. Endianness is developed further in the next section.
+On a **big-endian** host the multi-byte fields would reverse byte order within each field (for example `id = 42` would appear as `00 00 00 2a`). That is why uninterpreted dumps are not portable across endianness. The next section develops endianness more carefully.
 
-A portable format might transmit only domain data under an explicit rule—for example “one-byte flag, then four-byte little-endian `id`, then eight-byte little-endian `score`,” **without** the three padding zeros—or employ JSON, MessagePack, or Protocol Buffers so that field identity does not depend on host offsets.
+A portable format might transmit only domain data under an explicit rule—for example “one-byte flag, then four-byte little-endian `id`, then eight-byte little-endian `score`,” **without** the three padding zeros. Or it might use JSON, MessagePack, or Protocol Buffers so that field identity does not depend on host offsets.
 
 #### Same record in two languages
 
@@ -186,14 +188,14 @@ struct Player { char flag; int32_t id; int64_t score; };
 player = {"flag": 1, "id": 42, "score": 7}
 ```
 
-The Python dictionary comprises references and hash-table machinery in the interpreter heap. There is **no** single 16-byte image equivalent to the C structure. “Binary dump of my object” is meaningful, if at all, **only inside one language and one compiler/runtime on one platform**—and often not even then for managed objects.
+The Python dictionary is built from references and hash-table machinery in the interpreter heap. There is **no** single 16-byte image equivalent to the C structure. “Binary dump of my object” is meaningful, if at all, **only inside one language and one compiler/runtime on one platform**—and often not even then for managed objects.
 
 ### Endianness
 
 A multi-byte integer is stored as **several bytes in a defined order**. Two common conventions are:
 
-- **Big-endian (BE):** most significant byte at the lowest address (analogous to writing the decimal numeral 1234 from left to right).  
-- **Little-endian (LE):** least significant byte at the lowest address—common on x86/x86-64 and many ARM hosts.
+- **Big-endian (BE):** the most significant byte sits at the lowest address. This is similar to writing the decimal numeral 1234 from left to right.
+- **Little-endian (LE):** the least significant byte sits at the lowest address. This is common on x86/x86-64 and many ARM hosts.
 
 **Example:** 32-bit value `0x12345678` (decimal 305 419 896):
 
@@ -204,22 +206,22 @@ A multi-byte integer is stored as **several bytes in a defined order**. Two comm
   Little-endian:  78  56  34  12
 ```
 
-If a little-endian writer emits those four bytes and a big-endian reader loads them as a native integer **without conversion**, the reader obtains a different numeric value. Network protocols historically adopted a **network byte order** (classical Internet Protocol stacks: big-endian). Every serialization format must **document** endianness—or avoid host integers as the interchange unit (for example decimal text in JSON). See also the [historical perspective](../101/historical_perspective.md).
+If a little-endian writer emits those four bytes and a big-endian reader loads them as a native integer **without conversion**, the reader obtains a different numeric value. Network protocols historically adopted a **network byte order**; classical Internet Protocol stacks used big-endian. Every serialization format must **document** endianness—or avoid host integers as the interchange unit (for example by using decimal text in JSON). See also the [historical perspective](../101/historical_perspective.md).
 
-Binary floating-point values are subject to the same byte-order considerations when stored in memory.
+Binary floating-point values face the same byte-order considerations when stored in memory.
 
 ### Alignment and zero-copy formats
 
-Formats designed for **in-place reads** (FlatBuffers-class designs—see [Zero-copy](zero-copy.md)) place fields so that a host can load integers from buffer offsets with limited extra work (typically assuming a documented endianness). That arrangement is not the absence of a format; it is a **layout specification** that resembles a convenient memory image while still forbidding raw host pointers into another process’s heap.
+Formats designed for **in-place reads** (FlatBuffers-class designs—see [Zero-copy](zero-copy.md)) place fields so that a host can load integers from buffer offsets with limited extra work, typically assuming a documented endianness. That arrangement is not the absence of a format. It is a **layout specification** that resembles a convenient memory image while still forbidding raw host pointers into another process’s heap.
 
 ### Managed objects and graphs
 
-In C, a small structure may store integers **inline** (the bytes of `id` sit inside the structure itself). In managed languages (Python, Java, C#, JavaScript, and similar environments), a “record” or “object” is often a **graph**: the variable holds a **reference** (an address-like handle into a heap managed by the runtime), and fields may be further references to strings, lists, or nested objects. Those addresses are meaningful only inside **this process** and **this runtime**; they must not be treated as portable data.
+In C, a small structure may store integers **inline**: the bytes of `id` sit inside the structure itself. In managed languages (Python, Java, C#, JavaScript, and similar environments), a “record” or “object” is often a **graph**. The variable holds a **reference**—an address-like handle into a heap managed by the runtime—and fields may be further references to strings, lists, or nested objects. Those addresses are meaningful only inside **this process** and **this runtime**. They must not be treated as portable data.
 
 Serializing such a structure “as memory” would require:
 
-1. following every reference to the objects it points to;  
-2. defining behaviour for **shared** objects (one object reachable by two paths) and **cycles** (A refers to B and B refers to A);  
+1. following every reference to the objects it points to;
+2. defining behaviour for **shared** objects (one object reachable by two paths) and **cycles** (A refers to B and B refers to A);
 3. recording **type** information so that the receiver can reconstruct objects of the correct kinds.
 
 #### Nested object with a string field
@@ -242,7 +244,7 @@ Illustrative layout in the heap (addresses are fictional):
                                                          length / type metadata …
 ```
 
-What a naïve “dump of `player`” would capture depends on the language, but it is **not** the twelve bytes of a packed C `struct { int32_t id; char name[4]; }`. More often one would obtain only the **reference** to the map (a machine word), or a runtime-specific object header—neither of which another process can interpret as “id 42 and name Ada.”
+What a naïve “dump of `player`” would capture depends on the language, but it is **not** the twelve bytes of a packed C `struct { int32_t id; char name[4]; }`. More often you would obtain only the **reference** to the map (a machine word), or a runtime-specific object header. Neither of those can be interpreted by another process as “id 42 and name Ada.”
 
 A portable encoding must emit the **logical content**, for example:
 
@@ -266,14 +268,14 @@ task_b = {"title": label}   # same string object, not a second copy
   task_b ──► { title ──┘ }
 ```
 
-In memory there is **one** string object and **two** references to it. A graph-aware native serializer may record that sharing (write the string once, then two back-references). A simple tree encoding (typical JSON) writes the characters twice:
+In memory there is **one** string object and **two** references to it. A graph-aware native serializer may record that sharing: write the string once, then two back-references. A simple tree encoding (typical JSON) writes the characters twice:
 
 ```json
 {"title": "urgent"}
 {"title": "urgent"}
 ```
 
-Both approaches can be correct for a given product; they are **different contracts**. An uninterpreted memory dump does not choose either contract—it only freezes process-local addresses that are useless elsewhere.
+Both approaches can be correct for a given product; they are simply **different contracts**. An uninterpreted memory dump does not choose either contract. It only freezes process-local addresses that are useless elsewhere.
 
 #### Cycle
 
@@ -300,64 +302,64 @@ struct Player {
 };
 ```
 
-Here `id` and the four `name` bytes can sit **inside** one contiguous block (plus padding rules from earlier sections). Even so, as soon as `name` becomes a `char *` pointer to a heap buffer, the C picture becomes a small graph as well: the structure holds an address, and the characters live elsewhere.
+Here `id` and the four `name` bytes can sit **inside** one contiguous block, plus the padding rules from earlier sections. Even so, as soon as `name` becomes a `char *` pointer to a heap buffer, the C picture becomes a small graph as well: the structure holds an address, and the characters live elsewhere.
 
 | Approach | What is stored for a string field | Portable as a raw dump? |
 |----------|-----------------------------------|-------------------------|
-| Inline fixed array in C | Character bytes inside the structure | Only with agreed size, order, and encoding |
+| Inline fixed array in C | Character bytes inside the structure | Only if size, order, and character encoding are agreed |
 | Managed object / `char *` | Reference (address or handle) to data elsewhere | **No** — addresses are process-local |
 | JSON / MessagePack / schema codec | Length or delimiters plus character bytes (or field numbers plus values) | **Yes**, under that format’s rules |
-| Language-native graph serializer (`pickle`, Java serialization, …) | Runtime type tags, handles, and payload for **that** VM | Only to the **same** language/runtime family; unsafe on untrusted input |
+| Language-native graph serializer (`pickle`, Java serialization, and similar) | Runtime type tags, handles, and payload for **that** virtual machine | Only within the **same** language/runtime family; unsafe on untrusted input |
 
-Language-native serializers perform graph walking for **one** runtime. Portable formats ordinarily flatten data to **trees or tables of values** (numbers, character data for strings, nested records) under explicit rules—never “here is a heap address from this virtual machine.”
+Language-native serializers walk graphs for **one** runtime. Portable formats ordinarily flatten data to **trees or tables of values**—numbers, character data for strings, nested records—under explicit rules. They never mean “here is a heap address from this virtual machine.”
 
 ---
 
 ## Costs and constraints
 
-| Axis | What changes | What usually does not |
-|------|----------------|------------------------|
-| Processor time | Byte swaps or copies when host endianness differs from the wire; scanning padding versus dense packing | The need for *some* layout rule |
-| Memory / allocations | Dense packed buffers versus pointer-rich graphs | A costless solution that ignores portability |
-| Size / bandwidth | Padding wastes bytes; pointers become identifiers or nested payloads | Free portability of raw `sizeof` dumps |
-| Operability | Hexadecimal dumps of packed formats require a decoder | Informal dumps that appear simple in a single-host debugger |
+| Axis | What changes with layout and format choices | What usually stays true |
+|------|---------------------------------------------|-------------------------|
+| Processor time | Byte swaps or copies when host endianness differs from the wire; scanning padding versus dense packing | You still need *some* layout rule |
+| Memory / allocations | Dense packed buffers versus pointer-rich graphs | There is no free solution that ignores portability |
+| Size / bandwidth | Padding wastes bytes; pointers become identifiers or nested payloads | Raw `sizeof` dumps are not free portability |
+| Operability | Hexadecimal dumps of packed formats need a decoder to understand | Informal dumps can look simple in a single-host debugger |
 | Security / trust | Accepting raw native images from untrusted parties is hazardous | — |
 
 ---
 
 ## Illustrative scenario
 
-A game client on a little-endian laptop writes player state with an uninterpreted copy of a packed C structure and uploads it to a backend. The backend may use a different compiler or CPU convention for field layout, or a managed language that stores fields in an entirely different way for garbage collection. Inventory counts become incorrect; the defect appears to be application logic until the byte sequences are compared with an endian-aware viewer.
+A game client on a little-endian laptop writes player state with an uninterpreted copy of a packed C structure and uploads it to a backend. The backend may use a different compiler or CPU convention for field layout, or a managed language that stores fields in an entirely different way for garbage collection (GC = automatic reclamation of unused memory). Inventory counts become incorrect. The defect looks like application logic until someone compares the byte sequences with an endian-aware viewer.
 
-A durable remedy is not an informal document describing structure packing. It is an explicit format (even a simple length-prefixed little-endian layout, or a schema-driven codec) shared by both ends.
+A durable remedy is not an informal document describing structure packing. It is an explicit format shared by both ends—even a simple length-prefixed little-endian layout, or a schema-driven codec.
 
 ---
 
 ## In this suite
 
-The harness measures **codecs**, not raw structure dumps: each registered serializer implements a defined encode and decode path over the same logical fixtures. That choice is deliberate—portable interchange is the subject of multi-language comparison.
+The harness measures **codecs**, not raw structure dumps. Each registered serializer implements a defined encode and decode path over the same logical fixtures. That choice is deliberate: portable interchange is the subject of multi-language comparison.
 
-**Results** therefore reflect the cost of *those* contracts (JSON text, MessagePack tags, Protocol Buffers field encodings, and so on), not an uninterpreted memory-copy baseline. For family groupings, see [Serialization categories](../../analysis/serialization_categories.md).
+**Results** therefore reflect the cost of *those* contracts—JSON text, MessagePack tags, Protocol Buffers field encodings, and so on—not an uninterpreted memory-copy baseline. For family groupings, see [Serialization categories](../../analysis/serialization_categories.md).
 
 ---
 
 ## Common errors of practice
 
-- Treating `sizeof` together with an uninterpreted binary write as a multi-language interface.  
-- Forgetting that **padding and field order** are decisions of the compiler and platform, not merely part of a mental model of the domain object.  
-- Assuming that the prevalence of little-endian hosts makes endianness irrelevant—**embedded systems, network equipment, and file formats** still require a written rule.  
-- Confusing **host layout** with **zero-copy wire layout**; the latter is designed, versioned, and free of host pointers.  
+- Treating `sizeof` together with an uninterpreted binary write as if that combination were a multi-language interface.
+- Forgetting that **padding and field order** are decisions of the compiler and platform, not merely part of how you picture the domain object in your head.
+- Assuming that because little-endian hosts are common, endianness no longer matters. **Embedded systems, network equipment, and file formats** still need a written rule.
+- Confusing **host layout** with **zero-copy wire layout**. The latter is designed, versioned, and free of host pointers into another process’s heap.
 - Transmitting language-native serializations of object graphs across a trust boundary (see security notes in the [engineering perspective](../101/engineer_perspective.md)).
 
 ---
 
 ## Key takeaways
 
-- In-memory layout optimises for one processor and runtime; the wire optimises for a shared contract.  
-- Padding, field order, pointer representation, and endianness all invalidate uninterpreted dumps as interchange.  
-- Portable formats replace host assumptions with explicit sizes, order, and byte order (or self-describing tags).  
-- Zero-copy formats still define a layout; they make that layout readable in place.  
-- Multi-language systems require an agreed encoding, not merely a shared C header.  
-- Measure real codecs on representative payloads; do not treat a local memory-copy microbenchmark as an interchange strategy.
+- In-memory layout optimizes for one processor and runtime; the wire optimizes for a shared contract.
+- Padding, field order, pointer representation, and endianness all prevent uninterpreted dumps from working as interchange.
+- Portable formats replace host assumptions with explicit sizes, order, and byte order—or with self-describing tags.
+- Zero-copy formats still define a layout; they make that layout readable in place instead of rebuilding a full object graph.
+- Multi-language systems need an agreed encoding, not merely a shared C header file.
+- Measure real codecs on representative payloads. A local memory-copy microbenchmark is not an interchange strategy.
 
 ---

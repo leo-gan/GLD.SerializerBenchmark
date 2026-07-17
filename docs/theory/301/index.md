@@ -1,104 +1,106 @@
 # Serialization 301: Production Data Serialization
 
-> Production serialization—trust, contracts, workloads, and honest measurement—for people who already know how formats work.
+> This course is about production serialization: trust, contracts, workloads, and honest measurement. It is written for people who already know how formats work and now need to choose what to ship.
 
 ## Who this is for
 
-Experienced students and developers who must **ship a choice** under conflicting constraints (trust, evolution, multi-language estates, performance claims). This is the **core** advanced course after [Serialization 201](../201/index.md).
+Serialization 301 is for experienced students and developers who must **ship a choice** under conflicting constraints. Those constraints usually include trust and security, schema evolution, multi-language estates, and performance claims that do not all point the same way. This is the **core** advanced course after [Serialization 201](../201/index.md).
 
-If you need to **implement** a codec (wire encoding, runtime paths, a subset lab), that is [Serialization 401](../401/index.md) (implementer elective)—not this course.
+If your goal is to **implement** a codec—wire encoding, runtime paths, or a subset lab—that work belongs in [Serialization 401](../401/index.md) (the implementer elective), not here.
 
 ## Prerequisites
 
 | Type | Requirement |
 |------|-------------|
-| **Hard** | [Serialization 101](../101/index.md) — trade-off axes and at least one lens |
-| **Hard** | [Serialization 201](../201/index.md) — especially schema identity, evolution, dynamic vs IDL, encode cost, zero-copy, compression vs format *(or equivalent experience)* |
+| **Hard** | [Serialization 101](../101/index.md) — trade-off axes and at least one of the three lenses |
+| **Hard** | [Serialization 201](../201/index.md) — especially schema identity, evolution, dynamic versus IDL (interface definition language) binary formats, encode cost, zero-copy, and compression versus format *(or equivalent experience)* |
 
-This course does **not** re-teach 201 mechanisms. Open the 201 article when you need a model; return here for multi-constraint judgment.
+This course does **not** re-teach 201 mechanisms. When you need a mechanism model, open the matching 201 article. Then return here for multi-constraint judgment: what to ship when several good answers conflict.
 
 ## Learning outcomes
 
 By the end of this course you should be able to:
 
-1. **Analyze** trust boundaries and state when portable vs language-native formats are acceptable.
-2. **Distinguish** operational schema cultures (e.g. Avro-style resolution vs Protobuf field-number discipline) without re-deriving wire rules.
-3. **Evaluate** workload fit (row vs columnar at system scale; polyglot contracts; RPC vs messaging shape).
-4. **Critique** benchmark claims using this suite’s paradigm-and-language rules.
-5. **Recommend** a family or approach under stated constraints and **justify** it with categories and **Results**.
-6. **Identify** what this harness cannot answer.
+1. **Analyze** trust boundaries and state when portable formats are required and when language-native formats might still be acceptable.
+2. **Distinguish** operational schema cultures (for example Avro-style writer/reader resolution versus Protobuf field-number discipline) without re-deriving wire rules from scratch.
+3. **Evaluate** workload fit: row versus columnar storage at system scale, polyglot contracts across languages, and the different shapes of RPC (remote procedure call) versus messaging payloads.
+4. **Critique** benchmark claims using this suite’s rules about paradigm families and single-language comparisons.
+5. **Recommend** a format family or approach under stated constraints and **justify** it with serialization categories and language **Results**.
+6. **Identify** what this benchmark harness cannot answer, so you do not over-claim.
 
 ## How this course fits the program
 
 | Course | Role |
 |--------|------|
-| [101](../101/index.md) | Foundations — what serialization is; axes and lenses |
-| [201](../201/index.md) | Mechanisms — how formats work |
-| **301 (this course)** | Production judgment — what to ship under constraints |
-| [401](../401/index.md) | Implementer elective — wire + language paths + lab |
+| [101](../101/index.md) | Foundations — what serialization is; trade-off axes and lenses |
+| [201](../201/index.md) | Mechanisms — how formats work under the hood |
+| **301 (this course)** | Production judgment — what to ship under real constraints |
+| [401](../401/index.md) | Implementer elective — wire formats, language paths, and a hands-on lab |
 
-Default path: **101 → 201 → 301**. Suite lab: [Benchmarks](../../analysis/index.md) and language **Results**.
+The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s harness, use the [Benchmarks](../../analysis/index.md) pages and each language’s **Results**.
 
 ## Suggested paths
 
-**Services track:** [trust boundaries](trust-boundaries.md) → [untrusted input](untrusted-input.md) → [using this suite](using-this-suite.md) → [two schema cultures](two-schema-cultures.md) / [public API contracts](public-api-contracts.md) → [rpc and messaging](rpc-and-messaging.md) → [implementation variance](implementation-variance.md) → cases [public REST](case-public-rest-api.md), [internal RPC](case-internal-rpc.md), [polyglot boundary](case-polyglot-boundary.md).
+You do not need to read every article in order. Pick a track that matches the problem you are solving.
 
-**Data / events track:** [using this suite](using-this-suite.md) → [row vs columnar](row-vs-columnar.md) → [two schema cultures](two-schema-cultures.md) → [schema registries](schema-registries.md) → [versioning](versioning-in-the-wild.md) → cases [event backbone](case-event-stream.md), [analytics lake](case-analytics-lake.md).
+**Services track.** Start with [trust boundaries](trust-boundaries.md) and [untrusted input](untrusted-input.md). Then read [using this suite](using-this-suite.md) so you do not misread numbers. Continue with [two schema cultures](two-schema-cultures.md) and [public API contracts](public-api-contracts.md), then [rpc and messaging](rpc-and-messaging.md) and [implementation variance](implementation-variance.md). Finish with the service case studies: [public REST](case-public-rest-api.md), [internal RPC](case-internal-rpc.md), and [polyglot boundary](case-polyglot-boundary.md).
 
-**Performance deep path:** [using this suite](using-this-suite.md) → [implementation variance](implementation-variance.md) → [latency tails and GC](latency-tails-and-gc.md) → [compression as system choice](compression-as-system-choice.md) → [zero-copy in production](zero-copy-in-production.md) → [faster postmortem](case-faster-postmortem.md).
+**Data and events track.** Start with [using this suite](using-this-suite.md) and [row vs columnar](row-vs-columnar.md). Then study [two schema cultures](two-schema-cultures.md), [schema registries](schema-registries.md), and [versioning](versioning-in-the-wild.md). Finish with [event backbone](case-event-stream.md) and [analytics lake](case-analytics-lake.md).
+
+**Performance deep path.** Start with [using this suite](using-this-suite.md) and [implementation variance](implementation-variance.md). Then read [latency tails and GC](latency-tails-and-gc.md) (garbage collection), [compression as system choice](compression-as-system-choice.md), and [zero-copy in production](zero-copy-in-production.md). Close with the [faster postmortem](case-faster-postmortem.md) case study.
 
 ## Modules
 
-### Trust & boundaries
+### Trust and boundaries
 
 | Article | You should be able to… |
 |---------|------------------------|
-| [Trust boundaries: portable vs native](trust-boundaries.md) | Say when native formats are unacceptable as interchange |
+| [Trust boundaries: portable vs native](trust-boundaries.md) | Explain when language-native formats are unacceptable as interchange |
 | [Untrusted input and parser risk](untrusted-input.md) | Name failure modes and controls for hostile payloads |
-| [Secrets, PII, and payload surfaces](payload-surfaces.md) | Spot leak surfaces in logs, traces, and secondary stores |
+| [Secrets, PII, and payload surfaces](payload-surfaces.md) | Spot leak surfaces in logs, traces, and secondary stores (PII means personally identifiable information) |
 
 ### Contracts that survive years
 
 | Article | You should be able to… |
 |---------|------------------------|
-| [Two schema cultures: Avro vs Protobuf](two-schema-cultures.md) | Contrast resolution culture vs field-number discipline |
-| [Schema registries and compatibility modes](schema-registries.md) | Choose and enforce BACKWARD / FORWARD / FULL-class policy |
-| [Public API contracts](public-api-contracts.md) | Require a hard contract when the wire is JSON |
-| [Versioning strategies in the wild](versioning-in-the-wild.md) | Plan dual-write, content-type, and kill criteria |
+| [Two schema cultures: Avro vs Protobuf](two-schema-cultures.md) | Contrast resolution culture with field-number discipline |
+| [Schema registries and compatibility modes](schema-registries.md) | Choose and enforce BACKWARD, FORWARD, or FULL-class compatibility policy |
+| [Public API contracts](public-api-contracts.md) | Require a hard contract even when the wire format is JSON |
+| [Versioning strategies in the wild](versioning-in-the-wild.md) | Plan dual-write periods, content-type versioning, and kill criteria for old paths |
 
 ### Workload architecture
 
 | Article | You should be able to… |
 |---------|------------------------|
-| [Row vs columnar at system scale](row-vs-columnar.md) | Keep RPC codecs out of lake design (and the reverse) |
-| [Polyglot estates](polyglot-estates.md) | Defend one product contract across runtimes |
-| [RPC and messaging payload design](rpc-and-messaging.md) | Shape messages for sync vs fan-out |
-| [Zero-copy in production](zero-copy-in-production.md) | Adopt zero-copy only when ops fit |
-| [Caching and queues](caching-and-queues.md) | Keep shared stores portable and versioned |
+| [Row vs columnar at system scale](row-vs-columnar.md) | Keep RPC message codecs out of lake design (and keep lake formats off the hot RPC path) |
+| [Polyglot estates](polyglot-estates.md) | Defend one product contract across several language runtimes |
+| [RPC and messaging payload design](rpc-and-messaging.md) | Shape messages differently for synchronous calls versus fan-out events |
+| [Zero-copy in production](zero-copy-in-production.md) | Adopt zero-copy layouts only when operations and tooling fit |
+| [Caching and queues](caching-and-queues.md) | Keep shared caches and queues portable and versioned |
 
 ### Performance as engineering
 
 | Article | You should be able to… |
 |---------|------------------------|
-| [Using this suite without fooling yourself](using-this-suite.md) | Read Results within paradigm and language |
+| [Using this suite without fooling yourself](using-this-suite.md) | Read Results within one paradigm family and one language |
 | [Implementation variance within a family](implementation-variance.md) | Choose libraries without ranking formats globally |
-| [Latency tails, allocations, and GC](latency-tails-and-gc.md) | Judge p99 and allocation pressure |
-| [Compression as a system choice](compression-as-system-choice.md) | Place gzip/zstd without replacing format design |
+| [Latency tails, allocations, and GC](latency-tails-and-gc.md) | Judge p99 (99th-percentile latency) and allocation pressure |
+| [Compression as a system choice](compression-as-system-choice.md) | Place gzip or zstd in the stack without treating compression as a format |
 
 ### Capstones
 
 | Case study | Focus |
 |------------|--------|
-| [Public REST API](case-public-rest-api.md) | JSON + validation vs dual contracts |
-| [Internal high-QPS RPC](case-internal-rpc.md) | Schema-driven vs schemaless binary |
-| [Event backbone](case-event-stream.md) | Avro/Protobuf + evolution under rolling deploy |
-| [Analytics lake](case-analytics-lake.md) | Columnar lake vs row event dumps |
-| [Cross-language service boundary](case-polyglot-boundary.md) | One contract, three languages |
-| [“We need it faster” postmortem](case-faster-postmortem.md) | Wrong bench vs wrong paradigm vs wrong payload |
+| [Public REST API](case-public-rest-api.md) | JSON plus validation versus dual contracts |
+| [Internal high-QPS RPC](case-internal-rpc.md) | Schema-driven binary versus schemaless binary (QPS means queries or requests per second) |
+| [Event backbone](case-event-stream.md) | Avro or Protobuf plus evolution under rolling deploys |
+| [Analytics lake](case-analytics-lake.md) | Columnar lake storage versus dumping row events forever |
+| [Cross-language service boundary](case-polyglot-boundary.md) | One contract shared by three languages |
+| [“We need it faster” postmortem](case-faster-postmortem.md) | Wrong benchmark versus wrong paradigm versus wrong payload |
 
 ## Lab notebooks (Python / Colab)
 
-Experiment notebooks implement selected article **Experiments** (decision labs, not full harness clones):
+Experiment notebooks implement selected article **Experiments**. They are decision labs, not full clones of the suite harness:
 
 | Notebook | Article |
 |----------|---------|
@@ -107,27 +109,27 @@ Experiment notebooks implement selected article **Experiments** (decision labs, 
 | [Two schema cultures](../notebooks/301/two_schema_cultures.ipynb) | [Two schema cultures](two-schema-cultures.md) |
 | [Row vs columnar](../notebooks/301/row_vs_columnar.ipynb) | [Row vs columnar](row-vs-columnar.md) |
 
-Notes: [notebooks README](../notebooks/README.md).
+Install and run notes live in the [notebooks README](../notebooks/README.md).
 
 ## Honesty rules
 
-Same program rules as 101 / 201:
+The same program rules apply as in 101 and 201:
 
-1. No universal winners — always under stated constraints.  
-2. Implementation beats brand name.  
-3. Payload shape matters.  
-4. Compare within paradigm and within one language before cross-cutting claims.  
-5. Security and trust are first-class.  
-6. Prose numbers are illustrative; **Results** own suite truth for this harness.
+1. There are no universal winners. Every recommendation is under stated constraints.
+2. Implementation quality beats brand name. Two libraries can share a format label and differ sharply.
+3. Payload shape matters. Dense records and deep graphs are different jobs.
+4. Compare within one paradigm family and within one language before making cross-cutting claims.
+5. Security and trust are first-class concerns, not afterthoughts.
+6. Numbers in prose are illustrative. Language **Results** own the suite truth for this harness.
 
-**301-specific:** every article includes **Experiments** (setup, procedure, decision rule for the page’s problem) and **Metrics** (primary signals for that experiment’s conclusion), plus **what this suite cannot tell you**. Prefer failure modes and decision tables over mechanism encyclopedias.
+**301-specific guidance:** every article includes **Experiments** (setup, procedure, and a decision rule for that page’s problem), **Metrics** (the primary signals for that experiment’s conclusion), and a section on **what this suite cannot tell you**. Prefer failure modes and decision tables over encyclopedias of wire formats.
 
 ## Assessment (self-check)
 
-Treat the capstone case studies as the course exam: under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the harness.
+Treat the capstone case studies as the course exam. Under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the harness.
 
 ## Where to go next
 
-- Finish or skim [Serialization 201](../201/index.md) if mechanisms are rusty.  
-- [Serialization categories](../../analysis/serialization_categories.md) and language **Results** for suite evidence.  
-- [Serialization 401](../401/index.md) if you build or deeply integrate codecs.
+- Finish or skim [Serialization 201](../201/index.md) if the mechanisms feel rusty.
+- Use [Serialization categories](../../analysis/serialization_categories.md) and language **Results** for suite evidence.
+- Move to [Serialization 401](../401/index.md) if you build or deeply integrate codecs.

@@ -5,40 +5,48 @@
 
 ## Problem
 
-Schema-driven formats are often described as “binary with field numbers.” That slogan does not teach you how to **read or emit bytes**, debug a hex dump, or implement a subset codec. Without the wire rules, language tutorials stay API-deep and 201’s “schema-dependent” concept never becomes operational.
+Schema-driven formats are often described as “binary with field numbers.” That slogan does not teach you how to **read or write the actual bytes**, how to debug a hexadecimal dump, or how to implement even a small subset codec. Without the wire rules, language tutorials stay at the API surface, and the idea from Serialization 201 that Protocol Buffers is **schema-dependent** never becomes something you can operate on.
 
 ## Short answer
 
-Protocol Buffers (proto3 binary encoding) write a sequence of **keyed fields**. Each field is a **tag** (field number + wire type) followed by a **payload** whose shape depends on the wire type: varint, fixed 32/64-bit, or length-delimited (strings, bytes, embedded messages, packed repeated). Field **names do not appear** on the wire; readers need the schema (or equivalent) to interpret numbers. Unknown fields are typically **skipped** by field number, which is why additive evolution works when numbers are never reused.
+Protocol Buffers (proto3 binary encoding) write a message as a **sequence of keyed fields**. Each field begins with a **tag** (also called a **key**): a small integer that packs the **field number** (which field this is in the schema) together with the **wire type** (how the following bytes are shaped). After the tag comes a **payload**. The payload shape depends on the wire type: a **varint** (variable-length integer), a fixed 32-bit or 64-bit value, or a **length-delimited** blob (often abbreviated **LEN**)—used for strings, raw bytes, nested messages, and packed repeated numbers.
 
-Assumes 201: [self-describing vs schema](../201/self-describing-vs-schema-dependent.md), [schema evolution](../201/schema-evolution.md).
+Field **names never appear** on the wire. A reader needs the schema (or equivalent knowledge of field numbers and types) to turn those numbers back into meaningful fields. Unknown field numbers are usually **skipped** by looking at the wire type and consuming the right number of bytes. That skip rule is why additive schema evolution works, as long as field numbers are never reused for a different meaning.
+
+This article assumes the 201 ideas in [self-describing vs schema](../201/self-describing-vs-schema-dependent.md) and [schema evolution](../201/schema-evolution.md).
 
 Official encoding reference: [Protocol Buffers encoding](https://protobuf.dev/programming-guides/encoding/).
 
 ## Prerequisites
 
-- Comfort with hex and unsigned integers.  
-- 201 vocabulary: schema-dependent wire, additive field numbers.  
-- Optional: skim shared suite schema `schemas/v2/protobuf/benchmark_v2.proto` for real field numbers (this page uses a **teaching mini-message**, not a full suite fixture).
+- Comfort with hexadecimal notation and unsigned integers.  
+- 201 vocabulary: schema-dependent wire formats and additive field numbers.  
+- Optional: skim the suite schema `schemas/v2/protobuf/benchmark_v2.proto` for realistic field numbers. This page uses a **teaching mini-message**, not a full suite fixture.
 
 ## Mental model
 
-A message is a sequence of **fields**. Each field is:
+A message is a sequence of **fields**. Each field looks like this on the wire:
 
 ```
 [key varint] [payload...]
 ```
 
-Where `key = (field_number << 3) | wire_type`.
+The key is computed as:
+
+```text
+key = (field_number << 3) | wire_type
+```
+
+In plain language: shift the field number three bits left, then put the wire-type code in the low three bits. That integer is itself written as a varint.
 
 | Wire type | Value | Payload |
 |-----------|------:|---------|
-| VARINT | 0 | unsigned varint |
+| VARINT | 0 | unsigned varint (variable-length integer) |
 | I64    | 1 | exactly 8 bytes, little-endian |
-| LEN    | 2 | varint length `n` + `n` bytes |
+| LEN    | 2 | a length (as a varint) `n`, then exactly `n` bytes |
 | I32    | 5 | exactly 4 bytes, little-endian |
 
-Example tag strip for `id = 1` (field 1, varint):
+Example tag strip for `id = 1` (field 1, varint payload):
 
 ```
 08 01
@@ -47,7 +55,7 @@ Example tag strip for `id = 1` (field 1, varint):
 key = (1<<3) | 0
 ```
 
-Nested message example (field 3 = manager with `id=2`):
+Nested message example (field 3 is a manager whose only content is `id = 2`):
 
 ```
 1a       02       08       02
@@ -58,9 +66,9 @@ Nested message example (field 3 = manager with `id=2`):
 outer key = (3<<3)|2 = 0x1a (field 3, LEN)
 ```
 
-(Wire types 3/4 are legacy group markers — avoid.)
+Wire types 3 and 4 are legacy “group” markers. Avoid them in new designs.
 
-**Teaching mini-message** (not a full suite fixture / `benchmark_data.proto`):
+**Teaching mini-message** (not a full suite fixture and not `benchmark_data.proto`):
 
 ```protobuf
 syntax = "proto3";
@@ -84,7 +92,7 @@ Example: field `1`, wire type VARINT (0) → key = `(1 << 3) | 0` = `8` = `0x08`
 
 Field `2`, LEN (2) → key = `(2 << 3) | 2` = `18` = `0x12`.
 
-The key is itself a **varint**. For field numbers **1–15**, a single-byte key is common (the low 4 bits of the field number fit with the 3-bit wire type). For field number **≥ 16**, the key needs more than one byte:
+The key is itself a **varint**. For field numbers **1–15**, a single-byte key is common, because the low four bits of the field number fit beside the three-bit wire type. For field number **16 or higher**, the key needs more than one byte:
 
 | Field | Wire type | key value | Hex (key only) |
 |------:|----------:|----------:|----------------|
@@ -94,8 +102,12 @@ The key is itself a **varint**. For field numbers **1–15**, a single-byte key 
 
 ### 2. Encode a varint (unsigned base-128)
 
-While value ≥ 128: emit `(value & 0x7f) | 0x80`, then `value >>= 7`.  
-Finally emit the last 7-bit group with high bit clear.
+A **varint** (variable-length integer) stores an unsigned integer in base-128 groups. Each byte carries seven data bits. The high bit of a byte means “more bytes follow.”
+
+Algorithm:
+
+1. While the value is at least 128: emit `(value & 0x7f) | 0x80`, then shift the value right by seven bits.  
+2. Finally emit the last seven-bit group with the high bit cleared.
 
 | Decimal | Hex bytes (illustrative) |
 |--------:|--------------------------|
@@ -104,68 +116,68 @@ Finally emit the last 7-bit group with high bit clear.
 | 128 | `80 01` |
 | 300 | `ac 02` |
 
-Signed **int32/int64** in proto3 use ordinary varints of their two’s-complement bit pattern (large magnitudes for negatives). **sint32/sint64** use zigzag; this course’s mini subset avoids sint unless you extend the lab.
+Signed **int32** / **int64** in proto3 use ordinary varints of their two’s-complement bit pattern. Negative values therefore expand to many bytes. **sint32** / **sint64** use **zigzag** encoding so that small negatives become small varints. This course’s mini subset avoids `sint` unless you extend the lab yourself.
 
 | Type | Logical −1 (illustrative) | Idea |
 |------|---------------------------|------|
-| `int32` / `int64` | many `ff` bytes as unsigned varint of two’s complement | Expensive for negatives |
-| `sint32` / `sint64` | zigzag → small varint (e.g. `01` for −1) | Prefer when negatives are common |
+| `int32` / `int64` | many `ff` bytes as the unsigned varint of two’s complement | Expensive when negatives are common |
+| `sint32` / `sint64` | zigzag maps −1 to a small varint (for example `01`) | Prefer when negatives are common |
 
-**bool:** `false` → often omitted in proto3 (default); `true` → tag + varint `01`.  
-**enum:** encoded as varint of the numeric value.
+**bool:** `false` is often omitted in proto3 (it is the default); `true` is a tag plus the varint `01`.  
+**enum:** encoded as the varint of the numeric enum value.
 
 #### Varint failure modes (codec concerns)
 
-A correct decoder must not assume “integers are small” or “the buffer is well-formed”:
+A correct decoder must not assume that “integers are small” or that “the buffer is well-formed”:
 
 | Failure | What goes wrong |
 |---------|-----------------|
-| **Truncated mid-varint** | High bit set on last available byte; need more input |
-| **Overlong encoding** | Value that fits in fewer bytes encoded with extra continuation bytes; reject or define policy |
-| **Too many continuation bytes** | Cap (e.g. 10 bytes for 64-bit); otherwise DoS via endless `0x80` stream |
-| **Truncated fixed / LEN** | Not enough bytes for 4/8 or for `n` payload bytes after length |
+| **Truncated mid-varint** | The high bit is set on the last available byte, so more input is required but the stream ended |
+| **Overlong encoding** | A value that fits in fewer bytes is written with extra continuation bytes; reject it or define a clear policy |
+| **Too many continuation bytes** | Cap the length (for example ten bytes for a 64-bit value); otherwise a hostile stream of `0x80` bytes can become a denial-of-service |
+| **Truncated fixed or LEN** | Not enough bytes remain for 4/8 fixed bytes, or for `n` payload bytes after a length prefix |
 
-Hostile payloads are an operational topic in [301 untrusted input](../301/untrusted-input.md); bounds belong in the decoder itself.
+Hostile payloads as an operational problem are covered in [301 untrusted input](../301/untrusted-input.md). Bounds checks still belong inside the decoder itself.
 
-### 3. Length-delimited (wire type 2)
+### 3. Length-delimited fields (wire type 2, often called LEN)
 
-**On the wire** the field is always:
+**On the wire** a length-delimited field is always:
 
 ```text
   [ key ][ len ][ payload bytes… ]
 ```
 
-**When encoding**, you usually stage the payload first so you know `len`:
+**When encoding**, you usually stage the payload first so you know `len` before you write it:
 
-1. Build payload bytes (UTF-8 string, raw bytes, or nested message encoding) in a temporary buffer.  
-2. Emit key with wire type 2.  
-3. Emit varint **length** of that payload.  
+1. Build the payload bytes (UTF-8 for a string, raw bytes, or a nested message encoding) in a temporary buffer.  
+2. Emit the key with wire type 2.  
+3. Emit the **length** of that payload as a varint.  
 4. Emit the payload bytes.
 
-Do not emit length *after* the payload on the wire—only after you have computed it.
+Do not emit the length *after* the payload on the wire. Staging the payload in memory first is fine; the on-wire order is always key, then length, then payload.
 
 ### 4. Nested message
 
-A nested message is **just another length-delimited blob** whose payload is itself a valid message encoding (concatenation of its fields). There is no special “nest” wire type.
+A nested message is **just another length-delimited blob**. Its payload is itself a valid message encoding—the concatenation of that nested message’s fields. There is no special “nest” wire type.
 
 ### 5. Repeated fields
 
-**Unpacked** (lab default): for `repeated uint32 tags = 4`, emit **one complete field** (key + varint) **per element**. Same key may appear multiple times.
+**Unpacked** (the lab default): for `repeated uint32 tags = 4`, emit **one complete field** (key plus varint value) **per element**. The same key may appear multiple times in one message.
 
-Example `tags = [1, 2]` only:
+Example for `tags = [1, 2]` only:
 
 ```
 20 01 20 02
 ^^ ^^ ^^ ^^
 |  |  |  value 2
-|  |  key field 4 VARINT again
+|  |  key for field 4, VARINT, again
 |  value 1
 key (4<<3)|0 = 0x20
 ```
 
-**Packed** (proto3 default for many generators on primitive numeric repeated): a **single** length-delimited field whose payload is the concatenation of element encodings—no per-element tags inside.
+**Packed** (the proto3 default that many code generators use for primitive numeric repeated fields): a **single** length-delimited field whose payload is the concatenation of element encodings. There are no per-element tags inside the packed block.
 
-Example same logical `tags = [1, 2]` as packed (field 4, LEN):
+Example for the same logical `tags = [1, 2]` as packed (field 4, LEN):
 
 ```
 22       02       01 02
@@ -194,7 +206,7 @@ while bytes remain:
   else: assign to schema field
 ```
 
-Skipping unknown fields requires understanding the wire type so you consume the correct number of bytes—**do not** assume fixed sizes. Always check that the buffer has enough remaining bytes before reading.
+Skipping unknown fields requires understanding the wire type so you consume the correct number of bytes. **Do not** assume every unknown field has a fixed size. Always check that the buffer has enough remaining bytes before you read.
 
 ### 7. Worked examples
 
@@ -221,39 +233,39 @@ Skipping unknown fields requires understanding the wire type so you consume the 
 
 **Full message:** `1a 02 08 02`
 
-Verify with any official parser that loads an equivalent `.proto` (see [lab](lab-mini-protobuf-encoder.md)).
+Verify these with any official parser that loads an equivalent `.proto` (see the [lab](lab-mini-protobuf-encoder.md)).
 
 ## In this suite
 
 | Asset | Role |
 |-------|------|
-| `schemas/v2/protobuf/benchmark_v2.proto` | Real multi-message suite schema—larger than MiniUser |
+| `schemas/v2/protobuf/benchmark_v2.proto` | Real multi-message suite schema—much larger than MiniUser |
 | [Python](protobuf-python.md) / [Rust](protobuf-rust-prost.md) / [C](protobuf-c-protobuf-c.md) | Language runtime implementations of **this** wire format |
-| [301 using this suite](../301/using-this-suite.md) | How not to misuse Results when comparing libs |
+| [301 using this suite](../301/using-this-suite.md) | How not to misuse Results when comparing libraries |
 
-Wire layout is language-agnostic; buffer ownership is covered in each language path article.
+Wire layout is language-agnostic. Buffer ownership (who allocates and who frees) is covered in each language-path article.
 
 ## Common mistakes
 
-- Putting field **names** on the wire (that is not classic Protobuf binary).  
-- Reusing field numbers after deletion without `reserved`.  
-- Forgetting length prefix on strings.  
-- Emitting length after payload on the wire (staging vs wire order).  
+- Putting field **names** on the wire (classic Protocol Buffers binary does not do that).  
+- Reusing field numbers after deletion without marking them `reserved`.  
+- Forgetting the length prefix on strings.  
+- Emitting the length after the payload on the wire (confusing staging order with wire order).  
 - Treating message field order as semantically required (encoders may differ; decoders must accept any order).  
 - Decoding without a skip path for unknown tags.  
-- Reading LEN/`n` or fixed widths without checking remaining buffer length.
+- Reading a LEN length `n` or a fixed width without checking remaining buffer length.
 
 ## What this article is not
 
 - A full proto3 language guide (maps, oneofs, extensions, editions, JSON mapping).  
-- gRPC framing (length-prefixed HTTP/2 messages **wrap** Protobuf payloads).  
-- Buffer ownership per language (see language path articles).  
-- A security playbook—see [301 untrusted input](../301/untrusted-input.md) for hostile operational controls; varint/LEN bounds above are the codec side.
+- gRPC framing (length-prefixed HTTP/2 messages **wrap** Protocol Buffers payloads; they are not the payload itself).  
+- Buffer ownership per language (see the language-path articles).  
+- A security playbook—see [301 untrusted input](../301/untrusted-input.md) for hostile operational controls. The varint and LEN bounds above are the codec-side half of that story.
 
 ## Key takeaways
 
-- Protobuf binary = **tagged fields**; key = `(number << 3) | wire_type` (key is a varint; large field numbers multi-byte).  
-- Payloads are varint, fixed 32/64, or length-delimited (`key | len | payload` on the wire).  
-- Nested messages are length-delimited messages; repeated unpacked = repeated tags; packed = one LEN of concatenated elements.  
-- Unknown fields are skipped by wire type—foundation of evolution.  
-- Language paths apply these bytes via codegen runtimes; the lab builds a subset by hand.
+- Protocol Buffers binary is a stream of **tagged fields**. The key is `(number << 3) | wire_type`, written as a varint; large field numbers need more than one key byte.  
+- Payloads are varints, fixed 32/64-bit values, or length-delimited blobs (`key | len | payload` on the wire).  
+- Nested messages are length-delimited messages. Unpacked repeated fields repeat tags; packed repeated fields use one LEN of concatenated elements.  
+- Unknown fields are skipped by wire type—that rule is the foundation of additive evolution.  
+- Language-path articles show how code-generated runtimes apply these bytes; the lab builds a small subset by hand.

@@ -2,102 +2,108 @@
 
 ## Problem
 
-JSON’s flexibility is a gift for browsers and integrators and a curse for accidental breakage: fields appear, types drift (`"1"` vs `1`), and renames ship without a version bump. Saying “we use JSON” is not a contract. Public APIs need an **external schema and process** as strict as IDL cultures—just with different artifacts.
+JSON’s flexibility is a gift for browsers and integrators and a curse for accidental breakage. Fields appear without notice, types drift (`"1"` versus `1`), and renames ship without a version bump. Saying “we use JSON” is not a contract.
+
+Public APIs need an **external schema and process** as strict as IDL cultures—just with different artifacts.
 
 ## Short answer
 
-For public or cross-org HTTP APIs, pair JSON with a **published contract**: OpenAPI and/or JSON Schema (or equivalent), server-side validation, consumer-driven or contract tests, and a versioning policy ([versioning in the wild](versioning-in-the-wild.md)). Choose JSON libraries for performance and correctness ([implementation variance](implementation-variance.md)); do not skip the contract layer because the bytes are text. Binary dual-stack is optional and earned ([case: public REST](case-public-rest-api.md)).
+For public or cross-organization HTTP APIs, pair JSON with a **published contract**: OpenAPI and/or JSON Schema (or an equivalent), server-side validation, consumer-driven or contract tests, and a versioning policy (see [versioning in the wild](versioning-in-the-wild.md)).
+
+Choose JSON libraries for performance and correctness (see [implementation variance](implementation-variance.md)). Do not skip the contract layer because the bytes happen to be text. A binary dual stack is optional and must be earned (see [case: public REST](case-public-rest-api.md)).
 
 ## Constraints that matter
 
 | Layer | Job |
 |-------|-----|
-| **Wire** | JSON (or dual content-types) |
-| **Contract doc** | OpenAPI / JSON Schema / protobuf if dual |
-| **Runtime validation** | Reject illegal bodies early |
-| **Tests** | Provider + consumer checks |
-| **Process** | Review, deprecation windows, changelog |
+| **Wire** | JSON bodies (or dual content types when a second encoding exists) |
+| **Contract document** | OpenAPI, JSON Schema, or Protobuf if you offer a dual stack |
+| **Runtime validation** | Reject illegal bodies early, before business logic runs |
+| **Tests** | Provider checks and consumer-driven checks |
+| **Process** | Review, deprecation windows, and a changelog |
 
 ## Decision frame
 
 | Need | Action |
 |------|--------|
-| Third-party integrators | Published OpenAPI; stable URLs; deprecation policy |
-| Type-safe clients | Generate from OpenAPI; or offer dual Protobuf |
-| Rapid internal-only iteration | Still validate; shorter deprecation OK |
-| “Schemaless for agility” | Accept silent client breakage—or stop claiming stability |
+| Third-party integrators | Publish OpenAPI; keep URLs stable; write a deprecation policy |
+| Type-safe clients | Generate clients from OpenAPI, or offer dual Protobuf for selected clients |
+| Rapid internal-only iteration | Still validate; shorter deprecation windows may be acceptable |
+| “Schemaless for agility” | Accept silent client breakage—or stop claiming the API is stable |
 
 ## Failure modes
 
 | Mistake | Outcome |
 |---------|---------|
-| OpenAPI stale vs server | Docs lie; clients fail |
-| Validate only in one gateway | Alternate entrypoints drift |
-| Optional everything | No real contract |
-| Breaking change without version | Integrator outages |
-| PII in examples | Doc surface leak ([payload surfaces](payload-surfaces.md)) |
+| OpenAPI goes stale relative to the server | Documentation lies; clients fail in surprising ways |
+| Validation only in one gateway | Alternate entry points drift from the contract |
+| Everything is optional | There is no real contract |
+| Breaking change without a version | Integrator outages |
+| PII in documentation examples | Documentation becomes a leak surface ([payload surfaces](payload-surfaces.md)) |
 
 ## Real-world sketch
 
-A fintech publishes OpenAPI 3 and generates TypeScript and Kotlin clients. CI fails if the server’s request models drift from the spec. A “quick” field rename without version bump is blocked. Performance work swaps Python JSON libraries using suite Results without touching the public contract.
+A fintech publishes OpenAPI 3 and generates TypeScript and Kotlin clients. Continuous integration fails if the server’s request models drift from the specification. A “quick” field rename without a version bump is blocked. Later performance work swaps Python JSON libraries using suite Results without touching the public contract at all.
 
 ## In this suite
 
 | Resource | Role |
 |----------|------|
 | JSON-family **Results** | Pick implementations per language |
-| [Categories](../../analysis/serialization_categories.md) | JSON vs other families |
-| [Using this suite](using-this-suite.md) | Fair comparisons |
-
+| [Categories](../../analysis/serialization_categories.md) | JSON versus other families |
+| [Using this suite](using-this-suite.md) | Fair comparisons inside a family |
 
 ## Experiments
 
-**Question:** Is the public wire **contract** hard enough (schema/OpenAPI/JSON Schema), and what breaks if we only “use JSON”?
+**Question:** Is the public wire **contract** hard enough (schema, OpenAPI, or JSON Schema), and what breaks if we only “use JSON”?
 
 ### Setup
-1. Collect public endpoints and current docs (OpenAPI, ad hoc examples).  
-2. List client languages and critical fields.  
-3. One proposed additive change and one breaking change.
+
+1. Collect public endpoints and current docs (OpenAPI or ad hoc examples).
+2. List client languages and critical fields.
+3. Prepare one proposed additive change and one breaking change.
 
 ### Procedure
-1. Validate production samples against the published schema (should pass).  
-2. Ship additive change; confirm old clients still work.  
-3. Attempt breaking change behind a new version or content-type; confirm old route unchanged.  
-4. Check error bodies for accidental internal leakage ([payload surfaces](payload-surfaces.md)).  
-5. Suite: optional JSON library compare for server language—**after** contract exists.
+
+1. Validate production samples against the published schema (they should pass).
+2. Ship the additive change and confirm old clients still work.
+3. Attempt the breaking change behind a new version or content type; confirm the old route is unchanged.
+4. Check error bodies for accidental internal leakage ([payload surfaces](payload-surfaces.md)).
+5. Optionally compare JSON libraries for the server language—**after** the contract exists.
 
 ### Decision rule
-- No machine-readable contract + multi-party clients ⇒ insufficient; add schema before optimizing codecs.  
-- Performance experiments only among codecs that honor the published contract.
+
+- No machine-readable contract plus multi-party clients is insufficient. Add a schema before optimizing codecs.
+- Run performance experiments only among codecs that honor the published contract.
 
 ## Metrics
 
 | Metric / signal | Role |
 |-----------------|------|
-| **Schema coverage** (% endpoints with formal schema) | **Primary** |
-| Contract-test pass rate in CI | Enforcement |
+| **Schema coverage** (percentage of endpoints with a formal schema) | **Primary** |
+| Contract-test pass rate in CI | Enforcement quality |
 | Breaking-change escape rate | Process quality |
 | Client SDK regenerate success | Contract usability |
-| Suite JSON `deser_median_ns` / size | Secondary server cost |
+| Suite JSON `deser_median_ns` and size | Secondary server cost |
 | `mean_fidelity` | Implementation correctness |
 
-**Conclusion style:** “OpenAPI + JSON Schema required; content-type versioning for breaks.”
+**Conclusion style:** “OpenAPI and JSON Schema are required; breaking changes use content-type versioning.”
 
 ## What this suite cannot tell you
 
-- OpenAPI style guide politics.  
-- Whether to use URL versioning vs header versioning.  
-- Partner communication SLAs.
+- OpenAPI style-guide politics inside your organization.
+- Whether to use URL versioning versus header versioning.
+- Partner communication service-level agreements.
 
 ## Common mistakes
 
-- Treating JSON Schema as optional documentation only.  
-- Generating OpenAPI from code without review (noise and breaks).  
-- Different field names in Android vs web “by accident.”
+- Treating JSON Schema as optional documentation only.
+- Generating OpenAPI from code without review (noise and accidental breaks).
+- Different field names in Android versus web clients “by accident.”
 
 ## Key takeaways
 
-- Public JSON needs a **hard contract process**, not vibes.  
-- Validation and tests enforce what prose promises.  
-- Suite helps choose JSON **libraries**, not whether a contract exists.  
+- Public JSON needs a **hard contract process**, not good intentions.
+- Validation and tests enforce what prose promises.
+- The suite helps you choose JSON **libraries**, not whether a contract exists.
 - Dual binary APIs are additive products—not a substitute for JSON governance.
