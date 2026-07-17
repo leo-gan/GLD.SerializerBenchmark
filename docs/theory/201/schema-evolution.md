@@ -6,15 +6,19 @@
 
 ## Problem
 
-Services and data pipelines are seldom deployed as a single atomic unit. For a period of time one invariably observes **older readers with newer writers**, **newer readers with older writers**, or both. A field rename regarded as “local to one team,” reuse of a Protocol Buffers field number, or removal of a JSON property without a defined default can break a consumer that was overlooked—or corrupt analytical results for an extended period before the defect is noticed.
+Services and data pipelines are seldom deployed as a single atomic unit. For a while you almost always have **older readers with newer writers**, **newer readers with older writers**, or both. A field rename that one team treats as “local,” reuse of a Protocol Buffers field number, or removal of a JSON property without a defined default can break a consumer that was overlooked—or corrupt analytical results for a long time before anyone notices.
 
-Evolution is not a library feature that can be enabled with a single configuration flag. It is a **compatibility policy** together with encoding rules that make that policy feasible.
+Evolution is not a library feature you enable with one configuration flag. It is a **compatibility policy** together with encoding rules that make that policy feasible.
 
 ---
 
 ## Short answer
 
-Safe evolution means defining what **writers may add, remove, or change** while **readers at a different version** still obtain a sufficiently correct view of the data. In practice one prefers **additive** optional fields with explicit defaults; one never repurposes identifiers (Protocol Buffers field numbers; Avro names under a stated compatibility mode; API property names without versioning); one documents nullability and defaults as product semantics; and one enforces policy in continuous integration or a schema registry when more than one team shares the contract. “Forward” and “backward” compatibility are **directional**—the required direction must be known before fields are deleted.
+Safe evolution means defining what **writers may add, remove, or change** while **readers at a different version** still obtain a sufficiently correct view of the data.
+
+In practice you prefer **additive** optional fields with explicit defaults. You never repurpose identifiers—Protocol Buffers field numbers, Avro names under a stated compatibility mode, or API property names without versioning. You document nullability and defaults as product semantics. When more than one team shares the contract, you enforce policy in continuous integration or a schema registry.
+
+“Forward” and “backward” compatibility are **directional**. You need to know which direction matters before you delete fields.
 
 ---
 
@@ -33,7 +37,7 @@ Safe evolution means defining what **writers may add, remove, or change** while 
     · in-place type change of an existing field
 ```
 
-If deployment cannot guarantee “all readers first” or “all writers first,” both directions must hold for a supported interval (**full** compatibility in the terminology of many schema registries).
+If deployment cannot guarantee “all readers first” or “all writers first,” both directions must hold for a supported interval. Many schema registries call that **full** compatibility.
 
 ---
 
@@ -43,11 +47,11 @@ If deployment cannot guarantee “all readers first” or “all writers first,�
 
 | Term (common usage) | Meaning |
 |---------------------|---------|
-| **Backward-compatible** change | **New software can read old data** (fields absent from old data receive defaults). |
-| **Forward-compatible** change | **Old software can read new data** (unknown fields are skipped or ignored). |
+| **Backward-compatible** change | **New software can read old data**. Fields absent from old data receive defaults. |
+| **Forward-compatible** change | **Old software can read new data**. Unknown fields are skipped or ignored. |
 | **Full** compatibility | Both properties hold for a defined support window. |
 
-Exact registry definitions vary; project documentation should be authoritative. The engineering idea is stable: **which side advances first** constrains admissible changes.
+Exact registry definitions vary; project documentation should be authoritative. The engineering idea is stable: **which side advances first** constrains which changes are allowed.
 
 ### Beginner example: adding a field
 
@@ -65,13 +69,13 @@ Version 2 adds `currency_code` (string), default `"USD"` when absent.
 | Writer v2 → Reader v1 | Reader v1 must **ignore** `currency_code` if unknown, and still process `order_id` and `total_cents`. |
 | Writer v1 → Reader v2 | Reader v2 must treat missing `currency_code` as **`"USD"`** (or another documented default), not as an error—unless the product deliberately requires a hard cut-over. |
 
-If version 2 instead **renames** `total_cents` to `amount_cents` without a dual-field period, older readers stop seeing the amount (key absent) and newer readers miss older writers’ key. The failure mode is often silent.
+If version 2 instead **renames** `total_cents` to `amount_cents` without a dual-field period, older readers stop seeing the amount (the old key is absent) and newer readers miss the key that older writers still send. The failure mode is often silent.
 
 ### Protocol Buffers–style evolution (field numbers)
 
-- New fields receive **new numbers**; they are introduced as optional (exact presence rules depend on language edition and toolchain).  
-- A field number must **never** be reused for a new meaning; deleted numbers and names should be marked `reserved`.  
-- Renaming a field in the `.proto` source without changing its number is a source-level rename; the binary wire form may remain compatible while JSON mappings and human-facing APIs may not.  
+- New fields receive **new numbers**. They are introduced as optional; exact presence rules depend on language edition and toolchain.
+- A field number must **never** be reused for a new meaning. Deleted numbers and names should be marked `reserved`.
+- Renaming a field in the `.proto` source without changing its number is a source-level rename. The binary wire form may remain compatible while JSON mappings and human-facing APIs may not.
 - Changing a field’s type in place is ordinarily a breaking change.
 
 **Illustration — unsafe reuse:**
@@ -81,7 +85,7 @@ If version 2 instead **renames** `total_cents` to `amount_cents` without a dual-
   v2:  field 3 = total (string decimal)   ← same number, new type/meaning
 ```
 
-Readers compiled for v1 interpret string-shaped bytes (or a different wire type) incorrectly; mixed fleets produce inconsistent accounts.
+Readers compiled for v1 interpret string-shaped bytes (or a different wire type) incorrectly. Mixed fleets produce inconsistent accounts.
 
 **Illustration — safer migration:**
 
@@ -94,14 +98,16 @@ Readers compiled for v1 interpret string-shaped bytes (or a different wire type)
 
 ### Avro-style evolution (writer and reader schemas)
 
-Protocol Buffers evolution is organised around **field numbers that stay on the wire forever**. Avro (and similar systems) organise evolution around **two schemas at read time**:
+Protocol Buffers evolution is organized around **field numbers that stay on the wire forever**. Avro (and similar systems) organize evolution around **two schemas at read time**:
 
 | Schema | Role |
 |--------|------|
 | **Writer schema** | Describes how the **bytes were encoded** when the record was produced (field names, types, order). |
 | **Reader schema** | Describes how the **application wants to see** the record now (possibly a newer or older version of the model). |
 
-The Avro runtime performs **schema resolution**: it matches fields between writer and reader (primarily by **name**, with optional aliases) and applies documented rules for missing fields, extra fields, and limited type promotions. The important beginner idea is: **the payload need not carry field names on every record** (in the binary encoding they are implied by the writer schema), yet the reader still needs a precise account of how the writer laid the values out—or a **schema id** that retrieves that account from a registry.
+The Avro runtime performs **schema resolution**: it matches fields between writer and reader (primarily by **name**, with optional aliases) and applies documented rules for missing fields, extra fields, and limited type promotions.
+
+The important beginner idea is this: **the payload need not carry field names on every record** (in the binary encoding they are implied by the writer schema), yet the reader still needs a precise account of how the writer laid the values out—or a **schema id** that retrieves that account from a registry.
 
 #### Minimal example: adding a field with a default
 
@@ -128,9 +134,9 @@ A record written with **v1** contains only two long values in the Avro binary la
 
 | Field | How the value is obtained |
 |-------|---------------------------|
-| `order_id` | decoded from the writer’s bytes |
-| `total_cents` | decoded from the writer’s bytes |
-| `currency_code` | **not on the wire** → filled from the **default** in the reader schema (`"USD"`) |
+| `order_id` | Decoded from the writer’s bytes |
+| `total_cents` | Decoded from the writer’s bytes |
+| `currency_code` | **Not on the wire** → filled from the **default** in the reader schema (`"USD"`) |
 
 That is **backward-compatible** evolution in the “new software reads old data” sense: the new reader understands old bytes because the new field has a default.
 
@@ -140,8 +146,8 @@ That is **backward-compatible** evolution in the “new software reads old data�
 
 | Field on the wire (v2 writer) | Old reader (v1) behaviour under resolution |
 |-------------------------------|--------------------------------------------|
-| `order_id`, `total_cents` | decoded as usual |
-| `currency_code` | **no matching field** in the reader schema → value is **skipped / discarded** for that application |
+| `order_id`, `total_cents` | Decoded as usual |
+| `currency_code` | **No matching field** in the reader schema → value is **skipped / discarded** for that application |
 
 The old application never sees `currency_code`, but it continues to process the fields it knows. That supports **forward-compatible** change (old software reading new data) when the project’s compatibility rules allow the writer to add fields.
 
@@ -166,8 +172,8 @@ A reader cannot know whether the second long is `total_cents` or something else.
 | Pattern | What travels with the bytes |
 |---------|-----------------------------|
 | **Object container file** (classic Avro files) | Writer schema (or enough metadata) in the file header; many records share it |
-| **Schema registry** (common on event buses) | Small **schema id** (or fingerprint) per record or per batch; the full writer schema is fetched from the registry |
-| **Out-of-band agreement** | Both sides pinned to the same schema version by deployment process alone (fragile at scale) |
+| **Schema registry** (common on event buses) | A small **schema id** (or fingerprint) per record or batch; the full writer schema is fetched from the registry |
+| **Out-of-band agreement** | Both sides are pinned to the same schema version by deployment process alone (fragile at scale) |
 
 **Illustrative registry flow:**
 
@@ -187,31 +193,31 @@ The consumer’s **reader schema** may be v3 (extra fields with defaults, rename
 
 #### Rename via alias (sketch)
 
-Writer still uses the old field name; reader prefers a new name:
+The writer still uses the old field name; the reader prefers a new name:
 
 ```text
   Writer schema:   long total_cents;
   Reader schema:   long amount_cents;   with alias "total_cents"
 ```
 
-Resolution maps the writer’s `total_cents` bytes onto the reader’s `amount_cents` field. Without an alias or a dual-field period, a pure rename is a **break** (same problem as JSON key renames).
+Resolution maps the writer’s `total_cents` bytes onto the reader’s `amount_cents` field. Without an alias or a dual-field period, a pure rename is a **break**—the same problem as JSON key renames.
 
 #### Contrast with Protocol Buffers (same logical change)
 
 | Concern | Protocol Buffers (typical) | Avro (typical) |
 |---------|----------------------------|----------------|
-| Field identity on the wire | **Numbers** (`total_cents = 3`) | **Names** in the schema; binary layout follows the writer schema |
-| What the reader must know | Compiled message types / descriptors (numbers stable) | **Writer schema** (or id) **and** reader schema |
-| New field | New number; old readers skip unknown numbers | New name + default for old data; old readers skip unknown names under resolution |
-| Operational centre of gravity | `.proto` ownership and reserved numbers | Schema registry, compatibility modes (BACKWARD / FORWARD / FULL, product-specific) |
+| Field identity on the wire | **Numbers** (for example `total_cents = 3`) | **Names** in the schema; binary layout follows the writer schema |
+| What the reader must know | Compiled message types / descriptors (numbers stay stable) | **Writer schema** (or id) **and** reader schema |
+| New field | New number; old readers skip unknown numbers | New name plus a default for old data; old readers skip unknown names under resolution |
+| Operational center of gravity | `.proto` ownership and reserved numbers | Schema registry and compatibility modes (BACKWARD / FORWARD / FULL, product-specific) |
 
-Neither model removes the need for a **compatibility policy**; they implement that policy with different mechanisms. For analytical pipelines and lake-oriented formats, see also the [data science perspective](../101/data_science_perspective.md).
+Neither model removes the need for a **compatibility policy**. They implement that policy with different mechanisms. For analytical pipelines and lake-oriented formats, see also the [data science perspective](../101/data_science_perspective.md).
 
 ### JSON and schemaless binary formats
 
-- **Additive** properties are the usual safe change; consumers that require forward compatibility should ignore unknown keys.  
-- **Renames** fail silently (old key absent; new key ignored by older clients).  
-- **Type changes** of an existing key (for example, string to object) are breaking.  
+- **Additive** properties are the usual safe change. Consumers that need forward compatibility should ignore unknown keys.
+- **Renames** fail silently: the old key is absent, and the new key is ignored by older clients.
+- **Type changes** of an existing key (for example string to object) are breaking.
 - Without automated validation, “compatibility” is only as strong as the weakest client.
 
 **Minimal JSON examples:**
@@ -231,10 +237,10 @@ Neither model removes the need for a **compatibility policy**; they implement th
 
 Wire formats cannot invent product meaning. Designers must decide explicitly:
 
-- missing field versus explicit null versus a numeric zero default;  
+- whether a missing field, an explicit null, and a numeric zero default mean different things;
 - whether the value `0` is allowed to mean “unset” (usually a poor design).
 
-Code generators and serializers differ; tests should cover fixtures for **old payload × new reader** and **new payload × old reader**.
+Code generators and serializers differ. Tests should cover fixtures for **old payload × new reader** and **new payload × old reader**.
 
 ---
 
@@ -242,9 +248,9 @@ Code generators and serializers differ; tests should cover fixtures for **old pa
 
 | Axis | Consequence of weak evolution discipline | Benefit of disciplined practice |
 |------|------------------------------------------|----------------------------------|
-| Evolution risk | Service failures; corrupted stores; undeliverable messages | Rolling deployments without synchronized flag days |
+| Evolution risk | Service failures, corrupted stores, undeliverable messages | Rolling deployments without synchronized flag days |
 | Operability | Emergency reconstruction of schema history | Versioned schemas and clear ownership |
-| Size / bandwidth | Optional fields retained indefinitely accumulate | Planned deprecation windows |
+| Size / bandwidth | Optional fields kept forever slowly accumulate | Planned deprecation windows |
 | Tooling | Informal documents that drift from reality | Registry, breaking-change checks, contract tests |
 | Security / trust | Misinterpretation after silent type changes | Explicit validation of untrusted shapes |
 
@@ -252,37 +258,39 @@ Code generators and serializers differ; tests should cover fixtures for **old pa
 
 ## Illustrative scenario
 
-A billing field `amount_cents` (integer) is “replaced” by `amount` (decimal string) by reusing the same JSON key or the same Protocol Buffers field number. Part of the deployment still expects integers; part expects strings; some components write both. Reconciliation fails for a subset of accounts. A sound approach introduces a **new field** (or a versioned API), dual-writes and dual-reads during a migration window, then retires the old field with `reserved` markers or formal API deprecation—not an in-place type substitution.
+A billing field `amount_cents` (integer) is “replaced” by `amount` (decimal string) by reusing the same JSON key or the same Protocol Buffers field number. Part of the deployment still expects integers; part expects strings; some components write both. Reconciliation fails for a subset of accounts.
+
+A sound approach introduces a **new field** (or a versioned API), dual-writes and dual-reads during a migration window, then retires the old field with `reserved` markers or formal API deprecation—not an in-place type substitution.
 
 ---
 
 ## In this suite
 
-Benchmark fixtures assume a **stable logical model** so that libraries remain comparable; the suite is not a schema-registry simulator. Use Serialization 201 and the perspective documents for evolutionary *judgment*; use **Results** for encode and decode cost of a chosen codec once the contract is fixed.
+Benchmark fixtures assume a **stable logical model** so that libraries remain comparable. The suite is not a schema-registry simulator. Use Serialization 201 and the perspective documents for evolutionary *judgment*; use **Results** for encode and decode cost of a chosen codec once the contract is fixed.
 
-When evaluating schema-driven libraries on language overview pages, production use still requires an organization’s own compatibility process—the harness does not replace it.
+When you evaluate schema-driven libraries on language overview pages, production use still requires your organization’s own compatibility process. The harness does not replace it.
 
 ---
 
 ## Common errors of practice
 
-- Reusing Protocol Buffers field numbers or Avro names under incompatible modes.  
-- Deploying writers that emit a newly required field before all readers understand it.  
-- Renaming JSON properties without versioning or a dual-field period.  
-- Treating “optional in the interface description” as “optional in the product” without defaults.  
-- Omitting consumer tests against **reference payloads** from older versions.  
-- Deleting fields on the same day writers stop emitting them (no drain interval).
+- Reusing Protocol Buffers field numbers or Avro names under incompatible modes.
+- Deploying writers that emit a newly required field before all readers understand it.
+- Renaming JSON properties without versioning or a dual-field period.
+- Treating “optional in the interface description” as “optional in the product” without defaults.
+- Omitting consumer tests against **reference payloads** from older versions.
+- Deleting fields on the same day writers stop emitting them, with no drain interval.
 
 ---
 
 ## Key takeaways
 
-- Evolution is a **policy together with encoding rules** under rolling deployment and long-lived data.  
-- Determine whether older readers, older writers, or both must be supported during migration.  
-- Prefer additive optional fields with explicit defaults; never repurpose identifiers.  
-- Flexibility of JSON does not remove the need for a compatibility strategy.  
-- Registry and continuous-integration enforcement scale more reliably than informal coordination alone.  
-- Dual-read and dual-write migration windows are preferable to simultaneous type changes.  
+- Evolution is a **policy together with encoding rules** under rolling deployment and long-lived data.
+- Decide whether older readers, older writers, or both must be supported during migration.
+- Prefer additive optional fields with explicit defaults, and never repurpose identifiers.
+- Flexibility of JSON does not remove the need for a compatibility strategy.
+- Registry and continuous-integration enforcement scale more reliably than informal coordination alone.
+- Dual-read and dual-write migration windows are preferable to simultaneous type changes.
 - Test old×new and new×old payloads, not only matched-version paths.
 
 ---
