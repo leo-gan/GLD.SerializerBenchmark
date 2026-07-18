@@ -8,15 +8,15 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"serializer-benchmark-go/model"
+	modelv2 "serializer-benchmark-go/model/v2"
 )
 
-func fixtureByName(name string) model.Fixture {
-	for _, f := range model.AllFixtures(42) {
-		if f.Name == name {
-			return f
-		}
+func v2Fixture(typeID string) model.Fixture {
+	val := modelv2.MakeOne(typeID, nil, 42, 0)
+	if val == nil {
+		panic("unknown v2 type: " + typeID)
 	}
-	panic("fixture not found: " + name)
+	return model.Fixture{Name: typeID, Value: val}
 }
 
 func TestMsgpackUsesReusedEncoder(t *testing.T) {
@@ -24,7 +24,7 @@ func TestMsgpackUsesReusedEncoder(t *testing.T) {
 	if s.enc == nil {
 		t.Fatal("expected reused Encoder")
 	}
-	fx := fixtureByName("Person")
+	fx := v2Fixture("message")
 	if err := s.Prepare(fx); err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestMsgpackUsesReusedEncoder(t *testing.T) {
 
 func TestProtobufTimedPathReturnsMessage(t *testing.T) {
 	s := newGoogleProtobuf()
-	fx := fixtureByName("Person")
+	fx := v2Fixture("message")
 	if err := s.Prepare(fx); err != nil {
 		t.Fatal(err)
 	}
@@ -84,11 +84,11 @@ func TestProtobufTimedPathReturnsMessage(t *testing.T) {
 }
 
 func TestAvroSchemaCache(t *testing.T) {
-	a, err := schemaFor("Person")
+	a, err := schemaFor("message")
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := schemaFor("Person")
+	b, err := schemaFor("message")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,10 +98,10 @@ func TestAvroSchemaCache(t *testing.T) {
 	}
 }
 
-func TestAllSerializersPersonRoundtrip(t *testing.T) {
-	fx := fixtureByName("Person")
+func TestAllSerializersMessageRoundtrip(t *testing.T) {
+	fx := v2Fixture("message")
 	for _, ser := range All() {
-		if !ser.Supports("Person") {
+		if !ser.Supports("message") {
 			continue
 		}
 		t.Run(ser.Name(), func(t *testing.T) {
@@ -145,13 +145,14 @@ func TestRegistryHasExpectedNames(t *testing.T) {
 	}
 }
 
-func TestProtobufDoesNotSupportInteger(t *testing.T) {
+func TestProtobufSupportsOnlyV2(t *testing.T) {
 	s := newGoogleProtobuf()
-	if s.Supports("Integer") {
-		t.Fatal("protobuf should exclude bare Integer")
+	// Legacy V1 names must not be accepted.
+	if s.Supports("Person") || s.Supports("Integer") || s.Supports("ObjectGraph") || s.Supports("EDI_835") {
+		t.Fatal("protobuf should not support V1 fixture names")
 	}
-	if !s.Supports("ObjectGraph") {
-		t.Fatal("protobuf should support flat ObjectGraph")
+	if !s.Supports("message") || !s.Supports("document") || !s.Supports("event") {
+		t.Fatal("protobuf should support v2 type_ids")
 	}
 }
 
@@ -159,7 +160,7 @@ func TestCallPathDocsMentionOptimizations(t *testing.T) {
 	// Sanity: msgpack file documents Encoder reuse.
 	// (structural guard so the optimized path is not silently removed)
 	s := newVmihailencoMsgpack()
-	fx := fixtureByName("SimpleObject")
+	fx := v2Fixture("document")
 	_ = s.Prepare(fx)
 	raw, _ := s.SerializeBytes(fx)
 	var stream bytes.Buffer
@@ -221,10 +222,10 @@ func TestStreamModeLabels(t *testing.T) {
 	}
 }
 
-func TestAllSerializersPersonStreamRoundtrip(t *testing.T) {
-	fx := fixtureByName("Person")
+func TestAllSerializersMessageStreamRoundtrip(t *testing.T) {
+	fx := v2Fixture("message")
 	for _, ser := range All() {
-		if !ser.Supports("Person") {
+		if !ser.Supports("message") {
 			continue
 		}
 		t.Run(ser.Name(), func(t *testing.T) {

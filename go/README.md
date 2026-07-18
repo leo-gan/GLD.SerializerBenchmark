@@ -61,5 +61,5 @@ Analysis: `analyze-benchmarks -l go`.
 
 ## Build notes
 
-- `scripts/generate-protobuf.sh` regenerates protobuf bindings for the suite schema.  
-- Generated code under `gen/` is committed for offline builds.
+- `scripts/generate-protobuf.sh` regenerates Data Model v2 protobuf bindings into `gen/pbv2/`.  
+- Generated code under `gen/pbv2/` is committed for offline builds.

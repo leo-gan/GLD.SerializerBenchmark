@@ -68,7 +68,7 @@ outer key = (3<<3)|2 = 0x1a (field 3, LEN)
 
 Wire types 3 and 4 are legacy “group” markers. Avoid them in new designs.
 
-**Teaching mini-message** (not a full suite fixture and not `benchmark_data.proto`):
+**Teaching mini-message** (not a full suite fixture and not `schemas/v2/protobuf/benchmark_v2.proto`):
 
 ```protobuf
 syntax = "proto3";

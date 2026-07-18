@@ -31,7 +31,7 @@ export function pkgVersion(packageName) {
   return '';
 }
 
-/** All fixtures including ObjectGraph (flat index edges — not live cycles). */
+/** Suite supports all official V2 type ids (message, document, telemetry, strings, event). */
 export function baseSupports(_name) {
   return true;
 }

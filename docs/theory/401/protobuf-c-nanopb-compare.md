@@ -178,12 +178,13 @@ Whether to use Protocol Buffers at all is a [301](../301/index.md) product and p
 
 | Entry | Role |
 |-------|------|
-| `protobuf-c` | Classic path; see the [protobuf-c article](protobuf-c-protobuf-c.md) |
-| `nanopb` | `c/src/serializers/ser_nanopb.c` — separate log name; version **0.4.9** |
-| Shared helpers | Some C schema entries share fixture and wire helpers—read the language [C Overview](../../c/index.md) and serializer notes for what is timed and what fidelity means |
-| [C Results](../../c/results.md) | Compare **within C** and the schema-driven family ([301 using this suite](../301/using-this-suite.md)) |
+| `protobuf` | Official **Google libprotobuf** on C (sysroot); full generated messages from `benchmark_v2.proto` |
+| `protobuf-c` | Separate log name; linked **v1.5.0**; timed path is currently the shared `fixture_pb_v2` wire helper (see [C Overview](../../c/index.md)) |
+| `nanopb` | Separate log name; linked **0.4.9** (`ser_nanopb.c`); timed path is currently the **same** shared wire helper—not a full nanopb `pb_encode` / options-codegen benchmark |
+| `protobuf-wire` | In-tree proto3 tags only (not Google upb) |
+| [C Results](../../c/results.md) | Compare **within C** and the schema-driven family ([301 using this suite](../301/using-this-suite.md)); regenerate after harness changes |
 
-Do not treat a faster `nanopb` row as “protobuf-c is wrong for servers,” or the reverse for microcontrollers.
+Do **not** treat suite `nanopb` vs `protobuf-c` rows as a head-to-head of full library stacks until each times its native generated path. The article above still describes the real engines for product choices outside the suite.
 
 ## Common mistakes
 

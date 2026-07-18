@@ -126,13 +126,13 @@ def test_bootstrap_ci_contains_mean():
 def test_derive_seed_independent_across_groups():
     """Different performance keys must not share the same bootstrap seed."""
     base = 42
-    s1 = _derive_seed(base, "python", "orjson", "Person", "bytes")
-    s2 = _derive_seed(base, "python", "msgpack", "Person", "bytes")
-    s3 = _derive_seed(base, "csharp", "orjson", "Person", "bytes")
+    s1 = _derive_seed(base, "python", "orjson", "message", "bytes")
+    s2 = _derive_seed(base, "python", "msgpack", "message", "bytes")
+    s3 = _derive_seed(base, "csharp", "orjson", "message", "bytes")
     assert s1 != s2
     assert s1 != s3
     # Deterministic
-    assert s1 == _derive_seed(base, "python", "orjson", "Person", "bytes")
+    assert s1 == _derive_seed(base, "python", "orjson", "message", "bytes")
 
 
 def test_bootstrap_seeds_differ_for_two_serializers():
@@ -141,8 +141,8 @@ def test_bootstrap_seeds_differ_for_two_serializers():
         + _make_records(30, ser_ns=2000, serializer="slow")
     )
     # Spy on bootstrap_ci seeds via _derive_seed outcomes from group keys
-    key_fast = ("fast", "Person", "bytes", "python")
-    key_slow = ("slow", "Person", "bytes", "python")
+    key_fast = ("fast", "message", "bytes", "python")
+    key_slow = ("slow", "message", "bytes", "python")
     assert _derive_seed(42, key_fast, "total") != _derive_seed(42, key_slow, "total")
     # Still produces valid CIs
     stats = compute_statistics(recs, config={
@@ -211,7 +211,7 @@ def _make_records(n=20, ser_ns=1000, deser_ns=2000, lang="python", serializer="o
         recs.append({
             "Language": lang,
             "StringOrStream": "bytes",
-            "TestDataName": "Person",
+            "TestDataName": "message",
             "Repetitions": n,
             "RepetitionIndex": i,
             "SerializerName": serializer,
@@ -312,10 +312,10 @@ def test_save_baseline_skipped_when_regression(tmp_path):
     baseline = tmp_path / "baseline.json"
     # Fast baseline
     good = {
-        ("orjson", "Person", "bytes", "python"): {
+        ("orjson", "message", "bytes", "python"): {
             "language": "python",
             "serializer": "orjson",
-            "test_data": "Person",
+            "test_data": "message",
             "mode": "bytes",
             "avg_time_total_ns": 1000.0,
             "avg_ops_per_sec": 1e6,
@@ -327,10 +327,10 @@ def test_save_baseline_skipped_when_regression(tmp_path):
 
     # Current is much slower
     bad = {
-        ("orjson", "Person", "bytes", "python"): {
+        ("orjson", "message", "bytes", "python"): {
             "language": "python",
             "serializer": "orjson",
-            "test_data": "Person",
+            "test_data": "message",
             "mode": "bytes",
             "avg_time_total_ns": 5000.0,
             "avg_ops_per_sec": 2e5,
@@ -349,5 +349,5 @@ def test_save_baseline_skipped_when_regression(tmp_path):
     after = baseline.read_text(encoding="utf-8")
     assert before == after
     stored = json.loads(after)
-    key = "python|orjson|Person|bytes"
+    key = "python|orjson|message|bytes"
     assert stored[key]["avg_time_total_ns"] == 1000.0

@@ -6,9 +6,11 @@
   "main": "src/runner.js",
   "scripts": {
     "benchmark": "node src/runner.js",
-    "smoke": "node src/runner.js 2 JSON Person",
+    "smoke": "node src/runner.js 2 JSON message",
     "test": "node --test test/runner.test.js",
-    "generate:protobuf-es": "bash scripts/generate-protobuf-es.sh"
+    "generate:protobuf-es": "bash scripts/generate-protobuf-es.sh",
+    "generate:google-protobuf": "bash scripts/generate-google-protobuf.sh",
+    "generate:protobuf": "npm run generate:protobuf-es && npm run generate:google-protobuf"
   },
   "engines": {
     "node": ">=18"
@@ -28,6 +30,7 @@
     "devalue": "^5.8.1",
     "fast-json-stringify": "^6.0.0",
     "flatbuffers": "^24.12.23",
+    "google-protobuf": "^3.21.4",
     "msgpackr": "^1.11.0",
     "protobufjs": "^7.4.0"
   },

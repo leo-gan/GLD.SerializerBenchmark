@@ -48,6 +48,9 @@ void register_all_serializers(serializer_t *out, int *count) {
 #ifdef HAS_PROTOBUF_C
     bench_register_protobuf_c(out, count);
 #endif
+#ifdef HAS_LIBPROTOBUF
+    bench_register_protobuf_google(out, count);
+#endif
 #ifdef HAS_UPB_WIRE
     bench_register_upb(out, count);
 #endif

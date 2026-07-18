@@ -17,11 +17,10 @@ namespace bench {
 namespace {
 
 // ---------------------------------------------------------------------------
-// Protocol Buffers — standard proto3 wire for schemas/v2/protobuf/benchmark_v2.proto
-// Dual C/C++: C suite uses nanopb / protobuf-c / in-tree wire; C++ uses this codec
-// matching the shared .proto field numbers (same wire family as google.protobuf).
-// Optimal path: encode/decode into reused vector; convert domain in prepare (untimed
-// domain is already suite structs — timed path is pure wire).
+// Protocol Buffers — in-tree proto3 wire for schemas/v2/protobuf/benchmark_v2.proto
+// Registered as "protobuf-wire". Official Google libprotobuf is ser_protobuf_lib.cpp
+// ("protobuf"). C suite uses nanopb / protobuf-c / in-tree wire (not this file).
+// Optimal path: encode/decode into reused vector; timed path is pure wire.
 // ---------------------------------------------------------------------------
 
 // Minimal protobuf wire helpers (proto3).
@@ -412,9 +411,12 @@ static Value pb_decode_value(const std::vector<uint8_t>& data, const std::string
   return pb_decode_event(data);
 }
 
-class ProtobufSer final : public ISerializer {
+// Suite in-tree proto3 wire (not libprotobuf). Kept for parity with the old
+// codec and for environments without the protobuf sysroot. Official Google
+// runtime is ser_protobuf_lib.cpp ("protobuf").
+class ProtobufWireSer final : public ISerializer {
  public:
-  const char* name() const override { return "protobuf"; }
+  const char* name() const override { return "protobuf-wire"; }
   const char* version() const override { return "wire-v2"; }
   const char* stream_mode() const override { return "adapted"; }
   const char* native_kind() const override { return "schema"; }
@@ -686,7 +688,7 @@ class FlatbuffersSer final : public ISerializer {
 
 }  // namespace
 
-SerializerPtr make_protobuf() { return std::make_unique<ProtobufSer>(); }
+SerializerPtr make_protobuf_wire() { return std::make_unique<ProtobufWireSer>(); }
 SerializerPtr make_flexbuffers() { return std::make_unique<FlexbuffersSer>(); }
 SerializerPtr make_flatbuffers() { return std::make_unique<FlatbuffersSer>(); }
 

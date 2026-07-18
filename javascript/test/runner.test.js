@@ -1,99 +1,110 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  allFixtures,
-  Rng,
-  deepEqual,
-  makeObjectGraph,
-  objectGraphEqual,
-} from '../src/data.js';
+import { allFixturesV2, deepEqual, makeOne, V2_TYPE_IDS } from '../src/data.js';
 import { ALL_SERIALIZERS } from '../src/serializers/index.js';
 
-test('fixtures are deterministic for seed 42', () => {
-  const a = allFixtures(42);
-  const b = allFixtures(42);
+test('V2 fixtures are deterministic for seed 42', () => {
+  const a = allFixturesV2(42);
+  const b = allFixturesV2(42);
   assert.equal(a.length, b.length);
   assert.deepEqual(a[0].value, b[0].value);
+  for (let i = 0; i < a.length; i++) {
+    assert.deepEqual(a[i].value, b[i].value, a[i].name);
+  }
 });
 
-test('fixtures include ObjectGraph', () => {
-  const names = allFixtures(42).map((f) => f.name);
-  assert.ok(names.includes('ObjectGraph'));
-  assert.equal(names.length, 7);
+test('suite types are official V2 only', () => {
+  const names = allFixturesV2(42).map((f) => f.name);
+  assert.deepEqual(names, V2_TYPE_IDS);
+  assert.equal(names.length, 5);
+  for (const banned of ['Person', 'SimpleObject', 'Integer', 'EDI_835', 'ObjectGraph', 'StringArray']) {
+    assert.ok(!names.includes(banned), `must not include V1 ${banned}`);
+  }
 });
 
-test('object graph topology has sibling cycle via indices', () => {
-  const g = makeObjectGraph();
-  assert.equal(g.root, 0);
-  assert.equal(g.nodes.length, 3);
-  assert.deepEqual(g.nodes[0].Children, [1, 2]);
-  assert.equal(g.nodes[1].Related, 2);
-  assert.equal(g.nodes[2].Related, 1);
-  assert.ok(objectGraphEqual(g, g));
+test('makeOne produces expected shapes', () => {
+  const msg = makeOne('message', {}, 42, 0);
+  assert.equal(typeof msg.f_bool, 'boolean');
+  assert.equal(typeof msg.f_int32, 'number');
+  assert.equal(typeof msg.f_string, 'string');
+
+  const doc = makeOne('document', { children: 3 }, 42, 0);
+  assert.equal(typeof doc.id, 'string');
+  assert.ok(Array.isArray(doc.items));
+  assert.equal(doc.items.length, 3);
+
+  const tel = makeOne('telemetry', { points: 4, tag_count: 2 }, 42, 0);
+  assert.equal(tel.values.length, 4);
+  assert.equal(tel.tags.length, 2);
+
+  const str = makeOne('strings', { count: 5 }, 42, 0);
+  assert.equal(str.items.length, 5);
+
+  const ev = makeOne('event', { attr_count: 2 }, 42, 0);
+  assert.equal(typeof ev.event_id, 'string');
+  assert.equal(ev.attrs.length, 2);
 });
 
 test('at least 10 serializers registered', () => {
   assert.ok(ALL_SERIALIZERS.length >= 10, `got ${ALL_SERIALIZERS.length}`);
 });
 
-test('all serializers that support ObjectGraph roundtrip it', () => {
-  const fx = allFixtures(42).find((f) => f.name === 'ObjectGraph');
-  let ok = 0;
-  for (const ser of ALL_SERIALIZERS) {
-    if (!ser.supports(fx.name)) continue;
-    ser.prepare(fx.name, fx.value);
-    const buf = ser.serialize(fx.value);
-    assert.ok(buf && (buf.length ?? Buffer.byteLength(buf)) > 0, `${ser.name} empty`);
-    const out = ser.deserialize(buf);
-    assert.ok(objectGraphEqual(fx.value, out), `${ser.name} ObjectGraph fidelity`);
-    ok += 1;
-  }
-  assert.equal(ok, ALL_SERIALIZERS.length, `expected all serializers, got ${ok}`);
-});
-
-test('all supported fixtures roundtrip for every serializer', () => {
-  const fixtures = allFixtures(42);
+test('all V2 fixtures roundtrip for every supporting serializer', () => {
+  const fixtures = allFixturesV2(42);
   for (const ser of ALL_SERIALIZERS) {
     for (const fx of fixtures) {
-      if (!ser.supports(fx.name)) continue;
+      if (ser.supports && !ser.supports(fx.name)) continue;
       ser.prepare(fx.name, fx.value);
       const buf = ser.serialize(fx.value);
+      assert.ok(buf && (buf.length ?? Buffer.byteLength(buf)) > 0, `${ser.name}/${fx.name} empty`);
       const out = ser.deserialize(buf);
-      if (fx.name === 'ObjectGraph') {
-        assert.ok(objectGraphEqual(fx.value, out), `${ser.name}/${fx.name}`);
-      } else if (fx.name === 'Integer' && ser.name === 'bson') {
-        assert.ok(out && (out.v === fx.value || out === fx.value));
-      } else if (ser.name.startsWith('simdjson')) {
+      if (ser.name.startsWith('simdjson')) {
         /* number coercion allowed */
-      } else {
-        assert.ok(deepEqual(fx.value, out), `${ser.name}/${fx.name}`);
+      } else if (!deepEqual(fx.value, out)) {
+        assert.fail(
+          `${ser.name}/${fx.name} fidelity mismatch\n` +
+            `  expected: ${JSON.stringify(fx.value)}\n` +
+            `  got:      ${JSON.stringify(out)}`,
+        );
       }
     }
   }
 });
 
-test('JSON serializer roundtrips Person', () => {
+test('JSON serializer roundtrips message', () => {
   const ser = ALL_SERIALIZERS.find((s) => s.name === 'JSON.stringify');
-  const fx = allFixtures(42).find((f) => f.name === 'Person');
+  const fx = allFixturesV2(42).find((f) => f.name === 'message');
   ser.prepare(fx.name, fx.value);
   const buf = ser.serialize(fx.value);
   const out = ser.deserialize(buf);
   assert.ok(deepEqual(fx.value, out));
 });
 
-test('msgpackr roundtrips SimpleObject', () => {
+test('msgpackr roundtrips document', () => {
   const ser = ALL_SERIALIZERS.find((s) => s.name === 'msgpackr');
-  const fx = allFixtures(42).find((f) => f.name === 'SimpleObject');
+  const fx = allFixturesV2(42).find((f) => f.name === 'document');
   ser.prepare(fx.name, fx.value);
   const buf = ser.serialize(fx.value);
   const out = ser.deserialize(buf);
   assert.ok(deepEqual(fx.value, out));
 });
 
-test('rng produces integers in range', () => {
-  const rng = new Rng(1);
-  for (let i = 0; i < 100; i++) {
-    const v = rng.nextInt(0, 10);
-    assert.ok(v >= 0 && v <= 10);
+test('protobuf-es and google-protobuf roundtrip all V2 types', () => {
+  const fixtures = allFixturesV2(42);
+  for (const name of ['protobuf-es', 'google-protobuf', 'protobufjs']) {
+    const ser = ALL_SERIALIZERS.find((s) => s.name === name);
+    assert.ok(ser, name);
+    for (const fx of fixtures) {
+      ser.prepare(fx.name, fx.value);
+      const buf = ser.serialize(fx.value);
+      const out = ser.deserialize(buf);
+      if (!deepEqual(fx.value, out)) {
+        assert.fail(
+          `${name}/${fx.name} fidelity mismatch\n` +
+            `  expected: ${JSON.stringify(fx.value)}\n` +
+            `  got:      ${JSON.stringify(out)}`,
+        );
+      }
+    }
   }
 });

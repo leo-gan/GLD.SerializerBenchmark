@@ -37,7 +37,7 @@ def test_capture_writes_configs_json_from_csv_stem(monkeypatch, tmp_path: Path):
     csv.write_text(
         "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,"
         "SerializerName,SerializerVersion,TimeSer,TimeDeser,Size\n"
-        "python,bytes,Person,2,0,orjson,3.11.9,1,2,3\n",
+        "python,bytes,message,2,0,orjson,3.11.9,1,2,3\n",
         encoding="utf-8",
     )
     doc = capture_environment(str(csv))

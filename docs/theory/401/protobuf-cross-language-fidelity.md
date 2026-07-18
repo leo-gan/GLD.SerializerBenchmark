@@ -117,7 +117,7 @@ Passing suite fidelity means **that language entry** round-trips under **that** 
 
 ## MiniUser matrix runbook (~10 minutes)
 
-Teaching schema only—create `mini.proto` (same as the [lab](lab-mini-protobuf-encoder.md)). It is **not** the suite `benchmark_data.proto`.
+Teaching schema only—create `mini.proto` (same as the [lab](lab-mini-protobuf-encoder.md)). It is **not** the suite `schemas/v2/protobuf/benchmark_v2.proto`.
 
 **Logical fixture:** `MiniUser { id = 1, name = "Ada" }`  
 **Golden:** `08 01 12 03 41 64 61`
@@ -156,7 +156,7 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 | Asset | Fidelity role |
 |-------|----------------|
 | `schemas/v2/protobuf/benchmark_v2.proto` | Shared field numbers for suite types |
-| Python `protobuf` / Rust `prost` / C `protobuf-c` and `nanopb` | Separate encode paths (pins are on the language articles) |
+| Python `protobuf` / Rust `prost` / C Google `protobuf` (+ C helper rows) | Separate encode paths (pins and honesty notes are on the language articles / [C Overview](../../c/index.md)) |
 | Per-language fidelity hooks | Local round-trip checks only |
 | Results / ops | **Not** interoperability proofs |
 | [301 polyglot estates](../301/polyglot-estates.md) | One **product** contract; this page tests **bytes and logic** |

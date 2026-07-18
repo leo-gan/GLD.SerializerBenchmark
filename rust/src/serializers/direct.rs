@@ -1,8 +1,6 @@
-//! Direct encode/decode paths: minicbor, rkyv, nanoserde, speedy.
+//! Direct encode/decode paths: minicbor, rkyv, nanoserde, speedy (V2 types).
 
-use crate::data::{
-    Edi835, Fixture, ObjectGraph, Person, SimpleObject, StringArrayObject, TelemetryData,
-};
+use crate::data::{Document, Event, Fixture, Message, Strings, Telemetry};
 use anyhow::{anyhow, Result};
 
 use super::kinded::impl_kinded_direct;
@@ -10,13 +8,11 @@ use super::{ver, BenchSerializer, NativeKind};
 
 fn minicbor_ser(fixture: &Fixture) -> Result<Vec<u8>> {
     match fixture {
-        Fixture::Person(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::Integer(v) => Ok(minicbor::to_vec(v)?),
+        Fixture::Message(v) => Ok(minicbor::to_vec(v)?),
+        Fixture::Document(v) => Ok(minicbor::to_vec(v)?),
         Fixture::Telemetry(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::Simple(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::StringArray(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::Edi(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::ObjectGraph(v) => Ok(minicbor::to_vec(v)?),
+        Fixture::Strings(v) => Ok(minicbor::to_vec(v)?),
+        Fixture::Event(v) => Ok(minicbor::to_vec(v)?),
     }
 }
 
@@ -26,13 +22,11 @@ impl_kinded_direct!(
     "0.25",
     NativeKind::Direct,
     minicbor_ser,
-    |d| minicbor::decode::<Person>(d).map_err(|e| anyhow!("{e}")),
-    |d| minicbor::decode::<i32>(d).map_err(|e| anyhow!("{e}")),
-    |d| minicbor::decode::<TelemetryData>(d).map_err(|e| anyhow!("{e}")),
-    |d| minicbor::decode::<SimpleObject>(d).map_err(|e| anyhow!("{e}")),
-    |d| minicbor::decode::<StringArrayObject>(d).map_err(|e| anyhow!("{e}")),
-    |d| minicbor::decode::<Edi835>(d).map_err(|e| anyhow!("{e}")),
-    |d| minicbor::decode::<ObjectGraph>(d).map_err(|e| anyhow!("{e}"))
+    |d| minicbor::decode::<Message>(d).map_err(|e| anyhow!("{e}")),
+    |d| minicbor::decode::<Document>(d).map_err(|e| anyhow!("{e}")),
+    |d| minicbor::decode::<Telemetry>(d).map_err(|e| anyhow!("{e}")),
+    |d| minicbor::decode::<Strings>(d).map_err(|e| anyhow!("{e}")),
+    |d| minicbor::decode::<Event>(d).map_err(|e| anyhow!("{e}"))
 );
 
 // ---------------------------------------------------------------------------
@@ -41,50 +35,38 @@ impl_kinded_direct!(
 
 fn rkyv_ser(fixture: &Fixture) -> Result<Vec<u8>> {
     match fixture {
-        Fixture::Person(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
+        Fixture::Message(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
             .map(|b| b.to_vec())
             .map_err(|e| anyhow!("{e}")),
-        Fixture::Integer(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
+        Fixture::Document(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
             .map(|b| b.to_vec())
             .map_err(|e| anyhow!("{e}")),
         Fixture::Telemetry(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
             .map(|b| b.to_vec())
             .map_err(|e| anyhow!("{e}")),
-        Fixture::Simple(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
+        Fixture::Strings(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
             .map(|b| b.to_vec())
             .map_err(|e| anyhow!("{e}")),
-        Fixture::StringArray(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
-            .map(|b| b.to_vec())
-            .map_err(|e| anyhow!("{e}")),
-        Fixture::Edi(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
-            .map(|b| b.to_vec())
-            .map_err(|e| anyhow!("{e}")),
-        Fixture::ObjectGraph(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
+        Fixture::Event(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
             .map(|b| b.to_vec())
             .map_err(|e| anyhow!("{e}")),
     }
 }
 
-fn rkyv_de_person(data: &[u8]) -> Result<Person> {
-    rkyv::from_bytes::<Person, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
+fn rkyv_de_message(data: &[u8]) -> Result<Message> {
+    rkyv::from_bytes::<Message, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
 }
-fn rkyv_de_int(data: &[u8]) -> Result<i32> {
-    rkyv::from_bytes::<i32, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
+fn rkyv_de_document(data: &[u8]) -> Result<Document> {
+    rkyv::from_bytes::<Document, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
 }
-fn rkyv_de_tel(data: &[u8]) -> Result<TelemetryData> {
-    rkyv::from_bytes::<TelemetryData, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
+fn rkyv_de_telemetry(data: &[u8]) -> Result<Telemetry> {
+    rkyv::from_bytes::<Telemetry, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
 }
-fn rkyv_de_simple(data: &[u8]) -> Result<SimpleObject> {
-    rkyv::from_bytes::<SimpleObject, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
+fn rkyv_de_strings(data: &[u8]) -> Result<Strings> {
+    rkyv::from_bytes::<Strings, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
 }
-fn rkyv_de_sa(data: &[u8]) -> Result<StringArrayObject> {
-    rkyv::from_bytes::<StringArrayObject, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
-}
-fn rkyv_de_edi(data: &[u8]) -> Result<Edi835> {
-    rkyv::from_bytes::<Edi835, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
-}
-fn rkyv_de_graph(data: &[u8]) -> Result<ObjectGraph> {
-    rkyv::from_bytes::<ObjectGraph, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
+fn rkyv_de_event(data: &[u8]) -> Result<Event> {
+    rkyv::from_bytes::<Event, rkyv::rancor::Error>(data).map_err(|e| anyhow!("{e}"))
 }
 
 impl_kinded_direct!(
@@ -93,28 +75,21 @@ impl_kinded_direct!(
     "0.8",
     NativeKind::Archive,
     rkyv_ser,
-    rkyv_de_person,
-    rkyv_de_int,
-    rkyv_de_tel,
-    rkyv_de_simple,
-    rkyv_de_sa,
-    rkyv_de_edi,
-    rkyv_de_graph
+    rkyv_de_message,
+    rkyv_de_document,
+    rkyv_de_telemetry,
+    rkyv_de_strings,
+    rkyv_de_event
 );
-
-// Override native_kind for RkyvSer via a thin wrapper — the macro sets Direct.
-// We'll document rkyv as Archive in docs; native_kind Direct is acceptable.
 
 fn nanoserde_ser(fixture: &Fixture) -> Result<Vec<u8>> {
     use nanoserde::SerBin;
     match fixture {
-        Fixture::Person(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::Integer(v) => Ok(SerBin::serialize_bin(v)),
+        Fixture::Message(v) => Ok(SerBin::serialize_bin(v)),
+        Fixture::Document(v) => Ok(SerBin::serialize_bin(v)),
         Fixture::Telemetry(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::Simple(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::StringArray(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::Edi(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::ObjectGraph(v) => Ok(SerBin::serialize_bin(v)),
+        Fixture::Strings(v) => Ok(SerBin::serialize_bin(v)),
+        Fixture::Event(v) => Ok(SerBin::serialize_bin(v)),
     }
 }
 
@@ -143,27 +118,17 @@ impl_kinded_direct!(
     |d| {
         use nanoserde::DeBin;
         DeBin::deserialize_bin(d).map_err(|e| anyhow!("{e}"))
-    },
-    |d| {
-        use nanoserde::DeBin;
-        DeBin::deserialize_bin(d).map_err(|e| anyhow!("{e}"))
-    },
-    |d| {
-        use nanoserde::DeBin;
-        DeBin::deserialize_bin(d).map_err(|e| anyhow!("{e}"))
     }
 );
 
 fn speedy_ser(fixture: &Fixture) -> Result<Vec<u8>> {
     use speedy::Writable;
     match fixture {
-        Fixture::Person(v) => Ok(v.write_to_vec()?),
-        Fixture::Integer(v) => Ok(v.write_to_vec()?),
+        Fixture::Message(v) => Ok(v.write_to_vec()?),
+        Fixture::Document(v) => Ok(v.write_to_vec()?),
         Fixture::Telemetry(v) => Ok(v.write_to_vec()?),
-        Fixture::Simple(v) => Ok(v.write_to_vec()?),
-        Fixture::StringArray(v) => Ok(v.write_to_vec()?),
-        Fixture::Edi(v) => Ok(v.write_to_vec()?),
-        Fixture::ObjectGraph(v) => Ok(v.write_to_vec()?),
+        Fixture::Strings(v) => Ok(v.write_to_vec()?),
+        Fixture::Event(v) => Ok(v.write_to_vec()?),
     }
 }
 
@@ -175,30 +140,22 @@ impl_kinded_direct!(
     speedy_ser,
     |d| {
         use speedy::Readable;
-        Person::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
+        Message::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
     },
     |d| {
         use speedy::Readable;
-        i32::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
+        Document::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
     },
     |d| {
         use speedy::Readable;
-        TelemetryData::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
+        Telemetry::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
     },
     |d| {
         use speedy::Readable;
-        SimpleObject::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
+        Strings::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
     },
     |d| {
         use speedy::Readable;
-        StringArrayObject::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
-    },
-    |d| {
-        use speedy::Readable;
-        Edi835::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
-    },
-    |d| {
-        use speedy::Readable;
-        ObjectGraph::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
+        Event::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
     }
 );

@@ -4,10 +4,9 @@ import * as flatbuffers from 'flatbuffers';
 import { encode as flexEncode, toObject as flexToObject } from 'flatbuffers/mjs/flexbuffers.js';
 import { pkgVersion, baseSupports, jsonClone } from './common.js';
 
-/* ---------- shared Avro / protobuf field models matching JS fixtures ---------- */
+/* ---------- Avro schemas for official V2 types (doubles must be explicit) ---------- */
 
 const avroSchemas = {
-  // Data Model v2 (doubles must be explicit — forValue infers float32 and fails fidelity)
   message: {
     type: 'record',
     name: 'MessageV2',
@@ -95,148 +94,13 @@ const avroSchemas = {
       },
     ],
   },
-  Person: {
-    type: 'record',
-    name: 'Person',
-    fields: [
-      { name: 'FirstName', type: 'string' },
-      { name: 'LastName', type: 'string' },
-      { name: 'Age', type: 'int' },
-      { name: 'Gender', type: 'int' },
-      {
-        name: 'Passport',
-        type: {
-          type: 'record',
-          name: 'Passport',
-          fields: [
-            { name: 'Number', type: 'string' },
-            { name: 'Authority', type: 'string' },
-            { name: 'ExpirationDate', type: 'string' },
-          ],
-        },
-      },
-      {
-        name: 'PoliceRecords',
-        type: {
-          type: 'array',
-          items: {
-            type: 'record',
-            name: 'PoliceRecord',
-            fields: [
-              { name: 'Id', type: 'int' },
-              { name: 'CrimeCode', type: 'string' },
-            ],
-          },
-        },
-      },
-    ],
-  },
-  Integer: { type: 'int' },
-  SimpleObject: {
-    type: 'record',
-    name: 'SimpleObject',
-    fields: [
-      { name: 'Id', type: 'int' },
-      { name: 'Name', type: 'string' },
-      { name: 'Timestamp', type: 'string' },
-      { name: 'IsActive', type: 'boolean' },
-    ],
-  },
-  StringArray: {
-    type: 'record',
-    name: 'StringArray',
-    fields: [{ name: 'Items', type: { type: 'array', items: 'string' } }],
-  },
-  Telemetry: {
-    type: 'record',
-    name: 'Telemetry',
-    fields: [
-      { name: 'Id', type: 'string' },
-      { name: 'DataSource', type: 'string' },
-      { name: 'TimeStamp', type: 'string' },
-      { name: 'Param1', type: 'int' },
-      { name: 'Param2', type: 'int' },
-      { name: 'Measurements', type: { type: 'array', items: 'double' } },
-      { name: 'AssociatedProblemID', type: 'long' },
-      { name: 'AssociatedLogID', type: 'long' },
-      { name: 'WasProcessed', type: 'boolean' },
-    ],
-  },
-  EDI_835: {
-    type: 'record',
-    name: 'EDI835',
-    fields: [
-      { name: 'PayerName', type: 'string' },
-      { name: 'PayeeName', type: 'string' },
-      { name: 'PaymentDate', type: 'string' },
-      { name: 'TotalActualAmount', type: 'double' },
-      { name: 'TransactionControlNumber', type: 'string' },
-      {
-        name: 'Claims',
-        type: {
-          type: 'array',
-          items: {
-            type: 'record',
-            name: 'Claim',
-            fields: [
-              { name: 'ClaimId', type: 'string' },
-              { name: 'PatientName', type: 'string' },
-              { name: 'TotalCharge', type: 'double' },
-              { name: 'PaymentAmount', type: 'double' },
-              {
-                name: 'Lines',
-                type: {
-                  type: 'array',
-                  items: {
-                    type: 'record',
-                    name: 'ServiceLine',
-                    fields: [
-                      { name: 'ServiceCode', type: 'string' },
-                      { name: 'ChargeAmount', type: 'double' },
-                      { name: 'AdjudicatedAmount', type: 'double' },
-                    ],
-                  },
-                },
-              },
-            ],
-          },
-        },
-      },
-    ],
-  },
-  ObjectGraph: {
-    type: 'record',
-    name: 'ObjectGraph',
-    fields: [
-      { name: 'root', type: 'int' },
-      {
-        name: 'nodes',
-        type: {
-          type: 'array',
-          items: {
-            type: 'record',
-            name: 'GraphNodeData',
-            fields: [
-              { name: 'Name', type: 'string' },
-              { name: 'Parent', type: 'int' },
-              { name: 'Related', type: 'int' },
-              { name: 'Children', type: { type: 'array', items: 'int' } },
-            ],
-          },
-        },
-      },
-    ],
-  },
 };
 
 let avroType = null;
 let avroDataName = null;
 
-/** Normalize JS numbers for Avro long/double (integers that fit int stay int). */
-function avroPrepareValue(dataName, value) {
-  const v = jsonClone(value);
-  if (dataName === 'Integer') return v | 0;
-  return v;
+function avroPrepareValue(_dataName, value) {
+  return jsonClone(value);
 }
 
 export const avscSer = {
@@ -273,210 +137,248 @@ export const avscSer = {
   },
 };
 
-/* ---------- protobufjs: real messages per fixture (string timestamps for JS fidelity) ---------- */
+/* ---------- protobufjs: real V2 messages matching data_v2 field shapes ---------- */
 
 const pbRoot = protobuf.Root.fromJSON({
   nested: {
-    Passport: {
+    Message: {
       fields: {
-        Number: { type: 'string', id: 1 },
-        Authority: { type: 'string', id: 2 },
-        ExpirationDate: { type: 'string', id: 3 },
+        f_bool: { type: 'bool', id: 1 },
+        f_int32: { type: 'int32', id: 2 },
+        f_int64: { type: 'int64', id: 3 },
+        f_float64: { type: 'double', id: 4 },
+        f_string: { type: 'string', id: 5 },
+        f_bool_2: { type: 'bool', id: 6 },
+        f_int32_2: { type: 'int32', id: 7 },
+        f_string_2: { type: 'string', id: 8 },
       },
     },
-    PoliceRecord: {
+    BatchMessage: {
       fields: {
-        Id: { type: 'int32', id: 1 },
-        CrimeCode: { type: 'string', id: 2 },
+        items: { rule: 'repeated', type: 'Message', id: 1 },
       },
     },
-    Person: {
+    DocumentMeta: {
       fields: {
-        FirstName: { type: 'string', id: 1 },
-        LastName: { type: 'string', id: 2 },
-        Age: { type: 'uint32', id: 3 },
-        Gender: { type: 'int32', id: 4 },
-        Passport: { type: 'Passport', id: 5 },
-        PoliceRecords: { rule: 'repeated', type: 'PoliceRecord', id: 6 },
+        region: { type: 'string', id: 1 },
+        version: { type: 'int32', id: 2 },
       },
     },
-    SimpleObject: {
+    DocumentItem: {
       fields: {
-        Id: { type: 'int32', id: 1 },
-        Name: { type: 'string', id: 2 },
-        Timestamp: { type: 'string', id: 3 },
-        IsActive: { type: 'bool', id: 4 },
+        sku: { type: 'string', id: 1 },
+        qty: { type: 'int32', id: 2 },
+        price_minor: { type: 'int64', id: 3 },
       },
     },
-    StringArrayObject: {
+    Document: {
       fields: {
-        Items: { rule: 'repeated', type: 'string', id: 1 },
+        id: { type: 'string', id: 1 },
+        status: { type: 'int32', id: 2 },
+        meta: { type: 'DocumentMeta', id: 3 },
+        items: { rule: 'repeated', type: 'DocumentItem', id: 4 },
       },
     },
-    TelemetryData: {
+    BatchDocument: {
       fields: {
-        Id: { type: 'string', id: 1 },
-        DataSource: { type: 'string', id: 2 },
-        TimeStamp: { type: 'string', id: 3 },
-        Param1: { type: 'int32', id: 4 },
-        Param2: { type: 'uint32', id: 5 },
-        Measurements: { rule: 'repeated', type: 'double', id: 6 },
-        AssociatedProblemID: { type: 'int64', id: 7 },
-        AssociatedLogID: { type: 'int64', id: 8 },
-        WasProcessed: { type: 'bool', id: 9 },
+        items: { rule: 'repeated', type: 'Document', id: 1 },
       },
     },
-    ServiceLine: {
+    Telemetry: {
       fields: {
-        ServiceCode: { type: 'string', id: 1 },
-        ChargeAmount: { type: 'double', id: 2 },
-        AdjudicatedAmount: { type: 'double', id: 3 },
+        source: { type: 'string', id: 1 },
+        ts: { type: 'int64', id: 2 },
+        tags: { rule: 'repeated', type: 'string', id: 3 },
+        values: { rule: 'repeated', type: 'double', id: 4 },
       },
     },
-    Claim: {
+    BatchTelemetry: {
       fields: {
-        ClaimId: { type: 'string', id: 1 },
-        PatientName: { type: 'string', id: 2 },
-        TotalCharge: { type: 'double', id: 3 },
-        PaymentAmount: { type: 'double', id: 4 },
-        Lines: { rule: 'repeated', type: 'ServiceLine', id: 5 },
+        items: { rule: 'repeated', type: 'Telemetry', id: 1 },
       },
     },
-    EDI835: {
+    Strings: {
       fields: {
-        PayerName: { type: 'string', id: 1 },
-        PayeeName: { type: 'string', id: 2 },
-        PaymentDate: { type: 'string', id: 3 },
-        TotalActualAmount: { type: 'double', id: 4 },
-        TransactionControlNumber: { type: 'string', id: 5 },
-        Claims: { rule: 'repeated', type: 'Claim', id: 6 },
+        items: { rule: 'repeated', type: 'string', id: 1 },
       },
     },
-    IntegerValue: {
+    BatchStrings: {
       fields: {
-        value: { type: 'int32', id: 1 },
+        items: { rule: 'repeated', type: 'Strings', id: 1 },
       },
     },
-    GraphNodeData: {
+    EventAttr: {
       fields: {
-        Name: { type: 'string', id: 1 },
-        Parent: { type: 'int32', id: 2 },
-        Related: { type: 'int32', id: 3 },
-        Children: { rule: 'repeated', type: 'int32', id: 4 },
+        key: { type: 'string', id: 1 },
+        value: { type: 'string', id: 2 },
       },
     },
-    ObjectGraph: {
+    Event: {
       fields: {
-        root: { type: 'int32', id: 1 },
-        nodes: { rule: 'repeated', type: 'GraphNodeData', id: 2 },
+        event_id: { type: 'string', id: 1 },
+        event_type: { type: 'string', id: 2 },
+        occurred_at: { type: 'int64', id: 3 },
+        producer: { type: 'string', id: 4 },
+        attrs: { rule: 'repeated', type: 'EventAttr', id: 5 },
       },
     },
-    // Data Model v2 — JSON envelope for schemaless-shaped payloads
-    V2JsonPayload: {
+    BatchEvent: {
       fields: {
-        json: { type: 'string', id: 1 },
+        items: { rule: 'repeated', type: 'Event', id: 1 },
       },
     },
   },
 });
 
-const pbTypeByName = {
-  Person: 'Person',
-  SimpleObject: 'SimpleObject',
-  StringArray: 'StringArrayObject',
-  Telemetry: 'TelemetryData',
-  EDI_835: 'EDI835',
-  Integer: 'IntegerValue',
-  ObjectGraph: 'ObjectGraph',
-  message: 'V2JsonPayload',
-  document: 'V2JsonPayload',
-  telemetry: 'V2JsonPayload',
-  strings: 'V2JsonPayload',
-  event: 'V2JsonPayload',
+const pbSingleType = {
+  message: 'Message',
+  document: 'Document',
+  telemetry: 'Telemetry',
+  strings: 'Strings',
+  event: 'Event',
+};
+
+const pbBatchType = {
+  message: 'BatchMessage',
+  document: 'BatchDocument',
+  telemetry: 'BatchTelemetry',
+  strings: 'BatchStrings',
+  event: 'BatchEvent',
 };
 
 let pbType = null;
 let pbDataName = null;
+let pbIsBatch = false;
 /** Message built in prepare (untimed); serialize only encodes. */
 let pbMsg = null;
 
-function toPbValue(dataName, value) {
-  if (dataName === 'Integer') return { value: value | 0 };
-  if (['message', 'document', 'telemetry', 'strings', 'event'].includes(dataName)) {
-    return { json: JSON.stringify(value) };
-  }
-  // protobufjs Long fields: use numbers (fits our fixture ranges)
+function toPbItem(dataName, value) {
   const v = jsonClone(value);
-  if (dataName === 'Telemetry') {
-    v.AssociatedProblemID = Number(v.AssociatedProblemID);
-    v.AssociatedLogID = Number(v.AssociatedLogID);
-  }
-  if (dataName === 'ObjectGraph') {
+  if (dataName === 'message') {
     return {
-      root: value.root | 0,
-      nodes: (value.nodes || []).map((n) => ({
-        Name: String(n.Name ?? ''),
-        Parent: n.Parent | 0,
-        Related: n.Related | 0,
-        Children: (n.Children || []).map((c) => c | 0),
+      f_bool: Boolean(v.f_bool),
+      f_int32: v.f_int32 | 0,
+      f_int64: Number(v.f_int64),
+      f_float64: Number(v.f_float64),
+      f_string: String(v.f_string ?? ''),
+      f_bool_2: Boolean(v.f_bool_2),
+      f_int32_2: v.f_int32_2 | 0,
+      f_string_2: String(v.f_string_2 ?? ''),
+    };
+  }
+  if (dataName === 'document') {
+    return {
+      id: String(v.id ?? ''),
+      status: v.status | 0,
+      meta: {
+        region: String(v.meta?.region ?? ''),
+        version: (v.meta?.version ?? 0) | 0,
+      },
+      items: (v.items || []).map((it) => ({
+        sku: String(it.sku ?? ''),
+        qty: it.qty | 0,
+        price_minor: Number(it.price_minor),
       })),
     };
   }
-  return v;
+  if (dataName === 'telemetry') {
+    return {
+      source: String(v.source ?? ''),
+      ts: Number(v.ts),
+      tags: (v.tags || []).map(String),
+      values: (v.values || []).map(Number),
+    };
+  }
+  if (dataName === 'strings') {
+    return { items: (v.items || []).map(String) };
+  }
+  if (dataName === 'event') {
+    return {
+      event_id: String(v.event_id ?? ''),
+      event_type: String(v.event_type ?? ''),
+      occurred_at: Number(v.occurred_at),
+      producer: String(v.producer ?? ''),
+      attrs: (v.attrs || []).map((a) => ({
+        key: String(a.key ?? ''),
+        value: String(a.value ?? ''),
+      })),
+    };
+  }
+  throw new Error(`protobufjs: no mapping for ${dataName}`);
 }
 
-function fromPbValue(dataName, decoded) {
-  if (dataName === 'Integer') return decoded.value;
-  if (['message', 'document', 'telemetry', 'strings', 'event'].includes(dataName)) {
-    const o = decoded.toJSON ? decoded.toJSON() : { ...decoded };
-    return JSON.parse(o.json || '{}');
+function toPbValue(dataName, value) {
+  if (Array.isArray(value)) {
+    return { items: value.map((v) => toPbItem(dataName, v)) };
   }
-  const o = decoded.toJSON ? decoded.toJSON() : { ...decoded };
-  // protobufjs toJSON may stringify int64
-  if (dataName === 'Telemetry') {
-    o.AssociatedProblemID = Number(o.AssociatedProblemID);
-    o.AssociatedLogID = Number(o.AssociatedLogID);
-    o.Param1 = Number(o.Param1);
-    o.Param2 = Number(o.Param2);
-    if (Array.isArray(o.Measurements)) o.Measurements = o.Measurements.map(Number);
-  }
-  if (dataName === 'Person') {
-    o.Age = Number(o.Age);
-    o.Gender = Number(o.Gender);
-    if (Array.isArray(o.PoliceRecords)) {
-      o.PoliceRecords = o.PoliceRecords.map((r) => ({ ...r, Id: Number(r.Id) }));
-    }
-  }
-  if (dataName === 'SimpleObject') {
-    o.Id = Number(o.Id);
-  }
-  if (dataName === 'EDI_835') {
-    o.TotalActualAmount = Number(o.TotalActualAmount);
-    if (Array.isArray(o.Claims)) {
-      o.Claims = o.Claims.map((c) => ({
-        ...c,
-        TotalCharge: Number(c.TotalCharge),
-        PaymentAmount: Number(c.PaymentAmount),
-        Lines: (c.Lines || []).map((L) => ({
-          ...L,
-          ChargeAmount: Number(L.ChargeAmount),
-          AdjudicatedAmount: Number(L.AdjudicatedAmount),
-        })),
-      }));
-    }
-  }
-  if (dataName === 'ObjectGraph') {
+  return toPbItem(dataName, value);
+}
+
+function num(v, d = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+
+function fromPbItem(dataName, o) {
+  if (dataName === 'message') {
     return {
-      root: Number(o.root),
-      nodes: (o.nodes || []).map((n) => ({
-        Name: String(n.Name ?? ''),
-        Parent: Number(n.Parent),
-        Related: Number(n.Related),
-        Children: (n.Children || []).map(Number),
+      f_bool: Boolean(o.f_bool),
+      f_int32: num(o.f_int32),
+      f_int64: num(o.f_int64),
+      f_float64: num(o.f_float64),
+      f_string: String(o.f_string ?? ''),
+      f_bool_2: Boolean(o.f_bool_2),
+      f_int32_2: num(o.f_int32_2),
+      f_string_2: String(o.f_string_2 ?? ''),
+    };
+  }
+  if (dataName === 'document') {
+    return {
+      id: String(o.id ?? ''),
+      status: num(o.status),
+      meta: {
+        region: String(o.meta?.region ?? ''),
+        version: num(o.meta?.version),
+      },
+      items: (o.items || []).map((it) => ({
+        sku: String(it.sku ?? ''),
+        qty: num(it.qty),
+        price_minor: num(it.price_minor),
+      })),
+    };
+  }
+  if (dataName === 'telemetry') {
+    return {
+      source: String(o.source ?? ''),
+      ts: num(o.ts),
+      tags: (o.tags || []).map(String),
+      values: (o.values || []).map(Number),
+    };
+  }
+  if (dataName === 'strings') {
+    return { items: (o.items || []).map(String) };
+  }
+  if (dataName === 'event') {
+    return {
+      event_id: String(o.event_id ?? ''),
+      event_type: String(o.event_type ?? ''),
+      occurred_at: num(o.occurred_at),
+      producer: String(o.producer ?? ''),
+      attrs: (o.attrs || []).map((a) => ({
+        key: String(a.key ?? ''),
+        value: String(a.value ?? ''),
       })),
     };
   }
   return o;
+}
+
+function fromPbValue(dataName, decoded, isBatch) {
+  const o = decoded.toJSON ? decoded.toJSON() : { ...decoded };
+  if (isBatch) {
+    return (o.items || []).map((it) => fromPbItem(dataName, it));
+  }
+  return fromPbItem(dataName, o);
 }
 
 export const pbSer = {
@@ -487,7 +389,9 @@ export const pbSer = {
   prepare(dataName, value) {
     // Optimal: verify + create once outside the timed loop (docs: encode only on hot path).
     pbDataName = dataName;
-    const typeName = pbTypeByName[dataName] || 'Person';
+    pbIsBatch = Array.isArray(value);
+    const typeName = pbIsBatch ? pbBatchType[dataName] : pbSingleType[dataName];
+    if (!typeName) throw new Error(`protobufjs: no type for ${dataName}`);
     pbType = pbRoot.lookupType(typeName);
     const payload = toPbValue(dataName, value);
     const err = pbType.verify(payload);
@@ -500,93 +404,14 @@ export const pbSer = {
   deserialize(buf) {
     const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
     const decoded = pbType.decode(u8);
-    return fromPbValue(pbDataName, decoded);
+    return fromPbValue(pbDataName, decoded, pbIsBatch);
   },
 };
 
-
-/* ---------- FlatBuffers: real wire via Builder + string payload field ---------- */
+/* ---------- FlatBuffers: real tables for V2 types (not JSON-in-FB) ---------- */
 
 let fbDataName = null;
-
-/**
- * Build a one-field FlatBuffer table holding a JSON string of the fixture.
- * Uses the official `flatbuffers` Builder (real FB binary layout / file_identifier optional).
- * Materialize path reconstructs the JS object from the stored string (same model as other langs
- * that rehydrate into owned objects after zero-copy access).
- */
-/**
- * FlatBuffers paths:
- * - Integer / SimpleObject: compact table (no JSON blob) for fair small-object sizes
- * - Other fixtures: table with kind + full JSON payload string (nested fidelity)
- * Wire tag field 0: mode (0=compact int, 1=compact simple, 2=json blob)
- */
-function fbSerialize(dataName, value) {
-  const builder = new flatbuffers.Builder(1024);
-  // Suite types: real tables (not JSON-in-FB).
-  if (dataName === 'message') {
-    const v = Array.isArray(value) ? value[0] : value;
-    const s1 = builder.createString(String(v.f_string ?? ''));
-    const s2 = builder.createString(String(v.f_string_2 ?? ''));
-    builder.startObject(8);
-    builder.addFieldOffset(7, s2, 0);
-    builder.addFieldInt32(6, v.f_int32_2 | 0, 0);
-    builder.addFieldInt8(5, v.f_bool_2 ? 1 : 0, 0);
-    builder.addFieldOffset(4, s1, 0);
-    builder.addFieldFloat64(3, Number(v.f_float64) || 0, 0);
-    // int64 as float64 bits is wrong — use two int32 or BigInt if available; store as int32 low for bench fidelity on small values
-    builder.addFieldInt32(2, Number(v.f_int64) | 0, 0);
-    builder.addFieldInt32(1, v.f_int32 | 0, 0);
-    builder.addFieldInt8(0, v.f_bool ? 1 : 0, 0);
-    builder.finish(builder.endObject());
-    if (Array.isArray(value)) {
-      // batch: length-prefixed list of single messages
-      const parts = value.map((item) => fbSerialize('message', item));
-      const total = 4 + parts.reduce((a, p) => a + 4 + p.length, 0);
-      const out = Buffer.allocUnsafe(total);
-      out.writeUInt32LE(parts.length, 0);
-      let o = 4;
-      for (const p of parts) {
-        out.writeUInt32LE(p.length, o); o += 4;
-        p.copy(out, o); o += p.length;
-      }
-      return out;
-    }
-    return Buffer.from(builder.asUint8Array());
-  }
-  // Defaults must differ from written values so fields are not omitted
-  // (FB skips fields equal to default → mode 0 was lost and JSON.parse crashed).
-  const MODE_DEF = 255;
-  if (dataName === 'Integer') {
-    builder.startObject(2);
-    builder.addFieldInt8(0, 0, MODE_DEF); // mode compact-int
-    builder.addFieldInt32(1, value | 0, 0);
-    const root = builder.endObject();
-    builder.finish(root);
-    return Buffer.from(builder.asUint8Array());
-  }
-  if (dataName === 'SimpleObject') {
-    const nameOff = builder.createString(String(value.Name ?? ''));
-    const tsOff = builder.createString(String(value.Timestamp ?? ''));
-    builder.startObject(5);
-    builder.addFieldInt8(0, 1, MODE_DEF); // mode compact-simple
-    builder.addFieldInt32(1, value.Id | 0, 0);
-    builder.addFieldOffset(2, nameOff, 0);
-    builder.addFieldOffset(3, tsOff, 0);
-    builder.addFieldInt8(4, value.IsActive ? 1 : 0, 0);
-    const root = builder.endObject();
-    builder.finish(root);
-    return Buffer.from(builder.asUint8Array());
-  }
-  // full nested via JSON payload field
-  const jsonOff = builder.createString(JSON.stringify(value));
-  builder.startObject(2);
-  builder.addFieldInt8(0, 2, MODE_DEF); // mode json-blob
-  builder.addFieldOffset(1, jsonOff, 0);
-  const root = builder.endObject();
-  builder.finish(root);
-  return Buffer.from(builder.asUint8Array());
-}
+let fbIsBatch = false;
 
 function fbReadString(bb, bytes, table, fieldOff) {
   if (!fieldOff) return '';
@@ -596,74 +421,320 @@ function fbReadString(bb, bytes, table, fieldOff) {
   return Buffer.from(bytes.subarray(strPos + 4, strPos + 4 + len)).toString('utf8');
 }
 
-function fbDeserialize(buf) {
-  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-  // Suite message (and batch of messages)
-  if (fbDataName === 'message') {
-    if (bytes.length >= 4) {
-      // batch: u32 n + n*(u32 len + payload) — detect when first root looks wrong
-      // Use prepare batch flag: if buffer starts with small n and lengths add up
-      const n = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
-      if (n > 1 && n < 100000) {
-        let o = 4;
-        let ok = true;
-        const items = [];
-        for (let i = 0; i < n; i++) {
-          if (o + 4 > bytes.length) { ok = false; break; }
-          const ln = bytes[o] | (bytes[o+1] << 8) | (bytes[o+2] << 16) | (bytes[o+3] << 24);
-          o += 4;
-          if (o + ln > bytes.length) { ok = false; break; }
-          items.push(fbDeserializeOneMessage(bytes.subarray(o, o + ln)));
-          o += ln;
-        }
-        if (ok && o === bytes.length) return items;
-      }
-    }
-    return fbDeserializeOneMessage(bytes);
+function fbCreateOffsetVector(builder, offsets) {
+  builder.startVector(4, offsets.length, 4);
+  for (let i = offsets.length - 1; i >= 0; i--) {
+    builder.addOffset(offsets[i]);
   }
-  const bb = new flatbuffers.ByteBuffer(bytes);
-  const root = bb.readInt32(0);
-  const table = root;
-  const vtable = table - bb.readInt32(table);
-  const vsize = bb.readInt16(vtable);
-  const field = (id) => (4 + id * 2 + 2 <= vsize ? bb.readInt16(vtable + 4 + id * 2) : 0);
-  const modeOff = field(0);
-  const mode = modeOff ? bb.readInt8(table + modeOff) : 2;
-  if (mode === 0) {
-    const vOff = field(1);
-    return vOff ? bb.readInt32(table + vOff) : 0;
-  }
-  if (mode === 1) {
-    const idOff = field(1);
-    return {
-      Id: idOff ? bb.readInt32(table + idOff) : 0,
-      Name: fbReadString(bb, bytes, table, field(2)),
-      Timestamp: fbReadString(bb, bytes, table, field(3)),
-      IsActive: field(4) ? bb.readInt8(table + field(4)) !== 0 : false,
-    };
-  }
-  const jsonStr = fbReadString(bb, bytes, table, field(1));
-  return JSON.parse(jsonStr);
+  return builder.endVector();
 }
 
-function fbDeserializeOneMessage(bytes) {
-  const bb = new flatbuffers.ByteBuffer(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+function fbOpenRoot(bytes) {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const bb = new flatbuffers.ByteBuffer(u8);
+  bb.setPosition(0);
   const root = bb.readInt32(0);
   const table = root;
   const vtable = table - bb.readInt32(table);
   const vsize = bb.readInt16(vtable);
   const field = (id) => (4 + id * 2 + 2 <= vsize ? bb.readInt16(vtable + 4 + id * 2) : 0);
-  const f = (id) => field(id);
+  return { bb, bytes: u8, table, field };
+}
+
+function fbReadStringVector(bb, bytes, table, fieldOff) {
+  if (!fieldOff) return [];
+  const vec = table + fieldOff;
+  const start = vec + bb.readInt32(vec);
+  const len = bb.readInt32(start);
+  const out = [];
+  for (let i = 0; i < len; i++) {
+    const offPos = start + 4 + i * 4;
+    const strPos = offPos + bb.readInt32(offPos);
+    const slen = bb.readUint32(strPos);
+    out.push(Buffer.from(bytes.subarray(strPos + 4, strPos + 4 + slen)).toString('utf8'));
+  }
+  return out;
+}
+
+function fbReadFloat64Vector(bb, table, fieldOff) {
+  if (!fieldOff) return [];
+  const vec = table + fieldOff;
+  const start = vec + bb.readInt32(vec);
+  const len = bb.readInt32(start);
+  const out = [];
+  for (let i = 0; i < len; i++) {
+    out.push(bb.readFloat64(start + 4 + i * 8));
+  }
+  return out;
+}
+
+function fbSerializeMessage(builder, v) {
+  const s1 = builder.createString(String(v.f_string ?? ''));
+  const s2 = builder.createString(String(v.f_string_2 ?? ''));
+  builder.startObject(8);
+  builder.addFieldOffset(7, s2, 0);
+  builder.addFieldInt32(6, v.f_int32_2 | 0, 0);
+  builder.addFieldInt8(5, v.f_bool_2 ? 1 : 0, 0);
+  builder.addFieldOffset(4, s1, 0);
+  builder.addFieldFloat64(3, Number(v.f_float64) || 0, 0);
+  builder.addFieldInt64(2, BigInt(Number(v.f_int64) || 0), 0n);
+  builder.addFieldInt32(1, v.f_int32 | 0, 0);
+  builder.addFieldInt8(0, v.f_bool ? 1 : 0, 0);
+  return builder.endObject();
+}
+
+function fbDeserializeMessage(bytes) {
+  const { bb, bytes: u8, table, field } = fbOpenRoot(bytes);
+  const f = field;
   return {
     f_bool: f(0) ? bb.readInt8(table + f(0)) !== 0 : false,
     f_int32: f(1) ? bb.readInt32(table + f(1)) : 0,
-    f_int64: f(2) ? bb.readInt32(table + f(2)) : 0,
+    f_int64: f(2) ? Number(bb.readInt64(table + f(2))) : 0,
     f_float64: f(3) ? bb.readFloat64(table + f(3)) : 0,
-    f_string: fbReadString(bb, bytes, table, f(4)),
+    f_string: fbReadString(bb, u8, table, f(4)),
     f_bool_2: f(5) ? bb.readInt8(table + f(5)) !== 0 : false,
     f_int32_2: f(6) ? bb.readInt32(table + f(6)) : 0,
-    f_string_2: fbReadString(bb, bytes, table, f(7)),
+    f_string_2: fbReadString(bb, u8, table, f(7)),
   };
+}
+
+function fbSerializeDocument(builder, v) {
+  const idOff = builder.createString(String(v.id ?? ''));
+  const regionOff = builder.createString(String(v.meta?.region ?? ''));
+  // meta table: region, version
+  builder.startObject(2);
+  builder.addFieldOffset(0, regionOff, 0);
+  builder.addFieldInt32(1, (v.meta?.version ?? 0) | 0, 0);
+  const metaOff = builder.endObject();
+
+  const itemOffs = (v.items || []).map((it) => {
+    const skuOff = builder.createString(String(it.sku ?? ''));
+    builder.startObject(3);
+    builder.addFieldOffset(0, skuOff, 0);
+    builder.addFieldInt32(1, it.qty | 0, 0);
+    builder.addFieldInt64(2, BigInt(Number(it.price_minor) || 0), 0n);
+    return builder.endObject();
+  });
+  const itemsVec = fbCreateOffsetVector(builder, itemOffs);
+
+  builder.startObject(4);
+  builder.addFieldOffset(0, idOff, 0);
+  builder.addFieldInt32(1, v.status | 0, 0);
+  builder.addFieldOffset(2, metaOff, 0);
+  builder.addFieldOffset(3, itemsVec, 0);
+  return builder.endObject();
+}
+
+function fbReadNestedTable(bb, bytes, table, fieldOff) {
+  if (!fieldOff) return null;
+  const nested = table + fieldOff + bb.readInt32(table + fieldOff);
+  const vtable = nested - bb.readInt32(nested);
+  const vsize = bb.readInt16(vtable);
+  const field = (id) => (4 + id * 2 + 2 <= vsize ? bb.readInt16(vtable + 4 + id * 2) : 0);
+  return { table: nested, field };
+}
+
+function fbDeserializeDocument(bytes) {
+  const { bb, bytes: u8, table, field } = fbOpenRoot(bytes);
+  const meta = fbReadNestedTable(bb, u8, table, field(2));
+  let items = [];
+  if (field(3)) {
+    const vec = table + field(3);
+    const start = vec + bb.readInt32(vec);
+    const len = bb.readInt32(start);
+    for (let i = 0; i < len; i++) {
+      const offPos = start + 4 + i * 4;
+      const itemTable = offPos + bb.readInt32(offPos);
+      const vt = itemTable - bb.readInt32(itemTable);
+      const vs = bb.readInt16(vt);
+      const f = (id) => (4 + id * 2 + 2 <= vs ? bb.readInt16(vt + 4 + id * 2) : 0);
+      items.push({
+        sku: fbReadString(bb, u8, itemTable, f(0)),
+        qty: f(1) ? bb.readInt32(itemTable + f(1)) : 0,
+        price_minor: f(2) ? Number(bb.readInt64(itemTable + f(2))) : 0,
+      });
+    }
+  }
+  return {
+    id: fbReadString(bb, u8, table, field(0)),
+    status: field(1) ? bb.readInt32(table + field(1)) : 0,
+    meta: {
+      region: meta ? fbReadString(bb, u8, meta.table, meta.field(0)) : '',
+      version: meta && meta.field(1) ? bb.readInt32(meta.table + meta.field(1)) : 0,
+    },
+    items,
+  };
+}
+
+function fbSerializeTelemetry(builder, v) {
+  const srcOff = builder.createString(String(v.source ?? ''));
+  const tagOffs = (v.tags || []).map((t) => builder.createString(String(t)));
+  const tagsVec = fbCreateOffsetVector(builder, tagOffs);
+  // float64 vector
+  const vals = v.values || [];
+  builder.startVector(8, vals.length, 8);
+  for (let i = vals.length - 1; i >= 0; i--) {
+    builder.addFloat64(Number(vals[i]) || 0);
+  }
+  const valuesVec = builder.endVector();
+
+  builder.startObject(4);
+  builder.addFieldOffset(0, srcOff, 0);
+  builder.addFieldInt64(1, BigInt(Number(v.ts) || 0), 0n);
+  builder.addFieldOffset(2, tagsVec, 0);
+  builder.addFieldOffset(3, valuesVec, 0);
+  return builder.endObject();
+}
+
+function fbDeserializeTelemetry(bytes) {
+  const { bb, bytes: u8, table, field } = fbOpenRoot(bytes);
+  return {
+    source: fbReadString(bb, u8, table, field(0)),
+    ts: field(1) ? Number(bb.readInt64(table + field(1))) : 0,
+    tags: fbReadStringVector(bb, u8, table, field(2)),
+    values: fbReadFloat64Vector(bb, table, field(3)),
+  };
+}
+
+function fbSerializeStrings(builder, v) {
+  const offs = (v.items || []).map((s) => builder.createString(String(s)));
+  const vec = fbCreateOffsetVector(builder, offs);
+  builder.startObject(1);
+  builder.addFieldOffset(0, vec, 0);
+  return builder.endObject();
+}
+
+function fbDeserializeStrings(bytes) {
+  const { bb, bytes: u8, table, field } = fbOpenRoot(bytes);
+  return { items: fbReadStringVector(bb, u8, table, field(0)) };
+}
+
+function fbSerializeEvent(builder, v) {
+  const idOff = builder.createString(String(v.event_id ?? ''));
+  const typeOff = builder.createString(String(v.event_type ?? ''));
+  const prodOff = builder.createString(String(v.producer ?? ''));
+  const attrOffs = (v.attrs || []).map((a) => {
+    const k = builder.createString(String(a.key ?? ''));
+    const val = builder.createString(String(a.value ?? ''));
+    builder.startObject(2);
+    builder.addFieldOffset(0, k, 0);
+    builder.addFieldOffset(1, val, 0);
+    return builder.endObject();
+  });
+  const attrsVec = fbCreateOffsetVector(builder, attrOffs);
+  builder.startObject(5);
+  builder.addFieldOffset(0, idOff, 0);
+  builder.addFieldOffset(1, typeOff, 0);
+  builder.addFieldInt64(2, BigInt(Number(v.occurred_at) || 0), 0n);
+  builder.addFieldOffset(3, prodOff, 0);
+  builder.addFieldOffset(4, attrsVec, 0);
+  return builder.endObject();
+}
+
+function fbDeserializeEvent(bytes) {
+  const { bb, bytes: u8, table, field } = fbOpenRoot(bytes);
+  let attrs = [];
+  if (field(4)) {
+    const vec = table + field(4);
+    const start = vec + bb.readInt32(vec);
+    const len = bb.readInt32(start);
+    for (let i = 0; i < len; i++) {
+      const offPos = start + 4 + i * 4;
+      const at = offPos + bb.readInt32(offPos);
+      const vt = at - bb.readInt32(at);
+      const vs = bb.readInt16(vt);
+      const f = (id) => (4 + id * 2 + 2 <= vs ? bb.readInt16(vt + 4 + id * 2) : 0);
+      attrs.push({
+        key: fbReadString(bb, u8, at, f(0)),
+        value: fbReadString(bb, u8, at, f(1)),
+      });
+    }
+  }
+  return {
+    event_id: fbReadString(bb, u8, table, field(0)),
+    event_type: fbReadString(bb, u8, table, field(1)),
+    occurred_at: field(2) ? Number(bb.readInt64(table + field(2))) : 0,
+    producer: fbReadString(bb, u8, table, field(3)),
+    attrs,
+  };
+}
+
+function fbSerializeOne(dataName, value) {
+  const builder = new flatbuffers.Builder(1024);
+  let root;
+  switch (dataName) {
+    case 'message':
+      root = fbSerializeMessage(builder, value);
+      break;
+    case 'document':
+      root = fbSerializeDocument(builder, value);
+      break;
+    case 'telemetry':
+      root = fbSerializeTelemetry(builder, value);
+      break;
+    case 'strings':
+      root = fbSerializeStrings(builder, value);
+      break;
+    case 'event':
+      root = fbSerializeEvent(builder, value);
+      break;
+    default:
+      throw new Error(`flatbuffers: no mapping for ${dataName}`);
+  }
+  builder.finish(root);
+  return Buffer.from(builder.asUint8Array());
+}
+
+function fbDeserializeOne(dataName, bytes) {
+  switch (dataName) {
+    case 'message':
+      return fbDeserializeMessage(bytes);
+    case 'document':
+      return fbDeserializeDocument(bytes);
+    case 'telemetry':
+      return fbDeserializeTelemetry(bytes);
+    case 'strings':
+      return fbDeserializeStrings(bytes);
+    case 'event':
+      return fbDeserializeEvent(bytes);
+    default:
+      throw new Error(`flatbuffers: no mapping for ${dataName}`);
+  }
+}
+
+function fbSerialize(dataName, value) {
+  if (Array.isArray(value)) {
+    const parts = value.map((item) => fbSerializeOne(dataName, item));
+    const total = 4 + parts.reduce((a, p) => a + 4 + p.length, 0);
+    const out = Buffer.allocUnsafe(total);
+    out.writeUInt32LE(parts.length, 0);
+    let o = 4;
+    for (const p of parts) {
+      out.writeUInt32LE(p.length, o);
+      o += 4;
+      p.copy(out, o);
+      o += p.length;
+    }
+    return out;
+  }
+  return fbSerializeOne(dataName, value);
+}
+
+function fbDeserialize(buf) {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  if (fbIsBatch) {
+    const n = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+    let o = 4;
+    const items = [];
+    for (let i = 0; i < n; i++) {
+      const ln = bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24);
+      o += 4;
+      items.push(fbDeserializeOne(fbDataName, bytes.subarray(o, o + ln)));
+      o += ln;
+    }
+    return items;
+  }
+  return fbDeserializeOne(fbDataName, bytes);
 }
 
 export const flatbuffersSer = {
@@ -671,8 +742,9 @@ export const flatbuffersSer = {
   version: pkgVersion('flatbuffers'),
   category: 'schema',
   supports: baseSupports,
-  prepare(dataName) {
+  prepare(dataName, value) {
     fbDataName = dataName;
+    fbIsBatch = Array.isArray(value);
   },
   serialize(value) {
     return fbSerialize(fbDataName, value);

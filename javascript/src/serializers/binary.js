@@ -79,8 +79,8 @@ export const bsonSer = {
   name: 'bson',
   version: pkgVersion('bson'),
   category: 'binary',
-  // BSON top-level must be a document
-  supports: (n) => baseSupports(n) && n !== 'Integer',
+  // BSON top-level must be a document (V2 types are always plain objects / arrays of objects).
+  supports: baseSupports,
   _wrapped: false,
   prepare(_dataName, value) {
     this._wrapped = Array.isArray(value) || typeof value !== 'object' || value === null;
@@ -104,7 +104,7 @@ export const bserSer = {
   name: 'bser',
   version: pkgVersion('bser'),
   category: 'binary',
-  supports: (n) => baseSupports(n) && n !== 'Integer',
+  supports: baseSupports,
   prepare() {},
   serialize(value) {
     return bser.dumpToBuffer(value);

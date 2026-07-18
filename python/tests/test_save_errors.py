@@ -28,7 +28,7 @@ def test_save_errors_with_errors_writes_header_and_rows(tmp_path: Path):
     path = tmp_path / "run.errors.csv"
     err = BenchmarkError(
         string_or_stream="bytes",
-        test_data_name="Person",
+        test_data_name="message",
         serializer_name="orjson",
         repetition=1,
         error_text="boom",
@@ -37,4 +37,4 @@ def test_save_errors_with_errors_writes_header_and_rows(tmp_path: Path):
     assert path.exists()
     text = path.read_text(encoding="utf-8")
     assert "TestDataName,SerializerName,StringOrStream,Repetition,ErrorText" in text
-    assert "Person" in text and "orjson" in text and "boom" in text
+    assert "message" in text and "orjson" in text and "boom" in text

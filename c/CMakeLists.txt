@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
-project(serializer_benchmark_c C)
+project(serializer_benchmark_c C CXX)
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -19,6 +21,7 @@ set(BENCH_SOURCES
   src/batch_cell.c
   src/runner.c
   src/register_serializers.c
+  src/v2_codec.c
   src/serializers/ser_custom_binary.c
 )
 set(BENCH_LIBS m)
@@ -149,7 +152,58 @@ endif()
 
 list(APPEND BENCH_SOURCES src/serializers/ser_upb.c)
 add_compile_definitions(HAS_UPB_WIRE=1)
-message(STATUS "serializer: upb REAL (wire-1.0 in-tree)")
+message(STATUS "serializer: protobuf-wire (in-tree; historical log name was upb)")
+
+# ---- Official Google libprotobuf (reuse cpp suite sysroot or system) ----
+set(PB_SYSROOT "${CMAKE_CURRENT_SOURCE_DIR}/../cpp/third_party/protobuf-sysroot")
+set(PB_SYSROOT_PROTOC "${PB_SYSROOT}/usr/bin/protoc")
+set(PB_SYSROOT_INC "${PB_SYSROOT}/usr/include")
+set(PB_SYSROOT_LIBDIR "${PB_SYSROOT}/usr/lib/x86_64-linux-gnu")
+set(PB_SYSROOT_LIB "${PB_SYSROOT_LIBDIR}/libprotobuf.a")
+set(BENCH_HAS_LIBPROTOBUF 0)
+if(EXISTS "${PB_SYSROOT_PROTOC}" AND EXISTS "${PB_SYSROOT_INC}/google/protobuf/message.h" AND EXISTS "${PB_SYSROOT_LIB}")
+  set(BENCH_HAS_LIBPROTOBUF 1)
+  set(BENCH_PROTOC "${PB_SYSROOT_PROTOC}")
+  set(BENCH_PROTOBUF_INC "${PB_SYSROOT_INC}")
+  set(BENCH_PROTOBUF_LIB "${PB_SYSROOT_LIB}")
+  set(BENCH_PROTOBUF_LIBDIR "${PB_SYSROOT_LIBDIR}")
+  message(STATUS "serializer: protobuf (Google libprotobuf) REAL via ${PB_SYSROOT}")
+else()
+  find_package(Protobuf QUIET)
+  if(Protobuf_FOUND AND Protobuf_PROTOC_EXECUTABLE)
+    set(BENCH_HAS_LIBPROTOBUF 1)
+    set(BENCH_PROTOC "${Protobuf_PROTOC_EXECUTABLE}")
+    set(BENCH_PROTOBUF_INC "${Protobuf_INCLUDE_DIRS}")
+    set(BENCH_PROTOBUF_LIB "${Protobuf_LIBRARIES}")
+    message(STATUS "serializer: protobuf (Google libprotobuf) REAL via find_package")
+  else()
+    message(STATUS "serializer: protobuf (Google libprotobuf) SKIPPED — run cpp/scripts/setup-protobuf-sysroot.sh")
+  endif()
+endif()
+
+if(BENCH_HAS_LIBPROTOBUF)
+  set(PB_PROTO "${CMAKE_CURRENT_SOURCE_DIR}/../schemas/v2/protobuf/benchmark_v2.proto")
+  set(PB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+  file(MAKE_DIRECTORY ${PB_GEN_DIR})
+  set(PB_GEN_CC "${PB_GEN_DIR}/benchmark_v2.pb.cc")
+  set(PB_GEN_H "${PB_GEN_DIR}/benchmark_v2.pb.h")
+  add_custom_command(
+    OUTPUT ${PB_GEN_CC} ${PB_GEN_H}
+    COMMAND ${CMAKE_COMMAND} -E env
+            "LD_LIBRARY_PATH=${BENCH_PROTOBUF_LIBDIR}:$ENV{LD_LIBRARY_PATH}"
+            ${BENCH_PROTOC}
+            --cpp_out=${PB_GEN_DIR}
+            -I ${CMAKE_CURRENT_SOURCE_DIR}/../schemas/v2/protobuf
+            ${PB_PROTO}
+    DEPENDS ${PB_PROTO}
+    COMMENT "Generating Google libprotobuf C++ stubs (benchmark_v2.proto)"
+    VERBATIM
+  )
+  list(APPEND BENCH_SOURCES src/serializers/ser_protobuf_google.cpp ${PB_GEN_CC})
+  list(APPEND BENCH_INCLUDES ${PB_GEN_DIR} ${BENCH_PROTOBUF_INC})
+  list(APPEND BENCH_LIBS ${BENCH_PROTOBUF_LIB} pthread stdc++)
+  add_compile_definitions(HAS_LIBPROTOBUF=1)
+endif()
 
 if(EXISTS ${TP}/flatcc/src/runtime/builder.c)
   list(APPEND BENCH_SOURCES

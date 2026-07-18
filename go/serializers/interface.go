@@ -63,7 +63,7 @@ type DomainConverter interface {
 	ToDomain(decoded any) (any, error)
 }
 
-// DefaultSupports: flat ObjectGraph (index edges) is portable — every codec can encode it.
+// DefaultSupports: Data Model v2 payloads are portable — every codec can encode them.
 func DefaultSupports(testDataName string) bool {
 	return true
 }

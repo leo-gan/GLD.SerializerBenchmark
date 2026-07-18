@@ -29,7 +29,7 @@ class OrjsonSerializer(Serializer):
         return "orjson"
 
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
-        # Flat ObjectGraph (index edges) serializes as a plain dict like other fixtures.
+        # Flat document (index edges) serializes as a plain dict like other fixtures.
         return to_dict(obj)
 
     def serialize_bytes(self, obj: Any) -> bytes:

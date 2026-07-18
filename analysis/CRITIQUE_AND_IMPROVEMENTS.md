@@ -18,13 +18,13 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 
 **Problem (historical):** Default C build once used minimal JSON/binary *stand-ins* labeled with real library names.
 
-**Fixed:** Vendored libraries under `c/third_party/` (cJSON, yyjson, mpack, tinycbor, …), built via `c/scripts/fetch-and-build-deps.sh`, registered through real `HAS_*` paths in `register_serializers.c`. Pins in `c/third_party/VERSIONS.md`. Residual: a few **in-tree** codecs (minimal UBJSON, wire-1.0 “upb”) — document, do not mislabel as third-party Google upb.
+**Fixed:** Vendored libraries under `c/third_party/` (cJSON, yyjson, mpack, tinycbor, …), built via `c/scripts/fetch-and-build-deps.sh`, registered through real `HAS_*` paths in `register_serializers.c`. Pins in `c/third_party/VERSIONS.md`. Residual: a few **in-tree** codecs (minimal UBJSON, log name `protobuf-wire`) — document, do not mislabel as third-party Google upb.
 
 ### 2. Rust schema/zero-copy intermediate payloads (MEDIUM) — **fixed**
 
 **Problem (historical):** `rkyv` / `prost` / `minicbor` once wrapped intermediate MessagePack.
 
-**Fixed:** `prost-build` from `rust/proto/benchmark_data.proto`; full `rkyv` `Archive` on concrete types; direct `minicbor` `Encode`/`Decode`; inventory on [Rust overview](../docs/rust/index.md).
+**Fixed:** `prost-build` from `schemas/v2/protobuf/benchmark_v2.proto`; full `rkyv` `Archive` on concrete types; direct `minicbor` `Encode`/`Decode`; inventory on [Rust overview](../docs/rust/index.md).
 
 ### 3. Stream mode is often adapted (MEDIUM) — **open**
 

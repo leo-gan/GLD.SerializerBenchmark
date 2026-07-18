@@ -1,15 +1,11 @@
 //! Data Model v2 path: cells from resolve_run_config.py + full serializer registry.
 //!
-//! Schemaless codecs (serde) operate on `Fixture` variants populated from v2
-//! generators. Typed codecs (minicbor/rkyv/…) map v2 shapes onto the closest
-//! existing concrete structs so the historical 15-serializer set is preserved.
+//! Builds first-class V2 `Fixture` variants (Message/Document/Telemetry/Strings/Event)
+//! directly from generators — no V1 proxy mapping.
 
 use crate::csv_log::CsvLogger;
-use crate::data::{
-    Fixture, SimpleObject, StringArrayObject, TelemetryData, Edi835, Claim, ServiceLine,
-};
-use crate::data_v2;
-use crate::serializers::{all_serializers, BenchSerializer};
+use crate::data::{self, fidelity, Fixture};
+use crate::serializers::{all_serializers, BenchSerializer, StreamMode};
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::path::Path;
@@ -90,8 +86,9 @@ fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
         // while still labeling CSV DataTypeInstanceCount=N (that made Rust look 100× too fast).
         let mut fixtures = Vec::with_capacity(n as usize);
         for i in 0..n {
-            let value = data_v2::make_one(&type_id, seed, i, children, points, count, attrs);
-            fixtures.push(value_to_fixture(&type_id, &value)?);
+            fixtures.push(data::make_one(
+                &type_id, seed, i, children, points, count, attrs,
+            )?);
         }
         out_cells.push(Cell {
             type_id,
@@ -101,76 +98,6 @@ fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
         });
     }
     Ok((out_cells, modes))
-}
-
-/// Map v2 JSON values onto existing Fixture variants so all 15 codecs can run.
-fn value_to_fixture(type_id: &str, v: &Value) -> Result<Fixture> {
-    match type_id {
-        "message" => {
-            let m: data_v2::Message = serde_json::from_value(v.clone())?;
-            Ok(Fixture::Simple(SimpleObject {
-                id: m.f_int32,
-                name: m.f_string,
-                timestamp: format!("{}", m.f_int64),
-                is_active: m.f_bool,
-            }))
-        }
-        "telemetry" => {
-            let t: data_v2::Telemetry = serde_json::from_value(v.clone())?;
-            Ok(Fixture::Telemetry(TelemetryData {
-                id: t.source.clone(),
-                data_source: t.source,
-                time_stamp: format!("{}", t.ts),
-                param1: t.values.first().map(|x| *x as i32).unwrap_or(0),
-                param2: t.tags.len() as i32,
-                measurements: t.values,
-                associated_problem_id: 0,
-                associated_log_id: 0,
-                was_processed: true,
-            }))
-        }
-        "strings" => {
-            let s: data_v2::Strings = serde_json::from_value(v.clone())?;
-            Ok(Fixture::StringArray(StringArrayObject { items: s.items }))
-        }
-        "document" => {
-            let d: data_v2::Document = serde_json::from_value(v.clone())?;
-            let claims: Vec<Claim> = d
-                .items
-                .iter()
-                .take(4)
-                .map(|it| Claim {
-                    claim_id: it.sku.clone(),
-                    patient_name: d.id.clone(),
-                    total_charge: it.price_minor as f64 / 100.0,
-                    payment_amount: it.qty as f64,
-                    lines: vec![ServiceLine {
-                        service_code: it.sku.clone(),
-                        charge_amount: it.price_minor as f64 / 100.0,
-                        adjudicated_amount: it.qty as f64,
-                    }],
-                })
-                .collect();
-            Ok(Fixture::Edi(Edi835 {
-                payer_name: d.meta.region,
-                payee_name: d.id,
-                payment_date: format!("{}", d.status),
-                total_actual_amount: claims.iter().map(|c| c.total_charge).sum(),
-                transaction_control_number: format!("v{}", d.meta.version),
-                claims,
-            }))
-        }
-        "event" => {
-            let e: data_v2::Event = serde_json::from_value(v.clone())?;
-            Ok(Fixture::Simple(SimpleObject {
-                id: e.occurred_at as i32,
-                name: e.event_type,
-                timestamp: e.event_id,
-                is_active: !e.producer.is_empty(),
-            }))
-        }
-        other => anyhow::bail!("unknown v2 type_id {other}"),
-    }
 }
 
 /// Encode one cell: N=1 → raw codec bytes; N>1 → u32 LE count + (u32 LE len + payload)×N.
@@ -257,8 +184,8 @@ fn check_batch_fidelity(expected: &[Fixture], got: &[Fixture]) -> Result<()> {
         );
     }
     for (a, b) in expected.iter().zip(got.iter()) {
-        if a.name() != b.name() {
-            anyhow::bail!("fidelity kind mismatch {} vs {}", a.name(), b.name());
+        if !fidelity(a, b) {
+            anyhow::bail!("fidelity failed for {}", a.name());
         }
     }
     Ok(())
@@ -350,6 +277,16 @@ pub fn run_v2(
                     })();
                     match measured {
                         Ok((ser_ns, deser_ns, size)) => {
+                            let nk = match ser.native_kind() {
+                                crate::serializers::NativeKind::Serde => "serde",
+                                crate::serializers::NativeKind::Message => "message",
+                                crate::serializers::NativeKind::Archive => "archive",
+                                crate::serializers::NativeKind::Direct => "direct",
+                            };
+                            let sm = match ser.stream_mode() {
+                                StreamMode::Native => "native",
+                                StreamMode::Adapted => "adapted",
+                            };
                             logger.write_row_v2(
                                 mode,
                                 &cell.type_id,
@@ -361,8 +298,8 @@ pub fn run_v2(
                                 size,
                                 1.0,
                                 ser.version(),
-                                "serde",
-                                "adapted",
+                                nk,
+                                sm,
                                 cell.instance_count as u32,
                                 &cell.type_config_hash,
                             )?;

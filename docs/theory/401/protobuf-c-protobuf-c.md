@@ -59,7 +59,7 @@ protoc --c_out=gen -I schemas schemas/v2/protobuf/benchmark_v2.proto
 
 Alternatively, **`protobuf_c_message_pack_to_buffer`** streams chunks through a `ProtobufCBuffer` vtable (an append callback) without precomputing a single allocation size.
 
-For the teaching [MiniUser](lab-mini-protobuf-encoder.md) goldens, compile a separate tiny `mini.proto`—not the suite `benchmark_data.proto`.
+For the teaching [MiniUser](lab-mini-protobuf-encoder.md) goldens, compile a separate tiny `mini.proto`—not the suite `schemas/v2/protobuf/benchmark_v2.proto`.
 
 ## How protobuf-c implements serialization (step-by-step)
 
@@ -249,11 +249,11 @@ heap message → free_unpacked()
 
 | Location | Role |
 |----------|------|
-| `c/src/serializers/ser_protobuf_c.c` | Register `protobuf-c`; call fixture encode/decode helpers |
-| Fixture helpers | Map harness fixtures ↔ protobuf-c messages |
-| Log name | `protobuf-c` |
-| Pin | protobuf-c v1.5.0 |
-| [C Results](../../c/results.md) | Schema-driven C peers |
+| `c/src/serializers/ser_protobuf_c.c` | Register log name `protobuf-c` |
+| Timed encode/decode | Shared suite proto3 wire helper `fixture_pb_v2.h` (field tags match `benchmark_v2.proto`)—**not** a full protoc-gen-c `pack`/`unpack` path yet |
+| Official Google C++/C runtime row | Log name `protobuf` (libprotobuf) on the [C Overview](../../c/index.md) |
+| Pin (linked) | protobuf-c v1.5.0 in `c/third_party/VERSIONS.md` |
+| [C Results](../../c/results.md) | Schema-driven C peers (regenerate after harness changes) |
 
 Do not rank C against Python or Rust from Results alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 

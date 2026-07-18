@@ -10,7 +10,7 @@
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview SoT): C# **36** · Python **16** · Rust **15** · C **19** · JavaScript **19** (simdjson optional) · Go **19** · Java **18** · C++ **26+**.
+Registered counts (Overview SoT): C# **36** · Python **16** · Rust **15** · C **20** · JavaScript **20** (simdjson optional) · Go **19** · Java **18** · C++ **27+**.
 
 ---
 
@@ -95,11 +95,11 @@ Examples use **log `SerializerName` values** from language overviews (not necess
   - **C#:** `ProtoBuf` (protobuf-net), `Google.Protobuf`, `MS Bond Fast` / `Compact`, `FlatSharp`, `ZeroFormatter`, `MemoryPack` (model/generator path)  
   - **Python:** `protobuf`, `avro` (fastavro), `flatbuffers`  
   - **Rust:** `prost` (shared `.proto`), `rkyv` (timed deser **materializes** owned values), `flexbuffers`  
-  - **C:** `nanopb`, `protobuf-c`, `upb` (in-tree wire), `flatcc`, `avro-c`, `zcbor`  
-  - **JavaScript:** `avsc`, `protobufjs`, `protobuf-es`, `flatbuffers`, `flexbuffers`, `bebop`  
+  - **C:** `protobuf` (Google libprotobuf), `nanopb`, `protobuf-c`, `protobuf-wire` (in-tree), `flatcc`, `avro-c`, `zcbor`  
+  - **JavaScript:** `avsc`, `protobufjs`, `protobuf-es`, `google-protobuf`, `flatbuffers`, `flexbuffers`, `bebop`  
   - **Go:** `protobuf`, `hamba/avro`, `linkedin/goavro`  
   - **Java:** `protobuf`, `avro`  
-  - **C++:** `protobuf`, `avro`/`avro_c`, `thrift`, `capnproto`, `flatbuffers`, `flexbuffers`  
+  - **C++:** `protobuf` (libprotobuf), `protobuf-wire` (in-tree), `avro`/`avro_c`, `thrift`, `capnproto`, `flatbuffers`, `flexbuffers`  
 
 ### Language-native
 
@@ -119,7 +119,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 
 - Default comparison: **same language + same family + same fixture + same mode**.  
 - Schema-driven often leads on size/throughput *within a language*—not a universal ranking.  
-- **C** uses real library APIs when deps are built (`fetch-and-build-deps.sh`); read the C Overview for `upb` / `ubj` notes.  
+- **C** uses real library APIs when deps are built (`fetch-and-build-deps.sh`); read the [C Overview](../c/index.md) for visitor domain shape, `protobuf-wire` (in-tree, not Google upb), and payload-wrapped rows (`ubj`, flatcc, avro-c).  
 - Metrics live on language **Results**, not here.
 
 ## Further reading

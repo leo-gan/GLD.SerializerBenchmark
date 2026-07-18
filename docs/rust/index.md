@@ -21,7 +21,7 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 | minicbor | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
 | nanoserde | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
 | postcard | Binary | `postcard` | Serde | adapted | no_std-friendly format |
-| prost | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | From shared `.proto` |
+| prost | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
 | rkyv | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
 | rmp-serde | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
 | serde_json | JSON | `serde_json` | Serde `Fixture` | native | Baseline |

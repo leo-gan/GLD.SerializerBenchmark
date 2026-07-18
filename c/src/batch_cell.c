@@ -78,13 +78,11 @@ int bench_deserialize_cell(const serializer_t *S, const uint8_t *buf, size_t len
     out_fx->batch_n = (int)n;
     out_fx->batch = items;
     if (n > 0) {
-        out_fx->simple = items[0].simple;
+        out_fx->message = items[0].message;
+        out_fx->document = items[0].document;
         out_fx->telemetry = items[0].telemetry;
-        out_fx->string_array = items[0].string_array;
-        out_fx->edi = items[0].edi;
-        out_fx->person = items[0].person;
-        out_fx->graph = items[0].graph;
-        out_fx->integer_val = items[0].integer_val;
+        out_fx->strings = items[0].strings;
+        out_fx->event = items[0].event;
     }
     return 0;
 }

@@ -1,314 +1,199 @@
 #include "ser_common.h"
+#include "v2_codec.h"
 #include "parson_pref.h"
 
-/* Full-field parson: serialize/deserialize by routing through a complete JSON document
- * built and parsed with parson nested objects (same field map as yyjson/cJSON/json-c/jansson). */
+/* Wrapper: only parson ops. Domain shape is v2_write/read_fixture. */
 
 static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx; return 0; }
 
-/* Build via intermediate buffer using a tiny recursive approach:
- * we produce JSON with cJSON then parse with parson for ser? That would time cJSON.
- * Instead build with parson only. */
+typedef enum { PS_OBJ, PS_ARR } ps_kind;
+typedef struct {
+    JSON_Value *vals[32];
+    ps_kind kinds[32];
+    int sp;
+    JSON_Value *root;
+    char pending_key[64];
+    int has_key;
+} pw;
 
-static JSON_Value *fx_to_val(const test_fixture_t *fx) {
-    JSON_Value *root_v = json_value_init_object();
-    JSON_Object *root = json_value_get_object(root_v);
-    json_object_set_number(root, "kind", (double)fx->kind);
-    switch (fx->kind) {
-        case TD_INTEGER:
-            json_object_set_number(root, "value", fx->integer_val);
-            break;
-        case TD_SIMPLE:
-            json_object_set_number(root, "Id", fx->simple.id);
-            json_object_set_string(root, "Name", fx->simple.name);
-            json_object_set_string(root, "Timestamp", fx->simple.timestamp);
-            json_object_set_boolean(root, "IsActive", fx->simple.is_active);
-            break;
-        case TD_PERSON: {
-            json_object_set_string(root, "FirstName", fx->person.first_name);
-            json_object_set_string(root, "LastName", fx->person.last_name);
-            json_object_set_number(root, "Age", fx->person.age);
-            json_object_set_number(root, "Gender", fx->person.gender);
-            JSON_Value *pass_v = json_value_init_object();
-            JSON_Object *pass = json_value_get_object(pass_v);
-            json_object_set_string(pass, "Number", fx->person.passport_number);
-            json_object_set_string(pass, "Authority", fx->person.passport_authority);
-            json_object_set_value(root, "Passport", pass_v);
-            JSON_Value *arr_v = json_value_init_array();
-            JSON_Array *arr = json_value_get_array(arr_v);
-            int n = fx->person.police_count; if (n < 0) n = 0; if (n > 8) n = 8;
-            for (int i = 0; i < n; i++) {
-                JSON_Value *rec_v = json_value_init_object();
-                JSON_Object *rec = json_value_get_object(rec_v);
-                json_object_set_number(rec, "Id", fx->person.police_ids[i]);
-                json_object_set_string(rec, "CrimeCode", fx->person.police_codes[i]);
-                json_array_append_value(arr, rec_v);
-            }
-            json_object_set_value(root, "PoliceRecords", arr_v);
-            break;
-        }
-        case TD_TELEMETRY: {
-            json_object_set_string(root, "Id", fx->telemetry.id);
-            json_object_set_string(root, "DataSource", fx->telemetry.data_source);
-            json_object_set_string(root, "TimeStamp", fx->telemetry.time_stamp);
-            json_object_set_number(root, "Param1", fx->telemetry.param1);
-            json_object_set_number(root, "Param2", fx->telemetry.param2);
-            JSON_Value *arr_v = json_value_init_array();
-            JSON_Array *arr = json_value_get_array(arr_v);
-            int n = fx->telemetry.meas_count; if (n < 0) n = 0; if (n > 100) n = 100;
-            for (int i = 0; i < n; i++) json_array_append_number(arr, fx->telemetry.measurements[i]);
-            json_object_set_value(root, "Measurements", arr_v);
-            json_object_set_number(root, "AssociatedProblemID", fx->telemetry.problem_id);
-            json_object_set_number(root, "AssociatedLogID", fx->telemetry.log_id);
-            json_object_set_boolean(root, "WasProcessed", fx->telemetry.was_processed);
-            break;
-        }
-        case TD_STRING_ARRAY: {
-            json_object_set_number(root, "Count", fx->string_array.count);
-            JSON_Value *arr_v = json_value_init_array();
-            JSON_Array *arr = json_value_get_array(arr_v);
-            for (int i = 0; i < fx->string_array.count && i < 100; i++)
-                json_array_append_string(arr, fx->string_array.items[i]);
-            json_object_set_value(root, "Items", arr_v);
-            break;
-        }
-        case TD_EDI835: {
-            json_object_set_string(root, "PayerName", fx->edi.payer_name);
-            json_object_set_string(root, "PayeeName", fx->edi.payee_name);
-            json_object_set_string(root, "PaymentDate", fx->edi.payment_date);
-            json_object_set_number(root, "TotalActual", fx->edi.total_actual);
-            json_object_set_string(root, "TCN", fx->edi.tcn);
-            JSON_Value *claims_v = json_value_init_array();
-            JSON_Array *claims = json_value_get_array(claims_v);
-            int nc = fx->edi.claim_count; if (nc < 0) nc = 0; if (nc > 6) nc = 6;
-            for (int c = 0; c < nc; c++) {
-                const claim_t *cl = &fx->edi.claims[c];
-                JSON_Value *co_v = json_value_init_object();
-                JSON_Object *co = json_value_get_object(co_v);
-                json_object_set_string(co, "ClaimId", cl->claim_id);
-                json_object_set_string(co, "PatientName", cl->patient_name);
-                json_object_set_number(co, "TotalCharge", cl->total_charge);
-                json_object_set_number(co, "Payment", cl->payment);
-                JSON_Value *lines_v = json_value_init_array();
-                JSON_Array *lines = json_value_get_array(lines_v);
-                int nl = cl->line_count; if (nl < 0) nl = 0; if (nl > 4) nl = 4;
-                for (int L = 0; L < nl; L++) {
-                    JSON_Value *lo_v = json_value_init_object();
-                    JSON_Object *lo = json_value_get_object(lo_v);
-                    json_object_set_string(lo, "ServiceCode", cl->lines[L].service_code);
-                    json_object_set_number(lo, "Charge", cl->lines[L].charge);
-                    json_object_set_number(lo, "Adjudicated", cl->lines[L].adjudicated);
-                    json_array_append_value(lines, lo_v);
-                }
-                json_object_set_value(co, "Lines", lines_v);
-                json_array_append_value(claims, co_v);
-            }
-            json_object_set_value(root, "Claims", claims_v);
-            break;
-        }
-
-        case TD_OBJECT_GRAPH: {
-            const object_graph_t *g = &fx->graph;
-            json_object_set_number(root, "root", (double)g->root);
-            JSON_Value *nodes_v = json_value_init_array();
-            JSON_Array *nodes = json_value_get_array(nodes_v);
-            int nn = g->node_count; if (nn < 0) nn = 0; if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
-            for (int i = 0; i < nn; i++) {
-                const graph_node_t *n = &g->nodes[i];
-                JSON_Value *no_v = json_value_init_object();
-                JSON_Object *no = json_value_get_object(no_v);
-                json_object_set_string(no, "Name", n->name);
-                json_object_set_number(no, "Parent", (double)n->parent);
-                json_object_set_number(no, "Related", (double)n->related);
-                JSON_Value *ch_v = json_value_init_array();
-                JSON_Array *ch = json_value_get_array(ch_v);
-                int nc = n->child_count; if (nc < 0) nc = 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
-                for (int c = 0; c < nc; c++) json_array_append_number(ch, (double)n->children[c]);
-                json_object_set_value(no, "Children", ch_v);
-                json_array_append_value(nodes, no_v);
-            }
-            json_object_set_value(root, "nodes", nodes_v);
-            break;
-        }
-        default:
-            json_value_free(root_v);
-            return NULL;
-    }
-    return root_v;
-}
-
-static int val_to_fx(JSON_Value *root_v, test_fixture_t *out, test_data_kind_t kind) {
-    JSON_Object *root = json_value_get_object(root_v);
-    if (!root || (int)json_object_get_number(root, "kind") != (int)kind) return -1;
-    memset(out, 0, sizeof *out);
-    out->kind = kind;
-    out->name = test_data_name(kind);
-    switch (kind) {
-        case TD_INTEGER:
-            out->integer_val = (int)json_object_get_number(root, "value");
-            break;
-        case TD_SIMPLE: {
-            out->simple.id = (int)json_object_get_number(root, "Id");
-            const char *n = json_object_get_string(root, "Name");
-            const char *t = json_object_get_string(root, "Timestamp");
-            if (!n) return -1;
-            snprintf(out->simple.name, sizeof out->simple.name, "%s", n);
-            if (t) snprintf(out->simple.timestamp, sizeof out->simple.timestamp, "%s", t);
-            out->simple.is_active = json_object_get_boolean(root, "IsActive") == 1;
-            break;
-        }
-        case TD_PERSON: {
-            const char *fn = json_object_get_string(root, "FirstName");
-            const char *ln = json_object_get_string(root, "LastName");
-            if (!fn || !ln) return -1;
-            snprintf(out->person.first_name, sizeof out->person.first_name, "%s", fn);
-            snprintf(out->person.last_name, sizeof out->person.last_name, "%s", ln);
-            out->person.age = (int)json_object_get_number(root, "Age");
-            out->person.gender = (int)json_object_get_number(root, "Gender");
-            JSON_Object *pass = json_object_get_object(root, "Passport");
-            if (pass) {
-                const char *pn = json_object_get_string(pass, "Number");
-                const char *pa = json_object_get_string(pass, "Authority");
-                if (pn) snprintf(out->person.passport_number, sizeof out->person.passport_number, "%s", pn);
-                if (pa) snprintf(out->person.passport_authority, sizeof out->person.passport_authority, "%s", pa);
-            }
-            JSON_Array *arr = json_object_get_array(root, "PoliceRecords");
-            if (arr) {
-                size_t n = json_array_get_count(arr); if (n > 8) n = 8;
-                out->person.police_count = (int)n;
-                for (size_t i = 0; i < n; i++) {
-                    JSON_Object *rec = json_array_get_object(arr, i);
-                    out->person.police_ids[i] = (int)json_object_get_number(rec, "Id");
-                    const char *cc = json_object_get_string(rec, "CrimeCode");
-                    if (cc) snprintf(out->person.police_codes[i], sizeof out->person.police_codes[i], "%s", cc);
-                }
-            }
-            break;
-        }
-        case TD_TELEMETRY: {
-            const char *id = json_object_get_string(root, "Id");
-            if (!id) return -1;
-            snprintf(out->telemetry.id, sizeof out->telemetry.id, "%s", id);
-            const char *ds = json_object_get_string(root, "DataSource");
-            if (ds) snprintf(out->telemetry.data_source, sizeof out->telemetry.data_source, "%s", ds);
-            const char *ts = json_object_get_string(root, "TimeStamp");
-            if (ts) snprintf(out->telemetry.time_stamp, sizeof out->telemetry.time_stamp, "%s", ts);
-            out->telemetry.param1 = (int)json_object_get_number(root, "Param1");
-            out->telemetry.param2 = (int)json_object_get_number(root, "Param2");
-            out->telemetry.problem_id = (int)json_object_get_number(root, "AssociatedProblemID");
-            out->telemetry.log_id = (int)json_object_get_number(root, "AssociatedLogID");
-            out->telemetry.was_processed = json_object_get_boolean(root, "WasProcessed") == 1;
-            JSON_Array *arr = json_object_get_array(root, "Measurements");
-            if (arr) {
-                size_t n = json_array_get_count(arr); if (n > 100) n = 100;
-                out->telemetry.meas_count = (int)n;
-                for (size_t i = 0; i < n; i++) out->telemetry.measurements[i] = json_array_get_number(arr, i);
-            }
-            break;
-        }
-        case TD_STRING_ARRAY: {
-            JSON_Array *arr = json_object_get_array(root, "Items");
-            if (arr) {
-                size_t n = json_array_get_count(arr); if (n > 100) n = 100;
-                out->string_array.count = (int)n;
-                for (size_t i = 0; i < n; i++) {
-                    const char *s = json_array_get_string(arr, i);
-                    if (s) snprintf(out->string_array.items[i], sizeof out->string_array.items[i], "%s", s);
-                }
-            }
-            break;
-        }
-        case TD_EDI835: {
-            const char *p = json_object_get_string(root, "PayerName");
-            if (!p) return -1;
-            snprintf(out->edi.payer_name, sizeof out->edi.payer_name, "%s", p);
-            const char *q = json_object_get_string(root, "PayeeName");
-            if (q) snprintf(out->edi.payee_name, sizeof out->edi.payee_name, "%s", q);
-            const char *pd = json_object_get_string(root, "PaymentDate");
-            if (pd) snprintf(out->edi.payment_date, sizeof out->edi.payment_date, "%s", pd);
-            const char *tcn = json_object_get_string(root, "TCN");
-            if (tcn) snprintf(out->edi.tcn, sizeof out->edi.tcn, "%s", tcn);
-            out->edi.total_actual = json_object_get_number(root, "TotalActual");
-            JSON_Array *claims = json_object_get_array(root, "Claims");
-            if (claims) {
-                size_t nc = json_array_get_count(claims); if (nc > 6) nc = 6;
-                out->edi.claim_count = (int)nc;
-                for (size_t c = 0; c < nc; c++) {
-                    JSON_Object *co = json_array_get_object(claims, c);
-                    claim_t *cl = &out->edi.claims[c];
-                    const char *cid = json_object_get_string(co, "ClaimId");
-                    const char *pn = json_object_get_string(co, "PatientName");
-                    if (cid) snprintf(cl->claim_id, sizeof cl->claim_id, "%s", cid);
-                    if (pn) snprintf(cl->patient_name, sizeof cl->patient_name, "%s", pn);
-                    cl->total_charge = json_object_get_number(co, "TotalCharge");
-                    cl->payment = json_object_get_number(co, "Payment");
-                    JSON_Array *lines = json_object_get_array(co, "Lines");
-                    size_t nl = lines ? json_array_get_count(lines) : 0; if (nl > 4) nl = 4;
-                    cl->line_count = (int)nl;
-                    for (size_t L = 0; L < nl; L++) {
-                        JSON_Object *lo = json_array_get_object(lines, L);
-                        const char *sc = json_object_get_string(lo, "ServiceCode");
-                        if (sc) snprintf(cl->lines[L].service_code, sizeof cl->lines[L].service_code, "%s", sc);
-                        cl->lines[L].charge = json_object_get_number(lo, "Charge");
-                        cl->lines[L].adjudicated = json_object_get_number(lo, "Adjudicated");
-                    }
-                }
-            }
-            break;
-        }
-
-        case TD_OBJECT_GRAPH: {
-            out->graph.root = (int)json_object_get_number(root, "root");
-            JSON_Array *nodes = json_object_get_array(root, "nodes");
-            if (!nodes) return -1;
-            size_t nn = json_array_get_count(nodes); if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
-            out->graph.node_count = (int)nn;
-            for (size_t i = 0; i < nn; i++) {
-                JSON_Object *no = json_array_get_object(nodes, i);
-                graph_node_t *n = &out->graph.nodes[i];
-                const char *nm = json_object_get_string(no, "Name");
-                if (nm) snprintf(n->name, sizeof n->name, "%s", nm);
-                n->parent = (int)json_object_get_number(no, "Parent");
-                n->related = (int)json_object_get_number(no, "Related");
-                JSON_Array *ch = json_object_get_array(no, "Children");
-                size_t nc = ch ? json_array_get_count(ch) : 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
-                n->child_count = (int)nc;
-                for (size_t c = 0; c < nc; c++) n->children[c] = (int)json_array_get_number(ch, c);
-            }
-            break;
-        }
-        default: return -1;
-    }
+static int w_begin_map(void *ctx, int n) {
+    (void)n;
+    pw *c = ctx;
+    JSON_Value *v = json_value_init_object();
+    if (!v) return -1;
+    if (c->sp == 0) {
+        c->root = v;
+    } else if (c->has_key && c->kinds[c->sp - 1] == PS_OBJ) {
+        json_object_set_value(json_value_get_object(c->vals[c->sp - 1]), c->pending_key, v);
+        c->has_key = 0;
+    } else if (c->kinds[c->sp - 1] == PS_ARR) {
+        json_array_append_value(json_value_get_array(c->vals[c->sp - 1]), v);
+    } else { json_value_free(v); return -1; }
+    c->vals[c->sp] = v;
+    c->kinds[c->sp] = PS_OBJ;
+    c->sp++;
     return 0;
 }
+static int w_end_map(void *ctx) { pw *c = ctx; if (c->sp <= 0) return -1; c->sp--; return 0; }
+static int w_begin_array(void *ctx, int n) {
+    (void)n;
+    pw *c = ctx;
+    JSON_Value *v = json_value_init_array();
+    if (!v) return -1;
+    if (c->has_key && c->kinds[c->sp - 1] == PS_OBJ) {
+        json_object_set_value(json_value_get_object(c->vals[c->sp - 1]), c->pending_key, v);
+        c->has_key = 0;
+    } else { json_value_free(v); return -1; }
+    c->vals[c->sp] = v;
+    c->kinds[c->sp] = PS_ARR;
+    c->sp++;
+    return 0;
+}
+static int w_end_array(void *ctx) { pw *c = ctx; if (c->sp <= 0) return -1; c->sp--; return 0; }
+static int w_key(void *ctx, const char *k) {
+    pw *c = ctx; snprintf(c->pending_key, sizeof c->pending_key, "%s", k); c->has_key = 1; return 0;
+}
+static int w_attach_val(pw *c, JSON_Value *v) {
+    if (!v) return -1;
+    if (c->has_key && c->kinds[c->sp - 1] == PS_OBJ) {
+        json_object_set_value(json_value_get_object(c->vals[c->sp - 1]), c->pending_key, v);
+        c->has_key = 0;
+    } else if (c->kinds[c->sp - 1] == PS_ARR) {
+        json_array_append_value(json_value_get_array(c->vals[c->sp - 1]), v);
+    } else { json_value_free(v); return -1; }
+    return 0;
+}
+static int w_bool(void *ctx, int v) { return w_attach_val(ctx, json_value_init_boolean(v)); }
+static int w_i64(void *ctx, int64_t v) { return w_attach_val(ctx, json_value_init_number((double)v)); }
+static int w_f64(void *ctx, double v) { return w_attach_val(ctx, json_value_init_number(v)); }
+static int w_str(void *ctx, const char *s) { return w_attach_val(ctx, json_value_init_string(s ? s : "")); }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
-    /* Optimal: json_serialize_to_buffer avoids intermediate malloc of the JSON string. */
-    JSON_Value *v = fx_to_val(fx);
-    if (!v) return -1;
-    size_t need = json_serialization_size(v);
-    if (need == 0 || need > cap) { json_value_free(v); return -1; }
-    if (json_serialize_to_buffer(v, (char *)buf, cap) != JSONSuccess) {
-        json_value_free(v);
+    pw c = {0};
+    v2_writer_t w = {
+        .ctx = &c, .begin_map = w_begin_map, .end_map = w_end_map,
+        .begin_array = w_begin_array, .end_array = w_end_array,
+        .key = w_key, .put_bool = w_bool, .put_i64 = w_i64, .put_f64 = w_f64, .put_str = w_str,
+    };
+    if (v2_write_fixture(fx, &w) != 0 || !c.root) {
+        if (c.root) json_value_free(c.root);
         return -1;
     }
-    /* serialization_size includes the trailing NUL; reported payload is bytes without it. */
-    *ol = need > 0 ? need - 1 : 0;
-    json_value_free(v);
+    char *s = json_serialize_to_string(c.root);
+    json_value_free(c.root);
+    if (!s) return -1;
+    size_t n = strlen(s);
+    if (n + 1 > cap) { json_free_serialized_string(s); return -1; }
+    memcpy(buf, s, n); *ol = n;
+    json_free_serialized_string(s);
     return 0;
 }
 
+typedef struct {
+    JSON_Value *stack[32]; /* for objects: value; for arrays after enter: array value */
+    JSON_Array *arr_stack[32];
+    int is_arr[32];
+    int sp;
+} pr;
+
+static JSON_Object *robj(pr *c) {
+    return json_value_get_object(c->stack[c->sp - 1]);
+}
+
+static int r_get_bool(void *ctx, const char *key, int *out) {
+    pr *c = ctx;
+    if (key && key[0]) {
+        JSON_Value *v = json_object_get_value(robj(c), key);
+        if (!v) return 1;
+        *out = json_value_get_boolean(v);
+        return 0;
+    }
+    *out = json_value_get_boolean(c->stack[c->sp - 1]);
+    return 0;
+}
+static int r_get_i64(void *ctx, const char *key, int64_t *out) {
+    pr *c = ctx;
+    if (key && key[0]) {
+        JSON_Value *v = json_object_get_value(robj(c), key);
+        if (!v) return 1;
+        *out = (int64_t)json_value_get_number(v);
+        return 0;
+    }
+    *out = (int64_t)json_value_get_number(c->stack[c->sp - 1]);
+    return 0;
+}
+static int r_get_f64(void *ctx, const char *key, double *out) {
+    pr *c = ctx;
+    if (key && key[0]) {
+        JSON_Value *v = json_object_get_value(robj(c), key);
+        if (!v) return 1;
+        *out = json_value_get_number(v);
+        return 0;
+    }
+    *out = json_value_get_number(c->stack[c->sp - 1]);
+    return 0;
+}
+static int r_get_str(void *ctx, const char *key, char *buf, size_t buflen) {
+    pr *c = ctx;
+    const char *s = NULL;
+    if (key && key[0]) {
+        s = json_object_get_string(robj(c), key);
+        if (!s) { if (buflen) buf[0] = 0; return 0; }
+    } else {
+        s = json_value_get_string(c->stack[c->sp - 1]);
+        if (!s) return -1;
+    }
+    snprintf(buf, buflen, "%s", s);
+    return 0;
+}
+static int r_enter_object(void *ctx, const char *key) {
+    pr *c = ctx;
+    JSON_Value *v = json_object_get_value(robj(c), key);
+    if (!v || json_value_get_type(v) != JSONObject) return 1;
+    c->stack[c->sp] = v; c->is_arr[c->sp] = 0; c->sp++;
+    return 0;
+}
+static int r_leave_object(void *ctx) { pr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
+static int r_enter_array(void *ctx, const char *key, int *len_out) {
+    pr *c = ctx;
+    JSON_Array *a = json_object_get_array(robj(c), key);
+    if (!a) return 1;
+    *len_out = (int)json_array_get_count(a);
+    c->stack[c->sp] = json_object_get_value(robj(c), key);
+    c->arr_stack[c->sp] = a;
+    c->is_arr[c->sp] = 1;
+    c->sp++;
+    return 0;
+}
+static int r_leave_array(void *ctx) { pr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
+static int r_enter_elem(void *ctx, int index) {
+    pr *c = ctx;
+    JSON_Array *a = c->arr_stack[c->sp - 1];
+    JSON_Value *v = json_array_get_value(a, (size_t)index);
+    if (!v) return -1;
+    c->stack[c->sp] = v; c->is_arr[c->sp] = 0; c->sp++;
+    return 0;
+}
+static int r_leave_elem(void *ctx) { pr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
+
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
-    /* Parson only exposes null-terminated parse; keep a single contiguous copy. */
-    char *tmp = (char *)malloc(len + 1);
+    /* parson needs NUL-terminated; copy if needed */
+    char *tmp = malloc(len + 1);
     if (!tmp) return -1;
     memcpy(tmp, buf, len); tmp[len] = 0;
-    JSON_Value *v = json_parse_string(tmp);
+    JSON_Value *root = json_parse_string(tmp);
     free(tmp);
-    if (!v) return -1;
-    int rc = val_to_fx(v, out, kind);
-    json_value_free(v);
-    return rc;
+    if (!root) return -1;
+    pr rc = {0}; rc.stack[0] = root; rc.sp = 1;
+    v2_reader_t r = {
+        .ctx = &rc, .get_bool = r_get_bool, .get_i64 = r_get_i64, .get_f64 = r_get_f64,
+        .get_str = r_get_str, .enter_object = r_enter_object, .leave_object = r_leave_object,
+        .enter_array = r_enter_array, .leave_array = r_leave_array,
+        .enter_elem = r_enter_elem, .leave_elem = r_leave_elem,
+    };
+    int e = v2_read_fixture(kind, out, &r);
+    json_value_free(root);
+    return e;
 }
 
 void bench_register_parson(serializer_t *o, int *c) {

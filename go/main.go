@@ -68,7 +68,7 @@ func saveErrors(path string, errors []benchError) error {
 }
 
 // toDomain runs optional untimed library-native → suite-domain conversion
-// (e.g. protobuf Message → model.Person) after the timed deserialize path.
+// (e.g. protobuf Message → modelv2.Message) after the timed deserialize path.
 func toDomain(ser serializers.BenchSerializer, out any) (any, error) {
 	if conv, ok := ser.(serializers.DomainConverter); ok {
 		return conv.ToDomain(out)

@@ -31,11 +31,11 @@ Counts match the **registered inventories on each language Overview** (hand-writ
 | C# | **36** | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
 | Python | **16** | [Overview](../python/index.md) | [Results](../python/results.md) |
 | Rust | **15** | [Overview](../rust/index.md) | [Results](../rust/results.md) |
-| C | **19** | [Overview](../c/index.md) | [Results](../c/results.md) |
-| JavaScript | **19** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
+| C | **20** | [Overview](../c/index.md) | [Results](../c/results.md) |
+| JavaScript | **20** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 | Go | **19** | [Overview](../go/index.md) | [Results](../go/results.md) |
 | Java | **18** | [Overview](../java/index.md) | [Results](../java/results.md) |
-| C++ | **26+** | [Overview](../cpp/index.md) | [Results](../cpp/results.md) |
+| C++ | **27+** | [Overview](../cpp/index.md) | [Results](../cpp/results.md) |
 
 † **JavaScript:** `simdjson` is optional (native addon). If it fails to build, that codec is omitted from the run.
 

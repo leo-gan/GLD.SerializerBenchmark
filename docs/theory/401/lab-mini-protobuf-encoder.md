@@ -175,7 +175,7 @@ Install `protoc` (or use any official decoder). Minimal `.proto` plus Python:
 
 ```python
 # After: protoc --python_out=. mini.proto
-# mini.proto defines MiniUser (teaching schema — not suite benchmark_data)
+# mini.proto defines MiniUser (teaching schema — not suite benchmark_v2)
 import mini_pb2
 
 raw = bytes.fromhex("08011203416461")

@@ -18,11 +18,17 @@ Fetched by CMake `FetchContent` into `cpp/third_party/` (gitignored except this 
 | jsoncons | v0.177.0 | CBOR / BSON / MessagePack |
 | flatbuffers | v24.3.25 | FlatBuffers + FlexBuffers |
 
+Official Protobuf C++ (local sysroot, not FetchContent):
+
+| Artifact | Version | How |
+|----------|---------|-----|
+| libprotobuf + protoc | 3.12.4 (Ubuntu jammy debs) | `cpp/scripts/setup-protobuf-sysroot.sh` → `cpp/third_party/protobuf-sysroot/` |
+
 In-tree codecs (suite schema wire, not third-party pins):
 
 | Codec | Spec | Notes |
 |-------|------|-------|
-| protobuf | proto3 wire | `schemas/v2/protobuf/benchmark_v2.proto` field tags |
+| protobuf-wire | proto3 wire | `schemas/v2/protobuf/benchmark_v2.proto` field tags (no libprotobuf) |
 | avro | Avro binary 1.x | zigzag/varint records + array blocks (schema-driven) |
 | custom_binary | harness | length-prefixed baseline |
 
