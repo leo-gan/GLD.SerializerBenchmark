@@ -48,5 +48,5 @@ class Cbor2Serializer(Serializer):
 
     def deserialize_stream(self, stream: io.BytesIO) -> Any:
         stream.seek(0)
-        # Avoid cbor2.load(BytesIO): broken for some string-heavy payloads (e.g. StringArray).
+        # Avoid cbor2.load(BytesIO): broken for some string-heavy payloads (e.g. strings fixture).
         return cbor2.loads(stream.read())

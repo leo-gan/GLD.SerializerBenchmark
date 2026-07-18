@@ -478,6 +478,6 @@ mod tests {
 
     #[test]
     fn make_one_unknown_errors() {
-        assert!(make_one("Person", 1, 0, 1, 1, 1, 1).is_err());
+        assert!(make_one("not-a-suite-type", 1, 0, 1, 1, 1, 1).is_err());
     }
 }

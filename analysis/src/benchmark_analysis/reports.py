@@ -26,7 +26,7 @@ def _format_fixture_display(label: str) -> str:
     Examples:
       ``message@n=1``   → ``Message · 1 instance``
       ``message@n=100`` → ``Message · 100 instances``
-      ``Person``        → ``Person``
+      ``document``      → ``Document``
     """
     s = str(label or "").strip()
     if not s:

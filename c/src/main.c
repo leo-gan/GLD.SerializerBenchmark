@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     if (argc > 4) log_dir = argv[4];
     /* argv[2]/argv[3] ser/data filters reserved for future v2 filtering */
 
-    /* Data Model v2 only (V1 Person/EDI fixtures removed from the run path). */
+    /* Suite fixtures: message / document / telemetry / strings / event. */
     extern int run_benchmarks_v2(int repetitions, const char *log_dir);
     return run_benchmarks_v2(reps, log_dir);
 }

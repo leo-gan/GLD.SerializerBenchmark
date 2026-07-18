@@ -5,7 +5,7 @@ const SETTINGS_KEY = 'serializer-dashboard-settings-v1';
 /** Keys that identify a group, not metrics. */
 const GROUP_META_KEYS = new Set(['serializer', 'test_data', 'mode', 'language']);
 
-/** Suite fixture base names (no Person/ObjectGraph legacy). */
+/** Suite fixture base type ids. */
 const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
 
 /**
@@ -44,11 +44,7 @@ function pickPreferredFixture(options) {
   for (const p of preferred) {
     if (options.includes(p)) return p;
   }
-  // Drop legacy V1 names if somehow present
-  const cleaned = options.filter((o) => {
-    const b = baseTypeId(o);
-    return SUITE_TYPE_IDS.includes(b);
-  });
+  const cleaned = options.filter((o) => SUITE_TYPE_IDS.includes(baseTypeId(o)));
   return (cleaned[0] || options[0] || '');
 }
 
@@ -633,7 +629,7 @@ function processStatsData(statsObj) {
     test_data: fixtureKey(g),
   }));
 
-  // Suite fixtures only in the data-type dropdown (hide legacy Person/ObjectGraph/etc.)
+  // Suite fixtures only in the data-type dropdown
   const testDataOptions = [
     ...new Set(
       state.allGroups
@@ -647,7 +643,7 @@ function processStatsData(statsObj) {
   populateSelect('data-select', testDataOptions);
   populateSelect('mode-select', modeOptions);
 
-  // Prefer saved filters when still valid; migrate legacy V1 names
+  // Prefer saved filters when still valid
   if (!testDataOptions.includes(state.currentTestData)) {
     state.currentTestData = pickPreferredFixture(testDataOptions);
   }
@@ -868,7 +864,7 @@ function languageCountForMode(mode) {
 
 function initCrossLangControls() {
   const all = allCrossLangGroups();
-  // Groups normalized with fixtureKey on load; keep suite fixtures only (drop legacy V1 names)
+  // Groups normalized with fixtureKey on load; suite fixtures only
   const testDataOptions = [
     ...new Set(
       all

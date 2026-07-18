@@ -37,8 +37,7 @@ Pins: [`c/third_party/VERSIONS.md`](../../c/third_party/VERSIONS.md).
 
 ## Suite types
 
-Only: `message`, `document`, `telemetry`, `strings`, `event`.  
-**Removed:** Person, SimpleObject, Integer, EDI_835, ObjectGraph, and all V1 kinds.
+`message`, `document`, `telemetry`, `strings`, `event` (see [Test Data](../analysis/test_data_configuration.md)).
 
 ## Tests
 

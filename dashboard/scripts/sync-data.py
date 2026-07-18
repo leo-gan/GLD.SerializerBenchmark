@@ -109,7 +109,7 @@ def main():
             with open(dest_stats_path, "w", encoding="utf-8") as f:
                 json.dump(stats_data, f, indent=None)
         elif os.path.exists(dest_stats_path):
-            # Avoid serving stale V1 stats when reports has no file for this lang
+            # Drop outdated stats when reports has no file for this language
             print(f"Removing stale stats file: {dest_stats_path}")
             os.remove(dest_stats_path)
 

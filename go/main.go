@@ -195,7 +195,7 @@ func main() {
 		}
 	}
 
-	// Data Model v2 only (V1 Person/EDI fixtures removed).
+	// Suite type ids: message, document, telemetry, strings, event.
 	modes := []string{"bytes", "stream"}
 
 	type workItem struct {

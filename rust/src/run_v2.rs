@@ -1,7 +1,7 @@
 //! Data Model v2 path: cells from resolve_run_config.py + full serializer registry.
 //!
 //! Builds first-class V2 `Fixture` variants (Message/Document/Telemetry/Strings/Event)
-//! directly from generators — no V1 proxy mapping.
+//! directly from generators.
 
 use crate::csv_log::CsvLogger;
 use crate::data::{self, fidelity, Fixture};

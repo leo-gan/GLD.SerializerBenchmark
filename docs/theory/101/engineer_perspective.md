@@ -190,11 +190,11 @@ assert msgpack.unpackb(packed) == {"nums": [1, 2, 3]}
 ### Protocol Buffers style (after code generation)
 
 ```python
-# Generated module provides message classes (illustrative Google tutorial names).
-person = addressbook_pb2.Person(id=1234, name="Alice")
-data = person.SerializeToString()
-person2 = addressbook_pb2.Person()
-person2.ParseFromString(data)
+# Generated module provides message classes (illustrative names).
+user = mini_pb2.MiniUser(id=1234, name="Alice")
+data = user.SerializeToString()
+user2 = mini_pb2.MiniUser()
+user2.ParseFromString(data)
 ```
 
 ---

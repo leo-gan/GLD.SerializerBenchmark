@@ -147,12 +147,11 @@ func TestRegistryHasExpectedNames(t *testing.T) {
 
 func TestProtobufSupportsOnlyV2(t *testing.T) {
 	s := newGoogleProtobuf()
-	// Legacy V1 names must not be accepted.
-	if s.Supports("Person") || s.Supports("Integer") || s.Supports("ObjectGraph") || s.Supports("EDI_835") {
-		t.Fatal("protobuf should not support V1 fixture names")
+	if s.Supports("not-a-suite-type") {
+		t.Fatal("protobuf should reject unknown type ids")
 	}
 	if !s.Supports("message") || !s.Supports("document") || !s.Supports("event") {
-		t.Fatal("protobuf should support v2 type_ids")
+		t.Fatal("protobuf should support suite type_ids")
 	}
 }
 

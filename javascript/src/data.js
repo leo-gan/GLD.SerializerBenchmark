@@ -1,6 +1,6 @@
 /**
  * Shared helpers for the JS suite.
- * V1 fixture factories removed — official types live in data_v2.js
+ * Suite fixtures — re-export / helpers for data_v2.js
  * (message, document, telemetry, strings, event).
  */
 

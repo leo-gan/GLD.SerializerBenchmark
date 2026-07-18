@@ -1,4 +1,4 @@
-"""Avro (fastavro) — Data Model v2 schemas. Serializer kept; V1 Person schemas removed."""
+"""Avro (fastavro) — suite Data Model v2 schemas."""
 
 from __future__ import annotations
 
