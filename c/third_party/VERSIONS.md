@@ -14,9 +14,9 @@
 | QCBOR | v1.5.1 / master | CBOR |
 | ubj | in-tree minimal UBJSON in `ser_ubj.c` | UBJSON |
 | libbson | mongo-c-driver 1.27.5 (bson only) | BSON |
-| nanopb | 0.4.9 | Protobuf (stream API) |
-| protobuf-c | v1.5.0 | Protobuf wire + runtime |
-| upb | wire-1.0 in-tree (`ser_upb.c`) | Protobuf wire (not Google upb) |
+| nanopb | 0.4.9 | Linked library; suite log name `nanopb` currently times shared `fixture_pb_v2` wire (see docs/c) |
+| protobuf-c | v1.5.0 | Linked runtime; suite log name `protobuf-c` currently times shared `fixture_pb_v2` wire |
+| protobuf-wire | wire-v2 in-tree (`ser_upb.c`) | In-tree proto3 tags (`fixture_pb_v2`); **not** Google upb |
 | flatcc | v0.6.1 | FlatBuffers C |
 | avro-c | Apache Avro release-1.11.3 | Avro |
 | zcbor | main (Nordic) | CBOR structured API |

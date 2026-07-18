@@ -4,7 +4,7 @@ Native C harness emitting timestamped `logs/c/YYYY-MM-DD-HHMMSS.csv` (nanosecond
 
 ## Serializers (20)
 
-See [docs/c/index.md](../docs/c/index.md) for the inventory (JSON / binary / schema). Includes official Google **libprotobuf** (`protobuf` row) when the protobuf sysroot is present.
+See [docs/c/index.md](../docs/c/index.md) for the inventory (JSON / binary / schema), visitor domain layer (`v2_codec`), and caveats. Includes official Google **libprotobuf** (`protobuf` row) when the protobuf sysroot is present.
 
 ## Test data
 

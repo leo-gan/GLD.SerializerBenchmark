@@ -24,7 +24,7 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 - [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 36 serializers registered
 - [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 16
 - [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 15
-- [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 19
+- [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 20
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 19
 - [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 19
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18

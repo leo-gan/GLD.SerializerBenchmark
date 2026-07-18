@@ -47,7 +47,8 @@ Projects often set `PROTOC` through `protoc-bin-vendored` (as this suite does in
 
 ```rust
 pub mod pb {
-    include!(concat!(env!("OUT_DIR"), "/benchmark_data.rs"));
+    // Generated module name follows the .proto package (suite: benchmark.v2 → e.g. benchmark.v2.rs)
+    include!(concat!(env!("OUT_DIR"), "/benchmark.v2.rs"));
 }
 ```
 
@@ -66,7 +67,7 @@ let buf = person.encode_to_vec();
 let parsed = pb::MiniUser::decode(&buf[..])?;
 ```
 
-Field names are Rust-ified (snake_case and similar conventions). **Tags on the wire still come from the field numbers in the `.proto` file.** For the teaching [MiniUser](lab-mini-protobuf-encoder.md) message, compile a separate tiny `mini.proto`—it is not part of the suite `benchmark_data.proto`.
+Field names are Rust-ified (snake_case and similar conventions). **Tags on the wire still come from the field numbers in the `.proto` file.** For the teaching [MiniUser](lab-mini-protobuf-encoder.md) message, compile a separate tiny `mini.proto`—it is not part of the suite `schemas/v2/protobuf/benchmark_v2.proto`.
 
 ## How prost implements serialization (step-by-step)
 
@@ -202,8 +203,8 @@ Vec<u8>  (you own the output)
 
 | Location | Role |
 |----------|------|
-| `rust/build.rs` | `prost-build` on the shared proto |
-| `rust/src/serializers.rs` (`ProstSer`) | `prepare` builds a message; `serialize_bytes` calls `encode` |
+| `rust/build.rs` | `prost-build` on `schemas/v2/protobuf/benchmark_v2.proto` |
+| `rust/src/serializers/prost_ser.rs` (`ProstSer`) | `prepare` builds a message; timed path encodes/decodes |
 | Log name | `prost` |
 | Pin | `prost` / `prost-build` 0.13 |
 | [Rust Results](../../rust/results.md) | Schema-driven comparisons |

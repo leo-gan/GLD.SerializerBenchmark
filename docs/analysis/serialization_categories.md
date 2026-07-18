@@ -119,7 +119,7 @@ Examples use **log `SerializerName` values** from language overviews (not necess
 
 - Default comparison: **same language + same family + same fixture + same mode**.  
 - Schema-driven often leads on size/throughput *within a language*—not a universal ranking.  
-- **C** uses real library APIs when deps are built (`fetch-and-build-deps.sh`); read the C Overview for `upb` / `ubj` notes.  
+- **C** uses real library APIs when deps are built (`fetch-and-build-deps.sh`); read the [C Overview](../c/index.md) for visitor domain shape, `protobuf-wire` (in-tree, not Google upb), and payload-wrapped rows (`ubj`, flatcc, avro-c).  
 - Metrics live on language **Results**, not here.
 
 ## Further reading

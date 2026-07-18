@@ -64,7 +64,7 @@ for rep:
 | JSON focus | cJSON, yyjson, jansson, parson, json-c | nlohmann, RapidJSON, simdjson, arduinojson, yyjson |
 | MessagePack | mpack, msgpack-c **C API** | msgpack-c **C++ API** (`msgpack.hpp`) |
 | CBOR | tinycbor, libcbor, QCBOR, zcbor | jsoncons CBOR |
-| Protobuf | nanopb, protobuf-c, in-tree wire | suite proto3 wire (same field tags as `.proto`) |
+| Protobuf | Google **libprotobuf** (`protobuf`), plus nanopb / protobuf-c / protobuf-wire (shared suite wire helper) | official **libprotobuf** + in-tree protobuf-wire |
 | FlatBuffers | **flatcc** (C) | **google/flatbuffers** (C++) |
 
 ### Libraries that work for **both** C and C++
@@ -89,7 +89,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 
 3. **Protobuf family** (shared schema, different runtimes)
    - **Why:** The suite `.proto` is language-agnostic; C and C++ use different encoders for the **same field numbers**.
-   - **How:** C → nanopb / protobuf-c / in-tree wire; C++ → official **libprotobuf** and optional **protobuf-wire**, both aligned with `schemas/v2/protobuf/benchmark_v2.proto`.
+   - **How:** Both harnesses register official **libprotobuf** (`protobuf` row, sysroot via `setup-protobuf-sysroot.sh`) plus an in-tree **protobuf-wire** baseline. C also keeps log names `nanopb` / `protobuf-c` that currently time the shared `fixture_pb_v2` wire helper (see [C overview](../c/index.md) caveats)—not full generated nanopb/protoc-gen-c stacks. All field numbers align with `schemas/v2/protobuf/benchmark_v2.proto`.
    - **Example field:** `Message.f_int32 = 2` is wire tag `(2<<3)|0` in both.
 
 4. **FlatBuffers family** (shared idea, different codegens)
@@ -103,7 +103,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
    - **Example:** `string` = zigzag/`long` length + bytes; arrays end with a zero count block.
 
 6. **Not dual-registered (C-only or C++-only by design)**
-   - **C-only in suite:** cJSON, jansson, parson, json-c, mpack, tinycbor, QCBOR, libbson, nanopb, flatcc, avro-c, zcbor.
+   - **C-only in suite:** cJSON, jansson, parson, json-c, mpack, tinycbor, QCBOR, libbson, nanopb/protobuf-c log rows, flatcc, avro-c, zcbor.
    - **C++-only in suite:** nlohmann, RapidJSON, simdjson, arduinojson, cereal, bitsery, zpp_bits, jsoncons, google flatbuffers C++ API.
 
 **Rule of thumb:** If a library is **pure C** and already measured under `Language=c`, re-registering under C++ only makes sense when the C++ call path is a first-class usage mode (yyjson) or when the **API surface differs** (msgpack C vs C++). Do not treat C and C++ rows as interchangeable runtimes for ranking.
