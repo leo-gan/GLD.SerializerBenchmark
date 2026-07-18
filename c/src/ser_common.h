@@ -257,6 +257,9 @@ static inline int bin_read_fixture(const uint8_t *buf, size_t len, test_fixture_
     return 0;
 }
 
+/* Shared CBOR map decoder (tinycbor) for codecs that emit standard CBOR maps. */
+int bench_tinycbor_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind);
+
 #define BENCH_ADD(out, count, nm, ver, cat, prep, ser, de, fid) do { \
     (out)[*(count)].name = (nm); \
     (out)[*(count)].version = (ver); \

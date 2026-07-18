@@ -12,16 +12,20 @@ C serialization is fragmented: each library owns its own object model (DOM trees
 
 ## Serializers (20)
 
-| Name | Category | Notes |
-|------|----------|-------|
-| cJSON | JSON | Real cJSON encode/decode of V2 field graphs |
-| yyjson, jansson, parson, json-c | JSON | V2 domain; some still share suite binary envelope (native field maps may lag) |
-| mpack, msgpack-c, tinycbor, cbor-encode, qcbor, ubj, libbson | Binary | V2 domain payloads |
-| custom-binary | Binary | Suite length-prefixed V2 baseline |
-| **protobuf** | Schema | **Google libprotobuf** + `schemas/v2/protobuf/benchmark_v2.proto` |
-| nanopb | Schema | Real nanopb stream API for `message`; other types via suite envelope |
-| protobuf-c, protobuf-wire | Schema | V2 domain; suite wire helper (not full protoc-gen-c / Google upb) |
-| flatcc, avro-c, zcbor | Schema | V2 domain |
+All rows use **native library encode/decode APIs** on **Data Model v2** fixtures (`message` / `document` / `telemetry` / `strings` / `event`).
+
+| Name | Category | Native timed path |
+|------|----------|-------------------|
+| cJSON, yyjson, jansson, parson, json-c | JSON | Library DOM build + print / parse |
+| mpack, msgpack-c | Binary | Fixed-buffer map pack + tree/object unpack |
+| tinycbor, cbor-encode (libcbor), qcbor, zcbor | Binary/schema | Native CBOR map encode; decode via tinycbor map walker (standard CBOR interop) where noted |
+| libbson | Binary | `bson_append_*` / `bson_iter_*` |
+| ubj | Binary | In-tree UBJSON markers around suite V2 binary payload |
+| custom-binary | Binary | Suite length-prefixed V2 baseline (**this is** the native path) |
+| **protobuf** | Schema | **Google libprotobuf** `SerializeToArray` / `ParseFromArray` on `benchmark_v2.proto` |
+| nanopb | Schema | Real `pb_ostream` / field encode for all V2 types (proto3 tags) |
+| protobuf-c, protobuf-wire | Schema | Standard **proto3 wire** for V2 (`fixture_pb_v2.h` / same field tags as shared `.proto`) |
+| flatcc, avro-c | Schema | Real flatcc builder / avro-c iface write-read wrapping V2 payload bytes |
 
 ## Suite types
 
