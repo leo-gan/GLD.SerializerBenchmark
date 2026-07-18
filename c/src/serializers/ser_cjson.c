@@ -149,5 +149,5 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
 }
 
 void bench_register_cjson(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "cJSON", "1.7.18", "json", prep, ser, de, fidelity_fx);
+    BENCH_ADD(o, c, "cJSON", cJSON_Version(), "json", prep, ser, de, fidelity_fx);
 }

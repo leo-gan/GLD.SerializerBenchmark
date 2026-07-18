@@ -144,5 +144,5 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
 }
 
 void bench_register_jansson(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "jansson", "2.14", "json", prep, ser, de, fidelity_fx);
+    BENCH_ADD(o, c, "jansson", JANSSON_VERSION, "json", prep, ser, de, fidelity_fx);
 }
