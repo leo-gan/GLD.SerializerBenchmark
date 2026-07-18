@@ -6,7 +6,7 @@ Why dill serialize looks "slow" in this suite
 On ordinary importable dataclasses, ``dill.dumps`` emits a payload similar in
 *size* to ``pickle.dumps`` (same protocol family) but walks a much heavier
 pure-Python dispatch path (module-dict traversal, type location, recursive
-``save`` wrappers). Profiling on Person shows ~15–20× more CPU in
+``save`` wrappers). Profiling on message shows ~15–20× more CPU in
 ``dill._dill.save`` / ``save_module_dict`` than C ``pickle`` for the same
 object — with **no** equivalent flags (``byref``, ``recurse``) closing the gap.
 

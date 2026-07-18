@@ -2,9 +2,9 @@
 
 Native C harness emitting timestamped `logs/c/YYYY-MM-DD-HHMMSS.csv` (nanoseconds, `Language=c`).
 
-## Serializers (19)
+## Serializers (20)
 
-See [docs/c/index.md](../docs/c/index.md) for the inventory (JSON / binary / schema). Registered entries use real library APIs (or documented in-tree codecs where noted).
+See [docs/c/index.md](../docs/c/index.md) for the inventory (JSON / binary / schema). Includes official Google **libprotobuf** (`protobuf` row) when the protobuf sysroot is present.
 
 ## Test data
 
@@ -14,9 +14,10 @@ Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
 ```bash
 ./c/scripts/fetch-and-build-deps.sh   # once; vendors + builds static deps
+./cpp/scripts/setup-protobuf-sysroot.sh   # once; Google libprotobuf for the protobuf row
 ```
 
-Requires: `cmake`, `curl`, `pkg-config`, `libjson-c-dev` (or equivalent), `zlib`, `liblzma` for avro-c.
+Requires: `cmake`, `curl`, `pkg-config`, `libjson-c-dev` (or equivalent), `zlib`, `liblzma` for avro-c; C++17 compiler for the Google protobuf module.
 
 ## Build & run
 

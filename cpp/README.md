@@ -4,9 +4,11 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 Native C++20 harness emitting timestamped `logs/cpp/YYYY-MM-DD-HHMMSS.csv` (`Language=cpp`, nanoseconds).
 
-## Serializers (26+)
+## Serializers (27+)
 
 See [docs/cpp/index.md](../docs/cpp/index.md) for the inventory, optimal call paths, and **C vs C++ dual-use** notes.
+
+Includes official **libprotobuf** (`protobuf`) plus in-tree **protobuf-wire**.
 
 ## Test data
 
@@ -15,6 +17,12 @@ Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 ## Dependencies
 
 CMake **FetchContent** pulls pinned libraries into `cpp/third_party/` on first configure (see `third_party/VERSIONS.md`). Requires network once, `cmake` ≥ 3.16, `g++`/`clang++` with C++20, `git`.
+
+For official Google Protocol Buffers C++ (no root install):
+
+```bash
+./cpp/scripts/setup-protobuf-sysroot.sh
+```
 
 ```bash
 ./scripts/check-host-requirements.sh cpp

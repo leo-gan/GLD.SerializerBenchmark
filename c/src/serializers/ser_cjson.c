@@ -7,280 +7,182 @@ static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx
 static cJSON *fx_to_json(const test_fixture_t *fx) {
     cJSON *root = cJSON_CreateObject();
     if (!root) return NULL;
-    cJSON_AddNumberToObject(root, "kind", (double)fx->kind);
+    cJSON_AddStringToObject(root, "type", test_data_name(fx->kind));
     switch (fx->kind) {
-        case TD_INTEGER:
-            cJSON_AddNumberToObject(root, "value", fx->integer_val);
+        case TD_MESSAGE: {
+            const message_t *m = &fx->message;
+            cJSON_AddBoolToObject(root, "f_bool", m->f_bool);
+            cJSON_AddNumberToObject(root, "f_int32", m->f_int32);
+            cJSON_AddNumberToObject(root, "f_int64", (double)m->f_int64);
+            cJSON_AddNumberToObject(root, "f_float64", m->f_float64);
+            cJSON_AddStringToObject(root, "f_string", m->f_string);
+            cJSON_AddBoolToObject(root, "f_bool_2", m->f_bool_2);
+            cJSON_AddNumberToObject(root, "f_int32_2", m->f_int32_2);
+            cJSON_AddStringToObject(root, "f_string_2", m->f_string_2);
             break;
-        case TD_SIMPLE:
-            cJSON_AddNumberToObject(root, "Id", fx->simple.id);
-            cJSON_AddStringToObject(root, "Name", fx->simple.name);
-            cJSON_AddStringToObject(root, "Timestamp", fx->simple.timestamp);
-            cJSON_AddBoolToObject(root, "IsActive", fx->simple.is_active);
-            break;
-        case TD_PERSON: {
-            cJSON_AddStringToObject(root, "FirstName", fx->person.first_name);
-            cJSON_AddStringToObject(root, "LastName", fx->person.last_name);
-            cJSON_AddNumberToObject(root, "Age", fx->person.age);
-            cJSON_AddNumberToObject(root, "Gender", fx->person.gender);
-            cJSON *pass = cJSON_CreateObject();
-            cJSON_AddStringToObject(pass, "Number", fx->person.passport_number);
-            cJSON_AddStringToObject(pass, "Authority", fx->person.passport_authority);
-            cJSON_AddItemToObject(root, "Passport", pass);
-            cJSON *arr = cJSON_CreateArray();
-            int n = fx->person.police_count; if (n < 0) n = 0; if (n > 8) n = 8;
-            for (int i = 0; i < n; i++) {
-                cJSON *rec = cJSON_CreateObject();
-                cJSON_AddNumberToObject(rec, "Id", fx->person.police_ids[i]);
-                cJSON_AddStringToObject(rec, "CrimeCode", fx->person.police_codes[i]);
-                cJSON_AddItemToArray(arr, rec);
+        }
+        case TD_DOCUMENT: {
+            const document_t *d = &fx->document;
+            cJSON_AddStringToObject(root, "id", d->id);
+            cJSON_AddNumberToObject(root, "status", d->status);
+            cJSON *meta = cJSON_CreateObject();
+            cJSON_AddStringToObject(meta, "region", d->meta.region);
+            cJSON_AddNumberToObject(meta, "version", d->meta.version);
+            cJSON_AddItemToObject(root, "meta", meta);
+            cJSON *items = cJSON_CreateArray();
+            for (int i = 0; i < d->item_count; i++) {
+                cJSON *it = cJSON_CreateObject();
+                cJSON_AddStringToObject(it, "sku", d->items[i].sku);
+                cJSON_AddNumberToObject(it, "qty", d->items[i].qty);
+                cJSON_AddNumberToObject(it, "price_minor", (double)d->items[i].price_minor);
+                cJSON_AddItemToArray(items, it);
             }
-            cJSON_AddItemToObject(root, "PoliceRecords", arr);
+            cJSON_AddItemToObject(root, "items", items);
             break;
         }
         case TD_TELEMETRY: {
-            cJSON_AddStringToObject(root, "Id", fx->telemetry.id);
-            cJSON_AddStringToObject(root, "DataSource", fx->telemetry.data_source);
-            cJSON_AddStringToObject(root, "TimeStamp", fx->telemetry.time_stamp);
-            cJSON_AddNumberToObject(root, "Param1", fx->telemetry.param1);
-            cJSON_AddNumberToObject(root, "Param2", fx->telemetry.param2);
-            cJSON *arr = cJSON_CreateArray();
-            int n = fx->telemetry.meas_count; if (n < 0) n = 0; if (n > 100) n = 100;
-            for (int i = 0; i < n; i++) cJSON_AddItemToArray(arr, cJSON_CreateNumber(fx->telemetry.measurements[i]));
-            cJSON_AddItemToObject(root, "Measurements", arr);
-            cJSON_AddNumberToObject(root, "AssociatedProblemID", fx->telemetry.problem_id);
-            cJSON_AddNumberToObject(root, "AssociatedLogID", fx->telemetry.log_id);
-            cJSON_AddBoolToObject(root, "WasProcessed", fx->telemetry.was_processed);
+            const telemetry_t *t = &fx->telemetry;
+            cJSON_AddStringToObject(root, "source", t->source);
+            cJSON_AddNumberToObject(root, "ts", (double)t->ts);
+            cJSON *tags = cJSON_CreateArray();
+            for (int i = 0; i < t->tag_count; i++) cJSON_AddItemToArray(tags, cJSON_CreateString(t->tags[i]));
+            cJSON_AddItemToObject(root, "tags", tags);
+            cJSON *vals = cJSON_CreateArray();
+            for (int i = 0; i < t->value_count; i++) cJSON_AddItemToArray(vals, cJSON_CreateNumber(t->values[i]));
+            cJSON_AddItemToObject(root, "values", vals);
             break;
         }
-        case TD_STRING_ARRAY: {
-            cJSON_AddNumberToObject(root, "Count", fx->string_array.count);
-            cJSON *arr = cJSON_CreateArray();
-            for (int i = 0; i < fx->string_array.count && i < 100; i++)
-                cJSON_AddItemToArray(arr, cJSON_CreateString(fx->string_array.items[i]));
-            cJSON_AddItemToObject(root, "Items", arr);
+        case TD_STRINGS: {
+            cJSON *items = cJSON_CreateArray();
+            for (int i = 0; i < fx->strings.count; i++)
+                cJSON_AddItemToArray(items, cJSON_CreateString(fx->strings.items[i]));
+            cJSON_AddItemToObject(root, "items", items);
             break;
         }
-        case TD_EDI835: {
-            cJSON_AddStringToObject(root, "PayerName", fx->edi.payer_name);
-            cJSON_AddStringToObject(root, "PayeeName", fx->edi.payee_name);
-            cJSON_AddStringToObject(root, "PaymentDate", fx->edi.payment_date);
-            cJSON_AddNumberToObject(root, "TotalActual", fx->edi.total_actual);
-            cJSON_AddStringToObject(root, "TCN", fx->edi.tcn);
-            cJSON *claims = cJSON_CreateArray();
-            int nc = fx->edi.claim_count; if (nc < 0) nc = 0; if (nc > 6) nc = 6;
-            for (int c = 0; c < nc; c++) {
-                const claim_t *cl = &fx->edi.claims[c];
-                cJSON *co = cJSON_CreateObject();
-                cJSON_AddStringToObject(co, "ClaimId", cl->claim_id);
-                cJSON_AddStringToObject(co, "PatientName", cl->patient_name);
-                cJSON_AddNumberToObject(co, "TotalCharge", cl->total_charge);
-                cJSON_AddNumberToObject(co, "Payment", cl->payment);
-                cJSON *lines = cJSON_CreateArray();
-                int nl = cl->line_count; if (nl < 0) nl = 0; if (nl > 4) nl = 4;
-                for (int L = 0; L < nl; L++) {
-                    cJSON *lo = cJSON_CreateObject();
-                    cJSON_AddStringToObject(lo, "ServiceCode", cl->lines[L].service_code);
-                    cJSON_AddNumberToObject(lo, "Charge", cl->lines[L].charge);
-                    cJSON_AddNumberToObject(lo, "Adjudicated", cl->lines[L].adjudicated);
-                    cJSON_AddItemToArray(lines, lo);
-                }
-                cJSON_AddItemToObject(co, "Lines", lines);
-                cJSON_AddItemToArray(claims, co);
+        case TD_EVENT: {
+            const event_t *e = &fx->event;
+            cJSON_AddStringToObject(root, "event_id", e->event_id);
+            cJSON_AddStringToObject(root, "event_type", e->event_type);
+            cJSON_AddNumberToObject(root, "occurred_at", (double)e->occurred_at);
+            cJSON_AddStringToObject(root, "producer", e->producer);
+            cJSON *attrs = cJSON_CreateArray();
+            for (int i = 0; i < e->attr_count; i++) {
+                cJSON *a = cJSON_CreateObject();
+                cJSON_AddStringToObject(a, "key", e->attrs[i].key);
+                cJSON_AddStringToObject(a, "value", e->attrs[i].value);
+                cJSON_AddItemToArray(attrs, a);
             }
-            cJSON_AddItemToObject(root, "Claims", claims);
+            cJSON_AddItemToObject(root, "attrs", attrs);
             break;
         }
-
-        case TD_OBJECT_GRAPH: {
-            const object_graph_t *g = &fx->graph;
-            cJSON_AddNumberToObject(root, "root", g->root);
-            cJSON *nodes = cJSON_CreateArray();
-            int nn = g->node_count; if (nn < 0) nn = 0; if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
-            for (int i = 0; i < nn; i++) {
-                const graph_node_t *n = &g->nodes[i];
-                cJSON *no = cJSON_CreateObject();
-                cJSON_AddStringToObject(no, "Name", n->name);
-                cJSON_AddNumberToObject(no, "Parent", n->parent);
-                cJSON_AddNumberToObject(no, "Related", n->related);
-                cJSON *ch = cJSON_CreateArray();
-                int nc = n->child_count; if (nc < 0) nc = 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
-                for (int c = 0; c < nc; c++) cJSON_AddItemToArray(ch, cJSON_CreateNumber(n->children[c]));
-                cJSON_AddItemToObject(no, "Children", ch);
-                cJSON_AddItemToArray(nodes, no);
-            }
-            cJSON_AddItemToObject(root, "nodes", nodes);
-            break;
-        }
-        default:
-            cJSON_Delete(root);
-            return NULL;
+        default: break;
     }
     return root;
 }
 
 static int json_to_fx(cJSON *root, test_fixture_t *out, test_data_kind_t kind) {
-    cJSON *k = cJSON_GetObjectItemCaseSensitive(root, "kind");
-    if (!cJSON_IsNumber(k) || (int)k->valuedouble != (int)kind) return -1;
-    memset(out, 0, sizeof *out);
+    memset(out, 0, sizeof(*out));
     out->kind = kind;
     out->name = test_data_name(kind);
+    out->batch_n = 1;
     switch (kind) {
-        case TD_INTEGER: {
-            cJSON *v = cJSON_GetObjectItemCaseSensitive(root, "value");
-            if (!cJSON_IsNumber(v)) return -1;
-            out->integer_val = (int)v->valuedouble;
+        case TD_MESSAGE: {
+            message_t *m = &out->message;
+            cJSON *j;
+            if ((j = cJSON_GetObjectItem(root, "f_bool"))) m->f_bool = cJSON_IsTrue(j);
+            if ((j = cJSON_GetObjectItem(root, "f_int32"))) m->f_int32 = (int32_t)j->valuedouble;
+            if ((j = cJSON_GetObjectItem(root, "f_int64"))) m->f_int64 = (int64_t)j->valuedouble;
+            if ((j = cJSON_GetObjectItem(root, "f_float64"))) m->f_float64 = j->valuedouble;
+            if ((j = cJSON_GetObjectItem(root, "f_string")) && cJSON_IsString(j))
+                snprintf(m->f_string, sizeof m->f_string, "%s", j->valuestring);
+            if ((j = cJSON_GetObjectItem(root, "f_bool_2"))) m->f_bool_2 = cJSON_IsTrue(j);
+            if ((j = cJSON_GetObjectItem(root, "f_int32_2"))) m->f_int32_2 = (int32_t)j->valuedouble;
+            if ((j = cJSON_GetObjectItem(root, "f_string_2")) && cJSON_IsString(j))
+                snprintf(m->f_string_2, sizeof m->f_string_2, "%s", j->valuestring);
             break;
         }
-        case TD_SIMPLE: {
-            cJSON *id = cJSON_GetObjectItemCaseSensitive(root, "Id");
-            cJSON *name = cJSON_GetObjectItemCaseSensitive(root, "Name");
-            cJSON *ts = cJSON_GetObjectItemCaseSensitive(root, "Timestamp");
-            cJSON *act = cJSON_GetObjectItemCaseSensitive(root, "IsActive");
-            if (!cJSON_IsNumber(id) || !cJSON_IsString(name)) return -1;
-            out->simple.id = (int)id->valuedouble;
-            snprintf(out->simple.name, sizeof out->simple.name, "%s", name->valuestring);
-            if (cJSON_IsString(ts)) snprintf(out->simple.timestamp, sizeof out->simple.timestamp, "%s", ts->valuestring);
-            out->simple.is_active = cJSON_IsTrue(act);
-            break;
-        }
-        case TD_PERSON: {
-            cJSON *fn = cJSON_GetObjectItemCaseSensitive(root, "FirstName");
-            cJSON *ln = cJSON_GetObjectItemCaseSensitive(root, "LastName");
-            if (!cJSON_IsString(fn) || !cJSON_IsString(ln)) return -1;
-            snprintf(out->person.first_name, sizeof out->person.first_name, "%s", fn->valuestring);
-            snprintf(out->person.last_name, sizeof out->person.last_name, "%s", ln->valuestring);
-            cJSON *age_item = cJSON_GetObjectItemCaseSensitive(root, "Age");
-            out->person.age = cJSON_IsNumber(age_item) ? (int)age_item->valuedouble : 0;
-            cJSON *gender_item = cJSON_GetObjectItemCaseSensitive(root, "Gender");
-            out->person.gender = cJSON_IsNumber(gender_item) ? (int)gender_item->valuedouble : 0;
-            cJSON *pass = cJSON_GetObjectItemCaseSensitive(root, "Passport");
-            if (cJSON_IsObject(pass)) {
-                cJSON *pn = cJSON_GetObjectItemCaseSensitive(pass, "Number");
-                cJSON *pa = cJSON_GetObjectItemCaseSensitive(pass, "Authority");
-                if (cJSON_IsString(pn)) snprintf(out->person.passport_number, sizeof out->person.passport_number, "%s", pn->valuestring);
-                if (cJSON_IsString(pa)) snprintf(out->person.passport_authority, sizeof out->person.passport_authority, "%s", pa->valuestring);
+        case TD_DOCUMENT: {
+            document_t *d = &out->document;
+            cJSON *j;
+            if ((j = cJSON_GetObjectItem(root, "id")) && cJSON_IsString(j))
+                snprintf(d->id, sizeof d->id, "%s", j->valuestring);
+            if ((j = cJSON_GetObjectItem(root, "status"))) d->status = (int32_t)j->valuedouble;
+            cJSON *meta = cJSON_GetObjectItem(root, "meta");
+            if (meta) {
+                if ((j = cJSON_GetObjectItem(meta, "region")) && cJSON_IsString(j))
+                    snprintf(d->meta.region, sizeof d->meta.region, "%s", j->valuestring);
+                if ((j = cJSON_GetObjectItem(meta, "version"))) d->meta.version = (int32_t)j->valuedouble;
             }
-            cJSON *arr = cJSON_GetObjectItemCaseSensitive(root, "PoliceRecords");
-            if (cJSON_IsArray(arr)) {
-                int n = cJSON_GetArraySize(arr); if (n > 8) n = 8;
-                out->person.police_count = n;
+            cJSON *items = cJSON_GetObjectItem(root, "items");
+            if (items && cJSON_IsArray(items)) {
+                int n = cJSON_GetArraySize(items);
+                if (n > V2_MAX_CHILDREN) n = V2_MAX_CHILDREN;
+                d->item_count = n;
                 for (int i = 0; i < n; i++) {
-                    cJSON *rec = cJSON_GetArrayItem(arr, i);
-                    cJSON *id_item = rec ? cJSON_GetObjectItemCaseSensitive(rec, "Id") : NULL;
-                    out->person.police_ids[i] = cJSON_IsNumber(id_item) ? (int)id_item->valuedouble : 0;
-                    cJSON *cc = rec ? cJSON_GetObjectItemCaseSensitive(rec, "CrimeCode") : NULL;
-                    if (cJSON_IsString(cc)) snprintf(out->person.police_codes[i], sizeof out->person.police_codes[i], "%s", cc->valuestring);
+                    cJSON *it = cJSON_GetArrayItem(items, i);
+                    if ((j = cJSON_GetObjectItem(it, "sku")) && cJSON_IsString(j))
+                        snprintf(d->items[i].sku, sizeof d->items[i].sku, "%s", j->valuestring);
+                    if ((j = cJSON_GetObjectItem(it, "qty"))) d->items[i].qty = (int32_t)j->valuedouble;
+                    if ((j = cJSON_GetObjectItem(it, "price_minor"))) d->items[i].price_minor = (int64_t)j->valuedouble;
                 }
             }
             break;
         }
         case TD_TELEMETRY: {
-            cJSON *id = cJSON_GetObjectItemCaseSensitive(root, "Id");
-            if (!cJSON_IsString(id)) return -1;
-            snprintf(out->telemetry.id, sizeof out->telemetry.id, "%s", id->valuestring);
-            cJSON *ds = cJSON_GetObjectItemCaseSensitive(root, "DataSource");
-            if (cJSON_IsString(ds)) snprintf(out->telemetry.data_source, sizeof out->telemetry.data_source, "%s", ds->valuestring);
-            cJSON *ts = cJSON_GetObjectItemCaseSensitive(root, "TimeStamp");
-            if (cJSON_IsString(ts)) snprintf(out->telemetry.time_stamp, sizeof out->telemetry.time_stamp, "%s", ts->valuestring);
-            cJSON *p1 = cJSON_GetObjectItemCaseSensitive(root, "Param1");
-            out->telemetry.param1 = cJSON_IsNumber(p1) ? (int)p1->valuedouble : 0;
-            cJSON *p2 = cJSON_GetObjectItemCaseSensitive(root, "Param2");
-            out->telemetry.param2 = cJSON_IsNumber(p2) ? (int)p2->valuedouble : 0;
-            cJSON *prob = cJSON_GetObjectItemCaseSensitive(root, "AssociatedProblemID");
-            out->telemetry.problem_id = cJSON_IsNumber(prob) ? (int)prob->valuedouble : 0;
-            cJSON *log = cJSON_GetObjectItemCaseSensitive(root, "AssociatedLogID");
-            out->telemetry.log_id = cJSON_IsNumber(log) ? (int)log->valuedouble : 0;
-            out->telemetry.was_processed = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(root, "WasProcessed"));
-            cJSON *arr = cJSON_GetObjectItemCaseSensitive(root, "Measurements");
-            if (cJSON_IsArray(arr)) {
-                int n = cJSON_GetArraySize(arr); if (n > 100) n = 100;
-                out->telemetry.meas_count = n;
+            telemetry_t *t = &out->telemetry;
+            cJSON *j;
+            if ((j = cJSON_GetObjectItem(root, "source")) && cJSON_IsString(j))
+                snprintf(t->source, sizeof t->source, "%s", j->valuestring);
+            if ((j = cJSON_GetObjectItem(root, "ts"))) t->ts = (int64_t)j->valuedouble;
+            cJSON *tags = cJSON_GetObjectItem(root, "tags");
+            if (tags && cJSON_IsArray(tags)) {
+                int n = cJSON_GetArraySize(tags); if (n > V2_MAX_TAGS) n = V2_MAX_TAGS;
+                t->tag_count = n;
                 for (int i = 0; i < n; i++) {
-                    cJSON *mi = cJSON_GetArrayItem(arr, i);
-                    out->telemetry.measurements[i] = cJSON_IsNumber(mi) ? mi->valuedouble : 0.0;
+                    cJSON *s = cJSON_GetArrayItem(tags, i);
+                    if (cJSON_IsString(s)) snprintf(t->tags[i], sizeof t->tags[i], "%s", s->valuestring);
                 }
+            }
+            cJSON *vals = cJSON_GetObjectItem(root, "values");
+            if (vals && cJSON_IsArray(vals)) {
+                int n = cJSON_GetArraySize(vals); if (n > V2_MAX_POINTS) n = V2_MAX_POINTS;
+                t->value_count = n;
+                for (int i = 0; i < n; i++) t->values[i] = cJSON_GetArrayItem(vals, i)->valuedouble;
             }
             break;
         }
-        case TD_STRING_ARRAY: {
-            cJSON *arr = cJSON_GetObjectItemCaseSensitive(root, "Items");
-            if (cJSON_IsArray(arr)) {
-                int n = cJSON_GetArraySize(arr); if (n > 100) n = 100;
-                out->string_array.count = n;
+        case TD_STRINGS: {
+            cJSON *items = cJSON_GetObjectItem(root, "items");
+            if (items && cJSON_IsArray(items)) {
+                int n = cJSON_GetArraySize(items); if (n > V2_MAX_STRINGS) n = V2_MAX_STRINGS;
+                out->strings.count = n;
                 for (int i = 0; i < n; i++) {
-                    cJSON *it = cJSON_GetArrayItem(arr, i);
-                    if (cJSON_IsString(it)) snprintf(out->string_array.items[i], sizeof out->string_array.items[i], "%s", it->valuestring);
+                    cJSON *s = cJSON_GetArrayItem(items, i);
+                    if (cJSON_IsString(s)) snprintf(out->strings.items[i], sizeof out->strings.items[i], "%s", s->valuestring);
                 }
             }
             break;
         }
-        case TD_EDI835: {
-            cJSON *p = cJSON_GetObjectItemCaseSensitive(root, "PayerName");
-            if (!cJSON_IsString(p)) return -1;
-            snprintf(out->edi.payer_name, sizeof out->edi.payer_name, "%s", p->valuestring);
-            cJSON *q = cJSON_GetObjectItemCaseSensitive(root, "PayeeName");
-            if (cJSON_IsString(q)) snprintf(out->edi.payee_name, sizeof out->edi.payee_name, "%s", q->valuestring);
-            cJSON *pd = cJSON_GetObjectItemCaseSensitive(root, "PaymentDate");
-            if (cJSON_IsString(pd)) snprintf(out->edi.payment_date, sizeof out->edi.payment_date, "%s", pd->valuestring);
-            cJSON *tcn = cJSON_GetObjectItemCaseSensitive(root, "TCN");
-            if (cJSON_IsString(tcn)) snprintf(out->edi.tcn, sizeof out->edi.tcn, "%s", tcn->valuestring);
-            cJSON *tot = cJSON_GetObjectItemCaseSensitive(root, "TotalActual");
-            out->edi.total_actual = cJSON_IsNumber(tot) ? tot->valuedouble : 0.0;
-            cJSON *claims = cJSON_GetObjectItemCaseSensitive(root, "Claims");
-            if (cJSON_IsArray(claims)) {
-                int nc = cJSON_GetArraySize(claims); if (nc > 6) nc = 6;
-                out->edi.claim_count = nc;
-                for (int c = 0; c < nc; c++) {
-                    cJSON *co = cJSON_GetArrayItem(claims, c);
-                    claim_t *cl = &out->edi.claims[c];
-                    cJSON *cid = co ? cJSON_GetObjectItemCaseSensitive(co, "ClaimId") : NULL;
-                    cJSON *pn = co ? cJSON_GetObjectItemCaseSensitive(co, "PatientName") : NULL;
-                    if (cJSON_IsString(cid)) snprintf(cl->claim_id, sizeof cl->claim_id, "%s", cid->valuestring);
-                    if (cJSON_IsString(pn)) snprintf(cl->patient_name, sizeof cl->patient_name, "%s", pn->valuestring);
-                    cJSON *tc = co ? cJSON_GetObjectItemCaseSensitive(co, "TotalCharge") : NULL;
-                    cl->total_charge = cJSON_IsNumber(tc) ? tc->valuedouble : 0.0;
-                    cJSON *pay = co ? cJSON_GetObjectItemCaseSensitive(co, "Payment") : NULL;
-                    cl->payment = cJSON_IsNumber(pay) ? pay->valuedouble : 0.0;
-                    cJSON *lines = co ? cJSON_GetObjectItemCaseSensitive(co, "Lines") : NULL;
-                    int nl = cJSON_IsArray(lines) ? cJSON_GetArraySize(lines) : 0; if (nl > 4) nl = 4;
-                    cl->line_count = nl;
-                    for (int L = 0; L < nl; L++) {
-                        cJSON *lo = cJSON_GetArrayItem(lines, L);
-                        cJSON *sc = lo ? cJSON_GetObjectItemCaseSensitive(lo, "ServiceCode") : NULL;
-                        if (cJSON_IsString(sc)) snprintf(cl->lines[L].service_code, sizeof cl->lines[L].service_code, "%s", sc->valuestring);
-                        cJSON *ch = lo ? cJSON_GetObjectItemCaseSensitive(lo, "Charge") : NULL;
-                        cl->lines[L].charge = cJSON_IsNumber(ch) ? ch->valuedouble : 0.0;
-                        cJSON *adj = lo ? cJSON_GetObjectItemCaseSensitive(lo, "Adjudicated") : NULL;
-                        cl->lines[L].adjudicated = cJSON_IsNumber(adj) ? adj->valuedouble : 0.0;
-                    }
-                }
-            }
-            break;
-        }
-
-        case TD_OBJECT_GRAPH: {
-            cJSON *root_i = cJSON_GetObjectItemCaseSensitive(root, "root");
-            out->graph.root = cJSON_IsNumber(root_i) ? (int)root_i->valuedouble : 0;
-            cJSON *nodes = cJSON_GetObjectItemCaseSensitive(root, "nodes");
-            if (!cJSON_IsArray(nodes)) return -1;
-            int nn = cJSON_GetArraySize(nodes); if (nn > GRAPH_MAX_NODES) nn = GRAPH_MAX_NODES;
-            out->graph.node_count = nn;
-            for (int i = 0; i < nn; i++) {
-                cJSON *no = cJSON_GetArrayItem(nodes, i);
-                graph_node_t *n = &out->graph.nodes[i];
-                cJSON *nm = no ? cJSON_GetObjectItemCaseSensitive(no, "Name") : NULL;
-                if (cJSON_IsString(nm)) snprintf(n->name, sizeof n->name, "%s", nm->valuestring);
-                cJSON *par = no ? cJSON_GetObjectItemCaseSensitive(no, "Parent") : NULL;
-                n->parent = cJSON_IsNumber(par) ? (int)par->valuedouble : GRAPH_NULL_IDX;
-                cJSON *rel = no ? cJSON_GetObjectItemCaseSensitive(no, "Related") : NULL;
-                n->related = cJSON_IsNumber(rel) ? (int)rel->valuedouble : GRAPH_NULL_IDX;
-                cJSON *ch = no ? cJSON_GetObjectItemCaseSensitive(no, "Children") : NULL;
-                int nc = cJSON_IsArray(ch) ? cJSON_GetArraySize(ch) : 0; if (nc > GRAPH_MAX_CHILDREN) nc = GRAPH_MAX_CHILDREN;
-                n->child_count = nc;
-                for (int c = 0; c < nc; c++) {
-                    cJSON *ci = cJSON_GetArrayItem(ch, c);
-                    n->children[c] = cJSON_IsNumber(ci) ? (int)ci->valuedouble : GRAPH_NULL_IDX;
+        case TD_EVENT: {
+            event_t *e = &out->event;
+            cJSON *j;
+            if ((j = cJSON_GetObjectItem(root, "event_id")) && cJSON_IsString(j))
+                snprintf(e->event_id, sizeof e->event_id, "%s", j->valuestring);
+            if ((j = cJSON_GetObjectItem(root, "event_type")) && cJSON_IsString(j))
+                snprintf(e->event_type, sizeof e->event_type, "%s", j->valuestring);
+            if ((j = cJSON_GetObjectItem(root, "occurred_at"))) e->occurred_at = (int64_t)j->valuedouble;
+            if ((j = cJSON_GetObjectItem(root, "producer")) && cJSON_IsString(j))
+                snprintf(e->producer, sizeof e->producer, "%s", j->valuestring);
+            cJSON *attrs = cJSON_GetObjectItem(root, "attrs");
+            if (attrs && cJSON_IsArray(attrs)) {
+                int n = cJSON_GetArraySize(attrs); if (n > V2_MAX_ATTRS) n = V2_MAX_ATTRS;
+                e->attr_count = n;
+                for (int i = 0; i < n; i++) {
+                    cJSON *a = cJSON_GetArrayItem(attrs, i);
+                    if ((j = cJSON_GetObjectItem(a, "key")) && cJSON_IsString(j))
+                        snprintf(e->attrs[i].key, sizeof e->attrs[i].key, "%s", j->valuestring);
+                    if ((j = cJSON_GetObjectItem(a, "value")) && cJSON_IsString(j))
+                        snprintf(e->attrs[i].value, sizeof e->attrs[i].value, "%s", j->valuestring);
                 }
             }
             break;
@@ -291,28 +193,20 @@ static int json_to_fx(cJSON *root, test_fixture_t *out, test_data_kind_t kind) {
 }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
-    /* Optimal: cJSON_PrintPreallocated writes into the caller's buffer (no malloc+memcpy). */
     cJSON *root = fx_to_json(fx);
     if (!root) return -1;
-    if (cap < 2) { cJSON_Delete(root); return -1; }
-    if (!cJSON_PrintPreallocated(root, (char *)buf, (int)cap, 0 /* unformatted */)) {
-        cJSON_Delete(root);
-        return -1;
-    }
-    *ol = strlen((const char *)buf);
+    if (!cJSON_PrintPreallocated(root, (char *)buf, (int)cap, 0)) { cJSON_Delete(root); return -1; }
+    *ol = strlen((char *)buf);
     cJSON_Delete(root);
     return 0;
 }
-
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
-    /* Optimal: ParseWithLength avoids an extra null-terminated copy of the input. */
     cJSON *root = cJSON_ParseWithLength((const char *)buf, len);
     if (!root) return -1;
     int rc = json_to_fx(root, out, kind);
     cJSON_Delete(root);
     return rc;
 }
-
 void bench_register_cjson(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "cJSON", cJSON_Version(), "json", prep, ser, de, fidelity_fx);
+    BENCH_ADD(o, c, "cJSON", "1.7.18", "json", prep, ser, de, fidelity_fx);
 }

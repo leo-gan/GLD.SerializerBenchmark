@@ -1,6 +1,6 @@
 # C++
 
-C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (Protobuf wire, FlatBuffers, FlexBuffers).
+C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers).
 
 ## Harness
 
@@ -8,9 +8,10 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson),
 - Output: monorepo `logs/cpp/YYYY-MM-DD-HHMMSS.csv` (`Language=cpp`, times in **nanoseconds**)
 - Runner: `cpp/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Build: CMake **C++20**, deps via `FetchContent` → `cpp/third_party/` (pins in [`cpp/third_party/VERSIONS.md`](../../cpp/third_party/VERSIONS.md))
+- Official Protobuf: `cpp/scripts/setup-protobuf-sysroot.sh` (libprotobuf 3.12 + protoc, no root install)
 - Registration: [`cpp/src/register.cpp`](../../cpp/src/register.cpp)
 
-## Serializers (26+)
+## Serializers (27+)
 
 | Serializer | Category | Library | Optimal call path | Notes |
 |------------|----------|---------|-------------------|-------|
@@ -37,7 +38,8 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson),
 | avro_c | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++; stream adapted |
 | capnproto | Schema | Cap'n Proto | flat array bytes; `writeMessage` / `InputStreamMessageReader` stream | Zero-copy schema; **native stream** |
 | boost_serialization | Binary | Boost.Serialization | binary_o/iarchive (bytes + stream) | Optional (system lib); **native stream** |
-| protobuf | Schema | suite wire | proto3 field tags | Shared `.proto` field numbers |
+| protobuf | Schema | **libprotobuf** (Google) | `SerializeToArray` / `ParseFromArray` on prepared messages | Official C++ runtime; sysroot via setup script |
+| protobuf-wire | Schema | suite wire | proto3 field tags | In-tree codec; same field numbers as shared `.proto` |
 | avro | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
 | flexbuffers | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
 | flatbuffers | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
@@ -87,7 +89,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 
 3. **Protobuf family** (shared schema, different runtimes)
    - **Why:** The suite `.proto` is language-agnostic; C and C++ use different encoders for the **same field numbers**.
-   - **How:** C → nanopb / protobuf-c; C++ → proto3 wire codec aligned with `schemas/v2/protobuf/benchmark_v2.proto`.
+   - **How:** C → nanopb / protobuf-c / in-tree wire; C++ → official **libprotobuf** and optional **protobuf-wire**, both aligned with `schemas/v2/protobuf/benchmark_v2.proto`.
    - **Example field:** `Message.f_int32 = 2` is wire tag `(2<<3)|0` in both.
 
 4. **FlatBuffers family** (shared idea, different codegens)
@@ -113,7 +115,8 @@ Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 ## Caveats
 
 - **simdjson** is optimized for parse; serialize is prepared minified JSON (same honesty as Rust/JS suite entries).
-- **protobuf** uses an in-tree proto3 wire codec for the suite schema (standard tags), not a full `libprotobuf` link — field layout matches `schemas/v2/protobuf/benchmark_v2.proto`.
+- **protobuf** is official **libprotobuf** + protoc-generated stubs from `schemas/v2/protobuf/benchmark_v2.proto` (requires `cpp/scripts/setup-protobuf-sysroot.sh`). Domain→Message conversion is untimed (`prepare` / `to_domain`).
+- **protobuf-wire** is the previous in-tree proto3 field-tag codec (no libprotobuf); kept for comparison when the sysroot is absent or for wire-only baselines.
 - **flatbuffers** blob-root path embeds suite payload via `FlatBufferBuilder` (typed tables generated when `flatc` runs).
 - Stream mode is **native** where the library exposes streams/buffers and the harness uses them (`VecOutStream`/`VecInStream`, Cap’n Proto `writeMessage`, msgpack packer/unpacker, etc.); others are **adapted** (stream path = bytes path).
 - First CMake configure downloads pinned deps into `cpp/third_party/` (network required once).

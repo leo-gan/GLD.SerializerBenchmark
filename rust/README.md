@@ -63,5 +63,5 @@ Analysis: `analyze-benchmarks -l rust`.
 
 ## Build notes
 
-- `build.rs` + prost from the suite protobuf schema under `schemas/` / `rust/proto/`.  
+- `build.rs` compiles `schemas/v2/protobuf/benchmark_v2.proto` via prost-build.  
 - Offline builds need a populated `target/` / vendor cache.

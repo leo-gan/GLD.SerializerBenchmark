@@ -1,275 +1,172 @@
-//! prost (protobuf) path: shared .proto messages + local flat ObjectGraph.
+//! prost (protobuf) path: schemas/v2/protobuf/benchmark_v2.proto.
 
 use crate::data::{
-    Claim, Edi835, Fixture, Gender, GraphNodeData, ObjectGraph, Passport, Person, PoliceRecord,
-    ServiceLine, SimpleObject, StringArrayObject, TelemetryData,
+    Document, DocumentItem, DocumentMeta, Event, EventAttr, Fixture, Message, Strings, Telemetry,
 };
 use anyhow::{anyhow, Result};
 
 use super::{take_rearm, ver, BenchSerializer, NativeKind};
 
+// package benchmark.v2 → OUT_DIR/benchmark.v2.rs
 pub mod pb {
-    include!(concat!(env!("OUT_DIR"), "/benchmark_data.rs"));
+    include!(concat!(env!("OUT_DIR"), "/benchmark.v2.rs"));
 }
 
-fn parse_dt_ms(s: &str) -> i64 {
-    // Fixtures use ISO strings; map to a stable ms for proto int64 fields.
-    // Prefer chrono parse; fall back to 0.
-    chrono::DateTime::parse_from_rfc3339(s)
-        .map(|d| d.timestamp_millis())
-        .or_else(|_| {
-            chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%SZ")
-                .map(|n| n.and_utc().timestamp_millis())
-        })
-        .unwrap_or(0)
+fn message_to_pb(m: &Message) -> pb::Message {
+    pb::Message {
+        f_bool: m.f_bool,
+        f_int32: m.f_int32,
+        f_int64: m.f_int64,
+        f_float64: m.f_float64,
+        f_string: m.f_string.clone(),
+        f_bool_2: m.f_bool_2,
+        f_int32_2: m.f_int32_2,
+        f_string_2: m.f_string_2.clone(),
+    }
+}
+fn message_from_pb(m: pb::Message) -> Message {
+    Message {
+        f_bool: m.f_bool,
+        f_int32: m.f_int32,
+        f_int64: m.f_int64,
+        f_float64: m.f_float64,
+        f_string: m.f_string,
+        f_bool_2: m.f_bool_2,
+        f_int32_2: m.f_int32_2,
+        f_string_2: m.f_string_2,
+    }
 }
 
-fn person_to_pb(p: &Person) -> pb::Person {
-    pb::Person {
-        first_name: p.first_name.clone(),
-        last_name: p.last_name.clone(),
-        age: p.age as u32,
-        gender: match p.gender {
-            Gender::Male => pb::Gender::Male as i32,
-            Gender::Female => pb::Gender::Female as i32,
-        },
-        passport: p.passport.as_ref().map(|x| pb::Passport {
-            number: x.number.clone(),
-            authority: x.authority.clone(),
-            expiration_date: parse_dt_ms(&x.expiration_date),
+fn document_to_pb(d: &Document) -> pb::Document {
+    pb::Document {
+        id: d.id.clone(),
+        status: d.status,
+        meta: Some(pb::DocumentMeta {
+            region: d.meta.region.clone(),
+            version: d.meta.version,
         }),
-        police_records: p
-            .police_records
+        items: d
+            .items
             .iter()
-            .map(|r| pb::PoliceRecord {
-                id: r.id,
-                crime_code: r.crime_code.clone(),
+            .map(|it| pb::DocumentItem {
+                sku: it.sku.clone(),
+                qty: it.qty,
+                price_minor: it.price_minor,
             })
             .collect(),
     }
 }
-
-fn person_from_pb(p: pb::Person) -> Person {
-    Person {
-        first_name: p.first_name,
-        last_name: p.last_name,
-        age: p.age as i32,
-        gender: if p.gender == pb::Gender::Female as i32 {
-            Gender::Female
-        } else {
-            Gender::Male
+fn document_from_pb(d: pb::Document) -> Document {
+    let meta = d.meta.unwrap_or_default();
+    Document {
+        id: d.id,
+        status: d.status,
+        meta: DocumentMeta {
+            region: meta.region,
+            version: meta.version,
         },
-        passport: p.passport.map(|x| Passport {
-            number: x.number,
-            authority: x.authority,
-            expiration_date: chrono::DateTime::from_timestamp_millis(x.expiration_date)
-                .map(|d| d.to_rfc3339())
-                .unwrap_or_else(|| "1970-01-01T00:00:00Z".into()),
-        }),
-        police_records: p
-            .police_records
+        items: d
+            .items
             .into_iter()
-            .map(|r| PoliceRecord {
-                id: r.id,
-                crime_code: r.crime_code,
+            .map(|it| DocumentItem {
+                sku: it.sku,
+                qty: it.qty,
+                price_minor: it.price_minor,
             })
             .collect(),
     }
 }
 
-fn simple_to_pb(s: &SimpleObject) -> pb::SimpleObject {
-    pb::SimpleObject {
-        id: s.id,
-        name: s.name.clone(),
-        timestamp: parse_dt_ms(&s.timestamp),
-        is_active: s.is_active,
+fn telemetry_to_pb(t: &Telemetry) -> pb::Telemetry {
+    pb::Telemetry {
+        source: t.source.clone(),
+        ts: t.ts,
+        tags: t.tags.clone(),
+        values: t.values.clone(),
     }
 }
-fn simple_from_pb(s: pb::SimpleObject) -> SimpleObject {
-    SimpleObject {
-        id: s.id,
-        name: s.name,
-        timestamp: chrono::DateTime::from_timestamp_millis(s.timestamp)
-            .map(|d| d.to_rfc3339())
-            .unwrap_or_else(|| "1970-01-01T00:00:00Z".into()),
-        is_active: s.is_active,
+fn telemetry_from_pb(t: pb::Telemetry) -> Telemetry {
+    Telemetry {
+        source: t.source,
+        ts: t.ts,
+        tags: t.tags,
+        values: t.values,
     }
 }
 
-fn sa_to_pb(s: &StringArrayObject) -> pb::StringArrayObject {
-    pb::StringArrayObject {
+fn strings_to_pb(s: &Strings) -> pb::Strings {
+    pb::Strings {
         items: s.items.clone(),
     }
 }
-fn sa_from_pb(s: pb::StringArrayObject) -> StringArrayObject {
-    StringArrayObject { items: s.items }
+fn strings_from_pb(s: pb::Strings) -> Strings {
+    Strings { items: s.items }
 }
 
-fn tel_to_pb(t: &TelemetryData) -> pb::TelemetryData {
-    pb::TelemetryData {
-        id: t.id.clone(),
-        data_source: t.data_source.clone(),
-        time_stamp: parse_dt_ms(&t.time_stamp),
-        param1: t.param1,
-        param2: t.param2 as u32,
-        measurements: t.measurements.clone(),
-        associated_problem_id: t.associated_problem_id as i64,
-        associated_log_id: t.associated_log_id as i64,
-        was_processed: t.was_processed,
-    }
-}
-fn tel_from_pb(t: pb::TelemetryData) -> TelemetryData {
-    TelemetryData {
-        id: t.id,
-        data_source: t.data_source,
-        time_stamp: chrono::DateTime::from_timestamp_millis(t.time_stamp)
-            .map(|d| d.to_rfc3339())
-            .unwrap_or_else(|| "1970-01-01T00:00:00Z".into()),
-        param1: t.param1,
-        param2: t.param2 as i32,
-        measurements: t.measurements,
-        associated_problem_id: t.associated_problem_id as i32,
-        associated_log_id: t.associated_log_id as i32,
-        was_processed: t.was_processed,
-    }
-}
-
-fn edi_to_pb(e: &Edi835) -> pb::Edi835 {
-    pb::Edi835 {
-        payer_name: e.payer_name.clone(),
-        payee_name: e.payee_name.clone(),
-        payment_date: parse_dt_ms(&e.payment_date),
-        total_actual_amount: e.total_actual_amount,
-        transaction_control_number: e.transaction_control_number.clone(),
-        claims: e
-            .claims
+fn event_to_pb(e: &Event) -> pb::Event {
+    pb::Event {
+        event_id: e.event_id.clone(),
+        event_type: e.event_type.clone(),
+        occurred_at: e.occurred_at,
+        producer: e.producer.clone(),
+        attrs: e
+            .attrs
             .iter()
-            .map(|c| pb::Claim {
-                claim_id: c.claim_id.clone(),
-                patient_name: c.patient_name.clone(),
-                total_charge: c.total_charge,
-                payment_amount: c.payment_amount,
-                lines: c
-                    .lines
-                    .iter()
-                    .map(|l| pb::ServiceLine {
-                        service_code: l.service_code.clone(),
-                        charge_amount: l.charge_amount,
-                        adjudicated_amount: l.adjudicated_amount,
-                    })
-                    .collect(),
+            .map(|a| pb::EventAttr {
+                key: a.key.clone(),
+                value: a.value.clone(),
             })
             .collect(),
     }
 }
-fn edi_from_pb(e: pb::Edi835) -> Edi835 {
-    Edi835 {
-        payer_name: e.payer_name,
-        payee_name: e.payee_name,
-        payment_date: chrono::DateTime::from_timestamp_millis(e.payment_date)
-            .map(|d| d.to_rfc3339())
-            .unwrap_or_else(|| "1970-01-01T00:00:00Z".into()),
-        total_actual_amount: e.total_actual_amount,
-        transaction_control_number: e.transaction_control_number,
-        claims: e
-            .claims
+fn event_from_pb(e: pb::Event) -> Event {
+    Event {
+        event_id: e.event_id,
+        event_type: e.event_type,
+        occurred_at: e.occurred_at,
+        producer: e.producer,
+        attrs: e
+            .attrs
             .into_iter()
-            .map(|c| Claim {
-                claim_id: c.claim_id,
-                patient_name: c.patient_name,
-                total_charge: c.total_charge,
-                payment_amount: c.payment_amount,
-                lines: c
-                    .lines
-                    .into_iter()
-                    .map(|l| ServiceLine {
-                        service_code: l.service_code,
-                        charge_amount: l.charge_amount,
-                        adjudicated_amount: l.adjudicated_amount,
-                    })
-                    .collect(),
-            })
-            .collect(),
-    }
-}
-
-/// Local flat graph messages (shared .proto GraphNode is recursive without identity).
-/// Index edges enable ObjectGraph cycles on the prost path without schema churn.
-#[derive(Clone, PartialEq, prost::Message)]
-struct FlatGraphNode {
-    #[prost(string, tag = "1")]
-    name: String,
-    #[prost(int32, tag = "2")]
-    parent: i32,
-    #[prost(int32, tag = "3")]
-    related: i32,
-    #[prost(int32, repeated, tag = "4")]
-    children: Vec<i32>,
-}
-
-#[derive(Clone, PartialEq, prost::Message)]
-struct FlatObjectGraph {
-    #[prost(int32, tag = "1")]
-    root: i32,
-    #[prost(message, repeated, tag = "2")]
-    nodes: Vec<FlatGraphNode>,
-}
-
-fn graph_to_flat(g: &ObjectGraph) -> FlatObjectGraph {
-    FlatObjectGraph {
-        root: g.root,
-        nodes: g
-            .nodes
-            .iter()
-            .map(|n| FlatGraphNode {
-                name: n.name.clone(),
-                parent: n.parent,
-                related: n.related,
-                children: n.children.clone(),
-            })
-            .collect(),
-    }
-}
-
-fn graph_from_flat(g: FlatObjectGraph) -> ObjectGraph {
-    ObjectGraph {
-        root: g.root,
-        nodes: g
-            .nodes
-            .into_iter()
-            .map(|n| GraphNodeData {
-                name: n.name,
-                parent: n.parent,
-                related: n.related,
-                children: n.children,
+            .map(|a| EventAttr {
+                key: a.key,
+                value: a.value,
             })
             .collect(),
     }
 }
 
 enum ProstMsg {
-    Person(pb::Person),
-    Simple(pb::SimpleObject),
-    StringArray(pb::StringArrayObject),
-    Telemetry(pb::TelemetryData),
-    Edi(pb::Edi835),
-    ObjectGraph(FlatObjectGraph),
+    Message(pb::Message),
+    Document(pb::Document),
+    Telemetry(pb::Telemetry),
+    Strings(pb::Strings),
+    Event(pb::Event),
 }
 
 pub struct ProstSer {
-    msg: Option<ProstMsg>,
     kind: &'static str,
     buf: Vec<u8>,
 }
 impl Default for ProstSer {
     fn default() -> Self {
         Self {
-            msg: None,
-            kind: "Person",
+            kind: "message",
             buf: Vec::with_capacity(4096),
         }
     }
 }
+
+fn fixture_to_prost(fixture: &Fixture) -> ProstMsg {
+    match fixture {
+        Fixture::Message(m) => ProstMsg::Message(message_to_pb(m)),
+        Fixture::Document(d) => ProstMsg::Document(document_to_pb(d)),
+        Fixture::Telemetry(t) => ProstMsg::Telemetry(telemetry_to_pb(t)),
+        Fixture::Strings(s) => ProstMsg::Strings(strings_to_pb(s)),
+        Fixture::Event(e) => ProstMsg::Event(event_to_pb(e)),
+    }
+}
+
 impl BenchSerializer for ProstSer {
     fn name(&self) -> &'static str {
         "prost"
@@ -281,75 +178,61 @@ impl BenchSerializer for ProstSer {
         NativeKind::Message
     }
     fn supports(&self, test_data_name: &str) -> bool {
-        // Shared schema has no bare Integer wrapper message.
-        test_data_name != "Integer"
+        matches!(
+            test_data_name,
+            "message" | "document" | "telemetry" | "strings" | "event"
+        )
     }
     fn prepare(&mut self, fixture: &Fixture) -> Result<()> {
+        // Kind tracking for decode; domain→pb conversion happens per serialize so N>1 batches stay correct.
         self.kind = fixture.name();
-        self.msg = Some(match fixture {
-            Fixture::Person(p) => ProstMsg::Person(person_to_pb(p)),
-            Fixture::Simple(s) => ProstMsg::Simple(simple_to_pb(s)),
-            Fixture::StringArray(s) => ProstMsg::StringArray(sa_to_pb(s)),
-            Fixture::Telemetry(t) => ProstMsg::Telemetry(tel_to_pb(t)),
-            Fixture::Edi(e) => ProstMsg::Edi(edi_to_pb(e)),
-            Fixture::ObjectGraph(g) => ProstMsg::ObjectGraph(graph_to_flat(g)),
-            Fixture::Integer(_) => return Err(anyhow!("prost does not support bare Integer")),
-        });
+        self.buf.clear();
         Ok(())
     }
-    fn serialize_bytes(&mut self, _: &Fixture) -> Result<Vec<u8>> {
-        use prost::Message;
-        let msg = self
-            .msg
-            .as_ref()
-            .ok_or_else(|| anyhow!("prost: prepare() required"))?;
-        // Optimal: pre-size with encoded_len, reuse buffer (encode_to_vec always allocs).
-        let len = match msg {
-            ProstMsg::Person(m) => m.encoded_len(),
-            ProstMsg::Simple(m) => m.encoded_len(),
-            ProstMsg::StringArray(m) => m.encoded_len(),
+    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
+        use prost::Message as ProstMessage;
+        let msg = fixture_to_prost(fixture);
+        let len = match &msg {
+            ProstMsg::Message(m) => m.encoded_len(),
+            ProstMsg::Document(m) => m.encoded_len(),
             ProstMsg::Telemetry(m) => m.encoded_len(),
-            ProstMsg::Edi(m) => m.encoded_len(),
-            ProstMsg::ObjectGraph(m) => m.encoded_len(),
+            ProstMsg::Strings(m) => m.encoded_len(),
+            ProstMsg::Event(m) => m.encoded_len(),
         };
         self.buf.clear();
         self.buf.reserve(len);
-        match msg {
-            ProstMsg::Person(m) => m.encode(&mut self.buf)?,
-            ProstMsg::Simple(m) => m.encode(&mut self.buf)?,
-            ProstMsg::StringArray(m) => m.encode(&mut self.buf)?,
+        match &msg {
+            ProstMsg::Message(m) => m.encode(&mut self.buf)?,
+            ProstMsg::Document(m) => m.encode(&mut self.buf)?,
             ProstMsg::Telemetry(m) => m.encode(&mut self.buf)?,
-            ProstMsg::Edi(m) => m.encode(&mut self.buf)?,
-            ProstMsg::ObjectGraph(m) => m.encode(&mut self.buf)?,
+            ProstMsg::Strings(m) => m.encode(&mut self.buf)?,
+            ProstMsg::Event(m) => m.encode(&mut self.buf)?,
         }
         Ok(take_rearm(&mut self.buf))
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
-        use prost::Message;
+        // Alias avoids clash with domain `Message`.
+        use prost::Message as ProstMessage;
         match self.kind {
-            "Person" => {
-                let m = pb::Person::decode(data)?;
-                Ok(Fixture::Person(person_from_pb(m)))
+            "message" => {
+                let m = <pb::Message as ProstMessage>::decode(data)?;
+                Ok(Fixture::Message(message_from_pb(m)))
             }
-            "SimpleObject" => {
-                let m = pb::SimpleObject::decode(data)?;
-                Ok(Fixture::Simple(simple_from_pb(m)))
+            "document" => {
+                let m = <pb::Document as ProstMessage>::decode(data)?;
+                Ok(Fixture::Document(document_from_pb(m)))
             }
-            "StringArray" => {
-                let m = pb::StringArrayObject::decode(data)?;
-                Ok(Fixture::StringArray(sa_from_pb(m)))
+            "telemetry" => {
+                let m = <pb::Telemetry as ProstMessage>::decode(data)?;
+                Ok(Fixture::Telemetry(telemetry_from_pb(m)))
             }
-            "Telemetry" => {
-                let m = pb::TelemetryData::decode(data)?;
-                Ok(Fixture::Telemetry(tel_from_pb(m)))
+            "strings" => {
+                let m = <pb::Strings as ProstMessage>::decode(data)?;
+                Ok(Fixture::Strings(strings_from_pb(m)))
             }
-            "EDI_835" => {
-                let m = pb::Edi835::decode(data)?;
-                Ok(Fixture::Edi(edi_from_pb(m)))
-            }
-            "ObjectGraph" => {
-                let m = FlatObjectGraph::decode(data)?;
-                Ok(Fixture::ObjectGraph(graph_from_flat(m)))
+            "event" => {
+                let m = <pb::Event as ProstMessage>::decode(data)?;
+                Ok(Fixture::Event(event_from_pb(m)))
             }
             other => Err(anyhow!("prost: unsupported kind {other}")),
         }

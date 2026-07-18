@@ -189,6 +189,55 @@ set(BENCH_SOURCES
   src/serializers/ser_schema.cpp
 )
 
+# ---- Optional: official Google libprotobuf (suite sysroot or system) ----
+set(PB_SYSROOT "${CPP_TP}/protobuf-sysroot")
+set(PB_SYSROOT_PROTOC "${PB_SYSROOT}/usr/bin/protoc")
+set(PB_SYSROOT_INC "${PB_SYSROOT}/usr/include")
+set(PB_SYSROOT_LIBDIR "${PB_SYSROOT}/usr/lib/x86_64-linux-gnu")
+set(PB_SYSROOT_LIB "${PB_SYSROOT_LIBDIR}/libprotobuf.a")
+set(BENCH_HAS_LIBPROTOBUF 0)
+set(BENCH_PROTOC "")
+if(EXISTS "${PB_SYSROOT_PROTOC}" AND EXISTS "${PB_SYSROOT_INC}/google/protobuf/message.h" AND EXISTS "${PB_SYSROOT_LIB}")
+  set(BENCH_HAS_LIBPROTOBUF 1)
+  set(BENCH_PROTOC "${PB_SYSROOT_PROTOC}")
+  set(BENCH_PROTOBUF_INC "${PB_SYSROOT_INC}")
+  set(BENCH_PROTOBUF_LIB "${PB_SYSROOT_LIB}")
+  set(BENCH_PROTOBUF_LIBDIR "${PB_SYSROOT_LIBDIR}")
+  message(STATUS "serializer: protobuf (libprotobuf) REAL via sysroot ${PB_SYSROOT}")
+else()
+  find_package(Protobuf QUIET)
+  if(Protobuf_FOUND AND Protobuf_PROTOC_EXECUTABLE)
+    set(BENCH_HAS_LIBPROTOBUF 1)
+    set(BENCH_PROTOC "${Protobuf_PROTOC_EXECUTABLE}")
+    set(BENCH_PROTOBUF_INC "${Protobuf_INCLUDE_DIRS}")
+    set(BENCH_PROTOBUF_LIB "${Protobuf_LIBRARIES}")
+    message(STATUS "serializer: protobuf (libprotobuf) REAL via find_package")
+  else()
+    message(STATUS "serializer: protobuf (libprotobuf) SKIPPED — run cpp/scripts/setup-protobuf-sysroot.sh")
+  endif()
+endif()
+
+if(BENCH_HAS_LIBPROTOBUF)
+  set(PB_PROTO "${CMAKE_CURRENT_SOURCE_DIR}/../schemas/v2/protobuf/benchmark_v2.proto")
+  set(PB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+  file(MAKE_DIRECTORY ${PB_GEN_DIR})
+  set(PB_GEN_CC "${PB_GEN_DIR}/benchmark_v2.pb.cc")
+  set(PB_GEN_H "${PB_GEN_DIR}/benchmark_v2.pb.h")
+  add_custom_command(
+    OUTPUT ${PB_GEN_CC} ${PB_GEN_H}
+    COMMAND ${CMAKE_COMMAND} -E env
+            "LD_LIBRARY_PATH=${BENCH_PROTOBUF_LIBDIR}:$ENV{LD_LIBRARY_PATH}"
+            ${BENCH_PROTOC}
+            --cpp_out=${PB_GEN_DIR}
+            -I ${CMAKE_CURRENT_SOURCE_DIR}/../schemas/v2/protobuf
+            ${PB_PROTO}
+    DEPENDS ${PB_PROTO}
+    COMMENT "Generating libprotobuf C++ stubs from benchmark_v2.proto"
+    VERBATIM
+  )
+  list(APPEND BENCH_SOURCES src/serializers/ser_protobuf_lib.cpp ${PB_GEN_CC})
+endif()
+
 add_executable(serializer_benchmark_cpp ${BENCH_SOURCES})
 target_include_directories(serializer_benchmark_cpp PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -211,6 +260,22 @@ target_link_libraries(serializer_benchmark_cpp PRIVATE
   cista_hdr
   pthread
 )
+
+if(BENCH_HAS_LIBPROTOBUF)
+  target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_LIBPROTOBUF=1)
+  target_include_directories(serializer_benchmark_cpp PRIVATE ${BENCH_PROTOBUF_INC})
+  target_link_libraries(serializer_benchmark_cpp PRIVATE ${BENCH_PROTOBUF_LIB} pthread)
+  if(BENCH_PROTOBUF_LIBDIR)
+    # protoc and shared libs from sysroot at runtime (if .a not fully static)
+    set_target_properties(serializer_benchmark_cpp PROPERTIES
+      BUILD_RPATH "${BENCH_PROTOBUF_LIBDIR}"
+      INSTALL_RPATH "${BENCH_PROTOBUF_LIBDIR}")
+  endif()
+else()
+  target_compile_definitions(serializer_benchmark_cpp PRIVATE HAS_LIBPROTOBUF=0)
+  # Stub factory when official runtime is unavailable
+  target_sources(serializer_benchmark_cpp PRIVATE src/serializers/ser_protobuf_lib_stub.cpp)
+endif()
 
 # msgpack-cxx is header-only in cpp-6.x
 if(TARGET msgpack-cxx)
@@ -236,7 +301,7 @@ if(TARGET flatc)
 endif()
 
 # ---- Tests ----
-add_executable(cpp_serializer_tests
+set(TEST_SOURCES
   tests/test_roundtrip.cpp
   src/data_v2.cpp
   src/register.cpp
@@ -255,6 +320,12 @@ add_executable(cpp_serializer_tests
   src/serializers/ser_capnp.cpp
   src/serializers/ser_schema.cpp
 )
+if(BENCH_HAS_LIBPROTOBUF)
+  list(APPEND TEST_SOURCES src/serializers/ser_protobuf_lib.cpp ${PB_GEN_CC})
+else()
+  list(APPEND TEST_SOURCES src/serializers/ser_protobuf_lib_stub.cpp)
+endif()
+add_executable(cpp_serializer_tests ${TEST_SOURCES})
 target_include_directories(cpp_serializer_tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CPP_TP}/rapidjson/include
@@ -280,6 +351,13 @@ if(TARGET msgpack-cxx)
   target_link_libraries(cpp_serializer_tests PRIVATE msgpack-cxx)
 elseif(TARGET msgpackc-cxx)
   target_link_libraries(cpp_serializer_tests PRIVATE msgpackc-cxx)
+endif()
+if(BENCH_HAS_LIBPROTOBUF)
+  target_compile_definitions(cpp_serializer_tests PRIVATE HAS_LIBPROTOBUF=1)
+  target_include_directories(cpp_serializer_tests PRIVATE ${BENCH_PROTOBUF_INC})
+  target_link_libraries(cpp_serializer_tests PRIVATE ${BENCH_PROTOBUF_LIB} pthread)
+else()
+  target_compile_definitions(cpp_serializer_tests PRIVATE HAS_LIBPROTOBUF=0)
 endif()
 
 # ---- Optional: Boost.Serialization ----

@@ -5,7 +5,6 @@ export const v8Ser = {
   name: 'v8-serializer',
   version: `v8-${process.versions.v8}`,
   category: 'native',
-  // Flat ObjectGraph + live cycles both work; suite uses flat index edges.
   supports: () => true,
   prepare() {},
   serialize(value) {

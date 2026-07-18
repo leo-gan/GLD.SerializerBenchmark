@@ -43,13 +43,7 @@ func (s *linkedInGoavro) Version() string        { return ModuleVersion("github.
 func (s *linkedInGoavro) StreamMode() StreamMode { return StreamAdapted }
 func (s *linkedInGoavro) NativeKind() NativeKind { return NativeSchema }
 func (s *linkedInGoavro) Supports(n string) bool {
-	switch n {
-	case "message", "document", "telemetry", "strings", "event",
-		"Person", "Integer", "SimpleObject", "StringArray", "Telemetry", "EDI_835", "ObjectGraph":
-		return true
-	default:
-		return DefaultSupports(n)
-	}
+	return modelv2.IsV2TypeName(n)
 }
 
 func (s *linkedInGoavro) Prepare(fx model.Fixture) error {
@@ -154,7 +148,7 @@ func toGoavroNative(v any) (any, error) {
 		}
 		return map[string]any{
 			"id": t.ID, "status": int32(t.Status),
-			"meta": map[string]any{"region": t.Meta.Region, "version": int32(t.Meta.Version)},
+			"meta":  map[string]any{"region": t.Meta.Region, "version": int32(t.Meta.Version)},
 			"items": items,
 		}, nil
 	case modelv2.Telemetry:
@@ -182,40 +176,6 @@ func toGoavroNative(v any) (any, error) {
 			"event_id": t.EventID, "event_type": t.EventType,
 			"occurred_at": t.OccurredAt, "producer": t.Producer, "attrs": attrs,
 		}, nil
-	case model.Person:
-		var pass any
-		if t.Passport != nil {
-			pass = map[string]any{
-				"Passport": map[string]any{
-					"number": t.Passport.Number, "authority": t.Passport.Authority,
-					"expiration_date": t.Passport.ExpirationDate,
-				},
-			}
-		} else {
-			pass = nil // goavro accepts nil for null branch of union
-		}
-		recs := make([]any, len(t.PoliceRecords))
-		for i, r := range t.PoliceRecords {
-			recs[i] = map[string]any{"id": int32(r.ID), "crime_code": r.CrimeCode}
-		}
-		return map[string]any{
-			"first_name": t.FirstName, "last_name": t.LastName,
-			"age": int32(t.Age), "gender": int32(t.Gender),
-			"passport": pass, "police_records": recs,
-		}, nil
-	case model.ObjectGraph:
-		nodes := make([]any, len(t.Nodes))
-		for i, n := range t.Nodes {
-			ch := make([]any, len(n.Children))
-			for j, c := range n.Children {
-				ch[j] = int32(c)
-			}
-			nodes[i] = map[string]any{
-				"name": n.Name, "parent": int32(n.Parent),
-				"related": int32(n.Related), "children": ch,
-			}
-		}
-		return map[string]any{"root": int32(t.Root), "nodes": nodes}, nil
 	default:
 		return nil, fmt.Errorf("goavro: unsupported type %T", v)
 	}
@@ -384,54 +344,6 @@ func fromGoavroOne(typeID string, decoded any) (any, error) {
 			EventID: asString(m["event_id"]), EventType: asString(m["event_type"]),
 			OccurredAt: asInt64(m["occurred_at"]), Producer: asString(m["producer"]), Attrs: attrs,
 		}, nil
-	case "Person":
-		var pass *model.Passport
-		if pv := m["passport"]; pv != nil {
-			pm := asMap(pv)
-			// Union: {"Passport": {...}} or already unwrapped map
-			if inner := asMap(pm["Passport"]); inner != nil {
-				pm = inner
-			}
-			if pm != nil {
-				pass = &model.Passport{
-					Number: asString(pm["number"]), Authority: asString(pm["authority"]),
-					ExpirationDate: asString(pm["expiration_date"]),
-				}
-			}
-		}
-		var recs []model.PoliceRecord
-		if raw, ok := m["police_records"].([]any); ok {
-			recs = make([]model.PoliceRecord, len(raw))
-			for i, r := range raw {
-				rm := asMap(r)
-				recs[i] = model.PoliceRecord{ID: asInt32(rm["id"]), CrimeCode: asString(rm["crime_code"])}
-			}
-		}
-		return model.Person{
-			FirstName: asString(m["first_name"]), LastName: asString(m["last_name"]),
-			Age: asInt32(m["age"]), Gender: model.Gender(asInt32(m["gender"])),
-			Passport: pass, PoliceRecords: recs,
-		}, nil
-	case "ObjectGraph":
-		var nodes []model.GraphNodeData
-		if raw, ok := m["nodes"].([]any); ok {
-			nodes = make([]model.GraphNodeData, len(raw))
-			for i, n := range raw {
-				nm := asMap(n)
-				var ch []int32
-				if cr, ok := nm["children"].([]any); ok {
-					ch = make([]int32, len(cr))
-					for j, c := range cr {
-						ch[j] = asInt32(c)
-					}
-				}
-				nodes[i] = model.GraphNodeData{
-					Name: asString(nm["name"]), Parent: asInt32(nm["parent"]),
-					Related: asInt32(nm["related"]), Children: ch,
-				}
-			}
-		}
-		return model.ObjectGraph{Root: asInt32(m["root"]), Nodes: nodes}, nil
 	default:
 		return nil, fmt.Errorf("goavro: unsupported type_id %s", typeID)
 	}

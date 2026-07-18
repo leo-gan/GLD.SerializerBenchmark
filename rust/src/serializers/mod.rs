@@ -151,50 +151,9 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::{all_fixtures, make_object_graph, object_graph_fidelity, Fixture};
+    use crate::data::{all_fixtures, fidelity, make_one, Fixture};
     use super::binary_serde::CiboriumSer;
     use super::json::SerdeJson;
-
-    fn approx_eq(a: &Fixture, b: &Fixture) -> bool {
-        if a == b {
-            return true;
-        }
-        // Match harness fidelity (main.rs): allow prost date ms round-trip drift
-        // and float noise from JSON codecs.
-        match (a, b) {
-            (Fixture::ObjectGraph(x), Fixture::ObjectGraph(y)) => object_graph_fidelity(x, y),
-            (Fixture::Integer(x), Fixture::Integer(y)) => x == y,
-            (Fixture::Person(x), Fixture::Person(y)) => {
-                x.first_name == y.first_name
-                    && x.last_name == y.last_name
-                    && x.age == y.age
-                    && x.gender == y.gender
-                    && x.police_records == y.police_records
-                    && x.passport.as_ref().map(|p| (&p.number, &p.authority))
-                        == y.passport.as_ref().map(|p| (&p.number, &p.authority))
-            }
-            (Fixture::Simple(x), Fixture::Simple(y)) => {
-                x.id == y.id && x.name == y.name && x.is_active == y.is_active
-            }
-            (Fixture::StringArray(x), Fixture::StringArray(y)) => x.items == y.items,
-            (Fixture::Telemetry(x), Fixture::Telemetry(y)) => {
-                x.id == y.id
-                    && x.param1 == y.param1
-                    && x.measurements.len() == y.measurements.len()
-                    && x.measurements
-                        .iter()
-                        .zip(y.measurements.iter())
-                        .all(|(p, q)| (p - q).abs() < 1e-9)
-            }
-            (Fixture::Edi(x), Fixture::Edi(y)) => {
-                x.payer_name == y.payer_name
-                    && x.payee_name == y.payee_name
-                    && x.claims.len() == y.claims.len()
-                    && (x.total_actual_amount - y.total_actual_amount).abs() < 1e-6
-            }
-            _ => false,
-        }
-    }
 
     fn roundtrip(ser: &mut dyn BenchSerializer, fx: &Fixture) {
         ser.prepare(fx).expect("prepare");
@@ -202,7 +161,7 @@ mod tests {
         assert!(!bytes.is_empty(), "{} empty ser for {}", ser.name(), fx.name());
         let out = ser.deserialize_bytes(&bytes).expect("de");
         assert!(
-            approx_eq(fx, &out),
+            fidelity(fx, &out),
             "{} fidelity failed for {}",
             ser.name(),
             fx.name()
@@ -210,8 +169,9 @@ mod tests {
     }
 
     #[test]
-    fn all_serializers_roundtrip_all_fixtures() {
+    fn all_serializers_roundtrip_all_v2_fixtures() {
         let fixtures = all_fixtures(42);
+        assert_eq!(fixtures.len(), 5);
         for mut ser in all_serializers() {
             for fx in &fixtures {
                 if !ser.supports(fx.name()) {
@@ -223,31 +183,24 @@ mod tests {
     }
 
     #[test]
-    fn all_serializers_support_object_graph() {
-        let g = Fixture::ObjectGraph(make_object_graph());
+    fn all_serializers_support_message() {
+        let fx = make_one("message", 42, 0, 8, 32, 32, 4).unwrap();
         let mut ok = 0;
         for mut ser in all_serializers() {
             assert!(
-                ser.supports("ObjectGraph") || ser.name() == "prost" && false,
-                "{} should support ObjectGraph (or only Integer exclusion for prost)",
+                ser.supports("message"),
+                "{} should support message",
                 ser.name()
             );
-            // prost supports ObjectGraph; only Integer is excluded
-            if ser.name() == "prost" {
-                assert!(!ser.supports("Integer"));
-                assert!(ser.supports("ObjectGraph"));
-            }
-            if ser.supports(g.name()) {
-                roundtrip(ser.as_mut(), &g);
-                ok += 1;
-            }
+            roundtrip(ser.as_mut(), &fx);
+            ok += 1;
         }
         assert_eq!(ok, all_serializers().len());
     }
 
     #[test]
     fn buffer_reuse_serde_json_deterministic() {
-        let fx = Fixture::ObjectGraph(make_object_graph());
+        let fx = make_one("document", 1, 0, 4, 32, 32, 4).unwrap();
         let mut s = SerdeJson::default();
         s.prepare(&fx).unwrap();
         let a = s.serialize_bytes(&fx).unwrap();
@@ -258,7 +211,7 @@ mod tests {
 
     #[test]
     fn ciborium_no_empty_and_deterministic() {
-        let fx = Fixture::Simple(crate::data::make_simple(&mut crate::data::Rng::new(1)));
+        let fx = make_one("message", 1, 0, 8, 32, 32, 4).unwrap();
         let mut s = CiboriumSer::default();
         s.prepare(&fx).unwrap();
         let a = s.serialize_bytes(&fx).unwrap();

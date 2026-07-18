@@ -418,11 +418,11 @@ languages:
         crate: rkyv
         rationale: "Zero-copy archive deserialization"
         optimal_api: "to_bytes / access + deserialize (archives MessagePack payload)"
-      - name: prost-wire
+      - name: prost
         category: schema
         crate: prost
-        rationale: "Protobuf-style field-1 length-delimited envelope (stand-in until prost-build)"
-        optimal_api: "hand wire field-1 over MessagePack payload"
+        rationale: "De-facto Rust Protocol Buffers (prost + prost-build from shared/fixture protos)"
+        optimal_api: "Message::encode / decode on prepared messages (convert in prepare)"
 
   c:
     display_name: C
@@ -507,13 +507,18 @@ languages:
       - name: protobuf-c
         category: schema
         library: protobuf-c
-        rationale: "protobuf-c runtime + standard wire layout"
-        optimal_api: "protobuf wire via protobuf-c buffers"
-      - name: upb
+        rationale: "Version from real lib; timed path still suite fixture_pb_full wire (not full codegen pack)"
+        optimal_api: "fixture_pb_full encode/decode (prefer Google protobuf row)"
+      - name: protobuf
+        category: schema
+        library: libprotobuf (Google)
+        rationale: "Official Google Protocol Buffers C++ runtime used from C harness (SerializeToArray/ParseFromArray)"
+        optimal_api: "prepare Message; timed SerializeToArray / ParseFromArray"
+      - name: protobuf-wire
         category: schema
         library: in-tree-wire
-        rationale: "Protobuf wire codec (upb-compatible layout; not Google upb link)"
-        optimal_api: "standard protobuf binary field tags"
+        rationale: "In-tree proto wire (was logged as upb); NOT Google upb"
+        optimal_api: "fixture_pb_full field tags"
       - name: flatcc
         category: schema
         library: flatcc
@@ -611,6 +616,11 @@ languages:
         package: "@bufbuild/protobuf"
         rationale: "Modern Protobuf-ES (Buf) from generated schemas"
         optimal_api: "create + toBinary / fromBinary"
+      - name: google-protobuf
+        category: schema
+        package: google-protobuf
+        rationale: "Official Google JS runtime (jspb) from protoc --js_out"
+        optimal_api: "serializeBinary / deserializeBinary on prepared messages"
       - name: flatbuffers
         category: schema
         package: flatbuffers
@@ -961,8 +971,13 @@ languages:
         optimal_api: "length-prefixed field writer/reader"
       - name: protobuf
         category: schema
+        library: libprotobuf (Google C++ runtime)
+        rationale: "Official Protocol Buffers C++ (protoc + libprotobuf from suite sysroot)"
+        optimal_api: "SerializeToArray / ParseFromArray on prepared MessageLite"
+      - name: protobuf-wire
+        category: schema
         library: in-tree wire (suite .proto)
-        rationale: "Standard proto3 wire for shared schemas/v2 protobuf"
+        rationale: "In-tree proto3 wire codec (no libprotobuf); field tags match shared .proto"
         optimal_api: "field-tag encode/decode (proto3)"
       - name: flexbuffers
         category: schema

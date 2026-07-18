@@ -25,7 +25,8 @@ SerializerPtr make_jsoncons_bson();
 SerializerPtr make_jsoncons_msgpack();
 SerializerPtr make_custom_binary();
 SerializerPtr make_boost_serialization();
-SerializerPtr make_protobuf();
+SerializerPtr make_protobuf();       // official libprotobuf (optional)
+SerializerPtr make_protobuf_wire();  // in-tree proto3 wire
 SerializerPtr make_avro();
 SerializerPtr make_avro_c();
 SerializerPtr make_thrift();
@@ -60,6 +61,7 @@ std::vector<SerializerPtr> all_serializers() {
   add(v, make_custom_binary());
   add(v, make_boost_serialization());
   add(v, make_protobuf());
+  add(v, make_protobuf_wire());
   add(v, make_avro());
   add(v, make_avro_c());
   add(v, make_thrift());

@@ -47,17 +47,19 @@ static char *read_cmd(const char *cmd) {
     return buf;
 }
 
-static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed) {
-    test_fixture_t all[TD_COUNT];
-    data_init_all(all, TD_COUNT, (uint64_t)seed);
-    test_data_kind_t k = TD_SIMPLE;
-    if (strcmp(type_id, "telemetry") == 0) k = TD_TELEMETRY;
-    else if (strcmp(type_id, "strings") == 0) k = TD_STRING_ARRAY;
-    else if (strcmp(type_id, "document") == 0) k = TD_EDI835;
-    else if (strcmp(type_id, "message") == 0 || strcmp(type_id, "event") == 0) k = TD_SIMPLE;
-    *fx = all[k];
-    fx->kind = k;
-    /* name is set per-cell via strdup after fill */
+static test_data_kind_t kind_from_type_id(const char *type_id) {
+    if (strcmp(type_id, "message") == 0) return TD_MESSAGE;
+    if (strcmp(type_id, "document") == 0) return TD_DOCUMENT;
+    if (strcmp(type_id, "telemetry") == 0) return TD_TELEMETRY;
+    if (strcmp(type_id, "strings") == 0) return TD_STRINGS;
+    if (strcmp(type_id, "event") == 0) return TD_EVENT;
+    return TD_MESSAGE;
+}
+
+static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed,
+                            int children, int points, int str_count, int attr_count) {
+    data_make_one(fx, kind_from_type_id(type_id), (uint64_t)seed, 0,
+                  children, points, str_count, attr_count);
 }
 
 int run_benchmarks_v2(int repetitions, const char *log_dir) {
@@ -186,7 +188,8 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             continue;
         }
         for (int i = 0; i < n; i++) {
-            fill_v2_fixture(&items[i], type_id, seed + cells * 1000 + i);
+            fill_v2_fixture(&items[i], type_id, seed + cells * 1000 + i,
+                            /*children*/8, /*points*/32, /*str_count*/32, /*attr_count*/4);
             items[i].batch_n = 1;
             items[i].batch = NULL;
             items[i].name = type_id;
@@ -207,11 +210,12 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             items = NULL;
         } else {
             fx.batch = items;
-            /* peek fields from first */
-            fx.simple = items[0].simple;
+            /* peek first instance fields for codecs that only inspect union head */
+            fx.message = items[0].message;
+            fx.document = items[0].document;
             fx.telemetry = items[0].telemetry;
-            fx.string_array = items[0].string_array;
-            fx.edi = items[0].edi;
+            fx.strings = items[0].strings;
+            fx.event = items[0].event;
         }
 
         for (int si = 0; si < ser_count; si++) {

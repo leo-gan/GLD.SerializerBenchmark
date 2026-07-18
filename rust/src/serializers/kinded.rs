@@ -3,13 +3,24 @@
 //! Identifiers in the macro body resolve at the call site (`direct.rs`).
 
 macro_rules! impl_kinded_direct {
-    ($name:ident, $log:expr, $ver:expr, $nk:expr, $ser:expr, $de_person:expr, $de_int:expr, $de_tel:expr, $de_simple:expr, $de_sa:expr, $de_edi:expr, $de_graph:expr) => {
+    (
+        $name:ident,
+        $log:expr,
+        $ver:expr,
+        $nk:expr,
+        $ser:expr,
+        $de_message:expr,
+        $de_document:expr,
+        $de_telemetry:expr,
+        $de_strings:expr,
+        $de_event:expr
+    ) => {
         pub struct $name {
             kind: &'static str,
         }
         impl Default for $name {
             fn default() -> Self {
-                Self { kind: "Person" }
+                Self { kind: "message" }
             }
         }
         impl BenchSerializer for $name {
@@ -33,13 +44,11 @@ macro_rules! impl_kinded_direct {
             }
             fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
                 match self.kind {
-                    "Person" => Ok(Fixture::Person($de_person(data)?)),
-                    "Integer" => Ok(Fixture::Integer($de_int(data)?)),
-                    "Telemetry" => Ok(Fixture::Telemetry($de_tel(data)?)),
-                    "SimpleObject" => Ok(Fixture::Simple($de_simple(data)?)),
-                    "StringArray" => Ok(Fixture::StringArray($de_sa(data)?)),
-                    "EDI_835" => Ok(Fixture::Edi($de_edi(data)?)),
-                    "ObjectGraph" => Ok(Fixture::ObjectGraph($de_graph(data)?)),
+                    "message" => Ok(Fixture::Message($de_message(data)?)),
+                    "document" => Ok(Fixture::Document($de_document(data)?)),
+                    "telemetry" => Ok(Fixture::Telemetry($de_telemetry(data)?)),
+                    "strings" => Ok(Fixture::Strings($de_strings(data)?)),
+                    "event" => Ok(Fixture::Event($de_event(data)?)),
                     other => Err(anyhow!("unknown kind {other}")),
                 }
             }

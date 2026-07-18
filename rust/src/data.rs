@@ -1,4 +1,6 @@
-//! Canonical test data models, aligned with Python/C# fixtures.
+//! Data Model v2 domain types for the Rust harness.
+//!
+//! Suite types: message, document, telemetry, strings, event.
 //! Multiple derive stacks co-exist so each serializer can use its native path.
 
 use minicbor::{Decode, Encode};
@@ -7,54 +9,12 @@ use rkyv::{Archive, Deserialize as RkyvDeserialize, Serialize as RkyvSerialize};
 use serde::{Deserialize, Serialize};
 use speedy::{Readable, Writable};
 
-/// Null edge index for ObjectGraph (matches C harness `GRAPH_NULL_IDX`).
-pub const GRAPH_NULL: i32 = -1;
+/// Epoch-ms base for generated timestamps (matches other language harnesses).
+pub const BASE_TS_MS: i64 = 1_704_067_200_000;
 
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    Encode,
-    Decode,
-    Readable,
-    Writable,
-)]
-#[rkyv(derive(Debug))]
-#[repr(u8)]
-pub enum Gender {
-    #[n(0)]
-    Male = 0,
-    #[n(1)]
-    Female = 1,
-}
-
-impl nanoserde::SerBin for Gender {
-    fn ser_bin(&self, output: &mut Vec<u8>) {
-        (*self as u8).ser_bin(output);
-    }
-}
-
-impl nanoserde::DeBin for Gender {
-    fn de_bin(offset: &mut usize, bytes: &[u8]) -> Result<Self, nanoserde::DeBinErr> {
-        let v = u8::de_bin(offset, bytes)?;
-        match v {
-            0 => Ok(Gender::Male),
-            1 => Ok(Gender::Female),
-            _ => Err(nanoserde::DeBinErr {
-                o: *offset,
-                l: 1,
-                s: bytes.len(),
-            }),
-        }
-    }
-}
+// ---------------------------------------------------------------------------
+// Domain types
+// ---------------------------------------------------------------------------
 
 #[derive(
     Debug,
@@ -73,69 +33,23 @@ impl nanoserde::DeBin for Gender {
     Writable,
 )]
 #[rkyv(derive(Debug))]
-pub struct Passport {
+pub struct Message {
     #[n(0)]
-    pub number: String,
+    pub f_bool: bool,
     #[n(1)]
-    pub authority: String,
+    pub f_int32: i32,
     #[n(2)]
-    pub expiration_date: String,
-}
-
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    Encode,
-    Decode,
-    SerBin,
-    DeBin,
-    Readable,
-    Writable,
-)]
-#[rkyv(derive(Debug))]
-pub struct PoliceRecord {
-    #[n(0)]
-    pub id: i32,
-    #[n(1)]
-    pub crime_code: String,
-}
-
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    Encode,
-    Decode,
-    SerBin,
-    DeBin,
-    Readable,
-    Writable,
-)]
-#[rkyv(derive(Debug))]
-pub struct Person {
-    #[n(0)]
-    pub first_name: String,
-    #[n(1)]
-    pub last_name: String,
-    #[n(2)]
-    pub age: i32,
+    pub f_int64: i64,
     #[n(3)]
-    pub gender: Gender,
+    pub f_float64: f64,
     #[n(4)]
-    pub passport: Option<Passport>,
+    pub f_string: String,
     #[n(5)]
-    pub police_records: Vec<PoliceRecord>,
+    pub f_bool_2: bool,
+    #[n(6)]
+    pub f_int32_2: i32,
+    #[n(7)]
+    pub f_string_2: String,
 }
 
 #[derive(
@@ -155,15 +69,11 @@ pub struct Person {
     Writable,
 )]
 #[rkyv(derive(Debug))]
-pub struct SimpleObject {
+pub struct DocumentMeta {
     #[n(0)]
-    pub id: i32,
+    pub region: String,
     #[n(1)]
-    pub name: String,
-    #[n(2)]
-    pub timestamp: String,
-    #[n(3)]
-    pub is_active: bool,
+    pub version: i32,
 }
 
 #[derive(
@@ -183,7 +93,89 @@ pub struct SimpleObject {
     Writable,
 )]
 #[rkyv(derive(Debug))]
-pub struct StringArrayObject {
+pub struct DocumentItem {
+    #[n(0)]
+    pub sku: String,
+    #[n(1)]
+    pub qty: i32,
+    #[n(2)]
+    pub price_minor: i64,
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
+pub struct Document {
+    #[n(0)]
+    pub id: String,
+    #[n(1)]
+    pub status: i32,
+    #[n(2)]
+    pub meta: DocumentMeta,
+    #[n(3)]
+    pub items: Vec<DocumentItem>,
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
+pub struct Telemetry {
+    #[n(0)]
+    pub source: String,
+    #[n(1)]
+    pub ts: i64,
+    #[n(2)]
+    pub tags: Vec<String>,
+    #[n(3)]
+    pub values: Vec<f64>,
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
+pub struct Strings {
     #[n(0)]
     pub items: Vec<String>,
 }
@@ -205,183 +197,61 @@ pub struct StringArrayObject {
     Writable,
 )]
 #[rkyv(derive(Debug))]
-pub struct TelemetryData {
+pub struct EventAttr {
     #[n(0)]
-    pub id: String,
+    pub key: String,
     #[n(1)]
-    pub data_source: String,
+    pub value: String,
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    Archive,
+    RkyvSerialize,
+    RkyvDeserialize,
+    Encode,
+    Decode,
+    SerBin,
+    DeBin,
+    Readable,
+    Writable,
+)]
+#[rkyv(derive(Debug))]
+pub struct Event {
+    #[n(0)]
+    pub event_id: String,
+    #[n(1)]
+    pub event_type: String,
     #[n(2)]
-    pub time_stamp: String,
+    pub occurred_at: i64,
     #[n(3)]
-    pub param1: i32,
+    pub producer: String,
     #[n(4)]
-    pub param2: i32,
-    #[n(5)]
-    pub measurements: Vec<f64>,
-    #[n(6)]
-    pub associated_problem_id: i32,
-    #[n(7)]
-    pub associated_log_id: i32,
-    #[n(8)]
-    pub was_processed: bool,
+    pub attrs: Vec<EventAttr>,
 }
 
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    Encode,
-    Decode,
-    SerBin,
-    DeBin,
-    Readable,
-    Writable,
-)]
-#[rkyv(derive(Debug))]
-pub struct ServiceLine {
-    #[n(0)]
-    pub service_code: String,
-    #[n(1)]
-    pub charge_amount: f64,
-    #[n(2)]
-    pub adjudicated_amount: f64,
-}
+// ---------------------------------------------------------------------------
+// Generators
+// ---------------------------------------------------------------------------
 
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    Encode,
-    Decode,
-    SerBin,
-    DeBin,
-    Readable,
-    Writable,
-)]
-#[rkyv(derive(Debug))]
-pub struct Claim {
-    #[n(0)]
-    pub claim_id: String,
-    #[n(1)]
-    pub patient_name: String,
-    #[n(2)]
-    pub total_charge: f64,
-    #[n(3)]
-    pub payment_amount: f64,
-    #[n(4)]
-    pub lines: Vec<ServiceLine>,
-}
-
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    Encode,
-    Decode,
-    SerBin,
-    DeBin,
-    Readable,
-    Writable,
-)]
-#[rkyv(derive(Debug))]
-pub struct Edi835 {
-    #[n(0)]
-    pub payer_name: String,
-    #[n(1)]
-    pub payee_name: String,
-    #[n(2)]
-    pub payment_date: String,
-    #[n(3)]
-    pub total_actual_amount: f64,
-    #[n(4)]
-    pub transaction_control_number: String,
-    #[n(5)]
-    pub claims: Vec<Claim>,
-}
-
-/// One node in a flat ObjectGraph. Edges are **indices into `ObjectGraph.nodes`**
-/// (`GRAPH_NULL` = no edge). This is the portable cycle encoding used by every
-/// format: no live pointer chasing, no infinite recursion.
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    Encode,
-    Decode,
-    SerBin,
-    DeBin,
-    Readable,
-    Writable,
-)]
-#[rkyv(derive(Debug))]
-pub struct GraphNodeData {
-    #[n(0)]
-    pub name: String,
-    /// Parent node index, or `GRAPH_NULL`.
-    #[n(1)]
-    pub parent: i32,
-    /// Related node index, or `GRAPH_NULL`.
-    #[n(2)]
-    pub related: i32,
-    /// Child node indices.
-    #[n(3)]
-    pub children: Vec<i32>,
-}
-
-/// Object graph with circular references encoded via integer edges.
-/// Topology matches C#/Python: Root → Child1, Child2; Child1.Related ↔ Child2.
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    Archive,
-    RkyvSerialize,
-    RkyvDeserialize,
-    Encode,
-    Decode,
-    SerBin,
-    DeBin,
-    Readable,
-    Writable,
-)]
-#[rkyv(derive(Debug))]
-pub struct ObjectGraph {
-    #[n(0)]
-    pub root: i32,
-    #[n(1)]
-    pub nodes: Vec<GraphNodeData>,
-}
-
-/// Deterministic pseudo-random generator matching seed=42 intent.
+/// Deterministic xorshift64* RNG (within-language seed mixing).
 pub struct Rng {
     state: u64,
 }
 
 impl Rng {
     pub fn new(seed: u64) -> Self {
-        Self { state: seed.max(1) }
+        Self {
+            state: if seed == 0 {
+                0x9E3779B97F4A7C15
+            } else {
+                seed
+            },
+        }
     }
 
     fn next_u64(&mut self) -> u64 {
@@ -393,239 +263,221 @@ impl Rng {
         x
     }
 
-    pub fn next_i32(&mut self, lo: i32, hi: i32) -> i32 {
+    pub fn next_int(&mut self, lo: i32, hi: i32) -> i32 {
         if hi <= lo {
             return lo;
         }
-        let span = (hi - lo + 1) as u64;
-        lo + (self.next_u64() % span) as i32
-    }
-
-    pub fn next_f64(&mut self) -> f64 {
-        (self.next_u64() as f64) / (u64::MAX as f64)
+        lo + (self.next_u64() % (hi - lo + 1) as u64) as i32
     }
 
     pub fn next_bool(&mut self) -> bool {
         self.next_u64() & 1 == 1
     }
 
-    pub fn word(&mut self, min_len: usize, max_len: usize) -> String {
-        const POOL: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
-        let len = self.next_i32(min_len as i32, max_len as i32) as usize;
-        (0..len)
-            .map(|_| POOL[(self.next_u64() as usize) % POOL.len()] as char)
+    pub fn next_f64(&mut self) -> f64 {
+        (self.next_u64() >> 11) as f64 / ((1u64 << 53) as f64)
+    }
+
+    pub fn word(&mut self, min_l: usize, max_l: usize) -> String {
+        let n = self.next_int(min_l as i32, max_l as i32) as usize;
+        const A: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
+        (0..n)
+            .map(|_| A[(self.next_u64() % 26) as usize] as char)
             .collect()
     }
 }
 
-pub fn make_person(rng: &mut Rng) -> Person {
-    let n_records = 5;
-    Person {
-        first_name: rng.word(3, 10),
-        last_name: rng.word(3, 10),
-        age: rng.next_i32(1, 99),
-        gender: if rng.next_bool() {
-            Gender::Male
-        } else {
-            Gender::Female
-        },
-        passport: Some(Passport {
-            number: rng.word(8, 12),
-            authority: rng.word(3, 10),
-            expiration_date: "2030-01-01T00:00:00Z".into(),
-        }),
-        police_records: (0..n_records)
-            .map(|i| PoliceRecord {
-                id: i,
-                crime_code: rng.word(3, 8),
-            })
-            .collect(),
+pub fn mix_seed(seed: u64, type_id: &str, idx: i32) -> u64 {
+    let mut h = seed;
+    for b in type_id.bytes() {
+        h = (h ^ b as u64).wrapping_mul(0x100000001B3);
+    }
+    h ^= (idx as u64).wrapping_mul(0x9E3779B97F4A7C15);
+    if h == 0 {
+        1
+    } else {
+        h
     }
 }
 
-pub fn make_simple(rng: &mut Rng) -> SimpleObject {
-    SimpleObject {
-        id: rng.next_i32(0, 1_000_000),
-        name: rng.word(3, 10),
-        timestamp: "2024-01-01T00:00:00Z".into(),
-        is_active: rng.next_bool(),
+/// Build one V2 fixture instance.
+/// `children` / `points` / `count` / `attr_count` come from type_config defaults.
+pub fn make_one(
+    type_id: &str,
+    seed: u64,
+    instance_index: i32,
+    children: i32,
+    points: i32,
+    count: i32,
+    attr_count: i32,
+) -> anyhow::Result<Fixture> {
+    let mut r = Rng::new(mix_seed(seed, type_id, instance_index));
+    match type_id {
+        "message" => Ok(Fixture::Message(Message {
+            f_bool: r.next_bool(),
+            f_int32: r.next_int(0, 1_000_000),
+            f_int64: r.next_int(0, 1_000_000) as i64,
+            f_float64: r.next_f64() * 1000.0,
+            f_string: r.word(3, 16),
+            f_bool_2: r.next_bool(),
+            f_int32_2: r.next_int(0, 1_000_000),
+            f_string_2: r.word(3, 16),
+        })),
+        "document" => {
+            let items: Vec<_> = (0..children)
+                .map(|_| DocumentItem {
+                    sku: r.word(3, 12),
+                    qty: r.next_int(1, 100),
+                    price_minor: r.next_int(0, 100_000) as i64,
+                })
+                .collect();
+            Ok(Fixture::Document(Document {
+                id: r.word(8, 12),
+                status: r.next_int(0, 5),
+                meta: DocumentMeta {
+                    region: r.word(2, 4),
+                    version: r.next_int(1, 10),
+                },
+                items,
+            }))
+        }
+        "telemetry" => {
+            let tags: Vec<_> = (0..2).map(|_| r.word(3, 10)).collect();
+            let values: Vec<_> = (0..points).map(|_| r.next_f64() * 100.0).collect();
+            Ok(Fixture::Telemetry(Telemetry {
+                source: r.word(3, 10),
+                ts: BASE_TS_MS + r.next_int(0, 86_400_000) as i64,
+                tags,
+                values,
+            }))
+        }
+        "strings" => {
+            let items: Vec<_> = (0..count).map(|_| r.word(3, 16)).collect();
+            Ok(Fixture::Strings(Strings { items }))
+        }
+        "event" => {
+            let attrs: Vec<_> = (0..attr_count)
+                .map(|_| EventAttr {
+                    key: r.word(3, 12),
+                    value: r.word(3, 12),
+                })
+                .collect();
+            Ok(Fixture::Event(Event {
+                event_id: r.word(8, 12),
+                event_type: r.word(3, 12),
+                occurred_at: BASE_TS_MS + r.next_int(0, 86_400_000) as i64,
+                producer: r.word(3, 12),
+                attrs,
+            }))
+        }
+        other => anyhow::bail!("unknown v2 type_id {other}"),
     }
 }
 
-pub fn make_string_array(rng: &mut Rng) -> StringArrayObject {
-    StringArrayObject {
-        items: (0..100).map(|_| rng.word(3, 10)).collect(),
-    }
-}
-
-pub fn make_telemetry(rng: &mut Rng) -> TelemetryData {
-    TelemetryData {
-        id: rng.word(8, 12),
-        data_source: rng.word(3, 10),
-        time_stamp: "2024-01-01T00:00:00Z".into(),
-        param1: rng.next_i32(0, 1000),
-        param2: rng.next_i32(0, 1000),
-        measurements: (0..100).map(|_| rng.next_f64() * 100.0).collect(),
-        associated_problem_id: rng.next_i32(0, 10000),
-        associated_log_id: rng.next_i32(0, 10000),
-        was_processed: rng.next_bool(),
-    }
-}
-
-pub fn make_edi(rng: &mut Rng) -> Edi835 {
-    let mut claims = Vec::new();
-    for c in 0..5 {
-        let lines: Vec<ServiceLine> = (0..3)
-            .map(|_| ServiceLine {
-                service_code: rng.word(3, 6),
-                charge_amount: rng.next_f64() * 1000.0,
-                adjudicated_amount: rng.next_f64() * 1000.0,
-            })
-            .collect();
-        claims.push(Claim {
-            claim_id: format!("C{c}"),
-            patient_name: rng.word(3, 10),
-            total_charge: rng.next_f64() * 5000.0,
-            payment_amount: rng.next_f64() * 5000.0,
-            lines,
-        });
-    }
-    Edi835 {
-        payer_name: rng.word(3, 10),
-        payee_name: rng.word(3, 10),
-        payment_date: "2024-01-01T00:00:00Z".into(),
-        total_actual_amount: rng.next_f64() * 10000.0,
-        transaction_control_number: rng.word(8, 12),
-        claims,
-    }
-}
-
-/// Same topology as C# `ObjectGraphDescription` / Python `generate_object_graph`.
-pub fn make_object_graph() -> ObjectGraph {
-    ObjectGraph {
-        root: 0,
-        nodes: vec![
-            GraphNodeData {
-                name: "Root".into(),
-                parent: GRAPH_NULL,
-                related: GRAPH_NULL,
-                children: vec![1, 2],
-            },
-            GraphNodeData {
-                name: "Child1".into(),
-                parent: 0,
-                related: 2,
-                children: vec![],
-            },
-            GraphNodeData {
-                name: "Child2".into(),
-                parent: 0,
-                related: 1,
-                children: vec![],
-            },
-        ],
-    }
-}
+// ---------------------------------------------------------------------------
+// Fixture enum
+// ---------------------------------------------------------------------------
 
 /// Holder for harness fixtures (externally tagged for Serde formats).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Fixture {
-    Person(Person),
-    Integer(i32),
-    Telemetry(TelemetryData),
-    Simple(SimpleObject),
-    StringArray(StringArrayObject),
-    Edi(Edi835),
-    ObjectGraph(ObjectGraph),
+    Message(Message),
+    Document(Document),
+    Telemetry(Telemetry),
+    Strings(Strings),
+    Event(Event),
 }
 
 impl Fixture {
+    /// Catalog type_id: `"message"` | `"document"` | `"telemetry"` | `"strings"` | `"event"`.
     pub fn name(&self) -> &'static str {
         match self {
-            Fixture::Person(_) => "Person",
-            Fixture::Integer(_) => "Integer",
-            Fixture::Telemetry(_) => "Telemetry",
-            Fixture::Simple(_) => "SimpleObject",
-            Fixture::StringArray(_) => "StringArray",
-            Fixture::Edi(_) => "EDI_835",
-            Fixture::ObjectGraph(_) => "ObjectGraph",
+            Fixture::Message(_) => "message",
+            Fixture::Document(_) => "document",
+            Fixture::Telemetry(_) => "telemetry",
+            Fixture::Strings(_) => "strings",
+            Fixture::Event(_) => "event",
         }
     }
 }
 
-/// Structural fidelity for ObjectGraph (names + index edges + sibling cycle).
-pub fn object_graph_fidelity(a: &ObjectGraph, b: &ObjectGraph) -> bool {
-    if a.root != b.root || a.nodes.len() != b.nodes.len() {
-        return false;
-    }
-    if a.nodes.is_empty() {
-        return true;
-    }
-    if a.root < 0 || a.root as usize >= a.nodes.len() {
-        return false;
-    }
-    for (na, nb) in a.nodes.iter().zip(b.nodes.iter()) {
-        if na.name != nb.name
-            || na.parent != nb.parent
-            || na.related != nb.related
-            || na.children != nb.children
-        {
-            return false;
-        }
-    }
-    // Sibling cycle on the standard fixture (Root with ≥2 children).
-    let root = &a.nodes[a.root as usize];
-    if root.children.len() >= 2 {
-        let i1 = root.children[0] as usize;
-        let i2 = root.children[1] as usize;
-        if i1 >= a.nodes.len() || i2 >= a.nodes.len() {
-            return false;
-        }
-        if a.nodes[i1].parent != a.root || a.nodes[i2].parent != a.root {
-            return false;
-        }
-        if a.nodes[i1].related != root.children[1] || a.nodes[i2].related != root.children[0] {
-            return false;
-        }
-    }
-    true
+fn nearly_eq(a: f64, b: f64) -> bool {
+    let scale = 1.0_f64.max(a.abs()).max(b.abs());
+    (a - b).abs() <= 1e-6 * scale
 }
 
+/// Semantic fidelity check (float-tolerant for message / telemetry).
+pub fn fidelity(a: &Fixture, b: &Fixture) -> bool {
+    match (a, b) {
+        (Fixture::Message(x), Fixture::Message(y)) => {
+            x.f_bool == y.f_bool
+                && x.f_int32 == y.f_int32
+                && x.f_int64 == y.f_int64
+                && nearly_eq(x.f_float64, y.f_float64)
+                && x.f_string == y.f_string
+                && x.f_bool_2 == y.f_bool_2
+                && x.f_int32_2 == y.f_int32_2
+                && x.f_string_2 == y.f_string_2
+        }
+        (Fixture::Document(x), Fixture::Document(y)) => x == y,
+        (Fixture::Telemetry(x), Fixture::Telemetry(y)) => {
+            x.source == y.source
+                && x.ts == y.ts
+                && x.tags == y.tags
+                && x.values.len() == y.values.len()
+                && x.values
+                    .iter()
+                    .zip(y.values.iter())
+                    .all(|(p, q)| nearly_eq(*p, *q))
+        }
+        (Fixture::Strings(x), Fixture::Strings(y)) => x == y,
+        (Fixture::Event(x), Fixture::Event(y)) => x == y,
+        _ => false,
+    }
+}
+
+/// Standard suite samples (one of each V2 type_id).
 pub fn all_fixtures(seed: u64) -> Vec<Fixture> {
-    let mut rng = Rng::new(seed);
-    vec![
-        Fixture::Person(make_person(&mut rng)),
-        Fixture::Integer(42),
-        Fixture::Telemetry(make_telemetry(&mut rng)),
-        Fixture::Simple(make_simple(&mut rng)),
-        Fixture::StringArray(make_string_array(&mut rng)),
-        Fixture::Edi(make_edi(&mut rng)),
-        Fixture::ObjectGraph(make_object_graph()),
-    ]
+    ["message", "document", "telemetry", "strings", "event"]
+        .iter()
+        .map(|tid| {
+            make_one(tid, seed, 0, 8, 32, 32, 4)
+                .unwrap_or_else(|e| panic!("make_one({tid}): {e}"))
+        })
+        .collect()
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn object_graph_topology() {
-        let g = make_object_graph();
-        assert_eq!(g.root, 0);
-        assert_eq!(g.nodes.len(), 3);
-        assert_eq!(g.nodes[0].name, "Root");
-        assert_eq!(g.nodes[0].children, vec![1, 2]);
-        assert_eq!(g.nodes[1].parent, 0);
-        assert_eq!(g.nodes[1].related, 2);
-        assert_eq!(g.nodes[2].related, 1);
-        assert!(object_graph_fidelity(&g, &g));
+    fn all_fixtures_are_v2_type_ids() {
+        let names: Vec<_> = all_fixtures(42).iter().map(|f| f.name()).collect();
+        assert_eq!(
+            names,
+            vec!["message", "document", "telemetry", "strings", "event"]
+        );
     }
 
     #[test]
-    fn all_fixtures_include_object_graph() {
-        let names: Vec<_> = all_fixtures(42).iter().map(|f| f.name()).collect();
-        assert!(names.contains(&"ObjectGraph"));
-        assert_eq!(names.len(), 7);
+    fn make_one_message_roundtrip_fidelity() {
+        let a = make_one("message", 42, 0, 8, 32, 32, 4).unwrap();
+        assert_eq!(a.name(), "message");
+        assert!(fidelity(&a, &a));
+    }
+
+    #[test]
+    fn make_one_document_has_children() {
+        let fx = make_one("document", 7, 1, 5, 32, 32, 4).unwrap();
+        match fx {
+            Fixture::Document(d) => assert_eq!(d.items.len(), 5),
+            _ => panic!("expected document"),
+        }
+    }
+
+    #[test]
+    fn make_one_unknown_errors() {
+        assert!(make_one("Person", 1, 0, 1, 1, 1, 1).is_err());
     }
 }

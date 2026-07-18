@@ -34,7 +34,7 @@ class Cbor2Serializer(Serializer):
         return "cbor2"
 
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
-        # Flat ObjectGraph (index edges) is a plain dict tree after to_dict.
+        # Flat document (index edges) is a plain dict tree after to_dict.
         return to_dict(obj)
 
     def serialize_bytes(self, obj: Any) -> bytes:

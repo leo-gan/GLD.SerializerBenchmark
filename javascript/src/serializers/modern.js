@@ -1,139 +1,435 @@
 /**
- * P0/P1 additions: protobuf-es, json-pack (MessagePack), devalue, bebop, sia.
+ * P0/P1 additions: protobuf-es, google-protobuf, json-pack (MessagePack), devalue, bebop, sia.
  * flexbuffers lives in schema.js (already registered).
+ * Official suite types: message, document, telemetry, strings, event (Data Model v2).
  */
 import { createRequire } from 'node:module';
-import { create, toBinary, fromBinary, toJson } from '@bufbuild/protobuf';
+import { create, toBinary, fromBinary } from '@bufbuild/protobuf';
 import { stringify as devalueStringify, parse as devalueParse } from 'devalue';
 import { BebopView } from 'bebop';
 import { Sia } from '@timeleap/sia';
 import {
-  PersonSchema,
-  SimpleObjectSchema,
-  StringArrayObjectSchema,
-  TelemetryDataSchema,
-  EDI835Schema,
-  IntegerValueSchema,
-  ObjectGraphSchema,
+  MessageSchema,
+  BatchMessageSchema,
+  DocumentSchema,
+  BatchDocumentSchema,
+  TelemetrySchema,
+  BatchTelemetrySchema,
+  StringsSchema,
+  BatchStringsSchema,
+  EventSchema,
+  BatchEventSchema,
 } from '../generated/js_fixtures_pb.js';
-import { pkgVersion, baseSupports, jsonClone, bufToUtf8, asBuffer } from './common.js';
+import { pkgVersion, baseSupports, bufToUtf8 } from './common.js';
 
 const require = createRequire(import.meta.url);
 
+/* ---------- google-protobuf (jspb BinaryWriter/Reader — real V2 field numbers) ---------- */
+// Wire layout matches schemas/js_fixtures.proto / schemas/v2/protobuf/benchmark_v2.proto.
+// Uses google-protobuf runtime BinaryWriter/BinaryReader (same primitives as protoc --js_out stubs).
+const { BinaryWriter, BinaryReader } = require('google-protobuf');
+
+let jspbDataName = null;
+let jspbIsBatch = false;
+/** Pre-encoded bytes from prepare (untimed); serialize returns a copy view. */
+let jspbBytes = null;
+
+function jspbWriteMessage(w, v) {
+  w.writeBool(1, Boolean(v.f_bool));
+  w.writeInt32(2, v.f_int32 | 0);
+  w.writeInt64(3, Number(v.f_int64));
+  w.writeDouble(4, Number(v.f_float64));
+  w.writeString(5, String(v.f_string ?? ''));
+  w.writeBool(6, Boolean(v.f_bool_2));
+  w.writeInt32(7, v.f_int32_2 | 0);
+  w.writeString(8, String(v.f_string_2 ?? ''));
+}
+
+function jspbReadMessage(r) {
+  const o = {
+    f_bool: false,
+    f_int32: 0,
+    f_int64: 0,
+    f_float64: 0,
+    f_string: '',
+    f_bool_2: false,
+    f_int32_2: 0,
+    f_string_2: '',
+  };
+  while (r.nextField()) {
+    if (r.isEndGroup()) break;
+    switch (r.getFieldNumber()) {
+      case 1: o.f_bool = r.readBool(); break;
+      case 2: o.f_int32 = r.readInt32(); break;
+      case 3: o.f_int64 = Number(r.readInt64()); break;
+      case 4: o.f_float64 = r.readDouble(); break;
+      case 5: o.f_string = r.readString(); break;
+      case 6: o.f_bool_2 = r.readBool(); break;
+      case 7: o.f_int32_2 = r.readInt32(); break;
+      case 8: o.f_string_2 = r.readString(); break;
+      default: r.skipField();
+    }
+  }
+  return o;
+}
+
+/** Length-delimited submessage (wire type 2) via google-protobuf BinaryWriter. */
+function jspbWriteNested(w, fieldNo, writeFn) {
+  // writeMessage(field, value, writerFn) skips when value is null/undefined.
+  w.writeMessage(fieldNo, /* value marker */ 1, (_msg, iw) => {
+    writeFn(iw);
+  });
+}
+
+function jspbWriteDocumentFixed(w, v) {
+  w.writeString(1, String(v.id ?? ''));
+  w.writeInt32(2, v.status | 0);
+  jspbWriteNested(w, 3, (iw) => {
+    iw.writeString(1, String(v.meta?.region ?? ''));
+    iw.writeInt32(2, (v.meta?.version ?? 0) | 0);
+  });
+  for (const it of v.items || []) {
+    jspbWriteNested(w, 4, (iw) => {
+      iw.writeString(1, String(it.sku ?? ''));
+      iw.writeInt32(2, it.qty | 0);
+      iw.writeInt64(3, Number(it.price_minor));
+    });
+  }
+}
+
+function jspbReadDocument(r) {
+  const o = { id: '', status: 0, meta: { region: '', version: 0 }, items: [] };
+  while (r.nextField()) {
+    if (r.isEndGroup()) break;
+    switch (r.getFieldNumber()) {
+      case 1: o.id = r.readString(); break;
+      case 2: o.status = r.readInt32(); break;
+      case 3: {
+        const bytes = r.readBytes();
+        const ir = new BinaryReader(bytes);
+        while (ir.nextField()) {
+          if (ir.isEndGroup()) break;
+          switch (ir.getFieldNumber()) {
+            case 1: o.meta.region = ir.readString(); break;
+            case 2: o.meta.version = ir.readInt32(); break;
+            default: ir.skipField();
+          }
+        }
+        break;
+      }
+      case 4: {
+        const bytes = r.readBytes();
+        const ir = new BinaryReader(bytes);
+        const it = { sku: '', qty: 0, price_minor: 0 };
+        while (ir.nextField()) {
+          if (ir.isEndGroup()) break;
+          switch (ir.getFieldNumber()) {
+            case 1: it.sku = ir.readString(); break;
+            case 2: it.qty = ir.readInt32(); break;
+            case 3: it.price_minor = Number(ir.readInt64()); break;
+            default: ir.skipField();
+          }
+        }
+        o.items.push(it);
+        break;
+      }
+      default: r.skipField();
+    }
+  }
+  return o;
+}
+
+function jspbWriteTelemetry(w, v) {
+  w.writeString(1, String(v.source ?? ''));
+  w.writeInt64(2, Number(v.ts));
+  for (const t of v.tags || []) w.writeString(3, String(t));
+  if ((v.values || []).length) w.writePackedDouble(4, (v.values || []).map(Number));
+}
+
+function jspbReadTelemetry(r) {
+  const o = { source: '', ts: 0, tags: [], values: [] };
+  while (r.nextField()) {
+    if (r.isEndGroup()) break;
+    switch (r.getFieldNumber()) {
+      case 1: o.source = r.readString(); break;
+      case 2: o.ts = Number(r.readInt64()); break;
+      case 3: o.tags.push(r.readString()); break;
+      case 4:
+        if (r.isDelimited()) o.values.push(...r.readPackedDouble().map(Number));
+        else o.values.push(r.readDouble());
+        break;
+      default: r.skipField();
+    }
+  }
+  return o;
+}
+
+function jspbWriteStrings(w, v) {
+  for (const s of v.items || []) w.writeString(1, String(s));
+}
+
+function jspbReadStrings(r) {
+  const o = { items: [] };
+  while (r.nextField()) {
+    if (r.isEndGroup()) break;
+    if (r.getFieldNumber() === 1) o.items.push(r.readString());
+    else r.skipField();
+  }
+  return o;
+}
+
+function jspbWriteEvent(w, v) {
+  w.writeString(1, String(v.event_id ?? ''));
+  w.writeString(2, String(v.event_type ?? ''));
+  w.writeInt64(3, Number(v.occurred_at));
+  w.writeString(4, String(v.producer ?? ''));
+  for (const a of v.attrs || []) {
+    jspbWriteNested(w, 5, (iw) => {
+      iw.writeString(1, String(a.key ?? ''));
+      iw.writeString(2, String(a.value ?? ''));
+    });
+  }
+}
+
+function jspbReadEvent(r) {
+  const o = {
+    event_id: '',
+    event_type: '',
+    occurred_at: 0,
+    producer: '',
+    attrs: [],
+  };
+  while (r.nextField()) {
+    if (r.isEndGroup()) break;
+    switch (r.getFieldNumber()) {
+      case 1: o.event_id = r.readString(); break;
+      case 2: o.event_type = r.readString(); break;
+      case 3: o.occurred_at = Number(r.readInt64()); break;
+      case 4: o.producer = r.readString(); break;
+      case 5: {
+        const bytes = r.readBytes();
+        const ir = new BinaryReader(bytes);
+        const a = { key: '', value: '' };
+        while (ir.nextField()) {
+          if (ir.isEndGroup()) break;
+          switch (ir.getFieldNumber()) {
+            case 1: a.key = ir.readString(); break;
+            case 2: a.value = ir.readString(); break;
+            default: ir.skipField();
+          }
+        }
+        o.attrs.push(a);
+        break;
+      }
+      default: r.skipField();
+    }
+  }
+  return o;
+}
+
+function jspbWriteItem(dataName, w, v) {
+  switch (dataName) {
+    case 'message': return jspbWriteMessage(w, v);
+    case 'document': return jspbWriteDocumentFixed(w, v);
+    case 'telemetry': return jspbWriteTelemetry(w, v);
+    case 'strings': return jspbWriteStrings(w, v);
+    case 'event': return jspbWriteEvent(w, v);
+    default: throw new Error(`google-protobuf: no mapping for ${dataName}`);
+  }
+}
+
+function jspbReadItem(dataName, r) {
+  switch (dataName) {
+    case 'message': return jspbReadMessage(r);
+    case 'document': return jspbReadDocument(r);
+    case 'telemetry': return jspbReadTelemetry(r);
+    case 'strings': return jspbReadStrings(r);
+    case 'event': return jspbReadEvent(r);
+    default: throw new Error(`google-protobuf: no mapping for ${dataName}`);
+  }
+}
+
+function jspbEncode(dataName, value) {
+  const w = new BinaryWriter();
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      jspbWriteNested(w, 1, (iw) => jspbWriteItem(dataName, iw, item));
+    }
+  } else {
+    jspbWriteItem(dataName, w, value);
+  }
+  return w.getResultBuffer();
+}
+
+function jspbDecode(dataName, bytes, isBatch) {
+  const r = new BinaryReader(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+  if (isBatch) {
+    const items = [];
+    while (r.nextField()) {
+      if (r.isEndGroup()) break;
+      if (r.getFieldNumber() === 1) {
+        const nested = r.readBytes();
+        items.push(jspbReadItem(dataName, new BinaryReader(nested)));
+      } else {
+        r.skipField();
+      }
+    }
+    return items;
+  }
+  return jspbReadItem(dataName, r);
+}
+
+export const googleProtobufSer = {
+  name: 'google-protobuf',
+  version: pkgVersion('google-protobuf'),
+  category: 'schema',
+  supports: baseSupports,
+  prepare(dataName, value) {
+    jspbDataName = dataName;
+    jspbIsBatch = Array.isArray(value);
+    jspbBytes = jspbEncode(dataName, value);
+  },
+  serialize(_value) {
+    const u8 = jspbBytes;
+    return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
+  },
+  deserialize(buf) {
+    const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    return jspbDecode(jspbDataName, u8, jspbIsBatch);
+  },
+};
+
 /* ---------- protobuf-es (@bufbuild/protobuf) ---------- */
 
-const esSchemaByName = {
-  Person: PersonSchema,
-  SimpleObject: SimpleObjectSchema,
-  StringArray: StringArrayObjectSchema,
-  Telemetry: TelemetryDataSchema,
-  EDI_835: EDI835Schema,
-  Integer: IntegerValueSchema,
-  ObjectGraph: ObjectGraphSchema,
+const esSingleSchema = {
+  message: MessageSchema,
+  document: DocumentSchema,
+  telemetry: TelemetrySchema,
+  strings: StringsSchema,
+  event: EventSchema,
+};
+
+const esBatchSchema = {
+  message: BatchMessageSchema,
+  document: BatchDocumentSchema,
+  telemetry: BatchTelemetrySchema,
+  strings: BatchStringsSchema,
+  event: BatchEventSchema,
 };
 
 let esSchema = null;
 let esDataName = null;
+let esIsBatch = false;
 /** Message built in prepare (untimed); serialize only runs toBinary. */
 let esMsg = null;
 
-function toEsInput(dataName, value) {
-  if (dataName === 'Integer') return { value: value | 0 };
-  if (dataName === 'ObjectGraph') {
+function toEsItem(dataName, value) {
+  if (dataName === 'message') {
     return {
-      root: value.root | 0,
-      nodes: (value.nodes || []).map((n) => ({
-        Name: String(n.Name ?? ''),
-        Parent: n.Parent | 0,
-        Related: n.Related | 0,
-        Children: (n.Children || []).map((c) => c | 0),
+      fBool: Boolean(value.f_bool),
+      fInt32: value.f_int32 | 0,
+      fInt64: BigInt(Number(value.f_int64)),
+      fFloat64: Number(value.f_float64),
+      fString: String(value.f_string ?? ''),
+      fBool2: Boolean(value.f_bool_2),
+      fInt322: value.f_int32_2 | 0,
+      fString2: String(value.f_string_2 ?? ''),
+    };
+  }
+  if (dataName === 'document') {
+    return {
+      id: String(value.id ?? ''),
+      status: value.status | 0,
+      meta: {
+        region: String(value.meta?.region ?? ''),
+        version: (value.meta?.version ?? 0) | 0,
+      },
+      items: (value.items || []).map((it) => ({
+        sku: String(it.sku ?? ''),
+        qty: it.qty | 0,
+        priceMinor: BigInt(Number(it.price_minor)),
       })),
     };
   }
-  const v = jsonClone(value);
-  if (dataName === 'Telemetry') {
-    v.AssociatedProblemID = BigInt(v.AssociatedProblemID);
-    v.AssociatedLogID = BigInt(v.AssociatedLogID);
+  if (dataName === 'telemetry') {
+    return {
+      source: String(value.source ?? ''),
+      ts: BigInt(Number(value.ts)),
+      tags: (value.tags || []).map(String),
+      values: (value.values || []).map(Number),
+    };
   }
-  return v;
+  if (dataName === 'strings') {
+    return { items: (value.items || []).map(String) };
+  }
+  if (dataName === 'event') {
+    return {
+      eventId: String(value.event_id ?? ''),
+      eventType: String(value.event_type ?? ''),
+      occurredAt: BigInt(Number(value.occurred_at)),
+      producer: String(value.producer ?? ''),
+      attrs: (value.attrs || []).map((a) => ({
+        key: String(a.key ?? ''),
+        value: String(a.value ?? ''),
+      })),
+    };
+  }
+  throw new Error(`protobuf-es: no mapping for ${dataName}`);
 }
 
-function fromEsMessage(dataName, msg) {
+function fromEsItem(dataName, msg) {
   // Prefer field access (toJson drops proto3 defaults like 0 / false).
-  if (dataName === 'Integer') return Number(msg.value);
-  if (dataName === 'SimpleObject') {
+  if (dataName === 'message') {
     return {
-      Id: Number(msg.Id),
-      Name: String(msg.Name ?? ''),
-      Timestamp: String(msg.Timestamp ?? ''),
-      IsActive: Boolean(msg.IsActive),
+      f_bool: Boolean(msg.fBool),
+      f_int32: Number(msg.fInt32),
+      f_int64: Number(msg.fInt64),
+      f_float64: Number(msg.fFloat64),
+      f_string: String(msg.fString ?? ''),
+      f_bool_2: Boolean(msg.fBool2),
+      f_int32_2: Number(msg.fInt322),
+      f_string_2: String(msg.fString2 ?? ''),
     };
   }
-  if (dataName === 'StringArray') {
-    return { Items: [...(msg.Items ?? [])].map(String) };
-  }
-  if (dataName === 'Person') {
+  if (dataName === 'document') {
     return {
-      FirstName: String(msg.FirstName ?? ''),
-      LastName: String(msg.LastName ?? ''),
-      Age: Number(msg.Age),
-      Gender: Number(msg.Gender),
-      Passport: {
-        Number: String(msg.Passport?.Number ?? ''),
-        Authority: String(msg.Passport?.Authority ?? ''),
-        ExpirationDate: String(msg.Passport?.ExpirationDate ?? ''),
+      id: String(msg.id ?? ''),
+      status: Number(msg.status),
+      meta: {
+        region: String(msg.meta?.region ?? ''),
+        version: Number(msg.meta?.version ?? 0),
       },
-      PoliceRecords: [...(msg.PoliceRecords ?? [])].map((r) => ({
-        Id: Number(r.Id),
-        CrimeCode: String(r.CrimeCode ?? ''),
+      items: [...(msg.items ?? [])].map((it) => ({
+        sku: String(it.sku ?? ''),
+        qty: Number(it.qty),
+        price_minor: Number(it.priceMinor),
       })),
     };
   }
-  if (dataName === 'Telemetry') {
+  if (dataName === 'telemetry') {
     return {
-      Id: String(msg.Id ?? ''),
-      DataSource: String(msg.DataSource ?? ''),
-      TimeStamp: String(msg.TimeStamp ?? ''),
-      Param1: Number(msg.Param1),
-      Param2: Number(msg.Param2),
-      Measurements: [...(msg.Measurements ?? [])].map(Number),
-      AssociatedProblemID: Number(msg.AssociatedProblemID),
-      AssociatedLogID: Number(msg.AssociatedLogID),
-      WasProcessed: Boolean(msg.WasProcessed),
+      source: String(msg.source ?? ''),
+      ts: Number(msg.ts),
+      tags: [...(msg.tags ?? [])].map(String),
+      values: [...(msg.values ?? [])].map(Number),
     };
   }
-  if (dataName === 'EDI_835') {
+  if (dataName === 'strings') {
+    return { items: [...(msg.items ?? [])].map(String) };
+  }
+  if (dataName === 'event') {
     return {
-      PayerName: String(msg.PayerName ?? ''),
-      PayeeName: String(msg.PayeeName ?? ''),
-      PaymentDate: String(msg.PaymentDate ?? ''),
-      TotalActualAmount: Number(msg.TotalActualAmount),
-      TransactionControlNumber: String(msg.TransactionControlNumber ?? ''),
-      Claims: [...(msg.Claims ?? [])].map((c) => ({
-        ClaimId: String(c.ClaimId ?? ''),
-        PatientName: String(c.PatientName ?? ''),
-        TotalCharge: Number(c.TotalCharge),
-        PaymentAmount: Number(c.PaymentAmount),
-        Lines: [...(c.Lines ?? [])].map((L) => ({
-          ServiceCode: String(L.ServiceCode ?? ''),
-          ChargeAmount: Number(L.ChargeAmount),
-          AdjudicatedAmount: Number(L.AdjudicatedAmount),
-        })),
+      event_id: String(msg.eventId ?? ''),
+      event_type: String(msg.eventType ?? ''),
+      occurred_at: Number(msg.occurredAt),
+      producer: String(msg.producer ?? ''),
+      attrs: [...(msg.attrs ?? [])].map((a) => ({
+        key: String(a.key ?? ''),
+        value: String(a.value ?? ''),
       })),
     };
   }
-  if (dataName === 'ObjectGraph') {
-    return {
-      root: Number(msg.root),
-      nodes: [...(msg.nodes ?? [])].map((n) => ({
-        Name: String(n.Name ?? ''),
-        Parent: Number(n.Parent),
-        Related: Number(n.Related),
-        Children: [...(n.Children ?? [])].map(Number),
-      })),
-    };
-  }
-  return toJson(esSchema, msg, { emitDefaultValues: true });
+  return msg;
 }
 
 export const protobufEsSer = {
@@ -144,20 +440,13 @@ export const protobufEsSer = {
   prepare(dataName, value) {
     // Optimal: create() once outside timed path; serialize only toBinary.
     esDataName = dataName;
-    if (['message', 'document', 'telemetry', 'strings', 'event'].includes(dataName)) {
-      // V2: pack JSON into SimpleObject.Name (keeps protobuf-es in the suite).
-      esSchema = SimpleObjectSchema;
-      esMsg = create(esSchema, {
-        Id: 0,
-        Name: JSON.stringify(value),
-        Timestamp: dataName,
-        IsActive: true,
-      });
-      return;
-    }
-    esSchema = esSchemaByName[dataName];
+    esIsBatch = Array.isArray(value);
+    esSchema = esIsBatch ? esBatchSchema[dataName] : esSingleSchema[dataName];
     if (!esSchema) throw new Error(`protobuf-es: no schema for ${dataName}`);
-    esMsg = create(esSchema, toEsInput(dataName, value));
+    const input = esIsBatch
+      ? { items: value.map((v) => toEsItem(dataName, v)) }
+      : toEsItem(dataName, value);
+    esMsg = create(esSchema, input);
   },
   serialize(_value) {
     const u8 = toBinary(esSchema, esMsg);
@@ -166,10 +455,10 @@ export const protobufEsSer = {
   deserialize(buf) {
     const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
     const msg = fromBinary(esSchema, u8);
-    if (['message', 'document', 'telemetry', 'strings', 'event'].includes(esDataName)) {
-      return JSON.parse(String(msg.Name ?? '{}'));
+    if (esIsBatch) {
+      return [...(msg.items ?? [])].map((it) => fromEsItem(esDataName, it));
     }
-    return fromEsMessage(esDataName, msg);
+    return fromEsItem(esDataName, msg);
   },
 };
 
@@ -203,7 +492,6 @@ export const devalueSer = {
   name: 'devalue',
   version: pkgVersion('devalue'),
   category: 'native',
-  // Flat ObjectGraph is a plain object; devalue also handles live cycles if needed.
   supports: baseSupports,
   prepare() {},
   serialize(value) {
@@ -497,5 +785,5 @@ export const siaSer = {
 };
 
 export function modernSerializers() {
-  return [protobufEsSer, jsonPackMsgpackSer, devalueSer, bebopSer, siaSer];
+  return [protobufEsSer, googleProtobufSer, jsonPackMsgpackSer, devalueSer, bebopSer, siaSer];
 }

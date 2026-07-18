@@ -19,20 +19,7 @@ type encodingGob struct {
 }
 
 func newEncodingGob() *encodingGob {
-	// Register concrete types once at construction (recommended).
-	gob.Register(model.Person{})
-	gob.Register(model.IntegerValue{})
-	gob.Register(model.TelemetryData{})
-	gob.Register(model.SimpleObject{})
-	gob.Register(model.StringArrayObject{})
-	gob.Register(model.Edi835{})
-	gob.Register(model.ObjectGraph{})
-	gob.Register(model.GraphNodeData{})
-	gob.Register(model.Passport{})
-	gob.Register(model.PoliceRecord{})
-	gob.Register(model.Claim{})
-	gob.Register(model.ServiceLine{})
-	// Data Model v2 types (suite default fixtures).
+	// Register concrete Data Model v2 types once at construction (recommended).
 	gob.Register(modelv2.Message{})
 	gob.Register(modelv2.Document{})
 	gob.Register(modelv2.DocumentMeta{})

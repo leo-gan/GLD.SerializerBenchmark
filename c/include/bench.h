@@ -9,112 +9,92 @@
 #define BENCH_MAX_SERIALIZERS 32
 #define BENCH_MAX_NAME 64
 
-typedef struct {
-    char first_name[32];
-    char last_name[32];
-    int age;
-    int gender;
-    char passport_number[24];
-    char passport_authority[24];
-    int police_count;
-    int police_ids[8];
-    char police_codes[8][16];
-} person_t;
+/* Data Model v2 only — message / document / telemetry / strings / event */
+
+#define V2_MAX_CHILDREN 16
+#define V2_MAX_POINTS 64
+#define V2_MAX_STRINGS 64
+#define V2_MAX_TAGS 8
+#define V2_MAX_ATTRS 16
+#define V2_STR 48
+
+typedef enum {
+    TD_MESSAGE = 0,
+    TD_DOCUMENT,
+    TD_TELEMETRY,
+    TD_STRINGS,
+    TD_EVENT,
+    TD_COUNT
+} test_data_kind_t;
 
 typedef struct {
-    int id;
-    char name[32];
-    char timestamp[32];
-    bool is_active;
-} simple_object_t;
+    bool f_bool;
+    int32_t f_int32;
+    int64_t f_int64;
+    double f_float64;
+    char f_string[V2_STR];
+    bool f_bool_2;
+    int32_t f_int32_2;
+    char f_string_2[V2_STR];
+} message_t;
 
 typedef struct {
-    int count;
-    char items[100][16];
-} string_array_t;
+    char region[V2_STR];
+    int32_t version;
+} document_meta_t;
 
 typedef struct {
-    char id[24];
-    char data_source[24];
-    char time_stamp[32];
-    int param1;
-    int param2;
-    int meas_count;
-    double measurements[100];
-    int problem_id;
-    int log_id;
-    bool was_processed;
+    char sku[V2_STR];
+    int32_t qty;
+    int64_t price_minor;
+} document_item_t;
+
+typedef struct {
+    char id[V2_STR];
+    int32_t status;
+    document_meta_t meta;
+    int item_count;
+    document_item_t items[V2_MAX_CHILDREN];
+} document_t;
+
+typedef struct {
+    char source[V2_STR];
+    int64_t ts;
+    int tag_count;
+    char tags[V2_MAX_TAGS][V2_STR];
+    int value_count;
+    double values[V2_MAX_POINTS];
 } telemetry_t;
 
 typedef struct {
-    char service_code[16];
-    double charge;
-    double adjudicated;
-} service_line_t;
+    int count;
+    char items[V2_MAX_STRINGS][V2_STR];
+} strings_t;
 
 typedef struct {
-    char claim_id[16];
-    char patient_name[32];
-    double total_charge;
-    double payment;
-    int line_count;
-    service_line_t lines[4];
-} claim_t;
+    char key[V2_STR];
+    char value[V2_STR];
+} event_attr_t;
 
 typedef struct {
-    char payer_name[32];
-    char payee_name[32];
-    char payment_date[32];
-    double total_actual;
-    char tcn[24];
-    int claim_count;
-    claim_t claims[6];
-} edi835_t;
-
-/* ObjectGraph: fixed 3-node circular graph matching C#/Python fixtures.
- * Edges stored as node indices (-1 = null). Storage is dense nodes[0..node_count). */
-#define GRAPH_MAX_NODES 8
-#define GRAPH_MAX_CHILDREN 4
-#define GRAPH_NULL_IDX (-1)
-
-typedef struct {
-    char name[32];
-    int parent;                          /* index or GRAPH_NULL_IDX */
-    int related;                         /* index or GRAPH_NULL_IDX */
-    int child_count;
-    int children[GRAPH_MAX_CHILDREN];    /* indices into nodes[] */
-} graph_node_t;
-
-typedef struct {
-    int root;                            /* index of root node */
-    int node_count;
-    graph_node_t nodes[GRAPH_MAX_NODES];
-} object_graph_t;
-
-typedef enum {
-    TD_PERSON = 0,
-    TD_INTEGER,
-    TD_TELEMETRY,
-    TD_SIMPLE,
-    TD_STRING_ARRAY,
-    TD_EDI835,
-    TD_OBJECT_GRAPH,
-    TD_COUNT
-} test_data_kind_t;
+    char event_id[V2_STR];
+    char event_type[V2_STR];
+    int64_t occurred_at;
+    char producer[V2_STR];
+    int attr_count;
+    event_attr_t attrs[V2_MAX_ATTRS];
+} event_t;
 
 typedef struct test_fixture test_fixture_t;
 struct test_fixture {
     test_data_kind_t kind;
     const char *name;
-    person_t person;
-    int integer_val;
+    message_t message;
+    document_t document;
     telemetry_t telemetry;
-    simple_object_t simple;
-    string_array_t string_array;
-    edi835_t edi;
-    object_graph_t graph;
-    /* Batch cell (data_type_instance_count): batch_n==1 uses fields above;
-     * batch_n>1 uses heap array batch[0..batch_n) of single-instance fixtures. */
+    strings_t strings;
+    event_t event;
+    /* Batch cell: batch_n==1 uses fields above; batch_n>1 uses heap array. */
     int batch_n;
     test_fixture_t *batch;
 };
@@ -130,8 +110,16 @@ typedef struct {
     bool (*fidelity)(const test_fixture_t *a, const test_fixture_t *b);
 } serializer_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void data_init_all(test_fixture_t *out, int count, uint64_t seed);
+void data_make_one(test_fixture_t *out, test_data_kind_t kind, uint64_t seed, int instance_index,
+                   int children, int points, int str_count, int attr_count);
 const char *test_data_name(test_data_kind_t k);
+#ifdef __cplusplus
+}
+#endif
 
 typedef struct csv_logger csv_logger_t;
 csv_logger_t *csv_logger_create(const char *path);
@@ -142,23 +130,13 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
                       int instance_count, const char *type_config_hash);
 void csv_logger_close(csv_logger_t *L);
 
-/* Batch-aware encode/decode: when fx->batch_n > 1, frames N single-item
- * codec outputs (u32 n + for each: u32 len + bytes). N=1 is a thin passthrough. */
 int bench_serialize_cell(const serializer_t *S, const test_fixture_t *fx,
                          uint8_t *buf, size_t buf_cap, size_t *out_len);
 int bench_deserialize_cell(const serializer_t *S, const uint8_t *buf, size_t len,
                            test_fixture_t *out_fx, test_data_kind_t kind);
-bool bench_fidelity_cell(const serializer_t *S, const test_fixture_t *a,
-                         const test_fixture_t *b);
-
-int run_benchmarks(int repetitions, const char *ser_filter, const char *data_filter,
-                   const char *log_dir);
 
 void register_all_serializers(serializer_t *out, int *count);
 
-uint64_t bench_now_ns(void);
-
-/* Per-serializer registration helpers (defined when HAS_* is set) */
 void bench_register_cjson(serializer_t *out, int *count);
 void bench_register_yyjson(serializer_t *out, int *count);
 void bench_register_jansson(serializer_t *out, int *count);
@@ -175,12 +153,18 @@ void bench_register_custom_binary(serializer_t *out, int *count);
 void bench_register_nanopb(serializer_t *out, int *count);
 void bench_register_protobuf_c(serializer_t *out, int *count);
 void bench_register_upb(serializer_t *out, int *count);
+#ifdef __cplusplus
+extern "C" {
+#endif
+void bench_register_protobuf_google(serializer_t *out, int *count);
+#ifdef __cplusplus
+}
+#endif
 void bench_register_flatcc(serializer_t *out, int *count);
 void bench_register_avro_c(serializer_t *out, int *count);
 void bench_register_zcbor(serializer_t *out, int *count);
 
-#endif
-
-/* Adapted stream sink (Python stream_mode=adapted parity): not a free alias of bytes. */
 int bench_stream_write_all(const uint8_t *buf, size_t len);
 int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len);
+
+#endif

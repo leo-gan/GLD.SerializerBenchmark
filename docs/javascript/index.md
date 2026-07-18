@@ -9,7 +9,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 - Requires Node ≥ 18
 - Registration: modular under [`javascript/src/serializers/`](../../javascript/src/serializers/)
 - `prepare()` compiles schemas / reuses encoder instances outside timed loops
-- Protobuf-ES codegen: `npm run generate:protobuf-es` (needs `protoc`)
+- Protobuf codegen: `npm run generate:protobuf` (protobuf-es + google-protobuf; needs suite protoc sysroot for jspb stubs)
 
 ## Serializers
 
@@ -29,6 +29,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 | avsc | Schema | `avsc` | `Type.forSchema` + `toBuffer` / `fromBuffer` |
 | protobufjs | Schema | `protobufjs` | real fixture `Type.encode` / `decode` |
 | protobuf-es | Schema | `@bufbuild/protobuf` | `create` + `toBinary` / `fromBinary` |
+| google-protobuf | Schema | `google-protobuf` | official jspb `serializeBinary` / `deserializeBinary` |
 | flatbuffers | Schema | `flatbuffers` | `Builder` / `ByteBuffer` |
 | flexbuffers | Schema | `flatbuffers` (FlexBuffers) | `encode` / `toObject` |
 | bebop | Schema | `bebop` | `BebopView` JSON-model primitives |
@@ -38,7 +39,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 ### Notes
 
 - **simdjson-parse+JSON.stringify** (optional native addon; omitted from the run if not installed): only **deserialize** uses SIMD; serialize is stdlib `JSON.stringify` (honest leaderboard label).
-- **protobuf-es** uses generated code from `javascript/schemas/js_fixtures.proto` (field shapes match JS fixtures; string timestamps).
+- **protobuf-es** / **google-protobuf** use generated code from `javascript/schemas/js_fixtures.proto` (field shapes match JS fixtures; string timestamps). Google stubs live under `src/generated/google/` (`npm run generate:google-protobuf`).
 - Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 - **flatbuffers / flexbuffers:** fixture support via tables / FlexBuffers; see harness for float/array workarounds.
 - **bebop** / **sia** encode a JSON-shaped model via each library’s primitive writers.
