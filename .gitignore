@@ -152,3 +152,6 @@ java/.settings/
 cpp/build/
 cpp/third_party/**
 !cpp/third_party/VERSIONS.md
+
+# Local scratch (protobuf debs, extracts, etc.) — never commit
+.tmp/
