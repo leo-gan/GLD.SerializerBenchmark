@@ -1,196 +1,86 @@
 #include "ser_common.h"
+#include "v2_codec.h"
 #include "parson_pref.h"
+
+/* Wrapper: only parson ops. Domain shape is v2_write/read_fixture. */
 
 static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx; return 0; }
 
-static JSON_Value *fx_to_val(const test_fixture_t *fx) {
-    JSON_Value *root_v = json_value_init_object();
-    JSON_Object *root = json_value_get_object(root_v);
-    json_object_set_string(root, "type", test_data_name(fx->kind));
-    switch (fx->kind) {
-        case TD_MESSAGE: {
-            const message_t *m = &fx->message;
-            json_object_set_boolean(root, "f_bool", m->f_bool);
-            json_object_set_number(root, "f_int32", m->f_int32);
-            json_object_set_number(root, "f_int64", (double)m->f_int64);
-            json_object_set_number(root, "f_float64", m->f_float64);
-            json_object_set_string(root, "f_string", m->f_string);
-            json_object_set_boolean(root, "f_bool_2", m->f_bool_2);
-            json_object_set_number(root, "f_int32_2", m->f_int32_2);
-            json_object_set_string(root, "f_string_2", m->f_string_2);
-            break;
-        }
-        case TD_DOCUMENT: {
-            const document_t *d = &fx->document;
-            json_object_set_string(root, "id", d->id);
-            json_object_set_number(root, "status", d->status);
-            JSON_Value *meta_v = json_value_init_object();
-            JSON_Object *meta = json_value_get_object(meta_v);
-            json_object_set_string(meta, "region", d->meta.region);
-            json_object_set_number(meta, "version", d->meta.version);
-            json_object_set_value(root, "meta", meta_v);
-            JSON_Value *items_v = json_value_init_array();
-            JSON_Array *items = json_value_get_array(items_v);
-            for (int i = 0; i < d->item_count; i++) {
-                JSON_Value *it_v = json_value_init_object();
-                JSON_Object *it = json_value_get_object(it_v);
-                json_object_set_string(it, "sku", d->items[i].sku);
-                json_object_set_number(it, "qty", d->items[i].qty);
-                json_object_set_number(it, "price_minor", (double)d->items[i].price_minor);
-                json_array_append_value(items, it_v);
-            }
-            json_object_set_value(root, "items", items_v);
-            break;
-        }
-        case TD_TELEMETRY: {
-            const telemetry_t *t = &fx->telemetry;
-            json_object_set_string(root, "source", t->source);
-            json_object_set_number(root, "ts", (double)t->ts);
-            JSON_Value *tags_v = json_value_init_array();
-            JSON_Array *tags = json_value_get_array(tags_v);
-            for (int i = 0; i < t->tag_count; i++) json_array_append_string(tags, t->tags[i]);
-            json_object_set_value(root, "tags", tags_v);
-            JSON_Value *vals_v = json_value_init_array();
-            JSON_Array *vals = json_value_get_array(vals_v);
-            for (int i = 0; i < t->value_count; i++) json_array_append_number(vals, t->values[i]);
-            json_object_set_value(root, "values", vals_v);
-            break;
-        }
-        case TD_STRINGS: {
-            JSON_Value *items_v = json_value_init_array();
-            JSON_Array *items = json_value_get_array(items_v);
-            for (int i = 0; i < fx->strings.count; i++) json_array_append_string(items, fx->strings.items[i]);
-            json_object_set_value(root, "items", items_v);
-            break;
-        }
-        case TD_EVENT: {
-            const event_t *e = &fx->event;
-            json_object_set_string(root, "event_id", e->event_id);
-            json_object_set_string(root, "event_type", e->event_type);
-            json_object_set_number(root, "occurred_at", (double)e->occurred_at);
-            json_object_set_string(root, "producer", e->producer);
-            JSON_Value *attrs_v = json_value_init_array();
-            JSON_Array *attrs = json_value_get_array(attrs_v);
-            for (int i = 0; i < e->attr_count; i++) {
-                JSON_Value *a_v = json_value_init_object();
-                JSON_Object *a = json_value_get_object(a_v);
-                json_object_set_string(a, "key", e->attrs[i].key);
-                json_object_set_string(a, "value", e->attrs[i].value);
-                json_array_append_value(attrs, a_v);
-            }
-            json_object_set_value(root, "attrs", attrs_v);
-            break;
-        }
-        default: json_value_free(root_v); return NULL;
-    }
-    return root_v;
-}
+typedef enum { PS_OBJ, PS_ARR } ps_kind;
+typedef struct {
+    JSON_Value *vals[32];
+    ps_kind kinds[32];
+    int sp;
+    JSON_Value *root;
+    char pending_key[64];
+    int has_key;
+} pw;
 
-static int val_to_fx(JSON_Value *root_v, test_fixture_t *out, test_data_kind_t kind) {
-    memset(out, 0, sizeof *out);
-    out->kind = kind; out->name = test_data_name(kind); out->batch_n = 1;
-    JSON_Object *root = json_value_get_object(root_v);
-    if (!root) return -1;
-    switch (kind) {
-        case TD_MESSAGE: {
-            message_t *m = &out->message;
-            m->f_bool = json_object_get_boolean(root, "f_bool") == 1;
-            m->f_int32 = (int32_t)json_object_get_number(root, "f_int32");
-            m->f_int64 = (int64_t)json_object_get_number(root, "f_int64");
-            m->f_float64 = json_object_get_number(root, "f_float64");
-            { const char *s = json_object_get_string(root, "f_string"); if (s) snprintf(m->f_string, sizeof m->f_string, "%s", s); }
-            m->f_bool_2 = json_object_get_boolean(root, "f_bool_2") == 1;
-            m->f_int32_2 = (int32_t)json_object_get_number(root, "f_int32_2");
-            { const char *s = json_object_get_string(root, "f_string_2"); if (s) snprintf(m->f_string_2, sizeof m->f_string_2, "%s", s); }
-            break;
-        }
-        case TD_DOCUMENT: {
-            document_t *d = &out->document;
-            { const char *s = json_object_get_string(root, "id"); if (s) snprintf(d->id, sizeof d->id, "%s", s); }
-            d->status = (int32_t)json_object_get_number(root, "status");
-            JSON_Object *meta = json_object_get_object(root, "meta");
-            if (meta) {
-                const char *r = json_object_get_string(meta, "region");
-                if (r) snprintf(d->meta.region, sizeof d->meta.region, "%s", r);
-                d->meta.version = (int32_t)json_object_get_number(meta, "version");
-            }
-            JSON_Array *items = json_object_get_array(root, "items");
-            if (items) {
-                size_t n = json_array_get_count(items); if (n > V2_MAX_CHILDREN) n = V2_MAX_CHILDREN;
-                d->item_count = (int)n;
-                for (size_t i = 0; i < n; i++) {
-                    JSON_Object *it = json_array_get_object(items, i);
-                    const char *sku = json_object_get_string(it, "sku");
-                    if (sku) snprintf(d->items[i].sku, sizeof d->items[i].sku, "%s", sku);
-                    d->items[i].qty = (int32_t)json_object_get_number(it, "qty");
-                    d->items[i].price_minor = (int64_t)json_object_get_number(it, "price_minor");
-                }
-            }
-            break;
-        }
-        case TD_TELEMETRY: {
-            telemetry_t *t = &out->telemetry;
-            { const char *s = json_object_get_string(root, "source"); if (s) snprintf(t->source, sizeof t->source, "%s", s); }
-            t->ts = (int64_t)json_object_get_number(root, "ts");
-            JSON_Array *tags = json_object_get_array(root, "tags");
-            if (tags) {
-                size_t n = json_array_get_count(tags); if (n > V2_MAX_TAGS) n = V2_MAX_TAGS;
-                t->tag_count = (int)n;
-                for (size_t i = 0; i < n; i++) {
-                    const char *s = json_array_get_string(tags, i);
-                    if (s) snprintf(t->tags[i], sizeof t->tags[i], "%s", s);
-                }
-            }
-            JSON_Array *vals = json_object_get_array(root, "values");
-            if (vals) {
-                size_t n = json_array_get_count(vals); if (n > V2_MAX_POINTS) n = V2_MAX_POINTS;
-                t->value_count = (int)n;
-                for (size_t i = 0; i < n; i++) t->values[i] = json_array_get_number(vals, i);
-            }
-            break;
-        }
-        case TD_STRINGS: {
-            JSON_Array *items = json_object_get_array(root, "items");
-            if (items) {
-                size_t n = json_array_get_count(items); if (n > V2_MAX_STRINGS) n = V2_MAX_STRINGS;
-                out->strings.count = (int)n;
-                for (size_t i = 0; i < n; i++) {
-                    const char *s = json_array_get_string(items, i);
-                    if (s) snprintf(out->strings.items[i], sizeof out->strings.items[i], "%s", s);
-                }
-            }
-            break;
-        }
-        case TD_EVENT: {
-            event_t *e = &out->event;
-            { const char *s = json_object_get_string(root, "event_id"); if (s) snprintf(e->event_id, sizeof e->event_id, "%s", s); }
-            { const char *s = json_object_get_string(root, "event_type"); if (s) snprintf(e->event_type, sizeof e->event_type, "%s", s); }
-            e->occurred_at = (int64_t)json_object_get_number(root, "occurred_at");
-            { const char *s = json_object_get_string(root, "producer"); if (s) snprintf(e->producer, sizeof e->producer, "%s", s); }
-            JSON_Array *attrs = json_object_get_array(root, "attrs");
-            if (attrs) {
-                size_t n = json_array_get_count(attrs); if (n > V2_MAX_ATTRS) n = V2_MAX_ATTRS;
-                e->attr_count = (int)n;
-                for (size_t i = 0; i < n; i++) {
-                    JSON_Object *a = json_array_get_object(attrs, i);
-                    const char *k = json_object_get_string(a, "key");
-                    const char *v = json_object_get_string(a, "value");
-                    if (k) snprintf(e->attrs[i].key, sizeof e->attrs[i].key, "%s", k);
-                    if (v) snprintf(e->attrs[i].value, sizeof e->attrs[i].value, "%s", v);
-                }
-            }
-            break;
-        }
-        default: return -1;
-    }
+static int w_begin_map(void *ctx, int n) {
+    (void)n;
+    pw *c = ctx;
+    JSON_Value *v = json_value_init_object();
+    if (!v) return -1;
+    if (c->sp == 0) {
+        c->root = v;
+    } else if (c->has_key && c->kinds[c->sp - 1] == PS_OBJ) {
+        json_object_set_value(json_value_get_object(c->vals[c->sp - 1]), c->pending_key, v);
+        c->has_key = 0;
+    } else if (c->kinds[c->sp - 1] == PS_ARR) {
+        json_array_append_value(json_value_get_array(c->vals[c->sp - 1]), v);
+    } else { json_value_free(v); return -1; }
+    c->vals[c->sp] = v;
+    c->kinds[c->sp] = PS_OBJ;
+    c->sp++;
     return 0;
 }
+static int w_end_map(void *ctx) { pw *c = ctx; if (c->sp <= 0) return -1; c->sp--; return 0; }
+static int w_begin_array(void *ctx, int n) {
+    (void)n;
+    pw *c = ctx;
+    JSON_Value *v = json_value_init_array();
+    if (!v) return -1;
+    if (c->has_key && c->kinds[c->sp - 1] == PS_OBJ) {
+        json_object_set_value(json_value_get_object(c->vals[c->sp - 1]), c->pending_key, v);
+        c->has_key = 0;
+    } else { json_value_free(v); return -1; }
+    c->vals[c->sp] = v;
+    c->kinds[c->sp] = PS_ARR;
+    c->sp++;
+    return 0;
+}
+static int w_end_array(void *ctx) { pw *c = ctx; if (c->sp <= 0) return -1; c->sp--; return 0; }
+static int w_key(void *ctx, const char *k) {
+    pw *c = ctx; snprintf(c->pending_key, sizeof c->pending_key, "%s", k); c->has_key = 1; return 0;
+}
+static int w_attach_val(pw *c, JSON_Value *v) {
+    if (!v) return -1;
+    if (c->has_key && c->kinds[c->sp - 1] == PS_OBJ) {
+        json_object_set_value(json_value_get_object(c->vals[c->sp - 1]), c->pending_key, v);
+        c->has_key = 0;
+    } else if (c->kinds[c->sp - 1] == PS_ARR) {
+        json_array_append_value(json_value_get_array(c->vals[c->sp - 1]), v);
+    } else { json_value_free(v); return -1; }
+    return 0;
+}
+static int w_bool(void *ctx, int v) { return w_attach_val(ctx, json_value_init_boolean(v)); }
+static int w_i64(void *ctx, int64_t v) { return w_attach_val(ctx, json_value_init_number((double)v)); }
+static int w_f64(void *ctx, double v) { return w_attach_val(ctx, json_value_init_number(v)); }
+static int w_str(void *ctx, const char *s) { return w_attach_val(ctx, json_value_init_string(s ? s : "")); }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
-    JSON_Value *v = fx_to_val(fx);
-    if (!v) return -1;
-    char *s = json_serialize_to_string(v);
-    json_value_free(v);
+    pw c = {0};
+    v2_writer_t w = {
+        .ctx = &c, .begin_map = w_begin_map, .end_map = w_end_map,
+        .begin_array = w_begin_array, .end_array = w_end_array,
+        .key = w_key, .put_bool = w_bool, .put_i64 = w_i64, .put_f64 = w_f64, .put_str = w_str,
+    };
+    if (v2_write_fixture(fx, &w) != 0 || !c.root) {
+        if (c.root) json_value_free(c.root);
+        return -1;
+    }
+    char *s = json_serialize_to_string(c.root);
+    json_value_free(c.root);
     if (!s) return -1;
     size_t n = strlen(s);
     if (n + 1 > cap) { json_free_serialized_string(s); return -1; }
@@ -198,18 +88,114 @@ static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
     json_free_serialized_string(s);
     return 0;
 }
+
+typedef struct {
+    JSON_Value *stack[32]; /* for objects: value; for arrays after enter: array value */
+    JSON_Array *arr_stack[32];
+    int is_arr[32];
+    int sp;
+} pr;
+
+static JSON_Object *robj(pr *c) {
+    return json_value_get_object(c->stack[c->sp - 1]);
+}
+
+static int r_get_bool(void *ctx, const char *key, int *out) {
+    pr *c = ctx;
+    if (key && key[0]) {
+        JSON_Value *v = json_object_get_value(robj(c), key);
+        if (!v) return 1;
+        *out = json_value_get_boolean(v);
+        return 0;
+    }
+    *out = json_value_get_boolean(c->stack[c->sp - 1]);
+    return 0;
+}
+static int r_get_i64(void *ctx, const char *key, int64_t *out) {
+    pr *c = ctx;
+    if (key && key[0]) {
+        JSON_Value *v = json_object_get_value(robj(c), key);
+        if (!v) return 1;
+        *out = (int64_t)json_value_get_number(v);
+        return 0;
+    }
+    *out = (int64_t)json_value_get_number(c->stack[c->sp - 1]);
+    return 0;
+}
+static int r_get_f64(void *ctx, const char *key, double *out) {
+    pr *c = ctx;
+    if (key && key[0]) {
+        JSON_Value *v = json_object_get_value(robj(c), key);
+        if (!v) return 1;
+        *out = json_value_get_number(v);
+        return 0;
+    }
+    *out = json_value_get_number(c->stack[c->sp - 1]);
+    return 0;
+}
+static int r_get_str(void *ctx, const char *key, char *buf, size_t buflen) {
+    pr *c = ctx;
+    const char *s = NULL;
+    if (key && key[0]) {
+        s = json_object_get_string(robj(c), key);
+        if (!s) { if (buflen) buf[0] = 0; return 0; }
+    } else {
+        s = json_value_get_string(c->stack[c->sp - 1]);
+        if (!s) return -1;
+    }
+    snprintf(buf, buflen, "%s", s);
+    return 0;
+}
+static int r_enter_object(void *ctx, const char *key) {
+    pr *c = ctx;
+    JSON_Value *v = json_object_get_value(robj(c), key);
+    if (!v || json_value_get_type(v) != JSONObject) return 1;
+    c->stack[c->sp] = v; c->is_arr[c->sp] = 0; c->sp++;
+    return 0;
+}
+static int r_leave_object(void *ctx) { pr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
+static int r_enter_array(void *ctx, const char *key, int *len_out) {
+    pr *c = ctx;
+    JSON_Array *a = json_object_get_array(robj(c), key);
+    if (!a) return 1;
+    *len_out = (int)json_array_get_count(a);
+    c->stack[c->sp] = json_object_get_value(robj(c), key);
+    c->arr_stack[c->sp] = a;
+    c->is_arr[c->sp] = 1;
+    c->sp++;
+    return 0;
+}
+static int r_leave_array(void *ctx) { pr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
+static int r_enter_elem(void *ctx, int index) {
+    pr *c = ctx;
+    JSON_Array *a = c->arr_stack[c->sp - 1];
+    JSON_Value *v = json_array_get_value(a, (size_t)index);
+    if (!v) return -1;
+    c->stack[c->sp] = v; c->is_arr[c->sp] = 0; c->sp++;
+    return 0;
+}
+static int r_leave_elem(void *ctx) { pr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
+
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
     /* parson needs NUL-terminated; copy if needed */
-    char *tmp = (char *)malloc(len + 1);
+    char *tmp = malloc(len + 1);
     if (!tmp) return -1;
     memcpy(tmp, buf, len); tmp[len] = 0;
-    JSON_Value *v = json_parse_string(tmp);
+    JSON_Value *root = json_parse_string(tmp);
     free(tmp);
-    if (!v) return -1;
-    int rc = val_to_fx(v, out, kind);
-    json_value_free(v);
-    return rc;
+    if (!root) return -1;
+    pr rc = {0}; rc.stack[0] = root; rc.sp = 1;
+    v2_reader_t r = {
+        .ctx = &rc, .get_bool = r_get_bool, .get_i64 = r_get_i64, .get_f64 = r_get_f64,
+        .get_str = r_get_str, .enter_object = r_enter_object, .leave_object = r_leave_object,
+        .enter_array = r_enter_array, .leave_array = r_leave_array,
+        .enter_elem = r_enter_elem, .leave_elem = r_leave_elem,
+    };
+    int e = v2_read_fixture(kind, out, &r);
+    json_value_free(root);
+    return e;
 }
+
 void bench_register_parson(serializer_t *o, int *c) {
     BENCH_ADD(o, c, "parson", "1.5.3", "json", prep, ser, de, fidelity_fx);
 }

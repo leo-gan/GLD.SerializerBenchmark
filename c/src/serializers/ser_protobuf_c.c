@@ -1,6 +1,9 @@
+#include "ser_common.h"
 #include "fixture_pb_v2.h"
 #include "protobuf-c/protobuf-c.h"
-/* Native path: standard proto3 wire (benchmark_v2 field tags). */
+
+/* Domain shape lives in fixture_pb_v2. Wrapper only calls encode/decode. */
+
 static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx; return 0; }
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
     return pb_v2_encode(fx, buf, cap, ol);

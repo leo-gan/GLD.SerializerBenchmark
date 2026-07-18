@@ -1,5 +1,8 @@
 #include "ser_common.h"
+#include "v2_codec.h"
 #include <msgpack.h>
+
+/* Wrapper: only msgpack-c ops. Domain shape is v2_write/read_fixture. */
 
 typedef struct { uint8_t *buf; size_t cap; size_t used; int overflow; } fixed_buf_t;
 static int fixed_write(void *data, const char *buf, size_t len) {
@@ -8,81 +11,61 @@ static int fixed_write(void *data, const char *buf, size_t len) {
     memcpy(fb->buf + fb->used, buf, len); fb->used += len; return 0;
 }
 static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx; return 0; }
+
+typedef struct { msgpack_packer *pk; int err; } mw;
 static int pstr(msgpack_packer *pk, const char *s) {
-    size_t n = strlen(s); return msgpack_pack_str(pk, n) || msgpack_pack_str_body(pk, s, n);
+    size_t n = strlen(s ? s : "");
+    return msgpack_pack_str(pk, n) || msgpack_pack_str_body(pk, s ? s : "", n);
 }
-static int pbool(msgpack_packer *pk, int v) { return v ? msgpack_pack_true(pk) : msgpack_pack_false(pk); }
-
-static int pack_fx(msgpack_packer *pk, const test_fixture_t *fx) {
-    switch (fx->kind) {
-        case TD_MESSAGE: {
-            const message_t *m = &fx->message;
-            if (msgpack_pack_map(pk, 8)) return -1;
-            if (pstr(pk, "f_bool") || pbool(pk, m->f_bool)) return -1;
-            if (pstr(pk, "f_int32") || msgpack_pack_int32(pk, m->f_int32)) return -1;
-            if (pstr(pk, "f_int64") || msgpack_pack_int64(pk, m->f_int64)) return -1;
-            if (pstr(pk, "f_float64") || msgpack_pack_double(pk, m->f_float64)) return -1;
-            if (pstr(pk, "f_string") || pstr(pk, m->f_string)) return -1;
-            if (pstr(pk, "f_bool_2") || pbool(pk, m->f_bool_2)) return -1;
-            if (pstr(pk, "f_int32_2") || msgpack_pack_int32(pk, m->f_int32_2)) return -1;
-            if (pstr(pk, "f_string_2") || pstr(pk, m->f_string_2)) return -1;
-            return 0;
-        }
-        case TD_DOCUMENT: {
-            const document_t *d = &fx->document;
-            if (msgpack_pack_map(pk, 4)) return -1;
-            if (pstr(pk, "id") || pstr(pk, d->id)) return -1;
-            if (pstr(pk, "status") || msgpack_pack_int32(pk, d->status)) return -1;
-            if (pstr(pk, "meta") || msgpack_pack_map(pk, 2)) return -1;
-            if (pstr(pk, "region") || pstr(pk, d->meta.region)) return -1;
-            if (pstr(pk, "version") || msgpack_pack_int32(pk, d->meta.version)) return -1;
-            if (pstr(pk, "items") || msgpack_pack_array(pk, (size_t)d->item_count)) return -1;
-            for (int i = 0; i < d->item_count; i++) {
-                if (msgpack_pack_map(pk, 3)) return -1;
-                if (pstr(pk, "sku") || pstr(pk, d->items[i].sku)) return -1;
-                if (pstr(pk, "qty") || msgpack_pack_int32(pk, d->items[i].qty)) return -1;
-                if (pstr(pk, "price_minor") || msgpack_pack_int64(pk, d->items[i].price_minor)) return -1;
-            }
-            return 0;
-        }
-        case TD_TELEMETRY: {
-            const telemetry_t *t = &fx->telemetry;
-            if (msgpack_pack_map(pk, 4)) return -1;
-            if (pstr(pk, "source") || pstr(pk, t->source)) return -1;
-            if (pstr(pk, "ts") || msgpack_pack_int64(pk, t->ts)) return -1;
-            if (pstr(pk, "tags") || msgpack_pack_array(pk, (size_t)t->tag_count)) return -1;
-            for (int i = 0; i < t->tag_count; i++) if (pstr(pk, t->tags[i])) return -1;
-            if (pstr(pk, "values") || msgpack_pack_array(pk, (size_t)t->value_count)) return -1;
-            for (int i = 0; i < t->value_count; i++) if (msgpack_pack_double(pk, t->values[i])) return -1;
-            return 0;
-        }
-        case TD_STRINGS: {
-            if (msgpack_pack_map(pk, 1)) return -1;
-            if (pstr(pk, "items") || msgpack_pack_array(pk, (size_t)fx->strings.count)) return -1;
-            for (int i = 0; i < fx->strings.count; i++) if (pstr(pk, fx->strings.items[i])) return -1;
-            return 0;
-        }
-        case TD_EVENT: {
-            const event_t *e = &fx->event;
-            if (msgpack_pack_map(pk, 5)) return -1;
-            if (pstr(pk, "event_id") || pstr(pk, e->event_id)) return -1;
-            if (pstr(pk, "event_type") || pstr(pk, e->event_type)) return -1;
-            if (pstr(pk, "occurred_at") || msgpack_pack_int64(pk, e->occurred_at)) return -1;
-            if (pstr(pk, "producer") || pstr(pk, e->producer)) return -1;
-            if (pstr(pk, "attrs") || msgpack_pack_array(pk, (size_t)e->attr_count)) return -1;
-            for (int i = 0; i < e->attr_count; i++) {
-                if (msgpack_pack_map(pk, 2)) return -1;
-                if (pstr(pk, "key") || pstr(pk, e->attrs[i].key)) return -1;
-                if (pstr(pk, "value") || pstr(pk, e->attrs[i].value)) return -1;
-            }
-            return 0;
-        }
-        default: return -1;
-    }
+static int w_begin_map(void *ctx, int n) {
+    mw *c = ctx;
+    if (msgpack_pack_map(c->pk, n >= 0 ? (size_t)n : 0)) c->err = 1;
+    return c->err ? -1 : 0;
+}
+static int w_end_map(void *ctx) { (void)ctx; return 0; }
+static int w_begin_array(void *ctx, int n) {
+    mw *c = ctx;
+    if (msgpack_pack_array(c->pk, n >= 0 ? (size_t)n : 0)) c->err = 1;
+    return c->err ? -1 : 0;
+}
+static int w_end_array(void *ctx) { (void)ctx; return 0; }
+static int w_key(void *ctx, const char *k) {
+    mw *c = ctx; if (pstr(c->pk, k)) c->err = 1; return c->err ? -1 : 0;
+}
+static int w_bool(void *ctx, int v) {
+    mw *c = ctx;
+    if (v ? msgpack_pack_true(c->pk) : msgpack_pack_false(c->pk)) c->err = 1;
+    return c->err ? -1 : 0;
+}
+static int w_i64(void *ctx, int64_t v) {
+    mw *c = ctx; if (msgpack_pack_int64(c->pk, v)) c->err = 1; return c->err ? -1 : 0;
+}
+static int w_f64(void *ctx, double v) {
+    mw *c = ctx; if (msgpack_pack_double(c->pk, v)) c->err = 1; return c->err ? -1 : 0;
+}
+static int w_str(void *ctx, const char *s) {
+    mw *c = ctx; if (pstr(c->pk, s)) c->err = 1; return c->err ? -1 : 0;
 }
 
+static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    fixed_buf_t fb = { .buf = buf, .cap = cap };
+    msgpack_packer pk;
+    msgpack_packer_init(&pk, &fb, fixed_write);
+    mw ctx = { .pk = &pk };
+    v2_writer_t w = {
+        .ctx = &ctx, .begin_map = w_begin_map, .end_map = w_end_map,
+        .begin_array = w_begin_array, .end_array = w_end_array,
+        .key = w_key, .put_bool = w_bool, .put_i64 = w_i64, .put_f64 = w_f64, .put_str = w_str,
+    };
+    if (v2_write_fixture(fx, &w) != 0 || fb.overflow || ctx.err) return -1;
+    *ol = fb.used;
+    return 0;
+}
+
+typedef struct { const msgpack_object *stack[32]; int sp; } mr;
+static const msgpack_object *rtop(mr *c) { return c->stack[c->sp - 1]; }
 static const msgpack_object *map_get(const msgpack_object *m, const char *key) {
-    if (m->type != MSGPACK_OBJECT_MAP) return NULL;
+    if (!m || m->type != MSGPACK_OBJECT_MAP) return NULL;
     size_t kn = strlen(key);
     for (uint32_t i = 0; i < m->via.map.size; i++) {
         const msgpack_object *k = &m->via.map.ptr[i].key;
@@ -91,132 +74,81 @@ static const msgpack_object *map_get(const msgpack_object *m, const char *key) {
     }
     return NULL;
 }
-static int cpy_str(const msgpack_object *o, char *dst, size_t dcap) {
-    if (!o || o->type != MSGPACK_OBJECT_STR || o->via.str.size >= dcap) return -1;
-    memcpy(dst, o->via.str.ptr, o->via.str.size); dst[o->via.str.size] = 0; return 0;
+static const msgpack_object *rget(mr *c, const char *key) {
+    if (key && key[0]) return map_get(rtop(c), key);
+    return rtop(c);
 }
 static int64_t as_i64(const msgpack_object *o) {
     if (!o) return 0;
     if (o->type == MSGPACK_OBJECT_POSITIVE_INTEGER) return (int64_t)o->via.u64;
     if (o->type == MSGPACK_OBJECT_NEGATIVE_INTEGER) return o->via.i64;
+    if (o->type == MSGPACK_OBJECT_FLOAT64 || o->type == MSGPACK_OBJECT_FLOAT32) return (int64_t)o->via.f64;
     return 0;
 }
-static double as_f64(const msgpack_object *o) {
-    if (!o) return 0;
-    if (o->type == MSGPACK_OBJECT_FLOAT64 || o->type == MSGPACK_OBJECT_FLOAT) return o->via.f64;
-    return (double)as_i64(o);
+static int r_get_bool(void *ctx, const char *key, int *out) {
+    const msgpack_object *o = rget(ctx, key);
+    if (!o) return 1;
+    if (o->type == MSGPACK_OBJECT_BOOLEAN) { *out = o->via.boolean; return 0; }
+    return 1;
 }
-static int as_bool(const msgpack_object *o) {
-    return o && o->type == MSGPACK_OBJECT_BOOLEAN && o->via.boolean;
+static int r_get_i64(void *ctx, const char *key, int64_t *out) {
+    const msgpack_object *o = rget(ctx, key);
+    if (!o) return 1;
+    *out = as_i64(o);
+    return 0;
 }
+static int r_get_f64(void *ctx, const char *key, double *out) {
+    const msgpack_object *o = rget(ctx, key);
+    if (!o) return 1;
+    if (o->type == MSGPACK_OBJECT_FLOAT64 || o->type == MSGPACK_OBJECT_FLOAT32) { *out = o->via.f64; return 0; }
+    *out = (double)as_i64(o);
+    return 0;
+}
+static int r_get_str(void *ctx, const char *key, char *buf, size_t buflen) {
+    const msgpack_object *o = rget(ctx, key);
+    if (!o) { if (buflen) buf[0] = 0; return 0; }
+    if (o->type != MSGPACK_OBJECT_STR || o->via.str.size >= buflen) return -1;
+    memcpy(buf, o->via.str.ptr, o->via.str.size); buf[o->via.str.size] = 0;
+    return 0;
+}
+static int r_enter_object(void *ctx, const char *key) {
+    mr *c = ctx; const msgpack_object *o = map_get(rtop(c), key);
+    if (!o || o->type != MSGPACK_OBJECT_MAP) return 1;
+    c->stack[c->sp++] = o; return 0;
+}
+static int r_leave_object(void *ctx) { mr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
+static int r_enter_array(void *ctx, const char *key, int *len_out) {
+    mr *c = ctx; const msgpack_object *o = map_get(rtop(c), key);
+    if (!o || o->type != MSGPACK_OBJECT_ARRAY) return 1;
+    *len_out = (int)o->via.array.size; c->stack[c->sp++] = o; return 0;
+}
+static int r_leave_array(void *ctx) { mr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
+static int r_enter_elem(void *ctx, int index) {
+    mr *c = ctx; const msgpack_object *a = rtop(c);
+    if (a->type != MSGPACK_OBJECT_ARRAY || (uint32_t)index >= a->via.array.size) return -1;
+    c->stack[c->sp++] = &a->via.array.ptr[index]; return 0;
+}
+static int r_leave_elem(void *ctx) { mr *c = ctx; if (c->sp <= 1) return -1; c->sp--; return 0; }
 
-static int unpack_fx(const msgpack_object *root, test_fixture_t *out, test_data_kind_t kind) {
-    memset(out, 0, sizeof *out);
-    out->kind = kind; out->name = test_data_name(kind); out->batch_n = 1;
-    switch (kind) {
-        case TD_MESSAGE: {
-            message_t *m = &out->message;
-            m->f_bool = as_bool(map_get(root, "f_bool"));
-            m->f_int32 = (int32_t)as_i64(map_get(root, "f_int32"));
-            m->f_int64 = as_i64(map_get(root, "f_int64"));
-            m->f_float64 = as_f64(map_get(root, "f_float64"));
-            cpy_str(map_get(root, "f_string"), m->f_string, sizeof m->f_string);
-            m->f_bool_2 = as_bool(map_get(root, "f_bool_2"));
-            m->f_int32_2 = (int32_t)as_i64(map_get(root, "f_int32_2"));
-            cpy_str(map_get(root, "f_string_2"), m->f_string_2, sizeof m->f_string_2);
-            break;
-        }
-        case TD_DOCUMENT: {
-            document_t *d = &out->document;
-            cpy_str(map_get(root, "id"), d->id, sizeof d->id);
-            d->status = (int32_t)as_i64(map_get(root, "status"));
-            const msgpack_object *meta = map_get(root, "meta");
-            if (meta) {
-                cpy_str(map_get(meta, "region"), d->meta.region, sizeof d->meta.region);
-                d->meta.version = (int32_t)as_i64(map_get(meta, "version"));
-            }
-            const msgpack_object *items = map_get(root, "items");
-            if (items && items->type == MSGPACK_OBJECT_ARRAY) {
-                int n = (int)items->via.array.size; if (n > V2_MAX_CHILDREN) n = V2_MAX_CHILDREN;
-                d->item_count = n;
-                for (int i = 0; i < n; i++) {
-                    const msgpack_object *it = &items->via.array.ptr[i];
-                    cpy_str(map_get(it, "sku"), d->items[i].sku, sizeof d->items[i].sku);
-                    d->items[i].qty = (int32_t)as_i64(map_get(it, "qty"));
-                    d->items[i].price_minor = as_i64(map_get(it, "price_minor"));
-                }
-            }
-            break;
-        }
-        case TD_TELEMETRY: {
-            telemetry_t *t = &out->telemetry;
-            cpy_str(map_get(root, "source"), t->source, sizeof t->source);
-            t->ts = as_i64(map_get(root, "ts"));
-            const msgpack_object *tags = map_get(root, "tags");
-            if (tags && tags->type == MSGPACK_OBJECT_ARRAY) {
-                int n = (int)tags->via.array.size; if (n > V2_MAX_TAGS) n = V2_MAX_TAGS;
-                t->tag_count = n;
-                for (int i = 0; i < n; i++) cpy_str(&tags->via.array.ptr[i], t->tags[i], sizeof t->tags[i]);
-            }
-            const msgpack_object *vals = map_get(root, "values");
-            if (vals && vals->type == MSGPACK_OBJECT_ARRAY) {
-                int n = (int)vals->via.array.size; if (n > V2_MAX_POINTS) n = V2_MAX_POINTS;
-                t->value_count = n;
-                for (int i = 0; i < n; i++) t->values[i] = as_f64(&vals->via.array.ptr[i]);
-            }
-            break;
-        }
-        case TD_STRINGS: {
-            const msgpack_object *items = map_get(root, "items");
-            if (items && items->type == MSGPACK_OBJECT_ARRAY) {
-                int n = (int)items->via.array.size; if (n > V2_MAX_STRINGS) n = V2_MAX_STRINGS;
-                out->strings.count = n;
-                for (int i = 0; i < n; i++) cpy_str(&items->via.array.ptr[i], out->strings.items[i], sizeof out->strings.items[i]);
-            }
-            break;
-        }
-        case TD_EVENT: {
-            event_t *e = &out->event;
-            cpy_str(map_get(root, "event_id"), e->event_id, sizeof e->event_id);
-            cpy_str(map_get(root, "event_type"), e->event_type, sizeof e->event_type);
-            e->occurred_at = as_i64(map_get(root, "occurred_at"));
-            cpy_str(map_get(root, "producer"), e->producer, sizeof e->producer);
-            const msgpack_object *attrs = map_get(root, "attrs");
-            if (attrs && attrs->type == MSGPACK_OBJECT_ARRAY) {
-                int n = (int)attrs->via.array.size; if (n > V2_MAX_ATTRS) n = V2_MAX_ATTRS;
-                e->attr_count = n;
-                for (int i = 0; i < n; i++) {
-                    const msgpack_object *a = &attrs->via.array.ptr[i];
-                    cpy_str(map_get(a, "key"), e->attrs[i].key, sizeof e->attrs[i].key);
-                    cpy_str(map_get(a, "value"), e->attrs[i].value, sizeof e->attrs[i].value);
-                }
-            }
-            break;
-        }
-        default: return -1;
-    }
-    return 0;
-}
-
-static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
-    fixed_buf_t fb = { buf, cap, 0, 0 };
-    msgpack_packer pk;
-    msgpack_packer_init(&pk, &fb, fixed_write);
-    if (pack_fx(&pk, fx) || fb.overflow) return -1;
-    *ol = fb.used;
-    return 0;
-}
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
     msgpack_unpacked result;
     msgpack_unpacked_init(&result);
-    size_t off = 0;
-    if (msgpack_unpack_next(&result, (const char *)buf, len, &off) != MSGPACK_UNPACK_SUCCESS) {
-        msgpack_unpacked_destroy(&result); return -1;
+    if (msgpack_unpack_next(&result, (const char *)buf, len, NULL) != MSGPACK_UNPACK_SUCCESS) {
+        msgpack_unpacked_destroy(&result);
+        return -1;
     }
-    int rc = unpack_fx(&result.data, out, kind);
+    mr rc = {0}; rc.stack[0] = &result.data; rc.sp = 1;
+    v2_reader_t r = {
+        .ctx = &rc, .get_bool = r_get_bool, .get_i64 = r_get_i64, .get_f64 = r_get_f64,
+        .get_str = r_get_str, .enter_object = r_enter_object, .leave_object = r_leave_object,
+        .enter_array = r_enter_array, .leave_array = r_leave_array,
+        .enter_elem = r_enter_elem, .leave_elem = r_leave_elem,
+    };
+    int e = v2_read_fixture(kind, out, &r);
     msgpack_unpacked_destroy(&result);
-    return rc;
+    return e;
 }
+
 void bench_register_msgpack_c(serializer_t *o, int *c) {
     BENCH_ADD(o, c, "msgpack-c", "6.0.1", "binary", prep, ser, de, fidelity_fx);
 }

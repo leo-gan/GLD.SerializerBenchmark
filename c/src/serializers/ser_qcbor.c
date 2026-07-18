@@ -1,97 +1,118 @@
 #include "ser_common.h"
+#include "v2_codec.h"
 #include "qcbor/qcbor_encode.h"
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 
-/* Native QCBOR encode of V2 field maps; decode via standard CBOR map walker (tinycbor). */
+/* Wrapper: only QCBOR encode ops. Domain shape is v2_write_fixture.
+ * Decode: interoperable CBOR maps via tinycbor visitor reader. */
 
 static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx; return 0; }
 
+typedef struct {
+    QCBOREncodeContext *ctx;
+    char pending_key[64];
+    int has_key;
+    int in_array_depth; /* when >0 and no key, add bare value */
+} qcw;
+
+static int w_begin_map(void *ctx, int n) {
+    (void)n;
+    qcw *c = ctx;
+    if (c->has_key) {
+        QCBOREncode_OpenMapInMapSZ(c->ctx, c->pending_key);
+        c->has_key = 0;
+    } else if (c->in_array_depth > 0) {
+        QCBOREncode_OpenMap(c->ctx);
+    } else {
+        QCBOREncode_OpenMap(c->ctx);
+    }
+    return 0;
+}
+static int w_end_map(void *ctx) {
+    qcw *c = ctx;
+    QCBOREncode_CloseMap(c->ctx);
+    return 0;
+}
+static int w_begin_array(void *ctx, int n) {
+    (void)n;
+    qcw *c = ctx;
+    if (c->has_key) {
+        QCBOREncode_OpenArrayInMapSZ(c->ctx, c->pending_key);
+        c->has_key = 0;
+    } else {
+        QCBOREncode_OpenArray(c->ctx);
+    }
+    c->in_array_depth++;
+    return 0;
+}
+static int w_end_array(void *ctx) {
+    qcw *c = ctx;
+    QCBOREncode_CloseArray(c->ctx);
+    if (c->in_array_depth > 0) c->in_array_depth--;
+    return 0;
+}
+static int w_key(void *ctx, const char *k) {
+    qcw *c = ctx;
+    snprintf(c->pending_key, sizeof c->pending_key, "%s", k);
+    c->has_key = 1;
+    return 0;
+}
+static int w_bool(void *ctx, int v) {
+    qcw *c = ctx;
+    if (c->has_key) {
+        QCBOREncode_AddBoolToMapSZ(c->ctx, c->pending_key, v);
+        c->has_key = 0;
+    } else {
+        QCBOREncode_AddBool(c->ctx, v);
+    }
+    return 0;
+}
+static int w_i64(void *ctx, int64_t v) {
+    qcw *c = ctx;
+    if (c->has_key) {
+        QCBOREncode_AddInt64ToMapSZ(c->ctx, c->pending_key, v);
+        c->has_key = 0;
+    } else {
+        QCBOREncode_AddInt64(c->ctx, v);
+    }
+    return 0;
+}
+static int w_f64(void *ctx, double v) {
+    qcw *c = ctx;
+    if (c->has_key) {
+        QCBOREncode_AddDoubleToMapSZ(c->ctx, c->pending_key, v);
+        c->has_key = 0;
+    } else {
+        QCBOREncode_AddDouble(c->ctx, v);
+    }
+    return 0;
+}
+static int w_str(void *ctx, const char *s) {
+    qcw *c = ctx;
+    if (c->has_key) {
+        QCBOREncode_AddSZStringToMapSZ(c->ctx, c->pending_key, s ? s : "");
+        c->has_key = 0;
+    } else {
+        QCBOREncode_AddSZString(c->ctx, s ? s : "");
+    }
+    return 0;
+}
+
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
     UsefulBuf ub = { buf, cap };
-    QCBOREncodeContext ctx;
-    QCBOREncode_Init(&ctx, ub);
-    switch (fx->kind) {
-        case TD_MESSAGE: {
-            const message_t *m = &fx->message;
-            QCBOREncode_OpenMap(&ctx);
-            QCBOREncode_AddBoolToMapSZ(&ctx, "f_bool", m->f_bool);
-            QCBOREncode_AddInt64ToMapSZ(&ctx, "f_int32", m->f_int32);
-            QCBOREncode_AddInt64ToMapSZ(&ctx, "f_int64", m->f_int64);
-            QCBOREncode_AddDoubleToMapSZ(&ctx, "f_float64", m->f_float64);
-            QCBOREncode_AddSZStringToMapSZ(&ctx, "f_string", m->f_string);
-            QCBOREncode_AddBoolToMapSZ(&ctx, "f_bool_2", m->f_bool_2);
-            QCBOREncode_AddInt64ToMapSZ(&ctx, "f_int32_2", m->f_int32_2);
-            QCBOREncode_AddSZStringToMapSZ(&ctx, "f_string_2", m->f_string_2);
-            QCBOREncode_CloseMap(&ctx);
-            break;
-        }
-        case TD_DOCUMENT: {
-            const document_t *d = &fx->document;
-            QCBOREncode_OpenMap(&ctx);
-            QCBOREncode_AddSZStringToMapSZ(&ctx, "id", d->id);
-            QCBOREncode_AddInt64ToMapSZ(&ctx, "status", d->status);
-            QCBOREncode_OpenMapInMapSZ(&ctx, "meta");
-            QCBOREncode_AddSZStringToMapSZ(&ctx, "region", d->meta.region);
-            QCBOREncode_AddInt64ToMapSZ(&ctx, "version", d->meta.version);
-            QCBOREncode_CloseMap(&ctx);
-            QCBOREncode_OpenArrayInMapSZ(&ctx, "items");
-            for (int i = 0; i < d->item_count; i++) {
-                QCBOREncode_OpenMap(&ctx);
-                QCBOREncode_AddSZStringToMapSZ(&ctx, "sku", d->items[i].sku);
-                QCBOREncode_AddInt64ToMapSZ(&ctx, "qty", d->items[i].qty);
-                QCBOREncode_AddInt64ToMapSZ(&ctx, "price_minor", d->items[i].price_minor);
-                QCBOREncode_CloseMap(&ctx);
-            }
-            QCBOREncode_CloseArray(&ctx);
-            QCBOREncode_CloseMap(&ctx);
-            break;
-        }
-        case TD_TELEMETRY: {
-            const telemetry_t *t = &fx->telemetry;
-            QCBOREncode_OpenMap(&ctx);
-            QCBOREncode_AddSZStringToMapSZ(&ctx, "source", t->source);
-            QCBOREncode_AddInt64ToMapSZ(&ctx, "ts", t->ts);
-            QCBOREncode_OpenArrayInMapSZ(&ctx, "tags");
-            for (int i = 0; i < t->tag_count; i++) QCBOREncode_AddSZString(&ctx, t->tags[i]);
-            QCBOREncode_CloseArray(&ctx);
-            QCBOREncode_OpenArrayInMapSZ(&ctx, "values");
-            for (int i = 0; i < t->value_count; i++) QCBOREncode_AddDouble(&ctx, t->values[i]);
-            QCBOREncode_CloseArray(&ctx);
-            QCBOREncode_CloseMap(&ctx);
-            break;
-        }
-        case TD_STRINGS: {
-            QCBOREncode_OpenMap(&ctx);
-            QCBOREncode_OpenArrayInMapSZ(&ctx, "items");
-            for (int i = 0; i < fx->strings.count; i++) QCBOREncode_AddSZString(&ctx, fx->strings.items[i]);
-            QCBOREncode_CloseArray(&ctx);
-            QCBOREncode_CloseMap(&ctx);
-            break;
-        }
-        case TD_EVENT: {
-            const event_t *e = &fx->event;
-            QCBOREncode_OpenMap(&ctx);
-            QCBOREncode_AddSZStringToMapSZ(&ctx, "event_id", e->event_id);
-            QCBOREncode_AddSZStringToMapSZ(&ctx, "event_type", e->event_type);
-            QCBOREncode_AddInt64ToMapSZ(&ctx, "occurred_at", e->occurred_at);
-            QCBOREncode_AddSZStringToMapSZ(&ctx, "producer", e->producer);
-            QCBOREncode_OpenArrayInMapSZ(&ctx, "attrs");
-            for (int i = 0; i < e->attr_count; i++) {
-                QCBOREncode_OpenMap(&ctx);
-                QCBOREncode_AddSZStringToMapSZ(&ctx, "key", e->attrs[i].key);
-                QCBOREncode_AddSZStringToMapSZ(&ctx, "value", e->attrs[i].value);
-                QCBOREncode_CloseMap(&ctx);
-            }
-            QCBOREncode_CloseArray(&ctx);
-            QCBOREncode_CloseMap(&ctx);
-            break;
-        }
-        default: return -1;
-    }
-    UsefulBufC enc;
-    if (QCBOREncode_Finish(&ctx, &enc) != QCBOR_SUCCESS) return -1;
-    *ol = enc.len;
+    QCBOREncodeContext enc;
+    QCBOREncode_Init(&enc, ub);
+    qcw c = { .ctx = &enc };
+    v2_writer_t w = {
+        .ctx = &c, .begin_map = w_begin_map, .end_map = w_end_map,
+        .begin_array = w_begin_array, .end_array = w_end_array,
+        .key = w_key, .put_bool = w_bool, .put_i64 = w_i64, .put_f64 = w_f64, .put_str = w_str,
+    };
+    if (v2_write_fixture(fx, &w) != 0) return -1;
+    UsefulBufC out;
+    if (QCBOREncode_Finish(&enc, &out) != QCBOR_SUCCESS) return -1;
+    *ol = out.len;
     return 0;
 }
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {

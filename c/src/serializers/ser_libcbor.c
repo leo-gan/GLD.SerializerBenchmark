@@ -1,103 +1,126 @@
 #include "ser_common.h"
+#include "v2_codec.h"
 /* Disambiguate from tinycbor's cbor.h (earlier on include path). */
 #include "../../third_party/libcbor/src/cbor.h"
 
-/* Native libcbor encode (cbor_item_t tree + cbor_serialize). Decode via tinycbor
- * map walker (standard CBOR maps are interoperable). */
+/* Wrapper: only libcbor ops for encode. Domain shape is v2_write_fixture.
+ * Decode: interoperable CBOR maps via tinycbor visitor reader. */
 
 static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx; return 0; }
 
-static cbor_item_t *str(const char *s) { return cbor_build_string(s); }
-static cbor_item_t *sint(int64_t v) {
+typedef struct {
+    cbor_item_t *stack[32];
+    int sp;
+    cbor_item_t *root;
+    char pending_key[64];
+    int has_key;
+    int err;
+} lcw;
+
+static cbor_item_t *mk_str(const char *s) { return cbor_build_string(s ? s : ""); }
+static cbor_item_t *mk_sint(int64_t v) {
     if (v >= 0) return cbor_build_uint64((uint64_t)v);
     return cbor_build_negint64((uint64_t)(-1 - v));
 }
-static cbor_item_t *f64(double v) { return cbor_build_float8(v); }
-static cbor_item_t *boolean(bool v) { return cbor_build_bool(v); }
 
-static void map_add(cbor_item_t *m, const char *k, cbor_item_t *v) {
-    cbor_map_add(m, (struct cbor_pair){ .key = cbor_move(str(k)), .value = cbor_move(v) });
-}
-
-static cbor_item_t *fx_to_item(const test_fixture_t *fx) {
-    cbor_item_t *m = cbor_new_definite_map(16);
-    if (!m) return NULL;
-    switch (fx->kind) {
-        case TD_MESSAGE: {
-            const message_t *x = &fx->message;
-            map_add(m, "f_bool", boolean(x->f_bool));
-            map_add(m, "f_int32", sint(x->f_int32));
-            map_add(m, "f_int64", sint(x->f_int64));
-            map_add(m, "f_float64", f64(x->f_float64));
-            map_add(m, "f_string", str(x->f_string));
-            map_add(m, "f_bool_2", boolean(x->f_bool_2));
-            map_add(m, "f_int32_2", sint(x->f_int32_2));
-            map_add(m, "f_string_2", str(x->f_string_2));
-            break;
-        }
-        case TD_DOCUMENT: {
-            const document_t *d = &fx->document;
-            map_add(m, "id", str(d->id));
-            map_add(m, "status", sint(d->status));
-            cbor_item_t *meta = cbor_new_definite_map(2);
-            map_add(meta, "region", str(d->meta.region));
-            map_add(meta, "version", sint(d->meta.version));
-            map_add(m, "meta", meta);
-            cbor_item_t *items = cbor_new_definite_array((size_t)d->item_count);
-            for (int i = 0; i < d->item_count; i++) {
-                cbor_item_t *it = cbor_new_definite_map(3);
-                map_add(it, "sku", str(d->items[i].sku));
-                map_add(it, "qty", sint(d->items[i].qty));
-                map_add(it, "price_minor", sint(d->items[i].price_minor));
-                cbor_array_push(items, cbor_move(it));
-            }
-            map_add(m, "items", items);
-            break;
-        }
-        case TD_TELEMETRY: {
-            const telemetry_t *t = &fx->telemetry;
-            map_add(m, "source", str(t->source));
-            map_add(m, "ts", sint(t->ts));
-            cbor_item_t *tags = cbor_new_definite_array((size_t)t->tag_count);
-            for (int i = 0; i < t->tag_count; i++) cbor_array_push(tags, cbor_move(str(t->tags[i])));
-            map_add(m, "tags", tags);
-            cbor_item_t *vals = cbor_new_definite_array((size_t)t->value_count);
-            for (int i = 0; i < t->value_count; i++) cbor_array_push(vals, cbor_move(f64(t->values[i])));
-            map_add(m, "values", vals);
-            break;
-        }
-        case TD_STRINGS: {
-            cbor_item_t *items = cbor_new_definite_array((size_t)fx->strings.count);
-            for (int i = 0; i < fx->strings.count; i++) cbor_array_push(items, cbor_move(str(fx->strings.items[i])));
-            map_add(m, "items", items);
-            break;
-        }
-        case TD_EVENT: {
-            const event_t *e = &fx->event;
-            map_add(m, "event_id", str(e->event_id));
-            map_add(m, "event_type", str(e->event_type));
-            map_add(m, "occurred_at", sint(e->occurred_at));
-            map_add(m, "producer", str(e->producer));
-            cbor_item_t *attrs = cbor_new_definite_array((size_t)e->attr_count);
-            for (int i = 0; i < e->attr_count; i++) {
-                cbor_item_t *a = cbor_new_definite_map(2);
-                map_add(a, "key", str(e->attrs[i].key));
-                map_add(a, "value", str(e->attrs[i].value));
-                cbor_array_push(attrs, cbor_move(a));
-            }
-            map_add(m, "attrs", attrs);
-            break;
-        }
-        default: cbor_decref(&m); return NULL;
+static int attach(lcw *c, cbor_item_t *item) {
+    if (!item) { c->err = 1; return -1; }
+    if (c->sp == 0) {
+        c->root = item;
+        c->stack[c->sp++] = item;
+        return 0;
     }
-    return m;
+    cbor_item_t *parent = c->stack[c->sp - 1];
+    if (c->has_key) {
+        if (!cbor_map_add(parent, (struct cbor_pair){
+                .key = cbor_move(mk_str(c->pending_key)),
+                .value = cbor_move(item)})) {
+            c->err = 1; return -1;
+        }
+        c->has_key = 0;
+        /* item pointer still valid after cbor_move */
+        return 0;
+    }
+    if (cbor_isa_array(parent)) {
+        if (!cbor_array_push(parent, cbor_move(item))) { c->err = 1; return -1; }
+        return 0;
+    }
+    cbor_decref(&item);
+    c->err = 1;
+    return -1;
 }
+
+static int w_begin_map(void *ctx, int n) {
+    lcw *c = ctx;
+    cbor_item_t *m = cbor_new_definite_map(n >= 0 ? (size_t)n : 0);
+    if (!m) { c->err = 1; return -1; }
+    if (c->sp == 0) {
+        c->root = m;
+        c->stack[c->sp++] = m;
+        return 0;
+    }
+    cbor_item_t *parent = c->stack[c->sp - 1];
+    if (c->has_key) {
+        if (!cbor_map_add(parent, (struct cbor_pair){
+                .key = cbor_move(mk_str(c->pending_key)),
+                .value = cbor_move(m)})) { c->err = 1; return -1; }
+        c->has_key = 0;
+    } else if (cbor_isa_array(parent)) {
+        if (!cbor_array_push(parent, cbor_move(m))) { c->err = 1; return -1; }
+    } else { cbor_decref(&m); c->err = 1; return -1; }
+    c->stack[c->sp++] = m;
+    return 0;
+}
+static int w_end_map(void *ctx) {
+    lcw *c = ctx;
+    if (c->sp <= 0) return -1;
+    c->sp--;
+    return 0;
+}
+static int w_begin_array(void *ctx, int n) {
+    lcw *c = ctx;
+    cbor_item_t *a = cbor_new_definite_array(n >= 0 ? (size_t)n : 0);
+    if (!a) { c->err = 1; return -1; }
+    cbor_item_t *parent = c->stack[c->sp - 1];
+    if (c->has_key) {
+        if (!cbor_map_add(parent, (struct cbor_pair){
+                .key = cbor_move(mk_str(c->pending_key)),
+                .value = cbor_move(a)})) { c->err = 1; return -1; }
+        c->has_key = 0;
+    } else { cbor_decref(&a); c->err = 1; return -1; }
+    c->stack[c->sp++] = a;
+    return 0;
+}
+static int w_end_array(void *ctx) {
+    lcw *c = ctx;
+    if (c->sp <= 0) return -1;
+    c->sp--;
+    return 0;
+}
+static int w_key(void *ctx, const char *k) {
+    lcw *c = ctx;
+    snprintf(c->pending_key, sizeof c->pending_key, "%s", k);
+    c->has_key = 1;
+    return 0;
+}
+static int w_bool(void *ctx, int v) { return attach(ctx, cbor_build_bool(v)); }
+static int w_i64(void *ctx, int64_t v) { return attach(ctx, mk_sint(v)); }
+static int w_f64(void *ctx, double v) { return attach(ctx, cbor_build_float8(v)); }
+static int w_str(void *ctx, const char *s) { return attach(ctx, mk_str(s)); }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
-    cbor_item_t *item = fx_to_item(fx);
-    if (!item) return -1;
-    size_t len = cbor_serialize(item, buf, cap);
-    cbor_decref(&item);
+    lcw c = {0};
+    v2_writer_t w = {
+        .ctx = &c, .begin_map = w_begin_map, .end_map = w_end_map,
+        .begin_array = w_begin_array, .end_array = w_end_array,
+        .key = w_key, .put_bool = w_bool, .put_i64 = w_i64, .put_f64 = w_f64, .put_str = w_str,
+    };
+    if (v2_write_fixture(fx, &w) != 0 || c.err || !c.root) {
+        if (c.root) cbor_decref(&c.root);
+        return -1;
+    }
+    size_t len = cbor_serialize(c.root, buf, cap);
+    cbor_decref(&c.root);
     if (len == 0 || len > cap) return -1;
     *ol = len;
     return 0;

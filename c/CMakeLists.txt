@@ -21,6 +21,7 @@ set(BENCH_SOURCES
   src/batch_cell.c
   src/runner.c
   src/register_serializers.c
+  src/v2_codec.c
   src/serializers/ser_custom_binary.c
 )
 set(BENCH_LIBS m)
