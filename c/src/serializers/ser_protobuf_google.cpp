@@ -15,7 +15,6 @@ namespace {
 
 using google::protobuf::MessageLite;
 std::string g_version;
-std::unique_ptr<MessageLite> g_prepared;
 std::unique_ptr<MessageLite> g_dst;
 test_data_kind_t g_kind = TD_COUNT;
 
@@ -173,19 +172,31 @@ void from_proto(test_fixture_t* out, test_data_kind_t kind, const MessageLite& m
   }
 }
 
+/*
+ * Official libprotobuf path (MessageLite::SerializeToArray / ParseFromArray).
+ * Docs: https://protobuf.dev/reference/cpp/api-docs/google.protobuf.message_lite/
+ *
+ * Batch cells (N>1) call serialize once per instance with distinct fixtures
+ * (see batch_cell.c). We must encode *that* fixture — not a single prepared
+ * message — or fidelity fails and the runner drops the whole N cell.
+ */
 int prep(test_data_kind_t k, const test_fixture_t* fx) {
   g_kind = k;
-  g_prepared = to_proto(fx);
-  if (!g_prepared) return -1;
-  g_dst.reset(g_prepared->New());
+  /* Validate conversion + allocate typed parse target (untimed). */
+  auto probe = to_proto(fx);
+  if (!probe) return -1;
+  g_dst.reset(probe->New());
   return 0;
 }
 
-int ser(const test_fixture_t*, uint8_t* buf, size_t cap, size_t* ol) {
-  if (!g_prepared) return -1;
-  int sz = static_cast<int>(g_prepared->ByteSizeLong());
+int ser(const test_fixture_t* fx, uint8_t* buf, size_t cap, size_t* ol) {
+  if (!fx) return -1;
+  /* Always build from the fixture passed by the harness (batch-safe). */
+  auto msg = to_proto(fx);
+  if (!msg) return -1;
+  int sz = static_cast<int>(msg->ByteSizeLong());
   if (sz < 0 || static_cast<size_t>(sz) > cap) return -1;
-  if (sz > 0 && !g_prepared->SerializeToArray(buf, sz)) return -1;
+  if (sz > 0 && !msg->SerializeToArray(buf, sz)) return -1;
   *ol = static_cast<size_t>(sz);
   return 0;
 }
