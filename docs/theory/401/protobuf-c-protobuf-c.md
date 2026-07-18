@@ -23,8 +23,8 @@ This article assumes the [wire format](protobuf-wire-format.md) article.
 ## Mental model
 
 ```text
-  .proto ──protoc-gen-c──►  struct MessageV2 { ... };  /* illustrative */
-                            ProtobufCMessageDescriptor person_descriptor
+  .proto ──protoc-gen-c──►  struct Suite__Message { ... };  /* illustrative */
+                            ProtobufCMessageDescriptor suite__message__descriptor
                                       │
    message* + descriptor ──get_packed_size / pack──► uint8_t[]
    bytes + descriptor ──unpack──► heap message ──free_unpacked──►
@@ -36,18 +36,18 @@ Every message instance begins with descriptor linkage so the runtime can treat i
 
 ```c
 /* names are illustrative—generators apply their own prefixing */
-/* illustrative */ Suite__Message msg = SUITE__MESSAGE__INIT;
-person.first_name = "Ada";
-person.age = 36;
+Suite__Message msg = SUITE__MESSAGE__INIT;
+msg.f_string = "Ada";
+msg.f_int32 = 36;
 
-size_t sz = protobuf_c_message_get_packed_size((const ProtobufCMessage *)&person);
+size_t sz = protobuf_c_message_get_packed_size((const ProtobufCMessage *)&msg);
 uint8_t *buf = malloc(sz);
-size_t n = protobuf_c_message_pack((const ProtobufCMessage *)&person, buf);
+size_t n = protobuf_c_message_pack((const ProtobufCMessage *)&msg, buf);
 
 Suite__Message *out =
-    benchmark_data__person__unpack(NULL, n, buf);
+    suite__message__unpack(NULL, n, buf);
 /* use out */
-benchmark_data__person__free_unpacked(out, NULL);
+suite__message__free_unpacked(out, NULL);
 free(buf);
 ```
 

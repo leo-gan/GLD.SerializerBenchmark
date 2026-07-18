@@ -1,4 +1,4 @@
-"""Protobuf — Data Model v2 messages (schemas/v2). Serializer kept; V1 Person mapping removed."""
+"""Protobuf — suite Data Model v2 messages (schemas/v2)."""
 
 from __future__ import annotations
 

@@ -17,9 +17,7 @@ test('suite types are official V2 only', () => {
   const names = allFixturesV2(42).map((f) => f.name);
   assert.deepEqual(names, V2_TYPE_IDS);
   assert.equal(names.length, 5);
-  for (const banned of ['Person', 'SimpleObject', 'Integer', 'EDI_835', 'ObjectGraph', 'StringArray']) {
-    assert.ok(!names.includes(banned), `must not include V1 ${banned}`);
-  }
+  assert.ok(!names.includes('not-a-suite-type'));
 });
 
 test('makeOne produces expected shapes', () => {

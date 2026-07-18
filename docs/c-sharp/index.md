@@ -49,7 +49,7 @@ This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 
 ### Caveats
 
-- **Domain is Data Model v2 only**: types `Message`, `Document`, `Telemetry`, `Strings`, `Event` (+ batch wrappers) in [`c-sharp/src/TestData/V2/Models.cs`](../../c-sharp/src/TestData/V2/Models.cs). There are no legacy suite types (`SimpleObject`, `EDI835`, etc.) and no rename/proxy layer.
+- **Domain types:** `Message`, `Document`, `Telemetry`, `Strings`, `Event` (+ batch wrappers) in [`c-sharp/src/TestData/V2/Models.cs`](../../c-sharp/src/TestData/V2/Models.cs).
 - All registered serializers run on all suite fixtures. Most serialize domain types **directly** (attributes on the V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …).
 - A few codecs still need untimed `PrepareData` / `ToDomain` for **library wire format** (not old→new type mapping): Google.Protobuf (`IMessage` from `.proto`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (blob + MemoryPack payload), CsvHelper / BinaryPack / ExtendedXml / Migrant (string envelopes where the library cannot hold nested graphs on net8). See serializer source comments.
 - **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.

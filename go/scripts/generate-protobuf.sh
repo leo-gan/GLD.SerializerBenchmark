@@ -16,7 +16,7 @@ if [[ ! -f "$PROTO_SRC" ]]; then
   exit 1
 fi
 
-# V1 bindings removed; drop any leftover gen/pb.
+# Drop any leftover outdated gen/pb tree; output is gen/pbv2 only.
 rm -rf "$GO_DIR/gen/pb"
 mkdir -p "$GO_DIR/gen/pbv2"
 TMP_DIR="$(mktemp -d)"

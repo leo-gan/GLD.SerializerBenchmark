@@ -1,4 +1,4 @@
-"""Data fixtures — Data Model v2 only (V1 Person/EDI removed)."""
+"""Data fixtures — suite type ids (message, document, telemetry, strings, event)."""
 from ..data_v2 import (
     Document,
     Event,

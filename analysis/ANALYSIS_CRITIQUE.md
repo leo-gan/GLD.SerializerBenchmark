@@ -70,7 +70,7 @@ It sits between raw harness output (timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.c
 **What actually appears in published docs:**
 
 - Pivot tables: only `avg_time_total_ns` and `avg_ops_per_sec` (means)
-- One arbitrary sample under “Scientific metrics” (e.g. “MS Binary / Person / string”)
+- One arbitrary sample under “Scientific metrics” (e.g. “MS Binary / message / string”)
 - No table of CIs or effect sizes for all serializers
 
 Result: the package advertises publication-grade methods while the user-visible product is still largely spreadsheet-era means. The expensive stats work has low ROI today.

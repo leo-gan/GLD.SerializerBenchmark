@@ -1,4 +1,4 @@
-"""Lightweight cross-checks on v2 fixtures (replaces V1 ObjectGraph sanity)."""
+"""Lightweight cross-checks on suite fixtures."""
 from __future__ import annotations
 
 import sys
