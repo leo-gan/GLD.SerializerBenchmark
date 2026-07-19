@@ -9,86 +9,247 @@
 #include <jsoncons_ext/msgpack/msgpack.hpp>
 
 #include <cstring>
+#include <string_view>
 #include <type_traits>
+
+// Non-intrusive msgpack-c adaptor specializations for the domain structs.
+// Wire format is identical to what intrusive MSGPACK_DEFINE_MAP(...) inside
+// the structs would produce (map keyed by field name); keeping them here
+// avoids a msgpack dependency in the shared bench/types.hpp. With these,
+// packer::pack() and object::convert()/as() move data directly between
+// msgpack and the structs with no intermediate DOM.
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+namespace adaptor {
+
+inline std::string_view mp_key(const msgpack::object& k) {
+  if (k.type != msgpack::type::STR) throw msgpack::type_error();
+  return {k.via.str.ptr, k.via.str.size};
+}
+
+template <>
+struct pack<bench::Message> {
+  template <typename Stream>
+  msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& pk, const bench::Message& m) const {
+    pk.pack_map(8);
+    pk.pack("f_bool"); pk.pack(m.f_bool);
+    pk.pack("f_int32"); pk.pack(m.f_int32);
+    pk.pack("f_int64"); pk.pack(m.f_int64);
+    pk.pack("f_float64"); pk.pack(m.f_float64);
+    pk.pack("f_string"); pk.pack(m.f_string);
+    pk.pack("f_bool_2"); pk.pack(m.f_bool_2);
+    pk.pack("f_int32_2"); pk.pack(m.f_int32_2);
+    pk.pack("f_string_2"); pk.pack(m.f_string_2);
+    return pk;
+  }
+};
+template <>
+struct convert<bench::Message> {
+  const msgpack::object& operator()(const msgpack::object& o, bench::Message& m) const {
+    if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+    for (uint32_t i = 0; i < o.via.map.size; ++i) {
+      const msgpack::object_kv& kv = o.via.map.ptr[i];
+      const auto k = mp_key(kv.key);
+      if (k == "f_bool") kv.val.convert(m.f_bool);
+      else if (k == "f_int32") kv.val.convert(m.f_int32);
+      else if (k == "f_int64") kv.val.convert(m.f_int64);
+      else if (k == "f_float64") kv.val.convert(m.f_float64);
+      else if (k == "f_string") kv.val.convert(m.f_string);
+      else if (k == "f_bool_2") kv.val.convert(m.f_bool_2);
+      else if (k == "f_int32_2") kv.val.convert(m.f_int32_2);
+      else if (k == "f_string_2") kv.val.convert(m.f_string_2);
+    }
+    return o;
+  }
+};
+
+template <>
+struct pack<bench::DocumentMeta> {
+  template <typename Stream>
+  msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& pk, const bench::DocumentMeta& m) const {
+    pk.pack_map(2);
+    pk.pack("region"); pk.pack(m.region);
+    pk.pack("version"); pk.pack(m.version);
+    return pk;
+  }
+};
+template <>
+struct convert<bench::DocumentMeta> {
+  const msgpack::object& operator()(const msgpack::object& o, bench::DocumentMeta& m) const {
+    if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+    for (uint32_t i = 0; i < o.via.map.size; ++i) {
+      const msgpack::object_kv& kv = o.via.map.ptr[i];
+      const auto k = mp_key(kv.key);
+      if (k == "region") kv.val.convert(m.region);
+      else if (k == "version") kv.val.convert(m.version);
+    }
+    return o;
+  }
+};
+
+template <>
+struct pack<bench::DocumentItem> {
+  template <typename Stream>
+  msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& pk, const bench::DocumentItem& m) const {
+    pk.pack_map(3);
+    pk.pack("sku"); pk.pack(m.sku);
+    pk.pack("qty"); pk.pack(m.qty);
+    pk.pack("price_minor"); pk.pack(m.price_minor);
+    return pk;
+  }
+};
+template <>
+struct convert<bench::DocumentItem> {
+  const msgpack::object& operator()(const msgpack::object& o, bench::DocumentItem& m) const {
+    if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+    for (uint32_t i = 0; i < o.via.map.size; ++i) {
+      const msgpack::object_kv& kv = o.via.map.ptr[i];
+      const auto k = mp_key(kv.key);
+      if (k == "sku") kv.val.convert(m.sku);
+      else if (k == "qty") kv.val.convert(m.qty);
+      else if (k == "price_minor") kv.val.convert(m.price_minor);
+    }
+    return o;
+  }
+};
+
+template <>
+struct pack<bench::Document> {
+  template <typename Stream>
+  msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& pk, const bench::Document& m) const {
+    pk.pack_map(4);
+    pk.pack("id"); pk.pack(m.id);
+    pk.pack("status"); pk.pack(m.status);
+    pk.pack("meta"); pk.pack(m.meta);
+    pk.pack("items"); pk.pack(m.items);
+    return pk;
+  }
+};
+template <>
+struct convert<bench::Document> {
+  const msgpack::object& operator()(const msgpack::object& o, bench::Document& m) const {
+    if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+    for (uint32_t i = 0; i < o.via.map.size; ++i) {
+      const msgpack::object_kv& kv = o.via.map.ptr[i];
+      const auto k = mp_key(kv.key);
+      if (k == "id") kv.val.convert(m.id);
+      else if (k == "status") kv.val.convert(m.status);
+      else if (k == "meta") kv.val.convert(m.meta);
+      else if (k == "items") kv.val.convert(m.items);
+    }
+    return o;
+  }
+};
+
+template <>
+struct pack<bench::Telemetry> {
+  template <typename Stream>
+  msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& pk, const bench::Telemetry& m) const {
+    pk.pack_map(4);
+    pk.pack("source"); pk.pack(m.source);
+    pk.pack("ts"); pk.pack(m.ts);
+    pk.pack("tags"); pk.pack(m.tags);
+    pk.pack("values"); pk.pack(m.values);
+    return pk;
+  }
+};
+template <>
+struct convert<bench::Telemetry> {
+  const msgpack::object& operator()(const msgpack::object& o, bench::Telemetry& m) const {
+    if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+    for (uint32_t i = 0; i < o.via.map.size; ++i) {
+      const msgpack::object_kv& kv = o.via.map.ptr[i];
+      const auto k = mp_key(kv.key);
+      if (k == "source") kv.val.convert(m.source);
+      else if (k == "ts") kv.val.convert(m.ts);
+      else if (k == "tags") kv.val.convert(m.tags);
+      else if (k == "values") kv.val.convert(m.values);
+    }
+    return o;
+  }
+};
+
+template <>
+struct pack<bench::Strings> {
+  template <typename Stream>
+  msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& pk, const bench::Strings& m) const {
+    pk.pack_map(1);
+    pk.pack("items"); pk.pack(m.items);
+    return pk;
+  }
+};
+template <>
+struct convert<bench::Strings> {
+  const msgpack::object& operator()(const msgpack::object& o, bench::Strings& m) const {
+    if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+    for (uint32_t i = 0; i < o.via.map.size; ++i) {
+      const msgpack::object_kv& kv = o.via.map.ptr[i];
+      if (mp_key(kv.key) == "items") kv.val.convert(m.items);
+    }
+    return o;
+  }
+};
+
+template <>
+struct pack<bench::EventAttr> {
+  template <typename Stream>
+  msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& pk, const bench::EventAttr& m) const {
+    pk.pack_map(2);
+    pk.pack("key"); pk.pack(m.key);
+    pk.pack("value"); pk.pack(m.value);
+    return pk;
+  }
+};
+template <>
+struct convert<bench::EventAttr> {
+  const msgpack::object& operator()(const msgpack::object& o, bench::EventAttr& m) const {
+    if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+    for (uint32_t i = 0; i < o.via.map.size; ++i) {
+      const msgpack::object_kv& kv = o.via.map.ptr[i];
+      const auto k = mp_key(kv.key);
+      if (k == "key") kv.val.convert(m.key);
+      else if (k == "value") kv.val.convert(m.value);
+    }
+    return o;
+  }
+};
+
+template <>
+struct pack<bench::Event> {
+  template <typename Stream>
+  msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& pk, const bench::Event& m) const {
+    pk.pack_map(5);
+    pk.pack("event_id"); pk.pack(m.event_id);
+    pk.pack("event_type"); pk.pack(m.event_type);
+    pk.pack("occurred_at"); pk.pack(m.occurred_at);
+    pk.pack("producer"); pk.pack(m.producer);
+    pk.pack("attrs"); pk.pack(m.attrs);
+    return pk;
+  }
+};
+template <>
+struct convert<bench::Event> {
+  const msgpack::object& operator()(const msgpack::object& o, bench::Event& m) const {
+    if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+    for (uint32_t i = 0; i < o.via.map.size; ++i) {
+      const msgpack::object_kv& kv = o.via.map.ptr[i];
+      const auto k = mp_key(kv.key);
+      if (k == "event_id") kv.val.convert(m.event_id);
+      else if (k == "event_type") kv.val.convert(m.event_type);
+      else if (k == "occurred_at") kv.val.convert(m.occurred_at);
+      else if (k == "producer") kv.val.convert(m.producer);
+      else if (k == "attrs") kv.val.convert(m.attrs);
+    }
+    return o;
+  }
+};
+
+}  // namespace adaptor
+}  // MSGPACK_API_VERSION_NAMESPACE
+}  // namespace msgpack
 
 namespace bench {
 namespace {
-
-template <typename Stream>
-void pack_value(Stream& pk, const Message& m) {
-  pk.pack_map(8);
-  pk.pack("f_bool"); pk.pack(m.f_bool);
-  pk.pack("f_int32"); pk.pack(m.f_int32);
-  pk.pack("f_int64"); pk.pack(m.f_int64);
-  pk.pack("f_float64"); pk.pack(m.f_float64);
-  pk.pack("f_string"); pk.pack(m.f_string);
-  pk.pack("f_bool_2"); pk.pack(m.f_bool_2);
-  pk.pack("f_int32_2"); pk.pack(m.f_int32_2);
-  pk.pack("f_string_2"); pk.pack(m.f_string_2);
-}
-template <typename Stream>
-void pack_value(Stream& pk, const DocumentMeta& m) {
-  pk.pack_map(2); pk.pack("region"); pk.pack(m.region); pk.pack("version"); pk.pack(m.version);
-}
-template <typename Stream>
-void pack_value(Stream& pk, const DocumentItem& m) {
-  pk.pack_map(3); pk.pack("sku"); pk.pack(m.sku); pk.pack("qty"); pk.pack(m.qty);
-  pk.pack("price_minor"); pk.pack(m.price_minor);
-}
-template <typename Stream>
-void pack_value(Stream& pk, const Document& m) {
-  pk.pack_map(4); pk.pack("id"); pk.pack(m.id); pk.pack("status"); pk.pack(m.status);
-  pk.pack("meta"); pack_value(pk, m.meta);
-  pk.pack("items"); pk.pack_array(m.items.size());
-  for (const auto& it : m.items) pack_value(pk, it);
-}
-template <typename Stream>
-void pack_value(Stream& pk, const Telemetry& m) {
-  pk.pack_map(4); pk.pack("source"); pk.pack(m.source); pk.pack("ts"); pk.pack(m.ts);
-  pk.pack("tags"); pk.pack(m.tags); pk.pack("values"); pk.pack(m.values);
-}
-template <typename Stream>
-void pack_value(Stream& pk, const Strings& m) {
-  pk.pack_map(1); pk.pack("items"); pk.pack(m.items);
-}
-template <typename Stream>
-void pack_value(Stream& pk, const EventAttr& m) {
-  pk.pack_map(2); pk.pack("key"); pk.pack(m.key); pk.pack("value"); pk.pack(m.value);
-}
-template <typename Stream>
-void pack_value(Stream& pk, const Event& m) {
-  pk.pack_map(5); pk.pack("event_id"); pk.pack(m.event_id); pk.pack("event_type"); pk.pack(m.event_type);
-  pk.pack("occurred_at"); pk.pack(m.occurred_at); pk.pack("producer"); pk.pack(m.producer);
-  pk.pack("attrs"); pk.pack_array(m.attrs.size());
-  for (const auto& a : m.attrs) pack_value(pk, a);
-}
-
-static nlohmann::json mp_to_json(const msgpack::object& o) {
-  switch (o.type) {
-    case msgpack::type::NIL: return nullptr;
-    case msgpack::type::BOOLEAN: return o.via.boolean;
-    case msgpack::type::POSITIVE_INTEGER: return o.via.u64;
-    case msgpack::type::NEGATIVE_INTEGER: return o.via.i64;
-    case msgpack::type::FLOAT32:
-    case msgpack::type::FLOAT64: return o.via.f64;
-    case msgpack::type::STR: return std::string(o.via.str.ptr, o.via.str.size);
-    case msgpack::type::BIN: return std::string(o.via.bin.ptr, o.via.bin.size);
-    case msgpack::type::ARRAY: {
-      nlohmann::json a = nlohmann::json::array();
-      for (uint32_t i = 0; i < o.via.array.size; ++i) a.push_back(mp_to_json(o.via.array.ptr[i]));
-      return a;
-    }
-    case msgpack::type::MAP: {
-      nlohmann::json m = nlohmann::json::object();
-      for (uint32_t i = 0; i < o.via.map.size; ++i) {
-        auto k = mp_to_json(o.via.map.ptr[i].key);
-        m[k.is_string() ? k.get<std::string>() : k.dump()] = mp_to_json(o.via.map.ptr[i].val);
-      }
-      return m;
-    }
-    default: throw std::runtime_error("msgpack type unsupported");
-  }
-}
 
 class MsgpackSer final : public ISerializer {
  public:
@@ -108,8 +269,14 @@ class MsgpackSer final : public ISerializer {
     return {sbuf.data(), sbuf.data() + sbuf.size()};
   }
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    auto oh = msgpack::unpack(reinterpret_cast<const char*>(data.data()), data.size());
-    return json_to_value(mp_to_json(oh.get()), type_id_, n_);
+    // Reference func: keep STR/BIN as references into `data` (alive for the
+    // whole call) instead of copying into the zone; convert() then copies
+    // once, straight into the domain structs. The stream path needs no
+    // equivalent — msgpack::unpacker's default_reference_func already
+    // references its refcounted internal buffer.
+    auto oh = msgpack::unpack(reinterpret_cast<const char*>(data.data()), data.size(),
+                              [](msgpack::type::object_type, std::size_t, void*) { return true; });
+    return obj_to_value(oh.get());
   }
   // Docs: packer<Stream> where Stream::write(const char*, size_t); unpacker for stream feed.
   size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
@@ -126,25 +293,29 @@ class MsgpackSer final : public ISerializer {
     unp.buffer_consumed(data.size());
     msgpack::object_handle oh;
     if (!unp.next(oh)) throw std::runtime_error("msgpack unpacker: no object");
-    return json_to_value(mp_to_json(oh.get()), type_id_, n_);
+    return obj_to_value(oh.get());
   }
 
  private:
   template <typename Packer>
   void pack_all(Packer& pk) {
-    std::visit(
-        [&](const auto& v) {
-          using T = std::decay_t<decltype(v)>;
-          if constexpr (std::is_same_v<T, std::vector<Message>> || std::is_same_v<T, std::vector<Document>> ||
-                        std::is_same_v<T, std::vector<Telemetry>> || std::is_same_v<T, std::vector<Strings>> ||
-                        std::is_same_v<T, std::vector<Event>>) {
-            pk.pack_array(v.size());
-            for (const auto& el : v) pack_value(pk, el);
-          } else {
-            pack_value(pk, v);
-          }
-        },
-        value_);
+    // Adaptor pack; std::vector<T> goes through the library's vector adaptor.
+    std::visit([&](const auto& v) { pk.pack(v); }, value_);
+  }
+  // Direct object → struct conversion via the convert<> adaptors above.
+  Value obj_to_value(const msgpack::object& o) const {
+    if (n_ > 1) {
+      if (type_id_ == "message") return o.as<std::vector<Message>>();
+      if (type_id_ == "document") return o.as<std::vector<Document>>();
+      if (type_id_ == "telemetry") return o.as<std::vector<Telemetry>>();
+      if (type_id_ == "strings") return o.as<std::vector<Strings>>();
+      return o.as<std::vector<Event>>();
+    }
+    if (type_id_ == "message") return o.as<Message>();
+    if (type_id_ == "document") return o.as<Document>();
+    if (type_id_ == "telemetry") return o.as<Telemetry>();
+    if (type_id_ == "strings") return o.as<Strings>();
+    return o.as<Event>();
   }
   std::string type_id_;
   int n_ = 1;
