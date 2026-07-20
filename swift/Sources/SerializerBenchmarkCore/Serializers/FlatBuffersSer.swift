@@ -14,6 +14,9 @@ public final class FlatBuffersSerializer: BenchSerializer {
 
     private var prepared: Fixture?
     private var builder = FlatBufferBuilder(initialSize: 1024)
+    /// Bound in prepare — timed path has no multi-way fixture switch (issue #59).
+    private var encodeFn: ((inout FlatBufferBuilder, Fixture) throws -> Data)?
+    private var decodeFn: ((Data) throws -> Any)?
 
     public init() {
         self.version = PackageVersions.version(for: "flatbuffers", fallback: "24.3.25")
@@ -23,17 +26,20 @@ public final class FlatBuffersSerializer: BenchSerializer {
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture
+        encodeFn = try FlatBuffersBridge.bindEncode(for: fixture)
+        decodeFn = try FlatBuffersBridge.bindDecode(for: fixture)
         builder.clear()
-        _ = try FlatBuffersBridge.encode(into: &builder, fixture: fixture)
+        _ = try encodeFn!(&builder, fixture)
     }
 
     public func serializeBytes(_ fixture: Fixture) throws -> Data {
+        guard let encodeFn else { throw BenchError.prepareRequired }
         builder.clear()
-        return try FlatBuffersBridge.encode(into: &builder, fixture: fixture)
+        return try encodeFn(&builder, fixture)
     }
 
     public func deserializeBytes(_ data: Data) throws -> Any {
-        guard let prepared else { throw BenchError.prepareRequired }
-        return try FlatBuffersBridge.decode(data, fixture: prepared)
+        guard let decodeFn else { throw BenchError.prepareRequired }
+        return try decodeFn(data)
     }
 }

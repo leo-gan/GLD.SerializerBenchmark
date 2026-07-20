@@ -38,11 +38,13 @@ Meet the [harness contract summary](architecture.md#harness-contract-summary) an
 | Time unit | **Nanoseconds** for all runners (including C#) |
 | Modes | `bytes` and `stream` (or `string`/`stream` if matching legacy C#) |
 | Warmup | Repetition index 0 excluded by analysis |
-| Prepare outside loop | Schema compile, type registration, buffer pools — not timed |
+| Prepare outside loop | Schema compile, type registration, buffer pools, **bind fixture-kind encode fn** — not timed |
 | Timed section | Serialize + deserialize only |
+| Output buffer | Harness-owned / pre-sized buffer reused across reps (see [architecture timing methodology](architecture.md#timing-methodology-suite-wide-issue-59)) |
+| Optimization barriers | `black_box` / `DoNotOptimize` / `KeepAlive` (or equivalent) on timed I/O for native compilers |
 | Fidelity | Round-trip semantic check; write `logs/<lang>/<ts>.errors.csv` only when errors occur |
 | Optional sidecars | `*.configs.json` (environment + optional dataset/serializer metadata) |
-| Seed | Master config `reproducibility.random_seed` / `BENCHMARK_SEED` |
+| Seed | Master config `reproducibility.random_seed` / `BENCHMARK_SEED`; document PRNG + magic constants |
 
 ## 3. Test data types
 

@@ -60,6 +60,17 @@ What is timed (and what is not):
 
 CSV modes are **I/O API paths** (`bytes` / `stream`, or legacy C# `string` / `stream`)—not payload size labels. Results pages show them as **bytes mode** / **stream mode**.
 
+### Timing methodology (suite-wide; issue #59)
+
+| Concern | Policy |
+|---------|--------|
+| **Output buffer** | Prefer a **harness-owned** encode buffer (or static/pre-sized scratch) that is cleared/reused across reps so cold allocation lands in warmup. Document the language choice. Timed work is encode into that buffer (including amortized growth). Do **not** mix “always fresh alloc” and “reused buffer” across serializers of the same language without documenting both. |
+| **Optimization barriers** | On optimizing native compilers (C, C++, Rust, …), apply a language-appropriate sink/`black_box`/`DoNotOptimize`/`KeepAlive` to timed inputs and outputs so the compiler cannot DCE or hoist the work. |
+| **Fixture-kind dispatch** | Bind type-specific encode paths in **prepare** (function pointers / closures / monomorphic helpers). Timed serialize should not pay a multi-way `match`/`switch` on fixture type when the cell’s type is fixed for the whole cell. |
+| **RNG** | Deterministic **within one language** only. Prefer a well-known PRNG (or document the algorithm). Seed from `BENCHMARK_SEED` / `reproducibility.random_seed`. Document nothing-up-my-sleeve constants (e.g. π digits, golden-ratio avalanche `2^64/φ = 0x9E3779B97F4A7C15`). Cross-language payload identity is **not** required. |
+
+Rust reference implementation: `rust/README.md` and `rust/src/run_v2.rs`.
+
 ---
 
 ## Harness contract (summary)
@@ -73,6 +84,7 @@ CSV modes are **I/O API paths** (`bytes` / `stream`, or legacy C# `string` / `st
 | Timed section | Serialize + deserialize only |
 | Fidelity | Round-trip check; failures → `logs/<lang>/<ts>.errors.csv` |
 | Seed | `schemas/test_data_config.json` / config `reproducibility.random_seed` |
+| Methodology | Buffer reuse, barriers, prepare-bound kind — [Timing methodology](#timing-methodology-suite-wide-issue-59) |
 
 Full implementer checklist: [Adding a language](ADDING_A_LANGUAGE.md).
 

@@ -12,6 +12,9 @@ public final class CapnProtoSerializer: BenchSerializer {
     public let nativeKind: NativeKind = .message
 
     private var prepared: Fixture?
+    /// Bound in prepare — timed path has no multi-way fixture switch (issue #59).
+    private var encodeFn: ((Fixture) throws -> Data)?
+    private var decodeFn: ((Data) throws -> Any)?
 
     public init() {
         if let cstr = capnp_bridge_version() {
@@ -25,15 +28,18 @@ public final class CapnProtoSerializer: BenchSerializer {
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture
-        _ = try CapnpBridgeSwift.encode(fixture)
+        encodeFn = try CapnpBridgeSwift.bindEncode(for: fixture)
+        decodeFn = try CapnpBridgeSwift.bindDecode(for: fixture)
+        _ = try encodeFn!(fixture)
     }
 
     public func serializeBytes(_ fixture: Fixture) throws -> Data {
-        try CapnpBridgeSwift.encode(fixture)
+        guard let encodeFn else { throw BenchError.prepareRequired }
+        return try encodeFn(fixture)
     }
 
     public func deserializeBytes(_ data: Data) throws -> Any {
-        guard let prepared else { throw BenchError.prepareRequired }
-        return try CapnpBridgeSwift.decode(data, fixture: prepared)
+        guard let decodeFn else { throw BenchError.prepareRequired }
+        return try decodeFn(data)
     }
 }

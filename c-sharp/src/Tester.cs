@@ -183,12 +183,21 @@ namespace GLD.SerializerBenchmark
             }
         }
 
+        // Reused across streaming reps (issue #59 buffer policy).
+        [ThreadStatic] private static MemoryStream _streamScratch;
+
         private static void SingleTest(ISerDeser serializer, ITestDataDescription original, List<Error> errors,
             bool streaming, Log log, LogStorage logStorage, out bool isRepeatedError)
         {
             isRepeatedError = false;
             string serializedString = null;
-            Stream serializedStream = new MemoryStream();
+            MemoryStream serializedStream = null;
+            if (streaming)
+            {
+                serializedStream = _streamScratch ??= new MemoryStream(64 * 1024);
+                serializedStream.SetLength(0);
+                serializedStream.Position = 0;
+            }
             object processed;
             log.SerializerName = serializer.Name;
             log.SerializerVersion = serializer.Version ?? "";
@@ -219,12 +228,18 @@ namespace GLD.SerializerBenchmark
                 // Nanoseconds from high-resolution Stopwatch ticks (not TimeSpan.TotalNanoseconds,
                 // which quantizes to 100 ns and loses sub-tick precision on many platforms).
                 log.TimeSer = ElapsedNanoseconds(sw);
+                // KeepAlive: prevent JIT from DCE'ing timed work (issue #59).
+                if (streaming)
+                    GC.KeepAlive(serializedStream);
+                else
+                    GC.KeepAlive(serializedString);
 
                 processed = streaming
                     ? serializer.Deserialize(serializedStream)
                     : serializer.Deserialize(serializedString);
                 log.TimeDeser = ElapsedNanoseconds(sw) - log.TimeSer;
                 sw.Stop();
+                GC.KeepAlive(processed);
                 // Untimed domain conversion (annotated/KeyTuple → suite POCO).
                 processed = serializer.ToDomain(processed);
             }

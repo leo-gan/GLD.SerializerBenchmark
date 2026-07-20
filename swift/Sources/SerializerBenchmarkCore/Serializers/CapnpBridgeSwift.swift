@@ -3,105 +3,210 @@ import CapnpBridge
 
 /// Domain ↔ Cap'n Proto C bridge. Conversion is type-aware (schema codecs require it).
 enum CapnpBridgeSwift {
-    static func encode(_ fixture: Fixture) throws -> Data {
-        var len = 0
-        let ptr: UnsafeMutableRawPointer?
-        if fixture.instanceCount > 1 {
-            switch fixture.name {
-            case "message":
-                ptr = encodeMessages(fixture.value as! [Message], &len)
-            case "document":
-                ptr = encodeDocuments(fixture.value as! [Document], &len)
-            case "telemetry":
-                ptr = encodeTelemetries(fixture.value as! [Telemetry], &len)
-            case "strings":
-                ptr = encodeStringsList(fixture.value as! [Strings], &len)
-            case "event":
-                ptr = encodeEvents(fixture.value as! [Event], &len)
-            default:
-                throw BenchError.unknownType(fixture.name)
-            }
-        } else {
-            switch fixture.name {
-            case "message":
-                ptr = encodeOneMessage(fixture.value as! Message, &len)
-            case "document":
-                ptr = encodeOneDocument(fixture.value as! Document, &len)
-            case "telemetry":
-                ptr = encodeOneTelemetry(fixture.value as! Telemetry, &len)
-            case "strings":
-                ptr = encodeOneStrings(fixture.value as! Strings, &len)
-            case "event":
-                ptr = encodeOneEvent(fixture.value as! Event, &len)
-            default:
-                throw BenchError.unknownType(fixture.name)
-            }
-        }
-        guard let ptr else { throw BenchError.unsupported("capnp encode failed for \(fixture.name)") }
+    private static func dataFromPtr(_ ptr: UnsafeMutableRawPointer?, len: Int, name: String) throws -> Data {
+        guard let ptr else { throw BenchError.unsupported("capnp encode failed for \(name)") }
         defer { capnp_free(ptr) }
         return Data(bytes: ptr, count: len)
     }
 
-    static func decode(_ data: Data, fixture: Fixture) throws -> Any {
-        try data.withUnsafeBytes { raw -> Any in
-            let base = raw.baseAddress!
-            let n = data.count
-            if fixture.instanceCount > 1 {
-                switch fixture.name {
-                case "message":
-                    var out: UnsafeMutablePointer<CapnpCMessage>?
-                    var count = 0
-                    guard capnp_decode_batch_message(base, n, &out, &count) == 0, let out else { throw BenchError.fidelity }
-                    defer { capnp_free_batch_message(out, count) }
-                    return (0..<count).map { messageFrom(out[$0]) }
-                case "document":
-                    var out: UnsafeMutablePointer<CapnpCDocument>?
-                    var count = 0
-                    guard capnp_decode_batch_document(base, n, &out, &count) == 0, let out else { throw BenchError.fidelity }
-                    defer { capnp_free_batch_document(out, count) }
-                    return (0..<count).map { documentFrom(out[$0]) }
-                case "telemetry":
-                    var out: UnsafeMutablePointer<CapnpCTelemetry>?
-                    var count = 0
-                    guard capnp_decode_batch_telemetry(base, n, &out, &count) == 0, let out else { throw BenchError.fidelity }
-                    defer { capnp_free_batch_telemetry(out, count) }
-                    return (0..<count).map { telemetryFrom(out[$0]) }
-                case "strings":
-                    var out: UnsafeMutablePointer<CapnpCStrings>?
-                    var count = 0
-                    guard capnp_decode_batch_strings(base, n, &out, &count) == 0, let out else { throw BenchError.fidelity }
-                    defer { capnp_free_batch_strings(out, count) }
-                    return (0..<count).map { stringsFrom(out[$0]) }
-                case "event":
-                    var out: UnsafeMutablePointer<CapnpCEvent>?
-                    var count = 0
-                    guard capnp_decode_batch_event(base, n, &out, &count) == 0, let out else { throw BenchError.fidelity }
-                    defer { capnp_free_batch_event(out, count) }
-                    return (0..<count).map { eventFrom(out[$0]) }
-                default:
-                    throw BenchError.unknownType(fixture.name)
+    /// Bind monomorphic encode once in prepare (issue #59).
+    static func bindEncode(for fixture: Fixture) throws -> (Fixture) throws -> Data {
+        let batch = fixture.instanceCount > 1
+        let name = fixture.name
+        switch name {
+        case "message":
+            return batch
+                ? { fx in
+                    var len = 0
+                    let ptr = encodeMessages(fx.value as! [Message], &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
                 }
-            }
-            switch fixture.name {
-            case "message":
-                var o = CapnpCMessage(); guard capnp_decode_message(base, n, &o) == 0 else { throw BenchError.fidelity }
-                defer { capnp_free_message(&o) }; return messageFrom(o)
-            case "document":
-                var o = CapnpCDocument(); guard capnp_decode_document(base, n, &o) == 0 else { throw BenchError.fidelity }
-                defer { capnp_free_document(&o) }; return documentFrom(o)
-            case "telemetry":
-                var o = CapnpCTelemetry(); guard capnp_decode_telemetry(base, n, &o) == 0 else { throw BenchError.fidelity }
-                defer { capnp_free_telemetry(&o) }; return telemetryFrom(o)
-            case "strings":
-                var o = CapnpCStrings(); guard capnp_decode_strings(base, n, &o) == 0 else { throw BenchError.fidelity }
-                defer { capnp_free_strings(&o) }; return stringsFrom(o)
-            case "event":
-                var o = CapnpCEvent(); guard capnp_decode_event(base, n, &o) == 0 else { throw BenchError.fidelity }
-                defer { capnp_free_event(&o) }; return eventFrom(o)
-            default:
-                throw BenchError.unknownType(fixture.name)
-            }
+                : { fx in
+                    var len = 0
+                    let ptr = encodeOneMessage(fx.value as! Message, &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+        case "document":
+            return batch
+                ? { fx in
+                    var len = 0
+                    let ptr = encodeDocuments(fx.value as! [Document], &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+                : { fx in
+                    var len = 0
+                    let ptr = encodeOneDocument(fx.value as! Document, &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+        case "telemetry":
+            return batch
+                ? { fx in
+                    var len = 0
+                    let ptr = encodeTelemetries(fx.value as! [Telemetry], &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+                : { fx in
+                    var len = 0
+                    let ptr = encodeOneTelemetry(fx.value as! Telemetry, &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+        case "strings":
+            return batch
+                ? { fx in
+                    var len = 0
+                    let ptr = encodeStringsList(fx.value as! [Strings], &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+                : { fx in
+                    var len = 0
+                    let ptr = encodeOneStrings(fx.value as! Strings, &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+        case "event":
+            return batch
+                ? { fx in
+                    var len = 0
+                    let ptr = encodeEvents(fx.value as! [Event], &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+                : { fx in
+                    var len = 0
+                    let ptr = encodeOneEvent(fx.value as! Event, &len)
+                    return try dataFromPtr(ptr, len: len, name: name)
+                }
+        default:
+            throw BenchError.unknownType(name)
         }
+    }
+
+    static func bindDecode(for fixture: Fixture) throws -> (Data) throws -> Any {
+        let batch = fixture.instanceCount > 1
+        let name = fixture.name
+        switch name {
+        case "message":
+            return batch
+                ? { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        let base = raw.baseAddress!
+                        var out: UnsafeMutablePointer<CapnpCMessage>?
+                        var count = 0
+                        guard capnp_decode_batch_message(base, data.count, &out, &count) == 0, let out else {
+                            throw BenchError.fidelity
+                        }
+                        defer { capnp_free_batch_message(out, count) }
+                        return (0..<count).map { messageFrom(out[$0]) }
+                    }
+                }
+                : { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var o = CapnpCMessage()
+                        guard capnp_decode_message(raw.baseAddress!, data.count, &o) == 0 else {
+                            throw BenchError.fidelity
+                        }
+                        defer { capnp_free_message(&o) }
+                        return messageFrom(o)
+                    }
+                }
+        case "document":
+            return batch
+                ? { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var out: UnsafeMutablePointer<CapnpCDocument>?
+                        var count = 0
+                        guard capnp_decode_batch_document(raw.baseAddress!, data.count, &out, &count) == 0,
+                              let out else { throw BenchError.fidelity }
+                        defer { capnp_free_batch_document(out, count) }
+                        return (0..<count).map { documentFrom(out[$0]) }
+                    }
+                }
+                : { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var o = CapnpCDocument()
+                        guard capnp_decode_document(raw.baseAddress!, data.count, &o) == 0 else {
+                            throw BenchError.fidelity
+                        }
+                        defer { capnp_free_document(&o) }
+                        return documentFrom(o)
+                    }
+                }
+        case "telemetry":
+            return batch
+                ? { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var out: UnsafeMutablePointer<CapnpCTelemetry>?
+                        var count = 0
+                        guard capnp_decode_batch_telemetry(raw.baseAddress!, data.count, &out, &count) == 0,
+                              let out else { throw BenchError.fidelity }
+                        defer { capnp_free_batch_telemetry(out, count) }
+                        return (0..<count).map { telemetryFrom(out[$0]) }
+                    }
+                }
+                : { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var o = CapnpCTelemetry()
+                        guard capnp_decode_telemetry(raw.baseAddress!, data.count, &o) == 0 else {
+                            throw BenchError.fidelity
+                        }
+                        defer { capnp_free_telemetry(&o) }
+                        return telemetryFrom(o)
+                    }
+                }
+        case "strings":
+            return batch
+                ? { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var out: UnsafeMutablePointer<CapnpCStrings>?
+                        var count = 0
+                        guard capnp_decode_batch_strings(raw.baseAddress!, data.count, &out, &count) == 0,
+                              let out else { throw BenchError.fidelity }
+                        defer { capnp_free_batch_strings(out, count) }
+                        return (0..<count).map { stringsFrom(out[$0]) }
+                    }
+                }
+                : { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var o = CapnpCStrings()
+                        guard capnp_decode_strings(raw.baseAddress!, data.count, &o) == 0 else {
+                            throw BenchError.fidelity
+                        }
+                        defer { capnp_free_strings(&o) }
+                        return stringsFrom(o)
+                    }
+                }
+        case "event":
+            return batch
+                ? { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var out: UnsafeMutablePointer<CapnpCEvent>?
+                        var count = 0
+                        guard capnp_decode_batch_event(raw.baseAddress!, data.count, &out, &count) == 0,
+                              let out else { throw BenchError.fidelity }
+                        defer { capnp_free_batch_event(out, count) }
+                        return (0..<count).map { eventFrom(out[$0]) }
+                    }
+                }
+                : { data in
+                    try data.withUnsafeBytes { raw -> Any in
+                        var o = CapnpCEvent()
+                        guard capnp_decode_event(raw.baseAddress!, data.count, &o) == 0 else {
+                            throw BenchError.fidelity
+                        }
+                        defer { capnp_free_event(&o) }
+                        return eventFrom(o)
+                    }
+                }
+        default:
+            throw BenchError.unknownType(name)
+        }
+    }
+
+    // Legacy wrappers kept for any remaining call sites.
+    static func encode(_ fixture: Fixture) throws -> Data {
+        try bindEncode(for: fixture)(fixture)
+    }
+
+    static func decode(_ data: Data, fixture: Fixture) throws -> Any {
+        try bindDecode(for: fixture)(data)
     }
 
     // MARK: encode helpers (strdup held for call duration)

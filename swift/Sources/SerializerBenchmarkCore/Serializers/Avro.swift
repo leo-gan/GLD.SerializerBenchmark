@@ -15,6 +15,8 @@ public final class SwiftAvroSerializer: BenchSerializer {
     private let avro = Avro()
     private var prepared: Fixture?
     private var schema: AvroSchema?
+    /// Bound in prepare so timed path has no multi-way fixture switch (issue #59).
+    private var encodeFn: ((Fixture) throws -> Data)?
     private var decodeFn: ((Data) throws -> Any)?
 
     public init() {
@@ -30,17 +32,16 @@ public final class SwiftAvroSerializer: BenchSerializer {
             throw BenchError.unsupported("avro schema parse failed for \(fixture.name)")
         }
         schema = sch
-        // Bind typed decode without leaking suite types into serialize path.
-        decodeFn = { [avro, fixture] data in
-            try AvroSchemas.decode(avro: avro, schema: sch, data: data, fixture: fixture)
-        }
+        // Monomorphic encode/decode bound outside the timer (issue #59).
+        encodeFn = AvroSchemas.bindEncode(avro: avro, schema: sch, fixture: fixture)
+        decodeFn = AvroSchemas.bindDecode(avro: avro, schema: sch, fixture: fixture)
         // warm
         _ = try serializeBytes(fixture)
     }
 
     public func serializeBytes(_ fixture: Fixture) throws -> Data {
-        guard let schema else { throw BenchError.prepareRequired }
-        return try AvroSchemas.encode(avro: avro, schema: schema, fixture: fixture)
+        guard let encodeFn else { throw BenchError.prepareRequired }
+        return try encodeFn(fixture)
     }
 
     public func deserializeBytes(_ data: Data) throws -> Any {
@@ -126,45 +127,62 @@ enum AvroSchemas {
         }
     }
 
-    static func encode(avro: Avro, schema: AvroSchema, fixture: Fixture) throws -> Data {
-        if fixture.instanceCount > 1 {
-            switch fixture.name {
-            case "message": return try avro.encodeFrom(fixture.value as! [Message], schema: schema)
-            case "document": return try avro.encodeFrom(fixture.value as! [Document], schema: schema)
-            case "telemetry": return try avro.encodeFrom(fixture.value as! [Telemetry], schema: schema)
-            case "strings": return try avro.encodeFrom(fixture.value as! [Strings], schema: schema)
-            case "event": return try avro.encodeFrom(fixture.value as! [Event], schema: schema)
-            default: throw BenchError.unknownType(fixture.name)
-            }
-        }
+    /// Select monomorphic encode once in prepare (no timed multi-way switch).
+    static func bindEncode(avro: Avro, schema: AvroSchema, fixture: Fixture) -> (Fixture) throws -> Data {
+        let batch = fixture.instanceCount > 1
         switch fixture.name {
-        case "message": return try avro.encodeFrom(fixture.value as! Message, schema: schema)
-        case "document": return try avro.encodeFrom(fixture.value as! Document, schema: schema)
-        case "telemetry": return try avro.encodeFrom(fixture.value as! Telemetry, schema: schema)
-        case "strings": return try avro.encodeFrom(fixture.value as! Strings, schema: schema)
-        case "event": return try avro.encodeFrom(fixture.value as! Event, schema: schema)
-        default: throw BenchError.unknownType(fixture.name)
+        case "message":
+            return batch
+                ? { fx in try avro.encodeFrom(fx.value as! [Message], schema: schema) }
+                : { fx in try avro.encodeFrom(fx.value as! Message, schema: schema) }
+        case "document":
+            return batch
+                ? { fx in try avro.encodeFrom(fx.value as! [Document], schema: schema) }
+                : { fx in try avro.encodeFrom(fx.value as! Document, schema: schema) }
+        case "telemetry":
+            return batch
+                ? { fx in try avro.encodeFrom(fx.value as! [Telemetry], schema: schema) }
+                : { fx in try avro.encodeFrom(fx.value as! Telemetry, schema: schema) }
+        case "strings":
+            return batch
+                ? { fx in try avro.encodeFrom(fx.value as! [Strings], schema: schema) }
+                : { fx in try avro.encodeFrom(fx.value as! Strings, schema: schema) }
+        case "event":
+            return batch
+                ? { fx in try avro.encodeFrom(fx.value as! [Event], schema: schema) }
+                : { fx in try avro.encodeFrom(fx.value as! Event, schema: schema) }
+        default:
+            let name = fixture.name
+            return { _ in throw BenchError.unknownType(name) }
         }
     }
 
-    static func decode(avro: Avro, schema: AvroSchema, data: Data, fixture: Fixture) throws -> Any {
-        if fixture.instanceCount > 1 {
-            switch fixture.name {
-            case "message": return try avro.decodeFrom(from: data, schema: schema) as [Message]
-            case "document": return try avro.decodeFrom(from: data, schema: schema) as [Document]
-            case "telemetry": return try avro.decodeFrom(from: data, schema: schema) as [Telemetry]
-            case "strings": return try avro.decodeFrom(from: data, schema: schema) as [Strings]
-            case "event": return try avro.decodeFrom(from: data, schema: schema) as [Event]
-            default: throw BenchError.unknownType(fixture.name)
-            }
-        }
+    static func bindDecode(avro: Avro, schema: AvroSchema, fixture: Fixture) -> (Data) throws -> Any {
+        let batch = fixture.instanceCount > 1
         switch fixture.name {
-        case "message": return try avro.decodeFrom(from: data, schema: schema) as Message
-        case "document": return try avro.decodeFrom(from: data, schema: schema) as Document
-        case "telemetry": return try avro.decodeFrom(from: data, schema: schema) as Telemetry
-        case "strings": return try avro.decodeFrom(from: data, schema: schema) as Strings
-        case "event": return try avro.decodeFrom(from: data, schema: schema) as Event
-        default: throw BenchError.unknownType(fixture.name)
+        case "message":
+            return batch
+                ? { data in try avro.decodeFrom(from: data, schema: schema) as [Message] }
+                : { data in try avro.decodeFrom(from: data, schema: schema) as Message }
+        case "document":
+            return batch
+                ? { data in try avro.decodeFrom(from: data, schema: schema) as [Document] }
+                : { data in try avro.decodeFrom(from: data, schema: schema) as Document }
+        case "telemetry":
+            return batch
+                ? { data in try avro.decodeFrom(from: data, schema: schema) as [Telemetry] }
+                : { data in try avro.decodeFrom(from: data, schema: schema) as Telemetry }
+        case "strings":
+            return batch
+                ? { data in try avro.decodeFrom(from: data, schema: schema) as [Strings] }
+                : { data in try avro.decodeFrom(from: data, schema: schema) as Strings }
+        case "event":
+            return batch
+                ? { data in try avro.decodeFrom(from: data, schema: schema) as [Event] }
+                : { data in try avro.decodeFrom(from: data, schema: schema) as Event }
+        default:
+            let name = fixture.name
+            return { _ in throw BenchError.unknownType(name) }
         }
     }
 }

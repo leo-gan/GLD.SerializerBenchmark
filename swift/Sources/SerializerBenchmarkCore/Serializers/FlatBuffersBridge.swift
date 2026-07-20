@@ -2,63 +2,190 @@ import Foundation
 import FlatBuffers
 
 enum FlatBuffersBridge {
-    static func encode(into fbb: inout FlatBufferBuilder, fixture: Fixture) throws -> Data {
-        let root: Offset
-        let kind: benchmark_v2_FixtureKind
-        if fixture.instanceCount > 1 {
-            switch fixture.name {
-            case "message":
-                let batch = encodeBatchMessage(&fbb, fixture.value as! [Message])
-                kind = .batchmessage
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, batchMessageOffset: batch)
-            case "document":
-                let batch = encodeBatchDocument(&fbb, fixture.value as! [Document])
-                kind = .batchdocument
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, batchDocumentOffset: batch)
-            case "telemetry":
-                let batch = encodeBatchTelemetry(&fbb, fixture.value as! [Telemetry])
-                kind = .batchtelemetry
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, batchTelemetryOffset: batch)
-            case "strings":
-                let batch = encodeBatchStrings(&fbb, fixture.value as! [Strings])
-                kind = .batchstrings
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, batchStringsOffset: batch)
-            case "event":
-                let batch = encodeBatchEvent(&fbb, fixture.value as! [Event])
-                kind = .batchevent
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, batchEventOffset: batch)
-            default:
-                throw BenchError.unknownType(fixture.name)
-            }
-        } else {
-            switch fixture.name {
-            case "message":
-                let o = encodeMessage(&fbb, fixture.value as! Message)
-                kind = .message
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, messageOffset: o)
-            case "document":
-                let o = encodeDocument(&fbb, fixture.value as! Document)
-                kind = .document
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, documentOffset: o)
-            case "telemetry":
-                let o = encodeTelemetry(&fbb, fixture.value as! Telemetry)
-                kind = .telemetry
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, telemetryOffset: o)
-            case "strings":
-                let o = encodeStrings(&fbb, fixture.value as! Strings)
-                kind = .strings
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, stringsOffset: o)
-            case "event":
-                let o = encodeEvent(&fbb, fixture.value as! Event)
-                kind = .event
-                root = benchmark_v2_FixtureRoot.createFixtureRoot(&fbb, kind: kind, eventOffset: o)
-            default:
-                throw BenchError.unknownType(fixture.name)
-            }
+    /// Bind monomorphic encode once in prepare (issue #59).
+    static func bindEncode(for fixture: Fixture) throws -> (inout FlatBufferBuilder, Fixture) throws -> Data {
+        let batch = fixture.instanceCount > 1
+        switch fixture.name {
+        case "message":
+            return batch
+                ? { fbb, fx in
+                    let batchOff = encodeBatchMessage(&fbb, fx.value as! [Message])
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .batchmessage, batchMessageOffset: batchOff)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+                : { fbb, fx in
+                    let o = encodeMessage(&fbb, fx.value as! Message)
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .message, messageOffset: o)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+        case "document":
+            return batch
+                ? { fbb, fx in
+                    let batchOff = encodeBatchDocument(&fbb, fx.value as! [Document])
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .batchdocument, batchDocumentOffset: batchOff)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+                : { fbb, fx in
+                    let o = encodeDocument(&fbb, fx.value as! Document)
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .document, documentOffset: o)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+        case "telemetry":
+            return batch
+                ? { fbb, fx in
+                    let batchOff = encodeBatchTelemetry(&fbb, fx.value as! [Telemetry])
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .batchtelemetry, batchTelemetryOffset: batchOff)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+                : { fbb, fx in
+                    let o = encodeTelemetry(&fbb, fx.value as! Telemetry)
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .telemetry, telemetryOffset: o)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+        case "strings":
+            return batch
+                ? { fbb, fx in
+                    let batchOff = encodeBatchStrings(&fbb, fx.value as! [Strings])
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .batchstrings, batchStringsOffset: batchOff)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+                : { fbb, fx in
+                    let o = encodeStrings(&fbb, fx.value as! Strings)
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .strings, stringsOffset: o)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+        case "event":
+            return batch
+                ? { fbb, fx in
+                    let batchOff = encodeBatchEvent(&fbb, fx.value as! [Event])
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .batchevent, batchEventOffset: batchOff)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+                : { fbb, fx in
+                    let o = encodeEvent(&fbb, fx.value as! Event)
+                    let root = benchmark_v2_FixtureRoot.createFixtureRoot(
+                        &fbb, kind: .event, eventOffset: o)
+                    fbb.finish(offset: root)
+                    return Data(fbb.sizedByteArray)
+                }
+        default:
+            throw BenchError.unknownType(fixture.name)
         }
-        fbb.finish(offset: root)
-        // sizedByteArray is the documented finished payload view.
-        return Data(fbb.sizedByteArray)
+    }
+
+    static func bindDecode(for fixture: Fixture) throws -> (Data) throws -> Any {
+        let batch = fixture.instanceCount > 1
+        switch fixture.name {
+        case "message":
+            return batch
+                ? { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let b = root.batchMessage else { throw BenchError.fidelity }
+                    return (0..<b.itemsCount).compactMap { i -> Message? in
+                        guard let m = b.items(at: i) else { return nil }
+                        return messageDomain(m)
+                    }
+                }
+                : { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let m = root.message else { throw BenchError.fidelity }
+                    return messageDomain(m)
+                }
+        case "document":
+            return batch
+                ? { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let b = root.batchDocument else { throw BenchError.fidelity }
+                    return (0..<b.itemsCount).compactMap { i -> Document? in
+                        guard let d = b.items(at: i) else { return nil }
+                        return documentDomain(d)
+                    }
+                }
+                : { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let d = root.document else { throw BenchError.fidelity }
+                    return documentDomain(d)
+                }
+        case "telemetry":
+            return batch
+                ? { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let b = root.batchTelemetry else { throw BenchError.fidelity }
+                    return (0..<b.itemsCount).compactMap { i -> Telemetry? in
+                        guard let t = b.items(at: i) else { return nil }
+                        return telemetryDomain(t)
+                    }
+                }
+                : { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let t = root.telemetry else { throw BenchError.fidelity }
+                    return telemetryDomain(t)
+                }
+        case "strings":
+            return batch
+                ? { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let b = root.batchStrings else { throw BenchError.fidelity }
+                    return (0..<b.itemsCount).compactMap { i -> Strings? in
+                        guard let s = b.items(at: i) else { return nil }
+                        return stringsDomain(s)
+                    }
+                }
+                : { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let s = root.strings else { throw BenchError.fidelity }
+                    return stringsDomain(s)
+                }
+        case "event":
+            return batch
+                ? { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let b = root.batchEvent else { throw BenchError.fidelity }
+                    return (0..<b.itemsCount).compactMap { i -> Event? in
+                        guard let e = b.items(at: i) else { return nil }
+                        return eventDomain(e)
+                    }
+                }
+                : { data in
+                    var bytes = ByteBuffer(data: data)
+                    let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
+                    guard let e = root.event else { throw BenchError.fidelity }
+                    return eventDomain(e)
+                }
+        default:
+            throw BenchError.unknownType(fixture.name)
+        }
+    }
+
+    static func encode(into fbb: inout FlatBufferBuilder, fixture: Fixture) throws -> Data {
+        try bindEncode(for: fixture)(&fbb, fixture)
     }
 
     static func encode(_ fixture: Fixture) throws -> Data {
@@ -67,63 +194,7 @@ enum FlatBuffersBridge {
     }
 
     static func decode(_ data: Data, fixture: Fixture) throws -> Any {
-        var bytes = ByteBuffer(data: data)
-        let root: benchmark_v2_FixtureRoot = getRoot(byteBuffer: &bytes)
-        if fixture.instanceCount > 1 {
-            switch fixture.name {
-            case "message":
-                guard let b = root.batchMessage else { throw BenchError.fidelity }
-                return (0..<b.itemsCount).compactMap { i -> Message? in
-                    guard let m = b.items(at: i) else { return nil }
-                    return messageDomain(m)
-                }
-            case "document":
-                guard let b = root.batchDocument else { throw BenchError.fidelity }
-                return (0..<b.itemsCount).compactMap { i -> Document? in
-                    guard let d = b.items(at: i) else { return nil }
-                    return documentDomain(d)
-                }
-            case "telemetry":
-                guard let b = root.batchTelemetry else { throw BenchError.fidelity }
-                return (0..<b.itemsCount).compactMap { i -> Telemetry? in
-                    guard let t = b.items(at: i) else { return nil }
-                    return telemetryDomain(t)
-                }
-            case "strings":
-                guard let b = root.batchStrings else { throw BenchError.fidelity }
-                return (0..<b.itemsCount).compactMap { i -> Strings? in
-                    guard let s = b.items(at: i) else { return nil }
-                    return stringsDomain(s)
-                }
-            case "event":
-                guard let b = root.batchEvent else { throw BenchError.fidelity }
-                return (0..<b.itemsCount).compactMap { i -> Event? in
-                    guard let e = b.items(at: i) else { return nil }
-                    return eventDomain(e)
-                }
-            default:
-                throw BenchError.unknownType(fixture.name)
-            }
-        }
-        switch fixture.name {
-        case "message":
-            guard let m = root.message else { throw BenchError.fidelity }
-            return messageDomain(m)
-        case "document":
-            guard let d = root.document else { throw BenchError.fidelity }
-            return documentDomain(d)
-        case "telemetry":
-            guard let t = root.telemetry else { throw BenchError.fidelity }
-            return telemetryDomain(t)
-        case "strings":
-            guard let s = root.strings else { throw BenchError.fidelity }
-            return stringsDomain(s)
-        case "event":
-            guard let e = root.event else { throw BenchError.fidelity }
-            return eventDomain(e)
-        default:
-            throw BenchError.unknownType(fixture.name)
-        }
+        try bindDecode(for: fixture)(data)
     }
 
     private static func encodeMessage(_ fbb: inout FlatBufferBuilder, _ m: Message) -> Offset {

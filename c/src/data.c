@@ -2,11 +2,16 @@
 #include <string.h>
 #include <stdio.h>
 
-/* xorshift64* — matches C++ / other harness RNGs */
+/*
+ * Deterministic xorshift64* PRNG (within-language only; not cross-lang portable).
+ * Zero-seed / avalanche constant 0x9E3779B97F4A7C15 = floor(2^64/φ) (golden ratio;
+ * nothing-up-my-sleeve). Suite seed comes from BENCHMARK_SEED / master config.
+ */
 
 typedef struct { uint64_t state; } rng_t;
 
 static void rng_init(rng_t *r, uint64_t seed) {
+    /* floor(2^64/φ) when seed is 0 — standard avalanche / NUMS constant */
     r->state = seed ? seed : 0x9E3779B97F4A7C15ULL;
 }
 static uint64_t rng_u64(rng_t *r) {

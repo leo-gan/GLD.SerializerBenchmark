@@ -214,6 +214,10 @@ namespace GLD.SerializerBenchmark.TestData.V2
             return h == 0 ? 1UL : h;
         }
 
+        /// <summary>
+        /// Deterministic xorshift64* (within-language only). Zero seed uses
+        /// floor(2^64/φ)=0x9E3779B97F4A7C15 (golden ratio; nothing-up-my-sleeve).
+        /// </summary>
         sealed class Rng
         {
             ulong _state;

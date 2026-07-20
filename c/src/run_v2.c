@@ -150,6 +150,8 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     FILE *cp = popen(cells_cmd, "r");
     if (!cp) { csv_logger_close(log); unlink(tmpj); unlink(cells_py); return 1; }
 
+    /* Harness-owned encode/decode scratch (issue #59): fixed capacity, reused
+     * across all cells/reps — cold allocation is outside the timed path. */
     static uint8_t buf[8 * 1024 * 1024];
     const char *modes[] = { "bytes", "stream" };
     char line[512];
@@ -242,6 +244,8 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
                         rc = bench_stream_write_all(buf, out_len);
                     }
                     uint64_t t1 = bench_now_ns();
+                    bench_do_not_optimize(buf);
+                    bench_do_not_optimize(&out_len);
                     if (rc != 0) {
                         fprintf(stderr, "[ERROR] %s / %s N=%d / %s: serialize failed\n",
                                 S->name, type_id, n, mode);
@@ -259,6 +263,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
                     }
                     rc = bench_deserialize_cell(S, buf, out_len, &out_fx, fx.kind);
                     uint64_t t2 = bench_now_ns();
+                    bench_do_not_optimize(&out_fx);
                     if (rc != 0) {
                         fprintf(stderr, "[ERROR] %s / %s N=%d / %s: deserialize failed\n",
                                 S->name, type_id, n, mode);
