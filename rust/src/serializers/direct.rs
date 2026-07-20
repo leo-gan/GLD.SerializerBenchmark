@@ -1,19 +1,47 @@
 //! Direct encode/decode paths: minicbor, rkyv, nanoserde, speedy (V2 types).
+//!
+//! Each codec exposes monomorphic `ser_*` helpers (one per fixture kind) bound
+//! in `prepare` so timed encode is an indirect call, not a multi-way match.
 
 use crate::data::{Document, Event, Fixture, Message, Strings, Telemetry};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 
 use super::kinded::impl_kinded_direct;
 use super::{ver, BenchSerializer, NativeKind};
 
-fn minicbor_ser(fixture: &Fixture) -> Result<Vec<u8>> {
-    match fixture {
-        Fixture::Message(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::Document(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::Telemetry(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::Strings(v) => Ok(minicbor::to_vec(v)?),
-        Fixture::Event(v) => Ok(minicbor::to_vec(v)?),
-    }
+// ---------------------------------------------------------------------------
+// minicbor
+// ---------------------------------------------------------------------------
+
+fn minicbor_ser_message(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Message(v) = fx else {
+        bail!("minicbor: expected Message");
+    };
+    minicbor::encode(v, &mut *out).map_err(|e| anyhow!("{e}"))
+}
+fn minicbor_ser_document(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Document(v) = fx else {
+        bail!("minicbor: expected Document");
+    };
+    minicbor::encode(v, &mut *out).map_err(|e| anyhow!("{e}"))
+}
+fn minicbor_ser_telemetry(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Telemetry(v) = fx else {
+        bail!("minicbor: expected Telemetry");
+    };
+    minicbor::encode(v, &mut *out).map_err(|e| anyhow!("{e}"))
+}
+fn minicbor_ser_strings(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Strings(v) = fx else {
+        bail!("minicbor: expected Strings");
+    };
+    minicbor::encode(v, &mut *out).map_err(|e| anyhow!("{e}"))
+}
+fn minicbor_ser_event(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Event(v) = fx else {
+        bail!("minicbor: expected Event");
+    };
+    minicbor::encode(v, &mut *out).map_err(|e| anyhow!("{e}"))
 }
 
 impl_kinded_direct!(
@@ -21,7 +49,11 @@ impl_kinded_direct!(
     "minicbor",
     "0.25",
     NativeKind::Direct,
-    minicbor_ser,
+    minicbor_ser_message,
+    minicbor_ser_document,
+    minicbor_ser_telemetry,
+    minicbor_ser_strings,
+    minicbor_ser_event,
     |d| minicbor::decode::<Message>(d).map_err(|e| anyhow!("{e}")),
     |d| minicbor::decode::<Document>(d).map_err(|e| anyhow!("{e}")),
     |d| minicbor::decode::<Telemetry>(d).map_err(|e| anyhow!("{e}")),
@@ -33,24 +65,45 @@ impl_kinded_direct!(
 // rkyv — full Archive on concrete types (materialize to owned for fidelity)
 // ---------------------------------------------------------------------------
 
-fn rkyv_ser(fixture: &Fixture) -> Result<Vec<u8>> {
-    match fixture {
-        Fixture::Message(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
-            .map(|b| b.to_vec())
-            .map_err(|e| anyhow!("{e}")),
-        Fixture::Document(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
-            .map(|b| b.to_vec())
-            .map_err(|e| anyhow!("{e}")),
-        Fixture::Telemetry(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
-            .map(|b| b.to_vec())
-            .map_err(|e| anyhow!("{e}")),
-        Fixture::Strings(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
-            .map(|b| b.to_vec())
-            .map_err(|e| anyhow!("{e}")),
-        Fixture::Event(v) => rkyv::to_bytes::<rkyv::rancor::Error>(v)
-            .map(|b| b.to_vec())
-            .map_err(|e| anyhow!("{e}")),
-    }
+fn rkyv_ser_message(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Message(v) = fx else {
+        bail!("rkyv: expected Message");
+    };
+    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(v).map_err(|e| anyhow!("{e}"))?;
+    out.extend_from_slice(bytes.as_ref());
+    Ok(())
+}
+fn rkyv_ser_document(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Document(v) = fx else {
+        bail!("rkyv: expected Document");
+    };
+    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(v).map_err(|e| anyhow!("{e}"))?;
+    out.extend_from_slice(bytes.as_ref());
+    Ok(())
+}
+fn rkyv_ser_telemetry(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Telemetry(v) = fx else {
+        bail!("rkyv: expected Telemetry");
+    };
+    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(v).map_err(|e| anyhow!("{e}"))?;
+    out.extend_from_slice(bytes.as_ref());
+    Ok(())
+}
+fn rkyv_ser_strings(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Strings(v) = fx else {
+        bail!("rkyv: expected Strings");
+    };
+    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(v).map_err(|e| anyhow!("{e}"))?;
+    out.extend_from_slice(bytes.as_ref());
+    Ok(())
+}
+fn rkyv_ser_event(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    let Fixture::Event(v) = fx else {
+        bail!("rkyv: expected Event");
+    };
+    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(v).map_err(|e| anyhow!("{e}"))?;
+    out.extend_from_slice(bytes.as_ref());
+    Ok(())
 }
 
 fn rkyv_de_message(data: &[u8]) -> Result<Message> {
@@ -74,7 +127,11 @@ impl_kinded_direct!(
     "rkyv",
     "0.8",
     NativeKind::Archive,
-    rkyv_ser,
+    rkyv_ser_message,
+    rkyv_ser_document,
+    rkyv_ser_telemetry,
+    rkyv_ser_strings,
+    rkyv_ser_event,
     rkyv_de_message,
     rkyv_de_document,
     rkyv_de_telemetry,
@@ -82,15 +139,49 @@ impl_kinded_direct!(
     rkyv_de_event
 );
 
-fn nanoserde_ser(fixture: &Fixture) -> Result<Vec<u8>> {
+// ---------------------------------------------------------------------------
+// nanoserde
+// ---------------------------------------------------------------------------
+
+fn nanoserde_ser_message(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
     use nanoserde::SerBin;
-    match fixture {
-        Fixture::Message(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::Document(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::Telemetry(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::Strings(v) => Ok(SerBin::serialize_bin(v)),
-        Fixture::Event(v) => Ok(SerBin::serialize_bin(v)),
-    }
+    let Fixture::Message(v) = fx else {
+        bail!("nanoserde: expected Message");
+    };
+    out.extend_from_slice(&SerBin::serialize_bin(v));
+    Ok(())
+}
+fn nanoserde_ser_document(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use nanoserde::SerBin;
+    let Fixture::Document(v) = fx else {
+        bail!("nanoserde: expected Document");
+    };
+    out.extend_from_slice(&SerBin::serialize_bin(v));
+    Ok(())
+}
+fn nanoserde_ser_telemetry(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use nanoserde::SerBin;
+    let Fixture::Telemetry(v) = fx else {
+        bail!("nanoserde: expected Telemetry");
+    };
+    out.extend_from_slice(&SerBin::serialize_bin(v));
+    Ok(())
+}
+fn nanoserde_ser_strings(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use nanoserde::SerBin;
+    let Fixture::Strings(v) = fx else {
+        bail!("nanoserde: expected Strings");
+    };
+    out.extend_from_slice(&SerBin::serialize_bin(v));
+    Ok(())
+}
+fn nanoserde_ser_event(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use nanoserde::SerBin;
+    let Fixture::Event(v) = fx else {
+        bail!("nanoserde: expected Event");
+    };
+    out.extend_from_slice(&SerBin::serialize_bin(v));
+    Ok(())
 }
 
 impl_kinded_direct!(
@@ -98,7 +189,11 @@ impl_kinded_direct!(
     "nanoserde",
     "0.1",
     NativeKind::Direct,
-    nanoserde_ser,
+    nanoserde_ser_message,
+    nanoserde_ser_document,
+    nanoserde_ser_telemetry,
+    nanoserde_ser_strings,
+    nanoserde_ser_event,
     |d| {
         use nanoserde::DeBin;
         DeBin::deserialize_bin(d).map_err(|e| anyhow!("{e}"))
@@ -121,15 +216,49 @@ impl_kinded_direct!(
     }
 );
 
-fn speedy_ser(fixture: &Fixture) -> Result<Vec<u8>> {
+// ---------------------------------------------------------------------------
+// speedy
+// ---------------------------------------------------------------------------
+
+fn speedy_ser_message(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
     use speedy::Writable;
-    match fixture {
-        Fixture::Message(v) => Ok(v.write_to_vec()?),
-        Fixture::Document(v) => Ok(v.write_to_vec()?),
-        Fixture::Telemetry(v) => Ok(v.write_to_vec()?),
-        Fixture::Strings(v) => Ok(v.write_to_vec()?),
-        Fixture::Event(v) => Ok(v.write_to_vec()?),
-    }
+    let Fixture::Message(v) = fx else {
+        bail!("speedy: expected Message");
+    };
+    v.write_to_stream(&mut *out)?;
+    Ok(())
+}
+fn speedy_ser_document(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use speedy::Writable;
+    let Fixture::Document(v) = fx else {
+        bail!("speedy: expected Document");
+    };
+    v.write_to_stream(&mut *out)?;
+    Ok(())
+}
+fn speedy_ser_telemetry(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use speedy::Writable;
+    let Fixture::Telemetry(v) = fx else {
+        bail!("speedy: expected Telemetry");
+    };
+    v.write_to_stream(&mut *out)?;
+    Ok(())
+}
+fn speedy_ser_strings(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use speedy::Writable;
+    let Fixture::Strings(v) = fx else {
+        bail!("speedy: expected Strings");
+    };
+    v.write_to_stream(&mut *out)?;
+    Ok(())
+}
+fn speedy_ser_event(fx: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use speedy::Writable;
+    let Fixture::Event(v) = fx else {
+        bail!("speedy: expected Event");
+    };
+    v.write_to_stream(&mut *out)?;
+    Ok(())
 }
 
 impl_kinded_direct!(
@@ -137,7 +266,11 @@ impl_kinded_direct!(
     "speedy",
     "0.8",
     NativeKind::Direct,
-    speedy_ser,
+    speedy_ser_message,
+    speedy_ser_document,
+    speedy_ser_telemetry,
+    speedy_ser_strings,
+    speedy_ser_event,
     |d| {
         use speedy::Readable;
         Message::read_from_buffer(d).map_err(|e| anyhow!("{e}"))
