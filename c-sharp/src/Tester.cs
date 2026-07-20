@@ -183,8 +183,11 @@ namespace GLD.SerializerBenchmark
             }
         }
 
-        // Reused across streaming reps (issue #59 buffer policy).
-        [ThreadStatic] private static MemoryStream _streamScratch;
+        // Capacity floor for stream mode (issue #59): grow floor across reps so
+        // cold expansion is amortized; always use a writable expandable stream.
+        // Do not reuse one MemoryStream instance — some serializers leave the
+        // stream non-writable after deserialize (SetLength would throw).
+        [ThreadStatic] private static int _streamCapFloor = 64 * 1024;
 
         private static void SingleTest(ISerDeser serializer, ITestDataDescription original, List<Error> errors,
             bool streaming, Log log, LogStorage logStorage, out bool isRepeatedError)
@@ -194,9 +197,8 @@ namespace GLD.SerializerBenchmark
             MemoryStream serializedStream = null;
             if (streaming)
             {
-                serializedStream = _streamScratch ??= new MemoryStream(64 * 1024);
-                serializedStream.SetLength(0);
-                serializedStream.Position = 0;
+                if (_streamCapFloor < 64 * 1024) _streamCapFloor = 64 * 1024;
+                serializedStream = new MemoryStream(_streamCapFloor);
             }
             object processed;
             log.SerializerName = serializer.Name;
@@ -218,6 +220,8 @@ namespace GLD.SerializerBenchmark
                 {
                     serializer.Serialize(original.Data, serializedStream);
                     log.Size = (int) serializedStream.Length;
+                    if (serializedStream.Capacity > _streamCapFloor)
+                        _streamCapFloor = serializedStream.Capacity;
                 }
                 else
                 {
