@@ -135,7 +135,20 @@ check_c() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c java cpp)
+
+check_swift() {
+  echo "swift"
+  if [[ -x "${HOME}/.local/swift/usr/bin/swift" ]]; then
+    export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
+  fi
+  if command -v swift >/dev/null 2>&1; then
+    ok "swift ($(swift --version 2>/dev/null | head -1))"
+  else
+    miss "swift — ./scripts/install-host-requirements.sh swift"
+  fi
+}
+
+KNOWN=(analysis csharp python go rust javascript c java cpp swift)
 
 resolve_targets() {
   local args=("$@")
@@ -148,7 +161,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java cpp)
+      TARGETS+=(csharp python go rust javascript c java cpp swift)
     fi
     return
   fi
@@ -175,6 +188,7 @@ for t in "${TARGETS[@]}"; do
     c|native) check_c ;;
     java|jdk|jvm) check_java ;;
     cpp|c++|cxx|cplusplus) check_cpp ;;
+    swift) check_swift ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;
   esac
   echo

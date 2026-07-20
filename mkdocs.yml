@@ -145,6 +145,9 @@ nav:
   - C++:
       - Overview: cpp/index.md
       - Results: cpp/results.md
+  - Swift:
+      - Overview: swift/index.md
+      - Results: swift/results.md
   - Benchmarks:
       - Overview: analysis/index.md
       - 📊 Dashboard: dashboard/

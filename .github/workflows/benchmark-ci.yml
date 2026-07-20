@@ -56,6 +56,7 @@ jobs:
       go: ${{ steps.filter.outputs.go }}
       java: ${{ steps.filter.outputs.java }}
       cpp: ${{ steps.filter.outputs.cpp }}
+      swift: ${{ steps.filter.outputs.swift }}
       analysis: ${{ steps.filter.outputs.analysis }}
     steps:
       - uses: actions/checkout@v4
@@ -90,6 +91,9 @@ jobs:
               - 'schemas/**'
             cpp:
               - 'cpp/**'
+              - 'schemas/**'
+            swift:
+              - 'swift/**'
               - 'schemas/**'
             analysis:
               - 'analysis/**'
@@ -332,6 +336,35 @@ jobs:
           cd cpp
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+
+  swift-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.swift == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Swift toolchain
+        run: ./scripts/install-host-requirements.sh swift
+
+      - name: Setup Python for run-config resolution
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML (resolve_run_config)
+        run: pip install pyyaml
+
+      - name: Check host requirements (swift)
+        run: ./scripts/check-host-requirements.sh swift
+
+      - name: Run Swift Benchmark
+        run: |
+          cd swift
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
   analysis-unit-tests:
     needs: changes
     if: >-
@@ -366,5 +399,6 @@ jobs:
           $PY scripts/read-config.py --enabled-langs | grep -qw go
           $PY scripts/read-config.py --enabled-langs | grep -qw java
           $PY scripts/read-config.py --enabled-langs | grep -qw cpp
-          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|cpp)\|'
+          $PY scripts/read-config.py --enabled-langs | grep -qw swift
+          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|cpp|swift)\|'
           test "$($PY scripts/read-config.py --mode-reps smoke)" = "2"

@@ -147,6 +147,40 @@ install_java() {
   export PATH="$mvn_home/bin:$PATH"
 }
 
+
+install_swift() {
+  bench_extend_host_path
+  if [[ -x "${HOME}/.local/swift/usr/bin/swift" ]]; then
+    export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
+  fi
+  if command -v swift >/dev/null 2>&1; then
+    echo "[OK] swift already present: $(swift --version 2>/dev/null | head -1)"
+    return
+  fi
+  local ver=6.3.3
+  local arch
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64) ;;
+    aarch64|arm64) ;;
+    *) echo "[ERROR] Unsupported arch for Swift tarball: $arch" >&2; exit 1 ;;
+  esac
+  local dir="swift-${ver}-RELEASE-ubuntu22.04"
+  local url="https://download.swift.org/swift-${ver}-release/ubuntu2204/swift-${ver}-RELEASE/${dir}.tar.gz"
+  echo "[INFO] Installing Swift ${ver} to ~/.local/swift ..."
+  mkdir -p /tmp/swift-install "${HOME}/.local"
+  curl -fL "$url" -o /tmp/swift-install/swift.tar.gz
+  rm -rf "${HOME}/.local/swift" /tmp/swift-install/extracted
+  mkdir -p /tmp/swift-install/extracted
+  tar -xzf /tmp/swift-install/swift.tar.gz -C /tmp/swift-install/extracted
+  local top
+  top="$(find /tmp/swift-install/extracted -mindepth 1 -maxdepth 1 -type d | head -1)"
+  mv "$top" "${HOME}/.local/swift"
+  rm -f /tmp/swift-install/swift.tar.gz
+  export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
+  echo "[OK] $(swift --version | head -1)"
+}
+
 install_c_hint() {
   if command -v cmake >/dev/null 2>&1; then
     echo "[OK] cmake $(cmake --version | head -1)"
@@ -161,7 +195,7 @@ install_c_hint() {
   echo "[NOTE] C third-party libs are built by c/scripts/fetch-and-build-deps.sh on first run."
 }
 
-KNOWN=(analysis csharp python go rust javascript c java cpp)
+KNOWN=(analysis csharp python go rust javascript c java cpp swift)
 
 resolve_targets() {
   local args=("$@")
@@ -173,7 +207,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java cpp)
+      TARGETS+=(csharp python go rust javascript c java cpp swift)
     fi
     return
   fi
@@ -216,6 +250,9 @@ for t in "${TARGETS[@]}"; do
       ;;
     cpp|c++|cxx|cplusplus)
       install_cpp
+      ;;
+    swift)
+      install_swift
       ;;
     *)
       echo "[ERROR] Unknown target: $t" >&2
