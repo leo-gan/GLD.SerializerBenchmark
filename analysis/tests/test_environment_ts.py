@@ -5,11 +5,13 @@ import json
 from pathlib import Path
 
 from benchmark_analysis.environment import (
+    _public_cwd,
     _resolve_benchmark_ts,
     capture_environment,
     important_config_summary,
     load_run_config,
 )
+from benchmark_analysis.config_loader import repo_root
 from benchmark_analysis.metrics_catalog import filter_field_ids, load_metrics_config
 
 
@@ -31,6 +33,19 @@ def test_resolve_empty_when_unknown(monkeypatch):
     assert _resolve_benchmark_ts("/tmp/results.csv") == ""
 
 
+def test_public_cwd_strips_private_absolute_prefix():
+    root = repo_root().resolve()
+    repo_name = root.name
+    assert _public_cwd(str(root)) == repo_name
+    assert _public_cwd(str(root / "swift")) == f"{repo_name}/swift"
+    assert _public_cwd(str(root / "c-sharp")) == f"{repo_name}/c-sharp"
+    # Must not leak home / parent path segments.
+    pub = _public_cwd(str(root / "swift"))
+    assert not pub.startswith("/")
+    assert "/home/" not in pub
+    assert "PycharmProjects" not in pub
+
+
 def test_capture_writes_configs_json_from_csv_stem(monkeypatch, tmp_path: Path):
     monkeypatch.delenv("BENCHMARK_TS", raising=False)
     csv = tmp_path / "2026-07-01-195234.csv"
@@ -44,10 +59,15 @@ def test_capture_writes_configs_json_from_csv_stem(monkeypatch, tmp_path: Path):
     assert doc["benchmark_ts"] == "2026-07-01-195234"
     assert doc.get("schema_version") == 1
     assert "environment" in doc
+    cwd = doc["environment"]["process"]["cwd"]
+    assert not cwd.startswith("/")
+    assert "/home/" not in cwd
+    assert cwd == repo_root().resolve().name or cwd.startswith(repo_root().resolve().name + "/")
     out = tmp_path / "2026-07-01-195234.configs.json"
     assert out.is_file()
     text = out.read_text()
     assert '"benchmark_ts": "2026-07-01-195234"' in text
+    assert "/home/" not in text
     # serializers scraped from CSV when present
     assert doc.get("serializers", {}).get("count") == 1
 

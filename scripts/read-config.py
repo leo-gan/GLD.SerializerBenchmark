@@ -8,6 +8,7 @@ Examples:
   scripts/read-config.py --enabled-langs
   scripts/read-config.py --lang-runners   # id|runner_dir|runner_script
   scripts/read-config.py --logs-root
+  scripts/read-config.py --run-config-for-mode smoke
   scripts/read-config.py paths.reports_root
 """
 
@@ -32,6 +33,7 @@ from benchmark_analysis.config_loader import (  # noqa: E402
     mode_repetitions,
     random_seed,
     reports_root,
+    repo_root,
 )
 
 
@@ -53,6 +55,14 @@ def main() -> int:
         "--valid-modes",
         action="store_true",
         help="Space-separated mode names from modes:",
+    )
+    ap.add_argument(
+        "--run-config-for-mode",
+        metavar="MODE",
+        help=(
+            "Absolute path to library run config YAML for mode "
+            "(smoke → data_model_v2.smoke_run_config; else default_run_config)"
+        ),
     )
     args = ap.parse_args()
     cfg_path = args.config or str(default_config_path())
@@ -80,6 +90,23 @@ def main() -> int:
         cfg = load_master_config(cfg_path)
         modes = cfg.get("modes") or {}
         print(" ".join(str(k) for k in modes.keys()))
+        return 0
+    if args.run_config_for_mode:
+        mode = str(args.run_config_for_mode).strip().lower()
+        cfg = load_master_config(cfg_path)
+        if mode == "smoke":
+            rel = dig(cfg, "data_model_v2.smoke_run_config") or dig(
+                cfg, "data_model.smoke_run_config", "config/library/smoke.yaml"
+            )
+        else:
+            rel = dig(cfg, "data_model_v2.default_run_config") or dig(
+                cfg, "data_model.default_run_config", "config/library/default.yaml"
+            )
+        rel = str(rel or "config/library/default.yaml")
+        p = Path(rel)
+        if not p.is_absolute():
+            p = repo_root() / p
+        print(p.resolve())
         return 0
     if args.key:
         cfg = load_master_config(cfg_path)
