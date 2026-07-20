@@ -1,0 +1,92 @@
+// Data Model v2 — FlatBuffers schema (aligned with schemas/v2/protobuf/benchmark_v2.proto)
+namespace benchmark.v2;
+
+table Message {
+  f_bool:bool;
+  f_int32:int32;
+  f_int64:int64;
+  f_float64:float64;
+  f_string:string;
+  f_bool_2:bool;
+  f_int32_2:int32;
+  f_string_2:string;
+}
+
+table DocumentMeta {
+  region:string;
+  version:int32;
+}
+
+table DocumentItem {
+  sku:string;
+  qty:int32;
+  price_minor:int64;
+}
+
+table Document {
+  id:string;
+  status:int32;
+  meta:DocumentMeta;
+  items:[DocumentItem];
+}
+
+table Telemetry {
+  source:string;
+  ts:int64;
+  tags:[string];
+  values:[float64];
+}
+
+table Strings {
+  items:[string];
+}
+
+table EventAttr {
+  key:string;
+  value:string;
+}
+
+table Event {
+  event_id:string;
+  event_type:string;
+  occurred_at:int64;
+  producer:string;
+  attrs:[EventAttr];
+}
+
+// Root wrappers for batch cells
+table BatchMessage { items:[Message]; }
+table BatchDocument { items:[Document]; }
+table BatchTelemetry { items:[Telemetry]; }
+table BatchStrings { items:[Strings]; }
+table BatchEvent { items:[Event]; }
+
+// Tagged root so one buffer can hold any suite type
+enum FixtureKind : byte {
+  Message = 0,
+  Document = 1,
+  Telemetry = 2,
+  Strings = 3,
+  Event = 4,
+  BatchMessage = 5,
+  BatchDocument = 6,
+  BatchTelemetry = 7,
+  BatchStrings = 8,
+  BatchEvent = 9
+}
+
+table FixtureRoot {
+  kind:FixtureKind;
+  message:Message;
+  document:Document;
+  telemetry:Telemetry;
+  strings:Strings;
+  event:Event;
+  batch_message:BatchMessage;
+  batch_document:BatchDocument;
+  batch_telemetry:BatchTelemetry;
+  batch_strings:BatchStrings;
+  batch_event:BatchEvent;
+}
+
+root_type FixtureRoot;

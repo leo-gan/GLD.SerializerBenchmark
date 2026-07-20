@@ -157,7 +157,7 @@ def _infer_language(result_csv_path: Optional[str]) -> str:
         return (os.environ.get("BENCHMARK_LANGUAGE") or "").strip()
     low = str(result_csv_path).replace("\\", "/").lower()
     # Longer ids first so /logs/cpp/ is not mistaken for bare c.
-    for token in ("csharp", "python", "rust", "javascript", "java", "cpp", "go"):
+    for token in ("csharp", "python", "rust", "javascript", "java", "cpp", "swift", "go"):
         if f"/{token}/" in low:
             return token
     parts = [p for p in low.split("/") if p]
@@ -165,6 +165,8 @@ def _infer_language(result_csv_path: Optional[str]) -> str:
         return "cpp"
     if "java" in parts:
         return "java"
+    if "swift" in parts:
+        return "swift"
     if "c" in parts:
         return "c"
     return (os.environ.get("BENCHMARK_LANGUAGE") or "").strip()
@@ -239,6 +241,40 @@ def _serializers_block_from_csv(result_csv_path: Optional[str]) -> Dict[str, Any
         return {"error": str(exc)}
 
 
+def _public_cwd(cwd: Optional[str] = None) -> str:
+    """Return cwd as a repo-relative public path (no private absolute prefix).
+
+    Format: ``<repo-dirname>[/<path-inside-repo>]``, e.g.
+    ``seriailizer-benchmark/swift`` or ``seriailizer-benchmark`` when at root.
+
+    This keeps ``*.configs.json`` sidecars free of host home-directory paths.
+    """
+    cwd_path = Path(cwd or os.getcwd()).resolve()
+    try:
+        from .config_loader import repo_root
+
+        root = repo_root().resolve()
+    except Exception:
+        root = None
+        for p in [cwd_path, *cwd_path.parents]:
+            if (p / "config" / "benchmark_config.yaml").is_file():
+                root = p
+                break
+    if root is None:
+        # Outside monorepo: never emit a full home path; last component only.
+        return cwd_path.name or "."
+
+    repo_name = root.name
+    try:
+        rel = cwd_path.relative_to(root)
+    except ValueError:
+        return repo_name
+    rel_s = rel.as_posix()
+    if rel_s in (".", ""):
+        return repo_name
+    return f"{repo_name}/{rel_s}"
+
+
 def _gather_environment() -> Dict[str, Any]:
     return {
         "captured_at": datetime.now(timezone.utc).isoformat(),
@@ -254,7 +290,7 @@ def _gather_environment() -> Dict[str, Any]:
         "git": _git_info(),
         "process": {
             "pid": os.getpid(),
-            "cwd": os.getcwd(),
+            "cwd": _public_cwd(),
         },
     }
 
@@ -411,6 +447,7 @@ def important_config_summary(doc: Optional[Dict[str, Any]]) -> List[str]:
             "c": "gcc",
             "cpp": "g++",
             "java": "java",
+            "swift": "swift",  # may be absent until runtime capture adds it
         }
         k = key_map.get(lang_l)
         if k and runtimes.get(k):

@@ -38,15 +38,12 @@ fi
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
 export BENCHMARK_REPO_ROOT="${BENCHMARK_REPO_ROOT:-$PROJECT_ROOT}"
+
+# Library run config from master config (data_model_v2.smoke_run_config / default_run_config).
+# Caller may override with BENCHMARK_RUN_CONFIG=...
+bench_export_run_config "$MODE"
 export LOG_DIR
 
-if [[ -z "${BENCHMARK_RUN_CONFIG:-}" ]]; then
-  if [[ "$MODE" == "smoke" ]]; then
-    export BENCHMARK_RUN_CONFIG="$PROJECT_ROOT/config/library/smoke.yaml"
-  else
-    export BENCHMARK_RUN_CONFIG="$PROJECT_ROOT/config/library/default.yaml"
-  fi
-fi
 
 if ! command -v dotnet >/dev/null 2>&1; then
   echo "[ERROR] dotnet not found. Run: ./scripts/install-host-requirements.sh csharp" >&2

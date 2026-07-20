@@ -22,6 +22,7 @@ bench_extend_host_path() {
     export JAVA_HOME="${HOME}/.local/jdk-21"
   fi
   [[ -d "${HOME}/.cargo/bin" ]] && extras+=("${HOME}/.cargo/bin")
+  [[ -d "${HOME}/.local/swift/usr/bin" ]] && extras+=("${HOME}/.local/swift/usr/bin")
   if ((${#extras[@]})); then
     local joined
     joined="$(IFS=:; echo "${extras[*]}")"
@@ -92,4 +93,33 @@ bench_logs_root() {
     return
   fi
   echo "$d"
+}
+
+# Absolute path to library run-config YAML for a harness mode (from master config).
+# smoke → data_model_v2.smoke_run_config; all other modes → default_run_config.
+bench_run_config_for_mode() {
+  local mode="${1:-all-single}"
+  local path
+  path="$(bench_read_config --run-config-for-mode "$mode" 2>/dev/null)" || true
+  if [[ -n "$path" && -f "$path" ]]; then
+    echo "$path"
+    return
+  fi
+  if [[ "$mode" == "smoke" ]]; then
+    echo "${_BENCH_REPO_ROOT}/config/library/smoke.yaml"
+  else
+    echo "${_BENCH_REPO_ROOT}/config/library/default.yaml"
+  fi
+}
+
+# Export BENCHMARK_RUN_CONFIG from master config unless already set (caller override).
+# Usage in run-benchmarks.sh after MODE is known:
+#   bench_export_run_config "$MODE"
+bench_export_run_config() {
+  local mode="${1:-all-single}"
+  if [[ -n "${BENCHMARK_RUN_CONFIG:-}" ]]; then
+    return 0
+  fi
+  export BENCHMARK_RUN_CONFIG
+  BENCHMARK_RUN_CONFIG="$(bench_run_config_for_mode "$mode")"
 }

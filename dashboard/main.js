@@ -58,6 +58,7 @@ const LANGUAGE_CATALOG = [
   { id: 'c', label: 'C' },
   { id: 'java', label: 'Java' },
   { id: 'cpp', label: 'C++' },
+  { id: 'swift', label: 'Swift' },
 ];
 
 /** Metrics shown as rows in the cross-language matrix. */
@@ -122,8 +123,29 @@ let state = {
   historicalRuns: {} // Maps language -> array of runIds
 };
 
+/** Fill the main Language toolbar select from LANGUAGE_CATALOG (single source of truth). */
+function populateLanguageSelect() {
+  const sel = document.getElementById('lang-select');
+  if (!sel) return;
+  const prev = sel.value || state.currentLanguage;
+  sel.innerHTML = '';
+  for (const lang of LANGUAGE_CATALOG) {
+    const opt = document.createElement('option');
+    opt.value = lang.id;
+    opt.textContent = lang.label;
+    sel.appendChild(opt);
+  }
+  if ([...sel.options].some((o) => o.value === prev)) {
+    sel.value = prev;
+  } else if (sel.options.length) {
+    sel.value = sel.options[0].value;
+    state.currentLanguage = sel.value;
+  }
+}
+
 // Initialize elements
 document.addEventListener('DOMContentLoaded', async () => {
+  populateLanguageSelect();
   applySavedSettings(loadSettings());
   setupEventListeners();
   initCharts();
@@ -935,19 +957,23 @@ function findCrossLangGroup(lang, serializer) {
   return groups.find((g) => g.serializer === serializer) || null;
 }
 
+/** Max Pareto picks auto-selected per language in the cross-language diagram. */
+const XL_PARETO_MAX_PER_LANG = 2;
+
 function applyCrossLangParetoSelection() {
   const selected = [];
   for (const lang of LANGUAGE_CATALOG) {
     const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang.id] || []);
     if (!groups.length) continue;
     const pareto = paretoOptimalGroups(groups);
-    // Stable order: fastest total first within language
+    // Stable order: fastest total first; cap so the diagram stays readable.
     pareto
       .slice()
       .sort(
         (a, b) =>
           (a.avg_time_total_ns ?? Infinity) - (b.avg_time_total_ns ?? Infinity)
       )
+      .slice(0, XL_PARETO_MAX_PER_LANG)
       .forEach((g) => {
         selected.push({ lang: lang.id, serializer: g.serializer });
       });

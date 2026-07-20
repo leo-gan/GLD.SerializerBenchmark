@@ -56,6 +56,10 @@ export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
 export BENCHMARK_LANGUAGE=java
 
+# Library run config from master config (data_model_v2.smoke_run_config / default_run_config).
+# Caller may override with BENCHMARK_RUN_CONFIG=...
+bench_export_run_config "$MODE"
+
 if ! command -v java >/dev/null 2>&1; then
   echo "[ERROR] java not found. Run: ./scripts/install-host-requirements.sh java" >&2
   exit 1

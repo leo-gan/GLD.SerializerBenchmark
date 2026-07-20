@@ -29,7 +29,7 @@ def _KNOWN_LANGS() -> tuple:
 
         return known_language_ids()
     except Exception:
-        return ("rust", "python", "csharp", "c", "javascript", "go", "java", "cpp")
+        return ("rust", "python", "csharp", "c", "javascript", "go", "java", "cpp", "swift")
 
 
 def _LANG_ALIASES() -> dict:

@@ -207,6 +207,7 @@ paths:
     go: logs/go
     java: logs/java
     cpp: logs/cpp
+    swift: logs/swift
   # Result files are timestamped to preserve history across runs.
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
@@ -1046,3 +1047,59 @@ languages:
         rationale: "Classic C++ native binary archives (medium value / historical)"
         optimal_api: "binary_oarchive / binary_iarchive (no_header)"
 
+
+  swift:
+    display_name: Swift
+    enabled: true
+    runner_dir: swift
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/swift
+    time_unit: nanoseconds
+    docs_dir: docs/swift
+    serializers:
+      - name: Foundation.JSONEncoder
+        category: json
+        package: Foundation
+      - name: IkigaJSON
+        category: json
+        package: orlandos-nl/IkigaJSON
+      - name: Foundation.PropertyListEncoder
+        category: native
+        package: Foundation
+      - name: BinaryCodable
+        category: binary
+        package: christophhagen/BinaryCodable
+        rationale: "Popular pure-Swift binary Codable (schema-free)"
+        optimal_api: "BinaryEncoder.encode / BinaryDecoder.decode"
+      - name: SwiftMsgpack
+        category: binary
+        package: nnabeyang/swift-msgpack
+      - name: SwiftCbor
+        category: binary
+        package: nnabeyang/swift-cbor
+      - name: SwiftBSON
+        category: binary
+        package: mongodb/swift-bson
+      - name: Yams
+        category: text
+        package: jpsim/Yams
+      - name: XMLCoder
+        category: text
+        package: CoreOffice/XMLCoder
+      - name: TOML
+        category: text
+        package: mattt/swift-toml
+        rationale: "TOML Codable via toml++"
+        optimal_api: "TOMLEncoder / TOMLDecoder; map-root wrap for N>1"
+      - name: SwiftProtobuf
+        category: schema
+        package: apple/swift-protobuf
+      - name: FlatBuffers
+        category: schema
+        package: google/flatbuffers
+      - name: SwiftAvroCore
+        category: schema
+        package: lynixliu/SwiftAvroCore
+      - name: CapnProto
+        category: schema
+        package: capnproto C++ via CapnpBridge

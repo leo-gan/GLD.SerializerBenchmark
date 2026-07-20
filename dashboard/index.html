@@ -35,14 +35,16 @@
         <span class="filter-label">Language:</span>
         <div class="select-wrapper">
           <select id="lang-select" aria-label="Select Language">
-            <option value="csharp">C# (csharp)</option>
+            <!-- Options filled from LANGUAGE_CATALOG in main.js; static fallback: -->
+            <option value="csharp">C#</option>
             <option value="rust">Rust</option>
             <option value="go">Go</option>
             <option value="python">Python</option>
             <option value="javascript">JavaScript</option>
             <option value="java">Java</option>
             <option value="c">C</option>
-            <option value="cpp">C++ (cpp)</option>
+            <option value="cpp">C++</option>
+            <option value="swift">Swift</option>
           </select>
         </div>
 
@@ -204,7 +206,9 @@
       </div>
       <p class="section-help">
         Compare serializers across languages for the same workload. Default selection is each language’s
-        <strong>Pareto-best</strong> set (speed vs size). Add or remove any language/serializer pair.
+        <strong>Pareto-best</strong> set (speed vs size), limited to
+        <strong>at most 2 per language</strong> (fastest first) so the diagram stays readable.
+        Add or remove any language/serializer pair.
       </p>
 
       <div class="cross-lang-filters">
@@ -217,7 +221,8 @@
           <div class="select-wrapper">
             <select id="xl-mode-select" aria-label="Cross-language mode"></select>
           </div>
-          <button type="button" id="xl-reset-pareto" class="tab-btn active" style="font-size: 0.85rem;">
+          <button type="button" id="xl-reset-pareto" class="tab-btn active" style="font-size: 0.85rem;"
+            title="Re-select up to 2 Pareto-optimal serializers per language (fastest first)">
             Reset to Pareto best
           </button>
         </div>

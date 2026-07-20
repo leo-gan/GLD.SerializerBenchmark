@@ -32,6 +32,10 @@ fi
 export BENCHMARK_TS="${BENCHMARK_TS:-$(date +%Y-%m-%d-%H%M%S)}"
 export BENCHMARK_SEED="$(bench_random_seed)"
 
+# Library run config from master config (data_model_v2.smoke_run_config / default_run_config).
+# Caller may override with BENCHMARK_RUN_CONFIG=...
+bench_export_run_config "$MODE"
+
 cd "$JS_DIR"
 if [[ ! -d node_modules ]]; then
   echo "[INFO] npm install..."

@@ -155,3 +155,7 @@ cpp/third_party/**
 
 # Local scratch (protobuf debs, extracts, etc.) — never commit
 .tmp/
+
+# Swift
+swift/.build/
+swift/.swiftpm/
