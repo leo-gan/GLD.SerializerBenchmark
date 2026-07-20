@@ -29,7 +29,7 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 - [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 19
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
 - [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 26+
-- [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 12
+- [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 14
 
 [Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/).
 

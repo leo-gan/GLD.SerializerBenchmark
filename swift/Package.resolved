@@ -1,6 +1,15 @@
 {
-  "originHash" : "5964eaf21b9ee996df899f0a46d86e7dd3f1f80c9a3a9ea47ad8f626e85d05e5",
+  "originHash" : "c8cd84a38c2ee3173bd2add3815d4c6b8e7ba755e89dcd5eb83b6d7247898f06",
   "pins" : [
+    {
+      "identity" : "binarycodable",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/christophhagen/BinaryCodable",
+      "state" : {
+        "revision" : "9e5ef6ca38f18d0bdfbe134dadbe1517f7468293",
+        "version" : "4.0.0"
+      }
+    },
     {
       "identity" : "flatbuffers",
       "kind" : "remoteSourceControl",
@@ -143,6 +152,15 @@
       "state" : {
         "revision" : "b5544ba79a70a0cb3563e75bf26dc198d6b40ed3",
         "version" : "1.7.4"
+      }
+    },
+    {
+      "identity" : "swift-toml",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mattt/swift-toml.git",
+      "state" : {
+        "revision" : "827506c90475e82d5a7f191f950fb3025cbdc0d6",
+        "version" : "2.0.0"
       }
     },
     {

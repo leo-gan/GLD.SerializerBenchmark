@@ -1060,52 +1060,46 @@ languages:
       - name: Foundation.JSONEncoder
         category: json
         package: Foundation
-        rationale: "stdlib Codable JSON baseline (compact)"
       - name: IkigaJSON
         category: json
         package: orlandos-nl/IkigaJSON
-        rationale: "High-performance server-side Codable JSON"
       - name: Foundation.PropertyListEncoder
         category: native
         package: Foundation
-        rationale: "Binary property list via Codable"
+      - name: BinaryCodable
+        category: binary
+        package: christophhagen/BinaryCodable
+        rationale: "Popular pure-Swift binary Codable (schema-free)"
+        optimal_api: "BinaryEncoder.encode / BinaryDecoder.decode"
       - name: SwiftMsgpack
         category: binary
         package: nnabeyang/swift-msgpack
-        rationale: "MessagePack Codable"
       - name: SwiftCbor
         category: binary
         package: nnabeyang/swift-cbor
-        rationale: "IETF CBOR via Codable"
       - name: SwiftBSON
         category: binary
         package: mongodb/swift-bson
-        rationale: "Official MongoDB BSON + Codable"
       - name: Yams
         category: text
         package: jpsim/Yams
-        rationale: "Dominant Swift YAML (LibYAML)"
       - name: XMLCoder
         category: text
         package: CoreOffice/XMLCoder
-        rationale: "Codable XML"
+      - name: TOML
+        category: text
+        package: mattt/swift-toml
+        rationale: "TOML Codable via toml++"
+        optimal_api: "TOMLEncoder / TOMLDecoder; map-root wrap for N>1"
       - name: SwiftProtobuf
         category: schema
         package: apple/swift-protobuf
-        rationale: "Official Protocol Buffers for Swift"
-        optimal_api: "Message.serializedData / Message(serializedBytes:) after prepare convert"
       - name: FlatBuffers
         category: schema
         package: google/flatbuffers
-        rationale: "Google FlatBuffers official Swift runtime"
-        optimal_api: "FlatBufferBuilder.finish + getRoot"
       - name: SwiftAvroCore
         category: schema
         package: lynixliu/SwiftAvroCore
-        rationale: "Apache Avro binary via Codable + schema"
-        optimal_api: "Avro.encodeFrom / decodeFrom with prepared schema"
       - name: CapnProto
         category: schema
         package: capnproto C++ via CapnpBridge
-        rationale: "Cap'n Proto (official C++ runtime; no first-class Swift codegen)"
-        optimal_api: "messageToFlatArray / FlatArrayMessageReader via C ABI"

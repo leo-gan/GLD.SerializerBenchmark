@@ -54,10 +54,20 @@ if ! command -v swift >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "[INFO] swift build -c release (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)"
-swift build -c release 2>&1
+# Force GCC 11 libstdc++ headers (Swift clang may pick GCC 12 without headers).
+# Needed for toml++ (swift-toml) and CapnpBridge C++.
+SWIFT_CXX_INCLUDES=(
+  -Xcxx -isystem -Xcxx /usr/include/c++/11
+  -Xcxx -isystem -Xcxx /usr/include/x86_64-linux-gnu/c++/11
+  -Xcc -isystem -Xcc /usr/include/c++/11
+  -Xcc -isystem -Xcc /usr/include/x86_64-linux-gnu/c++/11
+)
+export LIBRARY_PATH="${HOME}/.local/lib:/usr/lib/gcc/x86_64-linux-gnu/11${LIBRARY_PATH:+:$LIBRARY_PATH}"
 
-BIN="$(swift build -c release --show-bin-path)/serializer-benchmark-swift"
+echo "[INFO] swift build -c release (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)"
+swift build -c release "${SWIFT_CXX_INCLUDES[@]}" 2>&1
+
+BIN="$(swift build -c release "${SWIFT_CXX_INCLUDES[@]}" --show-bin-path)/serializer-benchmark-swift"
 export LOG_DIR
 ARGS=("$REPS")
 [[ -n "$FILTER_SER" ]] && ARGS+=("$FILTER_SER")

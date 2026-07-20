@@ -6,8 +6,9 @@ public func allSerializers() -> [any BenchSerializer] {
         // JSON family
         FoundationJSONSerializer(),
         IkigaJSONSerializer(),
-        // Native document
+        // Native / pure-Swift binary Codable
         PropertyListBinarySerializer(),
+        BinaryCodableSerializer(),
         // Schemaless binary
         MsgPackSerializer(),
         CborSerializer(),
@@ -15,6 +16,7 @@ public func allSerializers() -> [any BenchSerializer] {
         // Text document formats
         YamsSerializer(),
         XMLCoderSerializer(),
+        TOMLSerializer(),
         // Schema / IDL
         SwiftProtobufSerializer(),
         FlatBuffersSerializer(),
