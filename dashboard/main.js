@@ -123,8 +123,29 @@ let state = {
   historicalRuns: {} // Maps language -> array of runIds
 };
 
+/** Fill the main Language toolbar select from LANGUAGE_CATALOG (single source of truth). */
+function populateLanguageSelect() {
+  const sel = document.getElementById('lang-select');
+  if (!sel) return;
+  const prev = sel.value || state.currentLanguage;
+  sel.innerHTML = '';
+  for (const lang of LANGUAGE_CATALOG) {
+    const opt = document.createElement('option');
+    opt.value = lang.id;
+    opt.textContent = lang.label;
+    sel.appendChild(opt);
+  }
+  if ([...sel.options].some((o) => o.value === prev)) {
+    sel.value = prev;
+  } else if (sel.options.length) {
+    sel.value = sel.options[0].value;
+    state.currentLanguage = sel.value;
+  }
+}
+
 // Initialize elements
 document.addEventListener('DOMContentLoaded', async () => {
+  populateLanguageSelect();
   applySavedSettings(loadSettings());
   setupEventListeners();
   initCharts();
