@@ -2,7 +2,7 @@
 
 Scientific, multi-language suite for **measuring and comparing serialization libraries**.
 
-- [Serialization 101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) — a starting point for anyone who wants to understand data serialization—students, data scientists, backend engineers, and systems architects.
+- [Serialization 101-401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) — a starting point for anyone who wants to understand data serialization—students, data scientists, backend engineers, and systems architects.
 - [Benchmarks](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/)
 - [📊 Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
 
@@ -10,12 +10,12 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 
 ## Who it is for
 
-| Audience | Use case |
-|----------|----------|
-| **Computer Science Students** | Theory, history, examples |
-| **Researchers** | Reproducible methods, CIs, configurable payloads, metrics |
-| **Serializer authors** | Measure, compare, and improve |
-| **System integrators** | Find serializers that fit custom payloads and environments |
+| Audience | Use case | Course |
+|----------|----------|--------|
+| **Computer Science Students** | Theory, history, examples | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/),  [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/) |
+| **System integrators** | Find serializers that fit payloads and environments | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
+| **Researchers** | Research, measure, invent | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
+| **Serializer authors** | Measure, compare, and improve | [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
 
 ---
 
