@@ -111,10 +111,12 @@ fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
 /// Encode one cell into `out` (caller cleared): N=1 → raw codec bytes;
 /// N>1 → u32 LE count + (u32 LE len + payload)×N.
 /// Matches C `bench_serialize_cell` so DataTypeInstanceCount reflects real batch work.
+/// `scratch` is a harness-owned per-item buffer reused across the batch and across reps.
 fn serialize_cell_into(
     ser: &mut dyn BenchSerializer,
     fixtures: &[Fixture],
     out: &mut Vec<u8>,
+    scratch: &mut Vec<u8>,
 ) -> Result<()> {
     if fixtures.is_empty() {
         anyhow::bail!("empty batch");
@@ -124,14 +126,12 @@ fn serialize_cell_into(
     }
     let n = fixtures.len() as u32;
     out.extend_from_slice(&n.to_le_bytes());
-    // Per-item scratch reuses capacity across the batch (not the outer `out` frame).
-    let mut part = Vec::with_capacity(256);
     for fx in fixtures {
-        part.clear();
-        ser.serialize_into(black_box(fx), &mut part)?;
-        let len = part.len() as u32;
+        scratch.clear();
+        ser.serialize_into(black_box(fx), scratch)?;
+        let len = scratch.len() as u32;
         out.extend_from_slice(&len.to_le_bytes());
-        out.extend_from_slice(&part);
+        out.extend_from_slice(scratch);
     }
     Ok(())
 }
@@ -238,8 +238,9 @@ pub fn run_v2(
             } else {
                 modes.iter().map(|s| s.as_str()).collect()
             };
-            // Harness-owned output buffer: capacity reused across reps (issue #59).
+            // Harness-owned buffers: capacity reused across reps (issue #59).
             let mut ser_buf = Vec::with_capacity(64 * 1024);
+            let mut cell_scratch = Vec::with_capacity(4096);
             for mode in mode_list {
                 let mut had_error = false;
                 for i in 0..repetitions {
@@ -250,6 +251,7 @@ pub fn run_v2(
                         // Batch cells: frame N single-item payloads (same as C harness).
                         // N=1 is a thin passthrough — no framing overhead.
                         ser_buf.clear();
+                        cell_scratch.clear();
                         let t0 = Instant::now();
                         if mode == "stream" {
                             // Native stream when available; otherwise adapted via serialize_into.
@@ -268,7 +270,12 @@ pub fn run_v2(
                                 check_batch_fidelity(&cell.fixtures, &outs)?;
                                 Ok((ser_ns, deser_ns, n))
                             } else {
-                                serialize_cell_into(ser.as_mut(), &cell.fixtures, &mut ser_buf)?;
+                                serialize_cell_into(
+                                    ser.as_mut(),
+                                    &cell.fixtures,
+                                    &mut ser_buf,
+                                    &mut cell_scratch,
+                                )?;
                                 let ser_ns = t0.elapsed().as_nanos();
                                 black_box(ser_buf.len());
                                 let t1 = Instant::now();
@@ -280,7 +287,12 @@ pub fn run_v2(
                                 Ok((ser_ns, deser_ns, ser_buf.len()))
                             }
                         } else {
-                            serialize_cell_into(ser.as_mut(), &cell.fixtures, &mut ser_buf)?;
+                            serialize_cell_into(
+                                ser.as_mut(),
+                                &cell.fixtures,
+                                &mut ser_buf,
+                                &mut cell_scratch,
+                            )?;
                             let ser_ns = t0.elapsed().as_nanos();
                             black_box(ser_buf.len());
                             let t1 = Instant::now();

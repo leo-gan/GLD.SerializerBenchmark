@@ -148,11 +148,11 @@ public final class Main {
     System.out.println("[PROGRESS] Complete. Results: " + logPath);
   }
 
-  /** Sink so the JIT cannot dead-code timed work (issue #59). */
+  /** Volatile sink so the JIT cannot dead-code timed work (issue #59). */
+  private static volatile Object preventDce;
+
   private static void keep(Object o) {
-    if (System.identityHashCode(o) == 0x7fff_ffff) {
-      throw new AssertionError("unreachable sink");
-    }
+    preventDce = o;
   }
 
   private static Measure measureBytes(BenchSerializer ser, Fixture fx) throws Exception {

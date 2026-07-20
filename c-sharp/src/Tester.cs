@@ -187,7 +187,8 @@ namespace GLD.SerializerBenchmark
         // cold expansion is amortized; always use a writable expandable stream.
         // Do not reuse one MemoryStream instance — some serializers leave the
         // stream non-writable after deserialize (SetLength would throw).
-        [ThreadStatic] private static int _streamCapFloor = 64 * 1024;
+        // No field initializer: [ThreadStatic] initializers only run on one thread.
+        [ThreadStatic] private static int _streamCapFloor;
 
         private static void SingleTest(ISerDeser serializer, ITestDataDescription original, List<Error> errors,
             bool streaming, Log log, LogStorage logStorage, out bool isRepeatedError)

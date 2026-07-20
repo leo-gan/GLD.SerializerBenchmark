@@ -185,8 +185,11 @@ impl BenchSerializer for BsonSer {
         Ok(())
     }
     fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
-        let doc = bson::to_vec(fixture)?;
-        out.extend_from_slice(&doc);
+        // bson 2.x has no serde `to_writer` (only `Document::to_writer` after
+        // materializing a Document). `to_vec` is the public one-shot path;
+        // append into the harness-owned buffer so capacity still reuses across reps.
+        let bytes = bson::to_vec(fixture)?;
+        out.extend_from_slice(&bytes);
         Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
