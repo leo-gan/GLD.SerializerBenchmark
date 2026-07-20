@@ -119,25 +119,11 @@ enum CapnpBridgeSwift {
     }
 
     private static func encodeMessages(_ items: [Message], _ len: inout Int) -> UnsafeMutableRawPointer? {
-        // Hold all UTF8 via ContiguousArray
-        var s1 = items.map { ContiguousArray($0.f_string.utf8CString) }
-        var s2 = items.map { ContiguousArray($0.f_string_2.utf8CString) }
-        var citems = [CapnpCMessage](repeating: CapnpCMessage(), count: items.count)
-        for i in items.indices {
-            s1[i].withUnsafeBufferPointer { b1 in
-                s2[i].withUnsafeBufferPointer { b2 in
-                    citems[i] = CapnpCMessage(
-                        f_bool: items[i].f_bool, f_int32: items[i].f_int32, f_int64: items[i].f_int64,
-                        f_float64: items[i].f_float64, f_string: b1.baseAddress,
-                        f_bool_2: items[i].f_bool_2, f_int32_2: items[i].f_int32_2, f_string_2: b2.baseAddress
-                    )
-                }
-            }
-        }
-        // BUG: pointers invalid after withUnsafe returns. Use strdup:
+        // strdup so C strings outlive CapnpCMessage construction until encode returns.
         var heap1: [UnsafeMutablePointer<CChar>] = items.map { strdup($0.f_string)! }
         var heap2: [UnsafeMutablePointer<CChar>] = items.map { strdup($0.f_string_2)! }
         defer { heap1.forEach { free($0) }; heap2.forEach { free($0) } }
+        var citems = [CapnpCMessage](repeating: CapnpCMessage(), count: items.count)
         for i in items.indices {
             citems[i] = CapnpCMessage(
                 f_bool: items[i].f_bool, f_int32: items[i].f_int32, f_int64: items[i].f_int64,

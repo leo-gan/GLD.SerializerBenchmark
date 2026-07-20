@@ -146,6 +146,18 @@ check_swift() {
   else
     miss "swift — ./scripts/install-host-requirements.sh swift"
   fi
+  local prefix="${HOME}/.local"
+  if [[ -f "${prefix}/include/capnp/generated-header-support.h" ]]; then
+    ok "capnproto headers (${prefix}/include/capnp)"
+  else
+    miss "capnproto C++ headers — ./scripts/install-host-requirements.sh swift (installs Cap'n Proto ${prefix})"
+  fi
+  if [[ -f "${prefix}/lib/libcapnp.so" ]] || [[ -f "${prefix}/lib/libcapnp.a" ]] \
+    || [[ -f "${prefix}/lib64/libcapnp.so" ]] || [[ -f "${prefix}/lib64/libcapnp.a" ]]; then
+    ok "libcapnp under ${prefix}/lib"
+  else
+    miss "libcapnp — ./scripts/install-host-requirements.sh swift"
+  fi
 }
 
 KNOWN=(analysis csharp python go rust javascript c java cpp swift)

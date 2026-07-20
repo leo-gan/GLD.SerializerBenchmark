@@ -1,7 +1,48 @@
 // swift-tools-version: 5.10
 import PackageDescription
+import Foundation
 
-let homeLocal = "/home/leo/.local"
+/// Prefix for Cap'n Proto / local toolchains (headers + libs). Override with CAPNP_PREFIX.
+let homeLocal: String = {
+    if let p = ProcessInfo.processInfo.environment["CAPNP_PREFIX"], !p.isEmpty {
+        return p
+    }
+    let home = ProcessInfo.processInfo.environment["HOME"] ?? ""
+    if !home.isEmpty {
+        return "\(home)/.local"
+    }
+    return "/usr/local"
+}()
+
+/// Prefer an installed libstdc++ tree (Swift's clang often needs explicit isystem on Linux).
+let libstdcxxIsystemFlags: [String] = {
+    let fm = FileManager.default
+    let multiarch = ProcessInfo.processInfo.environment["DEB_HOST_MULTIARCH"]
+        ?? "x86_64-linux-gnu"
+    for ver in ["14", "13", "12", "11"] {
+        let base = "/usr/include/c++/\(ver)"
+        let arch = "/usr/include/\(multiarch)/c++/\(ver)"
+        if fm.fileExists(atPath: base) {
+            var flags = ["-isystem", base]
+            if fm.fileExists(atPath: arch) {
+                flags += ["-isystem", arch]
+            }
+            return flags
+        }
+    }
+    return []
+}()
+
+let gccLibDir: String = {
+    let fm = FileManager.default
+    let multiarch = ProcessInfo.processInfo.environment["DEB_HOST_MULTIARCH"]
+        ?? "x86_64-linux-gnu"
+    for ver in ["14", "13", "12", "11"] {
+        let p = "/usr/lib/gcc/\(multiarch)/\(ver)"
+        if fm.fileExists(atPath: p) { return p }
+    }
+    return "/usr/lib/gcc/x86_64-linux-gnu/11"
+}()
 
 let package = Package(
     name: "SerializerBenchmark",
@@ -34,20 +75,19 @@ let package = Package(
             cxxSettings: [
                 .headerSearchPath("include"),
                 .headerSearchPath("cxx"),
-                .unsafeFlags([
-                    "-I\(homeLocal)/include",
-                    // Swift's clang may select GCC 12 without libstdc++-12-dev; force GCC 11 headers.
-                    "-isystem", "/usr/include/c++/11",
-                    "-isystem", "/usr/include/x86_64-linux-gnu/c++/11",
-                    "-std=c++17",
-                    "-Wno-unused-parameter",
-                ]),
+                .unsafeFlags(
+                    ["-I\(homeLocal)/include"]
+                        + libstdcxxIsystemFlags
+                        + ["-std=c++17", "-Wno-unused-parameter"]
+                ),
             ],
             linkerSettings: [
                 .unsafeFlags([
                     "-L\(homeLocal)/lib",
-                    "-L/usr/lib/gcc/x86_64-linux-gnu/11",
+                    "-L\(homeLocal)/lib64",
+                    "-L\(gccLibDir)",
                     "-Xlinker", "-rpath", "-Xlinker", "\(homeLocal)/lib",
+                    "-Xlinker", "-rpath", "-Xlinker", "\(homeLocal)/lib64",
                     "-lstdc++",
                     "-lcapnp",
                     "-lkj",

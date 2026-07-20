@@ -148,37 +148,106 @@ install_java() {
 }
 
 
+# Cap'n Proto C++ runtime for Swift CapnpBridge (headers require CAPNP_VERSION 1000002).
+install_capnp() {
+  local prefix="${HOME}/.local"
+  if [[ -f "${prefix}/include/capnp/generated-header-support.h" ]] \
+    && { [[ -f "${prefix}/lib/libcapnp.so" ]] || [[ -f "${prefix}/lib/libcapnp.a" ]] \
+      || [[ -f "${prefix}/lib64/libcapnp.so" ]] || [[ -f "${prefix}/lib64/libcapnp.a" ]]; }; then
+    echo "[OK] capnproto present under ${prefix}"
+    export PATH="${prefix}/bin:${PATH}"
+    export LD_LIBRARY_PATH="${prefix}/lib:${prefix}/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    return
+  fi
+  if ! command -v cmake >/dev/null 2>&1; then
+    echo "[ERROR] cmake required to build capnproto for Swift CapnpBridge" >&2
+    exit 1
+  fi
+  local ver=1.0.2
+  local url="https://github.com/capnproto/capnproto/archive/refs/tags/v${ver}.tar.gz"
+  echo "[INFO] Building Cap'n Proto ${ver} into ${prefix} (needed by Swift CapnpBridge) ..."
+  local work="/tmp/capnp-install-$$"
+  rm -rf "$work"
+  mkdir -p "$work" "$prefix"
+  curl -fsSL "$url" -o "$work/capnp.tgz"
+  tar -xzf "$work/capnp.tgz" -C "$work"
+  local src
+  src="$(find "$work" -mindepth 1 -maxdepth 1 -type d | head -1)"
+  cmake -S "$src/c++" -B "$work/build" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$prefix" \
+    -DBUILD_TESTING=OFF
+  cmake --build "$work/build" -j"$(nproc 2>/dev/null || echo 2)"
+  cmake --install "$work/build"
+  rm -rf "$work"
+  export PATH="${prefix}/bin:${PATH}"
+  export LD_LIBRARY_PATH="${prefix}/lib:${prefix}/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  echo "[OK] capnproto installed: $(capnp --version 2>/dev/null || echo v${ver})"
+}
+
 install_swift() {
   bench_extend_host_path
   if [[ -x "${HOME}/.local/swift/usr/bin/swift" ]]; then
     export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
   fi
-  if command -v swift >/dev/null 2>&1; then
+  if ! command -v swift >/dev/null 2>&1; then
+    local ver=6.3.3
+    local arch
+    arch="$(uname -m)"
+    case "$arch" in
+      x86_64) ;;
+      aarch64|arm64) ;;
+      *) echo "[ERROR] Unsupported arch for Swift tarball: $arch" >&2; exit 1 ;;
+    esac
+    # Map host OS to official Swift Linux tarball id (fallback ubuntu22.04).
+    local os_tag=ubuntu2204
+    local dir_suffix=ubuntu22.04
+    if [[ -f /etc/os-release ]]; then
+      # shellcheck disable=SC1091
+      . /etc/os-release
+      local id="${ID:-}"
+      local ver_id="${VERSION_ID:-}"
+      if [[ "$id" == "ubuntu" ]]; then
+        case "$ver_id" in
+          24.04) os_tag=ubuntu2404; dir_suffix=ubuntu24.04 ;;
+          22.04) os_tag=ubuntu2204; dir_suffix=ubuntu22.04 ;;
+          20.04) os_tag=ubuntu2004; dir_suffix=ubuntu20.04 ;;
+          *)
+            echo "[WARN] Ubuntu ${ver_id} not in Swift matrix; trying ubuntu22.04 tarball"
+            ;;
+        esac
+      elif [[ "$id" == "debian" ]]; then
+        # Closest supported Swift Linux build.
+        os_tag=ubuntu2204
+        dir_suffix=ubuntu22.04
+      else
+        echo "[WARN] Non-Ubuntu Linux (${id:-unknown}); trying ubuntu22.04 Swift tarball"
+      fi
+    fi
+    local dir="swift-${ver}-RELEASE-${dir_suffix}"
+    local url="https://download.swift.org/swift-${ver}-release/${os_tag}/swift-${ver}-RELEASE/${dir}.tar.gz"
+    echo "[INFO] Installing Swift ${ver} (${dir_suffix}) to ~/.local/swift ..."
+    mkdir -p /tmp/swift-install "${HOME}/.local"
+    if ! curl -fL "$url" -o /tmp/swift-install/swift.tar.gz; then
+      echo "[WARN] Download failed for ${os_tag}; retrying ubuntu2204"
+      dir="swift-${ver}-RELEASE-ubuntu22.04"
+      url="https://download.swift.org/swift-${ver}-release/ubuntu2204/swift-${ver}-RELEASE/${dir}.tar.gz"
+      curl -fL "$url" -o /tmp/swift-install/swift.tar.gz
+    fi
+    rm -rf "${HOME}/.local/swift" /tmp/swift-install/extracted
+    mkdir -p /tmp/swift-install/extracted
+    tar -xzf /tmp/swift-install/swift.tar.gz -C /tmp/swift-install/extracted
+    local top
+    top="$(find /tmp/swift-install/extracted -mindepth 1 -maxdepth 1 -type d | head -1)"
+    mv "$top" "${HOME}/.local/swift"
+    rm -f /tmp/swift-install/swift.tar.gz
+    export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
+    echo "[OK] $(swift --version | head -1)"
+  else
     echo "[OK] swift already present: $(swift --version 2>/dev/null | head -1)"
-    return
   fi
-  local ver=6.3.3
-  local arch
-  arch="$(uname -m)"
-  case "$arch" in
-    x86_64) ;;
-    aarch64|arm64) ;;
-    *) echo "[ERROR] Unsupported arch for Swift tarball: $arch" >&2; exit 1 ;;
-  esac
-  local dir="swift-${ver}-RELEASE-ubuntu22.04"
-  local url="https://download.swift.org/swift-${ver}-release/ubuntu2204/swift-${ver}-RELEASE/${dir}.tar.gz"
-  echo "[INFO] Installing Swift ${ver} to ~/.local/swift ..."
-  mkdir -p /tmp/swift-install "${HOME}/.local"
-  curl -fL "$url" -o /tmp/swift-install/swift.tar.gz
-  rm -rf "${HOME}/.local/swift" /tmp/swift-install/extracted
-  mkdir -p /tmp/swift-install/extracted
-  tar -xzf /tmp/swift-install/swift.tar.gz -C /tmp/swift-install/extracted
-  local top
-  top="$(find /tmp/swift-install/extracted -mindepth 1 -maxdepth 1 -type d | head -1)"
-  mv "$top" "${HOME}/.local/swift"
-  rm -f /tmp/swift-install/swift.tar.gz
-  export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
-  echo "[OK] $(swift --version | head -1)"
+  # CapnpBridge links against system/user libcapnp (same version as generated headers: 1.0.2).
+  install_capnp
 }
 
 install_c_hint() {

@@ -54,15 +54,37 @@ if ! command -v swift >/dev/null 2>&1; then
   exit 1
 fi
 
-# Force GCC 11 libstdc++ headers (Swift clang may pick GCC 12 without headers).
-# Needed for toml++ (swift-toml) and CapnpBridge C++.
+# Cap'n Proto + local toolchains (Package.swift also reads CAPNP_PREFIX / HOME).
+export CAPNP_PREFIX="${CAPNP_PREFIX:-${HOME}/.local}"
+export PATH="${CAPNP_PREFIX}/bin:${PATH}"
+export LD_LIBRARY_PATH="${CAPNP_PREFIX}/lib:${CAPNP_PREFIX}/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+# libstdc++ isystem for Swift's clang (toml++ / CapnpBridge). Prefer newest installed.
 SWIFT_CXX_INCLUDES=(
-  -Xcxx -isystem -Xcxx /usr/include/c++/11
-  -Xcxx -isystem -Xcxx /usr/include/x86_64-linux-gnu/c++/11
-  -Xcc -isystem -Xcc /usr/include/c++/11
-  -Xcc -isystem -Xcc /usr/include/x86_64-linux-gnu/c++/11
+  -Xcxx -I -Xcxx "${CAPNP_PREFIX}/include"
+  -Xcc -I -Xcc "${CAPNP_PREFIX}/include"
 )
-export LIBRARY_PATH="${HOME}/.local/lib:/usr/lib/gcc/x86_64-linux-gnu/11${LIBRARY_PATH:+:$LIBRARY_PATH}"
+multiarch="${DEB_HOST_MULTIARCH:-x86_64-linux-gnu}"
+gcc_lib=""
+for ver in 14 13 12 11; do
+  if [[ -d "/usr/include/c++/${ver}" ]]; then
+    SWIFT_CXX_INCLUDES+=(
+      -Xcxx -isystem -Xcxx "/usr/include/c++/${ver}"
+      -Xcc -isystem -Xcc "/usr/include/c++/${ver}"
+    )
+    if [[ -d "/usr/include/${multiarch}/c++/${ver}" ]]; then
+      SWIFT_CXX_INCLUDES+=(
+        -Xcxx -isystem -Xcxx "/usr/include/${multiarch}/c++/${ver}"
+        -Xcc -isystem -Xcc "/usr/include/${multiarch}/c++/${ver}"
+      )
+    fi
+    if [[ -d "/usr/lib/gcc/${multiarch}/${ver}" ]]; then
+      gcc_lib="/usr/lib/gcc/${multiarch}/${ver}"
+    fi
+    break
+  fi
+done
+export LIBRARY_PATH="${CAPNP_PREFIX}/lib:${CAPNP_PREFIX}/lib64${gcc_lib:+:$gcc_lib}${LIBRARY_PATH:+:$LIBRARY_PATH}"
 
 echo "[INFO] swift build -c release (mode=$MODE reps=$REPS seed=$BENCHMARK_SEED)"
 swift build -c release "${SWIFT_CXX_INCLUDES[@]}" 2>&1

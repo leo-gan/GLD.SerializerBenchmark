@@ -346,7 +346,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Swift toolchain
+      - name: Install build deps (cmake, g++, libstdc++)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake g++ libstdc++-12-dev
+
+      - name: Install Swift toolchain + Cap'n Proto
         run: ./scripts/install-host-requirements.sh swift
 
       - name: Setup Python for run-config resolution

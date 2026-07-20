@@ -1,5 +1,13 @@
 import Foundation
 
+/// RFC-style CSV field escape (quote when needed).
+private func escapeCSV(_ field: String) -> String {
+    if field.contains(",") || field.contains("\"") || field.contains("\n") || field.contains("\r") {
+        return "\"\(field.replacingOccurrences(of: "\"", with: "\"\""))\""
+    }
+    return field
+}
+
 public final class CsvLogger {
     private let handle: FileHandle
     private let path: URL
@@ -33,13 +41,13 @@ public final class CsvLogger {
         let opsDeser = timeDeser > 0 ? 1e9 / Double(timeDeser) : 0
         let opsTot = total > 0 ? 1e9 / Double(total) : 0
         let line = [
-            "swift",
-            mode,
-            testDataName,
+            escapeCSV("swift"),
+            escapeCSV(mode),
+            escapeCSV(testDataName),
             String(repetitions),
             String(repetitionIndex),
-            serializerName,
-            serializerVersion,
+            escapeCSV(serializerName),
+            escapeCSV(serializerVersion),
             String(timeSer),
             String(timeDeser),
             String(size),
@@ -49,10 +57,10 @@ public final class CsvLogger {
             String(format: "%.6f", opsTot),
             "0",
             String(format: "%.2f", fidelity),
-            nativeKind,
-            streamMode,
+            escapeCSV(nativeKind),
+            escapeCSV(streamMode),
             String(instanceCount),
-            typeConfigHash,
+            escapeCSV(typeConfigHash),
         ].joined(separator: ",") + "\n"
         handle.write(Data(line.utf8))
     }
@@ -77,10 +85,13 @@ public func saveErrors(path: URL, errors: [BenchRunError]) {
     }
     var text = "TestDataName,SerializerName,StringOrStream,Repetition,ErrorText\n"
     for e in errors {
-        let et = e.errorText
-            .replacingOccurrences(of: "\n", with: " ")
-            .replacingOccurrences(of: ",", with: ";")
-        text += "\(e.testDataName),\(e.serializerName),\(e.stringOrStream),\(e.repetition),\(et)\n"
+        text += [
+            escapeCSV(e.testDataName),
+            escapeCSV(e.serializerName),
+            escapeCSV(e.stringOrStream),
+            String(e.repetition),
+            escapeCSV(e.errorText.replacingOccurrences(of: "\n", with: " ")),
+        ].joined(separator: ",") + "\n"
     }
     try? text.write(to: path, atomically: true, encoding: .utf8)
 }
