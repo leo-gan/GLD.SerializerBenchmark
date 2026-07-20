@@ -167,4 +167,18 @@ void bench_register_zcbor(serializer_t *out, int *count);
 int bench_stream_write_all(const uint8_t *buf, size_t len);
 int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len);
 
+/* Optimization barrier (issue #59): prevent the compiler from DCE'ing timed work. */
+static inline void bench_do_not_optimize(const void *p) {
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("" : : "g"(p) : "memory");
+#else
+    (void)p;
+#endif
+}
+static inline void bench_clobber_memory(void) {
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("" : : : "memory");
+#endif
+}
+
 #endif

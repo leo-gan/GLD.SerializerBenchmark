@@ -61,11 +61,13 @@ type Event struct {
 
 const baseTSMS int64 = 1704067200000
 
+// Deterministic xorshift64* (within-language only). Zero seed uses floor(2^64/φ)
+// = 0x9E3779B97F4A7C15 (golden ratio; nothing-up-my-sleeve avalanche constant).
 type rng struct{ state uint64 }
 
 func newRNG(seed uint64) *rng {
 	if seed == 0 {
-		seed = 0x9E3779B97F4A7C15
+		seed = 0x9E3779B97F4A7C15 // floor(2^64/φ)
 	}
 	return &rng{state: seed}
 }

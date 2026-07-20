@@ -107,10 +107,15 @@ public final class Main {
             errors.add(new BenchError(fx.name, ser.name(), "prepare", 0, e.toString()));
             continue;
           }
+          // Stream buffer reused across reps (issue #59).
+          ByteArrayOutputStream streamScratch = new ByteArrayOutputStream(64 * 1024);
           for (String mode : modes) {
             for (int i = 0; i < repetitions; i++) {
               try {
-                Measure m = mode.equals("bytes") ? measureBytes(ser, fx) : measureStream(ser, fx);
+                Measure m =
+                    mode.equals("bytes")
+                        ? measureBytes(ser, fx)
+                        : measureStream(ser, fx, streamScratch);
                 logger.writeRow(
                     mode,
                     fx.name,
@@ -143,13 +148,22 @@ public final class Main {
     System.out.println("[PROGRESS] Complete. Results: " + logPath);
   }
 
+  /** Volatile sink so the JIT cannot dead-code timed work (issue #59). */
+  private static volatile Object preventDce;
+
+  private static void keep(Object o) {
+    preventDce = o;
+  }
+
   private static Measure measureBytes(BenchSerializer ser, Fixture fx) throws Exception {
     long t0 = System.nanoTime();
     byte[] buf = ser.serializeBytes(fx);
     long serNs = System.nanoTime() - t0;
+    keep(buf);
     t0 = System.nanoTime();
     Object out = ser.deserializeBytes(buf);
     long deserNs = System.nanoTime() - t0;
+    keep(out);
     out = ser.toDomain(out);
     if (!Fidelity.check(fx.value, out)) {
       throw new IllegalStateException("roundtrip fidelity failed for " + ser.name());
@@ -157,16 +171,20 @@ public final class Main {
     return new Measure(serNs, deserNs, buf.length);
   }
 
-  private static Measure measureStream(BenchSerializer ser, Fixture fx) throws Exception {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
+  /** Stream measure reuses {@code baos} across reps (caller resets; issue #59). */
+  private static Measure measureStream(BenchSerializer ser, Fixture fx, ByteArrayOutputStream baos)
+      throws Exception {
+    baos.reset();
     long t0 = System.nanoTime();
     int n = ser.serializeStream(fx, baos);
     long serNs = System.nanoTime() - t0;
+    keep(baos);
     if (n < 0) n = baos.size();
     ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
     t0 = System.nanoTime();
     Object out = ser.deserializeStream(bais);
     long deserNs = System.nanoTime() - t0;
+    keep(out);
     out = ser.toDomain(out);
     if (!Fidelity.check(fx.value, out)) {
       throw new IllegalStateException("stream roundtrip fidelity failed for " + ser.name());

@@ -183,12 +183,24 @@ namespace GLD.SerializerBenchmark
             }
         }
 
+        // Capacity floor for stream mode (issue #59): grow floor across reps so
+        // cold expansion is amortized; always use a writable expandable stream.
+        // Do not reuse one MemoryStream instance — some serializers leave the
+        // stream non-writable after deserialize (SetLength would throw).
+        // No field initializer: [ThreadStatic] initializers only run on one thread.
+        [ThreadStatic] private static int _streamCapFloor;
+
         private static void SingleTest(ISerDeser serializer, ITestDataDescription original, List<Error> errors,
             bool streaming, Log log, LogStorage logStorage, out bool isRepeatedError)
         {
             isRepeatedError = false;
             string serializedString = null;
-            Stream serializedStream = new MemoryStream();
+            MemoryStream serializedStream = null;
+            if (streaming)
+            {
+                if (_streamCapFloor < 64 * 1024) _streamCapFloor = 64 * 1024;
+                serializedStream = new MemoryStream(_streamCapFloor);
+            }
             object processed;
             log.SerializerName = serializer.Name;
             log.SerializerVersion = serializer.Version ?? "";
@@ -209,6 +221,8 @@ namespace GLD.SerializerBenchmark
                 {
                     serializer.Serialize(original.Data, serializedStream);
                     log.Size = (int) serializedStream.Length;
+                    if (serializedStream.Capacity > _streamCapFloor)
+                        _streamCapFloor = serializedStream.Capacity;
                 }
                 else
                 {
@@ -219,12 +233,18 @@ namespace GLD.SerializerBenchmark
                 // Nanoseconds from high-resolution Stopwatch ticks (not TimeSpan.TotalNanoseconds,
                 // which quantizes to 100 ns and loses sub-tick precision on many platforms).
                 log.TimeSer = ElapsedNanoseconds(sw);
+                // KeepAlive: prevent JIT from DCE'ing timed work (issue #59).
+                if (streaming)
+                    GC.KeepAlive(serializedStream);
+                else
+                    GC.KeepAlive(serializedString);
 
                 processed = streaming
                     ? serializer.Deserialize(serializedStream)
                     : serializer.Deserialize(serializedString);
                 log.TimeDeser = ElapsedNanoseconds(sw) - log.TimeSer;
                 sw.Stop();
+                GC.KeepAlive(processed);
                 // Untimed domain conversion (annotated/KeyTuple → suite POCO).
                 processed = serializer.ToDomain(processed);
             }

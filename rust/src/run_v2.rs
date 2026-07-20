@@ -2,12 +2,20 @@
 //!
 //! Builds first-class V2 `Fixture` variants (Message/Document/Telemetry/Strings/Event)
 //! directly from generators.
+//!
+//! ## Timing contract (issue #59)
+//!
+//! - Harness owns a reusable serialize buffer; `clear()` before each timed encode.
+//! - Capacity is preserved across reps so cold allocation is mostly warmup (rep 0).
+//! - [`std::hint::black_box`] on timed inputs/outputs prevents optimization leakage.
+//! - Direct codecs bind type-specific encode fns in `prepare` (outside the timer).
 
 use crate::csv_log::CsvLogger;
 use crate::data::{self, fidelity, Fixture};
 use crate::serializers::{all_serializers, BenchSerializer, StreamMode};
 use anyhow::{Context, Result};
 use serde_json::Value;
+use std::hint::black_box;
 use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
@@ -100,28 +108,32 @@ fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
     Ok((out_cells, modes))
 }
 
-/// Encode one cell: N=1 → raw codec bytes; N>1 → u32 LE count + (u32 LE len + payload)×N.
+/// Encode one cell into `out` (caller cleared): N=1 → raw codec bytes;
+/// N>1 → u32 LE count + (u32 LE len + payload)×N.
 /// Matches C `bench_serialize_cell` so DataTypeInstanceCount reflects real batch work.
-fn serialize_cell_bytes(
+/// `scratch` is a harness-owned per-item buffer reused across the batch and across reps.
+fn serialize_cell_into(
     ser: &mut dyn BenchSerializer,
     fixtures: &[Fixture],
-) -> Result<Vec<u8>> {
+    out: &mut Vec<u8>,
+    scratch: &mut Vec<u8>,
+) -> Result<()> {
     if fixtures.is_empty() {
         anyhow::bail!("empty batch");
     }
     if fixtures.len() == 1 {
-        return ser.serialize_bytes(&fixtures[0]);
+        return ser.serialize_into(black_box(&fixtures[0]), out);
     }
     let n = fixtures.len() as u32;
-    let mut out = Vec::with_capacity(4 + fixtures.len() * 64);
     out.extend_from_slice(&n.to_le_bytes());
     for fx in fixtures {
-        let part = ser.serialize_bytes(fx)?;
-        let len = part.len() as u32;
+        scratch.clear();
+        ser.serialize_into(black_box(fx), scratch)?;
+        let len = scratch.len() as u32;
         out.extend_from_slice(&len.to_le_bytes());
-        out.extend_from_slice(&part);
+        out.extend_from_slice(scratch);
     }
-    Ok(out)
+    Ok(())
 }
 
 fn deserialize_cell_bytes(
@@ -130,12 +142,12 @@ fn deserialize_cell_bytes(
     expected: &[Fixture],
 ) -> Result<Vec<Fixture>> {
     if expected.len() == 1 {
-        return Ok(vec![ser.deserialize_bytes(buf)?]);
+        return Ok(vec![ser.deserialize_bytes(black_box(buf))?]);
     }
     if buf.len() < 4 {
         anyhow::bail!("batch frame too short");
     }
-    let n = u32::from_le_bytes(buf[0..4].try_into()? ) as usize;
+    let n = u32::from_le_bytes(buf[0..4].try_into()?) as usize;
     if n != expected.len() {
         anyhow::bail!("batch count {n} != expected {}", expected.len());
     }
@@ -150,29 +162,10 @@ fn deserialize_cell_bytes(
         if o + item_len > buf.len() {
             anyhow::bail!("truncated batch payload");
         }
-        out.push(ser.deserialize_bytes(&buf[o..o + item_len])?);
+        out.push(ser.deserialize_bytes(black_box(&buf[o..o + item_len]))?);
         o += item_len;
     }
     Ok(out)
-}
-
-fn serialize_cell_stream(
-    ser: &mut dyn BenchSerializer,
-    fixtures: &[Fixture],
-    w: &mut dyn std::io::Write,
-) -> Result<usize> {
-    // Adapted: build full cell bytes then write (stream size = framed payload length).
-    let data = serialize_cell_bytes(ser, fixtures)?;
-    w.write_all(&data)?;
-    Ok(data.len())
-}
-
-fn deserialize_cell_stream(
-    ser: &mut dyn BenchSerializer,
-    buf: &[u8],
-    expected: &[Fixture],
-) -> Result<Vec<Fixture>> {
-    deserialize_cell_bytes(ser, buf, expected)
 }
 
 fn check_batch_fidelity(expected: &[Fixture], got: &[Fixture]) -> Result<()> {
@@ -245,6 +238,9 @@ pub fn run_v2(
             } else {
                 modes.iter().map(|s| s.as_str()).collect()
             };
+            // Harness-owned buffers: capacity reused across reps (issue #59).
+            let mut ser_buf = Vec::with_capacity(64 * 1024);
+            let mut cell_scratch = Vec::with_capacity(4096);
             for mode in mode_list {
                 let mut had_error = false;
                 for i in 0..repetitions {
@@ -254,25 +250,58 @@ pub fn run_v2(
                     let measured = (|| -> Result<(u128, u128, usize)> {
                         // Batch cells: frame N single-item payloads (same as C harness).
                         // N=1 is a thin passthrough — no framing overhead.
+                        ser_buf.clear();
+                        cell_scratch.clear();
+                        let t0 = Instant::now();
                         if mode == "stream" {
-                            let mut buf = Vec::new();
-                            let t0 = Instant::now();
-                            let size = serialize_cell_stream(ser.as_mut(), &cell.fixtures, &mut buf)?;
-                            let ser_ns = t0.elapsed().as_nanos();
-                            let t1 = Instant::now();
-                            let outs = deserialize_cell_stream(ser.as_mut(), &buf, &cell.fixtures)?;
-                            let deser_ns = t1.elapsed().as_nanos();
-                            check_batch_fidelity(&cell.fixtures, &outs)?;
-                            Ok((ser_ns, deser_ns, size))
+                            // Native stream when available; otherwise adapted via serialize_into.
+                            if cell.fixtures.len() == 1 {
+                                let n = ser.serialize_stream(
+                                    black_box(&cell.fixtures[0]),
+                                    black_box(&mut ser_buf),
+                                )?;
+                                let ser_ns = t0.elapsed().as_nanos();
+                                black_box(n);
+                                let t1 = Instant::now();
+                                let outs =
+                                    deserialize_cell_bytes(ser.as_mut(), &ser_buf, &cell.fixtures)?;
+                                let deser_ns = t1.elapsed().as_nanos();
+                                black_box(&outs);
+                                check_batch_fidelity(&cell.fixtures, &outs)?;
+                                Ok((ser_ns, deser_ns, n))
+                            } else {
+                                serialize_cell_into(
+                                    ser.as_mut(),
+                                    &cell.fixtures,
+                                    &mut ser_buf,
+                                    &mut cell_scratch,
+                                )?;
+                                let ser_ns = t0.elapsed().as_nanos();
+                                black_box(ser_buf.len());
+                                let t1 = Instant::now();
+                                let outs =
+                                    deserialize_cell_bytes(ser.as_mut(), &ser_buf, &cell.fixtures)?;
+                                let deser_ns = t1.elapsed().as_nanos();
+                                black_box(&outs);
+                                check_batch_fidelity(&cell.fixtures, &outs)?;
+                                Ok((ser_ns, deser_ns, ser_buf.len()))
+                            }
                         } else {
-                            let t0 = Instant::now();
-                            let buf = serialize_cell_bytes(ser.as_mut(), &cell.fixtures)?;
+                            serialize_cell_into(
+                                ser.as_mut(),
+                                &cell.fixtures,
+                                &mut ser_buf,
+                                &mut cell_scratch,
+                            )?;
                             let ser_ns = t0.elapsed().as_nanos();
+                            black_box(ser_buf.len());
                             let t1 = Instant::now();
-                            let outs = deserialize_cell_bytes(ser.as_mut(), &buf, &cell.fixtures)?;
+                            let outs =
+                                deserialize_cell_bytes(ser.as_mut(), &ser_buf, &cell.fixtures)?;
                             let deser_ns = t1.elapsed().as_nanos();
+                            black_box(&outs);
                             check_batch_fidelity(&cell.fixtures, &outs)?;
-                            Ok((ser_ns, deser_ns, buf.len()))
+                            Ok((ser_ns, deser_ns, ser_buf.len()))
                         }
                     })();
                     match measured {

@@ -1,6 +1,9 @@
 /**
  * Data Model v2 make_one generators (within-language deterministic).
  * Cross-language payload identity is not required.
+ *
+ * RNG: xorshift64*. Zero-seed / avalanche uses floor(2^64/φ)=0x9e3779b97f4a7c15
+ * (golden ratio; nothing-up-my-sleeve). Suite seed: BENCHMARK_SEED.
  * Wire via BENCHMARK_DATA_MODEL=v2 when the runner supports it.
  */
 
@@ -8,6 +11,7 @@ const BASE_TS_MS = 1704067200000n;
 
 class Rng {
   constructor(seed) {
+    // floor(2^64/φ) when seed is 0
     this.state = seed === 0n ? 0x9e3779b97f4a7c15n : BigInt(seed);
   }
   nextU64() {

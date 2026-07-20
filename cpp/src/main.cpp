@@ -6,6 +6,7 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -38,15 +39,31 @@ struct Measure {
   size_t size = 0;
 };
 
-static Measure measure_bytes(bench::ISerializer& ser, const bench::Fixture& fx) {
+// Optimization barrier (issue #59) — mirrors Google Benchmark DoNotOptimize.
+template <typename T>
+static inline void do_not_optimize(const T& value) {
+#if defined(__GNUC__) || defined(__clang__)
+  asm volatile("" : : "g"(std::addressof(value)) : "memory");
+#else
+  (void)value;
+#endif
+}
+
+static Measure measure_bytes(bench::ISerializer& ser, const bench::Fixture& fx,
+                             std::vector<uint8_t>& /*unused_scratch*/) {
   Measure m;
+  // Policy: timed path measures codec APIs that return/fill buffers. Many C++
+  // codecs allocate a fresh vector each call; stream mode reuses scratch.
+  // Warmup (rep 0) absorbs cold alloc; analysis drops it when exclude_warmup.
   uint64_t t0 = now_ns();
   auto buf = ser.serialize_bytes(fx);
   m.ser_ns = now_ns() - t0;
+  do_not_optimize(buf);
   m.size = buf.size();
   t0 = now_ns();
   auto out = ser.deserialize_bytes(buf);
   m.deser_ns = now_ns() - t0;
+  do_not_optimize(out);
   out = ser.to_domain(std::move(out));
   if (!bench::fidelity(fx.value, out)) {
     throw std::runtime_error(std::string("roundtrip fidelity failed for ") + ser.name());
@@ -54,17 +71,19 @@ static Measure measure_bytes(bench::ISerializer& ser, const bench::Fixture& fx) 
   return m;
 }
 
-static Measure measure_stream(bench::ISerializer& ser, const bench::Fixture& fx) {
+static Measure measure_stream(bench::ISerializer& ser, const bench::Fixture& fx,
+                              std::vector<uint8_t>& buf) {
   Measure m;
-  std::vector<uint8_t> buf;
-  buf.reserve(4096);
+  buf.clear();  // capacity reused across reps (issue #59)
   uint64_t t0 = now_ns();
   size_t n = ser.serialize_stream(fx, buf);
   m.ser_ns = now_ns() - t0;
+  do_not_optimize(buf);
   m.size = n > 0 ? n : buf.size();
   t0 = now_ns();
   auto out = ser.deserialize_stream(buf);
   m.deser_ns = now_ns() - t0;
+  do_not_optimize(out);
   out = ser.to_domain(std::move(out));
   if (!bench::fidelity(fx.value, out)) {
     throw std::runtime_error(std::string("stream roundtrip fidelity failed for ") + ser.name());
@@ -166,10 +185,14 @@ int main(int argc, char** argv) {
           errors.emplace_back(fx.type_id, ser->name(), "prepare", 0, e.what());
           continue;
         }
+        // Harness-owned stream scratch: capacity reused across reps (issue #59).
+        std::vector<uint8_t> ser_scratch;
+        ser_scratch.reserve(64 * 1024);
         for (const auto& mode : modes) {
           for (int i = 0; i < reps; ++i) {
             try {
-              Measure m = (mode == "bytes") ? measure_bytes(*ser, fx) : measure_stream(*ser, fx);
+              Measure m = (mode == "bytes") ? measure_bytes(*ser, fx, ser_scratch)
+                                            : measure_stream(*ser, fx, ser_scratch);
               logger.write_row(mode, fx.type_id, reps, i, ser->name(), ser->version(), m.ser_ns,
                                m.deser_ns, m.size, 1.0, ser->native_kind(), ser->stream_mode(),
                                fx.instance_count, fx.type_config_hash);

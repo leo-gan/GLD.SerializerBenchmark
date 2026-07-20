@@ -1,6 +1,7 @@
 import Foundation
 
-/// Deterministic xorshift RNG (aligned with other harnesses).
+/// Deterministic xorshift64* (within-language only).
+/// Zero seed uses floor(2^64/φ)=0x9E3779B97F4A7C15 (golden ratio; nothing-up-my-sleeve).
 final class Rng {
     private var state: UInt64
     init(seed: UInt64) {

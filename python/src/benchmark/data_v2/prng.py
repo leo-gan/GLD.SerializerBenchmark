@@ -1,4 +1,11 @@
-"""Deterministic xorshift64* PRNG (within-language stability; not cross-lang portable)."""
+"""Deterministic xorshift64* PRNG (within-language stability; not cross-lang portable).
+
+Nothing-up-my-sleeve constants:
+- ``0x9E3779B97F4A7C15`` = floor(2**64 / φ) (golden ratio avalanche / zero-seed fallback)
+- ``0x100000001B3`` = FNV-1a 64-bit prime (used in ``mix_seed``)
+
+Suite seed: ``BENCHMARK_SEED`` / master ``reproducibility.random_seed``.
+"""
 
 from __future__ import annotations
 
@@ -9,7 +16,7 @@ class XorShift64:
     def __init__(self, seed: int) -> None:
         s = seed & 0xFFFFFFFFFFFFFFFF
         if s == 0:
-            s = 0x9E3779B97F4A7C15
+            s = 0x9E3779B97F4A7C15  # floor(2**64 / φ)
         self._state = s
 
     def next_u64(self) -> int:

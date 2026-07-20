@@ -114,8 +114,11 @@ public func runBenchmark(_ opts: RunOptions) throws {
                             let t0 = nowNs()
                             let (buf, n) = try ser.serializeStream(fx)
                             let t1 = nowNs()
+                            // withExtendedLifetime: optimization barrier (issue #59).
+                            withExtendedLifetime(buf) {}
                             let decoded = try ser.deserializeStream(buf)
                             let t2 = nowNs()
+                            withExtendedLifetime(decoded) {}
                             serNs = t1 &- t0
                             deserNs = t2 &- t1
                             size = n
@@ -125,8 +128,10 @@ public func runBenchmark(_ opts: RunOptions) throws {
                             let t0 = nowNs()
                             let buf = try ser.serializeBytes(fx)
                             let t1 = nowNs()
+                            withExtendedLifetime(buf) {}
                             let decoded = try ser.deserializeBytes(buf)
                             let t2 = nowNs()
+                            withExtendedLifetime(decoded) {}
                             serNs = t1 &- t0
                             deserNs = t2 &- t1
                             size = buf.count

@@ -5,7 +5,7 @@ use crate::data::{
 };
 use anyhow::{anyhow, Result};
 
-use super::{take_rearm, ver, BenchSerializer, NativeKind};
+use super::{ver, BenchSerializer, NativeKind};
 
 // package benchmark.v2 → OUT_DIR/benchmark.v2.rs
 pub mod pb {
@@ -136,35 +136,71 @@ fn event_from_pb(e: pb::Event) -> Event {
     }
 }
 
-enum ProstMsg {
-    Message(pb::Message),
-    Document(pb::Document),
-    Telemetry(pb::Telemetry),
-    Strings(pb::Strings),
-    Event(pb::Event),
-}
+/// Bound encode fn: convert domain → pb + encode into harness buffer.
+type ProstSerFn = fn(&Fixture, &mut Vec<u8>) -> Result<()>;
 
 pub struct ProstSer {
     kind: &'static str,
-    buf: Vec<u8>,
+    ser: ProstSerFn,
 }
 impl Default for ProstSer {
     fn default() -> Self {
         Self {
             kind: "message",
-            buf: Vec::with_capacity(4096),
+            ser: prost_ser_message,
         }
     }
 }
 
-fn fixture_to_prost(fixture: &Fixture) -> ProstMsg {
-    match fixture {
-        Fixture::Message(m) => ProstMsg::Message(message_to_pb(m)),
-        Fixture::Document(d) => ProstMsg::Document(document_to_pb(d)),
-        Fixture::Telemetry(t) => ProstMsg::Telemetry(telemetry_to_pb(t)),
-        Fixture::Strings(s) => ProstMsg::Strings(strings_to_pb(s)),
-        Fixture::Event(e) => ProstMsg::Event(event_to_pb(e)),
-    }
+fn prost_ser_message(fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use prost::Message as ProstMessage;
+    let Fixture::Message(m) = fixture else {
+        return Err(anyhow!("prost: expected Message"));
+    };
+    let msg = message_to_pb(m);
+    out.reserve(msg.encoded_len());
+    msg.encode(out)?;
+    Ok(())
+}
+fn prost_ser_document(fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use prost::Message as ProstMessage;
+    let Fixture::Document(d) = fixture else {
+        return Err(anyhow!("prost: expected Document"));
+    };
+    let msg = document_to_pb(d);
+    out.reserve(msg.encoded_len());
+    msg.encode(out)?;
+    Ok(())
+}
+fn prost_ser_telemetry(fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use prost::Message as ProstMessage;
+    let Fixture::Telemetry(t) = fixture else {
+        return Err(anyhow!("prost: expected Telemetry"));
+    };
+    let msg = telemetry_to_pb(t);
+    out.reserve(msg.encoded_len());
+    msg.encode(out)?;
+    Ok(())
+}
+fn prost_ser_strings(fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use prost::Message as ProstMessage;
+    let Fixture::Strings(s) = fixture else {
+        return Err(anyhow!("prost: expected Strings"));
+    };
+    let msg = strings_to_pb(s);
+    out.reserve(msg.encoded_len());
+    msg.encode(out)?;
+    Ok(())
+}
+fn prost_ser_event(fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    use prost::Message as ProstMessage;
+    let Fixture::Event(e) = fixture else {
+        return Err(anyhow!("prost: expected Event"));
+    };
+    let msg = event_to_pb(e);
+    out.reserve(msg.encoded_len());
+    msg.encode(out)?;
+    Ok(())
 }
 
 impl BenchSerializer for ProstSer {
@@ -184,31 +220,21 @@ impl BenchSerializer for ProstSer {
         )
     }
     fn prepare(&mut self, fixture: &Fixture) -> Result<()> {
-        // Kind tracking for decode; domain→pb conversion happens per serialize so N>1 batches stay correct.
+        // Bind kind + monomorphic encode outside the timed loop.
+        // Domain→pb conversion remains in timed path for N>1 batch correctness
+        // (each instance differs); it is type-specialized, not a fixture match.
         self.kind = fixture.name();
-        self.buf.clear();
+        self.ser = match fixture {
+            Fixture::Message(_) => prost_ser_message,
+            Fixture::Document(_) => prost_ser_document,
+            Fixture::Telemetry(_) => prost_ser_telemetry,
+            Fixture::Strings(_) => prost_ser_strings,
+            Fixture::Event(_) => prost_ser_event,
+        };
         Ok(())
     }
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
-        use prost::Message as ProstMessage;
-        let msg = fixture_to_prost(fixture);
-        let len = match &msg {
-            ProstMsg::Message(m) => m.encoded_len(),
-            ProstMsg::Document(m) => m.encoded_len(),
-            ProstMsg::Telemetry(m) => m.encoded_len(),
-            ProstMsg::Strings(m) => m.encoded_len(),
-            ProstMsg::Event(m) => m.encoded_len(),
-        };
-        self.buf.clear();
-        self.buf.reserve(len);
-        match &msg {
-            ProstMsg::Message(m) => m.encode(&mut self.buf)?,
-            ProstMsg::Document(m) => m.encode(&mut self.buf)?,
-            ProstMsg::Telemetry(m) => m.encode(&mut self.buf)?,
-            ProstMsg::Strings(m) => m.encode(&mut self.buf)?,
-            ProstMsg::Event(m) => m.encode(&mut self.buf)?,
-        }
-        Ok(take_rearm(&mut self.buf))
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        (self.ser)(fixture, out)
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         // Alias avoids clash with domain `Message`.

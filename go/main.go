@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -83,6 +84,8 @@ func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, des
 	if err != nil {
 		return
 	}
+	// KeepAlive: prevent compiler from DCE'ing timed work (issue #59).
+	runtime.KeepAlive(buf)
 	size = len(buf)
 
 	t1 := time.Now()
@@ -91,6 +94,7 @@ func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, des
 	if err != nil {
 		return
 	}
+	runtime.KeepAlive(out)
 	// Domain conversion is intentionally outside the timer (fair codec measurement).
 	out, err = toDomain(ser, out)
 	if err != nil {
@@ -102,25 +106,27 @@ func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, des
 	return
 }
 
-func measureStream(ser serializers.BenchSerializer, fx model.Fixture) (serNs, deserNs uint64, size int, err error) {
-	buf := &bytes.Buffer{}
-	buf.Grow(4096)
+// measureStream reuses streamBuf across reps (caller owns it; issue #59 buffer policy).
+func measureStream(ser serializers.BenchSerializer, fx model.Fixture, streamBuf *bytes.Buffer) (serNs, deserNs uint64, size int, err error) {
+	streamBuf.Reset()
 
 	t0 := time.Now()
-	n, err := ser.SerializeStream(fx, buf)
+	n, err := ser.SerializeStream(fx, streamBuf)
 	serNs = uint64(time.Since(t0).Nanoseconds())
 	if err != nil {
 		return
 	}
+	runtime.KeepAlive(streamBuf)
 	size = n
 
-	r := bytes.NewReader(buf.Bytes())
+	r := bytes.NewReader(streamBuf.Bytes())
 	t1 := time.Now()
 	out, err := ser.DeserializeStream(r)
 	deserNs = uint64(time.Since(t1).Nanoseconds())
 	if err != nil {
 		return
 	}
+	runtime.KeepAlive(out)
 	out, err = toDomain(ser, out)
 	if err != nil {
 		return
@@ -248,6 +254,8 @@ func main() {
 				})
 				continue
 			}
+			// Stream scratch reused across reps (issue #59 buffer policy).
+			streamBuf := bytes.NewBuffer(make([]byte, 0, 64*1024))
 			// Log every successful rep including i==0 (warmup). Analysis drops warmup later.
 			for _, mode := range modes {
 				for i := uint32(0); i < repetitions; i++ {
@@ -257,7 +265,7 @@ func main() {
 					if mode == "bytes" {
 						serNs, deserNs, size, merr = measureBytes(ser, fx)
 					} else {
-						serNs, deserNs, size, merr = measureStream(ser, fx)
+						serNs, deserNs, size, merr = measureStream(ser, fx, streamBuf)
 					}
 					if merr != nil {
 						fmt.Fprintf(os.Stderr, "[ERROR] %s / %s / %s: %v\n", ser.Name(), fx.Name, mode, merr)
