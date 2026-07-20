@@ -2,10 +2,8 @@ import Foundation
 import CapnpBridge
 
 // MARK: - Cap'n Proto (C++ runtime via CapnpBridge)
-// Optimal: messageToFlatArray / FlatArrayMessageReader on prepared builders.
-// No first-class Swift codegen; suite uses C ABI bridge over official C++ library.
-// Schema: swift/schemas/benchmark.capnp (same as cpp/schemas/benchmark.capnp)
-// https://capnproto.org/
+// Docs: https://capnproto.org/ — messageToFlatArray / FlatArrayMessageReader.
+// Timed path includes field materialize into suite domain (fair vs other langs' full roundtrip).
 
 public final class CapnProtoSerializer: BenchSerializer {
     public let name = "CapnProto"
@@ -27,8 +25,7 @@ public final class CapnProtoSerializer: BenchSerializer {
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture
-        // Warm encode path
-        _ = try serializeBytes(fixture)
+        _ = try CapnpBridgeSwift.encode(fixture)
     }
 
     public func serializeBytes(_ fixture: Fixture) throws -> Data {

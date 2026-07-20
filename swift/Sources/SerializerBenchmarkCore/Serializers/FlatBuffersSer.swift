@@ -2,18 +2,18 @@ import Foundation
 import FlatBuffers
 
 // MARK: - Google FlatBuffers (official Swift runtime)
-// Optimal: FlatBufferBuilder + finish; getRoot as table. Conversion in prepare-style builders.
-// Schema: swift/schemas/benchmark.fbs (same as cpp/schemas/benchmark.fbs)
-// https://flatbuffers.dev/flatbuffers_guide_use_swift.html
+// Docs: https://flatbuffers.dev/flatbuffers_guide_use_swift.html
+// Optimal: reuse FlatBufferBuilder.clear(); finish + sizedByteArray; getRoot + field reads.
+// Domain materialize is timed (zero-copy root alone is not a suite deserialize).
 
 public final class FlatBuffersSerializer: BenchSerializer {
     public let name = "FlatBuffers"
     public let version: String
     public let streamMode: StreamMode = .adapted
-    public let nativeKind: NativeKind = .message
+    public let nativeKind: NativeKind = .archive
 
     private var prepared: Fixture?
-    private var preparedBytes: Data = Data()
+    private var builder = FlatBufferBuilder(initialSize: 1024)
 
     public init() {
         self.version = PackageVersions.version(for: "flatbuffers", fallback: "24.3.25")
@@ -23,13 +23,13 @@ public final class FlatBuffersSerializer: BenchSerializer {
 
     public func prepare(_ fixture: Fixture) throws {
         prepared = fixture
-        preparedBytes = try FlatBuffersBridge.encode(fixture)
+        builder.clear()
+        _ = try FlatBuffersBridge.encode(into: &builder, fixture: fixture)
     }
 
     public func serializeBytes(_ fixture: Fixture) throws -> Data {
-        // Rebuild each call (builder is not reusable across finishes without reset).
-        // prepare caches one sample for size; timed path encodes freshly.
-        return try FlatBuffersBridge.encode(fixture)
+        builder.clear()
+        return try FlatBuffersBridge.encode(into: &builder, fixture: fixture)
     }
 
     public func deserializeBytes(_ data: Data) throws -> Any {

@@ -2,8 +2,7 @@ import Foundation
 import FlatBuffers
 
 enum FlatBuffersBridge {
-    static func encode(_ fixture: Fixture) throws -> Data {
-        var fbb = FlatBufferBuilder(initialSize: 1024)
+    static func encode(into fbb: inout FlatBufferBuilder, fixture: Fixture) throws -> Data {
         let root: Offset
         let kind: benchmark_v2_FixtureKind
         if fixture.instanceCount > 1 {
@@ -58,7 +57,13 @@ enum FlatBuffersBridge {
             }
         }
         fbb.finish(offset: root)
+        // sizedByteArray is the documented finished payload view.
         return Data(fbb.sizedByteArray)
+    }
+
+    static func encode(_ fixture: Fixture) throws -> Data {
+        var fbb = FlatBufferBuilder(initialSize: 1024)
+        return try encode(into: &fbb, fixture: fixture)
     }
 
     static func decode(_ data: Data, fixture: Fixture) throws -> Any {

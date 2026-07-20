@@ -24,9 +24,16 @@ public protocol BenchSerializer: AnyObject {
     /// Untimed: encoder config, scratch buffers — no payload type knowledge required.
     func prepare(_ fixture: Fixture) throws
     func serializeBytes(_ fixture: Fixture) throws -> Data
+    /// Timed decode. May return a library-native value; see DomainConverter.
     func deserializeBytes(_ data: Data) throws -> Any
     func serializeStream(_ fixture: Fixture) throws -> (Data, Int)
     func deserializeStream(_ data: Data) throws -> Any
+}
+
+/// Optional: convert library-native decode result → suite domain **outside** the timer
+/// (same fair call-path as Go DomainConverter / Python to_domain).
+public protocol DomainConverter: AnyObject {
+    func toDomain(_ decoded: Any) throws -> Any
 }
 
 public extension BenchSerializer {
@@ -34,13 +41,43 @@ public extension BenchSerializer {
     var nativeKind: NativeKind { .codable }
     func supports(testDataName: String) -> Bool { true }
 
-    /// Default stream path: bytes + buffer (honest `adapted` mode).
+    /// Adapted stream: full bytes encode, then write through Foundation OutputStream
+    /// (not a free alias of the bytes path — includes stream sink work).
     func serializeStream(_ fixture: Fixture) throws -> (Data, Int) {
         let d = try serializeBytes(fixture)
-        return (d, d.count)
+        let out = OutputStream.toMemory()
+        out.open()
+        defer { out.close() }
+        let written: Int = d.withUnsafeBytes { raw in
+            guard let base = raw.bindMemory(to: UInt8.self).baseAddress, !d.isEmpty else {
+                return 0
+            }
+            return out.write(base, maxLength: d.count)
+        }
+        if written < 0 {
+            throw BenchError.unsupported("OutputStream write failed")
+        }
+        let produced = (out.property(forKey: .dataWrittenToMemoryStreamKey) as? Data) ?? d
+        return (produced, produced.count)
     }
+
+    /// Adapted stream: read full buffer via InputStream, then bytes decode.
     func deserializeStream(_ data: Data) throws -> Any {
-        try deserializeBytes(data)
+        let input = InputStream(data: data)
+        input.open()
+        defer { input.close() }
+        var chunk = [UInt8](repeating: 0, count: max(4096, data.count))
+        var collected = Data()
+        collected.reserveCapacity(data.count)
+        while input.hasBytesAvailable {
+            let n = input.read(&chunk, maxLength: chunk.count)
+            if n < 0 {
+                throw BenchError.unsupported("InputStream read failed")
+            }
+            if n == 0 { break }
+            collected.append(contentsOf: chunk.prefix(n))
+        }
+        return try deserializeBytes(collected)
     }
 }
 

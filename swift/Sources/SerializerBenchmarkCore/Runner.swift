@@ -6,6 +6,14 @@ private func nowNs() -> UInt64 {
     return UInt64(ts.tv_sec) * 1_000_000_000 &+ UInt64(ts.tv_nsec)
 }
 
+/// Untimed domain conversion after timed deserialize (protobuf Message → suite types, etc.).
+private func toDomain(_ ser: any BenchSerializer, _ decoded: Any) throws -> Any {
+    if let conv = ser as? DomainConverter {
+        return try conv.toDomain(decoded)
+    }
+    return decoded
+}
+
 public struct RunOptions {
     public var repetitions: UInt32
     public var serializerFilter: String
@@ -111,7 +119,8 @@ public func runBenchmark(_ opts: RunOptions) throws {
                             serNs = t1 &- t0
                             deserNs = t2 &- t1
                             size = n
-                            out = decoded
+                            // Domain conversion intentionally outside the timer.
+                            out = try toDomain(ser, decoded)
                         } else {
                             let t0 = nowNs()
                             let buf = try ser.serializeBytes(fx)
@@ -121,7 +130,7 @@ public func runBenchmark(_ opts: RunOptions) throws {
                             serNs = t1 &- t0
                             deserNs = t2 &- t1
                             size = buf.count
-                            out = decoded
+                            out = try toDomain(ser, decoded)
                         }
                         if !fx.fidelity(against: out) {
                             throw BenchError.fidelity
