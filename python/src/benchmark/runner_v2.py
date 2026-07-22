@@ -160,11 +160,13 @@ def _prepare_for_serializer(
         native = protobuf_bridge.to_pb(src)
         return native, payload, type(instances[0])
 
-    # Generic path: dataclass or list of dataclasses
+    # Generic path: dataclass or list of dataclasses. Batch cells pass the
+    # parameterized list[T] so typed codecs can be built ahead of timing.
     tip = type(instances[0]) if instances else dict
-    serializer.prepare(type_id, tip if n == 1 else list)
-    serializable = serializer.prepare_data(payload, type_id, tip if n == 1 else list)
-    return serializable, payload, tip if n == 1 else list
+    td_type = tip if n == 1 else list[tip]
+    serializer.prepare(type_id, td_type)
+    serializable = serializer.prepare_data(payload, type_id, td_type)
+    return serializable, payload, td_type
 
 
 def run_v2(
