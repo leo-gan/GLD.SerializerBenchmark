@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Interactive dashboard presenting performance analytics, trade-offs, and comparisons for serialization libraries.">
-  <title>Serializer Benchmark Analytics Dashboard</title>
+  <title>Serializer Analytics dashboard</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./index.css">
   <!-- Chart.js from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,7 +15,7 @@
   <header>
     <div class="logo">
       <div class="logo-icon">📊</div>
-      <h1>Serializer Analytics</h1>
+      <h1>Serializer Analytics dashboard</h1>
     </div>
     <ul class="nav-links">
       <li><a href="../" id="nav-docs-link" style="margin-right: 0.75rem; border: 1px solid var(--border-color); font-weight: 500;">← Back to Docs</a></li>
@@ -232,10 +233,10 @@
         <div class="select-wrapper">
           <select id="xl-add-lang" aria-label="Language to add"></select>
         </div>
-        <div class="select-wrapper" style="min-width: 12rem; flex: 1;">
+        <div class="select-wrapper xl-add-ser-wrap">
           <select id="xl-add-serializer" aria-label="Serializer to add"></select>
         </div>
-        <button type="button" id="xl-add-btn" class="tab-btn" style="font-size: 0.85rem; border: 1px solid var(--border-color);">
+        <button type="button" id="xl-add-btn" class="tab-btn xl-add-btn">
           Add
         </button>
       </div>

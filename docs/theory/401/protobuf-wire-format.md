@@ -57,6 +57,9 @@ key = (1<<3) | 0
 
 Nested message example (field 3 is a manager whose only content is `id = 2`):
 
+![Annotated MiniUser nested wire strip](../assets/diagrams/401-miniuser-wire.svg#only-light)
+![Annotated MiniUser nested wire strip](../assets/diagrams/401-miniuser-wire-dark.svg#only-dark)
+
 ```
 1a       02       08       02
 ^^       ^^       ^^       ^^
@@ -103,6 +106,9 @@ The key is itself a **varint**. For field numbers **1–15**, a single-byte key 
 ### 2. Encode a varint (unsigned base-128)
 
 A **varint** (variable-length integer) stores an unsigned integer in base-128 groups. Each byte carries seven data bits. The high bit of a byte means “more bytes follow.”
+
+![Varint bit layout for decimal 300](../assets/diagrams/401-varint.svg#only-light)
+![Varint bit layout for decimal 300](../assets/diagrams/401-varint-dark.svg#only-dark)
 
 Algorithm:
 

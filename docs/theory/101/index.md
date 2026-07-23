@@ -19,6 +19,9 @@ Theory alone does not decide production choices. Use this course to build vocabu
 
 Memory is a web of pointers and types. The network and the disk only understand bytes. Every format is a **contract** between a writer and a reader about how that collapse and rebuild work.
 
+![Serialization as a contract: in memory, on the wire, rebuilt](../assets/diagrams/101-serialize-contract.svg#only-light)
+![Serialization as a contract: in memory, on the wire, rebuilt](../assets/diagrams/101-serialize-contract-dark.svg#only-dark)
+
 ---
 
 ## Three lenses
