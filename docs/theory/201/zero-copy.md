@@ -18,18 +18,8 @@ Encoding still requires work to **construct** that layout. **Validation** of unt
 
 ## Mental model
 
-```text
-  Classical path                      Zero-copy style path
-  ──────────────                      ────────────────────
-  network buffer                      network buffer
-       │                                   │
-       ▼                                   │ structural verification
-  parse and allocate                       │ (required for untrusted data)
-       │                                   ▼
-       ▼                              accessors / views
-  object graph  ←── application ──   (read fields at offsets
-  (independent copy)     reads        into the same buffer)
-```
+![Classical deserialize path versus zero-copy accessors](../assets/diagrams/201-zero-copy.svg#only-light)
+![Classical deserialize path versus zero-copy accessors](../assets/diagrams/201-zero-copy-dark.svg#only-dark)
 
 **Information versus materialization.** Interpreting bytes as typed fields *is* deserialization in the information-theoretic sense. What zero-copy designs avoid is the classical step of **allocating a full data-transfer object graph** that mirrors the message.
 

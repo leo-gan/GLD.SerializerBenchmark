@@ -98,6 +98,9 @@ Consider three logical fields:
 
 **Layout 1 — order `flag`, `id`, `score` (typical 64-bit C-like padding):**
 
+![In-memory layout with padding: flag, pad, id, score](../assets/diagrams/201-memory-padding.svg#only-light)
+![In-memory layout with padding: flag, pad, id, score](../assets/diagrams/201-memory-padding-dark.svg#only-dark)
+
 ```text
   offset  0:  flag          [1 byte]
   offset  1:  pad pad pad   [3 bytes]   ← so that id begins at a multiple of 4
@@ -199,12 +202,8 @@ A multi-byte integer is stored as **several bytes in a defined order**. Two comm
 
 **Example:** 32-bit value `0x12345678` (decimal 305 419 896):
 
-```text
-  Increasing addresses →
-
-  Big-endian:     12  34  56  78
-  Little-endian:  78  56  34  12
-```
+![Endianness: big-endian vs little-endian byte order for 0x12345678](../assets/diagrams/201-endianness.svg#only-light)
+![Endianness: big-endian vs little-endian byte order for 0x12345678](../assets/diagrams/201-endianness-dark.svg#only-dark)
 
 If a little-endian writer emits those four bytes and a big-endian reader loads them as a native integer **without conversion**, the reader obtains a different numeric value. Network protocols historically adopted a **network byte order**; classical Internet Protocol stacks used big-endian. Every serialization format must **document** endianness—or avoid host integers as the interchange unit (for example by using decimal text in JSON). See also the [historical perspective](../101/historical_perspective.md).
 

@@ -419,7 +419,26 @@ select:focus {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.6rem;
+}
+
+/* Keep language + serializer + Add as a tight group (do not stretch the
+   serializer wrapper — a flex:1 wrapper left the custom ::after chevron
+   stranded at the far right of the row). */
+.cross-lang-add-row .select-wrapper {
+  flex: 0 0 auto;
+}
+
+.cross-lang-add-row .xl-add-ser-wrap select {
+  min-width: 12rem;
+  max-width: 22rem;
+}
+
+.cross-lang-add-row .xl-add-btn {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  border: 1px solid var(--border-color);
 }
 
 .xl-chips {

@@ -24,21 +24,8 @@ Self-describing formats typically trade larger size and extra parsing work for i
 
 ## Mental model
 
-```text
-  Self-describing (illustrative JSON)     Schema-dependent (illustrative)
-  ┌──────────────────────────┐           ┌──────────────────────────┐
-  │ {"user_id": 42,          │           │ Shared schema / IDL      │
-  │  "name": "Ada"}          │           │   1 → user_id (integer)  │
-  │  names and values        │           │   2 → name (string)      │
-  │  travel together         │           └────────────┬─────────────┘
-  └──────────────────────────┘                        │
-                                                      ▼
-                                         ┌──────────────────────────┐
-                                         │ Compact bytes using      │
-                                         │ field numbers / layout   │
-                                         │ (names not repeated)     │
-                                         └──────────────────────────┘
-```
+![Self-describing payload versus schema-dependent encoding](../assets/diagrams/201-self-describing-vs-schema.svg#only-light)
+![Self-describing payload versus schema-dependent encoding](../assets/diagrams/201-self-describing-vs-schema-dark.svg#only-dark)
 
 “Self-describing” is a spectrum, not a single switch. JSON prioritizes human inspection. MessagePack remains machine-oriented yet still carries tags and often keys. Operational deployments that ship descriptor sets alongside Protocol Buffers are hybrid arrangements; they are not the minimal on-the-wire encoding.
 

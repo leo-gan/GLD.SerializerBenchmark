@@ -34,18 +34,8 @@ This page assumes the 201 article on [self-describing vs schema](../201/self-des
 
 Ask one primary question first: **do these bytes leave this process or trust domain?**
 
-```text
-  Do bytes leave this process / trust domain?
-        │
-   no   │   yes
-        │    │
-        ▼    ▼
-   Native    Portable format required
-   may be    (choose the family with 101/201
-   OK if      knowledge and the category guide)
-   peers are
-   trusted
-```
+![Trust boundaries: process, service estate, public untrusted](../assets/diagrams/301-trust-boundaries.svg#only-light)
+![Trust boundaries: process, service estate, public untrusted](../assets/diagrams/301-trust-boundaries-dark.svg#only-dark)
 
 If the answer is yes, a portable format is required. If the answer is no, a native format may still be acceptable—only when every peer is trusted and the lock-in is documented.
 
