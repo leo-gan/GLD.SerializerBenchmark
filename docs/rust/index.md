@@ -9,10 +9,11 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 - Runner: `rust/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `cargo run --release -- <reps>`
 - Registration: [`rust/src/serializers/mod.rs`](../../rust/src/serializers/mod.rs) (family modules under `serializers/`)
 
-## Serializers (15)
+## Serializers (16)
 
 | Serializer | Category | Crate | Native path | Stream | Notes |
 |------------|----------|-------|-------------|--------|-------|
+| apache-avro | Schema | `apache-avro` | Serde + prepared schema; single-object binary | native write | Official Apache Avro Rust SDK |
 | bincode | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
 | bitcode | Binary | `bitcode` | Serde | adapted | Bit-packed |
 | bson | Document | `bson` | Serde | adapted | Document DB interop |

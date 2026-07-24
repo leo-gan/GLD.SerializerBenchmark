@@ -6,12 +6,13 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 ## What this benchmark measures vs the wider ecosystem
 
-This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
+This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
 
 **Not in this suite:** MessagePack-CSharp, Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs).
 
 | Log name | Category | Library / notes |
 |----------|----------|-----------------|
+| Apache.Avro | Schema | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize |
 | System.Text.Json | JSON | System.Text.Json (net8 built-in) |
 | BinaryPack | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
 | Ceras | Binary | Ceras |
@@ -76,7 +77,7 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (Results labels: **b
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
-| **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
+| **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
 | **Adapted stream** | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader` | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
 

@@ -43,6 +43,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Google.Protobuf" Version="3.*" />
+    <PackageReference Include="Apache.Avro" Version="1.*" />
     <PackageReference Include="GroBuf" Version="1.*" />
     <!-- 0.x: float only within the current minor (0.12.*) -->
     <PackageReference Include="Hyperion" Version="0.12.*" />

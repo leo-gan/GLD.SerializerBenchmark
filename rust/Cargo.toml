@@ -24,6 +24,7 @@ flexbuffers = "2"
 rkyv = { version = "0.8", features = ["std", "bytecheck", "alloc"] }
 minicbor = { version = "0.25", features = ["std", "derive"] }
 prost = "0.13"
+apache-avro = "0.21"
 chrono = { version = "0.4", features = ["serde"] }
 csv = "1"
 clap = { version = "4", features = ["derive"] }

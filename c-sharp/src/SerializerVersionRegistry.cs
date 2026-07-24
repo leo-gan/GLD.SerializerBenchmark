@@ -37,6 +37,7 @@ namespace GLD.SerializerBenchmark
                 ["FlatSharp"] = "FlatSharp",
                 ["FluentSerializer"] = "FluentSerializer.Json",
                 ["Google.Protobuf"] = "Google.Protobuf",
+                ["Apache.Avro"] = "Avro",
                 ["GroBuf"] = "GroBuf",
                 ["Hyperion"] = "Hyperion",
                 ["NetSerializer"] = "NetSerializer",
