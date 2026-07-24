@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-Extensible suite evaluating **36 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
+Extensible suite evaluating **37 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
 
 Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
@@ -8,7 +8,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **36 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
+- **37 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
 - **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs`.
 - **Dual mode**: **string** vs **Stream**. Text codecs use real text on the string path; **binary** codecs usually use **Base64** of bytes on the string path. Stream is **native** when the library writes the stream, or **adapted** when the benchmark runner wraps the string path — see [inventory honesty](../docs/c-sharp/index.md#string-mode-vs-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
@@ -34,7 +34,7 @@ For `N>1`, payloads use batch wrappers (`BatchMessage`, …) so codecs that need
 
 ## Requirements
 
-- **.NET SDK 8.0+** (host toolchain — prepare once):
+- **.NET SDK 9.0+** (host toolchain — prepare once). The project still targets **net8.0**; SDK 9+ is required so LightProto’s source generator (Roslyn 4.14+) runs. SDK 8 alone builds the project but leaves LightProto parsers ungenerated.
   ```bash
   ../scripts/install-host-requirements.sh csharp
   ../scripts/check-host-requirements.sh csharp
