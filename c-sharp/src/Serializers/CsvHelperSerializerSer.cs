@@ -12,7 +12,11 @@ namespace GLD.SerializerBenchmark.Serializers
 {
     /// <summary>
     /// CsvHelper on row-list contracts only (CsvFlatRow / CsvEventRow / CsvStringRow).
-    /// Domain projection via <see cref="IDomainNativeMap"/>. Supports message/event/strings.
+    /// Domain projection via <see cref="IDomainNativeMap"/> (untimed). Supports message/event/strings.
+    /// <para>
+    /// Timed path uses real CsvHelper <c>WriteRecords</c> / <c>GetRecords</c> (not a JSON envelope).
+    /// Stream mode is <b>adapted</b>: UTF-8 StreamWriter/Reader around the same CSV text path.
+    /// </para>
     /// https://joshclose.github.io/CsvHelper/
     /// </summary>
     internal class CsvHelperSerializerSer : MappedSerDeser
