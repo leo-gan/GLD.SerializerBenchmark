@@ -300,9 +300,9 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 37 serializers registered (Program.cs); all run on all V2 data types.
+    # 38 serializers registered (Program.cs); all run on all V2 data types.
     # Dropped: Apex.Serialization (net8 FieldInfoModifier crash), FluentSerializer (unsuitable graphs).
-    # Added: System.Text.Json. See docs/c-sharp/index.md for inventory + PrepareData projections.
+    # Added: System.Text.Json, Apache.Avro. See docs/c-sharp/index.md for inventory + PrepareData projections.
 
   python:
     display_name: Python
@@ -424,6 +424,11 @@ languages:
         crate: prost
         rationale: "De-facto Rust Protocol Buffers (prost + prost-build from shared suite protos)"
         optimal_api: "Message::encode / decode on prepared messages (convert in prepare)"
+      - name: serde_avro_fast
+        category: schema
+        crate: serde_avro_fast
+        rationale: "High-performance Avro binary datum (serde one-pass; wire-compatible with apache-avro)"
+        optimal_api: "to_datum + reused SerializerConfig / from_datum_slice; schema once in prepare"
 
   c:
     display_name: C

@@ -12,9 +12,10 @@ rust/src/serializers/
   binary_serde.rs  # rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson
   direct.rs        # minicbor, rkyv, nanoserde, speedy
   prost_ser.rs     # prost + fixture conversion
+  avro_ser.rs      # serde_avro_fast (Avro binary datum)
 ```
 
-## Serializers (15)
+## Serializers (16)
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
@@ -31,6 +32,7 @@ rust/src/serializers/
 | minicbor | CBOR | direct `Encode`/`Decode` |
 | rkyv | Zero-copy | timed path materializes owned `T` for fidelity |
 | prost | Protobuf | convert in `prepare`; timed codec only |
+| serde_avro_fast | Schema | schema + `SerializerConfig` once; `to_datum` / `from_datum_slice` |
 | nanoserde | Binary | `SerBin` / `DeBin` |
 | speedy | Binary | `Writable` / `Readable` |
 

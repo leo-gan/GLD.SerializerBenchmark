@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-Extensible suite evaluating **37 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
+Extensible suite evaluating **38 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
 
 Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
@@ -8,7 +8,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **37 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
+- **38 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
 - **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs`.
 - **Dual mode**: **string** vs **Stream**. Text codecs use real text on the string path; **binary** codecs usually use **Base64** of bytes on the string path. Stream is **native** when the library writes the stream, or **adapted** when the benchmark runner wraps the string path — see [inventory honesty](../docs/c-sharp/index.md#string-mode-vs-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.

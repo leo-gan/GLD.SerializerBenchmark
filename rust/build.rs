@@ -67,6 +67,7 @@ fn write_dep_versions(manifest: &std::path::Path) -> Result<(), Box<dyn std::err
         "rkyv",
         "minicbor",
         "prost",
+        "serde_avro_fast",
         "bson",
         "nanoserde",
         "speedy",

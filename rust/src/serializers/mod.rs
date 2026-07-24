@@ -21,6 +21,7 @@
 //! - [`binary_serde`] — rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson
 //! - [`direct`] — minicbor, rkyv, nanoserde, speedy
 //! - [`prost_ser`] — prost + fixture conversion
+//! - [`avro_ser`] — serde_avro_fast (Avro binary datum)
 //! - [`kinded`] — shared kind-tracked direct codec macro
 
 use crate::data::Fixture;
@@ -30,12 +31,14 @@ use std::io::{Read, Write};
 // Locked dependency versions from Cargo.lock (build.rs → OUT_DIR/dep_versions.rs).
 include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
 
+mod avro_ser;
 mod binary_serde;
 mod direct;
 mod json;
 mod kinded;
 mod prost_ser;
 
+use avro_ser::AvroFastSer;
 use binary_serde::{
     BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, PostcardSer, RmpSerde,
 };
@@ -153,6 +156,7 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(MinicborDirect::default()),
         Box::new(RkyvSer::default()),
         Box::new(ProstSer::default()),
+        Box::new(AvroFastSer::default()),
         Box::new(NanoserdeSer::default()),
         Box::new(SpeedySer::default()),
     ]

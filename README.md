@@ -59,9 +59,9 @@ Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 
 ## Supported languages
 
-- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 37 serializers registered
+- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 38 serializers registered
 - [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 16
-- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 15
+- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 16
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 20
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 20
 - [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 19
