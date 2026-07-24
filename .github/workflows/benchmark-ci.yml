@@ -1,8 +1,8 @@
 name: Benchmark CI
 
 # Per-language smoke when that language's *source* changes; analysis unit tests when
-# analysis/ or shared config/scripts change. Shared schemas/** (wire contracts) still
-# fan out to all language jobs — but prose under schemas/ (README.md, etc.) does not.
+# analysis/ or shared config/scripts change. Shared schemas/** still fans out to all
+# language jobs. Pure docs/prose PRs are skipped via paths-ignore (workflow-level).
 # Summaries/plots are committed under docs/ — not built here.
 #
 # Benchmark runners run natively (no Docker): each job installs the language toolchain
@@ -10,8 +10,11 @@ name: Benchmark CI
 #
 # Path policy (aligned with prepare-pr detect-changed-langs.sh):
 # - Workflow paths-ignore: pure docs/prose PRs never start this workflow.
-# - dorny filters: language/schemas hits exclude **/*.md (and similar) so a
-#   terminology-only README under schemas/ or python/ does not open smoke jobs.
+# - dorny filters use *positive* globs only. Do NOT add '!…' negation rules:
+#   with predicate-quantifier "some" (dorny default), each pattern is a separate
+#   matcher, and a standalone '!foo/**/*.md' matches almost every path that is
+#   *not* that pattern — so every language job incorrectly ran on every PR.
+# - Prose under a lang tree is still skipped for pure-docs PRs via paths-ignore.
 # - pull_request filters still compare the *whole PR* to the base branch.
 
 on:
@@ -84,102 +87,42 @@ jobs:
         with:
           # pull_request: all files in the PR vs base (not only the tip commit).
           # push: files in the push. workflow_dispatch: jobs use inputs, not filters.
-          # Negations: README/markdown under a tree must not alone select that job.
-          # schemas/** still selects all languages when *non-prose* schema files change.
+          # Positive globs only — see header comment (standalone '!…' is unsafe with some).
+          # schemas/** still selects all languages when any schema path changes.
+          # Note: 'c/**' does not match 'c-sharp/**' (trailing slash segment required).
           filters: |
             csharp:
               - 'c-sharp/**'
-              - '!c-sharp/**/*.md'
-              - '!c-sharp/**/*.mdx'
-              - '!c-sharp/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             python:
               - 'python/**'
-              - '!python/**/*.md'
-              - '!python/**/*.mdx'
-              - '!python/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             rust:
               - 'rust/**'
-              - '!rust/**/*.md'
-              - '!rust/**/*.mdx'
-              - '!rust/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             c:
               - 'c/**'
-              - '!c/**/*.md'
-              - '!c/**/*.mdx'
-              - '!c/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             javascript:
               - 'javascript/**'
-              - '!javascript/**/*.md'
-              - '!javascript/**/*.mdx'
-              - '!javascript/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             go:
               - 'go/**'
-              - '!go/**/*.md'
-              - '!go/**/*.mdx'
-              - '!go/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             java:
               - 'java/**'
-              - '!java/**/*.md'
-              - '!java/**/*.mdx'
-              - '!java/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             cpp:
               - 'cpp/**'
-              - '!cpp/**/*.md'
-              - '!cpp/**/*.mdx'
-              - '!cpp/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             swift:
               - 'swift/**'
-              - '!swift/**/*.md'
-              - '!swift/**/*.mdx'
-              - '!swift/**/*.txt'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
             analysis:
               - 'analysis/**'
-              - '!analysis/**/*.md'
-              - '!analysis/**/*.mdx'
-              - '!analysis/**/*.txt'
               - 'config/benchmark_config.yaml'
               - 'schemas/**'
-              - '!schemas/**/*.md'
-              - '!schemas/**/*.mdx'
-              - '!schemas/**/*.txt'
               - 'scripts/lib/**'
-              - '!scripts/lib/**/*.md'
               - 'scripts/read-config.py'
               - 'scripts/run-all-benchmarks.sh'
               - 'scripts/verify-results.sh'
