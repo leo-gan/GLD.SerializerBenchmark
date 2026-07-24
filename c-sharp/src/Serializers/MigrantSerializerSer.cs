@@ -6,8 +6,22 @@ using Newtonsoft.Json;
 namespace GLD.SerializerBenchmark.Serializers
 {
     /// <summary>
-    /// Migrant emits Bad IL on net8 for many suite graphs. Timed path serializes a
-    /// plain string envelope; fidelity restored from JSON in ToDomain.
+    /// <b>Honesty — not native domain Migrant graphs.</b>
+    /// <para>
+    /// Timed work serializes a <see cref="MigEnvelope"/> whose payload is a
+    /// <b>Newtonsoft.Json</b> string of the suite domain object. Migrant only
+    /// round-trips that envelope (plain POCOs). Fidelity is restored in
+    /// <see cref="ToDomain"/> (untimed) from the JSON field.
+    /// </para>
+    /// <para>
+    /// <b>String mode</b> wraps Migrant bytes as <b>Base64</b> (not a domain text format).
+    /// <b>Stream mode</b> writes Migrant binary of the envelope directly to the stream
+    /// (native Migrant stream API on the envelope type only).
+    /// </para>
+    /// Why: Migrant emits bad IL / fails on many suite graphs on net8. This keeps a
+    /// registered row for the envelope workaround. Do not treat Results as
+    /// “Migrant of nested suite POCOs.”
+    /// Docs: https://github.com/antmicro/Migrant
     /// </summary>
     internal class MigrantSerializerSer : SerDeser
     {
@@ -25,11 +39,13 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void PrepareData(object data)
         {
+            // Untimed: JSON envelope once per cell.
             _native = Make(data);
         }
 
         public override object ToDomain(object decoded)
         {
+            // Untimed: JSON → suite domain.
             if (decoded is MigEnvelope env)
                 return JsonConvert.DeserializeObject(env.Json, Type.GetType(env.TypeName));
             return decoded;
@@ -39,6 +55,7 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             using var ms = new MemoryStream();
             _serializer.Serialize(_native ?? Make(serializable), ms);
+            // String mode: Base64 of Migrant bytes of the envelope (not domain text).
             return Convert.ToBase64String(ms.ToArray());
         }
 
@@ -63,6 +80,7 @@ namespace GLD.SerializerBenchmark.Serializers
             Json = JsonConvert.SerializeObject(data)
         };
 
+        /// <summary>Wire type for Migrant only — holds type name + JSON payload.</summary>
         public class MigEnvelope
         {
             public string TypeName { get; set; }

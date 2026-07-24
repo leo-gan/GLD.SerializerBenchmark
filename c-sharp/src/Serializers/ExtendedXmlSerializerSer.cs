@@ -6,6 +6,24 @@ using Newtonsoft.Json;
 
 namespace GLD.SerializerBenchmark.Serializers
 {
+    /// <summary>
+    /// <b>Honesty — not native domain XML.</b>
+    /// <para>
+    /// Timed work serializes an <see cref="XmlEnvelope"/> whose payload is a
+    /// <b>Newtonsoft.Json</b> string of the suite domain object, not ExtendedXmlSerializer
+    /// mapping of <c>Message</c>/<c>Document</c>/… graphs. ExtendedXmlSerializer only
+    /// round-trips the envelope. Fidelity is restored in <see cref="ToDomain"/> (untimed)
+    /// by deserializing the JSON field.
+    /// </para>
+    /// <para>
+    /// Stream mode is <b>adapted</b>: UTF-8 write/read of the same XML string path
+    /// (not an ExtendedXml streaming API over domain types).
+    /// </para>
+    /// Why: ExtendedXml on net8 does not cleanly host the suite’s nested graphs for
+    /// all fixtures; this keeps the row registered for size/latency of the envelope
+    /// pattern. Do not treat Results as “ExtendedXml of domain POCOs.”
+    /// Docs: https://github.com/ExtendedXmlSerializer/home
+    /// </summary>
     internal class ExtendedXmlSerializerSer : SerDeser
     {
         private readonly IExtendedXmlSerializer _serializer =
@@ -17,19 +35,17 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void PrepareData(object data)
         {
-            _native = new XmlEnvelope
-            {
-                TypeName = data.GetType().AssemblyQualifiedName,
-                Json = JsonConvert.SerializeObject(data)
-            };
-            // untimed smoke
+            // Untimed: build JSON+type envelope once per cell (includes N-instance batches).
+            _native = Make(data);
             var xml = _serializer.Serialize(_native);
             var back = _serializer.Deserialize<XmlEnvelope>(xml);
-            if (back?.Json == null) throw new InvalidOperationException("ExtendedXml envelope smoke failed");
+            if (back?.Json == null)
+                throw new InvalidOperationException("ExtendedXml envelope smoke failed");
         }
 
         public override object ToDomain(object decoded)
         {
+            // Untimed: JSON → suite domain (not part of TimeSer/TimeDeser).
             if (decoded is XmlEnvelope env)
                 return JsonConvert.DeserializeObject(env.Json, Type.GetType(env.TypeName));
             return decoded;
@@ -46,6 +62,7 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
+            // Adapted stream: same string path through a StreamWriter.
             using var sw = new StreamWriter(outputStream, System.Text.Encoding.UTF8, 1024, true);
             sw.Write(Serialize(serializable));
             sw.Flush();
@@ -64,6 +81,7 @@ namespace GLD.SerializerBenchmark.Serializers
             Json = JsonConvert.SerializeObject(data)
         };
 
+        /// <summary>Wire type for ExtendedXml only — holds type name + JSON payload.</summary>
         public class XmlEnvelope
         {
             public string TypeName { get; set; }

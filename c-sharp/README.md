@@ -9,10 +9,10 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 ## Key Features
 
 - **36 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
-- **Suite fixtures**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs` (no legacy proxies).
-- **Dual mode**: string (base64 buffer) and Stream for every capable serializer.
+- **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs`.
+- **Dual mode**: **string** vs **Stream**. Text codecs use real text on the string path; **binary** codecs usually use **Base64** of bytes on the string path. Stream is **native** when the library writes the stream, or **adapted** when the benchmark runner wraps the string path — see [inventory honesty](../docs/c-sharp/index.md#string-mode-vs-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
-- All registered codecs run on all suite fixtures; some libraries use untimed `PrepareData` for **library wire forms** only (Protobuf `IMessage`, ZeroFormatter `KeyTuple`, envelopes) — see [inventory](../docs/c-sharp/index.md).
+- Most codecs use domain types (or codegen forms) on the timed path. **Exceptions:** ExtendedXmlSerializer and Migrant time a **JSON envelope** only — see [envelope codecs](../docs/c-sharp/index.md#envelope-codecs-not-native-domain-wire).
 
 ---
 

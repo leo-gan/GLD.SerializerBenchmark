@@ -11,12 +11,12 @@ This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | Log name | Category | Library / notes |
 |----------|----------|-----------------|
 | System.Text.Json | JSON | System.Text.Json (net8 built-in) |
-| BinaryPack | Binary | BinaryPack (`T : new()` constraints) |
+| BinaryPack | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
 | Ceras | Binary | Ceras |
-| CsvHelper | CSV | Tabular projection of suite types in `PrepareData` |
-| ExtendedXmlSerializer | XML | ExtendedXmlSerializer |
+| CsvHelper | CSV | Row-list projection (message/event/strings only); real CsvHelper write/read |
+| ExtendedXmlSerializer | XML (**envelope**) | **Not domain XML** — ExtendedXml of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
 | fastJson | JSON | FastJson |
-| FlatSharp | Schema / FlatBuffers | FlatSharp (blob table + MemoryPack payload of V2 domain) |
+| FlatSharp | Schema / FlatBuffers | FlatSharp tables via domain map (untimed `PrepareData`) |
 | FsPickler | Binary | FsPickler binary |
 | FsPicklerJson | JSON | FsPickler JSON |
 | Google.Protobuf | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
@@ -26,14 +26,14 @@ This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | Json.Net | JSON | Newtonsoft.Json |
 | Json.Net (Helper) | JSON | Newtonsoft.Json helper path |
 | MemoryPack | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
-| Migrant | Binary | Migrant |
+| Migrant | Binary (**envelope**) | **Not domain Migrant graphs** — Migrant of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
 | MS Binary | Binary (native) | Legacy `BinaryFormatter` path |
 | MS Bond Compact | Schema / Bond | Bond Compact Binary; V2 domain marked `[Schema]` |
 | MS Bond Fast | Schema / Bond | Bond Fast Binary |
 | MS Bond Json | JSON / Bond | Bond JSON protocol |
 | MS DataContract | XML | `DataContractSerializer` |
 | MS DataContract Json | JSON | `DataContractJsonSerializer` |
-| MS XmlSerializer | XML | Classic `XmlSerializer` |
+| MS XmlSerializer | XML | Classic `XmlSerializer` (real domain XML when attributes allow) |
 | NetJSON | JSON | NetJSON |
 | NetSerializer | Binary | NetSerializer |
 | ProtoBuf | Schema | protobuf-net |
@@ -47,18 +47,50 @@ This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | YAXLib | XML | YAXLib |
 | ZeroFormatter | Binary | ZeroFormatter; **all data types** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
 
+### Envelope codecs (not native domain wire)
+
+These rows stay in the matrix for history and size noise, but **Results must not be read as “library X serializes suite POCOs directly.”**
+
+| Log name | Timed wire | Untimed fidelity | Stream mode |
+|----------|------------|------------------|-------------|
+| **ExtendedXmlSerializer** | ExtendedXml of `{ TypeName, Json }` where `Json` is Newtonsoft of the domain object | `ToDomain` deserializes JSON | **Adapted** — UTF-8 `StreamWriter` of the XML string |
+| **Migrant** | Migrant of the same JSON envelope POCO | `ToDomain` deserializes JSON | **Native Migrant stream** of the envelope only; **string mode** is Base64 of those bytes |
+
+Source: [`ExtendedXmlSerializerSer.cs`](../../c-sharp/src/Serializers/ExtendedXmlSerializerSer.cs), [`MigrantSerializerSer.cs`](../../c-sharp/src/Serializers/MigrantSerializerSer.cs).
+
+**Compare fairly:** use **MS XmlSerializer** / **YAXLib** / **MS DataContract** for real XML-ish paths; use **Ceras**, **MemoryPack**, **NetSerializer**, etc. for binary domain graphs — not Migrant’s envelope row.
+
+### String mode vs stream mode
+
+CSV column `StringOrStream` is **`string`** or **`Stream`** (Results labels: **bytes mode** often means the non-stream column; for C# that column is the **string** path).
+
+| Path | Meaning on C# |
+|------|----------------|
+| **string** | `Serialize`/`Deserialize` with `string`. **Text** codecs return real text. **Binary** codecs usually return **Base64** of the byte payload (extra encode/decode on the timed path). |
+| **Stream** | `Serialize`/`Deserialize` with `Stream`. |
+
+**Stream honesty**
+
+| Kind | What is timed | Examples |
+|------|----------------|----------|
+| **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
+| **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
+| **Adapted stream** | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader` | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
+
+When stream ≈ string within a few percent on Results, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.
+
 ### Caveats
 
 - **Domain types:** `Message`, `Document`, `Telemetry`, `Strings`, `Event` (+ batch wrappers) in [`c-sharp/src/TestData/V2/Models.cs`](../../c-sharp/src/TestData/V2/Models.cs).
-- All registered serializers run on all suite data types. Most serialize domain types **directly** (attributes on the V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …).
-- A few codecs still need untimed `PrepareData` / `ToDomain` for **library wire format** (not old→new type mapping): Google.Protobuf (`IMessage` from `.proto`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (blob + MemoryPack payload), CsvHelper / BinaryPack / ExtendedXml / Migrant (string envelopes where the library cannot hold nested graphs on net8). See serializer source comments.
+- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …).
+- **Library-native prepare (still real domain or codegen forms):** Google.Protobuf (`IMessage`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (tables via map), CsvHelper (row lists). These are **not** JSON envelopes.
+- **Envelope exceptions:** ExtendedXmlSerializer and Migrant only — see above.
 - **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.
 - SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
 - Jil reuses a single static `Options` instance.
 - Benchmark runner no longer prints per-repetition DEBUG lines (measurement noise).
-
 - Failures: `logs/csharp/<ts>.errors.csv` (per run).
-- Rankings: use generated reports (`analyze-benchmarks`), not this list.
+- Rankings: use generated reports (`analyze-benchmarks`), not this list. Prefer [same category](../analysis/serialization_categories.md) and same I/O mode.
 
 Benchmark runner: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
 

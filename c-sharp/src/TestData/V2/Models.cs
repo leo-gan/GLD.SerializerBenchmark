@@ -1,4 +1,4 @@
-// Data Model v2 domain types — sole suite payload types for the C# harness.
+// Data Model v2 domain types — sole suite payload types for the C# benchmark runner.
 // Shape matches schemas/data_catalog_v2.yaml, python data_v2.models, and benchmark_v2.proto.
 using System;
 using System.Collections.Generic;
