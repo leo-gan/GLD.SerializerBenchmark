@@ -424,11 +424,11 @@ languages:
         crate: prost
         rationale: "De-facto Rust Protocol Buffers (prost + prost-build from shared suite protos)"
         optimal_api: "Message::encode / decode on prepared messages (convert in prepare)"
-      - name: apache-avro
+      - name: serde_avro_fast
         category: schema
-        crate: apache-avro
-        rationale: "Official Apache Avro Rust SDK (schemaless single-object binary)"
-        optimal_api: "write_avro_datum_ref / from_avro_datum + from_value; schema once in prepare"
+        crate: serde_avro_fast
+        rationale: "High-performance Avro binary datum (serde one-pass; wire-compatible with apache-avro)"
+        optimal_api: "to_datum + reused SerializerConfig / from_datum_slice; schema once in prepare"
 
   c:
     display_name: C

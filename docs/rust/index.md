@@ -13,7 +13,7 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 
 | Serializer | Category | Crate | Native path | Stream | Notes |
 |------------|----------|-------|-------------|--------|-------|
-| apache-avro | Schema | `apache-avro` | Serde + prepared schema; single-object binary | native write | Official Apache Avro Rust SDK |
+| serde_avro_fast | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records) |
 | bincode | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
 | bitcode | Binary | `bitcode` | Serde | adapted | Bit-packed |
 | bson | Document | `bson` | Serde | adapted | Document DB interop |

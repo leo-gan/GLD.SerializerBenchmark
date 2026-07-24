@@ -107,7 +107,7 @@ Examples use **log `SerializerName` values** from language overviews (not always
 - **Examples in suite:**
   - **C#:** `ProtoBuf` (protobuf-net), `Google.Protobuf`, `Apache.Avro`, `LightProto`, `MS Bond Fast` / `Compact`, `FlatSharp`, `ZeroFormatter`, `MemoryPack` (model/generator path)
   - **Python:** `protobuf`, `avro` (fastavro), `flatbuffers`
-  - **Rust:** `prost` (shared `.proto`), `apache-avro`, `rkyv` (timed deserialize **materializes** owned values), `flexbuffers`
+  - **Rust:** `prost` (shared `.proto`), `serde_avro_fast` (Avro; not official `apache-avro` — see inventory), `rkyv` (timed deserialize **materializes** owned values), `flexbuffers`
   - **C:** `protobuf` (Google libprotobuf), `nanopb`, `protobuf-c`, `protobuf-wire` (in-tree), `flatcc`, `avro-c`, `zcbor`
   - **JavaScript:** `avsc`, `protobufjs`, `protobuf-es`, `google-protobuf`, `flatbuffers`, `flexbuffers`, `bebop`
   - **Go:** `protobuf`, `hamba/avro`, `linkedin/goavro`
