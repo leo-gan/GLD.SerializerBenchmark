@@ -117,10 +117,16 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 | `go/**` | → `go` |
 | `java/**` | → `java` |
 | `cpp/**` | → `cpp` |
-| `schemas/**`, `scripts/run-all-benchmarks.sh`, `scripts/lib/**`, `config/benchmark_config.yaml` | → **all** enabled languages |
-| `docs/**`, `dashboard/public/data/**`, `logs/**`, `.grok/**` | **ignored** (regenerated / meta; do not select langs) |
+| `swift/**` | → `swift` |
+| **Shared (force all enabled langs)** — only *real* contract inputs | |
+| `schemas/**` **except** prose (see below) | → **all** enabled languages |
+| `scripts/run-all-benchmarks.sh`, `scripts/lib/**`, `scripts/read-config.py`, `scripts/resolve_run_config.py` | → **all** |
+| `config/benchmark_config.yaml` | → **all** |
+| **Always ignored (never select langs, never force-all)** | |
+| `docs/**`, `dashboard/public/data/**`, `logs/**`, `reports/**`, `site/**`, `.grok/**` | meta / published artifacts |
+| `**/*.md`, `**/*.mdx`, `**/README*`, `LICENSE*` **anywhere** (including under `schemas/`, `scripts/`, or a language tree) | prose-only; e.g. terminology edits in `schemas/v2/README.md` must **not** re-bench the world |
 
-Also considers unstaged/staged working-tree paths so uncommitted harness edits still trigger a re-bench.
+Also considers unstaged/staged working-tree paths so uncommitted harness source edits still trigger a re-bench.
 
 **Empty `CHANGED_LANGS`:** skip step 4 full benchmarks (e.g. skill-only or docs-only PR). Still run analysis only if you intentionally regenerated logs; otherwise continue to dashboard sync (no churn expected) and commit.
 
