@@ -73,6 +73,7 @@ namespace GLD.SerializerBenchmark
                 new FsPicklerJsonSerializer(),
                 new NetJSONSer(), 
                 new ProtoBufSerializer(),
+                new LightProtoSerializer(),
                 new SharpSerializer(), 
                 new ServiceStackJsonSerializer(), 
                 new ServiceStackTypeSerializer(), 
