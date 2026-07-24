@@ -90,7 +90,8 @@ See root README and [Benchmark architecture](../docs/analysis/architecture.md).
 
 1. Class under `Serializers/` implementing `ISerDeser` / `SerDeser`.
 2. Register in `Program.cs`.
-3. Document in `docs/c-sharp/index.md`.
+3. Map `Name` → NuGet assembly simple name in `SerializerVersionRegistry.cs` so the CSV `SerializerVersion` column is filled at runtime.
+4. Document in `docs/c-sharp/index.md`.
 
 ### Add a fixture type
 

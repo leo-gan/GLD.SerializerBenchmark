@@ -18,6 +18,7 @@ namespace GLD.SerializerBenchmark
                 ["Json.Net"] = "Newtonsoft.Json",
                 ["Json.Net (Helper)"] = "Newtonsoft.Json",
                 ["ProtoBuf"] = "protobuf-net",
+                ["LightProto"] = "LightProto",
                 ["Jil"] = "Jil",
                 ["ServiceStack Json"] = "ServiceStack.Text",
                 ["ServiceStack"] = "ServiceStack.Text",
