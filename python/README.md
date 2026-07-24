@@ -106,9 +106,13 @@ Override with `LOG_DIR` (if the path does not end in `python`, results go to `$L
 
 ### Add a serializer
 
+Full checklist (version column, honesty rules, results, PR): **[Adding a serializer](../docs/analysis/ADDING_A_SERIALIZER.md)**.
+
 1. Implement `Serializer` in `src/benchmark/serializers/`.
 2. Register in `ALL_SERIALIZERS` (`runner_v2` / package entry).
 3. Add dependency to `pyproject.toml` and `uv sync`.
+4. Ensure installed package version is reported for CSV `SerializerVersion`.
+5. Document in `docs/python/` inventory if present; re-run benchmarks + `analyze-benchmarks -l python`.
 
 ### Add a fixture type
 

@@ -88,10 +88,26 @@ See root README and [Benchmark architecture](../docs/analysis/architecture.md).
 
 ### Add a serializer
 
-1. Class under `Serializers/` implementing `ISerDeser` / `SerDeser`.
-2. Register in `Program.cs`.
-3. Map `Name` → NuGet assembly simple name in `SerializerVersionRegistry.cs` so the CSV `SerializerVersion` column is filled at runtime.
-4. Document in `docs/c-sharp/index.md`.
+Full suite checklist (all languages, PR expectations, honesty rules):
+**[Adding a serializer](../docs/analysis/ADDING_A_SERIALIZER.md)**.
+
+C# short path:
+
+1. PackageReference in `src/GLD.SerializerBenchmark.csproj`.
+2. Class under `src/Serializers/` implementing `ISerDeser` / `SerDeser` (`Name` is the CSV `SerializerName`).
+3. Register in `src/Program.cs`.
+4. Map `Name` → NuGet assembly simple name in `src/SerializerVersionRegistry.cs` (fills CSV `SerializerVersion`).
+5. Domain attributes / maps only if the library needs them (`TestData/V2/Models.cs`, `Maps/`, `Contracts/`).
+6. Document in `docs/c-sharp/index.md`; bump serializer counts (this README, root README, `config/benchmark_config.yaml` comment).
+7. Smoke, then full + analyze:
+
+```bash
+./scripts/run-benchmarks.sh custom 5 YourName message
+# from repo root:
+../scripts/run-all-benchmarks.sh --mode full --lang csharp --analyze
+```
+
+If the library uses a **source generator**, ensure the host **.NET SDK** is new enough for that generator (see Requirements above). CI must install the same SDK.
 
 ### Add a fixture type
 

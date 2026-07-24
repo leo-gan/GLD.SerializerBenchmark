@@ -40,6 +40,15 @@ Each programming language has a small program called a **benchmark runner**. The
 
 ---
 
+## Contribute
+
+| Task | Guide |
+|------|--------|
+| Add **one library** to an existing language | [Adding a serializer](ADDING_A_SERIALIZER.md) |
+| Add a **new language** tree | [Adding a language](ADDING_A_LANGUAGE.md) |
+
+---
+
 ## Shared terms (quick)
 
 | Say this | Not this | Means |

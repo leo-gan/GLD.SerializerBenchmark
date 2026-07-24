@@ -2,6 +2,8 @@
 
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With modern .NET memory primitives (`Span<T>`, `Memory<T>`) and source generators, the landscape shifted from heavy reflection-based engines to lower-allocation, code-generated libraries.
 
+**Add a library:** [Adding a serializer](../analysis/ADDING_A_SERIALIZER.md) (suite-wide checklist) · short steps in [`c-sharp/README.md`](../../c-sharp/README.md#add-a-serializer).
+
 ## What this benchmark measures vs the wider ecosystem
 
 This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).

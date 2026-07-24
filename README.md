@@ -53,7 +53,7 @@ Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 | **Computer science students** | Theory, history, worked examples | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/), [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/) |
 | **System integrators** | Pick formats that fit payloads and runtimes | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
 | **Researchers** | Reproducible measurement and experiments | [Methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Serializer authors** | Version A/B and regression checks | [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
+| **Serializer authors** | Add a codec, version A/B, regression checks | [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/) · [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
 
 ---
 
@@ -69,7 +69,7 @@ Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 - [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 27+
 - [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 14
 
-[Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/).
+[Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/) · [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/).
 
 ---
 

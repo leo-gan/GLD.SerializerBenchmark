@@ -10,6 +10,7 @@ Think of it as the **lab design** for the experiment. How we turn raw timings in
 | Sample data shapes and size knobs | [Test data](test_data_configuration.md) |
 | JSON vs binary vs schema families | [Serialization categories](serialization_categories.md) |
 | How to add another language | [Adding a language](ADDING_A_LANGUAGE.md) |
+| How to add one library to an existing language | [Adding a serializer](ADDING_A_SERIALIZER.md) |
 | Published numbers | [Results summary](BENCHMARK_SUMMARY.md) · each language’s **Results** page |
 
 ---
@@ -32,7 +33,7 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 | Reader | Primary question | How the suite helps |
 |--------|------------------|---------------------|
 | **Student or researcher** | Are the rankings inside one language trustworthy? | Fixed data types, run modes, warmup exclusion, outlier handling, confidence intervals, effect sizes — see [methodology](ANALYSIS_METHODOLOGY.md) |
-| **Library author** | Did *my* serializer get better or worse? | Stable names and data types; compare two runs with `analyze-benchmarks --compare-a` / `--compare-b`; optional regression check |
+| **Library author** | Can I drop in my codec? Did it get better or worse? | [Adding a serializer](ADDING_A_SERIALIZER.md); stable names + `--compare-a` / `--compare-b`; optional regression check |
 | **System builder** | What fits *our* data shapes and runtime? | Tunable test-data config, two I/O modes, language inventories, same CSV format for private runs |
 | **Maintainer** | Can I add a language without rewriting analysis? | Registry in `benchmark_config.yaml` plus the [Adding a language](ADDING_A_LANGUAGE.md) checklist |
 
