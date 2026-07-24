@@ -137,7 +137,7 @@ def known_language_ids(config_path: Optional[str | Path] = None) -> Tuple[str, .
 
 
 def enabled_languages(config_path: Optional[str | Path] = None) -> List[Dict[str, Any]]:
-    """Enabled language harness descriptors for orchestration.
+    """Enabled language benchmark-runner descriptors for orchestration.
 
     Each item: ``{id, display_name, runner_dir, runner_script, log_dir, ...}``.
     """

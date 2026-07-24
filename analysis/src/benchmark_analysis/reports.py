@@ -356,16 +356,16 @@ VIOLIN_TOP_N_SERIALIZERS = 5
 _MODE_DISPLAY = {
     "bytes": "bytes mode",
     "stream": "stream mode",
-    "string": "bytes mode",  # C#/some harnesses log "string" for the buffer API
+    "string": "bytes mode",  # C#/some benchmark runners log "string" for the buffer API
     "buffer": "bytes mode",
 }
 
 
 def _normalize_mode(mode: str) -> str:
-    """Canonical harness API mode: bytes (in-memory buffer) | stream.
+    """Canonical benchmark-runner API mode: bytes (in-memory buffer) | stream.
 
     Aligns with dashboard ``normalizeMode``: CSV may say ``string`` / ``Stream``
-    / ``bytes`` / ``buffer`` depending on language harness.
+    / ``bytes`` / ``buffer`` depending on language benchmark runner.
     """
     key = (mode or "").strip().lower()
     if key in ("bytes", "string", "buffer"):
@@ -376,7 +376,7 @@ def _normalize_mode(mode: str) -> str:
 
 
 def _display_mode(mode: str) -> str:
-    """Label harness API mode so it is not confused with payload size."""
+    """Label benchmark-runner API mode so it is not confused with payload size."""
     key = _normalize_mode(mode)
     return _MODE_DISPLAY.get(key, mode or key)
 
@@ -549,7 +549,7 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         lines.append("*No data available*\n")
         return '\n'.join(lines)
 
-    # When columns are harness modes, spell out "bytes mode" / "stream mode"
+    # When columns are runner I/O modes, spell out "bytes mode" / "stream mode"
     def _col_label(cv: str, unit: str = "") -> str:
         base = _display_mode(cv) if cols_dim == "mode" else cv
         if unit:

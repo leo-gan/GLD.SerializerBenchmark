@@ -95,7 +95,7 @@ bench_logs_root() {
   echo "$d"
 }
 
-# Absolute path to library run-config YAML for a harness mode (from master config).
+# Absolute path to library run-config YAML for a benchmark-runner mode (from master config).
 # smoke → data_model_v2.smoke_run_config; all other modes → default_run_config.
 bench_run_config_for_mode() {
   local mode="${1:-all-single}"

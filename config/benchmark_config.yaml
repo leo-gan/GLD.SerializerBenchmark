@@ -3,7 +3,7 @@
 # =============================================================================
 # Single source of truth for runners, analysis, and documentation.
 # Language-specific overrides live under `languages.<lang>`.
-# Add a new language by copying an existing block and implementing the harness.
+# Add a new language by copying an existing block and implementing the benchmark runner.
 # =============================================================================
 
 version: "2.0.0"
@@ -29,7 +29,7 @@ reproducibility:
   # Pin CPU affinity / thread count in runners when possible
   single_threaded: true
   # How many leading repetitions are treated as warmup *by analysis only*.
-  # Harnesses MUST still write those rows to the raw CSV (RepetitionIndex 0..n-1
+  # Benchmark runners MUST still write those rows to the raw CSV (RepetitionIndex 0..n-1
   # with no post-filter). Warmup is dropped only when statistics.exclude_warmup
   # is true in the analysis package — never when logging.
   warmup_repetitions: 1
@@ -212,7 +212,7 @@ paths:
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
   #   YYYY-MM-DD-HHMMSS.configs.json    (environment + optional dataset/serializer metadata)
-  #   YYYY-MM-DD-HHMMSS.errors.csv      (only when there are fidelity/harness failures)
+  #   YYYY-MM-DD-HHMMSS.errors.csv      (only when there are fidelity/runner failures)
   #   (legacy) YYYY-MM-DD-HHMMSS.environment.json still readable by analysis
   # Analysis auto-selects the most recent timestamped result CSV per language.
   log_filename: "YYYY-MM-DD-HHMMSS.csv"
@@ -289,7 +289,7 @@ regression:
   direction: higher_is_worse
 
 # -----------------------------------------------------------------------------
-# Language harnesses
+# Language benchmark runners
 # -----------------------------------------------------------------------------
 languages:
   csharp:
@@ -300,7 +300,7 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 36 serializers registered (Program.cs); all run on all V2 fixtures.
+    # 36 serializers registered (Program.cs); all run on all V2 data types.
     # Dropped: Apex.Serialization (net8 FieldInfoModifier crash), FluentSerializer (unsuitable graphs).
     # Added: System.Text.Json. See docs/c-sharp/index.md for inventory + PrepareData projections.
 
@@ -412,7 +412,7 @@ languages:
       - name: minicbor
         category: binary
         crate: minicbor
-        rationale: "Lightweight CBOR (wrapper path for untagged Fixture enum)"
+        rationale: "Lightweight CBOR (wrapper path for untagged data-type enum)"
         optimal_api: "to_vec / decode (MessagePack payload as CBOR byte string)"
       - name: rkyv
         category: zero_copy
@@ -422,7 +422,7 @@ languages:
       - name: prost
         category: schema
         crate: prost
-        rationale: "De-facto Rust Protocol Buffers (prost + prost-build from shared/fixture protos)"
+        rationale: "De-facto Rust Protocol Buffers (prost + prost-build from shared suite protos)"
         optimal_api: "Message::encode / decode on prepared messages (convert in prepare)"
 
   c:
@@ -508,12 +508,12 @@ languages:
       - name: protobuf-c
         category: schema
         library: protobuf-c
-        rationale: "Version from real lib; timed path still suite fixture_pb_full wire (not full codegen pack)"
+        rationale: "Version from real lib; timed path still suite fixture_pb_full wire codec (not full codegen pack)"
         optimal_api: "fixture_pb_full encode/decode (prefer Google protobuf row)"
       - name: protobuf
         category: schema
         library: libprotobuf (Google)
-        rationale: "Official Google Protocol Buffers C++ runtime used from C harness (SerializeToArray/ParseFromArray)"
+        rationale: "Official Google Protocol Buffers C++ runtime used from C benchmark runner (SerializeToArray/ParseFromArray)"
         optimal_api: "prepare Message; timed SerializeToArray / ParseFromArray"
       - name: protobuf-wire
         category: schema
@@ -605,12 +605,12 @@ languages:
       - name: avsc
         category: schema
         package: avsc
-        rationale: "Apache Avro pure JS with explicit fixture schemas"
+        rationale: "Apache Avro pure JS with explicit data-type schemas"
         optimal_api: "Type.forSchema + toBuffer / fromBuffer"
       - name: protobufjs
         category: schema
         package: protobufjs
-        rationale: "Classic Protocol Buffers in JS (real fixture messages)"
+        rationale: "Classic Protocol Buffers in JS (real data-type messages)"
         optimal_api: "Type.encode / decode (preloaded Root)"
       - name: protobuf-es
         category: schema
@@ -875,14 +875,14 @@ languages:
 #   serializers: [...]
 #
 # Runtime consumers of this file (do not hard-code these values in scripts):
-#   - scripts/read-config.py / scripts/lib/config.sh  — shell harnesses & run-all
+#   - scripts/read-config.py / scripts/lib/config.sh  — shell runners & run-all
 #   - analysis.config_loader / load_stats_config      — analyze-benchmarks
 #   - modes.<name>.repetitions → run-benchmarks.sh REPS
 #   - languages.*.enabled / runner_dir / runner_script → run-all-benchmarks.sh
-#   - reproducibility.random_seed → BENCHMARK_SEED env for harnesses
+#   - reproducibility.random_seed → BENCHMARK_SEED env for benchmark runners
 #   - paths.* / regression.* → analysis CLI defaults
 #
-# Required harness contract:
+# Required benchmark-runner contract:
 #   1. Prefer modes/seed from this file (via scripts/lib/config.sh + BENCHMARK_SEED)
 #   2. Emit logs/<id>/<timestamp>.csv (YYYY-MM-DD-HHMMSS.csv)
 #      with Language=<id> and times in nanoseconds. Never overwrite previous runs.
@@ -1034,7 +1034,7 @@ languages:
       - name: avro_c
         category: schema
         library: Apache avro-c
-        rationale: "Real Avro C library from C++ (dual with C harness avro-c)"
+        rationale: "Real Avro C library from C++ (dual with C benchmark runner avro-c)"
         optimal_api: "cached iface + avro_value_write/read memory IO"
       - name: capnproto
         category: schema

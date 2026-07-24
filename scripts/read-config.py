@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Query config/benchmark_config.yaml for shell harnesses and orchestration.
+"""Query config/benchmark_config.yaml for shell benchmark runners and orchestration.
 
 Examples:
   scripts/read-config.py modes.smoke.repetitions

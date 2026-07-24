@@ -155,7 +155,7 @@ def resolve_time_scale_to_ns(
     1. ``languages.<lang>.time_unit`` when *language* is known
     2. ``csv_schema.time_unit`` (suite baseline; default ``nanoseconds``)
 
-    All current harnesses emit nanoseconds; this central resolution guarantees
+    All current benchmark runners emit nanoseconds; this central resolution guarantees
     stats tables and latency distributions apply the *same* conversion.
     """
     cache_key = f"{language or ''}|{config_path or ''}"
@@ -194,7 +194,7 @@ def normalize_to_nanoseconds(
     scale_to_ns: Optional[float] = None,
     config_path: Optional[str] = None,
 ) -> float:
-    """Normalize a harness timing value to nanoseconds.
+    """Normalize a benchmark-runner timing value to nanoseconds.
 
     Scale is resolved once from the master config (see
     :func:`resolve_time_scale_to_ns`). Callers that process many rows should
@@ -381,7 +381,7 @@ def prepare_analysis_records(
     3. All-or-nothing paired IQR (or configured method) per group.
 
     This function is the **only** place that should drop warmup / outliers for
-    published tables and plots. Language harnesses must write complete raw CSVs
+    published tables and plots. Language benchmark runners must write complete raw CSVs
     (every successful rep, including index 0) with no filtering on disk.
 
     Returns

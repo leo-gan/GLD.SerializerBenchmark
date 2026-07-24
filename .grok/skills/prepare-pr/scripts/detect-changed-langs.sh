@@ -9,7 +9,7 @@
 # Prints space-separated language ids on stdout (empty if none / no bench needed).
 # Prints human diagnostics on stderr.
 #
-# Mapping uses harness *source* trees only (not regenerated docs/dashboard/logs,
+# Mapping uses benchmark-runner *source* trees only (not regenerated docs/dashboard/logs,
 # and not prose-only files such as README.md under schemas/ or scripts/).
 set -euo pipefail
 
@@ -122,7 +122,7 @@ for p in "${PATHS[@]}"; do
     continue
   fi
 
-  # Language harness trees (order matters: c-sharp before c)
+  # Language benchmark-runner trees (order matters: c-sharp before c)
   case "$p" in
     c-sharp/*|csharp/*)
       HIT[csharp]=1
@@ -180,7 +180,7 @@ if [[ ${#ids[@]} -eq 0 ]]; then
   if [[ "$IGNORED_PROSE" -eq 1 ]]; then
     echo "[detect-changed-langs] prose/meta-only changes vs $BASE_REF → skip full benchmarks" >&2
   else
-    echo "[detect-changed-langs] no harness changes vs $BASE_REF → skip full benchmarks" >&2
+    echo "[detect-changed-langs] no benchmark-runner source changes vs $BASE_REF → skip full benchmarks" >&2
   fi
   echo ""
   exit 0

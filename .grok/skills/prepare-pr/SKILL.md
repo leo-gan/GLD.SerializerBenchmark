@@ -58,7 +58,7 @@ All must exit 0:
 # Analysis package
 ( cd analysis && uv run pytest -q )
 
-# Python harness (if tests/ exists)
+# Python benchmark runner (if tests/ exists)
 if [[ -d python/tests ]]; then ( cd python && uv run pytest -q ); fi
 
 # JavaScript (if package has test script)
@@ -95,7 +95,7 @@ Only **fail the skill** if the toolchain is present **and** tests fail. Missing 
 
 ## 3. Detect changed languages (**required before full bench**)
 
-Default: run expensive full benchmarks **only** for languages whose **harness source** changed on this branch vs `main`/`master` merge-base.
+Default: run expensive full benchmarks **only** for languages whose **benchmark-runner source** changed on this branch vs `main`/`master` merge-base.
 
 ```bash
 CHANGED_LANGS=$(.grok/skills/prepare-pr/scripts/detect-changed-langs.sh)
@@ -126,7 +126,7 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 | `docs/**`, `dashboard/public/data/**`, `logs/**`, `reports/**`, `site/**`, `.grok/**` | meta / published artifacts |
 | `**/*.md`, `**/*.mdx`, `**/README*`, `LICENSE*` **anywhere** (including under `schemas/`, `scripts/`, or a language tree) | prose-only; e.g. terminology edits in `schemas/v2/README.md` must **not** re-bench the world |
 
-Also considers unstaged/staged working-tree paths so uncommitted harness source edits still trigger a re-bench.
+Also considers unstaged/staged working-tree paths so uncommitted benchmark-runner source edits still trigger a re-bench.
 
 **Empty `CHANGED_LANGS`:** skip step 4 full benchmarks (e.g. skill-only or docs-only PR). Still run analysis only if you intentionally regenerated logs; otherwise continue to dashboard sync (no churn expected) and commit.
 
@@ -147,7 +147,7 @@ MODE="${PREPARE_PR_MODE:-full}"
 LOG="logs/prepare-pr-$(date +%Y%m%d-%H%M%S).log"
 
 if [[ -z "${CHANGED_LANGS// }" ]]; then
-  echo "[prepare-pr] No harness language changes — skipping full benchmarks" | tee -a "$LOG"
+  echo "[prepare-pr] No benchmark-runner language changes — skipping full benchmarks" | tee -a "$LOG"
 else
   # One orchestrator invocation per language so stems stay aligned when possible.
   # Prefer a single shared BENCHMARK_TS by exporting if the runners honor it;
@@ -172,7 +172,7 @@ Do **not** re-bench unchanged languages “for completeness” unless `PREPARE_P
 
 ---
 
-## 5. Error CSV gate (harness error **regressions**, changed langs only)
+## 5. Error CSV gate (benchmark-runner error **regressions**, changed langs only)
 
 ```bash
 STEM="${BENCHMARK_TS:-}"  # prefer stem from step 4 when a single shared stem exists
