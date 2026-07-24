@@ -22,7 +22,7 @@ Analysis documentation hub: [Benchmarks overview](index.md).
 | C++ | [Results](../cpp/results.md) | [Overview](../cpp/index.md) |
 | Swift | [Results](../swift/results.md) | [Overview](../swift/index.md) |
 
-Related (not numbers): [Serialization categories](serialization_categories.md) · [Analysis methodology](ANALYSIS_METHODOLOGY.md) · [Benchmark architecture](architecture.md)
+Related (not numbers): [Modes](modes.md) · [Serialization categories](serialization_categories.md) · [Analysis methodology](ANALYSIS_METHODOLOGY.md) · [Benchmark architecture](architecture.md)
 
 ---
 

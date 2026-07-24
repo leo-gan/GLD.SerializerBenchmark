@@ -9,6 +9,7 @@ If architecture is the lab setup, methodology is the **lab notebook**: what we k
 | If you need… | Go here |
 |--------------|---------|
 | What the benchmark runner times / suite layout | [Benchmark architecture](architecture.md) |
+| I/O modes and run modes | [Modes](modes.md) |
 | Data-type meanings | [Test data](test_data_configuration.md) |
 | Paradigms | [Serialization categories](serialization_categories.md) |
 | How to regenerate site snapshots | [Results summary](BENCHMARK_SUMMARY.md#regenerating-language-snapshots) |
@@ -192,7 +193,7 @@ Honest methodology includes what the suite **cannot** claim.
 - **Cross-language absolute times** are directional at best. Garbage collection, allocators, and runtimes differ. Prefer within-language ranks and effect sizes.
 - **C** default builds may use portable stand-ins under real library names—see the [C overview](../c/index.md).
 - **Rust** paths such as `prost`, `rkyv`, and `minicbor` use concrete native codecs; timed `rkyv` deserialize **materializes** owned values for fidelity—see the [Rust overview](../rust/index.md).
-- **Stream** mode is not always a true incremental API (some benchmark runners buffer, then write).
+- **Stream** mode is not always a true incremental API (some benchmark runners buffer, then write). See [Modes — stream honesty](modes.md#three-levels-of-stream-honesty).
 - **Fidelity** is semantic or structural, not bit-identical across formats.
 - Outlier removal and warmup policy affect means; always read `runs`, confidence intervals, and effect sizes together.
 
