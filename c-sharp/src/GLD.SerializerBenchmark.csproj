@@ -20,6 +20,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />
     <PackageReference Include="protobuf-net" Version="2.*" />
+    <PackageReference Include="LightProto" Version="1.*" />
     <PackageReference Include="Jil" Version="2.*" />
     <PackageReference Include="ServiceStack.Text" Version="6.*" />
     <PackageReference Include="Bond.Core.CSharp" Version="9.*" />

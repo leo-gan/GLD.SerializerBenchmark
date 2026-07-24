@@ -300,7 +300,7 @@ languages:
     log_dir: logs/csharp
     time_unit: nanoseconds
     docs_dir: docs/c-sharp
-    # 36 serializers registered (Program.cs); all run on all V2 data types.
+    # 37 serializers registered (Program.cs); all run on all V2 data types.
     # Dropped: Apex.Serialization (net8 FieldInfoModifier crash), FluentSerializer (unsuitable graphs).
     # Added: System.Text.Json. See docs/c-sharp/index.md for inventory + PrepareData projections.
 

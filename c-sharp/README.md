@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-Extensible suite evaluating **36 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
+Extensible suite evaluating **37 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
 
 Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
@@ -8,7 +8,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **36 serializers** registered in `Program.cs` (Json.NET, protobuf-net, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
+- **37 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, Ceras, FlatSharp, Hyperion, SharpSerializer, and more). **Not** included: MessagePack-CSharp, Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
 - **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs`.
 - **Dual mode**: **string** vs **Stream**. Text codecs use real text on the string path; **binary** codecs usually use **Base64** of bytes on the string path. Stream is **native** when the library writes the stream, or **adapted** when the benchmark runner wraps the string path — see [inventory honesty](../docs/c-sharp/index.md#string-mode-vs-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
@@ -34,7 +34,7 @@ For `N>1`, payloads use batch wrappers (`BatchMessage`, …) so codecs that need
 
 ## Requirements
 
-- **.NET SDK 8.0+** (host toolchain — prepare once):
+- **.NET SDK 9.0+** (host toolchain — prepare once). The project still targets **net8.0**; SDK 9+ is required so LightProto’s source generator (Roslyn 4.14+) runs. SDK 8 alone builds the project but leaves LightProto parsers ungenerated.
   ```bash
   ../scripts/install-host-requirements.sh csharp
   ../scripts/check-host-requirements.sh csharp
@@ -88,9 +88,26 @@ See root README and [Benchmark architecture](../docs/analysis/architecture.md).
 
 ### Add a serializer
 
-1. Class under `Serializers/` implementing `ISerDeser` / `SerDeser`.
-2. Register in `Program.cs`.
-3. Document in `docs/c-sharp/index.md`.
+Full suite checklist (all languages, PR expectations, honesty rules):
+**[Adding a serializer](../docs/analysis/ADDING_A_SERIALIZER.md)**.
+
+C# short path:
+
+1. PackageReference in `src/GLD.SerializerBenchmark.csproj`.
+2. Class under `src/Serializers/` implementing `ISerDeser` / `SerDeser` (`Name` is the CSV `SerializerName`).
+3. Register in `src/Program.cs`.
+4. Map `Name` → NuGet assembly simple name in `src/SerializerVersionRegistry.cs` (fills CSV `SerializerVersion`).
+5. Domain attributes / maps only if the library needs them (`TestData/V2/Models.cs`, `Maps/`, `Contracts/`).
+6. Document in `docs/c-sharp/index.md`; bump serializer counts (this README, root README, `config/benchmark_config.yaml` comment).
+7. Smoke, then full + analyze:
+
+```bash
+./scripts/run-benchmarks.sh custom 5 YourName message
+# from repo root:
+../scripts/run-all-benchmarks.sh --mode full --lang csharp --analyze
+```
+
+If the library uses a **source generator**, ensure the host **.NET SDK** is new enough for that generator (see Requirements above). CI must install the same SDK.
 
 ### Add a fixture type
 

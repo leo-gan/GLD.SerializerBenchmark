@@ -2,9 +2,11 @@
 
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With modern .NET memory primitives (`Span<T>`, `Memory<T>`) and source generators, the landscape shifted from heavy reflection-based engines to lower-allocation, code-generated libraries.
 
+**Add a library:** [Adding a serializer](../analysis/ADDING_A_SERIALIZER.md) (suite-wide checklist) · short steps in [`c-sharp/README.md`](../../c-sharp/README.md#add-a-serializer).
+
 ## What this benchmark measures vs the wider ecosystem
 
-This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
+This suite registers **37 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
 
 **Not in this suite:** MessagePack-CSharp, Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs).
 
@@ -25,6 +27,7 @@ This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | Jil | JSON | Jil (Sigil) |
 | Json.Net | JSON | Newtonsoft.Json |
 | Json.Net (Helper) | JSON | Newtonsoft.Json helper path |
+| LightProto | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
 | MemoryPack | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
 | Migrant | Binary (**envelope**) | **Not domain Migrant graphs** — Migrant of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
 | MS Binary | Binary (native) | Legacy `BinaryFormatter` path |
@@ -73,7 +76,7 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (Results labels: **b
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
-| **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
+| **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
 | **Adapted stream** | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader` | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
 

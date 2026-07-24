@@ -58,6 +58,7 @@ plugins:
         'serializers/native.md': 'analysis/serialization_categories.md'
         'architecture/index.md': 'analysis/architecture.md'
         'architecture/ADDING_A_LANGUAGE.md': 'analysis/ADDING_A_LANGUAGE.md'
+        'architecture/ADDING_A_SERIALIZER.md': 'analysis/ADDING_A_SERIALIZER.md'
 
 markdown_extensions:
   - attr_list
@@ -154,6 +155,7 @@ nav:
       - Architecture: analysis/architecture.md
       - Modes: analysis/modes.md
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md
+      - Adding a Serializer: analysis/ADDING_A_SERIALIZER.md
       - Categories: analysis/serialization_categories.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Metrics: analysis/METRICS.md

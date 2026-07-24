@@ -5,7 +5,8 @@ This page is a **checklist for implementers**. Follow it when you want a new pro
 Background (layout, timing model, contract): [Benchmark architecture](architecture.md).  
 I/O modes and run modes: [Modes](modes.md).  
 Test data: [Test data](test_data_configuration.md).  
-How CSVs become tables: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
+How CSVs become tables: [Analysis methodology](ANALYSIS_METHODOLOGY.md).  
+**Only adding one library to an existing language?** Use [Adding a serializer](ADDING_A_SERIALIZER.md) instead.
 
 ---
 
