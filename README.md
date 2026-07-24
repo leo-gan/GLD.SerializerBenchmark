@@ -25,7 +25,7 @@ Compare 100+ serialization libraries across **nine languages** — with fair wit
 
 ---
 
-## Try it in ~60 seconds (Python smoke)
+## Try it: benchmark Python serializers in ~60 seconds
 
 Requires a recent Python 3 and [uv](https://docs.astral.sh/uv/) (or pip). No Docker.
 
