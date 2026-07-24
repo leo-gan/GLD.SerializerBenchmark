@@ -1,10 +1,46 @@
 # Multi-Language Serializer Benchmark
 
-Scientific, multi-language suite for **measuring and comparing serialization libraries**.
+[![Site](https://img.shields.io/badge/docs%20%2B%20dashboard-live-indigo?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+[![Languages](https://img.shields.io/badge/languages-9-informational?style=flat-square)](#supported-languages)
 
-- [Serialization 101-401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) — a starting point for anyone who wants to understand data serialization—students, data scientists, backend engineers, and systems architects.
-- [Benchmarks](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/)
-- [📊 Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
+**Same data types. Same CSV contract. Same statistics pipeline.**  
+Compare 100+ serialization libraries across **nine languages** — with fair within-language rankings, not marketing microbenchmarks.
+
+| Start here | |
+|------------|--|
+| **Numbers** | [📊 Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) · [Benchmarks overview](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/) |
+| **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) — students through systems engineers |
+| **Method** | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
+
+<p align="center">
+  <a href="https://leo-gan.github.io/GLD.SerializerBenchmark/python/results/">
+    <img src="docs/analysis/plots/violin/python_message@n=1.png" alt="Python serialize/deserialize latency distribution for message data type (1 instance)" width="780" />
+  </a>
+  <br />
+  <sub>Example: Python latency distribution for the <code>message</code> data type (1 instance). Full tables and charts on each language <strong>Results</strong> page.</sub>
+</p>
+
+---
+
+## Try it in ~60 seconds (Python smoke)
+
+Requires a recent Python 3 and [uv](https://docs.astral.sh/uv/) (or pip). No Docker.
+
+```bash
+git clone https://github.com/leo-gan/GLD.SerializerBenchmark.git
+cd GLD.SerializerBenchmark
+
+./scripts/check-host-requirements.sh python   # optional: see what's missing
+./scripts/install-host-requirements.sh python # optional: user-local toolchains
+
+cd python && ./scripts/run-benchmarks.sh smoke
+# → logs/python/YYYY-MM-DD-HHMMSS.csv
+```
+
+Then open the [Python Results](https://leo-gan.github.io/GLD.SerializerBenchmark/python/results/) page (or run `analyze-benchmarks -l python` after installing the analysis package) to turn CSVs into tables.
+
+Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 
 ---
 
@@ -12,10 +48,10 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 
 | Audience | Use case | Course |
 |----------|----------|--------|
-| **Computer Science Students** | Theory, history, examples | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/),  [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/) |
-| **System integrators** | Find serializers that fit payloads and environments | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Researchers** | Research, measure, invent | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Serializer authors** | Measure, compare, and improve | [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
+| **Computer science students** | Theory, history, worked examples | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/), [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/) |
+| **System integrators** | Pick formats that fit payloads and runtimes | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
+| **Researchers** | Reproducible measurement and experiments | [Methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
+| **Serializer authors** | Version A/B and regression checks | [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
 
 ---
 
@@ -25,57 +61,59 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 - [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 16
 - [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 15
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 20
-- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 19
+- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 20
 - [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 19
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
-- [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 26+
+- [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 27+
 - [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 14
 
 [Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/).
 
 ---
 
-## Quick start
+## Full quick start
 
-Benchmark runners run **natively on the host** (no Docker). **Prepare toolchains once**, then run benchmarks (project deps like `uv sync` / `npm install` still happen inside each runner).
+Benchmark runners run **natively on the host** (no Docker). Prepare toolchains once, then run benchmarks (project deps like `uv sync` / `npm install` still happen inside each runner).
 
 ```bash
-# 1) Host toolchains (separate step — compilers/runtimes only)
-./scripts/check-host-requirements.sh          # verify
-./scripts/install-host-requirements.sh        # user-local install (no sudo) where possible
-./scripts/install-host-requirements.sh csharp # one language
+# 1) Host toolchains (compilers/runtimes only)
+./scripts/check-host-requirements.sh
+./scripts/install-host-requirements.sh
+./scripts/install-host-requirements.sh csharp   # one language
 
 # 2) Smoke one language
-./<lang>/scripts/run-benchmarks.sh smoke
+./python/scripts/run-benchmarks.sh smoke
+# or: ./rust/scripts/run-benchmarks.sh smoke
 
 # Orchestrator: all languages or one language
 ./scripts/run-all-benchmarks.sh --mode all-single
 ./scripts/run-all-benchmarks.sh --mode full --lang rust
 
-# Analysis package (from analysis/)
+# Analysis package (publish tables + plots into docs/)
 cd analysis && uv pip install -e .   # or: pip install -e .
-analyze-benchmarks                  # publish snapshot: tables + plots into docs/
+analyze-benchmarks
 analyze-benchmarks -l python
-analyze-benchmarks -l python --logs python/logs/python
 analyze-benchmarks --compare-a rust:2026-07-09-194122 --compare-b rust:latest
 ```
 
 **Modes**: `smoke` (2 reps) · `all-single` (10) · `full` (100) · `research` (500).
 
-After regenerating results into `docs/analysis/`, review and commit before `publish-docs` deploys the site.
+After regenerating results into `docs/`, review and commit before `publish-docs` deploys the site.
 
 ---
 
 ## Test data
 
-Test data types: **message**, **document**, **telemetry**, **strings**, and **event**.
+Shared **data types**: `message`, `document`, `telemetry`, `strings`, and `event`.
 
 Catalog and defaults: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.  
-Docs: [Test Data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).
+Docs: [Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/test_data_configuration/).
 
 ---
 
 ## Statistics
 
 - [Analysis methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/)
-- [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/)
+- [Metrics catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/)
+
+Compare serializers **within one language** (and ideally one category). Cross-language absolute times are directional only — runtimes and GCs differ.
