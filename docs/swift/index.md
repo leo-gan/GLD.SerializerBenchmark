@@ -2,7 +2,7 @@
 
 Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto).
 
-## Benchmark harness
+## Benchmark runner
 
 - Directory: `swift/`
 - Output: `logs/swift/YYYY-MM-DD-HHMMSS.csv` (`Language=swift`, times in **nanoseconds**)
@@ -46,7 +46,7 @@ Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 ### Caveats
 
 - Stream mode is **adapted** for all registered codecs.
-- Cap’n Proto has no maintained first-class Swift codegen; the harness uses the **official C++ library** via `CapnpBridge` (requires `libcapnp` / `libkj`, typically under `~/.local`).
+- Cap’n Proto has no maintained first-class Swift codegen; the benchmark runner uses the **official C++ library** via `CapnpBridge` (requires `libcapnp` / `libkj`, typically under `~/.local`).
 - TOML uses mattt/swift-toml (toml++); Linux builds may need GCC 11 `libstdc++` include flags (set in `run-benchmarks.sh`).
 
 Also: [`swift/README.md`](../../swift/README.md).

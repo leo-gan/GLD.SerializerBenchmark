@@ -820,7 +820,7 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
         "(`*.configs.json`, or older `*.environment.json` files). "
         "They describe the machine and the run setup, not the timing formulas. "
         "For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). "
-        "Optional blocks (`dataset`, `serializers`) appear only when the harness recorded them.",
+        "Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.",
         "",
     ]
     if csv_path:
@@ -832,7 +832,7 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
     else:
         body.append(
             "- *No sidecar config found beside the latest CSV "
-            "(re-run harness with environment capture to populate).*"
+            "(re-run the benchmark runner with environment capture to populate).*"
         )
     if doc:
         ds = doc.get("dataset") if isinstance(doc.get("dataset"), dict) else {}
@@ -1257,7 +1257,7 @@ def generate_language_results_pages(
                 lines.append("")
                 lines.append(
                     "- **prost** maps ISO timestamps through millisecond integers; "
-                    "the harness allows date-string drift on types that carry timestamps "
+                    "the benchmark runner allows date-string drift on types that carry timestamps "
                     "(message, event, document, telemetry)."
                 )
                 lines.append(
@@ -1312,7 +1312,7 @@ def generate_language_results_pages(
         lines.append("")
         lines.append(
             "Snapshots are produced on a developer machine. "
-            "After a harness run (each run writes a timestamped `YYYY-MM-DD-HHMMSS.csv`):"
+            "After a benchmark-runner run (each run writes a timestamped `YYYY-MM-DD-HHMMSS.csv`):"
         )
         lines.append("")
         lines.append("```bash")

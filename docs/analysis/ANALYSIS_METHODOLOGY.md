@@ -1,6 +1,6 @@
 # Analysis methodology
 
-This page explains how the **analysis package** turns raw harness CSVs into group statistics, effect sizes, language **Results** tables, and latency charts.
+This page explains how the **analysis package** turns raw benchmark-runner CSVs into group statistics, effect sizes, language **Results** tables, and latency charts.
 
 If architecture is the lab setup, methodology is the **lab notebook**: what we keep, what we drop, and how we summarize.
 
@@ -8,7 +8,7 @@ If architecture is the lab setup, methodology is the **lab notebook**: what we k
 
 | If you need… | Go here |
 |--------------|---------|
-| What the harness times / suite layout | [Benchmark architecture](architecture.md) |
+| What the benchmark runner times / suite layout | [Benchmark architecture](architecture.md) |
 | Data-type meanings | [Test data](test_data_configuration.md) |
 | Paradigms | [Serialization categories](serialization_categories.md) |
 | How to regenerate site snapshots | [Results summary](BENCHMARK_SUMMARY.md#regenerating-language-snapshots) |
@@ -32,7 +32,7 @@ By the end of this page you should be able to:
 
 | Source | Role |
 |--------|------|
-| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language harness output (gitignored) |
+| `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language benchmark runner output (gitignored) |
 | `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `cpp`, `swift`, …) |
 | `csv_schema` in master config | Required and optional columns |
 
@@ -75,13 +75,13 @@ One function, `prepare_analysis_records` in `stats.py`, performs steps 1–3. **
 
 ### Time units
 
-All harnesses write times in **nanoseconds** (including C#). Analysis reads the scale once from master config (`csv_schema.time_unit`, optionally overridden per language) and uses the same factor everywhere. It does **not** guess units from medians or language names.
+All benchmark runners write times in **nanoseconds** (including C#). Analysis reads the scale once from master config (`csv_schema.time_unit`, optionally overridden per language) and uses the same factor everywhere. It does **not** guess units from medians or language names.
 
 Published **latency** tables use **microseconds** (µs = ns ÷ 1000). Latency charts also use µs and usually show the **top five** serializers by mean total time per data type so plots stay readable.
 
 ### Warmup exclusion
 
-**Harnesses write full raw CSVs.** Every successful timed repetition is logged, including index `0`. Runners must not drop warmup, apply IQR, or otherwise “clean” data before writing.
+**Benchmark runners write full raw CSVs.** Every successful timed repetition is logged, including index `0`. Runners must not drop warmup, apply IQR, or otherwise “clean” data before writing.
 
 **Analysis only** applies the policy: if `statistics.exclude_warmup` is true (default), rows with **`RepetitionIndex == 0`** are dropped inside `prepare_analysis_records` before outlier filtering and summaries.
 
@@ -192,7 +192,7 @@ Honest methodology includes what the suite **cannot** claim.
 - **Cross-language absolute times** are directional at best. Garbage collection, allocators, and runtimes differ. Prefer within-language ranks and effect sizes.
 - **C** default builds may use portable stand-ins under real library names—see the [C overview](../c/index.md).
 - **Rust** paths such as `prost`, `rkyv`, and `minicbor` use concrete native codecs; timed `rkyv` deserialize **materializes** owned values for fidelity—see the [Rust overview](../rust/index.md).
-- **Stream** mode is not always a true incremental API (some harnesses buffer, then write).
+- **Stream** mode is not always a true incremental API (some benchmark runners buffer, then write).
 - **Fidelity** is semantic or structural, not bit-identical across formats.
 - Outlier removal and warmup policy affect means; always read `runs`, confidence intervals, and effect sizes together.
 

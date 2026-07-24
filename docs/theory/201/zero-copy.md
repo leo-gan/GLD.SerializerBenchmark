@@ -107,7 +107,7 @@ The approach fits poorly for small, frequently mutated documents when builder co
 
 ## In this suite
 
-Where FlatBuffers or similar codecs are **registered** for a language, treat them as **schema-driven / specialized layout** entries and compare them carefully with other schema-driven libraries on the **same language Results** page. Absence from a language harness means “not measured here,” not “irrelevant in industry.” Categories and overviews record what is wired today: [Serialization categories](../../analysis/serialization_categories.md).
+Where FlatBuffers or similar codecs are **registered** for a language, treat them as **schema-driven / specialized layout** entries and compare them carefully with other schema-driven libraries on the **same language Results** page. Absence from a language benchmark runner means “not measured here,” not “irrelevant in industry.” Categories and overviews record what is wired today: [Serialization categories](../../analysis/serialization_categories.md).
 
 ---
 

@@ -55,12 +55,12 @@ This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 - **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.
 - SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
 - Jil reuses a single static `Options` instance.
-- Harness no longer prints per-repetition DEBUG lines (measurement noise).
+- Benchmark runner no longer prints per-repetition DEBUG lines (measurement noise).
 
 - Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.
 
-Harness: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
+Benchmark runner: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
 
 ## The Power of `Span<T>` and `Memory<T>`
 

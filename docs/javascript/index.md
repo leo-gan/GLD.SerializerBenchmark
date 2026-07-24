@@ -2,7 +2,7 @@
 
 Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
-## Harness
+## Benchmark runner
 
 - `javascript/` (repository root)
 - Logs: `logs/javascript/YYYY-MM-DD-HHMMSS.csv`
@@ -41,7 +41,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 - **simdjson-parse+JSON.stringify** (optional native addon; omitted from the run if not installed): only **deserialize** uses SIMD; serialize is stdlib `JSON.stringify` (honest leaderboard label).
 - **protobuf-es** / **google-protobuf** use generated code from `javascript/schemas/js_fixtures.proto` (field shapes match JS data types; string timestamps). Google stubs live under `src/generated/google/` (`npm run generate:google-protobuf`).
 - Suite type ids: `message`, `document`, `telemetry`, `strings`, `event`.
-- **flatbuffers / flexbuffers:** fixture support via tables / FlexBuffers; see harness for float/array workarounds.
+- **flatbuffers / flexbuffers:** fixture support via tables / FlexBuffers; see the benchmark runner for float/array workarounds.
 - **bebop** / **sia** encode a JSON-shaped model via each library’s primitive writers.
 - **devalue** is a framework-oriented value codec (SvelteKit), not a portable wire standard.
 - **prepare()** builds native messages and compiles schemas outside the timed path.

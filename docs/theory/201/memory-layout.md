@@ -336,7 +336,7 @@ A durable remedy is not an informal document describing structure packing. It is
 
 ## In this suite
 
-The harness measures **codecs**, not raw structure dumps. Each registered serializer implements a defined encode and decode path over the same logical fixtures. That choice is deliberate: portable interchange is the subject of multi-language comparison.
+The benchmark runner measures **codecs**, not raw structure dumps. Each registered serializer implements a defined encode and decode path over the same logical fixtures. That choice is deliberate: portable interchange is the subject of multi-language comparison.
 
 **Results** therefore reflect the cost of *those* contracts—JSON text, MessagePack tags, Protocol Buffers field encodings, and so on—not an uninterpreted memory-copy baseline. For family groupings, see [Serialization categories](../../analysis/serialization_categories.md).
 

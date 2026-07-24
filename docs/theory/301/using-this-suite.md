@@ -20,7 +20,7 @@ Prefer comparisons **within one paradigm family** (JSON text, schemaless binary,
 | **Paradigm family** | JSON and schema-driven binary solve different product problems; speed alone is not interchangeability. |
 | **Payload shape** | Dense structs versus deep graphs change cost centers (see [Encode/decode cost](../201/encode-decode-cost.md)). |
 | **Implementation** | Several libraries can share a format label and differ by an order of magnitude. |
-| **What is timed** | Harness paths measure serialize and deserialize of prepared fixtures—not network round-trip time, disk I/O, or your production validation layer. |
+| **What is timed** | Benchmark runner paths measure serialize and deserialize of prepared fixtures—not network round-trip time, disk I/O, or your production validation layer. |
 | **Analysis policy** | Warmup exclusion and outlier filters change means; raw CSV is not the published table unless you re-run analysis with the same config. |
 
 ## Decision frame
@@ -78,7 +78,7 @@ The suite result answered “fastest schema path in Rust for this fixture,” no
 | [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | Warmup, outliers, grouping keys, units |
 | [Metrics catalog](../../analysis/METRICS.md) | What each field means |
 | [Test Data](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
-| [Benchmark architecture](../../analysis/architecture.md) | What the harness times |
+| [Benchmark architecture](../../analysis/architecture.md) | What the benchmark runner times |
 | Dashboard (Benchmarks navigation) | Interactive slices of the same analysis story |
 
 **Grouping key for fair peers (conceptually):**  
@@ -132,7 +132,7 @@ The suite result answered “fastest schema path in Rust for this fixture,” no
 - **Correctness of your schema evolution policy** under rolling deploys (see 201 [schema evolution](../201/schema-evolution.md) and later 301 contract articles).
 - **Security** of deserializing untrusted bytes (native formats, hostile inputs).
 - Whether **gzip or zstd** on the wire wins for your message size mix (compression is orthogonal; see 201 [compression vs format](../201/compression-is-not-a-format.md)).
-- Cross-language byte identity for every registered pair (harnesses are per-language unless you design a fidelity experiment).
+- Cross-language byte identity for every registered pair (benchmark runners are per-language unless you design a fidelity experiment).
 - Business constraints: compliance, team skill, vendor lock-in, existing public contracts.
 
 ## Common mistakes
@@ -149,4 +149,4 @@ The suite result answered “fastest schema path in Rust for this fixture,” no
 - Implementation quality and payload shape often dominate format brand.
 - Analysis policies (warmup, outliers) are part of the claim—know them.
 - Use Results as evidence inside a larger 301 decision about trust, contracts, and workload.
-- Explicitly list what you still must measure outside this harness.
+- Explicitly list what you still must measure outside this benchmark runner.

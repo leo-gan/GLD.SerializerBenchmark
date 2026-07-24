@@ -48,7 +48,7 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 
 - **Size is real:** schemaless Avro omits field names (schema out-of-band).
 - **Speed is mostly library/runtime:** timed path is only `schemaless_writer`/`reader` on a pre-built dict + cached `parse_schema`. fastavro (Cython) still loses to protobuf message `SerializeToString` by ~20–30× on nested types because of Python-dict field walks and null-unions.
-- **Measurement:** the harness no longer runs `tracemalloc` during timed ser/des (it was inflating alloc-heavy codecs ~2–3×).
+- **Measurement:** the benchmark runner no longer runs `tracemalloc` during timed ser/des (it was inflating alloc-heavy codecs ~2–3×).
 
 #### Why flatbuffers and dill ops/s look low
 
@@ -62,7 +62,7 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 - `tracemalloc` under-counts C/Rust extension allocations.
 - Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).
 
-Harness: [`python/README.md`](../../python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Benchmark runner: [`python/README.md`](../../python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## The Global Interpreter Lock (GIL)
 

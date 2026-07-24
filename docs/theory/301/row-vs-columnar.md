@@ -69,7 +69,7 @@ A better design keeps the **serving path** on Protobuf and adds a **batch compac
 
 | Resource | Role |
 |----------|------|
-| Language harnesses | Predominantly **row-oriented message** codecs and fixtures |
+| Language benchmark runners | Predominantly **row-oriented message** codecs and fixtures |
 | [Test Data](../../analysis/test_data_configuration.md) | Record-shaped fixtures (`message`, `document`, `telemetry`, and others) |
 | [Serialization categories](../../analysis/serialization_categories.md) | Families for message codecs—not a Parquet engine benchmark |
 | [Using this suite](using-this-suite.md) | How to read message-level Results |

@@ -158,7 +158,7 @@ Each figure is a picture of **how long** serialize and deserialize took across m
 
 ## How to regenerate this page
 
-Snapshots are produced on a developer machine. After a harness run (each run writes a timestamped `YYYY-MM-DD-HHMMSS.csv`):
+Snapshots are produced on a developer machine. After a benchmark-runner run (each run writes a timestamped `YYYY-MM-DD-HHMMSS.csv`):
 
 ```bash
 analyze-benchmarks              # all languages
@@ -172,7 +172,7 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
 ??? note "Show host, seed, serializers, and source CSV"
 
-    These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the harness recorded them.
+    These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
     - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/javascript/2026-07-20-125122.csv`
     - run=2026-07-20-125122

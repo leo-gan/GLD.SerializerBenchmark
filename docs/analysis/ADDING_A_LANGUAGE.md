@@ -13,7 +13,7 @@ How CSVs become tables: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 After this page you should be able to:
 
 1. Register a language in the master config.
-2. Implement a harness that writes a valid CSV and respects the timing rules.
+2. Implement a benchmark runner that writes a valid CSV and respects the timing rules.
 3. Hook the runner into scripts, documentation, and continuous integration.
 
 ---
@@ -39,9 +39,9 @@ If your config uses `paths.language_log_dirs`, add an entry such as `go: logs/go
 
 ---
 
-## 2. Implement the harness contract
+## 2. Implement the benchmark runner contract
 
-Meet the [harness contract](architecture.md#harness-contract-summary) and [measurement model](architecture.md#measurement-model). In particular:
+Meet the [benchmark runner contract](architecture.md#harness-contract-summary) and [measurement model](architecture.md#measurement-model). In particular:
 
 | Requirement | Detail |
 |-------------|--------|
@@ -52,7 +52,7 @@ Meet the [harness contract](architecture.md#harness-contract-summary) and [measu
 | Warmup | Log repetition index 0; analysis excludes it from aggregates |
 | Prepare outside the loop | Schema compile, type registration, buffer pools, bind data-type encode function — not timed |
 | Timed section | Serialize and deserialize only |
-| Output buffer | Harness-owned / pre-sized buffer reused across reps — see [timing rules](architecture.md#timing-methodology-suite-wide-issue-59) |
+| Output buffer | Runner-owned / pre-sized buffer reused across reps — see [timing rules](architecture.md#timing-methodology-suite-wide-issue-59) |
 | Optimization barriers | `black_box` / `DoNotOptimize` / `KeepAlive` (or equivalent) on timed I/O for native compilers |
 | Fidelity | Semantic round-trip check; write `logs/<lang>/<ts>.errors.csv` only when errors occur |
 | Optional sidecars | `*.configs.json` (environment plus optional dataset / serializer metadata) |
@@ -121,7 +121,7 @@ Update **`.github/workflows/benchmark-ci.yml`**:
 2. A new `*-benchmark` job: install the toolchain, run `check-host-requirements.sh <id>`, run `./scripts/run-benchmarks.sh` (smoke by default).
 3. Analysis smoke step: assert the new id appears in `--enabled-langs` / `--lang-runners`.
 
-Without this, pull requests that only touch the new harness never run it in CI.
+Without this, pull requests that only touch the new benchmark runner never run it in CI.
 
 ---
 

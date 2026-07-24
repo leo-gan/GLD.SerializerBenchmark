@@ -20,7 +20,7 @@ By the end of this page you should be able to:
 
 1. Name the main folders of the repository and what each one is for.
 2. Explain the difference between **setup work** and **timed work**.
-3. List the rules every language harness must follow so results stay comparable.
+3. List the rules every language **benchmark runner** (older docs: *harness*) must follow so results stay comparable.
 4. Choose a **run mode** (smoke, full, research, …) for your purpose.
 
 ---
@@ -38,7 +38,7 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 
 **Typical paths**
 
-- **Publish a snapshot:** run all harnesses in `full` mode, run `analyze-benchmarks`, commit language Results and plots.
+- **Publish a snapshot:** run all benchmark runners in `full` mode, run `analyze-benchmarks`, commit language Results and plots.
 - **Author A/B test:** two CSVs of the same language → compare with `--compare-a` / `--compare-b`.
 - **Private experiment:** change data-type sizes, run one language, keep Results local or commit them.
 
@@ -52,7 +52,7 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 | `schemas/` | Shared data catalog, Protocol Buffers and related wire definitions |
 | `logs/<language>/` | Timestamped result CSVs (gitignored; not published as raw files) |
 | `analysis/` | Python package that implements the `analyze-benchmarks` command |
-| `python/`, `c-sharp/`, `rust/`, `c/`, `javascript/`, `go/`, `java/`, `cpp/`, `swift/` | One harness per language |
+| `python/`, `c-sharp/`, `rust/`, `c/`, `javascript/`, `go/`, `java/`, `cpp/`, `swift/` | One benchmark runner per language |
 | `docs/` | MkDocs site: theory, inventories, result snapshots, this analysis section |
 | `scripts/run-all-benchmarks.sh` | Orchestrates multi-language runs |
 
@@ -96,16 +96,16 @@ These policies keep native and managed languages from accidentally measuring dif
 
 | Concern | Policy |
 |---------|--------|
-| **Output buffer** | Prefer a **harness-owned** buffer (or a pre-sized scratch buffer) that is cleared and reused across repetitions. Cold allocation should land in warmup. Document the language’s choice. Do not mix “always allocate fresh” and “reuse buffer” across serializers of the same language without documenting both. |
+| **Output buffer** | Prefer a **runner-owned** buffer (or a pre-sized scratch buffer) that is cleared and reused across repetitions. Cold allocation should land in warmup. Document the language’s choice. Do not mix “always allocate fresh” and “reuse buffer” across serializers of the same language without documenting both. |
 | **Optimization barriers** | On optimizing native compilers (C, C++, Rust, …), force the compiler to keep timed inputs and outputs “alive” (`black_box`, `DoNotOptimize`, `KeepAlive`, or the language equivalent). Otherwise the compiler may delete the work as unused. |
 | **Data-type dispatch** | Bind type-specific encode paths during **prepare** (function pointers, closures, monomorphic helpers). The timed serialize path should not pay for a large `switch`/`match` on data type when the data type is fixed for the whole cell. |
 | **Random numbers** | Generation must be deterministic **within one language**. Prefer a well-known pseudo-random generator, seed it from `BENCHMARK_SEED` / `reproducibility.random_seed`, and document magic constants. Cross-language **identical** payloads are **not** required. |
 
-Rust’s harness is a useful reference implementation: `rust/README.md` and `rust/src/run_v2.rs`.
+Rust’s benchmark runner is a useful reference implementation: `rust/README.md` and `rust/src/run_v2.rs`.
 
 ---
 
-## Harness contract (summary) {#harness-contract-summary}
+## Benchmark runner contract (summary) {#harness-contract-summary}
 
 Every language runner must satisfy this contract so analysis can treat files the same way.
 
@@ -113,7 +113,7 @@ Every language runner must satisfy this contract so analysis can treat files the
 |-------------|--------|
 | Output file | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` matching `csv_schema` |
 | `Language` column | Language id (`csharp`, `python`, `rust`, …) |
-| Time unit | **Nanoseconds** for every harness (including C#) |
+| Time unit | **Nanoseconds** for every benchmark runner (including C#) |
 | Modes | `bytes` / `stream` (C# may use `string` / `stream`) |
 | Timed section | Serialize and deserialize only |
 | Fidelity | Round-trip check; failures → `logs/<lang>/<ts>.errors.csv` |
@@ -152,7 +152,7 @@ Run modes come from `modes:` in `config/benchmark_config.yaml`. Runners should c
 | `full` | 100 | Publication-quality run |
 | `research` | 500 | High-power statistical study |
 
-**Warmup policy:** harnesses **always log** every successful repetition, including index 0. Analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true (the configured warmup count is **1**). Outlier filtering is also analysis-only. Raw files under `logs/<lang>/` are never rewritten by the stats pipeline.
+**Warmup policy:** benchmark runners **always log** every successful repetition, including index 0. Analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true (the configured warmup count is **1**). Outlier filtering is also analysis-only. Raw files under `logs/<lang>/` are never rewritten by the stats pipeline.
 
 ---
 

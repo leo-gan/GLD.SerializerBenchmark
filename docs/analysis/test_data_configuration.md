@@ -1,6 +1,6 @@
 # Test data
 
-This page describes the **sample data** every language harness serializes: logical shapes, configuration knobs, run matrices, and generator rules.
+This page describes the **sample data** every language benchmark runner serializes: logical shapes, configuration knobs, run matrices, and generator rules.
 
 Think of it as the **shared homework assignment**. Each language implements the same types so comparisons stay fair.
 
@@ -51,7 +51,7 @@ This suite uses a few fixed words. Prefer these over informal synonyms such as �
 | `DataTypeInstanceCount` | batch size `N` |
 | `TypeConfigHash` | short hash of the resolved type config |
 
-> **Note:** Older docs and some harness code still say *fixture*. That almost always means **data type** (or one generated instance of it), not a separate concept.
+> **Note:** Older docs and some benchmark-runner code still say *fixture*. That almost always means **data type** (or one generated instance of it), not a separate concept.
 
 Batch cells may appear on Results as **Data type · N instances** (for example Message · 100 instances), from `type_id` and `data_type_instance_count`.
 
@@ -83,7 +83,7 @@ cells = W × C                             # cartesian product
 make_one(type_id, type_config_resolved, seed, instance_index) -> Instance
 ```
 
-Harness pattern:
+Benchmark runner pattern:
 
 ```text
 instances = [make_one(..., i) for i in range(N)]

@@ -67,7 +67,7 @@ A team proposes MessagePack everywhere because it looked strong on one language 
 |----------|------|
 | Multi-language Results | Evidence for **library choice per language** under one family |
 | [Serialization categories](../../analysis/serialization_categories.md) | Shared family vocabulary |
-| Shared `schemas/` (for example `.proto` files) where present | Example of one contract, many harnesses |
+| Shared `schemas/` (for example `.proto` files) where present | Example of one contract, many benchmark runners |
 | [Using this suite](using-this-suite.md) | Never crown cross-language winners |
 
 A format that appears in **many** language overviews is a candidate for polyglot adoption. Absence in one language is an **integration risk**, not a moral failing of that language.
@@ -87,7 +87,7 @@ A format that appears in **many** language overviews is a candidate for polyglot
 1. Freeze the schema and fixture values.
 2. Encode in each language; decode in every other; assert **logical** equality.
 3. Optionally assert bit-identity, and document whether you require it.
-4. Run per-language suite fidelity for harness round-trip (local only).
+4. Run per-language suite fidelity for benchmark runner round-trip (local only).
 5. Record footguns such as defaults, packed repeated fields, and renames.
 
 ### Decision rule
@@ -102,7 +102,7 @@ A format that appears in **many** language overviews is a candidate for polyglot
 | **Matrix pass rate** (encode in A, decode in B) | **Primary** |
 | Logical field equality | Correctness definition |
 | Bit-identical encode (optional) | Relevant only for caching or signing |
-| Per-language `mean_fidelity` | Local harness health |
+| Per-language `mean_fidelity` | Local benchmark runner health |
 | Schema and version alignment | Drift detector |
 | Per-language latency Results | Capacity planning **after** interop works |
 

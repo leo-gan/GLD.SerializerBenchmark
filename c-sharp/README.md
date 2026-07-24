@@ -45,7 +45,7 @@ For `N>1`, payloads use batch wrappers (`BatchMessage`, …) so codecs that need
 
 ## Running the benchmarks
 
-Modes match [`config/benchmark_config.yaml`](../config/benchmark_config.yaml). Same layout as other language harnesses (native host run, no Docker).
+Modes match [`config/benchmark_config.yaml`](../config/benchmark_config.yaml). Same layout as other language benchmark runners (native host run, no Docker).
 
 ```bash
 cd c-sharp

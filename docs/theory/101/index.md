@@ -106,5 +106,5 @@ Install and layout notes live in the [notebooks README](../notebooks/README.md).
 ## Scope and honesty
 
 - This theory track is a **map**, not an encyclopedia of every library.
-- Performance claims in prose are **illustrative**. Prefer suite **Results** for numbers on *this* harness and hardware.
+- Performance claims in prose are **illustrative**. Prefer suite **Results** for numbers on *this* benchmark runner and hardware.
 - “Best format” always means **best under your constraints** (team, trust boundary, retention, latency budget, multi-language needs).

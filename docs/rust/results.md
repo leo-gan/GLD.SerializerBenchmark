@@ -135,7 +135,7 @@ Compare serializers **inside the same family** only (for example JSON with JSON,
 
 These notes explain odd-looking correctness or speed edges on Rust only:
 
-- **prost** maps ISO timestamps through millisecond integers; the harness allows date-string drift on types that carry timestamps (message, event, document, telemetry).
+- **prost** maps ISO timestamps through millisecond integers; the benchmark runner allows date-string drift on types that carry timestamps (message, event, document, telemetry).
 - **rkyv** timed deserialize **builds owned values** for comparison; a pure zero-copy `access` path would be faster and is documented on the overview.
 - **simd-json** serialize still goes through `serde_json` (the crate focuses on parse speed).
 
@@ -190,7 +190,7 @@ Each figure is a picture of **how long** serialize and deserialize took across m
 
 ## How to regenerate this page
 
-Snapshots are produced on a developer machine. After a harness run (each run writes a timestamped `YYYY-MM-DD-HHMMSS.csv`):
+Snapshots are produced on a developer machine. After a benchmark-runner run (each run writes a timestamped `YYYY-MM-DD-HHMMSS.csv`):
 
 ```bash
 analyze-benchmarks              # all languages
@@ -204,7 +204,7 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
 ??? note "Show host, seed, serializers, and source CSV"
 
-    These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the harness recorded them.
+    These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
     - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/rust/2026-07-20-125050.csv`
     - run=2026-07-20-125050

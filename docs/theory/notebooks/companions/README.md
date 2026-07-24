@@ -16,4 +16,4 @@ Thin appendices to the **Python-first** Colab labs. These are **not** full cours
 
 ## Honesty
 
-Illustrative only. Suite language **Results** own harness measurements. Multi-language companions prove **wire judgment**, not benchmark rank.
+Illustrative only. Suite language **Results** own benchmark-runner measurements. Multi-language companions prove **wire judgment**, not benchmark rank.

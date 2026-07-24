@@ -37,7 +37,7 @@ These rows are orientation only—not a leaderboard. Real speed and size depend 
 | **Schema-driven** | Numbers / layout from schema or IDL | No | Often smallest | Often fastest deserialize | Where codegen exists | Stable contracts, streams |
 | **Language-native** | Runtime type metadata | No | Medium | Varies | Usually one runtime | Same-stack caches / graphs |
 
-Some harness entries (C# **XML** / **YAML** / **CSV**, and similar) sit outside a pure four-box split. Treat them as adjacent text or specialized formats and use the language Overview category column.
+Some benchmark-runner entries (C# **XML** / **YAML** / **CSV**, and similar) sit outside a pure four-box split. Treat them as adjacent text or specialized formats and use the language Overview category column.
 
 ---
 

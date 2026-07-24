@@ -23,10 +23,10 @@ For the ideas behind formats, start with [Serialization 101](../theory/101/index
 
 ## The big picture in one paragraph
 
-Each programming language has a small program called a **harness**. The harness builds sample data, runs each serializer many times, checks that the data comes back correctly, and writes a spreadsheet-like file (CSV). A shared **analysis** program then cleans those runs, computes summaries, and produces the tables and charts you see on the site. Everyone shares the same data shapes and the same analysis rules so comparisons stay fair.
+Each programming language has a small program called a **benchmark runner**. The benchmark runner builds sample data, runs each serializer many times, checks that the data comes back correctly, and writes a spreadsheet-like file (CSV). A shared **analysis** program then cleans those runs, computes summaries, and produces the tables and charts you see on the site. Everyone shares the same data shapes and the same analysis rules so comparisons stay fair.
 
 ```text
-  harness (C#, Python, Rust, …)
+  benchmark runner (C#, Python, Rust, …)
        │  timed serialize + deserialize
        ▼
   logs/<language>/*.csv
@@ -45,9 +45,10 @@ Each programming language has a small program called a **harness**. The harness 
 | Say this | Not this | Means |
 |----------|----------|--------|
 | **data type** | “fixture” | One of `message`, `document`, `telemetry`, `strings`, `event` |
+| **benchmark runner** | “harness” | Per-language program that times serializers and writes the CSV |
 | **batch size N** | — | How many instances in one serialize call (`1` or `100`) |
 | **category / family** | — | JSON, schemaless binary, schema-driven, language-native |
-| **bytes / stream mode** | — | Which API shape the harness called (not payload size) |
+| **bytes / stream mode** | — | Which API shape the benchmark runner called (not payload size) |
 
 Full glossary: [Test data — vocabulary](test_data_configuration.md#vocabulary).
 
@@ -62,7 +63,7 @@ Full glossary: [Test data — vocabulary](test_data_configuration.md#vocabulary)
 | **[Test data](test_data_configuration.md)** | The five sample data types and how sizes are chosen | What we serialize |
 | **[Methodology](ANALYSIS_METHODOLOGY.md)** | Warmup, outliers, confidence intervals, effect sizes | How CSVs become published numbers |
 | **[Metrics](METRICS.md)** | Names and meanings of every reported measurement | “What does this column mean?” |
-| **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to plug in a new language harness | Extending the suite |
+| **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to plug in a new language benchmark runner | Extending the suite |
 | **[Results summary](BENCHMARK_SUMMARY.md)** | Links to each language’s numbers and how to regenerate them | The published snapshots |
 
 Theory tracks: [101](../theory/101/index.md) · [201](../theory/201/index.md) · [301](../theory/301/index.md) · [401](../theory/401/index.md).

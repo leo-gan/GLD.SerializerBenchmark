@@ -30,7 +30,7 @@ Related (not numbers): [Serialization categories](serialization_categories.md) Â
 
 This hub file is **not** rewritten by `analyze-benchmarks`.
 
-You need local CSVs at `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` (gitignored; produced by a harness or by `./scripts/run-all-benchmarks.sh --mode full`).
+You need local CSVs at `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` (gitignored; produced by a benchmark runner or by `./scripts/run-all-benchmarks.sh --mode full`).
 
 ```bash
 cd analysis && pip install -e .   # once

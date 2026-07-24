@@ -10,7 +10,7 @@ How those numbers are produced (warmup, outlier filter, shared sanitize for tabl
 
 After this page you should be able to:
 
-1. Distinguish **CSV columns** written by harnesses from **group metrics** computed by analysis.
+1. Distinguish **CSV columns** written by benchmark runners from **group metrics** computed by analysis.
 2. Read the **importance** tags (high / medium / low) and know which appear on Results by default.
 3. Explain multi-way versus pairwise reporting in one sentence.
 
@@ -28,25 +28,25 @@ Configure visibility under `metrics:` in `config/benchmark_config.yaml`.
 
 ---
 
-## CSV columns (harness → analysis)
+## CSV columns (benchmark runner → analysis)
 
-These fields are written by each language harness. Column order (v1.2+): `SerializerVersion` immediately follows `SerializerName`.
+These fields are written by each language benchmark runner. Column order (v1.2+): `SerializerVersion` immediately follows `SerializerName`.
 
 | Column | Unit | Importance | Source | Everyday meaning |
 |--------|------|------------|--------|------------------|
-| `Language` | id | high | harness | Which language ran (`python`, `csharp`, …) |
-| `StringOrStream` | enum | high | harness | API mode: `bytes` / `stream` / legacy aliases |
-| `TestDataName` | id | high | harness | Data type id (`message`, `document`, …) |
-| `Repetitions` | count | medium | harness | How many times the loop was configured to run |
-| `RepetitionIndex` | index | medium | harness | Which trial this row is; `0` is the warmup row in raw logs |
-| `SerializerName` | id | high | harness | Stable log key for the library |
-| `SerializerVersion` | semver / runtime | high | harness | Installed package or crate version |
-| `TimeSer` | ns | high | harness | Wall time to serialize |
-| `TimeDeser` | ns | high | harness | Wall time to deserialize |
-| `TimeSerAndDeser` | ns | high | harness | Combined time (or serialize + deserialize) |
-| `Size` | bytes | high | harness | Raw wire size of the payload |
-| `OpPerSecSer` / `Deser` / `SerAndDeser` | 1/s | medium | harness | Often `1e9/time`; analysis may recompute |
-| `MemoryPeakBytes` | bytes | medium | optional | Peak allocation if the harness records it |
+| `Language` | id | high | runner | Which language ran (`python`, `csharp`, …) |
+| `StringOrStream` | enum | high | runner | API mode: `bytes` / `stream` / legacy aliases |
+| `TestDataName` | id | high | runner | Data type id (`message`, `document`, …) |
+| `Repetitions` | count | medium | runner | How many times the loop was configured to run |
+| `RepetitionIndex` | index | medium | runner | Which trial this row is; `0` is the warmup row in raw logs |
+| `SerializerName` | id | high | runner | Stable log key for the library |
+| `SerializerVersion` | semver / runtime | high | runner | Installed package or crate version |
+| `TimeSer` | ns | high | runner | Wall time to serialize |
+| `TimeDeser` | ns | high | runner | Wall time to deserialize |
+| `TimeSerAndDeser` | ns | high | runner | Combined time (or serialize + deserialize) |
+| `Size` | bytes | high | runner | Raw wire size of the payload |
+| `OpPerSecSer` / `Deser` / `SerAndDeser` | 1/s | medium | runner | Often `1e9/time`; analysis may recompute |
+| `MemoryPeakBytes` | bytes | medium | optional | Peak allocation if the benchmark runner records it |
 | `FidelityScore` | 0–1 | high | optional | `1.0` means the round-trip check passed |
 | `NativeKind` / `StreamMode` | enum | low | optional | Call-path metadata (for example Rust or Go) |
 

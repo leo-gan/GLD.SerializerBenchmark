@@ -23,4 +23,4 @@ Tool pins: [`scripts/schemas/tool-versions.env`](../../scripts/schemas/tool-vers
 Batch_<Type> { repeated <Type> items = 1; }
 ```
 
-For `data_type_instance_count == 1`, harnesses may use bare messages for optimal single-object APIs.
+For `data_type_instance_count == 1`, benchmark runners may use bare messages for optimal single-object APIs.

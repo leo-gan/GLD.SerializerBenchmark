@@ -26,7 +26,7 @@ By the end of this course you should be able to:
 3. **Evaluate** workload fit: row versus columnar storage at system scale, polyglot contracts across languages, and the different shapes of RPC (remote procedure call) versus messaging payloads.
 4. **Critique** benchmark claims using this suite’s rules about paradigm families and single-language comparisons.
 5. **Recommend** a format family or approach under stated constraints and **justify** it with serialization categories and language **Results**.
-6. **Identify** what this benchmark harness cannot answer, so you do not over-claim.
+6. **Identify** what this benchmark runner cannot answer, so you do not over-claim.
 
 ## How this course fits the program
 
@@ -37,7 +37,7 @@ By the end of this course you should be able to:
 | **301 (this course)** | Production judgment — what to ship under real constraints |
 | [401](../401/index.md) | Implementer elective — wire formats, language paths, and a hands-on lab |
 
-The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s harness, use the [Benchmarks](../../analysis/index.md) pages and each language’s **Results**.
+The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s benchmark runner, use the [Benchmarks](../../analysis/index.md) pages and each language’s **Results**.
 
 ## Suggested paths
 
@@ -100,7 +100,7 @@ You do not need to read every article in order. Pick a track that matches the pr
 
 ## Lab notebooks (Python / Colab)
 
-Experiment notebooks implement selected article **Experiments**. They are decision labs, not full clones of the suite harness:
+Experiment notebooks implement selected article **Experiments**. They are decision labs, not full clones of the suite benchmark runner:
 
 | Notebook | Article |
 |----------|---------|
@@ -120,13 +120,13 @@ The same program rules apply as in 101 and 201:
 3. Payload shape matters. Dense records and deep graphs are different jobs.
 4. Compare within one paradigm family and within one language before making cross-cutting claims.
 5. Security and trust are first-class concerns, not afterthoughts.
-6. Numbers in prose are illustrative. Language **Results** own the suite truth for this harness.
+6. Numbers in prose are illustrative. Language **Results** own the suite truth for this benchmark runner.
 
 **301-specific guidance:** every article includes **Experiments** (setup, procedure, and a decision rule for that page’s problem), **Metrics** (the primary signals for that experiment’s conclusion), and a section on **what this suite cannot tell you**. Prefer failure modes and decision tables over encyclopedias of wire formats.
 
 ## Assessment (self-check)
 
-Treat the capstone case studies as the course exam. Under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the harness.
+Treat the capstone case studies as the course exam. Under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the benchmark runner.
 
 ## Where to go next
 

@@ -11,9 +11,9 @@ Theory alone does not decide what you should ship. Use these pages to build clea
 1. Skim [Serialization 101](../101/index.md) so the basic definitions and trade-off axes feel familiar.
 2. Optionally read one lens that matches your work: [Historical](../101/historical_perspective.md), [Data science](../101/data_science_perspective.md), or [Engineering](../101/engineer_perspective.md).
 3. Work through the articles below when you need a clearer *how* or *why* for a mechanism.
-4. Open [Serialization categories](../../analysis/serialization_categories.md) and a language **Results** page for numbers measured on *this* harness.
+4. Open [Serialization categories](../../analysis/serialization_categories.md) and a language **Results** page for numbers measured on *this* benchmark runner.
 
-**Honesty rules (same as Serialization 101):** there are no universal winners. Implementation quality often matters more than the brand name of a format. Payload shape changes costs a lot. Compare within one paradigm and one language when you can. Numbers that appear in prose are only illustrations; the suite **Results** pages own the truth for this harness.
+**Honesty rules (same as Serialization 101):** there are no universal winners. Implementation quality often matters more than the brand name of a format. Payload shape changes costs a lot. Compare within one paradigm and one language when you can. Numbers that appear in prose are only illustrations; the suite **Results** pages own the truth for this benchmark runner.
 
 ---
 

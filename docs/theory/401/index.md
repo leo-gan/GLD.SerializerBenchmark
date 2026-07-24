@@ -89,7 +89,7 @@ The program-wide rules still apply: there are no universal winners; implementati
 
 1. **Wire truth is shared; runtimes differ.** Python, Rust, and C can all speak the same binary layout and still own buffers differently.  
 2. **The subset lab labels its omissions.** Packed repeated fields, zigzag signed integers, maps, oneofs, and full production hardening are out of scope on purpose.  
-3. **Suite harnesses illustrate integration.** They are not the reference design for how you should structure production Protocol Buffers.  
+3. **Suite benchmark runners illustrate integration.** They are not the reference design for how you should structure production Protocol Buffers.  
 4. **Results are optional cost context.** Speed tables are not the focus of this course.  
 5. **Hostile input is a 301 topic.** For operational controls on untrusted payloads, see [301 untrusted input](../301/untrusted-input.md). Codec-side bounds (truncated varints, overlong lengths) still belong in every decoder.  
 6. **Language tours are parallel, not ranked.** This course does not crown “Rust wins.”
