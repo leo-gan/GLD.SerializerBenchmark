@@ -1,6 +1,8 @@
 # Multi-Language Serializer Benchmark
 
-[![Site](https://img.shields.io/badge/docs%20%2B%20dashboard-live-indigo?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/)
+[![Docs](https://img.shields.io/badge/docs-indigo?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/)
+[![Dashboard](https://img.shields.io/badge/dashboard%20%7C%20live-brightgreen?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
+[![Serialization 101](https://img.shields.io/badge/Serialization%20101-8A2BE2?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Languages](https://img.shields.io/badge/languages-9-informational?style=flat-square)](#supported-languages)
 
