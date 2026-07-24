@@ -3,7 +3,7 @@
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
 
-## Suite fixtures
+## Suite data types
 
 Type ids: `message`, `document`, `telemetry`, `strings`, `event`.  
 Run configs: `config/library/`. Results may label batch cells as `type@n=<instance_count>`.  
@@ -54,7 +54,7 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 
 - **flatbuffers (serialize):** the official Python package builds with a pure-Python `Builder`. Expect ~100×+ slower ser than `protobuf` on the same POCO. C++/Rust FlatBuffers are a different performance class; this suite measures the Python binding.
 - **flatbuffers (deserialize):** timed path is zero-copy `GetRootAs` + a thin view. Full field materialization is *not* forced inside the timer (FlatBuffers' model: pay on field access).
-- **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these fixtures. Prefer pickle when you do not need dill's dynamic-object features.
+- **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these data types. Prefer pickle when you do not need dill's dynamic-object features.
 
 ### Other caveats
 

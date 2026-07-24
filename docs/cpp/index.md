@@ -108,7 +108,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 
 **Rule of thumb:** If a library is **pure C** and already measured under `Language=c`, re-registering under C++ only makes sense when the C++ call path is a first-class usage mode (yyjson) or when the **API surface differs** (msgpack C vs C++). Do not treat C and C++ rows as interchangeable runtimes for ranking.
 
-## Suite fixtures
+## Suite data types
 
 Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 

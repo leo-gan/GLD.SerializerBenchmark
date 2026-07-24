@@ -40,6 +40,19 @@ Each programming language has a small program called a **harness**. The harness 
 
 ---
 
+## Shared terms (quick)
+
+| Say this | Not this | Means |
+|----------|----------|--------|
+| **data type** | “fixture” | One of `message`, `document`, `telemetry`, `strings`, `event` |
+| **batch size N** | — | How many instances in one serialize call (`1` or `100`) |
+| **category / family** | — | JSON, schemaless binary, schema-driven, language-native |
+| **bytes / stream mode** | — | Which API shape the harness called (not payload size) |
+
+Full glossary: [Test data — vocabulary](test_data_configuration.md#vocabulary).
+
+---
+
 ## How to read this section
 
 | Page | What you will learn | Start here if you want… |
@@ -87,6 +100,6 @@ To regenerate tables and plots after a local run, see [Results summary — regen
 
 Prefer:
 
-> **Same language + same [category](serialization_categories.md) + same test data + same I/O mode**
+> **Same language + same [category](serialization_categories.md) + same data type + same I/O mode**
 
 Absolute times across languages (for example “Python vs C++”) mix runtimes, garbage collectors, and allocators. Those numbers can still be informative as a rough direction, but they are not a precise ranking. Details live under [methodology limitations](ANALYSIS_METHODOLOGY.md#limitations).

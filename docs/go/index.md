@@ -44,7 +44,7 @@ for rep:
   fidelity(expected, actual)     # untimed
 ```
 
-### Suite fixtures
+### Suite data types
 
 Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 

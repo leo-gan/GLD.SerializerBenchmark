@@ -752,7 +752,7 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
         "",
         "Compare serializers **inside the same family** only (for example JSON with JSON, "
         "not JSON with a zero-copy schema codec). "
-        "Each value is mean serialize+deserialize **operations per second** across fixtures, "
+        "Each value is mean serialize+deserialize **operations per second** across data types, "
         "using **bytes mode** only (the in-memory buffer API — not “payload size in bytes”). "
         "Higher is better. Stream mode is left out of this ranking. "
         "Rows are sorted by serializer name; **bold** marks the highest ops/s in the column.",
@@ -839,7 +839,9 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
         if ds.get("fixtures"):
             names = [f.get("name") for f in ds["fixtures"] if isinstance(f, dict) and f.get("name")]
             if names:
-                body.append(f"- **Fixtures (config):** {', '.join(str(n) for n in names)}")
+                body.append(
+                    f"- **Data types (config):** {', '.join(str(n) for n in names)}"
+                )
         ser = doc.get("serializers") if isinstance(doc.get("serializers"), dict) else {}
         items = ser.get("items") if isinstance(ser.get("items"), list) else []
         if items:
@@ -894,7 +896,7 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
     lines = [
         "### Summary",
         "",
-        "One row per serializer (averaged across fixtures; bytes mode preferred when both exist). "
+        "One row per serializer (averaged across data types; bytes mode preferred when both exist). "
         "Only **high-importance** columns appear here by default "
         "([Metrics catalog](../analysis/METRICS.md)). "
         "Times are **µs**. **Bold** = best in that column.",
@@ -1185,6 +1187,8 @@ def generate_language_results_pages(
             "",
             "| Term | Meaning |",
             "|------|---------|",
+            "| **data type** | Sample shape: `message`, `document`, `telemetry`, `strings`, or `event` "
+            "(CSV `TestDataName`; older text may say “fixture”) |",
             "| **bytes mode** | In-memory buffer API (encode to bytes / decode from a buffer) |",
             "| **stream mode** | Stream-style API (write/read through a stream) |",
             "| **µs** | Microseconds (one microsecond = 1000 nanoseconds). Tables show µs; raw CSVs store nanoseconds. |",
@@ -1192,7 +1196,7 @@ def generate_language_results_pages(
             "| **Bold** | Best value in that column (lowest time/size; highest ops/s). Ties are all bolded. |",
             "",
             "Rows are sorted by **serializer name** (easy lookup), not by rank. "
-            "Batch workloads appear as **Type · N instances** "
+            "Batch workloads appear as **Data type · N instances** "
             "(for example Message · 100 instances). "
             "Default multi-serializer tables show **high-importance** metrics only; "
             "pairwise / version A/B reports can show the full set "
@@ -1275,7 +1279,7 @@ def generate_language_results_pages(
             lines.append("")
             lines.append(
                 "Each figure is a picture of **how long** serialize and deserialize took "
-                "across many trials for one sample data type:"
+                "across many trials for one **data type** (and batch size):"
             )
             lines.append("")
             lines.append(
@@ -1288,10 +1292,10 @@ def generate_language_results_pages(
             )
             lines.append(
                 "- **Top 5 only:** charts show the five fastest serializers by mean total time "
-                "for that fixture so the picture stays readable. Tables above still list everyone."
+                "for that data type so the picture stays readable. Tables above still list everyone."
             )
             lines.append(
-                "- Each image also prints fixture name, source CSV, modes, and sample size."
+                "- Each image also prints the data type, source CSV, modes, and sample size."
             )
             lines.append("")
             for dtype, fname in items:

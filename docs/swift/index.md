@@ -39,7 +39,7 @@ fidelity                         # untimed, float-tolerant
 
 **Codable wrappers** never import suite types. **Schema bridges** convert domain ↔ native in prepare / after deserialize (same pattern as Go protobuf / Rust prost).
 
-### Suite fixtures
+### Suite data types
 
 Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 

@@ -9,7 +9,7 @@ If architecture is the lab setup, methodology is the **lab notebook**: what we k
 | If you need… | Go here |
 |--------------|---------|
 | What the harness times / suite layout | [Benchmark architecture](architecture.md) |
-| Fixture meanings | [Test data](test_data_configuration.md) |
+| Data-type meanings | [Test data](test_data_configuration.md) |
 | Paradigms | [Serialization categories](serialization_categories.md) |
 | How to regenerate site snapshots | [Results summary](BENCHMARK_SUMMARY.md#regenerating-language-snapshots) |
 
@@ -77,7 +77,7 @@ One function, `prepare_analysis_records` in `stats.py`, performs steps 1–3. **
 
 All harnesses write times in **nanoseconds** (including C#). Analysis reads the scale once from master config (`csv_schema.time_unit`, optionally overridden per language) and uses the same factor everywhere. It does **not** guess units from medians or language names.
 
-Published **latency** tables use **microseconds** (µs = ns ÷ 1000). Latency charts also use µs and usually show the **top five** serializers by mean total time per fixture so plots stay readable.
+Published **latency** tables use **microseconds** (µs = ns ÷ 1000). Latency charts also use µs and usually show the **top five** serializers by mean total time per data type so plots stay readable.
 
 ### Warmup exclusion
 
@@ -143,7 +143,7 @@ Produced only when the post-filter sample size is at least `min_samples_for_infe
 
 ### Effect sizes versus the fastest in the group
 
-When effect sizes are enabled (default), each serializer is compared—inside the same language, fixture, and I/O mode—to the **fastest** peer (lowest mean total time):
+When effect sizes are enabled (default), each serializer is compared—inside the same language, data type, and I/O mode—to the **fastest** peer (lowest mean total time):
 
 | Method | Role in plain language |
 |--------|------------------------|
@@ -198,7 +198,7 @@ Honest methodology includes what the suite **cannot** claim.
 
 ### Methodological disclosures (for careful readers)
 
-- **Bootstrap reproducibility:** each group gets a *derived* seed (base bootstrap seed mixed with a stable hash of language + serializer + fixture + mode + series prefix) so intervals are independent across groups yet fully reproducible.
+- **Bootstrap reproducibility:** each group gets a *derived* seed (base bootstrap seed mixed with a stable hash of language + serializer + data type + mode + series prefix) so intervals are independent across groups yet fully reproducible.
 - **Paired series:** serialize, deserialize, and total times share one all-or-nothing keep-mask.
 - **Mann–Whitney:** uses SciPy when available (tie-aware); otherwise a pure-NumPy fallback with tie-corrected variance and continuity correction.
 - **Regression gates:** `--save-baseline` is skipped when `--check-regression` fails, so a degraded run cannot overwrite the gate baseline.

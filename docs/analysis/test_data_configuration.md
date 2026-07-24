@@ -22,7 +22,7 @@ How times are cleaned and summarized is separate: [Analysis methodology](ANALYSI
 
 By the end of this page you should be able to:
 
-1. Define **type**, **run config**, **cell**, and **make_one** in one sentence each.
+1. Define **data type**, **run config**, **cell**, and **make_one** in one sentence each.
 2. Sketch the five default data types and what each stresses.
 3. Explain batching (`data_type_instance_count`) without confusing it with “how many repetitions.”
 
@@ -30,22 +30,30 @@ By the end of this page you should be able to:
 
 ## Vocabulary
 
-| Term | Meaning |
-|------|---------|
-| **type catalog** | Definitions of each `type_id` plus default `type_config` knobs |
-| **run config** | One matrix: types (W) × instance counts (C), plus compression / execution settings |
-| **cell** | One concrete point in the matrix: `(type_id, resolved type_config, data_type_instance_count)` |
-| **make_one** | Generator that builds a **single** instance of a type |
+This suite uses a few fixed words. Prefer these over informal synonyms such as “fixture.”
 
-CSV mapping:
+| Term | Meaning | Examples |
+|------|---------|----------|
+| **data type** (also **type id**) | Which *kind* of sample object we serialize | `message`, `document`, `telemetry`, `strings`, `event` |
+| **type config** | Size and shape knobs for **one** instance of that type | `field_count: 8`, `points: 32` |
+| **instance** | One concrete object of a data type | one `message` record |
+| **batch size** (`data_type_instance_count`) | How many instances go into **one** serialize/deserialize call | `1` or `100` |
+| **cell** | One measured combination: data type + type config + batch size | `message` with N=100 |
+| **type catalog** | File of type ids and default type configs | `schemas/data_catalog_v2.yaml` |
+| **run config** | Which cells to measure in a run | `config/library/default.yaml` |
+| **make_one** | Generator that builds a **single** instance | language-specific |
 
-| CSV column | Meaning |
-|------------|---------|
-| `TestDataName` | `type_id` |
-| `DataTypeInstanceCount` | How many instances in one serialize/deserialize call (`N`) |
-| `TypeConfigHash` | Short hash of the resolved `type_config` |
+**CSV names (for readers of raw logs):**
 
-Batch cells may appear on Results as `type@n=<N>` (for example `message@n=100`).
+| CSV column | Everyday name |
+|------------|---------------|
+| `TestDataName` | data type id |
+| `DataTypeInstanceCount` | batch size `N` |
+| `TypeConfigHash` | short hash of the resolved type config |
+
+> **Note:** Older docs and some harness code still say *fixture*. That almost always means **data type** (or one generated instance of it), not a separate concept.
+
+Batch cells may appear on Results as **Data type · N instances** (for example Message · 100 instances), from `type_id` and `data_type_instance_count`.
 
 ---
 

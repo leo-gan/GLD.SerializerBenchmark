@@ -3,7 +3,7 @@
 This page is a **checklist for implementers**. Follow it when you want a new programming language in the suite without changing the shared analysis core.
 
 Background (layout, timing model, contract): [Benchmark architecture](architecture.md).  
-Fixtures: [Test data](test_data_configuration.md).  
+Test data: [Test data](test_data_configuration.md).  
 How CSVs become tables: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
 ---
@@ -50,7 +50,7 @@ Meet the [harness contract](architecture.md#harness-contract-summary) and [measu
 | Time unit | **Nanoseconds** for all runners (including C#) |
 | Modes | `bytes` and `stream` (or `string` / `stream` if matching legacy C#) |
 | Warmup | Log repetition index 0; analysis excludes it from aggregates |
-| Prepare outside the loop | Schema compile, type registration, buffer pools, bind fixture-kind encode function — not timed |
+| Prepare outside the loop | Schema compile, type registration, buffer pools, bind data-type encode function — not timed |
 | Timed section | Serialize and deserialize only |
 | Output buffer | Harness-owned / pre-sized buffer reused across reps — see [timing rules](architecture.md#timing-methodology-suite-wide-issue-59) |
 | Optimization barriers | `black_box` / `DoNotOptimize` / `KeepAlive` (or equivalent) on timed I/O for native compilers |
@@ -117,7 +117,7 @@ Also check:
 
 Update **`.github/workflows/benchmark-ci.yml`**:
 
-1. `changes` job outputs and a `dorny/paths-filter` entry for `runner_dir/**` (and `schemas/**` if shared fixtures apply).
+1. `changes` job outputs and a `dorny/paths-filter` entry for `runner_dir/**` (and `schemas/**` if shared test data apply).
 2. A new `*-benchmark` job: install the toolchain, run `check-host-requirements.sh <id>`, run `./scripts/run-benchmarks.sh` (smoke by default).
 3. Analysis smoke step: assert the new id appears in `--enabled-langs` / `--lang-runners`.
 

@@ -36,7 +36,7 @@ These fields are written by each language harness. Column order (v1.2+): `Serial
 |--------|------|------------|--------|------------------|
 | `Language` | id | high | harness | Which language ran (`python`, `csharp`, …) |
 | `StringOrStream` | enum | high | harness | API mode: `bytes` / `stream` / legacy aliases |
-| `TestDataName` | id | high | harness | Fixture name (`message`, `document`, …) |
+| `TestDataName` | id | high | harness | Data type id (`message`, `document`, …) |
 | `Repetitions` | count | medium | harness | How many times the loop was configured to run |
 | `RepetitionIndex` | index | medium | harness | Which trial this row is; `0` is the warmup row in raw logs |
 | `SerializerName` | id | high | harness | Stable log key for the library |
@@ -128,7 +128,7 @@ logs/<lang>/YYYY-MM-DD-HHMMSS.configs.json
 | Block | Required? | Content |
 |-------|-----------|---------|
 | `environment` | preferred | Operating system, CPU, memory, runtimes, git revision |
-| `dataset` | optional | Seed, fixtures, repetitions, workload labels, config paths |
+| `dataset` | optional | Seed, data types, repetitions, workload labels, config paths |
 | `serializers` | optional | Names and versions from the run |
 | `run` | optional | Mode, metrics profile, timestamp |
 

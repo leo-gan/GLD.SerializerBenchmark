@@ -17,19 +17,20 @@ Compare serializers **inside this language**. Prefer the same [category](../anal
 
 | Term | Meaning |
 |------|---------|
+| **data type** | Sample shape: `message`, `document`, `telemetry`, `strings`, or `event` (CSV `TestDataName`; older text may say “fixture”) |
 | **bytes mode** | In-memory buffer API (encode to bytes / decode from a buffer) |
 | **stream mode** | Stream-style API (write/read through a stream) |
 | **µs** | Microseconds (one microsecond = 1000 nanoseconds). Tables show µs; raw CSVs store nanoseconds. |
 | **Ops/s** | Operations per second from mean total time — higher is faster |
 | **Bold** | Best value in that column (lowest time/size; highest ops/s). Ties are all bolded. |
 
-Rows are sorted by **serializer name** (easy lookup), not by rank. Batch workloads appear as **Type · N instances** (for example Message · 100 instances). Default multi-serializer tables show **high-importance** metrics only; pairwise / version A/B reports can show the full set ([Metrics](../analysis/METRICS.md)).
+Rows are sorted by **serializer name** (easy lookup), not by rank. Batch workloads appear as **Data type · N instances** (for example Message · 100 instances). Default multi-serializer tables show **high-importance** metrics only; pairwise / version A/B reports can show the full set ([Metrics](../analysis/METRICS.md)).
 
 ## Summary tables
 
 ### Summary
 
-One row per serializer (averaged across fixtures; bytes mode preferred when both exist). Only **high-importance** columns appear here by default ([Metrics catalog](../analysis/METRICS.md)). Times are **µs**. **Bold** = best in that column.
+One row per serializer (averaged across data types; bytes mode preferred when both exist). Only **high-importance** columns appear here by default ([Metrics catalog](../analysis/METRICS.md)). Times are **µs**. **Bold** = best in that column.
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
 |---|---|---|---|---|---|---|---|
@@ -102,12 +103,12 @@ One row per serializer (averaged across fixtures; bytes mode preferred when both
 
 ## Latency distributions
 
-Each figure is a picture of **how long** serialize and deserialize took across many trials for one sample data type:
+Each figure is a picture of **how long** serialize and deserialize took across many trials for one **data type** (and batch size):
 
 - **Left — mean bars:** average serialize time and average deserialize time in microseconds (scale starts at 0).
 - **Right — split violins:** the full distribution of sample times (thickness shows where trials cluster).
-- **Top 5 only:** charts show the five fastest serializers by mean total time for that fixture so the picture stays readable. Tables above still list everyone.
-- Each image also prints fixture name, source CSV, modes, and sample size.
+- **Top 5 only:** charts show the five fastest serializers by mean total time for that data type so the picture stays readable. Tables above still list everyone.
+- Each image also prints the data type, source CSV, modes, and sample size.
 
 ### Document · 1 instance
 
@@ -179,7 +180,7 @@ That refreshes this language’s tables and the latency images under `docs/analy
     - warmup_reps=1
     - serializers=18
     - metrics_profile=multi_way
-    - **Fixtures (config):** message, document, telemetry, strings, event
+    - **Data types (config):** message, document, telemetry, strings, event
     - **Serializers (from CSV):**
       - `avro` @ 1.12.0
       - `bson` @ 5.3.1

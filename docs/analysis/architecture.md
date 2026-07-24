@@ -31,8 +31,8 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 
 | Reader | Primary question | How the suite helps |
 |--------|------------------|---------------------|
-| **Student or researcher** | Are the rankings inside one language trustworthy? | Fixed fixtures, run modes, warmup exclusion, outlier handling, confidence intervals, effect sizes — see [methodology](ANALYSIS_METHODOLOGY.md) |
-| **Library author** | Did *my* serializer get better or worse? | Stable names and fixtures; compare two runs with `analyze-benchmarks --compare-a` / `--compare-b`; optional regression check |
+| **Student or researcher** | Are the rankings inside one language trustworthy? | Fixed data types, run modes, warmup exclusion, outlier handling, confidence intervals, effect sizes — see [methodology](ANALYSIS_METHODOLOGY.md) |
+| **Library author** | Did *my* serializer get better or worse? | Stable names and data types; compare two runs with `analyze-benchmarks --compare-a` / `--compare-b`; optional regression check |
 | **System builder** | What fits *our* data shapes and runtime? | Tunable test-data config, two I/O modes, language inventories, same CSV format for private runs |
 | **Maintainer** | Can I add a language without rewriting analysis? | Registry in `benchmark_config.yaml` plus the [Adding a language](ADDING_A_LANGUAGE.md) checklist |
 
@@ -40,7 +40,7 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 
 - **Publish a snapshot:** run all harnesses in `full` mode, run `analyze-benchmarks`, commit language Results and plots.
 - **Author A/B test:** two CSVs of the same language → compare with `--compare-a` / `--compare-b`.
-- **Private experiment:** change fixture sizes, run one language, keep Results local or commit them.
+- **Private experiment:** change data-type sizes, run one language, keep Results local or commit them.
 
 ---
 
@@ -98,7 +98,7 @@ These policies keep native and managed languages from accidentally measuring dif
 |---------|--------|
 | **Output buffer** | Prefer a **harness-owned** buffer (or a pre-sized scratch buffer) that is cleared and reused across repetitions. Cold allocation should land in warmup. Document the language’s choice. Do not mix “always allocate fresh” and “reuse buffer” across serializers of the same language without documenting both. |
 | **Optimization barriers** | On optimizing native compilers (C, C++, Rust, …), force the compiler to keep timed inputs and outputs “alive” (`black_box`, `DoNotOptimize`, `KeepAlive`, or the language equivalent). Otherwise the compiler may delete the work as unused. |
-| **Fixture-type dispatch** | Bind type-specific encode paths during **prepare** (function pointers, closures, monomorphic helpers). The timed serialize path should not pay for a large `switch`/`match` on fixture type when the type is fixed for the whole cell. |
+| **Data-type dispatch** | Bind type-specific encode paths during **prepare** (function pointers, closures, monomorphic helpers). The timed serialize path should not pay for a large `switch`/`match` on data type when the data type is fixed for the whole cell. |
 | **Random numbers** | Generation must be deterministic **within one language**. Prefer a well-known pseudo-random generator, seed it from `BENCHMARK_SEED` / `reproducibility.random_seed`, and document magic constants. Cross-language **identical** payloads are **not** required. |
 
 Rust’s harness is a useful reference implementation: `rust/README.md` and `rust/src/run_v2.rs`.
