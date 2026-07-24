@@ -78,7 +78,7 @@ namespace GLD.SerializerBenchmark
             get { return (TimeSer + TimeDeser) > 0 ? 1_000_000_000.0 / (TimeSer + TimeDeser) : 0; }
         }
 
-        /// <summary>Harness language id for multi-language CSV schema.</summary>
+        /// <summary>Benchmark-runner language id for multi-language CSV schema.</summary>
         public string Language { get { return "csharp"; } }
 
         /// <summary>Peak memory if measured; 0 when not tracked.</summary>
