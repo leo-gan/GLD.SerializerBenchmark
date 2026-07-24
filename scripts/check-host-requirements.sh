@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify host toolchains needed by language harnesses (does not install).
+# Verify host toolchains needed by language benchmark runners (does not install).
 # Usage:
 #   ./scripts/check-host-requirements.sh           # all enabled languages + analysis
 #   ./scripts/check-host-requirements.sh csharp python
@@ -33,7 +33,7 @@ need_cmd() {
 check_analysis() {
   echo "analysis (configs.json / analyze-benchmarks)"
   need_cmd python3 "Python 3.10+ recommended" || true
-  need_cmd uv "https://docs.astral.sh/uv/ — also used by python harness" || true
+  need_cmd uv "https://docs.astral.sh/uv/ — also used by python benchmark runner" || true
 }
 
 check_csharp() {

@@ -2,7 +2,7 @@
 
 C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers).
 
-## Harness
+## Benchmark runner
 
 - Directory: `cpp/` (repository root)
 - Output: monorepo `logs/cpp/YYYY-MM-DD-HHMMSS.csv` (`Language=cpp`, times in **nanoseconds**)
@@ -57,7 +57,7 @@ for rep:
 
 ## C vs C++ — clear separation
 
-| Concern | C harness (`c/`) | C++ harness (`cpp/`) |
+| Concern | C benchmark runner (`c/`) | C++ benchmark runner (`cpp/`) |
 |---------|------------------|----------------------|
 | Language id | `c` | `cpp` |
 | Object model | C structs + function pointers | C++20 structs + virtual `ISerializer` |
@@ -71,16 +71,16 @@ for rep:
 
 Some projects are C libraries with a pure C API. They are valid from C++ via `extern "C"` includes. The suite registers them carefully:
 
-1. **yyjson** (registered in **both** harnesses)
+1. **yyjson** (registered in **both** benchmark runners)
    - **Why:** Written in C, ships `yyjson.h` with C linkage; C++ can call it without a separate C++ port.
-   - **How:** C++ includes `yyjson.h` and uses `yyjson_read` / `yyjson_mut_write` (same recommended APIs as the C harness).
+   - **How:** C++ includes `yyjson.h` and uses `yyjson_read` / `yyjson_mut_write` (same recommended APIs as the C benchmark runner).
    - **Example:**
      ```cpp
      #include <yyjson.h>
      yyjson_doc* doc = yyjson_read(ptr, len, 0);
      char* out = yyjson_write(doc, 0, &out_len);
      ```
-     vs C harness `ser_yyjson.c` with the same calls.
+     vs C benchmark runner `ser_yyjson.c` with the same calls.
 
 2. **msgpack-c** (related but **not** the same registration)
    - **Why:** One repository provides **two** APIs: C (`msgpack.h`) and C++ (`msgpack.hpp`).
@@ -89,17 +89,17 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 
 3. **Protobuf family** (shared schema, different runtimes)
    - **Why:** The suite `.proto` is language-agnostic; C and C++ use different encoders for the **same field numbers**.
-   - **How:** Both harnesses register official **libprotobuf** (`protobuf` row, sysroot via `setup-protobuf-sysroot.sh`) plus an in-tree **protobuf-wire** baseline. C also keeps log names `nanopb` / `protobuf-c` that currently time the shared `fixture_pb_v2` wire helper (see [C overview](../c/index.md) caveats)—not full generated nanopb/protoc-gen-c stacks. All field numbers align with `schemas/v2/protobuf/benchmark_v2.proto`.
+   - **How:** Both benchmark runners register official **libprotobuf** (`protobuf` row, sysroot via `setup-protobuf-sysroot.sh`) plus an in-tree **protobuf-wire** baseline. C also keeps log names `nanopb` / `protobuf-c` that currently time the shared `fixture_pb_v2` wire helper (see [C overview](../c/index.md) caveats)—not full generated nanopb/protoc-gen-c stacks. All field numbers align with `schemas/v2/protobuf/benchmark_v2.proto`.
    - **Example field:** `Message.f_int32 = 2` is wire tag `(2<<3)|0` in both.
 
 4. **FlatBuffers family** (shared idea, different codegens)
    - **Why:** Google FlatBuffers is C++-first; **flatcc** is the maintained C implementation.
-   - **How:** C harness → flatcc builder/reader; C++ harness → `flatbuffers::FlatBufferBuilder` (+ FlexBuffers).
+   - **How:** C benchmark runner → flatcc builder/reader; C++ benchmark runner → `flatbuffers::FlatBufferBuilder` (+ FlexBuffers).
    - **Not interchangeable binaries** without matching schema/codegen.
 
 5. **Avro family**
    - **Why:** Same **Avro binary encoding** (zigzag ints, length-prefixed strings, array blocks).
-   - **How:** C harness → **avro-c**; C++ harness → in-tree Avro binary codec for suite types (Apache avro-cpp is heavy to FetchContent; wire follows Avro 1.x binary).
+   - **How:** C benchmark runner → **avro-c**; C++ benchmark runner → in-tree Avro binary codec for suite types (Apache avro-cpp is heavy to FetchContent; wire follows Avro 1.x binary).
    - **Example:** `string` = zigzag/`long` length + bytes; arrays end with a zero count block.
 
 6. **Not dual-registered (C-only or C++-only by design)**
@@ -108,7 +108,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 
 **Rule of thumb:** If a library is **pure C** and already measured under `Language=c`, re-registering under C++ only makes sense when the C++ call path is a first-class usage mode (yyjson) or when the **API surface differs** (msgpack C vs C++). Do not treat C and C++ rows as interchangeable runtimes for ranking.
 
-## Suite fixtures
+## Suite data types
 
 Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
@@ -118,7 +118,7 @@ Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 - **protobuf** is official **libprotobuf** + protoc-generated stubs from `schemas/v2/protobuf/benchmark_v2.proto` (requires `cpp/scripts/setup-protobuf-sysroot.sh`). Domain→Message conversion is untimed (`prepare` / `to_domain`).
 - **protobuf-wire** is the previous in-tree proto3 field-tag codec (no libprotobuf); kept for comparison when the sysroot is absent or for wire-only baselines.
 - **flatbuffers** blob-root path embeds suite payload via `FlatBufferBuilder` (typed tables generated when `flatc` runs).
-- Stream mode is **native** where the library exposes streams/buffers and the harness uses them (`VecOutStream`/`VecInStream`, Cap’n Proto `writeMessage`, msgpack packer/unpacker, etc.); others are **adapted** (stream path = bytes path).
+- Stream mode is **native** where the library exposes streams/buffers and the benchmark runner uses them (`VecOutStream`/`VecInStream`, Cap’n Proto `writeMessage`, msgpack packer/unpacker, etc.); others are **adapted** (stream path = bytes path).
 - First CMake configure downloads pinned deps into `cpp/third_party/` (network required once).
 
 Also: [`cpp/README.md`](../../cpp/README.md). [Serialization Categories](../analysis/serialization_categories.md).

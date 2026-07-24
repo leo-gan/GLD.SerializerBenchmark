@@ -253,7 +253,7 @@ heap message → free_unpacked()
 | Timed encode/decode | Shared suite proto3 wire helper `fixture_pb_v2.h` (field tags match `benchmark_v2.proto`)—**not** a full protoc-gen-c `pack`/`unpack` path yet |
 | Official Google C++/C runtime row | Log name `protobuf` (libprotobuf) on the [C Overview](../../c/index.md) |
 | Pin (linked) | protobuf-c v1.5.0 in `c/third_party/VERSIONS.md` |
-| [C Results](../../c/results.md) | Schema-driven C peers (regenerate after harness changes) |
+| [C Results](../../c/results.md) | Schema-driven C peers (regenerate after benchmark runner changes) |
 
 Do not rank C against Python or Rust from Results alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 

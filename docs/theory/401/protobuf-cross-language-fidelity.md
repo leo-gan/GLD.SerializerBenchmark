@@ -2,13 +2,13 @@
 
 ## Problem
 
-Saying “we all use Protocol Buffers” does not guarantee that Python, Rust, and C produce **bit-identical** payloads, or that round-trips preserve every logical field across languages. Fidelity bugs hide in defaults, field naming, timestamps, packed repeated fields, UTF-8 handling, and test-harness mapping—not in the marketing name of the format.
+Saying “we all use Protocol Buffers” does not guarantee that Python, Rust, and C produce **bit-identical** payloads, or that round-trips preserve every logical field across languages. Fidelity bugs hide in defaults, field naming, timestamps, packed repeated fields, UTF-8 handling, and test-benchmark runner mapping—not in the marketing name of the format.
 
 ## Short answer
 
 **Fidelity** here means two related claims. First, given one logical value and one `.proto`, each runtime’s encode and decode behaves as a correct Protocol Buffers implementation for that schema. Second, **cross-language** pairs interoperate for the fields you care about: bytes produced in language A decode correctly in language B.
 
-Prefer proving interoperability with **golden vectors** (known-correct hex sequences) and **matrix tests** (encode in A, decode in B). Do not treat suite speed tables as fidelity proofs. This suite’s harnesses are **per-language**; they do not automatically prove cross-runtime byte identity. [301 polyglot estates](../301/polyglot-estates.md) is about product contract choice; this page is about **byte and logic discipline**.
+Prefer proving interoperability with **golden vectors** (known-correct hex sequences) and **matrix tests** (encode in A, decode in B). Do not treat suite speed tables as fidelity proofs. This suite’s benchmark runners are **per-language**; they do not automatically prove cross-runtime byte identity. [301 polyglot estates](../301/polyglot-estates.md) is about product contract choice; this page is about **byte and logic discipline**.
 
 This article assumes the [wire format](protobuf-wire-format.md) article and at least one language path ([Python](protobuf-python.md), [Rust](protobuf-rust-prost.md), [C](protobuf-c-protobuf-c.md)).
 
@@ -39,7 +39,7 @@ Protocol Buffers requires **semantic** compatibility: a decoder must understand 
 |-------|---------|-------------------|
 | **Interoperable** | A’s bytes decode in B to the same logical fields | **Yes** (for the schema subset you use) |
 | **Bit-identical encode** | A and B produce equal `bytes` for one value | **No** |
-| **Harness fidelity** | Serialize then deserialize in **one** language matches the fixture compare | Suite-local only |
+| **Benchmark runner fidelity** | Serialize then deserialize in **one** language matches the fixture compare | Suite-local only |
 | **Canonical encode** | Deterministic field order / map order | Optional (`deterministic` in some APIs) |
 
 Serializer developers should chase **interoperability** first and **bit-identity** second (useful for debugging, signing, and caches).
@@ -58,7 +58,7 @@ Define values in a language-neutral way:
 
 - Integers and bools are exact.  
 - Strings are defined by Unicode code points (not “whatever my editor saved”).  
-- Timestamps use an explicit unit (this suite often uses milliseconds—see harness notes).  
+- Timestamps use an explicit unit (this suite often uses milliseconds—see benchmark runner notes).  
 - Floats and doubles: prefer values with exact binary representations when asserting bit-identity; otherwise assert with tolerances only where the product allows it.  
 - Nested and repeated fields: specify the full structure, including empty versus omitted.
 
@@ -103,9 +103,9 @@ Use the [lab](lab-mini-protobuf-encoder.md) goldens (for example `08 01 12 03 41
 | `int64` in JSON mapping | Not wire binary—but dual APIs confuse tests |
 | Float ordering / NaN | Equality and bit patterns |
 | Field name vs number | Codegen renames (`FirstName` vs `first_name`)—the wire carries numbers only |
-| Harness mapping | Suite `prepare` converts domain objects—bugs can look like codec bugs |
+| Benchmark runner mapping | Suite `prepare` converts domain objects—bugs can look like codec bugs |
 
-### 7. Separate harness fidelity from product fidelity
+### 7. Separate benchmark runner fidelity from product fidelity
 
 This suite may:
 
@@ -180,5 +180,5 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 
 - Require **cross-decode interoperability**. Treat **bit-identical encode** as an optional strict check.  
 - Prove fidelity with **matrix tests and goldens**, not with benchmark ranks.  
-- Defaults, packing, and harness mapping cause most “Protocol Buffers mismatch” bugs.  
+- Defaults, packing, and benchmark runner mapping cause most “Protocol Buffers mismatch” bugs.  
 - Suite fidelity is not multi-runtime fidelity—bridge them with explicit tests you own.

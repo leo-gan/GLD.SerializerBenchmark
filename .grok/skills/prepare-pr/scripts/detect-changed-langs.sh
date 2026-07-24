@@ -9,7 +9,8 @@
 # Prints space-separated language ids on stdout (empty if none / no bench needed).
 # Prints human diagnostics on stderr.
 #
-# Mapping uses harness source trees only (not regenerated docs/dashboard/logs).
+# Mapping uses benchmark-runner *source* trees only (not regenerated docs/dashboard/logs,
+# and not prose-only files such as README.md under schemas/ or scripts/).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,33 +64,65 @@ mapfile -t PATHS < <({
   git diff --name-only --cached
 } | sort -u)
 
+# True if path is documentation / meta only — must not select langs or force-all.
+is_prose_or_meta() {
+  local p="$1"
+  case "$p" in
+    docs/*|dashboard/public/data/*|dashboard/dist/*|logs/*|reports/*|site/*|.grok/*)
+      return 0
+      ;;
+  esac
+  # README / markdown / license prose anywhere (including schemas/, scripts/, lang trees)
+  case "$p" in
+    *.md|*.mdx|*.rst|*.txt)
+      return 0
+      ;;
+    */README|*/README.*|README|README.*)
+      return 0
+      ;;
+    LICENSE|LICENSE.*|*/LICENSE|*/LICENSE.*)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+# True if path is a *real* shared input that invalidates every language's numbers.
+is_shared_force_all() {
+  local p="$1"
+  case "$p" in
+    # Wire schemas, catalogs, generators — not prose under schemas/
+    schemas/*)
+      return 0
+      ;;
+    scripts/run-all-benchmarks.sh|scripts/lib/*|scripts/read-config.py|scripts/resolve_run_config.py)
+      return 0
+      ;;
+    config/benchmark_config.yaml)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
 declare -A HIT=()
 SHARED_FORCE_ALL=0
+IGNORED_PROSE=0
 
 for p in "${PATHS[@]}"; do
   [[ -z "$p" ]] && continue
 
-  # Regenerated / non-harness artifacts — never select a language alone
-  case "$p" in
-    docs/*|dashboard/public/data/*|logs/*|reports/*|site/*|.grok/*)
-      continue
-      ;;
-  esac
+  if is_prose_or_meta "$p"; then
+    IGNORED_PROSE=1
+    continue
+  fi
 
-  # Shared inputs that affect every language harness
-  case "$p" in
-    schemas/*|scripts/run-all-benchmarks.sh|scripts/lib/*|scripts/read-config.py)
-      SHARED_FORCE_ALL=1
-      continue
-      ;;
-    config/benchmark_config.yaml)
-      # modes / test_data / enabled languages — re-bench all enabled
-      SHARED_FORCE_ALL=1
-      continue
-      ;;
-  esac
+  if is_shared_force_all "$p"; then
+    SHARED_FORCE_ALL=1
+    continue
+  fi
 
-  # Language harness trees (order matters: c-sharp before c)
+  # Language benchmark-runner trees (order matters: c-sharp before c)
   case "$p" in
     c-sharp/*|csharp/*)
       HIT[csharp]=1
@@ -144,7 +177,11 @@ for id in csharp python rust c javascript go java cpp swift; do
 done
 
 if [[ ${#ids[@]} -eq 0 ]]; then
-  echo "[detect-changed-langs] no harness changes vs $BASE_REF → skip full benchmarks" >&2
+  if [[ "$IGNORED_PROSE" -eq 1 ]]; then
+    echo "[detect-changed-langs] prose/meta-only changes vs $BASE_REF → skip full benchmarks" >&2
+  else
+    echo "[detect-changed-langs] no benchmark-runner source changes vs $BASE_REF → skip full benchmarks" >&2
+  fi
   echo ""
   exit 0
 fi

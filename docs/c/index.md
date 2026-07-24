@@ -1,8 +1,8 @@
 # C
 
-C serialization is fragmented: each library owns its own object model (DOM trees, streams, generated structs). The harness uses **Data Model v2 only** (`message` · `document` · `telemetry` · `strings` · `event`).
+C serialization is fragmented: each library owns its own object model (DOM trees, streams, generated structs). The benchmark runner uses **Data Model v2 only** (`message` · `document` · `telemetry` · `strings` · `event`).
 
-## Harness
+## Benchmark runner
 
 - `c/` (repository root)
 - Logs: `logs/c/YYYY-MM-DD-HHMMSS.csv`

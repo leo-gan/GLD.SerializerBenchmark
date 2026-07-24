@@ -1,6 +1,6 @@
 # Swift Serializer Benchmark
 
-Native Swift harness for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
+Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
 
 ## Design: type-agnostic wrappers (Codable) + schema bridges
 

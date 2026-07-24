@@ -55,7 +55,7 @@ A game-state blob of 100KB or more is read by many services for a few fields per
 | **Results** | Same-language comparison; note validation settings if documented |
 | [Using this suite](using-this-suite.md) | Fair paradigm-local reads |
 
-Absence from a language harness means “not measured,” not “bad technology.”
+Absence from a language benchmark runner means “not measured,” not “bad technology.”
 
 ## Experiments
 
@@ -89,7 +89,7 @@ Absence from a language harness means “not measured,” not “bad technology.
 | Verify time and fail rate on corrupt input | Safety |
 | `median_size_bytes` | Density tradeoff |
 | Schema rollout complexity | Operations cost |
-| Suite `mean_fidelity` | Correctness under the harness |
+| Suite `mean_fidelity` | Correctness under the benchmark runner |
 | Planned `time_access_ns` (if available) | Direct suite support when present |
 
 **Conclusion style:** “The flat layout wins on field touches with verification OK; adopt it for the cache blob, not the public API.”

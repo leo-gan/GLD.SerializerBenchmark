@@ -67,7 +67,7 @@ Many published tables emphasize central tendency; **you** still owe a concurrent
 
 1. Fix **one language**, **one paradigm family**, and **one fixture** close to production shape (for example a deep graph versus dense `Telemetry`)—see [using this suite](using-this-suite.md).
 2. Shortlist two or three implementations from language **Results** (same family); note versions.
-3. Confirm the harness reports, or that you can attach: wall times, optional `MemoryPeakBytes` or tracemalloc (Python), and a **process profiler** for allocation rate and GC pauses outside pure means.
+3. Confirm the benchmark runner reports, or that you can attach: wall times, optional `MemoryPeakBytes` or tracemalloc (Python), and a **process profiler** for allocation rate and GC pauses outside pure means.
 4. Configure a load path that reuses your service concurrency model (workers, pool sizes)—not only single-threaded suite loops.
 
 ### Procedure
@@ -93,7 +93,7 @@ Primary signals for this page’s decision (see also [Metrics catalog](../../ana
 | **p99 / p999 latency** (serialize, deserialize, or end-to-end) | Load test or APM | **Primary**—tails are the service-level objective |
 | `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Suite analysis | Orientation within language; not sufficient alone |
 | `total_mean_ns`, `avg_ops_per_sec` | Suite | Central tendency; easy to over-trust |
-| `total_p95_ns` / `total_p99_ns` (if computed) | Suite or full metrics profile | Bridge from harness to tails when available |
+| `total_p95_ns` / `total_p99_ns` (if computed) | Suite or full metrics profile | Bridge from benchmark runner to tails when available |
 | `total_std_ns` / CV / MAD | Suite | Dispersion hint; not production p99 |
 | `mean_memory_peak_bytes` / `MemoryPeakBytes` | Suite (optional) | Allocation-pressure proxy when present |
 | **Allocations per op / alloc rate** | Profiler | Explains GC pressure |
@@ -122,4 +122,4 @@ Primary signals for this page’s decision (see also [Metrics catalog](../../ana
 - Tails track **allocations and shape**, not slogans.
 - Means are necessary, not sufficient, for latency service-level objectives.
 - Pick implementations with runtime behavior in mind.
-- Confirm under load outside the harness.
+- Confirm under load outside the benchmark runner.

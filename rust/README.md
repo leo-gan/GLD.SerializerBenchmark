@@ -44,7 +44,7 @@ rust/src/serializers/
 
 | Concern | Policy |
 |---------|--------|
-| **Output buffer** | Harness owns a reusable `Vec<u8>`, `clear()`s before each timed encode, reuses capacity across reps. Cold allocation is expected in warmup (rep 0; dropped when `exclude_warmup` is set). Timed work is encode into that buffer. |
+| **Output buffer** | Benchmark runner owns a reusable `Vec<u8>`, `clear()`s before each timed encode, reuses capacity across reps. Cold allocation is expected in warmup (rep 0; dropped when `exclude_warmup` is set). Timed work is encode into that buffer. |
 | **Optimization barriers** | `std::hint::black_box` on timed inputs and outputs. |
 | **Fixture kind** | Direct codecs (`minicbor`, `rkyv`, …) bind a monomorphic encode fn in `prepare` so the timed path is not a multi-way `match fixture`. |
 | **RNG** | `rand_pcg::Lcg64Xsh32` with nothing-up-my-sleeve π digits + suite `BENCHMARK_SEED` mix (within-language determinism only). |

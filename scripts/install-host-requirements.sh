@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install *user-local* host toolchains for language harnesses (no sudo).
+# Install *user-local* host toolchains for language benchmark runners (no sudo).
 # Project deps (uv sync, npm install, cargo fetch, C third_party) stay in
 # each language's run-benchmarks.sh — this script only prepares compilers/runtimes.
 #

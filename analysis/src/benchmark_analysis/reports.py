@@ -356,16 +356,16 @@ VIOLIN_TOP_N_SERIALIZERS = 5
 _MODE_DISPLAY = {
     "bytes": "bytes mode",
     "stream": "stream mode",
-    "string": "bytes mode",  # C#/some harnesses log "string" for the buffer API
+    "string": "bytes mode",  # C#/some benchmark runners log "string" for the buffer API
     "buffer": "bytes mode",
 }
 
 
 def _normalize_mode(mode: str) -> str:
-    """Canonical harness API mode: bytes (in-memory buffer) | stream.
+    """Canonical benchmark-runner API mode: bytes (in-memory buffer) | stream.
 
     Aligns with dashboard ``normalizeMode``: CSV may say ``string`` / ``Stream``
-    / ``bytes`` / ``buffer`` depending on language harness.
+    / ``bytes`` / ``buffer`` depending on language benchmark runner.
     """
     key = (mode or "").strip().lower()
     if key in ("bytes", "string", "buffer"):
@@ -376,7 +376,7 @@ def _normalize_mode(mode: str) -> str:
 
 
 def _display_mode(mode: str) -> str:
-    """Label harness API mode so it is not confused with payload size."""
+    """Label benchmark-runner API mode so it is not confused with payload size."""
     key = _normalize_mode(mode)
     return _MODE_DISPLAY.get(key, mode or key)
 
@@ -549,7 +549,7 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         lines.append("*No data available*\n")
         return '\n'.join(lines)
 
-    # When columns are harness modes, spell out "bytes mode" / "stream mode"
+    # When columns are runner I/O modes, spell out "bytes mode" / "stream mode"
     def _col_label(cv: str, unit: str = "") -> str:
         base = _display_mode(cv) if cols_dim == "mode" else cv
         if unit:
@@ -750,14 +750,12 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
     lines = [
         f"### {title}",
         "",
-        "Compare serializers **within the same paradigm** (not across JSON vs zero-copy).",
-        "Values are mean Ser+Deser **ops/s** over fixtures, using the harness "
-        "**bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — "
-        "not “number of bytes”). Higher is better. Stream mode is excluded here. "
-        "Rows are sorted by **serializer name**. "
-        "Each numeric column uses **one** unit (K or M) for the whole column, "
-        "with **2 significant digits** (display only; CSV unchanged). "
-        "**Bold** = best in column (ops/s: highest).",
+        "Compare serializers **inside the same family** only (for example JSON with JSON, "
+        "not JSON with a zero-copy schema codec). "
+        "Each value is mean serialize+deserialize **operations per second** across data types, "
+        "using **bytes mode** only (the in-memory buffer API — not “payload size in bytes”). "
+        "Higher is better. Stream mode is left out of this ranking. "
+        "Rows are sorted by serializer name; **bold** marks the highest ops/s in the column.",
         "",
     ]
     for cat in sorted(by_cat.keys()):
@@ -818,10 +816,11 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
     doc = _load_lang_run_config(csv_path)
     # Indent body by 4 spaces so it stays inside the collapsed details block.
     body: List[str] = [
-        "Key fields from the run sidecar (`*.configs.json`, or legacy "
-        "`*.environment.json`). Full metric definitions: "
-        "[Metrics catalog](../analysis/METRICS.md). "
-        "Optional blocks (`dataset`, `serializers`) appear only when captured.",
+        "These fields come from the run sidecar next to the CSV "
+        "(`*.configs.json`, or older `*.environment.json` files). "
+        "They describe the machine and the run setup, not the timing formulas. "
+        "For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). "
+        "Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.",
         "",
     ]
     if csv_path:
@@ -833,14 +832,16 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
     else:
         body.append(
             "- *No sidecar config found beside the latest CSV "
-            "(re-run harness with environment capture to populate).*"
+            "(re-run the benchmark runner with environment capture to populate).*"
         )
     if doc:
         ds = doc.get("dataset") if isinstance(doc.get("dataset"), dict) else {}
         if ds.get("fixtures"):
             names = [f.get("name") for f in ds["fixtures"] if isinstance(f, dict) and f.get("name")]
             if names:
-                body.append(f"- **Fixtures (config):** {', '.join(str(n) for n in names)}")
+                body.append(
+                    f"- **Data types (config):** {', '.join(str(n) for n in names)}"
+                )
         ser = doc.get("serializers") if isinstance(doc.get("serializers"), dict) else {}
         items = ser.get("items") if isinstance(ser.get("items"), list) else []
         if items:
@@ -895,13 +896,10 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
     lines = [
         "### Summary",
         "",
-        "Default multi-serializer view shows **high-importance** metrics only "
-        "([METRICS.md](../analysis/METRICS.md)). "
-        "Rows are sorted by **serializer name**. "
-        "**Bold** marks the semantic best value in each column (lowest latency / size; "
-        "highest ops/s). "
-        "Pairwise / version A/B reports use the full metric set. "
-        "Latency cells are **µs** (analysis storage remains ns).",
+        "One row per serializer (averaged across data types; bytes mode preferred when both exist). "
+        "Only **high-importance** columns appear here by default "
+        "([Metrics catalog](../analysis/METRICS.md)). "
+        "Times are **µs**. **Bold** = best in that column.",
         "",
     ]
     headers = ["serializer"] + [c[1] for c in cols]
@@ -1169,12 +1167,40 @@ def generate_language_results_pages(
             "",
             f"**Generated:** {datetime.now().isoformat()}",
             "",
-            "Published **local snapshot** (not regenerated by GitHub Actions). "
-            "Numbers may differ if you re-run benchmarks on another machine.",
+            f"This page is a **snapshot of measured numbers** for {title} on one machine. "
+            "Continuous integration deploys the documentation site; it does **not** re-run "
+            "analysis when docs are published. Re-running benchmarks on another computer "
+            "will usually change the numbers a little.",
             "",
-            f"Serializer inventory and caveats: [{title} overview](index.md). "
-            "Methods: [Analysis Methodology](../analysis/ANALYSIS_METHODOLOGY.md). "
-            "Metric definitions & importance tiers: [Metrics catalog](../analysis/METRICS.md).",
+            f"| Topic | Where to read |",
+            f"|-------|---------------|",
+            f"| Which libraries we measure, and caveats | [{title} overview](index.md) |",
+            f"| How CSVs become these tables | [Analysis methodology](../analysis/ANALYSIS_METHODOLOGY.md) |",
+            f"| What each metric means | [Metrics catalog](../analysis/METRICS.md) |",
+            f"| All languages’ result links | [Results summary](../analysis/BENCHMARK_SUMMARY.md) |",
+            "",
+            "## How to read these tables",
+            "",
+            "Compare serializers **inside this language**. Prefer the same "
+            "[category](../analysis/serialization_categories.md) "
+            "(for example JSON with JSON) so the comparison stays fair.",
+            "",
+            "| Term | Meaning |",
+            "|------|---------|",
+            "| **data type** | Sample shape: `message`, `document`, `telemetry`, `strings`, or `event` "
+            "(CSV `TestDataName`; older text may say “fixture”) |",
+            "| **bytes mode** | In-memory buffer API (encode to bytes / decode from a buffer) |",
+            "| **stream mode** | Stream-style API (write/read through a stream) |",
+            "| **µs** | Microseconds (one microsecond = 1000 nanoseconds). Tables show µs; raw CSVs store nanoseconds. |",
+            "| **Ops/s** | Operations per second from mean total time — higher is faster |",
+            "| **Bold** | Best value in that column (lowest time/size; highest ops/s). Ties are all bolded. |",
+            "",
+            "Rows are sorted by **serializer name** (easy lookup), not by rank. "
+            "Batch workloads appear as **Data type · N instances** "
+            "(for example Message · 100 instances). "
+            "Default multi-serializer tables show **high-importance** metrics only; "
+            "pairwise / version A/B reports can show the full set "
+            "([Metrics](../analysis/METRICS.md)).",
             "",
         ]
 
@@ -1197,21 +1223,7 @@ def generate_language_results_pages(
                     e2["test_data"] = _format_fixture_display(base)
                 display_stats[k] = e2
 
-            lines.append("## Pivot tables")
-            lines.append("")
-            lines.append(
-                "Multi-way leaderboards emphasize **high-importance** metrics "
-                "(configurable via `metrics.multi_way` in master config). "
-                "Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer "
-                "API; **stream mode** = write/read through a stream-like path. "
-                "These names are *not* payload sizes. "
-                "In each table, rows are sorted by **serializer name**; "
-                "**bold** marks the semantic best value in that column "
-                "(lowest time; highest ops/s). Ties are all bolded. "
-                "Latency tables are in **microseconds** (µs). "
-                "Batch fixtures show as **Type · N instances** "
-                "(from `DataTypeInstanceCount`; e.g. Message · 100 instances)."
-            )
+            lines.append("## Summary tables")
             lines.append("")
             sci = _scientific_summary_md(
                 display_stats,
@@ -1240,16 +1252,21 @@ def generate_language_results_pages(
                 lines.append("### Fidelity notes (Rust)")
                 lines.append("")
                 lines.append(
+                    "These notes explain odd-looking correctness or speed edges on Rust only:"
+                )
+                lines.append("")
+                lines.append(
                     "- **prost** maps ISO timestamps through millisecond integers; "
-                    "harness fidelity allows date-string drift on types that carry timestamps "
-                    "(e.g. message/event/document/telemetry)."
+                    "the benchmark runner allows date-string drift on types that carry timestamps "
+                    "(message, event, document, telemetry)."
                 )
                 lines.append(
-                    "- **rkyv** timed deserialize **materializes** owned values for comparison; "
-                    "pure `access` (zero-copy) would be faster and is documented on the overview."
+                    "- **rkyv** timed deserialize **builds owned values** for comparison; "
+                    "a pure zero-copy `access` path would be faster and is documented on the overview."
                 )
                 lines.append(
-                    "- **simd-json** serialize uses `serde_json` (crate optimizes parse)."
+                    "- **simd-json** serialize still goes through `serde_json` "
+                    "(the crate focuses on parse speed)."
                 )
                 lines.append("")
         else:
@@ -1261,10 +1278,24 @@ def generate_language_results_pages(
             lines.append("## Latency distributions")
             lines.append("")
             lines.append(
-                "Each figure pairs **mean bars** (left: ser / deser mean µs, linear from 0) "
-                "with **split violins** (right: full sample density, linear from 0). "
-                "**Top 5 serializers by mean total time** per fixture (display only; tables list all). "
-                "Provenance (fixture, CSV path, modes, *n*) is printed on each image."
+                "Each figure is a picture of **how long** serialize and deserialize took "
+                "across many trials for one **data type** (and batch size):"
+            )
+            lines.append("")
+            lines.append(
+                "- **Left — mean bars:** average serialize time and average deserialize time "
+                "in microseconds (scale starts at 0)."
+            )
+            lines.append(
+                "- **Right — split violins:** the full distribution of sample times "
+                "(thickness shows where trials cluster)."
+            )
+            lines.append(
+                "- **Top 5 only:** charts show the five fastest serializers by mean total time "
+                "for that data type so the picture stays readable. Tables above still list everyone."
+            )
+            lines.append(
+                "- Each image also prints the data type, source CSV, modes, and sample size."
             )
             lines.append("")
             for dtype, fname in items:
@@ -1277,11 +1308,11 @@ def generate_language_results_pages(
             lines.append("*No latency distributions for this language in the current snapshot.*")
             lines.append("")
 
-        lines.append("## Regenerate")
+        lines.append("## How to regenerate this page")
         lines.append("")
         lines.append(
-            "Published snapshots are produced **locally** (not by GitHub Actions). "
-            "After running benchmarks (each run creates a timestamped `YYYY-MM-DD-HHMMSS.csv`):"
+            "Snapshots are produced on a developer machine. "
+            "After a benchmark-runner run (each run writes a timestamped `YYYY-MM-DD-HHMMSS.csv`):"
         )
         lines.append("")
         lines.append("```bash")
@@ -1290,10 +1321,11 @@ def generate_language_results_pages(
         lines.append("```")
         lines.append("")
         lines.append(
-            "That refreshes this language's results tables and latency distributions under "
-            "`docs/analysis/plots/violin/`. The hub "
-            "[Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) is a **static** index "
-            "and is not rewritten. Commit the updated `results.md` / plot paths as needed."
+            "That refreshes this language’s tables and the latency images under "
+            "`docs/analysis/plots/violin/`. "
+            "The hub [Results summary](../analysis/BENCHMARK_SUMMARY.md) is a **static** "
+            "link index and is not rewritten by the CLI. "
+            "Commit updated `results.md` and plot files when you want them on the site."
         )
         lines.append("")
         # Collapsed at end: title always visible, body hidden by default (Material ??? details).

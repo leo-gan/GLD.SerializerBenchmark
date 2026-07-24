@@ -81,7 +81,7 @@ These representations remain **interpretable under format rules**. A gzip bitstr
 
 ### Worked size intuition (order-of-magnitude, not a benchmark)
 
-Consider *N* identical logical records, each with the same three field names. Numbers in this table are teaching intuition only; suite **Results** own harness truth for measured codecs.
+Consider *N* identical logical records, each with the same three field names. Numbers in this table are teaching intuition only; suite **Results** own benchmark-runner truth for measured codecs.
 
 | Approach | What is repeated *N* times | Typical implication |
 |----------|----------------------------|---------------------|
@@ -131,7 +131,7 @@ Compressed untrusted data has a history of **decompression bombs**—small input
 
 ## In this suite
 
-The harness measures **serializer** behaviour—encode and decode of logical fixtures—not a full matrix of compress-wrapped transports. **Results** should not be read as “gzip is unnecessary” or “binary is mandatory.” Use them to select a codec family and implementation; evaluate compression on the deployment path separately (or as an explicit follow-on experiment outside the core tables).
+The benchmark runner measures **serializer** behaviour—encode and decode of logical fixtures—not a full matrix of compress-wrapped transports. **Results** should not be read as “gzip is unnecessary” or “binary is mandatory.” Use them to select a codec family and implementation; evaluate compression on the deployment path separately (or as an explicit follow-on experiment outside the core tables).
 
 ---
 

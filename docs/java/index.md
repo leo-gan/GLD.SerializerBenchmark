@@ -2,13 +2,13 @@
 
 Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON), and **schema/IDL** stacks (Protocol Buffers, Avro).
 
-## Benchmark harness
+## Benchmark runner
 
 - Directory: `java/` (repository root)
 - Output: monorepo `logs/java/YYYY-MM-DD-HHMMSS.csv` (`Language=java`, times in **nanoseconds**)
 - Runner: `java/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Registration: [`java/src/main/java/benchmark/serializers/Registry.java`](../../java/src/main/java/benchmark/serializers/Registry.java)
-- Requires **JDK 17+** (harness targets 21) and **Maven 3.9+**
+- Requires **JDK 17+** (benchmark runner targets 21) and **Maven 3.9+**
 
 ## Serializers (18)
 
@@ -44,7 +44,7 @@ for rep:
   fidelity(expected, actual)     # untimed
 ```
 
-### Suite fixtures
+### Suite data types
 
 Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 

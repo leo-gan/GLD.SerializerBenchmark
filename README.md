@@ -37,7 +37,7 @@ Scientific, multi-language suite for **measuring and comparing serialization lib
 
 ## Quick start
 
-Harnesses run **natively on the host** (no Docker). **Prepare toolchains once**, then run benchmarks (project deps like `uv sync` / `npm install` still happen inside each runner).
+Benchmark runners run **natively on the host** (no Docker). **Prepare toolchains once**, then run benchmarks (project deps like `uv sync` / `npm install` still happen inside each runner).
 
 ```bash
 # 1) Host toolchains (separate step — compilers/runtimes only)

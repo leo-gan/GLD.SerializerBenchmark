@@ -244,7 +244,7 @@ input bytes (or memoryview — underlying buffer must remain valid for the call)
 | Pin | `protobuf>=7.34.1,<8` |
 | [Python Results](../../python/results.md) | Cost under whatever backend the environment selected |
 
-The harness keeps domain-to-Message conversion **out** of the timed path so Results compare codec work, not model mapping. Do not rank Python against Rust or C from Results alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
+The benchmark runner keeps domain-to-Message conversion **out** of the timed path so Results compare codec work, not model mapping. Do not rank Python against Rust or C from Results alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 
 ## Common mistakes
 

@@ -1,17 +1,17 @@
 # Benchmark runner scripts
 
-Scripts for running harnesses and analysis **locally**. GitHub Actions may smoke-test harnesses, but **never** regenerates result tables or plots for documentation — those are committed under `docs/analysis/` after a local `analyze-benchmarks` run.
+Scripts for running benchmark runners and analysis **locally**. GitHub Actions may smoke-test benchmark runners, but **never** regenerates result tables or plots for documentation — those are committed under `docs/analysis/` after a local `analyze-benchmarks` run.
 
 Each benchmark run creates timestamped artifacts with the **same stem** (never overwritten):
 
 - `YYYY-MM-DD-HHMMSS.csv` — timings
-- `YYYY-MM-DD-HHMMSS.errors.csv` — fidelity / harness failures (only when errors occur)
+- `YYYY-MM-DD-HHMMSS.errors.csv` — fidelity / benchmark-runner failures (only when errors occur)
 - `YYYY-MM-DD-HHMMSS.configs.json` — run config + environment sidecar
 - `YYYY-MM-DD-HHMMSS.environment.json` — older env-only sidecar (still loaded if present)
 
 ## Host toolchains (prepare once)
 
-Benchmark runners assume compilers/runtimes are already on the machine. That is **intentionally separate** from `run-benchmarks.sh` (which only builds project deps and runs the harness).
+Benchmark runners assume compilers/runtimes are already on the machine. That is **intentionally separate** from `run-benchmarks.sh` (which only builds project deps and runs the benchmark runner).
 
 | Script | Role |
 |--------|------|

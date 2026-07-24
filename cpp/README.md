@@ -2,7 +2,7 @@
 
 Part of the [Multi-Language Serializer Benchmark](../README.md).
 
-Native C++20 harness emitting timestamped `logs/cpp/YYYY-MM-DD-HHMMSS.csv` (`Language=cpp`, nanoseconds).
+Native C++20 benchmark runner emitting timestamped `logs/cpp/YYYY-MM-DD-HHMMSS.csv` (`Language=cpp`, nanoseconds).
 
 ## Serializers (27+)
 

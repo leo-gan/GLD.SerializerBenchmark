@@ -268,7 +268,7 @@ A sound approach introduces a **new field** (or a versioned API), dual-writes an
 
 Benchmark fixtures assume a **stable logical model** so that libraries remain comparable. The suite is not a schema-registry simulator. Use Serialization 201 and the perspective documents for evolutionary *judgment*; use **Results** for encode and decode cost of a chosen codec once the contract is fixed.
 
-When you evaluate schema-driven libraries on language overview pages, production use still requires your organization’s own compatibility process. The harness does not replace it.
+When you evaluate schema-driven libraries on language overview pages, production use still requires your organization’s own compatibility process. The benchmark runner does not replace it.
 
 ---
 

@@ -71,7 +71,7 @@ The pickle path is the incident class that ends careers. The depth bomb is the o
 | [Using this suite](using-this-suite.md) | Why you must not treat speed as safety |
 | [Trust boundaries](trust-boundaries.md) | Portable versus native policy |
 
-This harness does **not** run adversarial fuzz campaigns or claim parser security.
+This benchmark runner does **not** run adversarial fuzz campaigns or claim parser security.
 
 ## Experiments
 

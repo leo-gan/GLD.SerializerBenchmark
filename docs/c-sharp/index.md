@@ -45,22 +45,22 @@ This suite registers **36 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | Utf8Json | JSON | Utf8Json |
 | YamlDotNet | YAML | YamlDotNet |
 | YAXLib | XML | YAXLib |
-| ZeroFormatter | Binary | ZeroFormatter; **all fixtures** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
+| ZeroFormatter | Binary | ZeroFormatter; **all data types** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
 
 ### Caveats
 
 - **Domain types:** `Message`, `Document`, `Telemetry`, `Strings`, `Event` (+ batch wrappers) in [`c-sharp/src/TestData/V2/Models.cs`](../../c-sharp/src/TestData/V2/Models.cs).
-- All registered serializers run on all suite fixtures. Most serialize domain types **directly** (attributes on the V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …).
+- All registered serializers run on all suite data types. Most serialize domain types **directly** (attributes on the V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …).
 - A few codecs still need untimed `PrepareData` / `ToDomain` for **library wire format** (not old→new type mapping): Google.Protobuf (`IMessage` from `.proto`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (blob + MemoryPack payload), CsvHelper / BinaryPack / ExtendedXml / Migrant (string envelopes where the library cannot hold nested graphs on net8). See serializer source comments.
 - **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.
 - SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
 - Jil reuses a single static `Options` instance.
-- Harness no longer prints per-repetition DEBUG lines (measurement noise).
+- Benchmark runner no longer prints per-repetition DEBUG lines (measurement noise).
 
 - Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Rankings: use generated reports (`analyze-benchmarks`), not this list.
 
-Harness: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
+Benchmark runner: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
 
 ## The Power of `Span<T>` and `Memory<T>`
 

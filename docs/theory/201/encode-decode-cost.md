@@ -143,7 +143,7 @@ The label “JSON” covers both pedagogical recursive parsers and highly optimi
 
 Language **Results** pages and the [dashboard](../../dashboard/) report measured encode and decode behaviour for registered libraries (JSON family, schemaless binary, schema-driven, and language-native where present). Prefer comparisons **within one language** and, where possible, **within one family**. Cross-language “winners” are not interchangeable.
 
-Methodology and metric definitions: [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md), [Metrics](../../analysis/METRICS.md). Quantitative statements in prose are illustrative; suite measurements are authoritative for this harness.
+Methodology and metric definitions: [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md), [Metrics](../../analysis/METRICS.md). Quantitative statements in prose are illustrative; suite measurements are authoritative for this benchmark runner.
 
 ---
 

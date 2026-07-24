@@ -182,7 +182,7 @@ Whether to use Protocol Buffers at all is a [301](../301/index.md) product and p
 | `protobuf-c` | Separate log name; linked **v1.5.0**; timed path is currently the shared `fixture_pb_v2` wire helper (see [C Overview](../../c/index.md)) |
 | `nanopb` | Separate log name; linked **0.4.9** (`ser_nanopb.c`); timed path is currently the **same** shared wire helper—not a full nanopb `pb_encode` / options-codegen benchmark |
 | `protobuf-wire` | In-tree proto3 tags only (not Google upb) |
-| [C Results](../../c/results.md) | Compare **within C** and the schema-driven family ([301 using this suite](../301/using-this-suite.md)); regenerate after harness changes |
+| [C Results](../../c/results.md) | Compare **within C** and the schema-driven family ([301 using this suite](../301/using-this-suite.md)); regenerate after benchmark runner changes |
 
 Do **not** treat suite `nanopb` vs `protobuf-c` rows as a head-to-head of full library stacks until each times its native generated path. The article above still describes the real engines for product choices outside the suite.
 

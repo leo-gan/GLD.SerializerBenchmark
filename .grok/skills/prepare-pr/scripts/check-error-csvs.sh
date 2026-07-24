@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Check harness error sidecars (*.errors.csv) for regressions.
+# Check benchmark-runner error sidecars (*.errors.csv) for regressions.
 #
 # Usage:
 #   check-error-csvs.sh [STEM]
