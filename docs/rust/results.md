@@ -1,6 +1,6 @@
 # Rust — Benchmark Results
 
-**Generated:** 2026-07-24T15:53:02.163925
+**Generated:** 2026-07-24T16:20:17.681380
 
 This page is a **snapshot of measured numbers** for Rust on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
 
@@ -35,66 +35,66 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
 |---|---|---|---|---|---|---|---|
-| apache-avro:0.21.0 | 140 | 36.5 | 104 | 0.263M | 9.21K | 1823 | **1.00** |
-| bincode:2.0.1 | 27.2 | 5.44 | 21.7 | 1.61M | 9.42K | 1754 | **1.00** |
-| bitcode:0.6.9 | 72.9 | 35.8 | 37.1 | 0.417M | 9.25K | 1799 | **1.00** |
-| bson:2.15.0 | 113 | 32.3 | 80.4 | 0.314M | 21.4K | 1848 | **1.00** |
-| ciborium:0.2.2 | 84.6 | 13.7 | 70.9 | 0.404M | 14.2K | 1739 | **1.00** |
-| flexbuffers:2.0.0 | 130 | 65.6 | 64.2 | 0.244M | 19.6K | 1737 | **1.00** |
-| minicbor:0.25.1 | 43.2 | 12.2 | 31 | 1.18M | 9.91K | 1741 | **1.00** |
-| nanoserde:0.1.37 | 35.2 | 13.3 | 21.9 | 1.13M | 14.4K | 1820 | **1.00** |
-| postcard:1.1.3 | 28.4 | 5.8 | 22.6 | 1.86M | 9.21K | 1797 | **1.00** |
-| prost:0.13.5 | 52.1 | 17.9 | 34 | 1.07M | 10.2K | 1772 | **1.00** |
-| rkyv:0.8.17 | 29.2 | 11 | 18.2 | 2.51M | **8.53K** | 1030 | **1.00** |
-| rmp-serde:1.3.1 | 38.4 | 6.58 | 31.8 | 0.97M | 14.2K | 1761 | **1.00** |
-| serde_json:1.0.150 | 72.9 | 18.9 | 54 | 0.481M | 20.5K | 1807 | **1.00** |
-| simd-json:0.14.3 | 76.9 | 18.7 | 58.2 | 0.41M | 20.5K | 1757 | **1.00** |
-| sonic-rs:0.3.17 | 55.3 | 15.5 | 39.8 | 0.681M | 20.5K | 1776 | **1.00** |
-| speedy:0.8.7 | **20.3** | **2.66** | **17.7** | **3.1M** | 11.9K | 1774 | **1.00** |
+| bincode:2.0.1 | 25.5 | 5.43 | 20.1 | 1.45M | 9.42K | 1760 | **1.00** |
+| bitcode:0.6.9 | 68.6 | 33.9 | 34.6 | 0.404M | 9.25K | 1792 | **1.00** |
+| bson:2.15.0 | 107 | 31.4 | 75.6 | 0.276M | 21.4K | 1780 | **1.00** |
+| ciborium:0.2.2 | 80.7 | 13.3 | 67.5 | 0.364M | 14.2K | 1792 | **1.00** |
+| flexbuffers:2.0.0 | 123 | 61.4 | 61.2 | 0.222M | 19.6K | 1830 | **1.00** |
+| minicbor:0.25.1 | 40.6 | 11.6 | 29.1 | 1.03M | 9.91K | 1718 | **1.00** |
+| nanoserde:0.1.37 | 33 | 12.5 | 20.5 | 1.15M | 14.4K | 1756 | **1.00** |
+| postcard:1.1.3 | 26.8 | 5.55 | 21.3 | 1.67M | 9.21K | 1752 | **1.00** |
+| prost:0.13.5 | 49.4 | 17.5 | 31.8 | 0.948M | 10.2K | 1809 | **1.00** |
+| rkyv:0.8.17 | 27.5 | 10.5 | 17 | 2.41M | **8.53K** | 1049 | **1.00** |
+| rmp-serde:1.3.1 | 36.4 | 6.43 | 30 | 0.893M | 14.2K | 1738 | **1.00** |
+| serde_avro_fast:2.1.0 | 49.6 | 14.8 | 34.8 | 0.694M | 9.21K | 1769 | **1.00** |
+| serde_json:1.0.150 | 67 | 17.6 | 49.3 | 0.442M | 20.5K | 1740 | **1.00** |
+| simd-json:0.14.3 | 72.1 | 17.6 | 54.5 | 0.38M | 20.5K | 1791 | **1.00** |
+| sonic-rs:0.3.17 | 53.2 | 15 | 38.1 | 0.574M | 20.5K | 1749 | **1.00** |
+| speedy:0.8.7 | **19.3** | **2.57** | **16.7** | **3.23M** | 11.9K | 1767 | **1.00** |
 
 
 ### Total Time
 
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
-| apache-avro:0.21.0 | 0.883 | 0.882 | 0.913 | 0.902 |
-| bincode:2.0.1 | 0.124 | 0.124 | 0.188 | 0.188 |
-| bitcode:0.6.9 | 0.871 | 0.869 | 1.01 | 1.01 |
-| bson:2.15.0 | 0.698 | 0.697 | 0.794 | 0.792 |
-| ciborium:0.2.2 | 0.531 | 0.529 | 0.705 | 0.704 |
-| flexbuffers:2.0.0 | 1.21 | 1.2 | 1.31 | 1.31 |
-| minicbor:0.25.1 | 0.164 | 0.164 | 0.188 | 0.188 |
-| nanoserde:0.1.37 | 0.217 | 0.216 | 0.293 | 0.291 |
-| postcard:1.1.3 | 0.124 | 0.123 | 0.139 | 0.139 |
-| prost:0.13.5 | 0.178 | 0.18 | 0.216 | 0.213 |
-| rkyv:0.8.17 | 0.152 | 0.152 | 0.228 | 0.228 |
-| rmp-serde:1.3.1 | 0.272 | 0.274 | 0.297 | 0.299 |
-| serde_json:1.0.150 | 0.434 | 0.434 | 0.669 | 0.667 |
-| simd-json:0.14.3 | 0.651 | 0.657 | 0.698 | 0.727 |
-| sonic-rs:0.3.17 | 0.354 | 0.352 | 0.377 | 0.376 |
-| speedy:0.8.7 | **0.0646** | **0.061** | **0.0979** | **0.0975** |
+| bincode:2.0.1 | 0.181 | 0.18 | 0.264 | 0.264 |
+| bitcode:0.6.9 | 1.33 | 1.33 | 1.5 | 1.49 |
+| bson:2.15.0 | 1.06 | 1.06 | 1.32 | 1.31 |
+| ciborium:0.2.2 | 0.853 | 0.846 | 1.03 | 1.03 |
+| flexbuffers:2.0.0 | 1.89 | 1.88 | 2.05 | 2.03 |
+| minicbor:0.25.1 | 0.242 | 0.242 | 0.303 | 0.303 |
+| nanoserde:0.1.37 | 0.277 | 0.277 | 0.265 | 0.263 |
+| postcard:1.1.3 | 0.159 | 0.159 | 0.194 | 0.194 |
+| prost:0.13.5 | 0.261 | 0.258 | 0.273 | 0.272 |
+| rkyv:0.8.17 | 0.236 | 0.236 | 0.322 | 0.321 |
+| rmp-serde:1.3.1 | 0.355 | 0.355 | 0.404 | 0.403 |
+| serde_avro_fast:2.1.0 | 0.415 | 0.414 | 0.503 | 0.499 |
+| serde_json:1.0.150 | 0.635 | 0.63 | 0.941 | 0.938 |
+| simd-json:0.14.3 | 0.971 | 0.963 | 0.991 | 1.04 |
+| sonic-rs:0.3.17 | 0.656 | 0.656 | 0.717 | 0.715 |
+| speedy:0.8.7 | **0.0706** | **0.07** | **0.092** | **0.092** |
 
 
 ### Ops/Sec
 
 | serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
 |---|---|---|---|---|---|---|---|---|---|---|
-| apache-avro:0.21.0 | 0.29M | 2.7K | 0.55M | 4.7K | 1.1M | 11K | 0.25M | 2.2K | 0.41M | 3.6K |
-| bincode:2.0.1 | 2.3M | 19K | 2.7M | 21K | 8.1M | 90K | 1.3M | 7.4K | 4.5M | 42K |
-| bitcode:0.6.9 | 0.58M | 5.3K | 0.75M | 5.8K | 1.1M | 11K | 0.93M | 6K | 1M | 9.7K |
-| bson:2.15.0 | 0.34M | 3.7K | 0.69M | 6K | 1.4M | 14K | 0.36M | 2.8K | 0.41M | 4.1K |
-| ciborium:0.2.2 | 0.46M | 4.4K | 0.81M | 6.6K | 1.9M | 17K | 0.45M | 3.4K | 0.94M | 8.8K |
-| flexbuffers:2.0.0 | 0.25M | 2.5K | 0.47M | 4K | 0.83M | 7.8K | 0.4M | 3.2K | 0.54M | 5.2K |
-| minicbor:0.25.1 | 1.4M | 11K | 2.4M | 16K | 6.1M | 61K | 0.99M | 5.1K | 1.7M | 16K |
-| nanoserde:0.1.37 | 2.1M | 15K | 2.5M | 16K | 4.6M | 61K | 0.83M | 6.1K | 2.5M | 23K |
-| postcard:1.1.3 | 2.6M | 20K | 3.3M | 20K | 8.1M | 86K | 1.4M | 6.7K | 4.8M | 42K |
-| prost:0.13.5 | 1.1M | 8.8K | 1.5M | 11K | 5.6M | 56K | 0.64M | 3.9K | 2.8M | 25K |
-| rkyv:0.8.17 | 2.2M | - | 2.5M | - | 6.6M | - | 1.1M | 5.7K | 4.8M | - |
-| rmp-serde:1.3.1 | 1.1M | 10K | 1.9M | 13K | 3.7M | 41K | 1.2M | 6.7K | 2.5M | 26K |
-| serde_json:1.0.150 | 0.69M | 5.9K | 1.3M | 9.2K | 2.3M | 23K | 0.85M | 4.2K | 0.63M | 5.8K |
-| simd-json:0.14.3 | 0.55M | 5.8K | 0.91M | 7.8K | 1.5M | 15K | 0.65M | 5K | 0.52M | 5.1K |
-| sonic-rs:0.3.17 | 0.87M | 8.7K | 1.7M | 15K | 2.8M | 29K | 1.2M | 7.1K | 0.63M | 5.2K |
-| speedy:0.8.7 | **4.6M** | **30K** | **4.9M** | **28K** | **15M** | **140K** | **1.7M** | **8.9K** | **10M** | **70K** |
+| bincode:2.0.1 | 2.6M | 19K | 2.9M | 21K | 5.5M | 110K | 1.4M | 8.1K | 4.9M | 44K |
+| bitcode:0.6.9 | 0.68M | 5.4K | 0.75M | 6K | 0.75M | 12K | 1M | 6.4K | 1.1M | 11K |
+| bson:2.15.0 | 0.41M | 3.8K | 0.73M | 6.3K | 0.94M | 15K | 0.37M | 2.9K | 0.43M | 4.3K |
+| ciborium:0.2.2 | 0.51M | 4.6K | 0.84M | 7K | 1.2M | 18K | 0.49M | 3.6K | 1M | 9.5K |
+| flexbuffers:2.0.0 | 0.28M | 2.6K | 0.5M | 4.3K | 0.53M | 8K | 0.41M | 3.3K | 0.57M | 5.7K |
+| minicbor:0.25.1 | 1.7M | 12K | 2.6M | 17K | 4.1M | 65K | 1M | 5.3K | 1.8M | 17K |
+| nanoserde:0.1.37 | 2.5M | 17K | 2.6M | 17K | 3.6M | 69K | 0.83M | 6.4K | 2.7M | 25K |
+| postcard:1.1.3 | 2.7M | 20K | 3.3M | 22K | 6.3M | 96K | 1.4M | 7.1K | 4.9M | 44K |
+| prost:0.13.5 | 1.2M | 9.6K | 1.7M | 12K | 3.8M | 64K | 0.67M | 4.1K | 2.8M | 24K |
+| rkyv:0.8.17 | 2.6M | - | 2.9M | - | 4.2M | - | 1.2M | 6.1K | 5.4M | - |
+| rmp-serde:1.3.1 | 1.2M | 10K | 1.9M | 14K | 2.8M | 44K | 1.3M | 7.2K | 2.7M | 27K |
+| serde_avro_fast:2.1.0 | 1.1M | 9K | 1.7M | 13K | 2.4M | 44K | 0.87M | 4.8K | 1.3M | 13K |
+| serde_json:1.0.150 | 0.75M | 6.6K | 1.3M | 9.8K | 1.6M | 25K | 0.9M | 4.7K | 0.66M | 6.2K |
+| simd-json:0.14.3 | 0.64M | 6.1K | 0.98M | 8.3K | 1M | 17K | 0.63M | 5.3K | 0.6M | 5.5K |
+| sonic-rs:0.3.17 | 0.99M | 8.9K | 1.8M | 14K | 1.5M | 32K | 1.2M | 7.4K | 0.67M | 5.6K |
+| speedy:0.8.7 | **5.7M** | **32K** | **4.9M** | **29K** | **14M** | **150K** | **2M** | **9.2K** | **11M** | **74K** |
 
 ### Within-category ranking
 
@@ -104,35 +104,35 @@ Compare serializers **inside the same family** only (for example JSON with JSON,
 
 | serializer | mean ops/s (bytes mode) (K) |
 |---|---:|
-| serde_json:1.0.150 | 580K |
-| simd-json:0.14.3 | 420K |
-| sonic-rs:0.3.17 | **730K** |
+| serde_json:1.0.150 | 520K |
+| simd-json:0.14.3 | 390K |
+| sonic-rs:0.3.17 | **630K** |
 
 #### Rust-centric binary
 
 | serializer | mean ops/s (bytes mode) (M) |
 |---|---:|
-| bincode:2.0.1 | 1.9M |
-| bitcode:0.6.9 | 0.45M |
-| nanoserde:0.1.37 | 1.3M |
-| postcard:1.1.3 | 2M |
-| speedy:0.8.7 | **3.7M** |
+| bincode:2.0.1 | 1.8M |
+| bitcode:0.6.9 | 0.44M |
+| nanoserde:0.1.37 | 1.2M |
+| postcard:1.1.3 | 1.9M |
+| speedy:0.8.7 | **3.8M** |
 
 #### Schema / zero-copy family
 
 | serializer | mean ops/s (bytes mode) (M) |
 |---|---:|
-| flexbuffers:2.0.0 | 0.25M |
-| prost:0.13.5 | 1.2M |
-| rkyv:0.8.17 | **2.9M** |
+| flexbuffers:2.0.0 | 0.23M |
+| prost:0.13.5 | 1M |
+| rkyv:0.8.17 | **2.7M** |
 
 #### Schemaless binary (interop)
 
 | serializer | mean ops/s (bytes mode) (M) |
 |---|---:|
-| bson:2.15.0 | 0.33M |
-| ciborium:0.2.2 | 0.46M |
-| minicbor:0.25.1 | **1.3M** |
+| bson:2.15.0 | 0.29M |
+| ciborium:0.2.2 | 0.4M |
+| minicbor:0.25.1 | **1.1M** |
 | rmp-serde:1.3.1 | 1M |
 
 ### Fidelity notes (Rust)
@@ -210,21 +210,20 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/rust/2026-07-24-155253.csv`
-    - run=2026-07-24-155253
+    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/rust/2026-07-24-162009.csv`
+    - run=2026-07-24-162009
     - language=rust
     - os=Linux 6.8.0-124-generic
     - cpu=12th Gen Intel(R) Core(TM) i7-12800H (20 threads)
     - ram=31.0 GiB
     - runtimes: rustc=rustc 1.96.0 (ac68faa20 2026-05-25), python=3.14.0, node=24.15.0
-    - git=04d09d1 dirty
+    - git=78ae35f
     - seed=42
     - warmup_reps=1
     - serializers=16
     - metrics_profile=multi_way
     - **Data types (config):** message, document, telemetry, strings, event
     - **Serializers (from CSV):**
-      - `apache-avro` @ 0.21.0
       - `bincode` @ 2.0.1
       - `bitcode` @ 0.6.9
       - `bson` @ 2.15.0
@@ -236,6 +235,7 @@ That refreshes this language’s tables and the latency images under `docs/analy
       - `prost` @ 0.13.5
       - `rkyv` @ 0.8.17
       - `rmp-serde` @ 1.3.1
+      - `serde_avro_fast` @ 2.1.0
       - `serde_json` @ 1.0.150
       - `simd-json` @ 0.14.3
       - `sonic-rs` @ 0.3.17
