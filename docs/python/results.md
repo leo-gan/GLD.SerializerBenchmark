@@ -7,19 +7,20 @@ This page is a **snapshot of measured numbers** for Python on one machine. Conti
 | Topic | Where to read |
 |-------|---------------|
 | Which libraries we measure, and caveats | [Python overview](index.md) |
+| I/O modes and run modes | [Modes](../analysis/modes.md) |
 | How CSVs become these tables | [Analysis methodology](../analysis/ANALYSIS_METHODOLOGY.md) |
 | What each metric means | [Metrics catalog](../analysis/METRICS.md) |
 | All languages’ result links | [Results summary](../analysis/BENCHMARK_SUMMARY.md) |
 
 ## How to read these tables
 
-Compare serializers **inside this language**. Prefer the same [category](../analysis/serialization_categories.md) (for example JSON with JSON) so the comparison stays fair.
+Compare serializers **inside this language**. Prefer the same [category](../analysis/serialization_categories.md) (for example JSON with JSON) and the same [I/O mode](../analysis/modes.md) so the comparison stays fair.
 
 | Term | Meaning |
 |------|---------|
 | **data type** | Sample shape: `message`, `document`, `telemetry`, `strings`, or `event` (CSV `TestDataName`; older text may say “fixture”) |
-| **bytes mode** | In-memory buffer API (encode to bytes / decode from a buffer) |
-| **stream mode** | Stream-style API (write/read through a stream) |
+| **bytes mode** | In-memory buffer API (encode to bytes / decode from a buffer). On C# this is often the **string** path — see [Modes](../analysis/modes.md). |
+| **stream mode** | Stream-style API (write/read through a stream). May be native or adapted — see [Modes](../analysis/modes.md). |
 | **µs** | Microseconds (one microsecond = 1000 nanoseconds). Tables show µs; raw CSVs store nanoseconds. |
 | **Ops/s** | Operations per second from mean total time — higher is faster |
 | **Bold** | Best value in that column (lowest time/size; highest ops/s). Ties are all bolded. |

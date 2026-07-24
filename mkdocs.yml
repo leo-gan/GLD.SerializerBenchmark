@@ -152,6 +152,7 @@ nav:
       - Overview: analysis/index.md
       - 📊 Dashboard: dashboard/
       - Architecture: analysis/architecture.md
+      - Modes: analysis/modes.md
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md
       - Categories: analysis/serialization_categories.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md

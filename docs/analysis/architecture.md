@@ -83,10 +83,12 @@ CSV rows also record how the serializer was called:
 
 | Label on Results pages | Meaning |
 |------------------------|---------|
-| **bytes mode** | Work with in-memory byte arrays (or equivalent) |
+| **bytes mode** | Work with in-memory byte arrays (or equivalent; C# often uses **string**) |
 | **stream mode** | Work through a stream-style API |
 
-These names describe the **programming interface**, not whether the payload is “large” or “small.” Legacy C# rows may use `string` / `stream` with the same idea.
+These names describe the **programming interface**, not whether the payload is “large” or “small.”
+
+**Full explanation** (why both exist, C# string/Base64, native vs adapted stream, fair comparison): **[Modes](modes.md)**.
 
 ---
 
@@ -141,7 +143,7 @@ Defaults live under `statistics:` and `modes:` in `config/benchmark_config.yaml`
 
 ---
 
-## Run modes (how many repetitions)
+## Run modes (how many repetitions) {#run-modes-how-many-repetitions}
 
 Run modes come from `modes:` in `config/benchmark_config.yaml`. Runners should call `bench_mode_reps` rather than hard-coding counts.
 
@@ -152,6 +154,8 @@ Run modes come from `modes:` in `config/benchmark_config.yaml`. Runners should c
 | `full` | 100 | Publication-quality run |
 | `research` | 500 | High-power statistical study |
 
+**When to pick which mode, and how this differs from I/O mode:** **[Modes — run modes](modes.md#part-2--run-modes-how-heavy-the-experiment-is)**.
+
 **Warmup policy:** benchmark runners **always log** every successful repetition, including index 0. Analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true (the configured warmup count is **1**). Outlier filtering is also analysis-only. Raw files under `logs/<lang>/` are never rewritten by the stats pipeline.
 
 ---
@@ -160,6 +164,6 @@ Run modes come from `modes:` in `config/benchmark_config.yaml`. Runners should c
 
 | Concern | Where it lives |
 |---------|----------------|
-| Run modes, stats, languages, paths | `config/benchmark_config.yaml` |
+| Run modes, stats, languages, paths | `config/benchmark_config.yaml` — [Modes](modes.md) |
 | Payload shapes and seed | `schemas/data_catalog_v2.yaml` + `config/library/` — [Test data](test_data_configuration.md) |
 | Paradigm inventories | [Serialization categories](serialization_categories.md) + each language **Overview** |

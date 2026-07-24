@@ -35,7 +35,7 @@ These fields are written by each language benchmark runner. Column order (v1.2+)
 | Column | Unit | Importance | Source | Everyday meaning |
 |--------|------|------------|--------|------------------|
 | `Language` | id | high | runner | Which language ran (`python`, `csharp`, …) |
-| `StringOrStream` | enum | high | runner | API mode: `bytes` / `stream` / legacy aliases |
+| `StringOrStream` | enum | high | runner | I/O mode: `bytes` / `stream` (C# often `string`); see [Modes](modes.md) |
 | `TestDataName` | id | high | runner | Data type id (`message`, `document`, …) |
 | `Repetitions` | count | medium | runner | How many times the loop was configured to run |
 | `RepetitionIndex` | index | medium | runner | Which trial this row is; `0` is the warmup row in raw logs |

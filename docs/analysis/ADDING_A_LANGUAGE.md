@@ -3,6 +3,7 @@
 This page is a **checklist for implementers**. Follow it when you want a new programming language in the suite without changing the shared analysis core.
 
 Background (layout, timing model, contract): [Benchmark architecture](architecture.md).  
+I/O modes and run modes: [Modes](modes.md).  
 Test data: [Test data](test_data_configuration.md).  
 How CSVs become tables: [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
