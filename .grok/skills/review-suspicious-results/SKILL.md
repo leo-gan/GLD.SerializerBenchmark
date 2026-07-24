@@ -4,9 +4,12 @@ description: >
   Review serializer-benchmark results for suspicious sizes/ops/fidelity, research
   each suspect against the library’s official docs and code examples, fix wrong or
   ineffective harness client call paths (without breaking serializer isolation),
-  re-bench, and verify. Use when the user runs /review-suspicious-results, says
-  "review suspicious results", "audit benchmark numbers", "check outliers",
-  "too fast / too slow serializers", or "verify client calling against package docs".
+  re-bench, and verify. Also covers “official package is optimal but still too
+  slow” cases: research ecosystem high-perf peers (e.g. serde_avro_fast vs
+  apache-avro) when a binary/schema codec lags same-lang JSON. Use when the user
+  runs /review-suspicious-results, says "review suspicious results", "audit
+  benchmark numbers", "check outliers", "too fast / too slow serializers", or
+  "verify client calling against package docs".
 metadata:
   short-description: "Outlier audit + package-docs-driven client fixes"
 ---
@@ -21,6 +24,12 @@ examples before changing harness client code. Do not “fix by intuition” alon
 reading the **run harness** (cell construction / batch framing), not only serializer
 wrappers. Within-group relative scans alone are **not sufficient** (see
 [Lessons learned](#lessons-learned-why-rust-speedy-n100-was-missed)).
+
+**Also mandatory for “too slow” schema/binary codecs:** if the client already
+matches the **official** crate’s best public API but still loses to **same-language
+JSON**, do **not** stop at “expected, docs only have this API.” Research whether
+the ecosystem’s **throughput-oriented** library is a different package (see
+[Lessons learned: official Avro lagging JSON](#lessons-learned-official-apache-avro-lagged-json-on-rust)).
 
 Resolve repo root first:
 
@@ -76,6 +85,19 @@ Optional overrides:
    Package docs proving the wrapper API is correct **do not** close the case if the
    runner under-feeds the wrapper.
 
+7. **Official ≠ automatically the suite choice for throughput**  
+   Matching the official package’s documented hot path is necessary but not always
+   sufficient. If a **schema/binary** codec is slower than same-lang **JSON** on
+   small fixtures (e.g. `message@n=1`) with correct size and fidelity, treat that
+   as a **hard suspect**: either the client is wrong, or the **wrong library** was
+   selected for a performance suite. Research high-perf reimplementations that
+   stay wire-compatible (or document dual rows like Go’s hamba/avro + goavro).
+
+8. **Split ser vs deser when diagnosing “too slow”**  
+   Log mean `TimeSer` and `TimeDeser` separately. A healthy binary ser with a
+   multi-× deser often means intermediate graphs (`Value`, maps), not buffer
+   setup. That pattern points at **library design / choice**, not only reuse.
+
 ---
 
 ## Lessons learned: why Rust speedy `@n=100` was missed
@@ -129,6 +151,71 @@ Harness bug in `rust/src/run_v2.rs` (batch cell construction), **not** Speedy:
 
 ---
 
+## Lessons learned: official `apache-avro` lagged JSON on Rust
+
+### What the user saw
+
+Rust **Avro** on `message@n=1` was slower than **`serde_json` / `sonic-rs`**, while
+C# Avro sat near protobuf peers after a hot-path fix. Size (~47 B) matched
+Java/Go Avro and scaled with N — so LABEL≠WORK was clean. “Avro slower than JSON”
+looked like nonsense for a binary schema format.
+
+### What was actually wrong
+
+**Not** a broken harness client for the official crate:
+
+| Check | Result |
+|-------|--------|
+| Size / fidelity / batch axis | OK |
+| Ser path `write_avro_datum_ref` | Already the crate’s recommended fast write |
+| Deser path `from_avro_datum` + `from_value` | **Only** public single-datum API |
+
+Measured split (`message@n=1` bytes, ~mean ns):
+
+| Codec | ser | deser | total |
+|-------|-----|-------|-------|
+| prost | ~80 | ~100 | ~180 |
+| sonic-rs | ~130 | ~230 | ~360 |
+| serde_json | ~140 | ~310 | ~450 |
+| **apache-avro** | **~200** | **~700** | **~900** |
+
+Serialize was competitive; **deserialize** built a heap intermediate `Value` graph
+then converted to the struct. Matching “official docs” correctly still produced
+nonsense rankings vs JSON.
+
+### Why the first review almost closed as “expected”
+
+| Blind spot | Effect |
+|------------|--------|
+| **Docs match = done** | Confirmed optimal *for apache-avro*, stopped researching *other Avro crates* |
+| **“Expected library cost” too early** | Treated two-step `Value` API as inevitable without checking ecosystem peers |
+| **No mandatory schema-vs-JSON check** | Scanner LOW-ops thresholds (median/40) do not fire when Avro is only 2× slower than JSON peers in a group full of binary codecs |
+| **Ser/deser not split** | Total time looked “a bit slow”; deser multi-× ser was the smoking gun |
+| **Official brand preference** | Assumed Apache SDK is the right suite row (Python uses **fastavro**, Go often **hamba/avro**, not only the oldest port) |
+
+### Fix (reference)
+
+- Research: [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) — one-pass serde, no `Value`; claims ~10–20× vs apache-avro; local microbench ~4× total on suite `Message`.
+- **Wire check:** same datum bytes as `apache-avro` for suite schemas; cross-deser both ways.
+- Harness: switch (or add) row to `serde_avro_fast` with reused `SerializerConfig` + `to_datum` / `from_datum_slice` ([docs](https://docs.rs/serde_avro_fast)).
+- After: `message@n=1` ~**270 ns** total — **faster than serde_json/sonic-rs**, near prost.
+
+### Rules derived (must follow every “too slow” review)
+
+1. **Schema/binary slower than same-lang JSON on small fixtures is never “fine” by default.** Flag it even when within-group LOW-ops does not fire.
+2. After confirming the client matches the **current package’s** best API, still ask:  
+   **Is there a widely used high-throughput alternative in this language?**  
+   Examples: Python `fastavro` vs pure Avro; Go `hamba/avro` vs `linkedin/goavro`; Rust `serde_avro_fast` vs `apache-avro`; C# Reflect vs Specific (codegen) when Reflect still lags peers after reuse.
+3. Before marking **expected**:  
+   - Split ser vs deser.  
+   - Microbench official vs candidate peer (same payload).  
+   - Verify **wire compatibility** (or document dual rows if formats differ).  
+   - Prefer the suite default that reflects **realistic high-perf usage** (like other langs), not only brand/official.
+4. Do **not** mark **expected** solely because “docs only expose API X” if another crate is the ecosystem’s throughput path for the **same format**.
+5. Optional dual registration (official + fast) is fine when both are honest suite rows (Go already does this for Avro).
+
+---
+
 ## 1. Scope
 
 ```bash
@@ -173,6 +260,8 @@ The script prints **three** classes of findings. **All three are mandatory to ac
 | **HUGE size** | size &gt; median×40 (or envelope smell: size ≈ JSON size of same payload) |
 | **HIGH ops** | ops &gt; median×25 (possible no-op, skipped work, wrong N) |
 | **LOW ops** | ops &lt; median/40 (possible double work, reflection every call, JSON envelope) |
+| **slower than same-lang JSON** | **schema/binary** codec total time **&gt; same-lang JSON peer** (e.g. `serde_json` / `System.Text.Json`) on `message@n=1` with sane size — always flag; do not rely on median/40 alone |
+| **deser ≫ ser** | mean deser time **&gt; ~3×** mean ser for binary codecs (intermediate `Value`/map graph smell) |
 | **stream ≈ bytes** | median total time within ~5% and code paths identical (fake stream) |
 | **errors** | non-empty `logs/<lang>/<stem>.errors.csv` data rows for that serializer |
 | **fidelity oddity** | mean_fidelity &lt; 1 with large size, or fidelity 1.0 with tiny size |
@@ -248,6 +337,21 @@ From docs **and** code examples, note:
 - Stream vs bytes APIs
 - Registration / attributes / codegen requirements
 - Known limitations (e.g. top-level BSON must be a document)
+- Whether ser/de is **one-pass** into the domain type or builds an intermediate (`Value`, `GenericRecord`, map) every call
+
+### 3.2b Ecosystem peer research (required when “too slow” after API match)
+
+If the wrapper already matches the package’s best public API **and** the codec is still
+suspicious vs same-lang peers (especially **slower than JSON**):
+
+1. Search for high-performance reimplementations of the **same format** in that language  
+   (`fastavro`, `serde_avro_fast`, `hamba/avro`, codegen/Specific paths, …).
+2. Open **that** package’s README + examples; microbench against the official crate on one suite type.
+3. Check **wire compatibility** (identical or documented framing differences).
+4. Decide: **switch** the suite row, **add a second row** (official + fast), or document why the slow official path must stay alone.
+5. Only then mark residual slowness as **expected**.
+
+Do not invent APIs. Do not stay on a known multi-×-slower stack solely for “official” branding when the suite already prefers throughput libraries elsewhere (Python Avro = fastavro).
 
 ### 3.3 Diff against harness client **and** runner
 
@@ -275,9 +379,12 @@ Compare:
 | Isolation broken (suite types in wrapper)? | Use Type bind / maps |
 | **Label N but only one fixture built?** | Build N fixtures; batch frame ser/deser |
 | **Fidelity checks only first item of batch?** | Check all N (or documented sample with honest size) |
+| **Client matches docs but still ≪ JSON / peers?** | Run §3.2b ecosystem peer research; switch or dual-register if wire-compatible |
+| **Deser multi-× ser with intermediate Value/map?** | Prefer one-pass library or codegen path; do not only “reuse buffers” |
 
 **Document in the final report:** for each fix, `Docs: <url>` + `Example pattern: <snippet summary>` + `Harness was: <…>` + `Harness now: <…>`  
-For harness bugs: `Docs: n/a (runner LABEL≠WORK)` + root-cause path.
+For harness bugs: `Docs: n/a (runner LABEL≠WORK)` + root-cause path.  
+For library switches: `Docs: <old crate> + <new crate>` + wire-compat evidence + before/after ops.
 
 ---
 
@@ -331,12 +438,13 @@ For each original suspect, classify:
 | Status | Meaning |
 |--------|---------|
 | **fixed** | Client/harness now matches contract; numbers re-checked |
-| **expected** | Docs confirm behavior (e.g. pure-JS `cbor` slow; `dill` heavy) |
+| **expected** | Docs **and** ecosystem research confirm residual cost (e.g. pure-JS `cbor` slow; `dill` heavy; no faster wire-compatible crate) |
 | **blocked** | No docs/examples found, or library bug with documented workaround only |
 | **open** | Still suspicious after fix attempt |
 
 Do **not** mark **fixed** without re-scan (or explicit `REVIEW_FIX=0` report-only mode).  
-Do **not** mark **expected** for “fast at n=100” solely because package docs show a fast API — check LABEL≠WORK first.
+Do **not** mark **expected** for “fast at n=100” solely because package docs show a fast API — check LABEL≠WORK first.  
+Do **not** mark **expected** for “binary slower than JSON” solely because the **official** crate’s only public API is two-step — complete §3.2b first.
 
 ---
 
@@ -419,8 +527,11 @@ for lang in ['c','csharp','python','rust','javascript','go','java','cpp']:
 - [ ] For each wrapper suspect: opened official docs + code example  
 - [ ] Compared example to harness client line-by-line  
 - [ ] Verified `DataTypeInstanceCount` / fixture list length matches timed encode count  
-- [ ] Fixed only with documented APIs (wrappers) or honest batch framing (runners)  
+- [ ] For “too slow”: split **ser vs deser**; flagged schema/binary **slower than same-lang JSON**  
+- [ ] If API already optimal but still slow: **§3.2b ecosystem peer** research + wire-compat check  
+- [ ] Fixed only with documented APIs (wrappers), better ecosystem crates, or honest batch framing (runners)  
 - [ ] Re-benched affected langs (include n&gt;1 if batch fix)  
-- [ ] Re-scanned outliers; batch ratio ~N; cross-lang size sane  
-- [ ] Wrote research URLs / harness root cause into the report  
+- [ ] Re-scanned outliers; batch ratio ~N; cross-lang size sane; Avro/schema vs JSON sense-check  
+- [ ] Wrote research URLs / harness or library-switch root cause into the report  
 - [ ] Did **not** declare clean on within-group-only empty  
+- [ ] Did **not** mark **expected** for official two-step APIs without peer research  
