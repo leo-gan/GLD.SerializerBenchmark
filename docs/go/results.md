@@ -1,6 +1,6 @@
 # Go — Benchmark Results
 
-**Generated:** 2026-07-20T12:52:15.549859
+**Generated:** 2026-07-24T15:53:49.992859
 
 This page is a **snapshot of measured numbers** for Go on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
 
