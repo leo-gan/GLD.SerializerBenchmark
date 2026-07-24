@@ -1,10 +1,18 @@
 /// Apache.Avro Reflect binding on suite domain POCOs.
-/// Schema derived once in Initialize; timed path = BinaryEncoder/Decoder + Reflect write/read.
-/// https://avro.apache.org/docs/current/api/csharp/html/md_src_apache_main_Reflect_README.html
+///
+/// Optimal path (official Reflect README + local microbench):
+///  - Schema + ClassCache once in Initialize
+///  - Typed ReflectWriter&lt;T&gt; / ReflectReader&lt;T&gt; (bound via Type, not suite hard-codes)
+///  - Reuse BinaryEncoder / BinaryDecoder over fixed MemoryStreams (string/Base64 path)
+///  - Pass reuse instance into ReflectReader.Read (avoid root allocation per call)
+///  - Stream path: BinaryEncoder/Decoder on the harness Stream (docs example pattern)
+///
+/// https://avro.apache.org/docs/1.12.0/api/csharp/html/md_src_apache_main_Reflect_README.html
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using Avro;
@@ -17,9 +25,16 @@ namespace GLD.SerializerBenchmark.Serializers
     {
         private Schema _schema;
         private ClassCache _cache;
-        private ReflectDefaultWriter _writer;
-        private ReflectDefaultReader _reader;
+
+        // Bound to primary Type in Initialize (suite isolation: no hard-coded Message/…)
+        private Action<object, Avro.IO.Encoder> _write;
+        private Func<object, Avro.IO.Decoder, object> _read;
+
         private readonly MemoryStream _serMs = new MemoryStream(4096);
+        private readonly MemoryStream _deMs = new MemoryStream(4096);
+        private BinaryEncoder _serEnc;
+        private BinaryDecoder _deDec;
+        private object _reuse;
 
         public override string Name => "Apache.Avro";
         public override bool Supports(string testDataName) => true;
@@ -39,31 +54,73 @@ namespace GLD.SerializerBenchmark.Serializers
                         SchemaBuilder.LoadClassCache(_cache, sec, nested);
                 }
             }
-            _writer = new ReflectDefaultWriter(serializablePrimaryType, _schema, _cache);
-            _reader = new ReflectDefaultReader(serializablePrimaryType, _schema, _schema, _cache);
+
+            // Typed ReflectWriter/Reader for primary Type (docs example uses ReflectWriter<T>).
+            var writerType = typeof(ReflectWriter<>).MakeGenericType(serializablePrimaryType);
+            var readerType = typeof(ReflectReader<>).MakeGenericType(serializablePrimaryType);
+            var writer = Activator.CreateInstance(writerType, _schema, _cache);
+            var reader = Activator.CreateInstance(readerType, _schema, _schema, _cache);
+
+            // Action<object, Encoder> write = (obj, enc) => ((ReflectWriter<T>)writer).Write((T)obj, enc);
+            var writeMi = writerType.GetMethod("Write", new[] { serializablePrimaryType, typeof(Avro.IO.Encoder) });
+            var objP = Expression.Parameter(typeof(object), "obj");
+            var encP = Expression.Parameter(typeof(Avro.IO.Encoder), "enc");
+            var writeBody = Expression.Call(
+                Expression.Constant(writer),
+                writeMi,
+                Expression.Convert(objP, serializablePrimaryType),
+                encP);
+            _write = Expression.Lambda<Action<object, Avro.IO.Encoder>>(writeBody, objP, encP).Compile();
+
+            // Func<object, Decoder, object> read = (reuse, dec) => ((ReflectReader<T>)reader).Read((T)reuse, dec);
+            var readMi = readerType.GetMethod("Read", new[] { serializablePrimaryType, typeof(Avro.IO.Decoder) });
+            var reuseP = Expression.Parameter(typeof(object), "reuse");
+            var decP = Expression.Parameter(typeof(Avro.IO.Decoder), "dec");
+            var reuseCast = Expression.Convert(reuseP, serializablePrimaryType);
+            // reuse may be null on first call — ReflectReader accepts null via default for class types.
+            var reuseArg = Expression.Condition(
+                Expression.Equal(reuseP, Expression.Constant(null, typeof(object))),
+                Expression.Default(serializablePrimaryType),
+                reuseCast);
+            var readBody = Expression.Convert(
+                Expression.Call(Expression.Constant(reader), readMi, reuseArg, decP),
+                typeof(object));
+            _read = Expression.Lambda<Func<object, Avro.IO.Decoder, object>>(readBody, reuseP, decP).Compile();
+
+            // Reuse encoder/decoder only on our MemoryStreams (string/Base64 path).
+            // Stream path uses a fresh BinaryEncoder/Decoder on the harness stream —
+            // indirection via a redirect Stream was slower for large N payloads.
+            _serEnc = new BinaryEncoder(_serMs);
+            _deDec = new BinaryDecoder(_deMs);
+            _reuse = null;
         }
 
         public override string Serialize(object serializable)
         {
             _serMs.SetLength(0);
-            _writer.Write(serializable, new BinaryEncoder(_serMs));
+            _write(serializable, _serEnc);
             return Convert.ToBase64String(_serMs.GetBuffer(), 0, (int)_serMs.Length);
         }
 
         public override object Deserialize(string serialized)
         {
             var bytes = Convert.FromBase64String(serialized);
-            using var ms = new MemoryStream(bytes);
-            return _reader.Read<object>(null, new BinaryDecoder(ms));
+            _deMs.SetLength(0);
+            _deMs.Write(bytes, 0, bytes.Length);
+            _deMs.Position = 0;
+            _reuse = _read(_reuse, _deDec);
+            return _reuse;
         }
 
         public override void Serialize(object serializable, Stream outputStream)
-            => _writer.Write(serializable, new BinaryEncoder(outputStream));
+            => _write(serializable, new BinaryEncoder(outputStream));
 
         public override object Deserialize(Stream inputStream)
         {
-            inputStream.Seek(0, SeekOrigin.Begin);
-            return _reader.Read<object>(null, new BinaryDecoder(inputStream));
+            if (inputStream.CanSeek)
+                inputStream.Seek(0, SeekOrigin.Begin);
+            _reuse = _read(_reuse, new BinaryDecoder(inputStream));
+            return _reuse;
         }
 
         /// <summary>
