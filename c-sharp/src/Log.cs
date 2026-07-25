@@ -96,6 +96,9 @@ namespace GLD.SerializerBenchmark
         /// <summary>Hash of resolved type_config for this cell.</summary>
         public string TypeConfigHash { get; set; } = "";
 
+        /// <summary>B-6 stream honesty: native | text_on_stream | adapted (stream rows only).</summary>
+        public string StreamMode { get; set; } = "";
+
         /// <summary>Monotonic process order of written timed rows (B-1); -1 if unset.</summary>
         public int RunOrder { get; set; } = -1;
 
@@ -137,7 +140,7 @@ namespace GLD.SerializerBenchmark
                 "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName," +
                 "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser," +
                 "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash," +
-                "RunOrder,SchedulePosition";
+                "StreamMode,RunOrder,SchedulePosition";
             fileHeaderLine = fileHeaderLine.Replace(",", _separator);
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
@@ -158,6 +161,7 @@ namespace GLD.SerializerBenchmark
                 log.MemoryPeakBytes, log.FidelityScore.ToString("F2"),
                 log.DataTypeInstanceCount > 0 ? log.DataTypeInstanceCount : 1,
                 log.TypeConfigHash ?? "",
+                log.StreamMode ?? "",
                 log.RunOrder >= 0 ? log.RunOrder.ToString() : "",
                 log.SchedulePosition >= 0 ? log.SchedulePosition.ToString() : ""
                 );

@@ -9,6 +9,8 @@ namespace GLD.SerializerBenchmark
         string Name { get; }
         /// <summary>Installed library / package version for CSV SerializerVersion.</summary>
         string Version { get; }
+        /// <summary>B-6 honesty: native | text_on_stream | adapted (CSV StreamMode on stream rows).</summary>
+        string StreamMode { get; }
         bool Supports(string testDataName);
         void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null);
 
