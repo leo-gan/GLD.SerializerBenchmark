@@ -1,6 +1,6 @@
 # C — Benchmark Results
 
-**Generated:** 2026-07-24T19:43:49.999022
+**Generated:** 2026-07-24T20:23:57.431046
 
 This page is a **snapshot of measured numbers** for C on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
 
@@ -38,75 +38,75 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
 |---|---|---|---|---|---|---|---|
-| avro-c:1.11.3 | 32.3 | 12.9 | 19.4 | 0.486M | 10.9K | 1768 | **1.00** |
-| cbor-encode:0.11.0 | 356 | 103 | 253 | 0.0733M | 15.1K | 1837 | **1.00** |
-| cJSON:1.7.18 | 513 | 347 | 165 | 0.0716M | 19.9K | 1833 | **1.00** |
-| custom-binary:v2-1.0 | **19** | **6.02** | **13** | **1.51M** | 10.7K | 1725 | **1.00** |
-| flatcc:0.6.1 | 26.1 | 13 | 13 | 0.744M | 12.2K | 1773 | **1.00** |
-| jansson:2.14 | 647 | 298 | 349 | 0.0436M | 20.1K | 1849 | **1.00** |
-| json-c:0.15 | 522 | 249 | 272 | 0.0547M | 20.1K | 1854 | **1.00** |
-| libbson:1.27.5 | 316 | 96.7 | 219 | 0.114M | 21.1K | 1837 | **1.00** |
-| mpack:1.1 | 56.4 | 14.7 | 41.6 | 0.3M | 13.7K | 1779 | **1.00** |
-| msgpack-c:6.0.1 | 57.7 | 21 | 36.7 | 0.295M | 13.7K | 1792 | **1.00** |
-| nanopb:0.4.9 | 27.9 | 11.7 | 16.2 | 0.905M | **10.5K** | 1767 | **1.00** |
-| parson:1.5.3 | 749 | 561 | 188 | 0.0461M | 20.1K | 1824 | **1.00** |
-| protobuf-c:1.5.0 | 27.9 | 11.9 | 16 | 0.894M | **10.5K** | 1758 | **1.00** |
-| protobuf-wire:wire-v2 | 28 | 11.8 | 16.2 | 0.9M | **10.5K** | 1744 | **1.00** |
-| qcbor:1.5.1 | 309 | 56.4 | 253 | 0.101M | 13.8K | 1770 | **1.00** |
-| tinycbor:0.6.0 | 274 | 20.4 | 253 | 0.122M | 13.8K | 1819 | **1.00** |
-| ubj:1.0-min | 21.3 | 7.63 | 13.7 | 1.08M | 12.6K | 1795 | **1.00** |
-| yyjson:0.10.0 | 123 | 58.1 | 65 | 0.196M | 19.8K | 1823 | **1.00** |
-| zcbor:0.9 | 326 | 35.3 | 291 | 0.102M | 14K | 1785 | **1.00** |
+| avro-c:1.11.3 | 31.9 | 12.6 | 19.3 | 0.497M | 10.9K | 1757 | **1.00** |
+| cbor-encode:0.11.0 | 349 | 101 | 248 | 0.0757M | 15.1K | 1849 | **1.00** |
+| cJSON:1.7.18 | 503 | 340 | 162 | 0.0737M | 19.9K | 1862 | **1.00** |
+| custom-binary:v2-1.0 | **18.9** | **5.89** | **13** | **1.57M** | 10.7K | 1729 | **1.00** |
+| flatcc:0.6.1 | 25.8 | 12.7 | 13 | 0.771M | 12.2K | 1761 | **1.00** |
+| jansson:2.14 | 633 | 291 | 342 | 0.0446M | 20.1K | 1869 | **1.00** |
+| json-c:0.15 | 511 | 244 | 267 | 0.0575M | 20.1K | 1832 | **1.00** |
+| libbson:1.27.5 | 306 | 95.2 | 211 | 0.116M | 21.1K | 1842 | **1.00** |
+| mpack:1.1 | 55.3 | 14.4 | 40.8 | 0.312M | 13.7K | 1778 | **1.00** |
+| msgpack-c:6.0.1 | 56.6 | 20.5 | 36 | 0.306M | 13.7K | 1795 | **1.00** |
+| nanopb:0.4.9 | 27.6 | 11.5 | 16.1 | 0.941M | **10.5K** | 1734 | **1.00** |
+| parson:1.5.3 | 735 | 550 | 184 | 0.0469M | 20.1K | 1855 | **1.00** |
+| protobuf-c:1.5.0 | 27.6 | 11.6 | 16 | 0.926M | **10.5K** | 1782 | **1.00** |
+| protobuf-wire:wire-v2 | 27.7 | 11.5 | 16.1 | 0.93M | **10.5K** | 1751 | **1.00** |
+| qcbor:1.5.1 | 303 | 55.3 | 248 | 0.103M | 13.8K | 1785 | **1.00** |
+| tinycbor:0.6.0 | 268 | 20 | 248 | 0.126M | 13.8K | 1823 | **1.00** |
+| ubj:1.0-min | 21.2 | 7.51 | 13.7 | 1.1M | 12.6K | 1777 | **1.00** |
+| yyjson:0.10.0 | 121 | 56.8 | 63.7 | 0.201M | 19.8K | 1810 | **1.00** |
+| zcbor:0.9 | 320 | 34.5 | 285 | 0.105M | 14K | 1813 | **1.00** |
 
 
 ### Total Time
 
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
-| avro-c:1.11.3 | 0.636 | 0.621 | 1.02 | 1.02 |
-| cbor-encode:0.11.0 | 3.17 | 3.16 | 3.49 | 3.51 |
-| cJSON:1.7.18 | 3.46 | 3.43 | 3.82 | 3.83 |
-| custom-binary:v2-1.0 | **0.125** | **0.125** | **0.509** | **0.504** |
-| flatcc:0.6.1 | 0.344 | 0.34 | 0.739 | 0.733 |
-| jansson:2.14 | 5.78 | 5.71 | 5.92 | 5.92 |
-| json-c:0.15 | 5 | 4.96 | 5.06 | 5.05 |
-| libbson:1.27.5 | 1.72 | 1.7 | 1.99 | 1.99 |
-| mpack:1.1 | 0.996 | 0.971 | 1.17 | 1.17 |
-| msgpack-c:6.0.1 | 0.979 | 0.956 | 1.16 | 1.16 |
-| nanopb:0.4.9 | 0.212 | 0.21 | 0.604 | 0.594 |
-| parson:1.5.3 | 6.16 | 6.17 | 6.29 | 6.32 |
-| protobuf-c:1.5.0 | 0.209 | 0.211 | 0.592 | 0.586 |
-| protobuf-wire:wire-v2 | 0.213 | 0.215 | 0.61 | 0.591 |
-| qcbor:1.5.1 | 2.29 | 2.27 | 2.59 | 2.57 |
-| tinycbor:0.6.0 | 1.83 | 1.82 | 2.13 | 2.13 |
-| ubj:1.0-min | 0.199 | 0.196 | 0.609 | 0.594 |
-| yyjson:0.10.0 | 1.28 | 1.28 | 1.63 | 1.65 |
-| zcbor:0.9 | 2.06 | 2.06 | 2.37 | 2.37 |
+| avro-c:1.11.3 | 0.611 | 0.61 | 1.05 | 1.05 |
+| cbor-encode:0.11.0 | 2.91 | 2.9 | 3.51 | 3.51 |
+| cJSON:1.7.18 | 3.21 | 3.2 | 3.85 | 3.85 |
+| custom-binary:v2-1.0 | **0.113** | **0.116** | **0.522** | **0.519** |
+| flatcc:0.6.1 | 0.332 | 0.339 | 0.764 | 0.757 |
+| jansson:2.14 | 5.37 | 5.35 | 6 | 6 |
+| json-c:0.15 | 4.54 | 4.53 | 4.97 | 5 |
+| libbson:1.27.5 | 1.61 | 1.61 | 2.04 | 2.04 |
+| mpack:1.1 | 0.881 | 0.87 | 1.19 | 1.19 |
+| msgpack-c:6.0.1 | 0.848 | 0.872 | 1.18 | 1.18 |
+| nanopb:0.4.9 | 0.197 | 0.197 | 0.606 | 0.6 |
+| parson:1.5.3 | 5.71 | 5.66 | 6.4 | 6.46 |
+| protobuf-c:1.5.0 | 0.2 | 0.2 | 0.615 | 0.604 |
+| protobuf-wire:wire-v2 | 0.2 | 0.198 | 0.644 | 0.63 |
+| qcbor:1.5.1 | 2.12 | 2.13 | 2.59 | 2.6 |
+| tinycbor:0.6.0 | 1.67 | 1.66 | 2.12 | 2.11 |
+| ubj:1.0-min | 0.198 | 0.2 | 0.626 | 0.62 |
+| yyjson:0.10.0 | 1.19 | 1.19 | 1.69 | 1.71 |
+| zcbor:0.9 | 1.92 | 1.91 | 2.37 | 2.36 |
 
 
 ### Ops/Sec
 
 | serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
 |---|---|---|---|---|---|---|---|---|---|---|
-| avro-c:1.11.3 | 0.96M | 17K | 1M | 17K | 1.6M | 21K | 1.1M | 11K | 1.2M | 18K |
-| cbor-encode:0.11.0 | 0.079M | 1.1K | 0.19M | 2.6K | 0.32M | 4.1K | 0.077M | 0.85K | 0.1M | 1.3K |
-| cJSON:1.7.18 | 0.097M | 1.3K | 0.19M | 2.3K | 0.29M | 3.4K | 0.16M | 1.6K | 0.034M | 0.34K |
-| custom-binary:v2-1.0 | **3.7M** | **30K** | **3M** | **30K** | **8M** | **40K** | **2.9M** | **16K** | **5M** | **36K** |
-| flatcc:0.6.1 | 1.6M | 21K | 1.6M | 21K | 2.9M | 26K | 1.8M | 13K | 1.9M | 23K |
-| jansson:2.14 | 0.052M | 0.65K | 0.1M | 1.3K | 0.17M | 2.1K | 0.083M | 0.89K | 0.038M | 0.41K |
-| json-c:0.15 | 0.06M | 0.8K | 0.12M | 1.6K | 0.2M | 2.4K | 0.12M | 1.3K | 0.045M | 0.47K |
-| libbson:1.27.5 | 0.14M | 2K | 0.29M | 3.6K | 0.58M | 7.2K | 0.079M | 0.82K | 0.093M | 1K |
-| mpack:1.1 | 0.32M | 6.3K | 0.56M | 11K | 1M | 18K | 0.6M | 6.3K | 0.53M | 12K |
-| msgpack-c:6.0.1 | 0.32M | 5.7K | 0.55M | 10K | 1M | 17K | 0.62M | 7.6K | 0.48M | 10K |
-| nanopb:0.4.9 | 1.3M | 13K | 1.7M | 20K | 4.7M | 37K | 1.7M | 13K | 3.1M | 27K |
-| parson:1.5.3 | 0.044M | 0.56K | 0.12M | 1.5K | 0.16M | 1.9K | 0.13M | 1.3K | 0.027M | 0.27K |
-| protobuf-c:1.5.0 | 1.3M | 13K | 1.7M | 20K | 4.8M | 37K | 1.7M | 13K | 2.8M | 27K |
-| protobuf-wire:wire-v2 | 1.2M | 13K | 1.8M | 20K | 4.7M | 37K | 1.7M | 13K | 2.9M | 27K |
-| qcbor:1.5.1 | 0.11M | 1.3K | 0.29M | 3.5K | 0.44M | 4.8K | 0.092M | 0.96K | 0.12M | 1.3K |
-| tinycbor:0.6.0 | 0.14M | 1.6K | 0.37M | 4.5K | 0.55M | 5.9K | 0.096M | 1K | 0.13M | 1.5K |
-| ubj:1.0-min | 2.6M | 27K | 2.3M | 27K | 5M | 34K | 2.4M | 15K | 3.2M | 30K |
-| yyjson:0.10.0 | 0.2M | 3.1K | 0.44M | 5K | 0.78M | 9.7K | 0.35M | 3.1K | 0.3M | 3.8K |
-| zcbor:0.9 | 0.11M | 1.3K | 0.28M | 3.3K | 0.49M | 5.3K | 0.082M | 0.87K | 0.11M | 1.3K |
+| avro-c:1.11.3 | 1M | 17K | 1M | 17K | 1.6M | 21K | 1.1M | 11K | 1.2M | 19K |
+| cbor-encode:0.11.0 | 0.082M | 1.1K | 0.19M | 2.7K | 0.34M | 4.2K | 0.078M | 0.87K | 0.11M | 1.3K |
+| cJSON:1.7.18 | 0.1M | 1.3K | 0.19M | 2.4K | 0.31M | 3.5K | 0.16M | 1.7K | 0.035M | 0.34K |
+| custom-binary:v2-1.0 | **3.8M** | **29K** | **3.1M** | **30K** | **8.9M** | **41K** | **3M** | **16K** | **5.1M** | **35K** |
+| flatcc:0.6.1 | 1.7M | 21K | 1.6M | 22K | 3M | 26K | 1.8M | 13K | 2.1M | 24K |
+| jansson:2.14 | 0.054M | 0.66K | 0.1M | 1.3K | 0.19M | 2.1K | 0.083M | 0.91K | 0.039M | 0.41K |
+| json-c:0.15 | 0.063M | 0.79K | 0.13M | 1.7K | 0.22M | 2.6K | 0.13M | 1.3K | 0.046M | 0.48K |
+| libbson:1.27.5 | 0.15M | 2K | 0.29M | 3.6K | 0.62M | 7.4K | 0.081M | 0.86K | 0.096M | 1K |
+| mpack:1.1 | 0.35M | 6.3K | 0.57M | 11K | 1.1M | 19K | 0.61M | 6.5K | 0.55M | 12K |
+| msgpack-c:6.0.1 | 0.33M | 5.8K | 0.55M | 10K | 1.2M | 18K | 0.62M | 7.8K | 0.51M | 10K |
+| nanopb:0.4.9 | 1.3M | 13K | 1.7M | 20K | 5.1M | 37K | 1.7M | 13K | 3.3M | 28K |
+| parson:1.5.3 | 0.046M | 0.57K | 0.12M | 1.6K | 0.18M | 1.9K | 0.14M | 1.4K | 0.028M | 0.27K |
+| protobuf-c:1.5.0 | 1.3M | 13K | 1.7M | 20K | 5M | 37K | 1.8M | 13K | 3.1M | 27K |
+| protobuf-wire:wire-v2 | 1.3M | 13K | 1.8M | 20K | 5M | 37K | 1.8M | 13K | 3M | 28K |
+| qcbor:1.5.1 | 0.12M | 1.3K | 0.29M | 3.5K | 0.47M | 4.9K | 0.092M | 0.98K | 0.12M | 1.4K |
+| tinycbor:0.6.0 | 0.15M | 1.6K | 0.37M | 4.5K | 0.6M | 6K | 0.096M | 1K | 0.13M | 1.5K |
+| ubj:1.0-min | 2.6M | 27K | 2.3M | 27K | 5.1M | 34K | 2.4M | 15K | 3.4M | 30K |
+| yyjson:0.10.0 | 0.21M | 3.1K | 0.44M | 5K | 0.84M | 10K | 0.36M | 3.2K | 0.32M | 3.9K |
+| zcbor:0.9 | 0.12M | 1.3K | 0.28M | 3.4K | 0.52M | 5.4K | 0.082M | 0.9K | 0.11M | 1.3K |
 
 ## Latency distributions
 
@@ -175,14 +175,14 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `logs/c/2026-07-24-193854.csv`
-    - run=2026-07-24-193854
+    - **Source CSV:** `logs/c/2026-07-24-201935.csv`
+    - run=2026-07-24-201935
     - language=c
     - os=Linux 6.8.0-124-generic
     - cpu=12th Gen Intel(R) Core(TM) i7-12800H (20 threads)
     - ram=31.0 GiB
     - runtimes: gcc=gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, python=3.14.0, node=24.15.0
-    - git=7431b57 dirty
+    - git=40f6a8e dirty
     - seed=42
     - warmup_reps=1
     - serializers=19

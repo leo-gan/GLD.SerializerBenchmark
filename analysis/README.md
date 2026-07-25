@@ -43,7 +43,7 @@ cd analysis && uv run analyze-benchmarks
 | `-l` / `--language LANG` | One language (repeatable) |
 | `--skip-generate` | Skip docs/plots |
 | `--compare-a` / `--compare-b` | Compare two runs |
-| `--check-regression` / `--save-baseline` / `--baseline-file` / `--regression-threshold` | Regression gates |
+| `--check-regression` / `--save-baseline` / `--baseline-file` / `--regression-threshold` / `--regression-combine` | Regression gates (default **and**: practical % **and** CI; see methodology) |
 | `--config` | Path to `benchmark_config.yaml` |
 | `--list` | List result files |
 

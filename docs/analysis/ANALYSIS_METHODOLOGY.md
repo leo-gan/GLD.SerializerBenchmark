@@ -166,7 +166,76 @@ analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316
 
 This writes `reports/VERSION_COMPARE.md` (under `paths.reports_root`, default `reports/`) with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when hypothesis tests are enabled (`alpha` 0.05).
 
-Regression gates: `analyze-benchmarks --check-regression` against `paths.baseline_filename` (default `reports/baseline.json`); save a baseline with `--save-baseline`.
+Regression gates: `analyze-benchmarks --check-regression` against `paths.baseline_filename` (default `reports/baseline.json`); save a baseline with `--save-baseline`. Details: [Regression gate](#regression-gate).
+
+---
+
+## Regression gate {#regression-gate}
+
+This section is written for a **first-year university student**. No advanced stats course required.
+
+### What problem are we solving?
+
+Imagine you measured how long a library takes to serialize data **yesterday** (the **baseline**), and you measure again **today** (the **current** run).
+
+- Some days the computer is a bit busier (other programs, heat, random noise).
+- So today’s *average* can look 12% slower even when the library did **not** really get worse.
+
+If our quality gate shouted “REGRESSION!” every time the average wiggled, we would get **false alarms** and stop trusting the gate.
+
+### What went wrong with the old rule (OR)
+
+The old gate used two checks and failed if **either** was true (logical **OR**):
+
+1. **Practical check:** “Is the point estimate more than 10% slower than baseline?”
+2. **Statistical check:** “Is even the *optimistic* end of our confidence interval still more than 10% slower?”
+
+With **OR**, a noisy average alone could fail the gate even when the confidence interval still said “this might still be about the same.” That is like failing a student for one shaky quiz question while the rest of the exam looks fine.
+
+### What we do now (AND)
+
+By default the gate uses logical **AND**:
+
+> Fail only if the run looks **practically** slower **and** the data still look slower even if we give the new run the benefit of the doubt (CI lower bound).
+
+| Check | Plain meaning |
+|-------|----------------|
+| **Practical** | Median (preferred) or mean total time is more than `threshold_percent` (default 10%) worse than baseline |
+| **Statistical** | The lower end of the bootstrap CI on the **mean** is still above `baseline × (1 + threshold/100)` |
+
+So:
+
+- **Practical yes + statistical no** → classified **unclear** (investigate; do not hard-fail by default).
+- **Both yes** → **regression** (exit code 1; baseline is not overwritten).
+- **Within threshold** (and Cliff’s δ negligible when samples exist) → **equivalent**.
+
+You can restore the old noisier behavior with `regression.combine: or` or `--regression-combine or`.
+
+### Cliff’s δ (optional, when we saved samples)
+
+If the baseline file stores a sample of old timings, we also compute **Cliff’s δ** between current and baseline samples (positive ≈ current slower). By default δ is **diagnostic** only (`require_for_fail: false`). That keeps the gate simple while still reporting a nonparametric effect size.
+
+### Baseline file (what we store)
+
+`reports/baseline.json` (schema v2) stores, per group:
+
+- median and mean total time, CI, ops/s, size, run count  
+- optional capped list of sample times (for δ)  
+- keys that include **language, serializer, data type, batch N, type-config hash, I/O mode** so N=1 and N=100 do not collide  
+
+Legacy flat baselines (older keys without N/hash) are still **read** for one migration cycle; re-save with `--save-baseline` after a clean run.
+
+### Commands
+
+```bash
+analyze-benchmarks --check-regression
+analyze-benchmarks --check-regression --regression-threshold 5 --regression-combine and
+analyze-benchmarks --save-baseline   # only if check passes (or check not requested)
+```
+
+A machine-readable summary is written to `reports/regression_report.json` when you check.
+
+Config lives under `regression:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml).
 
 ---
 
@@ -203,7 +272,7 @@ Honest methodology includes what the suite **cannot** claim.
 - **Bootstrap reproducibility:** each group gets a *derived* seed (base bootstrap seed mixed with a stable hash of language + serializer + data type + mode + series prefix) so intervals are independent across groups yet fully reproducible.
 - **Paired series:** serialize, deserialize, and total times share one all-or-nothing keep-mask.
 - **Mann–Whitney:** uses SciPy when available (tie-aware); otherwise a pure-NumPy fallback with tie-corrected variance and continuity correction.
-- **Regression gates:** `--save-baseline` is skipped when `--check-regression` fails, so a degraded run cannot overwrite the gate baseline.
+- **Regression gates:** default combine is **and** (practical % and CI support). `--save-baseline` is skipped when `--check-regression` fails, so a degraded run cannot overwrite the gate baseline. See [Regression gate](#regression-gate).
 - **Cliff’s δ for large N:** if the full pair count exceeds about two million, a seeded 100 000-pair random sample is used.
 - Some documented config keys are parsed for documentation but do not yet change runtime behaviour; the implementation still computes the full rich metric set.
 

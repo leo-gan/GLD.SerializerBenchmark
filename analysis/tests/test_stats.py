@@ -349,5 +349,8 @@ def test_save_baseline_skipped_when_regression(tmp_path):
     after = baseline.read_text(encoding="utf-8")
     assert before == after
     stored = json.loads(after)
-    key = "python|orjson|message|bytes"
-    assert stored[key]["avg_time_total_ns"] == 1000.0
+    # v2 baseline wraps entries; accept either layout
+    entries = stored.get("entries") if isinstance(stored.get("entries"), dict) else stored
+    # Keys now include instance count + type hash when present
+    match = [v for k, v in entries.items() if "orjson" in k and isinstance(v, dict)]
+    assert match and match[0]["avg_time_total_ns"] == 1000.0

@@ -16,7 +16,7 @@ from .stats import (
     load_stats_config,
     prepare_analysis_records,
 )
-from .regression import check_regression, save_baseline
+from .regression import check_regression, load_regression_config, save_baseline
 
 
 # Matches result filename format: 2026-06-12-123415.csv
@@ -394,6 +394,12 @@ def main():
         help="Regression threshold percent (default: regression.threshold_percent in config)",
     )
     parser.add_argument(
+        "--regression-combine",
+        choices=["and", "or", "practical_only", "statistical_only"],
+        default=None,
+        help="How to combine practical %% and CI arms (default: regression.combine in config, usually and)",
+    )
+    parser.add_argument(
         "--baseline-file",
         default=_default_baseline,
         help="Baseline file path (default: paths.baseline_filename in config)",
@@ -645,15 +651,61 @@ def main():
     # Regression gate: never save a degraded baseline when a regression is detected.
     # --save-baseline only runs after a clean check (or when check is not requested).
     if args.check_regression:
+        reg_cfg = load_regression_config()
+        if args.regression_combine:
+            reg_cfg["combine"] = args.regression_combine
         has_regression, regressions = check_regression(
             all_stats,
             args.baseline_file,
             args.regression_threshold,
+            config=reg_cfg,
         )
+        details = getattr(check_regression, "last_details", []) or []
+        # Summary counts
+        from collections import Counter
+
+        counts = Counter(d.get("classification") for d in details)
+        print(
+            "Regression check "
+            f"(combine={reg_cfg.get('combine')}, threshold={args.regression_threshold}%): "
+            f"regression={counts.get('regression', 0)} "
+            f"unclear={counts.get('unclear', 0)} "
+            f"equivalent={counts.get('equivalent', 0)} "
+            f"improvement={counts.get('improvement', 0)} "
+            f"ok={counts.get('ok', 0)}"
+        )
+        # Machine-readable report
+        try:
+            import json
+            import datetime
+
+            report_path = Path(args.baseline_file).resolve().parent / "regression_report.json"
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(report_path, "w", encoding="utf-8") as rf:
+                json.dump(
+                    {
+                        "generated": datetime.datetime.now().isoformat(),
+                        "baseline_file": args.baseline_file,
+                        "combine": reg_cfg.get("combine"),
+                        "threshold_percent": args.regression_threshold,
+                        "metric": reg_cfg.get("metric"),
+                        "counts": dict(counts),
+                        "has_regression": has_regression,
+                        "messages": regressions,
+                        "details": details,
+                    },
+                    rf,
+                    indent=2,
+                )
+            print(f"Regression report: {report_path}")
+        except Exception as exc:
+            print(f"Warning: could not write regression_report.json: {exc}")
+
         if has_regression:
-            print(f"REGRESSION: {len(regressions)} entries exceeded threshold")
+            print(f"REGRESSION: {counts.get('regression', 0)} entries failed the gate")
             for r in regressions[:20]:
-                print(f"  {r}")
+                if r.startswith("REGRESSION"):
+                    print(f"  {r}")
             if args.save_baseline:
                 print(
                     "Note: --save-baseline skipped because a regression was detected "
@@ -662,7 +714,8 @@ def main():
             sys.exit(1)
 
     if args.save_baseline:
-        save_baseline(all_stats, args.baseline_file)
+        reg_cfg = load_regression_config()
+        save_baseline(all_stats, args.baseline_file, config=reg_cfg)
         print(f"Saved baseline to {args.baseline_file}")
 
 

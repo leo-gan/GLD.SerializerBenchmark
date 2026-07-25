@@ -291,13 +291,30 @@ metrics:
     p_value_holm: medium
 
 # -----------------------------------------------------------------------------
-# Regression gates (CI)
+# Regression gates (CI quality gate)
 # -----------------------------------------------------------------------------
+# Plain-language policy (A-4): a run is a REGRESSION only when BOTH:
+#   (1) the point estimate is more than threshold_percent slower than baseline, AND
+#   (2) even the optimistic end of the bootstrap CI is still that much slower.
+# Using AND (not OR) avoids failing the gate when a noisy mean moves but the
+# data still look compatible with "about the same speed". See methodology.
 regression:
   enabled: true
   threshold_percent: 10.0
-  metric: avg_time_total_ns
+  # Preferred point estimate for the practical % check (falls back to mean).
+  metric: total_median_ns
+  # and = both practical + CI (default); or = legacy noisier fail; practical_only / statistical_only
+  combine: and
   direction: higher_is_worse
+  cliffs_delta:
+    enabled: true
+    # Same "negligible" cut as statistics.effect_sizes (Vargha–Delaney / Cliff)
+    min_delta: 0.147
+    # If true, also require δ ≥ min_delta (current slower) before failing
+    require_for_fail: false
+  # Store a capped sample of total times so later runs can compute Cliff's δ vs baseline
+  store_samples: true
+  max_samples_stored: 500
 
 # -----------------------------------------------------------------------------
 # Language benchmark runners
