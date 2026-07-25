@@ -35,3 +35,6 @@ cmake --build c/build --target c_serializer_tests
 ```
 
 Analysis: `analyze-benchmarks -l c` (see root README).
+
+Default schedule is **block_shuffle**. Set `BENCHMARK_SCHEDULE=none` for legacy fixed order. See [architecture — schedule](../docs/analysis/architecture.md#timed-trial-schedule).
+

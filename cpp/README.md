@@ -51,3 +51,6 @@ cmake --build cpp/build --target cpp_serializer_tests
 ```
 
 Analysis: `analyze-benchmarks -l cpp`.
+
+Default schedule is **block_shuffle**. Set `BENCHMARK_SCHEDULE=none` for legacy fixed order. See [architecture — schedule](../docs/analysis/architecture.md#timed-trial-schedule).
+

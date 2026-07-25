@@ -48,3 +48,6 @@ Regenerate:
 ./swift/scripts/run-benchmarks.sh smoke
 ./swift/scripts/run-benchmarks.sh all-single
 ```
+
+Default schedule is **block_shuffle**. Set `BENCHMARK_SCHEDULE=none` for legacy fixed order. See [architecture — schedule](../docs/analysis/architecture.md#timed-trial-schedule).
+
