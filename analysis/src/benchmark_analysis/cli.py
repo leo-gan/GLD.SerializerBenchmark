@@ -271,6 +271,157 @@ def _resolve_logs_assignment(
     return lang, resolved
 
 
+def _expand_multi_session_specs(specs: Sequence[str]) -> List[str]:
+    """Flatten repeated flags and comma-separated tokens."""
+    out: List[str] = []
+    for spec in specs:
+        for part in str(spec).split(","):
+            part = part.strip()
+            if part:
+                out.append(part)
+    return out
+
+
+def _resolve_multi_session_paths(
+    specs: Sequence[str],
+    *,
+    logs_root: Path,
+    languages: Optional[Sequence[str]] = None,
+) -> Dict[str, List[str]]:
+    """Resolve multi-session tokens to ``{language: [csv_path, ...]}``.
+
+    Accepted token forms:
+    - path to a CSV file
+    - ``LANG:stem`` or ``LANG:latest`` shorthand under logs_root
+    - ``LANG=stem`` (same as ``LANG:stem``; useful with commas: ``python=a,python=b``)
+    - bare language when ``-l`` is set is not enough alone — need at least two stems
+    """
+    by_lang: Dict[str, List[str]] = {}
+    tokens = _expand_multi_session_specs(specs)
+    # Support LANG=stem1 style (split left=right once)
+    normalized: List[Tuple[Optional[str], str]] = []
+    for tok in tokens:
+        if "=" in tok and not Path(tok).exists() and not tok.startswith("/"):
+            left, right = tok.split("=", 1)
+            left, right = left.strip(), right.strip()
+            if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", left) and right:
+                lang = _try_normalize_language(left) or left.lower()
+                # right may still be stem or path
+                if ":" not in right and not Path(right).exists():
+                    normalized.append((lang, f"{lang}:{right}"))
+                else:
+                    normalized.append((lang, right))
+                continue
+        normalized.append((None, tok))
+
+    for forced_lang, tok in normalized:
+        path = _resolve_log_spec(tok, logs_root=logs_root)
+        if not path or not os.path.isfile(path):
+            raise SystemExit(
+                f"Cannot resolve --multi-session token {tok!r} under {logs_root}"
+            )
+        lang = forced_lang or _infer_language_from_path(path)
+        if lang is None and languages and len(languages) == 1:
+            lang = _normalize_language(languages[0])
+        if lang is None:
+            raise SystemExit(
+                f"Cannot determine language for --multi-session {tok!r}. "
+                f"Use LANG:stem or pair with -l LANG."
+            )
+        by_lang.setdefault(lang, []).append(path)
+
+    # De-dupe while preserving order
+    for lang in list(by_lang):
+        seen = set()
+        uniq: List[str] = []
+        for p in by_lang[lang]:
+            if p not in seen:
+                seen.add(p)
+                uniq.append(p)
+        by_lang[lang] = uniq
+
+    if languages:
+        wanted = {_normalize_language(x) for x in languages}
+        by_lang = {k: v for k, v in by_lang.items() if k in wanted}
+
+    return by_lang
+
+
+def _run_multi_session(
+    *,
+    specs: Sequence[str],
+    logs_root: Path,
+    reports_root: Path,
+    languages: Optional[Sequence[str]],
+    stats_config: Optional[Dict] = None,
+) -> None:
+    """Multi-session aggregation: write JSON + markdown per language."""
+    import json
+    import datetime
+
+    from .multi_session import (
+        aggregate_multi_session,
+        load_stats_for_csv,
+        machine_id_from_sidecar,
+        multi_session_markdown,
+    )
+
+    by_lang = _resolve_multi_session_paths(
+        specs, logs_root=logs_root, languages=languages
+    )
+    if not by_lang:
+        print("Error: --multi-session resolved to no CSV paths.")
+        sys.exit(1)
+
+    os.makedirs(str(reports_root), exist_ok=True)
+    for lang, paths in sorted(by_lang.items()):
+        if len(paths) < 2:
+            print(
+                f"Error: multi-session for '{lang}' needs ≥2 distinct CSVs "
+                f"(got {len(paths)}). Pass more --multi-session tokens."
+            )
+            sys.exit(1)
+        sessions: List[Dict] = []
+        for p in paths:
+            stem = Path(p).stem
+            stats = load_stats_for_csv(
+                p, language_hint=lang, stats_config=stats_config
+            )
+            sessions.append(
+                {
+                    "run_id": stem,
+                    "machine_id": machine_id_from_sidecar(p),
+                    "stats": stats,
+                }
+            )
+            print(f"  session {stem}: {len(stats)} groups from {p}")
+        report = aggregate_multi_session(sessions, language=lang)
+        report["generated"] = datetime.datetime.now().isoformat()
+        report["source_paths"] = paths
+        json_path = reports_root / f"multi_session_{lang}.json"
+        md_path = reports_root / f"multi_session_{lang}.md"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write(multi_session_markdown(report))
+        print(
+            f"Multi-session ({lang}): claim_level={report.get('claim_level')} "
+            f"n_sessions={report.get('n_sessions')} "
+            f"machines={report.get('machine_ids') or ['(unknown)']}"
+        )
+        print(f"  Wrote {json_path}")
+        print(f"  Wrote {md_path}")
+        # Console: top rank-frequency rows
+        for row in (report.get("rank_stability") or [])[:8]:
+            top = (row.get("fastest_frequency") or [{}])[0]
+            print(
+                f"  {row.get('test_data')} n={row.get('data_type_instance_count')} "
+                f"{row.get('mode')}: most-often-fastest="
+                f"{top.get('serializer')} "
+                f"({top.get('wins')}/{row.get('n_sessions_ranked')} sessions)"
+            )
+
+
 def _generate_artifacts(
     *,
     all_records: Dict[str, List[Dict]],
@@ -430,6 +581,18 @@ def main():
         action="store_true",
         help="List available result files per language and exit",
     )
+    parser.add_argument(
+        "--multi-session",
+        action="append",
+        default=[],
+        metavar="CSV_OR_SHORTHAND",
+        help=(
+            "Multi-session aggregate (claim level L2/L3 tooling). "
+            "Pass two+ CSV paths or LANG:stem shorthands; repeat the flag or use commas. "
+            "Also accepts LANG=stem1,stem2. Writes reports/multi_session_<lang>.json "
+            "and .md. See docs/analysis/CLAIMS_AND_REPLICATION.md."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -438,6 +601,17 @@ def main():
         stats_cfg["_metrics_profile"] = args.metrics_profile
         os.environ["BENCHMARK_METRICS_PROFILE"] = args.metrics_profile
     logs_root = Path(args.logs_root)
+
+    # Multi-session aggregation (early exit — does not need full matrix load)
+    if args.multi_session:
+        _run_multi_session(
+            specs=args.multi_session,
+            logs_root=logs_root,
+            reports_root=reports_root,
+            languages=args.languages,
+            stats_config=stats_cfg,
+        )
+        return
 
     if args.list:
         print("Available result files (latest marked with *):")

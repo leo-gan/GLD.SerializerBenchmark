@@ -263,6 +263,97 @@ def test_effect_sizes_attached():
     assert slow_entry["effect_vs_fastest_cliffs_delta"] > 0
 
 
+def test_effect_vs_fastest_mwu_holm_and_reference():
+    """MWU + within-group Holm; reference has null p; adjusted p ≥ raw p."""
+    recs = (
+        _make_records(25, ser_ns=1000, serializer="fast")
+        + _make_records(25, ser_ns=5000, serializer="slow")
+        + _make_records(25, ser_ns=5200, serializer="slow2")
+    )
+    stats = compute_statistics(
+        recs,
+        config={
+            "exclude_warmup": True,
+            "outlier_method": "none",
+            "bootstrap": {"enabled": False},
+            "effect_sizes": {
+                "enabled": True,
+                "vs_fastest": {
+                    "reference": "median",
+                    "test": "mann_whitney_u",
+                    "multiple_comparison": "holm",
+                },
+            },
+            "hypothesis_tests": {"enabled": True, "alpha": 0.05},
+        },
+    )
+    by = {v["serializer"]: v for v in stats.values()}
+    assert by["fast"]["effect_vs_fastest_cliffs_label"] == "reference"
+    assert by["fast"]["effect_vs_fastest_p_value"] is None
+    assert by["fast"]["effect_vs_fastest_significant_holm"] is None
+    assert by["fast"]["effect_vs_fastest_exploratory"] is True
+
+    for name in ("slow", "slow2"):
+        e = by[name]
+        assert e["fastest_in_group"] == "fast"
+        assert e["effect_vs_fastest_p_value"] is not None
+        assert e["effect_vs_fastest_p_value_holm"] is not None
+        assert e["effect_vs_fastest_p_value_holm"] + 1e-12 >= e["effect_vs_fastest_p_value"]
+        assert e["effect_vs_fastest_cliffs_delta"] > 0
+        assert e["effect_vs_fastest_significant_holm"] is True
+        assert e["effect_vs_fastest_exploratory"] is True
+
+
+def test_effect_vs_fastest_reference_prefers_median():
+    """Reference codec is argmin median total when vs_fastest.reference=median.
+
+    Construct left-skewed 'mean_fast' (low mean, high median) vs stable 'median_fast'
+    so mean-reference and median-reference disagree.
+    """
+    recs = []
+    n = 21
+    for i in range(n):
+        # After warmup skip (i=0), 20 samples: 9 tiny + 11 large → low mean, high median
+        total = 10.0 if 1 <= i <= 9 else 2000.0
+        recs.append({
+            "Language": "python",
+            "StringOrStream": "bytes",
+            "TestDataName": "message",
+            "Repetitions": n,
+            "RepetitionIndex": i,
+            "SerializerName": "mean_fast",
+            "TimeSer": total / 2,
+            "TimeDeser": total / 2,
+            "Size": 100,
+            "TimeSerAndDeser": total,
+            "OpPerSecSer": 0,
+            "OpPerSecDeser": 0,
+            "OpPerSecSerAndDeser": 0,
+            "FidelityScore": 1.0,
+        })
+    # Stable ~1200 ns total → better median than mean_fast's 2000, worse mean than mean_fast's mix
+    recs += _make_records(n, ser_ns=600, deser_ns=600, serializer="median_fast")
+    stats = compute_statistics(
+        recs,
+        config={
+            "exclude_warmup": True,
+            "outlier_method": "none",
+            "bootstrap": {"enabled": False},
+            "effect_sizes": {
+                "enabled": True,
+                "vs_fastest": {"reference": "median"},
+            },
+            "hypothesis_tests": {"enabled": False},
+        },
+    )
+    by = {v["serializer"]: v for v in stats.values()}
+    # Sanity: mean prefers mean_fast; median prefers median_fast
+    assert by["mean_fast"]["total_mean_ns"] < by["median_fast"]["total_mean_ns"]
+    assert by["mean_fast"]["total_median_ns"] > by["median_fast"]["total_median_ns"]
+    assert by["median_fast"]["effect_vs_fastest_cliffs_label"] == "reference"
+    assert by["mean_fast"]["fastest_in_group"] == "median_fast"
+
+
 def test_prepare_and_stats_share_sample_population():
     """Sanitized rows must equal the n used in compute_statistics."""
     recs = _make_records(25)

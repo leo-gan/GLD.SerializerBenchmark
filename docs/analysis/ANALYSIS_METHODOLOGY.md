@@ -98,9 +98,9 @@ Configured warmup length: `reproducibility.warmup_repetitions` = **1**.
 
 ### Outlier filtering
 
-Default method: **Tukey interquartile range (IQR)** (`statistics.outlier_method: iqr`, `iqr_k: 1.5`), applied **all-or-nothing** across the three times of each repetition (serialize, deserialize, total).
+Default method: **[John Tukey](https://en.wikipedia.org/wiki/John_Tukey "John Tukey — invented exploratory data analysis and popularized boxplot/IQR fences")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> [interquartile range (IQR)](https://en.wikipedia.org/wiki/Interquartile_range "Interquartile range — spread of the middle 50% of values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** fences (`statistics.outlier_method: iqr`, `iqr_k: 1.5`), applied **all-or-nothing** across the three times of each repetition (serialize, deserialize, total).
 
-**Idea in plain language:** look at the middle half of the data (from the 25th to the 75th percentile). Anything far outside fences built from that middle half is treated as an outlier. If *any* of the three times is an outlier, the **whole repetition** is dropped so the three series stay paired.
+**Idea in plain language:** look at the middle half of the data (from the 25th to the 75th [percentile](https://en.wikipedia.org/wiki/Percentile "Percentile — value below which a given percentage of observations fall")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />). Anything far outside fences built from that middle half is treated as an [outlier](https://en.wikipedia.org/wiki/Outlier "Outlier — observation far from the bulk of the data")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. If *any* of the three times is an outlier, the **whole repetition** is dropped so the three series stay paired.
 
 | Rule | Default behavior |
 |------|------------------|
@@ -110,16 +110,16 @@ Default method: **Tukey interquartile range (IQR)** (`statistics.outlier_method:
 | IQR = 0 for a metric | That metric does not remove anyone |
 | Would drop the entire group | Keep the original series |
 | Method `none` | Skip filtering |
-| Method `winsorize` | Clip each series at the 5th and 95th percentiles; never drop rows |
+| Method `winsorize` | [Winsorize](https://en.wikipedia.org/wiki/Winsorizing "Winsorizing — replace extreme values with less extreme ones")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />: clip each series at the 5th and 95th percentiles; never drop rows |
 
-Removed count: `outliers_removed`. Final `runs` is the same for serialize, deserialize, and total. IQR mainly stabilizes the **mean** against rare stalls; always look at dispersion and confidence intervals too.
+Removed count: `outliers_removed`. Final `runs` is the same for serialize, deserialize, and total. IQR mainly stabilizes the **mean** against rare stalls; always look at dispersion and [confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> too.
 
 ### Descriptive statistics (per group)
 
 | Kind | What we report |
 |------|----------------|
-| Central tendency | Mean and median of serialize / deserialize / total times |
-| Dispersion | Standard deviation, median absolute deviation (MAD), coefficient of variation, min/max, percentiles (default 5, 25, 50, 75, 95, 99) |
+| Central tendency | [Mean](https://en.wikipedia.org/wiki/Arithmetic_mean "Arithmetic mean — average") and [median](https://en.wikipedia.org/wiki/Median "Median — middle value when sorted") of serialize / deserialize / total times |
+| Dispersion | [Standard deviation](https://en.wikipedia.org/wiki/Standard_deviation "Standard deviation — typical distance from the mean"), [median absolute deviation (MAD)](https://en.wikipedia.org/wiki/Median_absolute_deviation "Median absolute deviation — robust scale measure"), [coefficient of variation](https://en.wikipedia.org/wiki/Coefficient_of_variation "Coefficient of variation — std / mean"), min/max, percentiles (default 5, 25, 50, 75, 95, 99) |
 | Size | Median serialized `Size` (bytes) |
 | Throughput | Operations per second from mean total time |
 | Provenance | `runs`, `runs_raw`, `warmup_skipped`, `outliers_removed` |
@@ -133,7 +133,7 @@ Removed count: `outliers_removed`. Final `runs` is the same for serialize, deser
 
 ### Bootstrap confidence interval on the mean
 
-When bootstrap is enabled (default), analysis resamples the total-time series many times (**percentile** bootstrap: 2000 iterations, 95% confidence, seed 42) and reports:
+When bootstrap is enabled (default), analysis resamples the total-time series many times using the **[bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics) "Bootstrapping (statistics) — resampling to estimate uncertainty")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** (**percentile** method: 2000 iterations, 95% [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, seed 42) and reports:
 
 - `total_ci_low_ns`
 - `total_ci_high_ns`
@@ -144,14 +144,36 @@ Produced only when the post-filter sample size is at least `min_samples_for_infe
 
 ### Effect sizes versus the fastest in the group
 
-When effect sizes are enabled (default), each serializer is compared—inside the same language, data type, and I/O mode—to the **fastest** peer (lowest mean total time):
+When [effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size — how large a difference is, not only whether it is significant")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> are enabled (default), each serializer is compared—inside the same language, data type, batch size, and I/O mode—to the **fastest** peer. The reference is chosen by **lowest median total time** when available (falls back to mean). That matches the [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics — methods that avoid strong distribution assumptions")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> story of the suite.
 
 | Method | Role in plain language |
 |--------|------------------------|
-| **Cliff’s δ (delta)** | How often this library is slower or faster than the reference, without assuming a normal distribution |
-| **Hedges’ g** | Standardized mean difference with a small-sample correction |
+| **[Cliff’s δ (delta)](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — probability one sample is larger than another")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** | How often this library is slower or faster than the reference, without assuming a normal distribution |
+| **[Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g — standardized mean difference with small-sample correction")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** | Standardized mean difference with a small-sample correction |
+| **[Mann–Whitney U](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test — nonparametric two-sample rank test")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> + [Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method — stepwise p-value adjustment for multiple tests")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** | Optional [p-values](https://en.wikipedia.org/wiki/P-value "P-value — probability of data as extreme as observed under the null") vs the reference; Holm adjusts for **many serializers in that one group only** |
 
-Use these for **within-language** interpretation. Do not treat them as cross-runtime rankings.
+Use these for **within-language** interpretation. Do not treat them as cross-runtime rankings. Multi-way tables treat ranks as **exploratory** — see [Exploratory ranks](#exploratory-ranks).
+
+### Exploratory ranks {#exploratory-ranks}
+
+This section is written for a **first-year university student**.
+
+#### What problem are we solving?
+
+A Results page often shows **many** libraries side by side. Picking a “winner” and then testing every other library against that winner is like running **many quizzes at once** — the [multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem "Multiple comparisons problem — more tests raise the chance of false positives")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. If you celebrate every small “significant” mark without adjusting for how many quizzes you ran, you overstate confidence.
+
+#### What we do
+
+1. **Show effect sizes** ([Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta") label, and in machine-readable JSON also [Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g")) so you can see *how large* a gap looks.
+2. **Attach [Mann–Whitney](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test") [p-values](https://en.wikipedia.org/wiki/P-value "P-value")** vs the group’s fastest codec when samples allow.
+3. **[Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method")-adjust those p-values inside the group** `(language × data type × type-config × batch N × I/O mode)` only — not across every cell on the page.
+4. **Label multi-way Results as exploratory.** Prefer **pairwise A/B** (`--compare-a` / `--compare-b`) when you need a confirmatory “did *this* change beat *that* baseline?” answer.
+
+#### Plain-language takeaway
+
+> Scores (effect sizes) help you browse. Adjusted p-values inside one group reduce “many quizzes” mistakes. They are **not** a global [family-wise](https://en.wikipedia.org/wiki/Family-wise_error_rate "Family-wise error rate — chance of any false positive in a family of tests") guarantee for the whole Results page, and default published ranks are still **L1 single-session** evidence ([Claims and replication](CLAIMS_AND_REPLICATION.md)).
+
+Config knobs live under `statistics.effect_sizes.vs_fastest` (defaults in code if YAML omits them): `reference: median`, `test: mann_whitney_u`, `multiple_comparison: holm`.
 
 ### Version A/B (same language, two runs)
 
@@ -164,7 +186,7 @@ analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
 analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316
 ```
 
-This writes `reports/VERSION_COMPARE.md` (under `paths.reports_root`, default `reports/`) with percent change, Cliff’s δ, Hedges’ g, **Mann–Whitney U**, and **Holm**-adjusted p-values when hypothesis tests are enabled (`alpha` 0.05).
+This writes `reports/VERSION_COMPARE.md` (under `paths.reports_root`, default `reports/`) with percent change, [Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta"), [Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g"), **[Mann–Whitney U](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test")**, and **[Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method")**-adjusted p-values when hypothesis tests are enabled (`alpha` 0.05).
 
 Regression gates: `analyze-benchmarks --check-regression` against `paths.baseline_filename` (default `reports/baseline.json`); save a baseline with `--save-baseline`. Details: [Regression gate](#regression-gate).
 
@@ -213,7 +235,7 @@ You can restore the old noisier behavior with `regression.combine: or` or `--reg
 
 ### Cliff’s δ (optional, when we saved samples)
 
-If the baseline file stores a sample of old timings, we also compute **Cliff’s δ** between current and baseline samples (positive ≈ current slower). By default δ is **diagnostic** only (`require_for_fail: false`). That keeps the gate simple while still reporting a nonparametric effect size.
+If the baseline file stores a sample of old timings, we also compute **[Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta — nonparametric effect size")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** between current and baseline samples (positive ≈ current slower). By default δ is **diagnostic** only (`require_for_fail: false`). That keeps the gate simple while still reporting a nonparametric effect size.
 
 ### Baseline file (what we store)
 
@@ -239,14 +261,52 @@ Config lives under `regression:` in [`config/benchmark_config.yaml`](../../confi
 
 ---
 
+## Multi-session and multi-machine claims {#multi-session-claims}
+
+This section is written for a **first-year university student**. Full ladder: [Claims and replication](CLAIMS_AND_REPLICATION.md).
+
+### Why one run is not enough for strong claims
+
+One full matrix on one laptop is a **snapshot**. Noise (other programs, thermal state, cloud neighbors) can move ranks a little. Stronger language needs **more races**:
+
+| Level | Evidence | Example claim |
+|-------|----------|---------------|
+| **L1** | One session, one host | “On this machine, this session, ….” |
+| **L2** | ≥3 sessions, same known `machine_id` | “Stable across repeated sessions on this host….” |
+| **L2 (host unknown)** | ≥3 sessions, missing sidecars | “Repeated sessions, but host fingerprint missing….” |
+| **L3** | ≥2 distinct `machine_id`s | “Consistent across machines in this set….” |
+
+Default Results pages are **L1**. Sidecars store `environment.machine_id` so analysis can tell hosts apart.
+
+### Aggregate several CSVs
+
+```bash
+analyze-benchmarks --list -l python
+analyze-benchmarks \
+  --multi-session python:STEM1 \
+  --multi-session python:STEM2 \
+  --multi-session python:STEM3
+```
+
+Writes `reports/multi_session_<lang>.json` and `.md` with:
+
+- median-of-session-medians and IQR across sessions  
+- how often each serializer is fastest (rank stability)  
+- heuristic `claim_level` (`L2_…` / `L3_…`)
+
+For research-oriented L2/L3 collection tips and soft host checks, see [Claims and replication](CLAIMS_AND_REPLICATION.md).
+
+---
+
 ## Outputs
 
 | Output | Content |
 |--------|---------|
-| `docs/<lang>/results.md` | Pivot tables and latency-chart embeds for one language |
+| `docs/<lang>/results.md` | Pivot tables and latency-chart embeds for one language (**L1** snapshot + exploratory-rank banner) |
 | `docs/analysis/plots/violin/*.png` | Combined mean bars (serialize/deserialize) plus split violin shapes (µs, linear from 0; top five by mean total) |
 | `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** index of links (not regenerated by the CLI) |
-| `logs/<lang>/*.configs.json` | Run sidecar: environment and optional dataset / serializer metadata (legacy `*.environment.json` still works) |
+| `logs/<lang>/*.configs.json` | Run sidecar: environment (`machine_id`, optional governor), dataset / serializer metadata (legacy `*.environment.json` still works) |
+| `reports/multi_session_<lang>.json` / `.md` | Optional L2/L3 aggregate from `--multi-session` |
 | Console | Load counts, warmup and outlier tallies |
 
 Latency charts use the **same** sanitized records as the summary tables. There is no separate hidden filter for plots. Display may still limit charts to the top five serializers by mean time; that does not change table membership.
@@ -273,11 +333,35 @@ Honest methodology includes what the suite **cannot** claim.
 - **Paired series:** serialize, deserialize, and total times share one all-or-nothing keep-mask.
 - **Mann–Whitney:** uses SciPy when available (tie-aware); otherwise a pure-NumPy fallback with tie-corrected variance and continuity correction.
 - **Regression gates:** default combine is **and** (practical % and CI support). `--save-baseline` is skipped when `--check-regression` fails, so a degraded run cannot overwrite the gate baseline. See [Regression gate](#regression-gate).
+- **Effect vs fastest:** reference is **median** total by default; Mann–Whitney + **within-group Holm** when hypothesis tests are enabled. Multi-way ranks are **exploratory** ([Exploratory ranks](#exploratory-ranks)).
+- **Claim scope:** default Results are **L1** single-session / single-host. Multi-session tooling does not rewrite Results automatically ([Claims and replication](CLAIMS_AND_REPLICATION.md)).
 - **Cliff’s δ for large N:** if the full pair count exceeds about two million, a seeded 100 000-pair random sample is used.
 - Some documented config keys are parsed for documentation but do not yet change runtime behaviour; the implementation still computes the full rich metric set.
 
 ## References
 
+### Wikipedia (statistical terms used on this page)
+
+| Term | Link |
+|------|------|
+| Interquartile range (IQR) | [en.wikipedia.org/wiki/Interquartile_range](https://en.wikipedia.org/wiki/Interquartile_range) |
+| John Tukey | [en.wikipedia.org/wiki/John_Tukey](https://en.wikipedia.org/wiki/John_Tukey) |
+| Confidence interval | [en.wikipedia.org/wiki/Confidence_interval](https://en.wikipedia.org/wiki/Confidence_interval) |
+| Bootstrapping | [en.wikipedia.org/wiki/Bootstrapping_(statistics)](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)) |
+| Effect size | [en.wikipedia.org/wiki/Effect_size](https://en.wikipedia.org/wiki/Effect_size) |
+| Cliff’s delta | [Effect size § ordinal data](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data) |
+| Hedges’ g | [Effect size § Hedges' g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g) |
+| Mann–Whitney U test | [en.wikipedia.org/wiki/Mann–Whitney_U_test](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test) |
+| Holm–Bonferroni method | [en.wikipedia.org/wiki/Holm–Bonferroni_method](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method) |
+| P-value | [en.wikipedia.org/wiki/P-value](https://en.wikipedia.org/wiki/P-value) |
+| Multiple comparisons problem | [en.wikipedia.org/wiki/Multiple_comparisons_problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem) |
+| Family-wise error rate | [en.wikipedia.org/wiki/Family-wise_error_rate](https://en.wikipedia.org/wiki/Family-wise_error_rate) |
+| Nonparametric statistics | [en.wikipedia.org/wiki/Nonparametric_statistics](https://en.wikipedia.org/wiki/Nonparametric_statistics) |
+| Median | [en.wikipedia.org/wiki/Median](https://en.wikipedia.org/wiki/Median) |
+| Median absolute deviation | [en.wikipedia.org/wiki/Median_absolute_deviation](https://en.wikipedia.org/wiki/Median_absolute_deviation) |
+| Winsorizing | [en.wikipedia.org/wiki/Winsorizing](https://en.wikipedia.org/wiki/Winsorizing) |
+
+### Other
+
 - Tukey, J.W. (1977). *Exploratory Data Analysis* (IQR fences).
-- Cliff’s delta; Hedges’ g; Mann–Whitney U (standard non-parametric toolkit).
 - [Seaborn violin / catplot](https://seaborn.pydata.org/generated/seaborn.catplot.html).

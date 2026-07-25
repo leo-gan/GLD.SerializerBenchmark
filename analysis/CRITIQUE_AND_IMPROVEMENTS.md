@@ -38,7 +38,13 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 
 **Problem:** Comparing Rust `sonic-rs` ns to Python `orjson` ns invites invalid conclusions.
 
-**Mitigation:** Reports group by language; effect sizes are within (language, data, mode). Emphasize **within-language ranks**, not absolute cross-runtime champions.
+**Mitigation:** Reports group by language; effect sizes are within (language, data, mode). Emphasize **within-language ranks**, not absolute cross-runtime champions. Claim ladder L1/L2/L3 ([Claims and replication](../docs/analysis/CLAIMS_AND_REPLICATION.md)); multi-session CLI for within-language generalization language only.
+
+### 4b. Multi-way ranks without multiplicity (A-1) — **addressed**
+
+**Problem:** Effect-vs-fastest tables can be read as confirmatory without multiplicity control.
+
+**Fixed (analysis):** Mann–Whitney + **within-group Holm**; median reference; exploratory banners on Results; metrics catalog fields `effect_vs_fastest_p_value(_holm)`. Pairwise A/B remains the confirmatory path.
 
 ### 5. Fidelity is heuristic (LOW–MEDIUM)
 

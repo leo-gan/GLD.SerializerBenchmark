@@ -22,6 +22,7 @@ Or::
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import platform
@@ -275,16 +276,51 @@ def _public_cwd(cwd: Optional[str] = None) -> str:
     return f"{repo_name}/{rel_s}"
 
 
+def _cpu_governor() -> Optional[str]:
+    """Best-effort CPU frequency governor (Linux); None if unavailable."""
+    # Prefer cpu0; do not require root.
+    path = Path("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+    try:
+        if path.is_file():
+            return path.read_text(encoding="utf-8").strip() or None
+    except OSError:
+        pass
+    return None
+
+
+def _machine_id(cpu: Dict[str, Any], os_block: Dict[str, Any]) -> str:
+    """Stable short fingerprint for multi-machine claims.
+
+    Not a security identifier — only enough to tell “same host class” apart
+    across sessions without storing the raw hostname in public docs by default.
+    """
+    parts = [
+        str(cpu.get("model") or ""),
+        str(cpu.get("architecture") or platform.machine() or ""),
+        str(os_block.get("system") or platform.system() or ""),
+        str(os_block.get("release") or ""),
+        str(cpu.get("logical_cores") or os.cpu_count() or ""),
+    ]
+    # Optional: include hostname only in the hash material (not exported raw)
+    # so two identical VMs on different hosts still differ when hostnames do.
+    host = platform.node() or ""
+    raw = "|".join(parts + [host])
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
 def _gather_environment() -> Dict[str, Any]:
-    return {
+    cpu = _cpu_info()
+    os_block = {
+        "system": platform.system(),
+        "release": platform.release(),
+        "version": platform.version(),
+        "architecture": platform.machine(),
+    }
+    gov = _cpu_governor()
+    env: Dict[str, Any] = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        "os": {
-            "system": platform.system(),
-            "release": platform.release(),
-            "version": platform.version(),
-            "architecture": platform.machine(),
-        },
-        "cpu": _cpu_info(),
+        "os": os_block,
+        "cpu": cpu,
         "memory": _memory_info(),
         "runtimes": _runtime_versions(),
         "git": _git_info(),
@@ -292,7 +328,13 @@ def _gather_environment() -> Dict[str, Any]:
             "pid": os.getpid(),
             "cwd": _public_cwd(),
         },
+        # Claim scoping (single-session default; multi-session uses machine_id)
+        "machine_id": _machine_id(cpu, os_block),
+        "claim_level_hint": "L1_single_session",
     }
+    if gov is not None:
+        env["cpu_governor"] = gov
+    return env
 
 
 def configs_path_for_csv(result_csv_path: str) -> Path:

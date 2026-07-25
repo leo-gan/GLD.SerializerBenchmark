@@ -29,6 +29,9 @@ _DEFAULT_IMPORTANCE: Dict[str, str] = {
     "effect_vs_fastest_cliffs_delta": "medium",
     "effect_vs_fastest_cliffs_label": "medium",
     "effect_vs_fastest_hedges_g": "low",
+    "effect_vs_fastest_p_value": "low",
+    "effect_vs_fastest_p_value_holm": "medium",
+    "effect_vs_fastest_significant_holm": "medium",
 }
 
 _DEFAULT_MULTI_WAY = ["high"]
