@@ -48,7 +48,8 @@ These fields are written by each language benchmark runner. Column order (v1.2+)
 | `OpPerSecSer` / `Deser` / `SerAndDeser` | 1/s | medium | runner | Often `1e9/time`; analysis may recompute |
 | `MemoryPeakBytes` | bytes | medium | optional | Peak allocation if the benchmark runner records it |
 | `FidelityScore` | 0–1 | high | optional | `1.0` means the round-trip check passed |
-| `NativeKind` / `StreamMode` | enum | low | optional | Call-path metadata (for example Rust or Go) |
+| `NativeKind` | enum | low | optional | Codec shape family (serde, message, codable, …) when the runner records it |
+| `StreamMode` | enum | **high** on stream rows | optional on old CSVs; **required on new stream rows** | Honesty label: `native` \| `text_on_stream` \| `adapted` — see [Modes — stream honesty](modes.md#three-levels-of-stream-honesty) |
 | `RunOrder` | index | low | optional | Monotonic 0-based index of written timed rows in process order (schedule audit; B-1) |
 | `SchedulePosition` | index | low | optional | 0-based position of this serializer within its `(cell, mode, rep)` after shuffle |
 

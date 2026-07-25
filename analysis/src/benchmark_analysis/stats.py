@@ -790,6 +790,7 @@ def compute_statistics(
         "sizes": [],
         "fidelity": [],
         "memory_peak": [],
+        "stream_modes": [],
         "language": None,
         "serializer_version": None,
     })
@@ -807,6 +808,8 @@ def compute_statistics(
         stats[key]["language"] = lang
         if r.get("SerializerVersion"):
             stats[key]["serializer_version"] = r["SerializerVersion"]
+        if r.get("StreamMode"):
+            stats[key]["stream_modes"].append(str(r["StreamMode"]).strip())
         if "FidelityScore" in r and r["FidelityScore"] is not None:
             try:
                 stats[key]["fidelity"].append(float(r["FidelityScore"]))
@@ -877,6 +880,16 @@ def compute_statistics(
             # Retain filtered series for effect-size / A-B (not serialized by default consumers)
             "_times_total_filtered": times_total,
         }
+        # B-6: majority StreamMode label for this group (stream I/O rows)
+        sms = [s for s in (data.get("stream_modes") or []) if s]
+        if sms:
+            # mode() for majority; stable fallback
+            try:
+                from collections import Counter
+
+                entry["StreamMode"] = Counter(sms).most_common(1)[0][0]
+            except Exception:
+                entry["StreamMode"] = sms[0]
         results[key] = entry
 
     # Effect sizes: within (language, test_data, mode) compare each serializer to fastest mean

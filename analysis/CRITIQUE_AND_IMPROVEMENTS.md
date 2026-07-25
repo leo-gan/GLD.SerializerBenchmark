@@ -26,11 +26,13 @@ This document records an unvarnished review of the v2 refactor and what was fixe
 
 **Fixed:** `prost-build` from `schemas/v2/protobuf/benchmark_v2.proto`; full `rkyv` `Archive` on concrete types; direct `minicbor` `Encode`/`Decode`; inventory on [Rust overview](../docs/rust/index.md).
 
-### 3. Stream mode is often adapted (MEDIUM) — **open**
+### 3. Stream mode is often adapted (MEDIUM) — **labeling gate in progress (B-6)**
 
-**Problem:** Several harnesses time the same buffer path for both `bytes` and `stream`, so stream columns may not show real incremental I/O cost.
+**Problem:** Several benchmark runners time the same buffer path for both `bytes` and `stream`, so stream columns may not show real incremental I/O cost.
 
-**Remaining:** Per-serializer `Write`/`Read` / Node streams / C `FILE*` where APIs exist. Prefer emitting honest `StreamMode=native|adapted`. Analysis can still compare modes; interpret with caution ([methodology](../docs/analysis/ANALYSIS_METHODOLOGY.md)).
+**B-6 policy:** honest CSV `StreamMode` (`native` \| `text_on_stream` \| `adapted`) on every stream row, **or** no stream rows when the path is a bytes alias. Results pages surface a honesty banner. True native stream upgrades remain phased.
+
+**Remaining after labeling:** Per-serializer real `Write`/`Read` / Node streams where APIs exist and still adapted.
 
 ### 4. Cross-language absolute ns comparisons (MEDIUM, conceptual)
 
