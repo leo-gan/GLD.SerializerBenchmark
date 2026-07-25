@@ -70,6 +70,8 @@ cargo run --release -- 100
 
 `LOG_DIR` may be a logs **root** (results under `$LOG_DIR/rust/`).
 
+`BENCHMARK_SCHEDULE=block_shuffle` (default) or `none` — serializers reshuffled each rep within a cell×mode; optional CSV `RunOrder` / `SchedulePosition` via `BENCHMARK_RECORD_RUN_ORDER`.
+
 Analysis: `analyze-benchmarks -l rust`.
 
 ## Build notes

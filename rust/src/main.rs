@@ -3,6 +3,7 @@
 mod csv_log;
 mod data;
 mod run_v2;
+mod schedule;
 mod serializers;
 
 use clap::Parser;

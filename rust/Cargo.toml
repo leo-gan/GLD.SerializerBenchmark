@@ -39,6 +39,7 @@ bytes = "1"
 # Deterministic fixture generation (see data.rs — nothing-up-my-sleeve π seeds).
 rand = "0.8"
 rand_pcg = "0.3"
+sha2 = "0.10"
 
 [build-dependencies]
 prost-build = "0.13"
