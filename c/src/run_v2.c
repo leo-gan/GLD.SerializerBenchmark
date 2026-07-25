@@ -1,5 +1,7 @@
-/* Data Model v2: resolve cells, map onto existing fixture kinds, FULL serializer registry. */
+/* Data Model v2: resolve cells, map onto existing fixture kinds, FULL serializer registry.
+ * B-1 schedule: prepare once per cell; mode → rep → Fisher–Yates serializers (default). */
 #include "bench.h"
+#include "schedule.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,6 +64,66 @@ static void fill_v2_fixture(test_fixture_t *fx, const char *type_id, int seed,
                   children, points, str_count, attr_count);
 }
 
+/* Timed trial for one serializer × mode × rep. Returns 0 on success. */
+static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_id,
+                         const char *mode, int n, uint8_t *buf, size_t buf_cap,
+                         int repetitions, int r, const char *type_hash,
+                         csv_logger_t *log, int record_ro, int *run_order, int pos) {
+    size_t out_len = 0;
+    test_fixture_t out_fx;
+    memset(&out_fx, 0, sizeof(out_fx));
+    out_fx.kind = fx->kind;
+    out_fx.batch_n = n;
+
+    uint64_t t0 = bench_now_ns();
+    int rc = bench_serialize_cell(S, fx, buf, buf_cap, &out_len);
+    if (rc == 0 && mode[0] == 's') { /* stream: adapted FILE* write */
+        rc = bench_stream_write_all(buf, out_len);
+    }
+    uint64_t t1 = bench_now_ns();
+    bench_do_not_optimize(buf);
+    bench_do_not_optimize(&out_len);
+    if (rc != 0) {
+        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: serialize failed\n",
+                S->name, type_id, n, mode);
+        return -1;
+    }
+    if (mode[0] == 's') {
+        rc = bench_stream_read_all(buf, buf_cap, out_len);
+        if (rc != 0) {
+            fprintf(stderr, "[ERROR] %s / %s N=%d / %s: stream read failed\n",
+                    S->name, type_id, n, mode);
+            return -1;
+        }
+    }
+    rc = bench_deserialize_cell(S, buf, out_len, &out_fx, fx->kind);
+    uint64_t t2 = bench_now_ns();
+    bench_do_not_optimize(&out_fx);
+    if (rc != 0) {
+        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: deserialize failed\n",
+                S->name, type_id, n, mode);
+        if (out_fx.batch) { free(out_fx.batch); out_fx.batch = NULL; }
+        return -1;
+    }
+    bool ok = bench_fidelity_cell(S, fx, &out_fx);
+    if (out_fx.batch) { free(out_fx.batch); out_fx.batch = NULL; }
+    if (!ok) {
+        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: fidelity failed\n",
+                S->name, type_id, n, mode);
+        return -1;
+    }
+    int ro = -1, sp = -1;
+    if (record_ro) {
+        ro = *run_order;
+        sp = pos;
+        (*run_order)++;
+    }
+    csv_logger_write(log, mode, type_id, repetitions, r, S->name,
+                     t1 - t0, t2 - t1, out_len, 1.0, S->version,
+                     n, type_hash, ro, sp);
+    return 0;
+}
+
 int run_benchmarks_v2(int repetitions, const char *log_dir) {
     char root_buf[512] = ".";
     if (getenv("BENCHMARK_REPO_ROOT") && getenv("BENCHMARK_REPO_ROOT")[0]) {
@@ -110,7 +172,9 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     int ser_count = 0;
     register_all_serializers(sers, &ser_count);
 
-    int seed = getenv("BENCHMARK_SEED") ? atoi(getenv("BENCHMARK_SEED")) : 42;
+    uint64_t seed = 42;
+    if (getenv("BENCHMARK_SEED") && getenv("BENCHMARK_SEED")[0])
+        seed = (uint64_t)strtoull(getenv("BENCHMARK_SEED"), NULL, 10);
     char cfg_path[1024];
     if (getenv("BENCHMARK_RUN_CONFIG") && getenv("BENCHMARK_RUN_CONFIG")[0])
         snprintf(cfg_path, sizeof cfg_path, "%s", getenv("BENCHMARK_RUN_CONFIG"));
@@ -119,8 +183,8 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
 
     char resolve_cmd[2048];
     snprintf(resolve_cmd, sizeof resolve_cmd,
-             "PYTHONPATH='%s/analysis/src' python3 '%s/scripts/resolve_run_config.py' '%s' --seed %d",
-             root, root, cfg_path, seed);
+             "PYTHONPATH='%s/analysis/src' python3 '%s/scripts/resolve_run_config.py' '%s' --seed %llu",
+             root, root, cfg_path, (unsigned long long)seed);
     char *resolved = read_cmd(resolve_cmd);
     if (!resolved || !resolved[0]) {
         fprintf(stderr, "[ERROR] resolve_run_config failed\n");
@@ -150,13 +214,18 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     FILE *cp = popen(cells_cmd, "r");
     if (!cp) { csv_logger_close(log); unlink(tmpj); unlink(cells_py); return 1; }
 
-    /* Harness-owned encode/decode scratch (issue #59): fixed capacity, reused
-     * across all cells/reps — cold allocation is outside the timed path. */
+    /* Harness-owned encode/decode scratch (issue #59): fixed capacity, reused. */
     static uint8_t buf[8 * 1024 * 1024];
     const char *modes[] = { "bytes", "stream" };
+    const int n_modes = 2;
     char line[512];
     int cells = 0;
-    printf("[PROGRESS] C suite cells: %d serializers\n", ser_count);
+    const char *strategy = schedule_resolve_strategy();
+    int record_ro = schedule_resolve_record_run_order();
+    int run_order = 0;
+    printf("[PROGRESS] C suite cells: %d serializers schedule=%s record_run_order=%d seed=%llu\n",
+           ser_count, strategy, record_ro, (unsigned long long)seed);
+
     while (fgets(line, sizeof line, cp)) {
         char type_id[64] = {0};
         char type_hash[128] = {0};
@@ -190,7 +259,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             continue;
         }
         for (int i = 0; i < n; i++) {
-            fill_v2_fixture(&items[i], type_id, seed + cells * 1000 + i,
+            fill_v2_fixture(&items[i], type_id, (int)seed + cells * 1000 + i,
                             /*children*/8, /*points*/32, /*str_count*/32, /*attr_count*/4);
             items[i].batch_n = 1;
             items[i].batch = NULL;
@@ -220,68 +289,69 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             fx.event = items[0].event;
         }
 
+        /* Untimed prepare once per cell; collect eligible serializers. */
+        int ready_idx[BENCH_MAX_SERIALIZERS];
+        int ready_n = 0;
+        int failed[BENCH_MAX_SERIALIZERS];
+        memset(failed, 0, sizeof failed);
         for (int si = 0; si < ser_count; si++) {
             serializer_t *S = &sers[si];
             if (S->supports && !S->supports(fx.kind)) continue;
-            /* prepare on first item (or single) */
             const test_fixture_t *prep_fx = (n > 1 && fx.batch) ? &fx.batch[0] : &fx;
-            if (S->prepare && S->prepare(fx.kind, prep_fx) != 0) continue;
+            if (S->prepare && S->prepare(fx.kind, prep_fx) != 0) {
+                failed[si] = 1;
+                continue;
+            }
+            ready_idx[ready_n++] = si;
+        }
 
-            for (int mi = 0; mi < 2; mi++) {
-                const char *mode = modes[mi];
-                int had_error = 0;
-                for (int r = 0; r < repetitions; r++) {
-                    if (had_error) break;
-                    size_t out_len = 0;
-                    test_fixture_t out_fx;
-                    memset(&out_fx, 0, sizeof(out_fx));
-                    out_fx.kind = fx.kind;
-                    out_fx.batch_n = n;
-
-                    uint64_t t0 = bench_now_ns();
-                    int rc = bench_serialize_cell(S, &fx, buf, sizeof(buf), &out_len);
-                    if (rc == 0 && mode[0] == 's') { /* stream: adapted FILE* write */
-                        rc = bench_stream_write_all(buf, out_len);
-                    }
-                    uint64_t t1 = bench_now_ns();
-                    bench_do_not_optimize(buf);
-                    bench_do_not_optimize(&out_len);
-                    if (rc != 0) {
-                        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: serialize failed\n",
-                                S->name, type_id, n, mode);
-                        had_error = 1;
-                        continue;
-                    }
-                    if (mode[0] == 's') {
-                        rc = bench_stream_read_all(buf, sizeof(buf), out_len);
-                        if (rc != 0) {
-                            fprintf(stderr, "[ERROR] %s / %s N=%d / %s: stream read failed\n",
-                                    S->name, type_id, n, mode);
+        if (strcmp(strategy, "none") == 0) {
+            /* Legacy: serializer → mode → all reps */
+            for (int ri = 0; ri < ready_n; ri++) {
+                int si = ready_idx[ri];
+                serializer_t *S = &sers[si];
+                for (int mi = 0; mi < n_modes; mi++) {
+                    const char *mode = modes[mi];
+                    int had_error = 0;
+                    for (int r = 0; r < repetitions; r++) {
+                        if (had_error) break;
+                        if (run_one_trial(S, &fx, type_id, mode, n, buf, sizeof(buf),
+                                          repetitions, r, type_hash, log,
+                                          record_ro, &run_order, 0) != 0) {
                             had_error = 1;
-                            continue;
+                            failed[si] = 1;
                         }
                     }
-                    rc = bench_deserialize_cell(S, buf, out_len, &out_fx, fx.kind);
-                    uint64_t t2 = bench_now_ns();
-                    bench_do_not_optimize(&out_fx);
-                    if (rc != 0) {
-                        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: deserialize failed\n",
-                                S->name, type_id, n, mode);
-                        had_error = 1;
-                        if (out_fx.batch) { free(out_fx.batch); out_fx.batch = NULL; }
-                        continue;
+                }
+            }
+        } else {
+            /* block_shuffle: mode → rep → shuffled serializers */
+            for (int mi = 0; mi < n_modes; mi++) {
+                const char *mode = modes[mi];
+                for (int r = 0; r < repetitions; r++) {
+                    /* Build eligible list for this rep */
+                    int elig[BENCH_MAX_SERIALIZERS];
+                    int elig_n = 0;
+                    for (int ri = 0; ri < ready_n; ri++) {
+                        int si = ready_idx[ri];
+                        if (!failed[si]) elig[elig_n++] = si;
                     }
-                    bool ok = bench_fidelity_cell(S, &fx, &out_fx);
-                    if (out_fx.batch) { free(out_fx.batch); out_fx.batch = NULL; }
-                    if (!ok) {
-                        fprintf(stderr, "[ERROR] %s / %s N=%d / %s: fidelity failed\n",
-                                S->name, type_id, n, mode);
-                        had_error = 1;
-                        continue;
+                    if (elig_n == 0) continue;
+                    uint64_t shuf_seed = schedule_derive_seed(
+                        seed, type_id, n, type_hash, mode, r);
+                    int order[BENCH_MAX_SERIALIZERS];
+                    schedule_fisher_yates_indices(order, elig_n, shuf_seed);
+                    /* Remap order through elig[] */
+                    for (int pos = 0; pos < elig_n; pos++) {
+                        int si = elig[order[pos]];
+                        if (failed[si]) continue;
+                        serializer_t *S = &sers[si];
+                        if (run_one_trial(S, &fx, type_id, mode, n, buf, sizeof(buf),
+                                          repetitions, r, type_hash, log,
+                                          record_ro, &run_order, pos) != 0) {
+                            failed[si] = 1;
+                        }
                     }
-                    csv_logger_write(log, mode, type_id, repetitions, r, S->name,
-                                     t1 - t0, t2 - t1, out_len, 1.0, S->version,
-                                     n, type_hash);
                 }
             }
         }
@@ -297,4 +367,3 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
            cells, ser_count, path);
     return 0;
 }
-

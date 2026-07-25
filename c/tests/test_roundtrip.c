@@ -1,5 +1,6 @@
 /* Round-trip tests for all registered C serializers — Data Model v2 only. */
 #include "bench.h"
+#include "schedule.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -61,8 +62,21 @@ static void test_v2_type_names(void) {
     }
 }
 
+static void test_schedule_golden(void) {
+    int rc = schedule_verify_golden();
+    CHECK(rc == 0, "B-1 schedule golden vector rc=%d (expect A,B,C → C,B,A)", rc);
+    uint64_t seed = schedule_derive_seed(42, "message", 1, "abc", "bytes", 0);
+    CHECK(seed == 15992650003647724414ULL, "golden seed %llu", (unsigned long long)seed);
+    const char *names[] = {"A", "B", "C"};
+    const char *out[3];
+    schedule_fisher_yates_cstr(names, 3, seed, out);
+    CHECK(strcmp(out[0], "C") == 0 && strcmp(out[1], "B") == 0 && strcmp(out[2], "A") == 0,
+          "golden perm %s,%s,%s", out[0], out[1], out[2]);
+}
+
 int main(void) {
     printf("C serializer roundtrip tests (Data Model v2)\n");
+    test_schedule_golden();
     test_v2_type_names();
     test_all_roundtrips();
     printf("%d checks, %d failures\n", checks, failures);

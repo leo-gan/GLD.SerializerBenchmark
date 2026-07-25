@@ -144,7 +144,7 @@ int run_benchmarks(int repetitions, const char *ser_filter, const char *data_fil
                     if (!had_error) {
                         csv_logger_write(log, mode, fx->name, repetitions, r, S->name,
                                          t1 - t0, t2 - t1, out_len, 1.0, S->version,
-                                         1, "");
+                                         1, "", -1, -1);
                     }
                 }
             }
