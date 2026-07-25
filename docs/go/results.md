@@ -1,6 +1,6 @@
 # Go — Benchmark Results
 
-**Generated:** 2026-07-24T19:44:00.492836
+**Generated:** 2026-07-24T20:24:07.863800
 
 This page is a **snapshot of measured numbers** for Go on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
 
@@ -38,75 +38,75 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
 |---|---|---|---|---|---|---|---|
-| encoding/gob:go1.24.13 | 73.6 | 26.1 | 46.7 | 32.7K | 10.3K | 1771 | **1.00** |
-| encoding/json:go1.24.13 | 265 | 53.6 | 211 | 74.4K | 19.7K | 1751 | **1.00** |
-| fxamacker/cbor:2.9.2 | 112 | 26.4 | 85 | 152K | 13.6K | 1747 | **1.00** |
-| goccy/go-json:0.10.6 | 116 | 48.1 | 68.1 | 166K | 19.7K | 1748 | **1.00** |
-| goccy/go-yaml:1.19.2 | 4,470 | 2,030 | 2,430 | 6.54K | 22K | 1827 | **1.00** |
-| hamba/avro:2.31.0 | **34.1** | **16.7** | **17.2** | 277K | 9.11K | 1771 | **1.00** |
-| jsoniter:1.1.12 | 147 | 51.5 | 95.7 | 138K | 19.7K | 1763 | **1.00** |
-| kelindar/binary:1.0.19 | 55.2 | 21.8 | 33.1 | **280K** | **8.97K** | 1756 | **1.00** |
-| linkedin/goavro:2.15.0 | 82.6 | 23.5 | 58.2 | 217K | 9.02K | 1770 | **1.00** |
-| mongo-bson:1.17.9 | 181 | 59.2 | 121 | 83.4K | 20.7K | 1739 | **1.00** |
-| pelletier/go-toml:2.4.3 | 333 | 122 | 208 | 67.2K | 22.2K | 1723 | **1.00** |
-| protobuf:1.36.11 | 61.3 | 20.8 | 39.6 | 230K | 10.1K | 1793 | **1.00** |
-| segmentio/encoding/json:0.5.4 | 131 | 45.3 | 85.5 | 134K | 19.7K | 1753 | **1.00** |
-| shamaton/msgpack:3.1.2 | 78.5 | 28.9 | 49 | 188K | 13.3K | 1759 | **1.00** |
-| sonic:1.15.2 | 74.2 | 32.9 | 40.5 | 178K | 19.7K | 1749 | **1.00** |
-| ugorji/cbor:1.3.1 | 64.4 | 20.8 | 43.2 | 159K | 13.6K | 1783 | **1.00** |
-| ugorji/json:1.3.1 | 145 | 50.4 | 93.9 | 102K | 19.7K | 1793 | **1.00** |
-| ugorji/msgpack:1.3.1 | 61.5 | 19.9 | 41.2 | 166K | 13.6K | 1746 | **1.00** |
-| vmihailenco/msgpack:5.4.1 | 110 | 41.1 | 68.7 | 140K | 14.2K | 1740 | **1.00** |
+| encoding/gob:go1.24.13 | 71.2 | 25.3 | 45.5 | 33K | 10.3K | 1783 | **1.00** |
+| encoding/json:go1.24.13 | 260 | 52.8 | 206 | 71.1K | 19.7K | 1759 | **1.00** |
+| fxamacker/cbor:2.9.2 | 107 | 25.2 | 82 | 146K | 13.6K | 1762 | **1.00** |
+| goccy/go-json:0.10.6 | 112 | 46 | 65.8 | 162K | 19.7K | 1768 | **1.00** |
+| goccy/go-yaml:1.19.2 | 4,360 | 1,970 | 2,370 | 6.48K | 22K | 1830 | **1.00** |
+| hamba/avro:2.31.0 | **33.3** | **16.3** | **17** | 260K | 9.11K | 1783 | **1.00** |
+| jsoniter:1.1.12 | 144 | 49.5 | 93.2 | 131K | 19.7K | 1771 | **1.00** |
+| kelindar/binary:1.0.19 | 53.5 | 21.1 | 32.1 | **263K** | **8.97K** | 1757 | **1.00** |
+| linkedin/goavro:2.15.0 | 79.1 | 21.7 | 56.3 | 207K | 9.02K | 1769 | **1.00** |
+| mongo-bson:1.17.9 | 175 | 57 | 117 | 78.7K | 20.7K | 1750 | **1.00** |
+| pelletier/go-toml:2.4.3 | 324 | 119 | 203 | 65.6K | 22.2K | 1746 | **1.00** |
+| protobuf:1.36.11 | 59.4 | 20 | 38.9 | 217K | 10.1K | 1799 | **1.00** |
+| segmentio/encoding/json:0.5.4 | 128 | 43.9 | 83.6 | 124K | 19.7K | 1764 | **1.00** |
+| shamaton/msgpack:3.1.2 | 75.7 | 28.1 | 47.4 | 176K | 13.3K | 1782 | **1.00** |
+| sonic:1.15.2 | 71.2 | 31.4 | 38.6 | 172K | 19.7K | 1753 | **1.00** |
+| ugorji/cbor:1.3.1 | 62.1 | 20.1 | 41.8 | 149K | 13.6K | 1766 | **1.00** |
+| ugorji/json:1.3.1 | 140 | 48.9 | 91.5 | 97.4K | 19.7K | 1767 | **1.00** |
+| ugorji/msgpack:1.3.1 | 59.1 | 18.9 | 39.9 | 154K | 13.6K | 1751 | **1.00** |
+| vmihailenco/msgpack:5.4.1 | 107 | 39.9 | 66.4 | 133K | 14.2K | 1762 | **1.00** |
 
 
 ### Total Time
 
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
-| encoding/gob:go1.24.13 | 15 | 14.5 | 14 | 13.9 |
-| encoding/json:go1.24.13 | 3.3 | 3.17 | 3.8 | 3.77 |
-| fxamacker/cbor:2.9.2 | 1.71 | 1.68 | 2.01 | 1.91 |
-| goccy/go-json:0.10.6 | 1.56 | 1.54 | 2.05 | 2.08 |
-| goccy/go-yaml:1.19.2 | 44.4 | 42.7 | 42.3 | 41.4 |
-| hamba/avro:2.31.0 | 0.949 | 0.893 | 1.34 | 1.29 |
-| jsoniter:1.1.12 | 2 | 1.94 | 2.52 | 2.48 |
-| kelindar/binary:1.0.19 | **0.805** | **0.781** | **1.25** | **1.25** |
-| linkedin/goavro:2.15.0 | 1.13 | 1.08 | 1.31 | 1.27 |
-| mongo-bson:1.17.9 | 3.09 | 2.86 | 3.29 | 3.16 |
-| pelletier/go-toml:2.4.3 | 3.82 | 3.78 | 4.28 | 4.15 |
-| protobuf:1.36.11 | 1.12 | 1.07 | 1.39 | 1.33 |
-| segmentio/encoding/json:0.5.4 | 1.62 | 1.59 | 3.26 | 3.1 |
-| shamaton/msgpack:3.1.2 | 1.34 | 1.32 | 1.98 | 1.89 |
-| sonic:1.15.2 | 1.6 | 1.54 | 2.16 | 2.15 |
-| ugorji/cbor:1.3.1 | 1.58 | 1.51 | 2.96 | 2.78 |
-| ugorji/json:1.3.1 | 2.32 | 2.25 | 3.94 | 3.82 |
-| ugorji/msgpack:1.3.1 | 1.45 | 1.4 | 2.86 | 2.72 |
-| vmihailenco/msgpack:5.4.1 | 1.86 | 1.79 | 2.36 | 2.34 |
+| encoding/gob:go1.24.13 | 13.9 | 13.7 | 16.3 | 14.1 |
+| encoding/json:go1.24.13 | 3.33 | 3.24 | 4.91 | 3.81 |
+| fxamacker/cbor:2.9.2 | 1.66 | 1.63 | 2.63 | 2.09 |
+| goccy/go-json:0.10.6 | 1.47 | 1.46 | 2.49 | 2.07 |
+| goccy/go-yaml:1.19.2 | 44.8 | 43.8 | 49.7 | 43.6 |
+| hamba/avro:2.31.0 | 0.997 | 0.997 | 1.79 | 1.52 |
+| jsoniter:1.1.12 | 2.05 | 2.01 | 3.28 | 2.69 |
+| kelindar/binary:1.0.19 | **0.744** | **0.73** | **1.67** | **1.32** |
+| linkedin/goavro:2.15.0 | 1.11 | 1.1 | 1.7 | 1.4 |
+| mongo-bson:1.17.9 | 3.1 | 2.88 | 4.42 | 3.59 |
+| pelletier/go-toml:2.4.3 | 3.77 | 3.72 | 5.36 | 4.38 |
+| protobuf:1.36.11 | 1.11 | 1.09 | 1.86 | 1.4 |
+| segmentio/encoding/json:0.5.4 | 1.58 | 1.53 | 4 | 3.48 |
+| shamaton/msgpack:3.1.2 | 1.31 | 1.31 | 2.4 | 2.01 |
+| sonic:1.15.2 | 1.54 | 1.54 | 2.63 | 2.18 |
+| ugorji/cbor:1.3.1 | 1.46 | 1.46 | 3.78 | 2.92 |
+| ugorji/json:1.3.1 | 2.26 | 2.17 | 5.2 | 4.01 |
+| ugorji/msgpack:1.3.1 | 1.43 | 1.4 | 3.62 | 2.86 |
+| vmihailenco/msgpack:5.4.1 | 1.81 | 1.8 | 3.01 | 2.55 |
 
 
 ### Ops/Sec
 
 | serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
 |---|---|---|---|---|---|---|---|---|---|---|
-| encoding/gob:go1.24.13 | 48K | 5.3K | 62K | 7.7K | 0.067M | 17K | 74K | 6.1K | 55K | 7.1K |
-| encoding/json:go1.24.13 | 100K | 1.5K | 190K | 2.8K | 0.3M | 5K | 150K | 1.8K | 81K | 1.1K |
-| fxamacker/cbor:2.9.2 | 190K | 3.1K | 350K | 5.3K | 0.59M | 13K | 310K | 4K | 270K | 5.1K |
-| goccy/go-json:0.10.6 | 320K | 6K | 490K | 10K | 0.64M | 16K | 370K | 4.2K | 130K | 1.7K |
-| goccy/go-yaml:1.19.2 | 7.3K | 0.062K | 14K | 0.13K | 0.023M | 0.25K | 14K | 0.13K | 10K | 0.1K |
-| hamba/avro:2.31.0 | 450K | **11K** | 670K | **18K** | 1.1M | **46K** | **590K** | **9.8K** | **520K** | 15K |
-| jsoniter:1.1.12 | 230K | 4.1K | 410K | 7.5K | 0.5M | 11K | 370K | 4.3K | 94K | 1.2K |
-| kelindar/binary:1.0.19 | **500K** | 8.7K | **780K** | 12K | **1.2M** | 37K | 460K | 5.9K | 500K | 10K |
-| linkedin/goavro:2.15.0 | 280K | 3.7K | 450K | 6.2K | 0.88M | 19K | 330K | 4K | 450K | 8.2K |
-| mongo-bson:1.17.9 | 100K | 1.7K | 180K | 3K | 0.32M | 7.2K | 170K | 2.4K | 130K | 2.5K |
-| pelletier/go-toml:2.4.3 | 72K | 0.89K | 140K | 1.8K | 0.26M | 3.6K | 190K | 2.1K | 80K | 1.1K |
-| protobuf:1.36.11 | 300K | 5.8K | 490K | 8.9K | 0.9M | 26K | 400K | 4.6K | 520K | **18K** |
-| segmentio/encoding/json:0.5.4 | 290K | 5.5K | 420K | 8.5K | 0.62M | 16K | 340K | 4.3K | 130K | 1.8K |
-| shamaton/msgpack:3.1.2 | 260K | 4.6K | 410K | 7.2K | 0.75M | 21K | 480K | 7.6K | 420K | 13K |
-| sonic:1.15.2 | 290K | 6.2K | 470K | 11K | 0.62M | 19K | 520K | 7.4K | 230K | 3.6K |
-| ugorji/cbor:1.3.1 | 240K | 4.8K | 410K | 8.3K | 0.63M | 18K | 440K | 7.3K | 360K | 13K |
-| ugorji/json:1.3.1 | 170K | 3.9K | 300K | 6.1K | 0.43M | 9.8K | 290K | 4.6K | 100K | 1.6K |
-| ugorji/msgpack:1.3.1 | 260K | 5.3K | 420K | 8.6K | 0.69M | 20K | 420K | 7.1K | 400K | 15K |
-| vmihailenco/msgpack:5.4.1 | 170K | 2.9K | 310K | 4.9K | 0.54M | 13K | 370K | 5.4K | 230K | 4.4K |
+| encoding/gob:go1.24.13 | 48K | 5.6K | 45K | 8.8K | 0.072M | 17K | 64K | 5.8K | 52K | 7.5K |
+| encoding/json:go1.24.13 | 100K | 1.6K | 130K | 3.2K | 0.3M | 5.3K | 130K | 1.8K | 72K | 1K |
+| fxamacker/cbor:2.9.2 | 190K | 3.2K | 220K | 6K | 0.6M | 14K | 260K | 4.2K | 230K | 5.2K |
+| goccy/go-json:0.10.6 | 310K | 5.8K | 300K | 11K | 0.68M | 18K | 310K | 4.7K | 120K | 1.8K |
+| goccy/go-yaml:1.19.2 | 6.9K | 0.064K | 11K | 0.14K | 0.022M | 0.25K | 13K | 0.13K | 9.7K | 0.11K |
+| hamba/avro:2.31.0 | 440K | **12K** | 410K | **20K** | 1M | **52K** | **490K** | **8.8K** | 420K | 14K |
+| jsoniter:1.1.12 | 220K | 4.3K | 250K | 8.3K | 0.49M | 11K | 290K | 4.3K | 86K | 1.3K |
+| kelindar/binary:1.0.19 | **480K** | 8.9K | **440K** | 14K | **1.3M** | 40K | 380K | 5.6K | 400K | 10K |
+| linkedin/goavro:2.15.0 | 270K | 4K | 310K | 7K | 0.9M | 20K | 280K | 3.8K | 390K | 8.5K |
+| mongo-bson:1.17.9 | 100K | 1.8K | 110K | 3.5K | 0.32M | 7.5K | 140K | 2.3K | 110K | 2.5K |
+| pelletier/go-toml:2.4.3 | 73K | 0.9K | 94K | 1.9K | 0.27M | 3.9K | 150K | 2K | 74K | 1.1K |
+| protobuf:1.36.11 | 290K | 5.9K | 290K | 9.4K | 0.9M | 27K | 330K | 4.5K | **440K** | **18K** |
+| segmentio/encoding/json:0.5.4 | 270K | 5.7K | 280K | 9.3K | 0.63M | 16K | 280K | 4.3K | 110K | 1.9K |
+| shamaton/msgpack:3.1.2 | 230K | 4.7K | 250K | 8.3K | 0.76M | 22K | 410K | 7.6K | 330K | 12K |
+| sonic:1.15.2 | 280K | 6.5K | 280K | 13K | 0.65M | 22K | 430K | 7.2K | 200K | 3.8K |
+| ugorji/cbor:1.3.1 | 240K | 5.1K | 250K | 9.2K | 0.69M | 20K | 340K | 6.8K | 290K | 13K |
+| ugorji/json:1.3.1 | 180K | 4K | 190K | 6.9K | 0.44M | 11K | 240K | 4.8K | 94K | 1.6K |
+| ugorji/msgpack:1.3.1 | 240K | 5.5K | 250K | 9.4K | 0.7M | 22K | 340K | 7.3K | 320K | 14K |
+| vmihailenco/msgpack:5.4.1 | 180K | 3K | 190K | 5.4K | 0.55M | 14K | 300K | 5.7K | 190K | 4.3K |
 
 ## Latency distributions
 
@@ -175,14 +175,14 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `logs/go/2026-07-24-193927.csv`
-    - run=2026-07-24-193927
+    - **Source CSV:** `logs/go/2026-07-24-202008.csv`
+    - run=2026-07-24-202008
     - language=go
     - os=Linux 6.8.0-124-generic
     - cpu=12th Gen Intel(R) Core(TM) i7-12800H (20 threads)
     - ram=31.0 GiB
     - runtimes: go=go version go1.22.10 linux/amd64, python=3.14.0, node=24.15.0
-    - git=7431b57 dirty
+    - git=40f6a8e dirty
     - seed=42
     - warmup_reps=1
     - serializers=19
