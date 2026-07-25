@@ -29,6 +29,15 @@ namespace GLD.SerializerBenchmark
             var logStorage = new LogStorage(logPath);
             var errors = new List<Error>();
 
+            _scheduleStrategy = Schedule.ResolveStrategy();
+            _recordRunOrder = Schedule.ResolveRecordRunOrder();
+            _globalRunOrder = 0;
+            var seedEnv = Environment.GetEnvironmentVariable("BENCHMARK_SEED");
+            if (!string.IsNullOrEmpty(seedEnv) && long.TryParse(seedEnv, out var seedParsed))
+                _baseSeed = seedParsed;
+            Console.WriteLine(
+                $"[PROGRESS] schedule={_scheduleStrategy} record_run_order={_recordRunOrder} seed={_baseSeed}");
+
             foreach (var testDataDescription in testDataDescriptions)
             {
                 var n = GetInstanceCount(testDataDescription);
@@ -124,6 +133,13 @@ namespace GLD.SerializerBenchmark
                 instanceCount, typeConfigHash, prepareFailed);
         }
 
+        // Shared across stream trials in this process; keyed per serializer (B-1 interleaving).
+        private static readonly Dictionary<string, int> StreamCapFloorBySer = new Dictionary<string, int>();
+        private static int _globalRunOrder;
+        private static bool _recordRunOrder = true;
+        private static string _scheduleStrategy = "block_shuffle";
+        private static long _baseSeed = 42;
+
         public static void TestsOnRepetition(ITestDataDescription testDataDescription, bool streaming, int repetitions,
             List<ISerDeser> serializers, LogStorage logStorage, List<Error> errors,
             int instanceCount = 1, string typeConfigHash = "",
@@ -136,20 +152,62 @@ namespace GLD.SerializerBenchmark
                     wasError[kv.Key] = true;
             }
             var original = testDataDescription;
+            var modeLabel = streaming ? "Stream" : "string";
+            var strategy = _scheduleStrategy;
 
             for (var i = 0; i < repetitions; i++)
             {
-                var log = new Log
+                List<ISerDeser> ordered;
+                if (strategy == "none")
                 {
-                    Run = 1,
-                    TestDataName = original.Name,
-                    Repetitions = repetitions,
-                    RepetitionIndex = i,
-                    StringOrStream = streaming ? "Stream" : "string",
-                    DataTypeInstanceCount = instanceCount < 1 ? 1 : instanceCount,
-                    TypeConfigHash = typeConfigHash ?? "",
-                };
-                TestOnSerializer(serializers, original, errors, streaming, logStorage, log, wasError);
+                    ordered = new List<ISerDeser>(serializers);
+                }
+                else
+                {
+                    var eligible = new List<ISerDeser>();
+                    foreach (var s in serializers)
+                    {
+                        if (wasError.ContainsKey(s.Name)) continue;
+                        if (!s.Supports(original.Name)) continue;
+                        eligible.Add(s);
+                    }
+                    var seed = Schedule.DeriveScheduleSeed(
+                        _baseSeed, original.Name, instanceCount < 1 ? 1 : instanceCount,
+                        typeConfigHash ?? "", modeLabel, i);
+                    ordered = Schedule.FisherYates(eligible, seed);
+                }
+
+                for (var pos = 0; pos < ordered.Count; pos++)
+                {
+                    var serializer = ordered[pos];
+                    if (wasError.ContainsKey(serializer.Name)) continue;
+                    if (!serializer.Supports(original.Name)) continue;
+
+                    var log = new Log
+                    {
+                        Run = 1,
+                        TestDataName = original.Name,
+                        Repetitions = repetitions,
+                        RepetitionIndex = i,
+                        StringOrStream = modeLabel,
+                        DataTypeInstanceCount = instanceCount < 1 ? 1 : instanceCount,
+                        TypeConfigHash = typeConfigHash ?? "",
+                    };
+                    if (_recordRunOrder)
+                    {
+                        log.RunOrder = _globalRunOrder;
+                        log.SchedulePosition = pos;
+                    }
+                    SingleTest(serializer, original, errors, streaming, log, logStorage, out bool isRepeatedError);
+                    if (isRepeatedError)
+                    {
+                        wasError[serializer.Name] = true;
+                        continue;
+                    }
+                    // Written result row — advance global RunOrder (set on log before SingleTest).
+                    if (_recordRunOrder)
+                        _globalRunOrder++;
+                }
             }
         }
 
@@ -167,28 +225,10 @@ namespace GLD.SerializerBenchmark
             return "";
         }
 
-        private static void TestOnSerializer(List<ISerDeser> serializers, ITestDataDescription original,
-            List<Error> errors, bool streaming, LogStorage logStorage, Log log, Dictionary<string, bool> wasError)
-        {
-            foreach (var serializer in serializers)
-            {
-                if (wasError.ContainsKey(serializer.Name)) continue;
-                
-                if (!serializer.Supports(original.Name)) continue;
-
-                // Do not Console.WriteLine per rep — that dominates short codec timings.
-                SingleTest(serializer, original, errors, streaming, log,
-                    logStorage, out bool isRepeatedError);
-                if (isRepeatedError) wasError[serializer.Name] = true;
-            }
-        }
-
         // Capacity floor for stream mode (issue #59): grow floor across reps so
         // cold expansion is amortized; always use a writable expandable stream.
-        // Do not reuse one MemoryStream instance — some serializers leave the
-        // stream non-writable after deserialize (SetLength would throw).
-        // No field initializer: [ThreadStatic] initializers only run on one thread.
-        [ThreadStatic] private static int _streamCapFloor;
+        // Per-serializer floors under block_shuffle so one codec does not amortize
+        // capacity growth for others.
 
         private static void SingleTest(ISerDeser serializer, ITestDataDescription original, List<Error> errors,
             bool streaming, Log log, LogStorage logStorage, out bool isRepeatedError)
@@ -198,8 +238,10 @@ namespace GLD.SerializerBenchmark
             MemoryStream serializedStream = null;
             if (streaming)
             {
-                if (_streamCapFloor < 64 * 1024) _streamCapFloor = 64 * 1024;
-                serializedStream = new MemoryStream(_streamCapFloor);
+                if (!StreamCapFloorBySer.TryGetValue(serializer.Name, out var floor) || floor < 64 * 1024)
+                    floor = 64 * 1024;
+                StreamCapFloorBySer[serializer.Name] = floor;
+                serializedStream = new MemoryStream(floor);
             }
             object processed;
             log.SerializerName = serializer.Name;
@@ -221,8 +263,9 @@ namespace GLD.SerializerBenchmark
                 {
                     serializer.Serialize(original.Data, serializedStream);
                     log.Size = (int) serializedStream.Length;
-                    if (serializedStream.Capacity > _streamCapFloor)
-                        _streamCapFloor = serializedStream.Capacity;
+                    var floor = StreamCapFloorBySer[serializer.Name];
+                    if (serializedStream.Capacity > floor)
+                        StreamCapFloorBySer[serializer.Name] = serializedStream.Capacity;
                 }
                 else
                 {

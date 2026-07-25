@@ -224,3 +224,8 @@ If two columns look almost equal, open [stream honesty](#three-levels-of-stream-
 | Data types and batch size N | [Test data](test_data_configuration.md) |
 | C# string / Base64 / envelopes | [C# overview](../c-sharp/index.md) |
 | Fair format families | [Categories](serialization_categories.md) |
+
+
+## Timed-trial order (serializers)
+
+Within each data type and I/O mode, serializers are **reshuffled each repetition** by default (`block_shuffle`) so wall-clock position does not systematically favor early registration order. Details: [architecture — schedule](architecture.md#timed-trial-schedule).

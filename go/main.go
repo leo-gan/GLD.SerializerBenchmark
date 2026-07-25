@@ -231,14 +231,25 @@ func main() {
 			typeConfigHash: c.TypeConfigHash,
 		})
 	}
-	fmt.Printf("[PROGRESS] Go Data Model v2: %d serializers, %d cells, %d reps, modes=%v\n",
-		len(sers), len(work), repetitions, modes)
+	strategy := resolveScheduleStrategy()
+	recordRO := resolveRecordRunOrder()
+	fmt.Printf("[PROGRESS] Go Data Model v2: %d serializers, %d cells, %d reps, modes=%v schedule=%s\n",
+		len(sers), len(work), repetitions, modes, strategy)
 
 	var errors []benchError
+	runOrder := 0
 
 	for _, w := range work {
 		fx := w.fx
 		fmt.Printf("[PROGRESS] Testing Data: %s (N=%d)\n", fx.Name, w.instanceCount)
+
+		// Untimed prepare once per cell; per-serializer stream buffers (B-1).
+		type prepared struct {
+			ser       serializers.BenchSerializer
+			streamBuf *bytes.Buffer
+		}
+		var ready []prepared
+		failed := map[string]bool{}
 		for _, ser := range sers {
 			if !ser.Supports(fx.Name) {
 				continue
@@ -252,20 +263,51 @@ func main() {
 					repetition:     0,
 					errorText:      err.Error(),
 				})
+				failed[ser.Name()] = true
 				continue
 			}
-			// Stream scratch reused across reps (issue #59 buffer policy).
-			streamBuf := bytes.NewBuffer(make([]byte, 0, 64*1024))
-			// Log every successful rep including i==0 (warmup). Analysis drops warmup later.
-			for _, mode := range modes {
-				for i := uint32(0); i < repetitions; i++ {
+			ready = append(ready, prepared{
+				ser:       ser,
+				streamBuf: bytes.NewBuffer(make([]byte, 0, 64*1024)),
+			})
+		}
+		byName := map[string]prepared{}
+		for _, p := range ready {
+			byName[p.ser.Name()] = p
+		}
+
+		// Log every successful rep including i==0 (warmup). Analysis drops warmup later.
+		for _, mode := range modes {
+			for i := uint32(0); i < repetitions; i++ {
+				var order []prepared
+				if strategy == "none" {
+					order = ready
+				} else {
+					var names []string
+					for _, p := range ready {
+						if failed[p.ser.Name()] {
+							continue
+						}
+						names = append(names, p.ser.Name())
+					}
+					shuffled := fisherYatesStrings(names, deriveScheduleSeed(
+						seed, fx.Name, w.instanceCount, w.typeConfigHash, mode, i))
+					for _, nm := range shuffled {
+						order = append(order, byName[nm])
+					}
+				}
+				for pos, p := range order {
+					if failed[p.ser.Name()] {
+						continue
+					}
+					ser := p.ser
 					var serNs, deserNs uint64
 					var size int
 					var merr error
 					if mode == "bytes" {
 						serNs, deserNs, size, merr = measureBytes(ser, fx)
 					} else {
-						serNs, deserNs, size, merr = measureStream(ser, fx, streamBuf)
+						serNs, deserNs, size, merr = measureStream(ser, fx, p.streamBuf)
 					}
 					if merr != nil {
 						fmt.Fprintf(os.Stderr, "[ERROR] %s / %s / %s: %v\n", ser.Name(), fx.Name, mode, merr)
@@ -276,14 +318,20 @@ func main() {
 							repetition:     i,
 							errorText:      merr.Error(),
 						})
-						// Stop further reps for this mode; failure is deterministic enough.
-						break
+						failed[ser.Name()] = true
+						continue
+					}
+					ro, sp := -1, -1
+					if recordRO {
+						ro, sp = runOrder, pos
+						runOrder++
 					}
 					_ = logger.WriteRow(
 						mode, fx.Name, repetitions, i, ser.Name(),
 						serNs, deserNs, size, 1.0,
 						ser.Version(), ser.NativeKind().String(), ser.StreamMode().String(),
 						w.instanceCount, w.typeConfigHash,
+						ro, sp,
 					)
 				}
 			}

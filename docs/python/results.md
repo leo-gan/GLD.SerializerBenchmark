@@ -1,6 +1,6 @@
 # Python — Benchmark Results
 
-**Generated:** 2026-07-24T15:52:53.325032
+**Generated:** 2026-07-24T18:57:57.688577
 
 This page is a **snapshot of measured numbers** for Python on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
 
@@ -35,66 +35,66 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
 |---|---|---|---|---|---|---|---|
-| avro:1.12.2 | 419 | 227 | 191 | 65K | **9.03K** | 1846 | **1.00** |
-| cbor2:6.1.3 | 272 | 180 | 92 | 89.4K | 13.6K | 1822 | **1.00** |
-| cloudpickle:3.1.2 | 270 | 200 | 69.6 | 58.3K | 13.6K | 1827 | **1.00** |
-| dill:0.4.1 | 2,050 | 1,970 | 79.7 | 8.67K | 13.6K | 1786 | **1.00** |
-| flatbuffers:25.12.19 | 2,200 | 1,740 | 458 | 12K | 18.7K | 1851 | **1.00** |
-| json:python-3.14.0 | 287 | 164 | 122 | 75.2K | 19.7K | 1825 | **1.00** |
-| mashumaro:3.22 | 135 | 39.6 | 95.4 | 189K | 19.7K | 1769 | **1.00** |
-| msgpack:1.2.1 | 90.5 | 45 | 45.2 | 250K | 13.6K | 1815 | **1.00** |
-| msgspec:0.21.1 | 54.4 | 21.5 | 32.7 | 411K | 14.7K | 1790 | **1.00** |
-| msgspec-msgpack:0.21.1 | 35.1 | 10.9 | 23.9 | 489K | 9.69K | 1805 | **1.00** |
-| orjson:3.11.9 | 61.5 | 21.7 | 39.6 | 383K | 19.7K | 1802 | **1.00** |
-| pickle:python-3.14.0 | 166 | 95.3 | 69.6 | 97.7K | 13.6K | 1819 | **1.00** |
-| protobuf:7.35.1 | **26.1** | **10.5** | **15.3** | **505K** | 10.1K | 1773 | **1.00** |
-| pydantic:2.13.4 | 465 | 239 | 225 | 70K | 21.4K | 1849 | **1.00** |
-| rapidjson:1.23 | 264 | 140 | 124 | 124K | 19.7K | 1811 | **1.00** |
-| serpyco-rs:1.21.0 | 107 | 39.4 | 66.7 | 228K | 19.7K | 1785 | **1.00** |
+| avro:1.12.2 | 475 | 264 | 210 | 25.7K | **9.03K** | 1783 | **1.00** |
+| cbor2:6.1.3 | 311 | 206 | 104 | 34.1K | 13.6K | 1814 | **1.00** |
+| cloudpickle:3.1.2 | 320 | 239 | 81.3 | 23.7K | 13.6K | 1833 | **1.00** |
+| dill:0.4.1 | 2,240 | 2,140 | 93.3 | 5.62K | 13.6K | 1835 | **1.00** |
+| flatbuffers:25.12.19 | 2,330 | 1,840 | 486 | 8.39K | 18.7K | 1860 | **1.00** |
+| json:python-3.14.0 | 329 | 191 | 137 | 29.6K | 19.7K | 1820 | **1.00** |
+| mashumaro:3.22 | 156 | 45.8 | 110 | 78.9K | 19.7K | 1840 | **1.00** |
+| msgpack:1.2.1 | 110 | 53.9 | 55.5 | 85.7K | 13.6K | 1786 | **1.00** |
+| msgspec:0.21.1 | 70.2 | 30 | 40.2 | 122K | 14.7K | 1801 | **1.00** |
+| msgspec-msgpack:0.21.1 | 47.2 | **17.3** | 29.8 | 164K | 9.69K | 1774 | **1.00** |
+| orjson:3.11.9 | 79.8 | 30.1 | 49.2 | **167K** | 19.7K | 1864 | **1.00** |
+| pickle:python-3.14.0 | 199 | 118 | 81 | 45.5K | 13.6K | 1867 | **1.00** |
+| protobuf:7.35.1 | **39.4** | 17.9 | **21.4** | 114K | 10.1K | 1739 | **1.00** |
+| pydantic:2.13.4 | 519 | 269 | 249 | 26.9K | 21.4K | 1794 | **1.00** |
+| rapidjson:1.23 | 300 | 158 | 142 | 47.1K | 19.7K | 1821 | **1.00** |
+| serpyco-rs:1.21.0 | 126 | 46.9 | 78.5 | 90.8K | 19.7K | 1834 | **1.00** |
 
 
 ### Total Time
 
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
-| avro:1.12.2 | 3.76 | 3.76 | 3.86 | 3.86 |
-| cbor2:6.1.3 | 3.16 | 3.16 | 3.39 | 3.38 |
-| cloudpickle:3.1.2 | 6.15 | 6.15 | 6.11 | 6.13 |
-| dill:0.4.1 | 36 | 36 | 37.1 | 36.7 |
-| flatbuffers:25.12.19 | 21.6 | 21.6 | 22.4 | 22.4 |
-| json:python-3.14.0 | 4.5 | 4.48 | 4.49 | 4.49 |
-| mashumaro:3.22 | 1.63 | 1.61 | 1.91 | 1.88 |
-| msgpack:1.2.1 | 1.36 | 1.35 | 1.59 | 1.58 |
-| msgspec:0.21.1 | 0.596 | 0.6 | 0.856 | 0.854 |
-| msgspec-msgpack:0.21.1 | **0.504** | **0.508** | 0.844 | 0.851 |
-| orjson:3.11.9 | 0.756 | 0.744 | 0.906 | 0.892 |
-| pickle:python-3.14.0 | 3.48 | 3.48 | 3.78 | 3.81 |
-| protobuf:7.35.1 | 0.666 | 0.648 | **0.777** | **0.763** |
-| pydantic:2.13.4 | 4.82 | 4.8 | 4.95 | 4.97 |
-| rapidjson:1.23 | 2.7 | 2.71 | 2.82 | 2.82 |
-| serpyco-rs:1.21.0 | 1.37 | 1.36 | 1.49 | 1.48 |
+| avro:1.12.2 | 13.9 | 14.1 | 14.5 | 14.5 |
+| cbor2:6.1.3 | 9.44 | 9.61 | 10.9 | 11 |
+| cloudpickle:3.1.2 | 17.1 | 17 | 16.8 | 16.7 |
+| dill:0.4.1 | 62.2 | 62 | 62.9 | 62.8 |
+| flatbuffers:25.12.19 | 36.6 | 36.7 | 38 | 37.8 |
+| json:python-3.14.0 | 12.3 | 12.5 | 13.5 | 13.6 |
+| mashumaro:3.22 | 4.56 | 4.48 | 5.28 | 5.21 |
+| msgpack:1.2.1 | 4.54 | 4.52 | 5.57 | 5.57 |
+| msgspec:0.21.1 | 2.37 | 2.41 | 3.72 | 3.78 |
+| msgspec-msgpack:0.21.1 | **1.72** | **1.73** | 2.99 | 3.01 |
+| orjson:3.11.9 | 1.89 | 1.87 | **2.42** | **2.39** |
+| pickle:python-3.14.0 | 7.84 | 7.84 | 9.01 | 9.06 |
+| protobuf:7.35.1 | 3.61 | 3.65 | 4.12 | 4.22 |
+| pydantic:2.13.4 | 14.9 | 14.8 | 15.6 | 15.6 |
+| rapidjson:1.23 | 7.8 | 7.81 | 8.53 | 8.63 |
+| serpyco-rs:1.21.0 | 4.32 | 4.24 | 4.76 | 4.75 |
 
 
 ### Ops/Sec
 
 | serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
 |---|---|---|---|---|---|---|---|---|---|---|
-| avro:1.12.2 | 66K | 0.77K | 0.11M | 1.3K | 0.27M | 2.9K | 91K | 1K | 0.11M | 1.3K |
-| cbor2:6.1.3 | 78K | 0.92K | 0.16M | 2.1K | 0.32M | 4.7K | 190K | 2.3K | 0.16M | 2.1K |
-| cloudpickle:3.1.2 | 45K | 0.77K | 0.073M | 1.6K | 0.16M | 6.3K | 140K | 2.8K | 0.14M | 4.3K |
-| dill:0.4.1 | 7.6K | 0.12K | 0.012M | 0.23K | 0.028M | 0.74K | 19K | 0.29K | 0.018M | 0.35K |
-| flatbuffers:25.12.19 | 10K | 0.13K | 0.02M | 0.25K | 0.046M | 0.54K | 16K | 0.18K | 0.026M | 0.35K |
-| json:python-3.14.0 | 110K | 1.8K | 0.17M | 3.6K | 0.22M | 5.3K | 180K | 3.3K | 0.056M | 0.67K |
-| mashumaro:3.22 | 180K | 1.9K | 0.34M | 4.5K | 0.61M | 9.8K | 520K | 4.4K | 0.31M | 3.9K |
-| msgpack:1.2.1 | 240K | 2.8K | 0.48M | 6.3K | 0.74M | 11K | 630K | 6.8K | 0.56M | 7.5K |
-| msgspec:0.21.1 | 670K | 9K | 0.93M | 17K | 1.7M | 46K | 740K | 6.9K | 0.47M | 4.8K |
-| msgspec-msgpack:0.21.1 | **760K** | 10K | **1.1M** | 18K | **2M** | 58K | 810K | 8.3K | 0.93M | 18K |
-| orjson:3.11.9 | 540K | 5.9K | 0.84M | 12K | 1.3M | 24K | 830K | 6.6K | 0.5M | 6.6K |
-| pickle:python-3.14.0 | 88K | 1.4K | 0.14M | 2.8K | 0.29M | 9.9K | 240K | 3.4K | 0.23M | 6.1K |
-| protobuf:7.35.1 | 660K | **13K** | 1M | **23K** | 1.5M | **64K** | **850K** | **10K** | **1.2M** | **54K** |
-| pydantic:2.13.4 | 79K | 0.75K | 0.13M | 1.5K | 0.21M | 2.7K | 190K | 2K | 0.09M | 0.58K |
-| rapidjson:1.23 | 170K | 2.2K | 0.3M | 4.8K | 0.37M | 6.2K | 350K | 4.4K | 0.059M | 0.65K |
-| serpyco-rs:1.21.0 | 250K | 2.6K | 0.43M | 5.9K | 0.73M | 13K | 580K | 5K | 0.34M | 4.4K |
+| avro:1.12.2 | 36K | 0.69K | 46K | 1.1K | 72K | 2.6K | 49K | 0.89K | 52K | 1.2K |
+| cbor2:6.1.3 | 41K | 0.85K | 56K | 1.7K | 110K | 4K | 80K | 2K | 65K | 1.9K |
+| cloudpickle:3.1.2 | 25K | 0.72K | 32K | 1.3K | 58K | 4.6K | 55K | 2.3K | 52K | 3.4K |
+| dill:0.4.1 | 5.7K | 0.11K | 8.2K | 0.21K | 16K | 0.66K | 13K | 0.28K | 12K | 0.33K |
+| flatbuffers:25.12.19 | 8.6K | 0.13K | 15K | 0.24K | 27K | 0.51K | 13K | 0.17K | 19K | 0.34K |
+| json:python-3.14.0 | 47K | 1.6K | 59K | 2.8K | 81K | 4.3K | 73K | 2.7K | 34K | 0.62K |
+| mashumaro:3.22 | 81K | 1.7K | 130K | 3.6K | 220K | 8.2K | 230K | 4.1K | 150K | 3.4K |
+| msgpack:1.2.1 | 110K | 2.5K | 150K | 4.7K | 220K | 8.9K | 230K | 5.5K | 190K | 6.1K |
+| msgspec:0.21.1 | 230K | 7K | 260K | 9.1K | 420K | 23K | 270K | 6K | 180K | 4.4K |
+| msgspec-msgpack:0.21.1 | **280K** | 8K | **320K** | 11K | **580K** | **35K** | 330K | 7.1K | **340K** | 13K |
+| orjson:3.11.9 | 230K | 4.9K | 310K | 6.7K | 530K | 18K | **420K** | 5.4K | 300K | 5.3K |
+| pickle:python-3.14.0 | 50K | 1.3K | 65K | 2.2K | 130K | 7.5K | 110K | 2.9K | 100K | 4.9K |
+| protobuf:7.35.1 | 180K | **10K** | 200K | **14K** | 280K | 32K | 220K | **7.4K** | 220K | **26K** |
+| pydantic:2.13.4 | 38K | 0.68K | 46K | 1.2K | 67K | 2.3K | 73K | 1.8K | 44K | 0.54K |
+| rapidjson:1.23 | 74K | 1.9K | 97K | 3.7K | 130K | 4.9K | 130K | 3.6K | 40K | 0.6K |
+| serpyco-rs:1.21.0 | 120K | 2.3K | 160K | 4.5K | 230K | 10K | 250K | 4.6K | 180K | 3.9K |
 
 ## Latency distributions
 
@@ -163,14 +163,14 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/python/2026-07-24-155049.csv`
-    - run=2026-07-24-155049
+    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/python/2026-07-24-183742.csv`
+    - run=2026-07-24-183742
     - language=python
     - os=Linux 6.8.0-124-generic
     - cpu=12th Gen Intel(R) Core(TM) i7-12800H (20 threads)
     - ram=31.0 GiB
     - runtimes: python=3.14.0, node=24.15.0, dotnet=9.0.316
-    - git=04d09d1 dirty
+    - git=85145fd dirty
     - seed=42
     - warmup_reps=1
     - serializers=16

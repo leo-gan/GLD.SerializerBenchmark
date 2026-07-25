@@ -54,10 +54,11 @@ Meet the [benchmark runner contract](architecture.md#harness-contract-summary) a
 | Warmup | Log repetition index 0; analysis excludes it from aggregates |
 | Prepare outside the loop | Schema compile, type registration, buffer pools, bind data-type encode function — not timed |
 | Timed section | Serialize and deserialize only |
+| Schedule | Default `block_shuffle`: after prepare, nest `mode → rep → shuffled serializers`; match golden vector in [architecture — schedule](architecture.md#timed-trial-schedule); emit optional `RunOrder` |
 | Output buffer | Runner-owned / pre-sized buffer reused across reps — see [timing rules](architecture.md#timing-methodology-suite-wide-issue-59) |
 | Optimization barriers | `black_box` / `DoNotOptimize` / `KeepAlive` (or equivalent) on timed I/O for native compilers |
 | Fidelity | Semantic round-trip check; write `logs/<lang>/<ts>.errors.csv` only when errors occur |
-| Optional sidecars | `*.configs.json` (environment plus optional dataset / serializer metadata) |
+| Optional sidecars | `*.configs.json` (environment plus optional dataset / serializer metadata); include `schedule` strategy/seed when set |
 | Seed | Master config `reproducibility.random_seed` / `BENCHMARK_SEED`; document the PRNG and any magic constants |
 
 ---

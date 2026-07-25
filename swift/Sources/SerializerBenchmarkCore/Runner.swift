@@ -84,16 +84,26 @@ public func runBenchmark(_ opts: RunOptions) throws {
     }
 
     let modes = resolved.ioModes.isEmpty ? ["bytes", "stream"] : resolved.ioModes
-    print("[PROGRESS] Swift Data Model v2: \(sers.count) serializers, \(work.count) cells, \(opts.repetitions) reps, modes=\(modes)")
+    let strategy = Schedule.resolveStrategy()
+    let recordRO = Schedule.resolveRecordRunOrder()
+    var runOrder = 0
+    print("[PROGRESS] Swift Data Model v2: \(sers.count) serializers, \(work.count) cells, \(opts.repetitions) reps, modes=\(modes) schedule=\(strategy) record_run_order=\(recordRO)")
 
     var errors: [BenchRunError] = []
 
     for fx in work {
         print("[PROGRESS] Testing Data: \(fx.name) (N=\(fx.instanceCount))")
+
+        // Untimed prepare once per cell.
+        var ready: [any BenchSerializer] = []
+        var failed = Set<String>()
+        var byName: [String: any BenchSerializer] = [:]
         for ser in sers {
             if !ser.supports(testDataName: fx.name) { continue }
             do {
                 try ser.prepare(fx)
+                ready.append(ser)
+                byName[ser.name] = ser
             } catch {
                 let msg = String(describing: error)
                 FileHandle.standardError.write(Data("[ERROR] prepare \(ser.name) / \(fx.name): \(msg)\n".utf8))
@@ -101,71 +111,111 @@ public func runBenchmark(_ opts: RunOptions) throws {
                     testDataName: fx.name, serializerName: ser.name,
                     stringOrStream: "prepare", repetition: 0, errorText: msg
                 ))
-                continue
+                failed.insert(ser.name)
             }
+        }
+
+        func measureAndWrite(ser: any BenchSerializer, mode: String, rep: UInt32, pos: Int) {
+            do {
+                let serNs: UInt64
+                let deserNs: UInt64
+                let size: Int
+                let out: Any
+                if mode == "stream" {
+                    let t0 = nowNs()
+                    let (buf, n) = try ser.serializeStream(fx)
+                    let t1 = nowNs()
+                    withExtendedLifetime(buf) {}
+                    let decoded = try ser.deserializeStream(buf)
+                    let t2 = nowNs()
+                    withExtendedLifetime(decoded) {}
+                    serNs = t1 &- t0
+                    deserNs = t2 &- t1
+                    size = n
+                    out = try toDomain(ser, decoded)
+                } else {
+                    let t0 = nowNs()
+                    let buf = try ser.serializeBytes(fx)
+                    let t1 = nowNs()
+                    withExtendedLifetime(buf) {}
+                    let decoded = try ser.deserializeBytes(buf)
+                    let t2 = nowNs()
+                    withExtendedLifetime(decoded) {}
+                    serNs = t1 &- t0
+                    deserNs = t2 &- t1
+                    size = buf.count
+                    out = try toDomain(ser, decoded)
+                }
+                if !fx.fidelity(against: out) {
+                    throw BenchError.fidelity
+                }
+                var ro = -1
+                var sp = -1
+                if recordRO {
+                    ro = runOrder
+                    sp = pos
+                    runOrder += 1
+                }
+                logger.writeRow(
+                    mode: mode,
+                    testDataName: fx.name,
+                    repetitions: opts.repetitions,
+                    repetitionIndex: rep,
+                    serializerName: ser.name,
+                    serializerVersion: ser.version,
+                    timeSer: serNs,
+                    timeDeser: deserNs,
+                    size: size,
+                    fidelity: 1.0,
+                    nativeKind: ser.nativeKind.rawValue,
+                    streamMode: ser.streamMode.rawValue,
+                    instanceCount: fx.instanceCount,
+                    typeConfigHash: fx.typeConfigHash,
+                    runOrder: ro,
+                    schedulePosition: sp
+                )
+            } catch {
+                let msg = String(describing: error)
+                FileHandle.standardError.write(
+                    Data("[ERROR] \(ser.name) / \(fx.name) / \(mode): \(msg)\n".utf8)
+                )
+                errors.append(BenchRunError(
+                    testDataName: fx.name, serializerName: ser.name,
+                    stringOrStream: mode, repetition: rep, errorText: msg
+                ))
+                failed.insert(ser.name)
+            }
+        }
+
+        if strategy == "none" {
+            // Legacy: serializer → mode → all reps
+            for ser in ready {
+                if failed.contains(ser.name) { continue }
+                for mode in modes {
+                    for i in 0..<opts.repetitions {
+                        if failed.contains(ser.name) { break }
+                        measureAndWrite(ser: ser, mode: mode, rep: i, pos: 0)
+                    }
+                }
+            }
+        } else {
+            // block_shuffle: mode → rep → shuffled serializers
             for mode in modes {
                 for i in 0..<opts.repetitions {
-                    do {
-                        let serNs: UInt64
-                        let deserNs: UInt64
-                        let size: Int
-                        let out: Any
-                        if mode == "stream" {
-                            let t0 = nowNs()
-                            let (buf, n) = try ser.serializeStream(fx)
-                            let t1 = nowNs()
-                            // withExtendedLifetime: optimization barrier (issue #59).
-                            withExtendedLifetime(buf) {}
-                            let decoded = try ser.deserializeStream(buf)
-                            let t2 = nowNs()
-                            withExtendedLifetime(decoded) {}
-                            serNs = t1 &- t0
-                            deserNs = t2 &- t1
-                            size = n
-                            // Domain conversion intentionally outside the timer.
-                            out = try toDomain(ser, decoded)
-                        } else {
-                            let t0 = nowNs()
-                            let buf = try ser.serializeBytes(fx)
-                            let t1 = nowNs()
-                            withExtendedLifetime(buf) {}
-                            let decoded = try ser.deserializeBytes(buf)
-                            let t2 = nowNs()
-                            withExtendedLifetime(decoded) {}
-                            serNs = t1 &- t0
-                            deserNs = t2 &- t1
-                            size = buf.count
-                            out = try toDomain(ser, decoded)
-                        }
-                        if !fx.fidelity(against: out) {
-                            throw BenchError.fidelity
-                        }
-                        logger.writeRow(
-                            mode: mode,
-                            testDataName: fx.name,
-                            repetitions: opts.repetitions,
-                            repetitionIndex: i,
-                            serializerName: ser.name,
-                            serializerVersion: ser.version,
-                            timeSer: serNs,
-                            timeDeser: deserNs,
-                            size: size,
-                            fidelity: 1.0,
-                            nativeKind: ser.nativeKind.rawValue,
-                            streamMode: ser.streamMode.rawValue,
-                            instanceCount: fx.instanceCount,
-                            typeConfigHash: fx.typeConfigHash
-                        )
-                    } catch {
-                        let msg = String(describing: error)
-                        FileHandle.standardError.write(
-                            Data("[ERROR] \(ser.name) / \(fx.name) / \(mode): \(msg)\n".utf8)
-                        )
-                        errors.append(BenchRunError(
-                            testDataName: fx.name, serializerName: ser.name,
-                            stringOrStream: mode, repetition: i, errorText: msg
-                        ))
-                        break
+                    let pool = ready.map(\.name).filter { !failed.contains($0) }
+                    let order = Schedule.shuffleSerializerNames(
+                        pool,
+                        baseSeed: seed,
+                        typeId: fx.name,
+                        instanceCount: fx.instanceCount,
+                        typeConfigHash: fx.typeConfigHash,
+                        mode: mode,
+                        rep: i
+                    )
+                    for (pos, nm) in order.enumerated() {
+                        if failed.contains(nm) { continue }
+                        guard let ser = byName[nm] else { continue }
+                        measureAndWrite(ser: ser, mode: mode, rep: i, pos: pos)
                     }
                 }
             }

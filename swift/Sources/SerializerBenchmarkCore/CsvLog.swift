@@ -16,7 +16,7 @@ public final class CsvLogger {
         self.path = path
         _ = FileManager.default.createFile(atPath: path.path, contents: nil)
         self.handle = try FileHandle(forWritingTo: path)
-        let header = "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,DataTypeInstanceCount,TypeConfigHash\n"
+        let header = "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition\n"
         handle.write(Data(header.utf8))
     }
 
@@ -34,12 +34,16 @@ public final class CsvLogger {
         nativeKind: String,
         streamMode: String,
         instanceCount: Int,
-        typeConfigHash: String
+        typeConfigHash: String,
+        runOrder: Int = -1,
+        schedulePosition: Int = -1
     ) {
         let total = timeSer &+ timeDeser
         let opsSer = timeSer > 0 ? 1e9 / Double(timeSer) : 0
         let opsDeser = timeDeser > 0 ? 1e9 / Double(timeDeser) : 0
         let opsTot = total > 0 ? 1e9 / Double(total) : 0
+        let ro = runOrder >= 0 ? String(runOrder) : ""
+        let sp = schedulePosition >= 0 ? String(schedulePosition) : ""
         let line = [
             escapeCSV("swift"),
             escapeCSV(mode),
@@ -61,6 +65,8 @@ public final class CsvLogger {
             escapeCSV(streamMode),
             String(instanceCount),
             escapeCSV(typeConfigHash),
+            ro,
+            sp,
         ].joined(separator: ",") + "\n"
         handle.write(Data(line.utf8))
     }

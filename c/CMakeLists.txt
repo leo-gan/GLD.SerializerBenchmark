@@ -17,6 +17,7 @@ set(BENCH_SOURCES
   src/data.c
   src/data_v2.c
   src/run_v2.c
+  src/schedule.c
   src/csv_log.c
   src/batch_cell.c
   src/runner.c

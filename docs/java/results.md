@@ -1,6 +1,6 @@
 # Java — Benchmark Results
 
-**Generated:** 2026-07-24T15:54:09.755419
+**Generated:** 2026-07-24T18:57:57.724061
 
 This page is a **snapshot of measured numbers** for Java on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
 
@@ -35,72 +35,72 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
 |---|---|---|---|---|---|---|---|
-| avro:1.12.0 | 121 | 36.2 | 84.6 | 83K | **9.02K** | 1722 | **1.00** |
-| bson:5.3.1 | 195 | 97.7 | 97.1 | 68.5K | 20.5K | 1741 | **1.00** |
-| dsl-json:2.0.2 | 136 | 68.7 | 67.1 | 103K | 19.5K | 1728 | **1.00** |
-| fastjson2:2.0.57 | 91.8 | 40.2 | 51.4 | 67.8K | 19.5K | 1682 | **1.00** |
-| fory:1.3.0 | **44.2** | **21.1** | **22.8** | **110K** | 9.65K | 1569 | **1.00** |
-| gson:2.12.1 | 369 | 214 | 154 | 43K | 19.5K | 1712 | **1.00** |
-| hessian:4.0.66 | 92 | 37.1 | 54.1 | 89.5K | 9.75K | 1758 | **1.00** |
-| ion:2.18.3 | 423 | 104 | 319 | 30.2K | 19K | 1715 | **1.00** |
-| jackson:2.18.3 | 243 | 75.7 | 167 | 49.9K | 19.5K | 1756 | **1.00** |
-| jackson-cbor:2.18.3 | 102 | 32 | 69.2 | 88.6K | 13.6K | 1706 | **1.00** |
-| jackson-smile:2.18.3 | 79.8 | 30.1 | 49.5 | 105K | 11.3K | 1736 | **1.00** |
-| java-serialization:21.0.11 | 187 | 76.7 | 110 | 30.8K | 13K | 1730 | **1.00** |
-| jsoniter:0.9.23 | 77.4 | 31.6 | 45.8 | 99.3K | 16.7K | 1686 | **1.00** |
-| kryo:5.6.2 | 92.7 | 52.1 | 40.4 | 66.6K | 9.25K | 1708 | **1.00** |
-| moshi:1.15.2 | 270 | 101 | 168 | 78.5K | 19.5K | 1721 | **1.00** |
-| msgpack:0.9.8 | 161 | 68.7 | 91.8 | 75.5K | 13.3K | 1675 | **1.00** |
-| protobuf:4.28.3 | 97.9 | 32 | 64.1 | 69.7K | 10.1K | 1682 | **1.00** |
-| protostuff:1.8.0 | 64.2 | 31.4 | 32.6 | 99.6K | 10.4K | 1672 | **1.00** |
+| avro:1.12.0 | 107 | 36.1 | 70 | 43.1K | **9.02K** | 1742 | **1.00** |
+| bson:5.3.1 | 200 | 103 | 95.5 | 38.5K | 20.5K | 1776 | **1.00** |
+| dsl-json:2.0.2 | 143 | 76.5 | 66.2 | 43.7K | 19.5K | 1742 | **1.00** |
+| fastjson2:2.0.57 | 106 | 49 | 56.6 | 30.3K | 19.5K | 1761 | **1.00** |
+| fory:1.3.0 | **48.2** | **24.4** | **23.7** | 44.8K | 9.65K | 1760 | **1.00** |
+| gson:2.12.1 | 348 | 197 | 150 | 29K | 19.5K | 1770 | **1.00** |
+| hessian:4.0.66 | 83 | 38.5 | 44.2 | 44.5K | 9.75K | 1764 | **1.00** |
+| ion:2.18.3 | 418 | 115 | 302 | 15.6K | 19K | 1764 | **1.00** |
+| jackson:2.18.3 | 190 | 64 | 125 | 33.1K | 19.5K | 1758 | **1.00** |
+| jackson-cbor:2.18.3 | 101 | 36.8 | 63.8 | 40.6K | 13.6K | 1767 | **1.00** |
+| jackson-smile:2.18.3 | 86.7 | 35 | 51.6 | 43.1K | 11.3K | 1757 | **1.00** |
+| java-serialization:21.0.11 | 210 | 84.6 | 125 | 14.7K | 13K | 1775 | **1.00** |
+| jsoniter:0.9.23 | 76.2 | 33.7 | 42 | 50.5K | 16.7K | 1750 | **1.00** |
+| kryo:5.6.2 | 88.6 | 51.5 | 37.1 | 51.3K | 9.25K | 1776 | **1.00** |
+| moshi:1.15.2 | 277 | 106 | 170 | 38.1K | 19.5K | 1773 | **1.00** |
+| msgpack:0.9.8 | 156 | 67.9 | 87.3 | 34.3K | 13.3K | 1768 | **1.00** |
+| protobuf:4.28.3 | 72.7 | 26.4 | 45.6 | 38.6K | 10.1K | 1676 | **1.00** |
+| protostuff:1.8.0 | 60.4 | 29 | 31.3 | **77.4K** | 10.4K | 1730 | **1.00** |
 
 
 ### Total Time
 
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
-| avro:1.12.0 | 41.7 | 37.8 | 44.8 | 42.3 |
-| bson:5.3.1 | 58.6 | 47.4 | 25.2 | 25.1 |
-| dsl-json:2.0.2 | 84.5 | 89 | 47.2 | 53.3 |
-| fastjson2:2.0.57 | 30.5 | 30.7 | 24.8 | 24 |
-| fory:1.3.0 | 25.5 | 25.3 | 23.7 | 22.6 |
-| gson:2.12.1 | 57.6 | 58.5 | 78.3 | 68.1 |
-| hessian:4.0.66 | 21.2 | 20.6 | 17 | 13.8 |
-| ion:2.18.3 | 157 | 133 | 75 | 70.6 |
-| jackson:2.18.3 | 97.4 | 94.5 | 59 | 55.2 |
-| jackson-cbor:2.18.3 | 34.9 | 35.3 | 16.2 | 15.3 |
-| jackson-smile:2.18.3 | 27.9 | 28.2 | 13 | 12.4 |
-| java-serialization:21.0.11 | 74.8 | 68 | 45.8 | 44.9 |
-| jsoniter:0.9.23 | 14.4 | 13.1 | **7.45** | **6.98** |
-| kryo:5.6.2 | 22.1 | 22.6 | 11.2 | 11 |
-| moshi:1.15.2 | 83 | 67.3 | 52.3 | 43.5 |
-| msgpack:0.9.8 | 53.4 | 54.5 | 25.6 | 23.9 |
-| protobuf:4.28.3 | 7.88 | **7.23** | 10.7 | 10.2 |
-| protostuff:1.8.0 | **7.77** | 7.8 | 8.33 | 7.97 |
+| avro:1.12.0 | 67.8 | 64.2 | 47.6 | 45.6 |
+| bson:5.3.1 | 87.8 | 77.1 | 55.1 | 54.3 |
+| dsl-json:2.0.2 | 72.4 | 68.9 | 57.6 | 57 |
+| fastjson2:2.0.57 | 50.8 | 49.6 | 39.4 | 38.7 |
+| fory:1.3.0 | 33.6 | 32.3 | 24.8 | 23.7 |
+| gson:2.12.1 | 68.5 | 65.2 | 63.4 | 62.1 |
+| hessian:4.0.66 | 41.2 | 39.5 | 31.2 | 30.5 |
+| ion:2.18.3 | 226 | 195 | 125 | 121 |
+| jackson:2.18.3 | 89.6 | 88.4 | 47.4 | 46.9 |
+| jackson-cbor:2.18.3 | 69.7 | 67.1 | 39.5 | 39.4 |
+| jackson-smile:2.18.3 | 68 | 65.6 | 38.8 | 38.3 |
+| java-serialization:21.0.11 | 116 | 110 | 81.3 | 80.3 |
+| jsoniter:0.9.23 | 30.3 | 28.9 | 21.8 | 21.5 |
+| kryo:5.6.2 | 41.2 | 39.5 | 27.3 | 27.1 |
+| moshi:1.15.2 | 74.9 | 69.8 | 44.8 | 42.3 |
+| msgpack:0.9.8 | 78.8 | 71.1 | 44.3 | 42.4 |
+| protobuf:4.28.3 | 24.3 | 23.7 | 23.3 | 22.6 |
+| protostuff:1.8.0 | **23.4** | **23** | **21.4** | **20.3** |
 
 
 ### Ops/Sec
 
 | serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
 |---|---|---|---|---|---|---|---|---|---|---|
-| avro:1.12.0 | 42K | 2.6K | 200K | 7.2K | 24K | 4.3K | 370K | 3.3K | 130K | 6.7K |
-| bson:5.3.1 | 50K | 1.4K | 230K | 3.6K | 17K | 3.2K | 250K | 2.5K | 88K | 3K |
-| dsl-json:2.0.2 | 76K | 2.9K | 320K | 6.1K | 12K | 3.9K | **590K** | 5.7K | 25K | 1.8K |
-| fastjson2:2.0.57 | 63K | 6K | 150K | 9K | 33K | 5.5K | 260K | 4.8K | 38K | 3.1K |
-| fory:1.3.0 | **130K** | **7.4K** | 240K | **19K** | 39K | **17K** | 230K | **6.9K** | **280K** | **32K** |
-| gson:2.12.1 | 40K | 1.2K | 170K | 3.2K | 17K | 1.6K | 210K | 2.6K | 28K | 0.78K |
-| hessian:4.0.66 | 78K | 2.4K | 320K | 13K | 47K | 4.2K | 260K | 4.1K | 120K | 7K |
-| ion:2.18.3 | 30K | 0.96K | 120K | 2.2K | 6.4K | 1.3K | 140K | 2.2K | 18K | 0.62K |
-| jackson:2.18.3 | 47K | 1.7K | 190K | 3.9K | 10K | 2.1K | 120K | 4K | 28K | 1.1K |
-| jackson-cbor:2.18.3 | 40K | 3.5K | 250K | 7.7K | 29K | 3.7K | 360K | 5.1K | 79K | 7.4K |
-| jackson-smile:2.18.3 | 55K | 4.6K | 270K | 9.9K | 36K | 4.9K | 430K | 5.6K | 100K | 8K |
-| java-serialization:21.0.11 | 44K | 1.9K | 80K | 3.4K | 13K | 3.1K | 78K | 1.7K | 49K | 4.6K |
-| jsoniter:0.9.23 | 120K | 5.9K | 290K | 11K | 70K | 5.9K | 280K | 5.5K | 82K | 4.9K |
-| kryo:5.6.2 | 58K | 3.6K | 190K | 8.6K | 45K | 6.4K | 200K | 3.3K | 80K | 8.6K |
-| moshi:1.15.2 | 76K | 2.2K | 280K | 5.3K | 12K | 2.8K | 350K | 3.7K | 35K | 0.72K |
-| msgpack:0.9.8 | 66K | 2.2K | 250K | 4.6K | 19K | 2K | 320K | 3.5K | 38K | 3.7K |
-| protobuf:4.28.3 | 52K | 5.4K | 210K | 7.8K | 130K | 13K | 160K | 3.3K | 99K | 4.9K |
-| protostuff:1.8.0 | 64K | 5.3K | **500K** | 14K | **130K** | 8.8K | 140K | 5.5K | 120K | 9.3K |
+| avro:1.12.0 | 26K | 3.8K | 120K | 6.1K | 15K | 6.3K | 160K | 3.3K | 56K | 7.1K |
+| bson:5.3.1 | 21K | 1.8K | 110K | 3.2K | 11K | 3K | 130K | 2.4K | **72K** | 3K |
+| dsl-json:2.0.2 | 24K | 4.1K | 110K | 6.6K | 14K | 4.3K | 210K | 5K | 35K | 1.7K |
+| fastjson2:2.0.57 | 24K | 6.1K | 61K | 8.1K | 20K | 5.2K | 92K | 4.6K | 35K | 3K |
+| fory:1.3.0 | 32K | **11K** | 93K | **15K** | 30K | 11K | 100K | **6.8K** | 61K | **19K** |
+| gson:2.12.1 | 25K | 1.5K | 99K | 2.9K | 15K | 3K | 130K | 2.4K | 26K | 0.75K |
+| hessian:4.0.66 | 26K | 5.1K | 140K | 8.7K | 24K | 7.2K | 130K | 4K | 55K | 7.9K |
+| ion:2.18.3 | 11K | 1K | 50K | 2.1K | 4.4K | 2K | 65K | 2.1K | 18K | 0.67K |
+| jackson:2.18.3 | 18K | 3.5K | 84K | 6K | 11K | 5.2K | 130K | 4.6K | 27K | 1.1K |
+| jackson-cbor:2.18.3 | 20K | 3.4K | 93K | 5.9K | 14K | 7.3K | 140K | 4.7K | 52K | 8.2K |
+| jackson-smile:2.18.3 | 24K | 4.5K | 100K | 7.4K | 15K | 8.2K | 160K | 5.1K | 46K | 8.5K |
+| java-serialization:21.0.11 | 11K | 2K | 37K | 2.7K | 8.6K | 3.7K | 38K | 1.6K | 23K | 4.6K |
+| jsoniter:0.9.23 | 43K | 7K | 110K | 8.9K | 33K | 8.1K | 160K | 4.9K | 64K | 5.6K |
+| kryo:5.6.2 | 39K | 5.1K | 160K | 6.7K | 24K | 9K | 160K | 3.1K | 43K | 9.8K |
+| moshi:1.15.2 | 29K | 2.3K | 110K | 4.2K | 13K | 3.8K | 160K | 3.2K | 26K | 0.72K |
+| msgpack:0.9.8 | 22K | 2.1K | 92K | 3.9K | 13K | 4.5K | 130K | 3.2K | 40K | 4.4K |
+| protobuf:4.28.3 | 26K | 6.4K | 85K | 7.4K | 41K | 11K | 98K | 4.2K | 42K | 5.6K |
+| protostuff:1.8.0 | **52K** | 7.8K | **230K** | 10K | **43K** | **12K** | **220K** | 5.1K | 70K | 9.9K |
 
 ## Latency distributions
 
@@ -169,14 +169,14 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/java/2026-07-24-155350.csv`
-    - run=2026-07-24-155350
+    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/java/2026-07-24-183742.csv`
+    - run=2026-07-24-183742
     - language=java
     - os=Linux 6.8.0-124-generic
     - cpu=12th Gen Intel(R) Core(TM) i7-12800H (20 threads)
     - ram=31.0 GiB
     - runtimes: java=openjdk version "1.8.0_492", python=3.14.0, node=24.15.0
-    - git=04d09d1 dirty
+    - git=85145fd dirty
     - seed=42
     - warmup_reps=1
     - serializers=18

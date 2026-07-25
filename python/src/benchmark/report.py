@@ -33,6 +33,9 @@ class BenchmarkLog:
     type_config_hash: str = ""
     size_gzip_bytes: int = 0
     size_zstd_bytes: int = 0
+    # B-1 schedule audit (optional)
+    run_order: int = -1
+    schedule_position: int = -1
 
     @property
     def time_ser_and_deser_ns(self) -> int:
@@ -52,8 +55,8 @@ class BenchmarkLog:
         return 1_000_000_000.0 / total if total > 0 else 0.0
 
 
-# Full harness CSV schema (SerializerVersion immediately after SerializerName).
-# Trailing columns are optional Data Model v2 fields (blank/0 on v1 runs).
+# Full benchmark-runner CSV schema (SerializerVersion immediately after SerializerName).
+# Trailing columns are optional Data Model v2 / schedule fields.
 CSV_HEADER = [
     "Language",
     "StringOrStream",
@@ -75,6 +78,8 @@ CSV_HEADER = [
     "TypeConfigHash",
     "SizeGzip",
     "SizeZstd",
+    "RunOrder",
+    "SchedulePosition",
 ]
 
 
@@ -123,6 +128,8 @@ class LogStorage:
             log.type_config_hash or "",
             log.size_gzip_bytes or "",
             log.size_zstd_bytes or "",
+            log.run_order if log.run_order >= 0 else "",
+            log.schedule_position if log.schedule_position >= 0 else "",
         ])
         self._file_handle.flush()
 
@@ -153,6 +160,12 @@ class LogStorage:
                     size_zstd_bytes=int(float(row["SizeZstd"] or 0))
                     if row.get("SizeZstd") not in (None, "")
                     else 0,
+                    run_order=int(float(row["RunOrder"]))
+                    if row.get("RunOrder") not in (None, "")
+                    else -1,
+                    schedule_position=int(float(row["SchedulePosition"]))
+                    if row.get("SchedulePosition") not in (None, "")
+                    else -1,
                 ))
         return logs
 

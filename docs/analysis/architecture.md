@@ -103,8 +103,65 @@ These policies keep native and managed languages from accidentally measuring dif
 | **Optimization barriers** | On optimizing native compilers (C, C++, Rust, …), force the compiler to keep timed inputs and outputs “alive” (`black_box`, `DoNotOptimize`, `KeepAlive`, or the language equivalent). Otherwise the compiler may delete the work as unused. |
 | **Data-type dispatch** | Bind type-specific encode paths during **prepare** (function pointers, closures, monomorphic helpers). The timed serialize path should not pay for a large `switch`/`match` on data type when the data type is fixed for the whole cell. |
 | **Random numbers** | Generation must be deterministic **within one language**. Prefer a well-known pseudo-random generator, seed it from `BENCHMARK_SEED` / `reproducibility.random_seed`, and document magic constants. Cross-language **identical** payloads are **not** required. |
+| **Stream capacity floors** | If the runner grows a stream buffer floor across reps, keep it **per serializer**, not shared across codecs (interleaved schedules would otherwise amortize one codec’s growth onto another). |
 
 Rust’s benchmark runner is a useful reference implementation: `rust/README.md` and `rust/src/run_v2.rs`.
+
+---
+
+## Timed-trial schedule (block shuffle) {#timed-trial-schedule}
+
+By default, benchmark runners use **`reproducibility.schedule.strategy: block_shuffle`** so serializer identity is not confounded with wall-clock position (thermal throttling, frequency drift).
+
+### Nesting
+
+```text
+for cell in cells:                         # fixed resolve / YAML order
+  prepare every eligible serializer        # UNTimed, once per cell
+  for mode in io_modes:                    # sequential mode blocks
+    for rep in 0 .. repetitions-1:
+      order = FisherYates(serializers, seed = H(...))
+      for ser in order:
+        timed serialize + deserialize
+        write CSV row (RepetitionIndex = rep; optional RunOrder)
+```
+
+- **Cells** stay outer and fixed (different prepare cost; clear progress/budget).
+- **I/O modes** stay sequential blocks (comparisons are within mode).
+- **Serializers** are reshuffled **each rep** (Fisher–Yates).
+- Escape hatch: `strategy: none` or env `BENCHMARK_SCHEDULE=none` restores legacy fixed order / older nesting.
+
+### Normative seed recipe (all languages)
+
+```text
+key = "{base_seed}|{type_id}|{instance_count}|{type_config_hash}|{mode}|{rep}"
+mode normalized: string|buffer → bytes; Stream → stream; then lowercase
+u64 = first 8 bytes of SHA-256(utf-8 key) as little-endian
+PRNG = SplitMix64(u64)
+Fisher–Yates: for i = n-1 .. 1: j = next_u64() % (i+1); swap i,j
+```
+
+`base_seed` is `BENCHMARK_SEED` / `reproducibility.random_seed`. Do **not** advance the payload-generation PRNG for shuffling.
+
+**Golden vector** (must match `analysis/tests/test_schedule.py`):
+
+| Input | Value |
+|-------|--------|
+| names | `A`, `B`, `C` |
+| base_seed | `42` |
+| type_id / n / hash / mode / rep | `message` / `1` / `abc` / `bytes` / `0` |
+| **result order** | **`C`, `B`, `A`** |
+
+Reference implementation: `analysis/src/benchmark_analysis/schedule.py`.
+
+### Optional CSV columns
+
+| Column | Meaning |
+|--------|---------|
+| `RunOrder` | Monotonic 0-based index of **written** result rows in process order |
+| `SchedulePosition` | Index of the serializer within the shuffled list for that rep |
+
+Analysis groups by matrix keys, not file order; these columns are for audits and diagnostics.
 
 ---
 
@@ -118,6 +175,7 @@ Every language runner must satisfy this contract so analysis can treat files the
 | `Language` column | Language id (`csharp`, `python`, `rust`, …) |
 | Time unit | **Nanoseconds** for every benchmark runner (including C#) |
 | Modes | `bytes` / `stream` (C# may use `string` / `stream`) |
+| Schedule | Default `block_shuffle`; see [Timed-trial schedule](#timed-trial-schedule) |
 | Timed section | Serialize and deserialize only |
 | Fidelity | Round-trip check; failures → `logs/<lang>/<ts>.errors.csv` |
 | Seed | From `schemas` / master config `reproducibility.random_seed` |
