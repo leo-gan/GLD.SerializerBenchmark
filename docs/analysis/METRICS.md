@@ -50,7 +50,7 @@ These fields are written by each language benchmark runner. Column order (v1.2+)
 | `FidelityScore` | 0–1 | high | optional | `1.0` means the round-trip check passed |
 | `NativeKind` | enum | low | optional | Codec shape family (serde, message, codable, …) when the runner records it |
 | `StreamMode` | enum | **high** on stream rows | optional on old CSVs; **required on new stream rows** | Honesty label: `native` \| `text_on_stream` \| `adapted` — see [Modes — stream honesty](modes.md#three-levels-of-stream-honesty) |
-| `RunOrder` | index | low | optional | Monotonic 0-based index of written timed rows in process order (schedule audit; B-1) |
+| `RunOrder` | index | low | optional | Monotonic 0-based index of written timed rows in process order (schedule audit) |
 | `SchedulePosition` | index | low | optional | 0-based position of this serializer within its `(cell, mode, rep)` after shuffle |
 
 ---
@@ -72,7 +72,7 @@ After warmup drop and optional outlier filter, analysis groups rows by:
 | `total_mean_ns` / `ser_mean_ns` / `deser_mean_ns` | Arithmetic means | medium | no |
 | `total_std_ns` / `*_mad_ns` / `*_cv` | Dispersion (spread) | medium | no (context) |
 | `total_p5_ns` … `total_p99_ns` | Percentiles | medium (p95/p99) / low (others) | no |
-| `total_ci_low_ns` / `total_ci_high_ns` | Bootstrap confidence interval on **mean** total | medium | — |
+| `total_ci_low_ns` / `total_ci_high_ns` | [Bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics) "Bootstrapping (statistics)") [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval") on **mean** total | medium | — |
 | `avg_ops_per_sec` | `1e9 / total_mean_ns` | high (display) | **yes** |
 | `runs` / `runs_raw` / `warmup_skipped` / `outliers_removed` | Sample provenance | high | — |
 
@@ -91,10 +91,18 @@ After warmup drop and optional outlier filter, analysis groups rows by:
 
 | id | Definition | Importance | When |
 |----|------------|------------|------|
-| `effect_vs_fastest_cliffs_delta` | Cliff’s δ vs fastest mean total | medium | multi-way attach |
-| `effect_vs_fastest_cliffs_label` | negligible…large / reference | medium | multi-way |
-| `effect_vs_fastest_hedges_g` | Hedges’ g | low | multi-way |
-| `mann_whitney_u` / `p_value` / `p_value_holm` | Two-sample non-parametric test | medium–high for pairwise | `--compare-a` / `--compare-b` |
+| `effect_vs_fastest_cliffs_delta` | [Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta") vs fastest (reference = lowest **[median](https://en.wikipedia.org/wiki/Median "Median")** total, else mean) | medium | multi-way attach |
+| `effect_vs_fastest_cliffs_label` | negligible…large / `reference` | medium | multi-way tables |
+| `effect_vs_fastest_hedges_g` | [Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g") vs reference | low | multi-way attach / pairwise profile |
+| `effect_vs_fastest_p_value` | [Mann–Whitney U](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test") [p](https://en.wikipedia.org/wiki/P-value "P-value") vs reference (raw) | low | machine-readable / full profile |
+| `effect_vs_fastest_p_value_holm` | [Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method")-adjusted p **within the same group only** | medium | JSON / pairwise-capable profiles |
+| `effect_vs_fastest_significant_holm` | `p_holm < alpha` (default 0.05) | medium | JSON; not a multi-page [family-wise](https://en.wikipedia.org/wiki/Family-wise_error_rate "Family-wise error rate") claim |
+| `effect_vs_fastest_exploratory` | Always true for multi-way attach (exploratory labeling) | — | JSON |
+| `mann_whitney_u` / `p_value` / `p_value_holm` | Two-sample [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics") test between version A and B | medium–high for pairwise | `--compare-a` / `--compare-b` |
+
+**Reading tip:** multi-way Results treat ranks as **exploratory**. Prefer [Claims and replication](CLAIMS_AND_REPLICATION.md) for L1/L2/L3 language, and pairwise A/B for confirmatory library comparisons.
+
+Full URL list: [Analysis methodology — References](ANALYSIS_METHODOLOGY.md#references).
 
 ### Planned (not all implemented)
 

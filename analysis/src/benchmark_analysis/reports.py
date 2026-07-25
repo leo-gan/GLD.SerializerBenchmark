@@ -1167,10 +1167,13 @@ def generate_language_results_pages(
             "",
             f"**Generated:** {datetime.now().isoformat()}",
             "",
-            f"This page is a **snapshot of measured numbers** for {title} on one machine. "
+            f"This page is a **snapshot of measured numbers** for {title} on **one machine, "
+            "one session** (claim level **L1**). "
             "Continuous integration deploys the documentation site; it does **not** re-run "
             "analysis when docs are published. Re-running benchmarks on another computer "
-            "will usually change the numbers a little.",
+            "will usually change the numbers a little. "
+            "Stronger multi-session / multi-machine claims need more evidence — see "
+            "[Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).",
             "",
             f"| Topic | Where to read |",
             f"|-------|---------------|",
@@ -1178,6 +1181,7 @@ def generate_language_results_pages(
             f"| I/O modes and run modes | [Modes](../analysis/modes.md) |",
             f"| How CSVs become these tables | [Analysis methodology](../analysis/ANALYSIS_METHODOLOGY.md) |",
             f"| What each metric means | [Metrics catalog](../analysis/METRICS.md) |",
+            f"| What you may claim (L1/L2/L3) | [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md) |",
             f"| All languages’ result links | [Results summary](../analysis/BENCHMARK_SUMMARY.md) |",
             "",
             "## How to read these tables",
@@ -1209,7 +1213,18 @@ def generate_language_results_pages(
             "",
         ]
 
-        # B-6 stream honesty banner (native / text_on_stream / adapted)
+        # Exploratory ranking banner (multi-way effect-vs-fastest is descriptive)
+        lines.append(
+            "> **Exploratory ranks:** effect sizes vs the fastest codec are **descriptive**. "
+            "When we attach Holm-adjusted tests, they only correct for many serializers "
+            "**inside one** (data type × batch size × I/O mode) group — not for every "
+            "comparison on this page. Prefer pairwise A/B "
+            "(`analyze-benchmarks --compare-a … --compare-b …`) for confirmatory checks. "
+            "See [Analysis methodology — ranks](../analysis/ANALYSIS_METHODOLOGY.md#exploratory-ranks)."
+        )
+        lines.append("")
+
+        # Stream honesty banner (native / text_on_stream / adapted)
         try:
             from .stream_honesty import (
                 stream_honesty_banner_md,

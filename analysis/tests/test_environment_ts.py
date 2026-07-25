@@ -59,15 +59,20 @@ def test_capture_writes_configs_json_from_csv_stem(monkeypatch, tmp_path: Path):
     assert doc["benchmark_ts"] == "2026-07-01-195234"
     assert doc.get("schema_version") == 1
     assert "environment" in doc
-    cwd = doc["environment"]["process"]["cwd"]
+    env = doc["environment"]
+    cwd = env["process"]["cwd"]
     assert not cwd.startswith("/")
     assert "/home/" not in cwd
     assert cwd == repo_root().resolve().name or cwd.startswith(repo_root().resolve().name + "/")
+    # Claim-scoping fields for multi-session / multi-machine reports
+    assert isinstance(env.get("machine_id"), str) and len(env["machine_id"]) == 16
+    assert env.get("claim_level_hint") == "L1_single_session"
     out = tmp_path / "2026-07-01-195234.configs.json"
     assert out.is_file()
     text = out.read_text()
     assert '"benchmark_ts": "2026-07-01-195234"' in text
     assert "/home/" not in text
+    assert "machine_id" in text
     # serializers scraped from CSV when present
     assert doc.get("serializers", {}).get("count") == 1
 

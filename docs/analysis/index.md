@@ -72,8 +72,9 @@ Full mode guide: [Modes](modes.md). Data-type glossary: [Test data — vocabular
 | **[Modes](modes.md)** | I/O modes (bytes/stream) and run modes (smoke…research) | Why Results have two mode columns; which run preset to use |
 | **[Categories](serialization_categories.md)** | Four families of serializers (JSON, binary, schema-driven, native) | Fair “apples to apples” groups |
 | **[Test data](test_data_configuration.md)** | The five sample data types and how sizes are chosen | What we serialize |
-| **[Methodology](ANALYSIS_METHODOLOGY.md)** | Warmup, outliers, confidence intervals, effect sizes | How CSVs become published numbers |
+| **[Methodology](ANALYSIS_METHODOLOGY.md)** | Warmup, outliers, confidence intervals, effect sizes, exploratory ranks | How CSVs become published numbers |
 | **[Metrics](METRICS.md)** | Names and meanings of every reported measurement | “What does this column mean?” |
+| **[Claims and replication](CLAIMS_AND_REPLICATION.md)** | L1 / L2 / L3: what you may claim from one run vs many | Honest generalization language |
 | **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to plug in a new language benchmark runner | Extending the suite |
 | **[Results summary](BENCHMARK_SUMMARY.md)** | Links to each language’s numbers and how to regenerate them | The published snapshots |
 

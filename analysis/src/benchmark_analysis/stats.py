@@ -55,6 +55,13 @@ _DEFAULT_STATS_CFG: Dict[str, Any] = {
             "small": 0.33,
             "medium": 0.474,
         },
+        # Effect vs fastest within each (lang, data, n, mode) group
+        "vs_fastest": {
+            "reference": "median",  # mean | median
+            "test": "mann_whitney_u",
+            "multiple_comparison": "holm",  # none | holm
+            "exploratory_in_multi_way": True,
+        },
     },
     "hypothesis_tests": {
         "enabled": True,
@@ -80,7 +87,13 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         for k, v in stats.items():
             if isinstance(v, dict) and isinstance(cfg.get(k), dict):
                 merged = dict(cfg[k])
-                merged.update(v)
+                for sk, sv in v.items():
+                    if isinstance(sv, dict) and isinstance(merged.get(sk), dict):
+                        nested = dict(merged[sk])
+                        nested.update(sv)
+                        merged[sk] = nested
+                    else:
+                        merged[sk] = sv
                 cfg[k] = merged
             else:
                 cfg[k] = v
@@ -908,8 +921,20 @@ def compute_statistics(
 
 
 def _attach_effect_sizes(results: Dict, cfg: Dict[str, Any]) -> None:
-    """Attach effect size vs fastest serializer in same (lang, data, instance, mode) group."""
-    thr = (cfg.get("effect_sizes") or {}).get("cliffs_delta_thresholds")
+    """Attach effect size + MWU vs fastest in same (lang, data, instance, mode) group.
+
+    Multiplicity: Holm correction is applied **within each group only**.
+    Multi-way Results treat these as exploratory; see methodology.
+    """
+    eff = cfg.get("effect_sizes") or {}
+    thr = eff.get("cliffs_delta_thresholds")
+    vs = eff.get("vs_fastest") or {}
+    ref_mode = str(vs.get("reference") or "median").strip().lower()
+    mcc = str(vs.get("multiple_comparison") or "holm").strip().lower()
+    ht = cfg.get("hypothesis_tests") or {}
+    alpha = float(ht.get("alpha", 0.05))
+    run_test = bool(ht.get("enabled", True)) and str(vs.get("test") or "mann_whitney_u") == "mann_whitney_u"
+
     groups: Dict[Tuple, List[Any]] = defaultdict(list)
     for key, entry in results.items():
         gkey = (
@@ -921,29 +946,76 @@ def _attach_effect_sizes(results: Dict, cfg: Dict[str, Any]) -> None:
         )
         groups[gkey].append((key, entry))
 
+    def _ref_score(entry: Dict[str, Any]) -> float:
+        if ref_mode == "median":
+            v = entry.get("total_median_ns")
+            if v is not None and v == v:  # not NaN
+                return float(v)
+        return float(entry.get("avg_time_total_ns") or float("inf"))
+
     for gkey, items in groups.items():
         if len(items) < 2:
             for _, entry in items:
                 entry["effect_vs_fastest_cliffs_delta"] = 0.0
                 entry["effect_vs_fastest_cliffs_label"] = "reference"
                 entry["effect_vs_fastest_hedges_g"] = 0.0
+                entry["effect_vs_fastest_p_value"] = None
+                entry["effect_vs_fastest_p_value_holm"] = None
+                entry["effect_vs_fastest_significant_holm"] = None
                 entry["fastest_in_group"] = entry["serializer"]
+                entry["effect_vs_fastest_exploratory"] = True
             continue
-        fastest_key, fastest_entry = min(items, key=lambda t: t[1]["avg_time_total_ns"] or float("inf"))
+
+        fastest_key, fastest_entry = min(items, key=lambda t: _ref_score(t[1]))
         fast_times = fastest_entry.get("_times_total_filtered") or []
+
+        # Collect MWU p-values for non-reference members (stable order)
+        non_ref: List[Tuple[Any, Dict[str, Any]]] = []
+        raw_ps: List[float] = []
         for key, entry in items:
-            entry["fastest_in_group"] = fastest_entry["serializer"]
             if key == fastest_key:
-                entry["effect_vs_fastest_cliffs_delta"] = 0.0
-                entry["effect_vs_fastest_cliffs_label"] = "reference"
-                entry["effect_vs_fastest_hedges_g"] = 0.0
                 continue
             mine = entry.get("_times_total_filtered") or []
-            cd = cliffs_delta(mine, fast_times)
-            hg = hedges_g(mine, fast_times)
+            p = 1.0
+            if run_test and len(mine) >= 2 and len(fast_times) >= 2:
+                _u, p = mann_whitney_u(mine, fast_times)
+            raw_ps.append(float(p))
+            non_ref.append((key, entry))
+
+        if mcc == "holm" and raw_ps:
+            adj_ps = holm_correction(raw_ps)
+        else:
+            adj_ps = list(raw_ps)
+
+        for (key, entry), p_raw, p_adj in zip(non_ref, raw_ps, adj_ps):
+            entry["fastest_in_group"] = fastest_entry["serializer"]
+            entry["effect_vs_fastest_exploratory"] = True
+            mine = entry.get("_times_total_filtered") or []
+            cd = cliffs_delta(mine, fast_times) if mine and fast_times else 0.0
+            hg = hedges_g(mine, fast_times) if mine and fast_times else 0.0
             entry["effect_vs_fastest_cliffs_delta"] = cd
             entry["effect_vs_fastest_cliffs_label"] = cliffs_delta_label(cd, thr)
             entry["effect_vs_fastest_hedges_g"] = hg
+            if run_test and len(mine) >= 2 and len(fast_times) >= 2:
+                entry["effect_vs_fastest_p_value"] = p_raw
+                entry["effect_vs_fastest_p_value_holm"] = p_adj
+                entry["effect_vs_fastest_significant_holm"] = bool(p_adj < alpha)
+            else:
+                entry["effect_vs_fastest_p_value"] = None
+                entry["effect_vs_fastest_p_value_holm"] = None
+                entry["effect_vs_fastest_significant_holm"] = None
+
+        for key, entry in items:
+            if key != fastest_key:
+                continue
+            entry["fastest_in_group"] = entry["serializer"]
+            entry["effect_vs_fastest_cliffs_delta"] = 0.0
+            entry["effect_vs_fastest_cliffs_label"] = "reference"
+            entry["effect_vs_fastest_hedges_g"] = 0.0
+            entry["effect_vs_fastest_p_value"] = None
+            entry["effect_vs_fastest_p_value_holm"] = None
+            entry["effect_vs_fastest_significant_holm"] = None
+            entry["effect_vs_fastest_exploratory"] = True
 
 
 def compare_versions(

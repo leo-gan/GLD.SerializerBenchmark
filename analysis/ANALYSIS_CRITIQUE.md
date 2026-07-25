@@ -63,9 +63,10 @@ It sits between raw harness output (timestamped `logs/<lang>/YYYY-MM-DD-HHMMSS.c
 `compute_statistics()` produces:
 - per-group bootstrap CIs
 - median, MAD, CV, multiple percentiles
-- `effect_vs_fastest_cliffs_delta` + label + Hedges’ g
+- `effect_vs_fastest_cliffs_delta` + label + Hedges’ g + MWU/Holm p (A-1; exploratory multi-way)
 - fidelity, memory, warmup/outlier counts
 - `_times_total_filtered` for further tests
+- multi-session aggregate path (`--multi-session`, claim levels L1–L3) for A-6/B-3
 
 **What actually appears in published docs:**
 
