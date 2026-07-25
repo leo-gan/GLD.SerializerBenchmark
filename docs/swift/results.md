@@ -1,6 +1,6 @@
 # Swift — Benchmark Results
 
-**Generated:** 2026-07-24T15:57:19.435741
+**Generated:** 2026-07-24T18:57:57.742477
 
 This page is a **snapshot of measured numbers** for Swift on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
 
@@ -35,60 +35,60 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
 |---|---|---|---|---|---|---|---|
-| BinaryCodable:4.0.0 | 1,800 | 1,240 | 557 | 19K | 13.4K | 1822 | **1.00** |
-| CapnProto:capnproto-1.0.2 | 955 | 751 | 203 | 59.4K | 18.3K | 1797 | **1.00** |
-| FlatBuffers:24.3.25 | 679 | 591 | 87.1 | 116K | 17.4K | 1838 | **1.00** |
-| Foundation.JSONEncoder:Foundation | 1,740 | 1,170 | 568 | 22K | 19.7K | 1788 | **1.00** |
-| Foundation.PropertyListEncoder:Foundation | 2,770 | 1,330 | 1,430 | 11.5K | 16.3K | 1820 | **1.00** |
-| IkigaJSON:2.5.3 | 1,760 | 1,110 | 653 | 19.9K | 19.7K | 1813 | **1.00** |
-| SwiftAvroCore:2.3.0 | 2,630 | 2,040 | 592 | 11.3K | **9.02K** | 1824 | **1.00** |
-| SwiftBSON:3.1.0 | 3,770 | 1,940 | 1,830 | 9.39K | 20.7K | 1828 | **1.00** |
-| SwiftCbor:0.0.4 | 2,370 | 1,560 | 811 | 14K | 13.6K | 1830 | **1.00** |
-| SwiftMsgpack:1.2.1 | 2,240 | 1,440 | 801 | 15.2K | 13.6K | 1810 | **1.00** |
-| SwiftProtobuf:1.38.1 | **411** | **366** | **45.2** | **230K** | 10.1K | 1863 | **1.00** |
-| TOML:2.0.0 | 5,240 | 4,080 | 1,160 | 6.77K | 22.4K | 1800 | **1.00** |
-| XMLCoder:0.18.2 | 14,900 | 7,990 | 6,880 | 2.11K | 34K | 1732 | **1.00** |
-| Yams:5.4.0 | 13,400 | 9,530 | 3,920 | 2.27K | 22.5K | 1814 | **1.00** |
+| BinaryCodable:4.0.0 | 1,910 | 1,330 | 580 | 10.8K | 13.4K | 1809 | **1.00** |
+| CapnProto:capnproto-1.0.2 | 1,060 | 833 | 229 | 17.6K | 18.3K | 1745 | **1.00** |
+| FlatBuffers:24.3.25 | 724 | 629 | 95.9 | 45K | 17.4K | 1745 | **1.00** |
+| Foundation.JSONEncoder:Foundation | 1,820 | 1,220 | 601 | 11.6K | 19.7K | 1770 | **1.00** |
+| Foundation.PropertyListEncoder:Foundation | 2,880 | 1,410 | 1,480 | 7.24K | 16.3K | 1768 | **1.00** |
+| IkigaJSON:2.5.3 | 1,830 | 1,150 | 675 | 12K | 19.7K | 1761 | **1.00** |
+| SwiftAvroCore:2.3.0 | 2,720 | 2,120 | 600 | 6.99K | **9.02K** | 1834 | **1.00** |
+| SwiftBSON:3.1.0 | 3,920 | 2,040 | 1,890 | 6.17K | 20.7K | 1794 | **1.00** |
+| SwiftCbor:0.0.4 | 2,520 | 1,650 | 871 | 8.65K | 13.6K | 1803 | **1.00** |
+| SwiftMsgpack:1.2.1 | 2,390 | 1,530 | 859 | 9.06K | 13.6K | 1795 | **1.00** |
+| SwiftProtobuf:1.38.1 | **448** | **394** | **53.1** | **63.2K** | 10.1K | 1724 | **1.00** |
+| TOML:2.0.0 | 5,470 | 4,220 | 1,250 | 4.7K | 22.4K | 1800 | **1.00** |
+| XMLCoder:0.18.2 | 15,500 | 8,350 | 7,190 | 1.74K | 34K | 1820 | **1.00** |
+| Yams:5.4.0 | 13,900 | 9,820 | 4,070 | 1.85K | 22.5K | 1803 | **1.00** |
 
 
 ### Total Time
 
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
-| BinaryCodable:4.0.0 | 11.3 | 11.1 | 20.9 | 20.6 |
-| CapnProto:capnproto-1.0.2 | 2.37 | 2.37 | 11 | 11.1 |
-| FlatBuffers:24.3.25 | 1.05 | 1.04 | 12.5 | 12.6 |
-| Foundation.JSONEncoder:Foundation | 7 | 6.82 | 19.5 | 19.5 |
-| Foundation.PropertyListEncoder:Foundation | 15.5 | 15.4 | 28.3 | 28.3 |
-| IkigaJSON:2.5.3 | 9.12 | 9.12 | 21.4 | 20.8 |
-| SwiftAvroCore:2.3.0 | 29.4 | 29.4 | 35.2 | 35.3 |
-| SwiftBSON:3.1.0 | 17 | 16.8 | 30.6 | 30.6 |
-| SwiftCbor:0.0.4 | 11.9 | 11.9 | 23.7 | 23.8 |
-| SwiftMsgpack:1.2.1 | 10.2 | 10.2 | 22.7 | 21.4 |
-| SwiftProtobuf:1.38.1 | **0.629** | **0.644** | **5.47** | **5.46** |
-| TOML:2.0.0 | 38.5 | 38 | 52.6 | 52 |
-| XMLCoder:0.18.2 | 109 | 109 | 131 | 131 |
-| Yams:5.4.0 | 100 | 101 | 120 | 120 |
+| BinaryCodable:4.0.0 | 25.6 | 25.8 | 37.2 | 37.3 |
+| CapnProto:capnproto-1.0.2 | 14.2 | 14.4 | 23.9 | 24.1 |
+| FlatBuffers:24.3.25 | 3.93 | 3.93 | 15.2 | 15.2 |
+| Foundation.JSONEncoder:Foundation | 19.6 | 19.7 | 34.6 | 34.7 |
+| Foundation.PropertyListEncoder:Foundation | 31.6 | 31.6 | 48.9 | 49.2 |
+| IkigaJSON:2.5.3 | 19.2 | 19.4 | 33.7 | 33.7 |
+| SwiftAvroCore:2.3.0 | 48.3 | 48.3 | 56.2 | 56.6 |
+| SwiftBSON:3.1.0 | 34.8 | 34.8 | 49 | 49 |
+| SwiftCbor:0.0.4 | 27.2 | 27.3 | 39.6 | 39.7 |
+| SwiftMsgpack:1.2.1 | 25 | 25.2 | 37.2 | 37.3 |
+| SwiftProtobuf:1.38.1 | **3.4** | **3.47** | **9.88** | **9.88** |
+| TOML:2.0.0 | 60.5 | 60.7 | 77.8 | 78 |
+| XMLCoder:0.18.2 | 137 | 138 | 163 | 164 |
+| Yams:5.4.0 | 132 | 133 | 151 | 152 |
 
 
 ### Ops/Sec
 
 | serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
 |---|---|---|---|---|---|---|---|---|---|---|
-| BinaryCodable:4.0.0 | 17K | 0.18K | 37K | 0.37K | 0.088M | 0.77K | 40K | 0.42K | 0.066M | 0.64K |
-| CapnProto:capnproto-1.0.2 | 110K | 1.2K | 130K | 1.4K | 0.42M | 10K | 63K | 0.65K | 0.23M | 2.8K |
-| FlatBuffers:24.3.25 | 310K | **4.2K** | 230K | 5K | 0.95M | 21K | 170K | 2K | 0.4M | 8.8K |
-| Foundation.JSONEncoder:Foundation | 30K | 0.31K | 66K | 0.71K | 0.14M | 1.5K | 41K | 0.43K | 0.03M | 0.3K |
-| Foundation.PropertyListEncoder:Foundation | 15K | 0.16K | 30K | 0.32K | 0.065M | 0.77K | 17K | 0.18K | 0.016M | 0.17K |
-| IkigaJSON:2.5.3 | 28K | 0.29K | 61K | 0.66K | 0.11M | 1.3K | 43K | 0.45K | 0.03M | 0.31K |
-| SwiftAvroCore:2.3.0 | 9.2K | 0.096K | 18K | 0.2K | 0.034M | 0.38K | 42K | 0.44K | 0.03M | 0.34K |
-| SwiftBSON:3.1.0 | 12K | 0.13K | 22K | 0.24K | 0.059M | 0.54K | 13K | 0.13K | 0.01M | 0.11K |
-| SwiftCbor:0.0.4 | 14K | 0.16K | 33K | 0.34K | 0.084M | 0.77K | 22K | 0.22K | 0.023M | 0.23K |
-| SwiftMsgpack:1.2.1 | 16K | 0.18K | 36K | 0.38K | 0.098M | 0.89K | 24K | 0.24K | 0.021M | 0.22K |
-| SwiftProtobuf:1.38.1 | **320K** | 3.1K | **480K** | **5.1K** | **1.6M** | **27K** | **540K** | **5.6K** | **1.2M** | **19K** |
-| TOML:2.0.0 | 6.2K | 0.052K | 14K | 0.11K | 0.026M | 0.25K | 21K | 0.19K | 0.013M | 0.13K |
-| XMLCoder:0.18.2 | 2.7K | 0.031K | 5.8K | 0.065K | 0.0092M | 0.11K | 2.8K | 0.03K | 0.0021M | 0.022K |
-| Yams:5.4.0 | 2.7K | 0.03K | 5.3K | 0.06K | 0.01M | 0.11K | 3.7K | 0.039K | 0.0023M | 0.025K |
+| BinaryCodable:4.0.0 | 13K | 0.17K | 19K | 0.34K | 39K | 0.73K | 26K | 0.38K | 32K | 0.61K |
+| CapnProto:capnproto-1.0.2 | 38K | 1.1K | 34K | 1.1K | 71K | 6.8K | 31K | 0.59K | 50K | 2.1K |
+| FlatBuffers:24.3.25 | **130K** | **3.9K** | 83K | **4.4K** | 250K | 16K | 96K | 1.9K | 140K | 7.7K |
+| Foundation.JSONEncoder:Foundation | 18K | 0.3K | 28K | 0.67K | 51K | 1.4K | 27K | 0.42K | 20K | 0.29K |
+| Foundation.PropertyListEncoder:Foundation | 11K | 0.15K | 16K | 0.29K | 32K | 0.72K | 13K | 0.18K | 12K | 0.16K |
+| IkigaJSON:2.5.3 | 19K | 0.29K | 28K | 0.61K | 52K | 1.2K | 30K | 0.45K | 21K | 0.3K |
+| SwiftAvroCore:2.3.0 | 7K | 0.096K | 11K | 0.19K | 21K | 0.38K | 22K | 0.43K | 17K | 0.33K |
+| SwiftBSON:3.1.0 | 9.1K | 0.13K | 14K | 0.22K | 29K | 0.51K | 11K | 0.13K | 8.5K | 0.1K |
+| SwiftCbor:0.0.4 | 11K | 0.15K | 18K | 0.3K | 37K | 0.74K | 17K | 0.21K | 17K | 0.23K |
+| SwiftMsgpack:1.2.1 | 12K | 0.17K | 18K | 0.33K | 40K | 0.83K | 18K | 0.23K | 16K | 0.21K |
+| SwiftProtobuf:1.38.1 | 110K | 3K | **120K** | 4.1K | **290K** | **18K** | **190K** | **4.8K** | **240K** | **14K** |
+| TOML:2.0.0 | 5.1K | 0.053K | 8.5K | 0.1K | 17K | 0.24K | 14K | 0.18K | 9.3K | 0.12K |
+| XMLCoder:0.18.2 | 2.4K | 0.029K | 4.1K | 0.059K | 7.3K | 0.1K | 2.6K | 0.029K | 2K | 0.021K |
+| Yams:5.4.0 | 2.4K | 0.029K | 3.8K | 0.055K | 7.6K | 0.1K | 3.2K | 0.038K | 2.1K | 0.025K |
 
 ## Latency distributions
 
@@ -157,14 +157,14 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/swift/2026-07-24-155452.csv`
-    - run=2026-07-24-155452
+    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/swift/2026-07-24-183742.csv`
+    - run=2026-07-24-183742
     - language=swift
     - os=Linux 6.8.0-124-generic
     - cpu=12th Gen Intel(R) Core(TM) i7-12800H (20 threads)
     - ram=31.0 GiB
     - runtimes: python=3.14.0, node=24.15.0, dotnet=9.0.316
-    - git=04d09d1 dirty
+    - git=85145fd dirty
     - seed=42
     - warmup_reps=1
     - serializers=14
