@@ -65,6 +65,8 @@ let package = Package(
         .package(url: "https://github.com/lynixliu/SwiftAvroCore.git", from: "2.0.0"),
         .package(url: "https://github.com/christophhagen/BinaryCodable", from: "4.0.0"),
         .package(url: "https://github.com/mattt/swift-toml.git", from: "2.0.0"),
+        // CryptoKit-compatible SHA-256 on Linux (Apple platforms use system CryptoKit).
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"),
     ],
     targets: [
         .target(
@@ -109,6 +111,7 @@ let package = Package(
                 .product(name: "SwiftAvroCore", package: "SwiftAvroCore"),
                 .product(name: "BinaryCodable", package: "BinaryCodable"),
                 .product(name: "TOML", package: "swift-toml"),
+                .product(name: "Crypto", package: "swift-crypto"),
             ],
             path: "Sources/SerializerBenchmarkCore"
         ),

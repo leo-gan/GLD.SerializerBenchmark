@@ -66,4 +66,23 @@ final class RoundtripTests: XCTestCase {
         if let conv = ser as? DomainConverter { out = try conv.toDomain(out) }
         XCTAssertTrue(fx.fidelity(against: out))
     }
+
+    func testScheduleGolden() {
+        let seed = Schedule.deriveScheduleSeed(
+            baseSeed: 42, typeId: "message", instanceCount: 1,
+            typeConfigHash: "abc", mode: "bytes", rep: 0
+        )
+        XCTAssertEqual(seed, 15992650003647724414)
+        XCTAssertEqual(Schedule.goldenPermutation(), ["C", "B", "A"])
+        let a = Schedule.deriveScheduleSeed(
+            baseSeed: 42, typeId: "message", instanceCount: 1,
+            typeConfigHash: "abc", mode: "bytes", rep: 0
+        )
+        let b = Schedule.deriveScheduleSeed(
+            baseSeed: 42, typeId: "message", instanceCount: 1,
+            typeConfigHash: "abc", mode: "string", rep: 0
+        )
+        XCTAssertEqual(a, b)
+    }
+
 }
