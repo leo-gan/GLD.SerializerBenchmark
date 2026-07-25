@@ -2,6 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { allFixturesV2, deepEqual, makeOne, V2_TYPE_IDS } from '../src/data.js';
 import { ALL_SERIALIZERS } from '../src/serializers/index.js';
+import {
+  deriveScheduleSeed,
+  goldenPermutation,
+  normalizeMode,
+} from '../src/schedule.js';
+
+test('B-1 schedule golden vector A,B,C → C,B,A', () => {
+  assert.equal(normalizeMode('string'), 'bytes');
+  assert.equal(normalizeMode('Stream'), 'stream');
+  const seed = deriveScheduleSeed(42, 'message', 1, 'abc', 'bytes', 0);
+  assert.equal(seed, 15992650003647724414n);
+  assert.deepEqual(goldenPermutation(), ['C', 'B', 'A']);
+});
 
 test('V2 fixtures are deterministic for seed 42', () => {
   const a = allFixturesV2(42);
