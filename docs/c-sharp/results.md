@@ -1,6 +1,6 @@
 # C# (.NET) — Benchmark Results
 
-**Generated:** 2026-07-24T18:57:57.673919
+**Generated:** 2026-07-24T19:43:31.757872
 
 This page is a **snapshot of measured numbers** for C# (.NET) on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
 
@@ -27,6 +27,9 @@ Compare serializers **inside this language**. Prefer the same [category](../anal
 
 Rows are sorted by **serializer name** (easy lookup), not by rank. Batch workloads appear as **Data type · N instances** (for example Message · 100 instances). Default multi-serializer tables show **high-importance** metrics only; pairwise / version A/B reports can show the full set ([Metrics](../analysis/METRICS.md)).
 
+> **Stream honesty:** stream rows labeled as **native** 170, **text_on_stream** 150, **adapted** 56. Only **`native`** (and carefully **`text_on_stream`**) support stream-API performance claims. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
+
+
 ## Summary tables
 
 ### Summary
@@ -35,132 +38,132 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 | serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
 |---|---|---|---|---|---|---|---|
-| Apache.Avro:1.12.1 | 321 | 165 | 156 | 27.3K | 10.5K | 1696 | **1.00** |
-| BinaryPack:1.0.3 | 73.5 | 33.4 | 39.7 | **99.2K** | 13.9K | 1753 | **1.00** |
-| Ceras:4.1.7 | 117 | 41.4 | 75.6 | 21.8K | 11.4K | 1760 | **1.00** |
-| CsvHelper:33.1.0 | 2,460 | 1,640 | 815 | 0.567K | **8.82K** | 1084 | **1.00** |
-| ExtendedXmlSerializer:3.10.0.0 | 142 | 71.6 | 69.1 | 10.5K | 19.9K | 1767 | **1.00** |
-| fastJson:2.4.0.4 | 393 | 137 | 254 | 18.7K | 22K | 1741 | **1.00** |
-| FlatSharp:7.5.1 | 80.3 | 36.3 | 43.3 | 47.3K | 20.3K | 1763 | **1.00** |
-| FsPickler:5.3.2 | 153 | 84.7 | 66.9 | 22.4K | 14.4K | 1768 | **1.00** |
-| FsPicklerJson:5.3.2 | 355 | 147 | 207 | 13.1K | 25.5K | 1753 | **1.00** |
-| Google.Protobuf:3.35.1 | 87.7 | 43.9 | 43.1 | 56.9K | 11.8K | 1763 | **1.00** |
-| GroBuf:1.9.2 | **56.3** | **18.7** | 36.8 | 83.1K | 27.2K | 1732 | **1.00** |
-| Hyperion:0.12.2 | 142 | 73.9 | 67.7 | 37.4K | 13.6K | 1835 | **1.00** |
-| Jil:2.17.0 | 262 | 129 | 133 | 26.9K | 19.5K | 1767 | **1.00** |
-| Json.Net:13.0.4 | 378 | 159 | 218 | 22.8K | 22.2K | 1774 | **1.00** |
-| Json.Net (Helper):13.0.4 | 383 | 160 | 221 | 22K | 21.6K | 1753 | **1.00** |
-| LightProto:1.3.4 | 91.9 | 46.4 | 44.4 | 59.2K | 12.2K | 1763 | **1.00** |
-| MemoryPack | 60.2 | 26.4 | **33.4** | 59.2K | 16.6K | 1769 | **1.00** |
-| Migrant:0.13.0.0 | 131 | 52.6 | 76.7 | 10.4K | 25.3K | 1803 | **1.00** |
-| MS Binary:.NET 8.0.28 | 444 | 209 | 233 | 11.4K | 21.9K | 1756 | **1.00** |
-| MS Bond Compact:.NET 8.0.28 | 70.8 | 32.7 | 37.5 | 62.3K | 11.4K | 1764 | **1.00** |
-| MS Bond Fast:.NET 8.0.28 | 72.1 | 33.3 | 38.5 | 64.9K | 13.6K | 1769 | **1.00** |
-| MS Bond Json:.NET 8.0.28 | 231 | 88.8 | 142 | 37.5K | 19.3K | 1764 | **1.00** |
-| MS DataContract:.NET 8.0.28 | 492 | 155 | 338 | 14.7K | 48.3K | 1799 | **1.00** |
-| MS DataContract Json:.NET 8.0.28 | 603 | 151 | 449 | 14.1K | 22.7K | 1788 | **1.00** |
-| MS XmlSerializer:.NET 8.0.28 | 524 | 198 | 325 | 13.3K | 51K | 1772 | **1.00** |
-| NetJSON:1.0.0 | 190 | 76.7 | 112 | 43.1K | 19.3K | 1765 | **1.00** |
-| NetSerializer:4.1.2 | 91.1 | 37.7 | 52.7 | 74.2K | 11.9K | 1763 | **1.00** |
-| ProtoBuf:2.4.9.1 | 107 | 34.7 | 71.6 | 47.5K | 12.2K | 1758 | **1.00** |
-| ServiceStack:6.11.0 | 313 | 142 | 170 | 27.5K | 17.2K | 1758 | **1.00** |
-| ServiceStack Json:6.11.0 | 368 | 153 | 214 | 23.8K | 19.5K | 1805 | **1.00** |
-| SharpSerializer | 2,320 | 541 | 1,780 | 6.49K | 107K | 1705 | **1.00** |
-| SharpYaml:3.13.0 | 1,130 | 259 | 867 | 3.55K | 26.2K | 1750 | **1.00** |
-| SpanJson:4.2.1 | 137 | 69.3 | 66.6 | 57.2K | 19.5K | 1771 | **1.00** |
-| System.Text.Json:8.0.0.0 | 234 | 99.9 | 134 | 24.2K | 22.7K | 1810 | **1.00** |
-| Utf8Json:1.3.7 | 173 | 69.4 | 103 | 35.2K | 19.5K | 1746 | **1.00** |
-| YamlDotNet:17.1.0 | 4,480 | 2,440 | 2,010 | 2.77K | 21.8K | 1762 | **1.00** |
-| YAXLib:4.4.0 | 1,650 | 792 | 834 | 1.85K | 50.8K | 1550 | **1.00** |
-| ZeroFormatter:1.6.4 | 63.2 | 26.8 | 36.3 | 74K | 13.6K | 1763 | **1.00** |
+| Apache.Avro:1.12.1 | 345 | 179 | 165 | 25.7K | 10.5K | 1649 | **1.00** |
+| BinaryPack:1.0.3 | 75.7 | 34.5 | 40.5 | **87.5K** | 13.9K | 1779 | **1.00** |
+| Ceras:4.1.7 | 121 | 43.1 | 77.9 | 20.8K | 11.4K | 1737 | **1.00** |
+| CsvHelper:33.1.0 | 2,650 | 1,760 | 864 | 0.539K | **8.82K** | 1107 | **1.00** |
+| ExtendedXmlSerializer:3.10.0.0 | 147 | 73.7 | 71.7 | 9.89K | 19.9K | 1750 | **1.00** |
+| fastJson:2.4.0.4 | 395 | 138 | 257 | 18.4K | 22K | 1711 | **1.00** |
+| FlatSharp:7.5.1 | 81.1 | 37.7 | 42.6 | 44.7K | 20.3K | 1741 | **1.00** |
+| FsPickler:5.3.2 | 157 | 88 | 68.2 | 20.6K | 14.4K | 1791 | **1.00** |
+| FsPicklerJson:5.3.2 | 364 | 153 | 210 | 12.4K | 25.5K | 1773 | **1.00** |
+| Google.Protobuf:3.35.1 | 88.9 | 44.8 | 43.1 | 54.1K | 11.8K | 1751 | **1.00** |
+| GroBuf:1.9.2 | **58.7** | **20.2** | 37.9 | 73K | 27.2K | 1762 | **1.00** |
+| Hyperion:0.12.2 | 148 | 76 | 70.5 | 34.7K | 13.6K | 1784 | **1.00** |
+| Jil:2.17.0 | 269 | 132 | 135 | 24.7K | 19.5K | 1756 | **1.00** |
+| Json.Net:13.0.4 | 379 | 161 | 218 | 22.6K | 22.2K | 1717 | **1.00** |
+| Json.Net (Helper):13.0.4 | 380 | 158 | 220 | 21.2K | 21.6K | 1714 | **1.00** |
+| LightProto:1.3.4 | 94.1 | 47.1 | 45.6 | 53.4K | 12.2K | 1754 | **1.00** |
+| MemoryPack | 61 | 26.9 | **33.7** | 57.7K | 16.6K | 1756 | **1.00** |
+| Migrant:0.13.0.0 | 137 | 54.5 | 80.6 | 9.84K | 25.3K | 1792 | **1.00** |
+| MS Binary:.NET 8.0.28 | 455 | 216 | 238 | 10.6K | 21.9K | 1726 | **1.00** |
+| MS Bond Compact:.NET 8.0.28 | 71.8 | 33.7 | 37.8 | 58.5K | 11.4K | 1765 | **1.00** |
+| MS Bond Fast:.NET 8.0.28 | 74.2 | 34.3 | 39 | 61.4K | 13.6K | 1734 | **1.00** |
+| MS Bond Json:.NET 8.0.28 | 234 | 89.1 | 143 | 36.9K | 19.3K | 1745 | **1.00** |
+| MS DataContract:.NET 8.0.28 | 489 | 155 | 330 | 14.4K | 48.3K | 1802 | **1.00** |
+| MS DataContract Json:.NET 8.0.28 | 573 | 146 | 426 | 13.7K | 22.7K | 1764 | **1.00** |
+| MS XmlSerializer:.NET 8.0.28 | 518 | 202 | 315 | 12.8K | 51K | 1774 | **1.00** |
+| NetJSON:1.0.0 | 189 | 76.8 | 112 | 41.4K | 19.3K | 1782 | **1.00** |
+| NetSerializer:4.1.2 | 92.8 | 38.8 | 53.4 | 69.5K | 11.9K | 1776 | **1.00** |
+| ProtoBuf:2.4.9.1 | 109 | 35.9 | 72.7 | 44.8K | 12.2K | 1752 | **1.00** |
+| ServiceStack:6.11.0 | 309 | 146 | 163 | 26K | 17.2K | 1744 | **1.00** |
+| ServiceStack Json:6.11.0 | 371 | 159 | 211 | 22.9K | 19.5K | 1783 | **1.00** |
+| SharpSerializer | 2,380 | 544 | 1,820 | 6.08K | 107K | 1720 | **1.00** |
+| SharpYaml:3.13.0 | 1,120 | 257 | 856 | 3.38K | 26.2K | 1688 | **1.00** |
+| SpanJson:4.2.1 | 139 | 70.4 | 67.1 | 55.1K | 19.5K | 1784 | **1.00** |
+| System.Text.Json:8.0.0.0 | 239 | 103 | 135 | 23.8K | 22.7K | 1807 | **1.00** |
+| Utf8Json:1.3.7 | 170 | 69.9 | 99.4 | 35K | 19.5K | 1745 | **1.00** |
+| YamlDotNet:17.1.0 | 4,490 | 2,430 | 2,020 | 2.69K | 21.8K | 1717 | **1.00** |
+| YAXLib:4.4.0 | 1,670 | 793 | 855 | 1.77K | 50.8K | 1619 | **1.00** |
+| ZeroFormatter:1.6.4 | 65.2 | 28 | 36.5 | 69.8K | 13.6K | 1756 | **1.00** |
 
 
 ### Total Time
 
 | serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
 |---|---|---|---|---|
-| Apache.Avro:1.12.1 | 17.6 | 17 | 17 | 17.1 |
-| BinaryPack:1.0.3 | **4.41** | **4.09** | **5.04** | **5.1** |
-| Ceras:4.1.7 | 28.7 | 27.5 | 30.7 | 29.9 |
-| CsvHelper:33.1.0 | 3,770 | 3,750 | 3,780 | 3,780 |
-| ExtendedXmlSerializer:3.10.0.0 | 101 | 104 | 102 | 104 |
-| fastJson:2.4.0.4 | 37.8 | 38 | 41.5 | 41.7 |
-| FlatSharp:7.5.1 | 12.6 | 12.1 | 12.5 | 12.7 |
-| FsPickler:5.3.2 | 26.5 | 26.6 | 26.1 | 26.6 |
-| FsPicklerJson:5.3.2 | 59 | 57.6 | 58.7 | 58.6 |
-| Google.Protobuf:3.35.1 | 9.73 | 9.74 | 9.06 | 8.93 |
-| GroBuf:1.9.2 | 7.47 | 7.29 | 7.22 | 7.51 |
-| Hyperion:0.12.2 | 13 | 12.7 | 12.3 | 12.2 |
-| Jil:2.17.0 | 17.6 | 17 | 19.2 | 18.9 |
-| Json.Net:13.0.4 | 35.4 | 35.5 | 37.5 | 37.8 |
-| Json.Net (Helper):13.0.4 | 39 | 39 | 43.9 | 43.3 |
-| LightProto:1.3.4 | 8.33 | 8.09 | 8.11 | 8.08 |
-| MemoryPack | 9.29 | 9.08 | 10.1 | 9.91 |
-| Migrant:0.13.0.0 | 99.1 | 96.5 | 101 | 100 |
-| MS Binary:.NET 8.0.28 | 49.7 | 48.5 | 48.6 | 48.8 |
-| MS Bond Compact:.NET 8.0.28 | 7.02 | 6.54 | 14.1 | 13.8 |
-| MS Bond Fast:.NET 8.0.28 | 5.77 | 5.66 | 12 | 11.9 |
-| MS Bond Json:.NET 8.0.28 | 17.7 | 17.8 | 20.8 | 20.7 |
-| MS DataContract:.NET 8.0.28 | 47.2 | 45.7 | 44.7 | 44.6 |
-| MS DataContract Json:.NET 8.0.28 | 53.3 | 53.1 | 49.8 | 47.7 |
-| MS XmlSerializer:.NET 8.0.28 | 51.5 | 49.6 | 52.4 | 51.2 |
-| NetJSON:1.0.0 | 13.6 | 13.6 | 16.5 | 16.8 |
-| NetSerializer:4.1.2 | 6.99 | 6.99 | 6.21 | 6.14 |
-| ProtoBuf:2.4.9.1 | 15.2 | 14.8 | 13.7 | 13.6 |
-| ServiceStack:6.11.0 | 27.7 | 27.3 | 32.3 | 32.2 |
-| ServiceStack Json:6.11.0 | 30.7 | 30.5 | 35.5 | 34.5 |
-| SharpSerializer | 85.7 | 82.9 | 88.2 | 86.4 |
-| SharpYaml:3.13.0 | 304 | 307 | 317 | 317 |
-| SpanJson:4.2.1 | 8.59 | 8.54 | 10.3 | 9.93 |
-| System.Text.Json:8.0.0.0 | 41.8 | 41.4 | 42.9 | 45.2 |
-| Utf8Json:1.3.7 | 18.4 | 18 | 19.3 | 19.8 |
-| YamlDotNet:17.1.0 | 262 | 255 | 284 | 273 |
-| YAXLib:4.4.0 | 415 | 414 | 441 | 437 |
-| ZeroFormatter:1.6.4 | 6.57 | 6.48 | 6.7 | 6.72 |
+| Apache.Avro:1.12.1 | 24.4 | 22.6 | 28.2 | 25.2 |
+| BinaryPack:1.0.3 | **6.39** | **6.03** | **8.14** | **7.33** |
+| Ceras:4.1.7 | 40.3 | 37 | 45.5 | 42.1 |
+| CsvHelper:33.1.0 | 4,640 | 4,680 | 5,130 | 5,130 |
+| ExtendedXmlSerializer:3.10.0.0 | 128 | 121 | 161 | 143 |
+| fastJson:2.4.0.4 | 49.8 | 47.7 | 54.2 | 51.9 |
+| FlatSharp:7.5.1 | 17.6 | 17 | 21.7 | 18.7 |
+| FsPickler:5.3.2 | 44.8 | 41.6 | 42.3 | 40.5 |
+| FsPicklerJson:5.3.2 | 90.4 | 79.1 | 85.8 | 82.6 |
+| Google.Protobuf:3.35.1 | 13.8 | 12.1 | 12.9 | 12.4 |
+| GroBuf:1.9.2 | 10.7 | 10.3 | 11.5 | 10.6 |
+| Hyperion:0.12.2 | 18.4 | 16.6 | 16.4 | 15.9 |
+| Jil:2.17.0 | 25.1 | 24 | 30 | 27.6 |
+| Json.Net:13.0.4 | 47.9 | 44.3 | 52 | 49.6 |
+| Json.Net (Helper):13.0.4 | 53.4 | 50 | 64.7 | 61.8 |
+| LightProto:1.3.4 | 12.7 | 10.8 | 13.1 | 11.6 |
+| MemoryPack | 15.4 | 13.3 | 15.3 | 13.9 |
+| Migrant:0.13.0.0 | 148 | 138 | 161 | 148 |
+| MS Binary:.NET 8.0.28 | 68.7 | 65.3 | 77.3 | 70.1 |
+| MS Bond Compact:.NET 8.0.28 | 10.6 | 9.58 | 17.9 | 17.5 |
+| MS Bond Fast:.NET 8.0.28 | 8.69 | 8.32 | 15.4 | 14.9 |
+| MS Bond Json:.NET 8.0.28 | 25.6 | 24.5 | 29.6 | 28.7 |
+| MS DataContract:.NET 8.0.28 | 78.7 | 71 | 73 | 69.5 |
+| MS DataContract Json:.NET 8.0.28 | 71.8 | 68.9 | 75.4 | 75.7 |
+| MS XmlSerializer:.NET 8.0.28 | 73.2 | 68.3 | 77.3 | 71.3 |
+| NetJSON:1.0.0 | 18.6 | 17.1 | 23.6 | 21.9 |
+| NetSerializer:4.1.2 | 10.1 | 8.93 | 9.45 | 8.36 |
+| ProtoBuf:2.4.9.1 | 21.9 | 20 | 19.5 | 18.5 |
+| ServiceStack:6.11.0 | 40.2 | 35.7 | 47.3 | 44.8 |
+| ServiceStack Json:6.11.0 | 43.5 | 40.3 | 51.1 | 48.7 |
+| SharpSerializer | 123 | 115 | 132 | 123 |
+| SharpYaml:3.13.0 | 366 | 375 | 464 | 460 |
+| SpanJson:4.2.1 | 13.4 | 11.9 | 15.9 | 14.7 |
+| System.Text.Json:8.0.0.0 | 57.5 | 54.3 | 70.2 | 63.6 |
+| Utf8Json:1.3.7 | 24.2 | 23.6 | 26.5 | 25.7 |
+| YamlDotNet:17.1.0 | 338 | 331 | 420 | 406 |
+| YAXLib:4.4.0 | 551 | 538 | 668 | 614 |
+| ZeroFormatter:1.6.4 | 9.7 | 8.86 | 9.58 | 9.21 |
 
 
 ### Ops/Sec
 
 | serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Apache.Avro:1.12.1 | 41K | 1.3K | 41K | 1.8K | 57K | 2K | 68K | 1.4K | 57K | 1.4K |
-| BinaryPack:1.0.3 | **160K** | 6.5K | **140K** | 7K | **230K** | **14K** | 140K | 2.7K | **260K** | 10K |
-| Ceras:4.1.7 | 33K | 3.5K | 29K | 5K | 35K | 6.9K | 46K | 2.8K | 41K | 5.7K |
-| CsvHelper:33.1.0 | - | - | 0.4K | 0.39K | 0.27K | 0.22K | 1.3K | 0.88K | - | - |
-| ExtendedXmlSerializer:3.10.0.0 | 15K | 4.7K | 12K | 6K | 9.9K | 3.4K | 22K | 4.8K | 21K | 3.9K |
-| fastJson:2.4.0.4 | 28K | 0.91K | 29K | 1.9K | 26K | 1.6K | 67K | 2.5K | 33K | 0.78K |
-| FlatSharp:7.5.1 | 60K | 4.8K | 51K | 6.6K | 79K | 6.2K | 91K | 3.3K | 94K | 8.4K |
-| FsPickler:5.3.2 | 34K | 2.8K | 34K | 4K | 38K | 6.5K | 51K | 2.4K | 46K | 4.2K |
-| FsPicklerJson:5.3.2 | 22K | 1.3K | 20K | 2.2K | 17K | 2K | 34K | 1.9K | 22K | 0.68K |
-| Google.Protobuf:3.35.1 | 70K | 4.9K | 72K | 6.2K | 100K | 6.4K | 120K | 2.7K | 89K | 8K |
-| GroBuf:1.9.2 | 110K | 5.2K | 110K | 8.1K | 130K | 12K | 180K | 4.5K | 190K | **11K** |
-| Hyperion:0.12.2 | 55K | 3.1K | 47K | 4.6K | 77K | 5.6K | 74K | 2.2K | 68K | 2.7K |
-| Jil:2.17.0 | 43K | 2.6K | 42K | 3.7K | 57K | 2.4K | 81K | 2.6K | 40K | 0.95K |
-| Json.Net:13.0.4 | 36K | 1K | 40K | 2K | 28K | 1.2K | 76K | 2.1K | 40K | 0.78K |
-| Json.Net (Helper):13.0.4 | 37K | 1K | 42K | 2K | 26K | 1.2K | 76K | 2.2K | 41K | 0.78K |
-| LightProto:1.3.4 | 81K | 4.7K | 75K | 6.7K | 120K | 6.7K | 130K | 2.7K | 90K | 6.8K |
-| MemoryPack | 93K | **8K** | 86K | **9.8K** | 110K | 11K | 110K | 3.6K | 100K | 10K |
-| Migrant:0.13.0.0 | 15K | 3.9K | 11K | 5.7K | 10K | 4.5K | 19K | 4.1K | 17K | 3.1K |
-| MS Binary:.NET 8.0.28 | 17K | 0.67K | 15K | 1.1K | 20K | 1.6K | 27K | 1.1K | 23K | 1.6K |
-| MS Bond Compact:.NET 8.0.28 | 140K | 6.3K | 130K | 8.5K | 140K | 11K | 180K | 3.6K | 190K | 8.8K |
-| MS Bond Fast:.NET 8.0.28 | 130K | 5.6K | 110K | 7.9K | 170K | 10K | 180K | 3.6K | 210K | 8.6K |
-| MS Bond Json:.NET 8.0.28 | 68K | 2.3K | 77K | 4.4K | 56K | 4.5K | 120K | 3.2K | 49K | 0.9K |
-| MS DataContract:.NET 8.0.28 | 26K | 1K | 24K | 1.9K | 21K | 1.1K | 35K | 0.97K | 23K | 0.51K |
-| MS DataContract Json:.NET 8.0.28 | 23K | 0.68K | 23K | 1.4K | 19K | 0.76K | 40K | 1K | 24K | 0.51K |
-| MS XmlSerializer:.NET 8.0.28 | 25K | 0.87K | 24K | 1.7K | 19K | 1.4K | 31K | 0.88K | 25K | 0.59K |
-| NetJSON:1.0.0 | 79K | 3K | 75K | 5.9K | 74K | 3.8K | 150K | 3.9K | 66K | 1.2K |
-| NetSerializer:4.1.2 | 120K | 4.9K | 96K | 6.5K | 140K | 7.1K | 140K | 3.1K | 150K | 4.8K |
-| ProtoBuf:2.4.9.1 | 73K | 4.4K | 65K | 5.5K | 66K | 6.3K | 90K | 2.4K | 110K | 5.6K |
-| ServiceStack:6.11.0 | 44K | 1.6K | 39K | 2.9K | 36K | 1.4K | 120K | 3K | 38K | 0.88K |
-| ServiceStack Json:6.11.0 | 38K | 1.3K | 37K | 2.3K | 33K | 1.2K | 96K | 2.1K | 35K | 0.83K |
-| SharpSerializer | 9.4K | 0.12K | 11K | 0.27K | 12K | 0.24K | 17K | 0.25K | 12K | 0.17K |
-| SharpYaml:3.13.0 | 4.3K | 0.33K | 5K | 0.67K | 3.3K | 0.29K | 13K | 0.6K | 7.4K | 0.35K |
-| SpanJson:4.2.1 | 95K | 5.9K | 110K | 9.4K | 120K | 7.2K | **200K** | **4.9K** | 47K | 1.3K |
-| System.Text.Json:8.0.0.0 | 42K | 2.1K | 39K | 3.5K | 24K | 2.5K | 85K | 2.6K | 38K | 1.2K |
-| Utf8Json:1.3.7 | 59K | 5.1K | 53K | 7.1K | 54K | 2.4K | 93K | 3.6K | 46K | 1.3K |
-| YamlDotNet:17.1.0 | 4.1K | 0.066K | 4.9K | 0.14K | 3.8K | 0.14K | 8.1K | 0.15K | 5.8K | 0.096K |
-| YAXLib:4.4.0 | 2.9K | 0.21K | 2.9K | 0.43K | 2.4K | 0.34K | 6.2K | 0.42K | 3.7K | 0.27K |
-| ZeroFormatter:1.6.4 | 93K | 7.5K | 85K | 9.6K | 150K | 9.6K | 170K | 3.8K | 120K | 8.1K |
+| Apache.Avro:1.12.1 | 40K | 1.2K | 65K | 1.8K | 41K | 1.6K | 54K | 1.3K | 41K | 1.3K |
+| BinaryPack:1.0.3 | **140K** | 6.4K | **210K** | 6.8K | **160K** | **15K** | 130K | 2.6K | **180K** | 9.4K |
+| Ceras:4.1.7 | 34K | 3.4K | 52K | 4.7K | 25K | 7.1K | 39K | 2.7K | 30K | 5.5K |
+| CsvHelper:33.1.0 | - | - | 0.47K | 0.4K | 0.22K | 0.22K | 1.1K | 0.85K | - | - |
+| ExtendedXmlSerializer:3.10.0.0 | 14K | 4.7K | 23K | 6.2K | 7.8K | 3.4K | 18K | 4.4K | 16K | 3.8K |
+| fastJson:2.4.0.4 | 27K | 0.91K | 49K | 1.9K | 20K | 1.6K | 60K | 2.5K | 28K | 0.76K |
+| FlatSharp:7.5.1 | 55K | 4.8K | 98K | 6.6K | 57K | 6.7K | 81K | 3.2K | 68K | 7.9K |
+| FsPickler:5.3.2 | 34K | 2.8K | 59K | 4K | 22K | 6.4K | 42K | 2.4K | 32K | 3.8K |
+| FsPicklerJson:5.3.2 | 22K | 1.3K | 34K | 2.1K | 11K | 2K | 28K | 1.8K | 17K | 0.66K |
+| Google.Protobuf:3.35.1 | 71K | 4.9K | 130K | 6.1K | 73K | 6.7K | 100K | 2.7K | 67K | 7.4K |
+| GroBuf:1.9.2 | 100K | 5.1K | 180K | 7.9K | 93K | 13K | 150K | 4.2K | 140K | 9.6K |
+| Hyperion:0.12.2 | 50K | 2.9K | 81K | 4.3K | 54K | 5.8K | 65K | 2.1K | 53K | 2.6K |
+| Jil:2.17.0 | 39K | 2.5K | 71K | 3.7K | 40K | 2.3K | 62K | 2.6K | 33K | 0.95K |
+| Json.Net:13.0.4 | 33K | 1K | 61K | 2K | 21K | 1.3K | 76K | 2.2K | 38K | 0.77K |
+| Json.Net (Helper):13.0.4 | 36K | 1K | 60K | 2K | 19K | 1.4K | 68K | 2.2K | 34K | 0.78K |
+| LightProto:1.3.4 | 74K | 5K | 120K | 6.4K | 79K | 6.9K | 110K | 2.6K | 67K | 6.6K |
+| MemoryPack | 78K | **8.2K** | 160K | **9.9K** | 65K | 11K | 86K | 3.6K | 77K | **10K** |
+| Migrant:0.13.0.0 | 13K | 3.9K | 20K | 5.6K | 6.7K | 4.4K | 16K | 4.1K | 14K | 2.9K |
+| MS Binary:.NET 8.0.28 | 17K | 0.66K | 24K | 1.1K | 15K | 1.6K | 23K | 1.1K | 17K | 1.5K |
+| MS Bond Compact:.NET 8.0.28 | 110K | 6.4K | 190K | 8.2K | 94K | 11K | 160K | 3.6K | 170K | 8.4K |
+| MS Bond Fast:.NET 8.0.28 | 120K | 5.4K | 190K | 7.8K | 120K | 10K | 170K | 3.5K | 160K | 8.4K |
+| MS Bond Json:.NET 8.0.28 | 66K | 2.4K | 110K | 4.6K | 39K | 5K | 110K | 3.2K | 46K | 0.9K |
+| MS DataContract:.NET 8.0.28 | 26K | 1K | 42K | 1.9K | 13K | 1.2K | 31K | 0.97K | 19K | 0.51K |
+| MS DataContract Json:.NET 8.0.28 | 22K | 0.67K | 38K | 1.4K | 14K | 0.87K | 34K | 0.97K | 22K | 0.51K |
+| MS XmlSerializer:.NET 8.0.28 | 23K | 0.88K | 37K | 1.8K | 14K | 1.4K | 28K | 0.86K | 21K | 0.61K |
+| NetJSON:1.0.0 | 61K | 3K | 130K | 5.8K | 54K | 4K | 120K | 3.8K | 55K | 1.3K |
+| NetSerializer:4.1.2 | 98K | 4.7K | 170K | 6K | 99K | 7.7K | 130K | 3K | 120K | 4.6K |
+| ProtoBuf:2.4.9.1 | 61K | 4.2K | 110K | 5.5K | 46K | 6.5K | 84K | 2.3K | 92K | 5.4K |
+| ServiceStack:6.11.0 | 37K | 1.5K | 79K | 2.8K | 25K | 1.4K | 95K | 2.9K | 33K | 0.89K |
+| ServiceStack Json:6.11.0 | 39K | 1.3K | 68K | 2.3K | 23K | 1.2K | 78K | 2K | 30K | 0.85K |
+| SharpSerializer | 8.9K | 0.12K | 15K | 0.27K | 8.1K | 0.22K | 15K | 0.24K | 10K | 0.16K |
+| SharpYaml:3.13.0 | 4.2K | 0.34K | 6.4K | 0.69K | 2.7K | 0.67K | 12K | 0.6K | 6.7K | 0.34K |
+| SpanJson:4.2.1 | 91K | 5.9K | 170K | 9.4K | 75K | 7.5K | **180K** | **4.8K** | 45K | 1.3K |
+| System.Text.Json:8.0.0.0 | 36K | 2K | 77K | 3.4K | 17K | 2.6K | 71K | 2.6K | 29K | 1.2K |
+| Utf8Json:1.3.7 | 57K | 4.9K | 100K | 6.8K | 41K | 2.7K | 82K | 3.5K | 37K | 1.3K |
+| YamlDotNet:17.1.0 | 3.9K | 0.066K | 7.5K | 0.15K | 3K | 0.17K | 7.2K | 0.15K | 4.8K | 0.096K |
+| YAXLib:4.4.0 | 2.6K | 0.22K | 4.2K | 0.43K | 1.8K | 0.37K | 5.5K | 0.39K | 3.1K | 0.26K |
+| ZeroFormatter:1.6.4 | 89K | 7.2K | 140K | 9.2K | 100K | 10K | 160K | 3.6K | 83K | 8K |
 
 ## Latency distributions
 
@@ -229,14 +232,14 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/csharp/2026-07-24-183742.csv`
-    - run=2026-07-24-183742
+    - **Source CSV:** `logs/csharp/2026-07-24-193224.csv`
+    - run=2026-07-24-193224
     - language=csharp
     - os=Linux 6.8.0-124-generic
     - cpu=12th Gen Intel(R) Core(TM) i7-12800H (20 threads)
     - ram=31.0 GiB
     - runtimes: dotnet=9.0.316, python=3.14.0, node=24.15.0
-    - git=85145fd dirty
+    - git=7431b57
     - seed=42
     - warmup_reps=1
     - serializers=38
