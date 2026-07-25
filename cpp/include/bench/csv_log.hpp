@@ -20,7 +20,8 @@ class CsvLogger {
                  const std::string& ser, const std::string& version, uint64_t ser_ns,
                  uint64_t deser_ns, size_t size, double fidelity, const std::string& native_kind,
                  const std::string& stream_mode, int instance_count,
-                 const std::string& type_config_hash);
+                 const std::string& type_config_hash, int run_order = -1,
+                 int schedule_position = -1);
 
  private:
   FILE* f_ = nullptr;

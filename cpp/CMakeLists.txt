@@ -171,6 +171,7 @@ set(BENCH_SOURCES
   src/main.cpp
   src/data_v2.cpp
   src/csv_log.cpp
+  src/schedule.cpp
   src/cells.cpp
   src/register.cpp
   src/serializers/ser_json.cpp
@@ -304,6 +305,7 @@ endif()
 set(TEST_SOURCES
   tests/test_roundtrip.cpp
   src/data_v2.cpp
+  src/schedule.cpp
   src/register.cpp
   src/serializers/ser_json.cpp
   src/serializers/ser_binary.cpp

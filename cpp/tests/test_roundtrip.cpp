@@ -1,4 +1,5 @@
 #include "bench/fixture.hpp"
+#include "bench/schedule.hpp"
 #include "bench/serializer.hpp"
 
 #include <iostream>
@@ -6,6 +7,11 @@
 
 int main() {
   using namespace bench;
+  if (int grc = verify_schedule_golden(); grc != 0) {
+    std::cerr << "FAIL schedule golden rc=" << grc << "\n";
+    return 1;
+  }
+  std::cout << "OK schedule golden (A,B,C → C,B,A)\n";
   TypeConfig cfg;
   auto sers = all_serializers();
   const char* types[] = {"message", "document", "telemetry", "strings", "event"};
