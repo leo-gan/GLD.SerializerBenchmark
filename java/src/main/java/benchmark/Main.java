@@ -12,17 +12,34 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Java serializer benchmark runner (Python/Go/Rust-aligned prepare/timed call path).
+ *
+ * <p>Default schedule is block_shuffle: prepare once per cell, then mode → rep → shuffled
+ * serializers. Escape hatch: {@code BENCHMARK_SCHEDULE=none}.
  */
 public final class Main {
   private record BenchError(
       String testDataName, String serializerName, String stringOrStream, int repetition, String errorText) {}
 
   private record Measure(long serNs, long deserNs, int size) {}
+
+  private static final class Prepared {
+    final BenchSerializer ser;
+    final ByteArrayOutputStream streamScratch;
+
+    Prepared(BenchSerializer ser) {
+      this.ser = ser;
+      this.streamScratch = new ByteArrayOutputStream(64 * 1024);
+    }
+  }
 
   public static void main(String[] args) throws Exception {
     int repetitions = 10;
@@ -58,7 +75,6 @@ public final class Main {
     String ts = System.getenv("BENCHMARK_TS");
     if (ts == null || ts.isBlank()) {
       ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss"));
-      // export for sidecars
     }
     Path logPath = logDir.resolve(ts + ".csv");
     Path errPath = logDir.resolve(ts + ".errors.csv");
@@ -89,15 +105,24 @@ public final class Main {
       work.add(Cells.fixtureFromCell(c, seed));
     }
 
+    String strategy = Schedule.resolveStrategy();
+    boolean recordRO = Schedule.resolveRecordRunOrder();
+
     System.out.printf(
-        "[PROGRESS] Java Data Model v2: %d serializers, %d cells, %d reps, modes=%s%n",
-        sers.size(), work.size(), repetitions, modes);
+        "[PROGRESS] Java Data Model v2: %d serializers, %d cells, %d reps, modes=%s schedule=%s%n",
+        sers.size(), work.size(), repetitions, modes, strategy);
 
     List<BenchError> errors = new ArrayList<>();
+    int runOrder = 0;
     try (CsvLogger logger = new CsvLogger(logPath)) {
       for (Cells.WorkItem w : work) {
         Fixture fx = w.fixture();
         System.out.printf("[PROGRESS] Testing Data: %s (N=%d)%n", fx.name, w.instanceCount());
+
+        // Untimed prepare once per cell; per-serializer stream buffers (B-1).
+        List<Prepared> ready = new ArrayList<>();
+        Map<String, Prepared> byName = new HashMap<>();
+        Set<String> failed = new HashSet<>();
         for (BenchSerializer ser : sers) {
           if (!ser.supports(fx.name)) continue;
           try {
@@ -105,17 +130,53 @@ public final class Main {
           } catch (Exception e) {
             System.err.printf("[ERROR] prepare %s / %s: %s%n", ser.name(), fx.name, e);
             errors.add(new BenchError(fx.name, ser.name(), "prepare", 0, e.toString()));
+            failed.add(ser.name());
             continue;
           }
-          // Stream buffer reused across reps (issue #59).
-          ByteArrayOutputStream streamScratch = new ByteArrayOutputStream(64 * 1024);
-          for (String mode : modes) {
-            for (int i = 0; i < repetitions; i++) {
+          Prepared p = new Prepared(ser);
+          ready.add(p);
+          byName.put(ser.name(), p);
+        }
+
+        for (String mode : modes) {
+          for (int i = 0; i < repetitions; i++) {
+            List<Prepared> order;
+            if ("none".equals(strategy)) {
+              order = ready;
+            } else {
+              List<String> names = new ArrayList<>();
+              for (Prepared p : ready) {
+                if (!failed.contains(p.ser.name())) {
+                  names.add(p.ser.name());
+                }
+              }
+              long schedSeed =
+                  Schedule.deriveScheduleSeed(
+                      seed, fx.name, w.instanceCount(), w.typeConfigHash(), mode, i);
+              List<String> shuffled = Schedule.fisherYates(names, schedSeed);
+              order = new ArrayList<>(shuffled.size());
+              for (String nm : shuffled) {
+                Prepared p = byName.get(nm);
+                if (p != null) order.add(p);
+              }
+            }
+
+            for (int pos = 0; pos < order.size(); pos++) {
+              Prepared p = order.get(pos);
+              if (failed.contains(p.ser.name())) continue;
+              BenchSerializer ser = p.ser;
               try {
                 Measure m =
                     mode.equals("bytes")
                         ? measureBytes(ser, fx)
-                        : measureStream(ser, fx, streamScratch);
+                        : measureStream(ser, fx, p.streamScratch);
+                int ro = -1;
+                int sp = -1;
+                if (recordRO) {
+                  ro = runOrder;
+                  sp = pos;
+                  runOrder++;
+                }
                 logger.writeRow(
                     mode,
                     fx.name,
@@ -130,12 +191,14 @@ public final class Main {
                     ser.nativeKind(),
                     ser.streamMode(),
                     w.instanceCount(),
-                    w.typeConfigHash());
+                    w.typeConfigHash(),
+                    ro,
+                    sp);
               } catch (Exception e) {
                 System.err.printf(
                     "[ERROR] %s / %s / %s: %s%n", ser.name(), fx.name, mode, e.toString());
                 errors.add(new BenchError(fx.name, ser.name(), mode, i, e.toString()));
-                break;
+                failed.add(ser.name());
               }
             }
           }
