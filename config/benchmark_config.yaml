@@ -35,6 +35,14 @@ reproducibility:
   warmup_repetitions: 1
   # Environment capture written beside logs
   capture_environment: true
+  # Timed-trial order within each (cell, I/O mode). See docs/analysis/architecture.md
+  # (schedule / block_shuffle). Env override: BENCHMARK_SCHEDULE=none|block_shuffle
+  schedule:
+    # none          — legacy: often serializer-outer, fixed registration order
+    # block_shuffle — default: mode blocks; each rep shuffles serializers (Fisher–Yates)
+    strategy: block_shuffle
+    # Emit optional CSV columns RunOrder (+ SchedulePosition when the runner supports it)
+    record_run_order: true
 
 # -----------------------------------------------------------------------------
 # Execution modes (CLI / scripts map to these)
@@ -131,6 +139,8 @@ csv_schema:
     - ErrorFlag
     - NativeKind
     - StreamMode
+    - RunOrder
+    - SchedulePosition
   time_unit: nanoseconds
 
 # -----------------------------------------------------------------------------

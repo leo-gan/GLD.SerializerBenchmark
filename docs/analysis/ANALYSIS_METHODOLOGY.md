@@ -191,6 +191,7 @@ How to run the CLI: [Results summary — regenerating](BENCHMARK_SUMMARY.md#rege
 Honest methodology includes what the suite **cannot** claim.
 
 - **Cross-language absolute times** are directional at best. Garbage collection, allocators, and runtimes differ. Prefer within-language ranks and effect sizes.
+- **Run order:** default benchmark-runner schedule is **block_shuffle** (serializers reshuffled each rep within a cell×mode). This reduces thermal/order confounds vs serializer-outer fixed order. Escape hatch: `BENCHMARK_SCHEDULE=none`. See [architecture — schedule](architecture.md#timed-trial-schedule).
 - **C** default builds may use portable stand-ins under real library names—see the [C overview](../c/index.md).
 - **Rust** paths such as `prost`, `rkyv`, and `minicbor` use concrete native codecs; timed `rkyv` deserialize **materializes** owned values for fidelity—see the [Rust overview](../rust/index.md).
 - **Stream** mode is not always a true incremental API (some benchmark runners buffer, then write). See [Modes — stream honesty](modes.md#three-levels-of-stream-honesty).
