@@ -214,7 +214,11 @@ fn native_kind_str(ser: &dyn BenchSerializer) -> &'static str {
     }
 }
 
-fn stream_mode_str(ser: &dyn BenchSerializer) -> &'static str {
+fn stream_mode_str(ser: &dyn BenchSerializer, mode: &str, n_instances: usize) -> &'static str {
+    // B-6: multi-instance stream uses batch-framed bytes APIs → adapted even if codec is native.
+    if mode == "stream" && n_instances > 1 {
+        return "adapted";
+    }
     match ser.stream_mode() {
         StreamMode::Native => "native",
         StreamMode::Adapted => "adapted",
@@ -233,7 +237,8 @@ fn measure_trial(
     cell_scratch.clear();
     let t0 = Instant::now();
     if mode == "stream" {
-        // Native stream when available; otherwise adapted via serialize_into.
+        // B-6: for native stream codecs, timed ser AND deser must use stream APIs.
+        // Batch N>1 still uses length-prefixed frames (bytes API) → always adapted path.
         if cell.fixtures.len() == 1 {
             let n = ser.serialize_stream(
                 black_box(&cell.fixtures[0]),
@@ -242,12 +247,14 @@ fn measure_trial(
             let ser_ns = t0.elapsed().as_nanos();
             black_box(n);
             let t1 = Instant::now();
-            let outs = deserialize_cell_bytes(ser, ser_buf, &cell.fixtures)?;
+            let mut cursor = std::io::Cursor::new(ser_buf.as_slice());
+            let out = ser.deserialize_stream(black_box(&mut cursor))?;
             let deser_ns = t1.elapsed().as_nanos();
-            black_box(&outs);
-            check_batch_fidelity(&cell.fixtures, &outs)?;
+            black_box(&out);
+            check_batch_fidelity(&cell.fixtures, &[out])?;
             Ok((ser_ns, deser_ns, n))
         } else {
+            // Multi-instance stream uses batch framing + deserialize_bytes (adapted).
             serialize_cell_into(ser, &cell.fixtures, ser_buf, cell_scratch)?;
             let ser_ns = t0.elapsed().as_nanos();
             black_box(ser_buf.len());
@@ -296,7 +303,7 @@ fn write_success(
         1.0,
         ser.version(),
         native_kind_str(ser),
-        stream_mode_str(ser),
+        stream_mode_str(ser, mode, cell.fixtures.len()),
         cell.instance_count as u32,
         &cell.type_config_hash,
         run_order,
