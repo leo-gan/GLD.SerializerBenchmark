@@ -121,6 +121,13 @@ def regression_threshold(config_path: Optional[str | Path] = None) -> float:
     return float(dig(cfg, "regression.threshold_percent", 10.0))
 
 
+def regression_config(config_path: Optional[str | Path] = None) -> Dict[str, Any]:
+    """Full ``regression:`` block with defaults (see regression.load_regression_config)."""
+    from .regression import load_regression_config
+
+    return load_regression_config(str(config_path) if config_path else None)
+
+
 def language_entries(config_path: Optional[str | Path] = None) -> Dict[str, Dict[str, Any]]:
     """Map language id -> language block from ``languages:``."""
     cfg = load_master_config(config_path)

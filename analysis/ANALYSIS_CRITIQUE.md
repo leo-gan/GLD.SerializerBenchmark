@@ -175,11 +175,10 @@ This creates a false sense of configurability and makes the methodology doc lie 
 1. **Surface the science**  
    Add at least one more table (or downloadable `stats.json`) that shows mean + CI + median + Cliff’s δ + n for every (serializer, data, mode) group. Make effect sizes visible in the published pages.
 
-2. **Fix regression**  
-   - Language is now included in the key.
-   - At minimum: require both % threshold **and** non-overlapping CIs (or δ above negligible) — partially addressed by using bootstrap CI lower bound.
-   - Persist more context (CI, δ, n) in baseline.json (future work).  
-   - Produce a proper regression report artifact.
+2. **Fix regression** — **done (A-4)**  
+   - Language + batch axes in baseline key; default **AND** (practical % + CI support).  
+   - Baseline v2 stores median, CI, n, optional samples; Cliff’s δ diagnostic when samples exist.  
+   - `reports/regression_report.json` on check; see methodology “Regression gate”.
 
 3. **Make time units explicit and single-source**  
    Either:
