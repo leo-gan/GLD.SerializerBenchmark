@@ -159,5 +159,6 @@ nav:
       - Categories: analysis/serialization_categories.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Metrics: analysis/METRICS.md
+      - Claims and replication: analysis/CLAIMS_AND_REPLICATION.md
       - Test Data: analysis/test_data_configuration.md
       - Results Summary: analysis/BENCHMARK_SUMMARY.md
