@@ -65,13 +65,10 @@ Direct `dotnet` (same env vars the script sets):
 ```bash
 export BENCHMARK_RUN_CONFIG=$PWD/../config/library/smoke.yaml
 export BENCHMARK_SEED=42
-export BENCHMARK_SCHEDULE=block_shuffle   # or none for legacy fixed order
 export LOG_DIR=$PWD/../logs/csharp
 dotnet build src/GLD.SerializerBenchmark.csproj -c Release
 dotnet run --project src -c Release -- <repetitions> [serializerFilter] [dataFilter]
 ```
-
-Default schedule is **block_shuffle** (serializers reshuffled each rep within a cell×mode; optional CSV `RunOrder` / `SchedulePosition`). See [architecture — schedule](../docs/analysis/architecture.md#timed-trial-schedule).
 
 Logs: `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (+ `.configs.json`; `.errors.csv` only on failures). Times in **nanoseconds**.
 

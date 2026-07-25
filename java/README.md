@@ -51,12 +51,6 @@ Requires **JDK 17+** (21 recommended) and **Maven 3.9+**.
 
 `LOG_DIR` may be a logs **root** (results under `$LOG_DIR/java/`).
 
-```bash
-export BENCHMARK_SCHEDULE=block_shuffle   # or none for legacy fixed order
-```
-
-Default schedule is **block_shuffle** (serializers reshuffled each rep within a cell×mode; optional CSV `RunOrder` / `SchedulePosition`). See [architecture — schedule](../docs/analysis/architecture.md#timed-trial-schedule).
-
 Analysis: `analyze-benchmarks -l java`.
 
 ## Build notes

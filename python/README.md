@@ -89,7 +89,6 @@ uv sync
 export PYTHONPATH=$PWD/src${PYTHONPATH:+:$PYTHONPATH}
 export BENCHMARK_RUN_CONFIG=$PWD/../config/library/default.yaml
 export BENCHMARK_SEED=42
-export BENCHMARK_SCHEDULE=block_shuffle  # or none
 export LOG_DIR=$PWD/../logs/python
 uv run python -m benchmark.runner 100
 uv run python -m benchmark.runner 10 "json" "message"

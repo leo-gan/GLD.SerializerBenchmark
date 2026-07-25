@@ -63,6 +63,3 @@ Analysis: `analyze-benchmarks -l go`.
 
 - `scripts/generate-protobuf.sh` regenerates Data Model v2 protobuf bindings into `gen/pbv2/`.  
 - Generated code under `gen/pbv2/` is committed for offline builds.
-
-
-Default timed-trial schedule is **block_shuffle** (serializers reshuffled each rep). Override with `BENCHMARK_SCHEDULE=none`. See [architecture — schedule](../docs/analysis/architecture.md#timed-trial-schedule).

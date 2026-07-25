@@ -27,10 +27,4 @@ npm run generate:protobuf   # protobuf-es + google-protobuf (jspb) stubs
 npm test
 ```
 
-```bash
-export BENCHMARK_SCHEDULE=block_shuffle   # or none for legacy fixed order
-```
-
-Default schedule is **block_shuffle** (serializers reshuffled each rep within a cell×mode; optional CSV `RunOrder` / `SchedulePosition`). See [architecture — schedule](../docs/analysis/architecture.md#timed-trial-schedule).
-
 Logs: `logs/javascript/YYYY-MM-DD-HHMMSS.csv` (+ `.configs.json`; `.errors.csv` only on failures).
