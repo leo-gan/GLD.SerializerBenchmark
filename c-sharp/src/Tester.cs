@@ -246,6 +246,11 @@ namespace GLD.SerializerBenchmark
             object processed;
             log.SerializerName = serializer.Name;
             log.SerializerVersion = serializer.Version ?? "";
+            // B-6: only label stream I/O rows
+            if (streaming)
+                log.StreamMode = serializer.StreamMode ?? StreamModeHelper.Resolve(serializer.Name);
+            else
+                log.StreamMode = "";
 
             var serSuccessful = false;
             var error = new Error

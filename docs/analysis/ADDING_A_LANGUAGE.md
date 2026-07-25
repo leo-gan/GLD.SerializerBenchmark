@@ -50,7 +50,8 @@ Meet the [benchmark runner contract](architecture.md#harness-contract-summary) a
 | Output CSV | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` with columns from `csv_schema` |
 | `Language` column | Must match the language id (for example `go`) |
 | Time unit | **Nanoseconds** for all runners (including C#) |
-| Modes | `bytes` and `stream` (or `string` / `stream` if matching legacy C#) |
+| Modes | `bytes` and `stream` when there is a real second path (or `string` / `stream` on C#). If stream would be a label-only alias of bytes, emit **bytes only** |
+| Stream honesty | On every stream row set CSV `StreamMode` to `native` \| `text_on_stream` \| `adapted` ([modes](modes.md#three-levels-of-stream-honesty)); never claim `native` if either timed half is still bytes |
 | Warmup | Log repetition index 0; analysis excludes it from aggregates |
 | Prepare outside the loop | Schema compile, type registration, buffer pools, bind data-type encode function — not timed |
 | Timed section | Serialize and deserialize only |

@@ -34,9 +34,10 @@ NativeKind = Literal[
     "model",  # pydantic / mashumaro / serpyco-style models
 ]
 
-# How stream mode is implemented for this serializer.
+# How stream mode is implemented for this serializer (CSV StreamMode; B-6).
 StreamMode = Literal[
-    "native",  # library has real stream/file API used in stream methods
+    "native",  # both timed ser and deser use real stream/file APIs
+    "text_on_stream",  # text writer/reader on a stream
     "adapted",  # serialize_bytes + write / read + deserialize_bytes
 ]
 

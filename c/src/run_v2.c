@@ -118,9 +118,12 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
         sp = pos;
         (*run_order)++;
     }
-    csv_logger_write(log, mode, type_id, repetitions, r, S->name,
-                     t1 - t0, t2 - t1, out_len, 1.0, S->version,
-                     n, type_hash, ro, sp);
+    {
+        const char *sm = (mode && strcmp(mode, "stream") == 0) ? "adapted" : "";
+        csv_logger_write(log, mode, type_id, repetitions, r, S->name,
+                         t1 - t0, t2 - t1, out_len, 1.0, S->version,
+                         n, type_hash, sm, ro, sp);
+    }
     return 0;
 }
 

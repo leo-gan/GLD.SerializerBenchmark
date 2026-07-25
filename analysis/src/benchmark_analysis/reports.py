@@ -1209,6 +1209,21 @@ def generate_language_results_pages(
             "",
         ]
 
+        # B-6 stream honesty banner (native / text_on_stream / adapted)
+        try:
+            from .stream_honesty import (
+                stream_honesty_banner_md,
+                summarize_stream_modes_from_stats,
+            )
+
+            honesty = summarize_stream_modes_from_stats(stats or {})
+            # Prefer raw records if available on plot_meta / lang_sources later;
+            # stats entries may lack StreamMode — still emit no-stream banner.
+            lines.append(stream_honesty_banner_md(honesty))
+            lines.append("")
+        except Exception:
+            pass
+
         if stats:
             # Show type@n=<instance_count> so N=1 vs N=100 do not collapse.
             display_stats = {}

@@ -138,6 +138,7 @@ csv_schema:
     - FidelityScore
     - ErrorFlag
     - NativeKind
+    # StreamMode: required on NEW stream I/O rows — native|text_on_stream|adapted (B-6)
     - StreamMode
     - RunOrder
     - SchedulePosition
@@ -561,6 +562,8 @@ languages:
     docs_dir: docs/javascript
     runtime: node
     min_node_version: "18"
+    # B-6: timed path is identical for bytes and stream labels — do not claim stream.
+    stream_policy: bytes_only
     serializers:
       - name: JSON.stringify
         category: json

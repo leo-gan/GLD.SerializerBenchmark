@@ -27,7 +27,7 @@ from ..converters import to_dict
 class Cbor2Serializer(Serializer):
     native_kind = "dict"
     # dump is native; load uses loads(read()) due to cbor2+BytesIO bug (see module doc).
-    stream_mode = "native"
+    stream_mode = "adapted"  # dump native; load uses loads(read())
 
     @property
     def name(self) -> str:

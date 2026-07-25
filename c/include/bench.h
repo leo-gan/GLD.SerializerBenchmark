@@ -128,6 +128,7 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
                       uint64_t ser_ns, uint64_t deser_ns, size_t size,
                       double fidelity, const char *version,
                       int instance_count, const char *type_config_hash,
+                      const char *stream_mode,
                       int run_order, int schedule_position);
 void csv_logger_close(csv_logger_t *L);
 

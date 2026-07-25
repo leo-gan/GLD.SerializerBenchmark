@@ -48,3 +48,8 @@ cmake --build c/build --target c_serializer_tests
 ```
 
 Also: [`c/README.md`](../../c/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+
+## Stream honesty (B-6)
+
+Stream mode uses an in-memory `FILE*` (`fmemopen`) wrapper around full encode/decode buffers — **`StreamMode=adapted`** for every stream row. It is not a per-library incremental stream API. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
+

@@ -15,6 +15,12 @@ namespace GLD.SerializerBenchmark
         /// <summary>Installed package version for CSV (resolved from the library assembly).</summary>
         public virtual string Version => SerializerVersionRegistry.Resolve(Name);
 
+        /// <summary>
+        /// Stream-path honesty for CSV StreamMode (B-6). Default native (real Stream API).
+        /// Override or use <see cref="StreamModeHelper"/> for adapted / text_on_stream codecs.
+        /// </summary>
+        public virtual string StreamMode => StreamModeHelper.Resolve(Name);
+
         public virtual bool Supports(string testDataName) => true;
 
         public virtual void Initialize(Type serializablePrimaryType, List<Type> serializableSecondaryTypes = null)

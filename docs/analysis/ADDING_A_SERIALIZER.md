@@ -44,7 +44,7 @@ These keep rankings comparable. Violating them produces “suspicious” numbers
 | Time **serialize** and **deserialize** only | Time schema compile, codegen, type registration, domain↔native maps, or buffer setup |
 | Put setup in **prepare / Initialize / PrepareData** (untimed) | Allocate a brand-new encoder every call when the library documents reuse |
 | Reuse readers/writers/encoders/decoders when the API allows | Copy a “new X every call” snippet from Getting Started into the timed loop without checking reuse |
-| Use real library stream APIs for **stream** mode when they exist | Make stream a free alias of the string/bytes path without documenting it as adapted |
+| Use real library stream APIs for **stream** mode when they exist; emit `StreamMode=native` or `text_on_stream` | Make stream a free alias of the string/bytes path, or label `native` while still using bytes APIs |
 | Encode **N instances** when the cell says `DataTypeInstanceCount=N` | Label N but serialize one object |
 
 ### Isolation

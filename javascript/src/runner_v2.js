@@ -75,8 +75,19 @@ let cells = resolved.cells || [];
 if (dataFilter) {
   cells = cells.filter((c) => c.type_id.toLowerCase().includes(dataFilter));
 }
-const modes =
+// B-6: JS timed path is identical for "bytes" and "stream" labels — never claim stream.
+// Until real stream APIs exist, force bytes-only regardless of resolve io_modes.
+const modesRaw =
   resolved.execution?.io_modes?.length > 0 ? resolved.execution.io_modes : ['bytes'];
+const modes = [...new Set(modesRaw.map((m) => String(m).toLowerCase()))].filter(
+  (m) => m === 'bytes' || m === 'string' || m === 'buffer',
+);
+if (modes.length === 0) modes.push('bytes');
+if (modesRaw.some((m) => String(m).toLowerCase() === 'stream')) {
+  console.log(
+    '[PROGRESS] B-6: ignoring stream io_mode for JavaScript (no distinct stream path; bytes only)',
+  );
+}
 
 // Full registry — schema codecs must support v2 type_ids or skip via supports().
 const serializers = ALL_SERIALIZERS.filter(

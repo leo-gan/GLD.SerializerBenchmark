@@ -33,6 +33,9 @@ class BenchmarkLog:
     type_config_hash: str = ""
     size_gzip_bytes: int = 0
     size_zstd_bytes: int = 0
+    # B-6 stream honesty (on stream rows)
+    native_kind: str = ""
+    stream_mode: str = ""
     # B-1 schedule audit (optional)
     run_order: int = -1
     schedule_position: int = -1
@@ -78,6 +81,8 @@ CSV_HEADER = [
     "TypeConfigHash",
     "SizeGzip",
     "SizeZstd",
+    "NativeKind",
+    "StreamMode",
     "RunOrder",
     "SchedulePosition",
 ]
@@ -128,6 +133,8 @@ class LogStorage:
             log.type_config_hash or "",
             log.size_gzip_bytes or "",
             log.size_zstd_bytes or "",
+            log.native_kind or "",
+            log.stream_mode or "",
             log.run_order if log.run_order >= 0 else "",
             log.schedule_position if log.schedule_position >= 0 else "",
         ])

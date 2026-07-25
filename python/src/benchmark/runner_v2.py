@@ -369,6 +369,12 @@ def run_v2(
                             type_config_hash=th,
                             size_gzip_bytes=size_gz,
                             size_zstd_bytes=size_zstd,
+                            native_kind=getattr(serializer, "native_kind", "") or "",
+                            stream_mode=(
+                                (getattr(serializer, "stream_mode", "") or "")
+                                if mode == "stream"
+                                else ""
+                            ),
                         )
                         try:
                             measure_memory = ser_name not in mem_cache
@@ -491,6 +497,10 @@ def _run_reps_v2(
             type_config_hash=type_config_hash,
             size_gzip_bytes=size_gzip,
             size_zstd_bytes=size_zstd,
+            native_kind=getattr(serializer, "native_kind", "") or "",
+            stream_mode=(
+                (getattr(serializer, "stream_mode", "") or "") if mode == "stream" else ""
+            ),
         )
         try:
             measure_memory = not was_error and cached_memory_peak == 0

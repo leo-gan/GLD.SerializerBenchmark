@@ -194,7 +194,7 @@ Honest methodology includes what the suite **cannot** claim.
 - **Run order:** default benchmark-runner schedule is **block_shuffle** (serializers reshuffled each rep within a cell×mode). This reduces thermal/order confounds vs serializer-outer fixed order. Escape hatch: `BENCHMARK_SCHEDULE=none`. See [architecture — schedule](architecture.md#timed-trial-schedule).
 - **C** default builds may use portable stand-ins under real library names—see the [C overview](../c/index.md).
 - **Rust** paths such as `prost`, `rkyv`, and `minicbor` use concrete native codecs; timed `rkyv` deserialize **materializes** owned values for fidelity—see the [Rust overview](../rust/index.md).
-- **Stream** mode is not always a true incremental API (some benchmark runners buffer, then write). See [Modes — stream honesty](modes.md#three-levels-of-stream-honesty).
+- **Stream** mode is not always a true incremental API. New runs must label stream rows with CSV `StreamMode` (`native` / `text_on_stream` / `adapted`). Languages that only alias bytes must **not** emit stream rows. See [Modes — stream honesty](modes.md#three-levels-of-stream-honesty).
 - **Fidelity** is semantic or structural, not bit-identical across formats.
 - Outlier removal and warmup policy affect means; always read `runs`, confidence intervals, and effect sizes together.
 

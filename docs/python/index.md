@@ -15,7 +15,7 @@ Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runn
 
 | Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
 |----------|----------|---------|---------------------------------|-------------|-------|
-| avro | Schema | `fastavro` | record dict | native | Compact schemaless size; dict/union path slower than protobuf C++ |
+| avro | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
 | cbor2 | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | cloudpickle | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
 | dill | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |

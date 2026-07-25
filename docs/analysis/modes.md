@@ -94,7 +94,25 @@ Not every “stream mode” row is a deep, true streaming API.
 | **Text writer on a stream** | Library writes text through a writer attached to a stream (common for JSON/YAML) | Still a real library path; not the same as binary stream APIs |
 | **Adapted stream** | Builds the full in-memory result first, then dumps it to a stream (or the reverse) | Times often **close to** the in-memory path; do **not** treat as proof of incremental I/O |
 
-If stream and bytes (or string) times are almost the same, check the language **Overview**. Many suites mark adapted paths there. Methodology also notes that stream is not always incremental: [Analysis methodology — limitations](ANALYSIS_METHODOLOGY.md#limitations).
+#### CSV `StreamMode` (required on new stream rows)
+
+Machine-readable honesty on **stream** I/O rows (`StringOrStream` = `stream` / C# `Stream`):
+
+| CSV value | Meaning |
+|-----------|---------|
+| `native` | Timed **serialize and deserialize** both use the library’s real stream/reader/writer APIs |
+| `text_on_stream` | Library text writer/reader on a stream (JSON/YAML/XML style) |
+| `adapted` | Full in-memory encode/decode plus dump to / load from a stream (or equivalent wrapper) |
+
+Rules:
+
+- Bytes/string rows may leave `StreamMode` empty.
+- Do **not** label `native` if either timed half is still the bytes API.
+- If the timed stream path is **identical** to bytes (label-only “stream”), the benchmark runner must **not emit stream rows** for that language/codec.
+
+Language Results pages show a short **stream honesty** banner from these labels. See [Metrics — StreamMode](METRICS.md).
+
+If stream and bytes (or string) times are almost the same, check the language **Overview** and the banner. Many suites mark adapted paths there. Methodology also notes that stream is not always incremental: [Analysis methodology — limitations](ANALYSIS_METHODOLOGY.md#limitations).
 
 ### How I/O mode appears in the pipeline
 
