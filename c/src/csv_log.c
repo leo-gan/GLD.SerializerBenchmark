@@ -15,7 +15,7 @@ csv_logger_t *csv_logger_create(const char *path) {
         "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,"
         "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,"
         "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash,"
-        "RunOrder,SchedulePosition\n");
+        "StreamMode,RunOrder,SchedulePosition\n");
     return L;
 }
 
@@ -24,6 +24,7 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
                       uint64_t ser_ns, uint64_t deser_ns, size_t size,
                       double fidelity, const char *version,
                       int instance_count, const char *type_config_hash,
+                      const char *stream_mode,
                       int run_order, int schedule_position) {
     if (!L || !L->f) return;
     uint64_t tot = ser_ns + deser_ns;
@@ -35,11 +36,12 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
     if (run_order >= 0) snprintf(ro, sizeof ro, "%d", run_order);
     if (schedule_position >= 0) snprintf(sp, sizeof sp, "%d", schedule_position);
     fprintf(L->f,
-        "c,%s,%s,%d,%d,%s,%s,%llu,%llu,%zu,%llu,%.6f,%.6f,%.6f,0,%.1f,%d,%s,%s,%s\n",
+        "c,%s,%s,%d,%d,%s,%s,%llu,%llu,%zu,%llu,%.6f,%.6f,%.6f,0,%.1f,%d,%s,%s,%s,%s\n",
         mode, td, reps, rep_idx, ser, version ? version : "",
         (unsigned long long)ser_ns, (unsigned long long)deser_ns, size,
         (unsigned long long)tot, ops_s, ops_d, ops_t, fidelity,
         instance_count, type_config_hash ? type_config_hash : "",
+        stream_mode ? stream_mode : "",
         ro, sp);
 }
 
