@@ -126,9 +126,20 @@
       <div class="glass-panel">
         <div class="chart-header">
           <h2 class="chart-title" id="bar-chart-title">Throughput &amp; Size Ranking</h2>
-          <button type="button" id="btn-export-bar" class="tab-btn chart-tool-btn" title="Download ranking PNG">PNG</button>
+          <div class="chart-toolbar">
+            <span class="filter-label" style="margin:0;">Sort</span>
+            <button type="button" id="btn-rank-sort-speed" class="tab-btn chart-tool-btn active" title="Sort by speed (ops/s or latency)">Speed</button>
+            <button type="button" id="btn-rank-sort-size" class="tab-btn chart-tool-btn" title="Sort by median size (compact first)">Size</button>
+            <button type="button" id="btn-export-bar" class="tab-btn chart-tool-btn" title="Download ranking PNG">PNG</button>
+          </div>
         </div>
-        <div class="chart-container chart-container-tall">
+        <p class="section-help ranking-help" id="ranking-help">
+          Single diverging chart:
+          <span class="rank-legend-size">◀ size</span> left ·
+          <span class="rank-legend-speed">speed ▶</span> right.
+          Each side is normalized to the chart max (100); hover for absolute values.
+        </p>
+        <div class="chart-container ranking-chart-single">
           <canvas id="bar-chart"></canvas>
         </div>
       </div>
@@ -139,9 +150,20 @@
       <div class="table-header-row">
         <div>
           <h2 class="chart-title">Detailed Analytics</h2>
-          <p class="section-help">Full roster for the current language, fixture, and mode. Units are in column headers only.</p>
+          <p class="section-help" id="detailed-analytics-help">
+            Roster with Median / Std / P95 / P99 for speed or latency, plus median size.
+            Pareto-optimal rows are highlighted. Cells: <code>value (ratio×)</code> vs baseline.
+          </p>
         </div>
         <div class="table-header-actions">
+          <div class="tabs roster-metric-tabs" role="tablist" aria-label="Detailed Analytics speed metric">
+            <button type="button" class="tab-btn active" id="btn-roster-ops">Ops/s</button>
+            <button type="button" class="tab-btn" id="btn-roster-latency">Latency</button>
+          </div>
+          <label class="filter-label" for="roster-baseline-select" style="margin:0;">Baseline</label>
+          <div class="select-wrapper">
+            <select id="roster-baseline-select" aria-label="Roster baseline serializer"></select>
+          </div>
           <button type="button" id="btn-copy-roster-md" class="tab-btn" style="font-size:0.8rem;">Copy Markdown</button>
           <div class="search-input-wrapper">
             <input type="text" id="table-search" class="search-input" placeholder="Search serializers…" aria-label="Search serializers">
@@ -150,16 +172,21 @@
       </div>
 
       <div class="table-container">
-        <table id="analytics-table" class="data-table">
+        <table id="analytics-table" class="data-table view-ops">
           <thead>
             <tr>
               <th id="th-serializer" class="str sort-asc">Serializer</th>
-              <th id="th-ops" class="num">Ops/s</th>
-              <th id="th-total-ns" class="num">Total latency</th>
-              <th id="th-ser-ns" class="num">Ser latency</th>
-              <th id="th-deser-ns" class="num">Deser latency</th>
+              <!-- Ops/s stats (shown when roster view = ops) -->
+              <th id="th-ops-median" class="num roster-col-ops">Median</th>
+              <th id="th-ops-std" class="num roster-col-ops">Std</th>
+              <th id="th-ops-p95" class="num roster-col-ops">P95</th>
+              <th id="th-ops-p99" class="num roster-col-ops">P99</th>
+              <!-- Latency stats (shown when roster view = latency) -->
+              <th id="th-lat-median" class="num roster-col-latency">Median</th>
+              <th id="th-lat-std" class="num roster-col-latency">Std</th>
+              <th id="th-lat-p95" class="num roster-col-latency">P95</th>
+              <th id="th-lat-p99" class="num roster-col-latency">P99</th>
               <th id="th-size" class="num">Median size (bytes)</th>
-              <th id="th-optimal" class="status">Frontier</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -169,95 +196,110 @@
 
     <!-- Unified Compare lab -->
     <section class="glass-panel comparison-section" id="compare">
-      <div class="chart-header">
-        <h2 class="chart-title">Compare</h2>
-        <span class="badge badge-slate" id="compare-scope-badge">Same language</span>
-      </div>
-      <p class="section-help">
-        Compare serializers on selected metrics. Pick a <strong>baseline</strong>; other columns show
-        <code>value (ratio×)</code> relative to baseline. Use <strong>Cross-language</strong> when porting
-        (absolute times are directional only).
-      </p>
-      <p id="compare-xl-disclaimer" class="section-disclaimer" hidden>
-        Cross-language absolute times are <strong>directional only</strong> — runtimes, GCs, and hosts differ.
-        Prefer size, fidelity, and rough order-of-magnitude over a single “winner.”
-      </p>
+      <!-- Dense 2-row toolbar + optional metrics panel -->
+      <div class="compare-controls-compact">
+        <div class="compare-ctrl-row compare-ctrl-row-main">
+          <h2 class="chart-title compare-h2">Compare</h2>
+          <div class="compare-scope-tabs tabs" role="tablist">
+            <button type="button" class="tab-btn active" id="btn-compare-same" data-scope="same">Same language</button>
+            <button type="button" class="tab-btn" id="btn-compare-xl" data-scope="cross">Cross-language</button>
+          </div>
+          <span class="badge badge-slate" id="compare-scope-badge" hidden>Same language</span>
 
-      <div class="compare-scope-tabs tabs" role="tablist">
-        <button type="button" class="tab-btn active" id="btn-compare-same" data-scope="same">Same language</button>
-        <button type="button" class="tab-btn" id="btn-compare-xl" data-scope="cross">Cross-language</button>
-      </div>
-
-      <div class="compare-lab-filters">
-        <div class="filter-group" id="compare-same-filters">
-          <span class="filter-label">Baseline</span>
-          <div class="select-wrapper">
-            <select id="compare-baseline-select" aria-label="Baseline serializer"></select>
-          </div>
-        </div>
-        <div class="filter-group" id="compare-xl-filters" hidden>
-          <span class="filter-label">Fixture</span>
-          <div class="select-wrapper">
-            <select id="xl-data-select" aria-label="Cross-language test data"></select>
-          </div>
-          <span class="filter-label">Mode</span>
-          <div class="select-wrapper">
-            <select id="xl-mode-select" aria-label="Cross-language mode"></select>
-          </div>
-          <span class="filter-label">Baseline</span>
-          <div class="select-wrapper">
-            <select id="compare-xl-baseline-select" aria-label="Cross-language baseline"></select>
-          </div>
-          <button type="button" id="xl-reset-pareto" class="tab-btn" style="font-size:0.85rem;"
-            title="Select up to 2 Pareto-optimal serializers per language">
-            Seed Pareto best
-          </button>
-        </div>
-      </div>
-
-      <div class="metrics-detail-controls metrics-detail-controls-wide">
-        <div class="picker-card metrics-checklist-card">
-          <div class="metrics-checklist-header">
-            <span class="filter-label" id="compare-ser-label">Serializers</span>
-            <div class="metrics-checklist-actions">
-              <button type="button" id="detail-ser-select-all" class="link-btn">All</button>
-              <button type="button" id="detail-ser-select-none" class="link-btn">None</button>
+          <div class="filter-group compare-lab-filters-inline" id="compare-same-filters">
+            <span class="filter-label">Test Data</span>
+            <div class="select-wrapper">
+              <select id="same-data-select" aria-label="Same-language test data"></select>
+            </div>
+            <span class="filter-label">Mode</span>
+            <div class="select-wrapper">
+              <select id="same-mode-select" aria-label="Same-language mode"></select>
+            </div>
+            <span class="filter-label">Baseline</span>
+            <div class="select-wrapper">
+              <select id="compare-baseline-select" aria-label="Baseline serializer"></select>
             </div>
           </div>
-          <div id="detail-serializer-checklist" class="metrics-checklist serializers-checklist" role="group" aria-label="Serializer checklist"></div>
-          <div id="xl-add-panel" class="xl-add-panel" hidden>
-            <div class="cross-lang-add-row">
-              <div class="select-wrapper">
-                <select id="xl-add-lang" aria-label="Language to add"></select>
-              </div>
-              <div class="select-wrapper xl-add-ser-wrap">
-                <select id="xl-add-serializer" aria-label="Serializer to add"></select>
-              </div>
-              <button type="button" id="xl-add-btn" class="tab-btn xl-add-btn">Add</button>
+
+          <div class="filter-group compare-lab-filters-inline" id="compare-xl-filters" hidden>
+            <span class="filter-label">Test Data</span>
+            <div class="select-wrapper">
+              <select id="xl-data-select" aria-label="Cross-language test data"></select>
             </div>
-            <div id="xl-selection-chips" class="xl-chips" aria-label="Selected serializers for comparison"></div>
+            <span class="filter-label">Mode</span>
+            <div class="select-wrapper">
+              <select id="xl-mode-select" aria-label="Cross-language mode"></select>
+            </div>
+            <span class="filter-label">Baseline</span>
+            <div class="select-wrapper">
+              <select id="compare-xl-baseline-select" aria-label="Cross-language baseline"></select>
+            </div>
+          </div>
+
+          <span class="compare-status-line" id="compare-status-line">0 serializers · 0 metrics</span>
+          <button type="button" id="btn-copy-compare-md" class="tab-btn chart-tool-btn compare-copy-btn">Copy Markdown</button>
+        </div>
+
+        <div class="compare-ctrl-row compare-ctrl-row-selected">
+          <div id="compare-same-panel" class="compare-inline-add">
+            <div class="select-wrapper same-lang-wrap">
+              <select id="same-lang-select" aria-label="Language for comparison"></select>
+            </div>
+            <input type="search" id="same-ser-search" class="compare-search-input" placeholder="Filter…" aria-label="Filter serializers to add" autocomplete="off">
+            <div class="select-wrapper compare-add-select-wrap">
+              <select id="same-ser-add-select" aria-label="Serializer to add"></select>
+            </div>
+            <button type="button" id="same-ser-add-btn" class="tab-btn chart-tool-btn">Add</button>
+          </div>
+
+          <div id="xl-add-panel" class="compare-inline-add xl-add-panel" hidden>
+            <div class="select-wrapper xl-lang-wrap">
+              <select id="xl-add-lang" aria-label="Language to add"></select>
+            </div>
+            <div class="select-wrapper xl-add-ser-wrap">
+              <select id="xl-add-serializer" aria-label="Serializer to add"></select>
+            </div>
+            <button type="button" id="xl-add-btn" class="tab-btn chart-tool-btn">Add</button>
+          </div>
+
+          <div id="same-selection-chips" class="chip-groups chip-groups-compact" aria-label="Selected serializers"></div>
+          <div id="xl-selection-chips" class="chip-groups chip-groups-compact" hidden aria-label="Selected serializers for comparison"></div>
+
+          <div class="metrics-checklist-actions compare-sel-actions">
+            <button type="button" id="xl-reset-pareto" class="link-btn" hidden title="Up to 2 Pareto-optimal per language">Pareto</button>
+            <button type="button" id="detail-ser-select-none" class="link-btn">Clear</button>
+            <button type="button" id="detail-ser-select-all" class="link-btn">All</button>
           </div>
         </div>
 
-        <div class="picker-card metrics-checklist-card">
-          <div class="metrics-checklist-header">
-            <span class="filter-label">Metrics</span>
-            <div class="metrics-checklist-actions">
-              <button type="button" id="metrics-select-all" class="link-btn">All</button>
-              <button type="button" id="metrics-select-none" class="link-btn">None</button>
-              <button type="button" id="metrics-select-default" class="link-btn">Defaults</button>
-            </div>
+        <div class="compare-ctrl-row compare-ctrl-row-metrics">
+          <span class="filter-label">Metrics</span>
+          <span class="badge badge-slate" id="metrics-selected-count">0</span>
+          <div class="metrics-preset-row" role="group" aria-label="Metric presets">
+            <button type="button" class="preset-btn active" data-preset="defaults" id="metrics-select-default">Defaults</button>
+            <button type="button" class="preset-btn" data-preset="latency" id="metrics-preset-latency">Latency</button>
+            <button type="button" class="preset-btn" data-preset="size" id="metrics-preset-size">Size</button>
+            <button type="button" class="preset-btn" data-preset="custom" id="metrics-edit-toggle">Custom ▾</button>
           </div>
-          <div id="metrics-checklist" class="metrics-checklist metrics-checklist-grouped" role="group" aria-label="Metric checklist by group"></div>
+          <div class="metrics-checklist-actions">
+            <button type="button" id="metrics-select-all" class="link-btn">All</button>
+            <button type="button" id="metrics-select-none" class="link-btn">None</button>
+          </div>
+          <span id="compare-selected-count" class="badge badge-slate" hidden>0</span>
         </div>
+        <div id="metrics-panel-body" class="metrics-panel-body" hidden>
+          <div id="metrics-checklist" class="metrics-checklist metrics-checklist-accordion" role="group" aria-label="Metric checklist by group"></div>
+        </div>
+
+        <p id="compare-xl-disclaimer" class="compare-xl-hint" hidden title="Runtimes, GCs, and hosts differ">
+          Cross-lang times are directional only
+        </p>
+
+        <div id="detail-serializer-checklist" hidden></div>
       </div>
 
-      <div class="table-header-actions" style="margin-bottom:0.5rem;">
-        <button type="button" id="btn-copy-compare-md" class="tab-btn" style="font-size:0.8rem;">Copy Markdown</button>
-      </div>
-
-      <div class="table-container xl-table-wrap">
-        <table id="serializer-metrics-table" class="data-table">
+      <div class="table-container xl-table-wrap compare-table-wrap">
+        <table id="serializer-metrics-table" class="data-table compare-matrix-table">
           <thead id="serializer-metrics-head">
             <tr><th class="str">Metric</th></tr>
           </thead>

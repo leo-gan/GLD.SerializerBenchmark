@@ -9,29 +9,68 @@
 
 const SIG = 3;
 
-/** Format a finite number to `sig` significant digits (no unit suffix). */
+/**
+ * Format a finite number to `sig` significant digits in **fixed-point only**
+ * (never scientific / exponential). Examples: 1100 → "1,100", 0.644 → "0.644".
+ */
 export function formatSig(value, sig = SIG) {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value !== 'number' || !Number.isFinite(value)) return String(value);
   if (value === 0) return '0';
 
   const abs = Math.abs(value);
-  // toPrecision already enforces significant digits (may yield scientific notation)
-  let s = Number(value).toPrecision(sig);
-  // Normalize exponent form: 1.24e+6 → 1.24e6
+  // Round to `sig` significant digits without using exponential display.
+  const order = Math.floor(Math.log10(abs));
+  const scale = 10 ** (sig - 1 - order);
+  const rounded = Math.round(value * scale) / scale;
+
+  // Fraction digits needed so the least significant digit of `sig` is visible.
+  const decimals = Math.max(0, sig - 1 - order);
+
+  if (decimals === 0) {
+    return Math.round(rounded).toLocaleString('en-US');
+  }
+
+  // Fixed-point with thousands separators; strip trailing zeros after the point.
+  let s = rounded.toLocaleString('en-US', {
+    useGrouping: true,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: decimals,
+  });
+  // Guard: some engines can still emit exp for extreme values — force fixed.
   if (/e/i.test(s)) {
-    return s.replace(/e\+/i, 'e').replace(/e-0+/i, 'e-');
-  }
-  // Trim trailing zeros on decimals (keep integers clean)
-  if (s.includes('.')) {
-    s = s.replace(/\.?0+$/, '');
-  }
-  // Group thousands for large fixed values still in decimal form
-  const n = Number(s);
-  if (Number.isFinite(n) && Math.abs(n) >= 1000) {
-    return n.toLocaleString('en-US', { maximumSignificantDigits: sig });
+    s = rounded.toFixed(decimals).replace(/\.?0+$/, '');
+    // Add grouping to integer part
+    const neg = s.startsWith('-');
+    const body = neg ? s.slice(1) : s;
+    const [ip, fp] = body.split('.');
+    const grouped = Number(ip).toLocaleString('en-US');
+    s = (neg ? '-' : '') + grouped + (fp != null && fp !== '' ? `.${fp}` : '');
   }
   return s;
+}
+
+/**
+ * Docs Summary-table style label: ``simd-json:0.14.3`` when version is known.
+ * Matches analysis/reports.py: ``f"{name}:{version}" if version else name``.
+ */
+export function serializerDisplayName(serializer, version) {
+  const name = serializer == null ? '' : String(serializer).trim();
+  if (!name) return '—';
+  const ver =
+    version == null || version === ''
+      ? ''
+      : String(version).trim();
+  if (!ver || ver === 'unknown' || ver === '—') return name;
+  // Avoid double-suffix if caller already passed "name:ver"
+  if (name.includes(':') && name.endsWith(ver)) return name;
+  return `${name}:${ver}`;
+}
+
+/** Label from a stats group object (uses serializer_version when present). */
+export function serializerLabelFromGroup(g) {
+  if (!g) return '—';
+  return serializerDisplayName(g.serializer, g.serializer_version);
 }
 
 /** Locale-grouped integer (sizes, counts). */
@@ -41,14 +80,28 @@ export function formatIntGrouped(value) {
   return Math.round(value).toLocaleString('en-US');
 }
 
-/** Choose latency display unit from a set of ns values. */
+/** Fixed µs scale for roster/compare latency columns. */
+export const LATENCY_US = { unit: 'µs', divisor: 1e3, header: 'µs' };
+
+/**
+ * Choose latency display unit from a set of ns values.
+ *
+ * Prefer **microseconds** for table columns. Serializer encode/decode times
+ * usually sit in the µs–ms band: ms collapses fast codecs to awkward decimals
+ * (e.g. 0.012 ms vs 12.3 µs), while a fixed µs scale keeps 3-sig values
+ * comparable across total / ser / deser without unit hopping when one slow
+ * row would otherwise force the whole column into milliseconds.
+ *
+ * - max < 1 µs  → ns (sub-microsecond niche)
+ * - otherwise   → µs (including multi-ms latencies, shown as e.g. 12,400)
+ * - never auto-ms for roster/compare tables
+ */
 export function chooseLatencyUnit(valuesNs) {
   const nums = (valuesNs || []).filter((v) => typeof v === 'number' && Number.isFinite(v) && v > 0);
-  if (!nums.length) return { unit: 'ns', divisor: 1, header: 'ns' };
+  if (!nums.length) return LATENCY_US;
   const max = Math.max(...nums);
-  if (max >= 1e6) return { unit: 'ms', divisor: 1e6, header: 'ms' };
-  if (max >= 1e3) return { unit: 'µs', divisor: 1e3, header: 'µs' };
-  return { unit: 'ns', divisor: 1, header: 'ns' };
+  if (max < 1e3) return { unit: 'ns', divisor: 1, header: 'ns' };
+  return LATENCY_US;
 }
 
 /** Choose throughput scale from ops/s values. */
@@ -152,27 +205,33 @@ export function metricHeaderLabel(key, scales = {}) {
 }
 
 /**
- * Ratio = value / baseline (always).
+ * Ratio = value / reference.
+ * @param {string} [ratioTag=''] suffix after ×, e.g. '' → "0.93×", 'med' → "0.93×med", 'base' → "0.93×base"
  * Returns { text, ratio, className } for cell rendering.
  */
-export function formatRelativeCell(value, baseline, higherIsBetter, scales, key) {
-  const abs = formatMetricCell(key, value, scales);
+export function formatRelativeCell(value, reference, higherIsBetter, scales, key, ratioTag = '') {
+  const abs =
+    key && (String(key).startsWith('ops_') || key === 'avg_ops_per_sec')
+      ? formatOpsCell(value, scales?.ops)
+      : formatMetricCell(key, value, scales);
   if (
     value === null ||
     value === undefined ||
-    baseline === null ||
-    baseline === undefined ||
+    reference === null ||
+    reference === undefined ||
     typeof value !== 'number' ||
-    typeof baseline !== 'number' ||
+    typeof reference !== 'number' ||
     !Number.isFinite(value) ||
-    !Number.isFinite(baseline) ||
-    baseline === 0
+    !Number.isFinite(reference) ||
+    reference === 0
   ) {
     return { text: abs, ratio: null, className: 'num' };
   }
 
-  const ratio = value / baseline;
-  const ratioText = `${formatSig(ratio)}×`;
+  const ratio = value / reference;
+  // Multiplier: 2 significant digits is enough (0.931× → 0.93×)
+  const tag = ratioTag ? `×${ratioTag}` : '×';
+  const ratioText = `${formatSig(ratio, 2)}${tag}`;
   let className = 'num rel-neutral';
   if (higherIsBetter === true || higherIsBetter === false) {
     const better = higherIsBetter ? ratio > 1 + 1e-9 : ratio < 1 - 1e-9;
@@ -210,7 +269,8 @@ export function scalesFromGroups(groups, keys = null) {
     }
   }
   return {
-    latency: chooseLatencyUnit(lat),
+    // Tables always normalize latency to µs (see chooseLatencyUnit).
+    latency: lat.length ? chooseLatencyUnit(lat) : LATENCY_US,
     ops: chooseOpsUnit(ops),
   };
 }
