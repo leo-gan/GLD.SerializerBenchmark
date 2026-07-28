@@ -26,8 +26,47 @@ import {
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 
-const GROUP_META_KEYS = new Set(['serializer', 'test_data', 'mode', 'language']);
+const GROUP_META_KEYS = new Set([
+  'serializer',
+  'test_data',
+  'mode',
+  'language',
+  'filter',
+  'serializer_version',
+  'type_config_hash',
+  'StreamMode',
+  'compounded',
+  'compound_parts',
+]);
 const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
+
+/** Named sample-filter policies (must match analysis FILTER_POLICY_IDS). */
+const FILTER_POLICY_FALLBACK = {
+  all: {
+    id: 'all',
+    label: 'All trials (post-warmup)',
+    description:
+      'Every measured repetition after warmup. No IQR drop and no winsorization.',
+  },
+  'iqr_1.5': {
+    id: 'iqr_1.5',
+    label: 'IQR k=1.5 (strict / default)',
+    description:
+      'Paired Tukey fences (k=1.5) on ser/deser/total; drop if outlier on any.',
+  },
+  iqr_3: {
+    id: 'iqr_3',
+    label: 'IQR k=3 (loose)',
+    description: 'Same paired IQR rule with k=3 (only extreme stalls removed).',
+  },
+  winsorize_5_95: {
+    id: 'winsorize_5_95',
+    label: 'Winsorize 5–95%',
+    description: 'Clip ser/deser/total at 5th–95th percentiles; n unchanged.',
+  },
+};
+const DEFAULT_FILTER_POLICY = 'iqr_1.5';
+const FILTER_POLICY_ORDER = ['all', 'iqr_1.5', 'iqr_3', 'winsorize_5_95'];
 
 function fixtureKey(g) {
   const raw = String(g?.test_data ?? '');
@@ -142,6 +181,12 @@ let state = {
   sortKey: 'serializer',
   sortDirection: 'asc',
   allGroups: [],
+  /** @type {Record<string, object[]>} policy id → full group list for current language */
+  groupsByPolicy: {},
+  /** @type {Record<string, object>} policy catalog from export or fallback */
+  filterPolicies: { ...FILTER_POLICY_FALLBACK },
+  filterPolicy: DEFAULT_FILTER_POLICY,
+  defaultFilterPolicy: DEFAULT_FILTER_POLICY,
   filteredGroups: [],
   paretoSerializerNames: [],
   serializerNames: [],
@@ -151,6 +196,8 @@ let state = {
   compareBaseline: '',
   compareScope: 'same', // 'same' | 'cross'
 
+  /** @type {Record<string, Record<string, object[]>>} lang → policy → groups */
+  crossLangGroupsByLangPolicy: {},
   crossLangGroupsByLang: {},
   xlTestData: '',
   xlMode: '',
@@ -277,6 +324,7 @@ function saveSettings() {
     xlSelectionMode: state.xlSelectionMode,
     xlBaselineKey: state.xlBaselineKey,
     chartLogScale: state.chartLogScale,
+    filterPolicy: state.filterPolicy,
   };
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
@@ -335,6 +383,9 @@ function applySavedSettings(saved) {
       .map((x) => ({ lang: x.lang, serializer: x.serializer }));
   }
   if (typeof saved.xlBaselineKey === 'string') state.xlBaselineKey = saved.xlBaselineKey;
+  if (typeof saved.filterPolicy === 'string' && saved.filterPolicy) {
+    state.filterPolicy = saved.filterPolicy;
+  }
   if (typeof saved.chartLogScale === 'boolean') {
     state.chartLogScale = saved.chartLogScale;
     setChartLogScale(state.chartLogScale);
@@ -474,6 +525,10 @@ function updateCompareStatusLine() {
 }
 
 function setupEventListeners() {
+  document.getElementById('filter-policy-select')?.addEventListener('change', (e) => {
+    setFilterPolicy(e.target.value);
+  });
+
   // Mobile nav
   const navToggle = document.getElementById('nav-toggle');
   const mainNav = document.getElementById('main-nav');
@@ -930,6 +985,25 @@ function updateHistoryUIForLanguage() {
   );
 }
 
+/**
+ * Prefer standalone multi-policy stats JSON; fall back to gz-embedded stats.
+ * @param {string} lang
+ * @param {object|null} gzStats
+ */
+async function loadStatsObjectForLanguage(lang, gzStats) {
+  const statsUrl = `data/stats_${lang}_latest.json`;
+  try {
+    const res = await fetch(statsUrl);
+    if (res.ok) {
+      const obj = await res.json();
+      if (obj && (obj.groups_by_policy || obj.groups)) return obj;
+    }
+  } catch (e) {
+    console.warn(`Could not load ${statsUrl}:`, e);
+  }
+  return gzStats || { groups: [] };
+}
+
 async function loadLanguageData(lang) {
   const url = `data/${lang}_latest.json.gz`;
   try {
@@ -950,11 +1024,24 @@ async function loadLanguageData(lang) {
     state.currentRunErrors = payload.errors || '';
     state.currentRunCsv = payload.csv_data || '';
 
-    processStatsData(payload.stats);
+    const statsObj = await loadStatsObjectForLanguage(lang, payload.stats);
+    processStatsData(statsObj);
     updateRunMeta();
     updateHistoryUIForLanguage();
   } catch (error) {
     console.error(error);
+    // Last resort: stats-only file without gz package
+    try {
+      const statsObj = await loadStatsObjectForLanguage(lang, null);
+      if (statsObj.groups?.length || statsObj.groups_by_policy) {
+        processStatsData(statsObj);
+        updateRunMeta();
+        updateHistoryUIForLanguage();
+        return;
+      }
+    } catch (_) {
+      /* ignore */
+    }
     showNotification(`Error loading ${lang} stats. Please run sync script first.`, 'error');
     setKpiEmpty('No data');
   }
@@ -1061,44 +1148,222 @@ async function loadHistoricalRunIntoDashboard(runId) {
   }
 }
 
+/**
+ * Normalize a stats export (schema 2.0 or 2.1) into groupsByPolicy.
+ * @param {object} statsObj
+ * @returns {{ groupsByPolicy: Record<string, object[]>, defaultPolicy: string, catalog: object }}
+ */
+function normalizeStatsPayload(statsObj) {
+  const raw = statsObj || {};
+  const catalog = {
+    ...FILTER_POLICY_FALLBACK,
+    ...(raw.filter_policies && typeof raw.filter_policies === 'object'
+      ? raw.filter_policies
+      : {}),
+  };
+  const defaultPolicy =
+    typeof raw.default_filter_policy === 'string' && raw.default_filter_policy
+      ? raw.default_filter_policy
+      : DEFAULT_FILTER_POLICY;
+
+  const mapGroups = (list) =>
+    (Array.isArray(list) ? list : []).map((g) => ({
+      ...g,
+      test_data: fixtureKey(g),
+    }));
+
+  /** @type {Record<string, object[]>} */
+  const groupsByPolicy = {};
+  if (raw.groups_by_policy && typeof raw.groups_by_policy === 'object') {
+    for (const [pid, list] of Object.entries(raw.groups_by_policy)) {
+      groupsByPolicy[pid] = mapGroups(list);
+    }
+  }
+  // Backward compat: schema 2.0 only has flat groups
+  if (!Object.keys(groupsByPolicy).length && Array.isArray(raw.groups)) {
+    groupsByPolicy[defaultPolicy] = mapGroups(raw.groups);
+  } else if (Array.isArray(raw.groups) && !groupsByPolicy[defaultPolicy]?.length) {
+    groupsByPolicy[defaultPolicy] = mapGroups(raw.groups);
+  }
+
+  return { groupsByPolicy, defaultPolicy, catalog };
+}
+
 function processStatsData(statsObj) {
-  state.allGroups = (statsObj.groups || []).map((g) => ({
-    ...g,
-    test_data: fixtureKey(g),
-  }));
+  const { groupsByPolicy, defaultPolicy, catalog } = normalizeStatsPayload(statsObj);
+  state.groupsByPolicy = groupsByPolicy;
+  state.defaultFilterPolicy = defaultPolicy;
+  state.filterPolicies = catalog;
 
-  const discovered = discoverFixtureOptions(state.allGroups);
-  const testDataOptions = discovered.all;
-  const modeOptions = [...new Set(state.allGroups.map((g) => g.mode))];
-
-  populateFixtureSelect(testDataOptions);
-  populateFixtureSelect(testDataOptions, {
-    selectId: 'same-data-select',
-    previous: state.currentTestData,
-  });
-  populateSelect('mode-select', modeOptions);
-  populateSelect('same-mode-select', modeOptions);
-
-  if (!testDataOptions.includes(state.currentTestData)) {
-    state.currentTestData =
-      pickPreferredFixture(discovered.natural) || testDataOptions[0] || '';
-  }
-  if (!modeOptions.includes(state.currentMode)) {
-    state.currentMode = modeOptions[0] || '';
+  // Keep selection if still available; else fall back to export default
+  const available = Object.keys(groupsByPolicy);
+  if (!available.includes(state.filterPolicy)) {
+    state.filterPolicy = available.includes(defaultPolicy)
+      ? defaultPolicy
+      : available[0] || DEFAULT_FILTER_POLICY;
   }
 
+  applyFilterPolicyToAllGroups({ refreshSelectors: true });
+  populateFilterPolicySelect();
   syncLanguageSelects();
   syncFixtureModeSelects();
-
   discoverMetricKeys(state.allGroups);
   filterAndRefresh();
+}
+
+/** Bind state.allGroups from the active filter policy. */
+function applyFilterPolicyToAllGroups({ refreshSelectors = false } = {}) {
+  const pid = state.filterPolicy;
+  const groups =
+    state.groupsByPolicy[pid] ||
+    state.groupsByPolicy[state.defaultFilterPolicy] ||
+    state.groupsByPolicy[DEFAULT_FILTER_POLICY] ||
+    [];
+  state.allGroups = groups;
+
+  if (refreshSelectors) {
+    const discovered = discoverFixtureOptions(state.allGroups);
+    const testDataOptions = discovered.all;
+    const modeOptions = [...new Set(state.allGroups.map((g) => g.mode))];
+
+    populateFixtureSelect(testDataOptions);
+    populateFixtureSelect(testDataOptions, {
+      selectId: 'same-data-select',
+      previous: state.currentTestData,
+    });
+    populateSelect('mode-select', modeOptions);
+    populateSelect('same-mode-select', modeOptions);
+
+    if (!testDataOptions.includes(state.currentTestData)) {
+      state.currentTestData =
+        pickPreferredFixture(discovered.natural) || testDataOptions[0] || '';
+    }
+    if (!modeOptions.includes(state.currentMode)) {
+      state.currentMode = modeOptions[0] || '';
+    }
+  }
+}
+
+function populateFilterPolicySelect() {
+  const sel = document.getElementById('filter-policy-select');
+  if (!sel) return;
+  const available = FILTER_POLICY_ORDER.filter((id) => state.groupsByPolicy[id]?.length);
+  const extras = Object.keys(state.groupsByPolicy).filter((id) => !available.includes(id));
+  const ids = available.length ? [...available, ...extras] : Object.keys(state.groupsByPolicy);
+
+  sel.innerHTML = '';
+  if (!ids.length) {
+    const opt = document.createElement('option');
+    opt.value = DEFAULT_FILTER_POLICY;
+    opt.textContent = FILTER_POLICY_FALLBACK[DEFAULT_FILTER_POLICY]?.label || DEFAULT_FILTER_POLICY;
+    sel.appendChild(opt);
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = ids.length <= 1;
+  for (const id of ids) {
+    const meta = state.filterPolicies[id] || FILTER_POLICY_FALLBACK[id] || { label: id };
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = meta.label || id;
+    sel.appendChild(opt);
+  }
+  if (ids.includes(state.filterPolicy)) sel.value = state.filterPolicy;
+  else {
+    state.filterPolicy = ids[0];
+    sel.value = ids[0];
+  }
+}
+
+function setFilterPolicy(policyId) {
+  if (!policyId) return;
+  if (!(policyId in state.groupsByPolicy)) {
+    showNotification(`Sample policy “${policyId}” not in this export.`, 'error');
+    return;
+  }
+  state.filterPolicy = policyId;
+  applyFilterPolicyToAllGroups({ refreshSelectors: false });
+  discoverMetricKeys(state.allGroups);
+  if (state.crossLangLoaded) {
+    rebuildCrossLangForPolicy();
+  }
+  filterAndRefresh();
+  if (state.compareScope === 'cross') {
+    renderCrossLangSelection();
+    renderCompareMatrix();
+  }
+}
+
+function updateFilterPolicyMeta() {
+  const el = document.getElementById('filter-policy-meta');
+  const text = document.getElementById('filter-policy-meta-text');
+  if (!el || !text) return;
+
+  const pid = state.filterPolicy;
+  const catalog = state.filterPolicies[pid] || FILTER_POLICY_FALLBACK[pid] || {};
+  const sample = state.filteredGroups[0] || state.allGroups[0];
+  const f = sample?.filter || {};
+
+  const removed = state.filteredGroups.length
+    ? state.filteredGroups.reduce((a, g) => a + (Number(g.outliers_removed) || 0), 0)
+    : state.allGroups.reduce((a, g) => a + (Number(g.outliers_removed) || 0), 0);
+  const clipped = state.filteredGroups.length
+    ? state.filteredGroups.reduce((a, g) => a + (Number(g.values_clipped) || 0), 0)
+    : state.allGroups.reduce((a, g) => a + (Number(g.values_clipped) || 0), 0);
+  const kept = state.filteredGroups.length
+    ? state.filteredGroups.reduce((a, g) => a + (Number(g.runs) || 0), 0)
+    : null;
+
+  const criteriaBits = [];
+  const method = f.method || catalog.outlier_method;
+  if (method) criteriaBits.push(`method=${method}`);
+  if (f.iqr_k != null || catalog.iqr_k != null) {
+    criteriaBits.push(`k=${f.iqr_k ?? catalog.iqr_k}`);
+  }
+  if (f.winsorize_percentiles || catalog.winsorize_percentiles) {
+    const w = f.winsorize_percentiles || catalog.winsorize_percentiles;
+    criteriaBits.push(`clip=${Array.isArray(w) ? w.join('–') : w}%`);
+  }
+  if (f.paired === true || catalog.paired === true) criteriaBits.push('paired ser/deser/total');
+  if (f.exclude_warmup !== false && catalog.exclude_warmup !== false) {
+    criteriaBits.push('warmup excluded');
+  }
+  if (f.min_samples_for_outlier_filter != null || catalog.min_samples_for_outlier_filter != null) {
+    criteriaBits.push(
+      `min_n=${f.min_samples_for_outlier_filter ?? catalog.min_samples_for_outlier_filter}`
+    );
+  }
+  if (f.fence_total_low_ns != null && f.fence_total_high_ns != null && sample) {
+    criteriaBits.push(
+      `e.g. total fences [${formatTimeCompact(f.fence_total_low_ns)}, ${formatTimeCompact(f.fence_total_high_ns)}] on ${sample.serializer}`
+    );
+  }
+
+  const statsBits = [];
+  if (kept != null) statsBits.push(`${formatIntGrouped(kept)} trials kept (current fixture)`);
+  if (removed > 0) statsBits.push(`${formatIntGrouped(removed)} reps removed (sum over rows)`);
+  if (clipped > 0) statsBits.push(`${formatIntGrouped(clipped)} reps clipped (winsorize, sum)`);
+
+  const desc = catalog.description || f.description || '';
+  text.innerHTML =
+    `<strong>Samples: ${catalog.label || pid}</strong>` +
+    (desc ? ` — ${desc}` : '') +
+    (criteriaBits.length
+      ? `<br><span class="fp-criteria">Criteria: ${criteriaBits.join(' · ')}</span>`
+      : '') +
+    (statsBits.length
+      ? `<br><span class="fp-criteria">This view: ${statsBits.join(' · ')}</span>`
+      : '');
+  el.hidden = false;
 }
 
 function discoverMetricKeys(groups) {
   const keys = new Set();
   for (const g of groups) {
     for (const k of Object.keys(g)) {
-      if (!GROUP_META_KEYS.has(k) && k !== 'data_type_instance_count') keys.add(k);
+      if (GROUP_META_KEYS.has(k) || k === 'data_type_instance_count') continue;
+      if (typeof g[k] === 'object' && g[k] !== null) continue; // skip filter blocks etc.
+      keys.add(k);
     }
   }
   state.availableMetrics = [...keys].sort();
@@ -1285,7 +1550,11 @@ function averageGroupsForSerializer(serializer, entries, meta) {
     }
     if (!vals.length) continue;
     row[key] =
-      key === 'runs' || key === 'runs_raw'
+      key === 'runs' ||
+      key === 'runs_raw' ||
+      key === 'outliers_removed' ||
+      key === 'values_clipped' ||
+      key === 'warmup_skipped'
         ? vals.reduce((a, b) => a + b, 0)
         : vals.reduce((a, b) => a + b, 0) / vals.length;
   }
@@ -1587,6 +1856,7 @@ function filterAndRefresh() {
   }
 
   updateKPIs();
+  updateFilterPolicyMeta();
   populateBaselineSelect();
   populateSameSerAddSelect();
   renderSameSelectionChips();
@@ -1795,7 +2065,11 @@ function modeDisplayLabel(norm) {
   return norm || '—';
 }
 
-async function fetchStatsGroups(langId) {
+/**
+ * Load multi-policy groups for one language (cross-lang compare).
+ * @returns {Promise<Record<string, object[]>>} policy → groups
+ */
+async function fetchStatsGroupsByPolicy(langId) {
   const urls = [`data/stats_${langId}_latest.json`, `data/${langId}_latest.json.gz`];
   for (const url of urls) {
     try {
@@ -1809,32 +2083,67 @@ async function fetchStatsGroups(langId) {
         const text = await new Response(response.body.pipeThrough(ds)).text();
         payload = JSON.parse(text);
       }
-      const groups = payload.groups || payload.stats?.groups || [];
-      if (Array.isArray(groups) && groups.length) {
-        return groups.map((g) => ({
+      // gz embeds stats under .stats
+      const statsObj = payload.groups || payload.groups_by_policy ? payload : payload.stats || payload;
+      const { groupsByPolicy, defaultPolicy } = normalizeStatsPayload(statsObj);
+      if (!Object.keys(groupsByPolicy).length) continue;
+      // Stamp language + fixture key
+      const stamped = {};
+      for (const [pid, list] of Object.entries(groupsByPolicy)) {
+        stamped[pid] = list.map((g) => ({
           ...g,
           language: g.language || langId,
           test_data: fixtureKey(g),
         }));
       }
+      if (!stamped[defaultPolicy] && statsObj.groups) {
+        stamped[defaultPolicy] = (statsObj.groups || []).map((g) => ({
+          ...g,
+          language: g.language || langId,
+          test_data: fixtureKey(g),
+        }));
+      }
+      return stamped;
     } catch (e) {
       console.warn(`Cross-lang load failed for ${langId} via ${url}:`, e);
     }
   }
-  return [];
+  return {};
+}
+
+function rebuildCrossLangForPolicy() {
+  const pid = state.filterPolicy;
+  const byLang = {};
+  for (const [lang, byPolicy] of Object.entries(state.crossLangGroupsByLangPolicy || {})) {
+    byLang[lang] =
+      byPolicy[pid] ||
+      byPolicy[state.defaultFilterPolicy] ||
+      byPolicy[DEFAULT_FILTER_POLICY] ||
+      byPolicy[Object.keys(byPolicy)[0]] ||
+      [];
+  }
+  state.crossLangGroupsByLang = byLang;
+  if (state.xlSelectionMode === 'pareto') {
+    applyCrossLangParetoSelection();
+  } else {
+    pruneCrossLangSelection();
+  }
+  updateXlBaselineSelect();
 }
 
 async function ensureCrossLangLoaded() {
   if (state.crossLangLoaded) {
+    rebuildCrossLangForPolicy();
     initCrossLangControls();
     return;
   }
   showNotification('Loading cross-language stats…', 'info');
   const entries = await Promise.all(
-    LANGUAGE_CATALOG.map(async (lang) => [lang.id, await fetchStatsGroups(lang.id)])
+    LANGUAGE_CATALOG.map(async (lang) => [lang.id, await fetchStatsGroupsByPolicy(lang.id)])
   );
-  state.crossLangGroupsByLang = Object.fromEntries(entries);
+  state.crossLangGroupsByLangPolicy = Object.fromEntries(entries);
   state.crossLangLoaded = true;
+  rebuildCrossLangForPolicy();
   initCrossLangControls();
   if (state.xlSelectionMode === 'pareto' || state.xlSelected.length === 0) {
     applyCrossLangParetoSelection();
@@ -2255,6 +2564,12 @@ function updateKPIs() {
 
   document.getElementById('kpi-pareto').textContent =
     `${state.paretoSerializerNames.length} / ${total}`;
+  const paretoDesc = document.querySelector('#kpi-pareto')?.closest('.kpi-card')?.querySelector('.kpi-desc');
+  if (paretoDesc) {
+    const pl =
+      state.filterPolicies[state.filterPolicy]?.label || state.filterPolicy || 'default';
+    paretoDesc.textContent = `Optimal trade-offs · samples: ${pl}`;
+  }
 }
 
 function groupForSerializer(name) {

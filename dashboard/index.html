@@ -71,6 +71,16 @@
             <!-- Dynamically populated -->
           </select>
         </div>
+
+        <span class="filter-label" title="Which sample set feeds tables, charts, and Pareto">Samples:</span>
+        <div class="select-wrapper">
+          <select id="filter-policy-select" aria-label="Sample filter policy for aggregations">
+            <option value="iqr_1.5">IQR k=1.5 (default)</option>
+            <option value="all">All trials</option>
+            <option value="iqr_3">IQR k=3 (loose)</option>
+            <option value="winsorize_5_95">Winsorize 5–95%</option>
+          </select>
+        </div>
       </div>
 
       <div class="tabs">
@@ -78,6 +88,10 @@
         <button class="tab-btn" id="btn-time-ns" aria-label="View Time In Nanoseconds">Latency (ns)</button>
       </div>
     </section>
+
+    <div id="filter-policy-meta" class="filter-policy-meta glass-panel" hidden>
+      <span id="filter-policy-meta-text" class="filter-policy-meta-text"></span>
+    </div>
 
     <div id="run-meta" class="run-meta glass-panel" hidden>
       <span id="run-meta-text" class="run-meta-text"></span>

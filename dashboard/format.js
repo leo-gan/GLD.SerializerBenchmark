@@ -156,7 +156,14 @@ export function metricKind(key) {
     return 'ops';
   }
   if (key.endsWith('_bytes') || key.startsWith('size_') || key === 'median_size_bytes') return 'bytes';
-  if (key === 'runs' || key === 'runs_raw' || key === 'outliers_removed') return 'count';
+  if (
+    key === 'runs' ||
+    key === 'runs_raw' ||
+    key === 'outliers_removed' ||
+    key === 'values_clipped' ||
+    key === 'warmup_skipped'
+  )
+    return 'count';
   if (typeof key === 'string' && (key.includes('fidelity') || key.includes('cv') || key.includes('delta') || key.includes('hedges'))) {
     return 'ratio';
   }

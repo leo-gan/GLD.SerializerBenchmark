@@ -75,6 +75,8 @@ After warmup drop and optional outlier filter, analysis groups rows by:
 | `total_ci_low_ns` / `total_ci_high_ns` | [Bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics) "Bootstrapping (statistics)") [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval") on **mean** total | medium | — |
 | `avg_ops_per_sec` | `1e9 / total_mean_ns` | high (display) | **yes** |
 | `runs` / `runs_raw` / `warmup_skipped` / `outliers_removed` | Sample provenance | high | — |
+| `values_clipped` | Rows touched by winsorize (0 for drop filters) | medium | — |
+| `filter` | Policy provenance block (`policy`, `method`, `iqr_k`, fences, counts) | high (dashboard) | — |
 
 **Tip:** lower time is better; higher ops/s is better. Medians resist wild spikes better than means; means still matter for throughput.
 

@@ -21,6 +21,63 @@ import numpy as np
 # Config helpers (optional YAML; safe defaults if PyYAML / file missing)
 # ---------------------------------------------------------------------------
 
+# Named filter policies exported for dashboard outlier research.
+# Keys are stable API ids; criteria are fixed (not taken from YAML outlier_method).
+FILTER_POLICY_IDS: Tuple[str, ...] = (
+    "all",
+    "iqr_1.5",
+    "iqr_3",
+    "winsorize_5_95",
+)
+DEFAULT_FILTER_POLICY = "iqr_1.5"
+
+FILTER_POLICY_SPECS: Dict[str, Dict[str, Any]] = {
+    "all": {
+        "label": "All trials (post-warmup)",
+        "description": (
+            "Every measured repetition after warmup exclusion. "
+            "No IQR drop and no winsorization — includes GC and scheduler tails."
+        ),
+        "outlier_method": "none",
+        "iqr_k": None,
+        "winsorize_percentiles": None,
+        "paired": None,
+    },
+    "iqr_1.5": {
+        "label": "IQR k=1.5 (strict / default)",
+        "description": (
+            "Tukey fences with k=1.5 on serialize, deserialize, and total; "
+            "a repetition is dropped if it is an outlier on any of the three (paired)."
+        ),
+        "outlier_method": "iqr",
+        "iqr_k": 1.5,
+        "winsorize_percentiles": None,
+        "paired": True,
+    },
+    "iqr_3": {
+        "label": "IQR k=3 (loose)",
+        "description": (
+            "Same paired IQR rule as iqr_1.5 but with k=3 so only extreme stalls "
+            "are removed; bulk tail mass is retained."
+        ),
+        "outlier_method": "iqr",
+        "iqr_k": 3.0,
+        "winsorize_percentiles": None,
+        "paired": True,
+    },
+    "winsorize_5_95": {
+        "label": "Winsorize 5–95%",
+        "description": (
+            "Clip each of ser/deser/total independently at the 5th and 95th "
+            "percentiles; sample size is unchanged (no rows dropped)."
+        ),
+        "outlier_method": "winsorize",
+        "iqr_k": None,
+        "winsorize_percentiles": [5.0, 95.0],
+        "paired": False,
+    },
+}
+
 _DEFAULT_STATS_CFG: Dict[str, Any] = {
     "exclude_warmup": True,
     "outlier_method": "iqr",
@@ -422,8 +479,19 @@ def prepare_analysis_records(
 
     # Bucket non-warmup rows by analysis group key
     buckets: Dict[Tuple, List[Dict]] = defaultdict(list)
-    group_meta: Dict[Tuple, Dict[str, int]] = defaultdict(
-        lambda: {"warmup_skipped": 0, "outliers_removed": 0, "runs_raw": 0}
+    group_meta: Dict[Tuple, Dict[str, Any]] = defaultdict(
+        lambda: {
+            "warmup_skipped": 0,
+            "outliers_removed": 0,
+            "values_clipped": 0,
+            "runs_raw": 0,
+            "fence_total_low_ns": None,
+            "fence_total_high_ns": None,
+            "fence_ser_low_ns": None,
+            "fence_ser_high_ns": None,
+            "fence_deser_low_ns": None,
+            "fence_deser_high_ns": None,
+        }
     )
 
     for r in records:
@@ -454,11 +522,37 @@ def prepare_analysis_records(
         deser = [float(x["TimeDeser"]) for x in recs]
         total = [float(x["TimeSerAndDeser"]) for x in recs]
 
+        if outlier_method == "iqr" and len(recs) >= min_out:
+            for series, lo_k, hi_k in (
+                (ser, "fence_ser_low_ns", "fence_ser_high_ns"),
+                (deser, "fence_deser_low_ns", "fence_deser_high_ns"),
+                (total, "fence_total_low_ns", "fence_total_high_ns"),
+            ):
+                lo, hi = _iqr_fence_bounds(series, iqr_k=iqr_k, min_samples=min_out)
+                group_meta[key][lo_k] = lo
+                group_meta[key][hi_k] = hi
+
         if outlier_method == "winsorize" and len(recs) >= min_out:
             s_f, d_f, t_f, rem = filter_outliers_paired(
                 ser, deser, total, method="winsorize", iqr_k=iqr_k, min_samples=min_out
             )
-            group_meta[key]["outliers_removed"] = rem
+            group_meta[key]["outliers_removed"] = rem  # always 0 for winsorize
+            clipped_rows = sum(
+                1
+                for i in range(len(ser))
+                if ser[i] != s_f[i] or deser[i] != d_f[i] or total[i] != t_f[i]
+            )
+            group_meta[key]["values_clipped"] = int(clipped_rows)
+            # Store clip bounds from total (and ser/deser) for provenance
+            for series, lo_k, hi_k in (
+                (ser, "fence_ser_low_ns", "fence_ser_high_ns"),
+                (deser, "fence_deser_low_ns", "fence_deser_high_ns"),
+                (total, "fence_total_low_ns", "fence_total_high_ns"),
+            ):
+                arr = np.asarray(series, dtype=float)
+                lo, hi = np.percentile(arr, [5, 95])
+                group_meta[key][lo_k] = float(lo)
+                group_meta[key][hi_k] = float(hi)
             for rec, ts, td, tt in zip(recs, s_f, d_f, t_f):
                 out = dict(rec)
                 out["TimeSer"] = ts
@@ -472,11 +566,30 @@ def prepare_analysis_records(
         )
         rem = int((~mask).sum())
         group_meta[key]["outliers_removed"] = rem
+        group_meta[key]["values_clipped"] = 0
         for rec, keep in zip(recs, mask):
             if keep:
                 sanitized.append(rec)
 
     return sanitized, dict(group_meta)
+
+
+def _iqr_fence_bounds(
+    values: Sequence[float],
+    iqr_k: float = 1.5,
+    min_samples: int = 10,
+) -> Tuple[Optional[float], Optional[float]]:
+    """Return (lower, upper) Tukey fences, or (None, None) if not applicable."""
+    arr = np.asarray(values, dtype=float)
+    n = len(arr)
+    if n < min_samples:
+        return None, None
+    q1 = float(np.percentile(arr, 25))
+    q3 = float(np.percentile(arr, 75))
+    iqr = q3 - q1
+    if iqr == 0:
+        return None, None
+    return q1 - iqr_k * iqr, q3 + iqr_k * iqr
 
 
 # ---------------------------------------------------------------------------
@@ -849,6 +962,7 @@ def compute_statistics(
         times_total = data["times_total"]
         m = meta.get(key) or {}
         rem_t = int(m.get("outliers_removed", 0))
+        values_clipped = int(m.get("values_clipped", 0))
         warmup_skipped = int(m.get("warmup_skipped", 0))
         runs_raw = int(m.get("runs_raw", len(times_total) + warmup_skipped + rem_t))
         total_outliers += rem_t
@@ -884,6 +998,7 @@ def compute_statistics(
             "runs_raw": runs_raw,
             "warmup_skipped": warmup_skipped,
             "outliers_removed": rem_t,
+            "values_clipped": values_clipped,
             # Extended scientific metrics
             **ser_stats,
             **deser_stats,
@@ -893,6 +1008,12 @@ def compute_statistics(
             # Retain filtered series for effect-size / A-B (not serialized by default consumers)
             "_times_total_filtered": times_total,
         }
+        entry["filter"] = _build_filter_block(
+            policy_id=m.get("filter_policy"),
+            cfg=cfg,
+            entry=entry,
+            meta=m,
+        )
         # B-6: majority StreamMode label for this group (stream I/O rows)
         sms = [s for s in (data.get("stream_modes") or []) if s]
         if sms:
@@ -918,6 +1039,249 @@ def compute_statistics(
     if total_outliers:
         print(f"Removed {total_outliers} outlier measurements ({outlier_method} filter)")
     return results
+
+
+def config_for_filter_policy(
+    base_config: Optional[Dict[str, Any]],
+    policy_id: str,
+) -> Dict[str, Any]:
+    """Return a stats config with outlier settings forced to a named policy."""
+    if policy_id not in FILTER_POLICY_SPECS:
+        raise ValueError(
+            f"Unknown filter policy {policy_id!r}; expected one of {list(FILTER_POLICY_SPECS)}"
+        )
+    cfg = dict(base_config or load_stats_config())
+    spec = FILTER_POLICY_SPECS[policy_id]
+    cfg["outlier_method"] = spec["outlier_method"]
+    if spec.get("iqr_k") is not None:
+        cfg["iqr_k"] = float(spec["iqr_k"])
+    return cfg
+
+
+def filter_policy_catalog() -> Dict[str, Dict[str, Any]]:
+    """Public catalog of filter policies (no internal-only fields)."""
+    out: Dict[str, Dict[str, Any]] = {}
+    for pid, spec in FILTER_POLICY_SPECS.items():
+        out[pid] = {
+            "id": pid,
+            "label": spec["label"],
+            "description": spec["description"],
+            "outlier_method": spec["outlier_method"],
+            "iqr_k": spec.get("iqr_k"),
+            "winsorize_percentiles": spec.get("winsorize_percentiles"),
+            "paired": spec.get("paired"),
+            "min_samples_for_outlier_filter": _DEFAULT_STATS_CFG[
+                "min_samples_for_outlier_filter"
+            ],
+            "exclude_warmup": _DEFAULT_STATS_CFG["exclude_warmup"],
+        }
+    return out
+
+
+def _infer_policy_id(cfg: Dict[str, Any]) -> Optional[str]:
+    method = str(cfg.get("outlier_method") or "iqr").lower()
+    if method == "none":
+        return "all"
+    if method == "winsorize":
+        return "winsorize_5_95"
+    if method == "iqr":
+        k = float(cfg.get("iqr_k", 1.5))
+        if abs(k - 1.5) < 1e-9:
+            return "iqr_1.5"
+        if abs(k - 3.0) < 1e-9:
+            return "iqr_3"
+    return None
+
+
+def _build_filter_block(
+    policy_id: Optional[str],
+    cfg: Dict[str, Any],
+    entry: Dict[str, Any],
+    meta: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Provenance block describing how this group's sample was filtered."""
+    pid = policy_id or _infer_policy_id(cfg)
+    spec = FILTER_POLICY_SPECS.get(pid or "", {})
+    method = str(cfg.get("outlier_method") or spec.get("outlier_method") or "iqr")
+    iqr_k = cfg.get("iqr_k") if method == "iqr" else spec.get("iqr_k")
+    winsor = (
+        list(spec.get("winsorize_percentiles") or [5.0, 95.0])
+        if method == "winsorize"
+        else None
+    )
+    paired = spec.get("paired")
+    if paired is None and method == "iqr":
+        paired = True
+    if method == "winsorize":
+        paired = False
+    if method == "none":
+        paired = None
+
+    block: Dict[str, Any] = {
+        "policy": pid,
+        "label": spec.get("label") or method,
+        "description": spec.get("description"),
+        "method": method,
+        "iqr_k": float(iqr_k) if iqr_k is not None and method == "iqr" else None,
+        "winsorize_percentiles": winsor,
+        "paired": paired,
+        "exclude_warmup": bool(cfg.get("exclude_warmup", True)),
+        "min_samples_for_outlier_filter": int(
+            cfg.get("min_samples_for_outlier_filter", 10)
+        ),
+        "runs_raw": int(entry.get("runs_raw") or 0),
+        "warmup_skipped": int(entry.get("warmup_skipped") or 0),
+        "runs_kept": int(entry.get("runs") or 0),
+        "outliers_removed": int(entry.get("outliers_removed") or 0),
+        "values_clipped": int(entry.get("values_clipped") or 0),
+        "fence_total_low_ns": meta.get("fence_total_low_ns"),
+        "fence_total_high_ns": meta.get("fence_total_high_ns"),
+        "fence_ser_low_ns": meta.get("fence_ser_low_ns"),
+        "fence_ser_high_ns": meta.get("fence_ser_high_ns"),
+        "fence_deser_low_ns": meta.get("fence_deser_low_ns"),
+        "fence_deser_high_ns": meta.get("fence_deser_high_ns"),
+    }
+    return block
+
+
+def public_stats_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Drop private underscore keys for JSON export."""
+    return {k: v for k, v in entry.items() if not str(k).startswith("_")}
+
+
+def compute_pareto_front(groups: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Classical 2D Pareto: minimize avg_time_total_ns and median_size_bytes."""
+    front: List[Dict[str, Any]] = []
+    workloads: Dict[Tuple[Any, Any], List[Dict[str, Any]]] = {}
+    for g in groups:
+        wkey = (g.get("test_data"), g.get("mode"))
+        workloads.setdefault(wkey, []).append(g)
+    for items in workloads.values():
+        for item in items:
+            t = item.get("avg_time_total_ns")
+            s = item.get("median_size_bytes")
+            if t is None or s is None:
+                continue
+            dominated = False
+            for other in items:
+                if other is item:
+                    continue
+                ot = other.get("avg_time_total_ns")
+                os_ = other.get("median_size_bytes")
+                if ot is None or os_ is None:
+                    continue
+                if (ot <= t and os_ < s) or (ot < t and os_ <= s):
+                    dominated = True
+                    break
+            if not dominated:
+                front.append(
+                    {
+                        "serializer": item.get("serializer"),
+                        "test_data": item.get("test_data"),
+                        "mode": item.get("mode"),
+                        "time": t,
+                        "size": s,
+                        "filter_policy": (item.get("filter") or {}).get("policy"),
+                    }
+                )
+    return front
+
+
+def compute_statistics_multi_policy(
+    records: List[Dict],
+    config: Optional[Dict[str, Any]] = None,
+    language_hint: Optional[str] = None,
+    policies: Optional[Sequence[str]] = None,
+) -> Dict[str, Dict]:
+    """Compute full stats under each named filter policy.
+
+    Returns ``{policy_id: {group_key: entry}}``. Each entry includes a
+    ``filter`` provenance block. Effect sizes are recomputed per policy
+    (comparisons only among groups sharing that sample set).
+    """
+    base = config or load_stats_config()
+    policy_ids = list(policies) if policies is not None else list(FILTER_POLICY_IDS)
+    result: Dict[str, Dict] = {}
+    for pid in policy_ids:
+        cfg = config_for_filter_policy(base, pid)
+        clean, meta = prepare_analysis_records(
+            records, config=cfg, language_hint=language_hint
+        )
+        # Tag meta so entries get the stable policy id
+        for key in meta:
+            meta[key]["filter_policy"] = pid
+        stats = compute_statistics(
+            clean,
+            config=cfg,
+            language_hint=language_hint,
+            pre_sanitized=True,
+            group_meta=meta,
+        )
+        # Ensure policy id is set even for empty-meta edge cases
+        for entry in stats.values():
+            fb = entry.get("filter") or {}
+            fb["policy"] = pid
+            if pid in FILTER_POLICY_SPECS:
+                fb["label"] = FILTER_POLICY_SPECS[pid]["label"]
+                fb["description"] = FILTER_POLICY_SPECS[pid]["description"]
+            entry["filter"] = fb
+        result[pid] = stats
+    return result
+
+
+def build_stats_export_payload(
+    by_policy: Dict[str, Dict],
+    language: str,
+    default_policy: str = DEFAULT_FILTER_POLICY,
+    generated: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Assemble schema 2.1 stats JSON with groups_by_policy + filter catalog."""
+    import datetime as _dt
+
+    if default_policy not in by_policy and by_policy:
+        default_policy = next(iter(by_policy))
+
+    groups_by_policy: Dict[str, List[Dict[str, Any]]] = {}
+    for pid, stats in by_policy.items():
+        groups_by_policy[pid] = [public_stats_entry(e) for e in stats.values()]
+
+    default_groups = groups_by_policy.get(default_policy) or []
+    pareto_by_policy = {
+        pid: compute_pareto_front(groups) for pid, groups in groups_by_policy.items()
+    }
+
+    # Merge catalog with runtime min_samples from first available config-ish entry
+    catalog = filter_policy_catalog()
+    for pid, groups in groups_by_policy.items():
+        if groups and isinstance(groups[0].get("filter"), dict):
+            f0 = groups[0]["filter"]
+            if pid in catalog:
+                catalog[pid]["min_samples_for_outlier_filter"] = f0.get(
+                    "min_samples_for_outlier_filter",
+                    catalog[pid]["min_samples_for_outlier_filter"],
+                )
+                catalog[pid]["exclude_warmup"] = f0.get(
+                    "exclude_warmup", catalog[pid]["exclude_warmup"]
+                )
+
+    return {
+        "schema_version": "2.1",
+        "generated": generated or _dt.datetime.now().isoformat(),
+        "language": language,
+        "default_filter_policy": default_policy,
+        "filter_policies": catalog,
+        "questions": {
+            "Q1": "How fast?",
+            "Q2": "How compact?",
+            "Q3": "How stable?",
+            "Q4": "Under which workloads does it win?",
+        },
+        # Backward-compatible flat groups = default policy
+        "groups": default_groups,
+        "groups_by_policy": groups_by_policy,
+        "pareto_front": pareto_by_policy.get(default_policy, []),
+        "pareto_by_policy": pareto_by_policy,
+    }
 
 
 def _attach_effect_sizes(results: Dict, cfg: Dict[str, Any]) -> None:

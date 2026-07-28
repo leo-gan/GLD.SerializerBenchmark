@@ -675,70 +675,40 @@ def main():
         recs, skipped = parse_csv_file(path, language_hint=lang)
         total_loaded += len(recs)
         if recs:
-            # One sanitize pass → same population for tables and latency distributions.
-            clean, meta = prepare_analysis_records(
+            # Multi-policy stats for dashboard outlier research; default policy
+            # still feeds markdown tables / latency distributions.
+            from .stats import (
+                DEFAULT_FILTER_POLICY,
+                build_stats_export_payload,
+                compute_statistics_multi_policy,
+                config_for_filter_policy,
+            )
+
+            by_policy = compute_statistics_multi_policy(
                 recs, config=stats_cfg, language_hint=lang
+            )
+            default_pid = DEFAULT_FILTER_POLICY
+            if default_pid not in by_policy:
+                default_pid = next(iter(by_policy), DEFAULT_FILTER_POLICY)
+            st = by_policy.get(default_pid) or {}
+            all_stats.update(st)
+
+            # Sanitize once under default policy for shared plot population
+            default_cfg = config_for_filter_policy(stats_cfg, default_pid)
+            clean, _meta = prepare_analysis_records(
+                recs, config=default_cfg, language_hint=lang
             )
             all_records[lang] = clean
             total_sanitized += len(clean)
-            st = compute_statistics(
-                clean,
-                config=stats_cfg,
-                language_hint=lang,
-                pre_sanitized=True,
-                group_meta=meta,
-            )
-            all_stats.update(st)
-            
-            # Export to machine-readable JSON: reports/stats_<lang>_latest.json
+
+            # Export machine-readable JSON with all filter policies
             try:
                 import json
-                import datetime
-                os.makedirs(str(reports_root), exist_ok=True)
-                groups_list = []
-                for entry in st.values():
-                    # Strip private helper keys (like _times_total_filtered)
-                    clean_entry = {k: v for k, v in entry.items() if not k.startswith("_")}
-                    groups_list.append(clean_entry)
-                
-                # Dynamic Pareto front computation
-                pareto_front = []
-                workloads = {}
-                for g in groups_list:
-                    wkey = (g["test_data"], g["mode"])
-                    workloads.setdefault(wkey, []).append(g)
-                for wkey, items in workloads.items():
-                    for item in items:
-                        dominated = False
-                        for other in items:
-                            if other == item:
-                                continue
-                            if ((other["avg_time_total_ns"] <= item["avg_time_total_ns"] and other["median_size_bytes"] < item["median_size_bytes"]) or
-                                (other["avg_time_total_ns"] < item["avg_time_total_ns"] and other["median_size_bytes"] <= item["median_size_bytes"])):
-                                dominated = True
-                                break
-                        if not dominated:
-                            pareto_front.append({
-                                "serializer": item["serializer"],
-                                "test_data": item["test_data"],
-                                "mode": item["mode"],
-                                "time": item["avg_time_total_ns"],
-                                "size": item["median_size_bytes"]
-                            })
 
-                export_data = {
-                    "schema_version": "2.0",
-                    "generated": datetime.datetime.now().isoformat(),
-                    "language": lang,
-                    "questions": {
-                        "Q1": "How fast?",
-                        "Q2": "How compact?",
-                        "Q3": "How stable?",
-                        "Q4": "Under which workloads does it win?"
-                    },
-                    "groups": groups_list,
-                    "pareto_front": pareto_front
-                }
+                os.makedirs(str(reports_root), exist_ok=True)
+                export_data = build_stats_export_payload(
+                    by_policy, language=lang, default_policy=default_pid
+                )
                 latest_json_path = reports_root / f"stats_{lang}_latest.json"
                 with open(latest_json_path, "w", encoding="utf-8") as f:
                     json.dump(export_data, f, indent=2)
@@ -747,7 +717,8 @@ def main():
 
             print(
                 f"Loaded {len(recs)} {lang} records from {os.path.basename(path)} "
-                f"-> {len(clean)} after sanitize, {len(st)} stat groups "
+                f"-> {len(clean)} after sanitize ({default_pid}), {len(st)} stat groups "
+                f"× {len(by_policy)} filter policies "
                 f"(parse-skipped {skipped})"
             )
         else:

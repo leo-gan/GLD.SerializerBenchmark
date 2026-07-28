@@ -201,6 +201,23 @@ header {
 }
 
 /* Filters Toolbar */
+.filter-policy-meta {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.filter-policy-meta-text strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.filter-policy-meta-text .fp-criteria {
+  color: var(--text-muted);
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
