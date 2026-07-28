@@ -40,29 +40,42 @@ body {
   overflow-x: hidden;
 }
 
-/* Header & Google Style Navbar */
+/* Header & responsive navbar */
 header {
   background: var(--bg-surface);
   padding: 0.75rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .logo-icon {
-  font-size: 1.25rem;
   color: var(--color-blue);
-  font-weight: bold;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .logo h1 {
@@ -70,12 +83,43 @@ header {
   font-weight: 500;
   color: var(--text-primary);
   letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  cursor: pointer;
+}
+
+.nav-toggle-bar {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--text-primary);
+  border-radius: 1px;
+}
+
+.main-nav {
+  flex: 0 1 auto;
 }
 
 .nav-links {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   list-style: none;
+  align-items: center;
 }
 
 .nav-links a {
@@ -83,9 +127,10 @@ header {
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 500;
-  padding: 0.4rem 0.8rem;
+  padding: 0.45rem 0.75rem;
   border-radius: 4px;
   transition: all 0.15s ease;
+  display: inline-block;
 }
 
 .nav-links a:hover {
@@ -97,6 +142,37 @@ header {
   background-color: var(--bg-blue-light);
   color: var(--color-blue);
   font-weight: 500;
+}
+
+.nav-docs {
+  border: 1px solid var(--border-color);
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  header {
+    padding: 0.6rem 0.85rem;
+  }
+  .nav-toggle {
+    display: flex;
+  }
+  .main-nav {
+    display: none;
+    width: 100%;
+    flex-basis: 100%;
+  }
+  .main-nav.open {
+    display: block;
+  }
+  .nav-links {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding-top: 0.35rem;
+  }
+  .nav-links a {
+    padding: 0.65rem 0.75rem;
+  }
 }
 
 /* Main Container Layout (High Density) */
@@ -242,8 +318,18 @@ select:focus {
   background: var(--color-blue);
 }
 
-.kpi-card.purple::before {
-  background: #a142f4;
+.kpi-card.featured::before {
+  background: #a142f4; /* featured highlight only — never negative status */
+}
+
+.kpi-card {
+  min-height: 84px;
+}
+
+.kpi-value-name {
+  font-size: 1.25rem !important;
+  line-height: 1.4 !important;
+  word-break: break-word;
 }
 
 .kpi-card.green::before {
@@ -944,4 +1030,159 @@ footer {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #bdc1c6;
+}
+
+
+/* --- Dashboard improvement tokens --- */
+.badge-slate {
+  background: #e8eaed;
+  color: #5f6368;
+}
+
+.section-help {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0.75rem 0;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+.section-disclaimer {
+  font-size: 0.85rem;
+  color: #5f4b00;
+  background: var(--bg-yellow-light);
+  border: 1px solid #f9ab00;
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.run-meta {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.run-meta-text {
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.chart-tool-btn {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.chart-container-tall {
+  height: 360px;
+}
+
+.table-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.data-table th.num,
+.data-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.data-table th.str,
+.data-table td.str {
+  text-align: left;
+}
+
+.data-table th.status,
+.data-table td.status {
+  text-align: center;
+}
+
+.data-table tbody tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.data-table tbody tr:hover td {
+  background: #f1f3f4;
+}
+
+td.rel-better {
+  color: var(--color-green);
+  background: var(--bg-green-light) !important;
+}
+
+td.rel-worse {
+  color: var(--color-red);
+  background: var(--bg-red-light) !important;
+}
+
+td.rel-neutral {
+  color: var(--text-secondary);
+}
+
+th.baseline-col {
+  background: var(--bg-blue-light) !important;
+  color: var(--color-blue);
+}
+
+.compare-lab-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+.compare-scope-tabs {
+  margin-bottom: 0.75rem;
+}
+
+.xl-add-panel {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.utility-card {
+  gap: 0.75rem;
+}
+
+.utility-card-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.utility-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.dropzone {
+  border: 2px dashed var(--border-color);
+}
+
+.dropzone.dragover {
+  border-color: var(--color-blue);
+  background: var(--bg-blue-light);
+}
+
+#serializer-metrics-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.82rem;
 }

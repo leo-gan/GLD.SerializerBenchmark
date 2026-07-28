@@ -1,20 +1,23 @@
-import { initCharts, updateCharts } from './charts.js';
+import { initCharts, updateCharts, setChartLogScale, getChartLogScale, exportScatterPng, exportBarPng } from './charts.js';
+import {
+  formatSig,
+  formatIntGrouped,
+  formatMetricCell,
+  formatRelativeCell,
+  scalesFromGroups,
+  metricHeaderLabel,
+  metricKind,
+  formatOpsCompact,
+  formatTimeCompact,
+} from './format.js';
 
-const SETTINGS_KEY = 'serializer-dashboard-settings-v1';
+const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 
-/** Keys that identify a group, not metrics. */
 const GROUP_META_KEYS = new Set(['serializer', 'test_data', 'mode', 'language']);
-
-/** Suite fixture base type ids. */
 const SUITE_TYPE_IDS = ['message', 'document', 'telemetry', 'strings', 'event'];
 
-/**
- * Display / filter key: "message@n=1" when batch axis is present.
- * Idempotent: safe if test_data is already labeled (or even doubled like "x@n=1@n=1").
- */
 function fixtureKey(g) {
   const raw = String(g?.test_data ?? '');
-  // Strip one or more trailing @n=<int> segments so re-labeling never stacks.
   const base = raw.replace(/(@n=\d+)+$/i, '') || raw;
   let n = g?.data_type_instance_count;
   if (n == null || n === '') {
@@ -29,12 +32,10 @@ function fixtureKey(g) {
 
 function baseTypeId(key) {
   if (!key) return '';
-  // First @n= starts the batch suffix (handles accidental doubles).
   const i = String(key).indexOf('@n=');
   return i >= 0 ? String(key).slice(0, i) : String(key);
 }
 
-/** Prefer message@n=1, then message, then any suite type. */
 function pickPreferredFixture(options) {
   if (!options || !options.length) return '';
   const preferred = [];
@@ -45,9 +46,8 @@ function pickPreferredFixture(options) {
     if (options.includes(p)) return p;
   }
   const cleaned = options.filter((o) => SUITE_TYPE_IDS.includes(baseTypeId(o)));
-  return (cleaned[0] || options[0] || '');
+  return cleaned[0] || options[0] || '';
 }
-
 
 const LANGUAGE_CATALOG = [
   { id: 'csharp', label: 'C#' },
@@ -61,69 +61,73 @@ const LANGUAGE_CATALOG = [
   { id: 'swift', label: 'Swift' },
 ];
 
-/** Metrics shown as rows in the cross-language matrix. */
 const CROSS_LANG_METRICS = [
-  { key: 'avg_ops_per_sec', label: 'Ops/Sec', higherIsBetter: true },
+  { key: 'avg_ops_per_sec', label: 'Ops/s', higherIsBetter: true },
   { key: 'avg_time_total_ns', label: 'Total latency', higherIsBetter: false },
   { key: 'avg_time_ser_ns', label: 'Ser latency', higherIsBetter: false },
   { key: 'avg_time_deser_ns', label: 'Deser latency', higherIsBetter: false },
   { key: 'total_median_ns', label: 'Median total', higherIsBetter: false },
   { key: 'median_size_bytes', label: 'Median size', higherIsBetter: false },
   { key: 'mean_fidelity', label: 'Fidelity', higherIsBetter: true },
+  { key: 'mean_memory_peak_bytes', label: 'Peak memory', higherIsBetter: false },
   { key: 'runs', label: 'Samples', higherIsBetter: null },
+  { key: 'total_cv', label: 'Total CV', higherIsBetter: false },
 ];
 
-/** Default checklist when no saved selection exists. */
 const DEFAULT_SELECTED_METRICS = [
   'avg_ops_per_sec',
   'avg_time_total_ns',
   'avg_time_ser_ns',
   'avg_time_deser_ns',
   'total_median_ns',
-  'ser_median_ns',
-  'deser_median_ns',
+  'total_ci_low_ns',
+  'total_ci_high_ns',
   'median_size_bytes',
-  'size_median_bytes',
-  'runs',
   'mean_fidelity',
+  'mean_memory_peak_bytes',
+  'runs',
   'serializer_version',
 ];
 
-// State Management
 let state = {
   currentLanguage: 'csharp',
   currentTestData: '',
   currentMode: '',
-  displayMetric: 'ops', // 'ops' or 'time'
+  displayMetric: 'ops',
   searchQuery: '',
   sortKey: 'serializer',
-  sortDirection: 'asc', // 'asc' or 'desc'
-  allGroups: [], // All serializer runs for the loaded file
-  filteredGroups: [], // Filtered by test_data and mode
-  paretoSerializerNames: [], // Names of Pareto-optimal serializers
-  serializerNames: [], // Names of all serializers in filtered group
-  compareA: '',
-  compareB: '',
-  detailSerializers: [], // multi-select for Serializer Metrics table
-  availableMetrics: [], // all metric field ids in loaded data
+  sortDirection: 'asc',
+  allGroups: [],
+  filteredGroups: [],
+  paretoSerializerNames: [],
+  serializerNames: [],
+  detailSerializers: [],
+  availableMetrics: [],
   selectedMetrics: [...DEFAULT_SELECTED_METRICS],
+  compareBaseline: '',
+  compareScope: 'same', // 'same' | 'cross'
 
-  // Cross-language comparison
-  crossLangGroupsByLang: {}, // langId -> groups[]
+  crossLangGroupsByLang: {},
   xlTestData: '',
-  xlMode: '', // normalized: 'bytes' | 'stream' | other
-  xlSelected: [], // [{ lang, serializer }]
-  xlSelectionMode: 'pareto', // 'pareto' | 'custom'
+  xlMode: '',
+  xlSelected: [],
+  xlSelectionMode: 'pareto',
+  xlBaselineKey: '', // "lang|serializer"
 
-  // Historical data state
   currentRunId: '',
   currentRunConfigs: {},
   currentRunErrors: '',
   currentRunCsv: '',
-  historicalRuns: {} // Maps language -> array of runIds
+  historicalRuns: {},
+  logsAvailable: null, // null unknown, true/false after probe
+  chartLogScale: false,
+  crossLangLoaded: false,
 };
 
-/** Fill the main Language toolbar select from LANGUAGE_CATALOG (single source of truth). */
+function languageLabel(langId) {
+  return LANGUAGE_CATALOG.find((l) => l.id === langId)?.label || langId;
+}
+
 function populateLanguageSelect() {
   const sel = document.getElementById('lang-select');
   if (!sel) return;
@@ -143,24 +147,32 @@ function populateLanguageSelect() {
   }
 }
 
-// Initialize elements
 document.addEventListener('DOMContentLoaded', async () => {
   populateLanguageSelect();
   applySavedSettings(loadSettings());
+  applyUrlParams();
   setupEventListeners();
   initCharts();
   applyUiFromState();
   await loadHistoryList();
-  await Promise.all([
-    loadLanguageData(state.currentLanguage),
-    loadAllLanguagesForCrossCompare(),
-  ]);
+  await probeLogsAvailability();
+  await loadLanguageData(state.currentLanguage);
+  // Lazy: do not load all langs until cross-lang compare is opened
+  if (state.compareScope === 'cross') {
+    await ensureCrossLangLoaded();
+  }
+  syncUrlFromState();
 });
 
 function loadSettings() {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return null;
+    if (!raw) {
+      // migrate v1
+      const v1 = localStorage.getItem('serializer-dashboard-settings-v1');
+      if (v1) return JSON.parse(v1);
+      return null;
+    }
     return JSON.parse(raw);
   } catch (e) {
     console.warn('Could not read saved dashboard settings:', e);
@@ -177,25 +189,27 @@ function saveSettings() {
     searchQuery: state.searchQuery,
     sortKey: state.sortKey,
     sortDirection: state.sortDirection,
-    compareA: state.compareA,
-    compareB: state.compareB,
     detailSerializers: state.detailSerializers,
     selectedMetrics: state.selectedMetrics,
+    compareBaseline: state.compareBaseline,
+    compareScope: state.compareScope,
     xlTestData: state.xlTestData,
     xlMode: state.xlMode,
     xlSelected: state.xlSelected,
     xlSelectionMode: state.xlSelectionMode,
+    xlBaselineKey: state.xlBaselineKey,
+    chartLogScale: state.chartLogScale,
   };
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
   } catch (e) {
     console.warn('Could not persist dashboard settings:', e);
   }
+  syncUrlFromState();
 }
 
 function applySavedSettings(saved) {
   if (!saved || typeof saved !== 'object') return;
-
   if (typeof saved.currentLanguage === 'string' && saved.currentLanguage) {
     state.currentLanguage = saved.currentLanguage;
   }
@@ -209,9 +223,6 @@ function applySavedSettings(saved) {
   if (saved.sortDirection === 'asc' || saved.sortDirection === 'desc') {
     state.sortDirection = saved.sortDirection;
   }
-  if (typeof saved.compareA === 'string') state.compareA = saved.compareA;
-  if (typeof saved.compareB === 'string') state.compareB = saved.compareB;
-  // Multi-select (new) with migration from single detailSerializer
   if (Array.isArray(saved.detailSerializers)) {
     state.detailSerializers = saved.detailSerializers.filter((s) => typeof s === 'string');
   } else if (typeof saved.detailSerializer === 'string' && saved.detailSerializer) {
@@ -219,6 +230,14 @@ function applySavedSettings(saved) {
   }
   if (Array.isArray(saved.selectedMetrics) && saved.selectedMetrics.length > 0) {
     state.selectedMetrics = saved.selectedMetrics.filter((k) => typeof k === 'string');
+  }
+  if (typeof saved.compareBaseline === 'string') state.compareBaseline = saved.compareBaseline;
+  // migrate old compareA as baseline
+  if (!state.compareBaseline && typeof saved.compareA === 'string') {
+    state.compareBaseline = saved.compareA;
+  }
+  if (saved.compareScope === 'same' || saved.compareScope === 'cross') {
+    state.compareScope = saved.compareScope;
   }
   if (typeof saved.xlTestData === 'string') state.xlTestData = saved.xlTestData;
   if (typeof saved.xlMode === 'string') state.xlMode = saved.xlMode;
@@ -230,24 +249,63 @@ function applySavedSettings(saved) {
       .filter((x) => x && typeof x.lang === 'string' && typeof x.serializer === 'string')
       .map((x) => ({ lang: x.lang, serializer: x.serializer }));
   }
+  if (typeof saved.xlBaselineKey === 'string') state.xlBaselineKey = saved.xlBaselineKey;
+  if (typeof saved.chartLogScale === 'boolean') {
+    state.chartLogScale = saved.chartLogScale;
+    setChartLogScale(state.chartLogScale);
+  }
 }
 
-/** Sync non-data-dependent controls from state (before/after data load). */
+function applyUrlParams() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.has('lang')) state.currentLanguage = p.get('lang');
+  if (p.has('data')) state.currentTestData = p.get('data');
+  if (p.has('mode')) state.currentMode = p.get('mode');
+  if (p.get('metric') === 'ops' || p.get('metric') === 'time') state.displayMetric = p.get('metric');
+  if (p.get('scope') === 'cross' || p.get('scope') === 'same') state.compareScope = p.get('scope');
+  if (p.has('baseline')) state.compareBaseline = p.get('baseline');
+  if (p.has('log')) state.chartLogScale = p.get('log') === '1';
+  setChartLogScale(state.chartLogScale);
+}
+
+function syncUrlFromState() {
+  try {
+    const p = new URLSearchParams();
+    p.set('lang', state.currentLanguage);
+    if (state.currentTestData) p.set('data', state.currentTestData);
+    if (state.currentMode) p.set('mode', state.currentMode);
+    p.set('metric', state.displayMetric);
+    if (state.compareScope === 'cross') p.set('scope', 'cross');
+    if (state.compareBaseline) p.set('baseline', state.compareBaseline);
+    if (state.chartLogScale) p.set('log', '1');
+    const qs = p.toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash || ''}`;
+    window.history.replaceState(null, '', url);
+  } catch (_) {
+    /* ignore */
+  }
+}
+
 function applyUiFromState() {
   const langSel = document.getElementById('lang-select');
   if (langSel && [...langSel.options].some((o) => o.value === state.currentLanguage)) {
     langSel.value = state.currentLanguage;
   }
 
-  document.getElementById('btn-ops-sec').classList.toggle('active', state.displayMetric === 'ops');
-  document.getElementById('btn-time-ns').classList.toggle('active', state.displayMetric === 'time');
+  document.getElementById('btn-ops-sec')?.classList.toggle('active', state.displayMetric === 'ops');
+  document.getElementById('btn-time-ns')?.classList.toggle('active', state.displayMetric === 'time');
+  document.getElementById('btn-chart-log')?.classList.toggle('active', state.chartLogScale);
 
   const search = document.getElementById('table-search');
   if (search) search.value = state.searchQuery || '';
 
-  // Restore sort indicator on multi-serializer table headers
+  updateSortIndicators();
+  applyCompareScopeUi();
+}
+
+function updateSortIndicators() {
   document.querySelectorAll('#analytics-table th').forEach((th) => {
-    th.className = '';
+    th.classList.remove('sort-asc', 'sort-desc');
   });
   const sortHeaderMap = {
     serializer: 'th-serializer',
@@ -259,106 +317,152 @@ function applyUiFromState() {
   };
   const sortTh = document.getElementById(sortHeaderMap[state.sortKey]);
   if (sortTh) {
-    sortTh.className = state.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc';
+    sortTh.classList.add(state.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+  }
+}
+
+function applyCompareScopeUi() {
+  const same = state.compareScope === 'same';
+  document.getElementById('btn-compare-same')?.classList.toggle('active', same);
+  document.getElementById('btn-compare-xl')?.classList.toggle('active', !same);
+  const sameFilters = document.getElementById('compare-same-filters');
+  const xlFilters = document.getElementById('compare-xl-filters');
+  const checklist = document.getElementById('detail-serializer-checklist');
+  const xlPanel = document.getElementById('xl-add-panel');
+  const disclaimer = document.getElementById('compare-xl-disclaimer');
+  const badge = document.getElementById('compare-scope-badge');
+  const serAll = document.getElementById('detail-ser-select-all');
+  const serNone = document.getElementById('detail-ser-select-none');
+
+  if (sameFilters) sameFilters.hidden = !same;
+  if (xlFilters) xlFilters.hidden = same;
+  if (checklist) checklist.hidden = !same;
+  if (xlPanel) xlPanel.hidden = same;
+  if (disclaimer) disclaimer.hidden = same;
+  if (serAll) serAll.hidden = !same;
+  if (serNone) serNone.hidden = !same;
+  if (badge) {
+    badge.textContent = same ? 'Same language' : 'Cross-language';
+    badge.className = same ? 'badge badge-cyan' : 'badge badge-slate';
   }
 }
 
 function setupEventListeners() {
-  // Selectors
-  document.getElementById('lang-select').addEventListener('change', async (e) => {
+  // Mobile nav
+  const navToggle = document.getElementById('nav-toggle');
+  const mainNav = document.getElementById('main-nav');
+  navToggle?.addEventListener('click', () => {
+    const open = mainNav?.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  document.getElementById('lang-select')?.addEventListener('change', async (e) => {
     state.currentLanguage = e.target.value;
     saveSettings();
     await loadLanguageData(state.currentLanguage);
   });
 
-  document.getElementById('data-select').addEventListener('change', (e) => {
+  document.getElementById('data-select')?.addEventListener('change', (e) => {
     state.currentTestData = e.target.value;
     saveSettings();
     filterAndRefresh();
   });
 
-  document.getElementById('mode-select').addEventListener('change', (e) => {
+  document.getElementById('mode-select')?.addEventListener('change', (e) => {
     state.currentMode = e.target.value;
     saveSettings();
     filterAndRefresh();
   });
 
-  // Toggle View Tabs
-  document.getElementById('btn-ops-sec').addEventListener('click', () => {
-    setViewMetric('ops');
+  document.getElementById('btn-ops-sec')?.addEventListener('click', () => setViewMetric('ops'));
+  document.getElementById('btn-time-ns')?.addEventListener('click', () => setViewMetric('time'));
+
+  document.getElementById('btn-chart-log')?.addEventListener('click', () => {
+    state.chartLogScale = !state.chartLogScale;
+    setChartLogScale(state.chartLogScale);
+    document.getElementById('btn-chart-log')?.classList.toggle('active', state.chartLogScale);
+    saveSettings();
+    updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
   });
 
-  document.getElementById('btn-time-ns').addEventListener('click', () => {
-    setViewMetric('time');
+  document.getElementById('btn-export-scatter')?.addEventListener('click', () => {
+    const url = exportScatterPng();
+    if (url) downloadDataUrl(url, `scatter-${state.currentLanguage}.png`);
+  });
+  document.getElementById('btn-export-bar')?.addEventListener('click', () => {
+    const url = exportBarPng();
+    if (url) downloadDataUrl(url, `ranking-${state.currentLanguage}.png`);
   });
 
-  // Search Input
-  document.getElementById('table-search').addEventListener('input', (e) => {
+  document.getElementById('table-search')?.addEventListener('input', (e) => {
     state.searchQuery = e.target.value.toLowerCase().trim();
     saveSettings();
     renderTable();
   });
 
-  // Table Sorting
   const headers = [
     { id: 'th-serializer', key: 'serializer' },
     { id: 'th-ops', key: 'avg_ops_per_sec' },
     { id: 'th-total-ns', key: 'avg_time_total_ns' },
     { id: 'th-ser-ns', key: 'avg_time_ser_ns' },
     { id: 'th-deser-ns', key: 'avg_time_deser_ns' },
-    { id: 'th-size', key: 'median_size_bytes' }
+    { id: 'th-size', key: 'median_size_bytes' },
   ];
-
-  headers.forEach(h => {
+  headers.forEach((h) => {
     const el = document.getElementById(h.id);
-    if (el) {
-      el.addEventListener('click', () => handleTableSort(h.key, el));
-    }
+    if (el) el.addEventListener('click', () => handleTableSort(h.key));
   });
 
-  // Comparison Selects
-  document.getElementById('compare-a-select').addEventListener('change', (e) => {
-    state.compareA = e.target.value;
+  document.getElementById('compare-baseline-select')?.addEventListener('change', (e) => {
+    state.compareBaseline = e.target.value;
     saveSettings();
-    updateComparison();
+    renderCompareMatrix();
   });
 
-  document.getElementById('compare-b-select').addEventListener('change', (e) => {
-    state.compareB = e.target.value;
+  document.getElementById('btn-compare-same')?.addEventListener('click', () => {
+    state.compareScope = 'same';
+    applyCompareScopeUi();
     saveSettings();
-    updateComparison();
+    renderCompareMatrix();
   });
 
-  // Multi-serializer metrics explorer
-  document.getElementById('detail-ser-select-all').addEventListener('click', () => {
+  document.getElementById('btn-compare-xl')?.addEventListener('click', async () => {
+    state.compareScope = 'cross';
+    applyCompareScopeUi();
+    saveSettings();
+    await ensureCrossLangLoaded();
+    renderCompareMatrix();
+  });
+
+  document.getElementById('detail-ser-select-all')?.addEventListener('click', () => {
     state.detailSerializers = [...state.serializerNames];
     saveSettings();
     renderDetailSerializerChecklist();
-    renderSerializerMetricsTable();
+    renderCompareMatrix();
   });
 
-  document.getElementById('detail-ser-select-none').addEventListener('click', () => {
-    state.detailSerializers = [];
+  document.getElementById('detail-ser-select-none')?.addEventListener('click', () => {
+    state.detailSerializers = state.compareBaseline ? [state.compareBaseline] : [];
     saveSettings();
     renderDetailSerializerChecklist();
-    renderSerializerMetricsTable();
+    renderCompareMatrix();
   });
 
-  document.getElementById('metrics-select-all').addEventListener('click', () => {
+  document.getElementById('metrics-select-all')?.addEventListener('click', () => {
     state.selectedMetrics = [...state.availableMetrics];
     saveSettings();
     renderMetricsChecklist();
-    renderSerializerMetricsTable();
+    renderCompareMatrix();
   });
 
-  document.getElementById('metrics-select-none').addEventListener('click', () => {
+  document.getElementById('metrics-select-none')?.addEventListener('click', () => {
     state.selectedMetrics = [];
     saveSettings();
     renderMetricsChecklist();
-    renderSerializerMetricsTable();
+    renderCompareMatrix();
   });
 
-  document.getElementById('metrics-select-default').addEventListener('click', () => {
+  document.getElementById('metrics-select-default')?.addEventListener('click', () => {
     state.selectedMetrics = DEFAULT_SELECTED_METRICS.filter((k) =>
       state.availableMetrics.includes(k)
     );
@@ -367,291 +471,330 @@ function setupEventListeners() {
     }
     saveSettings();
     renderMetricsChecklist();
-    renderSerializerMetricsTable();
+    renderCompareMatrix();
   });
 
-  // Cross-language comparison
-  document.getElementById('xl-data-select').addEventListener('change', (e) => {
+  // Cross-lang filters
+  document.getElementById('xl-data-select')?.addEventListener('change', (e) => {
     state.xlTestData = e.target.value;
-    if (state.xlSelectionMode === 'pareto') {
-      applyCrossLangParetoSelection();
-    } else {
-      pruneCrossLangSelection();
-    }
+    if (state.xlSelectionMode === 'pareto') applyCrossLangParetoSelection();
+    else pruneCrossLangSelection();
     refreshCrossLangAddSerializerOptions();
     renderCrossLangSelection();
-    renderCrossLangTable();
+    updateXlBaselineSelect();
+    renderCompareMatrix();
     saveSettings();
   });
 
-  document.getElementById('xl-mode-select').addEventListener('change', (e) => {
+  document.getElementById('xl-mode-select')?.addEventListener('change', (e) => {
     state.xlMode = e.target.value;
-    if (state.xlSelectionMode === 'pareto') {
-      applyCrossLangParetoSelection();
-    } else {
-      pruneCrossLangSelection();
-    }
+    if (state.xlSelectionMode === 'pareto') applyCrossLangParetoSelection();
+    else pruneCrossLangSelection();
     refreshCrossLangAddSerializerOptions();
     renderCrossLangSelection();
-    renderCrossLangTable();
+    updateXlBaselineSelect();
+    renderCompareMatrix();
     saveSettings();
   });
 
-  document.getElementById('xl-reset-pareto').addEventListener('click', () => {
+  document.getElementById('xl-reset-pareto')?.addEventListener('click', () => {
     state.xlSelectionMode = 'pareto';
     applyCrossLangParetoSelection();
     renderCrossLangSelection();
-    renderCrossLangTable();
-    updateCrossLangBadge();
+    updateXlBaselineSelect();
+    renderCompareMatrix();
     saveSettings();
   });
 
-  document.getElementById('xl-add-lang').addEventListener('change', () => {
+  document.getElementById('xl-add-lang')?.addEventListener('change', () => {
     refreshCrossLangAddSerializerOptions();
   });
 
-  document.getElementById('xl-add-btn').addEventListener('click', () => {
+  document.getElementById('xl-add-btn')?.addEventListener('click', () => {
     const lang = document.getElementById('xl-add-lang').value;
     const serializer = document.getElementById('xl-add-serializer').value;
     if (!lang || !serializer) return;
-    const exists = state.xlSelected.some(
-      (x) => x.lang === lang && x.serializer === serializer
-    );
-    if (exists) {
+    if (state.xlSelected.some((x) => x.lang === lang && x.serializer === serializer)) {
       showNotification('Already selected for comparison.', 'info');
       return;
     }
-    // Only add if a matching group exists under current filters
     const group = findCrossLangGroup(lang, serializer);
     if (!group) {
-      showNotification('No data for that serializer under the current Test Data / Mode.', 'error');
+      showNotification('No data for that serializer under the current fixture / mode.', 'error');
       return;
     }
     state.xlSelectionMode = 'custom';
     state.xlSelected = [...state.xlSelected, { lang, serializer }];
     renderCrossLangSelection();
-    renderCrossLangTable();
-    updateCrossLangBadge();
+    updateXlBaselineSelect();
+    renderCompareMatrix();
     saveSettings();
   });
 
-  // Navigation Links for Smooth Scrolling
-  const navLinks = document.querySelectorAll('.nav-links a');
-  navLinks.forEach(link => {
+  document.getElementById('compare-xl-baseline-select')?.addEventListener('change', (e) => {
+    state.xlBaselineKey = e.target.value;
+    saveSettings();
+    renderCompareMatrix();
+  });
+
+  document.getElementById('btn-copy-roster-md')?.addEventListener('click', () => copyRosterMarkdown());
+  document.getElementById('btn-copy-compare-md')?.addEventListener('click', () => copyCompareMarkdown());
+
+  // Nav smooth scroll
+  document.querySelectorAll('.nav-links a').forEach((link) => {
     link.addEventListener('click', (e) => {
       const href = link.getAttribute('href');
       if (href && href.startsWith('#')) {
         e.preventDefault();
-        // Remove active class
-        document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
+        document.querySelectorAll('.nav-links li').forEach((li) => li.classList.remove('active'));
         link.parentElement.classList.add('active');
-        
-        const targetId = href.substring(1);
-        const targetElement = document.getElementById(targetId);
-        if (targetElement) {
-          targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // close mobile nav
+        document.getElementById('main-nav')?.classList.remove('open');
+        document.getElementById('nav-toggle')?.setAttribute('aria-expanded', 'false');
       }
     });
   });
 
-  // Drag and Drop Upload Setup
+  // Upload
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');
-
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
-
-  ['dragenter', 'dragover'].forEach(eventName => {
-    dropZone.addEventListener(eventName, (e) => {
+  dropZone?.addEventListener('click', () => fileInput?.click());
+  fileInput?.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+  ['dragenter', 'dragover'].forEach((ev) => {
+    dropZone?.addEventListener(ev, (e) => {
       e.preventDefault();
       dropZone.classList.add('dragover');
-    }, false);
+    });
   });
-
-  ['dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, (e) => {
+  ['dragleave', 'drop'].forEach((ev) => {
+    dropZone?.addEventListener(ev, (e) => {
       e.preventDefault();
       dropZone.classList.remove('dragover');
-    }, false);
+    });
+  });
+  dropZone?.addEventListener('drop', (e) => handleFileUpload(e.dataTransfer.files[0]));
+
+  // History
+  document.getElementById('history-run-select')?.addEventListener('change', (e) => {
+    const disabled = !e.target.value || state.logsAvailable === false;
+    ['download-csv-btn', 'download-config-btn', 'download-error-btn', 'load-history-btn'].forEach(
+      (id) => {
+        const b = document.getElementById(id);
+        if (b) b.disabled = disabled;
+      }
+    );
   });
 
-  dropZone.addEventListener('drop', (e) => {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    handleFileUpload(files[0]);
-  });
-
-  // History Actions Setup
-  document.getElementById('history-run-select').addEventListener('change', (e) => {
-    const runId = e.target.value;
-    const disabled = !runId;
-    document.getElementById('download-csv-btn').disabled = disabled;
-    document.getElementById('download-config-btn').disabled = disabled;
-    document.getElementById('download-error-btn').disabled = disabled;
-    document.getElementById('load-history-btn').disabled = disabled;
-  });
-
-  document.getElementById('download-csv-btn').addEventListener('click', () => {
+  document.getElementById('download-csv-btn')?.addEventListener('click', () => {
     const runId = document.getElementById('history-run-select').value;
     if (runId) {
-      triggerDownload(`/logs/${state.currentLanguage}/${runId}.csv`, `${state.currentLanguage}_${runId}.csv`);
+      triggerDownload(
+        logsUrl(`${state.currentLanguage}/${runId}.csv`),
+        `${state.currentLanguage}_${runId}.csv`
+      );
     }
   });
 
-  document.getElementById('download-config-btn').addEventListener('click', () => {
+  document.getElementById('download-config-btn')?.addEventListener('click', () => {
     const runId = document.getElementById('history-run-select').value;
     if (runId) {
-      const url = `/logs/${state.currentLanguage}/${runId}.configs.json`;
-      const fallbackUrl = `/logs/${state.currentLanguage}/${runId}.environment.json`;
-      downloadFileWithFallback(url, fallbackUrl, `${state.currentLanguage}_${runId}.configs.json`);
+      downloadFileWithFallback(
+        logsUrl(`${state.currentLanguage}/${runId}.configs.json`),
+        logsUrl(`${state.currentLanguage}/${runId}.environment.json`),
+        `${state.currentLanguage}_${runId}.configs.json`
+      );
     }
   });
 
-  document.getElementById('download-error-btn').addEventListener('click', () => {
+  document.getElementById('download-error-btn')?.addEventListener('click', () => {
     const runId = document.getElementById('history-run-select').value;
     if (runId) {
-      const url = `/logs/${state.currentLanguage}/${runId}.errors.csv`;
-      downloadFileWithFallback(url, null, `${state.currentLanguage}_${runId}.errors.csv`);
+      downloadFileWithFallback(
+        logsUrl(`${state.currentLanguage}/${runId}.errors.csv`),
+        null,
+        `${state.currentLanguage}_${runId}.errors.csv`
+      );
     }
   });
 
-  document.getElementById('load-history-btn').addEventListener('click', async () => {
+  document.getElementById('load-history-btn')?.addEventListener('click', async () => {
     const runId = document.getElementById('history-run-select').value;
-    if (runId) {
-      await loadHistoricalRunIntoDashboard(runId);
-    }
+    if (runId) await loadHistoricalRunIntoDashboard(runId);
   });
 }
 
-// Load available historical runs index
-async function loadHistoryList() {
+function logsUrl(path) {
+  // Relative to dashboard base (Vite base: './')
+  return `logs/${path}`;
+}
+
+async function probeLogsAvailability() {
   try {
-    const response = await fetch('data/available_runs.json');
-    if (!response.ok) throw new Error("Could not fetch available runs index");
-    state.historicalRuns = await response.json();
-  } catch (e) {
-    console.error("History runs not indexable (or offline):", e);
+    // Try a lightweight probe against available_runs path sibling
+    const runs = state.historicalRuns[state.currentLanguage];
+    if (!runs || !runs.length) {
+      state.logsAvailable = false;
+    } else {
+      const probe = await fetch(logsUrl(`${state.currentLanguage}/${runs[0]}.csv`), {
+        method: 'HEAD',
+      });
+      state.logsAvailable = probe.ok;
+    }
+  } catch {
+    state.logsAvailable = false;
+  }
+  const localNote = document.getElementById('history-local-note');
+  const pagesNote = document.getElementById('history-pages-note');
+  if (localNote) localNote.hidden = state.logsAvailable === false;
+  if (pagesNote) pagesNote.hidden = state.logsAvailable !== false;
+  if (state.logsAvailable === false) {
+    ['download-csv-btn', 'download-config-btn', 'download-error-btn', 'load-history-btn'].forEach(
+      (id) => {
+        const b = document.getElementById(id);
+        if (b) b.disabled = true;
+      }
+    );
   }
 }
 
-// Populate the history dropdown for the current language
-function updateHistoryUIForLanguage() {
-  const select = document.getElementById('history-run-select');
-  select.innerHTML = '<option value="">-- Select Run ID --</option>';
-  
-  const runs = state.historicalRuns[state.currentLanguage] || [];
-  runs.forEach(runId => {
-    const opt = document.createElement('option');
-    opt.value = runId;
-    opt.textContent = runId + (runId === state.currentRunId ? ' (Currently Active)' : '');
-    select.appendChild(opt);
-  });
-
-  // Reset buttons
-  select.value = '';
-  document.getElementById('download-csv-btn').disabled = true;
-  document.getElementById('download-config-btn').disabled = true;
-  document.getElementById('download-error-btn').disabled = true;
-  document.getElementById('load-history-btn').disabled = true;
+async function loadHistoryList() {
+  try {
+    const response = await fetch('data/available_runs.json');
+    if (!response.ok) throw new Error('Could not fetch available runs index');
+    state.historicalRuns = await response.json();
+  } catch (e) {
+    console.error('History runs not indexable (or offline):', e);
+  }
 }
 
-// Load packed compressed run data (.json.gz)
+function updateHistoryUIForLanguage() {
+  const select = document.getElementById('history-run-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">— Select run ID —</option>';
+  const runs = state.historicalRuns[state.currentLanguage] || [];
+  runs.forEach((runId) => {
+    const opt = document.createElement('option');
+    opt.value = runId;
+    opt.textContent = runId + (runId === state.currentRunId ? ' (currently active)' : '');
+    select.appendChild(opt);
+  });
+  select.value = '';
+  ['download-csv-btn', 'download-config-btn', 'download-error-btn', 'load-history-btn'].forEach(
+    (id) => {
+      const b = document.getElementById(id);
+      if (b) b.disabled = true;
+    }
+  );
+}
+
 async function loadLanguageData(lang) {
   const url = `data/${lang}_latest.json.gz`;
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Could not load stats for ${lang}`);
-    
+
     let payload;
-    // Check if the response is already decompressed (e.g. Content-Encoding handled by browser)
     try {
-      const clonedResponse = response.clone();
-      payload = await clonedResponse.json();
-    } catch (e) {
-      // Fallback: manually decompress using DecompressionStream
-      try {
-        const ds = new DecompressionStream('gzip');
-        const decompressedStream = response.body.pipeThrough(ds);
-        const text = await new Response(decompressedStream).text();
-        payload = JSON.parse(text);
-      } catch (decompError) {
-        throw new Error(`Failed to parse or decompress payload: ${decompError.message}`);
-      }
+      payload = await response.clone().json();
+    } catch {
+      const ds = new DecompressionStream('gzip');
+      const text = await new Response(response.body.pipeThrough(ds)).text();
+      payload = JSON.parse(text);
     }
 
     state.currentRunId = payload.run_id;
-    state.currentRunConfigs = payload.configs;
-    state.currentRunErrors = payload.errors;
-    state.currentRunCsv = payload.csv_data;
+    state.currentRunConfigs = payload.configs || {};
+    state.currentRunErrors = payload.errors || '';
+    state.currentRunCsv = payload.csv_data || '';
 
     processStatsData(payload.stats);
+    updateRunMeta();
     updateHistoryUIForLanguage();
   } catch (error) {
     console.error(error);
     showNotification(`Error loading ${lang} stats. Please run sync script first.`, 'error');
+    setKpiEmpty('No data');
   }
 }
 
-// Load historical raw run dynamically into dashboard
+function updateRunMeta() {
+  const el = document.getElementById('run-meta');
+  const text = document.getElementById('run-meta-text');
+  if (!el || !text) return;
+  const cfg = state.currentRunConfigs || {};
+  const env = cfg.environment || {};
+  const git = env.git || {};
+  const cpu = env.cpu || {};
+  const runtimes = env.runtimes || {};
+  const dataset = cfg.dataset || {};
+  const parts = [];
+  if (state.currentRunId) parts.push(`run ${state.currentRunId}`);
+  if (git.commit) parts.push(`commit ${git.commit}${git.dirty ? '*' : ''}`);
+  if (cpu.model) parts.push(cpu.model);
+  const rtKey =
+    state.currentLanguage === 'csharp'
+      ? 'dotnet'
+      : state.currentLanguage === 'javascript'
+        ? 'node'
+        : state.currentLanguage === 'cpp'
+          ? 'g++'
+          : state.currentLanguage === 'c'
+            ? 'gcc'
+            : state.currentLanguage;
+  if (runtimes[rtKey]) parts.push(String(runtimes[rtKey]).split('\n')[0]);
+  if (dataset.seed != null) parts.push(`seed ${dataset.seed}`);
+  if (parts.length) {
+    text.textContent = parts.join(' · ');
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+  }
+}
+
 async function loadHistoricalRunIntoDashboard(runId) {
-  const csvUrl = `/logs/${state.currentLanguage}/${runId}.csv`;
-  const configUrl = `/logs/${state.currentLanguage}/${runId}.configs.json`;
-  const fallbackConfigUrl = `/logs/${state.currentLanguage}/${runId}.environment.json`;
+  const csvUrl = logsUrl(`${state.currentLanguage}/${runId}.csv`);
+  const configUrl = logsUrl(`${state.currentLanguage}/${runId}.configs.json`);
+  const fallbackConfigUrl = logsUrl(`${state.currentLanguage}/${runId}.environment.json`);
 
-  showNotification(`Loading historical run ${runId}...`, 'info');
-
+  showNotification(`Loading historical run ${runId}…`, 'info');
   try {
-    // 1. Fetch CSV
     const csvRes = await fetch(csvUrl);
     if (!csvRes.ok) throw new Error(`Could not fetch raw CSV for run ${runId}`);
     const csvText = await csvRes.text();
 
-    // 2. Fetch Config
     let configs = {};
     try {
       let confRes = await fetch(configUrl);
       if (!confRes.ok) confRes = await fetch(fallbackConfigUrl);
       if (confRes.ok) configs = await confRes.json();
     } catch (e) {
-      console.warn("Failed to load configs sidecar for history run:", e);
+      console.warn('Failed to load configs sidecar for history run:', e);
     }
 
-    // 3. Parse CSV and aggregate stats dynamically
     const records = parseCSV(csvText);
     const groups = aggregateCSVRecords(records);
-
-    if (groups.length === 0) {
-      throw new Error("No valid serializer records found in parsed CSV.");
-    }
+    if (groups.length === 0) throw new Error('No valid serializer records found in parsed CSV.');
 
     state.currentRunId = runId;
     state.currentRunConfigs = configs;
     state.currentRunCsv = csvText;
-    state.currentRunErrors = ''; // Cleared for historical local
-
-    // Swap datasets
+    state.currentRunErrors = '';
     processStatsData({ groups });
-    
-    // Update active indicators
-    document.getElementById('history-run-select').value = runId;
-    document.getElementById('load-history-btn').disabled = false;
-
-    showNotification(`Successfully loaded run ${runId} into Dashboard!`, 'success');
+    updateRunMeta();
+    showNotification(`Successfully loaded run ${runId}`, 'success');
   } catch (error) {
-    console.error("Error loading historical run:", error);
+    console.error(error);
     showNotification(`Failed to load historical run: ${error.message}`, 'error');
   }
 }
 
 function processStatsData(statsObj) {
-  // Normalize groups to display fixture keys (type@n=N when batch axis present)
   state.allGroups = (statsObj.groups || []).map((g) => ({
     ...g,
     test_data: fixtureKey(g),
   }));
 
-  // Suite fixtures only in the data-type dropdown
   const testDataOptions = [
     ...new Set(
       state.allGroups
@@ -659,13 +802,11 @@ function processStatsData(statsObj) {
         .filter((k) => k && SUITE_TYPE_IDS.includes(baseTypeId(k)))
     ),
   ].sort();
-  const modeOptions = [...new Set(state.allGroups.map(g => g.mode))];
+  const modeOptions = [...new Set(state.allGroups.map((g) => g.mode))];
 
-  // Populate Dropdowns
   populateSelect('data-select', testDataOptions);
   populateSelect('mode-select', modeOptions);
 
-  // Prefer saved filters when still valid
   if (!testDataOptions.includes(state.currentTestData)) {
     state.currentTestData = pickPreferredFixture(testDataOptions);
   }
@@ -673,113 +814,106 @@ function processStatsData(statsObj) {
     state.currentMode = modeOptions[0] || '';
   }
 
-  document.getElementById('data-select').value = state.currentTestData;
-  document.getElementById('mode-select').value = state.currentMode;
+  const dataSel = document.getElementById('data-select');
+  const modeSel = document.getElementById('mode-select');
+  if (dataSel) dataSel.value = state.currentTestData;
+  if (modeSel) modeSel.value = state.currentMode;
 
-  state.availableMetrics = discoverMetricKeys(state.allGroups);
-  // Keep only selected metrics that still exist; if none left, fall back to defaults
-  state.selectedMetrics = state.selectedMetrics.filter((k) =>
-    state.availableMetrics.includes(k)
-  );
-  if (state.selectedMetrics.length === 0) {
-    state.selectedMetrics = DEFAULT_SELECTED_METRICS.filter((k) =>
-      state.availableMetrics.includes(k)
-    );
-    if (state.selectedMetrics.length === 0) {
-      state.selectedMetrics = state.availableMetrics.slice(0, 12);
-    }
-  }
-
-  renderMetricsChecklist();
+  discoverMetricKeys(state.allGroups);
   filterAndRefresh();
-  saveSettings();
 }
 
 function discoverMetricKeys(groups) {
   const keys = new Set();
   for (const g of groups) {
-    if (!g || typeof g !== 'object') continue;
     for (const k of Object.keys(g)) {
-      if (!GROUP_META_KEYS.has(k)) keys.add(k);
+      if (!GROUP_META_KEYS.has(k) && k !== 'data_type_instance_count') keys.add(k);
     }
   }
-  return [...keys].sort((a, b) => a.localeCompare(b));
+  state.availableMetrics = [...keys].sort();
+  // Keep selected intersection; fill defaults if empty
+  state.selectedMetrics = state.selectedMetrics.filter((k) => state.availableMetrics.includes(k));
+  if (!state.selectedMetrics.length) {
+    state.selectedMetrics = DEFAULT_SELECTED_METRICS.filter((k) =>
+      state.availableMetrics.includes(k)
+    );
+  }
 }
 
 function populateSelect(id, options) {
-  const select = document.getElementById(id);
-  select.innerHTML = '';
-  options.forEach(opt => {
-    const el = document.createElement('option');
-    el.value = opt;
-    el.textContent = opt;
-    select.appendChild(el);
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  options.forEach((o) => {
+    const opt = document.createElement('option');
+    opt.value = o;
+    opt.textContent = o;
+    sel.appendChild(opt);
   });
+  if (options.includes(prev)) sel.value = prev;
 }
 
-// Filter dataset based on selected test_data & mode
 function filterAndRefresh() {
-  state.filteredGroups = state.allGroups.filter(g =>
-    g.test_data === state.currentTestData && g.mode === state.currentMode
+  state.filteredGroups = state.allGroups.filter(
+    (g) => g.test_data === state.currentTestData && g.mode === state.currentMode
   );
+  state.serializerNames = [
+    ...new Set(state.filteredGroups.map((g) => g.serializer)),
+  ].sort((a, b) => a.localeCompare(b));
 
-  // Re-calculate Pareto frontier dynamically
   calculateParetoFrontier();
 
-  // Populate comparison pickers
-  state.serializerNames = state.filteredGroups.map(g => g.serializer).sort();
-  populateCompareSelectors();
-  populateDetailSerializerSelect();
+  // Baseline default
+  if (!state.compareBaseline || !state.serializerNames.includes(state.compareBaseline)) {
+    state.compareBaseline =
+      state.paretoSerializerNames[0] || state.serializerNames[0] || '';
+  }
 
-  // Update summary widgets
+  // Detail serializers default: baseline + a few others
+  state.detailSerializers = state.detailSerializers.filter((s) =>
+    state.serializerNames.includes(s)
+  );
+  if (!state.detailSerializers.length) {
+    state.detailSerializers = state.serializerNames.slice(0, Math.min(6, state.serializerNames.length));
+  }
+  if (state.compareBaseline && !state.detailSerializers.includes(state.compareBaseline)) {
+    state.detailSerializers = [state.compareBaseline, ...state.detailSerializers];
+  }
+
   updateKPIs();
-
-  // Render visualizations
-  updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
-
-  // Render Table
+  populateBaselineSelect();
+  renderDetailSerializerChecklist();
+  renderMetricsChecklist();
   renderTable();
-
-  // Update Side-by-side comparison
-  updateComparison();
-
-  // Single-serializer metrics table
-  renderSerializerMetricsTable();
-
+  renderCompareMatrix();
+  updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
+  updateSortIndicators();
   saveSettings();
 }
 
 function setViewMetric(metric) {
   state.displayMetric = metric;
-
-  // Update Active Button Style
-  document.getElementById('btn-ops-sec').classList.toggle('active', metric === 'ops');
-  document.getElementById('btn-time-ns').classList.toggle('active', metric === 'time');
-
-  // Redraw charts & table
-  updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
+  document.getElementById('btn-ops-sec')?.classList.toggle('active', metric === 'ops');
+  document.getElementById('btn-time-ns')?.classList.toggle('active', metric === 'time');
   saveSettings();
+  updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
 }
 
-// Pareto Frontier Calculation (minimize latency + size)
 function isParetoDominated(g, groups) {
-  const gTime = g.avg_time_total_ns;
+  const gOps = g.avg_ops_per_sec;
   const gSize = g.median_size_bytes;
-  if (gTime == null || gSize == null) return true;
-
-  for (const other of groups) {
-    if (other === g) continue;
-    const otherTime = other.avg_time_total_ns;
-    const otherSize = other.median_size_bytes;
-    if (otherTime == null || otherSize == null) continue;
-    if (
-      (otherTime <= gTime && otherSize < gSize) ||
-      (otherTime < gTime && otherSize <= gSize)
-    ) {
-      return true;
-    }
-  }
-  return false;
+  if (gOps == null || gSize == null) return true;
+  return groups.some((other) => {
+    if (other === g) return false;
+    const oOps = other.avg_ops_per_sec;
+    const oSize = other.median_size_bytes;
+    if (oOps == null || oSize == null) return false;
+    const betterOrEqualOps = oOps >= gOps;
+    const betterOrEqualSize = oSize <= gSize;
+    const strictlyBetter = oOps > gOps || oSize < gSize;
+    return betterOrEqualOps && betterOrEqualSize && strictlyBetter;
+  });
 }
 
 function paretoOptimalGroups(groups) {
@@ -787,39 +921,30 @@ function paretoOptimalGroups(groups) {
 }
 
 function calculateParetoFrontier() {
-  state.paretoSerializerNames = paretoOptimalGroups(state.filteredGroups).map(
-    (g) => g.serializer
-  );
+  state.paretoSerializerNames = paretoOptimalGroups(state.filteredGroups).map((g) => g.serializer);
 }
 
-// ---------- Cross-language comparison ----------
+// ---------- Cross-language ----------
 
-function languageLabel(langId) {
-  return LANGUAGE_CATALOG.find((l) => l.id === langId)?.label || langId;
-}
-
-/** Normalize mode labels across languages (bytes/string vs stream/Stream). */
 function normalizeMode(mode) {
-  const s = String(mode || '').toLowerCase();
-  if (s === 'stream') return 'stream';
-  if (s === 'bytes' || s === 'string' || s === 'buffer') return 'bytes';
-  return s;
+  const m = String(mode || '').toLowerCase();
+  if (m === 'string' || m === 'bytes' || m === 'byte') return 'bytes';
+  if (m === 'stream') return 'stream';
+  return m;
 }
 
 function modeDisplayLabel(norm) {
-  if (norm === 'bytes') return 'bytes (buffer)';
+  if (norm === 'bytes') return 'bytes / string';
   if (norm === 'stream') return 'stream';
-  return norm;
+  return norm || '—';
 }
 
 async function fetchStatsGroups(langId) {
-  // Prefer plain JSON (no gzip edge cases); fall back to packed gz used by main dash.
   const urls = [`data/stats_${langId}_latest.json`, `data/${langId}_latest.json.gz`];
   for (const url of urls) {
     try {
       const response = await fetch(url);
       if (!response.ok) continue;
-
       let payload;
       try {
         payload = await response.clone().json();
@@ -828,10 +953,8 @@ async function fetchStatsGroups(langId) {
         const text = await new Response(response.body.pipeThrough(ds)).text();
         payload = JSON.parse(text);
       }
-
       const groups = payload.groups || payload.stats?.groups || [];
       if (Array.isArray(groups) && groups.length) {
-        // Normalize fixture keys so cross-lang filters match type@n=N options
         return groups.map((g) => ({
           ...g,
           language: g.language || langId,
@@ -845,110 +968,80 @@ async function fetchStatsGroups(langId) {
   return [];
 }
 
-async function loadAllLanguagesForCrossCompare() {
+async function ensureCrossLangLoaded() {
+  if (state.crossLangLoaded) {
+    initCrossLangControls();
+    return;
+  }
+  showNotification('Loading cross-language stats…', 'info');
   const entries = await Promise.all(
     LANGUAGE_CATALOG.map(async (lang) => [lang.id, await fetchStatsGroups(lang.id)])
   );
   state.crossLangGroupsByLang = Object.fromEntries(entries);
-
-  const loaded = entries.filter(([, g]) => g.length > 0).map(([id]) => id);
-  if (loaded.length === 0) {
-    console.warn('No cross-language stats loaded.');
-  }
-
+  state.crossLangLoaded = true;
   initCrossLangControls();
   if (state.xlSelectionMode === 'pareto' || state.xlSelected.length === 0) {
     applyCrossLangParetoSelection();
   } else {
     pruneCrossLangSelection();
-    if (state.xlSelected.length === 0) {
-      applyCrossLangParetoSelection();
-    }
   }
   renderCrossLangSelection();
-  renderCrossLangTable();
-  updateCrossLangBadge();
-  saveSettings();
+  updateXlBaselineSelect();
 }
 
 function allCrossLangGroups() {
   return Object.values(state.crossLangGroupsByLang).flat();
 }
 
-/** How many catalog languages have at least one group in this (normalized) mode. */
-function languageCountForMode(mode) {
-  if (!mode) return 0;
-  return LANGUAGE_CATALOG.filter((lang) => {
-    const groups = state.crossLangGroupsByLang[lang.id] || [];
-    return groups.some((g) => normalizeMode(g.mode) === mode);
-  }).length;
-}
-
 function initCrossLangControls() {
   const all = allCrossLangGroups();
-  // Groups normalized with fixtureKey on load; suite fixtures only
-  const testDataOptions = [
+  const fixtures = [
     ...new Set(
-      all
-        .map((g) => fixtureKey(g))
-        .filter((k) => k && SUITE_TYPE_IDS.includes(baseTypeId(k)))
+      all.map((g) => g.test_data).filter((k) => k && SUITE_TYPE_IDS.includes(baseTypeId(k)))
     ),
   ].sort();
-  const modeOptions = [...new Set(all.map((g) => normalizeMode(g.mode)).filter(Boolean))].sort();
+  const modes = [...new Set(all.map((g) => normalizeMode(g.mode)).filter(Boolean))].sort();
 
-  populateSelect('xl-data-select', testDataOptions);
+  populateSelect('xl-data-select', fixtures);
   const modeSel = document.getElementById('xl-mode-select');
-  modeSel.innerHTML = '';
-  modeOptions.forEach((m) => {
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = modeDisplayLabel(m);
-    modeSel.appendChild(opt);
-  });
-
-  // Prefer message@n=1; drop stale localStorage / doubled labels (e.g. type@n=100@n=100)
-  if (!testDataOptions.includes(state.xlTestData)) {
-    state.xlTestData = pickPreferredFixture(testDataOptions);
+  if (modeSel) {
+    modeSel.innerHTML = '';
+    modes.forEach((m) => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = modeDisplayLabel(m);
+      modeSel.appendChild(opt);
+    });
   }
 
-  // Prefer a mode available in as many languages as possible (bytes). Stream exists
-  // only for C/C# today — keep it selectable, but don't restore it as default when
-  // it would hide every other language on load.
-  const bytesCount = languageCountForMode('bytes');
-  const currentCount = languageCountForMode(state.xlMode);
-  if (
-    !modeOptions.includes(state.xlMode) ||
-    !state.xlMode ||
-    (bytesCount > currentCount && modeOptions.includes('bytes'))
-  ) {
-    state.xlMode = modeOptions.includes('bytes')
-      ? 'bytes'
-      : modeOptions[0] || '';
+  if (!fixtures.includes(state.xlTestData)) {
+    state.xlTestData = pickPreferredFixture(fixtures);
   }
+  if (!modes.includes(state.xlMode)) {
+    state.xlMode = modes.includes('bytes') ? 'bytes' : modes[0] || '';
+  }
+  const xd = document.getElementById('xl-data-select');
+  const xm = document.getElementById('xl-mode-select');
+  if (xd) xd.value = state.xlTestData;
+  if (xm) xm.value = state.xlMode;
 
-  document.getElementById('xl-data-select').value = state.xlTestData;
-  modeSel.value = state.xlMode;
-
-  // Language add picker
   const langSel = document.getElementById('xl-add-lang');
-  langSel.innerHTML = '';
-  LANGUAGE_CATALOG.forEach((lang) => {
-    const groups = state.crossLangGroupsByLang[lang.id] || [];
-    if (!groups.length) return;
-    const opt = document.createElement('option');
-    opt.value = lang.id;
-    opt.textContent = lang.label;
-    langSel.appendChild(opt);
-  });
-
+  if (langSel) {
+    langSel.innerHTML = '';
+    LANGUAGE_CATALOG.forEach((l) => {
+      const opt = document.createElement('option');
+      opt.value = l.id;
+      opt.textContent = l.label;
+      langSel.appendChild(opt);
+    });
+  }
   refreshCrossLangAddSerializerOptions();
 }
 
 function filterGroupsForCrossLang(groups) {
   return groups.filter(
     (g) =>
-      fixtureKey(g) === state.xlTestData &&
-      normalizeMode(g.mode) === state.xlMode
+      g.test_data === state.xlTestData && normalizeMode(g.mode) === state.xlMode
   );
 }
 
@@ -957,29 +1050,20 @@ function findCrossLangGroup(lang, serializer) {
   return groups.find((g) => g.serializer === serializer) || null;
 }
 
-/** Max Pareto picks auto-selected per language in the cross-language diagram. */
-const XL_PARETO_MAX_PER_LANG = 2;
-
 function applyCrossLangParetoSelection() {
   const selected = [];
   for (const lang of LANGUAGE_CATALOG) {
     const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang.id] || []);
-    if (!groups.length) continue;
-    const pareto = paretoOptimalGroups(groups);
-    // Stable order: fastest total first; cap so the diagram stays readable.
-    pareto
-      .slice()
-      .sort(
-        (a, b) =>
-          (a.avg_time_total_ns ?? Infinity) - (b.avg_time_total_ns ?? Infinity)
-      )
-      .slice(0, XL_PARETO_MAX_PER_LANG)
-      .forEach((g) => {
-        selected.push({ lang: lang.id, serializer: g.serializer });
-      });
+    const pareto = paretoOptimalGroups(groups)
+      .sort((a, b) => b.avg_ops_per_sec - a.avg_ops_per_sec)
+      .slice(0, 2);
+    pareto.forEach((g) => selected.push({ lang: lang.id, serializer: g.serializer }));
   }
   state.xlSelected = selected;
   state.xlSelectionMode = 'pareto';
+  if (selected.length && !state.xlBaselineKey) {
+    state.xlBaselineKey = `${selected[0].lang}|${selected[0].serializer}`;
+  }
 }
 
 function pruneCrossLangSelection() {
@@ -987,401 +1071,216 @@ function pruneCrossLangSelection() {
 }
 
 function refreshCrossLangAddSerializerOptions() {
-  const lang = document.getElementById('xl-add-lang').value;
+  const lang = document.getElementById('xl-add-lang')?.value;
   const serSel = document.getElementById('xl-add-serializer');
-  serSel.innerHTML = '';
-
+  if (!serSel || !lang) return;
   const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang] || []);
   const names = [...new Set(groups.map((g) => g.serializer))].sort((a, b) =>
     a.localeCompare(b)
   );
-
-  if (!names.length) {
+  serSel.innerHTML = '';
+  names.forEach((n) => {
     const opt = document.createElement('option');
-    opt.value = '';
-    opt.textContent = '— no serializers —';
-    serSel.appendChild(opt);
-    return;
-  }
-
-  names.forEach((name) => {
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
+    opt.value = n;
+    opt.textContent = n;
     serSel.appendChild(opt);
   });
-}
-
-function updateCrossLangBadge() {
-  const badge = document.getElementById('cross-lang-badge');
-  if (!badge) return;
-  if (state.xlSelectionMode === 'pareto') {
-    badge.textContent = 'Pareto best';
-    badge.className = 'badge badge-cyan';
-  } else {
-    badge.textContent = 'Custom selection';
-    badge.className = 'badge badge-purple';
-  }
 }
 
 function renderCrossLangSelection() {
   const host = document.getElementById('xl-selection-chips');
   if (!host) return;
   host.innerHTML = '';
-
-  updateCrossLangBadge();
-
   if (!state.xlSelected.length) {
     const empty = document.createElement('span');
     empty.style.color = 'var(--text-muted)';
     empty.style.fontSize = '0.85rem';
-    empty.textContent = 'No serializers selected. Reset to Pareto best or add one.';
+    empty.textContent = 'No serializers selected. Seed Pareto best or add one.';
     host.appendChild(empty);
     return;
   }
-
-  // Annotate which are currently Pareto under the active filters
-  const paretoKeys = new Set();
-  for (const lang of LANGUAGE_CATALOG) {
-    const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang.id] || []);
-    paretoOptimalGroups(groups).forEach((g) => {
-      paretoKeys.add(`${lang.id}|${g.serializer}`);
-    });
-  }
-
-  state.xlSelected.forEach((item, idx) => {
-    const key = `${item.lang}|${item.serializer}`;
+  state.xlSelected.forEach((x) => {
     const chip = document.createElement('span');
-    chip.className = 'xl-chip' + (paretoKeys.has(key) ? ' pareto-chip' : '');
-    chip.title = paretoKeys.has(key)
-      ? 'On Pareto front for this language / filter'
-      : 'Not on Pareto front for this language / filter';
-
-    const label = document.createElement('span');
-    label.className = 'xl-chip-label';
-    label.textContent = `${languageLabel(item.lang)} · ${item.serializer}`;
-
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'xl-chip-remove';
-    remove.setAttribute('aria-label', `Remove ${item.serializer}`);
-    remove.textContent = '×';
-    remove.addEventListener('click', () => {
+    chip.className = 'xl-chip';
+    chip.textContent = `${languageLabel(x.lang)} / ${x.serializer}`;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '×';
+    btn.setAttribute('aria-label', `Remove ${x.serializer}`);
+    btn.addEventListener('click', () => {
       state.xlSelectionMode = 'custom';
-      state.xlSelected = state.xlSelected.filter((_, i) => i !== idx);
+      state.xlSelected = state.xlSelected.filter(
+        (y) => !(y.lang === x.lang && y.serializer === x.serializer)
+      );
       renderCrossLangSelection();
-      renderCrossLangTable();
+      updateXlBaselineSelect();
+      renderCompareMatrix();
       saveSettings();
     });
-
-    chip.appendChild(label);
-    chip.appendChild(remove);
+    chip.appendChild(btn);
     host.appendChild(chip);
   });
 }
 
-function renderCrossLangTable() {
-  const thead = document.getElementById('xl-compare-head');
-  const tbody = document.getElementById('xl-compare-body');
-  if (!thead || !tbody) return;
-
-  thead.innerHTML = '';
-  tbody.innerHTML = '';
-
-  const headerRow = document.createElement('tr');
-  const metricTh = document.createElement('th');
-  metricTh.textContent = 'Metric';
-  headerRow.appendChild(metricTh);
-
-  const columns = state.xlSelected.map((item) => ({
-    ...item,
-    group: findCrossLangGroup(item.lang, item.serializer),
-  }));
-
-  columns.forEach((col) => {
-    const th = document.createElement('th');
-    th.innerHTML = `<span class="xl-col-lang">${escapeHtml(languageLabel(col.lang))}</span><span class="xl-col-name">${escapeHtml(col.serializer)}</span>`;
-    headerRow.appendChild(th);
+function updateXlBaselineSelect() {
+  const sel = document.getElementById('compare-xl-baseline-select');
+  if (!sel) return;
+  sel.innerHTML = '';
+  state.xlSelected.forEach((x) => {
+    const opt = document.createElement('option');
+    opt.value = `${x.lang}|${x.serializer}`;
+    opt.textContent = `${languageLabel(x.lang)} / ${x.serializer}`;
+    sel.appendChild(opt);
   });
-  thead.appendChild(headerRow);
-
-  if (!columns.length) {
-    const tr = document.createElement('tr');
-    tr.innerHTML =
-      '<td colspan="1" style="text-align:center;color:var(--text-muted);">Select serializers to compare across languages</td>';
-    tbody.appendChild(tr);
-    return;
+  if (
+    state.xlBaselineKey &&
+    state.xlSelected.some((x) => `${x.lang}|${x.serializer}` === state.xlBaselineKey)
+  ) {
+    sel.value = state.xlBaselineKey;
+  } else if (state.xlSelected.length) {
+    state.xlBaselineKey = `${state.xlSelected[0].lang}|${state.xlSelected[0].serializer}`;
+    sel.value = state.xlBaselineKey;
+  } else {
+    state.xlBaselineKey = '';
   }
-
-  CROSS_LANG_METRICS.forEach((metric) => {
-    // Skip metric row if every column is missing that field entirely
-    const values = columns.map((c) =>
-      c.group && c.group[metric.key] != null ? Number(c.group[metric.key]) : null
-    );
-    if (values.every((v) => v === null || Number.isNaN(v))) return;
-
-    let bestVal = null;
-    if (metric.higherIsBetter === true || metric.higherIsBetter === false) {
-      values.forEach((v) => {
-        if (v === null || Number.isNaN(v)) return;
-        if (
-          bestVal === null ||
-          (metric.higherIsBetter ? v > bestVal : v < bestVal)
-        ) {
-          bestVal = v;
-        }
-      });
-    }
-
-    const tr = document.createElement('tr');
-    const tdLabel = document.createElement('td');
-    tdLabel.textContent = metric.label;
-    tr.appendChild(tdLabel);
-
-    values.forEach((v) => {
-      const td = document.createElement('td');
-      if (v === null || Number.isNaN(v)) {
-        td.textContent = '—';
-        td.className = 'xl-missing';
-      } else {
-        td.textContent = formatMetricValue(metric.key, v);
-        // Highlight every column that ties for best (not only the first).
-        if (bestVal !== null && v === bestVal) td.classList.add('xl-best');
-      }
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
-  });
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+// ---------- KPIs / tables ----------
+
+function setKpiEmpty(msg) {
+  document.getElementById('kpi-total').textContent = '0';
+  document.getElementById('kpi-fastest').textContent = msg || 'No data for this filter';
+  document.getElementById('kpi-fastest-val').textContent = 'Select another fixture or mode';
+  document.getElementById('kpi-compact').textContent = msg || 'No data for this filter';
+  document.getElementById('kpi-compact-val').textContent = 'Select another fixture or mode';
+  document.getElementById('kpi-pareto').textContent = '—';
 }
 
-// Update KPI cards
 function updateKPIs() {
   const total = state.filteredGroups.length;
-  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-total').textContent = formatIntGrouped(total);
 
   if (total === 0) {
-    document.getElementById('kpi-fastest').textContent = '-';
-    document.getElementById('kpi-fastest-val').textContent = 'Speed: -';
-    document.getElementById('kpi-compact').textContent = '-';
-    document.getElementById('kpi-compact-val').textContent = 'Size: -';
-    document.getElementById('kpi-pareto').textContent = '-';
+    setKpiEmpty('No data for this filter');
     return;
   }
 
-  // Find Fastest (min avg_time_total_ns)
-  const fastest = [...state.filteredGroups].sort((a, b) => a.avg_time_total_ns - b.avg_time_total_ns)[0];
+  const fastest = [...state.filteredGroups].sort(
+    (a, b) => a.avg_time_total_ns - b.avg_time_total_ns
+  )[0];
   document.getElementById('kpi-fastest').textContent = fastest.serializer;
-  document.getElementById('kpi-fastest-val').textContent = `Total: ${formatTime(fastest.avg_time_total_ns)} (${formatOps(fastest.avg_ops_per_sec)})`;
+  document.getElementById('kpi-fastest-val').textContent =
+    `${formatTimeCompact(fastest.avg_time_total_ns)} · ${formatOpsCompact(fastest.avg_ops_per_sec)}`;
 
-  // Find Most Compact (min median_size_bytes)
-  const compact = [...state.filteredGroups].sort((a, b) => a.median_size_bytes - b.median_size_bytes)[0];
+  const compact = [...state.filteredGroups].sort(
+    (a, b) => a.median_size_bytes - b.median_size_bytes
+  )[0];
   document.getElementById('kpi-compact').textContent = compact.serializer;
-  document.getElementById('kpi-compact-val').textContent = `Size: ${compact.median_size_bytes} Bytes`;
+  document.getElementById('kpi-compact-val').textContent =
+    `${formatIntGrouped(compact.median_size_bytes)} bytes`;
 
-  // Pareto optimal count
-  document.getElementById('kpi-pareto').textContent = `${state.paretoSerializerNames.length} / ${total}`;
+  document.getElementById('kpi-pareto').textContent =
+    `${state.paretoSerializerNames.length} / ${total}`;
 }
 
-// Compare Selectors setup
-function populateCompareSelectors() {
-  const selA = document.getElementById('compare-a-select');
-  const selB = document.getElementById('compare-b-select');
-
-  selA.innerHTML = '';
-  selB.innerHTML = '';
-
-  state.serializerNames.forEach(name => {
-    const optA = document.createElement('option');
-    const optB = document.createElement('option');
-    optA.value = optA.textContent = name;
-    optB.value = optB.textContent = name;
-    selA.appendChild(optA);
-    selB.appendChild(optB);
+function populateBaselineSelect() {
+  const sel = document.getElementById('compare-baseline-select');
+  if (!sel) return;
+  sel.innerHTML = '';
+  state.serializerNames.forEach((name) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name + (state.paretoSerializerNames.includes(name) ? ' ★' : '');
+    sel.appendChild(opt);
   });
-
-  if (state.serializerNames.length === 0) {
-    state.compareA = '';
-    state.compareB = '';
-    return;
+  if (state.compareBaseline && state.serializerNames.includes(state.compareBaseline)) {
+    sel.value = state.compareBaseline;
+  } else if (state.serializerNames.length) {
+    sel.value = state.serializerNames[0];
+    state.compareBaseline = sel.value;
   }
-
-  // Prefer previously chosen serializers when still present
-  if (!state.serializerNames.includes(state.compareA)) {
-    state.compareA = state.serializerNames[0];
-  }
-  if (!state.serializerNames.includes(state.compareB)) {
-    state.compareB = state.serializerNames[Math.min(1, state.serializerNames.length - 1)];
-  }
-
-  selA.value = state.compareA;
-  selB.value = state.compareB;
 }
 
-/** Metric family for checklist + table grouping. */
-const METRIC_GROUP_ORDER = [
-  'Run & quality',
-  'Throughput',
-  'Serialization',
-  'Deserialization',
-  'Total latency',
-  'Size',
-  'Comparisons',
-  'Other',
-];
-
-function metricGroupName(key) {
-  if (
-    [
-      'runs',
-      'runs_raw',
-      'warmup_skipped',
-      'outliers_removed',
-      'serializer_version',
-      'mean_fidelity',
-      'mean_memory_peak_bytes',
-    ].includes(key)
-  ) {
-    return 'Run & quality';
-  }
-  if (
-    key.includes('ops_per_sec') ||
-    key.endsWith('_ops_mean') ||
-    key.endsWith('_ops_median') ||
-    key.endsWith('_ops_p95') ||
-    key === 'min_ops_per_sec' ||
-    key === 'max_ops_per_sec'
-  ) {
-    return 'Throughput';
-  }
-  if (key.startsWith('ser_') || key === 'avg_time_ser_ns') return 'Serialization';
-  if (key.startsWith('deser_') || key === 'avg_time_deser_ns') return 'Deserialization';
-  if (key.startsWith('total_') || key === 'avg_time_total_ns') return 'Total latency';
-  if (key.startsWith('size_') || key === 'median_size_bytes') return 'Size';
-  if (
-    key.includes('effect_') ||
-    key.includes('baseline') ||
-    key.includes('fastest') ||
-    key.includes('speedup')
-  ) {
-    return 'Comparisons';
-  }
-  return 'Other';
-}
-
-/** Higher is better for highlighting multi-serializer metric rows; null = no highlight. */
 function metricHigherIsBetter(key) {
   if (
-    key.includes('cliffs_label') ||
-    key.includes('baseline_serializer') ||
-    key.includes('fastest_in_group') ||
-    key === 'serializer_version' ||
-    key.includes('cliffs_delta') ||
-    key.includes('hedges_g')
-  ) {
-    return null;
-  }
-  if (
-    key.includes('ops_per_sec') ||
-    key.endsWith('_ops_mean') ||
-    key.endsWith('_ops_median') ||
-    key.endsWith('_ops_p95') ||
-    key === 'min_ops_per_sec' ||
-    key === 'max_ops_per_sec' ||
-    key === 'mean_fidelity' ||
-    key.includes('speedup')
+    key.includes('ops') ||
+    key.includes('fidelity') ||
+    key === 'runs' ||
+    key === 'fastest_in_group'
   ) {
     return true;
   }
   if (
+    key.includes('time') ||
     key.endsWith('_ns') ||
-    key.endsWith('_bytes') ||
-    key.includes('size_') ||
-    key.endsWith('_cv') ||
-    key.includes('_var_') ||
-    key.includes('_std_') ||
-    key.includes('_mad_')
+    key.includes('size') ||
+    key.includes('bytes') ||
+    key.includes('cv') ||
+    key.includes('mad') ||
+    key.includes('std') ||
+    key.includes('memory')
   ) {
     return false;
   }
   return null;
 }
 
-function groupMetrics(keys) {
-  const buckets = new Map(METRIC_GROUP_ORDER.map((g) => [g, []]));
-  keys.forEach((k) => {
-    const g = metricGroupName(k);
-    if (!buckets.has(g)) buckets.set(g, []);
-    buckets.get(g).push(k);
-  });
-  for (const arr of buckets.values()) arr.sort((a, b) => a.localeCompare(b));
-  return METRIC_GROUP_ORDER
-    .map((name) => ({ name, keys: buckets.get(name) || [] }))
-    .filter((g) => g.keys.length > 0);
+function metricGroupName(key) {
+  if (key.includes('ops')) return 'Throughput';
+  if (key.startsWith('ser_') || key.includes('time_ser')) return 'Serialize';
+  if (key.startsWith('deser_') || key.includes('time_deser')) return 'Deserialize';
+  if (key.startsWith('total_') || key.includes('time_total')) return 'Total time';
+  if (key.includes('size') || key.includes('bytes') || key.includes('memory')) return 'Size & memory';
+  if (key.includes('fidelity') || key.includes('effect')) return 'Quality';
+  if (key.includes('run') || key.includes('warmup') || key.includes('outlier')) return 'Samples';
+  return 'Other';
 }
 
-function populateDetailSerializerSelect() {
-  // Keep only still-valid serializers; default to first if empty
-  state.detailSerializers = state.detailSerializers.filter((s) =>
-    state.serializerNames.includes(s)
-  );
-  if (state.detailSerializers.length === 0 && state.serializerNames.length > 0) {
-    state.detailSerializers = [state.serializerNames[0]];
-  }
-  renderDetailSerializerChecklist();
+function groupMetrics(keys) {
+  const map = new Map();
+  keys.forEach((k) => {
+    const g = metricGroupName(k);
+    if (!map.has(g)) map.set(g, []);
+    map.get(g).push(k);
+  });
+  return [...map.entries()].map(([name, ks]) => ({ name, keys: ks }));
+}
+
+function metricLabel(key) {
+  return key
+    .replace(/_ns$/g, '')
+    .replace(/_bytes$/g, '')
+    .replace(/_per_sec$/g, '')
+    .replace(/_/g, ' ');
 }
 
 function renderDetailSerializerChecklist() {
   const container = document.getElementById('detail-serializer-checklist');
   if (!container) return;
-
   container.innerHTML = '';
-  const selected = new Set(state.detailSerializers);
-
   if (!state.serializerNames.length) {
-    const empty = document.createElement('span');
-    empty.style.color = 'var(--text-muted)';
-    empty.style.fontSize = '0.8rem';
-    empty.textContent = 'No serializers for this filter';
-    container.appendChild(empty);
+    container.textContent = 'No serializers for this filter';
     return;
   }
-
   state.serializerNames.forEach((name) => {
     const label = document.createElement('label');
-    label.className = 'metric-check-item';
-    label.title = name;
-
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.value = name;
-    input.checked = selected.has(name);
-    input.addEventListener('change', () => {
-      if (input.checked) {
+    label.className = 'metrics-check-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = state.detailSerializers.includes(name);
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
         if (!state.detailSerializers.includes(name)) {
-          state.detailSerializers = [...state.detailSerializers, name].sort((a, b) =>
-            a.localeCompare(b)
-          );
+          state.detailSerializers = [...state.detailSerializers, name];
         }
       } else {
         state.detailSerializers = state.detailSerializers.filter((s) => s !== name);
       }
       saveSettings();
-      renderSerializerMetricsTable();
+      renderCompareMatrix();
     });
-
-    const span = document.createElement('span');
-    span.textContent = name;
-
-    label.appendChild(input);
-    label.appendChild(span);
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(` ${name}`));
     container.appendChild(label);
   });
 }
@@ -1389,111 +1288,179 @@ function renderDetailSerializerChecklist() {
 function renderMetricsChecklist() {
   const container = document.getElementById('metrics-checklist');
   if (!container) return;
-
   container.innerHTML = '';
-  const selected = new Set(state.selectedMetrics);
   const groups = groupMetrics(state.availableMetrics);
-
   groups.forEach((group) => {
-    const block = document.createElement('div');
-    block.className = 'metric-group-block';
-
     const title = document.createElement('div');
-    title.className = 'metric-group-title';
-
-    const titleText = document.createElement('span');
-    titleText.textContent = `${group.name} (${group.keys.length})`;
-
-    const groupBtn = document.createElement('button');
-    groupBtn.type = 'button';
-    groupBtn.className = 'metric-group-toggle';
-    const allOn = group.keys.every((k) => selected.has(k));
-    groupBtn.textContent = allOn ? 'Clear' : 'All';
-    groupBtn.addEventListener('click', () => {
-      if (allOn) {
-        state.selectedMetrics = state.selectedMetrics.filter((k) => !group.keys.includes(k));
-      } else {
-        const set = new Set(state.selectedMetrics);
-        group.keys.forEach((k) => set.add(k));
-        state.selectedMetrics = [...set].sort((a, b) => a.localeCompare(b));
-      }
-      saveSettings();
-      renderMetricsChecklist();
-      renderSerializerMetricsTable();
-    });
-
-    title.appendChild(titleText);
-    title.appendChild(groupBtn);
-    block.appendChild(title);
-
-    const items = document.createElement('div');
-    items.className = 'metric-group-items';
-
+    title.className = 'metrics-group-title';
+    title.textContent = group.name;
+    container.appendChild(title);
     group.keys.forEach((key) => {
       const label = document.createElement('label');
-      label.className = 'metric-check-item';
-      label.title = key;
-
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.value = key;
-      input.checked = selected.has(key);
-      input.addEventListener('change', () => {
-        if (input.checked) {
+      label.className = 'metrics-check-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = state.selectedMetrics.includes(key);
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
           if (!state.selectedMetrics.includes(key)) {
-            state.selectedMetrics = [...state.selectedMetrics, key].sort((a, b) =>
-              a.localeCompare(b)
-            );
+            state.selectedMetrics = [...state.selectedMetrics, key];
           }
         } else {
           state.selectedMetrics = state.selectedMetrics.filter((k) => k !== key);
         }
         saveSettings();
-        renderSerializerMetricsTable();
+        renderCompareMatrix();
       });
-
-      const span = document.createElement('span');
-      span.textContent = metricLabel(key);
-
-      label.appendChild(input);
-      label.appendChild(span);
-      items.appendChild(label);
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(` ${metricLabel(key)}`));
+      label.title = key;
+      container.appendChild(label);
     });
-
-    block.appendChild(items);
-    container.appendChild(block);
   });
 }
 
-function renderSerializerMetricsTable() {
+function handleTableSort(key) {
+  if (state.sortKey === key) {
+    state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.sortKey = key;
+    state.sortDirection = key === 'serializer' ? 'asc' : 'desc';
+  }
+  updateSortIndicators();
+  saveSettings();
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  let rows = state.filteredGroups.filter((g) =>
+    (g.serializer || '').toLowerCase().includes(state.searchQuery)
+  );
+
+  rows.sort((a, b) => {
+    let valA = a[state.sortKey];
+    let valB = b[state.sortKey];
+    if (valA === null || valA === undefined) return 1;
+    if (valB === null || valB === undefined) return -1;
+    if (typeof valA === 'string') {
+      return state.sortDirection === 'asc'
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    }
+    return state.sortDirection === 'asc' ? valA - valB : valB - valA;
+  });
+
+  // Update header units from visible data
+  const scales = scalesFromGroups(rows);
+  const thOps = document.getElementById('th-ops');
+  const thTotal = document.getElementById('th-total-ns');
+  const thSer = document.getElementById('th-ser-ns');
+  const thDeser = document.getElementById('th-deser-ns');
+  if (thOps) thOps.textContent = scales.ops.header;
+  if (thTotal) thTotal.textContent = `Total latency (${scales.latency.header})`;
+  if (thSer) thSer.textContent = `Ser latency (${scales.latency.header})`;
+  if (thDeser) thDeser.textContent = `Deser latency (${scales.latency.header})`;
+
+  if (rows.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td colspan="7" style="text-align:center;color:var(--text-muted);">No serializers match search query</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  rows.forEach((r) => {
+    const tr = document.createElement('tr');
+    const isOptimal = state.paretoSerializerNames.includes(r.serializer);
+    const tdName = document.createElement('td');
+    tdName.className = 'str';
+    tdName.innerHTML = `<strong>${escapeHtml(r.serializer)}</strong>`;
+    tr.appendChild(tdName);
+
+    const cells = [
+      ['num', formatMetricCell('avg_ops_per_sec', r.avg_ops_per_sec, scales)],
+      ['num', formatMetricCell('avg_time_total_ns', r.avg_time_total_ns, scales)],
+      ['num', formatMetricCell('avg_time_ser_ns', r.avg_time_ser_ns, scales)],
+      ['num', formatMetricCell('avg_time_deser_ns', r.avg_time_deser_ns, scales)],
+      ['num', formatMetricCell('median_size_bytes', r.median_size_bytes, scales)],
+    ];
+    cells.forEach(([cls, text]) => {
+      const td = document.createElement('td');
+      td.className = cls;
+      td.textContent = text;
+      tr.appendChild(td);
+    });
+
+    const tdOpt = document.createElement('td');
+    tdOpt.className = 'status';
+    tdOpt.innerHTML = isOptimal
+      ? '<span class="badge badge-cyan">Optimal</span>'
+      : '<span class="badge badge-slate">Dominated</span>';
+    tr.appendChild(tdOpt);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderCompareMatrix() {
   const thead = document.getElementById('serializer-metrics-head');
   const tbody = document.getElementById('serializer-metrics-body');
   if (!thead || !tbody) return;
-
   thead.innerHTML = '';
   tbody.innerHTML = '';
 
-  const serializers = state.detailSerializers.filter((s) =>
-    state.serializerNames.includes(s)
-  );
-  const columns = serializers.map((name) => ({
-    name,
-    group: state.filteredGroups.find((g) => g.serializer === name) || null,
-  }));
+  /** @type {{ key: string, label: string, group: object|null, isBaseline: boolean }[]} */
+  let columns = [];
+
+  if (state.compareScope === 'same') {
+    const names = state.detailSerializers.filter((s) => state.serializerNames.includes(s));
+    // Baseline first
+    const ordered = [];
+    if (state.compareBaseline && names.includes(state.compareBaseline)) {
+      ordered.push(state.compareBaseline);
+    }
+    names.forEach((n) => {
+      if (!ordered.includes(n)) ordered.push(n);
+    });
+    columns = ordered.map((name) => ({
+      key: name,
+      label: name,
+      group: state.filteredGroups.find((g) => g.serializer === name) || null,
+      isBaseline: name === state.compareBaseline,
+    }));
+  } else {
+    const ordered = [...state.xlSelected];
+    // baseline first
+    const bi = ordered.findIndex((x) => `${x.lang}|${x.serializer}` === state.xlBaselineKey);
+    if (bi > 0) {
+      const [b] = ordered.splice(bi, 1);
+      ordered.unshift(b);
+    }
+    columns = ordered.map((x) => ({
+      key: `${x.lang}|${x.serializer}`,
+      label: `${languageLabel(x.lang)} / ${x.serializer}`,
+      group: findCrossLangGroup(x.lang, x.serializer),
+      isBaseline: `${x.lang}|${x.serializer}` === state.xlBaselineKey,
+    }));
+  }
 
   const headerRow = document.createElement('tr');
   const metricTh = document.createElement('th');
+  metricTh.className = 'str';
   metricTh.textContent = 'Metric';
   headerRow.appendChild(metricTh);
   columns.forEach((col) => {
     const th = document.createElement('th');
-    th.textContent = col.name;
+    th.className = 'num' + (col.isBaseline ? ' baseline-col' : '');
+    th.textContent = col.isBaseline ? `${col.label} (baseline)` : col.label;
     headerRow.appendChild(th);
   });
   thead.appendChild(headerRow);
 
   const colCount = Math.max(1, columns.length + 1);
-
   if (!columns.length) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">Select one or more serializers</td>`;
@@ -1501,15 +1468,29 @@ function renderSerializerMetricsTable() {
     return;
   }
 
-  const selectedKeys = state.selectedMetrics.filter((k) =>
-    state.availableMetrics.includes(k)
-  );
+  // Metrics: use selected; if cross-lang prefer known keys that exist
+  let selectedKeys = state.selectedMetrics.filter((k) => state.availableMetrics.includes(k));
+  if (state.compareScope === 'cross') {
+    // Union of keys from available metrics defaults that appear in any column
+    const crossKeys = CROSS_LANG_METRICS.map((m) => m.key).filter((k) =>
+      columns.some((c) => c.group && c.group[k] != null)
+    );
+    selectedKeys = state.selectedMetrics.length
+      ? state.selectedMetrics.filter((k) => columns.some((c) => c.group && c.group[k] != null))
+      : crossKeys;
+    if (!selectedKeys.length) selectedKeys = crossKeys;
+  }
+
   if (!selectedKeys.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">Select at least one metric in the checklist</td>`;
+    tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">Select at least one metric</td>`;
     tbody.appendChild(tr);
     return;
   }
+
+  const groupsForScale = columns.map((c) => c.group).filter(Boolean);
+  const scales = scalesFromGroups(groupsForScale, selectedKeys);
+  const baselineCol = columns.find((c) => c.isBaseline) || columns[0];
 
   const groups = groupMetrics(selectedKeys);
   groups.forEach((group) => {
@@ -1522,48 +1503,33 @@ function renderSerializerMetricsTable() {
     tbody.appendChild(groupRow);
 
     group.keys.forEach((key) => {
-      const values = columns.map((c) => {
-        if (!c.group || c.group[key] === undefined || c.group[key] === null) return null;
-        const v = c.group[key];
-        return typeof v === 'number' ? v : v;
-      });
-
-      const higherIsBetter = metricHigherIsBetter(key);
-      let bestVal = null;
-      if (higherIsBetter === true || higherIsBetter === false) {
-        values.forEach((v) => {
-          if (typeof v !== 'number' || !Number.isFinite(v)) return;
-          if (
-            bestVal === null ||
-            (higherIsBetter ? v > bestVal : v < bestVal)
-          ) {
-            bestVal = v;
-          }
-        });
-      }
-
       const tr = document.createElement('tr');
       const tdKey = document.createElement('td');
-      tdKey.textContent = key;
-      tdKey.title = metricLabel(key);
+      tdKey.className = 'str';
+      tdKey.textContent = metricHeaderLabel(key, scales);
+      tdKey.title = key;
       tr.appendChild(tdKey);
 
-      values.forEach((v) => {
+      const baselineVal =
+        baselineCol?.group && baselineCol.group[key] != null ? baselineCol.group[key] : null;
+      const higherIsBetter = metricHigherIsBetter(key);
+
+      columns.forEach((col) => {
         const td = document.createElement('td');
-        if (v === null || v === undefined) {
+        const v =
+          col.group && col.group[key] !== undefined && col.group[key] !== null
+            ? col.group[key]
+            : null;
+        if (v === null) {
           td.textContent = '—';
-          td.className = 'sm-missing';
+          td.className = 'num sm-missing';
+        } else if (col.isBaseline || typeof v !== 'number' || typeof baselineVal !== 'number') {
+          td.textContent = formatMetricCell(key, v, scales);
+          td.className = 'num';
         } else {
-          td.textContent = formatMetricValue(key, v);
-          // Highlight every tied best value when comparing multiple serializers.
-          if (
-            columns.length > 1 &&
-            typeof v === 'number' &&
-            bestVal !== null &&
-            v === bestVal
-          ) {
-            td.classList.add('sm-best');
-          }
+          const rel = formatRelativeCell(v, baselineVal, higherIsBetter, scales, key);
+          td.textContent = rel.text;
+          td.className = rel.className;
         }
         tr.appendChild(td);
       });
@@ -1572,188 +1538,70 @@ function renderSerializerMetricsTable() {
   });
 }
 
-function metricLabel(key) {
-  // Short readable label for checklist; full field id stays in the table.
-  return key
-    .replace(/_ns$/g, ' (ns)')
-    .replace(/_bytes$/g, ' (B)')
-    .replace(/_per_sec$/g, '/s')
-    .replace(/_/g, ' ');
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-function formatMetricValue(key, value) {
-  if (value === null || value === undefined || value === '') return '—';
-  if (typeof value === 'boolean') return value ? 'true' : 'false';
-  if (typeof value === 'string') return value;
-
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) return String(value);
-    if (key.endsWith('_ns')) return formatTime(value);
-    if (
-      key.includes('ops_per_sec') ||
-      key.endsWith('_ops_mean') ||
-      key.endsWith('_ops_median') ||
-      key.endsWith('_ops_p95')
-    ) {
-      return formatOps(value);
-    }
-    if (key.endsWith('_bytes') || key.startsWith('size_')) {
-      if (Math.abs(value) >= 1000) {
-        return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} B`;
-      }
-      return `${Number.isInteger(value) ? value : value.toFixed(4)} B`;
-    }
-    if (Number.isInteger(value)) return String(value);
-    return Number(value.toPrecision(8)).toString();
-  }
-
-  return String(value);
-}
-
-// Update Side by side comparison UI
-function updateComparison() {
-  const serializerA = state.filteredGroups.find(g => g.serializer === state.compareA);
-  const serializerB = state.filteredGroups.find(g => g.serializer === state.compareB);
-
-  if (!serializerA || !serializerB) {
-    clearComparisonUI();
-    return;
-  }
-
-  updateMetricUI('compare-total-val', 'compare-total-diff', serializerA.avg_time_total_ns, serializerB.avg_time_total_ns, 'ns', true);
-  updateMetricUI('compare-ser-val', 'compare-ser-diff', serializerA.avg_time_ser_ns, serializerB.avg_time_ser_ns, 'ns', true);
-  updateMetricUI('compare-deser-val', 'compare-deser-diff', serializerA.avg_time_deser_ns, serializerB.avg_time_deser_ns, 'ns', true);
-  updateMetricUI('compare-throughput-val', 'compare-throughput-diff', serializerA.avg_ops_per_sec, serializerB.avg_ops_per_sec, 'ops', false);
-  updateMetricUI('compare-size-val', 'compare-size-diff', serializerA.median_size_bytes, serializerB.median_size_bytes, 'bytes', true);
-}
-
-function updateMetricUI(valId, diffId, valA, valB, type, isLowerBetter) {
-  const valEl = document.getElementById(valId);
-  const diffEl = document.getElementById(diffId);
-
-  let displayA = '', displayB = '';
-  if (type === 'ns') {
-    displayA = formatTime(valA);
-    displayB = formatTime(valB);
-  } else if (type === 'ops') {
-    displayA = formatOps(valA);
-    displayB = formatOps(valB);
-  } else {
-    displayA = `${valA} B`;
-    displayB = `${valB} B`;
-  }
-
-  valEl.textContent = `${displayB}`;
-
-  if (valA === 0 || valB === 0 || valA === null || valB === null) {
-    diffEl.textContent = 'N/A';
-    diffEl.className = 'compare-diff diff-neutral';
-    return;
-  }
-
-  const pct = ((valB - valA) / valA) * 100;
-  const isBetter = isLowerBetter ? pct < 0 : pct > 0;
-  const absPct = Math.abs(pct).toFixed(1);
-
-  if (pct === 0) {
-    diffEl.textContent = 'Equal';
-    diffEl.className = 'compare-diff diff-neutral';
-  } else if (isBetter) {
-    diffEl.textContent = `-${absPct}% (Better)`;
-    diffEl.className = 'compare-diff diff-positive';
-    if (!isLowerBetter) diffEl.textContent = `+${absPct}% (Better)`;
-  } else {
-    diffEl.textContent = `+${absPct}% (Worse)`;
-    diffEl.className = 'compare-diff diff-negative';
-    if (!isLowerBetter) diffEl.textContent = `-${absPct}% (Worse)`;
-  }
-}
-
-function clearComparisonUI() {
-  ['compare-total-val', 'compare-ser-val', 'compare-deser-val', 'compare-throughput-val', 'compare-size-val'].forEach(id => {
-    document.getElementById(id).textContent = '-';
-  });
-  ['compare-total-diff', 'compare-ser-diff', 'compare-deser-diff', 'compare-throughput-diff', 'compare-size-diff'].forEach(id => {
-    document.getElementById(id).textContent = '-';
-    document.getElementById(id).className = 'compare-diff diff-neutral';
-  });
-}
-
-// Table Sorting
-function handleTableSort(key, el) {
-  if (state.sortKey === key) {
-    state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
-  } else {
-    state.sortKey = key;
-    state.sortDirection = 'desc';
-  }
-
-  document.querySelectorAll('#analytics-table th').forEach(th => th.className = '');
-  el.className = state.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc';
-
-  saveSettings();
-  renderTable();
-}
-
-function renderTable() {
-  const tbody = document.getElementById('table-body');
-  tbody.innerHTML = '';
-
-  let rows = state.filteredGroups.filter(g => 
-    g.serializer.toLowerCase().includes(state.searchQuery)
+function copyRosterMarkdown() {
+  const scales = scalesFromGroups(state.filteredGroups);
+  const rows = [...state.filteredGroups].sort((a, b) =>
+    a.serializer.localeCompare(b.serializer)
   );
-
-  rows.sort((a, b) => {
-    let valA = a[state.sortKey];
-    let valB = b[state.sortKey];
-
-    if (valA === null || valA === undefined) return 1;
-    if (valB === null || valB === undefined) return -1;
-
-    if (typeof valA === 'string') {
-      return state.sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-    } else {
-      return state.sortDirection === 'asc' ? valA - valB : valB - valA;
-    }
+  const lines = [
+    `| Serializer | ${scales.ops.header} | Total (${scales.latency.header}) | Size (bytes) | Frontier |`,
+    `|---|---:|---:|---:|:---:|`,
+  ];
+  rows.forEach((r) => {
+    const opt = state.paretoSerializerNames.includes(r.serializer) ? 'Optimal' : '';
+    lines.push(
+      `| ${r.serializer} | ${formatMetricCell('avg_ops_per_sec', r.avg_ops_per_sec, scales)} | ${formatMetricCell('avg_time_total_ns', r.avg_time_total_ns, scales)} | ${formatMetricCell('median_size_bytes', r.median_size_bytes, scales)} | ${opt} |`
+    );
   });
-
-  if (rows.length === 0) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="7" style="text-align: center; color: var(--text-muted);">No serializers match search query</td>`;
-    tbody.appendChild(tr);
-    return;
-  }
-
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-    const isOptimal = state.paretoSerializerNames.includes(r.serializer);
-    
-    tr.innerHTML = `
-      <td><strong>${r.serializer}</strong></td>
-      <td>${formatOps(r.avg_ops_per_sec)}</td>
-      <td>${formatTime(r.avg_time_total_ns)}</td>
-      <td>${formatTime(r.avg_time_ser_ns)}</td>
-      <td>${formatTime(r.avg_time_deser_ns)}</td>
-      <td>${r.median_size_bytes} Bytes</td>
-      <td>
-        ${isOptimal 
-          ? '<span class="badge badge-cyan">Optimal</span>' 
-          : '<span class="badge badge-purple" style="opacity: 0.4;">Compromised</span>'}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+  copyText(lines.join('\n'), 'Roster Markdown copied');
 }
 
-// Upload Handler
+function copyCompareMarkdown() {
+  const table = document.getElementById('serializer-metrics-table');
+  if (!table) return;
+  const rows = [...table.querySelectorAll('tr')];
+  const md = rows
+    .map((tr) => {
+      const cells = [...tr.children].map((td) => td.textContent.trim().replace(/\|/g, '\\|'));
+      return `| ${cells.join(' | ')} |`;
+    })
+    .filter((line) => !line.includes('Throughput') || line.startsWith('| Metric'));
+  // simpler: all rows
+  const all = rows.map((tr) => {
+    const cells = [...tr.children].map((td) => td.textContent.trim().replace(/\|/g, '\\|'));
+    if (tr.classList.contains('metric-group-row')) {
+      return `\n**${cells[0]}**\n`;
+    }
+    return `| ${cells.join(' | ')} |`;
+  });
+  copyText(all.join('\n'), 'Compare Markdown copied');
+}
+
+async function copyText(text, okMsg) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showNotification(okMsg || 'Copied', 'success');
+  } catch {
+    showNotification('Clipboard unavailable', 'error');
+  }
+}
+
 function handleFileUpload(file) {
   if (!file) return;
-  
   const status = document.getElementById('upload-status');
-  status.style.display = 'block';
-  status.style.color = 'var(--text-secondary)';
-  status.textContent = `Analyzing ${file.name}...`;
-
+  if (status) {
+    status.style.display = 'block';
+    status.style.color = 'var(--text-secondary)';
+    status.textContent = `Analyzing ${file.name}…`;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
@@ -1761,40 +1609,35 @@ function handleFileUpload(file) {
       if (!data.groups || !Array.isArray(data.groups)) {
         throw new Error("Invalid stats format. Missing 'groups' array.");
       }
-      
       processStatsData(data);
-      
-      status.style.color = 'var(--accent-green)';
-      status.textContent = `Successfully loaded ${file.name}!`;
+      if (status) {
+        status.style.color = 'var(--color-green)';
+        status.textContent = `Successfully loaded ${file.name}`;
+      }
       showNotification(`Loaded ${file.name} successfully.`, 'success');
-      
-      document.getElementById('lang-select').value = '';
     } catch (err) {
-      status.style.color = 'var(--accent-red)';
-      status.textContent = `Failed: ${err.message}`;
+      if (status) {
+        status.style.color = 'var(--color-red)';
+        status.textContent = `Failed: ${err.message}`;
+      }
       showNotification(`Upload failed: ${err.message}`, 'error');
     }
   };
-  
   reader.readAsText(file);
 }
 
-// Dynamic CSV parsing and aggregations
 function parseCSV(text) {
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-  if (lines.length === 0) return [];
-  
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
   const headers = parseCSVLine(lines[0]);
   const records = [];
-  
   for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
     const values = parseCSVLine(lines[i]);
-    if (values.length !== headers.length) continue;
-    
     const rec = {};
-    for (let j = 0; j < headers.length; j++) {
-      rec[headers[j]] = values[j];
-    }
+    headers.forEach((h, idx) => {
+      rec[h] = values[idx];
+    });
     records.push(rec);
   }
   return records;
@@ -1802,95 +1645,94 @@ function parseCSV(text) {
 
 function parseCSVLine(line) {
   const result = [];
-  let current = '';
+  let cur = '';
   let inQuotes = false;
-  
   for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(cur);
+      cur = '';
+    } else cur += ch;
   }
-  result.push(current.trim());
+  result.push(cur);
   return result;
 }
 
 function aggregateCSVRecords(records) {
-  const groups = {};
-  
-  records.forEach(r => {
-    const serializer = r.SerializerName || r.serializer || '';
-    const testData = r.TestDataName || r.test_data || '';
-    const mode = r.StringOrStream || r.mode || '';
-    
-    if (!serializer || !testData || !mode) return;
-    
-    const key = `${serializer}|${testData}|${mode}`;
-    if (!groups[key]) {
-      groups[key] = {
+  const map = new Map();
+  for (const r of records) {
+    const serializer = r.Serializer || r.serializer;
+    const test_data = r.TestData || r.test_data || r.DataType;
+    const mode = r.Mode || r.mode || 'bytes';
+    if (!serializer) continue;
+    const key = `${serializer}|${test_data}|${mode}`;
+    if (!map.has(key)) {
+      map.set(key, {
         serializer,
-        test_data: testData,
+        test_data,
         mode,
-        timesSer: [],
-        timesDeser: [],
-        timesTotal: [],
+        times: [],
+        ser: [],
+        deser: [],
         sizes: [],
-        opsSec: []
-      };
+        ops: [],
+        fidelities: [],
+      });
     }
-    
-    const tSer = parseFloat(r.TimeSer || r.time_ser || 0);
-    const tDeser = parseFloat(r.TimeDeser || r.time_deser || 0);
-    const tTotal = parseFloat(r.TimeSerAndDeser || r.time_total || 0) || (tSer + tDeser);
-    const size = parseFloat(r.Size || r.size || 0);
-    const ops = parseFloat(r.OpPerSecSerAndDeser || r.ops_sec || 0);
-    
-    groups[key].timesSer.push(tSer);
-    groups[key].timesDeser.push(tDeser);
-    groups[key].timesTotal.push(tTotal);
-    groups[key].sizes.push(size);
-    groups[key].opsSec.push(ops);
-  });
-  
-  const resultGroups = [];
-  Object.values(groups).forEach(g => {
-    const avgTotal = mean(g.timesTotal);
-    const avgOps = mean(g.opsSec) || (1e9 / avgTotal);
-    
-    resultGroups.push({
+    const g = map.get(key);
+    const total = Number(r.TotalTimeNs || r.total_time_ns || r.TimeNs);
+    const ser = Number(r.SerTimeNs || r.ser_time_ns);
+    const deser = Number(r.DeserTimeNs || r.deser_time_ns);
+    const size = Number(r.SizeBytes || r.size_bytes || r.PayloadSize);
+    const ops = Number(r.OpsPerSec || r.ops_per_sec);
+    const fid = Number(r.FidelityScore || r.fidelity);
+    if (Number.isFinite(total)) g.times.push(total);
+    if (Number.isFinite(ser)) g.ser.push(ser);
+    if (Number.isFinite(deser)) g.deser.push(deser);
+    if (Number.isFinite(size)) g.sizes.push(size);
+    if (Number.isFinite(ops)) g.ops.push(ops);
+    if (Number.isFinite(fid)) g.fidelities.push(fid);
+  }
+
+  const groups = [];
+  for (const g of map.values()) {
+    if (!g.times.length && !g.ops.length) continue;
+    const avg_time_total_ns = mean(g.times);
+    const avg_ops_per_sec =
+      g.ops.length > 0 ? mean(g.ops) : avg_time_total_ns > 0 ? 1e9 / avg_time_total_ns : 0;
+    groups.push({
       serializer: g.serializer,
       test_data: g.test_data,
       mode: g.mode,
-      avg_time_ser_ns: mean(g.timesSer),
-      avg_time_deser_ns: mean(g.timesDeser),
-      avg_time_total_ns: avgTotal,
+      avg_time_total_ns,
+      avg_time_ser_ns: mean(g.ser),
+      avg_time_deser_ns: mean(g.deser),
+      avg_ops_per_sec,
       median_size_bytes: median(g.sizes),
-      avg_ops_per_sec: avgOps,
-      runs: g.timesTotal.length
+      mean_fidelity: g.fidelities.length ? mean(g.fidelities) : null,
+      runs: Math.max(g.times.length, g.ops.length),
     });
-  });
-  
-  return resultGroups;
+  }
+  return groups;
 }
 
 function mean(arr) {
-  if (arr.length === 0) return 0;
-  return arr.reduce((sum, val) => sum + val, 0) / arr.length;
+  if (!arr || !arr.length) return null;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
 function median(arr) {
-  if (arr.length === 0) return 0;
-  const sorted = [...arr].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  if (!arr || !arr.length) return null;
+  const s = [...arr].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-// Download helpers
 function triggerDownload(url, filename) {
   const a = document.createElement('a');
   a.href = url;
@@ -1900,41 +1742,27 @@ function triggerDownload(url, filename) {
   a.remove();
 }
 
+function downloadDataUrl(dataUrl, filename) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 async function downloadFileWithFallback(url, fallbackUrl, filename) {
   try {
-    const res = await fetch(url);
-    if (res.ok) {
-      triggerDownload(url, filename);
-    } else if (fallbackUrl) {
-      const fbRes = await fetch(fallbackUrl);
-      if (fbRes.ok) {
-        // Change suffix to environment json
-        const fbFilename = filename.replace('.configs.json', '.environment.json');
-        triggerDownload(fallbackUrl, fbFilename);
-      } else {
-        showNotification("File not found on local server.", "error");
-      }
-    } else {
-      showNotification("File not found on local server.", "error");
-    }
+    let res = await fetch(url);
+    if (!res.ok && fallbackUrl) res = await fetch(fallbackUrl);
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const obj = URL.createObjectURL(blob);
+    triggerDownload(obj, filename);
+    URL.revokeObjectURL(obj);
   } catch (e) {
-    showNotification("Download failed: " + e.message, "error");
+    showNotification('Download failed: ' + e.message, 'error');
   }
-}
-
-// Helpers
-function formatTime(ns) {
-  if (ns === null || ns === undefined) return '-';
-  if (ns < 1000) return `${ns.toFixed(0)}ns`;
-  if (ns < 1000000) return `${(ns / 1000).toFixed(2)}µs`;
-  return `${(ns / 1000000).toFixed(2)}ms`;
-}
-
-function formatOps(ops) {
-  if (ops === null || ops === undefined) return '-';
-  if (ops < 1000) return `${ops.toFixed(0)}/s`;
-  if (ops < 1000000) return `${(ops / 1000).toFixed(1)}K/s`;
-  return `${(ops / 1000000).toFixed(2)}M/s`;
 }
 
 function showNotification(msg, type) {
@@ -1942,31 +1770,20 @@ function showNotification(msg, type) {
   notif.style.position = 'fixed';
   notif.style.bottom = '2rem';
   notif.style.right = '2rem';
-  notif.style.padding = '1rem 1.5rem';
+  notif.style.padding = '0.85rem 1.25rem';
   notif.style.borderRadius = '8px';
   notif.style.color = '#fff';
   notif.style.zIndex = '10000';
-  notif.style.backdropFilter = 'blur(10px)';
-  notif.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-  notif.style.fontSize = '0.95rem';
-  notif.style.transition = 'opacity 0.3s ease';
-  
-  if (type === 'error') {
-    notif.style.background = 'rgba(239, 68, 68, 0.8)';
-    notif.style.border = '1px solid rgba(239, 68, 68, 0.3)';
-  } else if (type === 'info') {
-    notif.style.background = 'rgba(59, 130, 246, 0.8)';
-    notif.style.border = '1px solid rgba(59, 130, 246, 0.3)';
-  } else {
-    notif.style.background = 'rgba(16, 185, 129, 0.8)';
-    notif.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-  }
-  
+  notif.style.fontSize = '0.9rem';
+  notif.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
   notif.textContent = msg;
+  if (type === 'error') notif.style.background = 'rgba(217, 48, 37, 0.92)';
+  else if (type === 'info') notif.style.background = 'rgba(26, 115, 232, 0.92)';
+  else notif.style.background = 'rgba(30, 142, 62, 0.92)';
   document.body.appendChild(notif);
-  
   setTimeout(() => {
     notif.style.opacity = '0';
+    notif.style.transition = 'opacity 0.3s';
     setTimeout(() => notif.remove(), 300);
-  }, 4000);
+  }, 2800);
 }

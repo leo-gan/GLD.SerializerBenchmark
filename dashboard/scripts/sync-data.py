@@ -113,15 +113,21 @@ def main():
             print(f"Removing stale stats file: {dest_stats_path}")
             os.remove(dest_stats_path)
 
-        # Assemble compact payload
+        # Assemble compact payload.
+        # Omit full CSV by default (multi-MB); set DASHBOARD_INCLUDE_CSV=1 to embed.
+        include_csv = os.environ.get("DASHBOARD_INCLUDE_CSV", "").strip() in ("1", "true", "yes")
         payload = {
             "language": lang,
             "run_id": latest_run,
             "stats": stats_data,
             "configs": configs_data,
             "errors": errors_data,
-            "csv_data": csv_data
         }
+        if include_csv:
+            payload["csv_data"] = csv_data
+        elif csv_data:
+            payload["csv_omitted"] = True
+            payload["csv_bytes"] = len(csv_data.encode("utf-8"))
 
         # Write as gzip-compressed JSON
         dest_gzip_path = os.path.join(target_data_dir, f"{lang}_latest.json.gz")
