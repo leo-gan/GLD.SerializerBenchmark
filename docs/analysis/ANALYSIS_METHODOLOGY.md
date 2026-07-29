@@ -116,7 +116,7 @@ Removed count: `outliers_removed`. Final `runs` is the same for serialize, deser
 
 ### Dashboard filter policies (multi-aggregation export)
 
-Machine-readable `stats_<lang>_latest.json` (schema **2.1**) recomputes every group under **four fixed sample policies** so the dashboard can research outliers without re-running filters in the browser:
+Machine-readable `stats_<lang>_latest.json` (schema **2.2**, published as **`.json.gz`**) recomputes every group under **four fixed sample policies** so the dashboard can research outliers without re-running filters in the browser:
 
 | Policy id | Behavior |
 |-----------|----------|
@@ -125,12 +125,15 @@ Machine-readable `stats_<lang>_latest.json` (schema **2.1**) recomputes every gr
 | `iqr_3` | Paired IQR with **k = 3** (looser fences) |
 | `winsorize_5_95` | Clip each series at the 5th/95th percentile; **n** unchanged (`values_clipped` counts affected rows) |
 
-Export fields:
+Export fields (compact):
 
-- `default_filter_policy` — usually `iqr_1.5`; flat `groups` / `pareto_front` match this policy (backward compatible)
-- `groups_by_policy` / `pareto_by_policy` — full aggregations per policy
-- `filter_policies` — catalog (label, description, method, k, …)
-- per-group `filter` — criteria, `runs_kept`, `outliers_removed`, `values_clipped`, optional fence bounds
+- `default_filter_policy` — usually `iqr_1.5`
+- `filter_policies` — catalog once (label, description, method, k, …)
+- `groups[]` — identity fields once + `variants.<policy>` metrics (no duplicated flat lists)
+- per-variant `filter` — counts / fences / method only (labels live in the catalog)
+- Pareto is **not** precomputed; the dashboard recalculates from the active policy metrics
+
+Published dashboard path: `dashboard/public/data/stats_<lang>_latest.json.gz` (gzip of the same JSON).
 
 Markdown language pages still use the configured single `statistics.outlier_method` path (default IQR 1.5). The multi-policy pack is for the interactive dashboard **Samples** control.
 

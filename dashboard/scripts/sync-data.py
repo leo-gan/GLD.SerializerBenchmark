@@ -102,16 +102,26 @@ def main():
             except Exception as e:
                 print(f"Error loading stats JSON: {e}")
 
-        # Plain stats JSON for cross-lang fetch (must stay in sync with reports/)
+        # Multi-policy stats as gzip only (schema 2.2; recommendation A).
+        # Dashboard prefers stats_<lang>_latest.json.gz over plain JSON.
         dest_stats_path = os.path.join(target_data_dir, f"stats_{lang}_latest.json")
+        dest_stats_gz_path = os.path.join(target_data_dir, f"stats_{lang}_latest.json.gz")
         if stats_data:
-            print(f"Copying stats JSON to: {dest_stats_path}")
-            with open(dest_stats_path, "w", encoding="utf-8") as f:
-                json.dump(stats_data, f, indent=None)
-        elif os.path.exists(dest_stats_path):
-            # Drop outdated stats when reports has no file for this language
-            print(f"Removing stale stats file: {dest_stats_path}")
-            os.remove(dest_stats_path)
+            stats_bytes = json.dumps(stats_data, indent=None, separators=(",", ":")).encode(
+                "utf-8"
+            )
+            print(f"Writing gzipped stats to: {dest_stats_gz_path} ({len(stats_bytes)} raw bytes)")
+            with gzip.open(dest_stats_gz_path, "wb", compresslevel=9) as f:
+                f.write(stats_bytes)
+            # Remove plain JSON if present (avoid double storage in git)
+            if os.path.exists(dest_stats_path):
+                print(f"Removing plain stats file: {dest_stats_path}")
+                os.remove(dest_stats_path)
+        else:
+            for p in (dest_stats_path, dest_stats_gz_path):
+                if os.path.exists(p):
+                    print(f"Removing stale stats file: {p}")
+                    os.remove(p)
 
         # Assemble compact payload.
         # Omit full CSV by default (multi-MB); set DASHBOARD_INCLUDE_CSV=1 to embed.

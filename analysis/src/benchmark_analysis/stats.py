@@ -1093,13 +1093,32 @@ def _infer_policy_id(cfg: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+# Group identity fields shared across filter-policy variants (schema 2.2).
+_EXPORT_IDENTITY_KEYS: Tuple[str, ...] = (
+    "serializer",
+    "test_data",
+    "type_config_hash",
+    "data_type_instance_count",
+    "mode",
+    "language",
+    "serializer_version",
+)
+
+
 def _build_filter_block(
     policy_id: Optional[str],
     cfg: Dict[str, Any],
     entry: Dict[str, Any],
     meta: Dict[str, Any],
+    *,
+    include_catalog_text: bool = False,
 ) -> Dict[str, Any]:
-    """Provenance block describing how this group's sample was filtered."""
+    """Provenance block describing how this group's sample was filtered.
+
+    By default omits ``label`` / ``description`` (schema 2.2 recommendation D):
+    those live once in ``filter_policies``. Pass ``include_catalog_text=True``
+    for in-memory full blocks (e.g. multi_policy before export slim).
+    """
     pid = policy_id or _infer_policy_id(cfg)
     spec = FILTER_POLICY_SPECS.get(pid or "", {})
     method = str(cfg.get("outlier_method") or spec.get("outlier_method") or "iqr")
@@ -1119,8 +1138,6 @@ def _build_filter_block(
 
     block: Dict[str, Any] = {
         "policy": pid,
-        "label": spec.get("label") or method,
-        "description": spec.get("description"),
         "method": method,
         "iqr_k": float(iqr_k) if iqr_k is not None and method == "iqr" else None,
         "winsorize_percentiles": winsor,
@@ -1141,7 +1158,21 @@ def _build_filter_block(
         "fence_deser_low_ns": meta.get("fence_deser_low_ns"),
         "fence_deser_high_ns": meta.get("fence_deser_high_ns"),
     }
+    if include_catalog_text:
+        block["label"] = spec.get("label") or method
+        block["description"] = spec.get("description")
     return block
+
+
+def slim_filter_block(filter_block: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Drop catalog-duplicated text from a per-group filter block (rec D)."""
+    if not filter_block:
+        return filter_block
+    return {
+        k: v
+        for k, v in filter_block.items()
+        if k not in ("label", "description")
+    }
 
 
 def public_stats_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
@@ -1221,10 +1252,7 @@ def compute_statistics_multi_policy(
         for entry in stats.values():
             fb = entry.get("filter") or {}
             fb["policy"] = pid
-            if pid in FILTER_POLICY_SPECS:
-                fb["label"] = FILTER_POLICY_SPECS[pid]["label"]
-                fb["description"] = FILTER_POLICY_SPECS[pid]["description"]
-            entry["filter"] = fb
+            entry["filter"] = slim_filter_block(fb)
         result[pid] = stats
     return result
 
@@ -1235,37 +1263,81 @@ def build_stats_export_payload(
     default_policy: str = DEFAULT_FILTER_POLICY,
     generated: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Assemble schema 2.1 stats JSON with groups_by_policy + filter catalog."""
+    """Assemble schema **2.2** compact multi-policy stats export.
+
+    Size reductions vs 2.1:
+    - **B** no duplicate flat ``groups`` list equal to default policy
+    - **C** identity once + ``variants`` per policy (no ``groups_by_policy`` blow-up)
+    - **D** filter blocks omit catalog ``label``/``description``
+    - Pareto fronts omitted (dashboard recomputes from metrics)
+
+    Dashboard expands variants client-side. Prefer publishing as
+    ``stats_<lang>_latest.json.gz`` (recommendation A).
+    """
     import datetime as _dt
 
     if default_policy not in by_policy and by_policy:
         default_policy = next(iter(by_policy))
 
-    groups_by_policy: Dict[str, List[Dict[str, Any]]] = {}
-    for pid, stats in by_policy.items():
-        groups_by_policy[pid] = [public_stats_entry(e) for e in stats.values()]
+    # Preserve policy order: FILTER_POLICY_IDS first, then any extras
+    policy_order: List[str] = [p for p in FILTER_POLICY_IDS if p in by_policy]
+    for p in by_policy:
+        if p not in policy_order:
+            policy_order.append(p)
 
-    default_groups = groups_by_policy.get(default_policy) or []
-    pareto_by_policy = {
-        pid: compute_pareto_front(groups) for pid, groups in groups_by_policy.items()
-    }
+    # Union of group keys across policies (stable sort for determinism)
+    all_keys: List[Any] = sorted(
+        {k for stats in by_policy.values() for k in stats.keys()},
+        key=lambda k: tuple(str(x) for x in (k if isinstance(k, tuple) else (k,))),
+    )
 
-    # Merge catalog with runtime min_samples from first available config-ish entry
     catalog = filter_policy_catalog()
-    for pid, groups in groups_by_policy.items():
-        if groups and isinstance(groups[0].get("filter"), dict):
-            f0 = groups[0]["filter"]
+    slim_groups: List[Dict[str, Any]] = []
+
+    for key in all_keys:
+        # Identity from first available policy entry
+        base_pub: Optional[Dict[str, Any]] = None
+        for pid in policy_order:
+            if key in by_policy[pid]:
+                base_pub = public_stats_entry(by_policy[pid][key])
+                break
+        if not base_pub:
+            continue
+
+        identity: Dict[str, Any] = {
+            k: base_pub.get(k) for k in _EXPORT_IDENTITY_KEYS
+        }
+        if base_pub.get("StreamMode") is not None:
+            identity["StreamMode"] = base_pub.get("StreamMode")
+
+        variants: Dict[str, Dict[str, Any]] = {}
+        for pid in policy_order:
+            if key not in by_policy[pid]:
+                continue
+            pub = public_stats_entry(by_policy[pid][key])
+            metrics = {
+                k: v
+                for k, v in pub.items()
+                if k not in _EXPORT_IDENTITY_KEYS and k != "StreamMode"
+            }
+            if isinstance(metrics.get("filter"), dict):
+                metrics["filter"] = slim_filter_block(metrics["filter"])
+            variants[pid] = metrics
+
+            # Refresh catalog min_samples / warmup from first seen filter
+            fb = metrics.get("filter") or {}
             if pid in catalog:
-                catalog[pid]["min_samples_for_outlier_filter"] = f0.get(
-                    "min_samples_for_outlier_filter",
-                    catalog[pid]["min_samples_for_outlier_filter"],
-                )
-                catalog[pid]["exclude_warmup"] = f0.get(
-                    "exclude_warmup", catalog[pid]["exclude_warmup"]
-                )
+                if fb.get("min_samples_for_outlier_filter") is not None:
+                    catalog[pid]["min_samples_for_outlier_filter"] = fb[
+                        "min_samples_for_outlier_filter"
+                    ]
+                if fb.get("exclude_warmup") is not None:
+                    catalog[pid]["exclude_warmup"] = fb["exclude_warmup"]
+
+        slim_groups.append({**identity, "variants": variants})
 
     return {
-        "schema_version": "2.1",
+        "schema_version": "2.2",
         "generated": generated or _dt.datetime.now().isoformat(),
         "language": language,
         "default_filter_policy": default_policy,
@@ -1276,11 +1348,7 @@ def build_stats_export_payload(
             "Q3": "How stable?",
             "Q4": "Under which workloads does it win?",
         },
-        # Backward-compatible flat groups = default policy
-        "groups": default_groups,
-        "groups_by_policy": groups_by_policy,
-        "pareto_front": pareto_by_policy.get(default_policy, []),
-        "pareto_by_policy": pareto_by_policy,
+        "groups": slim_groups,
     }
 
 

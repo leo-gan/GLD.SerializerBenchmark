@@ -453,16 +453,24 @@ def test_multi_policy_all_four_and_export_payload():
     assert win["avg_time_total_ns"] < all_e["avg_time_total_ns"]
 
     payload = build_stats_export_payload(by_policy, language="python")
-    assert payload["schema_version"] == "2.1"
+    assert payload["schema_version"] == "2.2"
     assert payload["default_filter_policy"] == DEFAULT_FILTER_POLICY
-    assert set(payload["groups_by_policy"]) == set(FILTER_POLICY_IDS)
-    assert len(payload["groups"]) == len(payload["groups_by_policy"][DEFAULT_FILTER_POLICY])
+    assert "groups_by_policy" not in payload  # B: no duplicate multi-list
+    assert "pareto_by_policy" not in payload  # client recomputes
     assert "filter_policies" in payload and "iqr_1.5" in payload["filter_policies"]
-    assert "pareto_by_policy" in payload
-    # No private series keys in export
+    # C: identity once + variants
     sample = payload["groups"][0]
+    assert "variants" in sample
+    assert set(sample["variants"]) == set(FILTER_POLICY_IDS)
+    assert "serializer" in sample and "avg_ops_per_sec" not in sample
+    assert "avg_ops_per_sec" in sample["variants"][DEFAULT_FILTER_POLICY]
+    # D: catalog text not repeated per group
+    fb = sample["variants"][DEFAULT_FILTER_POLICY].get("filter") or {}
+    assert "label" not in fb and "description" not in fb
+    assert fb.get("policy") == DEFAULT_FILTER_POLICY
+    assert "label" in payload["filter_policies"][DEFAULT_FILTER_POLICY]
     assert not any(str(k).startswith("_") for k in sample)
-    assert "filter" in sample
+    assert not any(str(k).startswith("_") for k in sample["variants"][DEFAULT_FILTER_POLICY])
 
 
 def test_save_baseline_skipped_when_regression(tmp_path):

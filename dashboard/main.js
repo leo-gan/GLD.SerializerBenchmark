@@ -32,6 +32,7 @@ const GROUP_META_KEYS = new Set([
   'mode',
   'language',
   'filter',
+  'variants',
   'serializer_version',
   'type_config_hash',
   'StreamMode',
@@ -986,20 +987,39 @@ function updateHistoryUIForLanguage() {
 }
 
 /**
- * Prefer standalone multi-policy stats JSON; fall back to gz-embedded stats.
+ * Fetch JSON or gzip-JSON from a URL.
+ * @param {string} url
+ * @returns {Promise<object|null>}
+ */
+async function fetchJsonMaybeGzip(url) {
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  try {
+    return await res.clone().json();
+  } catch {
+    const ds = new DecompressionStream('gzip');
+    const text = await new Response(res.body.pipeThrough(ds)).text();
+    return JSON.parse(text);
+  }
+}
+
+/**
+ * Prefer standalone multi-policy stats (gzip first); fall back to embedded stats.
  * @param {string} lang
  * @param {object|null} gzStats
  */
 async function loadStatsObjectForLanguage(lang, gzStats) {
-  const statsUrl = `data/stats_${lang}_latest.json`;
-  try {
-    const res = await fetch(statsUrl);
-    if (res.ok) {
-      const obj = await res.json();
+  const urls = [
+    `data/stats_${lang}_latest.json.gz`,
+    `data/stats_${lang}_latest.json`,
+  ];
+  for (const statsUrl of urls) {
+    try {
+      const obj = await fetchJsonMaybeGzip(statsUrl);
       if (obj && (obj.groups_by_policy || obj.groups)) return obj;
+    } catch (e) {
+      console.warn(`Could not load ${statsUrl}:`, e);
     }
-  } catch (e) {
-    console.warn(`Could not load ${statsUrl}:`, e);
   }
   return gzStats || { groups: [] };
 }
@@ -1148,8 +1168,72 @@ async function loadHistoricalRunIntoDashboard(runId) {
   }
 }
 
+const GROUP_IDENTITY_KEYS = new Set([
+  'serializer',
+  'test_data',
+  'type_config_hash',
+  'data_type_instance_count',
+  'mode',
+  'language',
+  'serializer_version',
+  'StreamMode',
+  'variants',
+]);
+
 /**
- * Normalize a stats export (schema 2.0 or 2.1) into groupsByPolicy.
+ * Expand schema 2.2 identity+variants groups into flat per-policy rows.
+ * Merges catalog label/description into each filter block (export omits them).
+ * @param {object[]} slimGroups
+ * @param {Record<string, object>} catalog
+ * @returns {Record<string, object[]>}
+ */
+function expandVariantGroups(slimGroups, catalog) {
+  /** @type {Record<string, object[]>} */
+  const byPolicy = {};
+  for (const g of slimGroups) {
+    const variants = g.variants;
+    if (!variants || typeof variants !== 'object') continue;
+    const identity = {};
+    for (const [k, v] of Object.entries(g)) {
+      if (!GROUP_IDENTITY_KEYS.has(k) || k === 'variants') continue;
+      identity[k] = v;
+    }
+    // Always copy known identity fields even if null
+    for (const k of [
+      'serializer',
+      'test_data',
+      'type_config_hash',
+      'data_type_instance_count',
+      'mode',
+      'language',
+      'serializer_version',
+    ]) {
+      if (k in g) identity[k] = g[k];
+    }
+    if (g.StreamMode != null) identity.StreamMode = g.StreamMode;
+
+    for (const [pid, metrics] of Object.entries(variants)) {
+      if (!metrics || typeof metrics !== 'object') continue;
+      const cat = catalog[pid] || FILTER_POLICY_FALLBACK[pid] || {};
+      const filter = { ...(metrics.filter || {}) };
+      if (filter.label == null && cat.label) filter.label = cat.label;
+      if (filter.description == null && cat.description) filter.description = cat.description;
+      if (filter.policy == null) filter.policy = pid;
+      const row = {
+        ...identity,
+        ...metrics,
+        filter,
+        test_data: fixtureKey({ ...identity, ...metrics }),
+      };
+      if (!byPolicy[pid]) byPolicy[pid] = [];
+      byPolicy[pid].push(row);
+    }
+  }
+  return byPolicy;
+}
+
+/**
+ * Normalize a stats export (schema 2.0 / 2.1 / 2.2) into groupsByPolicy.
  * @param {object} statsObj
  * @returns {{ groupsByPolicy: Record<string, object[]>, defaultPolicy: string, catalog: object }}
  */
@@ -1173,17 +1257,28 @@ function normalizeStatsPayload(statsObj) {
     }));
 
   /** @type {Record<string, object[]>} */
-  const groupsByPolicy = {};
-  if (raw.groups_by_policy && typeof raw.groups_by_policy === 'object') {
+  let groupsByPolicy = {};
+
+  // Schema 2.2: identity once + variants
+  const rawGroups = Array.isArray(raw.groups) ? raw.groups : [];
+  const isSlimVariants =
+    rawGroups.length > 0 &&
+    rawGroups.some((g) => g && typeof g === 'object' && g.variants && typeof g.variants === 'object');
+
+  if (isSlimVariants) {
+    groupsByPolicy = expandVariantGroups(rawGroups, catalog);
+  } else if (raw.groups_by_policy && typeof raw.groups_by_policy === 'object') {
+    // Schema 2.1
     for (const [pid, list] of Object.entries(raw.groups_by_policy)) {
       groupsByPolicy[pid] = mapGroups(list);
     }
   }
-  // Backward compat: schema 2.0 only has flat groups
-  if (!Object.keys(groupsByPolicy).length && Array.isArray(raw.groups)) {
-    groupsByPolicy[defaultPolicy] = mapGroups(raw.groups);
-  } else if (Array.isArray(raw.groups) && !groupsByPolicy[defaultPolicy]?.length) {
-    groupsByPolicy[defaultPolicy] = mapGroups(raw.groups);
+
+  // Schema 2.0 / fallback: flat groups = single policy
+  if (!Object.keys(groupsByPolicy).length && rawGroups.length) {
+    groupsByPolicy[defaultPolicy] = mapGroups(rawGroups);
+  } else if (rawGroups.length && !isSlimVariants && !groupsByPolicy[defaultPolicy]?.length) {
+    groupsByPolicy[defaultPolicy] = mapGroups(rawGroups);
   }
 
   return { groupsByPolicy, defaultPolicy, catalog };
@@ -2070,24 +2165,22 @@ function modeDisplayLabel(norm) {
  * @returns {Promise<Record<string, object[]>>} policy → groups
  */
 async function fetchStatsGroupsByPolicy(langId) {
-  const urls = [`data/stats_${langId}_latest.json`, `data/${langId}_latest.json.gz`];
+  const urls = [
+    `data/stats_${langId}_latest.json.gz`,
+    `data/stats_${langId}_latest.json`,
+    `data/${langId}_latest.json.gz`,
+  ];
   for (const url of urls) {
     try {
-      const response = await fetch(url);
-      if (!response.ok) continue;
-      let payload;
-      try {
-        payload = await response.clone().json();
-      } catch {
-        const ds = new DecompressionStream('gzip');
-        const text = await new Response(response.body.pipeThrough(ds)).text();
-        payload = JSON.parse(text);
-      }
-      // gz embeds stats under .stats
-      const statsObj = payload.groups || payload.groups_by_policy ? payload : payload.stats || payload;
+      const payload = await fetchJsonMaybeGzip(url);
+      if (!payload) continue;
+      // standalone stats file vs language pack with embedded .stats
+      const statsObj =
+        payload.groups || payload.groups_by_policy || payload.default_filter_policy
+          ? payload
+          : payload.stats || payload;
       const { groupsByPolicy, defaultPolicy } = normalizeStatsPayload(statsObj);
       if (!Object.keys(groupsByPolicy).length) continue;
-      // Stamp language + fixture key
       const stamped = {};
       for (const [pid, list] of Object.entries(groupsByPolicy)) {
         stamped[pid] = list.map((g) => ({
@@ -2096,7 +2189,7 @@ async function fetchStatsGroupsByPolicy(langId) {
           test_data: fixtureKey(g),
         }));
       }
-      if (!stamped[defaultPolicy] && statsObj.groups) {
+      if (!stamped[defaultPolicy] && Array.isArray(statsObj.groups) && !statsObj.groups[0]?.variants) {
         stamped[defaultPolicy] = (statsObj.groups || []).map((g) => ({
           ...g,
           language: g.language || langId,
