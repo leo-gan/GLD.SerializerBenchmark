@@ -13,12 +13,16 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from benchmark_analysis.stats import (
+    DEFAULT_FILTER_POLICY,
+    FILTER_POLICY_IDS,
     _derive_seed,
     _filter_outliers,
     bootstrap_ci,
+    build_stats_export_payload,
     cliffs_delta,
     cliffs_delta_label,
     compute_statistics,
+    compute_statistics_multi_policy,
     filter_outliers_paired,
     hedges_g,
     holm_correction,
@@ -396,6 +400,77 @@ def test_paired_n_equal_across_metrics_after_stats():
     assert len(entry["_times_total_filtered"]) == entry["runs"]
     # Means computed from same n
     assert entry["runs"] < entry["runs_raw"] - entry["warmup_skipped"] or entry["outliers_removed"] >= 0
+
+
+def test_multi_policy_all_four_and_export_payload():
+    """Four named policies differ on a spiked series; export is schema 2.1."""
+    recs = _make_records(30)
+    # Strong total spike on last measured rep → IQR k=1.5 drops; k=3 may keep
+    recs[-1]["TimeSer"] = 50_000_000.0
+    recs[-1]["TimeDeser"] = 50_000_000.0
+    recs[-1]["TimeSerAndDeser"] = 100_000_000.0
+
+    cfg = {
+        "exclude_warmup": True,
+        "bootstrap": {"enabled": False},
+        "effect_sizes": {"enabled": False},
+        "hypothesis_tests": {"enabled": False},
+        "min_samples_for_outlier_filter": 10,
+    }
+    by_policy = compute_statistics_multi_policy(recs, config=cfg, language_hint="python")
+    assert list(by_policy.keys()) == list(FILTER_POLICY_IDS)
+
+    all_e = next(iter(by_policy["all"].values()))
+    iqr15 = next(iter(by_policy["iqr_1.5"].values()))
+    iqr3 = next(iter(by_policy["iqr_3"].values()))
+    win = next(iter(by_policy["winsorize_5_95"].values()))
+
+    # all keeps every post-warmup rep
+    assert all_e["outliers_removed"] == 0
+    assert all_e["runs"] == all_e["runs_raw"] - all_e["warmup_skipped"]
+    assert all_e["filter"]["policy"] == "all"
+    assert all_e["filter"]["method"] == "none"
+
+    # strict IQR removes the spike; mean is lower than unfiltered
+    assert iqr15["outliers_removed"] >= 1
+    assert iqr15["runs"] < all_e["runs"]
+    assert iqr15["avg_time_total_ns"] < all_e["avg_time_total_ns"]
+    assert iqr15["filter"]["policy"] == "iqr_1.5"
+    assert iqr15["filter"]["iqr_k"] == 1.5
+    assert iqr15["filter"]["fence_total_high_ns"] is not None
+
+    # loose IQR removes fewer or equal vs strict
+    assert iqr3["outliers_removed"] <= iqr15["outliers_removed"]
+    assert iqr3["filter"]["iqr_k"] == 3.0
+
+    # winsorize keeps n, may clip
+    assert win["runs"] == all_e["runs"]
+    assert win["outliers_removed"] == 0
+    assert win["values_clipped"] >= 1
+    assert win["filter"]["method"] == "winsorize"
+    assert win["filter"]["winsorize_percentiles"] == [5.0, 95.0]
+    # clipped mean should not be as extreme as raw all
+    assert win["avg_time_total_ns"] < all_e["avg_time_total_ns"]
+
+    payload = build_stats_export_payload(by_policy, language="python")
+    assert payload["schema_version"] == "2.2"
+    assert payload["default_filter_policy"] == DEFAULT_FILTER_POLICY
+    assert "groups_by_policy" not in payload  # B: no duplicate multi-list
+    assert "pareto_by_policy" not in payload  # client recomputes
+    assert "filter_policies" in payload and "iqr_1.5" in payload["filter_policies"]
+    # C: identity once + variants
+    sample = payload["groups"][0]
+    assert "variants" in sample
+    assert set(sample["variants"]) == set(FILTER_POLICY_IDS)
+    assert "serializer" in sample and "avg_ops_per_sec" not in sample
+    assert "avg_ops_per_sec" in sample["variants"][DEFAULT_FILTER_POLICY]
+    # D: catalog text not repeated per group
+    fb = sample["variants"][DEFAULT_FILTER_POLICY].get("filter") or {}
+    assert "label" not in fb and "description" not in fb
+    assert fb.get("policy") == DEFAULT_FILTER_POLICY
+    assert "label" in payload["filter_policies"][DEFAULT_FILTER_POLICY]
+    assert not any(str(k).startswith("_") for k in sample)
+    assert not any(str(k).startswith("_") for k in sample["variants"][DEFAULT_FILTER_POLICY])
 
 
 def test_save_baseline_skipped_when_regression(tmp_path):

@@ -114,6 +114,29 @@ Default method: **[John Tukey](https://en.wikipedia.org/wiki/John_Tukey "John Tu
 
 Removed count: `outliers_removed`. Final `runs` is the same for serialize, deserialize, and total. IQR mainly stabilizes the **mean** against rare stalls; always look at dispersion and [confidence intervals](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> too.
 
+### Dashboard filter policies (multi-aggregation export)
+
+Machine-readable `stats_<lang>_latest.json` (schema **2.2**, published as **`.json.gz`**) recomputes every group under **four fixed sample policies** so the dashboard can research outliers without re-running filters in the browser:
+
+| Policy id | Behavior |
+|-----------|----------|
+| `all` | Post-warmup only; no drop, no winsorize |
+| `iqr_1.5` | Paired IQR with **k = 1.5** (canonical / default rankings) |
+| `iqr_3` | Paired IQR with **k = 3** (looser fences) |
+| `winsorize_5_95` | Clip each series at the 5th/95th percentile; **n** unchanged (`values_clipped` counts affected rows) |
+
+Export fields (compact):
+
+- `default_filter_policy` — usually `iqr_1.5`
+- `filter_policies` — catalog once (label, description, method, k, …)
+- `groups[]` — identity fields once + `variants.<policy>` metrics (no duplicated flat lists)
+- per-variant `filter` — counts / fences / method only (labels live in the catalog)
+- Pareto is **not** precomputed; the dashboard recalculates from the active policy metrics
+
+Published dashboard path: `dashboard/public/data/stats_<lang>_latest.json.gz` (gzip of the same JSON).
+
+Markdown language pages still use the configured single `statistics.outlier_method` path (default IQR 1.5). The multi-policy pack is for the interactive dashboard **Samples** control.
+
 ### Descriptive statistics (per group)
 
 | Kind | What we report |
