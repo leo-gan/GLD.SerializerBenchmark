@@ -142,15 +142,15 @@
           <h2 class="chart-title" id="bar-chart-title">Throughput &amp; Size Ranking</h2>
           <div class="chart-toolbar">
             <span class="filter-label" style="margin:0;">Sort</span>
-            <button type="button" id="btn-rank-sort-speed" class="tab-btn chart-tool-btn active" title="Sort by speed (ops/s or latency)">Speed</button>
             <button type="button" id="btn-rank-sort-size" class="tab-btn chart-tool-btn" title="Sort by median size (compact first)">Size</button>
+            <button type="button" id="btn-rank-sort-speed" class="tab-btn chart-tool-btn active" title="Sort by ops/s (highest first)">Ops/s</button>
             <button type="button" id="btn-export-bar" class="tab-btn chart-tool-btn" title="Download ranking PNG">PNG</button>
           </div>
         </div>
         <p class="section-help ranking-help" id="ranking-help">
           Single diverging chart:
           <span class="rank-legend-size">◀ size</span> left ·
-          <span class="rank-legend-speed">speed ▶</span> right.
+          <span class="rank-legend-speed">ops/s ▶</span> right.
           Each side is normalized to the chart max (100); hover for absolute values.
         </p>
         <div class="chart-container ranking-chart-single">

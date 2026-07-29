@@ -1,4 +1,10 @@
-import { formatOpsCompact, formatTimeCompact, formatIntGrouped } from './format.js';
+import {
+  formatOpsCompact,
+  formatTimeCompact,
+  formatIntGrouped,
+  formatSig,
+  chooseLatencyUnit,
+} from './format.js';
 
 let scatterChartInstance = null;
 let barChartInstance = null;
@@ -45,16 +51,17 @@ export function updateCharts(groups, paretoNames, metric) {
   }
   const help = document.getElementById('ranking-help');
   if (help) {
+    const primaryRight = metric === 'ops' ? 'ops/s' : 'latency';
     const sortLabel =
       chartOptions.rankSort === 'size'
         ? 'sorted by size (most compact first)'
         : metric === 'ops'
-          ? 'sorted by throughput (fastest first)'
+          ? 'sorted by ops/s (highest first)'
           : 'sorted by latency (lowest first)';
     help.innerHTML =
       `Single diverging chart, <strong>${sortLabel}</strong>: ` +
       `<span class="rank-legend-size">◀ size</span> left · ` +
-      `<span class="rank-legend-speed">speed ▶</span> right. ` +
+      `<span class="rank-legend-speed">${primaryRight} ▶</span> right. ` +
       `Each side is normalized to the chart max (100); hover for absolute values.`;
   }
 }
@@ -96,6 +103,20 @@ function updateScatterChart(groups, paretoNames, metric) {
     if (point.onFrontier) paretoPoints.push(point);
     else standardPoints.push(point);
   });
+
+  // Axis title unit must match tick scale (raw values stay in ns / ops/s).
+  const latencyNs = isOps
+    ? []
+    : [...standardPoints, ...paretoPoints].map((p) => p.time).filter((v) => Number.isFinite(v));
+  const latencyScale = chooseLatencyUnit(latencyNs);
+  const xAxisTitle = isOps
+    ? 'Throughput (ops/s)'
+    : `Total latency (${latencyScale.unit})`;
+  const formatXTick = (value) => {
+    if (isOps) return formatOpsCompact(value);
+    if (value == null || !Number.isFinite(value)) return '';
+    return formatSig(value / latencyScale.divisor);
+  };
 
   const sortedPareto = [...paretoPoints].sort((a, b) => a.y - b.y);
   const frontierLineData = [];
@@ -188,7 +209,7 @@ function updateScatterChart(groups, paretoNames, metric) {
           type: xType,
           title: {
             display: true,
-            text: isOps ? 'Throughput (ops/s)' : 'Total latency (ns)',
+            text: xAxisTitle,
             color: tickColor,
             font: { ...fontStyle, weight: 'bold' },
           },
@@ -196,7 +217,7 @@ function updateScatterChart(groups, paretoNames, metric) {
           ticks: {
             color: tickColor,
             font: fontStyle,
-            callback: (value) => (isOps ? formatOpsCompact(value) : formatTimeCompact(value)),
+            callback: (value) => formatXTick(value),
           },
         },
         y: {
@@ -303,13 +324,14 @@ function updateBarChart(groups, paretoNames, metric) {
     type: 'bar',
     data: {
       labels,
+      // Legend order matches plot: size left (←), then speed/latency right (→).
       datasets: [
         {
-          label: isOps ? 'Ops/s (→)' : 'Latency (→)',
-          data: speedNorm,
-          backgroundColor: speedColors,
+          label: 'Size (←)',
+          data: sizeNorm,
+          backgroundColor: sizeColors,
           borderColor: sortedGroups.map((g) =>
-            paretoNames.includes(g.serializer) ? '#1a73e8' : 'rgba(26, 115, 232, 0.45)'
+            paretoNames.includes(g.serializer) ? '#1e8e3e' : 'rgba(30, 142, 62, 0.45)'
           ),
           borderWidth: 1,
           borderRadius: 3,
@@ -317,11 +339,11 @@ function updateBarChart(groups, paretoNames, metric) {
           categoryPercentage: 0.75,
         },
         {
-          label: 'Size (←)',
-          data: sizeNorm,
-          backgroundColor: sizeColors,
+          label: isOps ? 'Ops/s (→)' : 'Latency (→)',
+          data: speedNorm,
+          backgroundColor: speedColors,
           borderColor: sortedGroups.map((g) =>
-            paretoNames.includes(g.serializer) ? '#1e8e3e' : 'rgba(30, 142, 62, 0.45)'
+            paretoNames.includes(g.serializer) ? '#1a73e8' : 'rgba(26, 115, 232, 0.45)'
           ),
           borderWidth: 1,
           borderRadius: 3,
@@ -360,17 +382,17 @@ function updateBarChart(groups, paretoNames, metric) {
             label: (context) => {
               const g = sortedGroups[context.dataIndex];
               if (!g) return '';
-              if (context.datasetIndex === 0) {
-                const abs = isOps
-                  ? formatOpsCompact(g.avg_ops_per_sec)
-                  : formatTimeCompact(g.avg_time_total_ns);
-                const pct = Math.abs(context.raw).toFixed(0);
-                return isOps
-                  ? `Ops/s: ${abs}  (${pct}% of max in chart)`
-                  : `Latency: ${abs}  (${pct}% of max in chart)`;
-              }
               const pct = Math.abs(context.raw).toFixed(0);
-              return `Size: ${formatIntGrouped(g.median_size_bytes)} bytes  (${pct}% of max in chart)`;
+              // dataset 0 = size (left), 1 = speed/latency (right)
+              if (context.datasetIndex === 0) {
+                return `Size: ${formatIntGrouped(g.median_size_bytes)} bytes  (${pct}% of max in chart)`;
+              }
+              const abs = isOps
+                ? formatOpsCompact(g.avg_ops_per_sec)
+                : formatTimeCompact(g.avg_time_total_ns);
+              return isOps
+                ? `Ops/s: ${abs}  (${pct}% of max in chart)`
+                : `Latency: ${abs}  (${pct}% of max in chart)`;
             },
             afterBody: (items) => {
               const g = sortedGroups[items[0]?.dataIndex];

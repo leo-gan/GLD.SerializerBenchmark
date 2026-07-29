@@ -447,12 +447,26 @@ function applyUiFromState() {
   document.getElementById('btn-rank-sort-speed')?.classList.toggle('active', state.rankSort !== 'size');
   document.getElementById('btn-rank-sort-size')?.classList.toggle('active', state.rankSort === 'size');
   setRankSort(state.rankSort);
+  updateRankSortPrimaryLabel();
 
   const search = document.getElementById('table-search');
   if (search) search.value = state.searchQuery || '';
 
   updateSortIndicators();
   applyCompareScopeUi();
+}
+
+/** Rank-sort primary button: Ops/s vs Latency (not generic "Speed"). */
+function updateRankSortPrimaryLabel() {
+  const btn = document.getElementById('btn-rank-sort-speed');
+  if (!btn) return;
+  if (state.displayMetric === 'time') {
+    btn.textContent = 'Latency';
+    btn.title = 'Sort by latency (lowest first)';
+  } else {
+    btn.textContent = 'Ops/s';
+    btn.title = 'Sort by ops/s (highest first)';
+  }
 }
 
 
@@ -589,6 +603,7 @@ function setupEventListeners() {
     setRankSort(state.rankSort);
     document.getElementById('btn-rank-sort-speed')?.classList.toggle('active', state.rankSort === 'speed');
     document.getElementById('btn-rank-sort-size')?.classList.toggle('active', state.rankSort === 'size');
+    updateRankSortPrimaryLabel();
     saveSettings();
     updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
   };
@@ -1973,6 +1988,7 @@ function setViewMetric(metric) {
   state.displayMetric = metric;
   document.getElementById('btn-ops-sec')?.classList.toggle('active', metric === 'ops');
   document.getElementById('btn-time-ns')?.classList.toggle('active', metric === 'time');
+  updateRankSortPrimaryLabel();
   saveSettings();
   updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
 }
