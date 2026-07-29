@@ -1,3 +1,8 @@
+/**
+ * Dashboard UI terminology: always say **data type** (test_data / Test Data control).
+ * Never use "fixture" in user-visible copy, notifications, KPIs, or export notes.
+ * Internal helpers may still say fixture* in identifiers until renamed.
+ */
 import {
   initCharts,
   updateCharts,
@@ -815,7 +820,7 @@ function setupEventListeners() {
     }
     const group = findCrossLangGroup(lang, serializer);
     if (!group) {
-      showNotification('No data for that serializer under the current fixture / mode.', 'error');
+      showNotification('No data for that serializer under the current data type / mode.', 'error');
       return;
     }
     state.xlSelectionMode = 'custom';
@@ -1435,7 +1440,7 @@ function updateFilterPolicyMeta() {
   }
 
   const statsBits = [];
-  if (kept != null) statsBits.push(`${formatIntGrouped(kept)} trials kept (current fixture)`);
+  if (kept != null) statsBits.push(`${formatIntGrouped(kept)} trials kept (current data type)`);
   if (removed > 0) statsBits.push(`${formatIntGrouped(removed)} reps removed (sum over rows)`);
   if (clipped > 0) statsBits.push(`${formatIntGrouped(clipped)} reps clipped (winsorize, sum)`);
 
@@ -1486,7 +1491,7 @@ function populateSelect(id, options) {
 }
 
 /**
- * Test Data select with grouped synthetic fixture labels.
+ * Test Data select with grouped synthetic data-type labels.
  * @param {string[]} options
  * @param {{ selectId?: string, previous?: string }} [cfg]
  */
@@ -1540,7 +1545,7 @@ function populateFixtureSelect(options, cfg = {}) {
 /**
  * Docs Summary aggregation (reports._scientific_summary_md intent):
  * - Prefer bytes/string mode when present for a serializer (else keep all modes).
- * - Restrict to suite fixture base types (message, document, …).
+ * - Restrict to suite data-type base ids (message, document, …).
  * - One value per field: arithmetic mean across remaining groups;
  *   `runs` is summed; non-numeric: first non-empty (e.g. serializer_version).
  * - `total_median_ns` falls back to `avg_time_total_ns` when missing.
@@ -1558,7 +1563,7 @@ function instanceCount(g) {
 }
 
 /**
- * Fixture selection kinds:
+ * Data-type selection kinds:
  * - natural: message@n=1
  * - batch_compound: message@n=1+100 (same type, two batch sizes)
  * - all_n: all@1 / all@100 (all suite types at fixed n)
@@ -1833,7 +1838,7 @@ function buildAllAllGroups(allGroups, mode) {
   return out.sort((a, b) => a.serializer.localeCompare(b.serializer));
 }
 
-/** Natural + synthetic fixture keys for the Test Data dropdown. */
+/** Natural + synthetic data-type keys for the Test Data dropdown. */
 function discoverFixtureOptions(allGroups) {
   const natural = [
     ...new Set(
@@ -2254,11 +2259,11 @@ function allCrossLangGroups() {
 function initCrossLangControls() {
   const all = allCrossLangGroups();
   const discovered = discoverFixtureOptions(all);
-  const fixtures = discovered.all;
+  const dataTypes = discovered.all;
   const modes = [...new Set(all.map((g) => normalizeMode(g.mode)).filter(Boolean))].sort();
 
   // Same grouped options as top toolbar Test Data (natural + compounds)
-  populateFixtureSelect(fixtures, {
+  populateFixtureSelect(dataTypes, {
     selectId: 'xl-data-select',
     previous: state.xlTestData,
   });
@@ -2274,9 +2279,9 @@ function initCrossLangControls() {
     });
   }
 
-  if (!fixtures.includes(state.xlTestData)) {
+  if (!dataTypes.includes(state.xlTestData)) {
     state.xlTestData =
-      pickPreferredFixture(discovered.natural) || fixtures[0] || '';
+      pickPreferredFixture(discovered.natural) || dataTypes[0] || '';
   }
   if (!modes.includes(state.xlMode)) {
     state.xlMode = modes.includes('bytes') ? 'bytes' : modes[0] || '';
@@ -2614,9 +2619,9 @@ function updateXlBaselineSelect() {
 function setKpiEmpty(msg) {
   document.getElementById('kpi-total').textContent = '0';
   document.getElementById('kpi-fastest').textContent = msg || 'No data for this filter';
-  document.getElementById('kpi-fastest-val').textContent = 'Select another fixture or mode';
+  document.getElementById('kpi-fastest-val').textContent = 'Select another data type or mode';
   document.getElementById('kpi-compact').textContent = msg || 'No data for this filter';
-  document.getElementById('kpi-compact-val').textContent = 'Select another fixture or mode';
+  document.getElementById('kpi-compact-val').textContent = 'Select another data type or mode';
   document.getElementById('kpi-pareto').textContent = '—';
 }
 
@@ -2929,7 +2934,7 @@ function renderTable() {
   const help = document.getElementById('detailed-analytics-help');
   if (help) {
     const scope = parseFixtureSelection(state.currentTestData);
-    let scopeNote = ' Full roster for the current language, fixture, and mode.';
+    let scopeNote = ' Full roster for the current language, data type, and mode.';
     if (scope.kind === 'batch_compound') {
       scopeNote =
         ` <strong>Compounded batch</strong>: mean of <code>${escapeHtml(scope.base)}@n=${scope.nA}</code> and <code>${escapeHtml(scope.base)}@n=${scope.nB}</code>.`;
@@ -3249,7 +3254,7 @@ function copyRosterMarkdown() {
       if (s.kind === 'all_all') {
         return `Scope: all@all (all types × all n) · mode ${state.currentMode}`;
       }
-      return `Scope: fixture ${state.currentTestData} · mode ${state.currentMode}`;
+      return `Scope: data type ${state.currentTestData} · mode ${state.currentMode}`;
     })(),
     ``,
     `| ${headers.join(' | ')} |`,
