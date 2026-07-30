@@ -1,8 +1,8 @@
 # Python — Benchmark Results
 
-**Generated:** 2026-07-24T20:23:46.124067
+**Generated:** 2026-07-29T20:52:48.213247
 
-This page is a **snapshot of measured numbers** for Python on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
+This page is a **snapshot of measured numbers** for Python on **one machine, one session** (claim level **L1**). Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little. Stronger multi-session / multi-machine claims need more evidence — see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 
 | Topic | Where to read |
 |-------|---------------|
@@ -10,6 +10,7 @@ This page is a **snapshot of measured numbers** for Python on one machine. Conti
 | I/O modes and run modes | [Modes](../analysis/modes.md) |
 | How CSVs become these tables | [Analysis methodology](../analysis/ANALYSIS_METHODOLOGY.md) |
 | What each metric means | [Metrics catalog](../analysis/METRICS.md) |
+| What you may claim (L1/L2/L3) | [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md) |
 | All languages’ result links | [Results summary](../analysis/BENCHMARK_SUMMARY.md) |
 
 ## How to read these tables
@@ -27,6 +28,10 @@ Compare serializers **inside this language**. Prefer the same [category](../anal
 
 Rows are sorted by **serializer name** (easy lookup), not by rank. Batch workloads appear as **Data type · N instances** (for example Message · 100 instances). Default multi-serializer tables show **high-importance** metrics only; pairwise / version A/B reports can show the full set ([Metrics](../analysis/METRICS.md)).
 
+> **How these numbers were filtered (Dashboard “Samples”):** First the first timed repetition is dropped as warmup (`RepetitionIndex == 0`). Then outliers are removed with **paired Tukey IQR k=1.5** — the same rule as the Dashboard **Samples** menu item **“IQR k=1.5 (default)”** (`iqr_1.5`). A whole trial is dropped if serialize, deserialize, or total time falls outside the fences. Raw CSVs still store every trial. On the Dashboard you can switch among four **Samples** policies without re-running the benchmark; this Results page is the **default policy only**. Details: [Analysis methodology — outlier filtering](../analysis/ANALYSIS_METHODOLOGY.md#outlier-filtering) · [Dashboard filter policies](../analysis/ANALYSIS_METHODOLOGY.md#dashboard-filter-policies-multi-aggregation-export).
+
+> **Exploratory ranks:** effect sizes vs the fastest codec are **descriptive**. When we attach Holm-adjusted tests, they only correct for many serializers **inside one** (data type × batch size × I/O mode) group — not for every comparison on this page. Prefer pairwise A/B (`analyze-benchmarks --compare-a … --compare-b …`) for confirmatory checks. See [Analysis methodology — ranks](../analysis/ANALYSIS_METHODOLOGY.md#exploratory-ranks).
+
 > **Stream honesty:** stream rows labeled as **native** 60, **adapted** 100. Only **`native`** (and carefully **`text_on_stream`**) support stream-API performance claims. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
 
 
@@ -36,29 +41,29 @@ Rows are sorted by **serializer name** (easy lookup), not by rank. Batch workloa
 
 One row per serializer (averaged across data types; bytes mode preferred when both exist). Only **high-importance** columns appear here by default ([Metrics catalog](../analysis/METRICS.md)). Times are **µs**. **Bold** = best in that column.
 
-| serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
-|---|---|---|---|---|---|---|---|
-| avro:1.12.2 | 453 | 254 | 198 | 26.9K | **9.03K** | 1806 | **1.00** |
-| cbor2:6.1.3 | 300 | 201 | 99.1 | 35.7K | 13.6K | 1782 | **1.00** |
-| cloudpickle:3.1.2 | 302 | 226 | 75.8 | 24.5K | 13.6K | 1859 | **1.00** |
-| dill:0.4.1 | 2,110 | 2,020 | 85.7 | 5.86K | 13.6K | 1818 | **1.00** |
-| flatbuffers:25.12.19 | 2,240 | 1,770 | 474 | 8.71K | 18.7K | 1876 | **1.00** |
-| json:python-3.14.0 | 317 | 185 | 130 | 30.3K | 19.7K | 1847 | **1.00** |
-| mashumaro:3.22 | 150 | 44.2 | 104 | 81.7K | 19.7K | 1877 | **1.00** |
-| msgpack:1.2.1 | 106 | 52.7 | 52.1 | 89.6K | 13.6K | 1767 | **1.00** |
-| msgspec:0.21.1 | 68 | 29.3 | 38.2 | 131K | 14.7K | 1780 | **1.00** |
-| msgspec-msgpack:0.21.1 | 45.1 | **16.5** | 28.2 | 166K | 9.69K | 1808 | **1.00** |
-| orjson:3.11.9 | 76.5 | 28.3 | 46.6 | **176K** | 19.7K | 1831 | **1.00** |
-| pickle:python-3.14.0 | 190 | 113 | 76.3 | 46.7K | 13.6K | 1883 | **1.00** |
-| protobuf:7.35.1 | **37.3** | 16.8 | **20.1** | 120K | 10.1K | 1704 | **1.00** |
-| pydantic:2.13.4 | 504 | 262 | 242 | 27.2K | 21.4K | 1816 | **1.00** |
-| rapidjson:1.23 | 288 | 153 | 134 | 48.8K | 19.7K | 1829 | **1.00** |
-| serpyco-rs:1.21.0 | 121 | 44.8 | 74.5 | 95.1K | 19.7K | 1846 | **1.00** |
+| serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) |
+|---|---|---|---|---|---|
+| avro:1.12.2 | 453 | 254 | 198 | 26.9K | **9.03K** |
+| cbor2:6.1.3 | 300 | 201 | 99.1 | 35.7K | 13.6K |
+| cloudpickle:3.1.2 | 302 | 226 | 75.8 | 24.5K | 13.6K |
+| dill:0.4.1 | 2,110 | 2,020 | 85.7 | 5.86K | 13.6K |
+| flatbuffers:25.12.19 | 2,240 | 1,770 | 474 | 8.71K | 18.7K |
+| json:python-3.14.0 | 317 | 185 | 130 | 30.3K | 19.7K |
+| mashumaro:3.22 | 150 | 44.2 | 104 | 81.7K | 19.7K |
+| msgpack:1.2.1 | 106 | 52.7 | 52.1 | 89.6K | 13.6K |
+| msgspec:0.21.1 | 68 | 29.3 | 38.2 | 131K | 14.7K |
+| msgspec-msgpack:0.21.1 | 45.1 | **16.5** | 28.2 | 166K | 9.69K |
+| orjson:3.11.9 | 76.5 | 28.3 | 46.6 | **176K** | 19.7K |
+| pickle:python-3.14.0 | 190 | 113 | 76.3 | 46.7K | 13.6K |
+| protobuf:7.35.1 | **37.3** | 16.8 | **20.1** | 120K | 10.1K |
+| pydantic:2.13.4 | 504 | 262 | 242 | 27.2K | 21.4K |
+| rapidjson:1.23 | 288 | 153 | 134 | 48.8K | 19.7K |
+| serpyco-rs:1.21.0 | 121 | 44.8 | 74.5 | 95.1K | 19.7K |
 
 
 ### Total Time
 
-| serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
+| serializer | bytes mode/mean (µs) | bytes mode/median (µs) | stream mode/mean (µs) | stream mode/median (µs) |
 |---|---|---|---|---|
 | avro:1.12.2 | 13.5 | 13.7 | 14.2 | 14.3 |
 | cbor2:6.1.3 | 9.35 | 9.47 | 10.8 | 10.8 |
@@ -80,24 +85,24 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 ### Ops/Sec
 
-| serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
-|---|---|---|---|---|---|---|---|---|---|---|
-| avro:1.12.2 | 38K | 0.73K | 52K | 1.2K | 74K | 2.8K | 50K | 0.93K | 53K | 1.2K |
-| cbor2:6.1.3 | 42K | 0.89K | 67K | 1.9K | 110K | 4.2K | 80K | 2.1K | 68K | 1.9K |
-| cloudpickle:3.1.2 | 26K | 0.76K | 37K | 1.4K | 59K | 4.8K | 54K | 2.4K | 55K | 3.4K |
-| dill:0.4.1 | 5.9K | 0.12K | 9.2K | 0.22K | 17K | 0.71K | 13K | 0.3K | 13K | 0.34K |
-| flatbuffers:25.12.19 | 8.9K | 0.13K | 16K | 0.25K | 28K | 0.53K | 13K | 0.17K | 20K | 0.35K |
-| json:python-3.14.0 | 48K | 1.7K | 65K | 3K | 80K | 4.6K | 71K | 2.9K | 34K | 0.64K |
-| mashumaro:3.22 | 87K | 1.8K | 150K | 3.9K | 220K | 8.6K | 220K | 4.2K | 160K | 3.5K |
-| msgpack:1.2.1 | 110K | 2.6K | 170K | 5.2K | 220K | 9.4K | 240K | 5.6K | 200K | 5.9K |
-| msgspec:0.21.1 | 250K | 7.7K | 300K | 9.8K | 430K | 25K | 270K | 6.1K | 180K | 4.4K |
-| msgspec-msgpack:0.21.1 | **270K** | 8.4K | **360K** | 12K | **560K** | **38K** | 330K | 7.3K | **350K** | 12K |
-| orjson:3.11.9 | 240K | 5.3K | 360K | 7.4K | 530K | 19K | **440K** | 5.7K | 320K | 5.3K |
-| pickle:python-3.14.0 | 51K | 1.3K | 74K | 2.4K | 130K | 7.7K | 110K | 3K | 110K | 4.8K |
-| protobuf:7.35.1 | 190K | **11K** | 230K | **14K** | 280K | 35K | 230K | **7.8K** | 230K | **23K** |
-| pydantic:2.13.4 | 38K | 0.72K | 52K | 1.3K | 66K | 2.4K | 70K | 1.8K | 44K | 0.55K |
-| rapidjson:1.23 | 75K | 2.1K | 110K | 4.2K | 130K | 5.3K | 130K | 3.7K | 41K | 0.61K |
-| serpyco-rs:1.21.0 | 130K | 2.4K | 190K | 4.9K | 240K | 11K | 250K | 4.7K | 180K | 3.9K |
+| serializer | Average | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| avro:1.12.2 | 27K | 38K | 0.73K | 52K | 1.2K | 74K | 2.8K | 50K | 0.93K | 53K | 1.2K |
+| cbor2:6.1.3 | 37K | 42K | 0.89K | 67K | 1.9K | 110K | 4.2K | 80K | 2.1K | 68K | 1.9K |
+| cloudpickle:3.1.2 | 24K | 26K | 0.76K | 37K | 1.4K | 59K | 4.8K | 54K | 2.4K | 55K | 3.4K |
+| dill:0.4.1 | 5.9K | 5.9K | 0.12K | 9.2K | 0.22K | 17K | 0.71K | 13K | 0.3K | 13K | 0.34K |
+| flatbuffers:25.12.19 | 8.8K | 8.9K | 0.13K | 16K | 0.25K | 28K | 0.53K | 13K | 0.17K | 20K | 0.35K |
+| json:python-3.14.0 | 31K | 48K | 1.7K | 65K | 3K | 80K | 4.6K | 71K | 2.9K | 34K | 0.64K |
+| mashumaro:3.22 | 86K | 87K | 1.8K | 150K | 3.9K | 220K | 8.6K | 220K | 4.2K | 160K | 3.5K |
+| msgpack:1.2.1 | 97K | 110K | 2.6K | 170K | 5.2K | 220K | 9.4K | 240K | 5.6K | 200K | 5.9K |
+| msgspec:0.21.1 | 150K | 250K | 7.7K | 300K | 9.8K | 430K | 25K | 270K | 6.1K | 180K | 4.4K |
+| msgspec-msgpack:0.21.1 | **190K** | **270K** | 8.4K | **360K** | 12K | **560K** | **38K** | 330K | 7.3K | **350K** | 12K |
+| orjson:3.11.9 | 190K | 240K | 5.3K | 360K | 7.4K | 530K | 19K | **440K** | 5.7K | 320K | 5.3K |
+| pickle:python-3.14.0 | 49K | 51K | 1.3K | 74K | 2.4K | 130K | 7.7K | 110K | 3K | 110K | 4.8K |
+| protobuf:7.35.1 | 130K | 190K | **11K** | 230K | **14K** | 280K | 35K | 230K | **7.8K** | 230K | **23K** |
+| pydantic:2.13.4 | 28K | 38K | 0.72K | 52K | 1.3K | 66K | 2.4K | 70K | 1.8K | 44K | 0.55K |
+| rapidjson:1.23 | 50K | 75K | 2.1K | 110K | 4.2K | 130K | 5.3K | 130K | 3.7K | 41K | 0.61K |
+| serpyco-rs:1.21.0 | 100K | 130K | 2.4K | 190K | 4.9K | 240K | 11K | 250K | 4.7K | 180K | 3.9K |
 
 ## Latency distributions
 
@@ -166,7 +171,7 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `logs/python/2026-07-24-201715.csv`
+    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/python/2026-07-24-201715.csv`
     - run=2026-07-24-201715
     - language=python
     - os=Linux 6.8.0-124-generic

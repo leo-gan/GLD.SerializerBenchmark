@@ -525,7 +525,16 @@ def _time_ns_to_display_us(value_key: str) -> bool:
     )
 
 
-def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
+def _pivot_table_md(
+    stats: Dict,
+    rows_dim: str,
+    cols_dim: str,
+    value_key: str,
+    title: str,
+    *,
+    include_row_average: bool = False,
+    prefer_bytes_mode: bool = False,
+) -> str:
     """Generate a markdown pivot table from stats dict.
 
     Semantic best-in-column values are bold (ops/throughput: max; time/size: min).
@@ -533,6 +542,10 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
 
     Latency metrics stored as ``*_ns`` are shown in **microseconds** (÷1000) as
     plain numbers (no K/M suffixes), so ~5400 ns appears as ``5.4`` not ``5.4K``.
+
+    When ``include_row_average`` is true, insert an **Average** column after the
+    row label. For Ops/s this matches the Dashboard ``all@all`` rule: unweighted
+    mean of the per-cell values (each type × n column) for that serializer.
     """
     lines = [f"\n### {title}\n"]
 
@@ -556,6 +569,19 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             return f"{base} ({unit})"
         return base
 
+    def _pick_entry(matching: List[Dict]) -> Optional[Dict]:
+        if not matching:
+            return None
+        if not prefer_bytes_mode:
+            return matching[0]
+        bytes_m = [
+            s
+            for s in matching
+            if _normalize_mode(str(s.get("mode") or s.get("StringOrStream") or ""))
+            == "bytes"
+        ]
+        return bytes_m[0] if bytes_m else matching[0]
+
     higher = _higher_is_better(value_key)
     # Display latency in µs (analysis/stats remain nanoseconds in memory/CSV).
     to_us = _time_ns_to_display_us(value_key)
@@ -568,14 +594,26 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             matching = [
                 s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv
             ]
-            if not matching:
+            entry = _pick_entry(matching)
+            if not entry:
                 cell[(rv, cv)] = None
                 continue
-            val = matching[0].get(value_key)
+            val = entry.get(value_key)
             if isinstance(val, (int, float)) and not isinstance(val, bool) and val == val:
                 cell[(rv, cv)] = float(val) / display_scale
             else:
                 cell[(rv, cv)] = None
+
+    # all@all-style row average: mean of per-fixture cell values (type × n).
+    row_avg: Dict[str, Optional[float]] = {}
+    if include_row_average:
+        for rv in row_vals:
+            vals = [
+                cell[(rv, cv)]
+                for cv in col_vals
+                if cell[(rv, cv)] is not None
+            ]
+            row_avg[rv] = (sum(vals) / len(vals)) if vals else None
 
     col_units: Dict[str, tuple] = {}
     col_best: Dict[str, Optional[float]] = {}
@@ -588,15 +626,27 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             col_units[cv] = _pick_column_unit(displayed)
         col_best[cv] = _column_best(displayed, higher_is_better=higher)
 
+    avg_unit = (1.0, "")
+    avg_best: Optional[float] = None
+    if include_row_average:
+        avg_vals = [v for v in row_avg.values() if v is not None]
+        if to_us:
+            avg_unit = (1.0, "")
+        else:
+            avg_unit = _pick_column_unit(avg_vals)
+        avg_best = _column_best(avg_vals, higher_is_better=higher)
+
     # Header (unit in column title when scaled, unless value_key is avg_ops_per_sec)
     show_unit = (value_key != "avg_ops_per_sec")
-    header = (
-        f"| {rows_dim} | "
-        + " | ".join(_col_label(cv, col_units[cv][1] if show_unit else "") for cv in col_vals)
-        + " |"
+    header_parts = [rows_dim]
+    if include_row_average:
+        u = avg_unit[1] if show_unit else ""
+        header_parts.append(f"Average ({u})" if u else "Average")
+    header_parts.extend(
+        _col_label(cv, col_units[cv][1] if show_unit else "") for cv in col_vals
     )
-    lines.append(header)
-    lines.append("|" + "---|" * (len(col_vals) + 1))
+    lines.append("| " + " | ".join(header_parts) + " |")
+    lines.append("|" + "---|" * len(header_parts))
 
     # Rows — all cells in a column share that column's unit; best is bold
     for rv in row_vals:
@@ -612,6 +662,14 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         else:
             display_name = rv
         row_cells = [display_name]
+        if include_row_average:
+            av = row_avg.get(rv)
+            if av is None:
+                row_cells.append("-")
+            else:
+                div, unit = avg_unit
+                is_best = avg_best is not None and av == avg_best
+                row_cells.append(_format_in_unit(av, div, unit, bold=is_best))
         for cv in col_vals:
             val = cell[(rv, cv)]
             if val is None:
@@ -868,6 +926,72 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
     return "\n".join(lines)
 
 
+def _sample_filter_banner_md() -> str:
+    """Explain *how outliers were filtered* for Markdown results tables.
+
+    This is the same choice as the Dashboard toolbar **Samples** control
+    (IQR / all trials / winsorize) — not a “number of samples” column.
+    Language Results use the analysis config’s single default policy.
+    """
+    exclude_warmup = True
+    method = "iqr"
+    iqr_k = 1.5
+    try:
+        from .config_loader import load_master_config
+
+        stats_cfg = (load_master_config().get("statistics") or {})
+        exclude_warmup = bool(stats_cfg.get("exclude_warmup", True))
+        method = str(stats_cfg.get("outlier_method") or "iqr").strip().lower()
+        iqr_k = float(stats_cfg.get("iqr_k", 1.5))
+    except Exception:
+        pass
+
+    warmup_bit = (
+        "First the first timed repetition is dropped as warmup "
+        "(`RepetitionIndex == 0`). Then "
+        if exclude_warmup
+        else "Warmup rows are kept. Then "
+    )
+    if method == "iqr":
+        policy_name = f"IQR k={iqr_k:g}"
+        dash_label = f"IQR k={iqr_k:g}" + (" (default)" if abs(iqr_k - 1.5) < 1e-9 else "")
+        dash_id = "iqr_1.5" if abs(iqr_k - 1.5) < 1e-9 else f"iqr_{iqr_k:g}"
+        detail = (
+            f"outliers are removed with **paired Tukey {policy_name}** — the same "
+            f"rule as the Dashboard **Samples** menu item **“{dash_label}”** "
+            f"(`{dash_id}`). A whole trial is dropped if serialize, deserialize, or "
+            "total time falls outside the fences."
+        )
+    elif method == "winsorize":
+        detail = (
+            "extremes are **winsorized at the 5th/95th percentile** — the same rule "
+            "as Dashboard **Samples → Winsorize 5–95%** (`winsorize_5_95`). "
+            "Values are clipped; trials are not dropped."
+        )
+    elif method in ("none", "off", "disabled"):
+        detail = (
+            "no outlier filter is applied after warmup — the same as Dashboard "
+            "**Samples → All trials** (`all`)."
+        )
+    else:
+        detail = (
+            f"outlier handling is **{method}** "
+            "(see analysis config `statistics.outlier_method`)."
+        )
+
+    return (
+        f"> **How these numbers were filtered (Dashboard “Samples”):** {warmup_bit}"
+        f"{detail} "
+        "Raw CSVs still store every trial. "
+        "On the Dashboard you can switch among four **Samples** policies without "
+        "re-running the benchmark; this Results page is the **default policy only**. "
+        "Details: [Analysis methodology — outlier filtering]"
+        "(../analysis/ANALYSIS_METHODOLOGY.md#outlier-filtering) · "
+        "[Dashboard filter policies]"
+        "(../analysis/ANALYSIS_METHODOLOGY.md#dashboard-filter-policies-multi-aggregation-export)."
+    )
+
+
 def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
     """Compact multi-way table: high-importance scientific fields (median-first)."""
     from .metrics_catalog import MULTI_WAY_SUMMARY_FIELDS, filter_field_ids, load_metrics_config
@@ -877,7 +1001,12 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
     cfg = load_metrics_config()
     field_ids = [f[0] for f in MULTI_WAY_SUMMARY_FIELDS]
     keep = set(filter_field_ids(field_ids, profile=profile, metrics_cfg=cfg))
-    cols = [c for c in MULTI_WAY_SUMMARY_FIELDS if c[0] in keep and c[0] != "serializer_version"]
+    cols = [
+        c
+        for c in MULTI_WAY_SUMMARY_FIELDS
+        if c[0] in keep
+        and c[0] not in ("serializer_version", "mean_fidelity", "runs")
+    ]
     if not cols:
         return ""
 
@@ -1019,14 +1148,15 @@ def _total_time_pivot_table_md(stats: Dict) -> str:
     if not serializers:
         return ""
 
+    # Values are ns→µs in _get_val; units live on the column headers only.
     lines = ["\n### Total Time\n"]
     
     headers = [
-        "serializer", 
-        "bytes mode/mean", 
-        "bytes mode/median", 
-        "stream mode/mean", 
-        "stream mode/median"
+        "serializer",
+        "bytes mode/mean (µs)",
+        "bytes mode/median (µs)",
+        "stream mode/mean (µs)",
+        "stream mode/median (µs)",
     ]
     lines.append("| " + " | ".join(headers) + " |")
     lines.append("|" + "---|" * len(headers))
@@ -1213,6 +1343,10 @@ def generate_language_results_pages(
             "",
         ]
 
+        # Outlier / aggregation policy = Dashboard "Samples" control (not a count column).
+        lines.append(_sample_filter_banner_md())
+        lines.append("")
+
         # Exploratory ranking banner (multi-way effect-vs-fastest is descriptive)
         lines.append(
             "> **Exploratory ranks:** effect sizes vs the fastest codec are **descriptive**. "
@@ -1274,6 +1408,9 @@ def generate_language_results_pages(
                     "test_data",
                     "avg_ops_per_sec",
                     "Ops/Sec",
+                    # Dashboard all@all: unweighted mean of type×n ops/s (bytes preferred).
+                    include_row_average=True,
+                    prefer_bytes_mode=True,
                 )
             )
             cat_md = _category_pivot_md(

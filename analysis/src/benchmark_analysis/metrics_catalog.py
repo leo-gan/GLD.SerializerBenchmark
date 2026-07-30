@@ -109,8 +109,7 @@ MULTI_WAY_SUMMARY_FIELDS: Sequence[tuple] = (
     ("deser_median_ns", "Median deser (µs)", True, False),
     ("avg_ops_per_sec", "Ops/s (from mean)", False, True),
     ("median_size_bytes", "Median size (B)", False, False),
-    ("runs", "Samples", False, None),
+    # runs / mean_fidelity intentionally omitted from multi-way Summary.
     ("serializer_version", "Version", False, None),
-    ("mean_fidelity", "Fidelity", False, True),
     ("effect_vs_fastest_cliffs_label", "δ vs fastest", False, None),
 )
