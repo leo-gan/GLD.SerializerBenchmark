@@ -21,7 +21,9 @@ cd "$(git rev-parse --show-toplevel)"
 
 **Finish condition:** whole workflow wall time **&lt; 1 hour**. Prefer one solid cycle over many shallow ones.
 
-**Surfaces (default):** root `README.md` + `dashboard/` (built into `docs/dashboard/`). Expand only if the user names Learn/Method pages.
+**Surfaces (default):** root `README.md` + `dashboard/` (built into `docs/dashboard/`).  
+
+When the user asks for **deep** validation, expand to: storefront `docs/index.md`, **all** language overviews, theory level indices (101–401), Method section indices, plus dashboard visuals—still **without** fattening README against `README_EDITING.md`.
 
 ---
 
@@ -32,9 +34,16 @@ cd "$(git rev-parse --show-toplevel)"
 | [references/ROLES.md](references/ROLES.md) | Four roles, profiles, use cases, attention cheatsheet |
 | [references/RESEARCH.md](references/RESEARCH.md) | Writing + dashboard standards (common sense wins) |
 | [references/STYLE.md](references/STYLE.md) | Content/visual/code constraints and complexity budget |
+| [references/README_EDITING.md](references/README_EDITING.md) | **Maintainer README preferences** from live prompts (overrides fat README rewrites) |
 | [references/CYCLE_LOG.md](references/CYCLE_LOG.md) | Optional last-cycle analysis/plan notes |
 
 If a file is **missing**, create it from the templates’ intent (roles = student, integrator, researcher, author). If it **exists**, amend only when the cycle teaches something new.
+
+### Critical lesson (README)
+
+A full cycle once **expanded** README (role know/want table, typical tasks, “How to read the numbers”). The maintainer **rolled that package back**, then applied **surgical** cuts and section moves.  
+
+**Do not re-apply the expanded README pattern.** Put persona depth in `ROLES.md` and site/Dashboard copy. Treat `README_EDITING.md` as binding for root `README.md`.
 
 ---
 
@@ -76,7 +85,8 @@ Cut scope creep, ensure dismissible UI is not permanent noise, prefer small diff
 ### 2.4 Implementation
 
 - Edit sources under `dashboard/` then **`npm run build`** in `dashboard/` so `docs/dashboard/` updates.
-- README/GitHub paths and MkDocs storefront (`docs/index.md`) stay aligned on honesty and role names.
+- **README:** follow `README_EDITING.md` — short lede, compact audience table, section order Who → languages → Try it → Quick start; no slogan/meta CTA prose; no unsolicited role expansion.
+- MkDocs storefront (`docs/index.md`) only if asked or if it clearly contradicts a user-approved README fact.
 - Follow `STYLE.md` (simple, no new frameworks, terminology: **data type** not fixture).
 
 ### 2.5 Critique the implementation
@@ -97,7 +107,7 @@ If **&lt; 1h** and top issues for this session are done → stop cycling. Else a
 ## 3. After cycles: skill + references
 
 1. Update `CYCLE_LOG.md` with what shipped and residual backlog.
-2. Amend `ROLES.md` / `RESEARCH.md` / `STYLE.md` only if the cycle invalidated something.
+2. Amend `ROLES.md` / `RESEARCH.md` / `STYLE.md` / `README_EDITING.md` only if the cycle or maintainer prompts invalidated something.
 3. Improve **this** `SKILL.md` if the procedure was wrong or incomplete.
 
 ---
@@ -127,6 +137,21 @@ Do **not** force `PREPARE_PR_BENCH_ALL` for copy/UI-only work.
 5. [ ] `dashboard` built into `docs/dashboard` when UI changed
 6. [ ] Skill + references updated
 7. [ ] prepare-pr (or explicit commit/PR if user forbids full gate)
+
+---
+
+## File layout
+
+```text
+.grok/skills/improve-docs/
+  SKILL.md
+  references/
+    ROLES.md
+    RESEARCH.md
+    STYLE.md
+    README_EDITING.md   # maintainer README prefs (from prompt analysis)
+    CYCLE_LOG.md
+```
 
 ---
 

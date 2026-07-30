@@ -2,6 +2,12 @@
 
 > This course is about **production serialization**. You will learn how teams choose formats and libraries when several real pressures act at the same time. Those pressures include trust, contracts, real workloads, and honest measurement. The course is written for people who already know how formats work. Now they need to decide what to ship.
 
+| Jump | |
+|------|--|
+| **Prereqs** | [101](../101/index.md) · [201](../201/index.md) |
+| **Implementers** | [401 elective](../401/index.md) |
+| **Measure** | [Dashboard](../../dashboard/) · [using this suite](using-this-suite.md) · [Method](../../analysis/index.md) |
+
 In this course you will not re-learn wire encoding from scratch. Instead you will practice **judgment under constraints**. A first-year computer science student who has finished [Serialization 101](../101/index.md) and [Serialization 201](../201/index.md) should be able to follow every article. The technical depth stays. The language aims to teach rather than to impress.
 
 ---

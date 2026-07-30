@@ -1,0 +1,156 @@
+/**
+ * Storefront (docs/index.md) — path cards and role routes.
+ * Scoped to pages that hide the left nav (home only).
+ */
+
+/* Home: slightly tighter vertical rhythm under the hero CTAs */
+.md-content[data-md-component="content"] .md-typeset > h2 {
+  margin-top: 1.6rem;
+}
+
+/* Four-path matrix as scannable cards (Material tables → styled) */
+.md-typeset table.path-matrix {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  width: 100%;
+}
+
+.md-typeset table.path-matrix colgroup,
+.md-typeset table.path-matrix thead {
+  display: none;
+}
+
+.md-typeset table.path-matrix tbody {
+  display: contents;
+}
+
+.md-typeset table.path-matrix tr {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) 1fr;
+  gap: 0.35rem 1rem;
+  align-items: start;
+  padding: 0.85rem 1rem;
+  margin: 0;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.5rem;
+  background: var(--md-default-bg-color);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--md-default-fg-color) 6%, transparent);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.md-typeset table.path-matrix tr:hover {
+  border-color: var(--md-primary-fg-color);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--md-primary-fg-color) 12%, transparent);
+}
+
+.md-typeset table.path-matrix td {
+  border: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.md-typeset table.path-matrix td:first-child {
+  font-weight: 700;
+  color: var(--md-primary-fg-color);
+  font-size: 0.95rem;
+}
+
+.md-typeset table.path-matrix td:last-child {
+  color: var(--md-typeset-color);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+/* Role route chips under audience */
+.md-typeset .role-routes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  gap: 0.65rem;
+  margin: 0.75rem 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.md-typeset .role-routes > li {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  background: color-mix(in srgb, var(--md-primary-fg-color) 6%, var(--md-default-bg-color));
+  list-style: none;
+}
+
+.md-typeset .role-routes > li > strong {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  color: var(--md-primary-fg-color);
+}
+
+.md-typeset .role-routes > li > span {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0.4rem;
+}
+
+.md-typeset .role-routes a {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Hero honesty callout */
+.md-typeset .honesty-strip {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--md-accent-fg-color, #7c4dff);
+  background: color-mix(in srgb, var(--md-accent-fg-color, #7c4dff) 8%, var(--md-default-bg-color));
+  border-radius: 0 0.4rem 0.4rem 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.md-typeset .honesty-strip p {
+  margin: 0.25rem 0 0;
+}
+
+.md-typeset .honesty-strip p:first-child {
+  margin-top: 0;
+  font-weight: 600;
+}
+
+/* Language explore strip (Overview pages) */
+.md-typeset .lang-explore {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  margin: 0.35rem 0 1.1rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.4rem;
+  background: color-mix(in srgb, var(--md-primary-fg-color) 7%, var(--md-default-bg-color));
+  border: 1px solid var(--md-default-fg-color--lightest);
+  font-size: 0.85rem;
+}
+
+.md-typeset .lang-explore a {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.md-typeset .lang-explore .sep {
+  color: var(--md-default-fg-color--lighter);
+  user-select: none;
+}
+
+@media (min-width: 48em) {
+  .md-typeset table.path-matrix tr {
+    grid-template-columns: minmax(9rem, 12rem) 1fr;
+    padding: 0.95rem 1.15rem;
+  }
+}

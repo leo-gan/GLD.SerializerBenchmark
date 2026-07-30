@@ -5,6 +5,10 @@ title: "JavaScript"
 JavaScript
 ==========
 
+<div class="lang-explore" markdown="1">
+**Explore:** [Results](results.md) <span class="sep">·</span> [Dashboard](../dashboard/) <span class="sep">·</span> [Method](../analysis/) <span class="sep">·</span> [Categories](../analysis/serialization_categories.md)
+</div>
+
 Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 ## Benchmark runner

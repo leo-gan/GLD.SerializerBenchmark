@@ -6,35 +6,65 @@ hide:
   - title
 ---
 
-Compare **100+** serialization libraries across **nine languages** with fair
-within-language rankings—not marketing microbenchmarks.
+Compare **100+** serialization libraries across **nine languages**.
 
 [Open live Dashboard](dashboard/){ .md-button .md-button--primary }
 [Start Serialization 101](theory/101/){ .md-button }
 [How we measure](analysis/){ .md-button }
 
+<div class="honesty-strip" markdown="1">
+
+**Read numbers carefully.** Prefer **one language** (and one format family). Always note **data type** and **mode**. Cross-language times are directional only.
+
+Full story: [Method](analysis/) · [Methodology](analysis/ANALYSIS_METHODOLOGY/) · [Claims](analysis/CLAIMS_AND_REPLICATION/)
+
+</div>
+
 ---
 
-## What this project is
-
-This suite runs the **same data shapes** through serializers in many programming
-languages, writes a **shared CSV contract**, and analyzes results with one
-statistics pipeline. Use it to compare libraries **inside one language** (and
-ideally one format family), not to crown a single global winner.
+## Pick a path
 
 | You want… | Go here |
 |-----------|---------|
-| Interactive charts, Pareto trade-offs, compare lab | **[Dashboard](dashboard/)** |
-| Course on formats and trade-offs (101–401) | **[Learn](theory/101/)** |
-| Per-language library lists and result tables | **[Languages](c/)** (sidebar: C, C#, C++, …) |
-| Methodology, metrics, how to add a codec | **[Method](analysis/)** |
+| Interactive charts, Pareto trade-offs, compare lab | **[Dashboard](dashboard/)** — scatter, ranking, roster, Compare |
+| Vocabulary and judgment (students → production) | **[Learn](theory/101/)** — Serialization 101 → 401 |
+| Library inventory for one runtime | **[Languages](c/)** — Overview + **Results** per language |
+| How we time, clean, and claim | **[Method](analysis/)** — architecture, modes, metrics |
+
+{ .path-matrix }
+
+### Who each path serves
+
+<ul class="role-routes">
+  <li>
+    <strong>Student</strong>
+    <span>What serialization is; fair charts without drowning in stats.</span>
+    <a href="theory/101/">Learn 101</a> · <a href="dashboard/">Dashboard</a>
+  </li>
+  <li>
+    <strong>Integrator</strong>
+    <span>Trade-offs for your language and payload shape.</span>
+    <a href="dashboard/">Dashboard</a> · <a href="theory/301/">301</a>
+  </li>
+  <li>
+    <strong>Researcher</strong>
+    <span>Warmup, filters, replication language for claims.</span>
+    <a href="analysis/ANALYSIS_METHODOLOGY/">Methodology</a> · <a href="analysis/CLAIMS_AND_REPLICATION/">Claims</a>
+  </li>
+  <li>
+    <strong>Author</strong>
+    <span>Drop in a codec; smoke; A/B against a previous build.</span>
+    <a href="analysis/ADDING_A_SERIALIZER/">Add serializer</a> · <a href="theory/401/">401</a>
+  </li>
+</ul>
 
 ---
 
 ## Same data · same pipeline
 
-Example measurement output (Python, `message` data type, 1 instance). Full tables
-and charts live on each language **Results** page and in the **Dashboard**.
+This suite runs the **same data shapes** through serializers in many languages, writes a **shared CSV contract**, and analyzes results with one statistics pipeline. Compare libraries **inside one language**—not a global winner podium.
+
+Example measurement output (Python, `message` data type, 1 instance). Full tables and charts live on each language **Results** page and in the **Dashboard**.
 
 [![Python serialize/deserialize latency distribution for message (n=1)](analysis/plots/violin/python_message@n=1.png){ width="780" }](python/results/)
 
@@ -42,7 +72,7 @@ and charts live on each language **Results** page and in the **Dashboard**.
 
 ## Languages
 
-Nine runners share the same fixtures and analysis rules.
+Nine runners share the same data types and analysis rules.
 
 | Language | Serializers |
 |----------|------------:|
@@ -58,9 +88,7 @@ Nine runners share the same fixtures and analysis rules.
 
 ---
 
-## Learn the ideas first (optional path)
-
-If you are new to serialization, start with the course under **Learn**:
+## Learn the ideas first (optional)
 
 1. [Serialization 101](theory/101/) — what serialization is; three lenses  
 2. [Serialization 201](theory/201/) — how formats work under the hood  
@@ -68,15 +96,3 @@ If you are new to serialization, start with the course under **Learn**:
 4. [Serialization 401](theory/401/) — wire formats and labs  
 
 Then return to the **[Dashboard](dashboard/)** with clearer questions.
-
----
-
-## Honesty rules (short)
-
-- Prefer comparisons **within one language** and one paradigm family.  
-- Always note **data type** (payload shape) and **mode** (bytes vs stream API).  
-- Implementation quality often matters more than the format brand name.  
-- Numbers on this site are from **this** suite’s runners and analysis—not a universal ranking of all software. Cross-language times are directional only.
-
-Full methodology: [Method overview](analysis/) · [Analysis methodology](analysis/ANALYSIS_METHODOLOGY/) · [Claims and replication](analysis/CLAIMS_AND_REPLICATION/).  
-Same rules on GitHub: [README — How to read the numbers](https://github.com/leo-gan/GLD.SerializerBenchmark#how-to-read-the-numbers).

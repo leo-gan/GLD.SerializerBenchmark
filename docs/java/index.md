@@ -5,6 +5,10 @@ title: "Java"
 Java
 ====
 
+<div class="lang-explore" markdown="1">
+**Explore:** [Results](results.md) <span class="sep">·</span> [Dashboard](../dashboard/) <span class="sep">·</span> [Method](../analysis/) <span class="sep">·</span> [Categories](../analysis/serialization_categories.md)
+</div>
+
 Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON), and **schema/IDL** stacks (Protocol Buffers, Avro).
 
 ## Benchmark runner

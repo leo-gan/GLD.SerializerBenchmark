@@ -67,6 +67,14 @@ Full mode guide: [Modes](modes.md). Data-type glossary: [Test data — vocabular
 
 ## How to read this section
 
+**Suggested order for a first visit**
+
+1. **[Architecture](architecture.md)** — lab design and what is timed  
+2. **[Modes](modes.md)** + **[Test data](test_data_configuration.md)** — what the columns mean  
+3. **[Methodology](ANALYSIS_METHODOLOGY.md)** — warmup, filters, uncertainty  
+4. **[Metrics](METRICS.md)** when a column name is opaque  
+5. **[Claims and replication](CLAIMS_AND_REPLICATION.md)** before publishing a blog or paper claim  
+
 | Page | What you will learn | Start here if you want… |
 |------|---------------------|-------------------------|
 | **[Architecture](architecture.md)** | How the repository is organized and how timing works | The measurement design |
@@ -76,10 +84,11 @@ Full mode guide: [Modes](modes.md). Data-type glossary: [Test data — vocabular
 | **[Methodology](ANALYSIS_METHODOLOGY.md)** | Warmup, outliers, confidence intervals, effect sizes, exploratory ranks | How CSVs become published numbers |
 | **[Metrics](METRICS.md)** | Names and meanings of every reported measurement | “What does this column mean?” |
 | **[Claims and replication](CLAIMS_AND_REPLICATION.md)** | L1 / L2 / L3: what you may claim from one run vs many | Honest generalization language |
+| **[Adding a serializer](ADDING_A_SERIALIZER.md)** | Drop-in checklist for one library | Author path |
 | **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to plug in a new language benchmark runner | Extending the suite |
 | **[Results summary](BENCHMARK_SUMMARY.md)** | Links to each language’s numbers and how to regenerate them | The published snapshots |
 
-Theory tracks: [101](../theory/101/index.md) · [201](../theory/201/index.md) · [301](../theory/301/index.md) · [401](../theory/401/index.md).
+Theory tracks: [101](../theory/101/index.md) · [201](../theory/201/index.md) · [301](../theory/301/index.md) · [401](../theory/401/index.md). Live charts: [Dashboard](../dashboard/).
 
 ---
 
@@ -92,9 +101,9 @@ Each language has two documentation pages:
 
 | Language | Serializers (registered) | Overview | Results |
 |----------|--------------------------|----------|---------|
-| C# | **36** | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
+| C# | **38** | [Overview](../c-sharp/index.md) | [Results](../c-sharp/results.md) |
 | Python | **16** | [Overview](../python/index.md) | [Results](../python/results.md) |
-| Rust | **15** | [Overview](../rust/index.md) | [Results](../rust/results.md) |
+| Rust | **16** | [Overview](../rust/index.md) | [Results](../rust/results.md) |
 | C | **20** | [Overview](../c/index.md) | [Results](../c/results.md) |
 | JavaScript | **20** † | [Overview](../javascript/index.md) | [Results](../javascript/results.md) |
 | Go | **19** | [Overview](../go/index.md) | [Results](../go/results.md) |

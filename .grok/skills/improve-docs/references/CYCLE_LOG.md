@@ -86,3 +86,51 @@ Deferred: docs/index.md sync if time; deep Compare simplification; main.js split
 | Residual backlog | Compare toolbar density; main.js split; Learn page cross-links; optional “show tip again” |
 
 **Stop:** cycle goals met; workflow under 1h; go to skill update + prepare-pr.
+
+---
+
+## Post-cycle maintainer feedback (README)
+
+Full README expansion from cycle 1 was **rejected** (rollback to pre-role wording), then surgically edited:
+
+- Shorter lede (no slogan triple; no “not marketing…” clause)
+- Section order: Who it is for → Supported languages → Try it → Quick start (renamed from Full quick start)
+
+Captured as binding rules in `README_EDITING.md` + `STYLE.md` + skill warning. **Do not re-expand README roles in a later cycle without explicit ask.**
+
+---
+
+## Cycle 2 — Deep site + dashboard (user: “DEEP… validate each article… more creative”)
+
+### Audit (80 markdown articles)
+
+| Finding | Action |
+|---------|--------|
+| Storefront lede still had marketing hedge + dead README “How to read the numbers” link | Rewrote home; honesty strip; role path cards |
+| Language overviews: no Results/Dashboard jump | `lang-explore` strip on all 9 |
+| Theory 101–401: weak cross-nav | Jump tables on level indices |
+| Method: C#/Rust counts wrong (36/15) | → 38 / 16; suggested reading order; Add serializer row |
+| `data_model_v2.md` stub (37w) | Expanded pointer + vocabulary |
+| Dashboard: no “what am I viewing” context; equal-weight filters; opaque scatter | Workload story strip; primary/secondary filters; axis help; empty chart overlays; KPI microcopy |
+| Broken internal links | 0 after pass (STEM diagram examples only in assets README) |
+
+### Shipped surfaces
+
+- `docs/index.md` + `docs/stylesheets/site-home.css` + mkdocs extra_css  
+- 9× `docs/*/index.md` explore strips  
+- theory 101/201/301/401 indices  
+- analysis index + data_model_v2  
+- dashboard HTML/CSS/JS (workload story, filters, chart empty states)
+
+### Explicitly not touched
+
+- Root README (README_EDITING — no unsolicited expansion)
+- Generated `results.md` bodies (except links from overviews)
+- Full theory essay rewrites (too large for one hour)
+
+### Residual backlog
+
+- Compare lab density / progressive disclosure  
+- Companion notebook READMEs still thin  
+- Optional dark-mode polish for dashboard  
+- Validate `path-matrix` attr_list rendering on Material in browser

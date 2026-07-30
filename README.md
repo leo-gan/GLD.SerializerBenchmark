@@ -6,8 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Languages](https://img.shields.io/badge/languages-9-informational?style=flat-square)](#supported-languages)
 
-**Same data types. Same CSV contract. Same statistics pipeline.**  
-Compare 100+ serialization libraries across **nine languages** — with fair within-language rankings, not marketing microbenchmarks.
+Compare 100+ serialization libraries across **nine languages**.
 
 | Start here | |
 |------------|--|
@@ -23,27 +22,6 @@ Compare 100+ serialization libraries across **nine languages** — with fair wit
   <br />
   <sub>Example: Python latency distribution for the <code>message</code> data type (1 instance). Full tables and charts on each language <strong>Results</strong> page.</sub>
 </p>
-
----
-
-## Try it: benchmark Python serializers in ~60 seconds
-
-Requires a recent Python 3 and [uv](https://docs.astral.sh/uv/) (or pip). No Docker.
-
-```bash
-git clone https://github.com/leo-gan/GLD.SerializerBenchmark.git
-cd GLD.SerializerBenchmark
-
-./scripts/check-host-requirements.sh python   # optional: see what's missing
-./scripts/install-host-requirements.sh python # optional: user-local toolchains
-
-cd python && ./scripts/run-benchmarks.sh smoke
-# → logs/python/YYYY-MM-DD-HHMMSS.csv
-```
-
-Then open the [Python Results](https://leo-gan.github.io/GLD.SerializerBenchmark/python/results/) page (or run `analyze-benchmarks -l python` after installing the analysis package) to turn CSVs into tables.
-
-Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 
 ---
 
@@ -74,7 +52,28 @@ Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 
 ---
 
-## Full quick start
+## Try it: benchmark Python serializers in ~60 seconds
+
+Requires a recent Python 3 and [uv](https://docs.astral.sh/uv/) (or pip). No Docker.
+
+```bash
+git clone https://github.com/leo-gan/GLD.SerializerBenchmark.git
+cd GLD.SerializerBenchmark
+
+./scripts/check-host-requirements.sh python   # optional: see what's missing
+./scripts/install-host-requirements.sh python # optional: user-local toolchains
+
+cd python && ./scripts/run-benchmarks.sh smoke
+# → logs/python/YYYY-MM-DD-HHMMSS.csv
+```
+
+Then open the [Python Results](https://leo-gan.github.io/GLD.SerializerBenchmark/python/results/) page (or run `analyze-benchmarks -l python` after installing the analysis package) to turn CSVs into tables.
+
+Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
+
+---
+
+## Quick start
 
 Benchmark runners run **natively on the host** (no Docker). Prepare toolchains once, then run benchmarks (project deps like `uv sync` / `npm install` still happen inside each runner).
 

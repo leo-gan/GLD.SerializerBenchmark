@@ -64,8 +64,8 @@
     
     <!-- Controls/Filters Toolbar -->
     <section class="glass-panel toolbar">
-      <div class="filter-group">
-        <span class="filter-label">Language:</span>
+      <div class="filter-group filter-group-primary" aria-label="Primary filters">
+        <span class="filter-label filter-label-primary">Language:</span>
         <div class="select-wrapper">
           <select id="lang-select" aria-label="Select Language">
             <!-- Options filled from LANGUAGE_CATALOG in main.js; static fallback: -->
@@ -81,13 +81,15 @@
           </select>
         </div>
 
-        <span class="filter-label" title="Payload shape (suite data type), e.g. message@n=1">Data type:</span>
+        <span class="filter-label filter-label-primary" title="Payload shape (suite data type), e.g. message@n=1">Data type:</span>
         <div class="select-wrapper">
           <select id="data-select" aria-label="Select data type">
             <!-- Dynamically populated -->
           </select>
         </div>
+      </div>
 
+      <div class="filter-group filter-group-secondary" aria-label="Secondary filters">
         <span class="filter-label" title="API path timed: in-memory bytes (or string) vs stream-style APIs — not payload size">Mode:</span>
         <div class="select-wrapper">
           <select id="mode-select" aria-label="Select mode (bytes or stream)">
@@ -111,6 +113,12 @@
         <button class="tab-btn" id="btn-time-ns" aria-label="View Time In Nanoseconds">Latency (ns)</button>
       </div>
     </section>
+
+    <!-- Live workload story: what the charts below are answering -->
+    <div id="workload-story" class="workload-story glass-panel" aria-live="polite">
+      <span class="workload-story-label">Viewing</span>
+      <span id="workload-story-text" class="workload-story-text">Loading…</span>
+    </div>
 
     <div id="filter-policy-meta" class="filter-policy-meta glass-panel" hidden>
       <span id="filter-policy-meta-text" class="filter-policy-meta-text"></span>
@@ -140,47 +148,53 @@
 
     <!-- KPI Summary Cards -->
     <section class="summary-grid" aria-live="polite">
-      <div class="glass-panel kpi-card">
-        <span class="kpi-title">Tested Libraries</span>
+      <div class="glass-panel kpi-card kpi-card-count">
+        <span class="kpi-title">Libraries</span>
         <span class="kpi-value" id="kpi-total">Loading…</span>
-        <span class="kpi-desc">Total serializers in this workload</span>
+        <span class="kpi-desc">In this language · data type · mode</span>
       </div>
       <div class="glass-panel kpi-card featured">
-        <span class="kpi-title">Fastest Serializer</span>
+        <span class="kpi-title">Fastest</span>
         <span class="kpi-value kpi-value-name" id="kpi-fastest">Loading…</span>
-        <span class="kpi-desc" id="kpi-fastest-val">Waiting for data</span>
+        <span class="kpi-desc" id="kpi-fastest-val">Lowest median latency</span>
       </div>
       <div class="glass-panel kpi-card green">
-        <span class="kpi-title">Most Compact</span>
+        <span class="kpi-title">Most compact</span>
         <span class="kpi-value kpi-value-name" id="kpi-compact">Loading…</span>
-        <span class="kpi-desc" id="kpi-compact-val">Waiting for data</span>
+        <span class="kpi-desc" id="kpi-compact-val">Smallest median payload</span>
       </div>
-      <div class="glass-panel kpi-card">
-        <span class="kpi-title">Pareto Frontier</span>
+      <div class="glass-panel kpi-card kpi-card-pareto">
+        <span class="kpi-title">Pareto set</span>
         <span class="kpi-value" id="kpi-pareto">Loading…</span>
-        <span class="kpi-desc">Optimal trade-offs (speed / size)</span>
+        <span class="kpi-desc">Undominated speed / size trade-offs</span>
       </div>
     </section>
 
     <!-- Visualizations Layout -->
     <section class="charts-grid" id="dashboard">
-      <div class="glass-panel">
+      <div class="glass-panel chart-panel">
         <div class="chart-header">
-          <h2 class="chart-title">Speed vs Size Trade-off</h2>
+          <h2 class="chart-title">Speed vs size</h2>
           <div class="chart-toolbar">
             <span class="badge badge-cyan" id="scatter-badge">Pareto front</span>
             <button type="button" id="btn-chart-log" class="tab-btn chart-tool-btn" title="Toggle log scale on scatter X axis">Log X</button>
             <button type="button" id="btn-export-scatter" class="tab-btn chart-tool-btn" title="Download scatter PNG">PNG</button>
           </div>
         </div>
+        <p class="section-help chart-axis-help">
+          Each point is one serializer.
+          <strong>Right / up</strong> = faster ops/s · <strong>left</strong> = smaller payload.
+          Highlighted = Pareto (no other library is both faster and smaller).
+        </p>
         <div class="chart-container">
           <canvas id="scatter-chart"></canvas>
+          <div id="scatter-empty" class="chart-empty" hidden>No serializers match this filter. Change data type or mode.</div>
         </div>
       </div>
 
-      <div class="glass-panel">
+      <div class="glass-panel chart-panel">
         <div class="chart-header">
-          <h2 class="chart-title" id="bar-chart-title">Throughput &amp; Size Ranking</h2>
+          <h2 class="chart-title" id="bar-chart-title">Throughput &amp; size ranking</h2>
           <div class="chart-toolbar">
             <span class="filter-label" style="margin:0;">Sort</span>
             <button type="button" id="btn-rank-sort-size" class="tab-btn chart-tool-btn" title="Sort by median size (compact first)">Size</button>
@@ -189,13 +203,14 @@
           </div>
         </div>
         <p class="section-help ranking-help" id="ranking-help">
-          Single diverging chart:
+          Diverging view:
           <span class="rank-legend-size">◀ size</span> left ·
           <span class="rank-legend-speed">ops/s ▶</span> right.
           Each side is normalized to the chart max (100); hover for absolute values.
         </p>
         <div class="chart-container ranking-chart-single">
           <canvas id="bar-chart"></canvas>
+          <div id="bar-empty" class="chart-empty" hidden>No serializers match this filter.</div>
         </div>
       </div>
     </section>

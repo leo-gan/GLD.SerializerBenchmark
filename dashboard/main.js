@@ -2021,6 +2021,7 @@ function setViewMetric(metric) {
   document.getElementById('btn-ops-sec')?.classList.toggle('active', metric === 'ops');
   document.getElementById('btn-time-ns')?.classList.toggle('active', metric === 'time');
   updateRankSortPrimaryLabel();
+  updateWorkloadStory();
   saveSettings();
   updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
 }
@@ -2673,9 +2674,39 @@ function setKpiEmpty(msg) {
   document.getElementById('kpi-pareto').textContent = '—';
 }
 
+function updateWorkloadStory() {
+  const el = document.getElementById('workload-story-text');
+  if (!el) return;
+  const lang = languageLabel(state.currentLanguage);
+  const dt = state.currentTestData || '—';
+  const mode = state.currentMode || '—';
+  const policy =
+    state.filterPolicies[state.filterPolicy]?.label ||
+    state.filterPolicy ||
+    'default';
+  const n = state.filteredGroups.length;
+  const metric = state.displayMetric === 'time' ? 'latency' : 'ops/s';
+  el.innerHTML =
+    `<strong>${lang}</strong><span class="ws-sep">·</span>` +
+    `<strong>${dt}</strong><span class="ws-sep">·</span>` +
+    `<span class="ws-dim">mode</span> ${mode}<span class="ws-sep">·</span>` +
+    `<span class="ws-dim">samples</span> ${policy}<span class="ws-sep">·</span>` +
+    `<span class="ws-dim">charts</span> ${metric}<span class="ws-sep">·</span>` +
+    `${n} librar${n === 1 ? 'y' : 'ies'}`;
+}
+
+function setChartEmptyVisible(empty) {
+  ['scatter-empty', 'bar-empty'].forEach((id) => {
+    const node = document.getElementById(id);
+    if (node) node.hidden = !empty;
+  });
+}
+
 function updateKPIs() {
   const total = state.filteredGroups.length;
   document.getElementById('kpi-total').textContent = formatIntGrouped(total);
+  updateWorkloadStory();
+  setChartEmptyVisible(total === 0);
 
   if (total === 0) {
     setKpiEmpty('No data for this filter');

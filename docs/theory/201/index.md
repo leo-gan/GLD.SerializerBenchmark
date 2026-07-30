@@ -1,6 +1,14 @@
 # Serialization 201
 
-In this track you will learn **how serialization mechanisms work**. You will not only learn the names of formats. You will learn why they behave differently. These short essays sit between [Serialization 101](../101/index.md) and its three lenses on one side, and the later courses on the other. **301** covers production judgment. **401** is for people who implement codecs. When you care about measured numbers, you will also want the suite [categories](../../analysis/serialization_categories.md) page and the language **Results** pages.
+In this track you will learn **how serialization mechanisms work**. You will not only learn the names of formats. You will learn why they behave differently.
+
+| Jump | |
+|------|--|
+| **Before this** | [Serialization 101](../101/index.md) vocabulary |
+| **After this** | [301 production judgment](../301/index.md) · [Dashboard](../../dashboard/) |
+| **Lab depth** | [401 wire formats](../401/index.md) |
+
+These short essays sit between [Serialization 101](../101/index.md) and its three lenses on one side, and the later courses on the other. **301** covers production judgment. **401** is for people who implement codecs. When you care about measured numbers, you will also want the suite [categories](../../analysis/serialization_categories.md) page and the language **Results** pages.
 
 Theory alone does not decide what you should ship. Use these pages to build clear mental models of the mechanisms. Then check those models against real libraries. When you must choose under several production constraints at once, continue into the advanced courses as they become available.
 

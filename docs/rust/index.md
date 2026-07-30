@@ -5,6 +5,10 @@ title: "Rust"
 Rust
 ====
 
+<div class="lang-explore" markdown="1">
+**Explore:** [Results](results.md) <span class="sep">·</span> [Dashboard](../dashboard/) <span class="sep">·</span> [Method](../analysis/) <span class="sep">·</span> [Categories](../analysis/serialization_categories.md)
+</div>
+
 Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends. A second tier (**rkyv**, FlatBuffers, Cap’n Proto) targets zero-copy access.
 
 ## Benchmark runner

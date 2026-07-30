@@ -5,6 +5,10 @@ title: "C"
 C
 ===
 
+<div class="lang-explore" markdown="1">
+**Explore:** [Results](results.md) <span class="sep">·</span> [Dashboard](../dashboard/) <span class="sep">·</span> [Method](../analysis/) <span class="sep">·</span> [Categories](../analysis/serialization_categories.md)
+</div>
+
 C serialization is fragmented: each library owns its own object model (DOM trees, streams, generated structs).
 
 ## Benchmark runner
