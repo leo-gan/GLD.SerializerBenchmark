@@ -5,10 +5,6 @@ title: "Swift"
 Swift
 =====
 
-<div class="lang-explore" markdown="1">
-**Explore:** [Results](results.md) <span class="sep">·</span> [Dashboard](../dashboard/) <span class="sep">·</span> [Method](../analysis/) <span class="sep">·</span> [Categories](../analysis/serialization_categories.md)
-</div>
-
 Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto).
 
 ## Benchmark runner

@@ -5,10 +5,6 @@ title: "C++"
 C++
 ===
 
-<div class="lang-explore" markdown="1">
-**Explore:** [Results](results.md) <span class="sep">·</span> [Dashboard](../dashboard/) <span class="sep">·</span> [Method](../analysis/) <span class="sep">·</span> [Categories](../analysis/serialization_categories.md)
-</div>
-
 C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers).
 
 ## Benchmark runner

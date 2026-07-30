@@ -5,10 +5,6 @@ title: "C#"
 C#
 ===
 
-<div class="lang-explore" markdown="1">
-**Explore:** [Results](results.md) <span class="sep">·</span> [Dashboard](../dashboard/) <span class="sep">·</span> [Method](../analysis/) <span class="sep">·</span> [Categories](../analysis/serialization_categories.md)
-</div>
-
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With modern .NET memory primitives (`Span<T>`, `Memory<T>`) and source generators, the landscape shifted from heavy reflection-based engines to lower-allocation, code-generated libraries.
 
 ## Benchmark runner

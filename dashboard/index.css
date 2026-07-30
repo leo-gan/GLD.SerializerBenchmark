@@ -405,44 +405,6 @@ body {
   opacity: 0.96;
 }
 
-/* Workload story strip — answers “what am I looking at?” */
-.workload-story {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.65rem;
-  margin: 0;
-  padding: 0.4rem 0.75rem;
-  background: linear-gradient(90deg, var(--bg-brand-indigo-light), var(--bg-surface) 55%);
-  border-left: 3px solid var(--color-brand-indigo);
-}
-
-.workload-story-label {
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-brand-indigo);
-}
-
-.workload-story-text {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.35;
-}
-
-.workload-story-text .ws-sep {
-  color: var(--text-muted);
-  margin: 0 0.2rem;
-  font-weight: 400;
-}
-
-.workload-story-text .ws-dim {
-  color: var(--text-secondary);
-  font-weight: 400;
-}
-
 .chart-axis-help {
   margin: -0.25rem 0 0.5rem;
   font-size: 0.78rem;
