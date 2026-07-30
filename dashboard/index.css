@@ -162,6 +162,23 @@ body {
   background: var(--bg-brand-indigo-light);
 }
 
+.site-links a.site-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  line-height: 0;
+  color: var(--text-secondary);
+}
+
+.site-links a.site-link-icon:hover {
+  color: var(--text-primary);
+}
+
+.site-links a.site-link-icon .github-icon {
+  display: block;
+}
+
 .section-nav {
   display: flex;
   flex-wrap: wrap;

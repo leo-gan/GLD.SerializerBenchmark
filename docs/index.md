@@ -1,13 +1,10 @@
 ---
+# No in-page title (site header has the product name). Browser tab uses site_name.
 hide:
   - navigation
   - toc
-title: Home
+  - title
 ---
-
-# Multi-Language Serializer Benchmark
-
-**Same data types · same CSV contract · same statistics pipeline.**
 
 Compare **100+** serialization libraries across **nine languages** with fair
 within-language rankings—not marketing microbenchmarks.
@@ -29,7 +26,7 @@ ideally one format family), not to crown a single global winner.
 |-----------|---------|
 | Interactive charts, Pareto trade-offs, compare lab | **[Dashboard](dashboard/)** |
 | Course on formats and trade-offs (101–401) | **[Learn](theory/101/)** |
-| Per-language library lists and result tables | **[Languages](c-sharp/)** (tabs: C#, Python, Rust, …) |
+| Per-language library lists and result tables | **[Languages](c/)** (sidebar: C, C#, C++, …) |
 | Methodology, metrics, how to add a codec | **[Method](analysis/)** |
 
 ---
@@ -47,17 +44,17 @@ and charts live on each language **Results** page and in the **Dashboard**.
 
 Nine runners share the same fixtures and analysis rules.
 
-| Language | Libraries (approx.) | Pages |
-|----------|--------------------:|-------|
-| [C#](c-sharp/) | 38 | [Overview](c-sharp/) · [Results](c-sharp/results/) |
-| [Python](python/) | 16 | [Overview](python/) · [Results](python/results/) |
-| [Rust](rust/) | 16 | [Overview](rust/) · [Results](rust/results/) |
-| [C](c/) | 20 | [Overview](c/) · [Results](c/results/) |
-| [JavaScript](javascript/) | 20 | [Overview](javascript/) · [Results](javascript/results/) |
-| [Go](go/) | 19 | [Overview](go/) · [Results](go/results/) |
-| [Java](java/) | 18 | [Overview](java/) · [Results](java/results/) |
-| [C++](cpp/) | 27+ | [Overview](cpp/) · [Results](cpp/results/) |
-| [Swift](swift/) | 14 | [Overview](swift/) · [Results](swift/results/) |
+| Language | Serializers |
+|----------|------------:|
+| [C](c/) · [Results](c/results/) | 20 |
+| [C#](c-sharp/) · [Results](c-sharp/results/) | 38 |
+| [C++](cpp/) · [Results](cpp/results/) | 27+ |
+| [Go](go/) · [Results](go/results/) | 19 |
+| [Java](java/) · [Results](java/results/) | 18 |
+| [JavaScript](javascript/) · [Results](javascript/results/) | 20 |
+| [Python](python/) · [Results](python/results/) | 16 |
+| [Rust](rust/) · [Results](rust/results/) | 16 |
+| [Swift](swift/) · [Results](swift/results/) | 14 |
 
 ---
 

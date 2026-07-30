@@ -10,6 +10,7 @@ exclude_docs: |
 
 theme:
   name: material
+  custom_dir: docs_theme
   features:
     # Header tabs: Dashboard | Learn | Languages | Method
     - navigation.tabs
@@ -73,6 +74,12 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
 
+# Languages sidebar: compact "Lang: Overview · Results" rows (see languages-nav.*).
+extra_css:
+  - stylesheets/languages-nav.css
+extra_javascript:
+  - javascripts/languages-nav.js
+
 # Top tabs: Dashboard | Learn | Languages | Method
 # Nested items appear in the left sidebar under the active tab (Material has no true ▾ dropdown).
 nav:
@@ -126,30 +133,31 @@ nav:
           - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
           - "Same bytes, three runtimes": theory/401/protobuf-cross-language-fidelity.md
   - Languages:
-      - C#:
-          - Overview: c-sharp/index.md
-          - Results: c-sharp/results.md
-      - Python:
-          - Overview: python/index.md
-          - Results: python/results.md
-      - Rust:
-          - Overview: rust/index.md
-          - Results: rust/results.md
+      # Alphabetical by display name
       - C:
           - Overview: c/index.md
           - Results: c/results.md
-      - JavaScript:
-          - Overview: javascript/index.md
-          - Results: javascript/results.md
+      - C#:
+          - Overview: c-sharp/index.md
+          - Results: c-sharp/results.md
+      - C++:
+          - Overview: cpp/index.md
+          - Results: cpp/results.md
       - Go:
           - Overview: go/index.md
           - Results: go/results.md
       - Java:
           - Overview: java/index.md
           - Results: java/results.md
-      - C++:
-          - Overview: cpp/index.md
-          - Results: cpp/results.md
+      - JavaScript:
+          - Overview: javascript/index.md
+          - Results: javascript/results.md
+      - Python:
+          - Overview: python/index.md
+          - Results: python/results.md
+      - Rust:
+          - Overview: rust/index.md
+          - Results: rust/results.md
       - Swift:
           - Overview: swift/index.md
           - Results: swift/results.md

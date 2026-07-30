@@ -1,19 +1,24 @@
-# C#
+---
+title: "C#"
+---
+
+C#
+===
 
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With modern .NET memory primitives (`Span<T>`, `Memory<T>`) and source generators, the landscape shifted from heavy reflection-based engines to lower-allocation, code-generated libraries.
 
-**Add a library:** [Adding a serializer](../analysis/ADDING_A_SERIALIZER.md) (suite-wide checklist) · short steps in [`c-sharp/README.md`](../../c-sharp/README.md#add-a-serializer).
+## Benchmark runner
 
-## What this benchmark measures vs the wider ecosystem
+- Directory: `c-sharp/` (repository root)
+- Output: monorepo `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (`Language=csharp`, times in **nanoseconds**)
+- Registration: [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs)
+- **Not in this suite:** MessagePack-CSharp, Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs)
 
-This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs). Log names appear as `SerializerName` in `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (times in **nanoseconds**).
-
-**Not in this suite:** MessagePack-CSharp, Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs).
+## Serializers
 
 | Log name | Category | Library / notes |
 |----------|----------|-----------------|
 | Apache.Avro | Schema | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize |
-| System.Text.Json | JSON | System.Text.Json (net8 built-in) |
 | BinaryPack | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
 | Ceras | Binary | Ceras |
 | CsvHelper | CSV | Row-list projection (message/event/strings only); real CsvHelper write/read |
@@ -46,6 +51,7 @@ This suite registers **38 serializers** in [`c-sharp/src/Program.cs`](../../c-sh
 | SharpSerializer | Binary / XML | SharpSerializer |
 | SharpYaml | YAML | SharpYaml |
 | SpanJson | JSON | SpanJson |
+| System.Text.Json | JSON | System.Text.Json (net8 built-in) |
 | Utf8Json | JSON | Utf8Json |
 | YamlDotNet | YAML | YamlDotNet |
 | YAXLib | XML | YAXLib |
@@ -70,23 +76,22 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (Results labels: **b
 
 | Path | Meaning on C# |
 |------|----------------|
-| **string** | `Serialize`/`Deserialize` with `string`. **Text** codecs return real text. **Binary** codecs usually return **Base64** of the byte payload (extra encode/decode on the timed path). |
 | **Stream** | `Serialize`/`Deserialize` with `Stream`. |
+| **string** | `Serialize`/`Deserialize` with `string`. **Text** codecs return real text. **Binary** codecs usually return **Base64** of the byte payload (extra encode/decode on the timed path). |
 
 **Stream honesty**
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
+| **Adapted stream** | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader` | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
 | **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
-| **Adapted stream** | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader` | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
 
 When stream ≈ string within a few percent on Results, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.
 
 ### Caveats
 
-- **Domain types:** `Message`, `Document`, `Telemetry`, `Strings`, `Event` (+ batch wrappers) in [`c-sharp/src/TestData/V2/Models.cs`](../../c-sharp/src/TestData/V2/Models.cs).
-- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …).
+- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …). Domain models live in [`c-sharp/src/TestData/V2/Models.cs`](../../c-sharp/src/TestData/V2/Models.cs).
 - **Library-native prepare (still real domain or codegen forms):** Google.Protobuf (`IMessage`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (tables via map), CsvHelper (row lists). These are **not** JSON envelopes.
 - **Envelope exceptions:** ExtendedXmlSerializer and Migrant only — see above.
 - **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.

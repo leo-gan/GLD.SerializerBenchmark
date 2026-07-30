@@ -1,4 +1,9 @@
-# Java
+---
+title: "Java"
+---
+
+Java
+====
 
 Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON), and **schema/IDL** stacks (Protocol Buffers, Avro).
 
@@ -10,28 +15,28 @@ Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-J
 - Registration: [`java/src/main/java/benchmark/serializers/Registry.java`](../../java/src/main/java/benchmark/serializers/Registry.java)
 - Requires **JDK 17+** (benchmark runner targets 21) and **Maven 3.9+**
 
-## Serializers (18)
+## Serializers
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
-| jackson | JSON | jackson-databind | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
-| gson | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
-| fastjson2 | JSON | fastjson2 | FieldBased API | adapted | `toJSONBytes` / `parseObject` |
+| avro | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
+| bson | Document | org.mongodb:bson | DocumentCodec | adapted | Domain→Document in prepare |
 | dsl-json | JSON | dsl-json | runtime DslJson | native | Reused JsonWriter buffer |
-| moshi | JSON | moshi | JsonAdapter | native | Okio Buffer; Square stack |
-| jsoniter | JSON | jsoniter | DYNAMIC + javassist | adapted | `JsonStream` / `JsonIterator` |
-| kryo | Binary | kryo | writeClassAndObject | native | Reused Kryo + Output/Input |
+| fastjson2 | JSON | fastjson2 | FieldBased API | adapted | `toJSONBytes` / `parseObject` |
 | fory | Binary | fory-core | serialize/deserialize | adapted | Apache Fory; register types before freeze |
-| protostuff | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
+| gson | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
 | hessian | Binary | hessian | Hessian2 write/readObject | native | Dubbo-era RPC binary |
-| java-serialization | Native | JDK | ObjectOutputStream | native | Language baseline |
-| msgpack | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java binding |
+| ion | Document | jackson-dataformat-ion | IonObjectMapper | native | Amazon Ion binary |
+| jackson | JSON | jackson-databind | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
 | jackson-cbor | CBOR | jackson-dataformat-cbor | CBORMapper | native | IETF CBOR |
 | jackson-smile | Binary JSON | jackson-dataformat-smile | SmileMapper | native | Elasticsearch ecosystem |
-| ion | Document | jackson-dataformat-ion | IonObjectMapper | native | Amazon Ion binary |
-| bson | Document | org.mongodb:bson | DocumentCodec | adapted | Domain→Document in prepare |
+| java-serialization | Native | JDK | ObjectOutputStream | native | Language baseline |
+| jsoniter | JSON | jsoniter | DYNAMIC + javassist | adapted | `JsonStream` / `JsonIterator` |
+| kryo | Binary | kryo | writeClassAndObject | native | Reused Kryo + Output/Input |
+| moshi | JSON | moshi | JsonAdapter | native | Okio Buffer; Square stack |
+| msgpack | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java binding |
 | protobuf | Schema | protobuf-java | MessageLite wire | native | Domain convert untimed |
-| avro | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
+| protostuff | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
 
 ### Call-path contract (same idea as Go/Python/Rust)
 
@@ -43,10 +48,6 @@ for rep:
   toDomain (if needed)           # untimed (e.g. protobuf Message → model)
   fidelity(expected, actual)     # untimed
 ```
-
-### Suite data types
-
-Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
 ### Caveats
 

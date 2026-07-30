@@ -1,17 +1,21 @@
-# Python
+---
+title: "Python"
+---
+
+Python
+======
 
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
+## Benchmark runner
 
-## Suite data types
+- Directory: `python/` (repository root)
+- Output: monorepo `logs/python/YYYY-MM-DD-HHMMSS.csv` (`Language=python`, times in **nanoseconds**)
+- Runner: `python/scripts/run-benchmarks.sh` (or project docs for modes)
+- Registration: [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py)
+- Modes: `bytes` and `stream`
 
-Type ids: `message`, `document`, `telemetry`, `strings`, `event`.  
-Run configs: `config/library/`. Results may label batch cells as `type@n=<instance_count>`.  
-See [Test Data](../analysis/test_data_configuration.md).
-
-## Serializers in this suite (16)
-
-Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py). Log names in `logs/python/YYYY-MM-DD-HHMMSS.csv` (nanoseconds). Modes: `bytes` and `stream`.
+## Serializers
 
 | Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
 |----------|----------|---------|---------------------------------|-------------|-------|
@@ -57,7 +61,6 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 - **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these data types. Prefer pickle when you do not need dill's dynamic-object features.
 
 ### Other caveats
-
 
 - `tracemalloc` under-counts C/Rust extension allocations.
 - Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).

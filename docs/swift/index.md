@@ -1,4 +1,9 @@
-# Swift
+---
+title: "Swift"
+---
+
+Swift
+=====
 
 Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto).
 
@@ -9,24 +14,24 @@ Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, I
 - Runner: `swift/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Registration: [`swift/Sources/SerializerBenchmarkCore/Serializers/Registry.swift`](../../swift/Sources/SerializerBenchmarkCore/Serializers/Registry.swift)
 
-## Serializers (14)
+## Serializers
 
 | Serializer | Category | Package | Stream | Notes |
 |------------|----------|---------|--------|-------|
-| Foundation.JSONEncoder | JSON | Foundation | adapted | Compact |
-| IkigaJSON | JSON | IkigaJSON | adapted | Server JSON |
-| Foundation.PropertyListEncoder | Native | Foundation | adapted | Binary plist |
 | BinaryCodable | Binary | BinaryCodable | adapted | Pure-Swift binary Codable |
-| SwiftMsgpack | Binary | swift-msgpack | adapted | Codable MessagePack |
-| SwiftCbor | Binary | swift-cbor | adapted | Codable CBOR |
-| SwiftBSON | Binary | swift-bson | adapted | Map-root wrap for N>1 |
-| Yams | Text | Yams | adapted | YAML |
-| XMLCoder | Text | XMLCoder | adapted | Root `payload` |
-| TOML | Text | mattt/swift-toml | adapted | Map-root wrap for N>1 |
-| SwiftProtobuf | Schema | apple/swift-protobuf | adapted | Generated from suite `.proto` |
-| FlatBuffers | Schema | google/flatbuffers | adapted | Generated from suite `.fbs` |
-| SwiftAvroCore | Schema | SwiftAvroCore | adapted | Binary Avro + schema |
 | CapnProto | Schema | Cap’n Proto C++ | adapted | C ABI over official C++ runtime |
+| FlatBuffers | Schema | google/flatbuffers | adapted | Generated from suite `.fbs` |
+| Foundation.JSONEncoder | JSON | Foundation | adapted | Compact |
+| Foundation.PropertyListEncoder | Native | Foundation | adapted | Binary plist |
+| IkigaJSON | JSON | IkigaJSON | adapted | Server JSON |
+| SwiftAvroCore | Schema | SwiftAvroCore | adapted | Binary Avro + schema |
+| SwiftBSON | Binary | swift-bson | adapted | Map-root wrap for N>1 |
+| SwiftCbor | Binary | swift-cbor | adapted | Codable CBOR |
+| SwiftMsgpack | Binary | swift-msgpack | adapted | Codable MessagePack |
+| SwiftProtobuf | Schema | apple/swift-protobuf | adapted | Generated from suite `.proto` |
+| TOML | Text | mattt/swift-toml | adapted | Map-root wrap for N>1 |
+| XMLCoder | Text | XMLCoder | adapted | Root `payload` |
+| Yams | Text | Yams | adapted | YAML |
 
 ### Call-path contract
 
@@ -38,10 +43,6 @@ fidelity                         # untimed, float-tolerant
 ```
 
 **Codable wrappers** never import suite types. **Schema bridges** convert domain ↔ native in prepare / after deserialize (same pattern as Go protobuf / Rust prost).
-
-### Suite data types
-
-Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
 ### Caveats
 

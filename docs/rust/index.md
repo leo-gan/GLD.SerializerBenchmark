@@ -1,4 +1,9 @@
-# Rust
+---
+title: "Rust"
+---
+
+Rust
+====
 
 Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends. A second tier (**rkyv**, FlatBuffers, Cap’n Proto) targets zero-copy access.
 
@@ -9,11 +14,10 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 - Runner: `rust/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `cargo run --release -- <reps>`
 - Registration: [`rust/src/serializers/mod.rs`](../../rust/src/serializers/mod.rs) (family modules under `serializers/`)
 
-## Serializers (16)
+## Serializers
 
 | Serializer | Category | Crate | Native path | Stream | Notes |
 |------------|----------|-------|-------------|--------|-------|
-| serde_avro_fast | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records) |
 | bincode | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
 | bitcode | Binary | `bitcode` | Serde | adapted | Bit-packed |
 | bson | Document | `bson` | Serde | adapted | Document DB interop |
@@ -25,6 +29,7 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 | prost | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
 | rkyv | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
 | rmp-serde | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
+| serde_avro_fast | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records) |
 | serde_json | JSON | `serde_json` | Serde `Fixture` | native | Baseline |
 | simd-json | JSON | `simd-json` | SIMD **parse**; ser via serde_json | adapted | Honest split responsibilities |
 | sonic-rs | JSON | `sonic-rs` | Serde-compatible SIMD JSON | adapted | Hot-path JSON |
@@ -39,10 +44,6 @@ for rep:
   deserialize_bytes / stream     # timed
   fidelity(expected, actual)     # untimed
 ```
-
-### Suite data types
-
-Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
 ### Caveats
 
