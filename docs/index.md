@@ -74,8 +74,9 @@ Then return to the **[Dashboard](dashboard/)** with clearer questions.
 ## Honesty rules (short)
 
 - Prefer comparisons **within one language** and one paradigm family.  
+- Always note **data type** (payload shape) and **mode** (bytes vs stream API).  
 - Implementation quality often matters more than the format brand name.  
-- Payload shape changes costs a great deal.  
-- Numbers on this site are from **this** suite’s runners and analysis—not a universal ranking of all software.
+- Numbers on this site are from **this** suite’s runners and analysis—not a universal ranking of all software. Cross-language times are directional only.
 
-Full methodology: [Method overview](analysis/) · [Analysis methodology](analysis/ANALYSIS_METHODOLOGY/) · [Claims and replication](analysis/CLAIMS_AND_REPLICATION/).
+Full methodology: [Method overview](analysis/) · [Analysis methodology](analysis/ANALYSIS_METHODOLOGY/) · [Claims and replication](analysis/CLAIMS_AND_REPLICATION/).  
+Same rules on GitHub: [README — How to read the numbers](https://github.com/leo-gan/GLD.SerializerBenchmark#how-to-read-the-numbers).

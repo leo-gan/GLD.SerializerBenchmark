@@ -49,12 +49,32 @@ Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 
 ## Who it is for
 
-| Audience | Use case | Course |
-|----------|----------|--------|
-| **Computer science students** | Theory, history, worked examples | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/), [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/) |
-| **System integrators** | Pick formats that fit payloads and runtimes | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Researchers** | Reproducible measurement and experiments | [Methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Serializer authors** | Add a codec, version A/B, regression checks | [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/) · [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
+Four reader roles. Pick the path that matches your job; skip the rest.
+
+| Role | You already know… | You want… | Start here |
+|------|-------------------|-----------|------------|
+| **Student** | APIs, maybe JSON | What serialization is; fair charts without stats jargon | [Learn 101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) → [Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) |
+| **System integrator** | Your language and latency/size budgets | Best trade-offs for *your* payload shape | [Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) (one language + data type) · [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
+| **Researcher** | Experimental bias, warmups, CIs | Reproducible ranks, filter policies, replication | [Methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
+| **Serializer author** | Your library’s API | Drop-in codec, smoke run, A/B vs previous build | [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/) · [Try smoke](#try-it-benchmark-python-serializers-in-60-seconds) · [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
+
+**Typical tasks**
+
+- **Student:** finish 101, open Dashboard for one language, read “fastest” and “most compact” with the honesty rules below.
+- **Integrator:** fix language + data type (e.g. `message@n=1`) → Pareto scatter + ranking → Compare 3 candidates vs a baseline → copy Markdown into a design doc.
+- **Researcher:** note run id, mode, and sample filter; re-run `full`/`research`; change filter policy and check rank stability.
+- **Author:** implement the interface → `./…/run-benchmarks.sh smoke` → confirm fidelity → Compare two stems or versions.
+
+---
+
+## How to read the numbers
+
+- Compare serializers **within one language** (and ideally one format family). Cross-language absolute times are **directional only** — runtimes and GCs differ.
+- Always quote **data type** (payload shape) and **mode** (bytes vs stream API). Ranks flip when either changes.
+- Prefer **median** (and spread / p95 when shown) over a single hero metric. Outlier policy is selectable on the Dashboard (default: IQR).
+- A broken round-trip is never a speed win: fidelity failures go to an errors file, not the winner podium.
+
+Details: [Method overview](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/) · [Analysis methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/).
 
 ---
 
@@ -119,4 +139,4 @@ Docs: [Test data](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/tes
 - [Analysis methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/)
 - [Metrics catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/)
 
-Compare serializers **within one language** (and ideally one category). Cross-language absolute times are directional only — runtimes and GCs differ.
+See [How to read the numbers](#how-to-read-the-numbers) for the short honesty rules.

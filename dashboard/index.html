@@ -81,23 +81,23 @@
           </select>
         </div>
 
-        <span class="filter-label">Test Data:</span>
+        <span class="filter-label" title="Payload shape (suite data type), e.g. message@n=1">Data type:</span>
         <div class="select-wrapper">
-          <select id="data-select" aria-label="Select Test Data">
+          <select id="data-select" aria-label="Select data type">
             <!-- Dynamically populated -->
           </select>
         </div>
 
-        <span class="filter-label">Mode:</span>
+        <span class="filter-label" title="API path timed: in-memory bytes (or string) vs stream-style APIs — not payload size">Mode:</span>
         <div class="select-wrapper">
-          <select id="mode-select" aria-label="Select Mode">
+          <select id="mode-select" aria-label="Select mode (bytes or stream)">
             <!-- Dynamically populated -->
           </select>
         </div>
 
-        <span class="filter-label" title="Which sample set feeds tables, charts, and Pareto">Samples:</span>
+        <span class="filter-label" title="Which trials feed tables, charts, and Pareto after warmup (default drops statistical outliers)">Samples:</span>
         <div class="select-wrapper">
-          <select id="filter-policy-select" aria-label="Sample filter policy for aggregations">
+          <select id="filter-policy-select" aria-label="Sample filter policy for aggregations" title="Default IQR drops outlier trials; choose All trials to include everything after warmup">
             <option value="iqr_1.5">IQR k=1.5 (default)</option>
             <option value="all">All trials</option>
             <option value="iqr_3">IQR k=3 (loose)</option>
@@ -119,6 +119,24 @@
     <div id="run-meta" class="run-meta glass-panel" hidden>
       <span id="run-meta-text" class="run-meta-text"></span>
     </div>
+
+    <!-- First-visit orientation (dismissible; see main.js ORIENTATION_KEY) -->
+    <aside id="orientation-banner" class="orientation-banner glass-panel" role="note">
+      <div class="orientation-body">
+        <p class="orientation-lead">
+          <strong>Start here:</strong> pick a <strong>language</strong> and <strong>data type</strong>, then read the scatter (speed vs size) and ranking.
+          Compare libraries <strong>within one language</strong> — cross-language times are directional only.
+        </p>
+        <p class="orientation-gloss section-help">
+          <strong>Pareto</strong> = best speed/size trade-offs ·
+          <strong>Mode</strong> = bytes vs stream API ·
+          <strong>Samples</strong> = which trials after warmup (default drops outliers) ·
+          <a href="../analysis/" id="orientation-method-link">Method</a> ·
+          <a href="../theory/101/" id="orientation-learn-link">Learn 101</a>
+        </p>
+      </div>
+      <button type="button" id="orientation-dismiss" class="orientation-dismiss tab-btn chart-tool-btn" title="Hide this tip">Got it</button>
+    </aside>
 
     <!-- KPI Summary Cards -->
     <section class="summary-grid" aria-live="polite">
@@ -244,11 +262,11 @@
           <span class="badge badge-slate" id="compare-scope-badge" hidden>Same language</span>
 
           <div class="filter-group compare-lab-filters-inline" id="compare-same-filters">
-            <span class="filter-label">Test Data</span>
+            <span class="filter-label" title="Payload shape (suite data type)">Data type</span>
             <div class="select-wrapper">
-              <select id="same-data-select" aria-label="Same-language test data"></select>
+              <select id="same-data-select" aria-label="Same-language data type"></select>
             </div>
-            <span class="filter-label">Mode</span>
+            <span class="filter-label" title="Bytes vs stream API path">Mode</span>
             <div class="select-wrapper">
               <select id="same-mode-select" aria-label="Same-language mode"></select>
             </div>
@@ -259,11 +277,11 @@
           </div>
 
           <div class="filter-group compare-lab-filters-inline" id="compare-xl-filters" hidden>
-            <span class="filter-label">Test Data</span>
+            <span class="filter-label" title="Payload shape (suite data type)">Data type</span>
             <div class="select-wrapper">
-              <select id="xl-data-select" aria-label="Cross-language test data"></select>
+              <select id="xl-data-select" aria-label="Cross-language data type"></select>
             </div>
-            <span class="filter-label">Mode</span>
+            <span class="filter-label" title="Bytes vs stream API path">Mode</span>
             <div class="select-wrapper">
               <select id="xl-mode-select" aria-label="Cross-language mode"></select>
             </div>

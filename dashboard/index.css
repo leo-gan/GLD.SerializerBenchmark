@@ -304,6 +304,55 @@ body {
 }
 
 /* Filters Toolbar */
+/* First-visit orientation (dismissible) */
+.orientation-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-left: 3px solid var(--color-brand-indigo);
+  background: var(--bg-brand-indigo-light);
+}
+
+.orientation-banner[hidden] {
+  display: none !important;
+}
+
+.orientation-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.orientation-lead {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.orientation-gloss {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+}
+
+.orientation-gloss a {
+  color: var(--color-brand-indigo);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.orientation-gloss a:hover {
+  text-decoration: underline;
+}
+
+.orientation-dismiss {
+  flex-shrink: 0;
+  font-size: 0.78rem !important;
+  white-space: nowrap;
+}
+
 .filter-policy-meta {
   margin: 0;
   padding: 0.35rem 0.7rem;
