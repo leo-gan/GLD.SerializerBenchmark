@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Interactive dashboard presenting performance analytics, trade-offs, and comparisons for serialization libraries.">
-  <title>Serializer Analytics dashboard</title>
+  <title>Dashboard · Multi-Language Serializer Benchmark</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./index.css">
   <!-- Chart.js from CDN -->
@@ -12,13 +12,16 @@
 </head>
 <body>
 
-  <header>
+  <header class="site-header">
     <div class="header-bar">
-      <div class="logo">
-        <div class="logo-icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>
         </div>
-        <h1>Serializer Analytics Dashboard</h1>
+        <div class="brand-text">
+          <span class="brand-product">Multi-Language Serializer Benchmark</span>
+          <span class="brand-context">Dashboard</span>
+        </div>
       </div>
       <button type="button" id="nav-toggle" class="nav-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="main-nav">
         <span class="nav-toggle-bar"></span>
@@ -26,10 +29,16 @@
         <span class="nav-toggle-bar"></span>
       </button>
     </div>
-    <nav id="main-nav" class="main-nav" aria-label="Dashboard sections">
-      <ul class="nav-links">
-        <li><a href="../" id="nav-docs-link" class="nav-docs">← Back to Docs</a></li>
-        <li class="active"><a href="#dashboard" id="nav-dash-link">Dashboard</a></li>
+    <nav id="main-nav" class="main-nav" aria-label="Site and dashboard navigation">
+      <ul class="site-links" aria-label="Site sections">
+        <li><a href="./" class="current-section" id="nav-site-dashboard" aria-current="page">Dashboard</a></li>
+        <li><a href="../theory/101/" id="nav-site-learn">Learn</a></li>
+        <li><a href="../c-sharp/" id="nav-site-languages">Languages</a></li>
+        <li><a href="../analysis/" id="nav-site-method">Method</a></li>
+        <li><a href="https://github.com/leo-gan/GLD.SerializerBenchmark" id="nav-site-github" rel="noopener noreferrer">GitHub</a></li>
+      </ul>
+      <ul class="nav-links section-nav" aria-label="Dashboard sections">
+        <li class="active"><a href="#dashboard" id="nav-dash-link">Overview</a></li>
         <li><a href="#detailed-analytics" id="nav-table-link">Details</a></li>
         <li><a href="#compare" id="nav-compare-link">Compare</a></li>
         <li><a href="#history-custom" id="nav-history-link">History</a></li>

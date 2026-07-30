@@ -858,20 +858,27 @@ function setupEventListeners() {
   document.getElementById('btn-copy-roster-md')?.addEventListener('click', () => copyRosterMarkdown());
   document.getElementById('btn-copy-compare-md')?.addEventListener('click', () => copyCompareMarkdown());
 
-  // Nav smooth scroll
-  document.querySelectorAll('.nav-links a').forEach((link) => {
+  // Section-nav smooth scroll; close mobile drawer on any nav click
+  const closeMobileNav = () => {
+    document.getElementById('main-nav')?.classList.remove('open');
+    document.getElementById('nav-toggle')?.setAttribute('aria-expanded', 'false');
+  };
+
+  document.querySelectorAll('.section-nav a').forEach((link) => {
     link.addEventListener('click', (e) => {
       const href = link.getAttribute('href');
       if (href && href.startsWith('#')) {
         e.preventDefault();
-        document.querySelectorAll('.nav-links li').forEach((li) => li.classList.remove('active'));
+        document.querySelectorAll('.section-nav li').forEach((li) => li.classList.remove('active'));
         link.parentElement.classList.add('active');
         document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // close mobile nav
-        document.getElementById('main-nav')?.classList.remove('open');
-        document.getElementById('nav-toggle')?.setAttribute('aria-expanded', 'false');
+        closeMobileNav();
       }
     });
+  });
+
+  document.querySelectorAll('.site-links a').forEach((link) => {
+    link.addEventListener('click', () => closeMobileNav());
   });
 
   // Upload
