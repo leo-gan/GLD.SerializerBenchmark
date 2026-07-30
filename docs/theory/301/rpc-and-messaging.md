@@ -2,9 +2,9 @@
 
 ## Problem
 
-Teams often reuse the same payload for synchronous RPC, fan-out events, and user-interface refresh. The result is chatty RPCs that carry analytics blobs, or events so large that consumers fall behind.
+Teams often reuse the same payload for synchronous RPC, fan-out events, and user-interface refresh. The result is chatty RPCs that carry analytics blobs. Or the result is events so large that consumers fall behind.
 
-**RPC** (remote procedure call) is a request-and-response style of communication: the caller waits for an answer. **Messaging** (or event streaming) is asynchronous: a producer writes a fact to a bus, and many consumers may process it later, at their own pace. **Fan-out** means one published event is delivered to many consumers.
+**RPC** means remote procedure call. It is a request-and-response style of communication. The caller waits for an answer. **Messaging** (or event streaming) is asynchronous. A producer writes a fact to a bus. Many consumers may process it later, at their own pace. **Fan-out** means one published event is delivered to many consumers.
 
 Serialization format debates hide a prior question: **what is the unit of work, and who needs which fields?**
 
@@ -12,11 +12,11 @@ Serialization format debates hide a prior question: **what is the unit of work, 
 
 ## Short answer
 
-Design **message shape** from the access pattern. Use small, stable records for high-QPS (high requests-per-second) RPC. Use explicit event types for async backbones. Use projections or separate APIs for “wide” reads. Prefer **narrow messages** plus references (identifiers) over embedding entire aggregates on every hop.
+Design **message shape** from the access pattern. Use small, stable records for high-QPS RPC. **High-QPS** means high requests per second. Use explicit event types for async backbones. Use projections or separate APIs for “wide” reads. Prefer **narrow messages** plus references. Prefer identifiers over embedding entire aggregates on every hop.
 
-In other words, do not ship the whole customer graph on every authorization check just because one team might want a field someday.
+In other words, do not ship the whole customer graph on every authorization check. Do not do that just because one team might want a field someday.
 
-Partial reads and zero-copy help only when the layout matches the access pattern (see 201 [zero-copy](../201/zero-copy.md) and [zero-copy in production](zero-copy-in-production.md)). **Idempotency** (applying the same command twice has the same effect as applying it once) and ordering are product properties—codecs do not invent them.
+Partial reads and zero-copy help only when the layout matches the access pattern. See 201 [zero-copy](../201/zero-copy.md) and [zero-copy in production](zero-copy-in-production.md). **Idempotency** means applying the same command twice has the same effect as applying it once. Ordering is also a product property. Codecs do not invent either property.
 
 ---
 
@@ -26,7 +26,7 @@ Partial reads and zero-copy help only when the layout matches the access pattern
 |---------|----------------|
 | **Request/response RPC** | Minimal fields for the decision; keep allocations low |
 | **Async event** | The fact, identifiers, and enough context for consumers; stable evolution |
-| **Fan-out** | One event, many consumers—avoid bloating the event for a single consumer |
+| **Fan-out** (one message delivered to many consumers) | One event, many consumers. Avoid bloating the event for a single consumer. |
 | **Streaming partial results** | Chunking or pagination; not one multi-megabyte JSON blob |
 | **Idempotent command** | Stable command identifier; dedupe keys live outside pure codec choice |
 
@@ -52,7 +52,7 @@ This matters because network round-trips and consumer lag often dominate codec m
 | Same proto for the UI list and the fraud pipeline | Separate contracts or views |
 | Mutation of a shared buffer across threads | Copy or freeze policy |
 
-A **god struct** (or god message) is a single type that tries to satisfy every consumer and therefore grows until every change breaks someone.
+A **god struct** (or god message) is a single type that tries to satisfy every consumer. It therefore grows until every change breaks someone.
 
 ---
 
@@ -66,15 +66,15 @@ A **god struct** (or god message) is a single type that tries to satisfy every c
 | Relying on the codec for exactly-once delivery | False safety |
 | Mixing command and event semantics | Replay nightmares |
 
-For example, **exactly-once delivery** is a system property of queues and consumers (dedupe, transactions). Encoding the same bytes twice in a deterministic format does not make the business operation exactly-once.
+For example, **exactly-once delivery** is a system property of queues and consumers. Dedupe and transactions matter there. Encoding the same bytes twice in a deterministic format does not make the business operation exactly-once.
 
 ---
 
 ## Real-world sketch
 
-Checkout RPC needs an authorization result and a risk score—tens of fields. Marketing wants full cart contents on `OrderPlaced`. One Protobuf is forced to carry both. Fraud p99 (99th-percentile latency) suffers, and marketing still has to join a catalog service.
+Checkout RPC needs an authorization result and a risk score. That is tens of fields. Marketing wants full cart contents on `OrderPlaced`. One Protobuf is forced to carry both. Fraud p99 suffers. **p99** is 99th-percentile latency. Marketing still has to join a catalog service.
 
-A better split: a thin `AuthorizePayment` RPC; an `OrderPlaced` event with line-item identifiers; and a marketing consumer that loads details asynchronously.
+A better split uses a thin `AuthorizePayment` RPC. It uses an `OrderPlaced` event with line-item identifiers. A marketing consumer then loads details asynchronously.
 
 ---
 
@@ -102,14 +102,14 @@ A better split: a thin `AuthorizePayment` RPC; an `OrderPlaced` event with line-
 ### Procedure
 
 1. Classify the hop with the decision frame.
-2. For RPC-like hops: use the suite plus a load test on encode/decode latency and size.
-3. For messaging: prioritize schema evolution, registry health, and consumer lag under burst—not only mean serialize time.
-4. Reject designs that use chatty RPC patterns on bulk fan-out topics (or the reverse).
+2. For RPC-like hops: use the suite plus a load test on encode and decode latency and size.
+3. For messaging: prioritize schema evolution, registry health, and consumer lag under burst. Do not prioritize only mean serialize time.
+4. Reject designs that use chatty RPC patterns on bulk fan-out topics. Also reject the reverse.
 5. Document payload size budgets per pattern.
 
 ### Decision rule
 
-- Strict sync service-level objectives with request/response traffic call for an RPC-shaped codec and size budget.
+- Strict sync reliability targets (*service-level objectives*) with request and response traffic call for an RPC-shaped codec and size budget.
 - Multi-consumer durable streams are dominated by messaging evolution and backlog metrics.
 
 ---

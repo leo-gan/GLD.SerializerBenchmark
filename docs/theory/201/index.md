@@ -1,8 +1,8 @@
 # Serialization 201
 
-In this track you will learn **how serialization mechanisms work**—not only what the formats are called, but why they behave differently. These short essays sit between [Serialization 101](../101/index.md) and its three lenses on one side, and the later courses on the other: **301** for production judgment and **401** for people who implement codecs. When you care about measured numbers, you will also want the suite [categories](../../analysis/serialization_categories.md) page and the language **Results** pages.
+In this track you will learn **how serialization mechanisms work**. You will not only learn the names of formats. You will learn why they behave differently. These short essays sit between [Serialization 101](../101/index.md) and its three lenses on one side, and the later courses on the other. **301** covers production judgment. **401** is for people who implement codecs. When you care about measured numbers, you will also want the suite [categories](../../analysis/serialization_categories.md) page and the language **Results** pages.
 
-Theory alone does not decide what you should ship. Use these pages to build clear mental models of the mechanisms, then check those models against real libraries. When you must choose under several production constraints at once, continue into the advanced courses as they become available.
+Theory alone does not decide what you should ship. Use these pages to build clear mental models of the mechanisms. Then check those models against real libraries. When you must choose under several production constraints at once, continue into the advanced courses as they become available.
 
 ---
 
@@ -13,7 +13,7 @@ Theory alone does not decide what you should ship. Use these pages to build clea
 3. Work through the articles below when you need a clearer *how* or *why* for a mechanism.
 4. Open [Serialization categories](../../analysis/serialization_categories.md) and a language **Results** page for numbers measured on *this* benchmark runner.
 
-**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload—whether data is flat, nested, sparse, or dense—can change costs a great deal. Compare within one paradigm and one language when you can. Numbers that appear in prose are only illustrations; the suite **Results** pages own the truth for this benchmark runner.
+**Honesty rules (same as Serialization 101).** There are no universal winners. Implementation quality often matters more than the brand name of a format. The shape of the payload can change costs a great deal. Flat, nested, sparse, and dense data all behave differently. Compare within one paradigm and one language when you can. Numbers that appear in prose are only illustrations. The suite **Results** pages own the truth for this benchmark runner.
 
 ---
 
@@ -24,10 +24,10 @@ The table below gives a suggested order for a first pass through Serialization 2
 | Step | Article | You should be able to… |
 |------|---------|------------------------|
 | 1 | [Memory layout](memory-layout.md) | Explain why dumping raw process memory is not a portable interchange format |
-| 2 | [Encode/decode cost](encode-decode-cost.md) | Name the real cost centers (parsing structure, converting numbers, allocating, copying)—instead of saying only that “JSON is slow” |
+| 2 | [Encode/decode cost](encode-decode-cost.md) | Name the real cost centers (parsing structure, converting numbers, allocating, copying). Do not say only that “JSON is slow.” |
 | 3 | [Self-describing vs schema](self-describing-vs-schema-dependent.md) | Say whether field identity lives in the payload itself or in a shared contract outside the message |
 | 4 | [Schema evolution](schema-evolution.md) | Plan additive changes that keep older readers and writers working during a rollout |
-| 5 | [Dynamic vs IDL binary](dynamic-vs-idl-binary.md) | Choose a MessagePack/CBOR-class encoding versus a Protocol Buffers–class encoding for a given workload (IDL = interface description language, a formal shared description of messages and field types) |
+| 5 | [Dynamic vs IDL binary](dynamic-vs-idl-binary.md) | Choose a MessagePack/CBOR-class encoding versus a Protocol Buffers–class encoding for a given workload. IDL means interface description language. An IDL is a formal shared description of messages and field types. |
 | 6 | [Zero-copy](zero-copy.md) | Explain what “no deserialize” usually means in marketing language—and what that design still costs |
 | 7 | [Compression vs format](compression-is-not-a-format.md) | Separate gzip-style compression on the wire from density that comes from the format itself |
 

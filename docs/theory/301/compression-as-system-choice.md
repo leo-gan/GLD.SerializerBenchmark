@@ -2,17 +2,17 @@
 
 ## Problem
 
-Bandwidth tickets often trigger “enable compression” as a global default. Small RPCs get slower; already-compressed media is double-compressed; teams stop improving message design because “gzip will fix size.”
+Bandwidth tickets often trigger “enable compression” as a global default. Small RPCs get slower. Already-compressed media is double-compressed. Teams stop improving message design because “gzip will fix size.”
 
-**Compression** here means general-purpose algorithms such as gzip or zstd that shrink opaque byte sequences by finding redundancy. Serialization 201 explains the mechanism ([compression vs format](../201/compression-is-not-a-format.md)). Serialization 301 places compression in **budgets and tiers**: where it sits in the stack, when it pays, and when it hurts.
+**Compression** here means general-purpose algorithms such as gzip or zstd. Those algorithms shrink opaque byte sequences by finding redundancy. Serialization 201 explains the mechanism. See [compression vs format](../201/compression-is-not-a-format.md). Serialization 301 places compression in **budgets and tiers**. You must decide where it sits in the stack. You must decide when it pays. You must decide when it hurts.
 
 ---
 
 ## Short answer
 
-Choose a **format for meaning** first. Add **compression as a transport or storage tier** when payloads are large enough that trading CPU for bandwidth is a net win under measurement. Prefer dense schema-aware encodings when structure allows; use general-purpose compression for verbose text or cold storage. Do not treat suite encode times as including your link-level gzip unless the experiment says so.
+Choose a **format for meaning** first. Add **compression as a transport or storage tier** when payloads are large enough. The trade is CPU for bandwidth. Measure whether that trade is a net win. Prefer dense schema-aware encodings when structure allows. Use general-purpose compression for verbose text or cold storage. Do not treat suite encode times as including your link-level gzip unless the experiment says so.
 
-In other words: compression is a layer you place deliberately, not a substitute for choosing the right serialization format.
+In other words: compression is a layer you place deliberately. It is not a substitute for choosing the right serialization format.
 
 ---
 
@@ -44,11 +44,11 @@ This matters because each extra CPU stage can dominate when messages are tiny an
 | Scenario | Lean |
 |----------|------|
 | Public HTTP with large JSON | HTTP content-encoding plus a good JSON library |
-| High-QPS internal RPC around 200 bytes | Usually no application-level gzip |
+| High-requests-per-second internal RPC around 200 bytes | Usually no application-level gzip |
 | Lake files | Format-aware columnar compression |
 | Encrypted tunnel plus gzip | Order of layers and stacked CPU cost matter |
 
-A **WAN** is a wide-area network (for example, the public internet between regions). Latency and bandwidth costs there often justify compression more than on a local data-center hop.
+A **WAN** is a wide-area network. One example is the public internet between regions. Latency and bandwidth costs there often justify compression more than on a local data-center hop.
 
 ---
 
@@ -62,13 +62,13 @@ A **WAN** is a wide-area network (for example, the public internet between regio
 | Compare compressed size to the suite Size column naively | Category error |
 | Forget mobile CPU cost | Battery and heat regressions |
 
-For example, JPEG images and video are already compressed. Running gzip over them usually costs CPU and gains almost nothing.
+For example, JPEG images and video are already compressed. Running gzip over them usually costs CPU. It gains almost nothing.
 
 ---
 
 ## Real-world sketch
 
-An API enables gzip globally. Median latency improves for 100KB responses; p99 for 1KB control RPCs worsens. Operations keeps gzip for large GET responses via content negotiation and disables it on chatty RPCs. Separately, internal events move from JSON to Protobuf, cutting size before compression—and compression becomes optional on the mesh.
+An API enables gzip globally. Median latency improves for 100KB responses. 99th-percentile latency (*p99*: 99% of requests are faster than this) for 1KB control RPCs worsens. Operations keeps gzip for large GET responses via content negotiation. It disables gzip on chatty RPCs. Separately, internal events move from JSON to Protobuf. That cuts size before compression. Compression then becomes optional on the mesh.
 
 ---
 
@@ -88,22 +88,22 @@ An API enables gzip globally. Median latency improves for 100KB responses; p99 f
 
 ### Setup
 
-1. Measure uncompressed payload sizes and link round-trip time and bandwidth.
-2. List candidates: gzip/zstd levels; an alternative binary format without compression; compress-after-serialize.
+1. Measure uncompressed payload sizes. Measure link round-trip time and bandwidth.
+2. List candidates. Include gzip and zstd levels. Include an alternative binary format without compression. Include compress-after-serialize.
 3. Estimate CPU headroom on producer and consumer.
 
 ### Procedure
 
-1. Baseline: suite `median_size_bytes` plus serialize/deserialize time without compression.
-2. Apply candidate compression on the wire; measure **end-to-end** latency and CPU.
+1. Baseline: suite `median_size_bytes` plus serialize and deserialize time without compression.
+2. Apply candidate compression on the wire. Measure **end-to-end** latency and CPU.
 3. Compare to a denser format **without** compression on the same hop.
-4. Check for double-compression waste (for example already-compressed fields).
-5. Pick placement (client, reverse proxy, broker, or application).
+4. Check for double-compression waste. One example is already-compressed fields.
+5. Pick placement. Options include client, reverse proxy, broker, or application.
 
 ### Decision rule
 
-- Choose the option that minimizes **service-level latency or cost per bandwidth** under the CPU cap—not the smallest microbenchmark size alone.
-- Compression is not a substitute for a wrong paradigm ([row vs columnar](row-vs-columnar.md)).
+- Choose the option that minimizes **end-to-end latency or cost per bandwidth against your reliability target** under the CPU cap. Do not choose the smallest microbenchmark size alone.
+- Compression is not a substitute for a wrong paradigm. See [row vs columnar](row-vs-columnar.md).
 
 ---
 
@@ -141,7 +141,7 @@ An API enables gzip globally. Median latency improves for 100KB responses; p99 f
 
 ## Key takeaways
 
-- Compression is a **tier**, not a format.
-- Measure CPU versus bandwidth; defaults are not universal.
-- Improve encoding when structure allows; compress the remainder.
+- Compression is a **tier**. It is not a format.
+- Measure CPU versus bandwidth. Defaults are not universal.
+- Improve encoding when structure allows. Compress the remainder.
 - Suite Size is not automatically post-gzip Size.

@@ -1,19 +1,21 @@
 # Lab: mini Protobuf subset encoder/decoder
 
-> Build a **deliberately small** Protocol Buffers binary codec for a teaching message. This is not production Protocol Buffers, and it is not the full benchmark suite fixture.
+> Build a **deliberately small** Protocol Buffers binary codec for a teaching message. This is not production Protocol Buffers. It is not the full benchmark suite fixture.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/401/lab_mini_protobuf_encoder.ipynb)
 **Lab notebook:** [lab_mini_protobuf_encoder.ipynb](../notebooks/401/lab_mini_protobuf_encoder.ipynb) · wire playground: [wire_format_playground.ipynb](../notebooks/401/wire_format_playground.ipynb)
 
 ## Goal
 
-In this lab you will implement a MiniUser subset encoder and decoder. An **encoder** turns a language value into a sequence of bytes. A **decoder** turns those bytes back into a language value. You will validate your bytes against **golden sequences** (known-correct hex dumps) and against an official parser. You will also refuse truncated or hostile shapes instead of reading past the end of a buffer.
+In this lab you will implement a MiniUser subset encoder and decoder.
+
+An **encoder** turns a language value into a sequence of bytes. A **decoder** turns those bytes back into a language value. You will validate your bytes against **golden sequences** (known-correct hex dumps) and against an official parser. You will also refuse truncated or hostile shapes instead of reading past the end of a buffer.
 
 This matters because reading the [wire format](protobuf-wire-format.md) article is not the same as writing a working codec. The lab forces you to handle tags, varints, length prefixes, nesting, and skip rules in code. You are not rebuilding `protoc` (the Protocol Buffers compiler that turns `.proto` files into language code).
 
 ## Subset (in / out)
 
-Labeling what you leave out is part of being honest about a teaching subset. The table below is your contract: everything on the left is required for “done”; everything on the right is deliberately out of scope.
+Labeling what you leave out is part of being honest about a teaching subset. The table below is your contract. Everything on the left is required for “done.” Everything on the right is deliberately out of scope.
 
 | In scope | Out of scope (do not implement for “done”) |
 |----------|-----------------------------------------------|
@@ -53,7 +55,7 @@ Work through these until each item is true of your code. They restate the rules 
 
 ## Steps (encode)
 
-Implement in **any language you choose**. The pseudocode below is deliberately language-agnostic. The validation section uses Python as one convenient official oracle, but **protobuf-c** or **prost** work equally well.
+Implement in **any language you choose**. The pseudocode below is deliberately language-agnostic. The validation section uses Python as one convenient official oracle. **protobuf-c** or **prost** work equally well.
 
 Read the functions in order. First you encode a single varint. Then you encode a field key. Then you encode a string as a length-delimited field. Finally you encode a whole MiniUser by emitting each present field.
 
@@ -106,7 +108,7 @@ Your encoder may omit default fields. Decoders must accept any field order. An e
 
 ## Steps (decode)
 
-Decoding walks the buffer from index zero until the end. For each field you read a key, split out the field number and wire type, then either assign a known field or skip an unknown one. Always check remaining length before you read.
+Decoding walks the buffer from index zero until the end. For each field you read a key. You split out the field number and wire type. Then you either assign a known field or skip an unknown one. Always check remaining length before you read.
 
 ```text
 function decode_varint(buf, i) -> (value, new_i):
@@ -149,9 +151,9 @@ function decode_mini_user(buf):
   return user
 ```
 
-**Unknown field test.** Append `28 63` (field 5 with varint value 99) to the G1 bytes. Your decoder should still yield the same logical `id` and `name`, and should ignore field 5. This is the practical form of additive schema evolution: a newer sender can add fields that an older decoder has never heard of.
+**Unknown field test.** Append `28 63` (field 5 with varint value 99) to the G1 bytes. Your decoder should still yield the same logical `id` and `name`. It should ignore field 5. This is the practical form of additive schema evolution: a newer sender can add fields that an older decoder has never heard of.
 
-**Bounds tests (required for “done”).** A decoder that only works on well-formed input is incomplete. The following cases must fail cleanly with an error, not with a silent truncate or an out-of-bounds read:
+**Bounds tests (required for “done”).** A decoder that only works on well-formed input is incomplete. The following cases must fail cleanly with an error. They must not fail with a silent truncate or an out-of-bounds read:
 
 | Input idea | Expected |
 |------------|----------|
@@ -177,7 +179,7 @@ Encoder output for G1–G5 must equal the hex table above (for the same logical 
 
 ### 2. Official parser
 
-Install `protoc` (or use any official decoder). The following minimal Python example treats the official library as an oracle: if your bytes parse and the fields match, your encoder is speaking the real wire language.
+Install `protoc` (or use any official decoder). The following minimal Python example treats the official library as an oracle. If your bytes parse and the fields match, your encoder is speaking the real wire language.
 
 ```python
 # After: protoc --python_out=. mini.proto

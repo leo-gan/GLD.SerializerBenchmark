@@ -2,19 +2,19 @@
 
 ## Why this article exists
 
-Saying “we all use Protocol Buffers” does not guarantee that Python, Rust, and C produce **bit-identical** payloads, or that round-trips preserve every logical field across languages. Fidelity bugs hide in defaults, field naming, timestamps, packed repeated fields, UTF-8 handling, and test-benchmark runner mapping—not in the marketing name of the format.
+Saying “we all use Protocol Buffers” does not guarantee that Python, Rust, and C produce **bit-identical** payloads. It also does not guarantee that round-trips preserve every logical field across languages. Fidelity bugs hide in defaults, field naming, timestamps, packed repeated fields, UTF-8 handling, and test-benchmark runner mapping. They do not hide in the marketing name of the format.
 
-In this article you will learn a disciplined way to prove that three runtimes interoperate. After reading it, you should be able to design a small encode/decode matrix, state when bit-identity is required, and avoid treating suite speed tables as fidelity proofs.
+In this article you will learn a disciplined way to prove that three runtimes interoperate. After reading it, you should be able to design a small encode/decode matrix. You should be able to state when bit-identity is required. You should also avoid treating suite speed tables as fidelity proofs.
 
 ## Short answer
 
-**Fidelity** here means two related claims. First, given one logical value and one `.proto`, each runtime’s encode and decode behaves as a correct Protocol Buffers implementation for that schema. Second, **cross-language** pairs interoperate for the fields you care about: bytes produced in language A decode correctly in language B.
+In this course, **fidelity** means two related claims. First, given one logical value and one `.proto`, each runtime’s encode and decode behaves as a correct Protocol Buffers implementation for that schema. Second, **cross-language** pairs interoperate for the fields you care about: bytes produced in language A decode correctly in language B.
 
-Prefer proving interoperability with **golden vectors** (known-correct hex sequences) and **matrix tests** (encode in A, decode in B). Do not treat suite speed tables as fidelity proofs. This suite’s benchmark runners are **per-language**; they do not automatically prove cross-runtime byte identity. [301 polyglot estates](../301/polyglot-estates.md) is about product contract choice; this page is about **byte and logic discipline**.
+Prefer proving interoperability with **golden vectors** (known-correct hex sequences) and **matrix tests** (encode in A, decode in B). Do not treat suite speed tables as fidelity proofs. This suite’s benchmark runners are **per-language**. They do not automatically prove cross-runtime byte identity. [301 multi-language systems (polyglot estates)](../301/polyglot-estates.md) is about product contract choice. This page is about **byte and logic discipline**.
 
 This article assumes the [wire format](protobuf-wire-format.md) article and at least one language path ([Python](protobuf-python.md), [Rust](protobuf-rust-prost.md), [C](protobuf-c-protobuf-c.md)).
 
-This monorepo already has Python, Rust, and C Protocol Buffers entries—use them when available. Outside the suite, the same discipline applies with any three official runtimes.
+This shared code repository already has Python, Rust, and C Protocol Buffers entries. Use them when available. Outside the suite, the same discipline applies with any three official runtimes.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ This monorepo already has Python, Rust, and C Protocol Buffers entries—use the
 
 ## Mental model
 
-Start from one logical value and two encoders. Then ask two separate questions: do the decoders recover the logical value, and do the encoders emit exactly the same bytes?
+Start from one logical value and two encoders. Then ask two separate questions. Do the decoders recover the logical value? Do the encoders emit exactly the same bytes?
 
 ```text
   logical value  ──A.encode──►  bytes₁
@@ -35,7 +35,7 @@ Start from one logical value and two encoders. Then ask two separate questions: 
   bytes₁ == bytes₂ ?   nice when true; NOT required by the Protobuf spec
 ```
 
-Protocol Buffers requires **semantic** compatibility: a decoder must understand what an encoder wrote. It does **not** require that two encoders emit the same field order or the same omission pattern for default values.
+Protocol Buffers requires **semantic** compatibility. A decoder must understand what an encoder wrote. It does **not** require that two encoders emit the same field order. It also does not require the same omission pattern for default values.
 
 ## What “same bytes” can mean (be precise)
 
@@ -48,7 +48,7 @@ Students often collapse several different claims into the phrase “same bytes.�
 | **Benchmark runner fidelity** | Serialize then deserialize in **one** language matches the fixture compare | Suite-local only |
 | **Canonical encode** | Deterministic field order / map order | Optional (`deterministic` in some APIs) |
 
-Serializer developers should chase **interoperability** first and **bit-identity** second (useful for debugging, signing, and caches).
+Serializer developers should chase **interoperability** first and **bit-identity** second. Bit-identity is useful for debugging, signing, and caches.
 
 ## Step-by-step fidelity discipline
 
@@ -67,7 +67,7 @@ Define values in a language-neutral way:
 - Integers and bools are exact.
 - Strings are defined by Unicode code points (not “whatever my editor saved”).
 - Timestamps use an explicit unit (this suite often uses milliseconds—see benchmark runner notes).
-- Floats and doubles: prefer values with exact binary representations when asserting bit-identity; otherwise assert with tolerances only where the product allows it.
+- Floats and doubles: prefer values with exact binary representations when asserting bit-identity. Otherwise assert with tolerances only where the product allows it.
 - Nested and repeated fields: specify the full structure, including empty versus omitted.
 
 ### 3. Encode matrix
@@ -97,11 +97,11 @@ Optionally:
 assert encode_python(fixture) == encode_rust(fixture)  # bit-identity (strict)
 ```
 
-If bit-identity fails but logical cross-decode works, document **why** (field order, default omission, map order). That documentation is itself a useful artifact: it shows you understand the format, not only the test harness.
+If bit-identity fails but logical cross-decode works, document **why** (field order, default omission, map order). That documentation is itself a useful artifact. It shows you understand the format, not only the test harness.
 
 ### 5. Golden vectors for the subset you hand-rolled
 
-Use the [lab](lab-mini-protobuf-encoder.md) goldens (for example `08 01 12 03 41 64 61`) as the **minimal cross-runtime test**. Encode the same logical `MiniUser` in Python, Rust, and C, then decode in the other two runtimes. That is the cheapest way to prove that your three implementations actually speak the same wire language.
+Use the [lab](lab-mini-protobuf-encoder.md) goldens (for example `08 01 12 03 41 64 61`) as the **minimal cross-runtime test**. Encode the same logical `MiniUser` in Python, Rust, and C. Then decode in the other two runtimes. That is the cheapest way to prove that your three implementations actually speak the same wire language.
 
 ### 6. Track known semantic footguns
 
@@ -169,7 +169,7 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 | Python `protobuf` / Rust `prost` / C Google `protobuf` (+ C helper rows) | Separate encode paths (pins and honesty notes are on the language articles / [C Overview](../../c/index.md)) |
 | Per-language fidelity hooks | Local round-trip checks only |
 | Results / ops | **Not** interoperability proofs |
-| [301 polyglot estates](../301/polyglot-estates.md) | One **product** contract; this page tests **bytes and logic** |
+| [301 multi-language systems (polyglot estates)](../301/polyglot-estates.md) | One **product** contract; this page tests **bytes and logic** |
 
 ## Common mistakes
 
@@ -182,7 +182,7 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 
 ## What this article is not
 
-- A full conformance suite (use upstream Protocol Buffers conformance tests for serious work).
+- A full suite of tests that check every language implements the same contract (use upstream Protocol Buffers conformance tests for serious work).
 - Product advice on JSON versus Protocol Buffers ([301](../301/index.md)).
 - Engine deep-dives (see the language-path articles).
 
@@ -191,4 +191,4 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 - Require **cross-decode interoperability**. Treat **bit-identical encode** as an optional strict check.
 - Prove fidelity with **matrix tests and goldens**, not with benchmark ranks.
 - Defaults, packing, and benchmark runner mapping cause most “Protocol Buffers mismatch” bugs.
-- Suite fidelity is not multi-runtime fidelity—bridge them with explicit tests you own.
+- Suite fidelity is not multi-runtime fidelity. Bridge them with explicit tests you own.

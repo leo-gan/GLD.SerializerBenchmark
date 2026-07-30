@@ -2,21 +2,21 @@
 
 ## Problem
 
-JSON’s flexibility is a gift for browsers and integrators and a curse for accidental breakage. Fields appear without notice, types drift (`"1"` versus `1`), and renames ship without a version bump. Saying “we use JSON” is not a contract.
+JSON’s flexibility is a gift for browsers and integrators. It is also a curse for accidental breakage. Fields appear without notice. Types drift. One example is `"1"` versus `1`. Renames ship without a version bump. Saying “we use JSON” is not a contract.
 
-A **contract** is a machine-checkable agreement about shapes, types, and allowed changes. Public APIs need an **external schema and process** as strict as IDL cultures—just with different artifacts. In other words, text on the wire does not remove the need for governance.
+A **contract** is a machine-checkable agreement about shapes, types, and allowed changes. Public APIs need an **external schema and process**. That process should be as strict as IDL cultures. The artifacts are different. In other words, text on the wire does not remove the need for governance.
 
 ---
 
 ## Short answer
 
-For public or cross-organization HTTP APIs, pair JSON with a **published contract**: OpenAPI and/or JSON Schema (or an equivalent), server-side validation, consumer-driven or contract tests, and a versioning policy (see [versioning in the wild](versioning-in-the-wild.md)).
+For public or cross-organization HTTP APIs, pair JSON with a **published contract**. Use OpenAPI and/or JSON Schema, or an equivalent. Add server-side validation. Add consumer-driven or contract tests. Add a versioning policy. See [versioning in the wild](versioning-in-the-wild.md).
 
-- **OpenAPI** is a widely used document format that describes HTTP endpoints, parameters, and body shapes.
+- **OpenAPI** is a widely used document format. It describes HTTP endpoints, parameters, and body shapes.
 - **JSON Schema** is a vocabulary for describing what a JSON document is allowed to contain.
-- **Server-side validation** means the server rejects illegal bodies early, before business logic runs.
+- **Server-side validation** means the server rejects illegal bodies early. That happens before business logic runs.
 
-Choose JSON libraries for performance and correctness (see [implementation variance](implementation-variance.md)). Do not skip the contract layer because the bytes happen to be text. A binary dual stack is optional and must be earned (see [case: public REST](case-public-rest-api.md)).
+Choose JSON libraries for performance and correctness. See [implementation variance](implementation-variance.md). Do not skip the contract layer because the bytes happen to be text. A binary dual stack is optional. It must be earned. See [case: public REST](case-public-rest-api.md).
 
 ---
 
@@ -30,7 +30,7 @@ Choose JSON libraries for performance and correctness (see [implementation varia
 | **Tests** | Provider checks and consumer-driven checks |
 | **Process** | Review, deprecation windows, and a changelog |
 
-This matters because a beautiful OpenAPI file that no one validates against is documentation theater, not a contract.
+This matters because a beautiful OpenAPI file that no one validates against is documentation theater. It is not a contract.
 
 ---
 
@@ -43,7 +43,7 @@ This matters because a beautiful OpenAPI file that no one validates against is d
 | Rapid internal-only iteration | Still validate; shorter deprecation windows may be acceptable |
 | “Schemaless for agility” | Accept silent client breakage—or stop claiming the API is stable |
 
-For example, if partner companies build against your API, a field rename without a version is an outage for them, even if your server still “works.”
+For example, suppose partner companies build against your API. A field rename without a version is an outage for them. That is true even if your server still “works.”
 
 ---
 
@@ -61,7 +61,7 @@ For example, if partner companies build against your API, a field rename without
 
 ## Real-world sketch
 
-A fintech publishes OpenAPI 3 and generates TypeScript and Kotlin clients. Continuous integration fails if the server’s request models drift from the specification. A “quick” field rename without a version bump is blocked. Later performance work swaps Python JSON libraries using suite Results without touching the public contract at all.
+A fintech publishes OpenAPI 3. It generates TypeScript and Kotlin clients. Continuous integration fails if the server’s request models drift from the specification. A “quick” field rename without a version bump is blocked. Later performance work swaps Python JSON libraries using suite Results. That work does not touch the public contract at all.
 
 In other words, the contract stayed stable while the implementation improved. That is the separation you want.
 
@@ -83,17 +83,17 @@ In other words, the contract stayed stable while the implementation improved. Th
 
 ### Setup
 
-1. Collect public endpoints and current docs (OpenAPI or ad hoc examples).
+1. Collect public endpoints and current docs. Those may be OpenAPI or ad hoc examples.
 2. List client languages and critical fields.
 3. Prepare one proposed additive change and one breaking change.
 
 ### Procedure
 
-1. Validate production samples against the published schema (they should pass).
-2. Ship the additive change and confirm old clients still work.
-3. Attempt the breaking change behind a new version or content type; confirm the old route is unchanged.
-4. Check error bodies for accidental internal leakage ([payload surfaces](payload-surfaces.md)).
-5. Optionally compare JSON libraries for the server language—**after** the contract exists.
+1. Validate production samples against the published schema. They should pass.
+2. Ship the additive change. Confirm old clients still work.
+3. Attempt the breaking change behind a new version or content type. Confirm the old route is unchanged.
+4. Check error bodies for accidental internal leakage. See [payload surfaces](payload-surfaces.md).
+5. Optionally compare JSON libraries for the server language. Do this **after** the contract exists.
 
 ### Decision rule
 
@@ -121,21 +121,21 @@ In other words, the contract stayed stable while the implementation improved. Th
 
 - OpenAPI style-guide politics inside your organization.
 - Whether to use URL versioning versus header versioning.
-- Partner communication service-level agreements.
+- Partner communication reliability agreements (*service-level agreements*).
 
 ---
 
 ## Common mistakes
 
 - Treating JSON Schema as optional documentation only.
-- Generating OpenAPI from code without review (noise and accidental breaks).
+- Generating OpenAPI from code without review. That creates noise and accidental breaks.
 - Different field names in Android versus web clients “by accident.”
 
 ---
 
 ## Key takeaways
 
-- Public JSON needs a **hard contract process**, not good intentions.
+- Public JSON needs a **hard contract process**. Good intentions are not enough.
 - Validation and tests enforce what prose promises.
-- The suite helps you choose JSON **libraries**, not whether a contract exists.
-- Dual binary APIs are additive products—not a substitute for JSON governance.
+- The suite helps you choose JSON **libraries**. It does not decide whether a contract exists.
+- Dual binary APIs are additive products. They are not a substitute for JSON governance.

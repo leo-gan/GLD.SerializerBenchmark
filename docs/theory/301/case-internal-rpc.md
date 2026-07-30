@@ -1,34 +1,34 @@
 # Case study: internal high-QPS RPC
 
-> Internal services exchange dense records at high QPS (queries or requests per second) on a private network. How should payloads be encoded?
+> Internal services exchange dense records at high QPS on a private network. How should payloads be encoded?
 
-This case study is the internal counterpart of the public REST case. The clients are other services you control, the records are stable and dense, and latency budgets are tight. Those facts change the recommendation without relaxing trust or portability rules.
+**QPS** means queries or requests per second. This case study is the internal counterpart of the public REST case. The clients are other services you control. The records are stable and dense. Latency budgets are tight. Those facts change the recommendation. They do not relax trust or portability rules.
 
 ---
 
 ## Context and goals
 
-**Setting:** Payment authorization path. Services run in Go and Rust (with a Python batch sibling that is not on the hot path). The network is private with mutual TLS service identity. Messages are compact structured records (identifiers, amounts, status enums)—not arbitrary documents. The target is low p99 latency and stable multi-year evolution.
+**Setting:** Payment authorization path. Services run in Go and Rust. There is a Python batch sibling that is not on the code path that runs on every request under load. The network is private with mutual TLS service identity. Messages are compact structured records. They hold identifiers, amounts, and status enums. They are not arbitrary documents. The target is low 99th-percentile latency (*p99*: 99% of requests are faster than this) and stable multi-year evolution.
 
-**Mutual TLS** means both client and server present certificates, so identity is stronger than “we share a private network.” **QPS** means queries (or requests) per second—how many messages the path must handle.
+**Mutual TLS** means both client and server present certificates. Identity is stronger than “we share a private network.” **QPS** means queries or requests per second. It is how many messages the path must handle.
 
 **Goals:**
 
-- High throughput encode and decode on the hot path.
+- High throughput encode and decode on the path that runs on every request under load.
 - A shared contract across Go and Rust.
-- Safe rolling deploys through additive evolution.
+- Safe gradual updates (old and new versions running together) through additive evolution.
 - No browser clients on this hop.
 
 ---
 
 ## Non-goals and hard constraints
 
-- This is not public third-party HTTP ([public REST case](case-public-rest-api.md)).
-- This is not cross-organization untrusted input (you still validate size and depth).
-- Language-native codecs are disallowed across services ([trust boundaries](trust-boundaries.md)).
-- Python appears only offline—it must not dictate the hot-path format, but speaking the format later must remain possible.
+- This is not public third-party HTTP. See [public REST case](case-public-rest-api.md).
+- This is not cross-organization untrusted input. You still validate size and depth.
+- Language-native codecs are disallowed across services. See [trust boundaries](trust-boundaries.md).
+- Python appears only offline. It must not dictate the format used on every request under load. Speaking the format later must remain possible.
 
-In other words, the hop is internal and high-QPS, but it is still an interchange boundary between processes and languages.
+In other words, the hop is internal and high-QPS. It is still an interchange boundary between processes and languages.
 
 ---
 
@@ -41,7 +41,7 @@ In other words, the hop is internal and high-QPS, but it is still an interchange
 | **C. JSON internal** | Same style as public APIs, but on a private network |
 | **D. Language-native per service** | Fastest local graph dump |
 
-An **IDL** (interface definition language) is a formal description of messages from which libraries generate typed code.
+An **IDL** is an interface definition language. It is a formal description of messages from which libraries generate typed code.
 
 ---
 
@@ -50,7 +50,7 @@ An **IDL** (interface definition language) is a formal description of messages f
 | Axis | A. IDL binary | B. Schemaless binary | C. JSON | D. Native |
 |------|---------------|----------------------|---------|-----------|
 | Density and CPU potential | High | Medium to high | Lower | Often high, **unsafe here** |
-| Multi-language | Excellent with code generation | Good if libraries are mature | Excellent | Fails polyglot requirements |
+| Multi-language | Excellent with code generation | Good if libraries are mature | Excellent | Fails multi-language (polyglot) requirements |
 | Evolution | Field-number process | Ad hoc unless disciplined | Ad hoc unless a schema layer exists | Brittle |
 | Debug | Tooling needed | Tooling needed | Easy | Opaque |
 | Fit for enums and stable records | Strong | Weaker unless careful | OK with care | Not applicable |
@@ -61,11 +61,11 @@ This matters because “internal” does not mean “native is fine.” It means
 
 ## Recommendation (under these constraints)
 
-**Prefer A (Protobuf-class IDL binary)** for the hot hop: stable record shape, two compiled languages, and evolution via field numbers and continuous-integration breaking-change checks ([two schema cultures](two-schema-cultures.md)). Select **implementations per language** with suite Results in the schema-driven family ([implementation variance](implementation-variance.md)).
+**Prefer A (Protobuf-class IDL binary)** for the high-load hop. The record shape is stable. Two compiled languages share the hop. Evolution uses field numbers and continuous-integration breaking-change checks. See [two schema cultures](two-schema-cultures.md). Select **implementations per language** with suite Results in the schema-driven family. See [implementation variance](implementation-variance.md).
 
-**Keep B** as an alternative if the team refuses IDL tooling *and* will fund validation and compatibility tests equivalent to a registry or IDL process. That combination is rare on high-QPS money paths.
+**Keep B** as an alternative if the team refuses IDL tooling *and* will fund validation and compatibility tests. Those tests must be equivalent to a registry or IDL process. That combination is rare on high-requests-per-second money paths.
 
-**Keep C** only if service-level objectives are met with JSON after the best libraries, and the organization values uniform JSON everywhere more than density. Validate that claim with measurement, not taste.
+**Keep C** only if reliability targets (*service-level objectives*) are met with JSON after the best libraries. The organization must also value uniform JSON everywhere more than density. Validate that claim with measurement. Do not validate it with taste.
 
 **Reject D** at the service boundary.
 
@@ -83,10 +83,10 @@ This matters because “internal” does not mean “native is fine.” It means
 
 ### Procedure
 
-1. Take a fair suite slice per family ([using this suite](using-this-suite.md)).
-2. Load-test shortlisted implementations at target QPS; record p99 and CPU.
-3. Score evolution needs (field adds, multi-service rollout).
-4. Apply trust constraints (internal mesh versus any plan to expose the hop).
+1. Take a fair suite slice per family. See [using this suite](using-this-suite.md).
+2. Load-test shortlisted implementations at target QPS. Record p99 and CPU.
+3. Score evolution needs. Include field adds and multi-service rollout.
+4. Apply trust constraints. Note internal mesh versus any plan to expose the hop.
 5. Recommend with an evidence table.
 
 ### Decision rule
@@ -112,13 +112,13 @@ This matters because “internal” does not mean “native is fine.” It means
 ## What would change the answer
 
 - Document-shaped, highly variable payloads may fit schemaless binary or JSON with validation better.
-- Many dynamic consumers without code generation lean toward resolution culture and events ([event case](case-event-stream.md)).
-- A browser on the same hop is not this case; add a gateway with JSON.
+- Many dynamic consumers without code generation lean toward resolution culture and events. See [event case](case-event-stream.md).
+- A browser on the same hop is not this case. Add a gateway with JSON.
 
 ---
 
 ## Key takeaways
 
-- Internal high-QPS **stable records** lean toward **schema-driven IDL**, not native codecs.
+- Internal high-QPS **stable records** lean toward **schema-driven IDL**. They do not lean toward native codecs.
 - The suite picks **libraries per language** after the family is fixed.
-- Evolution process is part of the recommendation—not an afterthought.
+- Evolution process is part of the recommendation. It is not an afterthought.

@@ -2,19 +2,19 @@
 
 ## Problem
 
-In the classical serialization model, a byte sequence arrives, a parser **constructs a new object graph** in the language runtime, application code reads properties from those objects, and memory is later reclaimed—manually or by **garbage collection** (GC = automatic reclamation of unused memory). That model is straightforward to reason about. It becomes expensive when messages are large, numerous, or only partly examined, because the implementation pays to materialize fields that are never read.
+In the classical serialization model, a byte sequence arrives and a parser **constructs a new object graph** in the language runtime. Application code then reads properties from those objects. Memory is later reclaimed, either manually or by **garbage collection**. Garbage collection (GC) is automatic reclamation of unused memory. That model is straightforward to reason about. It becomes expensive when messages are large, numerous, or only partly examined. The implementation pays to build full language objects in memory for fields that are never read.
 
-Some formats are described as **zero-copy**, or are said **not to deserialize**. Such phrasing is easily misread as “costless and invariably safer.” The underlying mechanism is more precise: for a chosen **endianness** (byte order) and alignment policy, **the on-the-wire layout is arranged so that fields can be read in place**, using **offsets** (distances in bytes from a known base) into the receive buffer, rather than by allocating a parallel tree of language objects.
+Some formats are described as **zero-copy**, or are said **not to deserialize**. Such phrasing is easily misread as “costless and invariably safer.” The underlying mechanism is more precise. For a chosen **endianness** (byte order) and alignment policy, **the on-the-wire layout is arranged so that fields can be read in place**. Readers use **offsets** into the receive buffer. An offset is a distance in bytes from a known base. The design avoids allocating a parallel tree of language objects.
 
 ---
 
 ## Short answer
 
-In a **zero-copy** design (FlatBuffers, Cap’n Proto, and related systems), encoding produces a binary image whose fields are accessible through **generated accessors or equivalent offset arithmetic** applied directly to the receive buffer. There is no separate step that parses the entire message into ordinary language objects on the ordinary read path. That is what people mean by “does not deserialize” in the *classical* sense of full materialization.
+In a **zero-copy** design, encoding produces a binary image whose fields are accessible through **generated accessors or equivalent offset arithmetic** applied directly to the receive buffer. FlatBuffers, Cap’n Proto, and related systems work this way. There is no separate step that parses the entire message into ordinary language objects on the ordinary read path. That is what people mean by “does not deserialize” in the *classical* sense of building the full set of language objects in memory.
 
-Encoding still requires work to **construct** that layout. **Validation** of untrusted buffers remains necessary—omitting it is a serious risk. Partial mutation is often awkward, and operational tooling differs from text-oriented formats. Zero-copy is a layout and application-programming-interface philosophy, not a costless substitute for a schema or a trust model.
+Encoding still requires work to **construct** that layout. **Validation** of untrusted buffers remains necessary. Omitting validation is a serious risk. Partial mutation is often awkward. Operational tooling differs from text-oriented formats. Zero-copy is a layout and application-programming-interface philosophy. It is not a costless substitute for a schema or a trust model.
 
-This matters because marketing language can hide real costs. In-place reads can be very efficient, but construction, verification, and buffer lifetime still need careful design.
+This matters because marketing language can hide real costs. In-place reads can be very efficient. Construction, verification, and buffer lifetime still need careful design.
 
 ---
 
@@ -23,7 +23,7 @@ This matters because marketing language can hide real costs. In-place reads can 
 ![Classical deserialize path versus zero-copy accessors](../assets/diagrams/201-zero-copy.svg#only-light)
 ![Classical deserialize path versus zero-copy accessors](../assets/diagrams/201-zero-copy-dark.svg#only-dark)
 
-**Information versus materialization.** Interpreting bytes as typed fields *is* deserialization in the information-theoretic sense. What zero-copy designs avoid is the classical step of **allocating a full data-transfer object graph** that mirrors the message.
+**Information versus building full objects in memory.** Interpreting bytes as typed fields *is* deserialization in the information-theoretic sense. What zero-copy designs avoid is the classical step of **allocating a full data-transfer object graph** that mirrors the message.
 
 ---
 
@@ -35,7 +35,7 @@ Recall from [memory layout](memory-layout.md) that a process-local structure may
 
 - multi-byte integers appear at agreed alignments and byte orders;
 - variable-length data (strings, vectors) are reached through **offsets** stored in the buffer;
-- optional fields may be indicated by a table of field offsets (often called a **vtable** in FlatBuffers documentation—a small table of offsets that tells the reader where each field lives).
+- optional fields may be indicated by a table of field offsets. That table is often called a **vtable** in FlatBuffers documentation. A vtable is a small table of offsets that tells the reader where each field lives.
 
 **Beginner sketch — reading one integer field.**
 
@@ -50,7 +50,7 @@ Suppose a verified buffer begins with a root table. Generated code might perform
      that owns a separate "price_cents" heap field.
 ```
 
-No host pointer from the **writer’s** address space appears in the file. Offsets are relative to the buffer, so the image remains meaningful after the bytes are copied to another machine (given matching endianness rules as defined by the format).
+No host pointer from the **writer’s** address space appears in the file. Offsets are relative to the buffer. The image remains meaningful after the bytes are copied to another machine, given matching endianness rules as defined by the format.
 
 ### FlatBuffers as a concrete case study
 
@@ -61,19 +61,19 @@ No host pointer from the **writer’s** address space appears in the file. Offse
 | Verify | A verifier checks that offsets and lengths lie within the buffer (essential for untrusted input). |
 | Read | Accessors traverse offsets; unread fields need not become heap objects. |
 
-So “FlatBuffers does not deserialize” means “does not classically materialize the whole message as objects.” It does **not** mean “does no work and needs no schema.”
+So “FlatBuffers does not deserialize” means “does not classically build the whole message as language objects in memory.” It does **not** mean “does no work and needs no schema.”
 
 ### The encode path is not free
 
-Builders must produce a correct buffer (packing, offsets, padding). Workloads that **mutate** messages continuously may find the classical pattern—populate a structure, then serialize—simpler. Zero-copy layouts are most advantageous when messages are **constructed once and read many times**, or when only a few fields of a large message are examined.
+Builders must produce a correct buffer. Packing, offsets, and padding all require work. Workloads that **mutate** messages continuously may find the classical pattern simpler: populate a structure, then serialize. Zero-copy layouts are most advantageous when messages are **constructed once and read many times**, or when only a few fields of a large message are examined.
 
 ### Validation
 
-Avoiding object materialization must not mean avoiding **bounds and structural checks** on untrusted data. FlatBuffers-style stacks provide verifiers; using them on adversarial input is part of the security discussion in the [engineering perspective](../101/engineer_perspective.md). An unverified buffer is a collection of offsets that an attacker may craft to induce out-of-bounds access.
+Avoiding the creation of full language objects in memory must not mean avoiding **bounds and structural checks** on untrusted data. FlatBuffers-style stacks provide verifiers. Using them on adversarial input is part of the security discussion in the [engineering perspective](../101/engineer_perspective.md). An unverified buffer is a collection of offsets that an attacker may craft to induce out-of-bounds access.
 
 ### Mutation and operability
 
-In-place updates are constrained: sufficient space must already exist, and changing lengths is difficult. Many deployments treat buffers as **immutable messages** and rebuild when state changes. Debugging requires format-aware tools; hexadecimal dumps are less informative than structured text logs.
+In-place updates are constrained. Sufficient space must already exist. Changing lengths is difficult. Many deployments treat buffers as **immutable messages** and rebuild when state changes. Debugging requires format-aware tools. Hexadecimal dumps are less informative than structured text logs.
 
 ### Related but distinct ideas
 
@@ -83,7 +83,7 @@ Several ideas sound similar to message zero-copy but solve different problems:
 |------|-------------------------------|
 | Memory-mapped columnar formats (Arrow, Parquet access paths) | Zero-copy *columns* for analytical workloads—a different problem domain ([data science perspective](../101/data_science_perspective.md)) |
 | `span` / buffer views on ordinary codecs | Reduce copies without adopting a full zero-copy message format |
-| Protocol Buffers with arenas or pooling | Fast materialization or reduced allocation—not the same layout model |
+| Protocol Buffers with arenas or pooling | Fast creation of full language objects in memory, or reduced allocation. This is not the same layout model. |
 
 ---
 
@@ -111,7 +111,7 @@ The approach fits poorly for small, frequently mutated documents when builder co
 
 ## In this suite
 
-Where FlatBuffers or similar codecs are **registered** for a language, treat them as **schema-driven / specialized layout** entries and compare them carefully with other schema-driven libraries on the **same language Results** page. Absence from a language benchmark runner means “not measured here,” not “irrelevant in industry.” Categories and overviews record what is wired today: [Serialization categories](../../analysis/serialization_categories.md).
+Where FlatBuffers or similar codecs are **registered** for a language, treat them as **schema-driven / specialized layout** entries. Compare them carefully with other schema-driven libraries on the **same language Results** page. Absence from a language benchmark runner means “not measured here.” It does not mean “irrelevant in industry.” Categories and overviews record what is wired today: [Serialization categories](../../analysis/serialization_categories.md).
 
 ---
 
@@ -127,9 +127,9 @@ Where FlatBuffers or similar codecs are **registered** for a language, treat the
 
 ## Key takeaways
 
-- Zero-copy means **in-place field access** from a designed layout, not “no interpretation of bytes.”
-- “Does not deserialize” targets the classical **full object-graph materialization** step.
-- Construction and **verification** still cost time; security requires the latter for untrusted data.
+- Zero-copy means **in-place field access** from a designed layout. It does not mean “no interpretation of bytes.”
+- “Does not deserialize” targets the classical step of **building a full object graph as language objects in memory**.
+- Construction and **verification** still cost time. Security requires verification for untrusted data.
 - Best fit: large or sparsely read, mostly immutable messages, with acceptance of schema tooling.
 - Poor fit: tiny mutable documents, or environments that require text inspectability above all else.
 - Columnar and buffer-view techniques are related but not identical.

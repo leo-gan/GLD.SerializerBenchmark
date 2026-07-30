@@ -9,21 +9,21 @@ Every public or multi-tenant deserialize path accepts **attacker-controlled byte
 
 The classic failures are not “the codec was a bit slow.” They are:
 
-- **Remote code execution** through native deserializers (running attacker code on your machine).
-- **Resource exhaustion** through nested or huge payloads (using up memory or CPU until the service fails).
-- **Logic bugs** from unvalidated schemaless data (accepting a shape that your business code never expected).
+- **Remote code execution** through native deserializers. That means running attacker code on your machine.
+- **Resource exhaustion** through nested or huge payloads. That means using up memory or CPU until the service fails.
+- **Logic bugs** from unvalidated schemaless data. That means accepting a shape that your business code never expected.
 
-Teams often discover these risks after an incident. They then retrofit limits that should have been part of the original boundary design. This page is the operational playbook so that retrofit is not your first lesson.
+Teams often discover these risks after an incident. They then retrofit limits that should have been part of the original boundary design. This page is the operational playbook. The goal is that retrofit is not your first lesson.
 
 ---
 
 ## Short answer
 
-Assume untrusted input is **hostile**. Prefer **portable pure-data formats** with explicit validation at the trust boundary (see [trust boundaries](trust-boundaries.md)). A **portable pure-data format** encodes values and structure without the power to reconstruct arbitrary program types or run code during parse.
+Assume untrusted input is **hostile**. Prefer **portable pure-data formats** with explicit validation at the trust boundary. See [trust boundaries](trust-boundaries.md). A **portable pure-data format** encodes values and structure. It does not have the power to reconstruct arbitrary program types. It also does not run code during parse.
 
-Enforce **maximum body size, nesting depth, and collection cardinality** before or during parse. In other words, refuse messages that are too large, nested too deep, or that contain enormous arrays or maps.
+Enforce **maximum body size, nesting depth, and collection cardinality** before or during parse. In other words, refuse messages that are too large. Refuse messages that are nested too deep. Refuse messages that contain enormous arrays or maps.
 
-Never run language-native deserialize—pickle, Java serialization, unsafe YAML load, legacy binary formatters—on untrusted bytes. For zero-copy layouts, **verify** the buffer before field access (see 201 [zero-copy](../201/zero-copy.md)). Suite speed numbers do not measure adversarial robustness.
+Never run language-native deserialize on untrusted bytes. That ban covers pickle, Java serialization, unsafe YAML load, and legacy binary formatters. For zero-copy layouts, **verify** the buffer before field access. See 201 [zero-copy](../201/zero-copy.md). Suite speed numbers do not measure adversarial robustness.
 
 This page assumes the security notes from the 101 engineering lens. Here we own the **operational playbook**.
 
@@ -47,12 +47,12 @@ This matters because the “who” question changes the whole design. A parser t
 
 ```text
   Untrusted producer?
-    no  → still enforce size limits; the threat model may be weaker
+    no  → still enforce size limits; the written security assumptions may be weaker
     yes → portable format + hard limits + validation
            never native deserialize
 ```
 
-Even when the producer is trusted, size limits remain a good default. When the producer is untrusted, portable formats, hard resource caps, and validation are mandatory.
+Even when the producer is trusted, size limits remain a good default. When the producer is untrusted, portable formats are mandatory. Hard resource caps are mandatory. Validation is mandatory.
 
 | Risk class | Typical vectors | Mitigations |
 |------------|-----------------|-------------|
@@ -72,19 +72,19 @@ Even when the producer is trusted, size limits remain a good default. When the p
 |---------|---------|
 | Treating “internal network” as fully trusted | Lateral movement inside the network becomes remote code execution |
 | Putting limits only at the gateway | A sidecar or admin path bypasses them |
-| Validating only after full materialization | You already paid the denial-of-service cost |
+| Validating only after building full language objects in memory | You already paid the denial-of-service cost |
 | Never running fuzz tests | Edge cases ship straight to production |
 | Choosing a codec by Results alone | A fast but unsafe path wins the architecture decision record |
 
-For example, if validation runs only after you have already built a giant object tree in memory, a malicious payload has already hurt you—even if you eventually reject it.
+For example, suppose validation runs only after you have already built a giant object tree in memory. A malicious payload has already hurt you. That is true even if you eventually reject it.
 
 ---
 
 ## Real-world sketch
 
-An internal API accepts MessagePack from other services and later from a partner VPN. There is no maximum nesting depth. A nested map bomb locks workers. Separately, a debug endpoint still accepts pickle “for support tools.”
+An internal API accepts MessagePack from other services. Later it also accepts MessagePack from a partner VPN. There is no maximum nesting depth. A nested map bomb locks workers. Separately, a debug endpoint still accepts pickle “for support tools.”
 
-The pickle path is the incident class that ends careers. The depth bomb is the one that ends service-level objectives (SLOs)—targets for reliability such as “99% of requests finish within 200 ms.” Both are **boundary design** failures, not “we picked the wrong MessagePack library.”
+The pickle path is the incident class that ends careers. The depth bomb is the one that ends reliability targets (*service-level objectives*, or SLOs). One example is “99% of requests finish within 200 ms.” Both failures are **boundary design** failures. They are not “we picked the wrong MessagePack library.”
 
 ---
 
@@ -97,7 +97,7 @@ The pickle path is the incident class that ends careers. The depth bomb is the o
 | [Using this suite](using-this-suite.md) | Why you must not treat speed as safety |
 | [Trust boundaries](trust-boundaries.md) | Portable versus native policy |
 
-This benchmark runner does **not** run adversarial fuzz campaigns or claim parser security. **Fuzzing** means feeding large numbers of random or semi-random inputs to find crashes and edge cases.
+This benchmark runner does **not** run adversarial fuzz campaigns. It does not claim parser security. **Fuzzing** means feeding large numbers of random or semi-random inputs to find crashes and edge cases.
 
 ---
 
@@ -109,19 +109,19 @@ This benchmark runner does **not** run adversarial fuzz campaigns or claim parse
 
 1. Identify every public or multi-tenant parse entry point.
 2. Note the codec (JSON, Protobuf, native, and so on) and the maximum request size at the edge.
-3. Gather parser settings: depth limits, document size limits, and known CVE posture (common vulnerabilities and exposures—published security issues in software).
+3. Gather parser settings. Include depth limits and document size limits. Note known CVE posture. **CVE** means common vulnerabilities and exposures. Those are published security issues in software.
 
 ### Procedure
 
-1. Walk a threat checklist: code execution through native deserialize, expansion bombs, huge allocations, deeply nested structures.
+1. Walk a threat checklist. Cover code execution through native deserialize. Cover expansion bombs. Cover huge allocations. Cover deeply nested structures.
 2. Verify **hard limits** on body size, depth, and collection cardinality before or during parse.
 3. Confirm that native, pickle, and Java serialization paths are **banned** on untrusted routes.
-4. Optionally fuzz or inject adversarial fixtures; watch process memory and time-to-failure.
+4. Optionally fuzz or inject adversarial fixtures. Watch process memory and time-to-failure.
 5. Use suite Results only for performance among **safe** portable codecs.
 
 ### Decision rule
 
-- Any untrusted path with native deserialize or no size/depth limits is a **fail**. Fix that before optimizing.
+- Any untrusted path with native deserialize is a **fail**. Any untrusted path with no size or depth limits is also a **fail**. Fix that before optimizing.
 - Among safe codecs, use the implementation-variance and latency experiments as usual.
 
 ---
@@ -146,15 +146,15 @@ This benchmark runner does **not** run adversarial fuzz campaigns or claim parse
 
 - Whether a library is free of known CVEs.
 - The correct absolute limits for *your* memory budget.
-- How effective your WAF rules or service-mesh policies are. A **WAF** is a web application firewall—filters in front of HTTP services.
+- How effective your WAF rules or service-mesh policies are. A **WAF** is a web application firewall. It is a filter in front of HTTP services.
 - Whether gadgets exist in *your* dependency graph.
 
 ---
 
 ## Common mistakes
 
-- Enabling “convenient” native deserialize behind authentication only. Authentication answers “who are you?”; it does not make hostile bytes safe to execute as code.
-- Logging full hostile bodies (this amplifies cost and leak risk).
+- Enabling “convenient” native deserialize behind authentication only. Authentication answers “who are you?” It does not make hostile bytes safe to execute as code.
+- Logging full hostile bodies. That amplifies cost and leak risk.
 - Skipping verification on FlatBuffers-class buffers for speed.
 
 ---
@@ -164,4 +164,4 @@ This benchmark runner does **not** run adversarial fuzz campaigns or claim parse
 - Deserialize is an **attack surface**. Design limits first.
 - Portable formats plus validation plus size and depth caps is the default for untrusted bytes.
 - Native deserialize is a special case of “trusted only.”
-- Suite Results answer cost under honest fixtures—not adversarial hardness.
+- Suite Results answer cost under honest fixtures. They do not answer adversarial hardness.
