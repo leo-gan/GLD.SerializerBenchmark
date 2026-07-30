@@ -4,23 +4,25 @@ This page is a **table of contents for measured numbers**. Pivot tables and late
 
 Those snapshots are generated on a developer machine and committed into `docs/`. Continuous integration deploys the site; it does **not** re-run analysis. Numbers depend on the machine and the CSV used—re-running elsewhere may differ.
 
-Analysis documentation hub: [Benchmarks overview](index.md).
+Analysis documentation hub: [Method overview](index.md).
 
 ---
 
 ## Results by language
 
-| Language | Results snapshot | Inventory (what we measure) |
-|----------|------------------|-----------------------------|
-| C# | [Results](../c-sharp/results.md) | [Overview](../c-sharp/index.md) |
-| Python | [Results](../python/results.md) | [Overview](../python/index.md) |
-| Rust | [Results](../rust/results.md) | [Overview](../rust/index.md) |
-| C | [Results](../c/results.md) | [Overview](../c/index.md) |
-| JavaScript | [Results](../javascript/results.md) | [Overview](../javascript/index.md) |
-| Go | [Results](../go/results.md) | [Overview](../go/index.md) |
-| Java | [Results](../java/results.md) | [Overview](../java/index.md) |
-| C++ | [Results](../cpp/results.md) | [Overview](../cpp/index.md) |
-| Swift | [Results](../swift/results.md) | [Overview](../swift/index.md) |
+Alphabetical, same link pattern as the **Languages** menu and storefront: language name → overview, **Results** → measured snapshot.
+
+| Language |
+|----------|
+| [C](../c/index.md) · [Results](../c/results.md) |
+| [C#](../c-sharp/index.md) · [Results](../c-sharp/results.md) |
+| [C++](../cpp/index.md) · [Results](../cpp/results.md) |
+| [Go](../go/index.md) · [Results](../go/results.md) |
+| [Java](../java/index.md) · [Results](../java/results.md) |
+| [JavaScript](../javascript/index.md) · [Results](../javascript/results.md) |
+| [Python](../python/index.md) · [Results](../python/results.md) |
+| [Rust](../rust/index.md) · [Results](../rust/results.md) |
+| [Swift](../swift/index.md) · [Results](../swift/results.md) |
 
 Related (not numbers): [Modes](modes.md) · [Serialization categories](serialization_categories.md) · [Analysis methodology](ANALYSIS_METHODOLOGY.md) · [Benchmark architecture](architecture.md)
 

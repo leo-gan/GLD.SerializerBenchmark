@@ -1,22 +1,30 @@
 # C: nanopb vs protobuf-c
 
-## Problem
+## Why this article exists
 
-Both **protobuf-c** and **nanopb** claim “Protocol Buffers for C,” but they optimize for different worlds. **protobuf-c** targets general services with heap-allocated messages. **nanopb** targets **embedded** systems with static memory budgets. Treating them as interchangeable APIs produces the wrong memory model, the wrong failure modes, and unfair suite comparisons.
+Both **protobuf-c** and **nanopb** claim “Protocol Buffers for C.” They optimize for different worlds. **protobuf-c** targets general services with heap-allocated messages. **nanopb** targets **embedded** systems with static memory budgets. Treating them as interchangeable APIs produces the wrong memory model, the wrong failure modes, and unfair suite comparisons.
+
+In this article you will compare the two engines along allocation, size limits, APIs, and typical failure modes. After reading it, you should be able to choose which C engine fits a deployment. You should also be able to explain why a valid Protocol Buffers message can still be rejected by nanopb.
 
 ## Short answer
 
-Use **protobuf-c** when you want classic generated structs, descriptor-driven pack/unpack, and heap-friendly services ([protobuf-c path](protobuf-c-protobuf-c.md)). Use **nanopb** when RAM or flash is tight, you can declare **maximum sizes** in options, and you accept stream- and callback-oriented encode/decode instead of free-form heap trees. The **wire format** remains Protocol Buffers binary ([wire format](protobuf-wire-format.md)). What diverges is the **engineering**: allocation, code generation, and APIs.
+Use **protobuf-c** when you want classic generated structs, descriptor-driven pack/unpack, and heap-friendly services ([protobuf-c path](protobuf-c-protobuf-c.md)).
 
-**Suite pins (this monorepo):** protobuf-c **v1.5.0**; nanopb **0.4.9** (`c/third_party/VERSIONS.md`, registration in `ser_nanopb.c`).
+Use **nanopb** when RAM or flash is tight. You declare **maximum sizes** in options. You accept stream- and callback-oriented encode/decode instead of free-form heap trees.
+
+The **wire format** remains Protocol Buffers binary ([wire format](protobuf-wire-format.md)). What diverges is the **engineering**: allocation, code generation, and APIs.
+
+**Suite pins (this shared code repository for many projects):** protobuf-c **v1.5.0**; nanopb **0.4.9** (`c/third_party/VERSIONS.md`, registration in `ser_nanopb.c`).
 
 ## Prerequisites
 
-- [C: protobuf-c path](protobuf-c-protobuf-c.md).  
-- [Wire format](protobuf-wire-format.md).  
+- [C: protobuf-c path](protobuf-c-protobuf-c.md).
+- [Wire format](protobuf-wire-format.md).
 - Soft: [301 untrusted input](../301/untrusted-input.md) (bounds matter even more on embedded targets).
 
 ## Mental model
+
+Picture two libraries speaking the same byte language but living under different memory contracts. The tags, varints, and length-delimited fields are the same. The way each library stores values in C memory is not.
 
 ```text
   Same wire (tags, varints, LEN fields)
@@ -43,7 +51,7 @@ Use **protobuf-c** when you want classic generated structs, descriptor-driven pa
 | **Typical failure** | Out of memory, or a leak if free is skipped | Encode/decode fails if data exceeds a static max |
 | **Suite registration** | `protobuf-c` | `nanopb` (a separate log name—compare within C and the schema-driven family) |
 
-**Ownership contrast**
+**Ownership contrast.** Ownership means who allocates memory and who must free it. protobuf-c leans on the heap for unpack. nanopb prefers pre-sized static storage. In the common case, nothing needs to be freed at all.
 
 ```text
 protobuf-c
@@ -91,12 +99,12 @@ if (!pb_decode(&istream, MiniUser_fields, &out)) {
 
 ### When valid Protocol Buffers still fails nanopb
 
-Suppose `name` is generated as an 8-byte array (`max_size:8`, including a null terminator in some setups) and the peer sends a longer string that is still **valid** length-delimited Protocol Buffers:
+Suppose `name` is generated as an 8-byte array (`max_size:8`, including a null terminator in some setups). A peer sends a longer string that is still **valid** length-delimited Protocol Buffers. What happens?
 
-1. protobuf-c `unpack` → a heap string of full length (until you run out of memory).  
+1. protobuf-c `unpack` → a heap string of full length (until you run out of memory).
 2. nanopb `pb_decode` → **false** / error: the value does not fit the static contract.
 
-That is intentional for embedded safety, not a wire-format bug. The same pattern applies when a `repeated` field’s count exceeds `max_count`.
+That is intentional for embedded safety. It is not a wire-format bug. The same pattern applies when a `repeated` field’s count exceeds `max_count`. Teams sometimes mislabel a max-size reject as “our encodings are incompatible.” The real issue is a deployment contract about size.
 
 ## Step-by-step: how nanopb thinks about encode
 
@@ -106,8 +114,8 @@ Logical model of [nanopb](https://jpa.kapsi.fi/nanopb/). Always check your nanop
 
 Code generation (from `.proto` plus optional `.options`) produces a C struct where:
 
-- Scalars are plain fields.  
-- Strings and bytes are often **fixed arrays**, or a pointer-plus-callback pair with a **maximum length**.  
+- Scalars are plain fields.
+- Strings and bytes are often **fixed arrays**, or a pointer-plus-callback pair with a **maximum length**.
 - Repeated fields have a **max count** (or a callback that streams elements).
 
 If the logical Protocol Buffers message can be unbounded, nanopb forces you to **cap** it at design time. That is the opposite of “malloc until it fits.”
@@ -121,9 +129,9 @@ pb_encode(&stream, FieldList, &struct)
 
 Encode walks the field list:
 
-1. For each present field, emit a **tag** (same wire key rule as everywhere else).  
-2. Emit the payload (varint, fixed, or length-delimited).  
-3. Nested messages encode into the stream as length-delimited blobs.  
+1. For each present field, emit a **tag** (same wire key rule as everywhere else).
+2. Emit the payload (varint, fixed, or length-delimited).
+3. Nested messages encode into the stream as length-delimited blobs.
 4. On buffer full or max exceeded → **false** / error (no silent realloc by default).
 
 ### N3 — No separate “get_packed_size then malloc” requirement
@@ -141,10 +149,10 @@ pb_decode(&stream, FieldList, &struct)
 
 ### N5 — Tag loop with hard limits
 
-1. Read a tag → field number and wire type.  
-2. Match against the field list.  
-3. Decode into static storage; if a repeated count would exceed its max → **fail**.  
-4. Unknown fields: skip by wire type (and optional callbacks).  
+1. Read a tag → field number and wire type.
+2. Match against the field list.
+3. Decode into static storage. If a repeated count would exceed its max → **fail**.
+4. Unknown fields: skip by wire type (and optional callbacks).
 5. Nested messages: decode a length-delimited blob into a nested struct (or a callback).
 
 ### N6 — Success means “fits the static contract”
@@ -172,7 +180,7 @@ A message that is valid Protocol Buffers for protobuf-c can still be **rejected*
 | Sensor stream with a fixed maximum number of samples | **nanopb** |
 | Team already owns protobuf-c everywhere | Stay with it; do not dual-stack without a reason |
 
-Whether to use Protocol Buffers at all is a [301](../301/index.md) product and polyglot question. This page is about **which C engine** once that choice is made.
+Whether to use Protocol Buffers at all is a [301](../301/index.md) product and multi-language (*polyglot*) question. This page is about **which C engine** once that choice is made.
 
 ## In this suite
 
@@ -188,21 +196,21 @@ Do **not** treat suite `nanopb` vs `protobuf-c` rows as a head-to-head of full l
 
 ## Common mistakes
 
-- Using nanopb without setting max sizes, then “fixing” by enabling unbounded dynamic mode everywhere (that loses the point of nanopb).  
-- Assuming nanopb decode allocates like protobuf-c.  
-- Mixing generated headers from different generators in one translation unit.  
-- Cross-ranking C Results against Python or Rust when choosing an engine ([cross-language fidelity](protobuf-cross-language-fidelity.md)).  
+- Using nanopb without setting max sizes, then “fixing” by enabling unbounded dynamic mode everywhere (that loses the point of nanopb).
+- Assuming nanopb decode allocates like protobuf-c.
+- Mixing generated headers from different generators in one translation unit.
+- Cross-ranking C Results against Python or Rust when choosing an engine ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 - Calling a max-size reject a “wire bug” when the peer used protobuf-c with no caps.
 
 ## What this article is not
 
-- A full nanopb options reference (see upstream nanopb docs).  
-- upb-C or other C bindings.  
+- A full nanopb options reference (see upstream nanopb docs).
+- upb-C or other C bindings.
 - A hand-rolled wire lab (see the [lab](lab-mini-protobuf-encoder.md)).
 
 ## Key takeaways
 
-- **Same wire format, different memory contracts.**  
-- protobuf-c = descriptor tables plus heap-friendly pack/unpack.  
-- nanopb = static budgets plus streams; fails closed when data exceeds caps.  
-- In this suite there are two names under one language—compare fairly, and choose by deployment constraints.
+- **Same wire format, different memory contracts.**
+- protobuf-c = descriptor tables plus heap-friendly pack/unpack.
+- nanopb = static budgets plus streams; fails closed when data exceeds caps.
+- In this suite there are two names under one language. Compare fairly, and choose by deployment constraints.

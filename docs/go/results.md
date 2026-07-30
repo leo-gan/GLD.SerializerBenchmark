@@ -1,8 +1,8 @@
 # Go — Benchmark Results
 
-**Generated:** 2026-07-24T20:24:07.863800
+**Generated:** 2026-07-29T20:52:48.238193
 
-This page is a **snapshot of measured numbers** for Go on one machine. Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little.
+This page is a **snapshot of measured numbers** for Go on **one machine, one session** (claim level **L1**). Continuous integration deploys the documentation site; it does **not** re-run analysis when docs are published. Re-running benchmarks on another computer will usually change the numbers a little. Stronger multi-session / multi-machine claims need more evidence — see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 
 | Topic | Where to read |
 |-------|---------------|
@@ -10,6 +10,7 @@ This page is a **snapshot of measured numbers** for Go on one machine. Continuou
 | I/O modes and run modes | [Modes](../analysis/modes.md) |
 | How CSVs become these tables | [Analysis methodology](../analysis/ANALYSIS_METHODOLOGY.md) |
 | What each metric means | [Metrics catalog](../analysis/METRICS.md) |
+| What you may claim (L1/L2/L3) | [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md) |
 | All languages’ result links | [Results summary](../analysis/BENCHMARK_SUMMARY.md) |
 
 ## How to read these tables
@@ -27,6 +28,10 @@ Compare serializers **inside this language**. Prefer the same [category](../anal
 
 Rows are sorted by **serializer name** (easy lookup), not by rank. Batch workloads appear as **Data type · N instances** (for example Message · 100 instances). Default multi-serializer tables show **high-importance** metrics only; pairwise / version A/B reports can show the full set ([Metrics](../analysis/METRICS.md)).
 
+> **How these numbers were filtered (Dashboard “Samples”):** First the first timed repetition is dropped as warmup (`RepetitionIndex == 0`). Then outliers are removed with **paired Tukey IQR k=1.5** — the same rule as the Dashboard **Samples** menu item **“IQR k=1.5 (default)”** (`iqr_1.5`). A whole trial is dropped if serialize, deserialize, or total time falls outside the fences. Raw CSVs still store every trial. On the Dashboard you can switch among four **Samples** policies without re-running the benchmark; this Results page is the **default policy only**. Details: [Analysis methodology — outlier filtering](../analysis/ANALYSIS_METHODOLOGY.md#outlier-filtering) · [Dashboard filter policies](../analysis/ANALYSIS_METHODOLOGY.md#dashboard-filter-policies-multi-aggregation-export).
+
+> **Exploratory ranks:** effect sizes vs the fastest codec are **descriptive**. When we attach Holm-adjusted tests, they only correct for many serializers **inside one** (data type × batch size × I/O mode) group — not for every comparison on this page. Prefer pairwise A/B (`analyze-benchmarks --compare-a … --compare-b …`) for confirmatory checks. See [Analysis methodology — ranks](../analysis/ANALYSIS_METHODOLOGY.md#exploratory-ranks).
+
 > **Stream honesty:** stream rows labeled as **native** 170, **adapted** 20. Only **`native`** (and carefully **`text_on_stream`**) support stream-API performance claims. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
 
 
@@ -36,32 +41,32 @@ Rows are sorted by **serializer name** (easy lookup), not by rank. Batch workloa
 
 One row per serializer (averaged across data types; bytes mode preferred when both exist). Only **high-importance** columns appear here by default ([Metrics catalog](../analysis/METRICS.md)). Times are **µs**. **Bold** = best in that column.
 
-| serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) | Samples | Fidelity |
-|---|---|---|---|---|---|---|---|
-| encoding/gob:go1.24.13 | 71.2 | 25.3 | 45.5 | 33K | 10.3K | 1783 | **1.00** |
-| encoding/json:go1.24.13 | 260 | 52.8 | 206 | 71.1K | 19.7K | 1759 | **1.00** |
-| fxamacker/cbor:2.9.2 | 107 | 25.2 | 82 | 146K | 13.6K | 1762 | **1.00** |
-| goccy/go-json:0.10.6 | 112 | 46 | 65.8 | 162K | 19.7K | 1768 | **1.00** |
-| goccy/go-yaml:1.19.2 | 4,360 | 1,970 | 2,370 | 6.48K | 22K | 1830 | **1.00** |
-| hamba/avro:2.31.0 | **33.3** | **16.3** | **17** | 260K | 9.11K | 1783 | **1.00** |
-| jsoniter:1.1.12 | 144 | 49.5 | 93.2 | 131K | 19.7K | 1771 | **1.00** |
-| kelindar/binary:1.0.19 | 53.5 | 21.1 | 32.1 | **263K** | **8.97K** | 1757 | **1.00** |
-| linkedin/goavro:2.15.0 | 79.1 | 21.7 | 56.3 | 207K | 9.02K | 1769 | **1.00** |
-| mongo-bson:1.17.9 | 175 | 57 | 117 | 78.7K | 20.7K | 1750 | **1.00** |
-| pelletier/go-toml:2.4.3 | 324 | 119 | 203 | 65.6K | 22.2K | 1746 | **1.00** |
-| protobuf:1.36.11 | 59.4 | 20 | 38.9 | 217K | 10.1K | 1799 | **1.00** |
-| segmentio/encoding/json:0.5.4 | 128 | 43.9 | 83.6 | 124K | 19.7K | 1764 | **1.00** |
-| shamaton/msgpack:3.1.2 | 75.7 | 28.1 | 47.4 | 176K | 13.3K | 1782 | **1.00** |
-| sonic:1.15.2 | 71.2 | 31.4 | 38.6 | 172K | 19.7K | 1753 | **1.00** |
-| ugorji/cbor:1.3.1 | 62.1 | 20.1 | 41.8 | 149K | 13.6K | 1766 | **1.00** |
-| ugorji/json:1.3.1 | 140 | 48.9 | 91.5 | 97.4K | 19.7K | 1767 | **1.00** |
-| ugorji/msgpack:1.3.1 | 59.1 | 18.9 | 39.9 | 154K | 13.6K | 1751 | **1.00** |
-| vmihailenco/msgpack:5.4.1 | 107 | 39.9 | 66.4 | 133K | 14.2K | 1762 | **1.00** |
+| serializer | Median total (µs) | Median ser (µs) | Median deser (µs) | Ops/s (from mean) | Median size (B) |
+|---|---|---|---|---|---|
+| encoding/gob:go1.24.13 | 71.2 | 25.3 | 45.5 | 33K | 10.3K |
+| encoding/json:go1.24.13 | 260 | 52.8 | 206 | 71.1K | 19.7K |
+| fxamacker/cbor:2.9.2 | 107 | 25.2 | 82 | 146K | 13.6K |
+| goccy/go-json:0.10.6 | 112 | 46 | 65.8 | 162K | 19.7K |
+| goccy/go-yaml:1.19.2 | 4,360 | 1,970 | 2,370 | 6.48K | 22K |
+| hamba/avro:2.31.0 | **33.3** | **16.3** | **17** | 260K | 9.11K |
+| jsoniter:1.1.12 | 144 | 49.5 | 93.2 | 131K | 19.7K |
+| kelindar/binary:1.0.19 | 53.5 | 21.1 | 32.1 | **263K** | **8.97K** |
+| linkedin/goavro:2.15.0 | 79.1 | 21.7 | 56.3 | 207K | 9.02K |
+| mongo-bson:1.17.9 | 175 | 57 | 117 | 78.7K | 20.7K |
+| pelletier/go-toml:2.4.3 | 324 | 119 | 203 | 65.6K | 22.2K |
+| protobuf:1.36.11 | 59.4 | 20 | 38.9 | 217K | 10.1K |
+| segmentio/encoding/json:0.5.4 | 128 | 43.9 | 83.6 | 124K | 19.7K |
+| shamaton/msgpack:3.1.2 | 75.7 | 28.1 | 47.4 | 176K | 13.3K |
+| sonic:1.15.2 | 71.2 | 31.4 | 38.6 | 172K | 19.7K |
+| ugorji/cbor:1.3.1 | 62.1 | 20.1 | 41.8 | 149K | 13.6K |
+| ugorji/json:1.3.1 | 140 | 48.9 | 91.5 | 97.4K | 19.7K |
+| ugorji/msgpack:1.3.1 | 59.1 | 18.9 | 39.9 | 154K | 13.6K |
+| vmihailenco/msgpack:5.4.1 | 107 | 39.9 | 66.4 | 133K | 14.2K |
 
 
 ### Total Time
 
-| serializer | bytes mode/mean | bytes mode/median | stream mode/mean | stream mode/median |
+| serializer | bytes mode/mean (µs) | bytes mode/median (µs) | stream mode/mean (µs) | stream mode/median (µs) |
 |---|---|---|---|---|
 | encoding/gob:go1.24.13 | 13.9 | 13.7 | 16.3 | 14.1 |
 | encoding/json:go1.24.13 | 3.33 | 3.24 | 4.91 | 3.81 |
@@ -86,27 +91,27 @@ One row per serializer (averaged across data types; bytes mode preferred when bo
 
 ### Ops/Sec
 
-| serializer | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
-|---|---|---|---|---|---|---|---|---|---|---|
-| encoding/gob:go1.24.13 | 48K | 5.6K | 45K | 8.8K | 0.072M | 17K | 64K | 5.8K | 52K | 7.5K |
-| encoding/json:go1.24.13 | 100K | 1.6K | 130K | 3.2K | 0.3M | 5.3K | 130K | 1.8K | 72K | 1K |
-| fxamacker/cbor:2.9.2 | 190K | 3.2K | 220K | 6K | 0.6M | 14K | 260K | 4.2K | 230K | 5.2K |
-| goccy/go-json:0.10.6 | 310K | 5.8K | 300K | 11K | 0.68M | 18K | 310K | 4.7K | 120K | 1.8K |
-| goccy/go-yaml:1.19.2 | 6.9K | 0.064K | 11K | 0.14K | 0.022M | 0.25K | 13K | 0.13K | 9.7K | 0.11K |
-| hamba/avro:2.31.0 | 440K | **12K** | 410K | **20K** | 1M | **52K** | **490K** | **8.8K** | 420K | 14K |
-| jsoniter:1.1.12 | 220K | 4.3K | 250K | 8.3K | 0.49M | 11K | 290K | 4.3K | 86K | 1.3K |
-| kelindar/binary:1.0.19 | **480K** | 8.9K | **440K** | 14K | **1.3M** | 40K | 380K | 5.6K | 400K | 10K |
-| linkedin/goavro:2.15.0 | 270K | 4K | 310K | 7K | 0.9M | 20K | 280K | 3.8K | 390K | 8.5K |
-| mongo-bson:1.17.9 | 100K | 1.8K | 110K | 3.5K | 0.32M | 7.5K | 140K | 2.3K | 110K | 2.5K |
-| pelletier/go-toml:2.4.3 | 73K | 0.9K | 94K | 1.9K | 0.27M | 3.9K | 150K | 2K | 74K | 1.1K |
-| protobuf:1.36.11 | 290K | 5.9K | 290K | 9.4K | 0.9M | 27K | 330K | 4.5K | **440K** | **18K** |
-| segmentio/encoding/json:0.5.4 | 270K | 5.7K | 280K | 9.3K | 0.63M | 16K | 280K | 4.3K | 110K | 1.9K |
-| shamaton/msgpack:3.1.2 | 230K | 4.7K | 250K | 8.3K | 0.76M | 22K | 410K | 7.6K | 330K | 12K |
-| sonic:1.15.2 | 280K | 6.5K | 280K | 13K | 0.65M | 22K | 430K | 7.2K | 200K | 3.8K |
-| ugorji/cbor:1.3.1 | 240K | 5.1K | 250K | 9.2K | 0.69M | 20K | 340K | 6.8K | 290K | 13K |
-| ugorji/json:1.3.1 | 180K | 4K | 190K | 6.9K | 0.44M | 11K | 240K | 4.8K | 94K | 1.6K |
-| ugorji/msgpack:1.3.1 | 240K | 5.5K | 250K | 9.4K | 0.7M | 22K | 340K | 7.3K | 320K | 14K |
-| vmihailenco/msgpack:5.4.1 | 180K | 3K | 190K | 5.4K | 0.55M | 14K | 300K | 5.7K | 190K | 4.3K |
+| serializer | Average | Document · 1 instance | Document · 100 instances | Event · 1 instance | Event · 100 instances | Message · 1 instance | Message · 100 instances | Strings · 1 instance | Strings · 100 instances | Telemetry · 1 instance | Telemetry · 100 instances |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| encoding/gob:go1.24.13 | 33K | 48K | 5.6K | 45K | 8.8K | 0.072M | 17K | 64K | 5.8K | 52K | 7.5K |
+| encoding/json:go1.24.13 | 74K | 100K | 1.6K | 130K | 3.2K | 0.3M | 5.3K | 130K | 1.8K | 72K | 1K |
+| fxamacker/cbor:2.9.2 | 150K | 190K | 3.2K | 220K | 6K | 0.6M | 14K | 260K | 4.2K | 230K | 5.2K |
+| goccy/go-json:0.10.6 | 180K | 310K | 5.8K | 300K | 11K | 0.68M | 18K | 310K | 4.7K | 120K | 1.8K |
+| goccy/go-yaml:1.19.2 | 6.3K | 6.9K | 0.064K | 11K | 0.14K | 0.022M | 0.25K | 13K | 0.13K | 9.7K | 0.11K |
+| hamba/avro:2.31.0 | 290K | 440K | **12K** | 410K | **20K** | 1M | **52K** | **490K** | **8.8K** | 420K | 14K |
+| jsoniter:1.1.12 | 140K | 220K | 4.3K | 250K | 8.3K | 0.49M | 11K | 290K | 4.3K | 86K | 1.3K |
+| kelindar/binary:1.0.19 | **310K** | **480K** | 8.9K | **440K** | 14K | **1.3M** | 40K | 380K | 5.6K | 400K | 10K |
+| linkedin/goavro:2.15.0 | 220K | 270K | 4K | 310K | 7K | 0.9M | 20K | 280K | 3.8K | 390K | 8.5K |
+| mongo-bson:1.17.9 | 80K | 100K | 1.8K | 110K | 3.5K | 0.32M | 7.5K | 140K | 2.3K | 110K | 2.5K |
+| pelletier/go-toml:2.4.3 | 67K | 73K | 0.9K | 94K | 1.9K | 0.27M | 3.9K | 150K | 2K | 74K | 1.1K |
+| protobuf:1.36.11 | 230K | 290K | 5.9K | 290K | 9.4K | 0.9M | 27K | 330K | 4.5K | **440K** | **18K** |
+| segmentio/encoding/json:0.5.4 | 160K | 270K | 5.7K | 280K | 9.3K | 0.63M | 16K | 280K | 4.3K | 110K | 1.9K |
+| shamaton/msgpack:3.1.2 | 200K | 230K | 4.7K | 250K | 8.3K | 0.76M | 22K | 410K | 7.6K | 330K | 12K |
+| sonic:1.15.2 | 190K | 280K | 6.5K | 280K | 13K | 0.65M | 22K | 430K | 7.2K | 200K | 3.8K |
+| ugorji/cbor:1.3.1 | 190K | 240K | 5.1K | 250K | 9.2K | 0.69M | 20K | 340K | 6.8K | 290K | 13K |
+| ugorji/json:1.3.1 | 120K | 180K | 4K | 190K | 6.9K | 0.44M | 11K | 240K | 4.8K | 94K | 1.6K |
+| ugorji/msgpack:1.3.1 | 190K | 240K | 5.5K | 250K | 9.4K | 0.7M | 22K | 340K | 7.3K | 320K | 14K |
+| vmihailenco/msgpack:5.4.1 | 140K | 180K | 3K | 190K | 5.4K | 0.55M | 14K | 300K | 5.7K | 190K | 4.3K |
 
 ## Latency distributions
 
@@ -175,7 +180,7 @@ That refreshes this language’s tables and the latency images under `docs/analy
 
     These fields come from the run sidecar next to the CSV (`*.configs.json`, or older `*.environment.json` files). They describe the machine and the run setup, not the timing formulas. For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.
     
-    - **Source CSV:** `logs/go/2026-07-24-202008.csv`
+    - **Source CSV:** `/home/leo/PycharmProjects/GLD/seriailizer-benchmark/logs/go/2026-07-24-202008.csv`
     - run=2026-07-24-202008
     - language=go
     - os=Linux 6.8.0-124-generic

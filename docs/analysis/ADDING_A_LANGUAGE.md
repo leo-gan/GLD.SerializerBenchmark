@@ -94,7 +94,7 @@ Source `scripts/lib/config.sh` and use `bench_mode_reps "$MODE"` (reads `modes.<
 
 - `docs/<lang>/index.md` — ecosystem overview, registered inventory, caveats.
 - After benchmarks: run `analyze-benchmarks` so `docs/<lang>/results.md` can be produced when logs exist.
-- Register Overview and Results under the language tab (and Benchmarks if needed) in `mkdocs.yml`.
+- Register Overview and Results under the **Languages** tab (and **Method** if needed) in `mkdocs.yml`.
 
 ---
 

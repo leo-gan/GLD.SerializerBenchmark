@@ -2,17 +2,25 @@
 
 ## Problem
 
-Event platforms and multi-team producers need a **control plane** for schemas: where the current schema lives, who may publish a new version, and which old reader and writer combinations remain legal. Without a registry (or an equivalent process), “we use Avro” or “we use Protobuf” becomes tribal knowledge, and production breaks on the first incompatible field.
+Event platforms and multi-team producers need a **control plane** for schemas. They need to know where the current schema lives. They need to know who may publish a new version. They need to know which old reader and writer combinations remain legal.
+
+Without a **schema registry** (or an equivalent process), “we use Avro” or “we use Protobuf” becomes tribal knowledge. Production then breaks on the first incompatible field. In plain language, a registry is a catalog of allowed message shapes. Automation rejects illegal changes before they reach production.
+
+---
 
 ## Short answer
 
-A **schema registry** (or a monorepo plus continuous integration that plays the same role) stores versioned schemas and evaluates **compatibility** before a new version is accepted. Common modes—**BACKWARD**, **FORWARD**, **FULL**, and their *transitive* variants—encode which rolling-upgrade stories you support.
+A **schema registry** stores versioned schemas. One shared code repository for many projects plus continuous integration can play the same role. The registry evaluates **compatibility** before a new version is accepted. Common modes include **BACKWARD**, **FORWARD**, and **FULL**. There are also *transitive* variants of those modes. The modes encode which gradual-upgrade stories you support (old and new service versions running at the same time).
+
+**Compatibility** means this: a combination of old and new software can still exchange data correctly. The mode you pick is a product decision. It is about deploy order and data lifetime. It is not a universal ranking of formats.
 
 Pick the mode from your deploy topology. Enforce it in CI/CD. Never rely on human review alone once more than a handful of teams publish schemas.
 
-Culture still matters ([two schema cultures](two-schema-cultures.md)). Resolution-oriented stacks lean on registry modes. Field-number stacks lean on IDL breaking-change detection. Both need a gate in the deploy path.
+Culture still matters. See [two schema cultures](two-schema-cultures.md). Resolution-oriented stacks lean on registry modes. Field-number stacks lean on IDL breaking-change detection. Both need a gate in the deploy path.
 
 This page assumes 201 [schema evolution](../201/schema-evolution.md).
+
+---
 
 ## Constraints that matter
 
@@ -23,7 +31,16 @@ This page assumes 201 [schema evolution](../201/schema-evolution.md).
 | **FULL** | Both directions at once | The strictest common intersection of BACKWARD and FORWARD |
 | **\*_TRANSITIVE** variants | Compatibility across **all** historical versions, not only version N versus N−1 | Long retention windows and many live schema versions |
 
-Exact rules differ by system (Confluent Avro, Protobuf policies, JSON Schema stores, and others). Read *your* registry documentation. Do not memorize one vendor’s table as universal law.
+In other words:
+
+- **BACKWARD** answers: “Can the new consumer still read yesterday’s messages?”
+- **FORWARD** answers: “Can the old consumer still read today’s messages?”
+- **FULL** answers: “Both of the above, during the support window.”
+- **Transitive** modes also check older historical versions. They do not check only the previous version.
+
+Exact rules differ by system. Examples include Confluent Avro, Protobuf policies, and JSON Schema stores. Read *your* registry documentation. Do not memorize one vendor’s table as universal law.
+
+---
 
 ## Decision frame
 
@@ -42,8 +59,12 @@ Exact rules differ by system (Confluent Avro, Protobuf policies, JSON Schema sto
 |-----------|-------------|
 | Long retention, replay, many consumer versions | Transitive checks plus BACKWARD or FULL |
 | Short-lived topics with few consumers | BACKWARD may suffice |
-| IDL monorepo without a registry product | Breaking-change CI plus review acts as a functional registry |
+| IDL in one shared code repository for many projects, without a registry product | Breaking-change CI plus review acts as a functional registry |
 | No enforcement at all | You do not have a registry—you have a wiki |
+
+This matters because a green “registry is running” dashboard is not enough. You need “incompatible schemas cannot ship.”
+
+---
 
 ## Failure modes
 
@@ -55,9 +76,15 @@ Exact rules differ by system (Confluent Avro, Protobuf policies, JSON Schema sto
 | Dual registries or dual subjects per event | Split brain about which schema is canonical |
 | Treating the registry as optional for “small” teams | Growth debt that appears when the team is no longer small |
 
+For example, suppose messages live for six months. You only check “new schema versus previous.” An old consumer replaying month-old data can still fail.
+
+---
+
 ## Real-world sketch
 
 A payments topic uses Avro with BACKWARD compatibility. A producer removes a field that a slow fraud consumer still reads. The registry rejects the schema in CI. The team either dual-writes for a while or waits for consumer lag to drain. Without that gate, the break appears as cryptic deserialize errors at 02:00.
+
+---
 
 ## In this suite
 
@@ -65,7 +92,9 @@ A payments topic uses Avro with BACKWARD compatibility. A producer removes a fie
 |----------|------|
 | **Results** | Codec cost only—not registry behavior |
 | [Two schema cultures](two-schema-cultures.md) | Which control plane you are running |
-| [Case: event backbone](case-event-stream.md) | End-to-end recommendation under rolling deploy |
+| [Case: event backbone](case-event-stream.md) | End-to-end recommendation under gradual updates (old and new versions run together) |
+
+---
 
 ## Experiments
 
@@ -73,22 +102,24 @@ A payments topic uses Avro with BACKWARD compatibility. A producer removes a fie
 
 ### Setup
 
-1. Identify the subject or subjects, the registry product, and the producer/consumer deploy order.
-2. Draft a realistic schema evolution: add an optional field, then attempt a known break.
-3. Ensure access to the registry API or a CI check that calls the compatibility endpoint.
+1. Identify the subject or subjects. Identify the registry product. Identify the producer and consumer deploy order.
+2. Draft a realistic schema evolution. Add an optional field. Then attempt a known break.
+3. Ensure access to the registry API. Or ensure a CI check that calls the compatibility endpoint.
 
 ### Procedure
 
-1. Set the proposed mode (for example BACKWARD for a consumer-first deploy order).
-2. Register the new schema in a **dev** subject and confirm that accept/reject matches intent.
-3. Try a known-breaking change and confirm a **reject**.
-4. Roll a canary producer or consumer and watch lag and errors.
+1. Set the proposed mode. One example is BACKWARD for a consumer-first deploy order.
+2. Register the new schema in a **dev** subject. Confirm that accept or reject matches intent.
+3. Try a known-breaking change. Confirm a **reject**.
+4. Roll a canary producer or consumer. Watch lag and errors. A **canary** is a small fraction of production traffic. It is used to validate a change safely.
 5. Document the mode and who is allowed to register.
 
 ### Decision rule
 
-- The mode must match deploy order (see the decision frame).
-- If the registry cannot reject breaks, you do not have registry-enforced compatibility—fix the process or the tool.
+- The mode must match deploy order. See the decision frame.
+- If the registry cannot reject breaks, you do not have registry-enforced compatibility. Fix the process or the tool.
+
+---
 
 ## Metrics
 
@@ -103,17 +134,23 @@ A payments topic uses Avro with BACKWARD compatibility. A producer removes a fie
 
 **Conclusion style:** “Subject `orders.v1` stays on BACKWARD; the breaking change is rejected in CI.”
 
+---
+
 ## What this suite cannot tell you
 
 - Which vendor registry to buy.
 - The exact mode matrix for your schema language.
-- How long a dual-write period must last in your estate.
+- How long a dual-write period must last in the set of systems the organization runs.
+
+---
 
 ## Common mistakes
 
-- Enabling a registry but skipping CI checks so people publish from laptops.
-- Using FULL when the organization cannot meet it—and then bypassing the registry.
-- Ignoring subject naming conventions (per topic versus per record type).
+- Enabling a registry but skipping CI checks. People then publish from laptops.
+- Using FULL when the organization cannot meet it. Teams then bypass the registry.
+- Ignoring subject naming conventions. That includes per topic versus per record type.
+
+---
 
 ## Key takeaways
 

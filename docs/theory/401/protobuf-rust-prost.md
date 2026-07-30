@@ -1,26 +1,32 @@
 # Rust: prost path
 
-## Problem
+## Why this article exists
 
-Rust has more than one Protocol Buffers stack (`prost`, the `protobuf` crate, and others). Client use of `encode` and `decode` looks short. Serializer developers need a deeper picture: how **`prost::Message`**, **code generation**, and the **encoding modules** actually turn structs into wire bytes and back.
+Rust has more than one Protocol Buffers stack. Examples include `prost`, the `protobuf` crate, and others. Client use of `encode` and `decode` looks short. Serializer developers need a deeper picture. How do **`prost::Message`**, **code generation**, and the **encoding modules** actually turn structs into wire bytes and back?
+
+In this article you will follow the path from a `.proto` file through `prost-build` at compile time. You will then follow `encoded_len`, `encode_raw`, and the decode `merge` loop. After reading it, you should be able to explain how prost differs from a descriptor-driven interpreter such as protobuf-c. In prost, the schema is baked into specialized Rust code. It is not consulted from a runtime table on every field.
 
 ## Short answer
 
-**`prost-build`** runs at compile time and emits Rust structs with an `impl Message` (or a derived equivalent). That implementation provides **`encode_raw`**, **`encoded_len`**, **`merge_field`**, and **`clear`**. The public methods `encode`, `encode_to_vec`, and `decode` are thin wrappers: they compute length, ensure capacity, and call `encode_raw`; or they start from `Default` and run a **`merge`** tag loop. Low-level primitives live in `prost::encoding` (varint, wire type, length-delimited helpers) and follow the [Protobuf encoding guide](https://protobuf.dev/programming-guides/encoding/).
+**`prost-build`** runs at compile time and emits Rust structs with an `impl Message` (or a derived equivalent). That implementation provides **`encode_raw`**, **`encoded_len`**, **`merge_field`**, and **`clear`**.
+
+The public methods `encode`, `encode_to_vec`, and `decode` are thin wrappers. For writing, they compute length, ensure capacity, and call `encode_raw`. For reading, they start from `Default` and run a **`merge`** tag loop. Low-level primitives live in `prost::encoding` (varint, wire type, length-delimited helpers). They follow the [Protobuf encoding guide](https://protobuf.dev/programming-guides/encoding/).
 
 In this suite, **`prepare`** builds messages outside the timed path. Timed work is encode and decode.
 
 This article assumes the [wire format](protobuf-wire-format.md) article. Crate: [tokio-rs/prost](https://github.com/tokio-rs/prost) (`Message` lives in `prost/src/message.rs`).
 
-**Suite pin (this monorepo):** `prost` / `prost-build` **0.13** in `rust/Cargo.toml`.
+**Suite pin (this shared code repository for many projects):** `prost` / `prost-build` **0.13** in `rust/Cargo.toml`.
 
 ## Prerequisites
 
-- Intermediate Rust: ownership, `Vec<u8>`, traits.  
-- Serialization 201: schema-dependent encoding.  
+- Intermediate Rust: ownership, `Vec<u8>`, traits.
+- Serialization 201: schema-dependent encoding.
 - Soft: [301 untrusted input](../301/untrusted-input.md) (recursion limits and hostile nesting).
 
 ## Mental model
+
+**Codegen** (code generation) here means running a build script that turns `.proto` files into Rust source. **Monomorphization** means the Rust compiler specializes generic or trait-based code for each concrete message type. Encode and decode become ordinary per-type functions rather than a single interpreter loop.
 
 ```text
   .proto ──prost-build──► generated struct + Message impl
@@ -32,6 +38,8 @@ This article assumes the [wire format](protobuf-wire-format.md) article. Crate: 
 ## Client path (what you write)
 
 ### 1. Codegen (`build.rs`)
+
+In this step, a Cargo build script invokes prost-build so that generated Rust appears under `OUT_DIR` when you compile.
 
 ```rust
 prost_build::Config::new()
@@ -67,11 +75,11 @@ let buf = person.encode_to_vec();
 let parsed = pb::MiniUser::decode(&buf[..])?;
 ```
 
-Field names are Rust-ified (snake_case and similar conventions). **Tags on the wire still come from the field numbers in the `.proto` file.** For the teaching [MiniUser](lab-mini-protobuf-encoder.md) message, compile a separate tiny `mini.proto`—it is not part of the suite `schemas/v2/protobuf/benchmark_v2.proto`.
+Field names are Rust-ified (snake_case and similar conventions). **Tags on the wire still come from the field numbers in the `.proto` file.** For the teaching [MiniUser](lab-mini-protobuf-encoder.md) message, compile a separate tiny `mini.proto`. It is not part of the suite `schemas/v2/protobuf/benchmark_v2.proto`.
 
 ## How prost implements serialization (step-by-step)
 
-prost turns a Rust struct into wire bytes using **compile-time knowledge** of the schema. There is no runtime descriptor table on the hot path. Instead, the code is **monomorphized**: the compiler specializes encode and decode for each concrete message type.
+prost turns a Rust struct into wire bytes using **compile-time knowledge** of the schema. There is no runtime descriptor table on the code path that runs on every request under load. Instead, the code is **monomorphized**. The compiler specializes encode and decode for each concrete message type.
 
 ### S1 — Codegen bakes the schema into Rust code
 
@@ -79,11 +87,11 @@ prost turns a Rust struct into wire bytes using **compile-time knowledge** of th
 
 ### S2 — `encoded_len` (dry-run size)
 
-`encoded_len()` walks the struct’s fields and sums `tag_len + payload_len` for every present field. Nested messages recurse. The result tells the caller (or `encode`) how many bytes to reserve.
+`encoded_len()` walks the struct’s fields and sums `tag_len + payload_len` for every present field. Nested messages recurse. The result tells the caller (or `encode`) how many bytes to reserve. This matters because Rust prefers to allocate a `Vec` of the right size once, rather than growing repeatedly.
 
 ### S3 — `encode_raw` (write tags + payloads)
 
-`encode_raw(&self, buf: &mut impl BufMut)` emits one tag-plus-payload pair per present field into the output buffer, using helpers from `prost::encoding` (varint, fixed, length-delimited). Nested messages call their own `encode_raw` inside a length-delimited frame.
+`encode_raw(&self, buf: &mut impl BufMut)` emits one tag-plus-payload pair per present field into the output buffer. It uses helpers from `prost::encoding` (varint, fixed, length-delimited). Nested messages call their own `encode_raw` inside a length-delimited frame. In other words, nested encode is ordinary recursion with a length prefix around the inner bytes.
 
 ### S4 — Public wrappers
 
@@ -119,8 +127,8 @@ Use prost when you want typed, monomorphized encode and decode in a Rust binary 
 
 `merge` reads the input buffer in a loop:
 
-1. Call `decode_key(buf)` to get `(field_number, wire_type)`.  
-2. Pass both plus the remaining buffer to `merge_field`.  
+1. Call `decode_key(buf)` to get `(field_number, wire_type)`.
+2. Pass both plus the remaining buffer to `merge_field`.
 3. Repeat until the buffer is exhausted.
 
 A `DecodeContext` tracks **recursion depth** to protect against malicious nesting (the limit is configurable). Bound untrusted input size as well ([301 untrusted input](../301/untrusted-input.md)).
@@ -129,7 +137,7 @@ A `DecodeContext` tracks **recursion depth** to protect against malicious nestin
 
 `merge_field` is generated per message type. It contains a `match` on `field_number`:
 
-- **Known tag** → call the type-appropriate decoder from `prost::encoding` (for example `uint32::merge`, `string::merge`, `message::merge`).  
+- **Known tag** → call the type-appropriate decoder from `prost::encoding` (for example `uint32::merge`, `string::merge`, `message::merge`).
 - **Unknown tag** → skip the payload by wire type (consume a varint, fixed bytes, or a length-delimited blob) so the loop can continue.
 
 Because `merge_field` is monomorphized code (not a runtime descriptor lookup), the compiler can inline and optimize each branch.
@@ -146,7 +154,7 @@ Because `merge_field` is monomorphized code (not a runtime descriptor lookup), t
 
 ### D5 — Length-delimited messages
 
-`decode_length_delimited` and nested decode read a length prefix, then merge only that many bytes—the same idea as LEN wire payloads in the encoding guide. That is how nested messages stay bounded: the outer decoder slices the buffer before it recurses.
+`decode_length_delimited` and nested decode read a length prefix, then merge only that many bytes. That is the same idea as LEN wire payloads in the encoding guide. Nested messages stay bounded because the outer decoder slices the buffer before it recurses.
 
 ### D6 — Errors
 
@@ -177,11 +185,11 @@ Insufficient data, an invalid varint, a recursion-limit hit, or bad UTF-8 all be
 | **prost-derive** | Derive support for custom or annotated types |
 | **Generated module** | Per-schema structs plus `encode_raw` / `merge_field` bodies |
 
-The hot path is **monomorphized** encode and decode per type, not a single reflective interpreter that walks a descriptor table at runtime.
+The path that runs on every request under load is **monomorphized** encode and decode per type. It is not a single reflective interpreter that walks a descriptor table at runtime.
 
 ## Buffers and ownership (simple diagram)
 
-In Rust, **ownership** is explicit: each value has one owner, and borrows must not outlive that owner.
+In Rust, **ownership** is explicit. Each value has one owner, and borrows must not outlive that owner. For prost, that means the output `Vec<u8>` is yours after encode. The input slice must remain valid only for the duration of decode.
 
 ```text
 Your struct (owned fields)
@@ -213,20 +221,20 @@ Do not cross-rank language Results without controlling for language ([cross-lang
 
 ## Common mistakes
 
-- Hand-editing files under `OUT_DIR`.  
-- Ignoring recursion limits on deep hostile input.  
-- Cross-language Results comparisons without controlling for language.  
+- Hand-editing files under `OUT_DIR`.
+- Ignoring recursion limits on deep hostile input.
+- Cross-language Results comparisons without controlling for language.
 - Assuming field emission order is part of the contract (decoders must accept any order).
 
 ## What this article is not
 
-- `tonic` / gRPC.  
-- A full prost versus `protobuf` crate comparison.  
+- `tonic` / gRPC.
+- A full prost versus `protobuf` crate comparison.
 - A manual subset codec (see the [lab](lab-mini-protobuf-encoder.md)).
 
 ## Key takeaways
 
-- **Trait split:** `encoded_len` plus `encode_raw` for writing; `merge` plus `merge_field` for reading.  
-- **Codegen** bakes field tags into Rust code—there is no descriptor table on the hot path.  
-- **decode** is `Default` plus a tag loop—the same wire model as other languages.  
+- **Trait split:** `encoded_len` plus `encode_raw` for writing; `merge` plus `merge_field` for reading.
+- **Codegen** bakes field tags into Rust code. There is no descriptor table on the path that runs on every request under load.
+- **decode** is `Default` plus a tag loop—the same wire model as other languages.
 - Parallel articles: [Python](protobuf-python.md), [C protobuf-c](protobuf-c-protobuf-c.md).

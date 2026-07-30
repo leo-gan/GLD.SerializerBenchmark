@@ -1,26 +1,34 @@
 # C: protobuf-c path
 
-## Problem
+## Why this article exists
 
-C clients often call `pack` and `unpack` without seeing that **protobuf-c** is a **descriptor-driven interpreter**. Generated structs supply field **offsets** (byte distances into the struct) and **types**. A shared runtime walks those descriptors to emit or parse wire data. Serializer developers need that split—and how it differs from prost’s monomorphized (per-type specialized) `encode_raw`.
+C clients often call `pack` and `unpack` without seeing how **protobuf-c** really works. It is a **descriptor-driven interpreter**. Generated structs supply field **offsets** (byte distances into the struct) and **types**. A shared runtime walks those descriptors to emit or parse wire data. Serializer developers need that split. They also need to see how it differs from prost’s monomorphized (per-type specialized) `encode_raw`.
+
+In this article you will follow the path from a `.proto` file through generated C structs and descriptor tables. You will then follow size-and-pack and scan-and-unpack. After reading it, you should be able to explain who allocates the packed buffer. You should also explain who owns the unpacked heap message, and why forgetting `free_unpacked` is a serious bug under load.
 
 ## Short answer
 
-Code generation emits C structs plus a `ProtobufCMessageDescriptor`: a field array that records id, type, offset, label, and related metadata. **`protobuf_c_message_get_packed_size`** walks the descriptor and sums sizes. **`protobuf_c_message_pack`** writes tags and payloads into a **caller-owned** buffer. **`protobuf_c_message_unpack`** scans the buffer into a **heap** message. **`protobuf_c_message_free_unpacked`** frees that tree. The implementation lives mainly in [`protobuf-c/protobuf-c.c`](https://github.com/protobuf-c/protobuf-c/blob/master/protobuf-c/protobuf-c.c); API overview: [packing docs](https://protobuf-c.github.io/protobuf-c/pack.html).
+Code generation emits C structs plus a `ProtobufCMessageDescriptor`. That descriptor is a field array that records id, type, offset, label, and related metadata.
+
+**`protobuf_c_message_get_packed_size`** walks the descriptor and sums sizes. **`protobuf_c_message_pack`** writes tags and payloads into a **caller-owned** buffer. **`protobuf_c_message_unpack`** scans the buffer into a **heap** message. **`protobuf_c_message_free_unpacked`** frees that tree.
+
+The implementation lives mainly in [`protobuf-c/protobuf-c.c`](https://github.com/protobuf-c/protobuf-c/blob/master/protobuf-c/protobuf-c.c). API overview: [packing docs](https://protobuf-c.github.io/protobuf-c/pack.html).
 
 **nanopb** is a different C design (static budgets and streams). See the short comparison box below and the full article [nanopb vs protobuf-c](protobuf-c-nanopb-compare.md).
 
 This article assumes the [wire format](protobuf-wire-format.md) article.
 
-**Suite pin (this monorepo):** **protobuf-c v1.5.0** (`c/third_party/VERSIONS.md`).
+**Suite pin (this shared code repository for many projects):** **protobuf-c v1.5.0** (`c/third_party/VERSIONS.md`).
 
 ## Prerequisites
 
-- Intermediate C: pointers, `malloc`, struct layout.  
-- Serialization 201: schema-dependent encoding.  
+- Intermediate C: pointers, `malloc`, struct layout.
+- Serialization 201: schema-dependent encoding.
 - Soft: [301 untrusted input](../301/untrusted-input.md).
 
 ## Mental model
+
+A **descriptor** is a table of metadata that describes every field: its number, type, and where it lives inside the C struct. The runtime uses that table like a map of the message layout.
 
 ```text
   .proto ──protoc-gen-c──►  struct Suite__Message { ... };  /* illustrative */
@@ -33,6 +41,8 @@ This article assumes the [wire format](protobuf-wire-format.md) article.
 Every message instance begins with descriptor linkage so the runtime can treat it as a generic `ProtobufCMessage *`.
 
 ## Minimum recipe (what you write)
+
+The following sketch shows the usual call order. Initialize a struct. Measure packed size. Allocate. Pack. Unpack. Free both the message tree and the buffer.
 
 ```c
 /* names are illustrative—generators apply their own prefixing */
@@ -59,7 +69,7 @@ protoc --c_out=gen -I schemas schemas/v2/protobuf/benchmark_v2.proto
 
 Alternatively, **`protobuf_c_message_pack_to_buffer`** streams chunks through a `ProtobufCBuffer` vtable (an append callback) without precomputing a single allocation size.
 
-For the teaching [MiniUser](lab-mini-protobuf-encoder.md) goldens, compile a separate tiny `mini.proto`—not the suite `schemas/v2/protobuf/benchmark_v2.proto`.
+For the teaching [MiniUser](lab-mini-protobuf-encoder.md) goldens, compile a separate tiny `mini.proto`. Do not use the suite `schemas/v2/protobuf/benchmark_v2.proto` for that teaching path.
 
 ## How protobuf-c implements serialization (step-by-step)
 
@@ -78,7 +88,7 @@ Each field descriptor carries at least:
 | **quantifier_offset** | `has` bit, repeated count, or oneof case |
 | **flags** | oneof, packed repeated, and similar |
 
-Code generation fills this table once. The runtime never parses `.proto` text at pack time.
+Code generation fills this table once. The runtime never parses `.proto` text at pack time. In other words, the `.proto` is compiled into C data structures. It is not re-read on every encode.
 
 ### S2 — `protobuf_c_message_get_packed_size`
 
@@ -101,11 +111,11 @@ for each unknown_field:
 return size
 ```
 
-Size helpers account for **tag bytes plus payload** (varint length of integers, string length plus bytes, nested `get_packed_size` for submessages, and so on).
+Size helpers account for **tag bytes plus payload**. That includes the varint length of integers, string length plus bytes, nested `get_packed_size` for submessages, and so on.
 
 ### S3 — `protobuf_c_message_pack`
 
-Same field loop; instead of summing, call pack helpers that **write** into `out + rv` and return the number of bytes written:
+Same field loop. Instead of summing, call pack helpers that **write** into `out + rv` and return the number of bytes written:
 
 ```text
 rv = 0
@@ -118,17 +128,17 @@ return rv
 
 ### S4 — Type dispatch (tag + payload)
 
-Regardless of label, the core write is **tag (field id plus wire type) then payload**, dispatched on the field **type** in the descriptor:
+Regardless of label, the core write is **tag (field id plus wire type) then payload**. The write is dispatched on the field **type** in the descriptor:
 
-- Varint types (int, bool, enum) → varint encoding  
-- Fixed32 / float → 4-byte little-endian  
-- Fixed64 / double → 8-byte  
-- String / bytes → length prefix plus data  
-- Message → length prefix plus recursive pack of the sub-message  
+- Varint types (int, bool, enum) → varint encoding
+- Fixed32 / float → 4-byte little-endian
+- Fixed64 / double → 8-byte
+- String / bytes → length prefix plus data
+- Message → length prefix plus recursive pack of the sub-message
 
 Source helpers are often named like `required_field_pack` even when called from optional or repeated paths. Think “type-dispatch pack,” not “proto2 required only.”
 
-This design is **descriptor-driven** (one shared interpreter loop) rather than monomorphized per-message code.
+This design is **descriptor-driven** (one shared interpreter loop) rather than monomorphized per-message code. That is the main engineering contrast with prost.
 
 ### S5 — Optional / repeated / oneof
 
@@ -141,7 +151,7 @@ This design is **descriptor-driven** (one shared interpreter loop) rather than m
 
 ### S6 — Buffer responsibility
 
-`pack` assumes that **`out` has at least `get_packed_size` bytes**. Undersized buffers are undefined or truncated—**you** measure, then allocate (or use `pack_to_buffer`).
+`pack` assumes that **`out` has at least `get_packed_size` bytes**. Undersized buffers are undefined or truncated. **You** measure, then allocate (or use `pack_to_buffer`). This matters because C will not grow the buffer for you.
 
 ```text
   struct + descriptor  →  size walk  →  pack walk (tag|wire + payload)  →  buffer
@@ -155,8 +165,8 @@ Public entry: **`protobuf_c_message_unpack(descriptor, allocator, len, data)`** 
 
 The unpacker walks the byte buffer as a Protocol Buffers stream:
 
-1. Read a tag → field number plus wire type.  
-2. Slice the **payload** for that field (varint, fixed width, or length-prefixed blob).  
+1. Read a tag → field number plus wire type.
+2. Slice the **payload** for that field (varint, fixed width, or length-prefixed blob).
 3. Build a list of **scanned members** (a pointer into the input plus field metadata when the number is known).
 
 This separates “find fields in the buffer” from “store into C structs.”
@@ -179,16 +189,16 @@ Known numbers map through descriptor **field ranges** and tables to a `ProtobufC
 
 For each scanned member the code calls type-specific helpers that write into the struct at the descriptor’s offset:
 
-- Scalars → direct store  
-- String/bytes → allocate and copy  
-- Message → recursive unpack  
-- Repeated → grow the array and append  
+- Scalars → direct store
+- String/bytes → allocate and copy
+- Message → recursive unpack
+- Repeated → grow the array and append
 
 The key point: everything is driven by the runtime descriptor, not by generated straight-line code per field.
 
 ### D4 — Merge when the same field appears twice
 
-Protocol Buffers allows multiple occurrences of the same field. protobuf-c **merges** them (documented in-source near `merge_messages`): repeated fields concatenate, submessages merge, and singulars prefer later values with care not to double-free. That is why unpack is not always a naive “last write wins” overwrite for messages.
+Protocol Buffers allows multiple occurrences of the same field. protobuf-c **merges** them (documented in-source near `merge_messages`). Repeated fields concatenate. Submessages merge. Singulars prefer later values with care not to double-free. That is why unpack is not always a naive “last write wins” overwrite for messages.
 
 ### D5 — Allocator
 
@@ -196,7 +206,7 @@ Unpack takes a `ProtobufCAllocator *` (`NULL` means a default libc-like allocato
 
 ### D6 — Errors
 
-On failure, unpack returns **NULL** (and should not leak partial trees—the implementation frees on error paths). Always check the pointer. Always bound `len` for untrusted data.
+On failure, unpack returns **NULL**. It should not leak partial trees—the implementation frees on error paths. Always check the pointer. Always bound `len` for untrusted data.
 
 ```text
   bytes  →  scan tags  →  lookup descriptor  →  parse/merge into heap struct
@@ -226,7 +236,7 @@ Short form only—full treatment: [nanopb vs protobuf-c](protobuf-c-nanopb-compa
 
 ## Buffers and ownership (simple diagram)
 
-**Ownership** in C is manual: whoever allocates must free, and buffers you pass to `pack` must be large enough.
+**Ownership** in C is manual. Whoever allocates must free. Buffers you pass to `pack` must be large enough.
 
 ```text
 struct (stack or heap)
@@ -259,21 +269,21 @@ Do not rank C against Python or Rust from Results alone ([cross-language fidelit
 
 ## Common mistakes
 
-- Skipping `free_unpacked` (leaks under load).  
-- Packing into an undersized buffer.  
-- Using a descriptor from a different `.proto` revision than your peers.  
+- Skipping `free_unpacked` (leaks under load).
+- Packing into an undersized buffer.
+- Using a descriptor from a different `.proto` revision than your peers.
 - Treating unpack success as “safe for untrusted input” without a size and depth policy.
 
 ## What this article is not
 
-- A full nanopb tutorial.  
-- A custom-allocator cookbook.  
+- A full nanopb tutorial.
+- A custom-allocator cookbook.
 - A hand-rolled varint lab (see the [lab](lab-mini-protobuf-encoder.md)).
 
 ## Key takeaways
 
-- protobuf-c is **generated layout plus a shared descriptor runtime**.  
-- Pack is a **size walk then a pack walk**, with tag|wire plus payload type dispatch.  
-- Unpack is **scan → lookup → parse/merge → heap message** (see the G1 scan sketch).  
-- Same wire as Python and Rust; different engineering of the engine.  
+- protobuf-c is **generated layout plus a shared descriptor runtime**.
+- Pack is a **size walk then a pack walk**, with tag|wire plus payload type dispatch.
+- Unpack is **scan → lookup → parse/merge → heap message** (see the G1 scan sketch).
+- Same wire as Python and Rust; different engineering of the engine.
 - Parallel articles: [Python](protobuf-python.md), [Rust prost](protobuf-rust-prost.md).

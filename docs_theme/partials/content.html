@@ -1,0 +1,18 @@
+{#-
+  Override Material content partial:
+  honor page.meta.hide including "title" so the storefront has no in-page H1
+  (the site header already shows the product name).
+-#}
+{% if "material/tags" in config.plugins and tags %}
+  {% include "partials/tags.html" %}
+{% endif %}
+{% include "partials/actions.html" %}
+{% if not (page.meta and page.meta.hide and "title" in page.meta.hide) %}
+  {% if "\x3ch1" not in page.content %}
+    <h1>{{ page.title | d(config.site_name, true)}}</h1>
+  {% endif %}
+{% endif %}
+{{ page.content }}
+{% include "partials/source-file.html" %}
+{% include "partials/feedback.html" %}
+{% include "partials/comments.html" %}

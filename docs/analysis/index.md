@@ -1,8 +1,8 @@
-# Benchmarks
+# Method
 
-This section explains **how this project measures serializers**, not the theory of formats themselves.
+This section explains **how this project measures serializers**, not the theory of formats themselves. On the site it lives under the **Method** tab. Live interactive results live under the **Dashboard** tab.
 
-If Theory 101 answers *“what is serialization?”*, Benchmarks answers *“how do we time it fairly, and what do the numbers mean?”*
+If Learn / Serialization 101 answers *“what is serialization?”*, Method answers *“how do we time it fairly, and what do the numbers mean?”*
 
 You do not need to be a performance engineer to read these pages. They are written for introductory computer science students and for anyone who wants a clear picture of the suite before diving into tables and plots.
 
@@ -15,9 +15,10 @@ After reading this section you should be able to:
 1. Say what a **benchmark** is measuring here (serialize and deserialize time, size, and correctness).
 2. Find the right page for layout, modes, statistics, metrics, test data, or published results.
 3. Compare serializers **within one language** (and ideally one category) instead of treating absolute times as a global ranking.
-4. Open a language **Overview** (what libraries we measure) and its **Results** (the measured numbers).
+4. Open a language **Overview** (what libraries we measure) and its **Results** (the measured numbers) under the **Languages** tab.
+5. Open the **Dashboard** for interactive charts and comparisons of the same analysis story.
 
-For the ideas behind formats, start with [Serialization 101](../theory/101/index.md).
+For the ideas behind formats, start with [Serialization 101](../theory/101/index.md) under **Learn**.
 
 ---
 

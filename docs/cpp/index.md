@@ -1,4 +1,9 @@
-# C++
+---
+title: "C++"
+---
+
+C++
+===
 
 C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers).
 
@@ -11,38 +16,38 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson),
 - Official Protobuf: `cpp/scripts/setup-protobuf-sysroot.sh` (libprotobuf 3.12 + protoc, no root install)
 - Registration: [`cpp/src/register.cpp`](../../cpp/src/register.cpp)
 
-## Serializers (27+)
+## Serializers
 
 | Serializer | Category | Library | Optimal call path | Notes |
 |------------|----------|---------|-------------------|-------|
-| nlohmann_json | JSON | nlohmann/json | `dump` / `parse`; stream `<<` / `parse(istream)` | De-facto C++ JSON; **native stream** |
-| rapidjson | JSON | Tencent/rapidjson | `Writer` + `Document::Parse`; stream O/IStreamWrapper | SAX/DOM hot path; **native stream** |
-| simdjson | JSON | simdjson | `dom::parser::parse` | Ser = prepared minified JSON; stream adapted |
 | arduinojson | JSON | ArduinoJson | `serializeJson` / `deserializeJson` (bytes + stream) | Embedded/IoT; **native stream** |
-| yyjson | JSON | yyjson | `yyjson_mut_write` / `yyjson_read` | **Also in C suite**; stream adapted |
-| msgpack | Binary | msgpack-c (C++ API) | `packer` + `sbuffer` / `unpack`; stream packer + unpacker | Official C++ API; **native stream** |
-| nlohmann_msgpack | Binary | nlohmann/json | `to_msgpack` / `from_msgpack` (+ ostream/istream) | Multi-format nlohmann; **native stream** |
-| nlohmann_cbor | Binary | nlohmann/json | `to_cbor` / `from_cbor` (+ ostream/istream) | IETF CBOR; **native stream** |
-| nlohmann_ubjson | Binary | nlohmann/json | `to_ubjson` / `from_ubjson` (+ ostream/istream) | UBJSON; **native stream** |
-| nlohmann_bson | Binary | nlohmann/json | `to_bson` / `from_bson` (+ ostream/istream) | BSON (object root); **native stream** |
-| cereal | Binary | cereal | `BinaryOutput/InputArchive` on ostream/istream | C++-native archives; **native stream** |
-| bitsery | Binary | bitsery | serializer `object`/`container` | Explicit schema |
-| zpp_bits | Binary | zpp_bits | `zpp::bits::out` / `in` | Compile-time binary |
-| yas | Binary | niXman/yas | `yas::save/load` `mem\|binary` | Top-tier microbench staple |
-| cista | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
-| jsoncons_cbor | Binary | jsoncons | `cbor::encode/decode` (bytes + ostream/istream) | DOM multi-format; **native stream** |
-| jsoncons_bson | Binary | jsoncons | `bson::encode/decode` (bytes + ostream/istream) | Document binary; **native stream** |
-| jsoncons_msgpack | Binary | jsoncons | `msgpack::encode/decode` (bytes + ostream/istream) | DOM MessagePack; **native stream** |
-| custom_binary | Binary | harness | length-prefixed fields | Baseline; stream adapted |
-| thrift | Schema | suite TBinaryProtocol | field type+id + STOP | Apache Thrift binary; stream adapted |
+| avro | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
 | avro_c | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++; stream adapted |
-| capnproto | Schema | Cap'n Proto | flat array bytes; `writeMessage` / `InputStreamMessageReader` stream | Zero-copy schema; **native stream** |
+| bitsery | Binary | bitsery | serializer `object`/`container` | Explicit schema |
 | boost_serialization | Binary | Boost.Serialization | binary_o/iarchive (bytes + stream) | Optional (system lib); **native stream** |
+| capnproto | Schema | Cap'n Proto | flat array bytes; `writeMessage` / `InputStreamMessageReader` stream | Zero-copy schema; **native stream** |
+| cereal | Binary | cereal | `BinaryOutput/InputArchive` on ostream/istream | C++-native archives; **native stream** |
+| cista | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
+| custom_binary | Binary | harness | length-prefixed fields | Baseline; stream adapted |
+| flatbuffers | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
+| flexbuffers | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
+| jsoncons_bson | Binary | jsoncons | `bson::encode/decode` (bytes + ostream/istream) | Document binary; **native stream** |
+| jsoncons_cbor | Binary | jsoncons | `cbor::encode/decode` (bytes + ostream/istream) | DOM multi-format; **native stream** |
+| jsoncons_msgpack | Binary | jsoncons | `msgpack::encode/decode` (bytes + ostream/istream) | DOM MessagePack; **native stream** |
+| msgpack | Binary | msgpack-c (C++ API) | `packer` + `sbuffer` / `unpack`; stream packer + unpacker | Official C++ API; **native stream** |
+| nlohmann_bson | Binary | nlohmann/json | `to_bson` / `from_bson` (+ ostream/istream) | BSON (object root); **native stream** |
+| nlohmann_cbor | Binary | nlohmann/json | `to_cbor` / `from_cbor` (+ ostream/istream) | IETF CBOR; **native stream** |
+| nlohmann_json | JSON | nlohmann/json | `dump` / `parse`; stream `<<` / `parse(istream)` | De-facto C++ JSON; **native stream** |
+| nlohmann_msgpack | Binary | nlohmann/json | `to_msgpack` / `from_msgpack` (+ ostream/istream) | Multi-format nlohmann; **native stream** |
+| nlohmann_ubjson | Binary | nlohmann/json | `to_ubjson` / `from_ubjson` (+ ostream/istream) | UBJSON; **native stream** |
 | protobuf | Schema | **libprotobuf** (Google) | `SerializeToArray` / `ParseFromArray` on prepared messages | Official C++ runtime; sysroot via setup script |
 | protobuf-wire | Schema | suite wire | proto3 field tags | In-tree codec; same field numbers as shared `.proto` |
-| avro | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
-| flexbuffers | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
-| flatbuffers | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
+| rapidjson | JSON | Tencent/rapidjson | `Writer` + `Document::Parse`; stream O/IStreamWrapper | SAX/DOM hot path; **native stream** |
+| simdjson | JSON | simdjson | `dom::parser::parse` | Ser = prepared minified JSON; stream adapted |
+| thrift | Schema | suite TBinaryProtocol | field type+id + STOP | Apache Thrift binary; stream adapted |
+| yas | Binary | niXman/yas | `yas::save/load` `mem\|binary` | Top-tier microbench staple |
+| yyjson | JSON | yyjson | `yyjson_mut_write` / `yyjson_read` | **Also in C suite**; stream adapted |
+| zpp_bits | Binary | zpp_bits | `zpp::bits::out` / `in` | Compile-time binary |
 
 ### Call-path contract
 
@@ -59,13 +64,13 @@ for rep:
 
 | Concern | C benchmark runner (`c/`) | C++ benchmark runner (`cpp/`) |
 |---------|------------------|----------------------|
-| Language id | `c` | `cpp` |
-| Object model | C structs + function pointers | C++20 structs + virtual `ISerializer` |
-| JSON focus | cJSON, yyjson, jansson, parson, json-c | nlohmann, RapidJSON, simdjson, arduinojson, yyjson |
-| MessagePack | mpack, msgpack-c **C API** | msgpack-c **C++ API** (`msgpack.hpp`) |
 | CBOR | tinycbor, libcbor, QCBOR, zcbor | jsoncons CBOR |
-| Protobuf | Google **libprotobuf** (`protobuf`), plus nanopb / protobuf-c / protobuf-wire (shared suite wire helper) | official **libprotobuf** + in-tree protobuf-wire |
 | FlatBuffers | **flatcc** (C) | **google/flatbuffers** (C++) |
+| JSON focus | cJSON, yyjson, jansson, parson, json-c | nlohmann, RapidJSON, simdjson, arduinojson, yyjson |
+| Language id | `c` | `cpp` |
+| MessagePack | mpack, msgpack-c **C API** | msgpack-c **C++ API** (`msgpack.hpp`) |
+| Object model | C structs + function pointers | C++20 structs + virtual `ISerializer` |
+| Protobuf | Google **libprotobuf** (`protobuf`), plus nanopb / protobuf-c / protobuf-wire (shared suite wire helper) | official **libprotobuf** + in-tree protobuf-wire |
 
 ### Libraries that work for **both** C and C++
 
@@ -107,10 +112,6 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
    - **C++-only in suite:** nlohmann, RapidJSON, simdjson, arduinojson, cereal, bitsery, zpp_bits, jsoncons, google flatbuffers C++ API.
 
 **Rule of thumb:** If a library is **pure C** and already measured under `Language=c`, re-registering under C++ only makes sense when the C++ call path is a first-class usage mode (yyjson) or when the **API surface differs** (msgpack C vs C++). Do not treat C and C++ rows as interchangeable runtimes for ranking.
-
-## Suite data types
-
-Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
 
 ## Caveats
 
