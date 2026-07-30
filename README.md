@@ -1,6 +1,6 @@
 # Multi-Language Serializer Benchmark
 
-[![Docs](https://img.shields.io/badge/docs-indigo?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/)
+[![Site](https://img.shields.io/badge/site-storefront-indigo?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/)
 [![Dashboard](https://img.shields.io/badge/dashboard%20%7C%20live-brightgreen?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
 [![Serialization 101](https://img.shields.io/badge/Serialization%20101-8A2BE2?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
@@ -11,6 +11,7 @@ Compare 100+ serialization libraries across **nine languages** — with fair wit
 
 | Start here | |
 |------------|--|
+| **Home** | [Project storefront](https://leo-gan.github.io/GLD.SerializerBenchmark/) (CTAs to Dashboard, Learn, Method) |
 | **Numbers** | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) · [Method overview](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/) |
 | **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) — students through systems engineers |
 | **Method** | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |

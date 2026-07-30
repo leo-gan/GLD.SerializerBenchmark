@@ -1,5 +1,5 @@
 site_name: Multi-Language Serializer Benchmark
-site_description: Multi-language serialization performance comparison.
+site_description: Fair multi-language serializer benchmarks — live dashboard, course, and open methodology.
 site_url: https://leo-gan.github.io/GLD.SerializerBenchmark/
 repo_url: https://github.com/leo-gan/GLD.SerializerBenchmark
 repo_name: leo-gan/GLD.SerializerBenchmark
@@ -38,8 +38,7 @@ theme:
 plugins:
   - redirects:
       redirect_maps:
-        # Site root stays on the course entry; Dashboard is the first top tab.
-        'index.md': 'theory/101/index.md'
+        # Site root is docs/index.md (storefront). Theory entry stays under Learn.
         'theory/index.md': 'theory/101/index.md'
         'theory/historical_perspective.md': 'theory/101/historical_perspective.md'
         'theory/data_science_perspective.md': 'theory/101/data_science_perspective.md'
