@@ -9,7 +9,7 @@ By the end of this theory track you should be able to:
 3. Choose a format for a specific kind of work by using the right lens. One lens is data work. Another lens is services and systems.
 4. Connect the ideas in these pages to measured libraries in this multi-language benchmark suite.
 
-Theory alone does not tell you what to ship in production. Use this course to build vocabulary and judgment. Then check real numbers with [Benchmarks](../../analysis/index.md) and each language’s **Results** pages.
+Theory alone does not tell you what to ship in production. Use this course to build vocabulary and judgment. Then check real numbers on the [Dashboard](../../dashboard/) and in each language’s **Results** pages. For how those numbers are produced, see [Method](../../analysis/index.md).
 
 ---
 

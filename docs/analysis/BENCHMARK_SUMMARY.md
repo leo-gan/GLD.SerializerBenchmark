@@ -4,7 +4,7 @@ This page is a **table of contents for measured numbers**. Pivot tables and late
 
 Those snapshots are generated on a developer machine and committed into `docs/`. Continuous integration deploys the site; it does **not** re-run analysis. Numbers depend on the machine and the CSV used—re-running elsewhere may differ.
 
-Analysis documentation hub: [Benchmarks overview](index.md).
+Analysis documentation hub: [Method overview](index.md).
 
 ---
 

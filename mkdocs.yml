@@ -11,10 +11,10 @@ exclude_docs: |
 theme:
   name: material
   features:
-    # Header: top-level sections as tabs (Serialization, C#, Python, …)
+    # Header tabs: Dashboard | Learn | Languages | Method
     - navigation.tabs
     - navigation.tabs.sticky
-    # Left sidebar: sections under the active tab
+    # Left sidebar: sections under the active tab (Languages, Learn, Method)
     - navigation.sections
     - navigation.tracking
     - navigation.instant
@@ -38,6 +38,7 @@ theme:
 plugins:
   - redirects:
       redirect_maps:
+        # Site root stays on the course entry; Dashboard is the first top tab.
         'index.md': 'theory/101/index.md'
         'theory/index.md': 'theory/101/index.md'
         'theory/historical_perspective.md': 'theory/101/historical_perspective.md'
@@ -73,8 +74,11 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
 
+# Top tabs: Dashboard | Learn | Languages | Method
+# Nested items appear in the left sidebar under the active tab (Material has no true ▾ dropdown).
 nav:
-  - Serialization:
+  - Dashboard: dashboard/
+  - Learn:
       - 101:
           - Overview: theory/101/index.md
           - Historical: theory/101/historical_perspective.md
@@ -122,36 +126,36 @@ nav:
           - "C: nanopb vs protobuf-c": theory/401/protobuf-c-nanopb-compare.md
           - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
           - "Same bytes, three runtimes": theory/401/protobuf-cross-language-fidelity.md
-  - C#:
-      - Overview: c-sharp/index.md
-      - Results: c-sharp/results.md
-  - Python:
-      - Overview: python/index.md
-      - Results: python/results.md
-  - Rust:
-      - Overview: rust/index.md
-      - Results: rust/results.md
-  - C:
-      - Overview: c/index.md
-      - Results: c/results.md
-  - JavaScript:
-      - Overview: javascript/index.md
-      - Results: javascript/results.md
-  - Go:
-      - Overview: go/index.md
-      - Results: go/results.md
-  - Java:
-      - Overview: java/index.md
-      - Results: java/results.md
-  - C++:
-      - Overview: cpp/index.md
-      - Results: cpp/results.md
-  - Swift:
-      - Overview: swift/index.md
-      - Results: swift/results.md
-  - Benchmarks:
+  - Languages:
+      - C#:
+          - Overview: c-sharp/index.md
+          - Results: c-sharp/results.md
+      - Python:
+          - Overview: python/index.md
+          - Results: python/results.md
+      - Rust:
+          - Overview: rust/index.md
+          - Results: rust/results.md
+      - C:
+          - Overview: c/index.md
+          - Results: c/results.md
+      - JavaScript:
+          - Overview: javascript/index.md
+          - Results: javascript/results.md
+      - Go:
+          - Overview: go/index.md
+          - Results: go/results.md
+      - Java:
+          - Overview: java/index.md
+          - Results: java/results.md
+      - C++:
+          - Overview: cpp/index.md
+          - Results: cpp/results.md
+      - Swift:
+          - Overview: swift/index.md
+          - Results: swift/results.md
+  - Method:
       - Overview: analysis/index.md
-      - 📊 Dashboard: dashboard/
       - Architecture: analysis/architecture.md
       - Modes: analysis/modes.md
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md

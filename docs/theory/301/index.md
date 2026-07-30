@@ -54,7 +54,7 @@ By the end of this course you should be able to:
 | **301 (this course)** | Production judgment — what to ship under real constraints |
 | [401](../401/index.md) | Implementer elective — wire formats, language paths, and a hands-on lab |
 
-The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s benchmark runner, use the [Benchmarks](../../analysis/index.md) pages. Also use each language’s **Results**.
+The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s benchmark runner, use the [Dashboard](../../dashboard/) and each language’s **Results**. For how the suite measures, see [Method](../../analysis/index.md).
 
 ---
 

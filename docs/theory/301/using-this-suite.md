@@ -99,7 +99,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 | [Metrics catalog](../../analysis/METRICS.md) | What each field means |
 | [Test Data](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
 | [Benchmark architecture](../../analysis/architecture.md) | What the benchmark runner times |
-| Dashboard (Benchmarks navigation) | Interactive slices of the same analysis story |
+| Dashboard (top-level **Dashboard** tab) | Interactive slices of the same analysis story |
 
 **Grouping key for fair peers (conceptually):**  
 `(Language, paradigm, TestDataName, StringOrStream)` — then compare `SerializerName` rows inside that cell.

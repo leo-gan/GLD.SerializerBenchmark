@@ -82,4 +82,4 @@ Install notes live in the [notebooks README](../notebooks/README.md).
 
 - **Core path:** [Serialization 301](../301/index.md) — production judgment when several constraints pull at once.
 - **Implementer elective:** [Serialization 401](../401/index.md) — wire formats, language-specific paths, and a hands-on lab.
-- Related reference pages: [Serialization categories](../../analysis/serialization_categories.md), [Engineering](../101/engineer_perspective.md), [Data science](../101/data_science_perspective.md), and [Benchmarks](../../analysis/index.md).
+- Related reference pages: [Serialization categories](../../analysis/serialization_categories.md), [Engineering](../101/engineer_perspective.md), [Data science](../101/data_science_perspective.md), [Method](../../analysis/index.md), and the [Dashboard](../../dashboard/).
