@@ -2,13 +2,21 @@
 
 ## Problem
 
-Architecture discussions often stop at the format name: “we use JSON,” “we switched to binary,” “we standardized on Protobuf.” On any language **Results** page, several serializers share a family label and differ sharply in encode time, decode time, size, allocation behavior, and fidelity notes. Teams that pick the brand without picking the **implementation** leave performance and reliability to accident—or copy a blog post’s library pin from another runtime.
+Architecture discussions often stop at the format name: “we use JSON,” “we switched to binary,” “we standardized on Protobuf.” On any language **Results** page, several serializers share a family label and differ sharply in encode time, decode time, size, allocation behavior, and fidelity notes.
+
+**Implementation variance** means that two libraries which claim the same format can behave very differently. Teams that pick the brand without picking the **implementation** leave performance and reliability to accident—or copy a blog post’s library pin from another runtime.
+
+---
 
 ## Short answer
 
 After the **paradigm family** is fixed ([categories](../../analysis/serialization_categories.md)), choose a **concrete library** (and version) per language using same-fixture, same-mode Results—and read Overview caveats. Format brand sets interoperability *possibility*; implementation sets cost and engineering quality on that runtime. Do not assume one language’s winning JSON library has a twin with identical behavior elsewhere ([polyglot estates](polyglot-estates.md)).
 
+In other words: first choose the product job (JSON versus schema-driven binary, and so on). Then choose the library. Do not reverse those steps.
+
 This page assumes [using this suite](using-this-suite.md) and 201 [encode/decode cost](../201/encode-decode-cost.md).
+
+---
 
 ## Constraints that matter
 
@@ -21,6 +29,10 @@ This page assumes [using this suite](using-this-suite.md) and 201 [encode/decode
 | **Safety defaults** | Strict versus loose handling of duplicate keys; depth limits |
 | **Maintenance** | Abandoned crate versus an actively fuzzed library |
 | **Version** | Major upgrades change both speed and edge-case behavior |
+
+A **DOM-style** parser builds a full in-memory tree of the document. A **streaming** parser processes tokens as they arrive. **Reflection** discovers fields at runtime; **code generation** produces typed code from a schema ahead of time. Each strategy has different costs.
+
+---
 
 ## Decision frame
 
@@ -41,6 +53,10 @@ This page assumes [using this suite](using-this-suite.md) and 201 [encode/decode
 | Is our Go JSON fast enough? | Rust Results | Go Results plus your service-level objective |
 | Why is size different within MessagePack? | Format myth | Key strategy, library options, fixture shape |
 
+This matters because “we use JSON” is not an operations decision until you also name the library and version.
+
+---
+
 ## Failure modes
 
 | Mistake | Consequence |
@@ -51,9 +67,13 @@ This page assumes [using this suite](using-this-suite.md) and 201 [encode/decode
 | **Chasing micro-wins weekly** | Churn without product gain |
 | **One global ranking table** | Cross-paradigm and cross-language confusion |
 
+---
+
 ## Real-world sketch
 
 An architecture decision record says “use JSON for the public API.” Three services pick three Python JSON libraries from habit. Latency and Unicode edge cases differ; only one path appears in continuous-integration benchmarks. Unifying on a single Overview-listed library, pinned in lockfiles, and tracked on Python Results for the public fixture reduces variance. A later move to schema-driven **internal** RPC is a separate family decision—not a reason to reopen the public JSON debate.
+
+---
 
 ## In this suite
 
@@ -66,6 +86,8 @@ An architecture decision record says “use JSON for the public API.” Three se
 | [Using this suite](using-this-suite.md) | Anti-leaderboard checklist |
 
 When multiple JSON (or multiple schema-driven) entries exist, **that spread is the lesson**: implementation variance is first-class.
+
+---
 
 ## Experiments
 
@@ -91,6 +113,8 @@ When multiple JSON (or multiple schema-driven) entries exist, **that spread is t
 - The winner is the best service-level metric among **faithful** same-family candidates.
 - Never pick by format name alone. Never import another language’s winning library name without re-running this experiment.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -106,6 +130,8 @@ When multiple JSON (or multiple schema-driven) entries exist, **that spread is t
 
 **Conclusion style:** “Pin `orjson@x` for the Python JSON **message** fixture in bytes mode—lowest deserialize median, fidelity 1.0.”
 
+---
+
 ## What this suite cannot tell you
 
 - Security audit status of a dependency.
@@ -113,11 +139,15 @@ When multiple JSON (or multiple schema-driven) entries exist, **that spread is t
 - Behavior under **your** custom validators and middleware.
 - Whether a 5% encode win matters against network round-trip time.
 
+---
+
 ## Common mistakes
 
 - Averaging ranks across families “for fairness.”
 - Treating the fastest library as the default for **untrusted** input without reading safety docs.
 - Upgrading major versions without re-checking Results and fidelity.
+
+---
 
 ## Key takeaways
 

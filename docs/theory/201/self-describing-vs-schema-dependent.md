@@ -6,7 +6,7 @@
 
 ## Problem
 
-Two systems exchange the “same” logical record: an identifier, a name, and a monetary balance. Encoded as JSON, you can often open a log line and infer meaning from the field names. Encoded as a compact binary sequence without documentation nearby, the same person sees only opaque bytes until a schema file, interface description, or other authoritative specification is consulted.
+Two systems exchange the “same” logical record: an identifier, a name, and a monetary balance. Encoded as JSON, you can often open a log line and infer meaning from the field names. Encoded as a compact binary sequence without documentation nearby, the same person sees only opaque bytes until a **schema** file, interface description, or other authoritative specification is consulted. A schema, in this context, is a formal description of messages and field types that producers and consumers agree to share.
 
 The design question is not merely “are there types?” It is **where the meaning of each field is recorded** when the message is in transit or at rest.
 
@@ -14,11 +14,13 @@ The design question is not merely “are there types?” It is **where the meani
 
 ## Short answer
 
-**Self-describing** formats (to varying degrees) embed enough structure in the payload that a generic tool can recover a tree of values. Field names and/or type tags travel with the data. JSON, MessagePack, CBOR, and many “binary JSON” encodings sit in this family.
+**Self-describing** formats (to varying degrees) embed enough structure in the **payload**—the actual message bytes—that a generic tool can recover a tree of values. Field names and/or type tags travel with the data. JSON, MessagePack, CBOR, and many “binary JSON” encodings sit in this family.
 
 **Schema-dependent** formats omit most of that metadata from each message. Readers need a **shared schema or interface description language (IDL)**—a formal description of messages and field types shared by producers and consumers. Classic Protocol Buffers binary encoding, raw Avro data bytes, and many compact remote-procedure-call encodings work this way. For example, you need the schema to know that field number `3` means `balance` and how that field is encoded.
 
 Self-describing formats typically trade larger size and extra parsing work for inspectability and flexibility. Schema-dependent formats trade an explicit, maintained contract and supporting tooling for density, code generation, and clearer evolution rules—when that contract is actually maintained.
+
+In other words: you either pay for meaning inside every message, or you pay for a shared contract outside the message.
 
 ---
 
@@ -75,11 +77,15 @@ The on-the-wire form carries **field numbers and values**, not the Unicode names
 
 Protocol Buffers’ compact binary encoding is small largely **because field names are absent from the stream**—field numbers and wire types remain. Without the mapping from numbers to names and types, only limited generic inspection is possible. That property is not peculiar to one product; it is the general pattern of **schema-dependent density**. The schema is part of the product contract. The bytes are an encoding of values under that contract.
 
+This matters because people sometimes expect “binary” to mean both small *and* self-explanatory. Those two goals pull in opposite directions.
+
 ### “Schemaless” on the wire is not “no contract in the organization”
 
 JSON and MessagePack do not eliminate the need for agreements among producers and consumers. They relocate validation, documentation, and compatibility policy into specifications such as OpenAPI or JSON Schema, shared source types, tests, and operational practice. The wire representation remains flexible. The organization still needs an authoritative definition of allowed shapes.
 
 ### Hybrid arrangements
+
+In practice, many systems sit between the pure extremes. The table below shows common hybrids and where the contract lives in each case.
 
 | Arrangement | Where the contract lives | What the payload emphasizes |
 |-------------|--------------------------|-----------------------------|

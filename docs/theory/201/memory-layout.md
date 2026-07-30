@@ -2,17 +2,19 @@
 
 ## Problem
 
-A structure in C, a record in Go, or an object graph in a managed language sits somewhere in the process’s address space—the region of memory that process can use. Writing that region to disk or to a network socket can look very cheap: you need no schema file, no serialization library, and you can get high throughput on *this* machine.
+Imagine you have a structure in C, a record in Go, or an object graph in a language such as Python or Java. That data sits somewhere in the process’s **address space**—the region of memory that process is allowed to use. Writing that region straight to disk or to a network socket can look very cheap. You need no schema file, no serialization library, and on *this* machine you can often get high throughput.
 
 A second process may then try to read those same bytes. That second process might be written in another language, run on another processor architecture, or use different structure-packing rules. It can then obtain incorrect values, crash, or silently misread numbers. Serialization exists largely because **in-memory layout is not a contract between machines**.
+
+In other words: what is efficient for one process on one machine is not, by itself, a portable way to share data.
 
 ---
 
 ## Short answer
 
-Compilers and language runtimes place fields in memory for **the local processor and operating environment**. That includes native integer widths, pointer sizes, alignment padding (unused bytes inserted so fields sit on convenient addresses), and often **host byte order**—the order in which multi-byte numbers are stored. Those placement rules exist so *this* machine can run efficiently. They are not designed so that another machine can understand the same bytes.
+Compilers and language runtimes place fields in memory for **the local processor and operating environment**. That placement includes native integer widths, pointer sizes, **alignment padding** (unused bytes inserted so fields sit on convenient addresses), and often **host byte order**—the order in which multi-byte numbers are stored. Those rules exist so *this* machine can run efficiently. They are not designed so that another machine can understand the same bytes.
 
-Networks and durable storage only exchange a **linear sequence of bytes under an agreed interpretation**. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and endianness (byte order for multi-byte values). Alternatively, the format must be self-describing enough that readers do not need to assume the writer’s in-memory layout. Raw memory dumps optimize for one process image. Interchange formats optimize for a shared contract.
+Networks and durable storage only exchange a **linear sequence of bytes under an agreed interpretation**. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and **endianness** (the byte order for multi-byte values). Alternatively, the format must be self-describing enough that readers do not need to assume the writer’s in-memory layout. Raw memory dumps optimize for one process image. Interchange formats optimize for a shared contract.
 
 ---
 
@@ -58,7 +60,7 @@ You do not need detailed processor microarchitecture for this course. The essent
 
 **Floating-point example.** The value `1.5` as a 32-bit binary float is a specific 32-bit pattern defined by IEEE 754—not the three characters `1`, `.`, and `5`. Text is appropriate for human display. Processors perform arithmetic on the binary pattern.
 
-**String example (why copying the variable fails as interchange):**
+**String example (why copying the variable fails as interchange).** Consider a string variable on a typical 64-bit process:
 
 ```text
   Variable `name` (eight bytes on a typical 64-bit process):
@@ -109,6 +111,8 @@ Consider three logical fields:
   ---------------------------------
   total size often 16 bytes, although only 13 bytes carry domain data
 ```
+
+In this diagram, an **offset** is the distance in bytes from the start of the structure. Offset 0 is the first byte; offset 4 is four bytes later.
 
 **Layout 2 — order `score`, `id`, `flag`:**
 
@@ -213,6 +217,8 @@ Binary floating-point values face the same byte-order considerations when stored
 
 Formats designed for **in-place reads** (FlatBuffers-class designs—see [Zero-copy](zero-copy.md)) place fields so that a host can load integers from buffer offsets with limited extra work, typically assuming a documented endianness. That arrangement is not the absence of a format. It is a **layout specification** that resembles a convenient memory image while still forbidding raw host pointers into another process’s heap.
 
+This matters because zero-copy designs can *look* like “just memory,” but they are still carefully defined contracts, not accidental dumps of process state.
+
 ### Managed objects and graphs
 
 In C, a small structure may store integers **inline**: the bytes of `id` sit inside the structure itself. In managed languages (Python, Java, C#, JavaScript, and similar environments), a “record” or “object” is often a **graph**. The variable holds a **reference**—an address-like handle into a heap managed by the runtime—and fields may be further references to strings, lists, or nested objects. Those addresses are meaningful only inside **this process** and **this runtime**. They must not be treated as portable data.
@@ -316,6 +322,8 @@ Language-native serializers walk graphs for **one** runtime. Portable formats or
 
 ## Costs and constraints
 
+The table below summarizes how layout and format choices affect different design axes. “What usually stays true” is the constraint you cannot wish away.
+
 | Axis | What changes with layout and format choices | What usually stays true |
 |------|---------------------------------------------|-------------------------|
 | Processor time | Byte swaps or copies when host endianness differs from the wire; scanning padding versus dense packing | You still need *some* layout rule |
@@ -328,7 +336,7 @@ Language-native serializers walk graphs for **one** runtime. Portable formats or
 
 ## Illustrative scenario
 
-A game client on a little-endian laptop writes player state with an uninterpreted copy of a packed C structure and uploads it to a backend. The backend may use a different compiler or CPU convention for field layout, or a managed language that stores fields in an entirely different way for garbage collection (GC = automatic reclamation of unused memory). Inventory counts become incorrect. The defect looks like application logic until someone compares the byte sequences with an endian-aware viewer.
+A game client on a little-endian laptop writes player state with an uninterpreted copy of a packed C structure and uploads it to a backend. The backend may use a different compiler or CPU convention for field layout, or a managed language that stores fields in an entirely different way for **garbage collection** (GC = automatic reclamation of unused memory). Inventory counts become incorrect. The defect looks like application logic until someone compares the byte sequences with an endian-aware viewer.
 
 A durable remedy is not an informal document describing structure packing. It is an explicit format shared by both ends—even a simple length-prefixed little-endian layout, or a schema-driven codec.
 

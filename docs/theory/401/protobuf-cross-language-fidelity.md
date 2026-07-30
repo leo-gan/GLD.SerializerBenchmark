@@ -1,8 +1,10 @@
 # Same bytes, three runtimes
 
-## Problem
+## Why this article exists
 
 Saying “we all use Protocol Buffers” does not guarantee that Python, Rust, and C produce **bit-identical** payloads, or that round-trips preserve every logical field across languages. Fidelity bugs hide in defaults, field naming, timestamps, packed repeated fields, UTF-8 handling, and test-benchmark runner mapping—not in the marketing name of the format.
+
+In this article you will learn a disciplined way to prove that three runtimes interoperate. After reading it, you should be able to design a small encode/decode matrix, state when bit-identity is required, and avoid treating suite speed tables as fidelity proofs.
 
 ## Short answer
 
@@ -16,10 +18,12 @@ This monorepo already has Python, Rust, and C Protocol Buffers entries—use the
 
 ## Prerequisites
 
-- Shared schema discipline (`schemas/v2/protobuf/benchmark_v2.proto` in this repo, or a tiny shared `mini.proto`).  
+- Shared schema discipline (`schemas/v2/protobuf/benchmark_v2.proto` in this repo, or a tiny shared `mini.proto`).
 - Soft: [301 using this suite](../301/using-this-suite.md)—do not use Results as fidelity proofs.
 
 ## Mental model
+
+Start from one logical value and two encoders. Then ask two separate questions: do the decoders recover the logical value, and do the encoders emit exactly the same bytes?
 
 ```text
   logical value  ──A.encode──►  bytes₁
@@ -35,6 +39,8 @@ Protocol Buffers requires **semantic** compatibility: a decoder must understand 
 
 ## What “same bytes” can mean (be precise)
 
+Students often collapse several different claims into the phrase “same bytes.” Keep the following distinctions clear.
+
 | Claim | Meaning | Required by spec? |
 |-------|---------|-------------------|
 | **Interoperable** | A’s bytes decode in B to the same logical fields | **Yes** (for the schema subset you use) |
@@ -48,21 +54,25 @@ Serializer developers should chase **interoperability** first and **bit-identity
 
 ### 1. Freeze the schema
 
-- Use one `.proto` file (or generated sources from one commit).  
-- Do not renumber fields silently.  
+Without a shared schema, cross-language tests are meaningless. Do the following first:
+
+- Use one `.proto` file (or generated sources from one commit).
+- Do not renumber fields silently.
 - Document packed versus unpacked repeated fields if generator versions differ.
 
 ### 2. Freeze the logical fixture
 
 Define values in a language-neutral way:
 
-- Integers and bools are exact.  
-- Strings are defined by Unicode code points (not “whatever my editor saved”).  
-- Timestamps use an explicit unit (this suite often uses milliseconds—see benchmark runner notes).  
-- Floats and doubles: prefer values with exact binary representations when asserting bit-identity; otherwise assert with tolerances only where the product allows it.  
+- Integers and bools are exact.
+- Strings are defined by Unicode code points (not “whatever my editor saved”).
+- Timestamps use an explicit unit (this suite often uses milliseconds—see benchmark runner notes).
+- Floats and doubles: prefer values with exact binary representations when asserting bit-identity; otherwise assert with tolerances only where the product allows it.
 - Nested and repeated fields: specify the full structure, including empty versus omitted.
 
 ### 3. Encode matrix
+
+The table below is the skeleton of a matrix test. Each cell asserts that decoding recovers the fixture’s logical fields.
 
 | Encoder \ Decoder | Python | Rust | C (protobuf-c) |
 |-------------------|--------|------|----------------|
@@ -87,7 +97,7 @@ Optionally:
 assert encode_python(fixture) == encode_rust(fixture)  # bit-identity (strict)
 ```
 
-If bit-identity fails but logical cross-decode works, document **why** (field order, default omission, map order).
+If bit-identity fails but logical cross-decode works, document **why** (field order, default omission, map order). That documentation is itself a useful artifact: it shows you understand the format, not only the test harness.
 
 ### 5. Golden vectors for the subset you hand-rolled
 
@@ -109,8 +119,8 @@ Use the [lab](lab-mini-protobuf-encoder.md) goldens (for example `08 01 12 03 41
 
 This suite may:
 
-- Convert fixtures to native messages **outside** timed paths.  
-- Apply language-specific compare callbacks (in C, the per-serializer compare function is often named something like `fidelity_fx`—a **suite-local round-trip check**, not multi-language proof).  
+- Convert fixtures to native messages **outside** timed paths.
+- Apply language-specific compare callbacks (in C, the per-serializer compare function is often named something like `fidelity_fx`—a **suite-local round-trip check**, not multi-language proof).
 - Exclude fixtures that a given language schema does not define.
 
 Passing suite fidelity means **that language entry** round-trips under **that** compare function. It does not mean that three languages share the same bytes.
@@ -136,10 +146,10 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 
 ## Worked mini protocol (summary)
 
-1. Take the lab message `MiniUser { id=1, name="Ada" }`.  
-2. Encode with Python `SerializeToString`, Rust `encode_to_vec`, and C `protobuf_c_message_pack` (or nanopb if that is your C choice—label it).  
-3. Decode each blob with the other two runtimes.  
-4. Record whether the encodes are bit-identical.  
+1. Take the lab message `MiniUser { id=1, name="Ada" }`.
+2. Encode with Python `SerializeToString`, Rust `encode_to_vec`, and C `protobuf_c_message_pack` (or nanopb if that is your C choice—label it).
+3. Decode each blob with the other two runtimes.
+4. Record whether the encodes are bit-identical.
 5. Append the unknown field `28 63` and confirm logical id and name still round-trip where skip-unknown works.
 
 ## Decision frame: when bit-identity matters
@@ -163,22 +173,22 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 
 ## Common mistakes
 
-- Declaring victory from three green language Results charts.  
-- Testing only A→A round-trips.  
-- Comparing floats with `==` across languages without a policy.  
-- Mixing nanopb static limits with “full” protobuf-c fixtures and calling the mismatch a wire bug.  
-- Editing generated code in one language only (schema drift).  
+- Declaring victory from three green language Results charts.
+- Testing only A→A round-trips.
+- Comparing floats with `==` across languages without a policy.
+- Mixing nanopb static limits with “full” protobuf-c fixtures and calling the mismatch a wire bug.
+- Editing generated code in one language only (schema drift).
 - Using suite fixtures for a first matrix when MiniUser goldens are enough.
 
 ## What this article is not
 
-- A full conformance suite (use upstream Protocol Buffers conformance tests for serious work).  
-- Product advice on JSON versus Protocol Buffers ([301](../301/index.md)).  
+- A full conformance suite (use upstream Protocol Buffers conformance tests for serious work).
+- Product advice on JSON versus Protocol Buffers ([301](../301/index.md)).
 - Engine deep-dives (see the language-path articles).
 
 ## Key takeaways
 
-- Require **cross-decode interoperability**. Treat **bit-identical encode** as an optional strict check.  
-- Prove fidelity with **matrix tests and goldens**, not with benchmark ranks.  
-- Defaults, packing, and benchmark runner mapping cause most “Protocol Buffers mismatch” bugs.  
+- Require **cross-decode interoperability**. Treat **bit-identical encode** as an optional strict check.
+- Prove fidelity with **matrix tests and goldens**, not with benchmark ranks.
+- Defaults, packing, and benchmark runner mapping cause most “Protocol Buffers mismatch” bugs.
 - Suite fidelity is not multi-runtime fidelity—bridge them with explicit tests you own.

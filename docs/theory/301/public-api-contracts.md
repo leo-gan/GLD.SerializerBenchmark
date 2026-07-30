@@ -4,13 +4,21 @@
 
 JSON’s flexibility is a gift for browsers and integrators and a curse for accidental breakage. Fields appear without notice, types drift (`"1"` versus `1`), and renames ship without a version bump. Saying “we use JSON” is not a contract.
 
-Public APIs need an **external schema and process** as strict as IDL cultures—just with different artifacts.
+A **contract** is a machine-checkable agreement about shapes, types, and allowed changes. Public APIs need an **external schema and process** as strict as IDL cultures—just with different artifacts. In other words, text on the wire does not remove the need for governance.
+
+---
 
 ## Short answer
 
 For public or cross-organization HTTP APIs, pair JSON with a **published contract**: OpenAPI and/or JSON Schema (or an equivalent), server-side validation, consumer-driven or contract tests, and a versioning policy (see [versioning in the wild](versioning-in-the-wild.md)).
 
+- **OpenAPI** is a widely used document format that describes HTTP endpoints, parameters, and body shapes.
+- **JSON Schema** is a vocabulary for describing what a JSON document is allowed to contain.
+- **Server-side validation** means the server rejects illegal bodies early, before business logic runs.
+
 Choose JSON libraries for performance and correctness (see [implementation variance](implementation-variance.md)). Do not skip the contract layer because the bytes happen to be text. A binary dual stack is optional and must be earned (see [case: public REST](case-public-rest-api.md)).
+
+---
 
 ## Constraints that matter
 
@@ -22,6 +30,10 @@ Choose JSON libraries for performance and correctness (see [implementation varia
 | **Tests** | Provider checks and consumer-driven checks |
 | **Process** | Review, deprecation windows, and a changelog |
 
+This matters because a beautiful OpenAPI file that no one validates against is documentation theater, not a contract.
+
+---
+
 ## Decision frame
 
 | Need | Action |
@@ -30,6 +42,10 @@ Choose JSON libraries for performance and correctness (see [implementation varia
 | Type-safe clients | Generate clients from OpenAPI, or offer dual Protobuf for selected clients |
 | Rapid internal-only iteration | Still validate; shorter deprecation windows may be acceptable |
 | “Schemaless for agility” | Accept silent client breakage—or stop claiming the API is stable |
+
+For example, if partner companies build against your API, a field rename without a version is an outage for them, even if your server still “works.”
+
+---
 
 ## Failure modes
 
@@ -41,9 +57,15 @@ Choose JSON libraries for performance and correctness (see [implementation varia
 | Breaking change without a version | Integrator outages |
 | PII in documentation examples | Documentation becomes a leak surface ([payload surfaces](payload-surfaces.md)) |
 
+---
+
 ## Real-world sketch
 
 A fintech publishes OpenAPI 3 and generates TypeScript and Kotlin clients. Continuous integration fails if the server’s request models drift from the specification. A “quick” field rename without a version bump is blocked. Later performance work swaps Python JSON libraries using suite Results without touching the public contract at all.
+
+In other words, the contract stayed stable while the implementation improved. That is the separation you want.
+
+---
 
 ## In this suite
 
@@ -52,6 +74,8 @@ A fintech publishes OpenAPI 3 and generates TypeScript and Kotlin clients. Conti
 | JSON-family **Results** | Pick implementations per language |
 | [Categories](../../analysis/serialization_categories.md) | JSON versus other families |
 | [Using this suite](using-this-suite.md) | Fair comparisons inside a family |
+
+---
 
 ## Experiments
 
@@ -76,6 +100,8 @@ A fintech publishes OpenAPI 3 and generates TypeScript and Kotlin clients. Conti
 - No machine-readable contract plus multi-party clients is insufficient. Add a schema before optimizing codecs.
 - Run performance experiments only among codecs that honor the published contract.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -89,17 +115,23 @@ A fintech publishes OpenAPI 3 and generates TypeScript and Kotlin clients. Conti
 
 **Conclusion style:** “OpenAPI and JSON Schema are required; breaking changes use content-type versioning.”
 
+---
+
 ## What this suite cannot tell you
 
 - OpenAPI style-guide politics inside your organization.
 - Whether to use URL versioning versus header versioning.
 - Partner communication service-level agreements.
 
+---
+
 ## Common mistakes
 
 - Treating JSON Schema as optional documentation only.
 - Generating OpenAPI from code without review (noise and accidental breaks).
 - Different field names in Android versus web clients “by accident.”
+
+---
 
 ## Key takeaways
 

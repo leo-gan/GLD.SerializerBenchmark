@@ -2,17 +2,25 @@
 
 ## Problem
 
-Real estates run **C#**, **Python**, **Go**, **Rust**, **JavaScript**, and more against shared data. Each language has a “fastest” library on some chart. Without a polyglot policy, every team picks a local optimum: one service speaks MessagePack with string keys, another speaks Protobuf, and a third pickles values into Redis.
+Real software estates run **C#**, **Python**, **Go**, **Rust**, **JavaScript**, and more against shared data. A **polyglot estate** is an organization that ships more than one programming language in production and expects those languages to interoperate.
 
-Integration cost appears later as translation layers, dual-write windows, and incidents that only reproduce at language boundaries.
+Each language has a “fastest” library on some chart. Without a polyglot policy, every team picks a local optimum: one service speaks MessagePack with string keys, another speaks Protobuf, and a third pickles values into Redis.
+
+Integration cost appears later as translation layers, dual-write windows, and incidents that only reproduce at language boundaries. This page teaches the policy that prevents that drift.
+
+---
 
 ## Short answer
 
 For each **boundary**—public API, internal RPC, async event, cache, or file—pick **one portable contract** and implement it in every language that crosses that boundary. Prefer formats with **mature multi-language implementations** and an explicit evolution story ([two schema cultures](two-schema-cultures.md)).
 
+A **contract** here means the shared rules for field identity, types, and allowed evolution—not merely “we both somehow use JSON.”
+
 Use this suite to compare **implementations within one language**, not to elect a global winner across languages. Dual contracts are allowed at **edges** (for example JSON on the public surface and Protobuf internally) when translation is owned and tested—not as accidental drift.
 
 This page assumes [trust boundaries](trust-boundaries.md) (no language-native interchange) and [using this suite](using-this-suite.md).
+
+---
 
 ## Constraints that matter
 
@@ -24,6 +32,10 @@ This page assumes [trust boundaries](trust-boundaries.md) (no language-native in
 | **Team skill** | Exotic codecs that only one expert understands do not survive staff changes |
 | **Fidelity** | Types such as decimals, timestamps, and maps must round-trip across languages |
 | **Operations tooling** | Can on-call engineers inspect payloads during incidents? |
+
+**Fidelity** means that after encode in language A and decode in language B, the logical values still match. Without fidelity, “we all speak Protobuf” is a slogan rather than a fact.
+
+---
 
 ## Decision frame
 
@@ -44,6 +56,10 @@ This page assumes [trust boundaries](trust-boundaries.md) (no language-native in
         → use per-language Results only to pick libraries
 ```
 
+This matters because a library that is excellent in one runtime is useless if another required language has no maintained implementation.
+
+---
+
 ## Failure modes
 
 | Mistake | Consequence |
@@ -55,11 +71,17 @@ This page assumes [trust boundaries](trust-boundaries.md) (no language-native in
 | **Cross-language rank from the suite** | “Rust won, rewrite the company” |
 | **Schema lives in only one repository** | Other languages reverse-engineer production traffic |
 
+For example, if every team invents its own JSON field names for the “same” event, you no longer have one estate—you have several products that only look related.
+
+---
+
 ## Real-world sketch
 
 Platform engineering standardizes **internal RPC on Protobuf** and **public HTTP on JSON**. Python, Go, and TypeScript services generate stubs from the same protos. Public gateways map JSON to Protobuf at the edge with explicit field tests.
 
 A team proposes MessagePack everywhere because it looked strong on one language Results page. Review asks: do all six languages have maintained libraries, a single evolution story, and a debug story? Without that, MessagePack becomes another dialect. The suite still helps each language pick **which Protobuf or JSON library** to use.
+
+---
 
 ## In this suite
 
@@ -71,6 +93,8 @@ A team proposes MessagePack everywhere because it looked strong on one language 
 | [Using this suite](using-this-suite.md) | Never crown cross-language winners |
 
 A format that appears in **many** language overviews is a candidate for polyglot adoption. Absence in one language is an **integration risk**, not a moral failing of that language.
+
+---
 
 ## Experiments
 
@@ -95,6 +119,8 @@ A format that appears in **many** language overviews is a candidate for polyglot
 - Any required language pair that fails logical interoperability needs a contract or implementation fix before performance tuning.
 - The product choice of family stays fixed; suite multi-language speed ranks do **not** pick the estate contract.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -108,6 +134,8 @@ A format that appears in **many** language overviews is a candidate for polyglot
 
 **Conclusion style:** “Protobuf contract is green on the Python/Go/Rust matrix; pin `prost` and `protobuf` versions.”
 
+---
+
 ## What this suite cannot tell you
 
 - The political cost of mandating one IDL monorepo.
@@ -115,11 +143,15 @@ A format that appears in **many** language overviews is a candidate for polyglot
 - The full matrix of type fidelity for every field across all languages (you must design conformance tests).
 - Vendor lock-in and staffing cost for exotic codecs.
 
+---
+
 ## Common mistakes
 
 - Saying “we’ll translate later” without an owner.
 - Using different field names per language for the “same” event.
 - Treating suite cross-language plots (if any) as architecture mandates.
+
+---
 
 ## Key takeaways
 

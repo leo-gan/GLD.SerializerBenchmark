@@ -5,12 +5,14 @@
 
 ## Who this page is for
 
-This lens is written for people who move **tables, events, features, and models**—not only single API messages:
+This lens is written for people who move **tables, events, features, and models**—not only single API messages. You may recognize yourself in one or more of these roles:
 
 - Analysts and analytics engineers who move data between warehouses, lakes, and notebooks  
 - Machine-learning engineers who checkpoint models, features, and batch scores  
 - Data platform engineers who choose formats for [Kafka](https://en.wikipedia.org/wiki/Apache_Kafka "Apache Kafka — distributed event streaming platform")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> topics, [S3](https://en.wikipedia.org/wiki/Amazon_S3 "Amazon S3 — object storage service")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> layouts, and interchange with [Spark](https://en.wikipedia.org/wiki/Apache_Spark "Apache Spark — unified analytics engine")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [DuckDB](https://en.wikipedia.org/wiki/DuckDB "DuckDB — in-process analytical SQL database")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, or Polars  
 - Scientists who currently “just pickle everything” and want a safer mental model  
+
+Even if you are a first-year student, this page is useful. It shows how the same idea of serialization looks when the unit of work is a table or a stream of events, not a single HTTP response.
 
 ---
 
@@ -32,6 +34,8 @@ Different workloads want different points on the [core trade-off axes](index.md#
 
 ## A short history of formats in data work
 
+The formats that data teams use did not appear all at once. They layered on top of earlier practice:
+
 1. **Fixed-width layouts and [CSV](https://en.wikipedia.org/wiki/Comma-separated_values "CSV — Comma-Separated Values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** — still everywhere for exports and simple tables; weak typing; awkward nesting.  
 2. **Language-native blobs (`pickle`, joblib, many machine-learning checkpoints)** — maximum Python convenience; poor multi-language story; **unsafe on untrusted bytes**. See [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> under language-native formats.  
 3. **JSON documents and JSON Lines** — universal glue; fine for small or medium configs and APIs; painful as a primary lake format at huge scale.  
@@ -50,7 +54,7 @@ Different workloads want different points on the [core trade-off axes](index.md#
 
 **Avoid it as the system of record when** types matter (dates, nulls versus empty strings), nesting appears, or multiple producers change columns silently.
 
-CSV is not “wrong.” It is a **lossy social format**. Treat it as an edge adapter, not as the core of a data lake.
+CSV is not “wrong.” It is a **lossy social format**: easy to share, easy to misinterpret. Treat it as an edge adapter, not as the core of a data lake.
 
 ### JSON and JSON Lines
 
@@ -58,7 +62,7 @@ CSV is not “wrong.” It is a **lossy social format**. Treat it as an edge ada
 
 **Costs include** repeated keys on every object, ambiguity around numbers and dates, and parse cost that stays higher than mature columnar binary formats for large analytics—even when compression shrinks the file.
 
-**JSON Lines** (one JSON object per line, often abbreviated JSONL) is a pragmatic compromise for streaming and batch: append-friendly, parallelizable by line, still text.
+**JSON Lines** (one JSON object per line, often abbreviated JSONL) is a pragmatic compromise for streaming and batch: append-friendly, parallelizable by line, still text. In other words, each line is a complete record, so tools can split a large file without parsing the whole document first.
 
 ### Pickle and friends
 
@@ -67,6 +71,8 @@ CSV is not “wrong.” It is a **lossy social format**. Treat it as an edge ada
 - Is the byte stream from a fully trusted source you control?
   - **No** → do not unpickle and do not use other native “deserialize anything” APIs.
   - **Yes** → still prefer portable formats for anything long-lived or multi-language.
+
+A **trust boundary** is any place where data may come from outside your fully controlled environment.
 
 | Approach | Strength | Risk |
 |----------|----------|------|
@@ -94,7 +100,7 @@ CSV is not “wrong.” It is a **lossy social format**. Treat it as an edge ada
 
 - Reading only the columns a query needs  
 - Better compression, because similar values sit next to each other  
-- Predicate pushdown and page skipping in mature engines  
+- Predicate pushdown and page skipping in mature engines (skipping data that cannot match a filter)  
 
 **Prefer these when** you run data lakes, warehouse extracts, Spark/DuckDB/Polars/[Athena](https://en.wikipedia.org/wiki/Amazon_Athena "Amazon Athena — serverless SQL over data lakes")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-style scans, wide tables, or read-heavy analytics.
 
@@ -122,7 +128,7 @@ These are **schemaless binary** encodings of JSON-like values:
 | **BSON** | Document database heritage ([MongoDB](https://en.wikipedia.org/wiki/MongoDB "MongoDB — document-oriented database")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />); extra types such as datetime and binary |
 | **CBOR** | Standards-track; strong story for constrained devices and some security/[IoT](https://en.wikipedia.org/wiki/Internet_of_things "IoT — Internet of Things")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> stacks |
 
-They help when JSON is too slow or large but you still want a **dynamic** model. They do **not** replace Parquet for lake analytics.
+They help when JSON is too slow or large but you still want a **dynamic** model (you do not need a fixed schema file first). They do **not** replace Parquet for lake analytics.
 
 ### Protocol Buffers and Thrift
 
@@ -132,7 +138,7 @@ Schema-driven remote-procedure-call formats show up when machine-learning **serv
 
 ## Schema evolution in data platforms
 
-“We added a field” is easy in a notebook and hard in a multi-year lake or event bus.
+“We added a field” is easy in a notebook and hard in a multi-year lake or event bus. **Schema evolution** means changing the shape of data over time without breaking every old reader or writer.
 
 | Strategy | Idea | Typical home |
 |----------|------|--------------|

@@ -2,11 +2,21 @@
 
 ## Problem
 
-Mean serialize time looks fine while p99 (the 99th-percentile latency) collapses under load. Managed runtimes pay for **allocation rate** with garbage-collection (GC) pauses; native heaps pay with allocator contention and cache misses. Codecs that “win” microbenchmarks by allocating per field can lose the service-level objective. Charts that show only means hide the failure mode.
+Mean serialize time looks fine while **p99** (the 99th-percentile latency—the time below which 99% of requests finish) collapses under load. Managed runtimes pay for **allocation rate** with **garbage-collection (GC)** pauses; native heaps pay with allocator contention and cache misses.
+
+**Garbage collection** is automatic reclaiming of memory that a program no longer uses. When the collector runs, application threads may pause, which shows up as rare but large latency spikes—the **tail** of the distribution.
+
+Codecs that “win” microbenchmarks by allocating per field can lose the service-level objective. Charts that show only means hide the failure mode. This page teaches you to treat tails and allocations as first-class evidence.
+
+---
 
 ## Short answer
 
 Treat **allocation and copy behavior** as first-class when choosing among implementations in a family ([implementation variance](implementation-variance.md)). Prefer APIs that reuse buffers, stream, or reduce temporary strings when p99 matters. Interpret suite **means** as a starting point; validate under concurrency with **your** runtime GC settings and payload shape (201 [encode/decode cost](../201/encode-decode-cost.md)). Format brand does not determine GC pressure—implementation and shape do.
+
+In other words: a library that is slightly slower on the mean but allocates far less can win the production latency budget.
+
+---
 
 ## Constraints that matter
 
@@ -17,6 +27,10 @@ Treat **allocation and copy behavior** as first-class when choosing among implem
 | Concurrency | Parallel allocate can cluster pauses |
 | Buffer reuse | Lowers steady-state pressure |
 | Native versus managed | Different pause mechanics, same lesson: do not thrash the allocator |
+
+This matters because two JSON libraries can look similar on mean decode and diverge sharply on p99 once worker threads allocate in parallel.
+
+---
 
 ## Decision frame
 
@@ -34,6 +48,10 @@ Treat **allocation and copy behavior** as first-class when choosing among implem
 | GC pause correlates with traffic | Reduce how chatty decode is |
 | Size looks fine, latency looks bad | Suspect the CPU or allocation path, not the network |
 
+A **profiler** is a tool that shows where a program spends time and memory. Use one before you rewrite a format.
+
+---
+
 ## Failure modes
 
 | Mistake | Outcome |
@@ -44,9 +62,15 @@ Treat **allocation and copy behavior** as first-class when choosing among implem
 | Disabling GC in the bench | Fantasy numbers |
 | Pooling without clear ownership | Use-after-free and data races |
 
+For example, turning GC off in a microbenchmark can make a library look impossibly fast while teaching nothing about production.
+
+---
+
 ## Real-world sketch
 
 Two JSON libraries show similar mean decode on Python Results. Production p99 diverges: one builds full `dict` trees; another binds into typed objects with fewer temporary strings. A load test with production-shaped payloads and workers decides the pin—not the mean column alone.
+
+---
 
 ## In this suite
 
@@ -58,6 +82,8 @@ Two JSON libraries show similar mean decode on Python Results. Production p99 di
 | [Using this suite](using-this-suite.md) | Fair slice checklist |
 
 Many published tables emphasize central tendency; **you** still owe a concurrent validation.
+
+---
 
 ## Experiments
 
@@ -84,6 +110,8 @@ Many published tables emphasize central tendency; **you** still owe a concurrent
 - Reject candidates that win mean Results but show high allocations per operation or GC pause clustering under load.
 - Do **not** compare GC metrics across languages to choose a format brand.
 
+---
+
 ## Metrics
 
 Primary signals for this page’s decision (see also [Metrics catalog](../../analysis/METRICS.md)):
@@ -105,17 +133,23 @@ Primary signals for this page’s decision (see also [Metrics catalog](../../ana
 
 **Not decision metrics here:** cross-language Results ranks; format brand alone.
 
+---
+
 ## What this suite cannot tell you
 
 - p99 under *your* framework and GC flags.
 - Interaction with other allocators on the host.
 - Whether pooling is safe in *your* concurrency model.
 
+---
+
 ## Common mistakes
 
 - Claiming “binary always means lower GC” without measuring.
 - Comparing C# and Python pause behavior to choose a format brand.
 - Shipping the fastest mean library that allocates unbounded on hostile input ([untrusted input](untrusted-input.md)).
+
+---
 
 ## Key takeaways
 

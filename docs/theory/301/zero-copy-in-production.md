@@ -2,15 +2,21 @@
 
 ## Problem
 
-Marketing claims “no deserialize,” and microbenchmarks look excellent for large, mostly-read messages. Production then hits missing verifiers, painful updates, language and tooling gaps, and debugging friction. The 201 mechanism is sound; the **operations** story decides whether zero-copy ships.
+Marketing claims “no deserialize,” and microbenchmarks look excellent for large, mostly-read messages. **Zero-copy** (also called random-access layout) means the reader can use fields by interpreting offsets inside a buffer rather than building a full object tree first. Serialization 201 explains the mechanism; this page asks whether the **operations** story is strong enough to ship.
+
+Production then hits missing verifiers, painful updates, language and tooling gaps, and debugging friction. The 201 mechanism is sound; operations decides whether zero-copy ships.
+
+---
 
 ## Short answer
 
 Use zero-copy layouts when messages are **large or partially read**, mostly **immutable** after they are built, and you are willing to pay for **schema tooling plus verification** on untrusted paths. Avoid them for tiny chatty RPCs, heavily mutated documents, or teams that require universal text debugging without investment.
 
-Always verify untrusted buffers. Measure with realistic access patterns—not only full materializing competitors on cold data.
+Always verify untrusted buffers. A **verifier** checks that offsets and sizes inside the buffer are safe before you trust field access. Measure with realistic access patterns—not only full materializing competitors on cold data.
 
 This page assumes 201 [zero-copy](../201/zero-copy.md).
+
+---
 
 ## Constraints that matter
 
@@ -23,6 +29,10 @@ This page assumes 201 [zero-copy](../201/zero-copy.md).
 | Debug | Willingness to invest in tools | Must `curl` everything as JSON |
 | Team skill | Comfortable with offsets and builders | Only JSON experience |
 
+In other words, zero-copy is a layout plus a tooling commitment. It is not a free lunch that removes all CPU work.
+
+---
+
 ## Decision frame
 
 ```text
@@ -32,6 +42,10 @@ This page assumes 201 [zero-copy](../201/zero-copy.md).
   Untrusted input?
     → verifier is mandatory (non-negotiable)
 ```
+
+This matters because skipping verification to “match the blog benchmark” turns an untrusted buffer into a memory-safety risk.
+
+---
 
 ## Failure modes
 
@@ -43,9 +57,15 @@ This page assumes 201 [zero-copy](../201/zero-copy.md).
 | Force zero-copy for CRUD APIs | Builder pain for no gain |
 | Compare against unvalidated peers | Invalid ranking |
 
+**CRUD** means create, read, update, delete—typical business APIs that mutate fields often. Those paths often prefer ordinary schemas over offset builders.
+
+---
+
 ## Real-world sketch
 
 A game-state blob of 100KB or more is read by many services for a few fields per request. FlatBuffers with verification cuts allocations compared with full JSON trees. An admin API that mutates ten fields per call stays on Protobuf. Both coexist at different boundaries ([polyglot estates](polyglot-estates.md)).
+
+---
 
 ## In this suite
 
@@ -56,6 +76,8 @@ A game-state blob of 100KB or more is read by many services for a few fields per
 | [Using this suite](using-this-suite.md) | Fair paradigm-local reads |
 
 Absence from a language benchmark runner means “not measured,” not “bad technology.”
+
+---
 
 ## Experiments
 
@@ -80,6 +102,8 @@ Absence from a language benchmark runner means “not measured,” not “bad te
 - Adopt only if the access-pattern benchmark wins **including verification** and operations can version the schema.
 - Untrusted input without a verifier means do not adopt.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -94,17 +118,23 @@ Absence from a language benchmark runner means “not measured,” not “bad te
 
 **Conclusion style:** “The flat layout wins on field touches with verification OK; adopt it for the cache blob, not the public API.”
 
+---
+
 ## What this suite cannot tell you
 
 - Builder ergonomics for *your* schema.
 - Cross-language binding maturity beyond what is registered in the suite.
 - Correct buffer ownership rules in *your* async runtime.
 
+---
+
 ## Common mistakes
 
 - Equating zero-copy with “no CPU work.”
 - Using suite means without matching the access pattern (full scan versus sparse reads).
 - Shipping without a verifier because the network is “internal.”
+
+---
 
 ## Key takeaways
 

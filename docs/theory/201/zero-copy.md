@@ -2,9 +2,9 @@
 
 ## Problem
 
-In the classical serialization model, a byte sequence arrives, a parser **constructs a new object graph** in the language runtime, application code reads properties from those objects, and memory is later reclaimed—manually or by garbage collection (GC = automatic reclamation of unused memory). That model is straightforward to reason about. It becomes expensive when messages are large, numerous, or only partly examined, because the implementation pays to materialize fields that are never read.
+In the classical serialization model, a byte sequence arrives, a parser **constructs a new object graph** in the language runtime, application code reads properties from those objects, and memory is later reclaimed—manually or by **garbage collection** (GC = automatic reclamation of unused memory). That model is straightforward to reason about. It becomes expensive when messages are large, numerous, or only partly examined, because the implementation pays to materialize fields that are never read.
 
-Some formats are described as **zero-copy**, or are said **not to deserialize**. Such phrasing is easily misread as “costless and invariably safer.” The underlying mechanism is more precise: for a chosen endianness (byte order) and alignment policy, **the on-the-wire layout is arranged so that fields can be read in place**, using offsets into the receive buffer, rather than by allocating a parallel tree of language objects.
+Some formats are described as **zero-copy**, or are said **not to deserialize**. Such phrasing is easily misread as “costless and invariably safer.” The underlying mechanism is more precise: for a chosen **endianness** (byte order) and alignment policy, **the on-the-wire layout is arranged so that fields can be read in place**, using **offsets** (distances in bytes from a known base) into the receive buffer, rather than by allocating a parallel tree of language objects.
 
 ---
 
@@ -13,6 +13,8 @@ Some formats are described as **zero-copy**, or are said **not to deserialize**.
 In a **zero-copy** design (FlatBuffers, Cap’n Proto, and related systems), encoding produces a binary image whose fields are accessible through **generated accessors or equivalent offset arithmetic** applied directly to the receive buffer. There is no separate step that parses the entire message into ordinary language objects on the ordinary read path. That is what people mean by “does not deserialize” in the *classical* sense of full materialization.
 
 Encoding still requires work to **construct** that layout. **Validation** of untrusted buffers remains necessary—omitting it is a serious risk. Partial mutation is often awkward, and operational tooling differs from text-oriented formats. Zero-copy is a layout and application-programming-interface philosophy, not a costless substitute for a schema or a trust model.
+
+This matters because marketing language can hide real costs. In-place reads can be very efficient, but construction, verification, and buffer lifetime still need careful design.
 
 ---
 
@@ -33,7 +35,7 @@ Recall from [memory layout](memory-layout.md) that a process-local structure may
 
 - multi-byte integers appear at agreed alignments and byte orders;
 - variable-length data (strings, vectors) are reached through **offsets** stored in the buffer;
-- optional fields may be indicated by a table of field offsets (often called a vtable in FlatBuffers documentation).
+- optional fields may be indicated by a table of field offsets (often called a **vtable** in FlatBuffers documentation—a small table of offsets that tells the reader where each field lives).
 
 **Beginner sketch — reading one integer field.**
 
@@ -74,6 +76,8 @@ Avoiding object materialization must not mean avoiding **bounds and structural c
 In-place updates are constrained: sufficient space must already exist, and changing lengths is difficult. Many deployments treat buffers as **immutable messages** and rebuild when state changes. Debugging requires format-aware tools; hexadecimal dumps are less informative than structured text logs.
 
 ### Related but distinct ideas
+
+Several ideas sound similar to message zero-copy but solve different problems:
 
 | Idea | Relation to message zero-copy |
 |------|-------------------------------|

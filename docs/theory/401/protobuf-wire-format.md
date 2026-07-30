@@ -3,24 +3,26 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leo-gan/GLD.SerializerBenchmark/blob/master/docs/theory/notebooks/401/wire_format_playground.ipynb)
 **Lab notebook:** [wire format playground](../notebooks/401/wire_format_playground.ipynb) · full MiniUser lab: [lab_mini_protobuf_encoder.ipynb](../notebooks/401/lab_mini_protobuf_encoder.ipynb)
 
-## Problem
+## Why this article exists
 
-Schema-driven formats are often described as “binary with field numbers.” That slogan does not teach you how to **read or write the actual bytes**, how to debug a hexadecimal dump, or how to implement even a small subset codec. Without the wire rules, language tutorials stay at the API surface, and the idea from Serialization 201 that Protocol Buffers is **schema-dependent** never becomes something you can operate on.
+Imagine you open a network capture and see a short sequence of bytes such as `08 01 12 03 41 64 61`. Someone tells you “that is Protocol Buffers.” The slogan “binary with field numbers” does not by itself teach you how to **read or write those bytes**, how to debug a hexadecimal dump, or how to implement even a small subset codec. Without the wire rules, language tutorials stay at the API surface. The idea from Serialization 201 that Protocol Buffers is **schema-dependent**—the reader needs a schema, not just the bytes—never becomes something you can operate on yourself.
 
-## Short answer
-
-Protocol Buffers (proto3 binary encoding) write a message as a **sequence of keyed fields**. Each field begins with a **tag** (also called a **key**): a small integer that packs the **field number** (which field this is in the schema) together with the **wire type** (how the following bytes are shaped). After the tag comes a **payload**. The payload shape depends on the wire type: a **varint** (variable-length integer), a fixed 32-bit or 64-bit value, or a **length-delimited** blob (often abbreviated **LEN**)—used for strings, raw bytes, nested messages, and packed repeated numbers.
-
-Field **names never appear** on the wire. A reader needs the schema (or equivalent knowledge of field numbers and types) to turn those numbers back into meaningful fields. Unknown field numbers are usually **skipped** by looking at the wire type and consuming the right number of bytes. That skip rule is why additive schema evolution works, as long as field numbers are never reused for a different meaning.
+In this article you will learn the binary layout that Protocol Buffers uses on the wire. After reading it, you should be able to encode and decode a small teaching message by hand, and you should understand why unknown fields can be skipped safely.
 
 This article assumes the 201 ideas in [self-describing vs schema](../201/self-describing-vs-schema-dependent.md) and [schema evolution](../201/schema-evolution.md).
 
 Official encoding reference: [Protocol Buffers encoding](https://protobuf.dev/programming-guides/encoding/).
 
+## Short answer
+
+Protocol Buffers (proto3 binary encoding) write a message as a **sequence of keyed fields**. Each field begins with a **tag** (also called a **key**): a small integer that packs the **field number** (which field this is in the schema) together with the **wire type** (how the following bytes are shaped). After the tag comes a **payload**. The payload shape depends on the wire type: a **varint** (variable-length integer), a fixed 32-bit or 64-bit value, or a **length-delimited** blob (often abbreviated **LEN**). Length-delimited fields are used for strings, raw bytes, nested messages, and packed repeated numbers.
+
+Field **names never appear** on the wire. A reader needs the schema (or equivalent knowledge of field numbers and types) to turn those numbers back into meaningful fields. Unknown field numbers are usually **skipped** by looking at the wire type and consuming the right number of bytes. That skip rule is why additive schema evolution works, as long as field numbers are never reused for a different meaning.
+
 ## Prerequisites
 
-- Comfort with hexadecimal notation and unsigned integers.  
-- 201 vocabulary: schema-dependent wire formats and additive field numbers.  
+- Comfort with hexadecimal notation and unsigned integers.
+- 201 vocabulary: schema-dependent wire formats and additive field numbers.
 - Optional: skim the suite schema `schemas/v2/protobuf/benchmark_v2.proto` for realistic field numbers. This page uses a **teaching mini-message**, not a full suite fixture.
 
 ## Mental model
@@ -37,7 +39,7 @@ The key is computed as:
 key = (field_number << 3) | wire_type
 ```
 
-In plain language: shift the field number three bits left, then put the wire-type code in the low three bits. That integer is itself written as a varint.
+In plain language: shift the field number three bits left, then put the wire-type code in the low three bits. That integer is itself written as a varint (explained below).
 
 | Wire type | Value | Payload |
 |-----------|------:|---------|
@@ -45,6 +47,8 @@ In plain language: shift the field number three bits left, then put the wire-typ
 | I64    | 1 | exactly 8 bytes, little-endian |
 | LEN    | 2 | a length (as a varint) `n`, then exactly `n` bytes |
 | I32    | 5 | exactly 4 bytes, little-endian |
+
+**Endianness** means the order of bytes in multi-byte fixed values. Protocol Buffers fixed types use **little-endian** order: the least significant byte comes first.
 
 Example tag strip for `id = 1` (field 1, varint payload):
 
@@ -71,7 +75,7 @@ outer key = (3<<3)|2 = 0x1a (field 3, LEN)
 
 Wire types 3 and 4 are legacy “group” markers. Avoid them in new designs.
 
-**Teaching mini-message** (not a full suite fixture and not `schemas/v2/protobuf/benchmark_v2.proto`):
+**Teaching mini-message.** The following schema is not a full suite fixture and is not `schemas/v2/protobuf/benchmark_v2.proto`. We use it so hex dumps stay small enough to reason about by hand:
 
 ```protobuf
 syntax = "proto3";
@@ -87,13 +91,15 @@ message MiniUser {
 
 ### 1. Encode the key (tag)
 
+In this section we encode the tag that names each field on the wire.
+
 ```text
 key = (field_number << 3) | wire_type
 ```
 
-Example: field `1`, wire type VARINT (0) → key = `(1 << 3) | 0` = `8` = `0x08`.
+For example, field `1` with wire type VARINT (0) gives key = `(1 << 3) | 0` = `8` = `0x08`.
 
-Field `2`, LEN (2) → key = `(2 << 3) | 2` = `18` = `0x12`.
+Field `2` with wire type LEN (2) gives key = `(2 << 3) | 2` = `18` = `0x12`.
 
 The key is itself a **varint**. For field numbers **1–15**, a single-byte key is common, because the low four bits of the field number fit beside the three-bit wire type. For field number **16 or higher**, the key needs more than one byte:
 
@@ -103,16 +109,18 @@ The key is itself a **varint**. For field numbers **1–15**, a single-byte key 
 | 16 | VARINT (0) | 128 | `80 01` |
 | 16 | LEN (2) | 130 | `82 01` |
 
+This matters because large field numbers cost an extra byte on every occurrence of that field. Many schemas keep hot fields in the range 1–15 for that reason.
+
 ### 2. Encode a varint (unsigned base-128)
 
-A **varint** (variable-length integer) stores an unsigned integer in base-128 groups. Each byte carries seven data bits. The high bit of a byte means “more bytes follow.”
+A **varint** (variable-length integer) stores an unsigned integer in base-128 groups. Each byte carries seven data bits. The high bit of a byte means “more bytes follow.” Small numbers use one byte; large numbers use more. That is why Protocol Buffers is efficient for small integers without fixing every integer at four or eight bytes.
 
 ![Varint bit layout for decimal 300](../assets/diagrams/401-varint.svg#only-light)
 ![Varint bit layout for decimal 300](../assets/diagrams/401-varint-dark.svg#only-dark)
 
-Algorithm:
+**Algorithm:**
 
-1. While the value is at least 128: emit `(value & 0x7f) | 0x80`, then shift the value right by seven bits.  
+1. While the value is at least 128: emit `(value & 0x7f) | 0x80`, then shift the value right by seven bits.
 2. Finally emit the last seven-bit group with the high bit cleared.
 
 | Decimal | Hex bytes (illustrative) |
@@ -122,7 +130,7 @@ Algorithm:
 | 128 | `80 01` |
 | 300 | `ac 02` |
 
-Signed **int32** / **int64** in proto3 use ordinary varints of their two’s-complement bit pattern. Negative values therefore expand to many bytes. **sint32** / **sint64** use **zigzag** encoding so that small negatives become small varints. This course’s mini subset avoids `sint` unless you extend the lab yourself.
+Signed **int32** / **int64** in proto3 use ordinary varints of their two’s-complement bit pattern. Negative values therefore expand to many bytes. **sint32** / **sint64** use **zigzag** encoding so that small negatives become small varints. Zigzag is a mapping that interleaves non-negative and negative integers (0, −1, 1, −2, 2, …) so that values near zero stay near zero on the wire. This course’s mini subset avoids `sint` unless you extend the lab yourself.
 
 | Type | Logical −1 (illustrative) | Idea |
 |------|---------------------------|------|
@@ -134,7 +142,7 @@ Signed **int32** / **int64** in proto3 use ordinary varints of their two’s-com
 
 #### Varint failure modes (codec concerns)
 
-A correct decoder must not assume that “integers are small” or that “the buffer is well-formed”:
+A correct decoder must not assume that “integers are small” or that “the buffer is well-formed.” In other words, every read must check that enough input remains:
 
 | Failure | What goes wrong |
 |---------|-----------------|
@@ -147,6 +155,8 @@ Hostile payloads as an operational problem are covered in [301 untrusted input](
 
 ### 3. Length-delimited fields (wire type 2, often called LEN)
 
+In this section we look at fields whose payload size is not fixed in advance. Strings, byte arrays, nested messages, and packed repeated numbers all use wire type 2.
+
 **On the wire** a length-delimited field is always:
 
 ```text
@@ -155,18 +165,20 @@ Hostile payloads as an operational problem are covered in [301 untrusted input](
 
 **When encoding**, you usually stage the payload first so you know `len` before you write it:
 
-1. Build the payload bytes (UTF-8 for a string, raw bytes, or a nested message encoding) in a temporary buffer.  
-2. Emit the key with wire type 2.  
-3. Emit the **length** of that payload as a varint.  
+1. Build the payload bytes (UTF-8 for a string, raw bytes, or a nested message encoding) in a temporary buffer.
+2. Emit the key with wire type 2.
+3. Emit the **length** of that payload as a varint.
 4. Emit the payload bytes.
 
 Do not emit the length *after* the payload on the wire. Staging the payload in memory first is fine; the on-wire order is always key, then length, then payload.
 
 ### 4. Nested message
 
-A nested message is **just another length-delimited blob**. Its payload is itself a valid message encoding—the concatenation of that nested message’s fields. There is no special “nest” wire type.
+A nested message is **just another length-delimited blob**. Its payload is itself a valid message encoding—the concatenation of that nested message’s fields. There is no special “nest” wire type. This matters because the same decode loop that handles strings also handles submessages: read a length, then parse that slice as a message.
 
 ### 5. Repeated fields
+
+A **repeated** field is a list of values of the same type. Protocol Buffers has two common ways to encode repeated numbers.
 
 **Unpacked** (the lab default): for `repeated uint32 tags = 4`, emit **one complete field** (key plus varint value) **per element**. The same key may appear multiple times in one message.
 
@@ -196,6 +208,8 @@ key (4<<3)|2 = 0x22
 Decoders should accept **both** forms for the same field when the schema says `repeated` numeric. The [lab](lab-mini-protobuf-encoder.md) implements unpacked only; packed is a stretch goal.
 
 ### 6. Decode loop
+
+When you decode, you walk the buffer from left to right until nothing remains. For each field you read a key, split it into field number and wire type, then consume the payload that matches that wire type.
 
 ```text
 while bytes remain:
@@ -253,25 +267,25 @@ Wire layout is language-agnostic. Buffer ownership (who allocates and who frees)
 
 ## Common mistakes
 
-- Putting field **names** on the wire (classic Protocol Buffers binary does not do that).  
-- Reusing field numbers after deletion without marking them `reserved`.  
-- Forgetting the length prefix on strings.  
-- Emitting the length after the payload on the wire (confusing staging order with wire order).  
-- Treating message field order as semantically required (encoders may differ; decoders must accept any order).  
-- Decoding without a skip path for unknown tags.  
+- Putting field **names** on the wire (classic Protocol Buffers binary does not do that).
+- Reusing field numbers after deletion without marking them `reserved`.
+- Forgetting the length prefix on strings.
+- Emitting the length after the payload on the wire (confusing staging order with wire order).
+- Treating message field order as semantically required (encoders may differ; decoders must accept any order).
+- Decoding without a skip path for unknown tags.
 - Reading a LEN length `n` or a fixed width without checking remaining buffer length.
 
 ## What this article is not
 
-- A full proto3 language guide (maps, oneofs, extensions, editions, JSON mapping).  
-- gRPC framing (length-prefixed HTTP/2 messages **wrap** Protocol Buffers payloads; they are not the payload itself).  
-- Buffer ownership per language (see the language-path articles).  
+- A full proto3 language guide (maps, oneofs, extensions, editions, JSON mapping).
+- gRPC framing (length-prefixed HTTP/2 messages **wrap** Protocol Buffers payloads; they are not the payload itself).
+- Buffer ownership per language (see the language-path articles).
 - A security playbook—see [301 untrusted input](../301/untrusted-input.md) for hostile operational controls. The varint and LEN bounds above are the codec-side half of that story.
 
 ## Key takeaways
 
-- Protocol Buffers binary is a stream of **tagged fields**. The key is `(number << 3) | wire_type`, written as a varint; large field numbers need more than one key byte.  
-- Payloads are varints, fixed 32/64-bit values, or length-delimited blobs (`key | len | payload` on the wire).  
-- Nested messages are length-delimited messages. Unpacked repeated fields repeat tags; packed repeated fields use one LEN of concatenated elements.  
-- Unknown fields are skipped by wire type—that rule is the foundation of additive evolution.  
+- Protocol Buffers binary is a stream of **tagged fields**. The key is `(number << 3) | wire_type`, written as a varint; large field numbers need more than one key byte.
+- Payloads are varints, fixed 32/64-bit values, or length-delimited blobs (`key | len | payload` on the wire).
+- Nested messages are length-delimited messages. Unpacked repeated fields repeat tags; packed repeated fields use one LEN of concatenated elements.
+- Unknown fields are skipped by wire type—that rule is the foundation of additive evolution.
 - Language-path articles show how code-generated runtimes apply these bytes; the lab builds a small subset by hand.

@@ -2,9 +2,15 @@
 
 > A multi-producer, multi-consumer event log must evolve for years. What serialization and control plane fit?
 
+An **event backbone** is a durable stream of business facts (for example `OrderPlaced`) that many services publish to and subscribe from. Unlike a single RPC hop, producers and consumers deploy independently, and messages may be retained for months. This case study focuses on schema culture and enforcement under rolling deploy.
+
+---
+
 ## Context and goals
 
 **Setting:** Commerce platform. Producers run in Java and Go (conceptually: any of the suite languages). Consumers include search index, analytics, fraud, and third-party webhooks (webhooks leave the backbone via a bridge). Events are business facts such as `OrderPlaced` and `PaymentCaptured`, retained for months. Each service deploys on its own cadence.
+
+A **webhook** is an HTTP callback to an external system. External parties usually should not be forced to speak your internal event codec.
 
 **Goals:**
 
@@ -13,11 +19,17 @@
 - A clear compatibility policy.
 - Analytics can export to a lake without using the event codec as the lake format ([row vs columnar](row-vs-columnar.md)).
 
+---
+
 ## Non-goals and hard constraints
 
 - This is not per-request public REST ([public REST case](case-public-rest-api.md)).
 - This is not single-binary native dumps ([trust boundaries](trust-boundaries.md)).
 - Consumers must not all deploy in lockstep with producers.
+
+In other words, the control plane must make independent evolution safe, not hope that everyone deploys together.
+
+---
 
 ## Options on the table
 
@@ -27,6 +39,8 @@
 | **B. Protobuf plus registry or process** | Field-number culture; file or registry of descriptors; continuous-integration breaks |
 | **C. JSON events plus conventions** | JSON bodies; organization schema docs; optional JSON Schema |
 | **D. Mixed per team** | Each producer picks its own encoding |
+
+---
 
 ## Trade-off matrix
 
@@ -38,6 +52,10 @@
 | Debug | Tooling required | Tooling required | Easy | Varies |
 | Operations cost | Registry high availability plus subjects | IDL ownership | Low tooling, high drift risk | Highest long-term |
 | Lake story | Row events compact to columnar | Same | Same | Painful |
+
+This matters because picking a codec brand without an evolution culture is how event platforms accumulate silent breaks.
+
+---
 
 ## Recommendation (under these constraints)
 
@@ -53,6 +71,8 @@
 Bridge **webhooks** to JSON at the edge; do not force external parties to speak the internal event codec.
 
 Compact to **columnar** lake formats in batch; do not treat the event codec as the analytics store.
+
+---
 
 ## Experiments
 
@@ -77,6 +97,8 @@ Compact to **columnar** lake formats in batch; do not treat the event codec as t
 - Prefer an enforceable registry mode and a culture that matches deploy order.
 - Speed cannot override a failed compatibility experiment.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -88,11 +110,15 @@ Compact to **columnar** lake formats in batch; do not treat the event codec as t
 | Suite size and serialize time | Capacity planning |
 | Matrix interop if polyglot | Estate fit |
 
+---
+
 ## What would change the answer
 
 - A single producer team with lockstep deploys can use a simpler process; a registry may be overkill, but a portable format is still required.
 - A pure analytics firehose with no service consumers prefers lake-oriented design earlier.
 - Extreme debug pressure and low volume may allow JSON events with a strict schema temporarily.
+
+---
 
 ## Key takeaways
 

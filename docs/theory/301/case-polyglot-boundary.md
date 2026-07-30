@@ -2,17 +2,27 @@
 
 > Three languages must share one internal contract. How do you stop local optima from fragmenting the estate?
 
+A **polyglot boundary** is a place where more than one programming language must speak the same data contract. This case study applies [polyglot estates](polyglot-estates.md) to a concrete three-language path and insists on interoperability evidence before performance tuning.
+
+---
+
 ## Context and goals
 
 **Setting:** An edge gateway in TypeScript, a core API in Go, and a machine-learning feature service in Python. The network is private. The team needs a shared request and response for feature fetch at moderate QPS. On-call engineers must be able to debug failures in human-readable ways when needed.
 
 **Goals:** One portable contract, independent deploys, acceptable latency, and no native codecs.
 
+---
+
 ## Non-goals and hard constraints
 
 - This is not a public third-party API (JSON may still be used at the outer edge).
 - This is not an analytics lake.
 - Python cannot dictate native pickle to Go or TypeScript.
+
+In other words, local language convenience ends where the shared hop begins.
+
+---
 
 ## Options on the table
 
@@ -22,6 +32,8 @@
 | **B. JSON plus JSON Schema** | Uniform text; validate on each side |
 | **C. MessagePack ad hoc** | Compact; organization-owned schemas |
 | **D. Each language picks its favorite** | Local Results winners only |
+
+---
 
 ## Trade-off matrix
 
@@ -33,15 +45,23 @@
 | Evolution | Field numbers plus CI | Process-heavy | Process-heavy | None |
 | Risk | IDL ownership | Verbosity | Schema drift | Integration hell |
 
+This matters because option D maximizes local microbenchmark wins and minimizes estate health.
+
+---
+
 ## Recommendation (under these constraints)
 
 **Prefer A** if the organization will own a proto monorepo and continuous-integration breaking checks ([two schema cultures](two-schema-cultures.md), [polyglot estates](polyglot-estates.md)). **Prefer B** if debug and simplicity outweigh density and QPS allows—still enforce a schema ([public API contracts](public-api-contracts.md) pattern used internally). **C** is acceptable only with explicit schema docs and conformance tests. **Reject D**.
 
 Pick **implementations per language** via suite Results within the chosen family ([implementation variance](implementation-variance.md)).
 
+---
+
 ## Experiments
 
 **Question:** With one contract across three languages, does the **interop matrix** pass before we optimize performance?
+
+An **interop matrix** means: encode a golden fixture in each language and decode it in every other language, asserting logical equality.
 
 ### Setup
 
@@ -61,6 +81,8 @@ Pick **implementations per language** via suite Results within the chosen family
 - A green matrix is required before performance work.
 - Do not use a global “fastest language” ranking as the boundary decision.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -71,10 +93,14 @@ Pick **implementations per language** via suite Results within the chosen family
 | Per-language p99 and suite medians | Capacity after interop |
 | Version pin drift | Drift risk |
 
+---
+
 ## What would change the answer
 
 - A browser on the same hop suggests JSON at the edge and binary internally via a gateway.
 - Extreme QPS leans harder toward A plus load tests ([latency tails](latency-tails-and-gc.md)).
+
+---
 
 ## Key takeaways
 

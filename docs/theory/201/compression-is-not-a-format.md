@@ -14,6 +14,8 @@ When bandwidth or storage is expensive, a common sequence of decisions is:
 
 That conclusion is sometimes operationally adequate. More often it hides **processor cost**, **latency effects**, and **forgone structure-aware savings**, or creates the incorrect impression that an inefficient encoding is free of consequence.
 
+In this section we separate two different mechanisms: choosing how values become bytes, and optionally shrinking those bytes after the fact.
+
 ---
 
 ## Short answer
@@ -23,6 +25,8 @@ That conclusion is sometimes operationally adequate. More often it hides **proce
 Compression can shrink verbose encodings (for example JSON with repeated keys) substantially. It also consumes processor time, can increase latency on small messages, and does not provide schema evolution, type safety, or zero-copy field access. Format-aware techniques—variable-length integers, dictionary encoding, columnar layouts, omission of field names—remove redundancy **using knowledge of the data model**.
 
 Prefer first to select a format suited to the contract and access pattern. **Then** apply compression when the network or storage tier still needs it and measurement supports the trade-off.
+
+In other words: compression can make a large encoding smaller; it cannot replace a good contract, and it is not free.
 
 ---
 

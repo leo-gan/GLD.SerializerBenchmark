@@ -5,16 +5,22 @@
 
 ## Who this page is for
 
-- Backend and platform engineers choosing API and [remote procedure call (RPC)](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> payloads  
-- Performance-minded developers who care about processor time, allocations, and latency tails  
+This lens is written for people who ship services and systems. You may be:
+
+- A backend or platform engineer choosing API and [remote procedure call (RPC)](https://en.wikipedia.org/wiki/Remote_procedure_call "RPC — Remote Procedure Call")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> payloads  
+- A performance-minded developer who cares about processor time, allocations, and latency tails  
 - Anyone who must deserialize **untrusted** input  
-- Engineers aligning local choices with a multi-language estate  
+- An engineer aligning local choices with a multi-language estate  
+
+An **RPC** is a way for one program to call a function that runs in another process or on another machine, as if it were a local call. A **latency tail** is the rare slow request that is much worse than the average—often more important than the mean in production.
+
+Even as a first-year student, you can use this page to see how format choice affects APIs, security, and performance.
 
 ---
 
 ## Four families (aligned with this suite)
 
-The benchmark suite groups serializers into paradigms. Compare **within one paradigm and within one language** before crowning a global winner.
+The benchmark suite groups serializers into paradigms. Compare **within one paradigm and within one language** before crowning a global winner. Different families solve different problems.
 
 | Family | Examples | Schema on the wire | Human-readable | Typical home |
 |--------|----------|--------------------|----------------|--------------|
@@ -22,6 +28,8 @@ The benchmark suite groups serializers into paradigms. Compare **within one para
 | **Schemaless binary** | [MessagePack](https://en.wikipedia.org/wiki/MessagePack "MessagePack — binary serialization of JSON-like values")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [CBOR](https://en.wikipedia.org/wiki/CBOR "CBOR — Concise Binary Object Representation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [BSON](https://en.wikipedia.org/wiki/BSON "BSON — Binary JSON (MongoDB)")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, many “binary JSON” codecs | Type tags or field names often present | No | Internal services, caches, queues |
 | **Schema-driven** | [Protocol Buffers](https://en.wikipedia.org/wiki/Protocol_Buffers "Protocol Buffers — schema-driven binary format")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Avro](https://en.wikipedia.org/wiki/Apache_Avro "Apache Avro — row-oriented binary with schemas")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [FlatBuffers](https://en.wikipedia.org/wiki/FlatBuffers "FlatBuffers — zero-copy serialization library")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, Bond, many [interface description language (IDL)](https://en.wikipedia.org/wiki/Interface_description_language "IDL — Interface Description Language")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> tools | Numbers or layout from a schema | No | Stable contracts, high-throughput RPC and streams |
 | **Language-native** | [pickle](https://en.wikipedia.org/wiki/Serialization#Python "pickle — Python object serialization")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, [Java serialization](https://en.wikipedia.org/wiki/Java_serialization "Java object serialization — JVM native object encoding")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, legacy .NET binary formatters | Runtime type metadata | No | Same-stack caches and graphs (**trust carefully**) |
+
+An **IDL** (interface description language) is a small language used to describe data structures and service methods once, so tools can generate code in many programming languages.
 
 ### Decision sketch for services
 
@@ -53,13 +61,13 @@ Work through these questions in order:
 
 **Typical engineering uses:** internal [HTTP](https://en.wikipedia.org/wiki/HTTP "HTTP — Hypertext Transfer Protocol")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> or RPC bodies, [Redis](https://en.wikipedia.org/wiki/Redis "Redis — in-memory data structure store")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-style values, multi-language payloads without an IDL mandate.
 
-**You still own** validation, compatibility, and documentation.
+**You still own** validation, compatibility, and documentation. Schemaless does not mean “no rules.” It means the format does not force a shared schema file before you send data.
 
 ## Schema-driven binary
 
 **Protocol Buffers** use field numbers, code generation, a strong multi-language story, and explicit evolution discipline (do not reuse field numbers; reserve deleted identifiers).
 
-**[Apache Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** pairs an IDL with pluggable protocols and transports. Historically it appears in RPC-centric polyglot stacks.
+**[Apache Thrift](https://en.wikipedia.org/wiki/Apache_Thrift "Apache Thrift — IDL and RPC framework")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** pairs an IDL with pluggable protocols and transports. Historically it appears in RPC-centric polyglot stacks (systems written in several languages).
 
 **Apache Avro** is often chosen when **schema resolution** and data-platform interoperability matter (also covered under the [data science perspective](data_science_perspective.md)). It appears in event pipelines as much as in classical RPC.
 
@@ -73,17 +81,17 @@ These are convenient for object graphs inside one runtime. Treat them as **unsaf
 
 ## Performance mechanics
 
-Numbers belong on **Results** pages. These are the mechanisms those numbers come from.
+Numbers belong on **Results** pages. These are the mechanisms those numbers come from. Understanding the mechanisms helps you interpret any benchmark.
 
 ### Data locality and processor caches
 
-Modern processors are fast; **random memory access** is not. Serializers that scatter fields through pointer-rich object graphs cause cache misses. Designs that keep related bytes **contiguous** (and zero-copy formats that read from a single buffer) reduce stalls.
+Modern processors are fast; **random memory access** is not. Serializers that scatter fields through pointer-rich object graphs cause cache misses (the CPU waits because the data is not nearby in memory). Designs that keep related bytes **contiguous** (and zero-copy formats that read from a single buffer) reduce stalls.
 
 When you benchmark, payload **shape** matters as much as codec brand: deep pointer graphs punish every language; dense structures favor contiguous layouts.
 
 ### Allocations and [garbage collection](https://en.wikipedia.org/wiki/Garbage_collection_%28computer_science%29 "Garbage collection — automatic memory reclamation")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />
 
-In managed runtimes (C#, Java, Python, JavaScript, Go), **allocation rate** drives garbage-collector work and latency spikes.
+In managed runtimes (C#, Java, Python, JavaScript, Go), **allocation rate** drives garbage-collector work and latency spikes. The garbage collector reclaims memory that is no longer used; if you allocate many short-lived objects, the collector runs more often.
 
 | Pattern | Effect |
 |---------|--------|
@@ -112,7 +120,7 @@ Smaller payloads help networks and storage; the fastest codec is not always the 
 
 ## Security: deserialization
 
-Untrusted bytes are **hostile input**.
+Untrusted bytes are **hostile input**. Assume that someone may craft data designed to break your program.
 
 | Risk | Where it shows up | Mitigation |
 |------|-------------------|------------|
@@ -128,7 +136,7 @@ Untrusted bytes are **hostile input**.
 
 ## Schema evolution for services
 
-Services rarely deploy all at once. Plan for **old readers with new writers** and the reverse.
+Services rarely deploy all at once. Plan for **old readers with new writers** and the reverse. That is **schema evolution** in a service setting.
 
 | Approach | Practical guidance |
 |----------|-------------------|
@@ -143,10 +151,12 @@ Document whether fields are required, defaulted, or nullable. A **wire format ca
 
 ## Operational concerns
 
+Beyond pure speed, real systems care about day-to-day operations:
+
 - **Debuggability:** JSON in logs versus binary that needs decoders and schema versions in observability tooling  
 - **Gateways and service meshes:** some exotic RPC framings interact poorly with ordinary [HTTP/2](https://en.wikipedia.org/wiki/HTTP/2 "HTTP/2 — major revision of HTTP")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> load balancers and serverless edges  
 - **Code generation in continuous integration:** schema-driven stacks need stable `protoc` or IDL pipelines and versioned generated artifacts  
-- **Polyglot drift:** “we use Protocol Buffers” is incomplete without a shared style guide (well-known types, error model, timestamp policy)  
+- **Polyglot drift:** “we use Protocol Buffers” is incomplete without a shared style guide (well-known types, error model, timestamp policy). *Polyglot* means many languages in one organization.  
 - **Partial failure:** corrupt and truncated frames need clear errors, not hung parsers  
 
 ---

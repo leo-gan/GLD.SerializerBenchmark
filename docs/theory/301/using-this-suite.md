@@ -4,13 +4,19 @@
 
 Benchmark tables are easy to misuse. A single chart—“library A is 3× faster than library B”—often becomes a policy decision without asking whether A and B implement the **same job**, on the **same payload shape**, in the **same language**, under the **same timing rules**. Organizations then switch codecs, observe little improvement, and conclude that “benchmarks lie,” when the real issue was **misaligned comparison**.
 
-This multi-language suite is built to support **fair, local** comparisons. It is not built to crown a global winner across paradigms or languages.
+This multi-language suite is built to support **fair, local** comparisons. It is not built to crown a global winner across paradigms or languages. In this section you will learn how to read the numbers as a first-year student should: as answers to carefully stated questions.
+
+---
 
 ## Short answer
 
 Treat every published number as the answer to a **narrow question**: for a given **language**, **fixture** (`TestDataName`), and **string versus stream mode**, how do registered serializers compare on encode time, decode time, size, and related metrics **after** the analysis pipeline’s warmup and optional outlier rules?
 
-Prefer comparisons **within one paradigm family** (JSON text, schemaless binary, schema-driven, language-native). Do not promote cross-language or cross-paradigm “champions” into architecture policy without re-stating the workload. When the decision is about trust, evolution, or multi-hop design, suite timings are **inputs**, not the whole argument—see the rest of Serialization 301.
+Prefer comparisons **within one paradigm family** (JSON text, schemaless binary, schema-driven, language-native). A **paradigm family** groups formats that solve roughly the same product job; see [Serialization categories](../../analysis/serialization_categories.md).
+
+Do not promote cross-language or cross-paradigm “champions” into architecture policy without re-stating the workload. When the decision is about trust, evolution, or multi-hop design, suite timings are **inputs**, not the whole argument—see the rest of Serialization 301.
+
+---
 
 ## Constraints that matter
 
@@ -22,6 +28,12 @@ Prefer comparisons **within one paradigm family** (JSON text, schemaless binary,
 | **Implementation** | Several libraries can share a format label and differ by an order of magnitude. |
 | **What is timed** | Benchmark runner paths measure serialize and deserialize of prepared fixtures—not network round-trip time, disk I/O, or your production validation layer. |
 | **Analysis policy** | Warmup exclusion and outlier filters change means; raw CSV is not the published table unless you re-run analysis with the same config. |
+
+**Warmup** means early iterations that may be slower while the runtime heats up (JIT compilation, caches). Analysis often drops those so the table reflects steady state, not cold start.
+
+This matters because a mixed chart can look like a tournament, while the honest use is a same-language, same-family shortlist.
+
+---
 
 ## Decision frame
 
@@ -50,6 +62,10 @@ Use this checklist **before** quoting a Result:
   Decide — or design a measurement this suite cannot do
 ```
 
+In other words: fix the experimental cell first, then read numbers inside that cell, then bring product constraints back into the decision.
+
+---
+
 ## Failure modes
 
 | Mistake | What goes wrong |
@@ -62,11 +78,15 @@ Use this checklist **before** quoting a Result:
 | **Treating fidelity notes as optional** | Some codecs are registered with documented shape limits; Overview caveats bound the claim. |
 | **Policy from means only** | Garbage-collection pauses and tail latency may not appear as a single mean encode time. |
 
+---
+
 ## Real-world sketch
 
 A team sees that a schema-driven library is fastest on **Rust** Results for a dense fixture and mandates it for a **public multi-language HTTP API**. Clients are browser and mobile; operators need human-readable debug logs; the public contract is already JSON.
 
 The suite result answered “fastest schema path in Rust for this fixture,” not “best public API contract.” A better use of the suite is to compare **JSON implementations within each language** that must speak the public contract, and to measure schema-driven codecs only on internal hops that already accept an IDL.
+
+---
 
 ## In this suite
 
@@ -85,6 +105,8 @@ The suite result answered “fastest schema path in Rust for this fixture,” no
 `(Language, paradigm, TestDataName, StringOrStream)` — then compare `SerializerName` rows inside that cell.
 
 **Illustrative only:** prose in theory pages must not invent winners. When you need a number, open **Results** for the language you will actually run.
+
+---
 
 ## Experiments
 
@@ -109,6 +131,8 @@ The suite result answered “fastest schema path in Rust for this fixture,” no
 - If any checklist box fails, **do not** use the number as architecture policy.
 - If the slice is fair but the product question is not about performance, treat suite data as **supporting**, not decisive.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -126,6 +150,8 @@ The suite result answered “fastest schema path in Rust for this fixture,” no
 
 **Not decision metrics:** mixed-paradigm leaderboards; cross-language “champions.”
 
+---
+
 ## What this suite cannot tell you
 
 - End-to-end **service** latency (queueing, network, TLS, framework overhead).
@@ -135,12 +161,16 @@ The suite result answered “fastest schema path in Rust for this fixture,” no
 - Cross-language byte identity for every registered pair (benchmark runners are per-language unless you design a fidelity experiment).
 - Business constraints: compliance, team skill, vendor lock-in, existing public contracts.
 
+---
+
 ## Common mistakes
 
 - Screenshotting one latency distribution into an architecture decision record without stating language, fixture, and paradigm.
 - Averaging ranks across languages “to be fair.”
 - Changing fixture generation parameters and comparing to old published snapshots without regenerating both sides.
 - Using language-native serializers’ speed as an argument for **network** interchange.
+
+---
 
 ## Key takeaways
 

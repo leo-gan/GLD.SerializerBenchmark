@@ -8,7 +8,7 @@
 
 Suppose text JSON is already judged unsuitable for a particular hop—payloads are large enough, or the path is performance-sensitive enough, that a binary encoding is under consideration. Two frequent alternatives are:
 
-1. **Dynamic (schemaless) binary** — MessagePack, CBOR, and related formats. They keep a data model similar to JSON, use a binary encoding, and need little or no interface description language (IDL = a formal shared description of messages and field types).
+1. **Dynamic (schemaless) binary** — MessagePack, CBOR, and related formats. They keep a data model similar to JSON, use a binary encoding, and need little or no **interface description language** (IDL = a formal shared description of messages and field types).
 2. **IDL / schema-driven binary** — Protocol Buffers and related systems. They use a shared schema, field numbers, code generation, and explicit evolution discipline.
 
 Selections are often driven by popularity or by a single latency chart. A durable choice instead tracks **how flexible the data model must remain** and **how much investment you will make in a shared contract**.
@@ -22,6 +22,8 @@ Selections are often driven by popularity or by a single latency chart. A durabl
 **IDL binary** encodings move names into a schema, encode **field numbers** (or equivalent identifiers), and support code generation, higher density, and multi-language stubs. The cost is schema design, generation in continuous integration, and a process for change.
 
 Prefer dynamic binary when document shapes vary and consumers are loosely coupled. Prefer IDL binary when the record shape is a product interface that will be versioned for years across languages.
+
+In other words: after you leave text JSON, the main fork is “flexible documents” versus “stable multi-language records,” not merely “which library is popular.”
 
 ---
 
@@ -44,7 +46,7 @@ Prefer dynamic binary when document shapes vary and consumers are loosely couple
    document compatibility    + compatibility rules
 ```
 
-Related dynamic formats (CBOR, BSON, and others) differ in type systems and ecosystem fit. The **decision axis relative to IDL binary** remains the same.
+Here **RPC** means remote procedure call: one program invokes an operation on another over the network. Related dynamic formats (CBOR, BSON, and others) differ in type systems and ecosystem fit. The **decision axis relative to IDL binary** remains the same.
 
 ---
 
@@ -85,7 +87,7 @@ Exact tags differ by format. The teaching points are:
 
 the wire form uses **field number 1** and **field number 2**, not the Unicode names `id` and `label`. Unknown field numbers can often be skipped, which supports forward compatibility when used correctly ([schema evolution](schema-evolution.md)).
 
-**Density and speed** depend strongly on **generated** versus reflective code paths.
+**Density and speed** depend strongly on **generated** versus reflective code paths. Generated code knows the field layout at compile time. Reflective paths discover structure at runtime and are often slower.
 
 ### Side-by-side miniature example
 

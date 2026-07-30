@@ -5,22 +5,28 @@
 
 ## Problem
 
-Both Apache Avro and Protocol Buffers are **schema-driven**. Teams still fail migrations because they treat “we have a schema” as if that were one single practice. In reality, two mature cultures dominate industry systems:
+Both Apache Avro and Protocol Buffers are **schema-driven**. A **schema** is a shared description of what fields a message has and what types they use. Teams still fail migrations because they treat “we have a schema” as if that were one single practice.
 
-1. **Resolution culture** (classic Avro): the writer’s schema and the reader’s schema may differ. A **resolution** algorithm fills defaults, projects fields, and defines what counts as compatible.
+In reality, two mature **cultures** dominate industry systems. A culture here means a set of habits, tools, and rules about how change is governed—not just a file format.
+
+1. **Resolution culture** (classic Avro): the writer’s schema and the reader’s schema may differ. A **resolution** algorithm fills defaults, projects fields, and defines what counts as compatible. In other words, at read time the system may reconcile two different schema versions.
 2. **Field-number culture** (classic Protobuf): field **numbers** are the stable contract; names are mostly local documentation. Evolution means “add optional fields, never reuse numbers,” enforced by process more than by runtime resolution of two full schemas on every read.
 
-Choosing the wrong culture for your operations model—or mixing the habits of both—breaks consumers under rolling deploy.
+Choosing the wrong culture for your operations model—or mixing the habits of both—breaks consumers under **rolling deploy**. Rolling deploy means you upgrade services gradually, so old and new versions run at the same time.
+
+---
 
 ## Short answer
 
-Use **Avro-like resolution** when producers and consumers evolve independently, schemas are published to a **registry**, and you want compatibility rules such as BACKWARD, FORWARD, or FULL checked as policy artifacts. (Those modes describe which old and new reader/writer combinations remain legal; the [schema registries](schema-registries.md) article expands them.)
+Use **Avro-like resolution** when producers and consumers evolve independently, schemas are published to a **registry** (a service that stores versioned schemas and can reject incompatible ones), and you want compatibility rules such as BACKWARD, FORWARD, or FULL checked as policy artifacts. Those modes describe which old and new reader/writer combinations remain legal; the [schema registries](schema-registries.md) article expands them.
 
-Use **Protobuf-like field-number discipline** when a shared `.proto` file (or equivalent IDL) is the product interface, code generation is central, and change control means “reserve numbers, add fields, and fail continuous integration (CI) on incompatible edits.”
+Use **Protobuf-like field-number discipline** when a shared `.proto` file (or equivalent **IDL**—interface definition language, a formal description of messages and services) is the product interface, code generation is central, and change control means “reserve numbers, add fields, and fail continuous integration (CI) on incompatible edits.”
 
 Both families can serve RPC and events. The difference is **how change is governed**, not a universal speed ranking.
 
 This page assumes 201 [schema evolution](../201/schema-evolution.md) for forward/backward vocabulary and [self-describing vs schema](../201/self-describing-vs-schema-dependent.md) for why schemas exist. Here we own **culture and operations**.
+
+---
 
 ## Constraints that matter
 
@@ -33,7 +39,9 @@ This page assumes 201 [schema evolution](../201/schema-evolution.md) for forward
 | **Typical homes** | Event logs and data-platform rows | RPC APIs and multi-language service stubs |
 | **Failure style** | Resolution errors; incompatible subject versions | Reused field numbers; silent semantic overwrite |
 
-Neither column is “more schema-driven.” Both are schema-driven with different **control planes**.
+Neither column is “more schema-driven.” Both are schema-driven with different **control planes**. A control plane is the system that decides and enforces policy, separate from the data plane that carries the actual messages.
+
+---
 
 ## Decision frame
 
@@ -53,6 +61,10 @@ Neither column is “more schema-driven.” Both are schema-driven with differen
               (you still need CI for breaking changes)
 ```
 
+This matters because culture is an operations choice. Picking Avro “because Kafka” without a compatibility mode, or Protobuf “because gRPC” while reusing field numbers, recreates the outages each culture evolved to prevent.
+
+---
+
 ## Failure modes
 
 | Mistake | Consequence |
@@ -64,6 +76,10 @@ Neither column is “more schema-driven.” Both are schema-driven with differen
 | **Protobuf without ownership** | `.proto` files fork per team; numbers collide when someone merges |
 | **Culture mashup** | Expecting registry-style resolution from raw Protobuf bytes without descriptors |
 
+For example, if field number `3` once meant “amount in cents” and later means “currency code,” old readers will treat the new bytes as a wrong amount. That is silent corruption: no loud error, wrong business data.
+
+---
+
 ## Real-world sketch
 
 **Events.** An orders topic uses Avro with BACKWARD compatibility. Producers deploy a new optional field; old consumers resolve defaults. The control plane is the registry subject, not a monorepo merge of stubs.
@@ -71,6 +87,8 @@ Neither column is “more schema-driven.” Both are schema-driven with differen
 **RPC.** A billing API uses Protobuf. Field `3` is `amount_cents` forever. A new `currency_code` becomes field `7`. Code generation updates services that care; old binaries ignore unknown fields according to runtime rules. The control plane is IDL review plus breaking-change CI.
 
 Swapping habits—treating Protobuf field names as the long-term identity, or deploying Avro without a compatibility mode—recreates the outages each culture evolved to prevent.
+
+---
 
 ## In this suite
 
@@ -82,6 +100,8 @@ Swapping habits—treating Protobuf field names as the long-term identity, or de
 | 201 [schema evolution](../201/schema-evolution.md) | Mechanism vocabulary |
 
 Suite timings compare **libraries**, not “Avro culture versus Protobuf culture” as governance systems. Use Results to pick an implementation **after** the culture fits the operations model.
+
+---
 
 ## Experiments
 
@@ -106,6 +126,8 @@ Suite timings compare **libraries**, not “Avro culture versus Protobuf culture
 - Prefer the culture your **operations team can enforce** (registry modes versus IDL governance).
 - Do not mix cultures on one topic without an explicit dual-stack plan.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -119,6 +141,8 @@ Suite timings compare **libraries**, not “Avro culture versus Protobuf culture
 
 **Conclusion style:** “The event bus uses Avro with BACKWARD registry mode; RPC uses Protobuf field-id discipline.”
 
+---
+
 ## What this suite cannot tell you
 
 - Which **compatibility mode** your registry should enforce.
@@ -126,12 +150,16 @@ Suite timings compare **libraries**, not “Avro culture versus Protobuf culture
 - How long a multi-hop dual-write must last for a rename.
 - Legal retention requirements for old writer schemas used in resolution.
 
+---
+
 ## Common mistakes
 
 - Picking Avro “because Kafka” without choosing and enforcing a compatibility mode.
 - Picking Protobuf “because gRPC” and then reusing field numbers under pressure.
 - Using suite speed to choose the culture.
 - Assuming JSON needs no culture—public JSON still needs a contract process (see [public API contracts](public-api-contracts.md)).
+
+---
 
 ## Key takeaways
 

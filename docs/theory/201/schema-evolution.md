@@ -8,7 +8,7 @@
 
 Services and data pipelines are seldom deployed as a single atomic unit. For a while you almost always have **older readers with newer writers**, **newer readers with older writers**, or both. A field rename that one team treats as “local,” reuse of a Protocol Buffers field number, or removal of a JSON property without a defined default can break a consumer that was overlooked—or corrupt analytical results for a long time before anyone notices.
 
-Evolution is not a library feature you enable with one configuration flag. It is a **compatibility policy** together with encoding rules that make that policy feasible.
+**Schema evolution** is the practice of changing a data contract over time without breaking systems that still use an older or newer version of that contract. Evolution is not a library feature you enable with one configuration flag. It is a **compatibility policy** together with encoding rules that make that policy feasible.
 
 ---
 
@@ -16,9 +16,9 @@ Evolution is not a library feature you enable with one configuration flag. It is
 
 Safe evolution means defining what **writers may add, remove, or change** while **readers at a different version** still obtain a sufficiently correct view of the data.
 
-In practice you prefer **additive** optional fields with explicit defaults. You never repurpose identifiers—Protocol Buffers field numbers, Avro names under a stated compatibility mode, or API property names without versioning. You document nullability and defaults as product semantics. When more than one team shares the contract, you enforce policy in continuous integration or a schema registry.
+In practice you prefer **additive** optional fields with explicit defaults. You never repurpose identifiers—Protocol Buffers field numbers, Avro names under a stated compatibility mode, or API property names without versioning. You document nullability and defaults as product semantics. When more than one team shares the contract, you enforce policy in continuous integration or a **schema registry** (a service that stores versioned schemas and often checks whether a proposed change is compatible).
 
-“Forward” and “backward” compatibility are **directional**. You need to know which direction matters before you delete fields.
+“Forward” and “backward” compatibility are **directional**. You need to know which direction matters before you delete fields. In other words: “compatible” is not a single yes/no property; it depends on who advances first.
 
 ---
 
@@ -72,6 +72,8 @@ Version 2 adds `currency_code` (string), default `"USD"` when absent.
 If version 2 instead **renames** `total_cents` to `amount_cents` without a dual-field period, older readers stop seeing the amount (the old key is absent) and newer readers miss the key that older writers still send. The failure mode is often silent.
 
 ### Protocol Buffers–style evolution (field numbers)
+
+In Protocol Buffers, field **identity on the wire** is a small integer number, not the human-readable name in the `.proto` file. The usual safe practices are:
 
 - New fields receive **new numbers**. They are introduced as optional; exact presence rules depend on language edition and toolchain.
 - A field number must **never** be reused for a new meaning. Deleted numbers and names should be marked `reserved`.
@@ -214,6 +216,8 @@ Resolution maps the writer’s `total_cents` bytes onto the reader’s `amount_c
 Neither model removes the need for a **compatibility policy**. They implement that policy with different mechanisms. For analytical pipelines and lake-oriented formats, see also the [data science perspective](../101/data_science_perspective.md).
 
 ### JSON and schemaless binary formats
+
+JSON and related “flexible” formats still need evolution discipline. The usual patterns are:
 
 - **Additive** properties are the usual safe change. Consumers that need forward compatibility should ignore unknown keys.
 - **Renames** fail silently: the old key is absent, and the new key is ignored by older clients.

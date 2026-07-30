@@ -10,15 +10,23 @@ The same organization often runs two very different workloads:
 - **Services** that exchange whole records (a user profile, an order command, a device event).
 - **Analytics** that scan billions of rows but only a few columns (revenue by day, feature columns for training).
 
+In a **row-oriented** layout, all fields of one record sit together. That is natural when you usually need the whole record. In a **columnar** layout, values from the same field across many records sit together. That is natural when you usually need a few fields across huge tables.
+
 Teams collapse both onto one encoding—“everything is Protobuf” or “everything is Parquet”—and then pay either impossible scan costs or impossible per-message overhead. The 101 axis *row versus columnar* becomes a **system boundary** question at Serialization 301 scale.
+
+---
 
 ## Short answer
 
 Use **row-oriented** messages (JSON objects, Protobuf messages, Avro records, MessagePack maps) when the unit of work is **whole records** with low-latency point access or per-event processing. Use **columnar** layouts (Parquet, ORC, Arrow tables) when the unit of work is a **bulk scan or aggregate over few columns** on large datasets.
 
+A **data lake** is a large store of historical data (often on object storage) designed for analytics rather than for single-record API responses.
+
 Crossing the streams is occasional glue (export jobs), not a default architecture. Do not pick columnar because it compresses well in a blog chart if every request needs the full row in under a millisecond.
 
 This page assumes the 101 row/columnar axis. Here we own **workload architecture**.
+
+---
 
 ## Constraints that matter
 
@@ -30,6 +38,12 @@ This page assumes the 101 row/columnar axis. Here we own **workload architecture
 | **Evolution** | Per-message schema or IDL culture | Table schema, file footers, and a catalog |
 | **Compression** | Per message or stream framing | Column statistics, dictionaries, page compression |
 | **Typical home** | APIs, RPC, queues, OLTP-style paths | Lakes, warehouses, feature stores, machine-learning batch |
+
+**Predicate pushdown** means the storage engine uses filters (for example “date = yesterday”) to avoid reading irrelevant files or column chunks. **OLTP** means online transaction processing—many small, interactive updates and reads.
+
+In other words, row and columnar optimize for different questions. They are not two brands of the same tool.
+
+---
 
 ## Decision frame
 
@@ -49,6 +63,10 @@ This page assumes the 101 row/columnar axis. Here we own **workload architecture
         yes → columnar storage or Arrow-class interchange
 ```
 
+This matters because a format that is excellent for service RPC can be a terrible lake format, and the reverse is also true.
+
+---
+
 ## Failure modes
 
 | Mistake | Consequence |
@@ -59,11 +77,17 @@ This page assumes the 101 row/columnar axis. Here we own **workload architecture
 | **Ignoring partition design** | Columnar storage without partitions or predicates still scans the world |
 | **Confusing Arrow with Parquet** | Arrow is mainly in-memory interchange; Parquet is mainly on-disk columnar—related jobs, not identical ones |
 
+For example, storing years of events as millions of tiny Protobuf files means every analytical query must open and fully parse records that contain fields the query does not need.
+
+---
+
 ## Real-world sketch
 
 A metrics pipeline ingests events as Protobuf. That is a good row-oriented, low-latency choice. Analysts then dump the same Protobuf messages as the lake format. Queries that need two fields open every message fully.
 
 A better design keeps the **serving path** on Protobuf and adds a **batch compact job** that writes Parquet partitions by day. Scan cost drops without changing the real-time contract. The suite may show excellent Protobuf decode rates; that does not make Protobuf a lake format.
+
+---
 
 ## In this suite
 
@@ -75,6 +99,8 @@ A better design keeps the **serving path** on Protobuf and adds a **batch compac
 | [Using this suite](using-this-suite.md) | How to read message-level Results |
 
 **Important:** this suite is **not** a columnar engine benchmark. Absence of Parquet or Arrow from a language Results page means “not measured here,” not “irrelevant for lakes.”
+
+---
 
 ## Experiments
 
@@ -99,6 +125,8 @@ A better design keeps the **serving path** on Protobuf and adds a **batch compac
 - Scan-heavy lake path means a columnar system format; RPC suite winners are irrelevant.
 - Hot RPC means a row or schema-driven family; columnar files are not substitutes.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -112,6 +140,8 @@ A better design keeps the **serving path** on Protobuf and adds a **batch compac
 
 **Conclusion style:** “Ingest RPC uses Protobuf rows; the lake uses Parquet; we do not dual-use one codec for both jobs.”
 
+---
+
 ## What this suite cannot tell you
 
 - Scan cost of Parquet versus ORC on your warehouse.
@@ -119,11 +149,15 @@ A better design keeps the **serving path** on Protobuf and adds a **batch compac
 - Optimal partition and layout design for your lake.
 - Whether micro-batch columnar encoding of events is worth the complexity.
 
+---
+
 ## Common mistakes
 
 - Citing message-codec Results to justify a lake format choice.
 - Forcing analytics to query an operational RPC log format forever.
 - Using columnar “because compression” on chatty, ultra-small RPCs.
+
+---
 
 ## Key takeaways
 

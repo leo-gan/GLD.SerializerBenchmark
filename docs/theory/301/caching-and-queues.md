@@ -4,11 +4,19 @@
 
 Redis, SQS, Kafka, and in-process caches all store **bytes**. Developers paste the fastest local serializer into the cache “temporarily.” Months later another language must read the key, or an attacker influences a value. The cache becomes a serialization and trust boundary that no one designed.
 
+In plain language: a cache or queue is not “just memory for us.” It is a store that other processes, languages, or future versions of your service may open. Design it that way from the start.
+
+---
+
 ## Short answer
 
 For **shared** caches and queues, use **portable** formats with an explicit schema or a documented JSON contract ([trust boundaries](trust-boundaries.md), [polyglot estates](polyglot-estates.md)). Reserve language-native codecs for **single-binary, trusted, non-shared** state if the threat model allows.
 
-Separate **event log** design ([schema registries](schema-registries.md)) from **ephemeral cache** values, but do not lower the portability bar just because time-to-live (TTL) is short. Size limits and poison-message handling matter as much as codec speed.
+Separate **event log** design ([schema registries](schema-registries.md)) from **ephemeral cache** values, but do not lower the portability bar just because time-to-live (TTL) is short. **TTL** is how long a key or message is allowed to live before automatic expiry. Size limits and poison-message handling matter as much as codec speed.
+
+A **poison message** is a payload that repeatedly fails processing (corrupt, too large, or schema-invalid). Without quarantine, it can crash a consumer loop forever.
+
+---
 
 ## Constraints that matter
 
@@ -18,6 +26,10 @@ Separate **event log** design ([schema registries](schema-registries.md)) from *
 | Single-service memory cache | Native encoding or plain structs are OK if not shared | Accidentally exposing native values via an admin API |
 | Durable bus | Schema culture plus a registry | Undocumented dual formats |
 | Task queues | Portable job payloads with a version field | Opaque blobs with no documented reader |
+
+This matters because “only our service writes Redis today” often becomes “three services read it next quarter.”
+
+---
 
 ## Decision frame
 
@@ -34,6 +46,10 @@ Separate **event log** design ([schema registries](schema-registries.md)) from *
 | Large values | Store a pointer to object storage plus a small metadata message |
 | PII in queues | Apply retention and redaction ([payload surfaces](payload-surfaces.md)) |
 
+In other words, short TTL reduces how long a bad encoding lives, but it does not make an unsafe format safe while it lives.
+
+---
+
 ## Failure modes
 
 | Mistake | Outcome |
@@ -44,9 +60,13 @@ Separate **event log** design ([schema registries](schema-registries.md)) from *
 | Cache used as system of record | The evolution story is lost |
 | Compressing without a framing version | Deploy skew between writers and readers |
 
+---
+
 ## Real-world sketch
 
 A session cache stores MessagePack with a `v` version field and a documented schema. The auth service (Go) and the API (Python) share fixtures in continuous integration. A proposal to switch to Python pickle for speed dies in review: a future Node edge worker could not participate, and security rejects native deserialize from Redis.
+
+---
 
 ## In this suite
 
@@ -55,6 +75,8 @@ A session cache stores MessagePack with a `v` version field and a documented sch
 | **Results** | Cost of candidate portable codecs in each language |
 | Native entries | Cost of portability—not a green light for shared stores |
 | [Using this suite](using-this-suite.md) | Local comparisons only |
+
+---
 
 ## Experiments
 
@@ -79,6 +101,8 @@ A session cache stores MessagePack with a `v` version field and a documented sch
 - Any cross-service reader plus native encoding means migrate to portable.
 - No poison handling means fix operations before chasing serialize benchmarks.
 
+---
+
 ## Metrics
 
 | Metric / signal | Role |
@@ -92,17 +116,23 @@ A session cache stores MessagePack with a `v` version field and a documented sch
 
 **Conclusion style:** “The Redis blob is portable Protobuf; native cache encoding has been removed.”
 
+---
+
 ## What this suite cannot tell you
 
 - Redis eviction policy and hot-key design.
 - Exactly-once queue semantics.
 - The correct TTL for *your* sessions.
 
+---
+
 ## Common mistakes
 
 - “TTL is 60 seconds, so schema doesn’t matter.”
 - Storing entire user graphs per key.
 - Logging cache values that contain tokens.
+
+---
 
 ## Key takeaways
 

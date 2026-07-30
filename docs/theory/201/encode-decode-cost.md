@@ -6,7 +6,9 @@
 
 ## Problem
 
-People sometimes declare a format “winner” from a single chart—“replace text with binary and improve performance by an order of magnitude.” Organizations then change codecs and see little improvement, or even a regression, because the limiting factor was never “text versus binary” as an abstract dichotomy. The dominant costs are typically **tokenization** (finding structure in the bytes), **numeric conversion**, **memory allocation**, **copying**, and **payload shape**.
+People sometimes declare a format “winner” from a single chart—“replace text with binary and improve performance by an order of magnitude.” Organizations then change codecs and see little improvement, or even a regression, because the limiting factor was never “text versus binary” as an abstract dichotomy.
+
+The dominant costs are typically **tokenization** (finding structure in the bytes), **numeric conversion**, **memory allocation**, **copying**, and **payload shape** (how nested or scattered the data is). In this section we separate those cost centers so you can reason about them one by one.
 
 ---
 
@@ -18,9 +20,13 @@ Text formats—especially JSON—spend work scanning character encodings such as
 
 In managed runtimes, **allocation rate and garbage collection** (GC = automatic reclamation of unused memory) often dominate the time spent inside the encode or decode routine itself. A carefully engineered JSON implementation may outperform an inefficient binary stack. A payload made of many small, pointer-linked objects stresses every codec.
 
+This matters because format choice alone rarely explains performance. Implementation quality and data shape often matter as much or more.
+
 ---
 
 ## Mental model
+
+Think of encode and decode as two opposite pipelines that convert between in-memory values and a sequence of bytes:
 
 ```text
   In-memory values (objects, records, maps)
@@ -59,7 +65,7 @@ Consider a minimal JSON object:
 
 As **text**, this is a sequence of characters, commonly stored as UTF-8 bytes. The processor does not “natively” understand braces or the decimal notation `21.5`. A JSON decoder must, among other steps:
 
-1. **Discover structure** — locate `{`, `:`, `,`, `}`, and string delimiters. Simple parsers do this with many conditional branches. Highly optimized parsers may use SIMD (single instruction, multiple data) instructions, but the logical task remains structure discovery.
+1. **Discover structure** — locate `{`, `:`, `,`, `}`, and string delimiters. Simple parsers do this with many conditional branches. Highly optimized parsers may use SIMD (single instruction, multiple data) instructions, which apply the same operation to several pieces of data at once, but the logical task remains structure discovery.
 2. **Interpret strings** — read the bytes between quotes; apply escape rules (for example `\n`); often allocate a string object in the language runtime.
 3. **Interpret numbers** — read the characters `2`, `1`, `.`, `5` and compute the binary floating-point value the CPU will use in arithmetic. That conversion is non-trivial and can dominate runtime on numeric-heavy payloads.
 4. **On encode (printing)** — convert binary integers and floats back into decimal digit characters; escape strings; emit punctuation.
@@ -76,12 +82,12 @@ No row is universally “best.” The table only makes visible **where processor
 
 ### Metadata that travels with the message
 
-Even without human-oriented punctuation, many binary formats still carry **descriptive metadata**:
+Even without human-oriented punctuation, many binary formats still carry **descriptive metadata**—extra information that helps a reader interpret the values:
 
 - **Type tags** — for example “the next value is a 32-bit integer,” or “the next value is a UTF-8 string of length *n*.”
 - **Field names** — string keys such as `"temp_c"` repeated for every record. This is common in MessagePack maps and in JSON.
 
-Schema-dependent formats such as Protocol Buffers typically replace names on the wire with **small field numbers** defined in a shared schema. That reduces per-message metadata at the cost of an out-of-band contract. See [Self-describing vs schema](self-describing-vs-schema-dependent.md).
+Schema-dependent formats such as Protocol Buffers typically replace names on the wire with **small field numbers** defined in a shared **schema** (a formal description of messages and field types). That reduces per-message metadata at the cost of an out-of-band contract. See [Self-describing vs schema](self-describing-vs-schema-dependent.md).
 
 ### Memory allocation and copying
 
@@ -94,7 +100,7 @@ A common decode path in managed languages (Python, Java, C#, JavaScript, and sim
       → return a fully populated graph
 ```
 
-Each allocation has a direct cost and contributes to later **garbage collection** work, which can increase latency variability (tail latency—the slowest requests). Alternative designs reduce that cost:
+Each allocation has a direct cost and contributes to later **garbage collection** work, which can increase latency variability (**tail latency**—the slowest requests, not just the average). Alternative designs reduce that cost:
 
 - decode into a preallocated structure;
 - reuse buffers across requests;
@@ -115,7 +121,7 @@ Two messages with the same logical “size in fields” can behave very differen
 
 ### Implementation quality
 
-The label “JSON” covers both pedagogical recursive parsers and highly optimized libraries. The label “Protocol Buffers” covers both reflection-based and fully code-generated paths. Comparisons should fix **language**, **implementation**, and **payload**, not only the marketing name of a format.
+The label “JSON” covers both pedagogical recursive parsers and highly optimized libraries. The label “Protocol Buffers” covers both reflection-based paths (where the program discovers field structure at runtime) and fully code-generated paths (where the structure is known at compile time). Comparisons should fix **language**, **implementation**, and **payload**, not only the marketing name of a format.
 
 ---
 

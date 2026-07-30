@@ -1,12 +1,25 @@
 # Serialization 301: Production Data Serialization
 
-> This course is about production serialization: trust, contracts, workloads, and honest measurement. It is written for people who already know how formats work and now need to choose what to ship.
+> This course is about **production serialization**: how teams choose formats and libraries when trust, contracts, real workloads, and honest measurement all pull at once. It is written for people who already know how formats work and now need to decide what to ship.
+
+In this course you will not re-learn wire encoding from scratch. Instead you will practice **judgment under constraints**. A first-year computer science student who has finished [Serialization 101](../101/index.md) and [Serialization 201](../201/index.md) should be able to follow every article. Technical depth stays; the language aims to teach rather than to impress.
+
+---
 
 ## Who this is for
 
-Serialization 301 is for experienced students and developers who must **ship a choice** under conflicting constraints. Those constraints usually include trust and security, schema evolution, multi-language estates, and performance claims that do not all point the same way. This is the **core** advanced course after [Serialization 201](../201/index.md).
+Serialization 301 is for students and developers who must **ship a choice** under conflicting constraints. In production, those constraints usually include:
 
-If your goal is to **implement** a codec—wire encoding, runtime paths, or a subset lab—that work belongs in [Serialization 401](../401/index.md) (the implementer elective), not here.
+- **Trust and security** — who is allowed to create or read the bytes.
+- **Schema evolution** — how messages change while old and new software still run.
+- **Multi-language estates** — more than one programming language sharing the same data.
+- **Performance claims** — numbers that do not all point the same way.
+
+This is the **core** advanced course after Serialization 201. In other words, 201 explains *how formats work*; 301 asks *what you should ship when several good answers conflict*.
+
+If your goal is to **implement** a codec—wire encoding, runtime paths, or a hands-on subset lab—that work belongs in [Serialization 401](../401/index.md) (the implementer elective), not here.
+
+---
 
 ## Prerequisites
 
@@ -15,18 +28,22 @@ If your goal is to **implement** a codec—wire encoding, runtime paths, or a su
 | **Hard** | [Serialization 101](../101/index.md) — trade-off axes and at least one of the three lenses |
 | **Hard** | [Serialization 201](../201/index.md) — especially schema identity, evolution, dynamic versus IDL (interface definition language) binary formats, encode cost, zero-copy, and compression versus format *(or equivalent experience)* |
 
-This course does **not** re-teach 201 mechanisms. When you need a mechanism model, open the matching 201 article. Then return here for multi-constraint judgment: what to ship when several good answers conflict.
+This course does **not** re-teach 201 mechanisms. When you need a mechanism model, open the matching 201 article. Then return here for multi-constraint judgment.
+
+---
 
 ## Learning outcomes
 
 By the end of this course you should be able to:
 
-1. **Analyze** trust boundaries and state when portable formats are required and when language-native formats might still be acceptable.
+1. **Analyze** trust boundaries and state when portable formats are required and when language-native formats might still be acceptable. A **trust boundary** is a place where data leaves one controlled world (a process, team, or network) and may be seen or produced by someone else.
 2. **Distinguish** operational schema cultures (for example Avro-style writer/reader resolution versus Protobuf field-number discipline) without re-deriving wire rules from scratch.
-3. **Evaluate** workload fit: row versus columnar storage at system scale, polyglot contracts across languages, and the different shapes of RPC (remote procedure call) versus messaging payloads.
+3. **Evaluate** workload fit: row versus columnar storage at system scale, polyglot contracts across languages, and the different shapes of **RPC** (remote procedure call—a synchronous request and response between services) versus messaging payloads.
 4. **Critique** benchmark claims using this suite’s rules about paradigm families and single-language comparisons.
 5. **Recommend** a format family or approach under stated constraints and **justify** it with serialization categories and language **Results**.
 6. **Identify** what this benchmark runner cannot answer, so you do not over-claim.
+
+---
 
 ## How this course fits the program
 
@@ -39,6 +56,8 @@ By the end of this course you should be able to:
 
 The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s benchmark runner, use the [Benchmarks](../../analysis/index.md) pages and each language’s **Results**.
 
+---
+
 ## Suggested paths
 
 You do not need to read every article in order. Pick a track that matches the problem you are solving.
@@ -47,7 +66,9 @@ You do not need to read every article in order. Pick a track that matches the pr
 
 **Data and events track.** Start with [using this suite](using-this-suite.md) and [row vs columnar](row-vs-columnar.md). Then study [two schema cultures](two-schema-cultures.md), [schema registries](schema-registries.md), and [versioning](versioning-in-the-wild.md). Finish with [event backbone](case-event-stream.md) and [analytics lake](case-analytics-lake.md).
 
-**Performance deep path.** Start with [using this suite](using-this-suite.md) and [implementation variance](implementation-variance.md). Then read [latency tails and GC](latency-tails-and-gc.md) (garbage collection), [compression as system choice](compression-as-system-choice.md), and [zero-copy in production](zero-copy-in-production.md). Close with the [faster postmortem](case-faster-postmortem.md) case study.
+**Performance deep path.** Start with [using this suite](using-this-suite.md) and [implementation variance](implementation-variance.md). Then read [latency tails and GC](latency-tails-and-gc.md) (garbage collection—the automatic reclaiming of unused memory on managed runtimes), [compression as system choice](compression-as-system-choice.md), and [zero-copy in production](zero-copy-in-production.md). Close with the [faster postmortem](case-faster-postmortem.md) case study.
+
+---
 
 ## Modules
 
@@ -57,7 +78,7 @@ You do not need to read every article in order. Pick a track that matches the pr
 |---------|------------------------|
 | [Trust boundaries: portable vs native](trust-boundaries.md) | Explain when language-native formats are unacceptable as interchange |
 | [Untrusted input and parser risk](untrusted-input.md) | Name failure modes and controls for hostile payloads |
-| [Secrets, PII, and payload surfaces](payload-surfaces.md) | Spot leak surfaces in logs, traces, and secondary stores (PII means personally identifiable information) |
+| [Secrets, PII, and payload surfaces](payload-surfaces.md) | Spot leak surfaces in logs, traces, and secondary stores (PII means personally identifiable information—data that can identify a person) |
 
 ### Contracts that survive years
 
@@ -98,6 +119,8 @@ You do not need to read every article in order. Pick a track that matches the pr
 | [Cross-language service boundary](case-polyglot-boundary.md) | One contract shared by three languages |
 | [“We need it faster” postmortem](case-faster-postmortem.md) | Wrong benchmark versus wrong paradigm versus wrong payload |
 
+---
+
 ## Lab notebooks (Python / Colab)
 
 Experiment notebooks implement selected article **Experiments**. They are decision labs, not full clones of the suite benchmark runner:
@@ -110,6 +133,8 @@ Experiment notebooks implement selected article **Experiments**. They are decisi
 | [Row vs columnar](../notebooks/301/row_vs_columnar.ipynb) | [Row vs columnar](row-vs-columnar.md) |
 
 Install and run notes live in the [notebooks README](../notebooks/README.md).
+
+---
 
 ## Honesty rules
 
@@ -124,9 +149,13 @@ The same program rules apply as in 101 and 201:
 
 **301-specific guidance:** every article includes **Experiments** (setup, procedure, and a decision rule for that page’s problem), **Metrics** (the primary signals for that experiment’s conclusion), and a section on **what this suite cannot tell you**. Prefer failure modes and decision tables over encyclopedias of wire formats.
 
+---
+
 ## Assessment (self-check)
 
 Treat the capstone case studies as the course exam. Under fixed constraints, recommend an approach, name the evidence you would collect on this suite, and state what you would still need to measure outside the benchmark runner.
+
+---
 
 ## Where to go next
 
