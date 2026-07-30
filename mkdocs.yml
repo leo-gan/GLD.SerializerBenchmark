@@ -77,6 +77,7 @@ markdown_extensions:
 # Languages sidebar: compact "Lang: Overview · Results" rows (see languages-nav.*).
 extra_css:
   - stylesheets/languages-nav.css
+  - stylesheets/site-home.css
 extra_javascript:
   - javascripts/languages-nav.js
 

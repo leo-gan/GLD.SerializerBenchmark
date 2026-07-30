@@ -2,6 +2,12 @@
 
 Welcome to Serialization 101. This course is a starting point for anyone who wants to understand data serialization. You do not need prior experience with distributed systems, data lakes, or binary formats. First-year students, data scientists, and working engineers can all begin here.
 
+| Jump | |
+|------|--|
+| **This track** | Three lenses below · then [201 mechanisms](../201/index.md) |
+| **See numbers** | [Dashboard](../../dashboard/) · any language **Results** |
+| **How we measure** | [Method](../../analysis/index.md) |
+
 By the end of this theory track you should be able to:
 
 1. Explain what serialization is and why computer programs need it.

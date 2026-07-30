@@ -1,5 +1,5 @@
 /**
- * Dashboard UI terminology: always say **data type** (test_data / Test Data control).
+ * Dashboard UI terminology: always say **data type** (test_data control label).
  * Never use "fixture" in user-visible copy, notifications, KPIs, or export notes.
  * Internal helpers may still say fixture* in identifiers until renamed.
  */
@@ -30,6 +30,8 @@ import {
 } from './format.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
+/** localStorage: hide first-visit orientation banner when set to "1". */
+const ORIENTATION_KEY = 'serializer-dashboard-orientation-dismissed-v1';
 
 const GROUP_META_KEYS = new Set([
   'serializer',
@@ -281,6 +283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applySavedSettings(loadSettings());
   applyUrlParams();
   setupEventListeners();
+  setupOrientationBanner();
   initCharts();
   applyUiFromState();
   await loadHistoryList();
@@ -292,6 +295,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   syncUrlFromState();
 });
+
+/** Dismissible first-visit tip (visible by default; hidden after Got it). */
+function setupOrientationBanner() {
+  const banner = document.getElementById('orientation-banner');
+  const btn = document.getElementById('orientation-dismiss');
+  if (!banner) return;
+  let dismissed = false;
+  try {
+    dismissed = localStorage.getItem(ORIENTATION_KEY) === '1';
+  } catch (_) {
+    /* private mode */
+  }
+  if (dismissed) banner.hidden = true;
+  btn?.addEventListener('click', () => {
+    banner.hidden = true;
+    try {
+      localStorage.setItem(ORIENTATION_KEY, '1');
+    } catch (_) {
+      /* ignore */
+    }
+  });
+}
 
 function loadSettings() {
   try {
@@ -2648,9 +2673,17 @@ function setKpiEmpty(msg) {
   document.getElementById('kpi-pareto').textContent = '—';
 }
 
+function setChartEmptyVisible(empty) {
+  ['scatter-empty', 'bar-empty'].forEach((id) => {
+    const node = document.getElementById(id);
+    if (node) node.hidden = !empty;
+  });
+}
+
 function updateKPIs() {
   const total = state.filteredGroups.length;
   document.getElementById('kpi-total').textContent = formatIntGrouped(total);
+  setChartEmptyVisible(total === 0);
 
   if (total === 0) {
     setKpiEmpty('No data for this filter');

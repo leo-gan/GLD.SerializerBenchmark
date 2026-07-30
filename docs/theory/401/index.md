@@ -2,6 +2,12 @@
 
 This course teaches how Protocol Buffers works at the byte level. You will also learn how three language libraries turn those bytes into ordinary values and back again.
 
+| Jump | |
+|------|--|
+| **Prereqs** | [101](../101/index.md) · [201](../201/index.md) (schema / wire ideas) |
+| **Sibling** | [301 production judgment](../301/index.md) — *whether / which*, not *how bytes* |
+| **Suite** | [Add a serializer](../../analysis/ADDING_A_SERIALIZER.md) · [Dashboard](../../dashboard/) |
+
 **Protocol Buffers** is a popular schema-driven binary format. You describe message shapes in a `.proto` file. Tools then generate code that can encode and decode those messages. This elective walks through that wire format first. It then follows the paths taken by Python, Rust, and C libraries. A small hands-on lab connects the theory to code you write yourself.
 
 The course is for people who want to implement, debug, or deeply integrate codecs. It is not only for people who choose a format from a list of options. You do not need to have written a serializer from scratch already. You do need intermediate reading comfort in at least one of Python, Rust, or C. You also need a working memory of schema-dependent binary ideas from Serialization 201.
