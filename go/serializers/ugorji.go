@@ -87,12 +87,11 @@ func (s *ugorjiCodec) DeserializeBytes(buf []byte) (any, error) {
 }
 
 func (s *ugorjiCodec) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
-	cw := &countWriter{w: w}
-	s.strenc.Reset(cw)
+	s.strenc.Reset(w)
 	if err := s.strenc.Encode(fx.Value); err != nil {
 		return 0, err
 	}
-	return cw.n, nil
+	return s.strenc.NumBytesWritten(), nil
 }
 
 func (s *ugorjiCodec) DeserializeStream(r io.Reader) (any, error) {
