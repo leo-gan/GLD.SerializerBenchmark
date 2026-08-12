@@ -18,15 +18,30 @@ type fxamackerCBOR struct {
 }
 
 func newFxamackerCBOR() *fxamackerCBOR {
-	// Default EncOptions (not CoreDet): CoreDet sorts / normalizes for deterministic
-	// encoding and is slower on struct payloads without map keys. Throughput path
-	// reuses immutable EncMode/DecMode (library-recommended).
-	// https://github.com/fxamacker/cbor#usage
+	// Throughput path reuses immutable EncMode/DecMode (library-recommended).
+	// https://github.com/fxamacker/cbor#quick-start
+
+	// fxamacker/cbor provides struct tag options `toarray` or `keyasint` to
+	// improve speed and reduce encoded size.
+	// To take effect, `toarray` or `keyasint` needs to be added to the Go structs
+	// in this benchmark's fixture file (model/v2/generate.go).
+	// See how to use struct tag options at:
+	// https://github.com/fxamacker/cbor#smaller-encodings-with-struct-tag-options
+
+	// fxamacker/cbor encodes structs faster than Go maps because struct keys
+	// and their sort order are cached per type, while map keys are encoded and
+	// sorted every time.
+
+	// Deterministic encoding isn't required in the benchmarks, so the
+	// default encoding option is used instead of cbor.CoreDetEncOptions.
 	em, err := cbor.EncOptions{}.EncMode()
 	if err != nil {
 		panic(err)
 	}
-	dm, err := cbor.DecOptions{}.DecMode()
+
+	// For untrusted input, the default option validates UTF-8 strings. All the
+	// generated fixtures are valid UTF-8, so the default option isn't used here.
+	dm, err := cbor.DecOptions{UTF8: cbor.UTF8DecodeInvalid}.DecMode()
 	if err != nil {
 		panic(err)
 	}
