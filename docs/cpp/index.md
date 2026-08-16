@@ -31,9 +31,9 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson),
 | custom_binary | Binary | harness | length-prefixed fields | Baseline; stream adapted |
 | flatbuffers | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
 | flexbuffers | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
-| jsoncons_bson | Binary | jsoncons | `bson::encode/decode` (bytes + ostream/istream) | Document binary; **native stream** |
-| jsoncons_cbor | Binary | jsoncons | `cbor::encode/decode` (bytes + ostream/istream) | DOM multi-format; **native stream** |
-| jsoncons_msgpack | Binary | jsoncons | `msgpack::encode/decode` (bytes + ostream/istream) | DOM MessagePack; **native stream** |
+| jsoncons_bson | Binary | jsoncons | `bson::encode/decode` on domain structs | BSON document; **native stream** |
+| jsoncons_cbor | Binary | jsoncons | `cbor::encode/decode` on domain structs | CBOR; **native stream** |
+| jsoncons_msgpack | Binary | jsoncons | `msgpack::encode/decode` on domain structs | MessagePack; **native stream** |
 | msgpack | Binary | msgpack-c (C++ API) | `packer` + `sbuffer` / `unpack`; stream packer + unpacker | Official C++ API; **native stream** |
 | nlohmann_bson | Binary | nlohmann/json | `to_bson` / `from_bson` (+ ostream/istream) | BSON (object root); **native stream** |
 | nlohmann_cbor | Binary | nlohmann/json | `to_cbor` / `from_cbor` (+ ostream/istream) | IETF CBOR; **native stream** |

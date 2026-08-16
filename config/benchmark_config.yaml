@@ -988,18 +988,18 @@ languages:
       - name: jsoncons_cbor
         category: binary
         library: danielaparker/jsoncons
-        rationale: "IETF CBOR via mature multi-format C++ library"
-        optimal_api: "cbor::encode_cbor / decode_cbor"
+        rationale: "IETF CBOR via jsoncons struct traits (no nlohmann hop)"
+        optimal_api: "cbor::encode_cbor / decode_cbor on domain structs"
       - name: jsoncons_bson
         category: binary
         library: danielaparker/jsoncons
-        rationale: "MongoDB BSON document binary"
-        optimal_api: "bson::encode_bson / decode_bson"
+        rationale: "MongoDB BSON via jsoncons struct traits (batch wrapped)"
+        optimal_api: "bson::encode_bson / decode_bson on domain structs"
       - name: jsoncons_msgpack
         category: binary
         library: danielaparker/jsoncons
-        rationale: "MessagePack via jsoncons (DOM path; compare with msgpack-cxx)"
-        optimal_api: "msgpack::encode_msgpack / decode_msgpack"
+        rationale: "MessagePack via jsoncons struct traits (compare with msgpack-cxx)"
+        optimal_api: "msgpack::encode_msgpack / decode_msgpack on domain structs"
       - name: custom_binary
         category: binary
         library: harness

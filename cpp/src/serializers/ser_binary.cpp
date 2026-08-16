@@ -1,12 +1,7 @@
 #include "bench/serializer.hpp"
-#include "bench/nlohmann_conv.hpp"
 #include "bench/stream_util.hpp"
 
 #include <msgpack.hpp>
-#include <jsoncons/json.hpp>
-#include <jsoncons_ext/cbor/cbor.hpp>
-#include <jsoncons_ext/bson/bson.hpp>
-#include <jsoncons_ext/msgpack/msgpack.hpp>
 
 #include <cstring>
 #include <string_view>
@@ -322,134 +317,6 @@ class MsgpackSer final : public ISerializer {
   Value value_;
 };
 
-class JsonconsCbor final : public ISerializer {
- public:
-  const char* name() const override { return "jsoncons_cbor"; }
-  const char* version() const override { return "0.177.0"; }
-  const char* stream_mode() const override { return "native"; }
-  const char* native_kind() const override { return "dom"; }
-  void prepare(const Fixture& fx) override {
-    type_id_ = fx.type_id;
-    n_ = fx.instance_count;
-    j_ = jsoncons::json::parse(value_to_json(fx.value).dump());
-  }
-  std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    std::vector<uint8_t> buf;
-    jsoncons::cbor::encode_cbor(j_, buf);
-    return buf;
-  }
-  Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    auto j = jsoncons::cbor::decode_cbor<jsoncons::json>(data);
-    return json_to_value(nlohmann::json::parse(j.to_string()), type_id_, n_);
-  }
-  // Docs: encode_cbor(j, ostream) / decode_cbor(istream).
-  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
-    out.clear();
-    VecOutStream os(out);
-    jsoncons::cbor::encode_cbor(j_, os);
-    return out.size();
-  }
-  Value deserialize_stream(const std::vector<uint8_t>& data) override {
-    VecInStream is(data);
-    auto j = jsoncons::cbor::decode_cbor<jsoncons::json>(is);
-    return json_to_value(nlohmann::json::parse(j.to_string()), type_id_, n_);
-  }
-
- private:
-  std::string type_id_;
-  int n_ = 1;
-  jsoncons::json j_;
-};
-
-class JsonconsBson final : public ISerializer {
- public:
-  const char* name() const override { return "jsoncons_bson"; }
-  const char* version() const override { return "0.177.0"; }
-  const char* stream_mode() const override { return "native"; }
-  const char* native_kind() const override { return "dom"; }
-  void prepare(const Fixture& fx) override {
-    type_id_ = fx.type_id;
-    n_ = fx.instance_count;
-    wrapped_ = false;
-    auto raw = jsoncons::json::parse(value_to_json(fx.value).dump());
-    if (raw.is_object()) {
-      j_ = std::move(raw);
-    } else {
-      // BSON root must be a document (object). Wrap arrays/scalars.
-      j_ = jsoncons::json::object();
-      j_["items"] = raw;
-      wrapped_ = true;
-    }
-  }
-  std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    std::vector<uint8_t> buf;
-    jsoncons::bson::encode_bson(j_, buf);
-    return buf;
-  }
-  Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    return unwrap(jsoncons::bson::decode_bson<jsoncons::json>(data));
-  }
-  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
-    out.clear();
-    VecOutStream os(out);
-    jsoncons::bson::encode_bson(j_, os);
-    return out.size();
-  }
-  Value deserialize_stream(const std::vector<uint8_t>& data) override {
-    VecInStream is(data);
-    return unwrap(jsoncons::bson::decode_bson<jsoncons::json>(is));
-  }
-
- private:
-  Value unwrap(jsoncons::json j) {
-    const jsoncons::json* payload = &j;
-    if (wrapped_ && j.is_object() && j.contains("items")) payload = &j.at("items");
-    return json_to_value(nlohmann::json::parse(payload->to_string()), type_id_, n_);
-  }
-  std::string type_id_;
-  int n_ = 1;
-  jsoncons::json j_;
-  bool wrapped_ = false;
-};
-
-class JsonconsMsgpack final : public ISerializer {
- public:
-  const char* name() const override { return "jsoncons_msgpack"; }
-  const char* version() const override { return "0.177.0"; }
-  const char* stream_mode() const override { return "native"; }
-  const char* native_kind() const override { return "dom"; }
-  void prepare(const Fixture& fx) override {
-    type_id_ = fx.type_id;
-    n_ = fx.instance_count;
-    j_ = jsoncons::json::parse(value_to_json(fx.value).dump());
-  }
-  std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    std::vector<uint8_t> buf;
-    jsoncons::msgpack::encode_msgpack(j_, buf);
-    return buf;
-  }
-  Value deserialize_bytes(const std::vector<uint8_t>& data) override {
-    auto j = jsoncons::msgpack::decode_msgpack<jsoncons::json>(data);
-    return json_to_value(nlohmann::json::parse(j.to_string()), type_id_, n_);
-  }
-  size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
-    out.clear();
-    VecOutStream os(out);
-    jsoncons::msgpack::encode_msgpack(j_, os);
-    return out.size();
-  }
-  Value deserialize_stream(const std::vector<uint8_t>& data) override {
-    VecInStream is(data);
-    auto j = jsoncons::msgpack::decode_msgpack<jsoncons::json>(is);
-    return json_to_value(nlohmann::json::parse(j.to_string()), type_id_, n_);
-  }
-
- private:
-  std::string type_id_;
-  int n_ = 1;
-  jsoncons::json j_;
-};
-
 // Hand-packed length-prefixed baseline (independent of third-party codecs).
 class CustomBinary final : public ISerializer {
  public:
@@ -573,9 +440,6 @@ class CustomBinary final : public ISerializer {
 }  // namespace
 
 SerializerPtr make_msgpack() { return std::make_unique<MsgpackSer>(); }
-SerializerPtr make_jsoncons_cbor() { return std::make_unique<JsonconsCbor>(); }
-SerializerPtr make_jsoncons_bson() { return std::make_unique<JsonconsBson>(); }
-SerializerPtr make_jsoncons_msgpack() { return std::make_unique<JsonconsMsgpack>(); }
 SerializerPtr make_custom_binary() { return std::make_unique<CustomBinary>(); }
 
 }  // namespace bench
