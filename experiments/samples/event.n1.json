@@ -1,0 +1,47 @@
+{
+  "about": "Preview copy for the plan. When this experiment is opened, that folder's save_sample.py will write the official sample.json. Do not edit by hand.",
+  "source": "--kind event",
+  "builder": "python/src/benchmark/data_v2/generator.py",
+  "cells": [
+    {
+      "kind": "event",
+      "settings": {
+        "attr_count": 4,
+        "string_len": {
+          "min": 3,
+          "max": 12
+        },
+        "include_payload_bytes": 0
+      },
+      "settings_hash": "963dc8e1b85e",
+      "how_many_records": 1,
+      "seed": 42,
+      "records": [
+        {
+          "event_id": "hwvrjkalkhp",
+          "event_type": "qldjcfyvr",
+          "occurred_at": 1704142140270,
+          "producer": "iytknyg",
+          "attrs": [
+            {
+              "key": "zijtxz",
+              "value": "nwugys"
+            },
+            {
+              "key": "atwymdxchav",
+              "value": "knrgdho"
+            },
+            {
+              "key": "joy",
+              "value": "rruteloqk"
+            },
+            {
+              "key": "plfvkeworb",
+              "value": "mvxbhvr"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

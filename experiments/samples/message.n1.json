@@ -1,0 +1,43 @@
+{
+  "about": "Preview copy for the plan. When this experiment is opened, that folder's save_sample.py will write the official sample.json. Do not edit by hand.",
+  "source": "--kind message",
+  "builder": "python/src/benchmark/data_v2/generator.py",
+  "cells": [
+    {
+      "kind": "message",
+      "settings": {
+        "field_count": 8,
+        "primitive_types": [
+          "bool",
+          "int32",
+          "int64",
+          "float64",
+          "utf8_string"
+        ],
+        "string_len": {
+          "min": 3,
+          "max": 16
+        },
+        "int_range": {
+          "min": 0,
+          "max": 1000000
+        }
+      },
+      "settings_hash": "99d1c7fab316",
+      "how_many_records": 1,
+      "seed": 42,
+      "records": [
+        {
+          "f_bool": true,
+          "f_int32": 442269,
+          "f_int64": 446816,
+          "f_float64": 649.1968904313869,
+          "f_string": "xljybqxfemz",
+          "f_bool_2": false,
+          "f_int32_2": 598855,
+          "f_string_2": "eobwzfgdqglt"
+        }
+      ]
+    }
+  ]
+}
