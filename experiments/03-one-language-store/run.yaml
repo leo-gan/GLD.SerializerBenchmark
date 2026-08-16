@@ -1,0 +1,23 @@
+# Generated from experiment.yaml. Edit experiment.yaml, not this file.
+id: 03-one-language-store
+description: What do we pay to stay readable by other languages?
+data_model_version: 2
+types:
+- type_id: message
+  type_config: {}
+data_type_instance_count:
+- 1
+compression:
+  mode: size_only
+  algorithms:
+  - gzip_6
+  - zstd_3
+execution:
+  mode: full
+  io_modes:
+  - bytes
+  - stream
+budget:
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50

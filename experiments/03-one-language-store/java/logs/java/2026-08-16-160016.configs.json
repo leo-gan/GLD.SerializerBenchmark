@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "benchmark_ts": "2026-08-16-160016",
+  "language": "java",
+  "environment": {
+    "captured_at": "2026-08-16T23:00:22.626471+00:00",
+    "os": {
+      "system": "Linux",
+      "release": "6.8.0-136-generic",
+      "version": "#136~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul  3 16:29:11 UTC ",
+      "architecture": "x86_64"
+    },
+    "cpu": {
+      "architecture": "x86_64",
+      "logical_cores": 20,
+      "model": "12th Gen Intel(R) Core(TM) i7-12800H",
+      "cpu_count": 20,
+      "max_freq_mhz": 4700,
+      "governor": "powersave"
+    },
+    "memory": {
+      "total_bytes": 33307172864
+    },
+    "runtimes": {
+      "python": "3.14.0",
+      "node": "24.15.0",
+      "dotnet": "9.0.316",
+      "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+      "gcc": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "g++": "g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "java": "openjdk version \"21.0.11\" 2026-04-21 LTS",
+      "go": "go version go1.23.6 linux/amd64"
+    },
+    "git": {
+      "commit": "70c886f",
+      "dirty": true
+    },
+    "process": {
+      "pid": 209362,
+      "cwd": "seriailizer-benchmark/java"
+    },
+    "machine_id": "1162d8ddf953b2d2",
+    "claim_level_hint": "L1_single_session",
+    "cpu_governor": "powersave",
+    "benchmark_ts": "2026-08-16-160016"
+  },
+  "dataset": {
+    "seed": "42",
+    "config_path": "config/benchmark_config.yaml",
+    "catalog_file": "schemas/data_catalog_v2.yaml",
+    "test_data_config": "schemas/data_catalog_v2.yaml",
+    "fixtures": [
+      {
+        "name": "message",
+        "category": "flat_mixed",
+        "supports_circular": false
+      },
+      {
+        "name": "document",
+        "category": "nested",
+        "supports_circular": false
+      },
+      {
+        "name": "telemetry",
+        "category": "numeric_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "strings",
+        "category": "text_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "event",
+        "category": "envelope",
+        "supports_circular": false
+      }
+    ],
+    "warmup_repetitions": 1,
+    "exclude_warmup_in_analysis": true
+  },
+  "run": {
+    "benchmark_ts": "2026-08-16-160016",
+    "seed": "42",
+    "metrics_profile": "multi_way"
+  },
+  "serializers": {
+    "count": 18,
+    "items": [
+      {
+        "name": "avro",
+        "version": "1.12.0"
+      },
+      {
+        "name": "bson",
+        "version": "5.3.1"
+      },
+      {
+        "name": "dsl-json",
+        "version": "2.0.2"
+      },
+      {
+        "name": "fastjson2",
+        "version": "2.0.57"
+      },
+      {
+        "name": "fory",
+        "version": "1.3.0"
+      },
+      {
+        "name": "gson",
+        "version": "2.12.1"
+      },
+      {
+        "name": "hessian",
+        "version": "4.0.66"
+      },
+      {
+        "name": "ion",
+        "version": "2.18.3"
+      },
+      {
+        "name": "jackson",
+        "version": "2.18.3"
+      },
+      {
+        "name": "jackson-cbor",
+        "version": "2.18.3"
+      },
+      {
+        "name": "jackson-smile",
+        "version": "2.18.3"
+      },
+      {
+        "name": "java-serialization",
+        "version": "21.0.11"
+      },
+      {
+        "name": "jsoniter",
+        "version": "0.9.23"
+      },
+      {
+        "name": "kryo",
+        "version": "5.6.2"
+      },
+      {
+        "name": "moshi",
+        "version": "1.15.2"
+      },
+      {
+        "name": "msgpack",
+        "version": "0.9.8"
+      },
+      {
+        "name": "protobuf",
+        "version": "4.28.3"
+      },
+      {
+        "name": "protostuff",
+        "version": "1.8.0"
+      }
+    ]
+  }
+}

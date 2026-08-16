@@ -190,7 +190,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 |---|--------|----------|
 | 1 | **done** (2026-08-16) | If we must keep JSON, which Python JSON library is best for Sample A? |
 | 2 | **done** (2026-08-16, [PR #84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
-| 3 | planned | How much faster is a Python-only library (`pickle`) than a library other languages can read? |
+| 3 | **done** (2026-08-16) | How much faster is a one-language library than a library other languages can read? |
 | 4 | planned | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
 | 5 | planned | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
 | 6 | planned | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
@@ -368,8 +368,9 @@ That is **not** a reason to change a public web contract. It is a reason to deci
 
 ## Experiment 3 — What do we pay to stay readable by other languages?
 
-**Status:** planned. Changed after Experiment 2.  
-**Sample:** Sample B and Sample A, one record each.
+**Status:** done for Python, Java, and Go (2026-08-16).  
+**Folder:** [03-one-language-store](03-one-language-store/). Combined page: [results.md](03-one-language-store/results.md). Combined JSON: [results.json](03-one-language-store/results.json).  
+**Sample:** Sample B, one record, saved as [03-one-language-store/sample.json](03-one-language-store/sample.json). Sample A was not run: one experiment file holds one sample kind.
 
 ### The question
 
@@ -390,8 +391,8 @@ A session cache, a background-job body, or a store that “only we write today.�
 | Language | Python-only (or Java-only, Go-only) | Other languages can read |
 |----------|-------------------------------------|---------------------------|
 | Python first | `pickle`, `cloudpickle`, `dill` | `orjson`, `msgspec-msgpack`, `protobuf` (what Experiment 2 left standing) |
-| Later Java | Java’s built-in writer, `kryo`, `fory`, `hessian` | `jackson`, `protobuf` |
-| Later Go | `encoding/gob` | JSON or `protobuf` |
+| Later Java | Java’s built-in writer, `kryo`, `fory`, `hessian` | `jsoniter`, `protobuf` (what Experiments 1 and 2 left standing) |
+| Later Go | `encoding/gob` | `goccy/go-json`, `protobuf` |
 
 ### How we decide
 
@@ -411,6 +412,23 @@ A session cache, a background-job body, or a store that “only we write today.�
 
 - That `pickle` is safe (this program does not attack the reader)
 - That Redis plus JSON is fast enough under load
+- Whether a one-language library wins on Sample A (nested order) or on a value JSON cannot hold (a class, a function)
+
+### What we found (2026-08-16)
+
+On Sample B, the one-language libraries are **slower**, not faster. Times are not one contest across languages.
+
+| Language | Fastest on this sample | One-language row | About how many times slower |
+|----------|------------------------|------------------|-----------------------------|
+| Python | `orjson` (1.70 µs, 168 bytes). `msgspec-msgpack` is close (1.86 µs, 52 bytes). | `pickle` 7.15 µs, 202 bytes. `cloudpickle` 15.5 µs. `dill` 57.2 µs. | `pickle` about **4×** |
+| Java | `protobuf` (25.6 µs, 50 bytes) | `fory` 35.1 µs. `kryo` 42.1 µs (46 bytes, smallest). `java-serialization` 119 µs. | `java-serialization` about **4.5×** |
+| Go | `protobuf` (1.10 µs, 50 bytes) | `encoding/gob` 14.6 µs, 173 bytes | about **13×** |
+
+The plan said: if the one-language library is only a little faster, do not put it in a shared store. Here it is **not faster at all** on this record. There is no speed gain to trade for lock-in or for the safety story.
+
+This sample has only ordinary fields. It is the “just pickle the cache” case. It is not the case those libraries were built for (a class, a function, or another value JSON cannot hold).
+
+**What this changes later:** Experiment 4 still asks when JSON is too large for a growing sensor list. Do not treat a one-language library as the default “fast internal” choice on a small flat record.
 
 ---
 
@@ -977,6 +995,17 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **What this changes about Experiment 3:** On the portable side, use `orjson` **and** the Experiment 2 MessagePack / Protocol Buffers names (`msgspec-msgpack`, `protobuf`). Do not treat “leave JSON” as already decided for Python.
 - **What this changes about Experiment 10:** We already saw some groups move when N goes from 1 to 100 (Python `orjson` drops out of the close set; Java `jsoniter` and C# protobuf enter it; C++ `msgpack` becomes similar). Keep the experiment; this is only a preview on Sample B.
 - **What this does not answer:** Total service time; whether an old reader understands a new field; load at tens of thousands of requests per second; official Google protobuf in C and C++ on this machine.
+
+---
+
+## After Experiment 3
+
+- **Date:** 2026-08-16
+- **Sample:** [03-one-language-store/sample.json](03-one-language-store/sample.json) (Sample B, one record)
+- **Folder:** [03-one-language-store](03-one-language-store/) · [combined page](03-one-language-store/results.md) · [combined JSON](03-one-language-store/results.json)
+- **Finding:** On this tiny flat record, one-language libraries are **slower**, not faster, than a library another language can read. In Python, `orjson` is fastest (about 1.70 µs); `msgspec-msgpack` is close and smaller; `pickle` is about four times slower and larger (7.15 µs, 202 bytes). `cloudpickle` and `dill` are slower still. In Java, `protobuf` is fastest; `kryo` is a little smaller but slower; `java-serialization` is about four and a half times slower. In Go, `protobuf` is fastest; `encoding/gob` is about thirteen times slower. There is no speed gain here to trade for lock-in. The sample has only ordinary fields — the common “just pickle the cache” case, not a class or a function.
+- **What this changes about Experiment 4:** Nothing about the sensor-list question. Do not treat a one-language library as the fast internal default on a small flat record.
+- **What this does not answer:** Safety of `pickle` (this program does not attack the reader); Redis plus JSON under load; Sample A; a value that JSON cannot hold.
 
 ---
 
