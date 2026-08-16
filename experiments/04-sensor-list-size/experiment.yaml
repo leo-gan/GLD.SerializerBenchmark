@@ -1,0 +1,62 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 04-sensor-list-size
+title: When is JSON too large for a sensor list?
+question: As the list of numbers grows, when does JSON’s size become more than a small radio packet can hold?
+
+sample:
+  kind: telemetry
+  records_per_write: 1
+  seed: 42
+  settings:
+    points: [8, 32, 128, 512]
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes, stream]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  # Mixed formats: every listed library is in the comparison set.
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: serde_json, writes_named_fields: true, role: JSON — usual Rust library}
+      - {name: sonic-rs, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: ciborium, writes_named_fields: true, role: CBOR}
+      - {name: rmp-serde, writes_named_fields: true, role: MessagePack}
+      - {name: postcard, writes_named_fields: true, role: postcard — compact Rust, no full OS}
+      - {name: prost, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: yyjson, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: cJSON, writes_named_fields: true, role: JSON — common C library}
+      - {name: qcbor, writes_named_fields: true, role: CBOR — small-device writer}
+      - {name: tinycbor, writes_named_fields: true, role: CBOR — Intel tinycbor}
+      - {name: zcbor, writes_named_fields: true, role: CBOR — structured (zcbor)}
+      - {name: mpack, writes_named_fields: true, role: MessagePack}
+      - {name: nanopb, writes_named_fields: true, role: Protocol Buffers — nanopb (read the C page before quoting)}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — in-tree wire helper}

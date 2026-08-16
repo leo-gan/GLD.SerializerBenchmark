@@ -191,7 +191,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 1 | **done** (2026-08-16) | If we must keep JSON, which Python JSON library is best for Sample A? |
 | 2 | **done** (2026-08-16, [PR #84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
 | 3 | **done** (2026-08-16, [PR #85](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/85)) | How much faster is a one-language library than a library other languages can read? |
-| 4 | planned | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
+| 4 | **done** (2026-08-16) | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
 | 5 | planned | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
 | 6 | planned | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
 | 7 | planned | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
@@ -434,8 +434,9 @@ This sample has only ordinary fields. It is the “just pickle the cache” case
 
 ## Experiment 4 — When is JSON too large for a sensor list?
 
-**Status:** planned.  
-**Sample:** Sample C, with 8, 32, 128, then 512 numbers. One record each time.
+**Status:** done for Rust (2026-08-16). C ran, but its sizes do not grow with the list, so C cannot answer the curve.  
+**Folder:** [04-sensor-list-size](04-sensor-list-size/). Combined page: [results.md](04-sensor-list-size/results.md). Combined JSON: [results.json](04-sensor-list-size/results.json).  
+**Sample:** Sample C, 8, 32, 128, then 512 numbers, saved as [04-sensor-list-size/sample.json](04-sensor-list-size/sample.json).
 
 ### The question
 
@@ -482,6 +483,26 @@ Python is only the cloud side, not the device.
 - How many bytes the library occupies in flash
 - Battery use
 - Whether the radio already compresses the packet
+- C on this machine (the C sizes do not grow with the list)
+
+### What we found (2026-08-16)
+
+We marked two example packet sizes: **128 bytes** and **512 bytes**. Your radio may differ. The curve we trust is **Rust**. C sizes stay near 320–670 bytes at every list length — that is not a growing list of numbers on the wire.
+
+In Rust (in memory):
+
+| Numbers | JSON (`serde_json` / `sonic-rs`) | postcard | prost | MessagePack / CBOR |
+|---------|----------------------------------|----------|-------|--------------------|
+| 8 | 234 B (over 128, under 512) | 91 B | 94 B | 135 B |
+| 32 | 672 B (over 512) | 286 B | 290 B | 355–356 B |
+| 128 | 2420 B | 1051 B | 1054 B | 1215–1216 B |
+| 512 | 9415 B | 4128 B | 4131 B | 4677 B |
+
+JSON already misses a 128-byte packet at 8 numbers. At 32 numbers it also misses a 512-byte packet. `postcard` and `prost` still fit 512 bytes at 32 numbers and miss it at 128. MessagePack and CBOR sit between JSON and postcard.
+
+The plan said: if JSON overflows and a denser format still fits, leave JSON on the device. That is the Rust answer at 32 numbers on a 512-byte packet. At 128 numbers, nothing in this set fits 512 bytes.
+
+**What this changes later:** Experiment 9 (size after gzip or zstd) is more useful now. Experiment 12 is still “format versus library.” Do not quote the C sizes as a device answer until the C runner writes the growing list.
 
 ---
 
@@ -1007,6 +1028,17 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Finding:** On this tiny flat record, one-language libraries are **slower**, not faster, than a library another language can read. In Python, `orjson` is fastest (about 1.70 µs); `msgspec-msgpack` is close and smaller; `pickle` is about four times slower and larger (7.15 µs, 202 bytes). `cloudpickle` and `dill` are slower still. In Java, `protobuf` is fastest; `kryo` is a little smaller but slower; `java-serialization` is about four and a half times slower. In Go, `protobuf` is fastest; `encoding/gob` is about thirteen times slower. There is no speed gain here to trade for lock-in. The sample has only ordinary fields — the common “just pickle the cache” case, not a class or a function.
 - **What this changes about Experiment 4:** Nothing about the sensor-list question. Do not treat a one-language library as the fast internal default on a small flat record.
 - **What this does not answer:** Safety of `pickle` (this program does not attack the reader); Redis plus JSON under load; Sample A; a value that JSON cannot hold.
+
+---
+
+## After Experiment 4
+
+- **Date:** 2026-08-16
+- **Sample:** [04-sensor-list-size/sample.json](04-sensor-list-size/sample.json) (Sample C, 8 / 32 / 128 / 512 numbers)
+- **Folder:** [04-sensor-list-size](04-sensor-list-size/) · [combined page](04-sensor-list-size/results.md) · [combined JSON](04-sensor-list-size/results.json)
+- **Finding:** Trust the Rust size curve. C sizes do not grow with the list, so C cannot answer this question here. In Rust, JSON is 234 bytes at 8 numbers (already over a 128-byte packet) and 672 bytes at 32 numbers (over a 512-byte packet). `postcard` and `prost` are about half that and still fit 512 bytes at 32 numbers (about 286–290 bytes); they overflow at 128 numbers (about 1051 bytes). MessagePack and CBOR sit in between. At 128 numbers, nothing in this set fits a 512-byte packet.
+- **What this changes about Experiment 9:** Size after gzip or zstd is now the next size question. Uncompressed JSON is already too large for these example packets at 32 numbers.
+- **What this does not answer:** Flash size of the library; battery; whether the radio compresses the packet; C on this machine.
 
 ---
 

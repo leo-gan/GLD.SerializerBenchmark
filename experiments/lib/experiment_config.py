@@ -76,6 +76,21 @@ def runner_script(language: str) -> str | None:
     return RUNNERS.get(language)
 
 
+def _type_rows(sample: dict[str, Any]) -> list[dict[str, Any]]:
+    """One runner type per points value when settings.points is a list."""
+    kind = sample["kind"]
+    settings = dict(sample.get("settings") or {})
+    points = settings.get("points")
+    if isinstance(points, list):
+        rows = []
+        for p in points:
+            cell = dict(settings)
+            cell["points"] = int(p)
+            rows.append({"type_id": kind, "type_config": cell})
+        return rows
+    return [{"type_id": kind, "type_config": settings}]
+
+
 def to_run_yaml(cfg: dict[str, Any]) -> dict[str, Any]:
     """Shape the benchmark runner already understands (config/library/*.yaml)."""
     sample = cfg["sample"]
@@ -89,12 +104,7 @@ def to_run_yaml(cfg: dict[str, Any]) -> dict[str, Any]:
         "id": cfg["id"],
         "description": cfg.get("title") or cfg["question"],
         "data_model_version": 2,
-        "types": [
-            {
-                "type_id": sample["kind"],
-                "type_config": sample.get("settings") or {},
-            }
-        ],
+        "types": _type_rows(sample),
         "data_type_instance_count": counts,
         "compression": {
             "mode": run.get("compression", "size_only"),
