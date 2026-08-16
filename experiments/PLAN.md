@@ -190,7 +190,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 |---|--------|----------|
 | 1 | **done** (2026-08-16) | If we must keep JSON, which Python JSON library is best for Sample A? |
 | 2 | **done** (2026-08-16, [PR #84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
-| 3 | **done** (2026-08-16) | How much faster is a one-language library than a library other languages can read? |
+| 3 | **done** (2026-08-16, [PR #85](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/85)) | How much faster is a one-language library than a library other languages can read? |
 | 4 | planned | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
 | 5 | planned | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
 | 6 | planned | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
@@ -1001,6 +1001,7 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 ## After Experiment 3
 
 - **Date:** 2026-08-16
+- **PR:** [#85](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/85)
 - **Sample:** [03-one-language-store/sample.json](03-one-language-store/sample.json) (Sample B, one record)
 - **Folder:** [03-one-language-store](03-one-language-store/) · [combined page](03-one-language-store/results.md) · [combined JSON](03-one-language-store/results.json)
 - **Finding:** On this tiny flat record, one-language libraries are **slower**, not faster, than a library another language can read. In Python, `orjson` is fastest (about 1.70 µs); `msgspec-msgpack` is close and smaller; `pickle` is about four times slower and larger (7.15 µs, 202 bytes). `cloudpickle` and `dill` are slower still. In Java, `protobuf` is fastest; `kryo` is a little smaller but slower; `java-serialization` is about four and a half times slower. In Go, `protobuf` is fastest; `encoding/gob` is about thirteen times slower. There is no speed gain here to trade for lock-in. The sample has only ordinary fields — the common “just pickle the cache” case, not a class or a function.
