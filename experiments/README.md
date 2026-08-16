@@ -7,12 +7,13 @@ A laboratory notebook of narrow questions this benchmark can run.
 Each experiment is one question. Edit that folder’s **`experiment.yaml`** to change it (sample, languages, libraries). The sample is shared. Each language run is a subfolder. Combined numbers for a dashboard live in that experiment’s `results.json`.
 
 - Experiment 1: [`01-json-library-bakeoff/`](01-json-library-bakeoff/) · [`results.md`](01-json-library-bakeoff/results.md) · [`results.json`](01-json-library-bakeoff/results.json)
+- Experiment 2: [`02-flat-record-formats/`](02-flat-record-formats/) · [`results.md`](02-flat-record-formats/results.md) · [`results.json`](02-flat-record-formats/results.json)
 - Preview copies for later experiments: [`samples/`](samples/)
 
 | # | Folder | Status | Question |
 |---|--------|--------|----------|
 | 1 | [01-json-library-bakeoff](01-json-library-bakeoff/) | **Done** | If we must keep JSON, which Python JSON library is best for one order-like record? |
-| 2 | — | Planned | Ordinary JSON vs MessagePack vs Protocol Buffers on one flat record |
+| 2 | [02-flat-record-formats](02-flat-record-formats/) | **Done** | Ordinary JSON vs MessagePack vs Protocol Buffers on one flat record |
 | 3 | — | Planned | How much faster is a Python-only library than one other languages can read? |
 | 4 | — | Planned | As a sensor list grows, when is JSON too large? |
 | 5 | — | Planned | Avro, Protocol Buffers, and JSON on one event |

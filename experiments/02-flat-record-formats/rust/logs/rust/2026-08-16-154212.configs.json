@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "benchmark_ts": "2026-08-16-154212",
+  "language": "rust",
+  "environment": {
+    "captured_at": "2026-08-16T22:42:12.797096+00:00",
+    "os": {
+      "system": "Linux",
+      "release": "6.8.0-136-generic",
+      "version": "#136~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul  3 16:29:11 UTC ",
+      "architecture": "x86_64"
+    },
+    "cpu": {
+      "architecture": "x86_64",
+      "logical_cores": 20,
+      "model": "12th Gen Intel(R) Core(TM) i7-12800H",
+      "cpu_count": 20,
+      "max_freq_mhz": 4700,
+      "governor": "powersave"
+    },
+    "memory": {
+      "total_bytes": 33307172864
+    },
+    "runtimes": {
+      "python": "3.14.0",
+      "node": "24.15.0",
+      "dotnet": "9.0.316",
+      "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+      "gcc": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "g++": "g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "java": "openjdk version \"1.8.0_492\"",
+      "go": "go version go1.23.6 linux/amd64"
+    },
+    "git": {
+      "commit": "359caed",
+      "dirty": true
+    },
+    "process": {
+      "pid": 175710,
+      "cwd": "seriailizer-benchmark/rust"
+    },
+    "machine_id": "1162d8ddf953b2d2",
+    "claim_level_hint": "L1_single_session",
+    "cpu_governor": "powersave",
+    "benchmark_ts": "2026-08-16-154212"
+  },
+  "dataset": {
+    "seed": "42",
+    "config_path": "config/benchmark_config.yaml",
+    "catalog_file": "schemas/data_catalog_v2.yaml",
+    "test_data_config": "schemas/data_catalog_v2.yaml",
+    "fixtures": [
+      {
+        "name": "message",
+        "category": "flat_mixed",
+        "supports_circular": false
+      },
+      {
+        "name": "document",
+        "category": "nested",
+        "supports_circular": false
+      },
+      {
+        "name": "telemetry",
+        "category": "numeric_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "strings",
+        "category": "text_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "event",
+        "category": "envelope",
+        "supports_circular": false
+      }
+    ],
+    "warmup_repetitions": 1,
+    "exclude_warmup_in_analysis": true
+  },
+  "run": {
+    "benchmark_ts": "2026-08-16-154212",
+    "seed": "42",
+    "metrics_profile": "multi_way"
+  },
+  "serializers": {
+    "count": 16,
+    "items": [
+      {
+        "name": "bincode",
+        "version": "2.0.1"
+      },
+      {
+        "name": "bitcode",
+        "version": "0.6.9"
+      },
+      {
+        "name": "bson",
+        "version": "2.15.0"
+      },
+      {
+        "name": "ciborium",
+        "version": "0.2.2"
+      },
+      {
+        "name": "flexbuffers",
+        "version": "2.0.0"
+      },
+      {
+        "name": "minicbor",
+        "version": "0.25.1"
+      },
+      {
+        "name": "nanoserde",
+        "version": "0.1.37"
+      },
+      {
+        "name": "postcard",
+        "version": "1.1.3"
+      },
+      {
+        "name": "prost",
+        "version": "0.13.5"
+      },
+      {
+        "name": "rkyv",
+        "version": "0.8.17"
+      },
+      {
+        "name": "rmp-serde",
+        "version": "1.3.1"
+      },
+      {
+        "name": "serde_avro_fast",
+        "version": "2.1.0"
+      },
+      {
+        "name": "serde_json",
+        "version": "1.0.150"
+      },
+      {
+        "name": "simd-json",
+        "version": "0.14.3"
+      },
+      {
+        "name": "sonic-rs",
+        "version": "0.3.17"
+      },
+      {
+        "name": "speedy",
+        "version": "0.8.7"
+      }
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "benchmark_ts": "2026-08-16-154210",
+  "language": "javascript",
+  "environment": {
+    "captured_at": "2026-08-16T22:42:11.824085+00:00",
+    "os": {
+      "system": "Linux",
+      "release": "6.8.0-136-generic",
+      "version": "#136~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul  3 16:29:11 UTC ",
+      "architecture": "x86_64"
+    },
+    "cpu": {
+      "architecture": "x86_64",
+      "logical_cores": 20,
+      "model": "12th Gen Intel(R) Core(TM) i7-12800H",
+      "cpu_count": 20,
+      "max_freq_mhz": 4700,
+      "governor": "powersave"
+    },
+    "memory": {
+      "total_bytes": 33307172864
+    },
+    "runtimes": {
+      "python": "3.14.0",
+      "node": "24.15.0",
+      "dotnet": "9.0.316",
+      "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+      "gcc": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "g++": "g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "java": "openjdk version \"1.8.0_492\"",
+      "go": "go version go1.23.6 linux/amd64"
+    },
+    "git": {
+      "commit": "359caed",
+      "dirty": true
+    },
+    "process": {
+      "pid": 175546,
+      "cwd": "seriailizer-benchmark/javascript"
+    },
+    "machine_id": "1162d8ddf953b2d2",
+    "claim_level_hint": "L1_single_session",
+    "cpu_governor": "powersave",
+    "benchmark_ts": "2026-08-16-154210"
+  },
+  "dataset": {
+    "seed": "42",
+    "config_path": "config/benchmark_config.yaml",
+    "catalog_file": "schemas/data_catalog_v2.yaml",
+    "test_data_config": "schemas/data_catalog_v2.yaml",
+    "fixtures": [
+      {
+        "name": "message",
+        "category": "flat_mixed",
+        "supports_circular": false
+      },
+      {
+        "name": "document",
+        "category": "nested",
+        "supports_circular": false
+      },
+      {
+        "name": "telemetry",
+        "category": "numeric_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "strings",
+        "category": "text_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "event",
+        "category": "envelope",
+        "supports_circular": false
+      }
+    ],
+    "warmup_repetitions": 1,
+    "exclude_warmup_in_analysis": true
+  },
+  "run": {
+    "benchmark_ts": "2026-08-16-154210",
+    "seed": "42",
+    "metrics_profile": "multi_way"
+  },
+  "serializers": {
+    "count": 20,
+    "items": [
+      {
+        "name": "@msgpack/msgpack",
+        "version": "3.1.3"
+      },
+      {
+        "name": "JSON.stringify",
+        "version": "node-24.15.0"
+      },
+      {
+        "name": "avsc",
+        "version": "5.7.9"
+      },
+      {
+        "name": "bebop",
+        "version": "3.2.3"
+      },
+      {
+        "name": "bser",
+        "version": "2.1.1"
+      },
+      {
+        "name": "bson",
+        "version": "6.10.4"
+      },
+      {
+        "name": "cbor",
+        "version": "9.0.2"
+      },
+      {
+        "name": "cbor-x",
+        "version": "1.6.4"
+      },
+      {
+        "name": "devalue",
+        "version": "5.8.1"
+      },
+      {
+        "name": "fast-json-stringify",
+        "version": "6.4.0"
+      },
+      {
+        "name": "flatbuffers",
+        "version": "24.12.23"
+      },
+      {
+        "name": "flexbuffers",
+        "version": "24.12.23"
+      },
+      {
+        "name": "google-protobuf",
+        "version": "3.21.4"
+      },
+      {
+        "name": "json-pack-msgpack",
+        "version": "18.28.0"
+      },
+      {
+        "name": "msgpackr",
+        "version": "1.12.1"
+      },
+      {
+        "name": "protobuf-es",
+        "version": "2.12.1"
+      },
+      {
+        "name": "protobufjs",
+        "version": "7.6.5"
+      },
+      {
+        "name": "sia",
+        "version": "2.3.0"
+      },
+      {
+        "name": "simdjson-parse+JSON.stringify",
+        "version": "0.9.2"
+      },
+      {
+        "name": "v8-serializer",
+        "version": "v8-13.6.233.17-node.48"
+      }
+    ]
+  }
+}
