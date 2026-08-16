@@ -191,7 +191,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 1 | **done** (2026-08-16) | If we must keep JSON, which Python JSON library is best for Sample A? |
 | 2 | **done** (2026-08-16, [PR #84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
 | 3 | **done** (2026-08-16, [PR #85](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/85)) | How much faster is a one-language library than a library other languages can read? |
-| 4 | **done** (2026-08-16) | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
+| 4 | **done** (2026-08-16, [PR #87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87)) | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
 | 5 | planned | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
 | 6 | planned | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
 | 7 | planned | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
@@ -1034,6 +1034,7 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 ## After Experiment 4
 
 - **Date:** 2026-08-16
+- **PR:** [#87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87)
 - **Sample:** [04-sensor-list-size/sample.json](04-sensor-list-size/sample.json) (Sample C, 8 / 32 / 128 / 512 numbers)
 - **Folder:** [04-sensor-list-size](04-sensor-list-size/) · [combined page](04-sensor-list-size/results.md) · [combined JSON](04-sensor-list-size/results.json)
 - **Finding:** Trust the Rust size curve. C sizes do not grow with the list, so C cannot answer this question here. In Rust, JSON is 234 bytes at 8 numbers (already over a 128-byte packet) and 672 bytes at 32 numbers (over a 512-byte packet). `postcard` and `prost` are about half that and still fit 512 bytes at 32 numbers (about 286–290 bytes); they overflow at 128 numbers (about 1051 bytes). MessagePack and CBOR sit in between. At 128 numbers, nothing in this set fits a 512-byte packet.
