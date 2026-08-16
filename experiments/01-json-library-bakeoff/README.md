@@ -7,11 +7,11 @@ The full argument is in [../PLAN.md](../PLAN.md). This folder is the question. E
   experiment.yaml       ← the one file to edit (sample, languages, libraries)
   run.yaml              ← written from experiment.yaml for the benchmark runner
   sample.json           ← shared record (built from experiment.yaml)
-  summarize.py          ← rebuild tables and JSON from saved CSVs
+  summarize.py          ← local CSV → results.json and results.md
   results.md            ← all languages, one page to read
   results.json          ← all languages, for a dashboard
   run.sh                ← run one language or every language
-  python/ go/ java/ …   ← one folder per language
+  python/ go/ java/ …   ← results.md, results.json (logs stay local)
 ```
 
 To change the experiment (which record, which languages, which libraries, how many trials), edit **[`experiment.yaml`](experiment.yaml)** only. A later screen can load and save that file. The field list is described in [`../lib/experiment.config.schema.json`](../lib/experiment.config.schema.json).
@@ -57,7 +57,7 @@ Other language runners build the same *shape* from the same settings and seed. T
 ./experiments/01-json-library-bakeoff/python/run.sh     # one language
 ```
 
-Each run writes a CSV under `<language>/logs/` and refreshes that language’s `results.json` and `results.md`. It does not change the published website tables.
+Each run writes a CSV under `<language>/logs/` (local only; not in git) and refreshes that language’s `results.json` and `results.md`. It does not change the published website tables. Saved results are enough.
 
 ## How a dashboard should read the numbers
 
@@ -72,19 +72,19 @@ For a dashboard, load **[`results.json`](results.json)** only.
 | `sample` | kind, `n`, path to `sample.json` |
 | `cleaning` | first trial dropped; stall filter id |
 | `languages.<id>.status` | `ok`, `empty`, `missing`, or `error` |
-| `languages.<id>.csv` | raw file, so you can rebuild |
+| `languages.<id>.csv` | path of the local raw file (not in git) |
 | `languages.<id>.rows[]` | one row per library and call style |
 
 Each row has times in **nanoseconds** (`*_ns`) and **microseconds** (`*_us`), size in bytes, gzip size when present, a yes/no for named fields, and how many trials were kept.
 
-To **recalculate** after you change the stall rule or the library list, do not re-time. Run:
+To **recalculate** after you change the stall rule or the library list, do not re-time if the local CSVs are still on disk:
 
 ```bash
 cd analysis
 uv run python ../experiments/01-json-library-bakeoff/summarize.py --all
 ```
 
-That reads the saved CSVs and rewrites every `results.json` / `results.md` plus the combined file.
+That reads local CSVs (not in git) and rewrites every `results.json` / `results.md` plus the combined file.
 
 The main comparison is `io == "memory"` and `writes_named_fields == true`. Stream rows are a side check.
 

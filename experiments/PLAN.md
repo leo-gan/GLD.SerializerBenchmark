@@ -80,7 +80,7 @@ Each experiment is one **question**. All settings live in that folder’s **`exp
 
 Experiment 1 builds the shared record with [`01-json-library-bakeoff/python/save_sample.py`](01-json-library-bakeoff/python/save_sample.py) → [`01-json-library-bakeoff/sample.json`](01-json-library-bakeoff/sample.json).
 
-A dashboard should load [`01-json-library-bakeoff/results.json`](01-json-library-bakeoff/results.json). To rebuild that file from saved CSVs (no new timing): `summarize.py --all`.
+A dashboard should load [`01-json-library-bakeoff/results.json`](01-json-library-bakeoff/results.json). Raw run logs stay on the machine that timed them and are **not** in git. Saved `results.md` / `results.json` are enough.
 
 Preview copies for experiments not yet opened live in [`samples/`](samples/).
 
@@ -941,11 +941,11 @@ experiments/
     experiment.yaml          ← the one file to edit
     run.yaml                 ← written from experiment.yaml for the runner
     sample.json              ← shared record
-    summarize.py             ← CSV → results.json and results.md
+    summarize.py             ← local CSV → results.json and results.md
     results.md               ← every language, one page to read
     results.json             ← every language, for a dashboard
     run.sh                   ← one language or all
-    python/ go/ java/ …      ← times, results.md, results.json, logs
+    python/ go/ java/ …      ← results.md, results.json (logs stay local)
 ```
 
 When we open a new experiment we:
@@ -953,8 +953,8 @@ When we open a new experiment we:
 1. Write `experiment.yaml` (copy Experiment 1’s file and change it).
 2. Save `sample.json` from that file.
 3. Add language folders and a `run.sh`.
-4. Write `summarize.py` so a dashboard can load `results.json` and rebuild it from CSVs.
-5. Measure, then add an **After Experiment *n*** block below.
+4. Write `summarize.py` so a dashboard can load `results.json`.
+5. Measure, then add an **After Experiment *n*** block below. Do not commit `<lang>/logs/`.
 
 Do not compare write times between language folders. Size is the only number that is roughly fair across languages, and only when both sides write the same field description.
 

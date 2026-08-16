@@ -8,9 +8,6 @@
 logs/
 logs
 *.log
-# Keep timed CSVs that belong to a saved experiment (rebuild tables from these).
-!experiments/**/logs/
-!experiments/**/logs/**
 reports/
 baseline.json
 reports/baseline.json

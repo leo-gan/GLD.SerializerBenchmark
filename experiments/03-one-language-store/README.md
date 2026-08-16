@@ -19,13 +19,6 @@ Python: `pickle`, `cloudpickle`, and `dill` against `orjson`, `msgspec-msgpack`,
 ./experiments/03-one-language-store/run.sh python
 ```
 
-Quick look: [`results.md`](results.md). Dashboard file: [`results.json`](results.json).
-
-Rebuild tables from saved CSVs:
-
-```bash
-cd analysis
-uv run python ../experiments/03-one-language-store/summarize.py --all
-```
+Quick look: [`results.md`](results.md). Dashboard file: [`results.json`](results.json). Run logs stay local and are not in git.
 
 Times in two languages are not one contest. Do not name a single winner; read the similar / close sets for each language. A faster one-language library is not proof that the store is safe.
