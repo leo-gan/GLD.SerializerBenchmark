@@ -165,7 +165,7 @@ uv run python ../experiments/NN-short-kebab/summarize.py --all
 | `experiments/PLAN.md` | Status + After Experiment *n* |
 | `experiments/README.md` | Index row for the new folder |
 
-`results.md` at the experiment root is the quick look. Per-language `results.md` stays for detail. **Do not commit** `<lang>/logs/` (raw CSVs). Local logs are for a later `summarize.py --all` on the same machine only.
+`results.md` at the experiment root is the quick look. Per-language `results.md` stays for detail. **Do not commit** `<lang>/logs/` (raw CSVs). Local logs are for a later `summarize.py --all` on the same machine only. Saved results are enough.
 
 ---
 
