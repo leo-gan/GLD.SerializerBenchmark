@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "benchmark_ts": "2026-08-16-154213",
+  "language": "c",
+  "environment": {
+    "captured_at": "2026-08-16T22:42:14.377180+00:00",
+    "os": {
+      "system": "Linux",
+      "release": "6.8.0-136-generic",
+      "version": "#136~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul  3 16:29:11 UTC ",
+      "architecture": "x86_64"
+    },
+    "cpu": {
+      "architecture": "x86_64",
+      "logical_cores": 20,
+      "model": "12th Gen Intel(R) Core(TM) i7-12800H",
+      "cpu_count": 20,
+      "max_freq_mhz": 4700,
+      "governor": "powersave"
+    },
+    "memory": {
+      "total_bytes": 33307172864
+    },
+    "runtimes": {
+      "python": "3.14.0",
+      "node": "24.15.0",
+      "dotnet": "9.0.316",
+      "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+      "gcc": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "g++": "g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "java": "openjdk version \"1.8.0_492\"",
+      "go": "go version go1.23.6 linux/amd64"
+    },
+    "git": {
+      "commit": "359caed",
+      "dirty": true
+    },
+    "process": {
+      "pid": 175923,
+      "cwd": "seriailizer-benchmark"
+    },
+    "machine_id": "1162d8ddf953b2d2",
+    "claim_level_hint": "L1_single_session",
+    "cpu_governor": "powersave",
+    "benchmark_ts": "2026-08-16-154213"
+  },
+  "dataset": {
+    "seed": "42",
+    "config_path": "config/benchmark_config.yaml",
+    "catalog_file": "schemas/data_catalog_v2.yaml",
+    "test_data_config": "schemas/data_catalog_v2.yaml",
+    "fixtures": [
+      {
+        "name": "message",
+        "category": "flat_mixed",
+        "supports_circular": false
+      },
+      {
+        "name": "document",
+        "category": "nested",
+        "supports_circular": false
+      },
+      {
+        "name": "telemetry",
+        "category": "numeric_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "strings",
+        "category": "text_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "event",
+        "category": "envelope",
+        "supports_circular": false
+      }
+    ],
+    "warmup_repetitions": 1,
+    "exclude_warmup_in_analysis": true
+  },
+  "run": {
+    "benchmark_ts": "2026-08-16-154213",
+    "seed": "42",
+    "metrics_profile": "multi_way"
+  },
+  "serializers": {
+    "count": 19,
+    "items": [
+      {
+        "name": "avro-c",
+        "version": "1.11.3"
+      },
+      {
+        "name": "cJSON",
+        "version": "1.7.18"
+      },
+      {
+        "name": "cbor-encode",
+        "version": "0.11.0"
+      },
+      {
+        "name": "custom-binary",
+        "version": "v2-1.0"
+      },
+      {
+        "name": "flatcc",
+        "version": "0.6.1"
+      },
+      {
+        "name": "jansson",
+        "version": "2.14"
+      },
+      {
+        "name": "json-c",
+        "version": "0.15"
+      },
+      {
+        "name": "libbson",
+        "version": "1.27.5"
+      },
+      {
+        "name": "mpack",
+        "version": "1.1"
+      },
+      {
+        "name": "msgpack-c",
+        "version": "6.0.1"
+      },
+      {
+        "name": "nanopb",
+        "version": "0.4.9"
+      },
+      {
+        "name": "parson",
+        "version": "1.5.3"
+      },
+      {
+        "name": "protobuf-c",
+        "version": "1.5.0"
+      },
+      {
+        "name": "protobuf-wire",
+        "version": "wire-v2"
+      },
+      {
+        "name": "qcbor",
+        "version": "1.5.1"
+      },
+      {
+        "name": "tinycbor",
+        "version": "0.6.0"
+      },
+      {
+        "name": "ubj",
+        "version": "1.0-min"
+      },
+      {
+        "name": "yyjson",
+        "version": "0.10.0"
+      },
+      {
+        "name": "zcbor",
+        "version": "0.9"
+      }
+    ]
+  }
+}

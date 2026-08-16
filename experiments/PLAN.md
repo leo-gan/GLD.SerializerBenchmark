@@ -189,7 +189,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | # | Status | Question |
 |---|--------|----------|
 | 1 | **done** (2026-08-16) | If we must keep JSON, which Python JSON library is best for Sample A? |
-| 2 | planned *(changed after Exp. 1)* | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare in Python? |
+| 2 | **done** (2026-08-16) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
 | 3 | planned | How much faster is a Python-only library (`pickle`) than a library other languages can read? |
 | 4 | planned | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
 | 5 | planned | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
@@ -278,12 +278,13 @@ For a public service that must send ordinary named JSON, **`orjson` is the fair 
 
 ## Experiment 2 — Should an internal service leave JSON?
 
-**Status:** planned. Changed after Experiment 1.  
-**Sample:** Sample B, one record, and again 100 records in one write.
+**Status:** done for all nine languages (2026-08-16).  
+**Folder:** [02-flat-record-formats](02-flat-record-formats/). Combined page: [results.md](02-flat-record-formats/results.md). Combined JSON: [results.json](02-flat-record-formats/results.json).  
+**Sample:** Sample B, one record, and again 100 records in one write, saved as [02-flat-record-formats/sample.json](02-flat-record-formats/sample.json).
 
 ### The question
 
-> For Sample B in Python, how do ordinary named JSON, MessagePack, and Protocol Buffers compare on write time, read time, and size? Is the gap large enough to justify a new shared description of the fields?
+> For Sample B, in each language, how do ordinary named JSON, MessagePack, and Protocol Buffers compare on write time, read time, and size? Is the gap large enough to justify a new shared description of the fields?
 
 ### Why these formats exist
 
@@ -334,14 +335,40 @@ A Python-only library is not a candidate here. That is Experiment 3.
 
 - Total service time (waiting in queues, the network, encryption)
 - Whether an old reader understands a new field (that needs a separate test of the description file)
-- Whether Go or Java would pick the same winner
+- Whether Go or Java would pick the same winner *(answered in the run below: they do not all pick the same answer)*
 - Behaviour at tens of thousands of requests per second (pick a few libraries here, then load-test them)
+
+### What we found (2026-08-16)
+
+The same question was run in all nine languages. Times are **not** one contest across languages. We do not name a single winner. Groups for 1 record and for 100 records are separate.
+
+On this tiny flat record, **leaving JSON is not one answer**. It depends on the language you ship.
+
+| Language | Not clearly slower (1 record, in memory) | Small gap | Size of the fastest row | Ordinary JSON on that row? |
+|----------|------------------------------------------|-----------|-------------------------|----------------------------|
+| Python | `msgspec-msgpack` | `orjson` | 52 bytes (JSON 168) | `orjson` is close in time |
+| Go | `protobuf` | — | 50 bytes (JSON 168) | No |
+| Java | `protobuf` | — | 50 bytes (JSON 150) | No (at 100 records `jsoniter` is close in time) |
+| JavaScript | `JSON.stringify` | — | 168 bytes | Yes — JSON is fastest |
+| Rust | `prost` | — | 55 bytes (JSON 182) | No |
+| C | `protobuf-c` | `protobuf-wire` | 51 bytes (JSON 170) | No. Both C protobuf rows use the suite wire path, not a generated Google pack. Official Google `protobuf` did not run. |
+| C++ | `protobuf-wire` | — | 50 bytes (JSON 168) | No. Official `libprotobuf` did not run. At 100 records `msgpack` is not clearly slower. |
+| C# | `SpanJson` | — | 157 bytes (protobuf 68) | Yes on time. C# has no MessagePack row in this suite. At 100 records both protobuf libraries are close in time. |
+| Swift | `SwiftProtobuf` | — | 50 bytes (JSON 168) | No |
+
+In Python, `orjson` is close to `msgspec-msgpack` at one record (about 1.79 µs versus 1.71 µs). Protocol Buffers is smaller (50 bytes versus 168) but slower than `orjson` on this sample. At 100 records, `orjson` is no longer close; MessagePack leads and Protocol Buffers is next. The plan said: if the gap is small on this tiny record, the format is not the bottleneck. For Python, that is the fair reading at N = 1.
+
+In JavaScript and C#, ordinary JSON is still the fastest write-and-read on this sample. In Go, Java, Rust, C, C++, and Swift, a Protocol Buffers row is clearly fastest **and** about three times smaller than JSON.
+
+That is **not** a reason to change a public web contract. It is a reason to decide per language, and only on a path you control.
+
+**What this changes later:** Experiment 3 still asks what we pay to stay readable by other languages. In Python, compare `pickle` to `orjson` **and** to `msgspec-msgpack` / `protobuf` — the portable side is no longer “JSON only.” Experiment 10 (one record versus one hundred) already has a preview: some close-sets move when N grows. Do not skip it.
 
 ---
 
 ## Experiment 3 — What do we pay to stay readable by other languages?
 
-**Status:** planned.  
+**Status:** planned. Changed after Experiment 2.  
 **Sample:** Sample B and Sample A, one record each.
 
 ### The question
@@ -362,7 +389,7 @@ A session cache, a background-job body, or a store that “only we write today.�
 
 | Language | Python-only (or Java-only, Go-only) | Other languages can read |
 |----------|-------------------------------------|---------------------------|
-| Python first | `pickle`, `cloudpickle`, `dill` | `orjson`, `msgpack`, `protobuf` |
+| Python first | `pickle`, `cloudpickle`, `dill` | `orjson`, `msgspec-msgpack`, `protobuf` (what Experiment 2 left standing) |
 | Later Java | Java’s built-in writer, `kryo`, `fory`, `hessian` | `jackson`, `protobuf` |
 | Later Go | `encoding/gob` | JSON or `protobuf` |
 
@@ -937,6 +964,18 @@ Do not compare write times between language folders. Size is the only number tha
 On Sample A in Python, `json` took about 22 microseconds to write and read. `orjson` took about 4 microseconds — about five and a half times less — and wrote the same named JSON (448 bytes; 229 after gzip). `pydantic` was slower than `json` when reading, because it also checks types. `msgspec` was almost as fast as `orjson` but wrote only 192 bytes: a list of values, not named fields. For a public Python service that must send ordinary named JSON, **`orjson` is the fair winner**. Changing the JSON library is enough to gain a large speed-up. We have not yet earned the right to change the format.
 - **What this changes about Experiment 2:** Compare MessagePack and Protocol Buffers to ordinary named JSON (`orjson`, with `json` as the familiar starting point). Do not use `msgspec` as the JSON side.
 - **What this does not answer:** Other samples; many records in one write; other languages; the network; whether binary is worth a new shared description of the fields.
+
+---
+
+## After Experiment 2
+
+- **Date:** 2026-08-16
+- **Sample:** [02-flat-record-formats/sample.json](02-flat-record-formats/sample.json) (Sample B, 1 and 100 records)
+- **Folder:** [02-flat-record-formats](02-flat-record-formats/) · [combined page](02-flat-record-formats/results.md) · [combined JSON](02-flat-record-formats/results.json)
+- **Finding:** The same question was run in all nine languages. Times are **not** one contest across languages. We do not name a single winner. On this tiny flat record, leaving JSON is **language-specific**. In Python, `orjson` is close to `msgspec-msgpack` at one record (about 1.79 µs versus 1.71 µs; 168 bytes versus 52). Protocol Buffers is smallest (50 bytes) but slower than `orjson` here. At 100 records, `orjson` is no longer close. In JavaScript, `JSON.stringify` is fastest. In C#, `SpanJson` is fastest; both protobuf libraries sit on the size front and become close in time at 100 records (C# has no MessagePack in this suite). In Go, Java, Rust, C, C++, and Swift, a Protocol Buffers row is clearly fastest and about three times smaller than JSON. C and C++ must be read with care: C `protobuf-c` uses the suite wire path, not a generated Google pack; official Google `libprotobuf` did not run in C or C++. A small gap on this record is not a reason to change a public contract.
+- **What this changes about Experiment 3:** On the portable side, use `orjson` **and** the Experiment 2 MessagePack / Protocol Buffers names (`msgspec-msgpack`, `protobuf`). Do not treat “leave JSON” as already decided for Python.
+- **What this changes about Experiment 10:** We already saw some groups move when N goes from 1 to 100 (Python `orjson` drops out of the close set; Java `jsoniter` and C# protobuf enter it; C++ `msgpack` becomes similar). Keep the experiment; this is only a preview on Sample B.
+- **What this does not answer:** Total service time; whether an old reader understands a new field; load at tens of thousands of requests per second; official Google protobuf in C and C++ on this machine.
 
 ---
 

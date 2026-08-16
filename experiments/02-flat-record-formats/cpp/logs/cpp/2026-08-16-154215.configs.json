@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "benchmark_ts": "2026-08-16-154215",
+  "language": "cpp",
+  "environment": {
+    "captured_at": "2026-08-16T22:42:17.730017+00:00",
+    "os": {
+      "system": "Linux",
+      "release": "6.8.0-136-generic",
+      "version": "#136~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul  3 16:29:11 UTC ",
+      "architecture": "x86_64"
+    },
+    "cpu": {
+      "architecture": "x86_64",
+      "logical_cores": 20,
+      "model": "12th Gen Intel(R) Core(TM) i7-12800H",
+      "cpu_count": 20,
+      "max_freq_mhz": 4700,
+      "governor": "powersave"
+    },
+    "memory": {
+      "total_bytes": 33307172864
+    },
+    "runtimes": {
+      "python": "3.14.0",
+      "node": "24.15.0",
+      "dotnet": "9.0.316",
+      "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+      "gcc": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "g++": "g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+      "java": "openjdk version \"1.8.0_492\"",
+      "go": "go version go1.23.6 linux/amd64"
+    },
+    "git": {
+      "commit": "359caed",
+      "dirty": true
+    },
+    "process": {
+      "pid": 176948,
+      "cwd": "seriailizer-benchmark"
+    },
+    "machine_id": "1162d8ddf953b2d2",
+    "claim_level_hint": "L1_single_session",
+    "cpu_governor": "powersave",
+    "benchmark_ts": "2026-08-16-154215"
+  },
+  "dataset": {
+    "seed": "42",
+    "config_path": "config/benchmark_config.yaml",
+    "catalog_file": "schemas/data_catalog_v2.yaml",
+    "test_data_config": "schemas/data_catalog_v2.yaml",
+    "fixtures": [
+      {
+        "name": "message",
+        "category": "flat_mixed",
+        "supports_circular": false
+      },
+      {
+        "name": "document",
+        "category": "nested",
+        "supports_circular": false
+      },
+      {
+        "name": "telemetry",
+        "category": "numeric_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "strings",
+        "category": "text_bulk",
+        "supports_circular": false
+      },
+      {
+        "name": "event",
+        "category": "envelope",
+        "supports_circular": false
+      }
+    ],
+    "warmup_repetitions": 1,
+    "exclude_warmup_in_analysis": true
+  },
+  "run": {
+    "benchmark_ts": "2026-08-16-154215",
+    "seed": "42",
+    "metrics_profile": "multi_way"
+  },
+  "serializers": {
+    "count": 26,
+    "items": [
+      {
+        "name": "arduinojson",
+        "version": "7.2.1"
+      },
+      {
+        "name": "avro",
+        "version": "binary-1.11"
+      },
+      {
+        "name": "avro_c",
+        "version": "avro-c"
+      },
+      {
+        "name": "bitsery",
+        "version": "5.2.4"
+      },
+      {
+        "name": "capnproto",
+        "version": "1.0.x"
+      },
+      {
+        "name": "cereal",
+        "version": "1.3.2"
+      },
+      {
+        "name": "cista",
+        "version": "0.15"
+      },
+      {
+        "name": "custom_binary",
+        "version": "harness"
+      },
+      {
+        "name": "flatbuffers",
+        "version": "flatbuffers"
+      },
+      {
+        "name": "flexbuffers",
+        "version": "flatbuffers-flex"
+      },
+      {
+        "name": "jsoncons_bson",
+        "version": "0.177.0"
+      },
+      {
+        "name": "jsoncons_cbor",
+        "version": "0.177.0"
+      },
+      {
+        "name": "jsoncons_msgpack",
+        "version": "0.177.0"
+      },
+      {
+        "name": "msgpack",
+        "version": "msgpack-cxx"
+      },
+      {
+        "name": "nlohmann_bson",
+        "version": "3.11.3"
+      },
+      {
+        "name": "nlohmann_cbor",
+        "version": "3.11.3"
+      },
+      {
+        "name": "nlohmann_json",
+        "version": "3.11.3"
+      },
+      {
+        "name": "nlohmann_msgpack",
+        "version": "3.11.3"
+      },
+      {
+        "name": "nlohmann_ubjson",
+        "version": "3.11.3"
+      },
+      {
+        "name": "protobuf-wire",
+        "version": "wire-v2"
+      },
+      {
+        "name": "rapidjson",
+        "version": "1.1.0"
+      },
+      {
+        "name": "simdjson",
+        "version": "3.10.1"
+      },
+      {
+        "name": "thrift",
+        "version": "TBinaryProtocol"
+      },
+      {
+        "name": "yas",
+        "version": "7.x"
+      },
+      {
+        "name": "yyjson",
+        "version": "0.10.0"
+      },
+      {
+        "name": "zpp_bits",
+        "version": "4.4.25"
+      }
+    ]
+  }
+}
