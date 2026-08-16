@@ -176,6 +176,7 @@ set(BENCH_SOURCES
   src/register.cpp
   src/serializers/ser_json.cpp
   src/serializers/ser_binary.cpp
+  src/serializers/ser_jsoncons.cpp
   src/serializers/ser_cereal.cpp
   src/serializers/ser_bitsery.cpp
   src/serializers/ser_zpp_bits.cpp
@@ -309,6 +310,7 @@ set(TEST_SOURCES
   src/register.cpp
   src/serializers/ser_json.cpp
   src/serializers/ser_binary.cpp
+  src/serializers/ser_jsoncons.cpp
   src/serializers/ser_cereal.cpp
   src/serializers/ser_bitsery.cpp
   src/serializers/ser_zpp_bits.cpp
