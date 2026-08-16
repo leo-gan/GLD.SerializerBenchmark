@@ -189,7 +189,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | # | Status | Question |
 |---|--------|----------|
 | 1 | **done** (2026-08-16) | If we must keep JSON, which Python JSON library is best for Sample A? |
-| 2 | **done** (2026-08-16) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
+| 2 | **done** (2026-08-16, [PR #84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
 | 3 | planned | How much faster is a Python-only library (`pickle`) than a library other languages can read? |
 | 4 | planned | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
 | 5 | planned | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
@@ -970,6 +970,7 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 ## After Experiment 2
 
 - **Date:** 2026-08-16
+- **PR:** [#84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)
 - **Sample:** [02-flat-record-formats/sample.json](02-flat-record-formats/sample.json) (Sample B, 1 and 100 records)
 - **Folder:** [02-flat-record-formats](02-flat-record-formats/) · [combined page](02-flat-record-formats/results.md) · [combined JSON](02-flat-record-formats/results.json)
 - **Finding:** The same question was run in all nine languages. Times are **not** one contest across languages. We do not name a single winner. On this tiny flat record, leaving JSON is **language-specific**. In Python, `orjson` is close to `msgspec-msgpack` at one record (about 1.79 µs versus 1.71 µs; 168 bytes versus 52). Protocol Buffers is smallest (50 bytes) but slower than `orjson` here. At 100 records, `orjson` is no longer close. In JavaScript, `JSON.stringify` is fastest. In C#, `SpanJson` is fastest; both protobuf libraries sit on the size front and become close in time at 100 records (C# has no MessagePack in this suite). In Go, Java, Rust, C, C++, and Swift, a Protocol Buffers row is clearly fastest and about three times smaller than JSON. C and C++ must be read with care: C `protobuf-c` uses the suite wire path, not a generated Google pack; official Google `libprotobuf` did not run in C or C++. A small gap on this record is not a reason to change a public contract.
