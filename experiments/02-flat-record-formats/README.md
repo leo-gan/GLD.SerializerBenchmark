@@ -21,13 +21,6 @@ C and C++ need a careful reading. C `protobuf-c` reports a real library version,
 ./experiments/02-flat-record-formats/run.sh python go
 ```
 
-Quick look: [`results.md`](results.md). Dashboard file: [`results.json`](results.json).
-
-Rebuild tables from saved CSVs:
-
-```bash
-cd analysis
-uv run python ../experiments/02-flat-record-formats/summarize.py --all
-```
+Quick look: [`results.md`](results.md). Dashboard file: [`results.json`](results.json). Run logs stay local and are not in git.
 
 Times in two languages are not one contest. Do not name a single winner; read the similar / close sets for each language and each N.

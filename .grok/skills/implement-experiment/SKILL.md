@@ -39,7 +39,7 @@ export PATH="${HOME}/.local/go/bin:${HOME}/.cargo/bin:${HOME}/.dotnet:${HOME}/.l
 1. **Not `master` / `main`.** Start with the **new-task** skill (next section). Do not implement on those branches.
 2. **One question per folder.** Number it `NN-short-kebab` (next free `NN` after existing dirs).
 3. **Edit `experiment.yaml` only** for sample, languages, libraries, run mode, grouping cut-offs. `run.yaml` is generated. Do not keep a second library list.
-4. **Shared sample** at the experiment root (`sample.json`). Language folders hold times and results only.
+4. **Shared sample** at the experiment root (`sample.json`). Language folders hold **results** only (`results.md`, `results.json`). **Do not commit experiment logs** (CSVs under `<lang>/logs/`). Those stay on the machine that ran the timing. Saved results are enough.
 5. **Do not compare write times across languages.** Size is the only roughly fair cross-language number, and only when both sides write the same field description.
 6. **Do not crown a single winner.** Use `top_group` (similar / close / slower via Cliff’s delta vs the fastest library in the comparison set). Not “top 5%.”
 7. **Plain language** in `README.md`, `results.md`, and the PLAN update. If a word is not everyday English, define it or drop it.
@@ -81,7 +81,7 @@ cp "$SRC/python/save_sample.py" "$DEST/python/"
 chmod +x "$DEST/run.sh" "$DEST/python/save_sample.py" "$DEST/python/run.sh"
 ```
 
-Do **not** copy `results.*`, `sample.json`, `run.yaml`, or any `*/logs/`.
+Do **not** copy `results.*`, `sample.json`, `run.yaml`, or any `*/logs/`. Do **not** add `*/logs/` to git later either.
 
 For each enabled language, add `$DEST/<lang>/run.sh` that execs `../run.sh <lang>` (same one-liner as Experiment 1).
 
@@ -143,7 +143,7 @@ Language runners still build from `run.yaml` + seed. They may not spell the same
 - Put `~/.local/go/bin` on `PATH` (Experiment 1’s `run.sh` already does).
 - Hard-fail only if **every** requested language fails or `summarize.py` cannot write combined files.
 
-Rebuild tables without new timing:
+Rebuild tables without new timing **only if the local CSVs are still on disk** (they are not in git):
 
 ```bash
 cd analysis
@@ -161,10 +161,11 @@ uv run python ../experiments/NN-short-kebab/summarize.py --all
 | `experiments/NN-…/results.md` | Combined human page (quick look) |
 | `experiments/NN-…/results.json` | Combined machine file (`top_group` + rows) |
 | `experiments/NN-…/<lang>/results.md` | Full table per language that ran |
+| `experiments/NN-…/<lang>/results.json` | Per-language machine file |
 | `experiments/PLAN.md` | Status + After Experiment *n* |
 | `experiments/README.md` | Index row for the new folder |
 
-`results.md` at the experiment root is the quick look. Per-language `results.md` stays for detail.
+`results.md` at the experiment root is the quick look. Per-language `results.md` stays for detail. **Do not commit** `<lang>/logs/` (raw CSVs). Local logs are for a later `summarize.py --all` on the same machine only.
 
 ---
 
@@ -183,7 +184,7 @@ In the PLAN **After** block and in `results.md`:
 Do this yourself. Do not ask whether to open it. Skip only if the user asked to plan or draft yaml, or if every language run failed.
 
 1. Stage the experiment folder, `experiments/PLAN.md`, `experiments/README.md`, and this skill if you changed it.
-2. Do **not** stage `__pycache__`, published site tables (`docs/<lang>/results.md`), or dashboard `*_latest.json.gz`.
+2. Do **not** stage `<lang>/logs/`, `__pycache__`, published site tables (`docs/<lang>/results.md`), or dashboard `*_latest.json.gz`. Saved `results.md` / `results.json` are enough.
 3. Commit. Match repo style, for example: `feat(experiments): add <short question> across <N> languages`.
 4. `git push -u origin HEAD`. Never push to `upstream`.
 5. Open the PR against the source-of-truth default branch (`origin/master` when only `origin` exists; `upstream/master` or `upstream/main` when that remote exists):
@@ -193,7 +194,7 @@ gh pr create --title "Add Experiment N: <one-line question>" --body "$(cat <<'PR
 ## Summary
 - <what the experiment asks>
 - Ran in <languages> (`full`).
-- Combined page: `experiments/NN-…/results.md`. Rebuild: `summarize.py --all`.
+- Combined page: `experiments/NN-…/results.md`.
 
 ## How to read
 - Times in two languages are not one contest.
@@ -205,7 +206,7 @@ gh pr create --title "Add Experiment N: <one-line question>" --body "$(cat <<'PR
 
 ## Notes
 - `run.yaml` is generated from `experiment.yaml`.
-- Raw CSVs live under `experiments/**/logs/` so tables can be recalculated.
+- Experiment logs stay local. Do not commit them.
 PR
 )"
 ```

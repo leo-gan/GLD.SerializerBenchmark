@@ -1,0 +1,66 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 03-one-language-store
+title: What do we pay to stay readable by other languages?
+question: On one flat record, how much faster is a one-language library than a library another language can read?
+
+sample:
+  kind: message
+  records_per_write: 1
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes, stream]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  # Mixed formats: every listed library is in the comparison set.
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: python
+    enabled: true
+    libraries:
+      - {name: pickle, writes_named_fields: true, role: one language — pickle}
+      - {name: cloudpickle, writes_named_fields: true, role: one language — cloudpickle}
+      - {name: dill, writes_named_fields: true, role: one language — dill}
+      - {name: orjson, writes_named_fields: true, role: other languages can read — JSON}
+      - {name: msgspec-msgpack, writes_named_fields: true, role: other languages can read — MessagePack}
+      - {name: protobuf, writes_named_fields: true, role: other languages can read — Protocol Buffers}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: java-serialization, writes_named_fields: true, role: one language — JDK ObjectOutputStream}
+      - {name: kryo, writes_named_fields: true, role: one language — Kryo}
+      - {name: fory, writes_named_fields: true, role: one language — Apache Fory (Java path)}
+      - {name: hessian, writes_named_fields: true, role: one language — Hessian2}
+      - {name: jsoniter, writes_named_fields: true, role: other languages can read — JSON}
+      - {name: protobuf, writes_named_fields: true, role: other languages can read — Protocol Buffers}
+
+  - id: go
+    enabled: true
+    libraries:
+      - {name: encoding/gob, writes_named_fields: true, role: one language — gob}
+      - {name: goccy/go-json, writes_named_fields: true, role: other languages can read — JSON}
+      - {name: protobuf, writes_named_fields: true, role: other languages can read — Protocol Buffers}
