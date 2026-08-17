@@ -37,6 +37,42 @@ paths:
   summary: results.md
 
 languages:
+  - id: python
+    enabled: true
+    libraries:
+      - {name: orjson, writes_named_fields: true, role: JSON}
+      - {name: yaml, writes_named_fields: true, role: YAML — PyYAML}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON}
+      - {name: jackson-yaml, writes_named_fields: true, role: YAML — Jackson}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: JSON.stringify, writes_named_fields: true, role: JSON}
+      - {name: js-yaml, writes_named_fields: true, role: YAML}
+
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: serde_json, writes_named_fields: true, role: JSON}
+      - {name: serde_yaml, writes_named_fields: true, role: YAML}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: yyjson, writes_named_fields: true, role: JSON}
+      - {name: libyaml, writes_named_fields: true, role: YAML}
+
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: nlohmann_json, writes_named_fields: true, role: JSON}
+      - {name: yaml-cpp, writes_named_fields: true, role: YAML}
+
   - id: go
     enabled: true
     libraries:

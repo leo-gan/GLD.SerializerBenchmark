@@ -40,7 +40,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | c | D (event) | protobuf-wire | protobuf-wire | yes |
 | cpp | B (flat) | protobuf-wire | protobuf-wire | yes |
 | cpp | D (event) | protobuf-wire | msgpack | no |
-| csharp | B (flat) | SpanJson | SpanJson | yes |
+| csharp | B (flat) | SpanJson | MessagePack-CSharp | no |
 | csharp | D (event) | SpanJson | SpanJson | yes |
 | swift | B (flat) | SwiftProtobuf | SwiftProtobuf | yes |
 | swift | D (event) | SwiftProtobuf | SwiftProtobuf | yes |
@@ -353,37 +353,41 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 9.01 | 254 | fastest |
-| Google.Protobuf | 9.98 | 164 | close |
-| ProtoBuf | 11.2 | 164 | slower |
-| System.Text.Json | 18.0 | 340 | slower |
+| SpanJson | 7.87 | 254 | fastest |
+| Google.Protobuf | 10.8 | 164 | slower |
+| ProtoBuf | 11.0 | 164 | slower |
+| MessagePack-CSharp | 11.4 | 156 | slower |
+| System.Text.Json | 19.3 | 340 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 115 | 25456 | fastest |
-| Google.Protobuf | 167 | 16636 | slower |
+| SpanJson | 112 | 25456 | fastest |
+| MessagePack-CSharp | 140 | 15536 | slower |
+| Google.Protobuf | 163 | 16636 | slower |
 | ProtoBuf | 187 | 16636 | slower |
-| System.Text.Json | 296 | 33944 | slower |
+| System.Text.Json | 295 | 33944 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 14.4 | 157 | fastest |
-| Google.Protobuf | 15.7 | 68 | similar |
-| ProtoBuf | 27.9 | 68 | slower |
-| System.Text.Json | 70.1 | 212 | slower |
+| SpanJson | 10.7 | 157 | fastest |
+| Google.Protobuf | 10.8 | 68 | similar |
+| MessagePack-CSharp | 13.3 | 72 | slower |
+| ProtoBuf | 16.1 | 68 | slower |
+| System.Text.Json | 50.1 | 212 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| SpanJson | 140 | 15456 | fastest |
-| ProtoBuf | 162 | 6456 | close |
-| Google.Protobuf | 165 | 6456 | similar |
-| System.Text.Json | 445 | 20608 | slower |
+| MessagePack-CSharp | 83.8 | 6580 | fastest |
+| SpanJson | 100 | 15456 | close |
+| ProtoBuf | 116 | 6456 | close |
+| Google.Protobuf | 127 | 6456 | similar |
+| System.Text.Json | 278 | 20608 | slower |
 
 ### swift
 

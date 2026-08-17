@@ -11,6 +11,7 @@ Python FlatBuffers write uses a slow Python builder. Do not reject the *format* 
 | Language | Libraries |
 |----------|-----------|
 | C++ | `flatbuffers`, `capnproto`, `flexbuffers`, `protobuf-wire`, official `protobuf` |
+| Java | `flatbuffers`, `capnproto`, `protobuf` |
 | C# | `FlatSharp`, `ZeroFormatter`, `MemoryPack`, `ProtoBuf` |
 | JavaScript | `flatbuffers`, `flexbuffers` |
 | Python | `flatbuffers`, `protobuf` |
@@ -20,7 +21,9 @@ Python FlatBuffers write uses a slow Python builder. Do not reject the *format* 
 
 Official Google `libprotobuf` 3.12.4 now registers in C++ after `cpp/scripts/setup-protobuf-sysroot.sh`.
 
-**Not in this run:** Java (no FlatBuffers / Cap’n Proto client in the suite).
+Java now has official `flatbuffers` and `capnproto` rows.
+
+**Not in this run:** Java still has no FlexBuffers client.
 
 ## The samples (shared)
 

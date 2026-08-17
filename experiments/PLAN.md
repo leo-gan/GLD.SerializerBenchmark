@@ -1258,14 +1258,14 @@ These are languages or measurements the **planned** experiments asked for, or th
 | 6 | C# BSON | No BSON writer is registered in C# | Add MongoDB.Bson (or similar) to the C# harness |
 | 6 | Swift BSON | **Fixed 2026-08-17.** `SwiftBSON` is 525 B and slower than `SwiftMsgpack` (329 B) — same story as other languages. | — |
 | 6 | Time to skip one field | The clock always writes and reads the **whole** sample | A custom skip-one-field clock |
-| 7 | Java FlatBuffers / Cap’n Proto | **Harness added 2026-08-17** (`flatbuffers`, `capnproto`). Re-run Experiment 7 Java to fill the tables. | List them in Experiment 7 and re-run |
+| 7 | Java FlatBuffers / Cap’n Proto | **Fixed 2026-08-17** ([#106](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/106) + this re-run). On Sample A, `flatbuffers` is 416 B / 45.4 µs, `capnproto` 376 B / 90 µs, `protobuf` 155 B / 62.8 µs. | — |
 | 7 | Official `libprotobuf` in C++ | **Fixed 2026-08-17** ([#102](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/102) + this re-run). `protobuf` 3.12.4 is 164 B on Sample A (same as the wire helper) and 4127 B / 1.36 µs on 512 numbers. | — |
 | 7 | C `flatcc`, Swift `FlatBuffers` / `CapnProto` | **Fixed 2026-08-17** ([#99](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/99)). | — |
 | 7 | Time to touch two fields only | The clock still builds a full value so we can check information (especially `rkyv`) | A custom two-field clock |
-| 8 | Python, Java, JS, Rust, C, C++ YAML/TOML/XML | **YAML harness added 2026-08-17** (`yaml`, `jackson-yaml`, `js-yaml`, `serde_yaml`, `libyaml`, `yaml-cpp`). TOML/XML in those six languages still missing. | List YAML in Experiment 8 and re-run |
+| 8 | Python, Java, JS, Rust, C, C++ YAML | **Fixed 2026-08-17** ([#106](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/106) + this re-run). YAML is many times slower than JSON in every language (Python `yaml` 1372 µs vs `orjson` 5.16 µs on Sample A). TOML/XML in those six languages still missing. | Add TOML/XML later |
 | 9 | Go, Java, C++, C#, JS, Rust, C, Swift gzip/zstd **size** | **Fixed 2026-08-17** ([#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100) + this re-run). Same story as Python in all nine languages. | — |
 | 9 | How long compression itself takes | We record compressed **size**, once | A timed compress experiment |
-| 10 | C# MessagePack | **Harness added 2026-08-17** (`MessagePack-CSharp`). Re-run Experiment 2 / 10 C# to fill the tables. | List it in those experiments and re-run |
+| 10 | C# MessagePack | **Fixed 2026-08-17** ([#106](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/106) + this re-run). `MessagePack-CSharp` is 72 B on Sample B at N=1 (vs `SpanJson` 157 B) and is not clearly slower at N=100. | — |
 | 11 | JavaScript stream | JS has no distinct stream path | None without a new JS stream API |
 | 11 | C and Swift as stream evidence | **C `yyjson` now has a native FILE* path** (2026-08-17). Other C codecs and all Swift Codable codecs stay copied (no library stream API). | Keep excluding copied rows; add more C FILE* writers later |
 | 11 | Real OS socket / multi-GB file | Samples are small; no socket | A socket / large-file test |
@@ -1324,7 +1324,6 @@ We go **row by row**. A wrapper (harness) change is its **own PR**, then we re-r
 
 ### Leave for a later, larger task
 
-- Experiment re-runs that list the new Java FlatBuffers / Cap’n Proto, six-language YAML, and MessagePack-CSharp rows
 - TOML/XML in Python, Java, JS, Rust, C, C++
 - Native stream APIs for remaining C codecs and for Swift Codable (no OutputStream encoder)
 - JavaScript stream API
