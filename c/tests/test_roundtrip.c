@@ -16,6 +16,16 @@ static int checks = 0;
     } \
 } while (0)
 
+static void test_compress_sizes(void) {
+    size_t gz = 0, zs = 0;
+    bench_compress_sizes((const uint8_t *)"hello", 5, &gz, &zs);
+    CHECK(gz >= 20 && gz <= 40, "gzip(hello)=%zu want ~25", gz);
+    /* zstd is optional */
+    (void)zs;
+    bench_compress_sizes(NULL, 0, &gz, &zs);
+    CHECK(gz == 0 && zs == 0, "empty compress should be 0,0");
+}
+
 static void test_all_roundtrips(void) {
     serializer_t sers[BENCH_MAX_SERIALIZERS];
     int n = 0;
@@ -89,6 +99,7 @@ int main(void) {
     test_schedule_golden();
     test_v2_type_names();
     test_telemetry_points_from_config();
+    test_compress_sizes();
     test_all_roundtrips();
     printf("%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;

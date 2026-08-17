@@ -40,6 +40,8 @@ bytes = "1"
 rand = "0.8"
 rand_pcg = "0.3"
 sha2 = "0.10"
+flate2 = "1"
+zstd = "0.13"
 
 [build-dependencies]
 prost-build = "0.13"

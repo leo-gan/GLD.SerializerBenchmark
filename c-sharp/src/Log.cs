@@ -104,6 +104,12 @@ namespace GLD.SerializerBenchmark
 
         /// <summary>Position within shuffled serializer list for this rep; -1 if unset.</summary>
         public int SchedulePosition { get; set; } = -1;
+
+        /// <summary>One-shot gzip(6) of written bytes (not timed). 0 if unset.</summary>
+        public int SizeGzip { get; set; }
+
+        /// <summary>One-shot zstd(3) of written bytes (not timed). 0 if unavailable.</summary>
+        public int SizeZstd { get; set; }
     }
 
     public class LogStorage
@@ -140,7 +146,7 @@ namespace GLD.SerializerBenchmark
                 "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName," +
                 "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser," +
                 "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash," +
-                "StreamMode,RunOrder,SchedulePosition";
+                "StreamMode,RunOrder,SchedulePosition,SizeGzip,SizeZstd";
             fileHeaderLine = fileHeaderLine.Replace(",", _separator);
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
@@ -163,7 +169,9 @@ namespace GLD.SerializerBenchmark
                 log.TypeConfigHash ?? "",
                 log.StreamMode ?? "",
                 log.RunOrder >= 0 ? log.RunOrder.ToString() : "",
-                log.SchedulePosition >= 0 ? log.SchedulePosition.ToString() : ""
+                log.SchedulePosition >= 0 ? log.SchedulePosition.ToString() : "",
+                log.SizeGzip > 0 ? log.SizeGzip.ToString() : "",
+                log.SizeZstd > 0 ? log.SizeZstd.ToString() : ""
                 );
             _logFileStreamWriter.WriteLine(line);
         }

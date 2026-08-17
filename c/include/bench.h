@@ -129,8 +129,12 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
                       double fidelity, const char *version,
                       int instance_count, const char *type_config_hash,
                       const char *stream_mode,
-                      int run_order, int schedule_position);
+                      int run_order, int schedule_position,
+                      size_t size_gzip, size_t size_zstd);
 void csv_logger_close(csv_logger_t *L);
+
+/* One-shot gzip(6) / zstd(3) of already-written bytes. Not timed. zstd is 0 if libzstd is absent. */
+void bench_compress_sizes(const uint8_t *data, size_t n, size_t *out_gzip, size_t *out_zstd);
 
 int bench_serialize_cell(const serializer_t *S, const test_fixture_t *fx,
                          uint8_t *buf, size_t buf_cap, size_t *out_len);

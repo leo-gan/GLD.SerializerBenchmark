@@ -16,6 +16,7 @@
 //!   Fisher–Yates shuffle serializers → timed trials (per-serializer buffers).
 //! - `none`: legacy serializer → mode → rep order.
 
+use crate::compress::compress_sizes;
 use crate::csv_log::CsvLogger;
 use crate::data::{self, fidelity, Fixture};
 use crate::schedule::{
@@ -288,6 +289,8 @@ fn write_success(
     ser_ns: u128,
     deser_ns: u128,
     size: usize,
+    size_gzip: usize,
+    size_zstd: usize,
     run_order: Option<i32>,
     schedule_position: Option<i32>,
 ) -> Result<()> {
@@ -308,6 +311,8 @@ fn write_success(
         &cell.type_config_hash,
         run_order,
         schedule_position,
+        size_gzip,
+        size_zstd,
     )?;
     Ok(())
 }
@@ -412,6 +417,7 @@ pub fn run_v2(
                         };
                         match measured {
                             Ok((ser_ns, deser_ns, size)) => {
+                                let (gz, zs) = compress_sizes(&prepared[p_i].ser_buf);
                                 let (ro, sp) = if record_ro {
                                     let ro = global_run_order;
                                     global_run_order += 1;
@@ -429,6 +435,8 @@ pub fn run_v2(
                                     ser_ns,
                                     deser_ns,
                                     size,
+                                    gz,
+                                    zs,
                                     ro,
                                     sp,
                                 )?;
@@ -491,6 +499,7 @@ pub fn run_v2(
                         };
                         match measured {
                             Ok((ser_ns, deser_ns, size)) => {
+                                let (gz, zs) = compress_sizes(&prepared[p_i].ser_buf);
                                 let (ro, sp) = if record_ro {
                                     let ro = global_run_order;
                                     global_run_order += 1;
@@ -508,6 +517,8 @@ pub fn run_v2(
                                     ser_ns,
                                     deser_ns,
                                     size,
+                                    gz,
+                                    zs,
                                     ro,
                                     sp,
                                 )?;

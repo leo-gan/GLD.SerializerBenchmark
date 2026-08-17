@@ -1,5 +1,6 @@
 //! Rust serializer benchmark runner (Data Model v2 only).
 
+mod compress;
 mod csv_log;
 mod data;
 mod run_v2;

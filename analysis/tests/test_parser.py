@@ -76,3 +76,19 @@ def test_infer_language_from_path_cpp_not_c(tmp_path):
     recs, _ = parse_csv_file(str(csv))
     assert recs
     assert recs[0]["Language"] == "cpp"
+
+
+def test_parse_size_gzip_zstd():
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["Language", "StringOrStream", "TestDataName", "Repetitions", "RepetitionIndex",
+                    "SerializerName", "SerializerVersion", "TimeSer", "TimeDeser", "Size",
+                    "TimeSerAndDeser", "OpPerSecSer", "OpPerSecDeser", "OpPerSecSerAndDeser",
+                    "MemoryPeakBytes", "FidelityScore", "SizeGzip", "SizeZstd"])
+        w.writerow(["go", "bytes", "strings", 10, 1, "encoding/json", "1.24", 100, 200, 448,
+                    300, 1, 1, 1, 0, 1.0, 229, 180])
+        path = f.name
+    recs, skipped = parse_csv_file(path)
+    assert skipped == 0
+    assert recs[0]["SizeGzip"] == 229
+    assert recs[0]["SizeZstd"] == 180

@@ -295,6 +295,18 @@ namespace GLD.SerializerBenchmark
                 GC.KeepAlive(processed);
                 // Untimed domain conversion (annotated/KeyTuple → suite POCO).
                 processed = serializer.ToDomain(processed);
+
+                // One-shot compress of written bytes — after the clock.
+                byte[] raw;
+                if (streaming)
+                    raw = serializedStream.ToArray();
+                else
+                    raw = serializedString != null
+                        ? System.Text.Encoding.UTF8.GetBytes(serializedString)
+                        : System.Array.Empty<byte>();
+                Compress.Sizes(raw, out var gz, out var zs);
+                log.SizeGzip = gz;
+                log.SizeZstd = zs;
             }
             catch (Exception ex)
             {

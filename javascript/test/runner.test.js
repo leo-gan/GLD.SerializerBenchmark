@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { allFixturesV2, deepEqual, makeOne, V2_TYPE_IDS } from '../src/data.js';
 import { ALL_SERIALIZERS } from '../src/serializers/index.js';
+import { compressSizes } from '../src/compress.js';
 import {
   deriveScheduleSeed,
   goldenPermutation,
@@ -80,6 +81,13 @@ test('all V2 fixtures roundtrip for every supporting serializer', () => {
       }
     }
   }
+});
+
+test('compressSizes gzip of hello is about 25 bytes', () => {
+  const [gz, zs] = compressSizes(Buffer.from('hello'));
+  assert.ok(gz >= 20 && gz <= 40, `gzip=${gz}`);
+  assert.equal(typeof zs, 'number');
+  assert.deepEqual(compressSizes(Buffer.alloc(0)), [0, 0]);
 });
 
 test('JSON serializer roundtrips message', () => {

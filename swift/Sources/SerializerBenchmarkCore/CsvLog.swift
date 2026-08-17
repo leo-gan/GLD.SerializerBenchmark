@@ -16,7 +16,7 @@ public final class CsvLogger {
         self.path = path
         _ = FileManager.default.createFile(atPath: path.path, contents: nil)
         self.handle = try FileHandle(forWritingTo: path)
-        let header = "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition\n"
+        let header = "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition,SizeGzip,SizeZstd\n"
         handle.write(Data(header.utf8))
     }
 
@@ -36,7 +36,9 @@ public final class CsvLogger {
         instanceCount: Int,
         typeConfigHash: String,
         runOrder: Int = -1,
-        schedulePosition: Int = -1
+        schedulePosition: Int = -1,
+        sizeGzip: Int = 0,
+        sizeZstd: Int = 0
     ) {
         let total = timeSer &+ timeDeser
         let opsSer = timeSer > 0 ? 1e9 / Double(timeSer) : 0
@@ -67,6 +69,8 @@ public final class CsvLogger {
             escapeCSV(typeConfigHash),
             ro,
             sp,
+            sizeGzip > 0 ? String(sizeGzip) : "",
+            sizeZstd > 0 ? String(sizeZstd) : "",
         ].joined(separator: ",") + "\n"
         handle.write(Data(line.utf8))
     }

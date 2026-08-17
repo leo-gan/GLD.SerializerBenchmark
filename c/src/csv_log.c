@@ -15,7 +15,7 @@ csv_logger_t *csv_logger_create(const char *path) {
         "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,"
         "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,"
         "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash,"
-        "StreamMode,RunOrder,SchedulePosition\n");
+        "StreamMode,RunOrder,SchedulePosition,SizeGzip,SizeZstd\n");
     return L;
 }
 
@@ -25,24 +25,27 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
                       double fidelity, const char *version,
                       int instance_count, const char *type_config_hash,
                       const char *stream_mode,
-                      int run_order, int schedule_position) {
+                      int run_order, int schedule_position,
+                      size_t size_gzip, size_t size_zstd) {
     if (!L || !L->f) return;
     uint64_t tot = ser_ns + deser_ns;
     double ops_s = ser_ns ? 1e9 / (double)ser_ns : 0;
     double ops_d = deser_ns ? 1e9 / (double)deser_ns : 0;
     double ops_t = tot ? 1e9 / (double)tot : 0;
     if (instance_count < 1) instance_count = 1;
-    char ro[32] = "", sp[32] = "";
+    char ro[32] = "", sp[32] = "", gz[32] = "", zs[32] = "";
     if (run_order >= 0) snprintf(ro, sizeof ro, "%d", run_order);
     if (schedule_position >= 0) snprintf(sp, sizeof sp, "%d", schedule_position);
+    if (size_gzip > 0) snprintf(gz, sizeof gz, "%zu", size_gzip);
+    if (size_zstd > 0) snprintf(zs, sizeof zs, "%zu", size_zstd);
     fprintf(L->f,
-        "c,%s,%s,%d,%d,%s,%s,%llu,%llu,%zu,%llu,%.6f,%.6f,%.6f,0,%.1f,%d,%s,%s,%s,%s\n",
+        "c,%s,%s,%d,%d,%s,%s,%llu,%llu,%zu,%llu,%.6f,%.6f,%.6f,0,%.1f,%d,%s,%s,%s,%s,%s,%s\n",
         mode, td, reps, rep_idx, ser, version ? version : "",
         (unsigned long long)ser_ns, (unsigned long long)deser_ns, size,
         (unsigned long long)tot, ops_s, ops_d, ops_t, fidelity,
         instance_count, type_config_hash ? type_config_hash : "",
         stream_mode ? stream_mode : "",
-        ro, sp);
+        ro, sp, gz, zs);
 }
 
 void csv_logger_close(csv_logger_t *L) {
