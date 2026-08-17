@@ -56,11 +56,16 @@
         <li><a href="#detailed-analytics" id="nav-table-link">Details</a></li>
         <li><a href="#compare" id="nav-compare-link">Compare</a></li>
         <li><a href="#history-custom" id="nav-history-link">History</a></li>
+        <li><a href="#experiments" id="nav-experiments-link">Experiments</a></li>
       </ul>
     </nav>
   </header>
 
   <main class="container">
+
+    <section class="exp-root" id="experiments" aria-label="Experiments">
+      <p class="section-help">Loading experiments…</p>
+    </section>
     
     <!-- Controls/Filters Toolbar -->
     <section class="glass-panel toolbar">
@@ -428,5 +433,6 @@
 
   <!-- App logic scripts -->
   <script type="module" src="./main.js"></script>
+  <script type="module" src="./experiments.js"></script>
 </body>
 </html>

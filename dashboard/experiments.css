@@ -1,0 +1,178 @@
+/* Experiments view — independent of language-latest dashboard chrome. */
+
+#experiments {
+  display: none;
+}
+
+body.dash-view-experiments #experiments {
+  display: block;
+}
+
+body.dash-view-experiments .toolbar,
+body.dash-view-experiments .summary-grid,
+body.dash-view-experiments .charts-grid,
+body.dash-view-experiments #detailed-analytics,
+body.dash-view-experiments #compare,
+body.dash-view-experiments #history-custom,
+body.dash-view-experiments #orientation-banner,
+body.dash-view-experiments #run-meta,
+body.dash-view-experiments #filter-policy-meta {
+  display: none !important;
+}
+
+.exp-header {
+  margin-bottom: 1rem;
+}
+
+.exp-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0.6rem 0 0.2rem;
+}
+
+.exp-back {
+  font-size: 0.8rem;
+}
+
+.exp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.exp-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.exp-card:hover {
+  border-color: var(--border-color-hover);
+}
+
+.exp-card[data-planned="1"] {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.exp-card-num {
+  flex: 0 0 2rem;
+  font-weight: 500;
+  color: var(--color-blue);
+  font-variant-numeric: tabular-nums;
+}
+
+.exp-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.exp-card-title {
+  font-weight: 500;
+}
+
+.exp-card-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.exp-lang-tabs {
+  margin: 0.5rem 0 0.75rem;
+  flex-wrap: wrap;
+}
+
+.exp-filters {
+  margin-bottom: 0.85rem;
+}
+
+.exp-groups {
+  margin: 0 0 1rem;
+}
+
+.exp-group-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.3rem 0;
+}
+
+.exp-group-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  width: 8.5rem;
+  flex: 0 0 8.5rem;
+}
+
+.exp-chip {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: #f1f3f4;
+  color: var(--text-primary);
+}
+
+.exp-chip-empty {
+  color: var(--text-muted);
+}
+
+.exp-tier-similar .exp-ver,
+.exp-chip.exp-tier-similar,
+tr.exp-tier-similar td:first-child {
+  box-shadow: none;
+}
+
+.exp-chip.exp-tier-similar {
+  background: var(--bg-green-light);
+  color: var(--color-green);
+}
+
+.exp-chip.exp-tier-close {
+  background: var(--bg-yellow-light);
+  color: #b06000;
+}
+
+.exp-chip.exp-tier-slower,
+tr.exp-tier-slower td:last-child {
+  color: var(--text-secondary);
+}
+
+tr.exp-tier-similar td:first-child {
+  font-weight: 500;
+}
+
+tr.exp-row-skip {
+  opacity: 0.55;
+}
+
+.exp-ver {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.exp-table {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .exp-group-label {
+    width: 100%;
+    flex-basis: 100%;
+  }
+}
