@@ -12,7 +12,7 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 - Directory: `c-sharp/` (repository root)
 - Output: monorepo `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (`Language=csharp`, times in **nanoseconds**)
 - Registration: [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs)
-- **Not in this suite:** MessagePack-CSharp, Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs)
+- **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs)
 
 ## Serializers
 
@@ -35,6 +35,7 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 | Json.Net (Helper) | JSON | Newtonsoft.Json helper path |
 | LightProto | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
 | MemoryPack | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
+| MessagePack-CSharp | Binary | Official MessagePack-CSharp (`ContractlessStandardResolver` on domain POCOs) |
 | Migrant | Binary (**envelope**) | **Not domain Migrant graphs** — Migrant of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
 | MS Binary | Binary (native) | Legacy `BinaryFormatter` path |
 | MS Bond Compact | Schema / Bond | Bond Compact Binary; V2 domain marked `[Schema]` |

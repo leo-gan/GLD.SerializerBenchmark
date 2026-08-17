@@ -76,9 +76,25 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
     out_fx.batch_n = n;
 
     uint64_t t0 = bench_now_ns();
-    int rc = bench_serialize_cell(S, fx, buf, buf_cap, &out_len);
-    if (rc == 0 && mode[0] == 's') { /* stream: adapted FILE* write */
-        rc = bench_stream_write_all(buf, out_len);
+    int rc = 0;
+    int native_stream = 0;
+    if (mode[0] == 's' && S->serialize_fp && S->deserialize_fp) {
+        native_stream = 1;
+        FILE *wf = fmemopen(buf, buf_cap, "w+");
+        if (!wf) rc = -1;
+        else {
+            rc = S->serialize_fp(fx, wf, &out_len);
+            if (rc == 0) {
+                if (fflush(wf) != 0) rc = -1;
+                else out_len = (size_t)ftell(wf);
+            }
+            fclose(wf);
+        }
+    } else {
+        rc = bench_serialize_cell(S, fx, buf, buf_cap, &out_len);
+        if (rc == 0 && mode[0] == 's') { /* stream: adapted FILE* write */
+            rc = bench_stream_write_all(buf, out_len);
+        }
     }
     uint64_t t1 = bench_now_ns();
     bench_do_not_optimize(buf);
@@ -88,15 +104,24 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
                 S->name, type_id, n, mode);
         return -1;
     }
-    if (mode[0] == 's') {
-        rc = bench_stream_read_all(buf, buf_cap, out_len);
-        if (rc != 0) {
-            fprintf(stderr, "[ERROR] %s / %s N=%d / %s: stream read failed\n",
-                    S->name, type_id, n, mode);
-            return -1;
+    if (native_stream) {
+        FILE *rf = fmemopen(buf, out_len ? out_len : 1, "r");
+        if (!rf) rc = -1;
+        else {
+            rc = S->deserialize_fp(rf, &out_fx, fx->kind);
+            fclose(rf);
         }
+    } else {
+        if (mode[0] == 's') {
+            rc = bench_stream_read_all(buf, buf_cap, out_len);
+            if (rc != 0) {
+                fprintf(stderr, "[ERROR] %s / %s N=%d / %s: stream read failed\n",
+                        S->name, type_id, n, mode);
+                return -1;
+            }
+        }
+        rc = bench_deserialize_cell(S, buf, out_len, &out_fx, fx->kind);
     }
-    rc = bench_deserialize_cell(S, buf, out_len, &out_fx, fx->kind);
     uint64_t t2 = bench_now_ns();
     bench_do_not_optimize(&out_fx);
     if (rc != 0) {
@@ -119,7 +144,9 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
         (*run_order)++;
     }
     {
-        const char *sm = (mode && strcmp(mode, "stream") == 0) ? "adapted" : "";
+        const char *sm = "";
+        if (mode && strcmp(mode, "stream") == 0)
+            sm = native_stream ? "native" : "adapted";
         size_t gz = 0, zs = 0;
         bench_compress_sizes(buf, out_len, &gz, &zs);
         csv_logger_write(log, mode, type_id, repetitions, r, S->name,

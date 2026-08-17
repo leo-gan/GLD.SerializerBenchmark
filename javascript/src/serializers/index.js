@@ -10,6 +10,7 @@ import { binarySerializers } from './binary.js';
 import { schemaSerializers } from './schema.js';
 import { nativeSerializers } from './native.js';
 import { modernSerializers } from './modern.js';
+import { yamlSerializers } from './yaml.js';
 
 export const ALL_SERIALIZERS = [
   ...jsonSerializers(),
@@ -17,6 +18,7 @@ export const ALL_SERIALIZERS = [
   ...schemaSerializers(),
   ...nativeSerializers(),
   ...modernSerializers(),
+  ...yamlSerializers(),
 ];
 
 export { deepEqual, performance };

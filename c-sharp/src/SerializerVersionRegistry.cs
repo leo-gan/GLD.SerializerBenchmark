@@ -49,6 +49,7 @@ namespace GLD.SerializerBenchmark
                 ["ZeroFormatter"] = "ZeroFormatter",
                 ["BinaryPack"] = "BinaryPack",
                 ["MemoryPack"] = "MemoryPack",
+                ["MessagePack-CSharp"] = "MessagePack",
                 ["Migrant"] = "Migrant",
             };
 

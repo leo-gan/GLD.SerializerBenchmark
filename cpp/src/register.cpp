@@ -33,6 +33,7 @@ SerializerPtr make_thrift();
 SerializerPtr make_capnproto();
 SerializerPtr make_flexbuffers();
 SerializerPtr make_flatbuffers();
+SerializerPtr make_yaml_cpp();
 
 static void add(std::vector<SerializerPtr>& v, SerializerPtr p) {
   if (p) v.push_back(std::move(p));
@@ -68,6 +69,7 @@ std::vector<SerializerPtr> all_serializers() {
   add(v, make_capnproto());
   add(v, make_flexbuffers());
   add(v, make_flatbuffers());
+  add(v, make_yaml_cpp());
   return v;
 }
 

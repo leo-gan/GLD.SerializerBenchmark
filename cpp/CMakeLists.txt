@@ -170,6 +170,17 @@ target_include_directories(zpp_bits_hdr INTERFACE ${CPP_TP}/zpp_bits)
 add_library(yas_hdr INTERFACE)
 target_include_directories(yas_hdr INTERFACE ${CPP_TP}/yas/include)
 
+FetchContent_Declare(yaml_cpp
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+  GIT_TAG 0.8.0
+  GIT_SHALLOW TRUE
+  SOURCE_DIR ${CPP_TP}/yaml-cpp
+)
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(yaml_cpp)
+
 add_library(cista_hdr INTERFACE)
 target_include_directories(cista_hdr INTERFACE ${CPP_TP}/cista/include)
 # single-header layout fallback
@@ -203,6 +214,7 @@ set(BENCH_SOURCES
   src/serializers/ser_boost.cpp
   src/serializers/ser_capnp.cpp
   src/serializers/ser_schema.cpp
+  src/serializers/ser_yaml.cpp
 )
 
 # ---- Optional: official Google libprotobuf (suite sysroot or system) ----
@@ -276,6 +288,7 @@ target_link_libraries(serializer_benchmark_cpp PRIVATE
   cista_hdr
   pthread
   ZLIB::ZLIB
+  yaml-cpp
 )
 
 if(BENCH_HAS_LIBPROTOBUF)
@@ -338,6 +351,7 @@ set(TEST_SOURCES
   src/serializers/ser_boost.cpp
   src/serializers/ser_capnp.cpp
   src/serializers/ser_schema.cpp
+  src/serializers/ser_yaml.cpp
 )
 if(BENCH_HAS_LIBPROTOBUF)
   list(APPEND TEST_SOURCES src/serializers/ser_protobuf_lib.cpp ${PB_GEN_CC})
@@ -366,6 +380,7 @@ target_link_libraries(cpp_serializer_tests PRIVATE
   cista_hdr
   pthread
   ZLIB::ZLIB
+  yaml-cpp
 )
 if(TARGET msgpack-cxx)
   target_link_libraries(cpp_serializer_tests PRIVATE msgpack-cxx)
