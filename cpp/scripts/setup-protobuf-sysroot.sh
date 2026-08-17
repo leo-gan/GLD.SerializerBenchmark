@@ -7,7 +7,8 @@ CPP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SYSROOT="$CPP_DIR/third_party/protobuf-sysroot"
 CACHE="$CPP_DIR/third_party/_protobuf_debs"
 VER="3.12.4-1ubuntu7.22.04.6"
-MIRROR="${PROTOBUF_DEB_MIRROR:-http://us.archive.ubuntu.com/ubuntu/pool/main/p/protobuf}"
+# us.archive has 404'd some 3.12.4 jammy debs; archive.ubuntu.com still has them.
+MIRROR="${PROTOBUF_DEB_MIRROR:-http://archive.ubuntu.com/ubuntu/pool/main/p/protobuf}"
 
 if [[ -x "$SYSROOT/usr/bin/protoc" && -f "$SYSROOT/usr/include/google/protobuf/message.h" && -f "$SYSROOT/usr/lib/x86_64-linux-gnu/libprotobuf.a" ]]; then
   echo "[skip] protobuf sysroot already present at $SYSROOT"
@@ -17,6 +18,7 @@ if [[ -x "$SYSROOT/usr/bin/protoc" && -f "$SYSROOT/usr/include/google/protobuf/m
 fi
 
 mkdir -p "$CACHE" "$SYSROOT"
+REPO_ROOT="$(cd "$CPP_DIR/.." && pwd)"
 debs=(
   "libprotobuf23_${VER}_amd64.deb"
   "libprotoc23_${VER}_amd64.deb"
@@ -26,6 +28,10 @@ debs=(
 )
 
 for deb in "${debs[@]}"; do
+  if [[ ! -f "$CACHE/$deb" && -f "$REPO_ROOT/$deb" ]]; then
+    echo "[copy] $deb from repo root"
+    cp "$REPO_ROOT/$deb" "$CACHE/$deb"
+  fi
   if [[ ! -f "$CACHE/$deb" ]]; then
     echo "[get] $deb"
     curl -fsSL -o "$CACHE/$deb" "$MIRROR/$deb"
