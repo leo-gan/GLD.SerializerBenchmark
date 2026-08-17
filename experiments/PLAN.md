@@ -1275,6 +1275,64 @@ The first-wave path **1 → 2 → 3 → 4 → 12 → 13** is done. Experiments *
 
 ---
 
+## Fix plan for Not covered (2026-08-17)
+
+We go **row by row**. A wrapper (harness) change is its **own PR**, then we re-run the experiment that needed it. An experiment-only change is its own PR. We do not ask for approval; we squash-merge and move on.
+
+### Will not do (out of suite, or not a code fix)
+
+| Row | Why we skip |
+|-----|-------------|
+| 4 flash / battery / radio | Not this program |
+| 5 old reader / same bytes in two languages | Needs a separate compatibility test, not this clock |
+| 6 skip one field | Needs a new clock |
+| 7 touch two fields only | Needs a new clock |
+| 9 compress **time** | We record size only |
+| 11 real socket / multi-GB file | Different test |
+| 13 three evenings / another CPU | Machine time and hardware, not a code change |
+| All: cross-language write times | Method, not a bug |
+
+### Experiment-only (no harness)
+
+| Step | What | PR |
+|------|------|----|
+| A1 | Experiment 5: add Avro rows that already exist (`Apache.Avro`, `serde_avro_fast`, `avsc`, `avro-c`, C++ `avro`/`avro_c`, `SwiftAvroCore`) and re-run | experiment |
+| A2 | Experiment 6: add `SwiftBSON` (already registered) and re-run | experiment |
+| A3 | Experiment 7: add C `flatcc` and Swift `FlatBuffers` / `CapnProto` and re-run | experiment |
+
+### Wrapper first, then re-run
+
+| Step | What | Why a wrapper PR |
+|------|------|------------------|
+| B1 | **C runner reads `type_config.points`** (today it hard-codes 32) and raise `V2_MAX_POINTS` from 64 to 512 | Experiment 4’s C sizes cannot grow until this lands |
+| B2 | Re-run Experiment 4 in C (and keep Rust) | experiment, after B1 |
+| B3 | **One-shot gzip(6) / zstd(3) of written bytes** in Go, Java, JS, Rust, C, C++, C#, Swift CSV (`SizeGzip`, `SizeZstd`). Parser already accepts those columns. Not timed. | wrapper |
+| B4 | Re-run Experiment 9 in those languages | experiment, after B3 |
+| B5 | Run `cpp/scripts/setup-protobuf-sysroot.sh` so official C++ `protobuf` registers; re-run Experiment 7 C++ | wrapper/env + experiment |
+
+### Wrapper, only if small enough to finish cleanly
+
+| Step | What | Note |
+|------|------|------|
+| C1 | Python BSON client + list in Experiment 6 | new serializer |
+| C2 | C# BSON client + list in Experiment 6 | new serializer |
+| C3 | Experiment 13 `schedule: sequential` vs shuffle | runner flag |
+
+### Leave for a later, larger task
+
+- Java FlatBuffers / Cap’n Proto (new stacks)
+- YAML/TOML/XML in Python, Java, JS, Rust, C, C++ (new stacks)
+- MessagePack-CSharp (explicitly **not** in the C# suite today)
+- Native C / Swift stream paths (today they are copied)
+- JavaScript stream API
+- Pin two versions of `orjson` and re-run Experiment 13
+
+### Order we will actually ship
+
+**B1 → B2 → A1 → A2 → A3 → B3 → B4 → B5 → C1 → C2 → C3**, skipping a C-step if the harness change is too large or fails on this machine. After each landed fix we tick the Not covered row or rewrite it.
+
+---
+
 ## After later experiments
 
 *Each new experiment adds a block above this line. We do not rewrite old findings. We only change the list and the next question.*
