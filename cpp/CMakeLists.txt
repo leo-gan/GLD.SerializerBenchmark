@@ -170,6 +170,16 @@ target_include_directories(zpp_bits_hdr INTERFACE ${CPP_TP}/zpp_bits)
 add_library(yas_hdr INTERFACE)
 target_include_directories(yas_hdr INTERFACE ${CPP_TP}/yas/include)
 
+# glaze — last C++20 release (v3+ requires C++23 / GCC 12+)
+FetchContent_Declare(glaze
+  GIT_REPOSITORY https://github.com/stephenberry/glaze.git
+  GIT_TAG v2.9.5
+  GIT_SHALLOW TRUE
+  SOURCE_DIR ${CPP_TP}/glaze
+)
+set(glaze_ENABLE_AVX2 OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glaze)
+
 FetchContent_Declare(yaml_cpp
   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
   GIT_TAG 0.8.0
@@ -200,6 +210,7 @@ set(BENCH_SOURCES
   src/cells.cpp
   src/register.cpp
   src/serializers/ser_json.cpp
+  src/serializers/ser_glaze.cpp
   src/serializers/ser_binary.cpp
   src/serializers/ser_jsoncons.cpp
   src/serializers/ser_cereal.cpp
@@ -276,6 +287,7 @@ target_include_directories(serializer_benchmark_cpp PRIVATE
 )
 target_link_libraries(serializer_benchmark_cpp PRIVATE
   nlohmann_json::nlohmann_json
+  glaze::glaze
   simdjson
   ArduinoJson
   yyjson
@@ -337,6 +349,7 @@ set(TEST_SOURCES
   src/schedule.cpp
   src/register.cpp
   src/serializers/ser_json.cpp
+  src/serializers/ser_glaze.cpp
   src/serializers/ser_binary.cpp
   src/serializers/ser_jsoncons.cpp
   src/serializers/ser_cereal.cpp
@@ -368,6 +381,7 @@ target_include_directories(cpp_serializer_tests PRIVATE
 )
 target_link_libraries(cpp_serializer_tests PRIVATE
   nlohmann_json::nlohmann_json
+  glaze::glaze
   simdjson
   ArduinoJson
   yyjson
@@ -502,4 +516,4 @@ enable_testing()
 add_test(NAME cpp_roundtrip COMMAND cpp_serializer_tests)
 
 
-message(STATUS "C++ serializer benchmark configured (23 codecs)")
+message(STATUS "C++ serializer benchmark configured (28+ codecs)")

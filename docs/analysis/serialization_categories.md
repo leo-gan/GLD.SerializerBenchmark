@@ -76,7 +76,7 @@ Examples use **log `SerializerName` values** from language overviews (not always
   - **Go:** `encoding/json`, `sonic`, `goccy/go-json`, `jsoniter`, `segmentio/encoding/json`, `ugorji/json`
   - **Go (adjacent text):** `goccy/go-yaml`, `pelletier/go-toml` (human-readable documents; not JSON wire)
   - **Java:** `jackson`, `gson`, `fastjson2`, `dsl-json`, `moshi`, `jsoniter`
-  - **C++:** `nlohmann_json`, `rapidjson`, `simdjson`, `arduinojson`, `yyjson`
+  - **C++:** `nlohmann_json`, `rapidjson`, `simdjson`, `arduinojson`, `yyjson`, `glaze`
 
 ### Schemaless binary
 

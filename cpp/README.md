@@ -4,7 +4,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 
 Native C++20 benchmark runner emitting timestamped `logs/cpp/YYYY-MM-DD-HHMMSS.csv` (`Language=cpp`, nanoseconds).
 
-## Serializers (27+)
+## Serializers (28+)
 
 See [docs/cpp/index.md](../docs/cpp/index.md) for the inventory, optimal call paths, and **C vs C++ dual-use** notes.
 
