@@ -1318,9 +1318,9 @@ We go **row by row**. A wrapper (harness) change is its **own PR**, then we re-r
 
 | Step | What | Note |
 |------|------|------|
-| C1 | Python BSON client + list in Experiment 6 | new serializer |
-| C2 | C# BSON client + list in Experiment 6 | new serializer |
-| C3 | Experiment 13 `schedule: sequential` vs shuffle | runner flag |
+| C1 | Python BSON client + list in Experiment 6 | **skipped** — new serializer (register, tests, fidelity). Leave for a later add-serializers task. |
+| C2 | C# BSON client + list in Experiment 6 | **skipped** — same: no BSON writer is registered; that is a new client, not an experiment yaml change. |
+| C3 | Experiment 13 `schedule: sequential` vs shuffle | **skipped** — `experiment.yaml` has no schedule key; adding `sequential` is a runner flag plus a full nine-language re-run. Too large for this pass. |
 
 ### Leave for a later, larger task
 
