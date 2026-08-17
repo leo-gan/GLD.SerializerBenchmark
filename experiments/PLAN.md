@@ -195,7 +195,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 5 | **done** (2026-08-17) | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
 | 6 | **done** (2026-08-17) | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
 | 7 | **done** (2026-08-17) | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
-| 8 | planned | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
+| 8 | **done** (2026-08-17) | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
 | 9 | planned | After gzip or zstd, does JSON stay larger than binary? |
 | 10 | planned | Does the winner at 1 record stay the winner at 100 records? |
 | 11 | planned | When we write as if to a file, does the ranking change? |
@@ -696,8 +696,9 @@ In **C++** on Sample A, FlatBuffers writes fastest (0.60 µs); Cap’n Proto **r
 
 ## Experiment 8 — Files people edit are not a request path
 
-**Status:** planned.  
-**Sample:** Sample A and Sample E.
+**Status:** done for Go, Swift, and C# (2026-08-17).  
+**Folder:** [08-human-files](08-human-files/). Combined page: [results.md](08-human-files/results.md). Combined JSON: [results.json](08-human-files/results.json).  
+**Sample:** Sample A and Sample E, saved as [08-human-files/sample.json](08-human-files/sample.json).
 
 ### The question
 
@@ -729,6 +730,12 @@ If YAML or XML is several times slower or much larger than JSON, it stays a **fi
 ### What this experiment cannot tell us
 
 - Whether your operators prefer YAML in the editor (that is a people question)
+
+### What we found (2026-08-17)
+
+YAML and XML are several times slower than JSON. They stay **files**. Convert once at start.
+
+On Sample A: Go YAML is about 38× slower than `goccy/go-json` (201 µs vs 5.3 µs). Swift YAML and XML are about 8× slower than `IkigaJSON`. C# `YamlDotNet` is about 9× slower than `System.Text.Json`. TOML is closer (Go about 4×; Swift about 4×) and a bit larger. XML is much larger (C# 1258 vs 588 bytes).
 
 ---
 
@@ -1159,6 +1166,15 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Folder:** [07-write-once-read-many](07-write-once-read-many/)
 - **Finding:** In C++, Cap’n Proto reads cheaper than FlatBuffers on Sample A; on a 512-number list, protobuf write is much more expensive than Cap’n Proto. Python FlatBuffers write is the Python builder, not the format. `rkyv` is faster than `prost` here, but the clock still builds a full value.
 - **What this does not answer:** Time to touch two fields only; safety of an unchecked buffer; official libprotobuf in C++; Java (no FlatBuffers client in the suite).
+
+---
+
+## After Experiment 8
+
+- **Date:** 2026-08-17
+- **Folder:** [08-human-files](08-human-files/)
+- **Finding:** YAML is many times slower than JSON. XML is larger. They stay files people edit. Convert to JSON or Protocol Buffers when the process starts.
+- **What this does not answer:** Whether operators prefer YAML in the editor; Python/Java/JS YAML (not registered next to JSON in those harnesses).
 
 ---
 
