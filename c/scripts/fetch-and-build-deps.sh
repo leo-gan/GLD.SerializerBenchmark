@@ -38,6 +38,7 @@ download libcbor "https://github.com/PJK/libcbor/archive/refs/tags/v0.11.0.tar.g
 download nanopb "https://github.com/nanopb/nanopb/archive/refs/tags/0.4.9.tar.gz"
 download zcbor "https://github.com/NordicSemiconductor/zcbor/archive/refs/heads/main.tar.gz"
 download flatcc "https://github.com/dvidelabs/flatcc/archive/refs/tags/v0.6.1.tar.gz"
+download libyaml "https://github.com/yaml/libyaml/archive/refs/tags/0.2.5.tar.gz"
 download protobuf-c "https://github.com/protobuf-c/protobuf-c/archive/refs/tags/v1.5.0.tar.gz"
 download avro "https://github.com/apache/avro/archive/refs/tags/release-1.11.3.tar.gz"
 download mongo-c-driver "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/1.27.5.tar.gz"

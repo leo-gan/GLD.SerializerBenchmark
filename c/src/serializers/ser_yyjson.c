@@ -188,6 +188,47 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
     return err;
 }
 
+static int ser_fp(const test_fixture_t *fx, FILE *f, size_t *ol) {
+    yyw c = {0};
+    c.doc = yyjson_mut_doc_new(NULL);
+    if (!c.doc) return -1;
+    v2_writer_t w = {
+        .ctx = &c, .begin_map = w_begin_map, .end_map = w_end_map,
+        .begin_array = w_begin_array, .end_array = w_end_array,
+        .key = w_key, .put_bool = w_bool, .put_i64 = w_i64, .put_f64 = w_f64, .put_str = w_str,
+    };
+    if (v2_write_fixture(fx, &w) != 0) { yyjson_mut_doc_free(c.doc); return -1; }
+    size_t len = 0;
+    if (!yyjson_mut_write_fp(f, c.doc, 0, NULL, NULL)) {
+        yyjson_mut_doc_free(c.doc);
+        return -1;
+    }
+    yyjson_mut_doc_free(c.doc);
+    long pos = ftell(f);
+    if (ol) *ol = pos > 0 ? (size_t)pos : 0;
+    return 0;
+}
+
+static int de_fp(FILE *f, test_fixture_t *out, test_data_kind_t kind) {
+    yyjson_read_err err;
+    yyjson_doc *doc = yyjson_read_fp(f, 0, NULL, &err);
+    if (!doc) return -1;
+    yyr rc = {0};
+    rc.stack[0] = yyjson_doc_get_root(doc);
+    rc.sp = 1;
+    v2_reader_t r = {
+        .ctx = &rc, .get_bool = r_get_bool, .get_i64 = r_get_i64, .get_f64 = r_get_f64,
+        .get_str = r_get_str, .enter_object = r_enter_object, .leave_object = r_leave_object,
+        .enter_array = r_enter_array, .leave_array = r_leave_array,
+        .enter_elem = r_enter_elem, .leave_elem = r_leave_elem,
+    };
+    int rc2 = v2_read_fixture(kind, out, &r);
+    yyjson_doc_free(doc);
+    return rc2;
+}
+
 void bench_register_yyjson(serializer_t *o, int *c) {
     BENCH_ADD(o, c, "yyjson", "0.10.0", "json", prep, ser, de, fidelity_fx);
+    o[*c - 1].serialize_fp = ser_fp;
+    o[*c - 1].deserialize_fp = de_fp;
 }

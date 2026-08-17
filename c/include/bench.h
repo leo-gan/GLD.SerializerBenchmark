@@ -108,6 +108,9 @@ typedef struct {
     int (*serialize)(const test_fixture_t *fx, uint8_t *buf, size_t buf_cap, size_t *out_len);
     int (*deserialize)(const uint8_t *buf, size_t len, test_fixture_t *out_fx, test_data_kind_t kind);
     bool (*fidelity)(const test_fixture_t *a, const test_fixture_t *b);
+    /* Optional native FILE* path. NULL → adapted encode-then-fwrite. */
+    int (*serialize_fp)(const test_fixture_t *fx, FILE *f, size_t *out_len);
+    int (*deserialize_fp)(FILE *f, test_fixture_t *out_fx, test_data_kind_t kind);
 } serializer_t;
 
 #ifdef __cplusplus
@@ -168,6 +171,7 @@ void bench_register_protobuf_google(serializer_t *out, int *count);
 #endif
 void bench_register_flatcc(serializer_t *out, int *count);
 void bench_register_avro_c(serializer_t *out, int *count);
+void bench_register_yaml(serializer_t *out, int *count);
 void bench_register_zcbor(serializer_t *out, int *count);
 
 int bench_stream_write_all(const uint8_t *buf, size_t len);

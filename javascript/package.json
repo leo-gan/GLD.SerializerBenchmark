@@ -31,6 +31,7 @@
     "fast-json-stringify": "^6.0.0",
     "flatbuffers": "^24.12.23",
     "google-protobuf": "^3.21.4",
+    "js-yaml": "^4.3.1",
     "msgpackr": "^1.11.0",
     "protobufjs": "^7.4.0"
   },

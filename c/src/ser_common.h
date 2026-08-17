@@ -269,6 +269,8 @@ int bench_tinycbor_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_
     (out)[*(count)].serialize = (ser); \
     (out)[*(count)].deserialize = (de); \
     (out)[*(count)].fidelity = (fid); \
+    (out)[*(count)].serialize_fp = NULL; \
+    (out)[*(count)].deserialize_fp = NULL; \
     (*(count))++; \
 } while (0)
 

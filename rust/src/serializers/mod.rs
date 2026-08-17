@@ -37,6 +37,7 @@ mod direct;
 mod json;
 mod kinded;
 mod prost_ser;
+mod yaml;
 
 use avro_ser::AvroFastSer;
 use binary_serde::{
@@ -45,6 +46,7 @@ use binary_serde::{
 use direct::{MinicborDirect, NanoserdeSer, RkyvSer, SpeedySer};
 use json::{SerdeJson, SimdJson, SonicRs};
 use prost_ser::ProstSer;
+use yaml::SerdeYaml;
 
 #[inline]
 pub(crate) fn ver(crate_name: &str) -> &'static str {
@@ -159,6 +161,7 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(AvroFastSer::default()),
         Box::new(NanoserdeSer::default()),
         Box::new(SpeedySer::default()),
+        Box::new(SerdeYaml::default()),
     ]
 }
 

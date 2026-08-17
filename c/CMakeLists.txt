@@ -246,6 +246,28 @@ if(EXISTS ${TP_BUILD}/avro-c/src/libavro.a)
   message(STATUS "serializer: avro-c REAL")
 endif()
 
+if(EXISTS ${TP}/libyaml/src/api.c AND EXISTS ${TP}/libyaml/include/yaml.h)
+  list(APPEND BENCH_SOURCES
+    ${TP}/libyaml/src/api.c
+    ${TP}/libyaml/src/dumper.c
+    ${TP}/libyaml/src/emitter.c
+    ${TP}/libyaml/src/loader.c
+    ${TP}/libyaml/src/parser.c
+    ${TP}/libyaml/src/reader.c
+    ${TP}/libyaml/src/scanner.c
+    ${TP}/libyaml/src/writer.c
+    src/serializers/ser_yaml.c)
+  list(APPEND BENCH_INCLUDES ${TP}/libyaml/include)
+  add_compile_definitions(
+    HAS_LIBYAML=1
+    YAML_DECLARE_STATIC=1
+    YAML_VERSION_MAJOR=0
+    YAML_VERSION_MINOR=2
+    YAML_VERSION_PATCH=5
+    YAML_VERSION_STRING="0.2.5")
+  message(STATUS "serializer: libyaml REAL")
+endif()
+
 if(EXISTS ${TP}/zcbor/src/zcbor_encode.c)
   list(APPEND BENCH_SOURCES
     ${TP}/zcbor/src/zcbor_common.c
