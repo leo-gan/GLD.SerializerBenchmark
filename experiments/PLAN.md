@@ -192,7 +192,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 2 | **done** (2026-08-16, [PR #84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
 | 3 | **done** (2026-08-16, [PR #85](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/85)) | How much faster is a one-language library than a library other languages can read? |
 | 4 | **done** (2026-08-16, [PR #87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87)) | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
-| 5 | planned | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
+| 5 | **done** (2026-08-17) | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
 | 6 | planned | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
 | 7 | planned | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
 | 8 | planned | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
@@ -508,8 +508,9 @@ The plan said: if JSON overflows and a denser format still fits, leave JSON on t
 
 ## Experiment 5 — An event log: size and write time only
 
-**Status:** planned.  
-**Sample:** Sample D, one record, and 100 records in one write.
+**Status:** done for Python, Java, and Go (2026-08-17).  
+**Folder:** [05-event-log-formats](05-event-log-formats/). Combined page: [results.md](05-event-log-formats/results.md). Combined JSON: [results.json](05-event-log-formats/results.json).  
+**Sample:** Sample D, one record and 100 records, saved as [05-event-log-formats/sample.json](05-event-log-formats/sample.json).
 
 ### The question
 
@@ -558,6 +559,18 @@ This experiment **plans disks and CPU** for a format you already chose because o
 - Whether an old reader can read a new field
 - How far the log reader falls behind
 - Whether two languages write the exact same bytes (each language has its own runner)
+
+### What we found (2026-08-17)
+
+On Sample D, Avro and Protocol Buffers write about **half** the bytes of JSON (about 105 and 123 versus 257). Times are not one contest.
+
+| Language | Not clearly slower (1 record) | Size of that row | At 100 records |
+|----------|-------------------------------|------------------|----------------|
+| Python | `orjson` (2.78 µs, 257 B) | JSON | `protobuf` leads; Avro is much slower |
+| Java | `protobuf` (48.5 µs, 123 B) | protobuf | still `protobuf` |
+| Go | `hamba/avro` (2.08 µs, 107 B) | Avro | still `hamba/avro`; `linkedin/goavro` is slower |
+
+Use the size cut in the disk budget. Still pick Avro vs Protocol Buffers on process grounds. Inside Avro, Go’s two libraries are not the same speed.
 
 ---
 
@@ -913,7 +926,7 @@ The plan said: if Jackson JSON and Jackson MessagePack are close, but Jackson JS
 
 ## Experiment 13 — Is the ranking an accident?
 
-**Status:** done for all nine languages (2026-08-17). This is the researcher’s experiment. Builders should still read the conclusion.  
+**Status:** done for all nine languages (2026-08-17, [PR #90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)). This is the researcher’s experiment. Builders should still read the conclusion.  
 **Folder:** [13-ranking-accident](13-ranking-accident/). Combined page: [results.md](13-ranking-accident/results.md). Combined JSON: [results.json](13-ranking-accident/results.json).  
 **Sample:** Samples A–E, 1 and 100 records, saved as [13-ranking-accident/sample.json](13-ranking-accident/sample.json).
 
@@ -1096,11 +1109,23 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 ## After Experiment 13
 
 - **Date:** 2026-08-17
+- **PR:** [#90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)
 - **Sample:** [13-ranking-accident/sample.json](13-ranking-accident/sample.json) (A–E, 1 and 100 records)
 - **Folder:** [13-ranking-accident](13-ranking-accident/) · [combined page](13-ranking-accident/results.md) · [combined JSON](13-ranking-accident/results.json)
 - **Finding:** Python `orjson` stays first on every sample and both N; about 5.3× faster than `json` on Sample A under every stall rule we tried. JavaScript, C, Rust, and Swift keep one first place at N = 1. Go, Java, C++, and C# flip when the sample changes. 1 vs 100 flips in Go, Swift, and some other cells. Quote the sample and N.
 - **What this changes about Experiment 10:** We already have the 1-vs-100 named-JSON preview. Experiment 10 should still ask the same question for mixed formats (JSON / MessagePack / Protocol Buffers), not only JSON.
 - **What this does not answer:** Another processor; shuffled vs fixed order; three evenings; two library versions.
+
+---
+
+## After Experiment 5
+
+- **Date:** 2026-08-17
+- **Sample:** [05-event-log-formats/sample.json](05-event-log-formats/sample.json) (Sample D, 1 and 100)
+- **Folder:** [05-event-log-formats](05-event-log-formats/) · [combined page](05-event-log-formats/results.md) · [combined JSON](05-event-log-formats/results.json)
+- **Finding:** Avro and Protocol Buffers are about half the bytes of JSON on this event. In Python, `orjson` is fastest at N = 1; Avro is smallest and much slower. At N = 100, Protocol Buffers leads. In Java, `protobuf` is fastest at both N. In Go, `hamba/avro` is fastest at both N; the other Avro library is slower. Use the size cut in the disk budget. Still pick the format on process grounds.
+- **What this changes about Experiment 10:** The 1-vs-100 flip is real for Python on this event (`orjson` → `protobuf`). Keep Experiment 10.
+- **What this does not answer:** Old reader vs new field; lag of the log reader; same bytes in two languages; C# / Rust / JS Avro rows (not in this run).
 
 ---
 
