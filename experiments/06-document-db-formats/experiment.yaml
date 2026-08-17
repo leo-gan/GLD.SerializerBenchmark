@@ -1,0 +1,76 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 06-document-db-formats
+title: Do BSON, Smile, and Ion beat JSON and MessagePack?
+question: On one nested order, do BSON, Smile, and Ion win a write-and-read contest against JSON and MessagePack?
+
+sample:
+  kind: document
+  records_per_write: 1
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON — Jackson}
+      - {name: jackson-cbor, writes_named_fields: true, role: CBOR — Jackson}
+      - {name: jackson-smile, writes_named_fields: true, role: Smile — Jackson}
+      - {name: ion, writes_named_fields: true, role: Ion — Jackson}
+      - {name: bson, writes_named_fields: true, role: BSON}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack — Jackson}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: JSON.stringify, writes_named_fields: true, role: JSON}
+      - {name: bson, writes_named_fields: true, role: BSON}
+      - {name: msgpackr, writes_named_fields: true, role: MessagePack}
+
+  - id: go
+    enabled: true
+    libraries:
+      - {name: goccy/go-json, writes_named_fields: true, role: JSON — Experiment 1}
+      - {name: mongo-bson, writes_named_fields: true, role: BSON}
+      - {name: vmihailenco/msgpack, writes_named_fields: true, role: MessagePack}
+
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: sonic-rs, writes_named_fields: true, role: JSON — Experiment 1}
+      - {name: bson, writes_named_fields: true, role: BSON}
+      - {name: rmp-serde, writes_named_fields: true, role: MessagePack}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: yyjson, writes_named_fields: true, role: JSON — Experiment 1}
+      - {name: libbson, writes_named_fields: true, role: BSON}
+      - {name: mpack, writes_named_fields: true, role: MessagePack}

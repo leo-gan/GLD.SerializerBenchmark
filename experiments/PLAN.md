@@ -193,7 +193,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 3 | **done** (2026-08-16, [PR #85](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/85)) | How much faster is a one-language library than a library other languages can read? |
 | 4 | **done** (2026-08-16, [PR #87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87)) | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
 | 5 | **done** (2026-08-17) | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
-| 6 | planned | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
+| 6 | **done** (2026-08-17) | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
 | 7 | planned | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
 | 8 | planned | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
 | 9 | planned | After gzip or zstd, does JSON stay larger than binary? |
@@ -576,8 +576,9 @@ Use the size cut in the disk budget. Still pick Avro vs Protocol Buffers on proc
 
 ## Experiment 6 — Document databases: BSON, Smile, Ion
 
-**Status:** planned.  
-**Sample:** Sample A, one record.
+**Status:** done for Java, JavaScript, Go, Rust, and C (2026-08-17).  
+**Folder:** [06-document-db-formats](06-document-db-formats/). Combined page: [results.md](06-document-db-formats/results.md). Combined JSON: [results.json](06-document-db-formats/results.json).  
+**Sample:** Sample A, one record, saved as [06-document-db-formats/sample.json](06-document-db-formats/sample.json).
 
 ### The question
 
@@ -618,6 +619,12 @@ This experiment can share a run with Experiment 12 on Java.
 
 - Time to skip one field in a large stored record
 - MongoDB disk layout or Elasticsearch index cost
+
+### What we found (2026-08-17)
+
+BSON **loses** a full write-and-read. It is larger and slower than MessagePack in Java, JavaScript, Go, Rust, and C (517–577 bytes versus 317–397). Keep BSON for Mongo.
+
+In Java, Smile is not clearly slower than Jackson JSON and is smaller (233 vs 440). Ion is slowest. Smile is a fair format inside a Jackson group of services, not on a public website.
 
 ---
 
@@ -1126,6 +1133,16 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Finding:** Avro and Protocol Buffers are about half the bytes of JSON on this event. In Python, `orjson` is fastest at N = 1; Avro is smallest and much slower. At N = 100, Protocol Buffers leads. In Java, `protobuf` is fastest at both N. In Go, `hamba/avro` is fastest at both N; the other Avro library is slower. Use the size cut in the disk budget. Still pick the format on process grounds.
 - **What this changes about Experiment 10:** The 1-vs-100 flip is real for Python on this event (`orjson` → `protobuf`). Keep Experiment 10.
 - **What this does not answer:** Old reader vs new field; lag of the log reader; same bytes in two languages; C# / Rust / JS Avro rows (not in this run).
+
+---
+
+## After Experiment 6
+
+- **Date:** 2026-08-17
+- **Sample:** [06-document-db-formats/sample.json](06-document-db-formats/sample.json) (Sample A)
+- **Folder:** [06-document-db-formats](06-document-db-formats/) · [combined page](06-document-db-formats/results.md)
+- **Finding:** BSON is larger and slower than MessagePack on a full write-and-read. Do not pick it for an ordinary service call. Jackson Smile is smaller than Jackson JSON and similar in time. Ion is slowest.
+- **What this does not answer:** Time to skip one field; Mongo disk layout; Python and C# BSON (not in the suite).
 
 ---
 
