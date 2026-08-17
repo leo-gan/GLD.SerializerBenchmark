@@ -1,0 +1,127 @@
+{
+  "about": "This is the shared 08-human-files record (['document', 'strings']). It was built from experiment.yaml with the same builder and seed as the benchmark. Do not edit by hand. If experiment.yaml changes, run python/save_sample.py again.",
+  "experiment": "08-human-files",
+  "config": "experiments/08-human-files/experiment.yaml",
+  "builder": "python/src/benchmark/data_v2/generator.py",
+  "cells": [
+    {
+      "kind": "document",
+      "settings": {
+        "children": 8,
+        "fields_per_child": 3,
+        "max_depth": 2,
+        "string_len": {
+          "min": 3,
+          "max": 12
+        }
+      },
+      "settings_hash": "c4a54cdecc67",
+      "how_many_records": 1,
+      "seed": 42,
+      "records": [
+        {
+          "id": "btimcpxm",
+          "status": 4,
+          "meta": {
+            "region": "al",
+            "version": 3
+          },
+          "items": [
+            {
+              "sku": "ytgl",
+              "qty": 10,
+              "price_minor": 55613
+            },
+            {
+              "sku": "sdwkhokqmf",
+              "qty": 38,
+              "price_minor": 2461
+            },
+            {
+              "sku": "gojhtifpuep",
+              "qty": 97,
+              "price_minor": 90854
+            },
+            {
+              "sku": "zia",
+              "qty": 79,
+              "price_minor": 67315
+            },
+            {
+              "sku": "pnjt",
+              "qty": 61,
+              "price_minor": 32619
+            },
+            {
+              "sku": "tftjldmqrott",
+              "qty": 54,
+              "price_minor": 90365
+            },
+            {
+              "sku": "uciperj",
+              "qty": 78,
+              "price_minor": 60676
+            },
+            {
+              "sku": "eheam",
+              "qty": 39,
+              "price_minor": 80173
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "strings",
+      "settings": {
+        "count": 32,
+        "string_len": {
+          "min": 3,
+          "max": 16
+        },
+        "duplication": 0.1
+      },
+      "settings_hash": "68ff6ad99f20",
+      "how_many_records": 1,
+      "seed": 42,
+      "records": [
+        {
+          "items": [
+            "onnmcmdfqriecps",
+            "nbfhfgtn",
+            "oronfndvtdn",
+            "efeupquqezcr",
+            "gssadmn",
+            "ufjfax",
+            "tbbakcpsbpfnysl",
+            "pudhprco",
+            "zkee",
+            "bpxyjtkrfkb",
+            "rkmhpiat",
+            "ninrvvceyoek",
+            "lgiuthadhdy",
+            "pudhprco",
+            "sryvhceinkfhwqf",
+            "nvximx",
+            "zmfvpgl",
+            "uifalrypxduedjn",
+            "xkvlsmob",
+            "gbipzp",
+            "sninhnufxol",
+            "jexfvv",
+            "hkxxclrwrdno",
+            "bpxyjtkrfkb",
+            "dsh",
+            "sqzgakfx",
+            "hchwgnembavdop",
+            "nrcnmdrbcgdrxw",
+            "pifpefppirh",
+            "yuiv",
+            "riq",
+            "hrxskgubnexas"
+          ]
+        }
+      ]
+    }
+  ]
+}

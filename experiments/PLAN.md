@@ -195,10 +195,10 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 5 | **done** (2026-08-17) | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
 | 6 | **done** (2026-08-17) | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
 | 7 | **done** (2026-08-17) | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
-| 8 | planned | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
-| 9 | planned | After gzip or zstd, does JSON stay larger than binary? |
-| 10 | planned | Does the winner at 1 record stay the winner at 100 records? |
-| 11 | planned | When we write as if to a file, does the ranking change? |
+| 8 | **done** (2026-08-17) | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
+| 9 | **done** (2026-08-17, Python only) | After gzip or zstd, does JSON stay larger than binary? |
+| 10 | **done** (2026-08-17) | Does the winner at 1 record stay the winner at 100 records? |
+| 11 | **done** (2026-08-17) | When we write as if to a file, does the ranking change? |
 | 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
 | 13 | **done** (2026-08-17, [PR #90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)) | Do Experiment 1 ranks stay the same if we change the sample or the cleaning rule? |
 
@@ -696,8 +696,9 @@ In **C++** on Sample A, FlatBuffers writes fastest (0.60 µs); Cap’n Proto **r
 
 ## Experiment 8 — Files people edit are not a request path
 
-**Status:** planned.  
-**Sample:** Sample A and Sample E.
+**Status:** done for Go, Swift, and C# (2026-08-17).  
+**Folder:** [08-human-files](08-human-files/). Combined page: [results.md](08-human-files/results.md). Combined JSON: [results.json](08-human-files/results.json).  
+**Sample:** Sample A and Sample E, saved as [08-human-files/sample.json](08-human-files/sample.json).
 
 ### The question
 
@@ -730,12 +731,19 @@ If YAML or XML is several times slower or much larger than JSON, it stays a **fi
 
 - Whether your operators prefer YAML in the editor (that is a people question)
 
+### What we found (2026-08-17)
+
+YAML and XML are several times slower than JSON. They stay **files**. Convert once at start.
+
+On Sample A: Go YAML is about 38× slower than `goccy/go-json` (201 µs vs 5.3 µs). Swift YAML and XML are about 8× slower than `IkigaJSON`. C# `YamlDotNet` is about 9× slower than `System.Text.Json`. TOML is closer (Go about 4×; Swift about 4×) and a bit larger. XML is much larger (C# 1258 vs 588 bytes).
+
 ---
 
 ## Experiment 9 — “Just turn compression on”
 
-**Status:** planned.  
-**Sample:** Sample E (repeated words), Sample C (numbers), Sample B (tiny record).
+**Status:** done for Python (2026-08-17). Other languages do not record gzip/zstd size.  
+**Folder:** [09-compression-size](09-compression-size/). Combined page: [results.md](09-compression-size/results.md). Combined JSON: [results.json](09-compression-size/results.json).  
+**Sample:** Samples E, C (128 numbers), and B, saved as [09-compression-size/sample.json](09-compression-size/sample.json).
 
 ### The question
 
@@ -782,12 +790,25 @@ The runner can record **size after gzip** and **size after zstd** once per sampl
 - How long compression itself takes (we record **size**, once, not compress time)
 - How encryption and HTTP/2 stack with the compressor
 
+### What we found (2026-08-17)
+
+Python only (the only runner that writes gzip/zstd size).
+
+| Sample | JSON raw | JSON gzip | protobuf raw | protobuf gzip |
+|--------|----------|-----------|--------------|---------------|
+| E words | 410 | 270 | 367 | 266 |
+| C 128 numbers | 2407 | 1317 | 1061 | 1080 |
+| B tiny | 168 | 138 | 50 | 71 |
+
+On words, gzip pulls JSON next to protobuf (270 vs 266). On numbers, the format still matters. On the tiny record, gzip **enlarges** protobuf (50 → 71) and barely shrinks JSON. Do not compress chatty control calls.
+
 ---
 
 ## Experiment 10 — One record versus one hundred
 
-**Status:** planned.  
-**Sample:** Sample B and Sample D, once with 1 record and once with 100 records in the same write.
+**Status:** done for all nine languages (2026-08-17).  
+**Folder:** [10-one-vs-hundred](10-one-vs-hundred/). Combined page: [results.md](10-one-vs-hundred/results.md). Combined JSON: [results.json](10-one-vs-hundred/results.json).  
+**Sample:** Sample B and Sample D, 1 and 100 records, saved as [10-one-vs-hundred/sample.json](10-one-vs-hundred/sample.json).
 
 ### The question
 
@@ -816,12 +837,23 @@ The project already measures 1 and 100. This experiment is how we **read** those
 
 - The best batch size for *your* log system (try several sizes in a load test)
 
+### What we found (2026-08-17)
+
+The name at N = 1 does **not** always stay at N = 100.
+
+Flips: Python B (`orjson` → `msgspec-msgpack`), Python D (`orjson` → `protobuf`), Go D (`protobuf` → `goccy/go-json`), JavaScript D (`JSON.stringify` → `msgpackr`), Rust D (`rmp-serde` → `sonic-rs`), C B (`protobuf-c` → `protobuf-wire`), C++ D (`protobuf-wire` → `msgpack`).
+
+Stays: Go B, Java B and D, JavaScript B, Rust B, C D, C++ B, C# both, Swift both.
+
+Quote the number of records that matches the product.
+
 ---
 
 ## Experiment 11 — Writing into memory versus writing as if to a file
 
-**Status:** planned.  
-**Sample:** Sample A or Sample B.
+**Status:** done for Go, Java, and C++ (2026-08-17).  
+**Folder:** [11-memory-vs-stream](11-memory-vs-stream/). Combined page: [results.md](11-memory-vs-stream/results.md). Combined JSON: [results.json](11-memory-vs-stream/results.json).  
+**Sample:** Sample A, saved as [11-memory-vs-stream/sample.json](11-memory-vs-stream/sample.json).
 
 ### The question
 
@@ -862,6 +894,16 @@ Only treat **real** rows as evidence for a file or socket. If the product is a c
 
 - Reading a multi-gigabyte file a little at a time (our samples are small)
 - How the operating system treats a real socket
+
+### What we found (2026-08-17)
+
+Only treat **real** stream rows as file/socket evidence.
+
+- **Go:** among *real* streams, `goccy/go-json` stays first. `protobuf` is fastest on the stream column but that path is **copied**.
+- **Java:** `jsoniter` is fastest in memory; its stream path is **copied**. Among real streams, `jackson` is first.
+- **C++:** `protobuf-wire` is fastest in memory; its stream path is **copied**. Among real streams, `msgpack` is first.
+
+A copied stream that matches in-memory is not a scandal. Claiming it as writing-as-you-go is.
 
 ---
 
@@ -1159,6 +1201,77 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Folder:** [07-write-once-read-many](07-write-once-read-many/)
 - **Finding:** In C++, Cap’n Proto reads cheaper than FlatBuffers on Sample A; on a 512-number list, protobuf write is much more expensive than Cap’n Proto. Python FlatBuffers write is the Python builder, not the format. `rkyv` is faster than `prost` here, but the clock still builds a full value.
 - **What this does not answer:** Time to touch two fields only; safety of an unchecked buffer; official libprotobuf in C++; Java (no FlatBuffers client in the suite).
+
+---
+
+## After Experiment 8
+
+- **Date:** 2026-08-17
+- **Folder:** [08-human-files](08-human-files/)
+- **Finding:** YAML is many times slower than JSON. XML is larger. They stay files people edit. Convert to JSON or Protocol Buffers when the process starts.
+- **What this does not answer:** Whether operators prefer YAML in the editor; Python/Java/JS YAML (not registered next to JSON in those harnesses).
+
+---
+
+## After Experiment 9
+
+- **Date:** 2026-08-17
+- **Folder:** [09-compression-size](09-compression-size/)
+- **Finding:** On text (Sample E), gzip makes JSON almost as small as Protocol Buffers. On numbers (Sample C), the gap survives. On a tiny record, gzip can make binary *larger*. Do not leave JSON for size on text-heavy bodies if HTTP already compresses; do not compress chatty control calls.
+- **What this does not answer:** Compress time; other languages (no SizeGzip column). Fix: add one-shot gzip/zstd of written bytes in each runner.
+
+---
+
+## After Experiment 10
+
+- **Date:** 2026-08-17
+- **Folder:** [10-one-vs-hundred](10-one-vs-hundred/)
+- **Finding:** Winner at 1 often loses at 100 (Python, and several other language/sample cells). C# and Swift stay put on these two samples. Quote N.
+- **What this does not answer:** The best batch size for your log system.
+
+---
+
+## After Experiment 11
+
+- **Date:** 2026-08-17
+- **Folder:** [11-memory-vs-stream](11-memory-vs-stream/)
+- **Finding:** Copied stream rows can hide a rank change. Among *real* streams, Java’s first place moves from `jsoniter` to `jackson`, and C++’s from `protobuf-wire` to `msgpack`. Go’s real-stream first place stays `goccy/go-json`.
+- **What this does not answer:** Multi-gigabyte files; a real OS socket; JavaScript (no stream path); C/Swift (copied only).
+
+---
+
+## Not covered
+
+These are languages or measurements the **planned** experiments asked for, or that a reader would reasonably expect, that this laboratory **did not run** or **cannot measure**. Each row has a serious reason and a concrete fix.
+
+| Experiment | What is not covered | Why | How to fix it |
+|------------|---------------------|-----|----------------|
+| 4 | C size curve | C sizes do not grow with the sensor list on this machine (the runner is not writing the growing list on the wire) | Fix the C telemetry encode path so size scales with `points`; re-run Experiment 4 |
+| 4 | Flash size, battery, radio compression | Out of suite scope | Measure on the device / radio |
+| 5 | C#, Rust, JS, C, C++, Swift Avro | The plan named Java / Go / Python as the Kafka/event trio. Those other languages *do* have Avro rows (`Apache.Avro`, `serde_avro_fast`, `avsc`, `avro-c`, `avro`, `SwiftAvroCore`) | Add them to `05-event-log-formats/experiment.yaml` and re-run |
+| 5 | Old reader vs new field; same bytes in two languages | One frozen description per run; each language has its own runner | A separate compatibility test of the `.avsc` / `.proto` |
+| 6 | Python BSON | No BSON library is registered in the Python harness | Add a `bson` / PyMongo codec and list it in Experiment 6 |
+| 6 | C# BSON | No BSON writer is registered in C# | Add MongoDB.Bson (or similar) to the C# harness |
+| 6 | Swift BSON | `SwiftBSON` exists but was not on the plan’s BSON list | Add `SwiftBSON` to Experiment 6 |
+| 6 | Time to skip one field | The clock always writes and reads the **whole** sample | A custom skip-one-field clock |
+| 7 | Java FlatBuffers / Cap’n Proto | No Java client for those formats in the suite | Add Java FlatBuffers / Cap’n Proto |
+| 7 | Official `libprotobuf` in C++ | The official library did not register (`setup-protobuf-sysroot.sh` not applied) | Run `cpp/scripts/setup-protobuf-sysroot.sh` and re-run |
+| 7 | C `flatcc`, Swift `FlatBuffers` / `CapnProto` | They exist; the plan listed C++ / C# / JS / Python / Rust | Add them to Experiment 7 |
+| 7 | Time to touch two fields only | The clock still builds a full value so we can check information (especially `rkyv`) | A custom two-field clock |
+| 8 | Python, Java, JS, Rust, C, C++ YAML/TOML/XML | Those harnesses do not register a YAML/TOML/XML pair next to JSON (except extra C# XML we did not need) | Add a YAML writer to each harness and list it |
+| 9 | Go, Java, C++, C#, JS, Rust, C, Swift gzip/zstd **size** | Only the Python runner writes `SizeGzip` / `SizeZstd` | Add a one-shot gzip(6)/zstd(3) of the written bytes (not timed) in each runner, matching `python/src/benchmark/runner_v2.py` |
+| 9 | How long compression itself takes | We record compressed **size**, once | A timed compress experiment |
+| 10 | C# MessagePack | MessagePack-CSharp is not registered | Add MessagePack-CSharp to the C# harness |
+| 11 | JavaScript stream | JS has no distinct stream path | None without a new JS stream API |
+| 11 | C and Swift as stream evidence | Their stream rows are **copied** | Implement native stream write/read, or keep excluding them |
+| 11 | Real OS socket / multi-GB file | Samples are small; no socket | A socket / large-file test |
+| 13 | Shuffled vs fixed order | The runner always shuffles blocks | Add a `schedule: sequential` run mode |
+| 13 | Three separate evenings | One session on this machine | Re-run Experiment 13 on three days |
+| 13 | Two versions of the same library | We did not pin an old package | Pin `orjson` (and peers) to two versions and re-run |
+| 13 | Another processor | One computer | Repeat Experiment 13 on another CPU |
+| All | Cross-language write times | Clocks and memory systems differ | Never treat them as one contest. Size is the only roughly fair number, and only with the same field description |
+
+The first-wave path **1 → 2 → 3 → 4 → 12 → 13** is done. Experiments **5–11** are done for the languages the plan named and the suite can actually measure.
 
 ---
 

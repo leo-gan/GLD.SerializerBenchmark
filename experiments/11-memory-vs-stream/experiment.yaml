@@ -1,0 +1,62 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 11-memory-vs-stream
+title: Writing into memory versus writing as if to a file
+question: When the product writes to a file or socket, which libraries really write as they go, and does that change the ranking we saw in memory?
+
+sample:
+  kind: document
+  records_per_write: 1
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes, stream]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: go
+    enabled: true
+    libraries:
+      - {name: goccy/go-json, writes_named_fields: true, role: JSON}
+      - {name: encoding/json, writes_named_fields: true, role: JSON — stdlib}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+      - {name: vmihailenco/msgpack, writes_named_fields: true, role: MessagePack}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jsoniter, writes_named_fields: true, role: JSON}
+      - {name: jackson, writes_named_fields: true, role: JSON — common default}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: nlohmann_json, writes_named_fields: true, role: JSON}
+      - {name: simdjson, writes_named_fields: true, role: JSON — fast read}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — wire helper}
