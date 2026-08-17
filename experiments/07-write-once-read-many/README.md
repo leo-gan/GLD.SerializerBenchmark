@@ -10,15 +10,17 @@ Python FlatBuffers write uses a slow Python builder. Do not reject the *format* 
 
 | Language | Libraries |
 |----------|-----------|
-| C++ | `flatbuffers`, `capnproto`, `flexbuffers`, `protobuf-wire` |
+| C++ | `flatbuffers`, `capnproto`, `flexbuffers`, `protobuf-wire`, official `protobuf` |
 | C# | `FlatSharp`, `ZeroFormatter`, `MemoryPack`, `ProtoBuf` |
 | JavaScript | `flatbuffers`, `flexbuffers` |
 | Python | `flatbuffers`, `protobuf` |
 | Rust | `rkyv`, `prost` |
+| C | `flatcc`, `protobuf-wire` |
+| Swift | `FlatBuffers`, `CapnProto` |
 
-Official Google `libprotobuf` did not register in C++ on this machine. The C++ protobuf row is the in-tree wire helper.
+Official Google `libprotobuf` 3.12.4 now registers in C++ after `cpp/scripts/setup-protobuf-sysroot.sh`.
 
-**Not in this run:** Java (no FlatBuffers / Cap’n Proto client in the suite). C `flatcc` and Swift `FlatBuffers` / `CapnProto` exist but were not on the plan list. Add them to `experiment.yaml` to cover those languages.
+**Not in this run:** Java (no FlatBuffers / Cap’n Proto client in the suite).
 
 ## The samples (shared)
 

@@ -44,7 +44,8 @@ languages:
       - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
       - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}
       - {name: flexbuffers, writes_named_fields: true, role: FlexBuffers}
-      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — in-tree wire helper (official libprotobuf did not run)}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — in-tree wire helper}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers — official libprotobuf}
 
   - id: csharp
     enabled: true
