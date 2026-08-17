@@ -14,6 +14,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |----------|---------|--------|----------|---------|---------|------------|------------|
 | cpp | flatbuffers | — | protobuf | — | — | no | [cpp/results.md](cpp/results.md) |
 | csharp | ZeroFormatter | — | MemoryPack | — | — | no | [csharp/results.md](csharp/results.md) |
+| java | flatbuffers | — | flatbuffers | — | — | no | [java/results.md](java/results.md) |
 | javascript | flatbuffers | — | flatbuffers | — | — | no | [javascript/results.md](javascript/results.md) |
 | python | protobuf | — | protobuf | — | — | no | [python/results.md](python/results.md) |
 | rust | rkyv | — | rkyv | — | — | no | [rust/results.md](rust/results.md) |
@@ -28,6 +29,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | C (sensor) | protobuf | — | no |
 | csharp | A (order) | ZeroFormatter | — | no |
 | csharp | C (sensor) | MemoryPack | — | no |
+| java | A (order) | flatbuffers | — | no |
+| java | C (sensor) | flatbuffers | — | no |
 | javascript | A (order) | flatbuffers | — | no |
 | javascript | C (sensor) | flatbuffers | — | no |
 | python | A (order) | protobuf | — | no |
@@ -45,6 +48,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |----------|--------|--------------------|-----------|
 | cpp | ok | `flatbuffers` | — |
 | csharp | ok | `ZeroFormatter` | — |
+| java | ok | `flatbuffers` | `protobuf` |
 | javascript | ok | `flatbuffers` | — |
 | python | ok | `protobuf` | — |
 | rust | ok | `rkyv` | — |
@@ -94,6 +98,24 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | FlatSharp | 29.1 | 46.0 | 5588 | slower |
 | ZeroFormatter | 32.5 | 47.7 | 5520 | slower |
 | ProtoBuf | 35.9 | 57.4 | 6184 | slower |
+
+### java
+
+**A (order), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| flatbuffers | 24.7 | 18.1 | 416 | fastest |
+| protobuf | 16.7 | 41.4 | 155 | close |
+| capnproto | 51.9 | 36.3 | 376 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| flatbuffers | 25.7 | 20.9 | 4192 | fastest |
+| capnproto | 64.9 | 37.1 | 4184 | slower |
+| protobuf | 44.6 | 58.9 | 4128 | slower |
 
 ### javascript
 

@@ -6,6 +6,7 @@ If YAML or XML is several times slower or much larger than JSON, it stays a **fi
 
 ## Who we compare
 
+- Python / Java / JS / Rust / C / C++ / Go: YAML versus JSON
 - Go: `goccy/go-yaml`, `pelletier/go-toml` versus `goccy/go-json`
 - Swift: `Yams`, `TOML`, `XMLCoder` versus `IkigaJSON`
 - C#: `YamlDotNet`, `MS XmlSerializer` versus `System.Text.Json`

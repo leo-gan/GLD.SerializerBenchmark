@@ -12,6 +12,12 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Language | A order | B flat | C sensor | D event | E words | Same as A? | Full table |
 |----------|---------|--------|----------|---------|---------|------------|------------|
+| python | orjson | — | — | — | orjson | no | [python/results.md](python/results.md) |
+| java | jackson | — | — | — | jackson | no | [java/results.md](java/results.md) |
+| javascript | JSON.stringify | — | — | — | JSON.stringify | no | [javascript/results.md](javascript/results.md) |
+| rust | serde_json | — | — | — | serde_json | no | [rust/results.md](rust/results.md) |
+| c | yyjson | — | — | — | yyjson | no | [c/results.md](c/results.md) |
+| cpp | nlohmann_json | — | — | — | nlohmann_json | no | [cpp/results.md](cpp/results.md) |
 | go | goccy/go-json | — | — | — | goccy/go-json | no | [go/results.md](go/results.md) |
 | swift | IkigaJSON | — | — | — | IkigaJSON | no | [swift/results.md](swift/results.md) |
 | csharp | System.Text.Json | — | — | — | System.Text.Json | no | [csharp/results.md](csharp/results.md) |
@@ -20,6 +26,18 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Language | Sample | Fastest at 1 | Fastest at 100 | Same? |
 |----------|--------|--------------|----------------|-------|
+| python | A (order) | orjson | — | no |
+| python | E (words) | orjson | — | no |
+| java | A (order) | jackson | — | no |
+| java | E (words) | jackson | — | no |
+| javascript | A (order) | JSON.stringify | — | no |
+| javascript | E (words) | JSON.stringify | — | no |
+| rust | A (order) | serde_json | — | no |
+| rust | E (words) | serde_json | — | no |
+| c | A (order) | yyjson | — | no |
+| c | E (words) | yyjson | — | no |
+| cpp | A (order) | nlohmann_json | — | no |
+| cpp | E (words) | nlohmann_json | — | no |
 | go | A (order) | goccy/go-json | — | no |
 | go | E (words) | goccy/go-json | — | no |
 | swift | A (order) | IkigaJSON | — | no |
@@ -31,11 +49,113 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Language | Status | Not clearly slower | Small gap |
 |----------|--------|--------------------|-----------|
+| python | ok | `orjson` | — |
+| java | ok | `jackson` | — |
+| javascript | ok | `JSON.stringify` | — |
+| rust | ok | `serde_json` | — |
+| c | ok | `yyjson` | — |
+| cpp | ok | `nlohmann_json` | — |
 | go | ok | `goccy/go-json` | — |
 | swift | ok | `IkigaJSON` | — |
 | csharp | ok | `System.Text.Json` | `MS XmlSerializer` |
 
 ## In memory, by language and sample
+
+### python
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| orjson | 5.16 | 448 | fastest |
+| yaml | 1372 | 429 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| orjson | 3.32 | 410 | fastest |
+| yaml | 761 | 406 | slower |
+
+### java
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jackson | 88.9 | 440 | fastest |
+| jackson-yaml | 388 | 441 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jackson | 31.1 | 411 | fastest |
+| jackson-yaml | 149 | 471 | slower |
+
+### javascript
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| JSON.stringify | 8.69 | 448 | fastest |
+| js-yaml | 88.2 | 477 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| JSON.stringify | 5.24 | 411 | fastest |
+| js-yaml | 51.1 | 471 | slower |
+
+### rust
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde_json | 2.90 | 460 | fastest |
+| serde_yaml | 30.7 | 438 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde_json | 2.54 | 390 | fastest |
+| serde_yaml | 22.8 | 383 | slower |
+
+### c
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| yyjson | 5.97 | 460 | fastest |
+| libyaml | 32.4 | 461 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| yyjson | 3.76 | 387 | fastest |
+| libyaml | 18.6 | 447 | slower |
+
+### cpp
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| nlohmann_json | 12.6 | 458 | fastest |
+| yaml-cpp | 165 | 486 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| nlohmann_json | 8.33 | 411 | fastest |
+| yaml-cpp | 128 | 470 | slower |
 
 ### go
 

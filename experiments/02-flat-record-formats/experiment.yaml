@@ -108,7 +108,7 @@ languages:
       - {name: SpanJson, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
       - {name: Google.Protobuf, writes_named_fields: true, role: Protocol Buffers — Google library}
       - {name: ProtoBuf, writes_named_fields: true, role: Protocol Buffers — protobuf-net}
-      # MessagePack-CSharp is not registered in this suite.
+      - {name: MessagePack-CSharp, writes_named_fields: true, role: MessagePack}
 
   - id: swift
     enabled: true
