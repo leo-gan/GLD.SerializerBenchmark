@@ -1252,7 +1252,7 @@ These are languages or measurements the **planned** experiments asked for, or th
 |------------|---------------------|-----|----------------|
 | 4 | C size curve | **Fixed 2026-08-17** ([#96](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/96) + this re-run). C sizes now grow: JSON 226→9371 B from 8 to 512 numbers. | — |
 | 4 | Flash size, battery, radio compression | Out of suite scope | Measure on the device / radio |
-| 5 | C#, Rust, JS, C, C++, Swift Avro | The plan named Java / Go / Python as the Kafka/event trio. Those other languages *do* have Avro rows (`Apache.Avro`, `serde_avro_fast`, `avsc`, `avro-c`, `avro`, `SwiftAvroCore`) | Add them to `05-event-log-formats/experiment.yaml` and re-run |
+| 5 | C#, Rust, JS, C, C++, Swift Avro | **Fixed 2026-08-17.** All nine languages now have Avro / protobuf / JSON rows. | — |
 | 5 | Old reader vs new field; same bytes in two languages | One frozen description per run; each language has its own runner | A separate compatibility test of the `.avsc` / `.proto` |
 | 6 | Python BSON | No BSON library is registered in the Python harness | Add a `bson` / PyMongo codec and list it in Experiment 6 |
 | 6 | C# BSON | No BSON writer is registered in C# | Add MongoDB.Bson (or similar) to the C# harness |

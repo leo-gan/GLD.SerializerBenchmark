@@ -17,6 +17,12 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | python | ok | `orjson` | — | `orjson`, `protobuf`, `avro` | [python/results.md](python/results.md) |
 | java | ok | `protobuf` | — | `protobuf`, `avro` | [java/results.md](java/results.md) |
 | go | ok | `hamba/avro` | — | `hamba/avro`, `linkedin/goavro` | [go/results.md](go/results.md) |
+| csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `Apache.Avro` | [csharp/results.md](csharp/results.md) |
+| rust | ok | `serde_avro_fast`, `sonic-rs` | — | `serde_avro_fast` | [rust/results.md](rust/results.md) |
+| javascript | ok | `JSON.stringify` | — | `JSON.stringify`, `avsc` | [javascript/results.md](javascript/results.md) |
+| c | ok | `protobuf-wire` | — | `protobuf-wire` | [c/results.md](c/results.md) |
+| cpp | ok | `avro` | — | `avro` | [cpp/results.md](cpp/results.md) |
+| swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` | [swift/results.md](swift/results.md) |
 
 ## At a glance (100 records per write)
 
@@ -25,6 +31,12 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | python | ok | `protobuf` | — | `protobuf`, `avro` |
 | java | ok | `protobuf` | — | `protobuf`, `avro` |
 | go | ok | `hamba/avro` | — | `hamba/avro`, `linkedin/goavro` |
+| csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `Apache.Avro` |
+| rust | ok | `sonic-rs` | — | `sonic-rs`, `serde_avro_fast` |
+| javascript | ok | `JSON.stringify` | — | `JSON.stringify`, `protobufjs`, `avsc` |
+| c | ok | `protobuf-wire` | — | `protobuf-wire` |
+| cpp | ok | `avro` | — | `avro` |
+| swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` |
 
 ## In memory, by language
 
@@ -87,6 +99,116 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 | protobuf | 108 | 12477 | Protocol Buffers | slower |
 | linkedin/goavro | 145 | 10448 | Avro — maps | slower |
 | encoding/json | 328 | 25746 | JSON — ships with Go | slower |
+
+### csharp
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| SpanJson | 12.1 | 254 | JSON — Experiment 1 | fastest |
+| Google.Protobuf | 16.9 | 164 | Protocol Buffers | slower |
+| Apache.Avro | 37.3 | 140 | Avro | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| SpanJson | 113 | 25456 | JSON — Experiment 1 | fastest |
+| Google.Protobuf | 167 | 16636 | Protocol Buffers | slower |
+| Apache.Avro | 577 | 13932 | Avro | slower |
+
+### rust
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| serde_avro_fast | 0.83 | 96 | Avro | fastest |
+| sonic-rs | 0.83 | 258 | JSON — Experiment 1 | similar |
+| prost | 0.87 | 114 | Protocol Buffers | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| sonic-rs | 95.2 | 26978 | JSON — Experiment 1 | fastest |
+| serde_avro_fast | 105 | 10778 | Avro | slower |
+| prost | 112 | 12578 | Protocol Buffers | slower |
+
+### javascript
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| JSON.stringify | 5.89 | 257 | JSON | fastest |
+| avsc | 19.3 | 105 | Avro | slower |
+| protobufjs | 29.7 | 123 | Protocol Buffers | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| JSON.stringify | 225 | 25746 | JSON | fastest |
+| protobufjs | 336 | 12477 | Protocol Buffers | slower |
+| avsc | 608 | 10448 | Avro | slower |
+
+### c
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf-wire | 0.62 | 131 | Protocol Buffers — wire helper | fastest |
+| avro-c | 1.12 | 132 | Avro | slower |
+| yyjson | 2.36 | 265 | JSON — Experiment 1 | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf-wire | 64.2 | 12525 | Protocol Buffers — wire helper | fastest |
+| avro-c | 75.3 | 12625 | Avro | slower |
+| yyjson | 223 | 25925 | JSON — Experiment 1 | slower |
+
+### cpp
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| avro | 0.92 | 120 | Avro | fastest |
+| protobuf-wire | 1.43 | 138 | Protocol Buffers — wire helper | slower |
+| avro_c | 3.74 | 120 | Avro — C library from C++ | slower |
+| nlohmann_json | 5.64 | 272 | JSON | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| avro | 44.7 | 10165 | Avro | fastest |
+| protobuf-wire | 112 | 12183 | Protocol Buffers — wire helper | slower |
+| avro_c | 227 | 10165 | Avro — C library from C++ | slower |
+| nlohmann_json | 386 | 25463 | JSON | slower |
+
+### swift
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| SwiftProtobuf | 6.88 | 123 | Protocol Buffers | fastest |
+| IkigaJSON | 29.0 | 257 | JSON — Experiment 1 | slower |
+| SwiftAvroCore | 77.7 | 105 | Avro | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| SwiftProtobuf | 231 | 12477 | Protocol Buffers | fastest |
+| IkigaJSON | 1644 | 25746 | JSON — Experiment 1 | slower |
+| SwiftAvroCore | 5368 | 10448 | Avro | slower |
 
 ## What we saw
 

@@ -59,3 +59,46 @@ languages:
       - {name: hamba/avro, writes_named_fields: true, role: Avro — binds to structs}
       - {name: linkedin/goavro, writes_named_fields: true, role: Avro — maps, Kafka world}
       - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: csharp
+    enabled: true
+    libraries:
+      - {name: SpanJson, writes_named_fields: true, role: JSON — Experiment 1}
+      - {name: Apache.Avro, writes_named_fields: true, role: Avro}
+      - {name: Google.Protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: sonic-rs, writes_named_fields: true, role: JSON — Experiment 1}
+      - {name: serde_avro_fast, writes_named_fields: true, role: Avro}
+      - {name: prost, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: JSON.stringify, writes_named_fields: true, role: JSON}
+      - {name: avsc, writes_named_fields: true, role: Avro}
+      - {name: protobufjs, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: yyjson, writes_named_fields: true, role: JSON — Experiment 1}
+      - {name: avro-c, writes_named_fields: true, role: Avro}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — wire helper}
+
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: nlohmann_json, writes_named_fields: true, role: JSON}
+      - {name: avro, writes_named_fields: true, role: Avro}
+      - {name: avro_c, writes_named_fields: true, role: Avro — C library from C++}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — wire helper}
+
+  - id: swift
+    enabled: true
+    libraries:
+      - {name: IkigaJSON, writes_named_fields: true, role: JSON — Experiment 1}
+      - {name: SwiftAvroCore, writes_named_fields: true, role: Avro}
+      - {name: SwiftProtobuf, writes_named_fields: true, role: Protocol Buffers}
