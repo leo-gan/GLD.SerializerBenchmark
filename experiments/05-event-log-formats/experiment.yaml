@@ -1,0 +1,61 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 05-event-log-formats
+title: "An event log: size and write time only"
+question: On one event, how do Avro, Protocol Buffers, and JSON compare on size and write time?
+
+sample:
+  kind: event
+  records_per_write: [1, 100]
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes, stream]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: python
+    enabled: true
+    libraries:
+      - {name: orjson, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: avro, writes_named_fields: true, role: Avro}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON — common default}
+      - {name: avro, writes_named_fields: true, role: Avro}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: go
+    enabled: true
+    libraries:
+      - {name: sonic, writes_named_fields: true, role: JSON — fast writer}
+      - {name: encoding/json, writes_named_fields: true, role: JSON — ships with Go}
+      - {name: hamba/avro, writes_named_fields: true, role: Avro — binds to structs}
+      - {name: linkedin/goavro, writes_named_fields: true, role: Avro — maps, Kafka world}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
