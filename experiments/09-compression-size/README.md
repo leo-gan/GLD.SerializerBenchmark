@@ -4,13 +4,11 @@ The full argument is in [../PLAN.md](../PLAN.md) (Experiment 9). Edit **[`experi
 
 After gzip or zstd, does JSON stay larger than a dense binary format?
 
-**Only Python records size after gzip / zstd** in this suite. Other language CSVs have no `SizeGzip` column.
-
-**Fix:** add a one-shot gzip/zstd of the written bytes (not timed) to each language runner, matching `python/src/benchmark/runner_v2.py`.
+Every language runner now writes `SizeGzip` (and `SizeZstd` when an encoder is present).
 
 ## Who we compare
 
-Python: `orjson` / `json` versus `msgspec-msgpack` and `protobuf` on Sample E (words), Sample C (128 numbers), and Sample B (tiny).
+JSON versus MessagePack and Protocol Buffers on Sample E (words), Sample C (128 numbers), and Sample B (tiny). Times stay inside one language. Size after gzip is the cross-language number.
 
 ## How to run
 
