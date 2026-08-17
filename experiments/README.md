@@ -31,7 +31,7 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 | 6 | [06-document-db-formats](06-document-db-formats/) | **Done** | BSON, Smile, and Ion on one order-like record |
 | 7 | [07-write-once-read-many](07-write-once-read-many/) | **Done** | FlatBuffers and Cap’n Proto: write time versus read time |
 | 8 | [08-human-files](08-human-files/) | **Done** | YAML, TOML, and XML versus JSON |
-| 9 | [09-compression-size](09-compression-size/) | **Done** (Python) | Size after gzip or zstd |
+| 9 | [09-compression-size](09-compression-size/) | **Done** | Size after gzip or zstd |
 | 10 | [10-one-vs-hundred](10-one-vs-hundred/) | **Done** | One record versus one hundred |
 | 11 | [11-memory-vs-stream](11-memory-vs-stream/) | **Done** | Writing into memory versus writing as if to a file |
 | 12 | [12-format-vs-library](12-format-vs-library/) | **Done** | Is the difference the format, or the library? |

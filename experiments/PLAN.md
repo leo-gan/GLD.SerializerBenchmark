@@ -745,7 +745,7 @@ On Sample A: Go YAML is about 38× slower than `goccy/go-json` (201 µs vs 5.3 �
 
 ## Experiment 9 — “Just turn compression on”
 
-**Status:** done for Python (2026-08-17). Other languages do not record gzip/zstd size.  
+**Status:** done for all nine languages (2026-08-17). Wrapper [#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100) added `SizeGzip` / `SizeZstd`; this re-run filled the tables.  
 **Folder:** [09-compression-size](09-compression-size/). Combined page: [results.md](09-compression-size/results.md). Combined JSON: [results.json](09-compression-size/results.json).  
 **Sample:** Samples E, C (128 numbers), and B, saved as [09-compression-size/sample.json](09-compression-size/sample.json).
 
@@ -796,7 +796,7 @@ The runner can record **size after gzip** and **size after zstd** once per sampl
 
 ### What we found (2026-08-17)
 
-Python only (the only runner that writes gzip/zstd size).
+First run was Python only. After the runner fix ([#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100)) we ran the same three samples in all nine languages.
 
 | Sample | JSON raw | JSON gzip | protobuf raw | protobuf gzip |
 |--------|----------|-----------|--------------|---------------|
@@ -804,7 +804,7 @@ Python only (the only runner that writes gzip/zstd size).
 | C 128 numbers | 2407 | 1317 | 1061 | 1080 |
 | B tiny | 168 | 138 | 50 | 71 |
 
-On words, gzip pulls JSON next to protobuf (270 vs 266). On numbers, the format still matters. On the tiny record, gzip **enlarges** protobuf (50 → 71) and barely shrinks JSON. Do not compress chatty control calls.
+Python numbers above. The other eight languages tell the same story: on words, gzip pulls JSON next to protobuf (about 270–291 vs 256–278); on numbers the format still matters (JSON gzip ~1220–1335 vs protobuf ~1068–1141); on the tiny record gzip **enlarges** protobuf and barely shrinks JSON. C# `Google.Protobuf` is a larger envelope on words (492 → 386). Do not compress chatty control calls. Combined page: [09-compression-size/results.md](09-compression-size/results.md).
 
 ---
 
@@ -1222,7 +1222,7 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Date:** 2026-08-17
 - **Folder:** [09-compression-size](09-compression-size/)
 - **Finding:** On text (Sample E), gzip makes JSON almost as small as Protocol Buffers. On numbers (Sample C), the gap survives. On a tiny record, gzip can make binary *larger*. Do not leave JSON for size on text-heavy bodies if HTTP already compresses; do not compress chatty control calls.
-- **What this does not answer:** Compress time; other languages (no SizeGzip column). Fix: add one-shot gzip/zstd of written bytes in each runner.
+- **What this does not answer:** Compress time. Other languages had no `SizeGzip` column on the first run; that is fixed (wrapper [#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100), re-run 2026-08-17). The same three-sample story holds in Go, Java, JS, Rust, C, C++, C#, and Swift.
 
 ---
 
@@ -1263,7 +1263,7 @@ These are languages or measurements the **planned** experiments asked for, or th
 | 7 | C `flatcc`, Swift `FlatBuffers` / `CapnProto` | They exist; the plan listed C++ / C# / JS / Python / Rust | Add them to Experiment 7 |
 | 7 | Time to touch two fields only | The clock still builds a full value so we can check information (especially `rkyv`) | A custom two-field clock |
 | 8 | Python, Java, JS, Rust, C, C++ YAML/TOML/XML | Those harnesses do not register a YAML/TOML/XML pair next to JSON (except extra C# XML we did not need) | Add a YAML writer to each harness and list it |
-| 9 | Go, Java, C++, C#, JS, Rust, C, Swift gzip/zstd **size** | Only the Python runner writes `SizeGzip` / `SizeZstd` | Add a one-shot gzip(6)/zstd(3) of the written bytes (not timed) in each runner, matching `python/src/benchmark/runner_v2.py` |
+| 9 | Go, Java, C++, C#, JS, Rust, C, Swift gzip/zstd **size** | **Fixed 2026-08-17** ([#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100) + this re-run). Same story as Python in all nine languages. | — |
 | 9 | How long compression itself takes | We record compressed **size**, once | A timed compress experiment |
 | 10 | C# MessagePack | MessagePack-CSharp is not registered | Add MessagePack-CSharp to the C# harness |
 | 11 | JavaScript stream | JS has no distinct stream path | None without a new JS stream API |
@@ -1310,8 +1310,8 @@ We go **row by row**. A wrapper (harness) change is its **own PR**, then we re-r
 |------|------|------------------|
 | B1 | **C runner reads `type_config.points`** and raise `V2_MAX_POINTS` to 512 | **done** [#96](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/96) |
 | B2 | Re-run Experiment 4 in C (and keep Rust) | **this re-run** |
-| B3 | **One-shot gzip(6) / zstd(3) of written bytes** in Go, Java, JS, Rust, C, C++, C#, Swift CSV (`SizeGzip`, `SizeZstd`). Parser already accepts those columns. Not timed. gzip everywhere; zstd where the language already has an encoder (Go, Rust, C/C++/JS when libzstd or Node zstd is present). Java / C# / Swift leave `SizeZstd` empty. | **this wrapper** |
-| B4 | Re-run Experiment 9 in those languages | experiment, after B3 |
+| B3 | **One-shot gzip(6) / zstd(3) of written bytes** in Go, Java, JS, Rust, C, C++, C#, Swift CSV (`SizeGzip`, `SizeZstd`). Parser already accepts those columns. Not timed. gzip everywhere; zstd where the language already has an encoder (Go, Rust, C/C++/JS when libzstd or Node zstd is present). Java / C# / Swift leave `SizeZstd` empty. | **done** [#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100) |
+| B4 | Re-run Experiment 9 in those languages | **this re-run** |
 | B5 | Run `cpp/scripts/setup-protobuf-sysroot.sh` so official C++ `protobuf` registers; re-run Experiment 7 C++ | wrapper/env + experiment |
 
 ### Wrapper, only if small enough to finish cleanly
