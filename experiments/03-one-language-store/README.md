@@ -1,4 +1,4 @@
-# Experiment 3 — What do we pay to stay readable by other languages?
+# Experiment 3 — Is a one-language format worth the lock-in?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 3). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

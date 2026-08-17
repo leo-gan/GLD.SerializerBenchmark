@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 10-one-vs-hundred
-title: One record versus one hundred
-question: Does the library that wins at one record still win at one hundred records in a single write?
+title: Does one record rank the same as one hundred?
+question: Does the library that is fastest for one record stay fastest when we write one hundred records at once?
+story:
+  why: A web call is usually one body. A log shipper often writes many records at once. Some libraries have a large cost every time you call them. That cost vanishes in a batch.
+  example: One “get user” request versus a telemetry exporter that sends 100 readings in one write.
+  tradeoff: Quote the number of records that matches the product. A chart of 100 records is not evidence for a one-record call.
 
 sample:
   kind: [message, event]

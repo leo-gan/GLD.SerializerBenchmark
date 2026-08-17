@@ -58,6 +58,36 @@ def _load_yaml(path: Path) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def _sample_preview(folder: Path) -> list[dict]:
+    path = folder / "sample.json"
+    if not path.is_file():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    previews = []
+    cells = data.get("cells") if isinstance(data, dict) else None
+    if isinstance(cells, list):
+        for cell in cells[:4]:
+            if not isinstance(cell, dict):
+                continue
+            recs = cell.get("records") or []
+            if not recs:
+                continue
+            first = recs[0]
+            if isinstance(first, dict) and isinstance(first.get("items"), list) and len(first["items"]) > 2:
+                first = {**first, "items": first["items"][:2] + [{"_more": len(first["items"]) - 2}]}
+            previews.append(
+                {
+                    "kind": cell.get("kind"),
+                    "how_many": cell.get("how_many_records") or len(recs),
+                    "record": first,
+                }
+            )
+    return previews
+
+
 def _lang_status(results: dict | None, cfg: dict) -> list[dict]:
     out = []
     if results and isinstance(results.get("languages"), dict):
@@ -123,6 +153,8 @@ def collect_experiments(experiments_dir: Path) -> list[dict]:
                 "slug": slug,
                 "title": cfg.get("title") or cfg.get("question") or exp_id,
                 "question": cfg.get("question") or "",
+                "story": cfg.get("story") if isinstance(cfg.get("story"), dict) else {},
+                "sample_preview": _sample_preview(folder),
                 "has_results": bool(results),
                 "payload": f"experiments/{exp_id}.json.gz" if results else None,
                 "generated_at": (results or {}).get("generated_at"),

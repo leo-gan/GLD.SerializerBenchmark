@@ -188,25 +188,25 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 
 | # | Status | Question |
 |---|--------|----------|
-| 1 | **done** (2026-08-16) | If we must keep JSON, which Python JSON library is best for Sample A? |
-| 2 | **done** (2026-08-16, [PR #84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)) | On Sample B, how do ordinary JSON, MessagePack, and Protocol Buffers compare? |
-| 3 | **done** (2026-08-16, [PR #85](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/85)) | How much faster is a one-language library than a library other languages can read? |
-| 4 | **done** (2026-08-16, [PR #87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87)) | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
-| 5 | **done** (2026-08-17) | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
-| 6 | **done** (2026-08-17) | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
-| 7 | **done** (2026-08-17) | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
-| 8 | **done** (2026-08-17) | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
-| 9 | **done** (2026-08-17, Python only) | After gzip or zstd, does JSON stay larger than binary? |
-| 10 | **done** (2026-08-17) | Does the winner at 1 record stay the winner at 100 records? |
-| 11 | **done** (2026-08-17) | When we write as if to a file, does the ranking change? |
-| 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
-| 13 | **done** (2026-08-17, [PR #90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)) | Do Experiment 1 ranks stay the same if we change the sample or the cleaning rule? |
+| 1 | **done** (2026-08-16) | Which JSON library is fastest? |
+| 2 | **done** (2026-08-16, [PR #84](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/84)) | Should two services inside the company stop using JSON? |
+| 3 | **done** (2026-08-16, [PR #85](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/85)) | Is a one-language format worth the lock-in? |
+| 4 | **done** (2026-08-16, [PR #87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87)) | When is JSON too big for a sensor? |
+| 5 | **done** (2026-08-17) | What should we use for an event log? |
+| 6 | **done** (2026-08-17) | Are database formats better for a normal service call? |
+| 7 | **done** (2026-08-17) | Fast to write, or fast to read? |
+| 8 | **done** (2026-08-17) | Can we send YAML on the live path? |
+| 9 | **done** (2026-08-17) | Does squeezing the bytes make JSON small enough? |
+| 10 | **done** (2026-08-17) | Does one record rank the same as one hundred? |
+| 11 | **done** (2026-08-17) | Does writing to a file change the ranking? |
+| 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | Is it the format, or the library? |
+| 13 | **done** (2026-08-17, [PR #90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)) | Does the ranking stay the same if we change the data? |
 
 Run **1, then 2, then 3, then 4, then 12, then 13** first, unless a result forces a detour.
 
 ---
 
-## Experiment 1 — If we must keep JSON, which Python library should we use?
+## Experiment 1 — Which JSON library is fastest?
 
 **Status:** done for Python (2026-08-16); other languages in the same folder.  
 **Folder:** [01-json-library-bakeoff](01-json-library-bakeoff/). Combined page: [results.md](01-json-library-bakeoff/results.md). Combined JSON: [results.json](01-json-library-bakeoff/results.json).  
@@ -276,7 +276,7 @@ For a public service that must send ordinary named JSON, **`orjson` is the fair 
 
 ---
 
-## Experiment 2 — Should an internal service leave JSON?
+## Experiment 2 — Should two services inside the company stop using JSON?
 
 **Status:** done for all nine languages (2026-08-16).  
 **Folder:** [02-flat-record-formats](02-flat-record-formats/). Combined page: [results.md](02-flat-record-formats/results.md). Combined JSON: [results.json](02-flat-record-formats/results.json).  
@@ -366,7 +366,7 @@ That is **not** a reason to change a public web contract. It is a reason to deci
 
 ---
 
-## Experiment 3 — What do we pay to stay readable by other languages?
+## Experiment 3 — Is a one-language format worth the lock-in?
 
 **Status:** done for Python, Java, and Go (2026-08-16).  
 **Folder:** [03-one-language-store](03-one-language-store/). Combined page: [results.md](03-one-language-store/results.md). Combined JSON: [results.json](03-one-language-store/results.json).  
@@ -432,7 +432,7 @@ This sample has only ordinary fields. It is the “just pickle the cache” case
 
 ---
 
-## Experiment 4 — When is JSON too large for a sensor list?
+## Experiment 4 — When is JSON too big for a sensor?
 
 **Status:** done for Rust (2026-08-16) and C (re-run 2026-08-17 after the runner honoured `points`).  
 **Folder:** [04-sensor-list-size](04-sensor-list-size/). Combined page: [results.md](04-sensor-list-size/results.md). Combined JSON: [results.json](04-sensor-list-size/results.json).  
@@ -510,7 +510,7 @@ C sizes now grow with the list and match the Rust curve to within a few bytes. J
 
 ---
 
-## Experiment 5 — An event log: size and write time only
+## Experiment 5 — What should we use for an event log?
 
 **Status:** done for Python, Java, and Go (2026-08-17).  
 **Folder:** [05-event-log-formats](05-event-log-formats/). Combined page: [results.md](05-event-log-formats/results.md). Combined JSON: [results.json](05-event-log-formats/results.json).  
@@ -578,7 +578,7 @@ Use the size cut in the disk budget. Still pick Avro vs Protocol Buffers on proc
 
 ---
 
-## Experiment 6 — Document databases: BSON, Smile, Ion
+## Experiment 6 — Are database formats better for a normal service call?
 
 **Status:** done for Java, JavaScript, Go, Rust, and C (2026-08-17).  
 **Folder:** [06-document-db-formats](06-document-db-formats/). Combined page: [results.md](06-document-db-formats/results.md). Combined JSON: [results.json](06-document-db-formats/results.json).  
@@ -632,7 +632,7 @@ In Java, Smile is not clearly slower than Jackson JSON and is smaller (233 vs 44
 
 ---
 
-## Experiment 7 — Write once, read many times
+## Experiment 7 — Fast to write, or fast to read?
 
 **Status:** done for C++, C#, JavaScript, Python, and Rust (2026-08-17).  
 **Folder:** [07-write-once-read-many](07-write-once-read-many/). Combined page: [results.md](07-write-once-read-many/results.md). Combined JSON: [results.json](07-write-once-read-many/results.json).  
@@ -698,7 +698,7 @@ In **C++** on Sample A, FlatBuffers writes fastest (0.60 µs); Cap’n Proto **r
 
 ---
 
-## Experiment 8 — Files people edit are not a request path
+## Experiment 8 — Can we send YAML on the live path?
 
 **Status:** done for Go, Swift, and C# (2026-08-17).  
 **Folder:** [08-human-files](08-human-files/). Combined page: [results.md](08-human-files/results.md). Combined JSON: [results.json](08-human-files/results.json).  
@@ -743,7 +743,7 @@ On Sample A: Go YAML is about 38× slower than `goccy/go-json` (201 µs vs 5.3 �
 
 ---
 
-## Experiment 9 — “Just turn compression on”
+## Experiment 9 — Does squeezing the bytes make JSON small enough?
 
 **Status:** done for all nine languages (2026-08-17). Wrapper [#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100) added `SizeGzip` / `SizeZstd`; this re-run filled the tables.  
 **Folder:** [09-compression-size](09-compression-size/). Combined page: [results.md](09-compression-size/results.md). Combined JSON: [results.json](09-compression-size/results.json).  
@@ -808,7 +808,7 @@ Python numbers above. The other eight languages tell the same story: on words, g
 
 ---
 
-## Experiment 10 — One record versus one hundred
+## Experiment 10 — Does one record rank the same as one hundred?
 
 **Status:** done for all nine languages (2026-08-17).  
 **Folder:** [10-one-vs-hundred](10-one-vs-hundred/). Combined page: [results.md](10-one-vs-hundred/results.md). Combined JSON: [results.json](10-one-vs-hundred/results.json).  
@@ -853,7 +853,7 @@ Quote the number of records that matches the product.
 
 ---
 
-## Experiment 11 — Writing into memory versus writing as if to a file
+## Experiment 11 — Does writing to a file change the ranking?
 
 **Status:** done for Go, Java, and C++ (2026-08-17).  
 **Folder:** [11-memory-vs-stream](11-memory-vs-stream/). Combined page: [results.md](11-memory-vs-stream/results.md). Combined JSON: [results.json](11-memory-vs-stream/results.json).  
@@ -911,7 +911,7 @@ A copied stream that matches in-memory is not a scandal. Claiming it as writing-
 
 ---
 
-## Experiment 12 — Is the difference the format, or the library?
+## Experiment 12 — Is it the format, or the library?
 
 **Status:** done for Java, C++, Go, C#, and JavaScript (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)).  
 **Folder:** [12-format-vs-library](12-format-vs-library/). Combined page: [results.md](12-format-vs-library/results.md). Combined JSON: [results.json](12-format-vs-library/results.json).  
@@ -984,7 +984,7 @@ The plan said: if Jackson JSON and Jackson MessagePack are close, but Jackson JS
 
 ---
 
-## Experiment 13 — Is the ranking an accident?
+## Experiment 13 — Does the ranking stay the same if we change the data?
 
 **Status:** done for all nine languages (2026-08-17, [PR #90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)). This is the researcher’s experiment. Builders should still read the conclusion.  
 **Folder:** [13-ranking-accident](13-ranking-accident/). Combined page: [results.md](13-ranking-accident/results.md). Combined JSON: [results.json](13-ranking-accident/results.json).  

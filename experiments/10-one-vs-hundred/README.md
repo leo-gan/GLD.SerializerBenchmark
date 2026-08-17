@@ -1,4 +1,4 @@
-# Experiment 10 — One record versus one hundred
+# Experiment 10 — Does one record rank the same as one hundred?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 10). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

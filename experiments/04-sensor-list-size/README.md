@@ -1,4 +1,4 @@
-# Experiment 4 — When is JSON too large for a sensor list?
+# Experiment 4 — When is JSON too big for a sensor?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 4). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

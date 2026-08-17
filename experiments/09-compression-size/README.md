@@ -1,4 +1,4 @@
-# Experiment 9 — Just turn compression on
+# Experiment 9 — Does squeezing the bytes make JSON small enough?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 9). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

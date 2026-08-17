@@ -1,4 +1,4 @@
-# Experiment 13 — Is the ranking an accident?
+# Experiment 13 — Does the ranking stay the same if we change the data?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 13). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

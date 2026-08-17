@@ -11,6 +11,16 @@
     "id": { "type": "string", "minLength": 1 },
     "title": { "type": "string" },
     "question": { "type": "string", "minLength": 1 },
+    "story": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Short plain-language notes for docs and the dashboard.",
+      "properties": {
+        "why": { "type": "string" },
+        "example": { "type": "string" },
+        "tradeoff": { "type": "string" }
+      }
+    },
     "sample": {
       "type": "object",
       "required": ["kind", "records_per_write"],

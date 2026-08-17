@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 05-event-log-formats
-title: "An event log: size and write time only"
-question: On one event, how do Avro, Protocol Buffers, and JSON compare on size and write time?
+title: What should we use for an event log?
+question: On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
+story:
+  why: Event logs keep facts for months. Size drives disk cost. Write time drives the producer’s CPU. Compatibility (old and new software together) is why Avro and Protocol Buffers exist.
+  example: “Order placed” is written many times a day and stored for months. Outside parties still get JSON at the edge.
+  tradeoff: JSON is easy to read and can drift. Avro and Protocol Buffers are smaller. Speed cannot override a failed compatibility story.
 
 sample:
   kind: event

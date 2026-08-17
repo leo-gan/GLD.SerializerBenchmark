@@ -6,7 +6,7 @@ A laboratory notebook of narrow questions this benchmark can run.
 
 Each experiment is one question. Edit that folder’s **`experiment.yaml`** to change it (sample, languages, libraries). The sample is shared. Each language run is a subfolder. Combined numbers for a dashboard live in that experiment’s `results.json`.
 
-The interactive **Dashboard → Experiments** tab lists every folder that has `experiment.yaml`. After you add a folder or refresh `results.json`, run `python3 dashboard/scripts/sync-experiments.py` (also invoked at the end of `sync-data.py`). No dashboard file needs a hardcoded experiment name.
+Plain-language pages: [docs/experiments](../docs/experiments/index.md). The interactive **Dashboard → Experiments** tab lists every folder that has `experiment.yaml`. After you add a folder or refresh `results.json`, run `python3 dashboard/scripts/sync-experiments.py` (also invoked at the end of `sync-data.py`). No dashboard file needs a hardcoded experiment name.
 
 - Experiment 1: [`01-json-library-bakeoff/`](01-json-library-bakeoff/) · [`results.md`](01-json-library-bakeoff/results.md) · [`results.json`](01-json-library-bakeoff/results.json)
 - Experiment 2: [`02-flat-record-formats/`](02-flat-record-formats/) · [`results.md`](02-flat-record-formats/results.md) · [`results.json`](02-flat-record-formats/results.json)
@@ -25,18 +25,18 @@ The interactive **Dashboard → Experiments** tab lists every folder that has `e
 
 | # | Folder | Status | Question |
 |---|--------|--------|----------|
-| 1 | [01-json-library-bakeoff](01-json-library-bakeoff/) | **Done** | If we must keep JSON, which Python JSON library is best for one order-like record? |
-| 2 | [02-flat-record-formats](02-flat-record-formats/) | **Done** | Ordinary JSON vs MessagePack vs Protocol Buffers on one flat record |
-| 3 | [03-one-language-store](03-one-language-store/) | **Done** | How much faster is a one-language library than one other languages can read? |
-| 4 | [04-sensor-list-size](04-sensor-list-size/) | **Done** | As a sensor list grows, when is JSON too large? |
-| 5 | [05-event-log-formats](05-event-log-formats/) | **Done** | Avro, Protocol Buffers, and JSON on one event |
-| 6 | [06-document-db-formats](06-document-db-formats/) | **Done** | BSON, Smile, and Ion on one order-like record |
-| 7 | [07-write-once-read-many](07-write-once-read-many/) | **Done** | FlatBuffers and Cap’n Proto: write time versus read time |
-| 8 | [08-human-files](08-human-files/) | **Done** | YAML, TOML, and XML versus JSON |
-| 9 | [09-compression-size](09-compression-size/) | **Done** | Size after gzip or zstd |
-| 10 | [10-one-vs-hundred](10-one-vs-hundred/) | **Done** | One record versus one hundred |
-| 11 | [11-memory-vs-stream](11-memory-vs-stream/) | **Done** | Writing into memory versus writing as if to a file |
-| 12 | [12-format-vs-library](12-format-vs-library/) | **Done** | Is the difference the format, or the library? |
-| 13 | [13-ranking-accident](13-ranking-accident/) | **Done** | Does the ranking stay the same if we change the sample? |
+| 1 | [01-json-library-bakeoff](01-json-library-bakeoff/) | **Done** | Which JSON library is fastest? |
+| 2 | [02-flat-record-formats](02-flat-record-formats/) | **Done** | Should two services inside the company stop using JSON? |
+| 3 | [03-one-language-store](03-one-language-store/) | **Done** | Is a one-language format worth the lock-in? |
+| 4 | [04-sensor-list-size](04-sensor-list-size/) | **Done** | When is JSON too big for a sensor? |
+| 5 | [05-event-log-formats](05-event-log-formats/) | **Done** | What should we use for an event log? |
+| 6 | [06-document-db-formats](06-document-db-formats/) | **Done** | Are database formats better for a normal service call? |
+| 7 | [07-write-once-read-many](07-write-once-read-many/) | **Done** | Fast to write, or fast to read? |
+| 8 | [08-human-files](08-human-files/) | **Done** | Can we send YAML on the live path? |
+| 9 | [09-compression-size](09-compression-size/) | **Done** | Does squeezing the bytes make JSON small enough? |
+| 10 | [10-one-vs-hundred](10-one-vs-hundred/) | **Done** | Does one record rank the same as one hundred? |
+| 11 | [11-memory-vs-stream](11-memory-vs-stream/) | **Done** | Does writing to a file change the ranking? |
+| 12 | [12-format-vs-library](12-format-vs-library/) | **Done** | Is it the format, or the library? |
+| 13 | [13-ranking-accident](13-ranking-accident/) | **Done** | Does the ranking stay the same if we change the data? |
 
 Do **1, then 2, then 3, then 4, then 12, then 13** first. Full reasons live in the plan.

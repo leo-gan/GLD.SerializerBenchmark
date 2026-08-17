@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 13-ranking-accident
-title: Is the ranking an accident?
-question: Do the named-JSON ranks from Experiment 1 stay the same if we change the sample, the number of records per write, or the cleaning rule?
+title: Does the ranking stay the same if we change the data?
+question: Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?
+story:
+  why: One run on one computer is one evening’s measurement. A ranking that flips when we change the data or the cleaning rule was never a fact about the libraries.
+  example: The fastest JSON library on one order may not stay fastest on a list of words, or when we write 100 records at once.
+  tradeoff: A large gap that holds on every sample is a stable fact. A close contest that swaps places is too close to name a winner.
 
 sample:
   kind: [document, message, telemetry, event, strings]
