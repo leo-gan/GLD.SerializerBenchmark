@@ -9,6 +9,20 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-O2> $<$<COMPILE_LANGUAGE:C>:-O2> -Wall)
 
+find_package(ZLIB REQUIRED)
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+  pkg_check_modules(LIBZSTD QUIET libzstd)
+endif()
+if(LIBZSTD_FOUND)
+  add_compile_definitions(HAS_ZSTD=1)
+  include_directories(${LIBZSTD_INCLUDE_DIRS})
+  link_libraries(${LIBZSTD_LIBRARIES})
+  message(STATUS "compress: libzstd REAL")
+else()
+  message(STATUS "compress: libzstd SKIPPED (SizeZstd will be empty)")
+endif()
+
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
 set(CPP_TP "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
@@ -261,6 +275,7 @@ target_link_libraries(serializer_benchmark_cpp PRIVATE
   yas_hdr
   cista_hdr
   pthread
+  ZLIB::ZLIB
 )
 
 if(BENCH_HAS_LIBPROTOBUF)
@@ -350,6 +365,7 @@ target_link_libraries(cpp_serializer_tests PRIVATE
   yas_hdr
   cista_hdr
   pthread
+  ZLIB::ZLIB
 )
 if(TARGET msgpack-cxx)
   target_link_libraries(cpp_serializer_tests PRIVATE msgpack-cxx)

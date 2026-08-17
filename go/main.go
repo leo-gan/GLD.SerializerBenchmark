@@ -247,6 +247,8 @@ func main() {
 		type prepared struct {
 			ser       serializers.BenchSerializer
 			streamBuf *bytes.Buffer
+			sizeGzip  int
+			sizeZstd  int
 		}
 		var ready []prepared
 		failed := map[string]bool{}
@@ -266,9 +268,15 @@ func main() {
 				failed[ser.Name()] = true
 				continue
 			}
+			gz, zs := 0, 0
+			if raw, serr := ser.SerializeBytes(fx); serr == nil {
+				gz, zs = compressSizes(raw)
+			}
 			ready = append(ready, prepared{
 				ser:       ser,
 				streamBuf: bytes.NewBuffer(make([]byte, 0, 64*1024)),
+				sizeGzip:  gz,
+				sizeZstd:  zs,
 			})
 		}
 		byName := map[string]prepared{}
@@ -332,6 +340,7 @@ func main() {
 						ser.Version(), ser.NativeKind().String(), ser.StreamMode().String(),
 						w.instanceCount, w.typeConfigHash,
 						ro, sp,
+						p.sizeGzip, p.sizeZstd,
 					)
 				}
 			}

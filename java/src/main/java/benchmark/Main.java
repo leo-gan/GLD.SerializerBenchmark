@@ -34,10 +34,14 @@ public final class Main {
   private static final class Prepared {
     final BenchSerializer ser;
     final ByteArrayOutputStream streamScratch;
+    final int sizeGzip;
+    final int sizeZstd;
 
-    Prepared(BenchSerializer ser) {
+    Prepared(BenchSerializer ser, int sizeGzip, int sizeZstd) {
       this.ser = ser;
       this.streamScratch = new ByteArrayOutputStream(64 * 1024);
+      this.sizeGzip = sizeGzip;
+      this.sizeZstd = sizeZstd;
     }
   }
 
@@ -133,7 +137,15 @@ public final class Main {
             failed.add(ser.name());
             continue;
           }
-          Prepared p = new Prepared(ser);
+          int gz = 0, zs = 0;
+          try {
+            int[] csz = Compress.sizes(ser.serializeBytes(fx));
+            gz = csz[0];
+            zs = csz[1];
+          } catch (Exception ignored) {
+            // leave compressed sizes empty
+          }
+          Prepared p = new Prepared(ser, gz, zs);
           ready.add(p);
           byName.put(ser.name(), p);
         }
@@ -193,7 +205,9 @@ public final class Main {
                     w.instanceCount(),
                     w.typeConfigHash(),
                     ro,
-                    sp);
+                    sp,
+                    p.sizeGzip,
+                    p.sizeZstd);
               } catch (Exception e) {
                 System.err.printf(
                     "[ERROR] %s / %s / %s: %s%n", ser.name(), fx.name, mode, e.toString());

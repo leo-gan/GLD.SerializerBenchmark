@@ -97,8 +97,17 @@ let package = Package(
             ]
         ),
         .target(
+            name: "GzipC",
+            path: "Sources/GzipC",
+            publicHeadersPath: "include",
+            linkerSettings: [
+                .linkedLibrary("z"),
+            ]
+        ),
+        .target(
             name: "SerializerBenchmarkCore",
             dependencies: [
+                "GzipC",
                 "CapnpBridge",
                 .product(name: "IkigaJSON", package: "IkigaJSON"),
                 .product(name: "SwiftMsgpack", package: "swift-msgpack"),

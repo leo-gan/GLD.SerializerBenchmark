@@ -120,6 +120,7 @@ public func runBenchmark(_ opts: RunOptions) throws {
                 let serNs: UInt64
                 let deserNs: UInt64
                 let size: Int
+                let written: Data
                 let out: Any
                 if mode == "stream" {
                     let t0 = nowNs()
@@ -132,6 +133,7 @@ public func runBenchmark(_ opts: RunOptions) throws {
                     serNs = t1 &- t0
                     deserNs = t2 &- t1
                     size = n
+                    written = buf
                     out = try toDomain(ser, decoded)
                 } else {
                     let t0 = nowNs()
@@ -144,6 +146,7 @@ public func runBenchmark(_ opts: RunOptions) throws {
                     serNs = t1 &- t0
                     deserNs = t2 &- t1
                     size = buf.count
+                    written = buf
                     out = try toDomain(ser, decoded)
                 }
                 if !fx.fidelity(against: out) {
@@ -156,6 +159,9 @@ public func runBenchmark(_ opts: RunOptions) throws {
                     sp = pos
                     runOrder += 1
                 }
+                let c = compressSizes(written)
+                let gz = c.gzip
+                let zs = c.zstd
                 logger.writeRow(
                     mode: mode,
                     testDataName: fx.name,
@@ -172,7 +178,9 @@ public func runBenchmark(_ opts: RunOptions) throws {
                     instanceCount: fx.instanceCount,
                     typeConfigHash: fx.typeConfigHash,
                     runOrder: ro,
-                    schedulePosition: sp
+                    schedulePosition: sp,
+                    sizeGzip: gz,
+                    sizeZstd: zs
                 )
             } catch {
                 let msg = String(describing: error)

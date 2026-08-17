@@ -120,9 +120,11 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
     }
     {
         const char *sm = (mode && strcmp(mode, "stream") == 0) ? "adapted" : "";
+        size_t gz = 0, zs = 0;
+        bench_compress_sizes(buf, out_len, &gz, &zs);
         csv_logger_write(log, mode, type_id, repetitions, r, S->name,
                          t1 - t0, t2 - t1, out_len, 1.0, S->version,
-                         n, type_hash, sm, ro, sp);
+                         n, type_hash, sm, ro, sp, gz, zs);
     }
     return 0;
 }

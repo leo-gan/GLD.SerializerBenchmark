@@ -13,6 +13,13 @@ final class RoundtripTests: XCTestCase {
         XCTAssertTrue(fx.fidelity(against: out), "\(ser.name) fidelity for \(fx.name)")
     }
 
+    func testCompressSizesGzipHello() {
+        let c = compressSizes(Data("hello".utf8))
+        XCTAssertGreaterThanOrEqual(c.gzip, 20)
+        XCTAssertLessThanOrEqual(c.gzip, 40)
+        XCTAssertEqual(compressSizes(Data()).gzip, 0)
+    }
+
     func testAllSerializersRoundtripAllTypes() throws {
         for typeId in ["message", "document", "telemetry", "strings", "event"] {
             let fx = try fixtureFromCell(

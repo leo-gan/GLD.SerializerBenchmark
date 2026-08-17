@@ -40,6 +40,8 @@ struct Measure {
   uint64_t ser_ns = 0;
   uint64_t deser_ns = 0;
   size_t size = 0;
+  size_t size_gzip = 0;
+  size_t size_zstd = 0;
 };
 
 // Optimization barrier (issue #59) — mirrors Google Benchmark DoNotOptimize.
@@ -71,6 +73,9 @@ static Measure measure_bytes(bench::ISerializer& ser, const bench::Fixture& fx,
   if (!bench::fidelity(fx.value, out)) {
     throw std::runtime_error(std::string("roundtrip fidelity failed for ") + ser.name());
   }
+  auto [gz, zs] = bench::compress_sizes(buf.data(), buf.size());
+  m.size_gzip = gz;
+  m.size_zstd = zs;
   return m;
 }
 
@@ -91,6 +96,9 @@ static Measure measure_stream(bench::ISerializer& ser, const bench::Fixture& fx,
   if (!bench::fidelity(fx.value, out)) {
     throw std::runtime_error(std::string("stream roundtrip fidelity failed for ") + ser.name());
   }
+  auto [gz, zs] = bench::compress_sizes(buf.data(), m.size);
+  m.size_gzip = gz;
+  m.size_zstd = zs;
   return m;
 }
 
@@ -223,7 +231,7 @@ int main(int argc, char** argv) {
         }
         logger.write_row(mode, fx.type_id, reps, rep_idx, ser.name(), ser.version(), m.ser_ns,
                          m.deser_ns, m.size, 1.0, ser.native_kind(), ser.stream_mode(),
-                         fx.instance_count, fx.type_config_hash, ro, sp);
+                         fx.instance_count, fx.type_config_hash, ro, sp, m.size_gzip, m.size_zstd);
       };
 
       if (strategy == "none") {

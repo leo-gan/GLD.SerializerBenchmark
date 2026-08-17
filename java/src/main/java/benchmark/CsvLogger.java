@@ -18,7 +18,7 @@ public final class CsvLogger implements AutoCloseable {
         "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,"
             + "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,"
             + "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,"
-            + "DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition\n");
+            + "DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition,SizeGzip,SizeZstd\n");
   }
 
   public void writeRow(
@@ -37,7 +37,9 @@ public final class CsvLogger implements AutoCloseable {
       int instanceCount,
       String typeConfigHash,
       int runOrder,
-      int schedulePosition)
+      int schedulePosition,
+      int sizeGzip,
+      int sizeZstd)
       throws IOException {
     long total = timeSerNs + timeDeserNs;
     double opsSer = timeSerNs > 0 ? 1e9 / timeSerNs : 0;
@@ -46,12 +48,14 @@ public final class CsvLogger implements AutoCloseable {
     String ic = instanceCount > 0 ? Integer.toString(instanceCount) : "";
     String ro = runOrder >= 0 ? Integer.toString(runOrder) : "";
     String sp = schedulePosition >= 0 ? Integer.toString(schedulePosition) : "";
+    String gz = sizeGzip > 0 ? Integer.toString(sizeGzip) : "";
+    String zs = sizeZstd > 0 ? Integer.toString(sizeZstd) : "";
     // Locale.US: decimal point must stay '.' — default locales (e.g. de_DE) use ',' and
     // would inject extra CSV columns for OpPerSec* / FidelityScore.
     w.write(
         String.format(
             Locale.US,
-            "java,%s,%s,%d,%d,%s,%s,%d,%d,%d,%d,%.6f,%.6f,%.6f,0,%.1f,%s,%s,%s,%s,%s,%s\n",
+            "java,%s,%s,%d,%d,%s,%s,%d,%d,%d,%d,%.6f,%.6f,%.6f,0,%.1f,%s,%s,%s,%s,%s,%s,%s,%s\n",
             mode,
             testData,
             repetitions,
@@ -71,7 +75,9 @@ public final class CsvLogger implements AutoCloseable {
             ic,
             typeConfigHash == null ? "" : typeConfigHash,
             ro,
-            sp));
+            sp,
+            gz,
+            zs));
   }
 
   public void flush() throws IOException {

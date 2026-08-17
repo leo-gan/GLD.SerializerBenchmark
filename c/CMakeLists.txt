@@ -19,6 +19,7 @@ set(BENCH_SOURCES
   src/run_v2.c
   src/schedule.c
   src/csv_log.c
+  src/compress.c
   src/batch_cell.c
   src/runner.c
   src/register_serializers.c
@@ -26,10 +27,26 @@ set(BENCH_SOURCES
   src/serializers/ser_custom_binary.c
 )
 set(BENCH_LIBS m)
+find_package(ZLIB REQUIRED)
+list(APPEND BENCH_LIBS ZLIB::ZLIB)
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+  pkg_check_modules(LIBZSTD QUIET libzstd)
+endif()
+if(LIBZSTD_FOUND)
+  list(APPEND BENCH_LIBS ${LIBZSTD_LIBRARIES})
+  add_compile_definitions(HAS_ZSTD=1)
+  message(STATUS "compress: libzstd REAL")
+else()
+  message(STATUS "compress: libzstd SKIPPED (SizeZstd will be empty)")
+endif()
 set(BENCH_INCLUDES
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+if(LIBZSTD_FOUND)
+  list(APPEND BENCH_INCLUDES ${LIBZSTD_INCLUDE_DIRS})
+endif()
 add_compile_definitions(HAS_CUSTOM_BINARY=1)
 
 if(EXISTS ${TP}/cJSON/cJSON.c)

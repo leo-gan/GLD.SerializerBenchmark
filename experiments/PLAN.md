@@ -1310,7 +1310,7 @@ We go **row by row**. A wrapper (harness) change is its **own PR**, then we re-r
 |------|------|------------------|
 | B1 | **C runner reads `type_config.points`** and raise `V2_MAX_POINTS` to 512 | **done** [#96](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/96) |
 | B2 | Re-run Experiment 4 in C (and keep Rust) | **this re-run** |
-| B3 | **One-shot gzip(6) / zstd(3) of written bytes** in Go, Java, JS, Rust, C, C++, C#, Swift CSV (`SizeGzip`, `SizeZstd`). Parser already accepts those columns. Not timed. | wrapper |
+| B3 | **One-shot gzip(6) / zstd(3) of written bytes** in Go, Java, JS, Rust, C, C++, C#, Swift CSV (`SizeGzip`, `SizeZstd`). Parser already accepts those columns. Not timed. gzip everywhere; zstd where the language already has an encoder (Go, Rust, C/C++/JS when libzstd or Node zstd is present). Java / C# / Swift leave `SizeZstd` empty. | **this wrapper** |
 | B4 | Re-run Experiment 9 in those languages | experiment, after B3 |
 | B5 | Run `cpp/scripts/setup-protobuf-sysroot.sh` so official C++ `protobuf` registers; re-run Experiment 7 C++ | wrapper/env + experiment |
 

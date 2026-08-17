@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { compressSizes } from './compress.js';
 import { makeOne, instances } from './data_v2.js';
 import { ALL_SERIALIZERS, performance } from './serializers/index.js';
 import { deepEqual } from './data.js';
@@ -37,7 +38,7 @@ const logPath = path.join(logDir, `${ts}.csv`);
 const errPath = path.join(logDir, `${ts}.errors.csv`);
 
 const header =
-  'Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition\n';
+  'Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition,SizeGzip,SizeZstd\n';
 const lines = [header];
 const errors = ['TestDataName,SerializerName,StringOrStream,Repetition,ErrorText\n'];
 
@@ -119,6 +120,7 @@ for (const cell of cells) {
   const prepared = [];
   const byName = new Map();
   const failed = new Set();
+  const compressByName = new Map();
   for (const ser of serializers) {
     if (ser.supports && !ser.supports(typeId)) continue;
     try {
@@ -129,6 +131,11 @@ for (const cell of cells) {
       );
       failed.add(ser.name);
       continue;
+    }
+    try {
+      compressByName.set(ser.name, compressSizes(ser.serialize(value)));
+    } catch {
+      compressByName.set(ser.name, [0, 0]);
     }
     prepared.push(ser);
     byName.set(ser.name, ser);
@@ -177,6 +184,7 @@ for (const cell of cells) {
             sp = String(pos);
             runOrder++;
           }
+          const [gz, zs] = compressByName.get(ser.name) || [0, 0];
           lines.push(
             [
               'javascript',
@@ -199,6 +207,8 @@ for (const cell of cells) {
               hash,
               ro,
               sp,
+              gz || '',
+              zs || '',
             ].join(',') + '\n',
           );
         } catch (e) {

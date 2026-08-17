@@ -19,7 +19,7 @@ impl CsvLogger {
         // RunOrder / SchedulePosition optional (empty when not recording).
         writeln!(
             writer,
-            "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition"
+            "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition,SizeGzip,SizeZstd"
         )?;
         Ok(Self { writer })
     }
@@ -57,7 +57,7 @@ impl CsvLogger {
         };
         writeln!(
             self.writer,
-            "rust,{mode},{test_data},{repetitions},{rep_index},{serializer},{version},{time_ser_ns},{time_deser_ns},{size},{total},{ops_ser:.6},{ops_deser:.6},{ops_tot:.6},0,{fidelity:.1},{native_kind},{stream_mode},,,,"
+            "rust,{mode},{test_data},{repetitions},{rep_index},{serializer},{version},{time_ser_ns},{time_deser_ns},{size},{total},{ops_ser:.6},{ops_deser:.6},{ops_tot:.6},0,{fidelity:.1},{native_kind},{stream_mode},,,,,,"
         )
     }
 
@@ -80,6 +80,8 @@ impl CsvLogger {
         type_config_hash: &str,
         run_order: Option<i32>,
         schedule_position: Option<i32>,
+        size_gzip: usize,
+        size_zstd: usize,
     ) -> std::io::Result<()> {
         let total = time_ser_ns + time_deser_ns;
         let ops_ser = if time_ser_ns > 0 {
@@ -103,9 +105,19 @@ impl CsvLogger {
         let sp = schedule_position
             .map(|v| v.to_string())
             .unwrap_or_default();
+        let gz = if size_gzip > 0 {
+            size_gzip.to_string()
+        } else {
+            String::new()
+        };
+        let zs = if size_zstd > 0 {
+            size_zstd.to_string()
+        } else {
+            String::new()
+        };
         writeln!(
             self.writer,
-            "rust,{mode},{test_data},{repetitions},{rep_index},{serializer},{version},{time_ser_ns},{time_deser_ns},{size},{total},{ops_ser:.6},{ops_deser:.6},{ops_tot:.6},0,{fidelity:.1},{native_kind},{stream_mode},{instance_count},{type_config_hash},{ro},{sp}"
+            "rust,{mode},{test_data},{repetitions},{rep_index},{serializer},{version},{time_ser_ns},{time_deser_ns},{size},{total},{ops_ser:.6},{ops_deser:.6},{ops_tot:.6},0,{fidelity:.1},{native_kind},{stream_mode},{instance_count},{type_config_hash},{ro},{sp},{gz},{zs}"
         )
     }
 
