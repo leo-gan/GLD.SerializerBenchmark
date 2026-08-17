@@ -10,7 +10,7 @@ Analysis documentation hub: [Method overview](index.md).
 
 ## Results by language
 
-Alphabetical, same link pattern as the **Languages** menu and storefront: language name → overview, **Results** → measured snapshot.
+Alphabetical, same link pattern as the **Languages** menu and documentation home: language name → overview, **Results** → measured snapshot.
 
 | Language |
 |----------|

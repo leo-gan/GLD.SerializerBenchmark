@@ -1,6 +1,6 @@
 # Multi-Language Serializer Benchmark
 
-[![Site](https://img.shields.io/badge/site-storefront-indigo?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/)
+[![Site](https://img.shields.io/badge/site-documentation-indigo?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/)
 [![Dashboard](https://img.shields.io/badge/dashboard%20%7C%20live-brightgreen?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
 [![Serialization 101](https://img.shields.io/badge/Serialization%20101-8A2BE2?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
@@ -10,17 +10,17 @@ Compare 100+ serialization libraries across **nine languages**.
 
 | Start here | |
 |------------|--|
-| **Home** | [Project storefront](https://leo-gan.github.io/GLD.SerializerBenchmark/) (CTAs to Dashboard, Learn, Method) |
+| **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
 | **Numbers** | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) · [Method overview](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/) |
 | **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) — students through systems engineers |
 | **Method** | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
 
 <p align="center">
-  <a href="https://leo-gan.github.io/GLD.SerializerBenchmark/python/results/">
-    <img src="docs/analysis/plots/violin/python_message@n=1.png" alt="Python serialize/deserialize latency distribution for message data type (1 instance)" width="780" />
+  <a href="https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/">
+    <img src="docs/assets/dashboard-overview.jpg" alt="Live Dashboard: language and data-type filters, speed vs size scatter, and throughput ranking" width="780" />
   </a>
   <br />
-  <sub>Example: Python latency distribution for the <code>message</code> data type (1 instance). Full tables and charts on each language <strong>Results</strong> page.</sub>
+  <sub>The live <strong>Dashboard</strong>: pick a language and data type, then read speed vs size and the ranking.</sub>
 </p>
 
 ---
