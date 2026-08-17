@@ -199,7 +199,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 9 | planned | After gzip or zstd, does JSON stay larger than binary? |
 | 10 | planned | Does the winner at 1 record stay the winner at 100 records? |
 | 11 | planned | When we write as if to a file, does the ranking change? |
-| 12 | **done** (2026-08-17) | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
+| 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
 | 13 | planned | Do Experiment 1 ranks stay the same if we change the sample or the cleaning rule? |
 
 Run **1, then 2, then 3, then 4, then 12, then 13** first, unless a result forces a detour.
@@ -840,7 +840,7 @@ Only treat **real** rows as evidence for a file or socket. If the product is a c
 
 ## Experiment 12 — Is the difference the format, or the library?
 
-**Status:** done for Java, C++, Go, C#, and JavaScript (2026-08-17).  
+**Status:** done for Java, C++, Go, C#, and JavaScript (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)).  
 **Folder:** [12-format-vs-library](12-format-vs-library/). Combined page: [results.md](12-format-vs-library/results.md). Combined JSON: [results.json](12-format-vs-library/results.json).  
 **Sample:** Sample A, one record, saved as [12-format-vs-library/sample.json](12-format-vs-library/sample.json).
 
@@ -1065,6 +1065,7 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 ## After Experiment 12
 
 - **Date:** 2026-08-17
+- **PR:** [#89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)
 - **Sample:** [12-format-vs-library/sample.json](12-format-vs-library/sample.json) (Sample A, one record)
 - **Folder:** [12-format-vs-library](12-format-vs-library/) · [combined page](12-format-vs-library/results.md) · [combined JSON](12-format-vs-library/results.json)
 - **Finding:** On this one order, the library often moves time more than the format does. In Java, `jsoniter` is not clearly slower (about 49 µs, 440 bytes). Jackson JSON is about 110 µs and the same size. Inside Jackson, Smile is smaller (233 bytes) and similar in time; MessagePack is slower than Jackson JSON; Ion is slowest. `gson` sits between `jsoniter` and Jackson. In C++, all five nlohmann formats sit in a tight time band (about 9–10 µs); JSON is fastest; BSON is larger than JSON. In Go, `goccy/go-json` is fastest; inside ugorji, MessagePack is a bit faster and smaller than JSON; `encoding/json` is about three times slower than `goccy/go-json`. In C#, Bond Fast is fastest and larger (376 bytes); Bond Compact is smaller (208 bytes); both protobuf libraries write 208 bytes and are slower than Bond. In JavaScript, three Protocol Buffers libraries write 155 bytes and differ by about four times (`google-protobuf` about 16 µs, `protobuf-es` about 69 µs). “Move to binary” without naming the library is not a plan.
