@@ -1204,7 +1204,7 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Date:** 2026-08-17
 - **Folder:** [07-write-once-read-many](07-write-once-read-many/)
 - **Finding:** In C++, Cap’n Proto reads cheaper than FlatBuffers on Sample A; on a 512-number list, protobuf write is much more expensive than Cap’n Proto. Python FlatBuffers write is the Python builder, not the format. `rkyv` is faster than `prost` here, but the clock still builds a full value.
-- **What this does not answer:** Time to touch two fields only; safety of an unchecked buffer; official libprotobuf in C++; Java (no FlatBuffers client in the suite).
+- **What this does not answer:** Time to touch two fields only; safety of an unchecked buffer; Java (no FlatBuffers client in the suite). Official C++ `libprotobuf` now runs ([#102](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/102) + this re-run): on Sample A it writes the same **164** bytes as `protobuf-wire` and is close in time to Cap’n Proto; on the 512-number list it is **smaller and faster** than the in-tree wire helper (4127 B / 1.36 µs vs 4636 B / 14.9 µs).
 
 ---
 
@@ -1259,8 +1259,8 @@ These are languages or measurements the **planned** experiments asked for, or th
 | 6 | Swift BSON | **Fixed 2026-08-17.** `SwiftBSON` is 525 B and slower than `SwiftMsgpack` (329 B) — same story as other languages. | — |
 | 6 | Time to skip one field | The clock always writes and reads the **whole** sample | A custom skip-one-field clock |
 | 7 | Java FlatBuffers / Cap’n Proto | No Java client for those formats in the suite | Add Java FlatBuffers / Cap’n Proto |
-| 7 | Official `libprotobuf` in C++ | The official library did not register (`setup-protobuf-sysroot.sh` not applied) | Run `cpp/scripts/setup-protobuf-sysroot.sh` and re-run |
-| 7 | C `flatcc`, Swift `FlatBuffers` / `CapnProto` | They exist; the plan listed C++ / C# / JS / Python / Rust | Add them to Experiment 7 |
+| 7 | Official `libprotobuf` in C++ | **Fixed 2026-08-17** ([#102](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/102) + this re-run). `protobuf` 3.12.4 is 164 B on Sample A (same as the wire helper) and 4127 B / 1.36 µs on 512 numbers. | — |
+| 7 | C `flatcc`, Swift `FlatBuffers` / `CapnProto` | **Fixed 2026-08-17** ([#99](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/99)). | — |
 | 7 | Time to touch two fields only | The clock still builds a full value so we can check information (especially `rkyv`) | A custom two-field clock |
 | 8 | Python, Java, JS, Rust, C, C++ YAML/TOML/XML | Those harnesses do not register a YAML/TOML/XML pair next to JSON (except extra C# XML we did not need) | Add a YAML writer to each harness and list it |
 | 9 | Go, Java, C++, C#, JS, Rust, C, Swift gzip/zstd **size** | **Fixed 2026-08-17** ([#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100) + this re-run). Same story as Python in all nine languages. | — |
@@ -1312,7 +1312,7 @@ We go **row by row**. A wrapper (harness) change is its **own PR**, then we re-r
 | B2 | Re-run Experiment 4 in C (and keep Rust) | **this re-run** |
 | B3 | **One-shot gzip(6) / zstd(3) of written bytes** in Go, Java, JS, Rust, C, C++, C#, Swift CSV (`SizeGzip`, `SizeZstd`). Parser already accepts those columns. Not timed. gzip everywhere; zstd where the language already has an encoder (Go, Rust, C/C++/JS when libzstd or Node zstd is present). Java / C# / Swift leave `SizeZstd` empty. | **done** [#100](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/100) |
 | B4 | Re-run Experiment 9 in those languages | **this re-run** |
-| B5 | Run `cpp/scripts/setup-protobuf-sysroot.sh` so official C++ `protobuf` registers; re-run Experiment 7 C++ | wrapper/env + experiment |
+| B5 | Run `cpp/scripts/setup-protobuf-sysroot.sh` so official C++ `protobuf` registers; re-run Experiment 7 C++ | **done** wrapper [#102](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/102) + **this re-run** |
 
 ### Wrapper, only if small enough to finish cleanly
 
