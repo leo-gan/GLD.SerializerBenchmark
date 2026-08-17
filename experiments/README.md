@@ -12,6 +12,7 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 - Experiment 4: [`04-sensor-list-size/`](04-sensor-list-size/) · [`results.md`](04-sensor-list-size/results.md) · [`results.json`](04-sensor-list-size/results.json)
 - Experiment 5: [`05-event-log-formats/`](05-event-log-formats/) · [`results.md`](05-event-log-formats/results.md) · [`results.json`](05-event-log-formats/results.json)
 - Experiment 6: [`06-document-db-formats/`](06-document-db-formats/) · [`results.md`](06-document-db-formats/results.md) · [`results.json`](06-document-db-formats/results.json)
+- Experiment 7: [`07-write-once-read-many/`](07-write-once-read-many/) · [`results.md`](07-write-once-read-many/results.md) · [`results.json`](07-write-once-read-many/results.json)
 - Experiment 12: [`12-format-vs-library/`](12-format-vs-library/) · [`results.md`](12-format-vs-library/results.md) · [`results.json`](12-format-vs-library/results.json)
 - Experiment 13: [`13-ranking-accident/`](13-ranking-accident/) · [`results.md`](13-ranking-accident/results.md) · [`results.json`](13-ranking-accident/results.json)
 - Preview copies for later experiments: [`samples/`](samples/)
@@ -24,7 +25,7 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 | 4 | [04-sensor-list-size](04-sensor-list-size/) | **Done** | As a sensor list grows, when is JSON too large? |
 | 5 | [05-event-log-formats](05-event-log-formats/) | **Done** | Avro, Protocol Buffers, and JSON on one event |
 | 6 | [06-document-db-formats](06-document-db-formats/) | **Done** | BSON, Smile, and Ion on one order-like record |
-| 7 | — | Planned | FlatBuffers and Cap’n Proto: write time versus read time |
+| 7 | [07-write-once-read-many](07-write-once-read-many/) | **Done** | FlatBuffers and Cap’n Proto: write time versus read time |
 | 8 | — | Planned | YAML, TOML, and XML versus JSON |
 | 9 | — | Planned | Size after gzip or zstd |
 | 10 | — | Planned | One record versus one hundred |

@@ -194,7 +194,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 4 | **done** (2026-08-16, [PR #87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87)) | As Sample C grows from 8 to 512 numbers, when is JSON too large? |
 | 5 | **done** (2026-08-17) | On Sample D, how do Avro, Protocol Buffers, and JSON compare on size and write time? |
 | 6 | **done** (2026-08-17) | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
-| 7 | planned | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
+| 7 | **done** (2026-08-17) | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
 | 8 | planned | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
 | 9 | planned | After gzip or zstd, does JSON stay larger than binary? |
 | 10 | planned | Does the winner at 1 record stay the winner at 100 records? |
@@ -630,8 +630,9 @@ In Java, Smile is not clearly slower than Jackson JSON and is smaller (233 vs 44
 
 ## Experiment 7 — Write once, read many times
 
-**Status:** planned.  
-**Sample:** Sample A, and Sample C with many numbers.
+**Status:** done for C++, C#, JavaScript, Python, and Rust (2026-08-17).  
+**Folder:** [07-write-once-read-many](07-write-once-read-many/). Combined page: [results.md](07-write-once-read-many/results.md). Combined JSON: [results.json](07-write-once-read-many/results.json).  
+**Sample:** Sample A and Sample C (512 numbers), saved as [07-write-once-read-many/sample.json](07-write-once-read-many/sample.json).
 
 ### The question
 
@@ -684,6 +685,12 @@ Look at **write time and read time separately**. Do not add them. The whole poin
 
 - Time to touch two fields only (we do not ship that clock yet)
 - Safety of an unchecked buffer
+
+### What we found (2026-08-17)
+
+Look at write and read separately.
+
+In **C++** on Sample A, FlatBuffers writes fastest (0.60 µs); Cap’n Proto **reads** fastest (0.52 µs). On Sample C (512 numbers), Cap’n Proto is fastest overall; protobuf-wire **write** jumps to 11.7 µs while Cap’n Proto write stays about 1 µs. Python FlatBuffers write is terrible (90 µs vs protobuf 2.55 µs) — that is the Python builder. In Rust, `rkyv` is faster than `prost` on both write and read; the timed read still builds a full value.
 
 ---
 
@@ -1143,6 +1150,15 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Folder:** [06-document-db-formats](06-document-db-formats/) · [combined page](06-document-db-formats/results.md)
 - **Finding:** BSON is larger and slower than MessagePack on a full write-and-read. Do not pick it for an ordinary service call. Jackson Smile is smaller than Jackson JSON and similar in time. Ion is slowest.
 - **What this does not answer:** Time to skip one field; Mongo disk layout; Python and C# BSON (not in the suite).
+
+---
+
+## After Experiment 7
+
+- **Date:** 2026-08-17
+- **Folder:** [07-write-once-read-many](07-write-once-read-many/)
+- **Finding:** In C++, Cap’n Proto reads cheaper than FlatBuffers on Sample A; on a 512-number list, protobuf write is much more expensive than Cap’n Proto. Python FlatBuffers write is the Python builder, not the format. `rkyv` is faster than `prost` here, but the clock still builds a full value.
+- **What this does not answer:** Time to touch two fields only; safety of an unchecked buffer; official libprotobuf in C++; Java (no FlatBuffers client in the suite).
 
 ---
 
