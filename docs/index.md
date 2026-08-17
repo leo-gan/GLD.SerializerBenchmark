@@ -34,10 +34,11 @@ ideally one format family), not to crown a single global winner.
 
 ## Same data · same pipeline
 
-Example measurement output (Python, `message` data type, 1 instance). Full tables
-and charts live on each language **Results** page and in the **Dashboard**.
+The live **Dashboard** is the interactive view of the same measurements. Pick a
+language and a data type, then read speed vs size and the ranking. Per-language
+tables also live on each **Results** page.
 
-[![Python serialize/deserialize latency distribution for message (n=1)](analysis/plots/violin/python_message@n=1.png){ width="780" }](python/results/)
+[![Live Dashboard: language and data-type filters, speed vs size scatter, and throughput ranking](assets/dashboard-overview.jpg){ width="780" }](dashboard/)
 
 ---
 

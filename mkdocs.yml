@@ -39,7 +39,7 @@ theme:
 plugins:
   - redirects:
       redirect_maps:
-        # Site root is docs/index.md (storefront). Theory entry stays under Learn.
+        # Site root is docs/index.md (documentation home). Theory entry stays under Learn.
         'theory/index.md': 'theory/101/index.md'
         'theory/historical_perspective.md': 'theory/101/historical_perspective.md'
         'theory/data_science_perspective.md': 'theory/101/data_science_perspective.md'
