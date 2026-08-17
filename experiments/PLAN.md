@@ -1324,14 +1324,72 @@ We go **row by row**. A wrapper (harness) change is its **own PR**, then we re-r
 
 ### Leave for a later, larger task
 
-- TOML/XML in Python, Java, JS, Rust, C, C++
-- Native stream APIs for remaining C codecs and for Swift Codable (no OutputStream encoder)
-- JavaScript stream API
-- Pin two versions of `orjson` and re-run Experiment 13
+See **Next task (saved 2026-08-17)** below. Do not start it in the same session as the Java FB / YAML / MessagePack-CSharp work.
 
 ### Order we will actually ship
 
 **B1 → B2 → A1 → A2 → A3 → B3 → B4 → B5 → C1 → C2 → C3**, skipping a C-step if the harness change is too large or fails on this machine. After each landed fix we tick the Not covered row or rewrite it.
+
+---
+
+## Next task (saved 2026-08-17)
+
+Pick this up as a **new task**. Do not implement it until that task starts.
+
+**Question to finish:** the leftover human-file formats (TOML / XML), and the stream paths that are still copied or missing.
+
+**First:** research the correspondent **existing** library in each language (same method as Java FlatBuffers / six-language YAML / MessagePack-CSharp). Register that library; do not invent a one-off writer.
+
+**Then:** add the harness (one wrapper PR), then list the names in the experiment and re-run (one experiment PR). Squash-merge; do not ask for approval.
+
+### What is already done (do not redo)
+
+| Item | Where |
+|------|--------|
+| YAML in Python, Java, JS, Rust, C, C++ | [#106](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/106) + Experiment 8 [#107](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/107) |
+| Java FlatBuffers / Cap’n Proto | same |
+| C# MessagePack-CSharp | same; Experiments 2 and 10 |
+| C `yyjson` native `FILE*` stream | [#106](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/106) |
+| Go YAML/TOML, Swift YAML/TOML/XML, C# YAML/XML | Experiment 8 original run |
+
+### What to add (research map — confirm before coding)
+
+| Gap | Languages | Correspondent library to try first | Notes |
+|-----|-----------|--------------------------------------|-------|
+| TOML | Python | `tomllib` (read, 3.11+) + `tomli-w` (write) | stdlib has no writer |
+| TOML | Java | `jackson-dataformat-toml` | same Jackson family as JSON / YAML |
+| TOML | JS | `@iarna/toml` or `smol-toml` | pick the one that round-trips suite objects |
+| TOML | Rust | `toml` (serde) | usual crate |
+| TOML | C | `tomlc99` | no official “stdlib” TOML; skip if fetch is messy |
+| TOML | C++ | `toml++` | Swift already uses this family |
+| XML | Python | `xml.etree.ElementTree` | ships with Python; not a DOM skip-one-field clock |
+| XML | Java | `jackson-dataformat-xml` | same Jackson family |
+| XML | JS | `fast-xml-parser` | common Node XML; confirm named-field round-trip |
+| XML | Rust | `quick-xml` + serde, or `serde-xml-rs` | prefer the one that keeps field names |
+| XML | C | `libxml2` | heavy; skip if the machine has no headers |
+| XML | C++ | `pugixml` | small, common |
+| Native C streams | C (not `yyjson`) | each library’s own `FILE*` API if it has one (`mpack` writer, `json-c` `json_object_to_fd`, …) | leave **adapted** if the library only prints then `fwrite` |
+| Native Swift streams | Swift Codable | none today | `JSONEncoder` has no `OutputStream`. Do **not** label copied `OutputStream.write` as native. `JSONSerialization.writeJSONObject` is a different API (not Codable). |
+| JS stream | JavaScript | a real `stream.Writable` / `Readable` path distinct from `Buffer` | Experiment 11 still has no JS stream. None without a new JS stream API. |
+
+### Order of work
+
+1. **D1** wrapper: TOML in the six languages that already have YAML (Python, Java, JS, Rust, C if `tomlc99` is clean, C++).  
+2. **D2** experiment: list TOML in Experiment 8 and re-run those languages.  
+3. **D3** wrapper: XML in the same six, same “existing library” rule; skip a language if the stack is too large.  
+4. **D4** experiment: list XML in Experiment 8 and re-run.  
+5. **D5** wrapper: more C native `FILE*` writers (only where the library already has one). Re-run Experiment 11 C.  
+6. **D6** JS stream API — only if a distinct stream path exists without lying. Otherwise leave the Not covered row.  
+7. **D7** (optional, from C-steps): Python BSON, C# BSON, Experiment 13 `schedule: sequential`. Each is its own wrapper-then-experiment pair.
+
+### Rules
+
+- One programming language at a time for **time**. Size is the only roughly fair cross-language number, and only with the same field description.
+- Do not crown a single winner.
+- Do not overwrite published site tables.
+- Do not commit experiment logs.
+- Wrapper PR and experiment PR stay separate.
+- If a language has no honest correspondent library, write that in Not covered and skip it.
 
 ---
 
