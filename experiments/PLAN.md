@@ -200,7 +200,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 10 | planned | Does the winner at 1 record stay the winner at 100 records? |
 | 11 | planned | When we write as if to a file, does the ranking change? |
 | 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
-| 13 | planned | Do Experiment 1 ranks stay the same if we change the sample or the cleaning rule? |
+| 13 | **done** (2026-08-17) | Do Experiment 1 ranks stay the same if we change the sample or the cleaning rule? |
 
 Run **1, then 2, then 3, then 4, then 12, then 13** first, unless a result forces a detour.
 
@@ -913,8 +913,9 @@ The plan said: if Jackson JSON and Jackson MessagePack are close, but Jackson JS
 
 ## Experiment 13 — Is the ranking an accident?
 
-**Status:** planned. This is the researcher’s experiment. Builders should still read the conclusion.  
-**Sample:** start from Experiment 1’s Sample A, then change one thing at a time.
+**Status:** done for all nine languages (2026-08-17). This is the researcher’s experiment. Builders should still read the conclusion.  
+**Folder:** [13-ranking-accident](13-ranking-accident/). Combined page: [results.md](13-ranking-accident/results.md). Combined JSON: [results.json](13-ranking-accident/results.json).  
+**Sample:** Samples A–E, 1 and 100 records, saved as [13-ranking-accident/sample.json](13-ranking-accident/sample.json).
 
 ### The question
 
@@ -951,6 +952,23 @@ One run on one computer is a single evening’s measurement. Other programs, hea
 
 - Behaviour on a different processor until we repeat it there
 - A world ranking across languages (we will never treat that as a result)
+- Shuffled order versus a fixed order (the runner always shuffles blocks)
+- Three separate evenings on this machine
+- Two versions of the same library (we did not pin an old package)
+
+### What we found (2026-08-17)
+
+Named JSON, all nine languages, Samples A–E, 1 and 100 records, in memory.
+
+**Python is stable.** `orjson` is first on every sample and at both 1 and 100. On Sample A it is about **5.3 times** faster than `json`. That ratio stays put under IQR 1.5, IQR 3.0, no stall filter, and keeping the first trial. Experiment 1 is a fact about named JSON in Python on this machine.
+
+**Some languages keep one name at N = 1:** JavaScript (`JSON.stringify`), C (`yyjson`), Rust (`sonic-rs`), Swift (`IkigaJSON`).
+
+**Some languages flip when the sample changes:** Go (`goccy/go-json` / `segmentio/encoding/json` / `sonic`), Java (`jsoniter` on A–C, `dsl-json` on D–E), C++ (`simdjson` / `yyjson` / `nlohmann_json`), C# (`SpanJson`, except `NetJSON` on the sensor list).
+
+**1 vs 100 flips** in Go, Swift, and some Java / Rust / C++ / C# cells. Python, JavaScript, and C do not flip.
+
+Never quote a rank without naming the sample and N. A close contest (Go on Sample A) is not the same kind of fact as `orjson` versus `json`.
 
 ---
 
@@ -1072,6 +1090,17 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **What this changes about Experiment 6:** The document-database question still stands (skip a field). We already know Jackson Smile is smaller, not clearly faster, and nlohmann BSON is larger than nlohmann JSON on a full write-and-read.
 - **What this changes about Experiment 13:** Still the next first-wave item. A rank that is a library gap (Java `jsoniter` vs Jackson; JavaScript protobuf trio) is the kind of gap we should see again if the ranking is real.
 - **What this does not answer:** A world ranking of formats; whether your team already knows Jackson; time to skip one field; Experiment 11’s extra C# in-memory step for binary.
+
+---
+
+## After Experiment 13
+
+- **Date:** 2026-08-17
+- **Sample:** [13-ranking-accident/sample.json](13-ranking-accident/sample.json) (A–E, 1 and 100 records)
+- **Folder:** [13-ranking-accident](13-ranking-accident/) · [combined page](13-ranking-accident/results.md) · [combined JSON](13-ranking-accident/results.json)
+- **Finding:** Python `orjson` stays first on every sample and both N; about 5.3× faster than `json` on Sample A under every stall rule we tried. JavaScript, C, Rust, and Swift keep one first place at N = 1. Go, Java, C++, and C# flip when the sample changes. 1 vs 100 flips in Go, Swift, and some other cells. Quote the sample and N.
+- **What this changes about Experiment 10:** We already have the 1-vs-100 named-JSON preview. Experiment 10 should still ask the same question for mixed formats (JSON / MessagePack / Protocol Buffers), not only JSON.
+- **What this does not answer:** Another processor; shuffled vs fixed order; three evenings; two library versions.
 
 ---
 

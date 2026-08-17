@@ -17,8 +17,21 @@
       "additionalProperties": false,
       "properties": {
         "kind": {
-          "type": "string",
-          "enum": ["message", "document", "telemetry", "strings", "event"]
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["message", "document", "telemetry", "strings", "event"]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["message", "document", "telemetry", "strings", "event"]
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          ]
         },
         "records_per_write": {
           "oneOf": [
