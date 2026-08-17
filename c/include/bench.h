@@ -12,7 +12,7 @@
 /* Data Model v2 only — message / document / telemetry / strings / event */
 
 #define V2_MAX_CHILDREN 16
-#define V2_MAX_POINTS 64
+#define V2_MAX_POINTS 512
 #define V2_MAX_STRINGS 64
 #define V2_MAX_TAGS 8
 #define V2_MAX_ATTRS 16
