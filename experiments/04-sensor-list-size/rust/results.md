@@ -1,6 +1,6 @@
 # Experiment 4 results — rust
 
-**Date:** 2026-08-16
+**Date:** 2026-08-17
 **Raw file:** `experiments/04-sensor-list-size/rust/logs/rust/2026-08-16-161217.csv`
 **Language:** rust
 **Sample:** one sensor record (`telemetry`), list lengths 8, 32, 128, 512

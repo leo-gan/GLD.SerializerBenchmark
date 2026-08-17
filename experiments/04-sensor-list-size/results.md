@@ -1,7 +1,7 @@
 # When is JSON too large for a sensor list?
 
 **Question:** As the list of numbers grows, when does JSON’s size become more than a small radio packet can hold?
-**Date:** 2026-08-16
+**Date:** 2026-08-17
 **Sample:** `telemetry`, one record, list lengths [8, 32, 128, 512] · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -29,14 +29,14 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 
 | Library | 8 nums | 32 nums | 128 nums | 512 nums | vs 128 / 512 at 512 nums | Role |
 |---------|--------|--------|--------|--------|--------------------------|------|
-| nanopb | 321 | 317 | 323 | 320 | >128, ≤512 | Protocol Buffers — nanopb (read the C page before quoting) |
-| protobuf-wire | 321 | 317 | 323 | 320 | >128, ≤512 | Protocol Buffers — in-tree wire helper |
-| mpack | 347 | 343 | 349 | 346 | >128, ≤512 | MessagePack |
-| yyjson | 657 | 661 | 667 | 659 | >128, >512 | JSON — fast writer from Experiment 1 |
-| tinycbor | 346 | 342 | 348 | 345 | >128, ≤512 | CBOR — Intel tinycbor |
-| qcbor | 346 | 342 | 348 | 345 | >128, ≤512 | CBOR — small-device writer |
-| zcbor | 348 | 344 | 350 | 347 | >128, ≤512 | CBOR — structured (zcbor) |
-| cJSON | 663 | 667 | 678 | 656 | >128, >512 | JSON — common C library |
+| nanopb | 105 | 317 | 1187 | 4640 | >128, >512 | Protocol Buffers — nanopb (read the C page before quoting) |
+| protobuf-wire | 105 | 317 | 1187 | 4640 | >128, >512 | Protocol Buffers — in-tree wire helper |
+| mpack | 129 | 343 | 1213 | 4666 | >128, >512 | MessagePack |
+| tinycbor | 129 | 342 | 1212 | 4666 | >128, >512 | CBOR — Intel tinycbor |
+| yyjson | 226 | 661 | 2418 | 9371 | >128, >512 | JSON — fast writer from Experiment 1 |
+| qcbor | 129 | 342 | 1212 | 4666 | >128, >512 | CBOR — small-device writer |
+| zcbor | 132 | 344 | 1214 | 4667 | >128, >512 | CBOR — structured (zcbor) |
+| cJSON | 226 | 667 | 2448 | 9482 | >128, >512 | JSON — common C library |
 
 ## Time and groups, by list length
 
@@ -94,53 +94,53 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| nanopb | 0.30 | 321 | fastest |
-| protobuf-wire | 0.30 | 321 | similar |
-| mpack | 1.63 | 347 | slower |
-| yyjson | 2.87 | 657 | slower |
-| tinycbor | 6.61 | 346 | slower |
-| qcbor | 7.31 | 346 | slower |
-| zcbor | 7.87 | 348 | slower |
-| cJSON | 26.0 | 663 | slower |
+| nanopb | 0.27 | 105 | fastest |
+| protobuf-wire | 0.27 | 105 | similar |
+| mpack | 1.12 | 129 | slower |
+| tinycbor | 1.46 | 129 | slower |
+| yyjson | 1.49 | 226 | slower |
+| qcbor | 1.85 | 129 | slower |
+| zcbor | 2.10 | 132 | slower |
+| cJSON | 8.66 | 226 | slower |
 
-**32 numbers** — not clearly slower: `nanopb`, `protobuf-wire`. Small gap: —.
-
-| Library | Write + read (µs) | Size (bytes) | Group |
-|---------|-------------------|--------------|-------|
-| nanopb | 0.29 | 317 | fastest |
-| protobuf-wire | 0.30 | 317 | similar |
-| mpack | 1.64 | 343 | slower |
-| yyjson | 2.90 | 661 | slower |
-| tinycbor | 6.77 | 342 | slower |
-| qcbor | 7.46 | 342 | slower |
-| zcbor | 8.01 | 344 | slower |
-| cJSON | 27.3 | 667 | slower |
-
-**128 numbers** — not clearly slower: `nanopb`. Small gap: —.
+**32 numbers** — not clearly slower: `protobuf-wire`, `nanopb`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| nanopb | 0.29 | 323 | fastest |
-| protobuf-wire | 0.31 | 323 | slower |
-| mpack | 1.67 | 349 | slower |
-| yyjson | 2.94 | 667 | slower |
-| tinycbor | 6.80 | 348 | slower |
-| qcbor | 7.38 | 348 | slower |
-| zcbor | 8.03 | 350 | slower |
-| cJSON | 28.1 | 678 | slower |
+| protobuf-wire | 0.40 | 317 | fastest |
+| nanopb | 0.40 | 317 | similar |
+| mpack | 1.84 | 343 | slower |
+| yyjson | 3.23 | 661 | slower |
+| tinycbor | 6.60 | 342 | slower |
+| qcbor | 7.40 | 342 | slower |
+| zcbor | 8.04 | 344 | slower |
+| cJSON | 29.5 | 667 | slower |
 
-**512 numbers** — not clearly slower: `nanopb`. Small gap: —.
+**128 numbers** — not clearly slower: `protobuf-wire`. Small gap: `nanopb`.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| nanopb | 0.29 | 320 | fastest |
-| protobuf-wire | 0.31 | 320 | slower |
-| mpack | 1.66 | 346 | slower |
-| yyjson | 2.95 | 659 | slower |
-| tinycbor | 6.95 | 345 | slower |
-| qcbor | 7.63 | 345 | slower |
-| zcbor | 8.23 | 347 | slower |
-| cJSON | 25.7 | 656 | slower |
+| protobuf-wire | 0.64 | 1187 | fastest |
+| nanopb | 0.65 | 1187 | close |
+| mpack | 3.33 | 1213 | slower |
+| yyjson | 7.58 | 2418 | slower |
+| tinycbor | 79.6 | 1212 | slower |
+| qcbor | 80.6 | 1212 | slower |
+| zcbor | 88.2 | 1214 | slower |
+| cJSON | 117 | 2448 | slower |
+
+**512 numbers** — not clearly slower: `protobuf-wire`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf-wire | 1.57 | 4640 | fastest |
+| nanopb | 1.76 | 4640 | slower |
+| mpack | 7.06 | 4666 | slower |
+| yyjson | 28.7 | 9371 | slower |
+| cJSON | 579 | 9482 | slower |
+| tinycbor | 1195 | 4666 | slower |
+| qcbor | 1209 | 4666 | slower |
+| zcbor | 1302 | 4667 | slower |
 
 ## What we saw
 

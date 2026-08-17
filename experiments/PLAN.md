@@ -434,7 +434,7 @@ This sample has only ordinary fields. It is the “just pickle the cache” case
 
 ## Experiment 4 — When is JSON too large for a sensor list?
 
-**Status:** done for Rust (2026-08-16). C ran, but its sizes do not grow with the list, so C cannot answer the curve.  
+**Status:** done for Rust (2026-08-16) and C (re-run 2026-08-17 after the runner honoured `points`).  
 **Folder:** [04-sensor-list-size](04-sensor-list-size/). Combined page: [results.md](04-sensor-list-size/results.md). Combined JSON: [results.json](04-sensor-list-size/results.json).  
 **Sample:** Sample C, 8, 32, 128, then 512 numbers, saved as [04-sensor-list-size/sample.json](04-sensor-list-size/sample.json).
 
@@ -483,7 +483,7 @@ Python is only the cloud side, not the device.
 - How many bytes the library occupies in flash
 - Battery use
 - Whether the radio already compresses the packet
-- C on this machine (the C sizes do not grow with the list)
+- C on this machine *(fixed 2026-08-17: the runner now reads `type_config.points`)*
 
 ### What we found (2026-08-16)
 
@@ -503,6 +503,10 @@ JSON already misses a 128-byte packet at 8 numbers. At 32 numbers it also misses
 The plan said: if JSON overflows and a denser format still fits, leave JSON on the device. That is the Rust answer at 32 numbers on a 512-byte packet. At 128 numbers, nothing in this set fits 512 bytes.
 
 **What this changes later:** Experiment 9 (size after gzip or zstd) is more useful now. Experiment 12 is still “format versus library.” Do not quote the C sizes as a device answer until the C runner writes the growing list.
+
+### What we found after the C fix (2026-08-17)
+
+C sizes now grow with the list and match the Rust curve to within a few bytes. JSON (`yyjson`) is 226 B at 8 numbers (over 128), 661 B at 32 (over 512), 2418 B at 128, 9371 B at 512. `protobuf-wire` / `nanopb` are 105 / 317 / 1187 / 4640. MessagePack and CBOR sit between JSON and protobuf. The Rust reading still holds on C: leave JSON on the device at 32 numbers on a 512-byte packet.
 
 ---
 
@@ -1139,13 +1143,13 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 
 ## After Experiment 4
 
-- **Date:** 2026-08-16
-- **PR:** [#87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87)
+- **Date:** 2026-08-16; C re-run 2026-08-17
+- **PR:** [#87](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/87); C runner [#96](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/96)
 - **Sample:** [04-sensor-list-size/sample.json](04-sensor-list-size/sample.json) (Sample C, 8 / 32 / 128 / 512 numbers)
 - **Folder:** [04-sensor-list-size](04-sensor-list-size/) · [combined page](04-sensor-list-size/results.md) · [combined JSON](04-sensor-list-size/results.json)
-- **Finding:** Trust the Rust size curve. C sizes do not grow with the list, so C cannot answer this question here. In Rust, JSON is 234 bytes at 8 numbers (already over a 128-byte packet) and 672 bytes at 32 numbers (over a 512-byte packet). `postcard` and `prost` are about half that and still fit 512 bytes at 32 numbers (about 286–290 bytes); they overflow at 128 numbers (about 1051 bytes). MessagePack and CBOR sit in between. At 128 numbers, nothing in this set fits a 512-byte packet.
+- **Finding:** Trust the Rust size curve. The first C run (2026-08-16) did not grow with the list. After the runner honoured `points` (2026-08-17), C matches Rust: JSON 226 / 661 / 2418 / 9371 bytes; protobuf-wire 105 / 317 / 1187 / 4640. Leave JSON on the device at 32 numbers on a 512-byte packet.
 - **What this changes about Experiment 9:** Size after gzip or zstd is now the next size question. Uncompressed JSON is already too large for these example packets at 32 numbers.
-- **What this does not answer:** Flash size of the library; battery; whether the radio compresses the packet; C on this machine.
+- **What this does not answer:** Flash size of the library; battery; whether the radio compresses the packet.
 
 ---
 
@@ -1246,7 +1250,7 @@ These are languages or measurements the **planned** experiments asked for, or th
 
 | Experiment | What is not covered | Why | How to fix it |
 |------------|---------------------|-----|----------------|
-| 4 | C size curve | C sizes do not grow with the sensor list on this machine (the runner is not writing the growing list on the wire) | Fix the C telemetry encode path so size scales with `points`; re-run Experiment 4 |
+| 4 | C size curve | **Fixed 2026-08-17** ([#96](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/96) + this re-run). C sizes now grow: JSON 226→9371 B from 8 to 512 numbers. | — |
 | 4 | Flash size, battery, radio compression | Out of suite scope | Measure on the device / radio |
 | 5 | C#, Rust, JS, C, C++, Swift Avro | The plan named Java / Go / Python as the Kafka/event trio. Those other languages *do* have Avro rows (`Apache.Avro`, `serde_avro_fast`, `avsc`, `avro-c`, `avro`, `SwiftAvroCore`) | Add them to `05-event-log-formats/experiment.yaml` and re-run |
 | 5 | Old reader vs new field; same bytes in two languages | One frozen description per run; each language has its own runner | A separate compatibility test of the `.avsc` / `.proto` |
@@ -1304,8 +1308,8 @@ We go **row by row**. A wrapper (harness) change is its **own PR**, then we re-r
 
 | Step | What | Why a wrapper PR |
 |------|------|------------------|
-| B1 | **C runner reads `type_config.points`** (today it hard-codes 32) and raise `V2_MAX_POINTS` from 64 to 512 | Experiment 4’s C sizes cannot grow until this lands |
-| B2 | Re-run Experiment 4 in C (and keep Rust) | experiment, after B1 |
+| B1 | **C runner reads `type_config.points`** and raise `V2_MAX_POINTS` to 512 | **done** [#96](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/96) |
+| B2 | Re-run Experiment 4 in C (and keep Rust) | **this re-run** |
 | B3 | **One-shot gzip(6) / zstd(3) of written bytes** in Go, Java, JS, Rust, C, C++, C#, Swift CSV (`SizeGzip`, `SizeZstd`). Parser already accepts those columns. Not timed. | wrapper |
 | B4 | Re-run Experiment 9 in those languages | experiment, after B3 |
 | B5 | Run `cpp/scripts/setup-protobuf-sysroot.sh` so official C++ `protobuf` registers; re-run Experiment 7 C++ | wrapper/env + experiment |
