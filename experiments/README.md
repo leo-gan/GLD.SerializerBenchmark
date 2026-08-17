@@ -15,6 +15,8 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 - Experiment 7: [`07-write-once-read-many/`](07-write-once-read-many/) · [`results.md`](07-write-once-read-many/results.md) · [`results.json`](07-write-once-read-many/results.json)
 - Experiment 8: [`08-human-files/`](08-human-files/) · [`results.md`](08-human-files/results.md) · [`results.json`](08-human-files/results.json)
 - Experiment 9: [`09-compression-size/`](09-compression-size/) · [`results.md`](09-compression-size/results.md) · [`results.json`](09-compression-size/results.json)
+- Experiment 10: [`10-one-vs-hundred/`](10-one-vs-hundred/) · [`results.md`](10-one-vs-hundred/results.md) · [`results.json`](10-one-vs-hundred/results.json)
+- Experiment 11: [`11-memory-vs-stream/`](11-memory-vs-stream/) · [`results.md`](11-memory-vs-stream/results.md) · [`results.json`](11-memory-vs-stream/results.json)
 - Experiment 12: [`12-format-vs-library/`](12-format-vs-library/) · [`results.md`](12-format-vs-library/results.md) · [`results.json`](12-format-vs-library/results.json)
 - Experiment 13: [`13-ranking-accident/`](13-ranking-accident/) · [`results.md`](13-ranking-accident/results.md) · [`results.json`](13-ranking-accident/results.json)
 - Preview copies for later experiments: [`samples/`](samples/)
@@ -30,8 +32,8 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 | 7 | [07-write-once-read-many](07-write-once-read-many/) | **Done** | FlatBuffers and Cap’n Proto: write time versus read time |
 | 8 | [08-human-files](08-human-files/) | **Done** | YAML, TOML, and XML versus JSON |
 | 9 | [09-compression-size](09-compression-size/) | **Done** (Python) | Size after gzip or zstd |
-| 10 | — | Planned | One record versus one hundred |
-| 11 | — | Planned | Writing into memory versus writing as if to a file |
+| 10 | [10-one-vs-hundred](10-one-vs-hundred/) | **Done** | One record versus one hundred |
+| 11 | [11-memory-vs-stream](11-memory-vs-stream/) | **Done** | Writing into memory versus writing as if to a file |
 | 12 | [12-format-vs-library](12-format-vs-library/) | **Done** | Is the difference the format, or the library? |
 | 13 | [13-ranking-accident](13-ranking-accident/) | **Done** | Does the ranking stay the same if we change the sample? |
 
