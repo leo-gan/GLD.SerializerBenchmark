@@ -71,3 +71,16 @@ languages:
     libraries:
       - {name: rkyv, writes_named_fields: true, role: rkyv — timed read builds a full value}
       - {name: prost, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: flatcc, writes_named_fields: true, role: FlatBuffers — C}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — wire helper}
+
+  - id: swift
+    enabled: true
+    libraries:
+      - {name: FlatBuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: CapnProto, writes_named_fields: true, role: Cap’n Proto}
+      - {name: SwiftProtobuf, writes_named_fields: true, role: Protocol Buffers}

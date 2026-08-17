@@ -19,6 +19,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `vmihailenco/msgpack` | [go/results.md](go/results.md) |
 | rust | ok | `rmp-serde` | — | `rmp-serde` | [rust/results.md](rust/results.md) |
 | c | ok | `mpack` | — | `mpack` | [c/results.md](c/results.md) |
+| swift | ok | `IkigaJSON` | — | `IkigaJSON`, `SwiftMsgpack` | [swift/results.md](swift/results.md) |
 
 ## In memory, by language
 
@@ -76,6 +77,16 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | mpack | 2.82 | 335 | MessagePack | fastest |
 | yyjson | 4.79 | 460 | JSON — Experiment 1 | slower |
 | libbson | 6.71 | 577 | BSON | slower |
+
+### swift
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| IkigaJSON | 49.4 | 448 | JSON — Experiment 1 | fastest |
+| SwiftMsgpack | 78.2 | 329 | MessagePack | slower |
+| SwiftBSON | 102 | 525 | BSON | slower |
 
 ## What we saw
 
