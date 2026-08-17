@@ -5,7 +5,7 @@ title: "C++"
 C++
 ===
 
-C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers).
+C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson, **glaze**), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers).
 
 ## Benchmark runner
 
@@ -30,6 +30,7 @@ C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson),
 | cista | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
 | custom_binary | Binary | harness | length-prefixed fields | Baseline; stream adapted |
 | flatbuffers | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
+| glaze | JSON | stephenberry/glaze | `glz::write_json` / `glz::read_json` on domain structs | Direct-to-memory JSON; **C++20 pin v2.9.5** (v3+ needs C++23); stream adapted |
 | flexbuffers | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
 | jsoncons_bson | Binary | jsoncons | `bson::encode/decode` on domain structs | BSON document; **native stream** |
 | jsoncons_cbor | Binary | jsoncons | `cbor::encode/decode` on domain structs | CBOR; **native stream** |
@@ -66,7 +67,7 @@ for rep:
 |---------|------------------|----------------------|
 | CBOR | tinycbor, libcbor, QCBOR, zcbor | jsoncons CBOR |
 | FlatBuffers | **flatcc** (C) | **google/flatbuffers** (C++) |
-| JSON focus | cJSON, yyjson, jansson, parson, json-c | nlohmann, RapidJSON, simdjson, arduinojson, yyjson |
+| JSON focus | cJSON, yyjson, jansson, parson, json-c | nlohmann, RapidJSON, simdjson, arduinojson, yyjson, glaze |
 | Language id | `c` | `cpp` |
 | MessagePack | mpack, msgpack-c **C API** | msgpack-c **C++ API** (`msgpack.hpp`) |
 | Object model | C structs + function pointers | C++20 structs + virtual `ISerializer` |
@@ -109,12 +110,13 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 
 6. **Not dual-registered (C-only or C++-only by design)**
    - **C-only in suite:** cJSON, jansson, parson, json-c, mpack, tinycbor, QCBOR, libbson, nanopb/protobuf-c log rows, flatcc, avro-c, zcbor.
-   - **C++-only in suite:** nlohmann, RapidJSON, simdjson, arduinojson, cereal, bitsery, zpp_bits, jsoncons, google flatbuffers C++ API.
+   - **C++-only in suite:** nlohmann, RapidJSON, simdjson, arduinojson, glaze, cereal, bitsery, zpp_bits, jsoncons, google flatbuffers C++ API.
 
 **Rule of thumb:** If a library is **pure C** and already measured under `Language=c`, re-registering under C++ only makes sense when the C++ call path is a first-class usage mode (yyjson) or when the **API surface differs** (msgpack C vs C++). Do not treat C and C++ rows as interchangeable runtimes for ranking.
 
 ## Caveats
 
+- **glaze** is pinned to **v2.9.5**, the last release that builds as C++20. Glaze v3+ requires C++23 (GCC 12+ / Clang 15+). This pin measures JSON via `write_json` / `read_json` on suite structs; CBOR is not registered (it landed after the C++20 line). Stream is **adapted**.
 - **simdjson** is optimized for parse; serialize is prepared minified JSON (same honesty as Rust/JS suite entries).
 - **protobuf** is official **libprotobuf** + protoc-generated stubs from `schemas/v2/protobuf/benchmark_v2.proto` (requires `cpp/scripts/setup-protobuf-sysroot.sh`). Domain→Message conversion is untimed (`prepare` / `to_domain`).
 - **protobuf-wire** is the previous in-tree proto3 field-tag codec (no libprotobuf); kept for comparison when the sysroot is absent or for wire-only baselines.

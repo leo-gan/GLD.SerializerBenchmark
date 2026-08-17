@@ -945,6 +945,11 @@ languages:
         library: nlohmann/json
         rationale: "De-facto standard C++ JSON library"
         optimal_api: "json::dump / json::parse (compact, no pretty-print)"
+      - name: glaze
+        category: json
+        library: stephenberry/glaze
+        rationale: "Fastest-class C++ JSON via compile-time struct reflection (direct to memory)"
+        optimal_api: "glz::write_json / glz::read_json on domain structs (reused string buffer)"
       - name: rapidjson
         category: json
         library: Tencent/rapidjson
