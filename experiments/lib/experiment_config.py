@@ -77,18 +77,30 @@ def runner_script(language: str) -> str | None:
 
 
 def _type_rows(sample: dict[str, Any]) -> list[dict[str, Any]]:
-    """One runner type per points value when settings.points is a list."""
-    kind = sample["kind"]
+    """One runner type per kind, and per points value when settings.points is a list.
+
+    ``sample.kind`` may be one name or a list (Experiments 8, 9, 10, 13).
+    ``points`` is only applied to telemetry cells so other kinds do not
+    inherit a sensor-list knob.
+    """
+    kinds = sample["kind"]
+    if isinstance(kinds, str):
+        kinds = [kinds]
     settings = dict(sample.get("settings") or {})
     points = settings.get("points")
-    if isinstance(points, list):
-        rows = []
-        for p in points:
-            cell = dict(settings)
-            cell["points"] = int(p)
+    rows: list[dict[str, Any]] = []
+    for kind in kinds:
+        cell = dict(settings)
+        if kind != "telemetry":
+            cell.pop("points", None)
+        if kind == "telemetry" and isinstance(points, list):
+            for p in points:
+                one = dict(cell)
+                one["points"] = int(p)
+                rows.append({"type_id": kind, "type_config": one})
+        else:
             rows.append({"type_id": kind, "type_config": cell})
-        return rows
-    return [{"type_id": kind, "type_config": settings}]
+    return rows
 
 
 def to_run_yaml(cfg: dict[str, Any]) -> dict[str, Any]:

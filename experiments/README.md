@@ -11,6 +11,7 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 - Experiment 3: [`03-one-language-store/`](03-one-language-store/) · [`results.md`](03-one-language-store/results.md) · [`results.json`](03-one-language-store/results.json)
 - Experiment 4: [`04-sensor-list-size/`](04-sensor-list-size/) · [`results.md`](04-sensor-list-size/results.md) · [`results.json`](04-sensor-list-size/results.json)
 - Experiment 12: [`12-format-vs-library/`](12-format-vs-library/) · [`results.md`](12-format-vs-library/results.md) · [`results.json`](12-format-vs-library/results.json)
+- Experiment 13: [`13-ranking-accident/`](13-ranking-accident/) · [`results.md`](13-ranking-accident/results.md) · [`results.json`](13-ranking-accident/results.json)
 - Preview copies for later experiments: [`samples/`](samples/)
 
 | # | Folder | Status | Question |
@@ -27,6 +28,6 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 | 10 | — | Planned | One record versus one hundred |
 | 11 | — | Planned | Writing into memory versus writing as if to a file |
 | 12 | [12-format-vs-library](12-format-vs-library/) | **Done** | Is the difference the format, or the library? |
-| 13 | — | Planned | Does the ranking stay the same if we change the sample? |
+| 13 | [13-ranking-accident](13-ranking-accident/) | **Done** | Does the ranking stay the same if we change the sample? |
 
 Do **1, then 2, then 3, then 4, then 12, then 13** first. Full reasons live in the plan.
