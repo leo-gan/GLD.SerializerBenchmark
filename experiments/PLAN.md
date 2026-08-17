@@ -199,7 +199,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 9 | planned | After gzip or zstd, does JSON stay larger than binary? |
 | 10 | planned | Does the winner at 1 record stay the winner at 100 records? |
 | 11 | planned | When we write as if to a file, does the ranking change? |
-| 12 | planned | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
+| 12 | **done** (2026-08-17) | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
 | 13 | planned | Do Experiment 1 ranks stay the same if we change the sample or the cleaning rule? |
 
 Run **1, then 2, then 3, then 4, then 12, then 13** first, unless a result forces a detour.
@@ -840,8 +840,9 @@ Only treat **real** rows as evidence for a file or socket. If the product is a c
 
 ## Experiment 12 — Is the difference the format, or the library?
 
-**Status:** planned.  
-**Sample:** Sample A, one record.
+**Status:** done for Java, C++, Go, C#, and JavaScript (2026-08-17).  
+**Folder:** [12-format-vs-library](12-format-vs-library/). Combined page: [results.md](12-format-vs-library/results.md). Combined JSON: [results.json](12-format-vs-library/results.json).  
+**Sample:** Sample A, one record, saved as [12-format-vs-library/sample.json](12-format-vs-library/sample.json).
 
 ### The question
 
@@ -889,6 +890,24 @@ A design review that is about to require “binary” without naming the library
 
 - A world ranking of formats across languages
 - Whether your team already knows Jackson (knowing Jackson is not the same as knowing nlohmann)
+
+### What we found (2026-08-17)
+
+The same question was run in Java, C++, Go, C#, and JavaScript. Times are **not** one contest across languages. We do not name a single winner.
+
+On this one order, the **library** often moves time more than the **format** does.
+
+| Language | Not clearly slower (in memory) | What that means here |
+|----------|--------------------------------|----------------------|
+| Java | `jsoniter` (about 49 µs, 440 bytes) | Same JSON size as Jackson and Gson. Jackson JSON is about 110 µs. Inside Jackson, Smile is smaller (233 bytes) and similar in time to Jackson JSON. Jackson MessagePack is slower than Jackson JSON. Ion is slowest. |
+| C++ | `nlohmann_json` (about 9.07 µs, 458 bytes) | All five nlohmann formats sit in a tight time band (about 9–10 µs). MessagePack and CBOR are smaller. BSON is **larger** than JSON. |
+| Go | `goccy/go-json` (about 2.89 µs, 448 bytes) | Inside ugorji, MessagePack is a bit faster and smaller than JSON. `encoding/json` is about three times slower than `goccy/go-json`. The three MessagePack libraries are closer to each other than the three JSON libraries are. |
+| C# | `MS Bond Fast` (about 10.3 µs, 376 bytes) | Bond Compact is smaller (208 bytes) and a little slower. Both protobuf libraries write 208 bytes and are slower than Bond. Fast vs Compact is the size trade Microsoft wrote down. |
+| JavaScript | `google-protobuf` (about 16 µs, 155 bytes) | `protobufjs` about 39 µs. `protobuf-es` about 69 µs. Same 155 bytes. Same format, about four times the time. |
+
+The plan said: if Jackson JSON and Jackson MessagePack are close, but Jackson JSON and Gson are far apart, the **library** matters more than the **format**. Here Jackson JSON and Jackson MessagePack are in the same time neighbourhood (MessagePack is a bit slower). `jsoniter` is about twice as fast as Jackson, same size. “Move to binary” without naming the library is not a plan.
+
+**What this changes later:** Experiment 6 still asks whether BSON, Smile, and Ion win a full write-and-read because they spend bytes on skip-ability. We already know Jackson Smile is smaller, not clearly faster, and nlohmann BSON is larger than nlohmann JSON. Experiment 13 is still next: do these ranks stay put if we change the sample?
 
 ---
 
@@ -1040,6 +1059,18 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Finding:** Trust the Rust size curve. C sizes do not grow with the list, so C cannot answer this question here. In Rust, JSON is 234 bytes at 8 numbers (already over a 128-byte packet) and 672 bytes at 32 numbers (over a 512-byte packet). `postcard` and `prost` are about half that and still fit 512 bytes at 32 numbers (about 286–290 bytes); they overflow at 128 numbers (about 1051 bytes). MessagePack and CBOR sit in between. At 128 numbers, nothing in this set fits a 512-byte packet.
 - **What this changes about Experiment 9:** Size after gzip or zstd is now the next size question. Uncompressed JSON is already too large for these example packets at 32 numbers.
 - **What this does not answer:** Flash size of the library; battery; whether the radio compresses the packet; C on this machine.
+
+---
+
+## After Experiment 12
+
+- **Date:** 2026-08-17
+- **Sample:** [12-format-vs-library/sample.json](12-format-vs-library/sample.json) (Sample A, one record)
+- **Folder:** [12-format-vs-library](12-format-vs-library/) · [combined page](12-format-vs-library/results.md) · [combined JSON](12-format-vs-library/results.json)
+- **Finding:** On this one order, the library often moves time more than the format does. In Java, `jsoniter` is not clearly slower (about 49 µs, 440 bytes). Jackson JSON is about 110 µs and the same size. Inside Jackson, Smile is smaller (233 bytes) and similar in time; MessagePack is slower than Jackson JSON; Ion is slowest. `gson` sits between `jsoniter` and Jackson. In C++, all five nlohmann formats sit in a tight time band (about 9–10 µs); JSON is fastest; BSON is larger than JSON. In Go, `goccy/go-json` is fastest; inside ugorji, MessagePack is a bit faster and smaller than JSON; `encoding/json` is about three times slower than `goccy/go-json`. In C#, Bond Fast is fastest and larger (376 bytes); Bond Compact is smaller (208 bytes); both protobuf libraries write 208 bytes and are slower than Bond. In JavaScript, three Protocol Buffers libraries write 155 bytes and differ by about four times (`google-protobuf` about 16 µs, `protobuf-es` about 69 µs). “Move to binary” without naming the library is not a plan.
+- **What this changes about Experiment 6:** The document-database question still stands (skip a field). We already know Jackson Smile is smaller, not clearly faster, and nlohmann BSON is larger than nlohmann JSON on a full write-and-read.
+- **What this changes about Experiment 13:** Still the next first-wave item. A rank that is a library gap (Java `jsoniter` vs Jackson; JavaScript protobuf trio) is the kind of gap we should see again if the ranking is real.
+- **What this does not answer:** A world ranking of formats; whether your team already knows Jackson; time to skip one field; Experiment 11’s extra C# in-memory step for binary.
 
 ---
 
