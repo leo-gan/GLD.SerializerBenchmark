@@ -52,6 +52,16 @@ static void test_all_roundtrips(void) {
     }
 }
 
+static void test_telemetry_points_from_config(void) {
+    test_fixture_t fx;
+    data_make_one(&fx, TD_TELEMETRY, 42, 0, 8, 8, 32, 4);
+    CHECK(fx.telemetry.value_count == 8, "points 8 got %d", fx.telemetry.value_count);
+    data_make_one(&fx, TD_TELEMETRY, 42, 0, 8, 128, 32, 4);
+    CHECK(fx.telemetry.value_count == 128, "points 128 got %d", fx.telemetry.value_count);
+    data_make_one(&fx, TD_TELEMETRY, 42, 0, 8, 512, 32, 4);
+    CHECK(fx.telemetry.value_count == 512, "points 512 got %d", fx.telemetry.value_count);
+}
+
 static void test_v2_type_names(void) {
     test_fixture_t fixtures[TD_COUNT];
     data_init_all(fixtures, TD_COUNT, 1);
@@ -78,6 +88,7 @@ int main(void) {
     printf("C serializer roundtrip tests (Data Model v2)\n");
     test_schedule_golden();
     test_v2_type_names();
+    test_telemetry_points_from_config();
     test_all_roundtrips();
     printf("%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;

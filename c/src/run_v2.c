@@ -209,8 +209,12 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
             "import json,sys\n"
             "d=json.load(open(sys.argv[1]))\n"
             "for c in d['cells']:\n"
+            "    tc=c.get('type_config') or {}\n"
             "    print(c['type_id'], c['data_type_instance_count'], "
-            "c.get('type_config_hash',''), sep='\\t')\n");
+            "c.get('type_config_hash',''),\n"
+            "          int(tc.get('points', 32)), int(tc.get('children', 8)),\n"
+            "          int(tc.get('count', 32)), int(tc.get('attr_count', 4)),\n"
+            "          sep='\\t')\n");
     fclose(cspf);
     char cells_cmd[512];
     snprintf(cells_cmd, sizeof cells_cmd, "python3 %s %s", cells_py, tmpj);
@@ -233,26 +237,29 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         char type_id[64] = {0};
         char type_hash[128] = {0};
         int n = 1;
-        /* type_id \t N \t hash */
-        char *p1 = strchr(line, '\t');
-        if (!p1) continue;
-        *p1 = 0;
-        strncpy(type_id, line, sizeof type_id - 1);
-        char *p2 = strchr(p1 + 1, '\t');
-        if (p2) {
-            *p2 = 0;
-            n = atoi(p1 + 1);
-            char *hash_s = p2 + 1;
-            while (*hash_s == ' ' || *hash_s == '\t') hash_s++;
-            size_t hl = strcspn(hash_s, "\r\n");
+        int points = 32, children = 8, str_count = 32, attr_count = 4;
+        /* type_id \t N \t hash \t points \t children \t count \t attr_count */
+        char *toks[8] = {0};
+        int nt = 0;
+        for (char *t = strtok(line, "\t\r\n"); t && nt < 7; t = strtok(NULL, "\t\r\n"))
+            toks[nt++] = t;
+        if (nt < 2) continue;
+        strncpy(type_id, toks[0], sizeof type_id - 1);
+        n = atoi(toks[1]);
+        if (nt >= 3) {
+            size_t hl = strlen(toks[2]);
             if (hl >= sizeof type_hash) hl = sizeof type_hash - 1;
-            memcpy(type_hash, hash_s, hl);
+            memcpy(type_hash, toks[2], hl);
             type_hash[hl] = 0;
-        } else {
-            n = atoi(p1 + 1);
         }
+        if (nt >= 4) points = atoi(toks[3]);
+        if (nt >= 5) children = atoi(toks[4]);
+        if (nt >= 6) str_count = atoi(toks[5]);
+        if (nt >= 7) attr_count = atoi(toks[6]);
         if (n < 1) n = 1;
-        printf("[PROGRESS] Cell %s N=%d hash=%s\n", type_id, n, type_hash);
+        if (points < 0) points = 0;
+        printf("[PROGRESS] Cell %s N=%d hash=%s points=%d\n",
+               type_id, n, type_hash, points);
         cells++;
 
         /* Build N single-instance fixtures (seeded per index). */
@@ -263,7 +270,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
         }
         for (int i = 0; i < n; i++) {
             fill_v2_fixture(&items[i], type_id, (int)seed + cells * 1000 + i,
-                            /*children*/8, /*points*/32, /*str_count*/32, /*attr_count*/4);
+                            children, points, str_count, attr_count);
             items[i].batch_n = 1;
             items[i].batch = NULL;
             items[i].name = type_id;
