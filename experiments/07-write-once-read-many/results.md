@@ -17,6 +17,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | javascript | flatbuffers | — | flatbuffers | — | — | no | [javascript/results.md](javascript/results.md) |
 | python | protobuf | — | protobuf | — | — | no | [python/results.md](python/results.md) |
 | rust | rkyv | — | rkyv | — | — | no | [rust/results.md](rust/results.md) |
+| c | flatcc | — | protobuf-wire | — | — | no | [c/results.md](c/results.md) |
+| swift | FlatBuffers | — | SwiftProtobuf | — | — | no | [swift/results.md](swift/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -32,6 +34,10 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | C (sensor) | protobuf | — | no |
 | rust | A (order) | rkyv | — | no |
 | rust | C (sensor) | rkyv | — | no |
+| c | A (order) | flatcc | — | no |
+| c | C (sensor) | protobuf-wire | — | no |
+| swift | A (order) | FlatBuffers | — | no |
+| swift | C (sensor) | SwiftProtobuf | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -42,6 +48,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | javascript | ok | `flatbuffers` | — |
 | python | ok | `protobuf` | — |
 | rust | ok | `rkyv` | — |
+| c | ok | `flatcc` | — |
+| swift | ok | `FlatBuffers` | — |
 
 ## In memory, by language and sample
 
@@ -132,6 +140,40 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |---------|------------|-----------|--------------|-------|
 | rkyv | 0.33 | 0.20 | 4144 | fastest |
 | prost | 0.76 | 0.95 | 4131 | slower |
+
+### c
+
+**A (order), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| flatcc | 0.47 | 0.12 | 236 | fastest |
+| protobuf-wire | 0.53 | 0.27 | 166 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| protobuf-wire | 0.52 | 1.06 | 4637 | fastest |
+| flatcc | 1.67 | 0.31 | 4164 | close |
+
+### swift
+
+**A (order), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| FlatBuffers | 3.85 | 3.92 | 440 | fastest |
+| SwiftProtobuf | 4.65 | 4.35 | 155 | slower |
+| CapnProto | 15.9 | 10.5 | 376 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| SwiftProtobuf | 5.73 | 4.90 | 4128 | fastest |
+| FlatBuffers | 5.62 | 8.36 | 4216 | slower |
+| CapnProto | 33.9 | 15.2 | 4184 | slower |
 
 ## What we saw
 

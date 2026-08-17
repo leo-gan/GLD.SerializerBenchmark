@@ -74,3 +74,10 @@ languages:
       - {name: yyjson, writes_named_fields: true, role: JSON — Experiment 1}
       - {name: libbson, writes_named_fields: true, role: BSON}
       - {name: mpack, writes_named_fields: true, role: MessagePack}
+
+  - id: swift
+    enabled: true
+    libraries:
+      - {name: IkigaJSON, writes_named_fields: true, role: JSON — Experiment 1}
+      - {name: SwiftBSON, writes_named_fields: true, role: BSON}
+      - {name: SwiftMsgpack, writes_named_fields: true, role: MessagePack}

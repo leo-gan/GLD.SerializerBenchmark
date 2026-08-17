@@ -1256,7 +1256,7 @@ These are languages or measurements the **planned** experiments asked for, or th
 | 5 | Old reader vs new field; same bytes in two languages | One frozen description per run; each language has its own runner | A separate compatibility test of the `.avsc` / `.proto` |
 | 6 | Python BSON | No BSON library is registered in the Python harness | Add a `bson` / PyMongo codec and list it in Experiment 6 |
 | 6 | C# BSON | No BSON writer is registered in C# | Add MongoDB.Bson (or similar) to the C# harness |
-| 6 | Swift BSON | `SwiftBSON` exists but was not on the plan’s BSON list | Add `SwiftBSON` to Experiment 6 |
+| 6 | Swift BSON | **Fixed 2026-08-17.** `SwiftBSON` is 525 B and slower than `SwiftMsgpack` (329 B) — same story as other languages. | — |
 | 6 | Time to skip one field | The clock always writes and reads the **whole** sample | A custom skip-one-field clock |
 | 7 | Java FlatBuffers / Cap’n Proto | No Java client for those formats in the suite | Add Java FlatBuffers / Cap’n Proto |
 | 7 | Official `libprotobuf` in C++ | The official library did not register (`setup-protobuf-sysroot.sh` not applied) | Run `cpp/scripts/setup-protobuf-sysroot.sh` and re-run |

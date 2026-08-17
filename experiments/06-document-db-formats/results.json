@@ -15,7 +15,7 @@
     "main_io": "memory",
     "require_named_fields": false
   },
-  "generated_at": "2026-08-17T18:00:54Z",
+  "generated_at": "2026-08-17T18:40:43Z",
   "languages": {
     "java": {
       "status": "ok",
@@ -872,6 +872,141 @@
           "tier": null,
           "cliffs_delta_vs_fastest": null,
           "cliffs_label": null,
+          "on_time_size_front": false
+        }
+      ]
+    },
+    "swift": {
+      "status": "ok",
+      "language": "swift",
+      "csv": "experiments/06-document-db-formats/swift/logs/swift/2026-08-17-114013.csv",
+      "error": null,
+      "top_groups": [
+        {
+          "method": "cliffs_delta_vs_fastest",
+          "n": 1,
+          "io": "memory",
+          "similar_max": 0.147,
+          "close_max": 0.33,
+          "reference": "IkigaJSON",
+          "similar": [
+            "IkigaJSON"
+          ],
+          "close": [],
+          "time_size_front": [
+            "IkigaJSON",
+            "SwiftMsgpack"
+          ]
+        }
+      ],
+      "top_group": {
+        "method": "cliffs_delta_vs_fastest",
+        "n": 1,
+        "io": "memory",
+        "similar_max": 0.147,
+        "close_max": 0.33,
+        "reference": "IkigaJSON",
+        "similar": [
+          "IkigaJSON"
+        ],
+        "close": [],
+        "time_size_front": [
+          "IkigaJSON",
+          "SwiftMsgpack"
+        ]
+      },
+      "rows": [
+        {
+          "library": "IkigaJSON",
+          "n": 1,
+          "version": "2.5.3",
+          "role": "JSON — Experiment 1",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": "copied",
+          "write_median_ns": 18215,
+          "read_median_ns": 31076,
+          "total_median_ns": 49372,
+          "write_median_us": 18.215,
+          "read_median_us": 31.0765,
+          "total_median_us": 49.372,
+          "total_mean_ns": 49607,
+          "total_p95_ns": 53300,
+          "total_p99_ns": 55910,
+          "total_ci_low_ns": 49132,
+          "total_ci_high_ns": 50123,
+          "size_bytes": 448,
+          "size_gzip_bytes": null,
+          "fidelity": 1.0,
+          "runs": 80,
+          "runs_raw": 100,
+          "outliers_removed": 19,
+          "in_comparison": true,
+          "tier": "fastest",
+          "cliffs_delta_vs_fastest": 0.0,
+          "cliffs_label": "reference",
+          "on_time_size_front": true
+        },
+        {
+          "library": "SwiftMsgpack",
+          "n": 1,
+          "version": "1.2.1",
+          "role": "MessagePack",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": "copied",
+          "write_median_ns": 44987,
+          "read_median_ns": 33171,
+          "total_median_ns": 78160,
+          "write_median_us": 44.987,
+          "read_median_us": 33.171,
+          "total_median_us": 78.16,
+          "total_mean_ns": 78396,
+          "total_p95_ns": 82378,
+          "total_p99_ns": 84041,
+          "total_ci_low_ns": 77899,
+          "total_ci_high_ns": 78896,
+          "size_bytes": 329,
+          "size_gzip_bytes": null,
+          "fidelity": 1.0,
+          "runs": 83,
+          "runs_raw": 100,
+          "outliers_removed": 16,
+          "in_comparison": true,
+          "tier": "slower",
+          "cliffs_delta_vs_fastest": 1.0,
+          "cliffs_label": "large",
+          "on_time_size_front": true
+        },
+        {
+          "library": "SwiftBSON",
+          "n": 1,
+          "version": "3.1.0",
+          "role": "BSON",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": "copied",
+          "write_median_ns": 42936,
+          "read_median_ns": 58900,
+          "total_median_ns": 101911,
+          "write_median_us": 42.936,
+          "read_median_us": 58.9,
+          "total_median_us": 101.911,
+          "total_mean_ns": 101932,
+          "total_p95_ns": 107875,
+          "total_p99_ns": 109839,
+          "total_ci_low_ns": 101187,
+          "total_ci_high_ns": 102713,
+          "size_bytes": 525,
+          "size_gzip_bytes": null,
+          "fidelity": 1.0,
+          "runs": 83,
+          "runs_raw": 100,
+          "outliers_removed": 16,
+          "in_comparison": true,
+          "tier": "slower",
+          "cliffs_delta_vs_fastest": 1.0,
+          "cliffs_label": "large",
           "on_time_size_front": false
         }
       ]
