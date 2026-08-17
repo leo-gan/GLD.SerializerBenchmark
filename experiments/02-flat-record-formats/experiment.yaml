@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 02-flat-record-formats
-title: Should an internal service leave JSON?
-question: On one flat record, how do ordinary named JSON, MessagePack, and Protocol Buffers compare?
+title: Should two services inside the company stop using JSON?
+question: On one small record, how do JSON, MessagePack, and Protocol Buffers compare?
+story:
+  why: Inside a company you may pick a denser format. That is a real cost (new tools, harder debugging). We measure whether the gain is large.
+  example: Two services you own swap a small request on a private network. No browser is on this path.
+  tradeoff: JSON is easy to read at 3 a.m. The other two write smaller bytes. Protocol Buffers needs a shared field list. MessagePack does not.
 
 sample:
   kind: message

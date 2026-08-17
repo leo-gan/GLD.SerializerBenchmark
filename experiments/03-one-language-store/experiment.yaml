@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 03-one-language-store
-title: What do we pay to stay readable by other languages?
-question: On one flat record, how much faster is a one-language library than a library another language can read?
+title: Is a one-language format worth the lock-in?
+question: On one small record, is a format only one language can read faster than a format other languages can read?
+story:
+  why: Formats like Python pickle are built for one language talking to itself. Next year another service may need the same bytes.
+  example: A cache or a job queue that “only we write today.” Next quarter a second program cannot open the key.
+  tradeoff: A one-language format can store rich objects. Other languages cannot read it. Some of these readers can run code — that is a safety problem.
 
 sample:
   kind: message

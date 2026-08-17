@@ -25,6 +25,7 @@ ideally one format family), not to crown a single global winner.
 | You want… | Go here |
 |-----------|---------|
 | Interactive charts, Pareto trade-offs, compare lab | **[Dashboard](dashboard/)** |
+| One-question tests in everyday words | **[Experiments](experiments/)** |
 | Course on formats and trade-offs (101–401) | **[Learn](theory/101/)** |
 | Per-language library lists and result tables | **[Languages](c/)** (sidebar: C, C#, C++, …) |
 | Methodology, metrics, how to add a codec | **[Method](analysis/)** |

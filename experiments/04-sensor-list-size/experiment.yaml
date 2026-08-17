@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 04-sensor-list-size
-title: When is JSON too large for a sensor list?
-question: As the list of numbers grows, when does JSON’s size become more than a small radio packet can hold?
+title: When is JSON too big for a sensor?
+question: As a list of sensor numbers grows, when does JSON no longer fit a small radio packet?
+story:
+  why: A radio packet has a size limit. JSON is easy to read but writes extra text around every number.
+  example: "A device sends 8, then 32, then 128, then 512 readings. We mark two example limits: 128 bytes and 512 bytes."
+  tradeoff: Stay on JSON if it still fits, so people can read the packets. Leave JSON when the packet overflows and a denser format still fits.
 
 sample:
   kind: telemetry

@@ -1,4 +1,4 @@
-# Experiment 11 — Writing into memory versus writing as if to a file
+# Experiment 11 — Does writing to a file change the ranking?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 11). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

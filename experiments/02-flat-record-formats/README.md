@@ -1,4 +1,4 @@
-# Experiment 2 — Should an internal service leave JSON?
+# Experiment 2 — Should two services inside the company stop using JSON?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 2). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

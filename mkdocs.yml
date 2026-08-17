@@ -12,7 +12,7 @@ theme:
   name: material
   custom_dir: docs_theme
   features:
-    # Header tabs: Dashboard | Learn | Languages | Method
+    # Header tabs: Dashboard | Experiments | Learn | Languages | Method
     - navigation.tabs
     - navigation.tabs.sticky
     # Left sidebar: sections under the active tab (Languages, Learn, Method)
@@ -81,10 +81,11 @@ extra_css:
 extra_javascript:
   - javascripts/languages-nav.js
 
-# Top tabs: Dashboard | Learn | Languages | Method
+# Top tabs: Dashboard | Experiments | Learn | Languages | Method
 # Nested items appear in the left sidebar under the active tab (Material has no true ▾ dropdown).
 nav:
   - Dashboard: dashboard/
+  - Experiments: experiments/index.md
   - Learn:
       - 101:
           - Overview: theory/101/index.md

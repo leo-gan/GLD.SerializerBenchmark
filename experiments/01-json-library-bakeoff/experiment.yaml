@@ -6,8 +6,12 @@
 
 schema: gld.experiment.config/1
 id: 01-json-library-bakeoff
-title: If we must keep JSON, which library should we use?
-question: If we must keep JSON, which library is best for one nested document?
+title: Which JSON library is fastest?
+question: We have to send JSON (the usual web text). On one small order, which JSON library is fastest?
+story:
+  why: Most websites already speak JSON. Changing that format is expensive. First we ask whether a faster JSON library is enough.
+  example: A shop’s public API sends one order as JSON. Partners and browsers already expect that text.
+  tradeoff: A faster library can help a lot. A library that checks types is slower on purpose — that extra time buys safety, not speed.
 
 sample:
   kind: document

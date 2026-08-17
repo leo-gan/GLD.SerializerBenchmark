@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 09-compression-size
-title: Just turn compression on
+title: Does squeezing the bytes make JSON small enough?
 question: After gzip or zstd, does JSON stay larger than a dense binary format?
+story:
+  why: Teams often turn compression on for everything. It finds repeated words. Tiny messages can get slower, because the processor work exceeds the bytes you save.
+  example: A public web page (large text) versus a chatty internal ping (a few dozen bytes).
+  tradeoff: On repeated words, compression can pull JSON next to a dense format. On numbers, the format still matters. Do not compress tiny control calls.
 
 sample:
   kind: [strings, telemetry, message]

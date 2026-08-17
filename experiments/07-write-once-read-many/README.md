@@ -1,4 +1,4 @@
-# Experiment 7 — Write once, read many times
+# Experiment 7 — Fast to write, or fast to read?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 7). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

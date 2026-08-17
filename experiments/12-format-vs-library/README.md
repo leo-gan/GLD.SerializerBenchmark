@@ -1,4 +1,4 @@
-# Experiment 12 — Is the difference the format, or the library?
+# Experiment 12 — Is it the format, or the library?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 12). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

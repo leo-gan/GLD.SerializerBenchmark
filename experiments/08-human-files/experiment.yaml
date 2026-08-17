@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 08-human-files
-title: Files people edit are not a request path
+title: Can we send YAML on the live path?
 question: On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
+story:
+  why: YAML, TOML, and XML exist so people can edit files. They were not built for a live request.
+  example: A service reads a config file at start. Someone proposes sending that same YAML on every request.
+  tradeoff: Keep YAML on disk if people edit it. Convert once at start. Use JSON (or a denser format) on the live path.
 
 sample:
   kind: [document, strings]

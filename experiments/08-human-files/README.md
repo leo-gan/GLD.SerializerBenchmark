@@ -1,4 +1,4 @@
-# Experiment 8 — Files people edit are not a request path
+# Experiment 8 — Can we send YAML on the live path?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 8). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

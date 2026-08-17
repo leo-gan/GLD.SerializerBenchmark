@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 12-format-vs-library
-title: Is the difference the format, or the library?
-question: If one library can write several formats, how much of the speed and size difference is the format, and how much is that library?
+title: Is it the format, or the library?
+question: If one library can write several formats, how much of the difference is the format, and how much is that library?
+story:
+  why: People say “we switched to binary” as if the name were the whole decision. Two libraries that both write JSON can still differ a lot.
+  example: Jackson in Java can write JSON, MessagePack, Smile, and more. We hold Jackson still and only change what it writes.
+  tradeoff: This tells you about that one library, not about every MessagePack library in the world. “Move to binary” without naming the library is not a plan.
 
 sample:
   kind: document

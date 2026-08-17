@@ -1,4 +1,4 @@
-# Experiment 5 — An event log: size and write time only
+# Experiment 5 — What should we use for an event log?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 5). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

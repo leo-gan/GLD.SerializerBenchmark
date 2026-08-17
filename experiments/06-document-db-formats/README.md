@@ -1,4 +1,4 @@
-# Experiment 6 — Document databases: BSON, Smile, and Ion
+# Experiment 6 — Are database formats better for a normal service call?
 
 The full argument is in [../PLAN.md](../PLAN.md) (Experiment 6). Edit **[`experiment.yaml`](experiment.yaml)** to change this experiment.
 

@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 06-document-db-formats
-title: Do BSON, Smile, and Ion beat JSON and MessagePack?
-question: On one nested order, do BSON, Smile, and Ion win a write-and-read contest against JSON and MessagePack?
+title: Are database formats better for a normal service call?
+question: On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
+story:
+  why: BSON, Smile, and Ion were built for databases and skip-through documents, not for a simple “write it all, read it all” call.
+  example: A program talking to MongoDB (BSON) or Java services talking to Elasticsearch (Smile).
+  tradeoff: These formats spend bytes so a reader can skip a field. This test always reads the whole record, so that extra may look like a loss.
 
 sample:
   kind: document

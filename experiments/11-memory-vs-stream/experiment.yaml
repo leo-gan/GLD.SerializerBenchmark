@@ -3,8 +3,12 @@
 
 schema: gld.experiment.config/1
 id: 11-memory-vs-stream
-title: Writing into memory versus writing as if to a file
-question: When the product writes to a file or socket, which libraries really write as they go, and does that change the ranking we saw in memory?
+title: Does writing to a file change the ranking?
+question: When we write as if to a file, which libraries really write as they go, and does the ranking change?
+story:
+  why: A cache uses a block of bytes in memory. A file or socket writes as you go. Some “stream” numbers are a full result that is then copied.
+  example: Saving a cache key versus writing a file or a network socket.
+  tradeoff: Only treat a real stream path as evidence for a file. If the product is a cache, the in-memory number is the one that matters.
 
 sample:
   kind: document

@@ -6,6 +6,7 @@
  * New folders appear automatically after sync.
  */
 import './experiments.css';
+import { formatSig, formatRelativeCell, formatIntGrouped } from './format.js';
 
 const CATALOG_URL = 'data/experiments/index.json';
 const LANG_LABELS = {
@@ -19,38 +20,72 @@ const LANG_LABELS = {
   cpp: 'C++',
   swift: 'Swift',
 };
-
-const TIER_CLASS = {
-  fastest: 'exp-tier-similar',
-  similar: 'exp-tier-similar',
-  close: 'exp-tier-close',
-  slower: 'exp-tier-slower',
+const KIND_LABELS = {
+  document: 'one order',
+  message: 'flat record',
+  telemetry: 'sensor readings',
+  event: 'one event',
+  strings: 'list of words',
 };
+const COMPARE_LABEL = {
+  fastest: 'Fastest',
+  reference: 'Fastest',
+  similar: 'About the same',
+  close: 'A bit slower',
+  slower: 'Clearly slower',
+};
+const LATENCY_SCALE = { latency: { unit: 'µs', divisor: 1e3, header: 'µs' } };
 
 function langLabel(id) {
   return LANG_LABELS[id] || id;
 }
 
-function formatKind(value) {
-  if (Array.isArray(value)) return value.join(', ');
+function kindLabel(value) {
+  if (Array.isArray(value)) return value.map(kindLabel).join(', ');
   if (value == null || value === '') return '—';
-  return String(value);
+  return KIND_LABELS[value] || String(value);
 }
 
-function formatUs(ns) {
-  if (ns == null || Number.isNaN(Number(ns))) return '—';
-  const us = Number(ns) / 1000;
-  if (us >= 1000) return us.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  if (us >= 100) return us.toFixed(1);
-  if (us >= 10) return us.toFixed(2);
-  return us.toFixed(3);
+function compareLabel(row) {
+  if (row.in_comparison === false) return 'Not compared';
+  const key = row.tier || row.cliffs_label || '';
+  return COMPARE_LABEL[key] || COMPARE_LABEL[row.cliffs_label] || '—';
 }
 
-function formatBytes(n) {
-  if (n == null || n === '') return '—';
-  const v = Number(n);
-  if (Number.isNaN(v)) return '—';
-  return v.toLocaleString();
+function compareClass(row) {
+  if (row.in_comparison === false) return 'exp-row-skip';
+  if (row.tier === 'fastest' || row.cliffs_label === 'reference') return 'exp-row-fastest';
+  if (row.tier === 'similar') return 'exp-row-similar';
+  if (row.tier === 'close') return 'exp-row-close';
+  if (row.tier === 'slower') return 'exp-row-slower';
+  return '';
+}
+
+function totalStdUs(row) {
+  let ns = row.total_std_ns;
+  if (ns == null) {
+    const lo = Number(row.total_ci_low_ns);
+    const hi = Number(row.total_ci_high_ns);
+    const n = Number(row.runs);
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || !n || n < 2) return null;
+    ns = ((hi - lo) / (2 * 1.96)) * Math.sqrt(n);
+  }
+  if (!Number.isFinite(Number(ns))) return null;
+  return Number(ns) / 1000;
+}
+
+function ratioCell(valueNs, bestNs, key) {
+  if (valueNs == null || bestNs == null) return '<td class="num">—</td>';
+  const { text, className } = formatRelativeCell(valueNs, bestNs, false, LATENCY_SCALE, key);
+  return `<td class="${className}">${escapeHtml(text)}</td>`;
+}
+
+function sizeCell(value, best) {
+  if (value == null || best == null) {
+    return `<td class="num">${value == null ? '—' : formatIntGrouped(value)}</td>`;
+  }
+  const { text, className } = formatRelativeCell(value, best, false, {}, 'size_bytes');
+  return `<td class="${className}">${escapeHtml(text)}</td>`;
 }
 
 async function fetchJson(url) {
@@ -172,11 +207,6 @@ async function loadPayload(id, payloadPath) {
 
 function setExperimentsView(on) {
   document.body.classList.toggle('dash-view-experiments', on);
-  document.querySelectorAll('.section-nav a').forEach((link) => {
-    const href = link.getAttribute('href') || '';
-    const isExp = href === '#experiments' || href.startsWith('#experiments/');
-    link.parentElement?.classList.toggle('active', on ? isExp : !isExp && link.parentElement.classList.contains('active'));
-  });
   const expLink = document.getElementById('nav-experiments-link');
   if (expLink) expLink.parentElement?.classList.toggle('active', on);
   if (on) {
@@ -188,49 +218,6 @@ function setExperimentsView(on) {
   }
 }
 
-function renderList(root) {
-  const items = catalog?.experiments || [];
-  root.innerHTML = `
-    <div class="exp-header">
-      <h2 class="chart-title">Experiments</h2>
-      <p class="section-help">
-        Each item is one question from the lab notebook.
-        Compare libraries <strong>inside one language</strong> — not write times across languages.
-        New experiment folders appear here after <code>sync-experiments.py</code>.
-      </p>
-    </div>
-    <div class="exp-list" role="list">
-      ${items
-        .map((exp) => {
-          const langs = (exp.languages || [])
-            .filter((l) => l.status === 'ok' || l.status === 'planned')
-            .map((l) => langLabel(l.id))
-            .join(' · ');
-          const status = exp.has_results
-            ? `<span class="badge badge-cyan">${(exp.languages || []).filter((l) => l.status === 'ok').length} language${(exp.languages || []).filter((l) => l.status === 'ok').length === 1 ? '' : 's'}</span>`
-            : `<span class="badge badge-slate">No results yet</span>`;
-          return `
-            <button type="button" class="exp-card glass-panel" data-exp-id="${exp.id}" role="listitem" ${exp.has_results ? '' : 'data-planned="1"'}>
-              <span class="exp-card-num">${exp.number != null ? exp.number : '—'}</span>
-              <span class="exp-card-body">
-                <span class="exp-card-title">${escapeHtml(exp.question || exp.title)}</span>
-                <span class="exp-card-meta">${escapeHtml(langs || '—')}${exp.generated_at ? ` · ${escapeHtml(String(exp.generated_at).slice(0, 10))}` : ''}</span>
-              </span>
-              ${status}
-            </button>`;
-        })
-        .join('')}
-    </div>
-    ${!items.length ? `<p class="section-help">No experiment folders found.</p>` : ''}
-  `;
-  root.querySelectorAll('.exp-card[data-exp-id]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (btn.getAttribute('data-planned') === '1') return;
-      setHash(btn.getAttribute('data-exp-id'));
-    });
-  });
-}
-
 function escapeHtml(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -239,12 +226,13 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-function selectHtml(id, label, values, current) {
+function selectHtml(id, label, values, current, labelFn) {
   if (values.length <= 1) return '';
   const opts = values
     .map((v) => {
       const s = String(v);
-      return `<option value="${escapeHtml(s)}"${s === current ? ' selected' : ''}>${escapeHtml(s)}</option>`;
+      const text = labelFn ? labelFn(v) : s;
+      return `<option value="${escapeHtml(s)}"${s === current ? ' selected' : ''}>${escapeHtml(text)}</option>`;
     })
     .join('');
   return `
@@ -254,30 +242,92 @@ function selectHtml(id, label, values, current) {
     </div>`;
 }
 
-function renderTopGroup(group) {
-  if (!group) return '';
-  const similar = group.similar || [];
-  const close = group.close || [];
-  const front = group.time_size_front || [];
+function renderHowToRead() {
   return `
-    <div class="exp-groups">
+    <details class="exp-howto glass-panel">
+      <summary>How to read this table</summary>
+      <ul>
+        <li>Times are the <strong>middle</strong> value, in microseconds. Smaller is better.</li>
+        <li>A cell like <code>15.9 (1.2×)</code> means 15.9, and <strong>1.2 times</strong> the fastest row. Green is better. Red is worse.</li>
+        <li><strong>Vs fastest</strong> is not simply Winner / Loser. Two libraries can be too close to call on this sample:
+          <strong>Fastest</strong> · <strong>About the same</strong> · <strong>A bit slower</strong> · <strong>Clearly slower</strong>.</li>
+        <li><strong>Good trade-off</strong> means nobody is both faster and smaller.</li>
+        <li><strong>Trials</strong> is how many timed runs we kept. <strong>Spread (std)</strong> is how much those times bounced around.</li>
+        <li>Compare libraries <strong>inside one language</strong>. Do not compare write times across languages.</li>
+      </ul>
+      <p><a href="../experiments/">Full experiment notes</a></p>
+    </details>`;
+}
+
+function renderStory(meta) {
+  const story = meta.story || {};
+  if (!story.why && !story.example && !story.tradeoff) return '';
+  return `
+    <div class="exp-story glass-panel">
+      ${story.why ? `<p><strong>Why we ran this.</strong> ${escapeHtml(story.why)}</p>` : ''}
+      ${story.example ? `<p><strong>Example.</strong> ${escapeHtml(story.example)}</p>` : ''}
+      ${story.tradeoff ? `<p><strong>Trade-off.</strong> ${escapeHtml(story.tradeoff)}</p>` : ''}
+    </div>`;
+}
+
+function renderSample(meta) {
+  const previews = meta.sample_preview || [];
+  if (!previews.length) return '';
+  return `
+    <details class="exp-sample glass-panel">
+      <summary>The data we timed (${previews.length === 1 ? 'one record' : `${previews.length} records`})</summary>
+      ${previews
+        .map((p) => {
+          const rec = { ...p.record };
+          if (rec && rec.items && rec.items.some((it) => it && it._more)) {
+            /* keep as stored */
+          }
+          return `
+            <p class="section-help">${escapeHtml(kindLabel(p.kind))}${p.how_many > 1 ? ` · ${p.how_many} records in one write (first record shown)` : ''}</p>
+            <pre class="exp-sample-pre">${escapeHtml(JSON.stringify(p.record, null, 2))}</pre>`;
+        })
+        .join('')}
+    </details>`;
+}
+
+function chips(names, cls) {
+  if (!names || !names.length) return '<span class="exp-chip exp-chip-empty">—</span>';
+  return names.map((n) => `<span class="exp-chip ${cls}">${escapeHtml(n)}</span>`).join('');
+}
+
+function renderTopGroup(group, rows) {
+  if (!group && !rows.length) return '';
+  const similar = group?.similar || rows.filter((r) => r.tier === 'similar' || r.tier === 'fastest').map((r) => r.library);
+  const close = group?.close || rows.filter((r) => r.tier === 'close').map((r) => r.library);
+  const slower = rows.filter((r) => r.tier === 'slower').map((r) => r.library);
+  const front = group?.time_size_front || rows.filter((r) => r.on_time_size_front).map((r) => r.library);
+  const fastest = group?.reference || rows.find((r) => r.tier === 'fastest')?.library;
+  return `
+    <div class="exp-groups glass-panel">
       <p class="section-help">
-        Groups vs the fastest on <strong>this sample</strong> (Cliff’s delta).
-        Not a single winner — a different record can change the order.
+        How they compare <strong>on this sample</strong>. This is not simply Winner / Loser — two libraries can be too close to call.
       </p>
       <div class="exp-group-row">
-        <span class="exp-group-label">Similar</span>
-        ${similar.map((n) => `<span class="exp-chip exp-tier-similar">${escapeHtml(n)}</span>`).join('') || '<span class="exp-chip exp-chip-empty">—</span>'}
+        <span class="exp-group-label">Fastest</span>
+        ${chips(fastest ? [fastest] : [], 'exp-tier-similar')}
       </div>
       <div class="exp-group-row">
-        <span class="exp-group-label">Close</span>
-        ${close.map((n) => `<span class="exp-chip exp-tier-close">${escapeHtml(n)}</span>`).join('') || '<span class="exp-chip exp-chip-empty">—</span>'}
+        <span class="exp-group-label">About the same</span>
+        ${chips(similar.filter((n) => n !== fastest), 'exp-tier-similar')}
+      </div>
+      <div class="exp-group-row">
+        <span class="exp-group-label">A bit slower</span>
+        ${chips(close, 'exp-tier-close')}
+      </div>
+      <div class="exp-group-row">
+        <span class="exp-group-label">Clearly slower</span>
+        ${chips(slower, 'exp-tier-slower')}
       </div>
       ${
         front.length
           ? `<div class="exp-group-row">
-              <span class="exp-group-label">Time/size front</span>
-              ${front.map((n) => `<span class="exp-chip">${escapeHtml(n)}</span>`).join('')}
+              <span class="exp-group-label" title="Nobody is both faster and smaller">Good trade-off</span>
+              ${chips(front, '')}
             </div>`
           : ''
       }
@@ -296,38 +346,57 @@ function renderTable(rows) {
     if (ac !== bc) return ac - bc;
     return (Number(a.total_median_ns) || 1e18) - (Number(b.total_median_ns) || 1e18);
   });
+  const compared = sorted.filter((r) => r.in_comparison !== false);
+  const minOf = (key) => {
+    const nums = compared.map((r) => Number(r[key])).filter(Number.isFinite);
+    return nums.length ? Math.min(...nums) : null;
+  };
+  const bestTotal = minOf('total_median_ns');
+  const bestWrite = minOf('write_median_ns');
+  const bestRead = minOf('read_median_ns');
+  const bestSize = minOf('size_bytes');
+  const bestGzip = minOf('size_gzip_bytes');
+  const bestZstd = minOf('size_zstd_bytes');
+
   const head = `
     <tr>
       <th class="str">Library</th>
-      ${showKind ? '<th class="str">Data type</th>' : ''}
-      ${showN ? '<th class="num">N</th>' : ''}
-      ${showIo ? '<th class="str">I/O</th>' : ''}
+      ${showKind ? '<th class="str">Record</th>' : ''}
+      ${showN ? '<th class="num">How many</th>' : ''}
+      ${showIo ? '<th class="str">How written</th>' : ''}
       <th class="num">Write (µs)</th>
       <th class="num">Read (µs)</th>
       <th class="num">Total (µs)</th>
+      <th class="num">Spread (std)</th>
       <th class="num">Size</th>
-      ${showGzip ? '<th class="num">gzip</th>' : ''}
-      ${showZstd ? '<th class="num">zstd</th>' : ''}
-      <th class="str">Group</th>
+      ${showGzip ? '<th class="num">After gzip</th>' : ''}
+      ${showZstd ? '<th class="num">After zstd</th>' : ''}
+      <th class="num">Trials</th>
+      <th class="str" title="Fastest, about the same, a bit slower, or clearly slower — on this sample. Not simply Winner / Loser.">Vs fastest</th>
     </tr>`;
   const body = sorted
     .map((row) => {
-      const tier = row.cliffs_label || row.tier || '';
-      const cls = TIER_CLASS[row.tier] || TIER_CLASS[tier] || '';
       const skipped = row.in_comparison === false;
+      const std = totalStdUs(row);
+      const trials =
+        row.runs != null
+          ? `${formatIntGrouped(row.runs)}${row.runs_raw ? ` of ${formatIntGrouped(row.runs_raw)}` : ''}`
+          : '—';
       return `
-        <tr class="${cls}${skipped ? ' exp-row-skip' : ''}">
+        <tr class="${compareClass(row)}">
           <td class="str">${escapeHtml(row.library)}${row.version ? `<span class="exp-ver">${escapeHtml(row.version)}</span>` : ''}</td>
-          ${showKind ? `<td class="str">${escapeHtml(row.kind ?? '')}</td>` : ''}
+          ${showKind ? `<td class="str">${escapeHtml(kindLabel(row.kind))}</td>` : ''}
           ${showN ? `<td class="num">${escapeHtml(row.n ?? '')}</td>` : ''}
-          ${showIo ? `<td class="str">${escapeHtml(row.io ?? '')}</td>` : ''}
-          <td class="num">${formatUs(row.write_median_ns)}</td>
-          <td class="num">${formatUs(row.read_median_ns)}</td>
-          <td class="num">${formatUs(row.total_median_ns)}</td>
-          <td class="num">${formatBytes(row.size_bytes)}</td>
-          ${showGzip ? `<td class="num">${formatBytes(row.size_gzip_bytes)}</td>` : ''}
-          ${showZstd ? `<td class="num">${formatBytes(row.size_zstd_bytes)}</td>` : ''}
-          <td class="str">${escapeHtml(skipped ? 'not compared' : tier || '—')}</td>
+          ${showIo ? `<td class="str">${escapeHtml(row.io === 'memory' ? 'in memory' : row.io ?? '')}</td>` : ''}
+          ${skipped ? `<td class="num">${formatSig(Number(row.write_median_ns) / 1000)}</td>` : ratioCell(row.write_median_ns, bestWrite, 'write_median_ns')}
+          ${skipped ? `<td class="num">${formatSig(Number(row.read_median_ns) / 1000)}</td>` : ratioCell(row.read_median_ns, bestRead, 'read_median_ns')}
+          ${skipped ? `<td class="num">${formatSig(Number(row.total_median_ns) / 1000)}</td>` : ratioCell(row.total_median_ns, bestTotal, 'total_median_ns')}
+          <td class="num">${std == null ? '—' : formatSig(std)}</td>
+          ${skipped ? `<td class="num">${formatIntGrouped(row.size_bytes)}</td>` : sizeCell(row.size_bytes, bestSize)}
+          ${showGzip ? (skipped ? `<td class="num">${formatIntGrouped(row.size_gzip_bytes)}</td>` : sizeCell(row.size_gzip_bytes, bestGzip)) : ''}
+          ${showZstd ? (skipped ? `<td class="num">${formatIntGrouped(row.size_zstd_bytes)}</td>` : sizeCell(row.size_zstd_bytes, bestZstd)) : ''}
+          <td class="num">${trials}</td>
+          <td class="str">${escapeHtml(compareLabel(row))}</td>
         </tr>`;
     })
     .join('');
@@ -338,6 +407,46 @@ function renderTable(rows) {
         <tbody>${body || '<tr><td colspan="8">No rows for this filter.</td></tr>'}</tbody>
       </table>
     </div>`;
+}
+
+function renderList(root) {
+  const items = catalog?.experiments || [];
+  root.innerHTML = `
+    <div class="exp-header">
+      <h2 class="chart-title">Experiments</h2>
+      <p class="section-help">
+        Each item is <strong>one question</strong>. Compare libraries inside one language.
+        <a href="../experiments/">Read the notes</a> if you want the why and the examples.
+      </p>
+    </div>
+    ${renderHowToRead()}
+    <div class="exp-list" role="list">
+      ${items
+        .map((exp) => {
+          const nOk = (exp.languages || []).filter((l) => l.status === 'ok').length;
+          const status = exp.has_results
+            ? `<span class="badge badge-cyan">${nOk} language${nOk === 1 ? '' : 's'}</span>`
+            : `<span class="badge badge-slate">No results yet</span>`;
+          return `
+            <button type="button" class="exp-card glass-panel" data-exp-id="${exp.id}" role="listitem" ${exp.has_results ? '' : 'data-planned="1"'}>
+              <span class="exp-card-num">${exp.number != null ? exp.number : '—'}</span>
+              <span class="exp-card-body">
+                <span class="exp-card-title">${escapeHtml(exp.title || exp.question)}</span>
+                <span class="exp-card-meta">${escapeHtml(exp.question || '')}</span>
+              </span>
+              ${status}
+            </button>`;
+        })
+        .join('')}
+    </div>
+    ${!items.length ? `<p class="section-help">No experiment folders found.</p>` : ''}
+  `;
+  root.querySelectorAll('.exp-card[data-exp-id]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.getAttribute('data-planned') === '1') return;
+      setHash(btn.getAttribute('data-exp-id'));
+    });
+  });
 }
 
 async function renderDetail(root, id) {
@@ -353,8 +462,9 @@ async function renderDetail(root, id) {
     root.innerHTML = `
       <div class="exp-header">
         <button type="button" class="tab-btn exp-back" id="exp-back">All experiments</button>
-        <h2 class="chart-title">${escapeHtml(meta.question || meta.title)}</h2>
-        <p class="section-help">No results.json yet. Re-run the experiment, then sync.</p>
+        <h2 class="chart-title">${escapeHtml(meta.title || meta.question)}</h2>
+        ${renderStory(meta)}
+        <p class="section-help">No results yet.</p>
       </div>`;
     root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
     return;
@@ -387,21 +497,17 @@ async function renderDetail(root, id) {
   };
   const filtered = rowsFor(langBlock, filters);
   const group = matchingTopGroup(langBlock, filters);
-  const sampleBits = [
-    data.sample?.kind != null ? `data type ${formatKind(data.sample.kind)}` : '',
-    data.sample?.n != null ? `N=${formatKind(data.sample.n)}` : '',
-    data.cleaning?.filter_id ? `samples ${data.cleaning.filter_id}` : '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
 
   root.innerHTML = `
     <div class="exp-header">
       <button type="button" class="tab-btn exp-back" id="exp-back">All experiments</button>
       <p class="exp-kicker">Experiment ${meta.number != null ? meta.number : ''}</p>
-      <h2 class="chart-title">${escapeHtml(data.question || meta.question || meta.title)}</h2>
-      <p class="section-help">${escapeHtml(sampleBits)}${data.generated_at ? ` · ${escapeHtml(String(data.generated_at).slice(0, 10))}` : ''}</p>
+      <h2 class="chart-title">${escapeHtml(meta.title || data.question || meta.question)}</h2>
+      <p class="section-help">${escapeHtml(meta.question || data.question || '')}</p>
     </div>
+    ${renderStory(meta)}
+    ${renderHowToRead()}
+    ${renderSample(meta)}
     <div class="exp-lang-tabs tabs" role="tablist" aria-label="Language">
       ${langIds
         .map(
@@ -410,13 +516,12 @@ async function renderDetail(root, id) {
         )
         .join('')}
     </div>
-    <p class="section-help">Times are median microseconds on this sample. Do not compare write times across languages.</p>
     <div class="filter-group exp-filters">
-      ${selectHtml('exp-kind', 'Data type', kinds, ui.kind)}
-      ${selectHtml('exp-n', 'N', ns, ui.n)}
-      ${selectHtml('exp-io', 'I/O', ios, ui.io)}
+      ${selectHtml('exp-kind', 'Record', kinds, ui.kind, kindLabel)}
+      ${selectHtml('exp-n', 'How many', ns, ui.n)}
+      ${selectHtml('exp-io', 'How written', ios, ui.io, (v) => (v === 'memory' ? 'in memory' : v))}
     </div>
-    ${renderTopGroup(group)}
+    ${renderTopGroup(group, filtered)}
     ${renderTable(filtered)}
   `;
   root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));

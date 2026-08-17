@@ -1,4 +1,4 @@
-# Experiment 1 — If we must keep JSON, which library should we use?
+# Experiment 1 — Which JSON library is fastest?
 
 The full argument is in [../PLAN.md](../PLAN.md). This folder is the question. Each language run is a subfolder.
 
