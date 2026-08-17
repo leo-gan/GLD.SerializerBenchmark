@@ -242,6 +242,51 @@ function selectHtml(id, label, values, current, labelFn) {
     </div>`;
 }
 
+function renderWhyExperiments() {
+  return `
+    <details class="exp-howto exp-why glass-panel" open>
+      <summary>Why experiments, if the Dashboard already has every number?</summary>
+      <p>
+        The main Dashboard is the <strong>full warehouse</strong>: every library, every record shape.
+        That is the right place to browse. It is the wrong place to pick a library for a real service
+        by sorting on speed.
+      </p>
+      <p>
+        The fastest row in the big table may be a library you <strong>cannot use</strong>.
+        It might write bytes that only one language can read.
+        It might drop field names so partners cannot parse the text.
+        It might be built for a file you write once, not for a web request you write on every click.
+        The Dashboard will still put it first, because it is fast.
+      </p>
+      <p>
+        An experiment starts with a <strong>decision</strong>, not a sort.
+        Example: “We must keep JSON on the public website. Which JSON library is fast enough?”
+        We keep only the libraries that could be the answer. We time one shared record.
+        We write down what we would give up.
+      </p>
+      <p>
+        Think of a grocery store and a recipe. The store has every product — that is the main Dashboard.
+        The recipe lists only what you need for dinner, and why — that is an experiment.
+        You need both. The store does not tell you what to cook.
+      </p>
+      <p>
+        Concrete traps the big table does not prevent:
+      </p>
+      <ul>
+        <li><strong>Different jobs in one list.</strong> JSON, compact bytes, and a Python-only format can share a table. “What is fastest?” is not one question.</li>
+        <li><strong>A tiny gap looks like a winner.</strong> 1.7 µs vs 1.8 µs is not a reason to rewrite a service.</li>
+        <li><strong>Your constraint is invisible.</strong> If browsers must keep JSON, the big table still shows every format.</li>
+        <li><strong>One record is not one hundred.</strong> The winner at 1 can lose at 100.</li>
+        <li><strong>Numbers without a story.</strong> “Binary is faster” is how teams break a public website.</li>
+      </ul>
+      <p>
+        We do not run a second benchmark. We cut the same numbers down to a fair contest
+        and put the story next to them.
+        <a href="../experiments/">Longer notes</a>
+      </p>
+    </details>`;
+}
+
 function renderHowToRead() {
   return `
     <details class="exp-howto glass-panel">
@@ -415,10 +460,11 @@ function renderList(root) {
     <div class="exp-header">
       <h2 class="chart-title">Experiments</h2>
       <p class="section-help">
-        Each item is <strong>one question</strong>. Compare libraries inside one language.
-        <a href="../experiments/">Read the notes</a> if you want the why and the examples.
+        Each item is <strong>one question</strong> — a fair slice of the big Dashboard, not a second set of clocks.
+        Compare libraries inside one language.
       </p>
     </div>
+    ${renderWhyExperiments()}
     ${renderHowToRead()}
     <div class="exp-list" role="list">
       ${items
@@ -504,6 +550,7 @@ async function renderDetail(root, id) {
       <p class="exp-kicker">Experiment ${meta.number != null ? meta.number : ''}</p>
       <h2 class="chart-title">${escapeHtml(meta.title || data.question || meta.question)}</h2>
       <p class="section-help">${escapeHtml(meta.question || data.question || '')}</p>
+      <p class="section-help">This is a fair slice of the main Dashboard for one decision, not extra clocks. <a href="#experiments">Why we keep experiments separate</a></p>
     </div>
     ${renderStory(meta)}
     ${renderHowToRead()}
