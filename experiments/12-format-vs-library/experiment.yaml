@@ -1,0 +1,85 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 12-format-vs-library
+title: Is the difference the format, or the library?
+question: If one library can write several formats, how much of the speed and size difference is the format, and how much is that library?
+
+sample:
+  kind: document
+  records_per_write: 1
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes, stream]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  # Mixed formats: every listed library is in the comparison set.
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: Jackson — JSON}
+      - {name: jackson-cbor, writes_named_fields: true, role: Jackson — CBOR}
+      - {name: jackson-smile, writes_named_fields: true, role: Jackson — Smile}
+      - {name: ion, writes_named_fields: true, role: Jackson — Ion}
+      - {name: msgpack, writes_named_fields: true, role: Jackson — MessagePack}
+      - {name: gson, writes_named_fields: true, role: JSON — another library (Gson)}
+      - {name: jsoniter, writes_named_fields: true, role: "JSON — another library (jsoniter, Experiment 1)"}
+
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: nlohmann_json, writes_named_fields: true, role: nlohmann — JSON}
+      - {name: nlohmann_cbor, writes_named_fields: true, role: nlohmann — CBOR}
+      - {name: nlohmann_bson, writes_named_fields: true, role: nlohmann — BSON}
+      - {name: nlohmann_msgpack, writes_named_fields: true, role: nlohmann — MessagePack}
+      - {name: nlohmann_ubjson, writes_named_fields: true, role: nlohmann — UBJSON}
+
+  - id: go
+    enabled: true
+    libraries:
+      - {name: ugorji/json, writes_named_fields: true, role: ugorji — JSON}
+      - {name: ugorji/msgpack, writes_named_fields: true, role: ugorji — MessagePack}
+      - {name: ugorji/cbor, writes_named_fields: true, role: ugorji — CBOR}
+      - {name: encoding/json, writes_named_fields: true, role: JSON — ships with Go}
+      - {name: goccy/go-json, writes_named_fields: true, role: JSON — another library (Experiment 1)}
+      - {name: vmihailenco/msgpack, writes_named_fields: true, role: MessagePack — another library}
+      - {name: shamaton/msgpack, writes_named_fields: true, role: MessagePack — another library}
+
+  - id: csharp
+    enabled: true
+    libraries:
+      - {name: MS Bond Compact, writes_named_fields: true, role: Bond — Compact Binary}
+      - {name: MS Bond Fast, writes_named_fields: true, role: Bond — Fast Binary}
+      - {name: Google.Protobuf, writes_named_fields: true, role: Protocol Buffers — Google library}
+      - {name: ProtoBuf, writes_named_fields: true, role: Protocol Buffers — protobuf-net}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: protobuf-es, writes_named_fields: true, role: Protocol Buffers — protobuf-es}
+      - {name: protobufjs, writes_named_fields: true, role: Protocol Buffers — protobufjs}
+      - {name: google-protobuf, writes_named_fields: true, role: Protocol Buffers — google-protobuf}
