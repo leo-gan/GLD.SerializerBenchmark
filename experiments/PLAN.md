@@ -200,7 +200,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 10 | planned | Does the winner at 1 record stay the winner at 100 records? |
 | 11 | planned | When we write as if to a file, does the ranking change? |
 | 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
-| 13 | **done** (2026-08-17) | Do Experiment 1 ranks stay the same if we change the sample or the cleaning rule? |
+| 13 | **done** (2026-08-17, [PR #90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)) | Do Experiment 1 ranks stay the same if we change the sample or the cleaning rule? |
 
 Run **1, then 2, then 3, then 4, then 12, then 13** first, unless a result forces a detour.
 
