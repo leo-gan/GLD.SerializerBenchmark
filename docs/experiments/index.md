@@ -12,6 +12,58 @@ Compare libraries **inside one language**. A Python time and a Java time are not
 
 ---
 
+## Why experiments, if the Dashboard already has every number?
+
+The main Dashboard is the **full set of measurements**. Every language, every library we registered, every record shape, both “in memory” and “as if to a file.” It is the warehouse. You can browse, sort, and compare.
+
+That warehouse is easy to misuse.
+
+If you open Python and sort by speed, the top row might be a library you **cannot use** for your job. It might write bytes that only Python can read. It might skip field names so partners cannot parse the text. It might be built for a game file you write once, not for a web request you write on every click. The Dashboard will still put that row at the top, because it is fast.
+
+An experiment is the opposite of “show me everything.” We start with a **decision**:
+
+> We must keep JSON on the public website. Which JSON library is fast enough?
+
+Then we keep **only** the libraries that could be the answer. We time **one** record (the same one for everyone in that test). We write down what we would give up if we picked the faster row.
+
+Think of a grocery store and a recipe. The store has every product. That is the main Dashboard. The recipe lists only what you need for tonight’s dinner, and why. That is an experiment. You need both. The store does not tell you what to cook. The recipe does not replace the store.
+
+### What goes wrong if we only use the big table
+
+**1. Different jobs sit in the same list.**  
+JSON (text people can read), MessagePack (compact bytes, no shared field file), Protocol Buffers (shared field numbers), and Python pickle (Python only) can all appear in one language table. “What is fastest?” is not one question. “What is fastest **for a public API that must stay JSON**?” is one question. Experiment 1 is that question. Experiment 2 is a different question: “may we leave JSON on a private path?”
+
+**2. A small gap looks like a winner.**  
+On a tiny record, 1.7 µs versus 1.8 µs is not a reason to rewrite a service. The experiment page says when the gap is “about the same” or “a bit slower,” so we do not crown a winner we cannot defend.
+
+**3. The Dashboard does not know your constraint.**  
+You may be stuck with JSON because browsers and partners already speak it. You may be stuck with Protocol Buffers because two languages share a field file. The big table cannot hide the rows that break that rule. An experiment can.
+
+**4. One record is not one hundred records.**  
+A web call is usually one body. A log shipper often writes many records at once. The library that wins at 1 can lose at 100 (Experiment 10). The main Dashboard shows both, side by side. Without the experiment, it is easy to quote the wrong column.
+
+**5. Size after gzip is not the same as raw size.**  
+Teams say “just turn compression on.” Experiment 9 asks whether that erases the reason to leave JSON. The main Dashboard can show extra size columns. It does not ask the question or name the three records we used (words, numbers, a tiny ping).
+
+**6. Numbers without a story invite the wrong change.**  
+A common mistake: someone sees “binary is faster,” changes the public website, and then spends months helping partners who can no longer use ordinary tools. Experiments exist so we **ask a narrow question first**, measure only that, and then decide.
+
+### What an experiment adds that the big table does not
+
+| The main Dashboard | An experiment |
+|--------------------|---------------|
+| Every library we measured | Only libraries that could answer **this** question |
+| Every record shape, mixed | One record (or a planned set), named and shown |
+| Speed, size, charts | The same numbers, plus **why**, an **example**, and the **trade-off** |
+| You pick the filter | We already picked the fair comparison |
+| Easy to browse | Built to support **one decision** |
+
+The experiment still uses the same clock and the same record builder. We do not invent a second benchmark. We **cut the big table down to a fair contest** and write the story next to it.
+
+If you only want to look around, use the main Dashboard. If you have to choose a library for a real service, start with the experiment that matches your constraint.
+
+---
+
 ## How to read a table
 
 Times are the **middle** value (the median), in **microseconds**. Smaller is better for time and for size.

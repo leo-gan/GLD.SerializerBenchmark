@@ -45,6 +45,10 @@ body.dash-view-experiments #filter-policy-meta {
   margin: 0.25rem 0;
 }
 
+.exp-why p {
+  margin: 0.5rem 0 0;
+}
+
 .exp-story p {
   margin: 0.35rem 0;
 }
