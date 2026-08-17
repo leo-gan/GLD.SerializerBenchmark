@@ -196,7 +196,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 6 | **done** (2026-08-17) | On Sample A, do BSON, Smile, and Ion beat JSON and MessagePack? |
 | 7 | **done** (2026-08-17) | On Sample A, how do FlatBuffers and Cap’n Proto split write time and read time? |
 | 8 | **done** (2026-08-17) | On Sample A and Sample E, how much slower are YAML, TOML, and XML than JSON? |
-| 9 | planned | After gzip or zstd, does JSON stay larger than binary? |
+| 9 | **done** (2026-08-17, Python only) | After gzip or zstd, does JSON stay larger than binary? |
 | 10 | planned | Does the winner at 1 record stay the winner at 100 records? |
 | 11 | planned | When we write as if to a file, does the ranking change? |
 | 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | If **one** Java library writes JSON and also writes MessagePack, how much of the difference is the format? |
@@ -741,8 +741,9 @@ On Sample A: Go YAML is about 38× slower than `goccy/go-json` (201 µs vs 5.3 �
 
 ## Experiment 9 — “Just turn compression on”
 
-**Status:** planned.  
-**Sample:** Sample E (repeated words), Sample C (numbers), Sample B (tiny record).
+**Status:** done for Python (2026-08-17). Other languages do not record gzip/zstd size.  
+**Folder:** [09-compression-size](09-compression-size/). Combined page: [results.md](09-compression-size/results.md). Combined JSON: [results.json](09-compression-size/results.json).  
+**Sample:** Samples E, C (128 numbers), and B, saved as [09-compression-size/sample.json](09-compression-size/sample.json).
 
 ### The question
 
@@ -788,6 +789,18 @@ The runner can record **size after gzip** and **size after zstd** once per sampl
 
 - How long compression itself takes (we record **size**, once, not compress time)
 - How encryption and HTTP/2 stack with the compressor
+
+### What we found (2026-08-17)
+
+Python only (the only runner that writes gzip/zstd size).
+
+| Sample | JSON raw | JSON gzip | protobuf raw | protobuf gzip |
+|--------|----------|-----------|--------------|---------------|
+| E words | 410 | 270 | 367 | 266 |
+| C 128 numbers | 2407 | 1317 | 1061 | 1080 |
+| B tiny | 168 | 138 | 50 | 71 |
+
+On words, gzip pulls JSON next to protobuf (270 vs 266). On numbers, the format still matters. On the tiny record, gzip **enlarges** protobuf (50 → 71) and barely shrinks JSON. Do not compress chatty control calls.
 
 ---
 
@@ -1175,6 +1188,15 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 - **Folder:** [08-human-files](08-human-files/)
 - **Finding:** YAML is many times slower than JSON. XML is larger. They stay files people edit. Convert to JSON or Protocol Buffers when the process starts.
 - **What this does not answer:** Whether operators prefer YAML in the editor; Python/Java/JS YAML (not registered next to JSON in those harnesses).
+
+---
+
+## After Experiment 9
+
+- **Date:** 2026-08-17
+- **Folder:** [09-compression-size](09-compression-size/)
+- **Finding:** On text (Sample E), gzip makes JSON almost as small as Protocol Buffers. On numbers (Sample C), the gap survives. On a tiny record, gzip can make binary *larger*. Do not leave JSON for size on text-heavy bodies if HTTP already compresses; do not compress chatty control calls.
+- **What this does not answer:** Compress time; other languages (no SizeGzip column). Fix: add one-shot gzip/zstd of written bytes in each runner.
 
 ---
 

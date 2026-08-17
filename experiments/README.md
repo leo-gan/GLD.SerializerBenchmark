@@ -14,6 +14,7 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 - Experiment 6: [`06-document-db-formats/`](06-document-db-formats/) · [`results.md`](06-document-db-formats/results.md) · [`results.json`](06-document-db-formats/results.json)
 - Experiment 7: [`07-write-once-read-many/`](07-write-once-read-many/) · [`results.md`](07-write-once-read-many/results.md) · [`results.json`](07-write-once-read-many/results.json)
 - Experiment 8: [`08-human-files/`](08-human-files/) · [`results.md`](08-human-files/results.md) · [`results.json`](08-human-files/results.json)
+- Experiment 9: [`09-compression-size/`](09-compression-size/) · [`results.md`](09-compression-size/results.md) · [`results.json`](09-compression-size/results.json)
 - Experiment 12: [`12-format-vs-library/`](12-format-vs-library/) · [`results.md`](12-format-vs-library/results.md) · [`results.json`](12-format-vs-library/results.json)
 - Experiment 13: [`13-ranking-accident/`](13-ranking-accident/) · [`results.md`](13-ranking-accident/results.md) · [`results.json`](13-ranking-accident/results.json)
 - Preview copies for later experiments: [`samples/`](samples/)
@@ -28,7 +29,7 @@ Each experiment is one question. Edit that folder’s **`experiment.yaml`** to c
 | 6 | [06-document-db-formats](06-document-db-formats/) | **Done** | BSON, Smile, and Ion on one order-like record |
 | 7 | [07-write-once-read-many](07-write-once-read-many/) | **Done** | FlatBuffers and Cap’n Proto: write time versus read time |
 | 8 | [08-human-files](08-human-files/) | **Done** | YAML, TOML, and XML versus JSON |
-| 9 | — | Planned | Size after gzip or zstd |
+| 9 | [09-compression-size](09-compression-size/) | **Done** (Python) | Size after gzip or zstd |
 | 10 | — | Planned | One record versus one hundred |
 | 11 | — | Planned | Writing into memory versus writing as if to a file |
 | 12 | [12-format-vs-library](12-format-vs-library/) | **Done** | Is the difference the format, or the library? |
