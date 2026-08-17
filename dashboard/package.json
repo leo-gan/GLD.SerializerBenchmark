@@ -6,7 +6,8 @@
     "dev": "vite --port 5173 --open",
     "build": "vite build",
     "preview": "vite preview",
-    "sync-data": "python3 scripts/sync-data.py"
+    "sync-data": "python3 scripts/sync-data.py",
+    "sync-experiments": "python3 scripts/sync-experiments.py"
   },
   "devDependencies": {
     "vite": "^5.0.0"

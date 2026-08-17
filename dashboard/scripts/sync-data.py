@@ -175,5 +175,12 @@ def main():
 
     print("Sync complete.")
 
+    # Experiment catalog is independent of language-latest payloads.
+    exp_script = os.path.join(script_dir, "sync-experiments.py")
+    if os.path.isfile(exp_script):
+        import subprocess
+        print("Syncing experiment catalog...")
+        subprocess.check_call([sys.executable, exp_script])
+
 if __name__ == "__main__":
     main()
