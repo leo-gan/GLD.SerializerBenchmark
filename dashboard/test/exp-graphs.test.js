@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareLabel, displayTier, rowsToDelimited, skipReason, totalStdUs } from '../exp-export.js';
-import { sizeTreatment, wrapYTick } from '../exp-charts.js';
+import { figureTypesFor, sizeTreatment, usesExperimentGraphs, wrapYTick } from '../exp-charts.js';
 
 test('totalStdUs reconstructs from mean CI', () => {
   const std = totalStdUs({
@@ -167,4 +167,26 @@ test('wrapYTick splits slash names and prefixes only the first line', () => {
   assert.equal(tick.length, 2);
   assert.equal(tick[0], '× segmentio/');
   assert.equal(tick[1], 'encoding/json');
+});
+
+test('usesExperimentGraphs is on for every experiment id', () => {
+  assert.equal(usesExperimentGraphs('01-json-library-bakeoff'), true);
+  assert.equal(usesExperimentGraphs('13-ranking-accident'), true);
+  assert.equal(usesExperimentGraphs('unknown'), false);
+});
+
+test('figureTypesFor picks a story-specific hero', () => {
+  const timed = [
+    { library: 'a', write_median_ns: 1, read_median_ns: 2, total_median_ns: 3, size_bytes: 10, in_comparison: true },
+    { library: 'b', write_median_ns: 2, read_median_ns: 4, total_median_ns: 6, size_bytes: 20, in_comparison: true },
+  ];
+  assert.deepEqual(figureTypesFor('07-write-once-read-many', timed), ['W1', 'S1']);
+  assert.deepEqual(figureTypesFor('04-sensor-list-size', timed), ['C1']);
+  assert.deepEqual(figureTypesFor('09-compression-size', timed), ['S2']);
+  assert.ok(figureTypesFor('10-one-vs-hundred', timed).includes('C2'));
+  assert.ok(figureTypesFor('13-ranking-accident', timed).includes('R1'));
+  const def = figureTypesFor('02-flat-record-formats', timed);
+  assert.ok(def.includes('L1'));
+  assert.ok(def.includes('W1'));
+  assert.ok(def.includes('S1'));
 });
