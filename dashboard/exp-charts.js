@@ -13,7 +13,53 @@ import {
   totalStdUs,
 } from './exp-export.js';
 
-export const GRAPH_PROTOTYPE_IDS = new Set(['01-json-library-bakeoff']);
+export const GRAPH_PROTOTYPE_IDS = new Set([
+  '01-json-library-bakeoff',
+  '02-flat-record-formats',
+  '03-one-language-store',
+  '04-sensor-list-size',
+  '05-event-log-formats',
+  '06-document-db-formats',
+  '07-write-once-read-many',
+  '08-human-files',
+  '09-compression-size',
+  '10-one-vs-hundred',
+  '11-memory-vs-stream',
+  '12-format-vs-library',
+  '13-ranking-accident',
+]);
+
+const KIND_AXIS = {
+  document: 'one order',
+  message: 'flat record',
+  telemetry: 'sensor readings',
+  event: 'one event',
+  strings: 'list of words',
+};
+
+const SERIES_PALETTE = [
+  { fill: '#7eb6ff', ink: '#1565c0', bg: '#e3f2fd' },
+  { fill: '#5d4037', ink: '#3e2723', bg: '#efebe9' },
+  { fill: '#00838f', ink: '#006064', bg: '#e0f7fa' },
+  { fill: '#f9a825', ink: '#f57f17', bg: '#fff8e1' },
+  { fill: '#546e7a', ink: '#37474f', bg: '#eceff1' },
+  { fill: '#8d6e63', ink: '#4e342e', bg: '#efebe9' },
+  { fill: '#0288d1', ink: '#01579b', bg: '#e1f5fe' },
+  { fill: '#6d4c41', ink: '#3e2723', bg: '#efebe9' },
+  { fill: '#455a64', ink: '#263238', bg: '#eceff1' },
+  { fill: '#00acc1', ink: '#006064', bg: '#e0f7fa' },
+];
+
+function paletteAt(i) {
+  return SERIES_PALETTE[i % SERIES_PALETTE.length];
+}
+
+function libraryChips(names) {
+  return (names || []).map((name, i) => {
+    const p = paletteAt(i);
+    return seriesChip(String(name), p.fill, p.ink, p.bg);
+  }).join(' ');
+}
 
 const fontStyle = {
   family: "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -24,6 +70,9 @@ const tickColor = '#5f6368';
 /** Write vs read series — not green/red (those mean faster/slower). */
 const SERIES_WRITE = '#7eb6ff';
 const SERIES_READ = '#4a148c';
+/** Experiment 10: one vs a hundred — not the write/read pair (those were too close). */
+const SERIES_N1 = '#7eb6ff';
+const SERIES_N100 = '#5d4037';
 const tooltipChrome = {
   backgroundColor: 'rgba(32, 33, 36, 0.95)',
   titleColor: '#ffffff',
@@ -40,9 +89,8 @@ const L1_CAPTION =
 
 /** @type {import('chart.js').Chart[]} */
 const chartInstances = [];
-let latencyChart = null;
-let splitChart = null;
-let sizeChart = null;
+/** @type {Record<string, import('chart.js').Chart>} */
+const chartsByKey = {};
 let hatchPattern = null;
 
 export function usesExperimentGraphs(id) {
@@ -58,15 +106,78 @@ export function destroyExperimentFigures() {
     }
   }
   chartInstances.length = 0;
-  latencyChart = null;
-  splitChart = null;
-  sizeChart = null;
+  for (const k of Object.keys(chartsByKey)) delete chartsByKey[k];
 }
 
 export function figuresToPng(which) {
-  const chart = which === 'latency' ? latencyChart : which === 'split' ? splitChart : sizeChart;
+  const chart = chartsByKey[which];
   if (!chart) return null;
   return chart.toBase64Image('image/png', 1);
+}
+
+function hasFiniteSeries(rows, key) {
+  return (rows || []).some((r) => Number.isFinite(Number(r[key])));
+}
+
+function uniqueValues(rows, key) {
+  const seen = [];
+  const have = new Set();
+  for (const row of rows || []) {
+    const v = row?.[key];
+    if (v == null || v === '') continue;
+    const s = String(v);
+    if (have.has(s)) continue;
+    have.add(s);
+    seen.push(v);
+  }
+  return seen;
+}
+
+function rowsMatching(rows, match = {}, ignore = {}) {
+  return (rows || []).filter((r) => {
+    if (!ignore.io && match.io && String(r.io ?? '') !== String(match.io)) return false;
+    if (!ignore.kind && match.kind && String(r.kind ?? '') !== String(match.kind)) return false;
+    if (!ignore.n && match.n && String(r.n ?? '') !== String(match.n)) return false;
+    return true;
+  });
+}
+
+/**
+ * Which figures to draw. Special experiments get a story-specific hero;
+ * the rest reuse L1 / W1 / S0 / S1.
+ */
+export function figureTypesFor(id, rows, allRows) {
+  const view = rows || [];
+  const types = [];
+  if (id === '07-write-once-read-many') {
+    if (hasFiniteSeries(view, 'write_median_ns') && hasFiniteSeries(view, 'read_median_ns')) types.push('W1');
+    const t = sizeTreatment(view);
+    if (t.kind === 'S1' || t.kind === 'S0') types.push(t.kind);
+    return types;
+  }
+  if (id === '04-sensor-list-size') {
+    types.push('C1');
+    return types;
+  }
+  if (id === '09-compression-size') {
+    types.push('S2');
+    return types;
+  }
+  if (id === '10-one-vs-hundred') {
+    types.push('C2');
+    types.push('L1');
+    return types;
+  }
+  if (id === '13-ranking-accident') {
+    types.push('R1');
+    types.push('L1');
+    return types;
+  }
+  types.push('L1');
+  if (hasFiniteSeries(view, 'write_median_ns') && hasFiniteSeries(view, 'read_median_ns')) types.push('W1');
+  const t = sizeTreatment(view);
+  if (t.kind === 'S1' || t.kind === 'S0') types.push(t.kind);
+  return types;
 }
 
 function comparedSizes(rows) {
@@ -389,14 +500,26 @@ function l1TooltipLines(row, bestTotal, rows) {
   if (row.runs != null) {
     lines.push(`Trials ${formatIntGrouped(row.runs)}${row.runs_raw ? ` of ${formatIntGrouped(row.runs_raw)}` : ''}`);
   }
+  if (row.stream_kind) {
+    const kind =
+      row.stream_kind === 'real'
+        ? 'real stream'
+        : row.stream_kind === 'copied'
+          ? 'copied onto a stream'
+          : row.stream_kind === 'text_on_stream' || row.stream_kind === 'text on a stream'
+            ? 'text on a stream'
+            : String(row.stream_kind);
+    lines.push(`How written  ${kind}`);
+  }
   lines.push(`Vs fastest  ${compareLabel(row, rows)}`);
   return lines;
 }
 
-function makeBarChart(canvas, config) {
+function makeBarChart(canvas, config, key) {
   const ctx = canvas.getContext ? canvas.getContext('2d') : canvas;
   const chart = new globalThis.Chart(ctx, config);
   chartInstances.push(chart);
+  if (key) chartsByKey[key] = chart;
   return chart;
 }
 
@@ -414,7 +537,9 @@ function mountLatency(canvas, rows, lang) {
   const stds = rows.map(totalStdUs);
   const bestTotal = bestCompared(rows, 'total_median_ns');
   const values = rows.map((r) => Number(r.total_median_ns) / 1000);
-  return makeBarChart(canvas, {
+  return makeBarChart(
+    canvas,
+    {
     type: 'bar',
     plugins: [
       makeErrorBarsPlugin(stds, 0),
@@ -460,11 +585,15 @@ function mountLatency(canvas, rows, lang) {
         y: commonScaleY(rows),
       },
     },
-  });
+    },
+    'latency'
+  );
 }
 
 function mountSplit(canvas, rows) {
-  return makeBarChart(canvas, {
+  return makeBarChart(
+    canvas,
+    {
     type: 'bar',
     data: {
       labels: rows.map((r) => r.library),
@@ -517,7 +646,9 @@ function mountSplit(canvas, rows) {
         y: { ...commonScaleY(rows), stacked: false },
       },
     },
-  });
+    },
+    'split'
+  );
 }
 
 function sortRowsBySize(rows) {
@@ -532,7 +663,9 @@ function sortRowsBySize(rows) {
 function mountSize(canvas, rows) {
   const sorted = sortRowsBySize(rows);
   const bestSize = bestCompared(sorted, 'size_bytes');
-  return makeBarChart(canvas, {
+  return makeBarChart(
+    canvas,
+    {
     type: 'bar',
     plugins: [makeValueLabelsPlugin({ rows: sorted, stds: [], format: formatIntGrouped, datasetIndex: 0 })],
     data: {
@@ -575,25 +708,279 @@ function mountSize(canvas, rows) {
         y: commonScaleY(sorted),
       },
     },
-  });
+    },
+    'size'
+  );
 }
 
-function hasFiniteSeries(rows, key) {
-  return rows.some((r) => Number.isFinite(Number(r[key])));
+function seriesChip(label, fill, ink, bg) {
+  const text = ink || fill;
+  const back = bg || '#f1f3f4';
+  return `<span class="exp-chip exp-series-key" style="color:${text};background:${back}"><span class="exp-swatch" style="background:${fill};width:0.85rem;height:0.85rem" aria-hidden="true"></span>${escapeHtml(label)}</span>`;
+}
+
+function mountCompress(canvas, rows) {
+  const sorted = sortRowsBySize(rows);
+  const showZstd = sorted.some((r) => r.size_zstd_bytes != null);
+  const datasets = [
+    {
+      label: 'Raw',
+      data: sorted.map((r) => Number(r.size_bytes)),
+      backgroundColor: '#5f6368',
+      borderRadius: 3,
+      barPercentage: 0.9,
+      categoryPercentage: 0.7,
+    },
+    {
+      label: 'gzip',
+      data: sorted.map((r) => Number(r.size_gzip_bytes)),
+      backgroundColor: '#1565c0',
+      borderRadius: 3,
+      barPercentage: 0.9,
+      categoryPercentage: 0.7,
+    },
+  ];
+  if (showZstd) {
+    datasets.push({
+      label: 'zstd',
+      data: sorted.map((r) => Number(r.size_zstd_bytes)),
+      backgroundColor: '#6a1b9a',
+      borderRadius: 3,
+      barPercentage: 0.9,
+      categoryPercentage: 0.7,
+    });
+  }
+  return makeBarChart(
+    canvas,
+    {
+      type: 'bar',
+      data: { labels: sorted.map((r) => r.library), datasets },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        layout: { padding: { right: 24, left: 4, top: 4, bottom: 4 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipChrome,
+            callbacks: {
+              title: (items) => sorted[items[0]?.dataIndex]?.library || '',
+              label: (item) => {
+                const v = item.parsed.x;
+                return `${item.dataset.label}  ${Number.isFinite(v) ? formatIntGrouped(v) : '—'} B`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { ...commonScaleX('bytes', formatIntGrouped), stacked: false },
+          y: { ...commonScaleY(sorted), stacked: false },
+        },
+      },
+    },
+    'compress'
+  );
+}
+
+function mountSizeVsPoints(canvas, rows) {
+  const points = uniqueValues(rows, 'points')
+    .map(Number)
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+  const libs = uniqueValues(rows, 'library');
+  const datasets = libs.map((lib, i) => ({
+    label: String(lib),
+    data: points.map((p) => {
+      const row = rows.find((r) => String(r.library) === String(lib) && Number(r.points) === p);
+      const v = Number(row?.size_bytes);
+      return Number.isFinite(v) ? v : null;
+    }),
+    borderColor: paletteAt(i).fill,
+    backgroundColor: paletteAt(i).fill,
+    tension: 0.15,
+    spanGaps: true,
+  }));
+  return makeBarChart(
+    canvas,
+    {
+      type: 'line',
+      data: { labels: points.map(String), datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipChrome,
+            callbacks: {
+              label: (item) => {
+                const v = item.parsed.y;
+                return `${item.dataset.label}  ${Number.isFinite(v) ? formatIntGrouped(v) : '—'} B`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'sensor readings', color: tickColor, font: { ...fontStyle, weight: 'bold' } },
+            grid: { color: gridColor },
+            ticks: { color: tickColor, font: fontStyle },
+          },
+          y: {
+            min: 0,
+            title: { display: true, text: 'bytes', color: tickColor, font: { ...fontStyle, weight: 'bold' } },
+            grid: { color: gridColor },
+            ticks: { color: tickColor, font: fontStyle, callback: (v) => formatIntGrouped(v) },
+          },
+        },
+      },
+    },
+    'curve'
+  );
+}
+
+function mountLatencyVsN(canvas, rows) {
+  const libs = [];
+  const byLib = new Map();
+  for (const row of rows) {
+    const name = String(row.library || '');
+    if (!byLib.has(name)) {
+      byLib.set(name, {});
+      libs.push(name);
+    }
+    byLib.get(name)[String(row.n)] = row;
+  }
+  const sorted = [...libs].sort((a, b) => {
+    const ta = Number(byLib.get(a)['1']?.total_median_ns) || 1e18;
+    const tb = Number(byLib.get(b)['1']?.total_median_ns) || 1e18;
+    return ta - tb;
+  });
+  const proxy = sorted.map((name) => byLib.get(name)['1'] || byLib.get(name)['100'] || { library: name });
+  const series = [
+    { n: '1', label: '1 record', color: SERIES_N1 },
+    { n: '100', label: '100 records', color: SERIES_N100 },
+  ];
+  const datasets = series.map((s) => ({
+    label: s.label,
+    data: sorted.map((name) => {
+      const v = Number(byLib.get(name)[s.n]?.total_median_ns);
+      return Number.isFinite(v) ? v / 1000 : null;
+    }),
+    backgroundColor: s.color,
+    borderRadius: 3,
+    barPercentage: 0.9,
+    categoryPercentage: 0.7,
+  }));
+  return makeBarChart(
+    canvas,
+    {
+      type: 'bar',
+      data: { labels: sorted, datasets },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        layout: { padding: { right: 24, left: 4, top: 4, bottom: 4 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipChrome,
+            callbacks: {
+              title: (items) => sorted[items[0]?.dataIndex] || '',
+              label: (item) => {
+                const v = item.parsed.x;
+                return `${item.dataset.label}  ${Number.isFinite(v) ? formatSig(v) : '—'} µs`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { ...commonScaleX('µs', formatSig), stacked: false },
+          y: { ...commonScaleY(proxy), stacked: false },
+        },
+      },
+    },
+    'vsn'
+  );
+}
+
+function mountRankSlope(canvas, rows) {
+  const kinds = uniqueValues(rows, 'kind');
+  const libs = uniqueValues(rows, 'library');
+  const rankByKind = new Map();
+  for (const kind of kinds) {
+    const slice = rows
+      .filter((r) => String(r.kind) === String(kind) && Number.isFinite(Number(r.total_median_ns)))
+      .sort((a, b) => Number(a.total_median_ns) - Number(b.total_median_ns));
+    const ranks = new Map();
+    slice.forEach((r, i) => ranks.set(String(r.library), i + 1));
+    rankByKind.set(String(kind), ranks);
+  }
+  const labels = kinds.map((k) => KIND_AXIS[k] || String(k));
+  const datasets = libs.map((lib, i) => ({
+    label: String(lib),
+    data: kinds.map((kind) => rankByKind.get(String(kind))?.get(String(lib)) ?? null),
+    borderColor: paletteAt(i).fill,
+    backgroundColor: paletteAt(i).fill,
+    tension: 0.1,
+    spanGaps: true,
+  }));
+  return makeBarChart(
+    canvas,
+    {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipChrome,
+            callbacks: {
+              label: (item) => {
+                const v = item.parsed.y;
+                return `${item.dataset.label}  rank ${Number.isFinite(v) ? v : '—'}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'record shape', color: tickColor, font: { ...fontStyle, weight: 'bold' } },
+            grid: { color: gridColor },
+            ticks: { color: tickColor, font: fontStyle },
+          },
+          y: {
+            reverse: true,
+            min: 1,
+            title: { display: true, text: 'rank (1 = fastest)', color: tickColor, font: { ...fontStyle, weight: 'bold' } },
+            grid: { color: gridColor },
+            ticks: { color: tickColor, font: fontStyle, stepSize: 1 },
+          },
+        },
+      },
+    },
+    'ranks'
+  );
 }
 
 /**
  * @param {HTMLElement} mount
- * @param {{ id: string, meta: object, lang: string, io: string, rows: object[] }} ctx
+ * @param {{ id: string, meta: object, lang: string, io: string, kind: string, n: string, rows: object[], allRows?: object[] }} ctx
  */
 export function mountExperimentFigures(mount, ctx) {
   if (!mount) return;
   const rows = sortRows(ctx.rows || []);
-  latencyChart = null;
-  splitChart = null;
-  sizeChart = null;
+  const allRows = ctx.allRows || rows;
+  const match = { io: ctx.io, kind: ctx.kind, n: ctx.n };
 
-  if (!rows.length) {
+  if (!rows.length && !allRows.length) {
     mount.innerHTML = `
       <div class="exp-figure glass-panel" style="position:relative;min-height:8rem">
         <p class="chart-empty">No rows for this filter.</p>
@@ -609,59 +996,119 @@ export function mountExperimentFigures(mount, ctx) {
     return;
   }
 
-  const allSkipped = competingRows(rows).length === 0;
+  const types = figureTypesFor(ctx.id, rows, allRows);
   const lang = ctx.lang || 'this language';
-  const h = plotHeight(rows.length);
+  const h = plotHeight(Math.max(rows.length, 4));
   const parts = [];
+  const builders = [];
 
-  parts.push(
-    figureHtml({
-      title: 'Write + read (µs)',
-      helpHtml: `${L1_CAPTION}${allSkipped ? ' Nothing in this filter is in the comparison.' : ''}`,
-      pngId: 'exp-png-latency',
-      height: h,
-      canvasLabel: `Horizontal bar chart of write-plus-read time in microseconds for ${lang}, whiskers show spread`,
-    })
-  );
-  parts.push(legendHtml(rows));
+  const writeReadHelp = `${seriesChip('Write', SERIES_WRITE, '#1565c0', '#e3f2fd')} ${seriesChip('Read', SERIES_READ, '#4a148c', '#f3e5f5')}`;
 
-  const showW1 = hasFiniteSeries(rows, 'write_median_ns') && hasFiniteSeries(rows, 'read_median_ns');
-  if (showW1) {
-    parts.push(
-      figureHtml({
-        title: 'Write and read, separately',
-        helpHtml: `<span class="exp-chip exp-series-write" style="--exp-series:${SERIES_WRITE};--exp-series-ink:#1565c0"><span class="exp-swatch" aria-hidden="true"></span>Write</span> <span class="exp-chip exp-series-read" style="--exp-series:${SERIES_READ};--exp-series-ink:#4a148c"><span class="exp-swatch" aria-hidden="true"></span>Read</span>`,
-        pngId: 'exp-png-split',
-        height: h,
-        canvasLabel: `Grouped bar chart of write time and read time in microseconds for ${lang}`,
-      })
-    );
+  for (const type of types) {
+    if (type === 'L1') {
+      const allSkipped = competingRows(rows).length === 0;
+      parts.push(
+        figureHtml({
+          title: 'Write + read (µs)',
+          helpHtml: `${L1_CAPTION}${allSkipped ? ' Nothing in this filter is in the comparison.' : ''}`,
+          pngId: 'exp-png-latency',
+          height: h,
+          canvasLabel: `Horizontal bar chart of write-plus-read time in microseconds for ${lang}, whiskers show spread`,
+        })
+      );
+      parts.push(legendHtml(rows));
+      builders.push((canvas) => mountLatency(canvas, rows, lang));
+    } else if (type === 'W1') {
+      parts.push(
+        figureHtml({
+          title: 'Write and read, separately',
+          helpHtml: writeReadHelp,
+          pngId: 'exp-png-split',
+          height: h,
+          canvasLabel: `Grouped bar chart of write time and read time in microseconds for ${lang}`,
+        })
+      );
+      builders.push((canvas) => mountSplit(canvas, rows));
+    } else if (type === 'S0') {
+      parts.push(`<p class="exp-size-callout">${escapeHtml(sizeTreatment(rows).text)}</p>`);
+    } else if (type === 'S1') {
+      parts.push(
+        figureHtml({
+          title: 'Size (bytes)',
+          helpHtml: 'Smaller is more compact.',
+          pngId: 'exp-png-size',
+          height: h,
+          canvasLabel: `Horizontal bar chart of payload size in bytes for ${lang}`,
+        })
+      );
+      builders.push((canvas) => mountSize(canvas, rows));
+    } else if (type === 'S2') {
+      parts.push(
+        figureHtml({
+          title: 'Size raw and after compression (bytes)',
+          helpHtml: `${seriesChip('Raw', '#5f6368', '#3c4043', '#eceff1')} ${seriesChip('gzip', '#1565c0', '#1565c0', '#e3f2fd')} ${seriesChip('zstd', '#6a1b9a', '#4a148c', '#f3e5f5')}`,
+          pngId: 'exp-png-compress',
+          height: h,
+          canvasLabel: `Grouped bar chart of raw, gzip, and zstd size in bytes for ${lang}`,
+        })
+      );
+      builders.push((canvas) => mountCompress(canvas, rows));
+    } else if (type === 'C1') {
+      const curveRows = rowsMatching(allRows, match, { n: true, kind: true });
+      const nLib = uniqueValues(curveRows, 'library').length;
+      parts.push(
+        figureHtml({
+          title: 'Size vs how many sensor readings',
+          helpHtml: `Each line is one library. Smaller is more compact. The 128-byte and 512-byte marks are common packet limits.<br>${libraryChips(uniqueValues(curveRows, 'library'))}`,
+          pngId: 'exp-png-curve',
+          height: Math.max(320, 160 + nLib * 12),
+          canvasLabel: `Line chart of payload size versus number of sensor readings for ${lang}`,
+        })
+      );
+      builders.push((canvas) => mountSizeVsPoints(canvas, curveRows));
+    } else if (type === 'C2') {
+      const pairRows = rowsMatching(allRows, match, { n: true });
+      const nLib = uniqueValues(pairRows, 'library').length;
+      parts.push(
+        figureHtml({
+          title: 'One record vs one hundred (µs)',
+          helpHtml: `${seriesChip('1 record', SERIES_N1, '#1565c0', '#e3f2fd')} ${seriesChip('100 records', SERIES_N100, '#3e2723', '#efebe9')}`,
+          pngId: 'exp-png-vsn',
+          height: plotHeight(nLib),
+          canvasLabel: `Grouped bar chart of write-plus-read time at n=1 and n=100 for ${lang}`,
+        })
+      );
+      builders.push((canvas) => mountLatencyVsN(canvas, pairRows));
+    } else if (type === 'R1') {
+      const rankRows = rowsMatching(allRows, match, { kind: true });
+      const nLib = uniqueValues(rankRows, 'library').length;
+      parts.push(
+        figureHtml({
+          title: 'Does the rank hold if the record changes?',
+          helpHtml: `Each line is one library. Rank 1 is fastest. Lines that cross mean the winner depends on the record shape.<br>${libraryChips(uniqueValues(rankRows, 'library'))}`,
+          pngId: 'exp-png-ranks',
+          height: Math.max(340, 140 + nLib * 16),
+          canvasLabel: `Slopegraph of library rank across record shapes for ${lang}`,
+        })
+      );
+      builders.push((canvas) => mountRankSlope(canvas, rankRows));
+    }
   }
 
-  const treatment = sizeTreatment(rows);
-  if (treatment.kind === 'S0') {
-    parts.push(`<p class="exp-size-callout">${escapeHtml(treatment.text)}</p>`);
-  } else if (treatment.kind === 'S1') {
-    parts.push(
-      figureHtml({
-        title: 'Size (bytes)',
-        helpHtml: 'Smaller is more compact. Compared libraries only share a color key with the time charts.',
-        pngId: 'exp-png-size',
-        height: h,
-        canvasLabel: `Horizontal bar chart of payload size in bytes for ${lang}`,
-      })
-    );
+  if (!parts.length) {
+    mount.innerHTML = `
+      <div class="exp-figure glass-panel" style="position:relative;min-height:8rem">
+        <p class="chart-empty">No rows for this filter.</p>
+      </div>`;
+    return;
   }
 
   mount.innerHTML = parts.join('');
   const canvases = [...mount.querySelectorAll('canvas')];
-  let i = 0;
   try {
-    latencyChart = mountLatency(canvases[i++], rows, lang);
-    if (showW1) splitChart = mountSplit(canvases[i++], rows);
-    if (treatment.kind === 'S1') sizeChart = mountSize(canvases[i++], rows);
+    builders.forEach((build, i) => build(canvases[i]));
   } catch (err) {
-    const plot = mount.querySelectorAll('.exp-figure-plot')[showW1 && !splitChart ? 1 : 0];
+    const plot = mount.querySelector('.exp-figure-plot');
     if (plot) {
       const p = document.createElement('p');
       p.className = 'exp-figure-help';

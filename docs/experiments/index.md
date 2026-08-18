@@ -66,18 +66,17 @@ If you only want to look around, use the main Dashboard. If you have to choose a
 
 ## How to read the graphs
 
-Only **Experiment 1** is graphed so far. The other experiments still use a table. The numbers mean the same thing.
-
-Open them in the [Dashboard → Experiments](../dashboard/#experiments) tab.
+Open the numbers in the [Dashboard → Experiments](../dashboard/#experiments) tab.
 
 - The **bar** is the middle time (median), in **microseconds**. Smaller is faster.
 - The **whisker** is **approximate spread**, reconstructed from the published confidence interval of the **mean**. It is the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation of the trials.
 - Hover a bar for the same `15.9 (1.2×)` style numbers as the table.
-- **Vs fastest** is still Fastest / About the same / A bit slower / Clearly slower — also shown as color + a glyph on the axis.
+- **Vs fastest** is still Fastest / About the same / A bit slower / Clearly slower — also shown as color + a glyph on the axis. A 2% gap is not “clearly slower.”
 - Compare libraries **inside one language**.
-- Experiment 1 shows only libraries that write **named JSON** (`{"id": 1, "status": "ok"}`). A JSON list is a different public-API payload, so it is not on that chart.
+- Some experiments add a size, compression, or rank chart when that is the question.
+- Experiment 1 shows only libraries that write **named JSON** (`{"id": 1, "status": "ok"}`).
 
-Use **Download CSV** or **Show numbers as a table** when you want the grid. Experiments 2–13 stay on the table until they are opted in.
+Use **Download CSV** or **Show numbers as a table** when you want the grid.
 
 ### The downloadable table
 

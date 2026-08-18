@@ -257,20 +257,18 @@ tr.exp-row-skip {
   margin-left: 0.2rem;
 }
 
-.exp-chip.exp-series-write,
-.exp-chip.exp-series-read {
-  color: var(--exp-series-ink, var(--exp-series));
-  background: color-mix(in srgb, var(--exp-series) 18%, #fff);
+.exp-chip.exp-series-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .exp-swatch {
   display: inline-block;
-  width: 0.65rem;
-  height: 0.65rem;
-  margin-right: 0.3rem;
+  width: 0.85rem;
+  height: 0.85rem;
   border-radius: 2px;
-  vertical-align: -0.1rem;
-  background: var(--exp-series);
+  flex: 0 0 auto;
 }
 
 .exp-figure-plot {

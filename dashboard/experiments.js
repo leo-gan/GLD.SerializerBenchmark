@@ -24,7 +24,6 @@ import {
   destroyExperimentFigures,
   figuresToPng,
   mountExperimentFigures,
-  sizeTreatment,
   usesExperimentGraphs,
 } from './exp-charts.js';
 
@@ -287,14 +286,14 @@ function renderWhyExperiments() {
     </details>`;
 }
 
-function renderHowToRead({ mode } = { mode: 'table' }) {
+function renderHowToRead({ mode, id } = { mode: 'table' }) {
   if (mode === 'list') {
     return `
     <details class="exp-howto glass-panel">
       <summary>How to read the numbers</summary>
       <ul>
         <li>Times are the <strong>middle</strong> value (median), in microseconds. Smaller is better.</li>
-        <li>Most experiments still show a <strong>table</strong>. Experiment 1 shows <strong>graphs</strong> of the same numbers.</li>
+        <li>Each experiment page shows <strong>graphs</strong> of the same numbers, plus <strong>Download CSV</strong> or <strong>Show numbers as a table</strong> for the grid.</li>
         <li>On a graph page, <strong>Download CSV</strong> or <strong>Show numbers as a table</strong> gives you the grid.</li>
         <li><strong>Vs fastest</strong> is Fastest · About the same · A bit slower · Clearly slower — not simply Winner / Loser.</li>
         <li>Compare libraries <strong>inside one language</strong>.</li>
@@ -312,7 +311,12 @@ function renderHowToRead({ mode } = { mode: 'table' }) {
         <li>A cell-style <code>15.9 (1.2×)</code> still appears in the tooltip and in the table: 15.9 µs, 1.2 times the fastest compared library.</li>
         <li><strong>Vs fastest</strong> is still Fastest · About the same · A bit slower · Clearly slower — same chips as today, also encoded as color + glyph.</li>
         <li>Compare libraries <strong>inside one language</strong>.</li>
-        <li>This experiment shows only libraries that write <strong>named JSON</strong> — an object like <code>{"id": 1, "status": "ok"}</code>. A library that writes a JSON list is not the same public-API payload, so it is not on this page.</li>
+        ${
+          id === '01-json-library-bakeoff'
+            ? '<li>This experiment shows only libraries that write <strong>named JSON</strong> — an object like <code>{"id": 1, "status": "ok"}</code>.</li>'
+            : ''
+        }
+        <li>Some experiments add a size, compression, or rank chart when that is the question.</li>
         <li><strong>Download CSV</strong> or open <strong>Show numbers as a table</strong> for the grid.</li>
       </ul>
       <p><a href="../experiments/">Full experiment notes</a></p>
@@ -414,8 +418,6 @@ function renderTopGroup(group, rows) {
               (${skipped.map((r) => escapeHtml(r.library)).join(', ')}):
               timed OK, but ${skipped.length === 1 ? 'this library writes' : 'these libraries write'} a JSON
               <em>list</em> <code>[…]</code>, not a named object <code>{"id": …}</code>.
-              That is not what <strong>Stream</strong> means — Stream is only “write as if to a file.”
-              We do not rank the list against named JSON.
             </p>`
           : ''
       }
@@ -552,13 +554,9 @@ function wireExportControls(root, ctx) {
     downloadDataUrl(url, `${stem(which)}.png`);
     setExpStatus(root, '');
   };
-  root.querySelector('#exp-png-latency')?.addEventListener('click', pngClick('latency'));
-  root.querySelector('#exp-png-split')?.addEventListener('click', pngClick('split'));
-  const pngSize = root.querySelector('#exp-png-size');
-  if (pngSize) {
-    if (sizeTreatment(ctx.rows).kind !== 'S1') pngSize.hidden = true;
-    else pngSize.addEventListener('click', pngClick('size'));
-  }
+  ['latency', 'split', 'size', 'compress', 'curve', 'vsn', 'ranks'].forEach((which) => {
+    root.querySelector(`#exp-png-${which}`)?.addEventListener('click', pngClick(which));
+  });
 }
 
 function renderList(root) {
@@ -679,7 +677,7 @@ async function renderDetail(root, id) {
       <p class="section-help">This is a fair slice of the main Dashboard for one decision, not extra clocks. <a href="#experiments">Why we keep experiments separate</a></p>
     </div>
     ${renderStory(meta)}
-    ${renderHowToRead({ mode: howToMode })}
+    ${renderHowToRead({ mode: howToMode, id })}
     ${renderSample(meta)}
     <div class="exp-lang-tabs tabs" role="tablist" aria-label="Language">
       ${langIds
@@ -708,8 +706,11 @@ async function renderDetail(root, id) {
       id,
       meta,
       rows: filtered,
+      allRows: allRows,
       lang: ui.lang,
-      io: filters.io,
+      io: filters.io || ui.io,
+      kind: filters.kind || ui.kind,
+      n: filters.n || ui.n,
     });
     wireExportControls(root, exportCtx);
   }
