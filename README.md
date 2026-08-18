@@ -11,8 +11,9 @@ Compare 100+ serialization libraries across **nine languages**.
 | Start here | |
 |------------|--|
 | **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
-| **Numbers** | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) · [Method overview](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/) |
-| **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) — students through systems engineers |
+| **Numbers** | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) |
+| **Experiments** | [One-question tests](https://leo-gan.github.io/GLD.SerializerBenchmark/experiments/) |
+| **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) |
 | **Method** | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
 
 <p align="center">

@@ -1,6 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compareLabel, displayTier, rowsToDelimited, skipReason, totalStdUs } from '../exp-export.js';
+import {
+  ALL_LANG,
+  compareLabel,
+  displayTier,
+  flattenLanguageRows,
+  isAllLang,
+  mixedLanguages,
+  peerRows,
+  rowsToDelimited,
+  skipReason,
+  sortRows,
+  totalStdUs,
+} from '../exp-export.js';
 import { figureTypesFor, sizeTreatment, usesExperimentGraphs, wrapYTick } from '../exp-charts.js';
 
 test('totalStdUs reconstructs from mean CI', () => {
@@ -173,6 +185,98 @@ test('usesExperimentGraphs is on for every experiment id', () => {
   assert.equal(usesExperimentGraphs('01-json-library-bakeoff'), true);
   assert.equal(usesExperimentGraphs('13-ranking-accident'), true);
   assert.equal(usesExperimentGraphs('unknown'), false);
+});
+
+test('All tab flattens languages and keeps vs-fastest inside each language', () => {
+  assert.equal(isAllLang(ALL_LANG), true);
+  assert.equal(isAllLang('python'), false);
+  const languages = {
+    rust: {
+      status: 'ok',
+      rows: [
+        { library: 'sonic-rs', total_median_ns: 1300, tier: 'fastest', in_comparison: true },
+        { library: 'serde_json', total_median_ns: 4000, tier: 'slower', in_comparison: true },
+      ],
+    },
+    java: {
+      status: 'ok',
+      rows: [
+        { library: 'jsoniter', total_median_ns: 42700, tier: 'fastest', in_comparison: true },
+        { library: 'jackson', total_median_ns: 92800, tier: 'slower', in_comparison: true },
+      ],
+    },
+    go: { status: 'missing', rows: [] },
+  };
+  const flat = flattenLanguageRows(languages, ['rust', 'java', 'go']);
+  assert.equal(flat.length, 4);
+  assert.equal(mixedLanguages(flat), true);
+  assert.deepEqual(
+    peerRows(flat[2], flat).map((r) => r.library),
+    ['jsoniter', 'jackson']
+  );
+  assert.equal(displayTier(flat[2], flat), 'fastest');
+  assert.equal(displayTier(flat[3], flat), 'slower');
+  assert.equal(displayTier(flat[0], flat), 'fastest');
+  const ordered = sortRows(flat).map((r) => `${r.language}:${r.library}`);
+  assert.deepEqual(ordered, ['rust:sonic-rs', 'rust:serde_json', 'java:jsoniter', 'java:jackson']);
+});
+
+test('rowsToDelimited prefixes language on All-tab rows', () => {
+  const csv = rowsToDelimited(
+    [
+      {
+        language: 'python',
+        library: 'orjson',
+        io: 'memory',
+        write_median_ns: 1522,
+        read_median_ns: 2362,
+        total_median_ns: 3894,
+        size_bytes: 448,
+        runs: 92,
+        tier: 'fastest',
+        in_comparison: true,
+      },
+      {
+        language: 'go',
+        library: 'goccy/go-json',
+        io: 'memory',
+        write_median_ns: 1000,
+        read_median_ns: 2000,
+        total_median_ns: 3000,
+        size_bytes: 448,
+        runs: 90,
+        tier: 'fastest',
+        in_comparison: true,
+      },
+    ],
+    { delimiter: ',' }
+  );
+  const header = csv.trim().split('\n')[0];
+  assert.equal(header.startsWith('language,library,'), true);
+  assert.match(csv, /^python,orjson,/m);
+  assert.match(csv, /^go,goccy\/go-json,/m);
+});
+
+test('wrapYTick prefers the All-tab language · library label', () => {
+  assert.deepEqual(wrapYTick({ library: 'orjson', label: 'Python · orjson', tier: 'fastest' }), [
+    '● Python · orjson',
+  ]);
+});
+
+test('figureTypesFor All tab uses the same microsecond figures as a language tab', () => {
+  const timed = [
+    { library: 'a', language: 'rust', write_median_ns: 1, read_median_ns: 2, total_median_ns: 3, size_bytes: 10, in_comparison: true },
+    { library: 'b', language: 'java', write_median_ns: 20, read_median_ns: 40, total_median_ns: 60, size_bytes: 20, in_comparison: true },
+  ];
+  const all = figureTypesFor('01-json-library-bakeoff', timed, timed, { crossLang: true });
+  const one = figureTypesFor('01-json-library-bakeoff', timed, timed);
+  assert.deepEqual(all, one);
+  assert.ok(all.includes('L1'));
+  assert.ok(!all.includes('A1'));
+  assert.deepEqual(figureTypesFor('04-sensor-list-size', timed, timed, { crossLang: true }), ['C1']);
+  assert.deepEqual(figureTypesFor('09-compression-size', timed, timed, { crossLang: true }), ['S2']);
+  assert.ok(figureTypesFor('10-one-vs-hundred', timed, timed, { crossLang: true }).includes('C2'));
+  assert.ok(figureTypesFor('10-one-vs-hundred', timed, timed, { crossLang: true }).includes('L1'));
 });
 
 test('figureTypesFor picks a story-specific hero', () => {

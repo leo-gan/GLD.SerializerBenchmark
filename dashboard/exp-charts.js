@@ -8,6 +8,8 @@ import {
   competingRows,
   displayTier,
   isShapeSkip,
+  mixedLanguages,
+  peerRows,
   skipReason,
   sortRows,
   totalStdUs,
@@ -133,6 +135,27 @@ function uniqueValues(rows, key) {
   return seen;
 }
 
+function seriesKey(row) {
+  if (row?.language) return `${row.language}\0${row.library || ''}`;
+  return String(row?.library || '');
+}
+
+function seriesLabel(row) {
+  return row?.label || (row?.language ? `${langAxis(row.language)} · ${row.library}` : String(row?.library || ''));
+}
+
+function uniqueSeriesKeys(rows) {
+  const seen = [];
+  const have = new Set();
+  for (const row of rows || []) {
+    const key = seriesKey(row);
+    if (!key || have.has(key)) continue;
+    have.add(key);
+    seen.push({ key, label: seriesLabel(row), language: row.language, library: row.library });
+  }
+  return seen;
+}
+
 function rowsMatching(rows, match = {}, ignore = {}) {
   return (rows || []).filter((r) => {
     if (!ignore.io && match.io && String(r.io ?? '') !== String(match.io)) return false;
@@ -146,7 +169,7 @@ function rowsMatching(rows, match = {}, ignore = {}) {
  * Which figures to draw. Special experiments get a story-specific hero;
  * the rest reuse L1 / W1 / S0 / S1.
  */
-export function figureTypesFor(id, rows, allRows) {
+export function figureTypesFor(id, rows, allRows, _opts = {}) {
   const view = rows || [];
   const types = [];
   if (id === '07-write-once-read-many') {
@@ -237,7 +260,7 @@ function splitLibraryName(name) {
 
 export function wrapYTick(row, rows) {
   const prefix = `${glyphFor(row, rows)} `;
-  const name = String(row.library || '');
+  const name = String(row.label || row.library || '');
   if ((prefix + name).length <= 22) return [prefix + name];
   const parts = splitLibraryName(name).map(clipTickPiece).slice(0, 2);
   if (!parts.length) return [prefix.trim()];
@@ -245,8 +268,8 @@ export function wrapYTick(row, rows) {
   return parts;
 }
 
-function plotHeight(n) {
-  return Math.max(280, n * 36 + 48);
+function plotHeight(n, compact = false) {
+  return Math.max(280, n * (compact ? 26 : 36) + 48);
 }
 
 function escapeHtml(s) {
@@ -262,6 +285,32 @@ function bestCompared(rows, key) {
     .map((r) => Number(r[key]))
     .filter(Number.isFinite);
   return nums.length ? Math.min(...nums) : null;
+}
+
+function bestComparedPeers(row, rows, key) {
+  return bestCompared(peerRows(row, rows), key);
+}
+
+const LANG_AXIS = {
+  csharp: 'C#',
+  rust: 'Rust',
+  go: 'Go',
+  python: 'Python',
+  javascript: 'JavaScript',
+  c: 'C',
+  java: 'Java',
+  cpp: 'C++',
+  swift: 'Swift',
+};
+
+function langAxis(id) {
+  return LANG_AXIS[id] || String(id || '');
+}
+
+function rowTitle(row) {
+  if (!row) return '';
+  const name = row.label || row.library || '';
+  return row.version ? `${name}  ${row.version}` : name;
 }
 
 function createHatch(color = '#b06000') {
@@ -451,11 +500,12 @@ function commonScaleX(title, tickFmt) {
 }
 
 function commonScaleY(rows) {
+  const wide = mixedLanguages(rows) || (rows || []).some((r) => r.label);
   return {
     stacked: false,
     grid: { display: false },
     afterFit(scale) {
-      scale.width = Math.max(scale.width, 148);
+      scale.width = Math.max(scale.width, wide ? 188 : 148);
     },
     ticks: {
       color: tickColor,
@@ -481,7 +531,8 @@ function l1TooltipLines(row, bestTotal, rows) {
   const lines = [];
   const skip = skipReason(row);
   if (skip) lines.push(skip.detail);
-  lines.push(`Write + read   ${ratioText(row.total_median_ns, bestTotal, 'total_median_ns')}`);
+  const best = bestTotal ?? bestComparedPeers(row, rows, 'total_median_ns');
+  lines.push(`Write + read   ${ratioText(row.total_median_ns, best, 'total_median_ns')}`);
   const std = totalStdUs(row);
   lines.push(std == null ? 'Spread unknown (not enough trials to reconstruct).' : `Spread (std)   ${formatSig(std)} µs`);
   const w = Number(row.write_median_ns);
@@ -533,9 +584,73 @@ function suggestedMax(values, stds = []) {
   return m > 0 ? m * 1.12 : undefined;
 }
 
+function mountRelative(canvas, rows) {
+  const values = rows.map((r) => {
+    const best = bestComparedPeers(r, rows, 'total_median_ns');
+    const v = Number(r.total_median_ns);
+    if (!Number.isFinite(v) || !Number.isFinite(best) || best <= 0) return null;
+    return v / best;
+  });
+  const stds = rows.map((r) => {
+    const std = totalStdUs(r);
+    const best = bestComparedPeers(r, rows, 'total_median_ns');
+    if (std == null || !Number.isFinite(best) || best <= 0) return null;
+    return std / (best / 1000);
+  });
+  return makeBarChart(
+    canvas,
+    {
+      type: 'bar',
+      plugins: [
+        makeErrorBarsPlugin(stds, 0),
+        makeValueLabelsPlugin({ rows, stds, format: (v) => `${formatSig(v, 2)}×`, datasetIndex: 0 }),
+      ],
+      data: {
+        labels: rows.map((r) => r.label || r.library),
+        datasets: [
+          {
+            data: values,
+            backgroundColor: rows.map((r) => l1Fill(r, rows)),
+            borderColor: rows.map((r) => l1Stroke(r, rows)),
+            borderWidth: 1.5,
+            borderDash: (ctx) => l1BorderDash(rows[ctx.dataIndex] || {}),
+            borderRadius: 3,
+            barPercentage: 0.72,
+            categoryPercentage: 0.8,
+          },
+        ],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        layout: { padding: { right: 72, left: 4, top: 4, bottom: 4 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tooltipChrome,
+            callbacks: {
+              title: (items) => rowTitle(rows[items[0]?.dataIndex]),
+              label: (item) => l1TooltipLines(rows[item.dataIndex], null, rows),
+            },
+          },
+        },
+        scales: {
+          x: {
+            ...commonScaleX('× that language’s fastest', (v) => `${formatSig(v, 2)}×`),
+            suggestedMax: suggestedMax(values, stds),
+          },
+          y: commonScaleY(rows),
+        },
+      },
+    },
+    'relative'
+  );
+}
+
 function mountLatency(canvas, rows, lang) {
   const stds = rows.map(totalStdUs);
-  const bestTotal = bestCompared(rows, 'total_median_ns');
   const values = rows.map((r) => Number(r.total_median_ns) / 1000);
   return makeBarChart(
     canvas,
@@ -571,12 +686,8 @@ function mountLatency(canvas, rows, lang) {
         tooltip: {
           ...tooltipChrome,
           callbacks: {
-            title: (items) => {
-              const row = rows[items[0]?.dataIndex];
-              if (!row) return '';
-              return row.version ? `${row.library}  ${row.version}` : row.library;
-            },
-            label: (item) => l1TooltipLines(rows[item.dataIndex], bestTotal, rows),
+            title: (items) => rowTitle(rows[items[0]?.dataIndex]),
+            label: (item) => l1TooltipLines(rows[item.dataIndex], null, rows),
           },
         },
       },
@@ -596,7 +707,7 @@ function mountSplit(canvas, rows) {
     {
     type: 'bar',
     data: {
-      labels: rows.map((r) => r.library),
+      labels: rows.map((r) => seriesLabel(r)),
       datasets: [
         {
           label: 'Write',
@@ -629,10 +740,7 @@ function mountSplit(canvas, rows) {
         tooltip: {
           ...tooltipChrome,
           callbacks: {
-            title: (items) => {
-              const row = rows[items[0]?.dataIndex];
-              return row?.library || '';
-            },
+            title: (items) => rowTitle(rows[items[0]?.dataIndex]),
             label: (item) => {
               const name = item.dataset.label;
               const v = item.parsed.x;
@@ -669,7 +777,7 @@ function mountSize(canvas, rows) {
     type: 'bar',
     plugins: [makeValueLabelsPlugin({ rows: sorted, stds: [], format: formatIntGrouped, datasetIndex: 0 })],
     data: {
-      labels: sorted.map((r) => r.library),
+      labels: sorted.map((r) => r.label || r.library),
       datasets: [
         {
           data: sorted.map((r) => Number(r.size_bytes)),
@@ -694,7 +802,7 @@ function mountSize(canvas, rows) {
         tooltip: {
           ...tooltipChrome,
           callbacks: {
-            title: (items) => sorted[items[0]?.dataIndex]?.library || '',
+            title: (items) => rowTitle(sorted[items[0]?.dataIndex]),
             label: (item) => {
               const row = sorted[item.dataIndex];
               const rel = formatRelativeCell(row.size_bytes, bestSize, false, {}, 'size_bytes');
@@ -754,7 +862,7 @@ function mountCompress(canvas, rows) {
     canvas,
     {
       type: 'bar',
-      data: { labels: sorted.map((r) => r.library), datasets },
+      data: { labels: sorted.map((r) => r.label || r.library), datasets },
       options: {
         indexAxis: 'y',
         responsive: true,
@@ -766,7 +874,7 @@ function mountCompress(canvas, rows) {
           tooltip: {
             ...tooltipChrome,
             callbacks: {
-              title: (items) => sorted[items[0]?.dataIndex]?.library || '',
+              title: (items) => rowTitle(sorted[items[0]?.dataIndex]),
               label: (item) => {
                 const v = item.parsed.x;
                 return `${item.dataset.label}  ${Number.isFinite(v) ? formatIntGrouped(v) : '—'} B`;
@@ -784,16 +892,24 @@ function mountCompress(canvas, rows) {
   );
 }
 
-function mountSizeVsPoints(canvas, rows) {
+function mountSizeVsPoints(canvas, rows, { byLanguage = false } = {}) {
   const points = uniqueValues(rows, 'points')
     .map(Number)
     .filter(Number.isFinite)
     .sort((a, b) => a - b);
-  const libs = uniqueValues(rows, 'library');
-  const datasets = libs.map((lib, i) => ({
-    label: String(lib),
+  const seriesIds = byLanguage ? uniqueValues(rows, 'language') : uniqueValues(rows, 'library');
+  const datasets = seriesIds.map((id, i) => ({
+    label: byLanguage ? langAxis(id) : String(id),
     data: points.map((p) => {
-      const row = rows.find((r) => String(r.library) === String(lib) && Number(r.points) === p);
+      if (byLanguage) {
+        const slice = rows.filter(
+          (r) => r.language === id && Number(r.points) === p && Number.isFinite(Number(r.size_bytes))
+        );
+        const pool = competingRows(slice);
+        const sizes = (pool.length ? pool : slice).map((r) => Number(r.size_bytes));
+        return sizes.length ? Math.min(...sizes) : null;
+      }
+      const row = rows.find((r) => String(r.library) === String(id) && Number(r.points) === p);
       const v = Number(row?.size_bytes);
       return Number.isFinite(v) ? v : null;
     }),
@@ -843,30 +959,33 @@ function mountSizeVsPoints(canvas, rows) {
 }
 
 function mountLatencyVsN(canvas, rows) {
-  const libs = [];
-  const byLib = new Map();
+  const keys = [];
+  const byKey = new Map();
   for (const row of rows) {
-    const name = String(row.library || '');
-    if (!byLib.has(name)) {
-      byLib.set(name, {});
-      libs.push(name);
+    const key = seriesKey(row);
+    if (!byKey.has(key)) {
+      byKey.set(key, {});
+      keys.push(key);
     }
-    byLib.get(name)[String(row.n)] = row;
+    byKey.get(key)[String(row.n)] = row;
   }
-  const sorted = [...libs].sort((a, b) => {
-    const ta = Number(byLib.get(a)['1']?.total_median_ns) || 1e18;
-    const tb = Number(byLib.get(b)['1']?.total_median_ns) || 1e18;
+  const sorted = [...keys].sort((a, b) => {
+    const ta = Number(byKey.get(a)['1']?.total_median_ns) || 1e18;
+    const tb = Number(byKey.get(b)['1']?.total_median_ns) || 1e18;
     return ta - tb;
   });
-  const proxy = sorted.map((name) => byLib.get(name)['1'] || byLib.get(name)['100'] || { library: name });
+  const proxy = sorted.map((key) => {
+    const row = byKey.get(key)['1'] || byKey.get(key)['100'] || { library: key };
+    return { ...row, label: seriesLabel(row) };
+  });
   const series = [
     { n: '1', label: '1 record', color: SERIES_N1 },
     { n: '100', label: '100 records', color: SERIES_N100 },
   ];
   const datasets = series.map((s) => ({
     label: s.label,
-    data: sorted.map((name) => {
-      const v = Number(byLib.get(name)[s.n]?.total_median_ns);
+    data: sorted.map((key) => {
+      const v = Number(byKey.get(key)[s.n]?.total_median_ns);
       return Number.isFinite(v) ? v / 1000 : null;
     }),
     backgroundColor: s.color,
@@ -878,7 +997,7 @@ function mountLatencyVsN(canvas, rows) {
     canvas,
     {
       type: 'bar',
-      data: { labels: sorted, datasets },
+      data: { labels: proxy.map((r) => r.label || r.library), datasets },
       options: {
         indexAxis: 'y',
         responsive: true,
@@ -890,7 +1009,7 @@ function mountLatencyVsN(canvas, rows) {
           tooltip: {
             ...tooltipChrome,
             callbacks: {
-              title: (items) => sorted[items[0]?.dataIndex] || '',
+              title: (items) => rowTitle(proxy[items[0]?.dataIndex]),
               label: (item) => {
                 const v = item.parsed.x;
                 return `${item.dataset.label}  ${Number.isFinite(v) ? formatSig(v) : '—'} µs`;
@@ -910,20 +1029,27 @@ function mountLatencyVsN(canvas, rows) {
 
 function mountRankSlope(canvas, rows) {
   const kinds = uniqueValues(rows, 'kind');
-  const libs = uniqueValues(rows, 'library');
+  const series = uniqueSeriesKeys(rows);
+  const byLang = mixedLanguages(rows);
   const rankByKind = new Map();
   for (const kind of kinds) {
-    const slice = rows
-      .filter((r) => String(r.kind) === String(kind) && Number.isFinite(Number(r.total_median_ns)))
-      .sort((a, b) => Number(a.total_median_ns) - Number(b.total_median_ns));
     const ranks = new Map();
-    slice.forEach((r, i) => ranks.set(String(r.library), i + 1));
+    const timed = rows.filter(
+      (r) => String(r.kind) === String(kind) && Number.isFinite(Number(r.total_median_ns))
+    );
+    const groups = byLang ? uniqueValues(timed, 'language') : [null];
+    for (const lang of groups) {
+      const slice = timed
+        .filter((r) => (lang == null ? true : r.language === lang))
+        .sort((a, b) => Number(a.total_median_ns) - Number(b.total_median_ns));
+      slice.forEach((r, i) => ranks.set(seriesKey(r), i + 1));
+    }
     rankByKind.set(String(kind), ranks);
   }
   const labels = kinds.map((k) => KIND_AXIS[k] || String(k));
-  const datasets = libs.map((lib, i) => ({
-    label: String(lib),
-    data: kinds.map((kind) => rankByKind.get(String(kind))?.get(String(lib)) ?? null),
+  const datasets = series.map((s, i) => ({
+    label: s.label,
+    data: kinds.map((kind) => rankByKind.get(String(kind))?.get(s.key) ?? null),
     borderColor: paletteAt(i).fill,
     backgroundColor: paletteAt(i).fill,
     tension: 0.1,
@@ -972,13 +1098,14 @@ function mountRankSlope(canvas, rows) {
 
 /**
  * @param {HTMLElement} mount
- * @param {{ id: string, meta: object, lang: string, io: string, kind: string, n: string, rows: object[], allRows?: object[] }} ctx
+ * @param {{ id: string, meta: object, lang: string, io: string, kind: string, n: string, rows: object[], allRows?: object[], crossLang?: boolean }} ctx
  */
 export function mountExperimentFigures(mount, ctx) {
   if (!mount) return;
   const rows = sortRows(ctx.rows || []);
   const allRows = ctx.allRows || rows;
   const match = { io: ctx.io, kind: ctx.kind, n: ctx.n };
+  const crossLang = Boolean(ctx.crossLang);
 
   if (!rows.length && !allRows.length) {
     mount.innerHTML = `
@@ -996,13 +1123,16 @@ export function mountExperimentFigures(mount, ctx) {
     return;
   }
 
-  const types = figureTypesFor(ctx.id, rows, allRows);
-  const lang = ctx.lang || 'this language';
-  const h = plotHeight(Math.max(rows.length, 4));
+  const types = figureTypesFor(ctx.id, rows, allRows, { crossLang });
+  const lang = crossLang ? 'every language' : ctx.lang || 'this language';
+  const h = plotHeight(Math.max(rows.length, 4), crossLang);
   const parts = [];
   const builders = [];
 
   const writeReadHelp = `${seriesChip('Write', SERIES_WRITE, '#1565c0', '#e3f2fd')} ${seriesChip('Read', SERIES_READ, '#4a148c', '#f3e5f5')}`;
+  const allAxisNote = crossLang
+    ? ' Every language shares this <strong>microsecond</strong> axis, so you can compare runtimes. Color is still vs that language’s fastest.'
+    : '';
 
   for (const type of types) {
     if (type === 'L1') {
@@ -1010,7 +1140,7 @@ export function mountExperimentFigures(mount, ctx) {
       parts.push(
         figureHtml({
           title: 'Write + read (µs)',
-          helpHtml: `${L1_CAPTION}${allSkipped ? ' Nothing in this filter is in the comparison.' : ''}`,
+          helpHtml: `${L1_CAPTION}${allAxisNote}${allSkipped ? ' Nothing in this filter is in the comparison.' : ''}`,
           pngId: 'exp-png-latency',
           height: h,
           canvasLabel: `Horizontal bar chart of write-plus-read time in microseconds for ${lang}, whiskers show spread`,
@@ -1055,39 +1185,44 @@ export function mountExperimentFigures(mount, ctx) {
       builders.push((canvas) => mountCompress(canvas, rows));
     } else if (type === 'C1') {
       const curveRows = rowsMatching(allRows, match, { n: true, kind: true });
-      const nLib = uniqueValues(curveRows, 'library').length;
+      const byLanguage = crossLang && uniqueValues(curveRows, 'language').length > 1;
+      const series = byLanguage ? uniqueValues(curveRows, 'language').map(langAxis) : uniqueValues(curveRows, 'library');
       parts.push(
         figureHtml({
-          title: 'Size vs how many sensor readings',
-          helpHtml: `Each line is one library. Smaller is more compact. The 128-byte and 512-byte marks are common packet limits.<br>${libraryChips(uniqueValues(curveRows, 'library'))}`,
+          title: byLanguage ? 'Smallest size vs how many sensor readings' : 'Size vs how many sensor readings',
+          helpHtml: byLanguage
+            ? `Each line is one language’s <strong>smallest</strong> payload. Size is the fair number across languages. The 128-byte and 512-byte marks are common packet limits.<br>${libraryChips(series)}`
+            : `Each line is one library. Smaller is more compact. The 128-byte and 512-byte marks are common packet limits.<br>${libraryChips(series)}`,
           pngId: 'exp-png-curve',
-          height: Math.max(320, 160 + nLib * 12),
-          canvasLabel: `Line chart of payload size versus number of sensor readings for ${lang}`,
+          height: Math.max(320, 160 + series.length * 12),
+          canvasLabel: byLanguage
+            ? 'Line chart of smallest payload size versus number of sensor readings in each language'
+            : `Line chart of payload size versus number of sensor readings for ${lang}`,
         })
       );
-      builders.push((canvas) => mountSizeVsPoints(canvas, curveRows));
+      builders.push((canvas) => mountSizeVsPoints(canvas, curveRows, { byLanguage }));
     } else if (type === 'C2') {
       const pairRows = rowsMatching(allRows, match, { n: true });
-      const nLib = uniqueValues(pairRows, 'library').length;
+      const nSeries = uniqueSeriesKeys(pairRows).length;
       parts.push(
         figureHtml({
           title: 'One record vs one hundred (µs)',
-          helpHtml: `${seriesChip('1 record', SERIES_N1, '#1565c0', '#e3f2fd')} ${seriesChip('100 records', SERIES_N100, '#3e2723', '#efebe9')}`,
+          helpHtml: `${seriesChip('1 record', SERIES_N1, '#1565c0', '#e3f2fd')} ${seriesChip('100 records', SERIES_N100, '#3e2723', '#efebe9')}${crossLang ? ' Every language shares this microsecond axis.' : ''}`,
           pngId: 'exp-png-vsn',
-          height: plotHeight(nLib),
+          height: plotHeight(nSeries, crossLang),
           canvasLabel: `Grouped bar chart of write-plus-read time at n=1 and n=100 for ${lang}`,
         })
       );
       builders.push((canvas) => mountLatencyVsN(canvas, pairRows));
     } else if (type === 'R1') {
       const rankRows = rowsMatching(allRows, match, { kind: true });
-      const nLib = uniqueValues(rankRows, 'library').length;
+      const series = uniqueSeriesKeys(rankRows);
       parts.push(
         figureHtml({
           title: 'Does the rank hold if the record changes?',
-          helpHtml: `Each line is one library. Rank 1 is fastest. Lines that cross mean the winner depends on the record shape.<br>${libraryChips(uniqueValues(rankRows, 'library'))}`,
+          helpHtml: `Each line is one library${crossLang ? ' in one language' : ''}. Rank 1 is fastest <em>in that language</em>. Lines that cross mean the winner depends on the record shape.<br>${libraryChips(series.map((s) => s.label))}`,
           pngId: 'exp-png-ranks',
-          height: Math.max(340, 140 + nLib * 16),
+          height: Math.max(340, 140 + series.length * 16),
           canvasLabel: `Slopegraph of library rank across record shapes for ${lang}`,
         })
       );

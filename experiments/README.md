@@ -6,7 +6,7 @@ A laboratory notebook of narrow questions this benchmark can run.
 
 Each experiment is one question. Edit that folder’s **`experiment.yaml`** to change it (sample, languages, libraries). The sample is shared. Each language run is a subfolder. Combined numbers for a dashboard live in that experiment’s `results.json`.
 
-Plain-language pages: [docs/experiments](../docs/experiments/index.md). The interactive **Dashboard → Experiments** tab lists every folder that has `experiment.yaml`. After you add a folder or refresh `results.json`, run `python3 dashboard/scripts/sync-experiments.py` (also invoked at the end of `sync-data.py`). No dashboard file needs a hardcoded experiment name.
+Plain-language pages: [docs/experiments](../docs/experiments/index.md). The interactive **Dashboard → Experiments** tab lists every folder that has `experiment.yaml`. Each experiment has a tab per language, plus **All** on the right (the same question in every language). After you add a folder or refresh `results.json`, run `python3 dashboard/scripts/sync-experiments.py` (also invoked at the end of `sync-data.py`). No dashboard file needs a hardcoded experiment name.
 
 - Experiment 1: [`01-json-library-bakeoff/`](01-json-library-bakeoff/) · [`results.md`](01-json-library-bakeoff/results.md) · [`results.json`](01-json-library-bakeoff/results.json)
 - Experiment 2: [`02-flat-record-formats/`](02-flat-record-formats/) · [`results.md`](02-flat-record-formats/results.md) · [`results.json`](02-flat-record-formats/results.json)

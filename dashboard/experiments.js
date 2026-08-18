@@ -8,6 +8,7 @@
 import './experiments.css';
 import { formatSig, formatRelativeCell, formatIntGrouped } from './format.js';
 import {
+  ALL_LANG,
   compareLabel,
   competingRows,
   copyText,
@@ -15,9 +16,12 @@ import {
   downloadDataUrl,
   downloadText,
   exportStem,
+  flattenLanguageRows,
+  isAllLang,
   isShapeSkip,
+  mixedLanguages,
+  peerRows,
   rowsToDelimited,
-  skipReason,
   totalStdUs,
 } from './exp-export.js';
 import {
@@ -296,7 +300,8 @@ function renderHowToRead({ mode, id } = { mode: 'table' }) {
         <li>Each experiment page shows <strong>graphs</strong> of the same numbers, plus <strong>Download CSV</strong> or <strong>Show numbers as a table</strong> for the grid.</li>
         <li>On a graph page, <strong>Download CSV</strong> or <strong>Show numbers as a table</strong> gives you the grid.</li>
         <li><strong>Vs fastest</strong> is Fastest · About the same · A bit slower · Clearly slower — not simply Winner / Loser.</li>
-        <li>Compare libraries <strong>inside one language</strong>.</li>
+        <li>The <strong>All</strong> tab puts every language on the same microsecond axis so you can compare runtimes. Color is still vs that language’s fastest.</li>
+        <li>A single-language tab is one contest inside that runtime.</li>
       </ul>
       <p><a href="../experiments/">Full experiment notes</a></p>
     </details>`;
@@ -310,7 +315,8 @@ function renderHowToRead({ mode, id } = { mode: 'table' }) {
         <li>The <strong>whisker</strong> is <strong>approximate spread</strong>, reconstructed from the published confidence interval of the mean — the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation. After results publish <code>total_std_ns</code>, we will draw that.</li>
         <li>A cell-style <code>15.9 (1.2×)</code> still appears in the tooltip and in the table: 15.9 µs, 1.2 times the fastest compared library.</li>
         <li><strong>Vs fastest</strong> is still Fastest · About the same · A bit slower · Clearly slower — same chips as today, also encoded as color + glyph.</li>
-        <li>Compare libraries <strong>inside one language</strong>.</li>
+        <li>On the <strong>All</strong> tab the bars use the same <strong>microsecond</strong> axis as a language tab, so you can compare languages. Color and “Vs fastest” stay vs that language’s fastest.</li>
+        <li>A single-language tab is one contest inside that runtime.</li>
         ${
           id === '01-json-library-bakeoff'
             ? '<li>This experiment shows only libraries that write <strong>named JSON</strong> — an object like <code>{"id": 1, "status": "ok"}</code>.</li>'
@@ -332,7 +338,8 @@ function renderHowToRead({ mode, id } = { mode: 'table' }) {
           <strong>Fastest</strong> · <strong>About the same</strong> · <strong>A bit slower</strong> · <strong>Clearly slower</strong>.</li>
         <li><strong>Good trade-off</strong> means nobody is both faster and smaller.</li>
         <li><strong>Trials</strong> is how many timed runs we kept. <strong>Spread (std)</strong> is how much those times bounced around.</li>
-        <li>Compare libraries <strong>inside one language</strong>. Do not compare write times across languages.</li>
+        <li>On the <strong>All</strong> tab, times are on one microsecond scale so you can compare languages. <strong>Vs fastest</strong> in the table is still vs that language’s fastest.</li>
+        <li>A single-language tab is one contest inside that runtime.</li>
       </ul>
       <p><a href="../experiments/">Full experiment notes</a></p>
     </details>`;
@@ -372,6 +379,13 @@ function renderSample(meta) {
 function chips(names, cls) {
   if (!names || !names.length) return '<span class="exp-chip exp-chip-empty">—</span>';
   return names.map((n) => `<span class="exp-chip ${cls}">${escapeHtml(n)}</span>`).join('');
+}
+
+function bestAmong(row, rows, key) {
+  const nums = competingRows(peerRows(row, rows))
+    .map((r) => Number(r[key]))
+    .filter(Number.isFinite);
+  return nums.length ? Math.min(...nums) : null;
 }
 
 function renderTopGroup(group, rows) {
@@ -425,31 +439,26 @@ function renderTopGroup(group, rows) {
 }
 
 function renderTable(rows) {
+  const showLang = mixedLanguages(rows) || rows.some((r) => r.language);
   const showKind = unique(rows, 'kind').length > 1;
   const showN = unique(rows, 'n').length > 1;
   const showIo = unique(rows, 'io').length > 1;
   const showGzip = rows.some((r) => r.size_gzip_bytes != null);
   const showZstd = rows.some((r) => r.size_zstd_bytes != null);
   const sorted = [...rows].sort((a, b) => {
+    if (showLang && a.language !== b.language) {
+      const langs = unique(rows, 'language').map(String);
+      return langs.indexOf(String(a.language || '')) - langs.indexOf(String(b.language || ''));
+    }
     const ac = isShapeSkip(a) ? 1 : 0;
     const bc = isShapeSkip(b) ? 1 : 0;
     if (ac !== bc) return ac - bc;
     return (Number(a.total_median_ns) || 1e18) - (Number(b.total_median_ns) || 1e18);
   });
-  const compared = competingRows(sorted);
-  const minOf = (key) => {
-    const nums = compared.map((r) => Number(r[key])).filter(Number.isFinite);
-    return nums.length ? Math.min(...nums) : null;
-  };
-  const bestTotal = minOf('total_median_ns');
-  const bestWrite = minOf('write_median_ns');
-  const bestRead = minOf('read_median_ns');
-  const bestSize = minOf('size_bytes');
-  const bestGzip = minOf('size_gzip_bytes');
-  const bestZstd = minOf('size_zstd_bytes');
 
   const head = `
     <tr>
+      ${showLang ? '<th class="str">Language</th>' : ''}
       <th class="str">Library</th>
       ${showKind ? '<th class="str">Record</th>' : ''}
       ${showN ? '<th class="num">How many</th>' : ''}
@@ -462,7 +471,7 @@ function renderTable(rows) {
       ${showGzip ? '<th class="num">After gzip</th>' : ''}
       ${showZstd ? '<th class="num">After zstd</th>' : ''}
       <th class="num">Trials</th>
-      <th class="str" title="Fastest, about the same, a bit slower, or clearly slower — on this sample. Not simply Winner / Loser.">Vs fastest</th>
+      <th class="str" title="Fastest, about the same, a bit slower, or clearly slower — vs that language’s fastest on this sample. Not simply Winner / Loser.">Vs fastest</th>
     </tr>`;
   const body = sorted
     .map((row) => {
@@ -472,8 +481,20 @@ function renderTable(rows) {
         row.runs != null
           ? `${formatIntGrouped(row.runs)}${row.runs_raw ? ` of ${formatIntGrouped(row.runs_raw)}` : ''}`
           : '—';
+      const bestWrite = bestAmong(row, sorted, 'write_median_ns');
+      const bestRead = bestAmong(row, sorted, 'read_median_ns');
+      const bestTotal = bestAmong(row, sorted, 'total_median_ns');
+      const sizePool = showLang ? competingRows(sorted) : competingRows(peerRows(row, sorted));
+      const minSize = (key) => {
+        const nums = sizePool.map((r) => Number(r[key])).filter(Number.isFinite);
+        return nums.length ? Math.min(...nums) : null;
+      };
+      const bestSize = minSize('size_bytes');
+      const bestGzip = minSize('size_gzip_bytes');
+      const bestZstd = minSize('size_zstd_bytes');
       return `
         <tr class="${compareClass(row, sorted)}">
+          ${showLang ? `<td class="str">${escapeHtml(langLabel(row.language))}</td>` : ''}
           <td class="str">${escapeHtml(row.library)}${row.version ? `<span class="exp-ver">${escapeHtml(row.version)}</span>` : ''}</td>
           ${showKind ? `<td class="str">${escapeHtml(kindLabel(row.kind))}</td>` : ''}
           ${showN ? `<td class="num">${escapeHtml(row.n ?? '')}</td>` : ''}
@@ -554,7 +575,7 @@ function wireExportControls(root, ctx) {
     downloadDataUrl(url, `${stem(which)}.png`);
     setExpStatus(root, '');
   };
-  ['latency', 'split', 'size', 'compress', 'curve', 'vsn', 'ranks'].forEach((which) => {
+  ['latency', 'relative', 'split', 'size', 'compress', 'curve', 'vsn', 'ranks'].forEach((which) => {
     root.querySelector(`#exp-png-${which}`)?.addEventListener('click', pngClick(which));
   });
 }
@@ -566,7 +587,7 @@ function renderList(root) {
       <h2 class="chart-title">Experiments</h2>
       <p class="section-help">
         Each item is <strong>one question</strong> — a fair slice of the big Dashboard, not a second set of clocks.
-        Compare libraries inside one language.
+        Open <strong>All</strong> to see every language on one microsecond axis.
       </p>
     </div>
     ${renderWhyExperiments()}
@@ -642,8 +663,19 @@ async function renderDetail(root, id) {
     return;
   }
   const langIds = Object.keys(data.languages || {}).filter((k) => data.languages[k]?.status === 'ok');
-  if (!ui.lang || !langIds.includes(ui.lang)) ui.lang = langIds[0] || '';
-  const langBlock = data.languages?.[ui.lang] || {};
+  const tabIds = langIds.length ? [...langIds, ALL_LANG] : [];
+  if (!ui.lang || !tabIds.includes(ui.lang)) ui.lang = langIds[0] || '';
+  const crossLang = isAllLang(ui.lang);
+  const langBlock = crossLang
+    ? {
+        status: 'ok',
+        language: ALL_LANG,
+        rows: flattenLanguageRows(data.languages, langIds).map((r) => ({
+          ...r,
+          label: `${langLabel(r.language)} · ${r.library}`,
+        })),
+      }
+    : data.languages?.[ui.lang] || {};
   const allRows = langBlock.rows || [];
   const kinds = unique(allRows, 'kind').map(String);
   const ns = unique(allRows, 'n').map(String);
@@ -659,12 +691,13 @@ async function renderDetail(root, id) {
   const filtered = rowsFor(langBlock, filters).filter((row) =>
     id === '01-json-library-bakeoff' ? !isShapeSkip(row) : true
   );
-  const group = matchingTopGroup(langBlock, filters);
+  const group = crossLang ? null : matchingTopGroup(langBlock, filters);
   const graphs = usesExperimentGraphs(id);
   const howToMode = graphs ? 'graphs' : 'table';
   const resultsHtml = graphs
     ? `${renderFiguresMount()}${renderDownloadBar()}${renderNumbersDetails(filtered)}`
     : renderTable(filtered);
+  const groupHtml = crossLang ? '' : renderTopGroup(group, filtered);
 
   replaceExperimentsHtml(
     root,
@@ -680,11 +713,11 @@ async function renderDetail(root, id) {
     ${renderHowToRead({ mode: howToMode, id })}
     ${renderSample(meta)}
     <div class="exp-lang-tabs tabs" role="tablist" aria-label="Language">
-      ${langIds
-        .map(
-          (idLang) =>
-            `<button type="button" class="tab-btn${idLang === ui.lang ? ' active' : ''}" data-exp-lang="${escapeHtml(idLang)}">${escapeHtml(langLabel(idLang))}</button>`
-        )
+      ${tabIds
+        .map((idLang) => {
+          const label = isAllLang(idLang) ? 'All' : langLabel(idLang);
+          return `<button type="button" class="tab-btn${idLang === ui.lang ? ' active' : ''}" data-exp-lang="${escapeHtml(idLang)}">${escapeHtml(label)}</button>`;
+        })
         .join('')}
     </div>
     <div class="filter-group exp-filters">
@@ -692,7 +725,7 @@ async function renderDetail(root, id) {
       ${selectHtml('exp-n', 'How many', ns, ui.n)}
       ${selectHtml('exp-io', 'How written', ios, ui.io, (v) => (v === 'memory' ? 'in memory' : v))}
     </div>
-    ${renderTopGroup(group, filtered)}
+    ${groupHtml}
     ${resultsHtml}
   `
   );
@@ -711,6 +744,7 @@ async function renderDetail(root, id) {
       io: filters.io || ui.io,
       kind: filters.kind || ui.kind,
       n: filters.n || ui.n,
+      crossLang,
     });
     wireExportControls(root, exportCtx);
   }
