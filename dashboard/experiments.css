@@ -233,3 +233,93 @@ tr.exp-row-skip {
     flex-basis: 100%;
   }
 }
+
+.exp-figure {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem 1rem;
+}
+
+.exp-figure .chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.exp-figure-help {
+  margin: 0.15rem 0 0.55rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.exp-figure-help .exp-chip {
+  vertical-align: middle;
+  margin-left: 0.2rem;
+}
+
+.exp-chip.exp-series-write,
+.exp-chip.exp-series-read {
+  color: var(--exp-series-ink, var(--exp-series));
+  background: color-mix(in srgb, var(--exp-series) 18%, #fff);
+}
+
+.exp-swatch {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-right: 0.3rem;
+  border-radius: 2px;
+  vertical-align: -0.1rem;
+  background: var(--exp-series);
+}
+
+.exp-figure-plot {
+  position: relative;
+  width: 100%;
+}
+
+.exp-size-callout {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.85rem;
+}
+
+.exp-download {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.exp-numbers {
+  margin: 0 0 1.25rem;
+}
+
+.exp-numbers summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.exp-shape-note {
+  margin-top: 0.55rem;
+}
+
+.exp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  margin: 0.15rem 0 0.85rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+#exp-status:empty {
+  display: none;
+}
+
+#exp-status {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}

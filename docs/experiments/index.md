@@ -64,7 +64,22 @@ If you only want to look around, use the main Dashboard. If you have to choose a
 
 ---
 
-## How to read a table
+## How to read the graphs
+
+Only **Experiment 1** is graphed so far. The other experiments still use a table. The numbers mean the same thing.
+
+Open them in the [Dashboard → Experiments](../dashboard/#experiments) tab.
+
+- The **bar** is the middle time (median), in **microseconds**. Smaller is faster.
+- The **whisker** is **approximate spread**, reconstructed from the published confidence interval of the **mean**. It is the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation of the trials.
+- Hover a bar for the same `15.9 (1.2×)` style numbers as the table.
+- **Vs fastest** is still Fastest / About the same / A bit slower / Clearly slower — also shown as color + a glyph on the axis.
+- Compare libraries **inside one language**.
+- Experiment 1 shows only libraries that write **named JSON** (`{"id": 1, "status": "ok"}`). A JSON list is a different public-API payload, so it is not on that chart.
+
+Use **Download CSV** or **Show numbers as a table** when you want the grid. Experiments 2–13 stay on the table until they are opted in.
+
+### The downloadable table
 
 Times are the **middle** value (the median), in **microseconds**. Smaller is better for time and for size.
 
@@ -104,7 +119,9 @@ We have to send JSON (the usual web text). Changing that format is expensive. Fi
 
 **Trade-off:** A faster library can help a lot. A library that checks types is slower on purpose — that extra time buys safety.
 
-**Sample:** one small order (an id, a status, eight line items).
+**What counts:** only libraries that write named JSON (`{"id": …}`). A JSON list is a different payload, so it is not in this contest.
+
+**Sample:** one shop order (an id, a status, eight line items, about 450 bytes). Not a file of many orders.
 
 [Dashboard](../dashboard/#experiments/01-json-library-bakeoff) · [Folder](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/experiments/01-json-library-bakeoff)
 
