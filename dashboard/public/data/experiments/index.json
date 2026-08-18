@@ -10,7 +10,7 @@
       "number": 1,
       "slug": "json-library-bakeoff",
       "title": "Which JSON library is fastest?",
-      "question": "We have to send JSON (the usual web text). On one small order, which JSON library is fastest?",
+      "question": "We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?",
       "story": {
         "why": "Most websites already speak JSON. Changing that format is expensive. First we ask whether a faster JSON library is enough.",
         "example": "A shop\u2019s public API sends one order as JSON. Partners and browsers already expect that text.",

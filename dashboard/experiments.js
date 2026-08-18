@@ -7,6 +7,26 @@
  */
 import './experiments.css';
 import { formatSig, formatRelativeCell, formatIntGrouped } from './format.js';
+import {
+  compareLabel,
+  competingRows,
+  copyText,
+  displayTier,
+  downloadDataUrl,
+  downloadText,
+  exportStem,
+  isShapeSkip,
+  rowsToDelimited,
+  skipReason,
+  totalStdUs,
+} from './exp-export.js';
+import {
+  destroyExperimentFigures,
+  figuresToPng,
+  mountExperimentFigures,
+  sizeTreatment,
+  usesExperimentGraphs,
+} from './exp-charts.js';
 
 const CATALOG_URL = 'data/experiments/index.json';
 const LANG_LABELS = {
@@ -27,13 +47,6 @@ const KIND_LABELS = {
   event: 'one event',
   strings: 'list of words',
 };
-const COMPARE_LABEL = {
-  fastest: 'Fastest',
-  reference: 'Fastest',
-  similar: 'About the same',
-  close: 'A bit slower',
-  slower: 'Clearly slower',
-};
 const LATENCY_SCALE = { latency: { unit: 'µs', divisor: 1e3, header: 'µs' } };
 
 function langLabel(id) {
@@ -46,32 +59,14 @@ function kindLabel(value) {
   return KIND_LABELS[value] || String(value);
 }
 
-function compareLabel(row) {
-  if (row.in_comparison === false) return 'Not compared';
-  const key = row.tier || row.cliffs_label || '';
-  return COMPARE_LABEL[key] || COMPARE_LABEL[row.cliffs_label] || '—';
-}
-
-function compareClass(row) {
-  if (row.in_comparison === false) return 'exp-row-skip';
-  if (row.tier === 'fastest' || row.cliffs_label === 'reference') return 'exp-row-fastest';
-  if (row.tier === 'similar') return 'exp-row-similar';
-  if (row.tier === 'close') return 'exp-row-close';
-  if (row.tier === 'slower') return 'exp-row-slower';
+function compareClass(row, rows) {
+  const tier = displayTier(row, rows);
+  if (tier === 'skip') return 'exp-row-skip';
+  if (tier === 'fastest') return 'exp-row-fastest';
+  if (tier === 'similar') return 'exp-row-similar';
+  if (tier === 'close') return 'exp-row-close';
+  if (tier === 'slower') return 'exp-row-slower';
   return '';
-}
-
-function totalStdUs(row) {
-  let ns = row.total_std_ns;
-  if (ns == null) {
-    const lo = Number(row.total_ci_low_ns);
-    const hi = Number(row.total_ci_high_ns);
-    const n = Number(row.runs);
-    if (!Number.isFinite(lo) || !Number.isFinite(hi) || !n || n < 2) return null;
-    ns = ((hi - lo) / (2 * 1.96)) * Math.sqrt(n);
-  }
-  if (!Number.isFinite(Number(ns))) return null;
-  return Number(ns) / 1000;
 }
 
 function ratioCell(valueNs, bestNs, key) {
@@ -172,10 +167,15 @@ function matchingTopGroup(langBlock, filters) {
   const hit = groups.find((g) => {
     if (filters.kind && g.kind != null && String(g.kind) !== filters.kind) return false;
     if (filters.n && g.n != null && String(g.n) !== filters.n) return false;
-    if (filters.io && g.io != null && String(g.io) !== filters.io) return false;
+    if (filters.io) {
+      const gio = g.io == null || g.io === '' ? 'memory' : String(g.io);
+      if (gio !== String(filters.io)) return false;
+    }
     return true;
   });
-  return hit || groups[0];
+  if (hit) return hit;
+  if (filters.io) return null;
+  return groups[0];
 }
 
 let catalog = null;
@@ -287,7 +287,37 @@ function renderWhyExperiments() {
     </details>`;
 }
 
-function renderHowToRead() {
+function renderHowToRead({ mode } = { mode: 'table' }) {
+  if (mode === 'list') {
+    return `
+    <details class="exp-howto glass-panel">
+      <summary>How to read the numbers</summary>
+      <ul>
+        <li>Times are the <strong>middle</strong> value (median), in microseconds. Smaller is better.</li>
+        <li>Most experiments still show a <strong>table</strong>. Experiment 1 shows <strong>graphs</strong> of the same numbers.</li>
+        <li>On a graph page, <strong>Download CSV</strong> or <strong>Show numbers as a table</strong> gives you the grid.</li>
+        <li><strong>Vs fastest</strong> is Fastest · About the same · A bit slower · Clearly slower — not simply Winner / Loser.</li>
+        <li>Compare libraries <strong>inside one language</strong>.</li>
+      </ul>
+      <p><a href="../experiments/">Full experiment notes</a></p>
+    </details>`;
+  }
+  if (mode === 'graphs') {
+    return `
+    <details class="exp-howto glass-panel">
+      <summary>How to read these graphs</summary>
+      <ul>
+        <li>The <strong>bar</strong> is the middle time (median), in microseconds. Smaller is faster.</li>
+        <li>The <strong>whisker</strong> is <strong>approximate spread</strong>, reconstructed from the published confidence interval of the mean — the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation. After results publish <code>total_std_ns</code>, we will draw that.</li>
+        <li>A cell-style <code>15.9 (1.2×)</code> still appears in the tooltip and in the table: 15.9 µs, 1.2 times the fastest compared library.</li>
+        <li><strong>Vs fastest</strong> is still Fastest · About the same · A bit slower · Clearly slower — same chips as today, also encoded as color + glyph.</li>
+        <li>Compare libraries <strong>inside one language</strong>.</li>
+        <li>This experiment shows only libraries that write <strong>named JSON</strong> — an object like <code>{"id": 1, "status": "ok"}</code>. A library that writes a JSON list is not the same public-API payload, so it is not on this page.</li>
+        <li><strong>Download CSV</strong> or open <strong>Show numbers as a table</strong> for the grid.</li>
+      </ul>
+      <p><a href="../experiments/">Full experiment notes</a></p>
+    </details>`;
+  }
   return `
     <details class="exp-howto glass-panel">
       <summary>How to read this table</summary>
@@ -342,11 +372,12 @@ function chips(names, cls) {
 
 function renderTopGroup(group, rows) {
   if (!group && !rows.length) return '';
-  const similar = group?.similar || rows.filter((r) => r.tier === 'similar' || r.tier === 'fastest').map((r) => r.library);
-  const close = group?.close || rows.filter((r) => r.tier === 'close').map((r) => r.library);
-  const slower = rows.filter((r) => r.tier === 'slower').map((r) => r.library);
+  const similar = group?.similar || rows.filter((r) => displayTier(r, rows) === 'similar' || displayTier(r, rows) === 'fastest').map((r) => r.library);
+  const close = group?.close || rows.filter((r) => displayTier(r, rows) === 'close').map((r) => r.library);
+  const slower = rows.filter((r) => displayTier(r, rows) === 'slower').map((r) => r.library);
   const front = group?.time_size_front || rows.filter((r) => r.on_time_size_front).map((r) => r.library);
-  const fastest = group?.reference || rows.find((r) => r.tier === 'fastest')?.library;
+  const fastest = group?.reference || rows.find((r) => displayTier(r, rows) === 'fastest')?.library;
+  const skipped = rows.filter((r) => isShapeSkip(r));
   return `
     <div class="exp-groups glass-panel">
       <p class="section-help">
@@ -376,6 +407,18 @@ function renderTopGroup(group, rows) {
             </div>`
           : ''
       }
+      ${
+        skipped.length
+          ? `<p class="section-help exp-shape-note">
+              Hollow bar${skipped.length === 1 ? '' : 's'}
+              (${skipped.map((r) => escapeHtml(r.library)).join(', ')}):
+              timed OK, but ${skipped.length === 1 ? 'this library writes' : 'these libraries write'} a JSON
+              <em>list</em> <code>[…]</code>, not a named object <code>{"id": …}</code>.
+              That is not what <strong>Stream</strong> means — Stream is only “write as if to a file.”
+              We do not rank the list against named JSON.
+            </p>`
+          : ''
+      }
     </div>`;
 }
 
@@ -386,12 +429,12 @@ function renderTable(rows) {
   const showGzip = rows.some((r) => r.size_gzip_bytes != null);
   const showZstd = rows.some((r) => r.size_zstd_bytes != null);
   const sorted = [...rows].sort((a, b) => {
-    const ac = a.in_comparison === false ? 1 : 0;
-    const bc = b.in_comparison === false ? 1 : 0;
+    const ac = isShapeSkip(a) ? 1 : 0;
+    const bc = isShapeSkip(b) ? 1 : 0;
     if (ac !== bc) return ac - bc;
     return (Number(a.total_median_ns) || 1e18) - (Number(b.total_median_ns) || 1e18);
   });
-  const compared = sorted.filter((r) => r.in_comparison !== false);
+  const compared = competingRows(sorted);
   const minOf = (key) => {
     const nums = compared.map((r) => Number(r[key])).filter(Number.isFinite);
     return nums.length ? Math.min(...nums) : null;
@@ -421,14 +464,14 @@ function renderTable(rows) {
     </tr>`;
   const body = sorted
     .map((row) => {
-      const skipped = row.in_comparison === false;
+      const skipped = isShapeSkip(row);
       const std = totalStdUs(row);
       const trials =
         row.runs != null
           ? `${formatIntGrouped(row.runs)}${row.runs_raw ? ` of ${formatIntGrouped(row.runs_raw)}` : ''}`
           : '—';
       return `
-        <tr class="${compareClass(row)}">
+        <tr class="${compareClass(row, sorted)}">
           <td class="str">${escapeHtml(row.library)}${row.version ? `<span class="exp-ver">${escapeHtml(row.version)}</span>` : ''}</td>
           ${showKind ? `<td class="str">${escapeHtml(kindLabel(row.kind))}</td>` : ''}
           ${showN ? `<td class="num">${escapeHtml(row.n ?? '')}</td>` : ''}
@@ -441,7 +484,7 @@ function renderTable(rows) {
           ${showGzip ? (skipped ? `<td class="num">${formatIntGrouped(row.size_gzip_bytes)}</td>` : sizeCell(row.size_gzip_bytes, bestGzip)) : ''}
           ${showZstd ? (skipped ? `<td class="num">${formatIntGrouped(row.size_zstd_bytes)}</td>` : sizeCell(row.size_zstd_bytes, bestZstd)) : ''}
           <td class="num">${trials}</td>
-          <td class="str">${escapeHtml(compareLabel(row))}</td>
+          <td class="str">${escapeHtml(compareLabel(row, sorted))}</td>
         </tr>`;
     })
     .join('');
@@ -454,9 +497,73 @@ function renderTable(rows) {
     </div>`;
 }
 
+function replaceExperimentsHtml(root, html) {
+  destroyExperimentFigures();
+  root.innerHTML = html;
+}
+
+function renderFiguresMount() {
+  return `<div id="exp-figures"></div>`;
+}
+
+function renderDownloadBar() {
+  return `
+    <div class="exp-download">
+      <button type="button" class="tab-btn chart-tool-btn" id="exp-dl-csv">Download CSV</button>
+      <button type="button" class="tab-btn chart-tool-btn" id="exp-copy-tsv">Copy TSV</button>
+      <span id="exp-status" role="status"></span>
+    </div>`;
+}
+
+function renderNumbersDetails(rows) {
+  return `
+    <details class="exp-numbers glass-panel">
+      <summary>Show numbers as a table</summary>
+      ${renderTable(rows)}
+    </details>`;
+}
+
+function setExpStatus(root, msg) {
+  const el = root.querySelector('#exp-status');
+  if (el) el.textContent = msg || '';
+}
+
+function wireExportControls(root, ctx) {
+  const stem = (extra) => exportStem({ id: ctx.id, lang: ctx.lang, io: ctx.io, extra });
+  root.querySelector('#exp-dl-csv')?.addEventListener('click', () => {
+    try {
+      downloadText(`${stem()}.csv`, rowsToDelimited(ctx.rows, { delimiter: ',' }), 'text/csv;charset=utf-8');
+      setExpStatus(root, '');
+    } catch (err) {
+      setExpStatus(root, 'Download failed');
+    }
+  });
+  root.querySelector('#exp-copy-tsv')?.addEventListener('click', () => {
+    copyText(rowsToDelimited(ctx.rows, { delimiter: '\t' }))
+      .then(() => setExpStatus(root, 'Table copied'))
+      .catch(() => setExpStatus(root, 'Clipboard unavailable'));
+  });
+  const pngClick = (which) => () => {
+    const url = figuresToPng(which);
+    if (!url) {
+      setExpStatus(root, 'Download failed');
+      return;
+    }
+    downloadDataUrl(url, `${stem(which)}.png`);
+    setExpStatus(root, '');
+  };
+  root.querySelector('#exp-png-latency')?.addEventListener('click', pngClick('latency'));
+  root.querySelector('#exp-png-split')?.addEventListener('click', pngClick('split'));
+  const pngSize = root.querySelector('#exp-png-size');
+  if (pngSize) {
+    if (sizeTreatment(ctx.rows).kind !== 'S1') pngSize.hidden = true;
+    else pngSize.addEventListener('click', pngClick('size'));
+  }
+}
+
 function renderList(root) {
   const items = catalog?.experiments || [];
-  root.innerHTML = `
+  replaceExperimentsHtml(root, `
     <div class="exp-header">
       <h2 class="chart-title">Experiments</h2>
       <p class="section-help">
@@ -465,7 +572,7 @@ function renderList(root) {
       </p>
     </div>
     ${renderWhyExperiments()}
-    ${renderHowToRead()}
+    ${renderHowToRead({ mode: 'list' })}
     <div class="exp-list" role="list">
       ${items
         .map((exp) => {
@@ -486,7 +593,7 @@ function renderList(root) {
         .join('')}
     </div>
     ${!items.length ? `<p class="section-help">No experiment folders found.</p>` : ''}
-  `;
+  `);
   root.querySelectorAll('.exp-card[data-exp-id]').forEach((btn) => {
     btn.addEventListener('click', () => {
       if (btn.getAttribute('data-planned') === '1') return;
@@ -496,33 +603,43 @@ function renderList(root) {
 }
 
 async function renderDetail(root, id) {
+  destroyExperimentFigures();
   const meta = (catalog?.experiments || []).find((e) => e.id === id);
   if (!meta) {
-    root.innerHTML = `
+    replaceExperimentsHtml(
+      root,
+      `
       <p class="section-help">Unknown experiment <code>${escapeHtml(id)}</code>.</p>
-      <button type="button" class="tab-btn" id="exp-back">All experiments</button>`;
+      <button type="button" class="tab-btn" id="exp-back">All experiments</button>`
+    );
     root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
     return;
   }
   if (!meta.has_results) {
-    root.innerHTML = `
+    replaceExperimentsHtml(
+      root,
+      `
       <div class="exp-header">
         <button type="button" class="tab-btn exp-back" id="exp-back">All experiments</button>
         <h2 class="chart-title">${escapeHtml(meta.title || meta.question)}</h2>
         ${renderStory(meta)}
         <p class="section-help">No results yet.</p>
-      </div>`;
+      </div>`
+    );
     root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
     return;
   }
-  root.innerHTML = `<p class="section-help">Loading ${escapeHtml(id)}…</p>`;
+  replaceExperimentsHtml(root, `<p class="section-help">Loading ${escapeHtml(id)}…</p>`);
   let data;
   try {
     data = await loadPayload(id, meta.payload);
   } catch (err) {
-    root.innerHTML = `
+    replaceExperimentsHtml(
+      root,
+      `
       <button type="button" class="tab-btn exp-back" id="exp-back">All experiments</button>
-      <p class="section-help">Could not load results: ${escapeHtml(err.message)}</p>`;
+      <p class="section-help">Could not load results: ${escapeHtml(err.message)}</p>`
+    );
     root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
     return;
   }
@@ -541,10 +658,19 @@ async function renderDetail(root, id) {
     n: ns.length > 1 ? ui.n : '',
     io: ios.length > 1 ? ui.io : '',
   };
-  const filtered = rowsFor(langBlock, filters);
+  const filtered = rowsFor(langBlock, filters).filter((row) =>
+    id === '01-json-library-bakeoff' ? !isShapeSkip(row) : true
+  );
   const group = matchingTopGroup(langBlock, filters);
+  const graphs = usesExperimentGraphs(id);
+  const howToMode = graphs ? 'graphs' : 'table';
+  const resultsHtml = graphs
+    ? `${renderFiguresMount()}${renderDownloadBar()}${renderNumbersDetails(filtered)}`
+    : renderTable(filtered);
 
-  root.innerHTML = `
+  replaceExperimentsHtml(
+    root,
+    `
     <div class="exp-header">
       <button type="button" class="tab-btn exp-back" id="exp-back">All experiments</button>
       <p class="exp-kicker">Experiment ${meta.number != null ? meta.number : ''}</p>
@@ -553,7 +679,7 @@ async function renderDetail(root, id) {
       <p class="section-help">This is a fair slice of the main Dashboard for one decision, not extra clocks. <a href="#experiments">Why we keep experiments separate</a></p>
     </div>
     ${renderStory(meta)}
-    ${renderHowToRead()}
+    ${renderHowToRead({ mode: howToMode })}
     ${renderSample(meta)}
     <div class="exp-lang-tabs tabs" role="tablist" aria-label="Language">
       ${langIds
@@ -569,8 +695,24 @@ async function renderDetail(root, id) {
       ${selectHtml('exp-io', 'How written', ios, ui.io, (v) => (v === 'memory' ? 'in memory' : v))}
     </div>
     ${renderTopGroup(group, filtered)}
-    ${renderTable(filtered)}
-  `;
+    ${resultsHtml}
+  `
+  );
+  if (graphs) {
+    const exportCtx = { id, lang: ui.lang, io: filters.io, rows: filtered };
+    if (typeof globalThis.Chart === 'undefined') {
+      root.querySelector('.exp-numbers')?.setAttribute('open', '');
+      setExpStatus(root, 'Graphs need Chart.js (CDN). The table below has the same numbers.');
+    }
+    mountExperimentFigures(root.querySelector('#exp-figures'), {
+      id,
+      meta,
+      rows: filtered,
+      lang: ui.lang,
+      io: filters.io,
+    });
+    wireExportControls(root, exportCtx);
+  }
   root.querySelector('#exp-back')?.addEventListener('click', () => setHash(null));
   root.querySelectorAll('[data-exp-lang]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -596,6 +738,7 @@ async function renderDetail(root, id) {
 }
 
 async function render() {
+  destroyExperimentFigures();
   const root = document.getElementById('experiments');
   if (!root) return;
   const loc = parseHash();
@@ -603,7 +746,9 @@ async function render() {
   if (loc.view === 'suite') return;
   await loadCatalog();
   if (catalogError) {
-    root.innerHTML = `
+    replaceExperimentsHtml(
+      root,
+      `
       <div class="exp-header">
         <h2 class="chart-title">Experiments</h2>
         <p class="section-help">
@@ -611,7 +756,8 @@ async function render() {
           <code>python3 dashboard/scripts/sync-experiments.py</code>
           (${escapeHtml(catalogError.message)}).
         </p>
-      </div>`;
+      </div>`
+    );
     return;
   }
   if (loc.view === 'list') {
