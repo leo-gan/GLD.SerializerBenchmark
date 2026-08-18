@@ -12,6 +12,8 @@ const COMPARE_LABEL = {
   slower: 'Clearly slower',
 };
 
+export const ALL_LANG = 'all';
+
 const CSV_COLUMNS = [
   'library',
   'version',
@@ -27,6 +29,46 @@ const CSV_COLUMNS = [
   'vs_fastest',
   'in_comparison',
 ];
+
+export function isAllLang(lang) {
+  return lang === ALL_LANG;
+}
+
+/** True when the current rows cover more than one tagged language. */
+export function mixedLanguages(rows) {
+  const langs = new Set();
+  for (const row of rows || []) {
+    if (row?.language == null || row.language === '') continue;
+    langs.add(String(row.language));
+    if (langs.size > 1) return true;
+  }
+  return false;
+}
+
+/**
+ * Rows that share this row’s language. Untagged lists stay one contest.
+ * Used so All-tab colors and “vs fastest” never rank Rust against Java.
+ */
+export function peerRows(row, rows) {
+  const list = rows || [];
+  const lang = row?.language;
+  if (lang == null || lang === '') return list;
+  const peers = list.filter((r) => r.language === lang);
+  return peers.length ? peers : list;
+}
+
+/** Flatten ok language blocks, tagging every row with `language`. */
+export function flattenLanguageRows(languages, langIds) {
+  const rows = [];
+  for (const id of langIds || []) {
+    const block = languages?.[id];
+    if (!block || (block.status && block.status !== 'ok')) continue;
+    for (const row of block.rows || []) {
+      rows.push({ ...row, language: id });
+    }
+  }
+  return rows;
+}
 
 /** True skip: different JSON shape. Stream rows are not skips — they are a different filter. */
 export function isShapeSkip(row) {
@@ -70,9 +112,10 @@ function tierFromMedianRatio(row, rows) {
  * median-ratio band (≤1.15× similar, ≤1.5× close).
  */
 export function displayTier(row, rows) {
+  const peers = peerRows(row, rows);
   if (isShapeSkip(row)) return 'skip';
   if (row.tier === 'fastest' || row.cliffs_label === 'reference') return 'fastest';
-  const fromRatio = tierFromMedianRatio(row, rows);
+  const fromRatio = tierFromMedianRatio(row, peers);
   if (fromRatio === 'fastest') return 'fastest';
   const fromCliffs =
     row.tier === 'similar' || row.tier === 'close' || row.tier === 'slower' ? row.tier : '';
@@ -142,9 +185,18 @@ function escapeField(value, delimiter) {
   return s;
 }
 
+function rowHasLanguage(rows) {
+  return (rows || []).some((r) => r?.language != null && r.language !== '');
+}
+
+function csvColumns(rows) {
+  return rowHasLanguage(rows) ? ['language', ...CSV_COLUMNS] : CSV_COLUMNS;
+}
+
 function rowFields(row, rows) {
   const std = totalStdUs(row);
   return {
+    language: row.language ?? '',
     library: row.library ?? '',
     version: row.version ?? '',
     io: row.io ?? '',
@@ -163,10 +215,11 @@ function rowFields(row, rows) {
 
 export function rowsToDelimited(rows, { delimiter = ',' } = {}) {
   const sorted = sortRows(rows);
-  const lines = [CSV_COLUMNS.join(delimiter)];
+  const cols = csvColumns(sorted);
+  const lines = [cols.join(delimiter)];
   for (const row of sorted) {
     const fields = rowFields(row, sorted);
-    lines.push(CSV_COLUMNS.map((k) => escapeField(fields[k], delimiter)).join(delimiter));
+    lines.push(cols.map((k) => escapeField(fields[k], delimiter)).join(delimiter));
   }
   return `${lines.join('\n')}\n`;
 }

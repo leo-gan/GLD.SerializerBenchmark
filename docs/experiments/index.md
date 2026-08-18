@@ -4,11 +4,11 @@ title: Experiments
 
 # Experiments
 
+[Dashboard → Experiments](../dashboard/#experiments){ .md-button .md-button--primary }
+
 Each experiment answers **one everyday question**, such as “which JSON library is fastest?” or “is YAML too slow for a live request?”
 
-Open the numbers in the [Dashboard → Experiments](../dashboard/#experiments) tab. This page is the same story in words.
-
-Compare libraries **inside one language**. A Python time and a Java time are not the same contest. Size (how many bytes) is the only number that is roughly fair across languages.
+Each experiment opens on a language tab. The **All** tab (last on the right) puts every language on one microsecond axis so you can compare runtimes. Color is still vs that language’s fastest. Size (how many bytes) is also fair across languages.
 
 ---
 
@@ -66,13 +66,12 @@ If you only want to look around, use the main Dashboard. If you have to choose a
 
 ## How to read the graphs
 
-Open the numbers in the [Dashboard → Experiments](../dashboard/#experiments) tab.
-
 - The **bar** is the middle time (median), in **microseconds**. Smaller is faster.
 - The **whisker** is **approximate spread**, reconstructed from the published confidence interval of the **mean**. It is the same reconstruction the table’s Spread column uses. It is not yet the sample standard deviation of the trials.
 - Hover a bar for the same `15.9 (1.2×)` style numbers as the table.
 - **Vs fastest** is still Fastest / About the same / A bit slower / Clearly slower — also shown as color + a glyph on the axis. A 2% gap is not “clearly slower.”
-- Compare libraries **inside one language**.
+- The **All** tab uses the same **microsecond** axis as a language tab, so you can compare languages. Color is still vs that language’s fastest.
+- A single-language tab is one contest inside that runtime.
 - Some experiments add a size, compression, or rank chart when that is the question.
 - Experiment 1 shows only libraries that write **named JSON** (`{"id": 1, "status": "ok"}`).
 
