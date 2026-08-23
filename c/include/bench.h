@@ -149,6 +149,7 @@ void bench_register_mpack(serializer_t *out, int *count);
 void bench_register_msgpack_c(serializer_t *out, int *count);
 void bench_register_tinycbor(serializer_t *out, int *count);
 void bench_register_libcbor(serializer_t *out, int *count);
+void bench_register_libcbor_stream(serializer_t *out, int *count);
 void bench_register_qcbor(serializer_t *out, int *count);
 void bench_register_ubj(serializer_t *out, int *count);
 void bench_register_libbson(serializer_t *out, int *count);
