@@ -134,6 +134,21 @@ nav:
           - "C: nanopb vs protobuf-c": theory/401/protobuf-c-nanopb-compare.md
           - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
           - "Same bytes, three runtimes": theory/401/protobuf-cross-language-fidelity.md
+          - "Python: msgspec vs orjson": theory/401/python-msgspec-vs-orjson.md
+          - "Python: msgspec JSON vs MessagePack": theory/401/python-msgspec-json-vs-msgpack.md
+          - "Python: orjson vs json": theory/401/python-orjson-vs-json.md
+          - "Rust: Speedy vs Bincode": theory/401/rust-speedy-vs-bincode.md
+          - "Rust: Speedy vs Postcard": theory/401/rust-speedy-vs-postcard.md
+          - "Rust: rkyv vs Speedy": theory/401/rust-rkyv-vs-speedy.md
+          - "C: custom-binary vs ubj": theory/401/c-custom-binary-vs-ubj.md
+          - "C++: Bitsery vs YAS": theory/401/cpp-bitsery-vs-yas.md
+          - "C++: the simdjson row": theory/401/cpp-simdjson-wrapper.md
+          - "C#: BinaryPack vs Bond": theory/401/csharp-binarypack-vs-bond.md
+          - "Go: kelindar vs Avro": theory/401/go-kelindar-vs-avro.md
+          - "Java: Protostuff vs protobuf": theory/401/java-protostuff-vs-protobuf.md
+          - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
+          - "JavaScript: three Protobuf engines": theory/401/javascript-three-protobufs.md
+          - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
   - Languages:
       # Alphabetical by display name
       - C:
