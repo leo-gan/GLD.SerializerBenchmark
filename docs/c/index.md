@@ -17,7 +17,7 @@ C serialization is fragmented: each library owns its own object model (DOM trees
 |------|----------|-------------------------------------|
 | cJSON, yyjson, jansson, parson, json-c | JSON | Library DOM build + print / parse via visitor ops |
 | mpack, msgpack-c | Binary | Fixed-buffer map pack + tree/object unpack via visitor ops |
-| tinycbor, cbor-encode (libcbor), qcbor, zcbor | Binary/schema | Native CBOR map encode via visitor ops; decode via tinycbor map walker (standard CBOR interop) where noted |
+| tinycbor, libcbor, libcbor-stream, qcbor, zcbor | Binary/schema | Native CBOR map encode via visitor ops (`libcbor` = DOM API, `libcbor-stream` = streaming `cbor_encode_*`); decode via each library's native walker (tinycbor buffer walker, libcbor `cbor_load`), interoperable CBOR |
 | libbson | Binary | `bson_append_*` / `bson_iter_*` via visitor ops |
 | ubj | Binary | In-tree UBJSON markers around suite V2 binary payload (`bin_*`) |
 | custom-binary | Binary | Suite length-prefixed V2 baseline (`bin_write_fixture` / `bin_read_fixture`) |

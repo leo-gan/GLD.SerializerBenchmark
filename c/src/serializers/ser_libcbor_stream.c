@@ -6,13 +6,14 @@
 /*
  * Wrapper: libcbor's streaming/low-level encoder (src/cbor/encoding.h).
  * No cbor_item_t allocations; bytes are written directly into the caller's
- * buffer. Interoperable CBOR output; decode reuses the tinycbor visitor
- * reader like the DOM wrapper.
+ * buffer. Interoperable CBOR output. Decode uses the shared libcbor-native
+ * DOM decoder from ser_libcbor_common.c (bench_libcbor_de) — encode is the
+ * streaming half of this row; decode is not yet allocation-free.
  *
- * v2_write_fixture always supplies definite-length container sizes, so
+ * v2_write_fixture only ever supplies definite-length container sizes, so
  * end_map / end_array are no-ops (definite-length containers auto-close
- * once N elements are written). We still track an "indef" bit per depth
- * so an unexpected -1 count would still round-trip via CBOR break codes.
+ * once N elements are written). An indefinite count (n < 0) is not
+ * supported and will fail-fast rather than silently emit garbage.
  */
 
 static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx; return 0; }
@@ -31,14 +32,18 @@ static inline int lcs_write(lcs *c, size_t n) {
 }
 
 /* v2_write_fixture only ever passes definite-length sizes, so end_* are no-ops
-   (definite containers auto-close after their promised N elements). */
+   (definite containers auto-close after their promised N elements). An
+   indefinite (n < 0) count is not supported and would silently produce
+   garbage via a wrap to (size_t)-1, so fail-fast on it. */
 static int w_begin_map(void *ctx, int n) {
     lcs *c = ctx;
+    if (n < 0) { c->err = 1; return -1; }
     return lcs_write(c, cbor_encode_map_start((size_t)n, c->buf + c->off, c->cap - c->off));
 }
 static int w_end_map(void *ctx) { (void)ctx; return 0; }
 static int w_begin_array(void *ctx, int n) {
     lcs *c = ctx;
+    if (n < 0) { c->err = 1; return -1; }
     return lcs_write(c, cbor_encode_array_start((size_t)n, c->buf + c->off, c->cap - c->off));
 }
 static int w_end_array(void *ctx) { (void)ctx; return 0; }
@@ -60,9 +65,7 @@ static int w_str(void *ctx, const char *s) { return emit_text(ctx, s); }
 
 static int w_bool(void *ctx, int v) {
     lcs *c = ctx;
-    if (c->off >= c->cap) { c->err = 1; return -1; }
-    c->buf[c->off++] = v ? 0xF5 : 0xF4;  /* CBOR true / false */
-    return 0;
+    return lcs_write(c, cbor_encode_bool(v != 0, c->buf + c->off, c->cap - c->off));
 }
 static int w_i64(void *ctx, int64_t v) {
     lcs *c = ctx;

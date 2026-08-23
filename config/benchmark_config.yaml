@@ -474,11 +474,16 @@ languages:
         library: tinycbor
         rationale: "Intel tinycbor (IETF CBOR)"
         optimal_api: "cbor_encoder / cbor_parser"
-      - name: cbor-encode
+      - name: libcbor
         category: binary
         library: libcbor
-        rationale: "libcbor reference implementation"
+        rationale: "libcbor DOM API (cbor_build_* + cbor_serialize)"
         optimal_api: "cbor_serialize_alloc / cbor_load"
+      - name: libcbor-stream
+        category: binary
+        library: libcbor
+        rationale: "libcbor streaming/low-level encoder (src/cbor/encoding.h)"
+        optimal_api: "cbor_encode_* / cbor_load"
       - name: qcbor
         category: binary
         library: QCBOR
