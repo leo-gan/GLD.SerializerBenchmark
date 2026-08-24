@@ -1155,6 +1155,13 @@ select:focus {
 #analytics-table:not(.view-stream) .roster-col-honesty {
   display: none;
 }
+#analytics-table thead .roster-col-honesty {
+  cursor: default;
+}
+#analytics-table thead .roster-col-honesty:hover {
+  background: #f1f3f4;
+  color: var(--text-secondary);
+}
 
 /* Pareto highlight instead of Frontier column */
 #analytics-table tbody tr.roster-pareto-row td {
