@@ -1,4 +1,4 @@
-"""Display number formatting for results.md Summary / pivot tables."""
+"""Display number formatting for unpublished language report Summary / pivot tables."""
 
 import sys
 import unittest

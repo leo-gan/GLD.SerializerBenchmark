@@ -427,13 +427,17 @@ def _generate_artifacts(
     all_records: Dict[str, List[Dict]],
     all_stats: Dict,
     lang_paths: Dict[str, Optional[str]],
-    publish_root: Path,
-    docs_dir: Path,
     reports_root: Path,
     stats_config: Optional[Dict] = None,
     pre_sanitized: bool = True,
+    write_markdown: bool = True,
+    write_violins: bool = False,
 ) -> None:
-    """Write hub index, per-language results tables, and latency distributions.
+    """Write unpublished language reports and optional latency distributions.
+
+    Output lives under ``reports_root`` (``reports/<docs_dir>/results.md``,
+    and ``reports/plots/violin/`` only when ``write_violins``). Never writes
+    ``docs/<lang>/results.md``.
 
     ``all_records`` should be the *same* sanitized population used to build
     ``all_stats`` (see :func:`prepare_analysis_records`) so plots and tables
@@ -442,18 +446,22 @@ def _generate_artifacts(
     # Lazy import: reports pulls matplotlib (heavy / optional in some envs).
     from .reports import generate_language_results_pages, generate_violin_plots
 
-    plots_dir = str(publish_root / "plots" / "violin")
     lang_sources = {k: v for k, v in lang_paths.items() if v}
-    violin_images = generate_violin_plots(
-        plots_dir,
-        multi_lang_records=all_records,
-        lang_sources=lang_sources,
-        stats_config=stats_config,
-        pre_sanitized=pre_sanitized,
-    )
+    # Empty unless --violins: do not embed missing PNG paths in the markdown.
+    violin_images: Dict = {}
+    if write_violins:
+        plots_dir = str(reports_root / "plots" / "violin")
+        violin_images = generate_violin_plots(
+            plots_dir,
+            multi_lang_records=all_records,
+            lang_sources=lang_sources,
+            stats_config=stats_config,
+            pre_sanitized=pre_sanitized,
+        )
 
-    # docs/analysis/BENCHMARK_SUMMARY.md is a static hub — do not regenerate it.
-    docs_root = str(docs_dir) if docs_dir.is_dir() else str(reports_root)
+    if not write_markdown:
+        return
+
     metrics_profile = (
         os.environ.get("BENCHMARK_METRICS_PROFILE")
         or (stats_config or {}).get("_metrics_profile")
@@ -462,7 +470,7 @@ def _generate_artifacts(
     generate_language_results_pages(
         multi_lang_stats=all_stats,
         violin_images=violin_images,
-        docs_root=docs_root,
+        docs_root=str(reports_root),
         lang_sources=lang_sources,
         metrics_profile=str(metrics_profile),
     )
@@ -484,14 +492,17 @@ def main():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Analyze serializer benchmarks and publish site artifacts "
-            "(results tables + latency distributions)."
+            "Analyze serializer benchmarks and write unpublished reports "
+            "(stats JSON + language markdown; violins only with --violins)."
         ),
         epilog=(
             "By default, loads the latest timestamped CSV under logs/<lang>/ and writes:\n"
-            "  docs/<lang>/results.md\n"
-            "  docs/analysis/plots/violin/<lang>_*.png\n"
+            "  reports/stats_<lang>_latest.json\n"
+            "  reports/<docs_dir>/results.md   (e.g. reports/c-sharp/results.md)\n"
+            "With --violins:\n"
+            "  reports/plots/violin/<lang>_*.png\n"
             "(docs/analysis/BENCHMARK_SUMMARY.md is a static hub and is not overwritten.)\n"
+            "Do not commit reports/<docs_dir>/results.md to the published site.\n"
             "\n"
             "Examples:\n"
             "  analyze-benchmarks\n"
@@ -535,7 +546,17 @@ def main():
     parser.add_argument(
         "--skip-generate",
         action="store_true",
-        help="Do not write docs/plots (use with --compare-a/--check-regression/--save-baseline only)",
+        help="Do not write reports markdown/plots (use with --compare-a/--check-regression/--save-baseline only)",
+    )
+    parser.add_argument(
+        "--violins",
+        action="store_true",
+        help="Write unpublished violin PNGs under reports/plots/violin/ (skipped by default)",
+    )
+    parser.add_argument(
+        "--no-markdown-report",
+        action="store_true",
+        help="Skip unpublished reports/<docs_dir>/results.md (stats JSON is still written)",
     )
     parser.add_argument("--check-regression", action="store_true", help="Check for regressions")
     parser.add_argument(
@@ -731,11 +752,6 @@ def main():
 
     os.makedirs(str(reports_root), exist_ok=True)
 
-    repo_root = _repo_root()
-    docs_dir = repo_root / "docs"
-    docs_analysis = docs_dir / "analysis"
-    publish_root = docs_analysis if docs_analysis.is_dir() else reports_root
-
     if not args.skip_generate:
         if total_loaded == 0:
             print("No records loaded; skipping artifact generation.")
@@ -744,11 +760,11 @@ def main():
                 all_records=all_records,
                 all_stats=all_stats,
                 lang_paths=lang_paths,
-                publish_root=publish_root,
-                docs_dir=docs_dir,
                 reports_root=reports_root,
                 stats_config=stats_cfg,
                 pre_sanitized=True,
+                write_markdown=not args.no_markdown_report,
+                write_violins=args.violins,
             )
 
     if args.compare_a and args.compare_b:

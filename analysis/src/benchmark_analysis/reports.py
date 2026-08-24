@@ -1250,7 +1250,11 @@ def generate_language_results_pages(
     lang_sources: Optional[Dict[str, str]] = None,
     metrics_profile: str = "multi_way",
 ) -> List[str]:
-    """Write ``docs/<lang>/results.md`` with pivots + violin embeds per language.
+    """Write ``<docs_root>/<docs_dir>/results.md`` (unpublished language report).
+
+    ``docs_root`` is typically ``reports/`` so C# lands at
+    ``reports/c-sharp/results.md`` via ``_lang_docs_dir_map``. Pass empty
+    ``violin_images`` to omit latency-chart embeds.
 
     Multi-way pages emphasize **high-importance** metrics (see METRICS.md).
     Important run-config fields from ``*.configs.json`` are published when present.
@@ -1493,11 +1497,11 @@ def generate_language_results_pages(
         lines.append("```")
         lines.append("")
         lines.append(
-            "That refreshes this language’s tables and the latency images under "
-            "`docs/analysis/plots/violin/`. "
+            "That writes unpublished tables under `reports/<docs_dir>/results.md` "
+            "and, with `--violins`, latency images under `reports/plots/violin/`. "
             "The hub [Results summary](../analysis/BENCHMARK_SUMMARY.md) is a **static** "
             "link index and is not rewritten by the CLI. "
-            "Commit updated `results.md` and plot files when you want them on the site."
+            "Do not commit `reports/<docs_dir>/results.md` to the published site."
         )
         lines.append("")
         # Collapsed at end: title always visible, body hidden by default (Material ??? details).
@@ -1508,7 +1512,7 @@ def generate_language_results_pages(
         with open(out_path, "w", encoding="utf-8") as f:
             f.write("\n".join(lines))
         written.append(out_path)
-        print(f"Language results written to: {out_path}")
+        print(f"Unpublished language report written to: {out_path}")
 
     return written
 
