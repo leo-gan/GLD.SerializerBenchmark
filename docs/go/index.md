@@ -59,6 +59,13 @@ for rep:
 
 Also: [`go/README.md`](../../go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).
 
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=go&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
+
 ## Design choices
 
 1. **Prepare outside the loop** — configs, Pretouch, EncMode, Avro schema, protobuf messages, ugorji Handles, goavro maps.

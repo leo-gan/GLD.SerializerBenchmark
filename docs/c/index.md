@@ -44,3 +44,10 @@ Pins: [`c/third_party/VERSIONS.md`](../../c/third_party/VERSIONS.md).
 
 Stream mode uses an in-memory `FILE*` (`fmemopen`) wrapper around full encode/decode buffers — **`StreamMode=adapted`** for every stream row. It is not a per-library incremental stream API. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
 
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=c&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
+
