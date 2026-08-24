@@ -125,7 +125,15 @@
     </div>
 
     <div id="run-meta" class="run-meta glass-panel" hidden>
+      <a id="run-meta-claim" class="run-meta-claim"
+         href="../analysis/CLAIMS_AND_REPLICATION/">L1</a>
+      <span class="run-meta-sep" aria-hidden="true">·</span>
       <span id="run-meta-text" class="run-meta-text"></span>
+      <button type="button" id="run-config-toggle" class="run-config-toggle"
+              aria-expanded="false" aria-controls="run-config-panel">
+        Run configuration
+      </button>
+      <div id="run-config-panel" class="run-config-panel" hidden></div>
     </div>
 
     <!-- First-visit orientation (dismissible; see main.js ORIENTATION_KEY) -->

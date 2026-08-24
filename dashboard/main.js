@@ -574,6 +574,15 @@ function setupEventListeners() {
     setFilterPolicy(e.target.value);
   });
 
+  const runConfigToggle = document.getElementById('run-config-toggle');
+  const runConfigPanel = document.getElementById('run-config-panel');
+  runConfigToggle?.addEventListener('click', () => {
+    const open = runConfigToggle.getAttribute('aria-expanded') === 'true';
+    const next = !open;
+    runConfigToggle.setAttribute('aria-expanded', next ? 'true' : 'false');
+    if (runConfigPanel) runConfigPanel.hidden = !next;
+  });
+
   // Mobile nav
   const navToggle = document.getElementById('nav-toggle');
   const mainNav = document.getElementById('main-nav');
@@ -1180,6 +1189,159 @@ function updateRunMeta() {
     el.hidden = false;
   } else {
     el.hidden = true;
+  }
+  updateRunConfigPanel();
+}
+
+const RUNTIME_KEY_BY_LANG = {
+  python: 'python',
+  csharp: 'dotnet',
+  javascript: 'node',
+  rust: 'rustc',
+  go: 'go',
+  c: 'gcc',
+  cpp: 'g++',
+  java: 'java',
+  swift: 'swift',
+};
+
+function firstLine(value) {
+  return String(value ?? '')
+    .split('\n')[0]
+    .trim();
+}
+
+function formatConfigRam(mem) {
+  const bytes = mem?.total_bytes ?? mem?.total ?? null;
+  if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes <= 0) return '';
+  return `${(bytes / 1024 ** 3).toFixed(1)} GiB`;
+}
+
+function formatConfigRuntimes(runtimes, lang) {
+  if (!runtimes || typeof runtimes !== 'object') return '';
+  const prefer = [];
+  const k = RUNTIME_KEY_BY_LANG[(lang || '').toLowerCase()];
+  if (k && runtimes[k] != null && runtimes[k] !== '') {
+    prefer.push(`${k}=${firstLine(runtimes[k])}`);
+  }
+  for (const [rk, rv] of Object.entries(runtimes).slice(0, 4)) {
+    if (k && rk === k) continue;
+    if (rv == null || rv === '') continue;
+    prefer.push(`${rk}=${firstLine(rv)}`);
+  }
+  return prefer.slice(0, 3).join(', ');
+}
+
+function appendConfigRow(dl, term, value) {
+  if (value == null || value === '') return;
+  const dt = document.createElement('dt');
+  dt.textContent = term;
+  const dd = document.createElement('dd');
+  if (value instanceof Node) {
+    dd.appendChild(value);
+  } else {
+    dd.textContent = String(value);
+  }
+  dl.appendChild(dt);
+  dl.appendChild(dd);
+}
+
+function buildSerializerNameList(items) {
+  const ul = document.createElement('ul');
+  ul.className = 'run-config-serializers';
+  const list = Array.isArray(items) ? items : [];
+  for (const it of list.slice(0, 40)) {
+    if (!it || typeof it !== 'object') continue;
+    const name = it.name;
+    if (name == null || name === '') continue;
+    const li = document.createElement('li');
+    const ver = it.version || '';
+    li.textContent = ver ? `${name} @ ${ver}` : String(name);
+    ul.appendChild(li);
+  }
+  if (list.length > 40) {
+    const more = document.createElement('li');
+    more.textContent = `… (${list.length - 40} more)`;
+    ul.appendChild(more);
+  }
+  return ul.childElementCount ? ul : null;
+}
+
+function updateRunConfigPanel() {
+  const panel = document.getElementById('run-config-panel');
+  if (!panel) return;
+  while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+  const cfg = state.currentRunConfigs || {};
+  const env = cfg.environment && typeof cfg.environment === 'object' ? cfg.environment : cfg;
+  const os = env.os || {};
+  const cpu = env.cpu || {};
+  const mem = env.memory || {};
+  const git = env.git || {};
+  const dataset = cfg.dataset || {};
+  const ser = cfg.serializers || {};
+  const run = cfg.run || {};
+  const lang = cfg.language || state.currentLanguage || '';
+
+  const dl = document.createElement('dl');
+  dl.className = 'run-config-list';
+
+  const runId = state.currentRunId || cfg.benchmark_ts || '';
+  appendConfigRow(dl, 'run', runId);
+  appendConfigRow(dl, 'language', lang);
+  if (os.system) {
+    appendConfigRow(dl, 'os', `${os.system} ${os.release || ''}`.trim());
+  }
+  if (cpu.model) {
+    const cores = cpu.logical_cores || cpu.cpu_count;
+    appendConfigRow(dl, 'cpu', cores ? `${cpu.model} (${cores} threads)` : cpu.model);
+  }
+  appendConfigRow(dl, 'ram', formatConfigRam(mem));
+  appendConfigRow(dl, 'runtimes', formatConfigRuntimes(env.runtimes, lang));
+  if (git.commit) {
+    appendConfigRow(dl, 'git', `${git.commit}${git.dirty ? ' dirty' : ''}`);
+  }
+  if (dataset.seed != null && dataset.seed !== '') {
+    appendConfigRow(dl, 'seed', dataset.seed);
+  }
+  if (dataset.mode) {
+    appendConfigRow(dl, 'mode', dataset.mode);
+  }
+  if (dataset.warmup_repetitions != null) {
+    appendConfigRow(dl, 'warmup_reps', dataset.warmup_repetitions);
+  }
+  const serCount = ser.count != null ? ser.count : Array.isArray(ser.items) ? ser.items.length : null;
+  if (serCount != null) {
+    appendConfigRow(dl, 'serializers', serCount);
+  }
+  if (run.metrics_profile) {
+    appendConfigRow(dl, 'metrics_profile', run.metrics_profile);
+  }
+
+  const fixtures = Array.isArray(dataset.fixtures) ? dataset.fixtures : [];
+  const typeNames = fixtures
+    .filter((f) => f && typeof f === 'object' && f.name)
+    .map((f) => f.name);
+  if (typeNames.length) {
+    appendConfigRow(dl, 'Data types (config)', typeNames.join(', '));
+  }
+
+  const serList = buildSerializerNameList(ser.items);
+  if (serList) {
+    appendConfigRow(dl, 'Serializers (from CSV)', serList);
+  }
+
+  if (env.machine_id) {
+    appendConfigRow(dl, 'machine_id', env.machine_id);
+  }
+
+  if (dl.childElementCount) {
+    panel.appendChild(dl);
+  } else {
+    const empty = document.createElement('p');
+    empty.className = 'run-config-empty';
+    empty.textContent = 'No sidecar config found for this run.';
+    panel.appendChild(empty);
   }
 }
 
