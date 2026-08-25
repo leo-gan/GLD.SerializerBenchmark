@@ -60,6 +60,16 @@ plugins:
         'architecture/index.md': 'analysis/architecture.md'
         'architecture/ADDING_A_LANGUAGE.md': 'analysis/ADDING_A_LANGUAGE.md'
         'architecture/ADDING_A_SERIALIZER.md': 'analysis/ADDING_A_SERIALIZER.md'
+        'c/results.md': 'c/index.md'
+        'c-sharp/results.md': 'c-sharp/index.md'
+        'cpp/results.md': 'cpp/index.md'
+        'go/results.md': 'go/index.md'
+        'java/results.md': 'java/index.md'
+        'javascript/results.md': 'javascript/index.md'
+        'python/results.md': 'python/index.md'
+        'rust/results.md': 'rust/index.md'
+        'swift/results.md': 'swift/index.md'
+        'analysis/BENCHMARK_SUMMARY.md': 'analysis/CLAIMS_AND_REPLICATION.md'
 
 markdown_extensions:
   - attr_list
@@ -74,7 +84,7 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
 
-# Languages sidebar: compact "Lang: Overview · Results" rows (see languages-nav.*).
+# Languages sidebar: compact "Lang · Dashboard" rows (see languages-nav.*).
 extra_css:
   - stylesheets/languages-nav.css
   - stylesheets/site-home.css
@@ -150,34 +160,26 @@ nav:
           - "JavaScript: three Protobuf engines": theory/401/javascript-three-protobufs.md
           - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
   - Languages:
-      # Alphabetical by display name
+      # Alphabetical by display name. One-child nest so languages-nav.js
+      # can inject a Dashboard sibling (flat items have no children).
       - C:
           - Overview: c/index.md
-          - Results: c/results.md
       - C#:
           - Overview: c-sharp/index.md
-          - Results: c-sharp/results.md
       - C++:
           - Overview: cpp/index.md
-          - Results: cpp/results.md
       - Go:
           - Overview: go/index.md
-          - Results: go/results.md
       - Java:
           - Overview: java/index.md
-          - Results: java/results.md
       - JavaScript:
           - Overview: javascript/index.md
-          - Results: javascript/results.md
       - Python:
           - Overview: python/index.md
-          - Results: python/results.md
       - Rust:
           - Overview: rust/index.md
-          - Results: rust/results.md
       - Swift:
           - Overview: swift/index.md
-          - Results: swift/results.md
   - Method:
       - Overview: analysis/index.md
       - Architecture: analysis/architecture.md
@@ -189,4 +191,3 @@ nav:
       - Metrics: analysis/METRICS.md
       - Claims and replication: analysis/CLAIMS_AND_REPLICATION.md
       - Test Data: analysis/test_data_configuration.md
-      - Results Summary: analysis/BENCHMARK_SUMMARY.md

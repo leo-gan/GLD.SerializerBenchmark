@@ -8,7 +8,7 @@ Theory pages cover product trade-offs in more depth. Language **Overview** pages
 |--------------|---------|
 | Conceptual trade-offs (product / theory) | [Theory — engineering](../theory/101/engineer_perspective.md) · [101 home](../theory/101/index.md) |
 | Full registered names and caveats | Language **Overview** pages |
-| Timings and plots | Language **Results** · [Results summary](BENCHMARK_SUMMARY.md) |
+| Timings and plots | [Dashboard](../dashboard/) |
 
 ---
 
@@ -133,7 +133,7 @@ Examples use **log `SerializerName` values** from language overviews (not always
 - Default comparison: **same language + same family + same data type + same mode**.
 - Schema-driven formats often lead on size and throughput *within a language*—that is not a universal ranking.
 - **C** uses real library APIs when dependencies are built (`fetch-and-build-deps.sh`); read the [C Overview](../c/index.md) for visitor domain shape, `protobuf-wire` (in-tree, not Google upb), and payload-wrapped rows (`ubj`, flatcc, avro-c).
-- Metrics live on language **Results**, not on this page.
+- Metrics live on the [Dashboard](../dashboard/), not on this page.
 
 ## Further reading
 

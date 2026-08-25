@@ -90,7 +90,7 @@ A payments topic uses Avro with BACKWARD compatibility. A producer removes a fie
 
 | Resource | Role |
 |----------|------|
-| **Results** | Codec cost only—not registry behavior |
+| **Dashboard** | Codec cost only—not registry behavior |
 | [Two schema cultures](two-schema-cultures.md) | Which control plane you are running |
 | [Case: event backbone](case-event-stream.md) | End-to-end recommendation under gradual updates (old and new versions run together) |
 

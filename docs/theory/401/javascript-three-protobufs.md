@@ -6,7 +6,13 @@ The [JSON versus google-protobuf](javascript-json-vs-protobuf.md) page showed th
 
 This page places **google-protobuf**, **protobufjs**, and **protobuf-es** side by side. After reading it you should be able to say which functions are timed, why the three totals differ by a factor of five, and how this extends [Same bytes, three runtimes](protobuf-cross-language-fidelity.md) without leaving JavaScript.
 
-Numbers are from the committed JavaScript **Results** snapshot (document, one instance). See [JavaScript Results](../../javascript/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=javascript&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=google-protobuf&ser=google-protobuf&ser=protobufjs&ser=protobuf-es#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [JavaScript overview](../../javascript/)
 
 ## Short answer
 

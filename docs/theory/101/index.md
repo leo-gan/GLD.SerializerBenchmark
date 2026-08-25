@@ -5,7 +5,7 @@ Welcome to Serialization 101. This course is a starting point for anyone who wan
 | Jump | |
 |------|--|
 | **This track** | Three lenses below · then [201 mechanisms](../201/index.md) |
-| **See numbers** | [Dashboard](../../dashboard/) · any language **Results** |
+| **See numbers** | [Dashboard](../../dashboard/) · language **Overview** for roster |
 | **How we measure** | [Method](../../analysis/index.md) |
 
 By the end of this theory track you should be able to:
@@ -15,7 +15,7 @@ By the end of this theory track you should be able to:
 3. Choose a format for a specific kind of work by using the right lens. One lens is data work. Another lens is services and systems.
 4. Connect the ideas in these pages to measured libraries in this multi-language benchmark suite.
 
-Theory alone does not tell you what to ship in production. Use this course to build vocabulary and judgment. Then check real numbers on the [Dashboard](../../dashboard/) and in each language’s **Results** pages. For how those numbers are produced, see [Method](../../analysis/index.md).
+Theory alone does not tell you what to ship in production. Use this course to build vocabulary and judgment. Then check real numbers on the [Dashboard](../../dashboard/). Language **Overview** pages list the roster and caveats. For how those numbers are produced, see [Method](../../analysis/index.md).
 
 ---
 
@@ -45,7 +45,7 @@ The same family of formats appears under three perspectives on purpose. Each doc
 1. Skim the **shared trade-offs** below. This takes about ten minutes.
 2. Read the **[historical perspective](historical_perspective.md)** once for the big picture.
 3. Deep-dive the lens that matches your work. Choose either **[data science](data_science_perspective.md)** or **[engineering](engineer_perspective.md)**.
-4. Open [Serialization categories](../../analysis/serialization_categories.md). Also open a language **Overview** or **Results** page for libraries you might actually use.
+4. Open [Serialization categories](../../analysis/serialization_categories.md). Also open a language **Overview** (roster) and the [Dashboard](../../dashboard/) (numbers) for libraries you might actually use.
 5. When you need *mechanisms* (how formats work under the hood), work through the **[Serialization 201](../201/index.md)** track:
     1. [Memory layout](../201/memory-layout.md)
     2. [Encode/decode cost](../201/encode-decode-cost.md)
@@ -120,5 +120,5 @@ Install and layout notes live in the [notebooks README](../notebooks/README.md).
 ## Scope and honesty
 
 - This theory track is a **map**, not an encyclopedia of every library.
-- Performance claims in prose are **illustrative**. Prefer suite **Results** for numbers on *this* benchmark runner and hardware.
+- Performance claims in prose are **illustrative**. Prefer the [Dashboard](../../dashboard/) for numbers on *this* benchmark runner and hardware.
 - “Best format” always means **best under your constraints**. Those constraints include team skills, trust boundaries, retention needs, latency budgets, and multi-language requirements.

@@ -19,7 +19,7 @@ This shared code repository already has Python, Rust, and C Protocol Buffers ent
 ## Prerequisites
 
 - Shared schema discipline (`schemas/v2/protobuf/benchmark_v2.proto` in this repo, or a tiny shared `mini.proto`).
-- Soft: [301 using this suite](../301/using-this-suite.md)—do not use Results as fidelity proofs.
+- Soft: [301 using this suite](../301/using-this-suite.md)—do not use Dashboard numbers as fidelity proofs.
 
 ## Mental model
 
@@ -168,12 +168,12 @@ Optional second fixture: lab G5 `1a 02 08 02` (nested manager) for nested LEN co
 | `schemas/v2/protobuf/benchmark_v2.proto` | Shared field numbers for suite types |
 | Python `protobuf` / Rust `prost` / C Google `protobuf` (+ C helper rows) | Separate encode paths (pins and honesty notes are on the language articles / [C Overview](../../c/index.md)) |
 | Per-language fidelity hooks | Local round-trip checks only |
-| Results / ops | **Not** interoperability proofs |
+| Dashboard / ops | **Not** interoperability proofs |
 | [301 multi-language systems (polyglot estates)](../301/polyglot-estates.md) | One **product** contract; this page tests **bytes and logic** |
 
 ## Common mistakes
 
-- Declaring victory from three green language Results charts.
+- Declaring victory from three green language Dashboard charts.
 - Testing only A→A round-trips.
 - Comparing floats with `==` across languages without a policy.
 - Mixing nanopb static limits with “full” protobuf-c fixtures and calling the mismatch a wire bug.

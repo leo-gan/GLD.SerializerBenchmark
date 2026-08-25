@@ -76,7 +76,7 @@ An API enables gzip globally. Median latency improves for 100KB responses. 99th-
 
 | Resource | Role |
 |----------|------|
-| Size and time **Results** | Uncompressed codec behavior (typical) |
+| Size and time **Dashboard** | Uncompressed codec behavior (typical) |
 | 201 compression article | Mechanism explanation |
 | [Using this suite](using-this-suite.md) | What is and is not measured |
 

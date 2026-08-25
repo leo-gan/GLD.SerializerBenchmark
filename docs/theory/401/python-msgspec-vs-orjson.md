@@ -6,7 +6,13 @@ On this suite’s **document** fixture, one instance, in-memory buffer mode, **m
 
 This page compares the two timed call sites in this repository and the layouts they emit. After reading it you should be able to say why orjson can still *encode* faster, why msgspec-msgpack *decodes* faster, and why the PyPI `msgpack` package is far slower even though it speaks the same MessagePack format family.
 
-Numbers are from the committed Python **Results** snapshot. See [Python Results](../../python/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=orjson&ser=msgspec-msgpack&ser=orjson#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [Python overview](../../python/)
 
 ## Short answer
 

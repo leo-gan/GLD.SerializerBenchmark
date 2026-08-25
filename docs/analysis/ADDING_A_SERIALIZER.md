@@ -93,7 +93,7 @@ If the only public API is inherently two-step (example: some Avro crates decode 
 
 #### 3. Microbench or peer-smoke before the full language matrix
 
-Before `full` / publishing `docs/<lang>/results.md`:
+Before `full` / publishing Dashboard data:
 
 ```bash
 # Example: C# — your codec only, message, enough reps to ignore warmup
@@ -239,8 +239,8 @@ Confirm:
 - No new unexpected rows in `*.errors.csv`.
 - **Ops/s (or total time) is not an unexplained multi-× outlier** vs same-family peers after the hot-path audit.
 - `size(n=100)/size(n=1)` roughly scales with N for binary codecs.
-- `docs/<lang>/results.md` and violin plots updated when you ran `--analyze`.
-- Optional dashboard: `python3 dashboard/scripts/sync-data.py` (commit `dashboard/public/data/<lang>_latest.json.gz` if you publish dashboard data).
+- Dashboard Details / Compare: `python3 dashboard/scripts/sync-data.py` (commit `dashboard/public/data/<lang>_latest.json.gz` if you publish dashboard data).
+- Unpublished report: `analyze-benchmarks` writes `reports/<docs_dir>/results.md` (do not commit to the site).
 
 ### 9. Pull request
 

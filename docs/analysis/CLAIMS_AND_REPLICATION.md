@@ -4,7 +4,7 @@ This page is written for a **first-year university student**. No advanced stats 
 
 It answers one practical question:
 
-> **After I look at a Results table, what am I allowed to say out loud?**
+> **After I look at the Dashboard, what am I allowed to say out loud?**
 
 Different amounts of evidence support different claim strengths. We call those levels **L1**, **L2**, and **L3**.
 
@@ -14,7 +14,7 @@ Different amounts of evidence support different claim strengths. We call those l
 
 By the end of this page you should be able to:
 
-1. Tell whether a published Results page is a **single-session snapshot** (L1).
+1. Tell whether a published Dashboard run is a **single-session snapshot** (L1).
 2. Explain why repeating the suite on the **same machine** (L2) is stronger than one lucky run.
 3. Explain why **different machines** (L3) are needed before you talk about “generalizes across hardware.”
 4. Know the command that aggregates several CSVs for one language.
@@ -39,11 +39,11 @@ You still should **not** claim “fastest car in the world on every road forever
 
 | Level | Evidence | Allowed claim language | What this suite ships by default |
 |-------|----------|------------------------|----------------------------------|
-| **L1 — single session** | One full (or smoke) run on **one host** | “On **this machine**, in **this session**…” | Language **Results** pages (`docs/<lang>/results.md`) |
+| **L1 — single session** | One full (or smoke) run on **one host** | “On **this machine**, in **this session**…” | **Dashboard** Overview (run chrome + current Samples policy). Packed from `logs/<lang>/<ts>.csv` + sidecar via `dashboard/scripts/sync-data.py`. |
 | **L2 — multi-session, same host** | ≥ **3** timestamped runs with the **same** `machine_id` | “Stable across **repeated sessions on this host**…” | Optional: `analyze-benchmarks --multi-session …` |
 | **L3 — multi-machine** | ≥ **2** distinct `machine_id` values | “Consistent across **these machines**…” (still not “all hardware”) | Optional multi-session report with different hosts |
 
-Default Results headers state claim level **L1**. They do **not** claim multi-machine generalization.
+Default Dashboard packed latest is claim level **L1**. It does **not** claim multi-machine generalization.
 
 ### How `machine_id` works
 
@@ -136,7 +136,7 @@ This script **warns**; it does **not** fail CI smokes. Isolation features like `
 
 ---
 
-## Ranks on a single Results page
+## Ranks on a single Dashboard slice
 
 Even inside **one** L1 session, ranking many libraries is like grading many quizzes at once ([multiple comparisons](https://en.wikipedia.org/wiki/Multiple_comparisons_problem "Multiple comparisons problem")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />). [Effect sizes](https://en.wikipedia.org/wiki/Effect_size "Effect size")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> versus the fastest codec are **descriptive / exploratory**. [Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />-adjusted tests only correct inside one (data type × batch size × I/O mode) group. Prefer pairwise A/B for confirmatory library-vs-library checks.
 
@@ -151,4 +151,4 @@ Details: [Analysis methodology — exploratory ranks](ANALYSIS_METHODOLOGY.md#ex
 | [Analysis methodology](ANALYSIS_METHODOLOGY.md) | Warmup, outliers, CIs, ranks, multi-session command |
 | [Metrics](METRICS.md) | Column definitions including effect-vs-fastest fields |
 | [Modes](modes.md) | Smoke vs full vs research run presets |
-| [Results summary](BENCHMARK_SUMMARY.md) | Links to published L1 snapshots |
+| [Dashboard](../dashboard/) | Published L1 numbers (run chrome + Details / Compare) |

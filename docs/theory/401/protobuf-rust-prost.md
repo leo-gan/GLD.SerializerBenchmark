@@ -215,15 +215,15 @@ Vec<u8>  (you own the output)
 | `rust/src/serializers/prost_ser.rs` (`ProstSer`) | `prepare` builds a message; timed path encodes/decodes |
 | Log name | `prost` |
 | Pin | `prost` / `prost-build` 0.13 |
-| [Rust Results](../../rust/results.md) | Schema-driven comparisons |
+| [Open this slice on the Dashboard](../../dashboard/?lang=rust&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=prost&ser=prost#detailed-analytics) | Schema-driven comparisons |
 
-Do not cross-rank language Results without controlling for language ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
+Do not cross-rank language Dashboard slices without controlling for language ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 
 ## Common mistakes
 
 - Hand-editing files under `OUT_DIR`.
 - Ignoring recursion limits on deep hostile input.
-- Cross-language Results comparisons without controlling for language.
+- Cross-language Dashboard comparisons without controlling for language.
 - Assuming field emission order is part of the contract (decoders must accept any order).
 
 ## What this article is not

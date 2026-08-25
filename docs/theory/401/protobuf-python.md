@@ -14,7 +14,7 @@ At import time the library selects an **implementation backend**. By default tha
 
 Serialize walks the message’s fields using **descriptors**. Descriptors are metadata that record field numbers and types. The walk emits standard Protocol Buffers binary. Parse consumes tags and fills a message instance.
 
-In this benchmark suite, converting a domain object into a Message is untimed **`prepare_data`**. Timed work is only serialize and parse of the Message. This matters because Results pages are meant to compare codec work, not model-mapping work.
+In this benchmark suite, converting a domain object into a Message is untimed **`prepare_data`**. Timed work is only serialize and parse of the Message. This matters because Dashboard numbers are meant to compare codec work, not model-mapping work.
 
 This article assumes the [wire format](protobuf-wire-format.md) article. Package: `protobuf` ([Python tutorial](https://protobuf.dev/getting-started/pythontutorial/), [encoding guide](https://protobuf.dev/programming-guides/encoding/), [python/README backends](https://github.com/protocolbuffers/protobuf/blob/main/python/README.md)).
 
@@ -254,9 +254,9 @@ input bytes (or memoryview — underlying buffer must remain valid for the call)
 | suite generated `*_pb2.py` modules | Generated suite messages—not MiniUser |
 | Log name | `protobuf` |
 | Pin | `protobuf>=7.34.1,<8` |
-| [Python Results](../../python/results.md) | Cost under whatever backend the environment selected |
+| [Open this slice on the Dashboard](../../dashboard/?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=protobuf&ser=protobuf#detailed-analytics) | Cost under whatever backend the environment selected |
 
-The benchmark runner keeps domain-to-Message conversion **out** of the timed path so Results compare codec work, not model mapping. Do not rank Python against Rust or C from Results alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
+The benchmark runner keeps domain-to-Message conversion **out** of the timed path so Dashboard numbers compare codec work, not model mapping. Do not rank Python against Rust or C from the Dashboard alone ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 
 ## Common mistakes
 

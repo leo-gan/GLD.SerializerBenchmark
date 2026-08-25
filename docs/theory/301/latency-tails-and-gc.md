@@ -37,7 +37,7 @@ This matters because two JSON libraries can look similar on mean decode. They ca
 ```text
   Is the reliability target (SLO) p99 or p999 under load?
     → inspect allocations, pooling, and streaming options
-    → load-test; do not stop at mean Results
+    → load-test; do not stop at mean Dashboard numbers
   Is this a mean-only nightly batch job?
     → means may suffice; still watch the memory ceiling
 ```
@@ -68,7 +68,7 @@ For example, turning GC off in a microbenchmark can make a library look impossib
 
 ## Real-world sketch
 
-Two JSON libraries show similar mean decode on Python Results. Production p99 diverges. One builds full `dict` trees. Another binds into typed objects with fewer temporary strings. A load test with production-shaped payloads and workers decides the pin. The mean column alone does not.
+Two JSON libraries show similar mean decode on the Python Dashboard. Production p99 diverges. One builds full `dict` trees. Another binds into typed objects with fewer temporary strings. A load test with production-shaped payloads and workers decides the pin. The mean column alone does not.
 
 ---
 
@@ -76,7 +76,7 @@ Two JSON libraries show similar mean decode on Python Results. Production p99 di
 
 | Resource | Role |
 |----------|------|
-| **Results** means and ops | Orientation within one language |
+| **Dashboard** means and ops | Orientation within one language |
 | Methodology | Warmup and outliers—read before quoting |
 | Optional memory metrics | If present for a language, use them cautiously |
 | [Using this suite](using-this-suite.md) | Fair slice checklist |
@@ -92,7 +92,7 @@ Many published tables emphasize central tendency. **You** still owe a concurrent
 ### Setup
 
 1. Fix **one language**, **one paradigm family**, and **one fixture** close to production shape. One example is a deep graph versus dense `Telemetry`. See [using this suite](using-this-suite.md).
-2. Shortlist two or three implementations from language **Results**. Stay in the same family. Note versions.
+2. Shortlist two or three implementations from the language **Dashboard** slice. Stay in the same family. Note versions.
 3. Confirm the benchmark runner reports useful signals. Or attach wall times yourself. Optionally attach `MemoryPeakBytes` or tracemalloc (Python). Also attach a **process profiler** for allocation rate and GC pauses outside pure means.
 4. Configure a load path that reuses your service concurrency model. Include workers and pool sizes. Do not rely only on single-threaded suite loops.
 
@@ -107,7 +107,7 @@ Many published tables emphasize central tendency. **You** still owe a concurrent
 ### Decision rule
 
 - Prefer the candidate that meets the **p99 reliability target** with acceptable allocation and GC behavior. That holds even if mean is slightly worse.
-- Reject candidates that win mean Results but show high allocations per operation. Also reject GC pause clustering under load.
+- Reject candidates that win mean Dashboard ranks but show high allocations per operation. Also reject GC pause clustering under load.
 - Do **not** compare GC metrics across languages to choose a format brand.
 
 ---
@@ -129,9 +129,9 @@ Primary signals for this page’s decision. See also [Metrics catalog](../../ana
 | `median_size_bytes` | Suite | Separates “big payload” from “allocation-heavy codec” |
 | `mean_fidelity` | Suite | Reject broken codecs before the performance debate |
 
-**Conclusion style:** “Choose library L because p99 and allocation rate under load meet the reliability target; mean Results only shortlisted L.”
+**Conclusion style:** “Choose library L because p99 and allocation rate under load meet the reliability target; mean Dashboard ranks only shortlisted L.”
 
-**Not decision metrics here:** cross-language Results ranks; format brand alone.
+**Not decision metrics here:** cross-language Dashboard ranks; format brand alone.
 
 ---
 

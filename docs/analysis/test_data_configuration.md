@@ -53,7 +53,7 @@ This suite uses a few fixed words. Prefer these over informal synonyms such as �
 
 > **Note:** Older docs and some benchmark-runner code still say *fixture*. That almost always means **data type** (or one generated instance of it), not a separate concept.
 
-Batch cells may appear on Results as **Data type · N instances** (for example Message · 100 instances), from `type_id` and `data_type_instance_count`.
+Batch cells may appear on the Dashboard as **Data type · N instances** (for example Message · 100 instances), from `type_id` and `data_type_instance_count`.
 
 ---
 

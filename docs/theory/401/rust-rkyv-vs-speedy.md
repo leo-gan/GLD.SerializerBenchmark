@@ -2,11 +2,17 @@
 
 ## Why this article exists
 
-rkyv is designed so a reader can use the received buffer **in place**. Product language calls that zero-copy. On this suite’s **document** fixture, one instance, **Speedy** is still faster, and rkyv’s message is **larger**. The Results page already notes that timed rkyv decode **materializes owned values**. This page opens those two call sites and the library functions they invoke, so the note becomes something you can see in code.
+rkyv is designed so a reader can use the received buffer **in place**. Product language calls that zero-copy. On this suite’s **document** fixture, one instance, **Speedy** is still faster, and rkyv’s message is **larger**. The Rust overview already notes that timed rkyv decode **materializes owned values**. This page opens those two call sites and the library functions they invoke, so the note becomes something you can see in code.
 
 After reading it you should be able to say what `rkyv::from_bytes` does that `rkyv::access` would not, and why an in-place layout can lose a stopwatch that demands a `Document`.
 
-Numbers are from the committed Rust **Results** snapshot. See [Rust Results](../../rust/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=rust&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=rkyv&ser=speedy#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [Rust overview](../../rust/)
 
 ## Short answer
 

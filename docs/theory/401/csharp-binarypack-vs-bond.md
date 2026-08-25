@@ -6,7 +6,13 @@ On this suite’s **document** fixture, one instance, **BinaryPack** finishes mo
 
 This page compares the two timed wrappers and the library code they invoke. After reading it you should be able to point at Bond’s per-field type-and-identifier prefix and at BinaryPack’s positional stores.
 
-Numbers are from the committed C# **Results** snapshot. The C# “string” path Base64-encodes binary codecs; compare ranks, not raw byte sizes against other languages. See [C# Results](../../c-sharp/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking. The C# “string” path (canonical `mode=bytes`) Base64-encodes binary codecs; compare ranks, not raw byte sizes against other languages.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=csharp&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=BinaryPack&ser=BinaryPack&ser=MS%20Bond%20Fast#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [C# overview](../../c-sharp/)
 
 ## Short answer
 
@@ -102,7 +108,7 @@ Eight line items, each with three fields, plus the document header: the tag tax 
 
 1. **Base64 is on the clock** for both. Do not compare these sizes to Rust or C byte counts.
 2. **MemoryPack** is also specialized (source-generated formatters on the models). This runner calls the non-generic `MemoryPackSerializer.Serialize(Type, object)` API, so the measured MemoryPack row is not the fastest MemoryPack path. That is why this page uses Bond Fast as the schema-driven counterpart.
-3. Bond Compact would change the integer encoding. It is a different row on the Results page.
+3. Bond Compact would change the integer encoding. It is a different row on the Dashboard.
 
 ## Self-check
 

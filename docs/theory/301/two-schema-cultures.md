@@ -94,12 +94,12 @@ Swapping habits recreates classic outages. Treating Protobuf field names as the 
 
 | Resource | Role |
 |----------|------|
-| Language **Overview** and **Results** | Where Avro, Protobuf, or similar **implementations** are registered |
+| Language **Overview** | Where Avro, Protobuf, or similar **implementations** are registered |
 | [Serialization categories](../../analysis/serialization_categories.md) | Both sit in the **schema-driven** family—do not rank cultures with a mixed chart |
 | [Using this suite](using-this-suite.md) | Same language and paradigm before comparing libraries |
 | 201 [schema evolution](../201/schema-evolution.md) | Mechanism vocabulary |
 
-Suite timings compare **libraries**. They do not compare “Avro culture versus Protobuf culture” as governance systems. Use Results to pick an implementation **after** the culture fits the operations model.
+Suite timings compare **libraries**. They do not compare “Avro culture versus Protobuf culture” as governance systems. Use the Dashboard to pick an implementation **after** the culture fits the operations model.
 
 ---
 

@@ -72,7 +72,7 @@ A session cache stores MessagePack with a `v` version field and a documented sch
 
 | Resource | Role |
 |----------|------|
-| **Results** | Cost of candidate portable codecs in each language |
+| **Dashboard** | Cost of candidate portable codecs in each language |
 | Native entries | Cost of portability—not a green light for shared stores |
 | [Using this suite](using-this-suite.md) | Local comparisons only |
 

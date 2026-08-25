@@ -60,7 +60,7 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 ### Envelope codecs (not native domain wire)
 
-These rows stay in the matrix for history and size noise, but **Results must not be read as “library X serializes suite POCOs directly.”**
+These rows stay in the matrix for history and size noise, but **Dashboard numbers must not be read as “library X serializes suite POCOs directly.”**
 
 | Log name | Timed wire | Untimed fidelity | Stream mode |
 |----------|------------|------------------|-------------|
@@ -73,7 +73,7 @@ Source: [`ExtendedXmlSerializerSer.cs`](../../c-sharp/src/Serializers/ExtendedXm
 
 ### String mode vs stream mode
 
-CSV column `StringOrStream` is **`string`** or **`Stream`** (Results labels: **bytes mode** often means the non-stream column; for C# that column is the **string** path).
+CSV column `StringOrStream` is **`string`** or **`Stream`** (canonical mode labels: **bytes mode** often means the non-stream column; for C# that column is the **string** path).
 
 | Path | Meaning on C# |
 |------|----------------|
@@ -88,7 +88,7 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (Results labels: **b
 | **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
 
-When stream ≈ string within a few percent on Results, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.
+When stream ≈ string within a few percent on the Dashboard, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.
 
 ### Caveats
 

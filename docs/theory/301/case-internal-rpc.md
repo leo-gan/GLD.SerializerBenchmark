@@ -61,7 +61,7 @@ This matters because “internal” does not mean “native is fine.” It means
 
 ## Recommendation (under these constraints)
 
-**Prefer A (Protobuf-class IDL binary)** for the high-load hop. The record shape is stable. Two compiled languages share the hop. Evolution uses field numbers and continuous-integration breaking-change checks. See [two schema cultures](two-schema-cultures.md). Select **implementations per language** with suite Results in the schema-driven family. See [implementation variance](implementation-variance.md).
+**Prefer A (Protobuf-class IDL binary)** for the high-load hop. The record shape is stable. Two compiled languages share the hop. Evolution uses field numbers and continuous-integration breaking-change checks. See [two schema cultures](two-schema-cultures.md). Select **implementations per language** with the Dashboard in the schema-driven family. See [implementation variance](implementation-variance.md).
 
 **Keep B** as an alternative if the team refuses IDL tooling *and* will fund validation and compatibility tests. Those tests must be equivalent to a registry or IDL process. That combination is rare on high-requests-per-second money paths.
 
@@ -79,7 +79,7 @@ This matters because “internal” does not mean “native is fine.” It means
 
 1. Fix language or languages, QPS, p99 budget, and payload fixture.
 2. Consider families: JSON, MessagePack/CBOR-class, Protobuf/Avro-class.
-3. Use suite Results plus a load generator.
+3. Use the Dashboard plus a load generator.
 
 ### Procedure
 

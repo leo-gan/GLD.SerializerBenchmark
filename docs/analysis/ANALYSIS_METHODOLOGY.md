@@ -1,6 +1,6 @@
 # Analysis methodology
 
-This page explains how the **analysis package** turns raw benchmark-runner CSVs into group statistics, effect sizes, language **Results** tables, and latency charts.
+This page explains how the **analysis package** turns raw benchmark-runner CSVs into group statistics, effect sizes, Dashboard numbers, and unpublished language reports.
 
 If architecture is the lab setup, methodology is the **lab notebook**: what we keep, what we drop, and how we summarize.
 
@@ -12,7 +12,7 @@ If architecture is the lab setup, methodology is the **lab notebook**: what we k
 | I/O modes and run modes | [Modes](modes.md) |
 | Data-type meanings | [Test data](test_data_configuration.md) |
 | Paradigms | [Serialization categories](serialization_categories.md) |
-| How to regenerate site snapshots | [Results summary](BENCHMARK_SUMMARY.md#regenerating-language-snapshots) |
+| How to regenerate published numbers | [Dashboard](../dashboard/) via `sync-data.py` · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 
 Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml). Regeneration is **local** (`analyze-benchmarks`); continuous integration does not re-run analysis for publication.
 
@@ -147,12 +147,14 @@ Markdown language pages still use the configured single `statistics.outlier_meth
 | Throughput | Operations per second from mean total time |
 | Provenance | `runs`, `runs_raw`, `warmup_skipped`, `outliers_removed` |
 
-**Display-only** rules on language `results.md` (the CSV on disk is unchanged):
+**Display-only** rules on unpublished `reports/<docs_dir>/results.md` (the CSV on disk is unchanged):
 
 - I/O modes labeled **bytes mode** / **stream mode**
 - Large numbers: one unit per column (K or M) with about two significant digits
 - **Bold** cells mark the semantic best value (lowest time; highest ops/s; ties all bolded)
-- **Rust** pages also include within-category mean ops/s rankings in bytes mode
+- **Rust** reports also include within-category mean ops/s rankings in bytes mode
+
+Published numbers live on the [Dashboard](../dashboard/). Those reports are PR-diff blobs, not site pages.
 
 ### Bootstrap confidence interval on the mean
 
@@ -183,18 +185,18 @@ This section is written for a **first-year university student**.
 
 #### What problem are we solving?
 
-A Results page often shows **many** libraries side by side. Picking a “winner” and then testing every other library against that winner is like running **many quizzes at once** — the [multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem "Multiple comparisons problem — more tests raise the chance of false positives")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. If you celebrate every small “significant” mark without adjusting for how many quizzes you ran, you overstate confidence.
+A Dashboard slice often shows **many** libraries side by side. Picking a “winner” and then testing every other library against that winner is like running **many quizzes at once** — the [multiple comparisons problem](https://en.wikipedia.org/wiki/Multiple_comparisons_problem "Multiple comparisons problem — more tests raise the chance of false positives")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. If you celebrate every small “significant” mark without adjusting for how many quizzes you ran, you overstate confidence.
 
 #### What we do
 
 1. **Show effect sizes** ([Cliff’s δ](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data "Cliff’s delta") label, and in machine-readable JSON also [Hedges’ g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g "Hedges’ g")) so you can see *how large* a gap looks.
 2. **Attach [Mann–Whitney](https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test "Mann–Whitney U test") [p-values](https://en.wikipedia.org/wiki/P-value "P-value")** vs the group’s fastest codec when samples allow.
 3. **[Holm](https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method "Holm–Bonferroni method")-adjust those p-values inside the group** `(language × data type × type-config × batch N × I/O mode)` only — not across every cell on the page.
-4. **Label multi-way Results as exploratory.** Prefer **pairwise A/B** (`--compare-a` / `--compare-b`) when you need a confirmatory “did *this* change beat *that* baseline?” answer.
+4. **Label multi-way Dashboard ranks as exploratory.** Prefer **pairwise A/B** (`--compare-a` / `--compare-b`) when you need a confirmatory “did *this* change beat *that* baseline?” answer.
 
 #### Plain-language takeaway
 
-> Scores (effect sizes) help you browse. Adjusted p-values inside one group reduce “many quizzes” mistakes. They are **not** a global [family-wise](https://en.wikipedia.org/wiki/Family-wise_error_rate "Family-wise error rate — chance of any false positive in a family of tests") guarantee for the whole Results page, and default published ranks are still **L1 single-session** evidence ([Claims and replication](CLAIMS_AND_REPLICATION.md)).
+> Scores (effect sizes) help you browse. Adjusted p-values inside one group reduce “many quizzes” mistakes. They are **not** a global [family-wise](https://en.wikipedia.org/wiki/Family-wise_error_rate "Family-wise error rate — chance of any false positive in a family of tests") guarantee for the whole Dashboard roster, and default published ranks are still **L1 single-session** evidence ([Claims and replication](CLAIMS_AND_REPLICATION.md)).
 
 Config knobs live under `statistics.effect_sizes.vs_fastest` (defaults in code if YAML omits them): `reference: median`, `test: mann_whitney_u`, `multiple_comparison: holm`.
 
@@ -299,7 +301,7 @@ One full matrix on one laptop is a **snapshot**. Noise (other programs, thermal 
 | **L2 (host unknown)** | ≥3 sessions, missing sidecars | “Repeated sessions, but host fingerprint missing….” |
 | **L3** | ≥2 distinct `machine_id`s | “Consistent across machines in this set….” |
 
-Default Results pages are **L1**. Sidecars store `environment.machine_id` so analysis can tell hosts apart.
+Default Dashboard packed latest is **L1**. Sidecars store `environment.machine_id` so analysis can tell hosts apart.
 
 ### Aggregate several CSVs
 
@@ -328,14 +330,14 @@ For research-oriented L2/L3 collection tips and soft host checks, see [Claims an
 | `reports/stats_<lang>_latest.json` | Multi-policy stats export (Dashboard sync input; **always** written) |
 | `reports/<docs_dir>/results.md` | Unpublished language report (pivot tables + exploratory-rank banner). Default on; `--no-markdown-report` skips. `csharp` → `reports/c-sharp/results.md`. Do not commit to the site. |
 | `reports/plots/violin/*.png` | Combined mean bars (serialize/deserialize) plus split violin shapes (µs, linear from 0; top five by mean total). **Opt-in** via `--violins`. |
-| `docs/analysis/BENCHMARK_SUMMARY.md` | **Static** index of links (not regenerated by the CLI) |
+| [Dashboard](../dashboard/) | Published L1 numbers (packed via `sync-data.py`; not written by the CLI) |
 | `logs/<lang>/*.configs.json` | Run sidecar: environment (`machine_id`, optional governor), dataset / serializer metadata (legacy `*.environment.json` still works) |
 | `reports/multi_session_<lang>.json` / `.md` | Optional L2/L3 aggregate from `--multi-session` |
 | Console | Load counts, warmup and outlier tallies |
 
 Latency charts use the **same** sanitized records as the summary tables. There is no separate hidden filter for plots. Display may still limit charts to the top five serializers by mean time; that does not change table membership.
 
-How to run the CLI: [Results summary — regenerating](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
+How to run the CLI: `analyze-benchmarks` writes `reports/`; pack the Dashboard with `python3 dashboard/scripts/sync-data.py`. Claim levels: [Claims and replication](CLAIMS_AND_REPLICATION.md).
 
 ---
 
@@ -358,7 +360,7 @@ Honest methodology includes what the suite **cannot** claim.
 - **Mann–Whitney:** uses SciPy when available (tie-aware); otherwise a pure-NumPy fallback with tie-corrected variance and continuity correction.
 - **Regression gates:** default combine is **and** (practical % and CI support). `--save-baseline` is skipped when `--check-regression` fails, so a degraded run cannot overwrite the gate baseline. See [Regression gate](#regression-gate).
 - **Effect vs fastest:** reference is **median** total by default; Mann–Whitney + **within-group Holm** when hypothesis tests are enabled. Multi-way ranks are **exploratory** ([Exploratory ranks](#exploratory-ranks)).
-- **Claim scope:** default Results are **L1** single-session / single-host. Multi-session tooling does not rewrite Results automatically ([Claims and replication](CLAIMS_AND_REPLICATION.md)).
+- **Claim scope:** default Dashboard packed latest is **L1** single-session / single-host. Multi-session tooling does not rewrite the Dashboard automatically ([Claims and replication](CLAIMS_AND_REPLICATION.md)).
 - **Cliff’s δ for large N:** if the full pair count exceeds about two million, a seeded 100 000-pair random sample is used.
 - Some documented config keys are parsed for documentation but do not yet change runtime behaviour; the implementation still computes the full rich metric set.
 

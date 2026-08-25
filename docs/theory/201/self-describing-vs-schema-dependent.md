@@ -128,7 +128,7 @@ The suite’s families align roughly with this axis:
 | Schema-driven | Field numbers or layout derived from a schema |
 | Language-native | Runtime type metadata (generally unsuitable as portable interchange) |
 
-See [Serialization categories](../../analysis/serialization_categories.md) and language **Overview** pages for registered examples. Claims about density and speed belong on **Results**, not on the family label alone.
+See [Serialization categories](../../analysis/serialization_categories.md) and language **Overview** pages for registered examples. Claims about density and speed belong on the **Dashboard**, not on the family label alone.
 
 ---
 

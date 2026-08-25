@@ -37,7 +37,7 @@ This matters because a mixed chart can look like a tournament. The honest use is
 
 ## Decision frame
 
-Use this checklist **before** quoting a Result:
+Use this checklist **before** quoting a Dashboard number:
 
 1. **Same language?** If no, stop. Use the numbers only as rough orientation. Do not use them as a pick.
 2. **Same paradigm?** Prefer [Serialization categories](../../analysis/serialization_categories.md) families. Cross family only when the product decision is “which family.” Then treat speed as one axis among many.
@@ -53,7 +53,7 @@ Use this checklist **before** quoting a Result:
   Fix language + paradigm + fixture + mode + metric
         │
         ▼
-  Read Results or the dashboard for that slice only
+  Read the Dashboard for that slice only
         │
         ▼
   Re-check product constraints (trust, evolution, operations)
@@ -82,7 +82,7 @@ In other words: fix the experimental cell first. Then read numbers inside that c
 
 ## Real-world sketch
 
-A team sees that a schema-driven library is fastest on **Rust** Results for a dense fixture. The team mandates it for a **public multi-language HTTP API**. Clients are browser and mobile. Operators need human-readable debug logs. The public contract is already JSON.
+A team sees that a schema-driven library is fastest on the **Rust** Dashboard for a dense fixture. The team mandates it for a **public multi-language HTTP API**. Clients are browser and mobile. Operators need human-readable debug logs. The public contract is already JSON.
 
 The suite result answered “fastest schema path in Rust for this fixture.” It did not answer “best public API contract.” A better use of the suite is to compare **JSON implementations within each language** that must speak the public contract. Measure schema-driven codecs only on internal hops that already accept an IDL.
 
@@ -94,7 +94,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 |----------|------------|
 | [Serialization categories](../../analysis/serialization_categories.md) | Paradigm families and the within-paradigm rule |
 | Language **Overview** | Registered names, categories, fidelity caveats (inventory source of truth) |
-| Language **Results** | Published timings and sizes for that language |
+| [Dashboard](../../dashboard/) | Published timings and sizes (filter by language) |
 | [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | Warmup, outliers, grouping keys, units |
 | [Metrics catalog](../../analysis/METRICS.md) | What each field means |
 | [Test Data](../../analysis/test_data_configuration.md) | Fixture meanings and size knobs |
@@ -104,7 +104,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 **Grouping key for fair peers (conceptually):**  
 `(Language, paradigm, TestDataName, StringOrStream)` — then compare `SerializerName` rows inside that cell.
 
-**Illustrative only:** prose in theory pages must not invent winners. When you need a number, open **Results** for the language you will actually run.
+**Illustrative only:** prose in theory pages must not invent winners. When you need a number, open the **Dashboard** for the language you will actually run.
 
 ---
 
@@ -115,13 +115,13 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 ### Setup
 
 1. Write the decision question in one sentence. One example is “Which JSON library in Python for message-shaped RPC?”
-2. Open [categories](../../analysis/serialization_categories.md) and the language **Results** / Overview for the runtime you will ship.
+2. Open [categories](../../analysis/serialization_categories.md) and the language **Overview** / [Dashboard](../../dashboard/) for the runtime you will ship.
 3. Note analysis configuration from [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) if you will re-derive tables. Include warmup and outlier policy.
 
 ### Procedure
 
 1. Apply the checklist in **Decision frame**. Check language, then paradigm, then fixture, then mode, then metric.
-2. Pull only the matching rows from Results or the dashboard. Discard cross-family and cross-language ranks for the policy claim.
+2. Pull only the matching rows from the Dashboard. Discard cross-family and cross-language ranks for the policy claim.
 3. Record which metric column you will use. Examples include encode versus decode versus size versus operations per second.
 4. List product constraints the suite does **not** measure. Examples include trust, registry, and network RTT.
 5. Either decide from that slice or design an out-of-suite experiment for the missing constraints.
@@ -139,7 +139,7 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 |-----------------|------|
 | **Comparison validity** (same language, paradigm, fixture, mode) | **Primary gate.** Binary pass/fail before any number. |
 | Chosen reliability-target (SLO) metric (for example decode median or size) | The one number allowed in the argument |
-| `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Default speed ranks on Results |
+| `total_median_ns` / `ser_median_ns` / `deser_median_ns` | Default speed ranks on the Dashboard |
 | `median_size_bytes` | Density and bandwidth axis |
 | `mean_fidelity` | Eligibility filter: non-faithful rows are out |
 | `serializer_version` | Reproducibility of the claim |
@@ -178,5 +178,5 @@ The suite result answered “fastest schema path in Rust for this fixture.” It
 - Fix **language, paradigm, fixture, mode, and metric** before comparing serializers.
 - Implementation quality and payload shape often dominate format brand.
 - Analysis policies are part of the claim. Know warmup and outlier rules.
-- Use Results as evidence inside a larger 301 decision about trust, contracts, and workload.
+- Use Dashboard numbers as evidence inside a larger 301 decision about trust, contracts, and workload.
 - Explicitly list what you still must measure outside this benchmark runner.

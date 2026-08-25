@@ -11,7 +11,7 @@ Think of it as the **lab design** for the experiment. How we turn raw timings in
 | JSON vs binary vs schema families | [Serialization categories](serialization_categories.md) |
 | How to add another language | [Adding a language](ADDING_A_LANGUAGE.md) |
 | How to add one library to an existing language | [Adding a serializer](ADDING_A_SERIALIZER.md) |
-| Published numbers | [Results summary](BENCHMARK_SUMMARY.md) · each language’s **Results** page |
+| Published numbers | [Dashboard](../dashboard/) · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 
 ---
 
@@ -39,9 +39,9 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 
 **Typical paths**
 
-- **Publish a snapshot:** run all benchmark runners in `full` mode, run `analyze-benchmarks`, commit language Results and plots.
+- **Publish a snapshot:** run all benchmark runners in `full` mode, run `analyze-benchmarks`, then `python3 dashboard/scripts/sync-data.py` and commit packed Dashboard data.
 - **Author A/B test:** two CSVs of the same language → compare with `--compare-a` / `--compare-b`.
-- **Private experiment:** change data-type sizes, run one language, keep Results local or commit them.
+- **Private experiment:** change data-type sizes, run one language, keep unpublished reports under `reports/` or pack a local Dashboard.
 
 ---
 
@@ -54,10 +54,10 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 | `logs/<language>/` | Timestamped result CSVs (gitignored; not published as raw files) |
 | `analysis/` | Python package that implements the `analyze-benchmarks` command |
 | `python/`, `c-sharp/`, `rust/`, `c/`, `javascript/`, `go/`, `java/`, `cpp/`, `swift/` | One benchmark runner per language |
-| `docs/` | MkDocs site: theory, inventories, result snapshots, this analysis section |
+| `docs/` | MkDocs site: theory, inventories, Dashboard, this analysis section |
 | `scripts/run-all-benchmarks.sh` | Orchestrates multi-language runs |
 
-Published site numbers are regenerated **on a developer machine** into `docs/<lang>/results.md` and `docs/analysis/plots/violin/`. Continuous integration only deploys the documentation site; it does not re-run the full analysis. See [regenerating snapshots](BENCHMARK_SUMMARY.md#regenerating-language-snapshots).
+Published site numbers are packed **on a developer machine** into `docs/dashboard/data/<lang>_latest.json.gz` via `dashboard/scripts/sync-data.py` (from `reports/stats_<lang>_latest.json`). Continuous integration only deploys the documentation site; it does not re-run the full analysis. See [Claims and replication](CLAIMS_AND_REPLICATION.md).
 
 ---
 
@@ -82,7 +82,7 @@ A fair timing experiment separates **preparation** (do this once, untimed) from 
 
 CSV rows also record how the serializer was called:
 
-| Label on Results pages | Meaning |
+| Label on the Dashboard | Meaning |
 |------------------------|---------|
 | **bytes mode** | Work with in-memory byte arrays (or equivalent; C# often uses **string**) |
 | **stream mode** | Work through a stream-style API |

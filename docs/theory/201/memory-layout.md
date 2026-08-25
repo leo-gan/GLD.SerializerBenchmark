@@ -346,7 +346,7 @@ A durable remedy is not an informal document describing structure packing. It is
 
 The benchmark runner measures **codecs**, not raw structure dumps. Each registered serializer implements a defined encode and decode path over the same logical fixtures. That choice is deliberate. Portable interchange is the subject of multi-language comparison.
 
-**Results** therefore reflect the cost of *those* contracts. JSON text, MessagePack tags, Protocol Buffers field encodings, and similar mechanisms are what you measure. An uninterpreted memory-copy baseline is not. For family groupings, see [Serialization categories](../../analysis/serialization_categories.md).
+The **Dashboard** therefore reflects the cost of *those* contracts. JSON text, MessagePack tags, Protocol Buffers field encodings, and similar mechanisms are what you measure. An uninterpreted memory-copy baseline is not. For family groupings, see [Serialization categories](../../analysis/serialization_categories.md).
 
 ---
 

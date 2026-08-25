@@ -66,9 +66,9 @@ The table below lists every article in this course. For each article, it states 
 
 ### Language winners in code
 
-These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on language **Results** pages.
+These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/).
 
-The first nine pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two engines, same Protocol Buffers bytes and three JavaScript runtimes, an in-place crate used as a classical decoder, and a Results row whose timer does not measure the famous library.
+The first nine pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two engines, same Protocol Buffers bytes and three JavaScript runtimes, an in-place crate used as a classical decoder, and a Dashboard row whose timer does not measure the famous library.
 
 | Article | You should be able to… |
 |---------|------------------------|
@@ -80,7 +80,7 @@ The first nine pages take the speed or size leader in each language and ask why 
 | [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | Show that in-place access only helps if the timed path uses it |
 | [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
 | [C++: Bitsery vs YAS](cpp-bitsery-vs-yas.md) | Show why one-byte lengths and a reused buffer beat eight-byte lengths and a 20 KiB stream |
-| [C++: the simdjson row](cpp-simdjson-wrapper.md) | Read a Results row whose encode is a cache copy and whose decode parses twice |
+| [C++: the simdjson row](cpp-simdjson-wrapper.md) | Read a Dashboard row whose encode is a cache copy and whose decode parses twice |
 | [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Show positional IL stores versus a type-and-identifier prefix on every field |
 | [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Show two cached positional plans, and why the Avro schema walk costs a little more |
 | [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
@@ -126,14 +126,14 @@ Details appear in the language-path articles and in [nanopb compare](protobuf-c-
 
 ## Honesty rules
 
-The program-wide rules still apply. There are no universal winners. Implementation quality beats brand name. Suite **Results** pages own measured numbers.
+The program-wide rules still apply. There are no universal winners. Implementation quality beats brand name. The **Dashboard** owns measured numbers.
 
 **401-specific honesty:**
 
 1. **Wire truth is shared; runtimes differ.** Python, Rust, and C can all speak the same binary layout. They can still own buffers differently.
 2. **The subset lab labels its omissions.** Packed repeated fields, zigzag signed integers, maps, oneofs, and full production hardening are out of scope on purpose.
 3. **Suite benchmark runners illustrate integration.** They are not the reference design for how you should structure production Protocol Buffers.
-4. **Results are optional cost context.** Speed tables are not the focus of the Protocol Buffers sequence. The language-winner articles use one Results snapshot so you can attach a number to a line of code. They do not crown a universal library.
+4. **Dashboard numbers are optional cost context.** Speed tables are not the focus of the Protocol Buffers sequence. The language-winner articles quote one L1 slice so you can attach a number to a line of code. They do not crown a universal library.
 5. **Hostile input is a 301 topic.** For operational controls on untrusted payloads, see [301 untrusted input](../301/untrusted-input.md). Codec-side bounds still belong in every decoder. Examples include truncated varints and overlong lengths.
 6. **Language tours are parallel, not ranked.** This course does not crown “Rust wins.”
 

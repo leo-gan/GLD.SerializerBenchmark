@@ -53,7 +53,7 @@ This page assumes [trust boundaries](trust-boundaries.md). Language-native inter
         → pick a family (JSON / schemaless binary / schema-driven)
         → pick ONE evolution process
         → implement and run tests that check every language implements the same contract
-        → use per-language Results only to pick libraries
+        → use per-language Dashboard only to pick libraries
 ```
 
 This matters because a library that is excellent in one runtime is useless if another required language has no maintained implementation.
@@ -79,7 +79,7 @@ For example, suppose every team invents its own JSON field names for the “same
 
 Platform engineering standardizes **internal RPC on Protobuf**. It standardizes **public HTTP on JSON**. Python, Go, and TypeScript services generate stubs from the same protos. Public gateways map JSON to Protobuf at the edge with explicit field tests.
 
-A team proposes MessagePack everywhere because it looked strong on one language Results page. Review asks hard questions. Do all six languages have maintained libraries? Is there a single evolution story? Is there a debug story? Without that, MessagePack becomes another dialect. The suite still helps each language pick **which Protobuf or JSON library** to use.
+A team proposes MessagePack everywhere because it looked strong on one language Dashboard slice. Review asks hard questions. Do all six languages have maintained libraries? Is there a single evolution story? Is there a debug story? Without that, MessagePack becomes another dialect. The suite still helps each language pick **which Protobuf or JSON library** to use.
 
 ---
 
@@ -87,7 +87,7 @@ A team proposes MessagePack everywhere because it looked strong on one language 
 
 | Resource | Role |
 |----------|------|
-| Multi-language Results | Evidence for **library choice per language** under one family |
+| Multi-language Dashboard | Evidence for **library choice per language** under one family |
 | [Serialization categories](../../analysis/serialization_categories.md) | Shared family vocabulary |
 | Shared `schemas/` (for example `.proto` files) where present | Example of one contract, many benchmark runners |
 | [Using this suite](using-this-suite.md) | Never crown cross-language winners |
@@ -130,7 +130,7 @@ A format that appears in **many** language overviews is a candidate for multi-la
 | Bit-identical encode (optional) | Relevant only for caching or signing |
 | Per-language `mean_fidelity` | Local benchmark runner health |
 | Schema and version alignment | Drift detector |
-| Per-language latency Results | Capacity planning **after** interop works |
+| Per-language latency (Dashboard) | Capacity planning **after** interop works |
 
 **Conclusion style:** “Protobuf contract is green on the Python/Go/Rust matrix; pin `prost` and `protobuf` versions.”
 

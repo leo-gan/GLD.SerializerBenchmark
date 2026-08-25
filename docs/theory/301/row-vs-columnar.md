@@ -96,9 +96,9 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 | Language benchmark runners | Predominantly **row-oriented message** codecs and fixtures |
 | [Test Data](../../analysis/test_data_configuration.md) | Record-shaped fixtures (`message`, `document`, `telemetry`, and others) |
 | [Serialization categories](../../analysis/serialization_categories.md) | Families for message codecs—not a Parquet engine benchmark |
-| [Using this suite](using-this-suite.md) | How to read message-level Results |
+| [Using this suite](using-this-suite.md) | How to read message-level Dashboard numbers |
 
-**Important:** this suite is **not** a columnar engine benchmark. Absence of Parquet or Arrow from a language Results page means “not measured here.” It does not mean “irrelevant for lakes.”
+**Important:** this suite is **not** a columnar engine benchmark. Absence of Parquet or Arrow from a language Dashboard slice means “not measured here.” It does not mean “irrelevant for lakes.”
 
 ---
 
@@ -117,7 +117,7 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 1. Classify the primary workload using the decision frame.
 2. If the path is analytical, prototype scan time and compression on a columnar layout. Compare that with dumping RPC rows.
 3. If the path is RPC, measure per-message latency with row codecs. Do not put lake formats on the code path that runs on every request under load.
-4. Treat suite Results as **row** codec orientation only. Do not treat them as lake rankings.
+4. Treat Dashboard numbers as **row** codec orientation only. Do not treat them as lake rankings.
 5. Document a two-hop design if both patterns exist. Use row events on the bus. Use columnar data in the lake.
 
 ### Decision rule
@@ -153,7 +153,7 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 
 ## Common mistakes
 
-- Citing message-codec Results to justify a lake format choice.
+- Citing message-codec Dashboard numbers to justify a lake format choice.
 - Forcing analytics to query an operational RPC log format forever.
 - Using columnar “because compression” on chatty, ultra-small RPCs.
 
@@ -163,5 +163,5 @@ A better design keeps the **serving path** on Protobuf. It adds a **batch compac
 
 - **Access pattern** chooses row versus columnar more than fashion.
 - Services want row messages. Lakes and analytics want columnar storage. Use deliberate bridges between them.
-- Suite Results inform **message codec** choice inside a language. They do not design lake architecture.
+- Dashboard numbers inform **message codec** choice inside a language. They do not design lake architecture.
 - Dual paths are normal. Use row for serve and columnar for analyze. That is not a design failure.

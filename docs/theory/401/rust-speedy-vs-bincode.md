@@ -6,7 +6,13 @@ On this suite’s **document** fixture, one instance, in-memory buffer mode, **S
 
 This page walks through the two call paths as they exist in this repository and in the crates those paths invoke. After reading it you should be able to point at the generated Speedy `write_to` body and at Bincode’s Serde encoder and say what extra work Bincode performs on every integer, every string, and every `Document`.
 
-Numbers below are from the committed Rust **Results** snapshot (`speedy:0.8.7`, `bincode:2.0.1`). They illustrate the gap. They are not a universal ranking. See [Rust Results](../../rust/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data (`speedy:0.8.7`, `bincode:2.0.1`). They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=rust&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=bincode#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [Rust overview](../../rust/)
 
 ## Short answer
 
@@ -274,7 +280,7 @@ Bincode’s Serde path is the better default when the same struct must also spea
 
 1. **The wrapper is not identical.** Speedy encodes a `Document`. Bincode encodes a `Fixture`. A fairer Bincode call would be `encode_into_std_write(document, …)` on the inner struct, or Bincode’s native `Encode` derive without Serde. The suite measures the Serde integration because that is how Bincode is usually used.
 2. **`standard()` is a choice.** `bincode::config::legacy()` uses fixed-width integers and would move Bincode toward Speedy’s size/speed point. It is not what this runner configures.
-3. **Results own the numbers.** Payload shape changes the ratio. A document with huge strings spends most of its time copying UTF-8; the integer tax shrinks as a fraction.
+3. **The Dashboard owns the numbers.** Payload shape changes the ratio. A document with huge strings spends most of its time copying UTF-8; the integer tax shrinks as a fraction.
 4. This page does not say “Rust wins.” It says why **one Rust library** outruns **another Rust library** on this fixture.
 
 ## Self-check

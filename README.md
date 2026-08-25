@@ -68,7 +68,8 @@ cd python && ./scripts/run-benchmarks.sh smoke
 # → logs/python/YYYY-MM-DD-HHMMSS.csv
 ```
 
-Then open the [Python Results](https://leo-gan.github.io/GLD.SerializerBenchmark/python/results/) page (or run `analyze-benchmarks -l python` after installing the analysis package) to turn CSVs into tables.
+Then open the [Python Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/?lang=python)
+(or run `analyze-benchmarks -l python` after installing the analysis package) to review the run.
 
 Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 
@@ -92,7 +93,7 @@ Benchmark runners run **natively on the host** (no Docker). Prepare toolchains o
 ./scripts/run-all-benchmarks.sh --mode all-single
 ./scripts/run-all-benchmarks.sh --mode full --lang rust
 
-# Analysis package (publish tables + plots into docs/)
+# Analysis package (writes reports/; Dashboard via sync-data.py)
 cd analysis && uv pip install -e .   # or: pip install -e .
 analyze-benchmarks
 analyze-benchmarks -l python
@@ -101,7 +102,7 @@ analyze-benchmarks --compare-a rust:2026-07-09-194122 --compare-b rust:latest
 
 **Modes**: `smoke` (2 reps) · `all-single` (10) · `full` (100) · `research` (500).
 
-After regenerating results into `docs/`, review and commit before `publish-docs` deploys the site.
+`analyze-benchmarks` writes `reports/`; Dashboard via `sync-data.py`. Review and commit before `publish-docs` deploys the site.
 
 ---
 

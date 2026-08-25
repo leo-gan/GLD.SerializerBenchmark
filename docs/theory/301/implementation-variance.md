@@ -2,7 +2,7 @@
 
 ## Problem
 
-Architecture discussions often stop at the format name. People say “we use JSON,” “we switched to binary,” or “we standardized on Protobuf.” On any language **Results** page, several serializers share a family label. They still differ sharply in encode time, decode time, size, allocation behavior, and fidelity notes.
+Architecture discussions often stop at the format name. People say “we use JSON,” “we switched to binary,” or “we standardized on Protobuf.” On any language Dashboard slice, several serializers share a family label. They still differ sharply in encode time, decode time, size, allocation behavior, and fidelity notes.
 
 **Implementation variance** means that two libraries which claim the same format can behave very differently. Teams that pick the brand without picking the **implementation** leave performance and reliability to accident. Or they copy a blog post’s library pin from another runtime.
 
@@ -10,7 +10,7 @@ Architecture discussions often stop at the format name. People say “we use JSO
 
 ## Short answer
 
-After the **paradigm family** is fixed, choose a **concrete library** (and version) per language. See [categories](../../analysis/serialization_categories.md). Use same-fixture, same-mode Results. Read Overview caveats. Format brand sets interoperability *possibility*. Implementation sets cost and engineering quality on that runtime. Do not assume one language’s winning JSON library has a twin with identical behavior elsewhere. See [multi-language systems (polyglot estates)](polyglot-estates.md).
+After the **paradigm family** is fixed, choose a **concrete library** (and version) per language. See [categories](../../analysis/serialization_categories.md). Use same-fixture, same-mode Dashboard numbers. Read Overview caveats. Format brand sets interoperability *possibility*. Implementation sets cost and engineering quality on that runtime. Do not assume one language’s winning JSON library has a twin with identical behavior elsewhere. See [multi-language systems (polyglot estates)](polyglot-estates.md).
 
 In other words: first choose the product job. That may be JSON versus schema-driven binary, and so on. Then choose the library. Do not reverse those steps.
 
@@ -40,7 +40,7 @@ A **DOM-style** parser builds a full in-memory tree of the document. A **streami
   1. Fix boundary contract and family (other 301 policy articles)
   2. For each language on that boundary:
        open Overview → candidates in that family
-       open Results → same TestDataName and mode
+       open Dashboard → same TestDataName and mode
        apply fidelity and stream caveats
        pick library and pin the version
   3. Add tests that check every language implements the same contract for shared fixtures
@@ -48,9 +48,9 @@ A **DOM-style** parser builds a full in-memory tree of the document. A **streami
 
 | Question | Wrong tool | Right tool |
 |----------|------------|------------|
-| JSON versus Protobuf for a public API? | Mixed Results chart | Product constraints and paradigm families |
-| Which JSON library in Python? | “JSON is slow” slogan | Python Results, JSON-family rows |
-| Is our Go JSON fast enough? | Rust Results | Go Results plus your reliability target |
+| JSON versus Protobuf for a public API? | Mixed Dashboard chart | Product constraints and paradigm families |
+| Which JSON library in Python? | “JSON is slow” slogan | Python Dashboard, JSON-family rows |
+| Is our Go JSON fast enough? | Rust Dashboard | Go Dashboard plus your reliability target |
 | Why is size different within MessagePack? | Format myth | Key strategy, library options, fixture shape |
 
 This matters because “we use JSON” is not an operations decision until you also name the library and version.
@@ -71,7 +71,7 @@ This matters because “we use JSON” is not an operations decision until you a
 
 ## Real-world sketch
 
-An architecture decision record says “use JSON for the public API.” Three services pick three Python JSON libraries from habit. Latency and Unicode edge cases differ. Only one path appears in continuous-integration benchmarks. Unifying on a single Overview-listed library helps. Pin it in lockfiles. Track it on Python Results for the public fixture. That reduces variance. A later move to schema-driven **internal** RPC is a separate family decision. It is not a reason to reopen the public JSON debate.
+An architecture decision record says “use JSON for the public API.” Three services pick three Python JSON libraries from habit. Latency and Unicode edge cases differ. Only one path appears in continuous-integration benchmarks. Unifying on a single Overview-listed library helps. Pin it in lockfiles. Track it on the Python Dashboard for the public fixture. That reduces variance. A later move to schema-driven **internal** RPC is a separate family decision. It is not a reason to reopen the public JSON debate.
 
 ---
 
@@ -80,7 +80,7 @@ An architecture decision record says “use JSON for the public API.” Three se
 | Resource | Role |
 |----------|------|
 | Language **Overview** | Registered `SerializerName` values and categories |
-| Language **Results** | Within-language, within-fixture comparisons |
+| [Dashboard](../../dashboard/) | Within-language, within-fixture comparisons |
 | [Categories](../../analysis/serialization_categories.md) | Family membership |
 | [Metrics](../../analysis/METRICS.md) / [methodology](../../analysis/ANALYSIS_METHODOLOGY.md) | What means and confidence intervals mean |
 | [Using this suite](using-this-suite.md) | Anti-leaderboard checklist |
@@ -101,7 +101,7 @@ When multiple JSON entries exist, **that spread is the lesson**. The same is tru
 
 ### Procedure
 
-1. Run or read suite Results for all candidates on that slice.
+1. Run or read the Dashboard for all candidates on that slice.
 2. Filter out `mean_fidelity` failures and Overview caveats. Include stream mode and unsupported fixtures.
 3. Rank by the reliability-target metric. That is often deserialize or total median. Sometimes it is size.
 4. Spot-check version pins and maintenance posture.
@@ -145,7 +145,7 @@ When multiple JSON entries exist, **that spread is the lesson**. The same is tru
 
 - Averaging ranks across families “for fairness.”
 - Treating the fastest library as the default for **untrusted** input without reading safety docs.
-- Upgrading major versions without re-checking Results and fidelity.
+- Upgrading major versions without re-checking Dashboard numbers and fidelity.
 
 ---
 
@@ -153,6 +153,6 @@ When multiple JSON entries exist, **that spread is the lesson**. The same is tru
 
 - A format family is not a single performance number.
 - Pick **library and version** per language after the family is fixed.
-- Suite Results exist to expose **implementation variance** honestly.
+- Suite Dashboard numbers exist to expose **implementation variance** honestly.
 - Multi-language (polyglot) contracts share **format or IDL**. They do not necessarily share identical library behavior.
 - Pin and re-measure. Brands do not ship bytes. Implementations do.

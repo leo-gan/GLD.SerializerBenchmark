@@ -6,7 +6,13 @@ simdjson is famous for parsing JSON at very high speed (Geoff Langdale and Danie
 
 A results table invites the wrong sentence: “simdjson is slow to decode.” This page opens the wrapper. After reading it you should be able to say what those 217 ns copy, why decode calls **two** JSON parsers, and how to read any row that sets `native_kind` to `dom`.
 
-Numbers are from the committed C++ **Results** snapshot. See [C++ Results](../../cpp/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=cpp&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=simdjson&ser=simdjson&ser=glaze#detailed-analytics)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [C++ overview](../../cpp/)
 
 ## Short answer
 
