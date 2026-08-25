@@ -12,7 +12,7 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 - Directory: `go/` (repository root)
 - Output: monorepo `logs/go/YYYY-MM-DD-HHMMSS.csv` (`Language=go`, times in **nanoseconds**)
 - Runner: `go/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `go build && ./bin/serializer-benchmark-go <reps>`
-- Registration: [`go/serializers/registry.go`](../../go/serializers/registry.go)
+- Registration: [`go/serializers/registry.go`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/serializers/registry.go)
 
 ## Serializers
 
@@ -57,7 +57,7 @@ for rep:
 - **Stream adapted** only for **protobuf** and **linkedin/goavro** (bytes-only libraries; OCF/gRPC would change wire format). All other registered Go codecs use **native** stream APIs.
 - **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
-Also: [`go/README.md`](../../go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## Numbers
 

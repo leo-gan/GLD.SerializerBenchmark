@@ -13,8 +13,8 @@ C serialization is fragmented: each library owns its own object model (DOM trees
 - Logs: `logs/c/YYYY-MM-DD-HHMMSS.csv`
 - Build: CMake, C11 (+ C++17 for Google libprotobuf)
 - Deps: `c/scripts/fetch-and-build-deps.sh`; Google protobuf: `cpp/scripts/setup-protobuf-sysroot.sh`
-- Registration: [`c/src/register_serializers.c`](../../c/src/register_serializers.c)
-- **Domain shape:** map-style codecs use a single visitor in [`c/src/v2_codec.c`](../../c/src/v2_codec.c) (`v2_write_fixture` / `v2_read_fixture`). Wrappers implement library ops only—they do not hard-code V2 field graphs.
+- Registration: [`c/src/register_serializers.c`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/register_serializers.c)
+- **Domain shape:** map-style codecs use a single visitor in [`c/src/v2_codec.c`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/v2_codec.c) (`v2_write_fixture` / `v2_read_fixture`). Wrappers implement library ops only—they do not hard-code V2 field graphs.
 
 ## Serializers
 
@@ -30,7 +30,7 @@ C serialization is fragmented: each library owns its own object model (DOM trees
 | tinycbor, libcbor, libcbor-stream, qcbor, zcbor | Binary/schema | Native CBOR map encode via visitor ops (`libcbor` = DOM API, `libcbor-stream` = streaming `cbor_encode_*`); decode via each library's native walker (tinycbor buffer walker, libcbor `cbor_load`). Do not read `libcbor-stream` deserialize as a streaming decoder. |
 | ubj | Binary | In-tree UBJSON markers around suite V2 binary payload (`bin_*`) |
 
-Pins: [`c/third_party/VERSIONS.md`](../../c/third_party/VERSIONS.md).
+Pins: [`c/third_party/VERSIONS.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/third_party/VERSIONS.md).
 
 ### Caveats
 

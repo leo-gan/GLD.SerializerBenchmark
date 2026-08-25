@@ -12,7 +12,7 @@ Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-J
 - Directory: `java/` (repository root)
 - Output: monorepo `logs/java/YYYY-MM-DD-HHMMSS.csv` (`Language=java`, times in **nanoseconds**)
 - Runner: `java/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
-- Registration: [`java/src/main/java/benchmark/serializers/Registry.java`](../../java/src/main/java/benchmark/serializers/Registry.java)
+- Registration: [`java/src/main/java/benchmark/serializers/Registry.java`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/java/src/main/java/benchmark/serializers/Registry.java)
 - Requires **JDK 17+** (benchmark runner targets 21) and **Maven 3.9+**
 
 ## Serializers
@@ -56,7 +56,7 @@ for rep:
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.
 - Some JSON codecs (e.g. **jsoniter**) shorten floating-point digits; fidelity uses float tolerance.
 
-Also: [`java/README.md`](../../java/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`java/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/java/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## Numbers
 

@@ -12,7 +12,7 @@ Python's dynamic nature makes serialization uniquely challenging. While it excel
 - Directory: `python/` (repository root)
 - Output: monorepo `logs/python/YYYY-MM-DD-HHMMSS.csv` (`Language=python`, times in **nanoseconds**)
 - Runner: `python/scripts/run-benchmarks.sh` (or project docs for modes)
-- Registration: [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py)
+- Registration: [`python/src/benchmark/runner.py`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/src/benchmark/runner.py)
 - Modes: `bytes` and `stream`
 
 ## Serializers
@@ -65,7 +65,7 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 - `tracemalloc` under-counts C/Rust extension allocations.
 - Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).
 
-Benchmark runner: [`python/README.md`](../../python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Benchmark runner: [`python/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## Numbers
 

@@ -11,7 +11,7 @@ In the .NET ecosystem, serialization has evolved dramatically over the past deca
 
 - Directory: `c-sharp/` (repository root)
 - Output: monorepo `logs/csharp/YYYY-MM-DD-HHMMSS.csv` (`Language=csharp`, times in **nanoseconds**)
-- Registration: [`c-sharp/src/Program.cs`](../../c-sharp/src/Program.cs)
+- Registration: [`c-sharp/src/Program.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Program.cs)
 - **Not in this suite:** Wire; Apex.Serialization (crashes on .NET 8); FluentSerializer (unsuitable for suite graphs)
 
 ## Serializers
@@ -67,7 +67,7 @@ These rows stay in the matrix for history and size noise, but **Dashboard number
 | **ExtendedXmlSerializer** | ExtendedXml of `{ TypeName, Json }` where `Json` is Newtonsoft of the domain object | `ToDomain` deserializes JSON | **Adapted** — UTF-8 `StreamWriter` of the XML string |
 | **Migrant** | Migrant of the same JSON envelope POCO | `ToDomain` deserializes JSON | **Native Migrant stream** of the envelope only; **string mode** is Base64 of those bytes |
 
-Source: [`ExtendedXmlSerializerSer.cs`](../../c-sharp/src/Serializers/ExtendedXmlSerializerSer.cs), [`MigrantSerializerSer.cs`](../../c-sharp/src/Serializers/MigrantSerializerSer.cs).
+Source: [`ExtendedXmlSerializerSer.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Serializers/ExtendedXmlSerializerSer.cs), [`MigrantSerializerSer.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Serializers/MigrantSerializerSer.cs).
 
 **Compare fairly:** use **MS XmlSerializer** / **YAXLib** / **MS DataContract** for real XML-ish paths; use **Ceras**, **MemoryPack**, **NetSerializer**, etc. for binary domain graphs — not Migrant’s envelope row.
 
@@ -92,7 +92,7 @@ When stream ≈ string within a few percent on the Dashboard, check which kind a
 
 ### Caveats
 
-- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …). Domain models live in [`c-sharp/src/TestData/V2/Models.cs`](../../c-sharp/src/TestData/V2/Models.cs).
+- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …). Domain models live in [`c-sharp/src/TestData/V2/Models.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/TestData/V2/Models.cs).
 - **Library-native prepare (still real domain or codegen forms):** Google.Protobuf (`IMessage`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (tables via map), CsvHelper (row lists). These are **not** JSON envelopes.
 - **Envelope exceptions:** ExtendedXmlSerializer and Migrant only — see above.
 - **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.
@@ -102,7 +102,7 @@ When stream ≈ string within a few percent on the Dashboard, check which kind a
 - Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Rankings: use generated reports (`analyze-benchmarks`), not this list. Prefer [same category](../analysis/serialization_categories.md) and same I/O mode.
 
-Benchmark runner: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
+Benchmark runner: [`c-sharp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
 
 ## Numbers
 
