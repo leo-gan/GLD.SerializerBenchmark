@@ -21,6 +21,63 @@ import numpy as np
 # Config helpers (optional YAML; safe defaults if PyYAML / file missing)
 # ---------------------------------------------------------------------------
 
+# Named filter policies exported for dashboard outlier research.
+# Keys are stable API ids; criteria are fixed (not taken from YAML outlier_method).
+FILTER_POLICY_IDS: Tuple[str, ...] = (
+    "all",
+    "iqr_1.5",
+    "iqr_3",
+    "winsorize_5_95",
+)
+DEFAULT_FILTER_POLICY = "iqr_1.5"
+
+FILTER_POLICY_SPECS: Dict[str, Dict[str, Any]] = {
+    "all": {
+        "label": "All trials (post-warmup)",
+        "description": (
+            "Every measured repetition after warmup exclusion. "
+            "No IQR drop and no winsorization — includes GC and scheduler tails."
+        ),
+        "outlier_method": "none",
+        "iqr_k": None,
+        "winsorize_percentiles": None,
+        "paired": None,
+    },
+    "iqr_1.5": {
+        "label": "IQR k=1.5 (strict / default)",
+        "description": (
+            "Tukey fences with k=1.5 on serialize, deserialize, and total; "
+            "a repetition is dropped if it is an outlier on any of the three (paired)."
+        ),
+        "outlier_method": "iqr",
+        "iqr_k": 1.5,
+        "winsorize_percentiles": None,
+        "paired": True,
+    },
+    "iqr_3": {
+        "label": "IQR k=3 (loose)",
+        "description": (
+            "Same paired IQR rule as iqr_1.5 but with k=3 so only extreme stalls "
+            "are removed; bulk tail mass is retained."
+        ),
+        "outlier_method": "iqr",
+        "iqr_k": 3.0,
+        "winsorize_percentiles": None,
+        "paired": True,
+    },
+    "winsorize_5_95": {
+        "label": "Winsorize 5–95%",
+        "description": (
+            "Clip each of ser/deser/total independently at the 5th and 95th "
+            "percentiles; sample size is unchanged (no rows dropped)."
+        ),
+        "outlier_method": "winsorize",
+        "iqr_k": None,
+        "winsorize_percentiles": [5.0, 95.0],
+        "paired": False,
+    },
+}
+
 _DEFAULT_STATS_CFG: Dict[str, Any] = {
     "exclude_warmup": True,
     "outlier_method": "iqr",
@@ -55,6 +112,13 @@ _DEFAULT_STATS_CFG: Dict[str, Any] = {
             "small": 0.33,
             "medium": 0.474,
         },
+        # Effect vs fastest within each (lang, data, n, mode) group
+        "vs_fastest": {
+            "reference": "median",  # mean | median
+            "test": "mann_whitney_u",
+            "multiple_comparison": "holm",  # none | holm
+            "exploratory_in_multi_way": True,
+        },
     },
     "hypothesis_tests": {
         "enabled": True,
@@ -80,7 +144,13 @@ def load_stats_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         for k, v in stats.items():
             if isinstance(v, dict) and isinstance(cfg.get(k), dict):
                 merged = dict(cfg[k])
-                merged.update(v)
+                for sk, sv in v.items():
+                    if isinstance(sv, dict) and isinstance(merged.get(sk), dict):
+                        nested = dict(merged[sk])
+                        nested.update(sv)
+                        merged[sk] = nested
+                    else:
+                        merged[sk] = sv
                 cfg[k] = merged
             else:
                 cfg[k] = v
@@ -155,7 +225,7 @@ def resolve_time_scale_to_ns(
     1. ``languages.<lang>.time_unit`` when *language* is known
     2. ``csv_schema.time_unit`` (suite baseline; default ``nanoseconds``)
 
-    All current harnesses emit nanoseconds; this central resolution guarantees
+    All current benchmark runners emit nanoseconds; this central resolution guarantees
     stats tables and latency distributions apply the *same* conversion.
     """
     cache_key = f"{language or ''}|{config_path or ''}"
@@ -194,7 +264,7 @@ def normalize_to_nanoseconds(
     scale_to_ns: Optional[float] = None,
     config_path: Optional[str] = None,
 ) -> float:
-    """Normalize a harness timing value to nanoseconds.
+    """Normalize a benchmark-runner timing value to nanoseconds.
 
     Scale is resolved once from the master config (see
     :func:`resolve_time_scale_to_ns`). Callers that process many rows should
@@ -381,7 +451,7 @@ def prepare_analysis_records(
     3. All-or-nothing paired IQR (or configured method) per group.
 
     This function is the **only** place that should drop warmup / outliers for
-    published tables and plots. Language harnesses must write complete raw CSVs
+    published tables and plots. Language benchmark runners must write complete raw CSVs
     (every successful rep, including index 0) with no filtering on disk.
 
     Returns
@@ -409,8 +479,19 @@ def prepare_analysis_records(
 
     # Bucket non-warmup rows by analysis group key
     buckets: Dict[Tuple, List[Dict]] = defaultdict(list)
-    group_meta: Dict[Tuple, Dict[str, int]] = defaultdict(
-        lambda: {"warmup_skipped": 0, "outliers_removed": 0, "runs_raw": 0}
+    group_meta: Dict[Tuple, Dict[str, Any]] = defaultdict(
+        lambda: {
+            "warmup_skipped": 0,
+            "outliers_removed": 0,
+            "values_clipped": 0,
+            "runs_raw": 0,
+            "fence_total_low_ns": None,
+            "fence_total_high_ns": None,
+            "fence_ser_low_ns": None,
+            "fence_ser_high_ns": None,
+            "fence_deser_low_ns": None,
+            "fence_deser_high_ns": None,
+        }
     )
 
     for r in records:
@@ -441,11 +522,37 @@ def prepare_analysis_records(
         deser = [float(x["TimeDeser"]) for x in recs]
         total = [float(x["TimeSerAndDeser"]) for x in recs]
 
+        if outlier_method == "iqr" and len(recs) >= min_out:
+            for series, lo_k, hi_k in (
+                (ser, "fence_ser_low_ns", "fence_ser_high_ns"),
+                (deser, "fence_deser_low_ns", "fence_deser_high_ns"),
+                (total, "fence_total_low_ns", "fence_total_high_ns"),
+            ):
+                lo, hi = _iqr_fence_bounds(series, iqr_k=iqr_k, min_samples=min_out)
+                group_meta[key][lo_k] = lo
+                group_meta[key][hi_k] = hi
+
         if outlier_method == "winsorize" and len(recs) >= min_out:
             s_f, d_f, t_f, rem = filter_outliers_paired(
                 ser, deser, total, method="winsorize", iqr_k=iqr_k, min_samples=min_out
             )
-            group_meta[key]["outliers_removed"] = rem
+            group_meta[key]["outliers_removed"] = rem  # always 0 for winsorize
+            clipped_rows = sum(
+                1
+                for i in range(len(ser))
+                if ser[i] != s_f[i] or deser[i] != d_f[i] or total[i] != t_f[i]
+            )
+            group_meta[key]["values_clipped"] = int(clipped_rows)
+            # Store clip bounds from total (and ser/deser) for provenance
+            for series, lo_k, hi_k in (
+                (ser, "fence_ser_low_ns", "fence_ser_high_ns"),
+                (deser, "fence_deser_low_ns", "fence_deser_high_ns"),
+                (total, "fence_total_low_ns", "fence_total_high_ns"),
+            ):
+                arr = np.asarray(series, dtype=float)
+                lo, hi = np.percentile(arr, [5, 95])
+                group_meta[key][lo_k] = float(lo)
+                group_meta[key][hi_k] = float(hi)
             for rec, ts, td, tt in zip(recs, s_f, d_f, t_f):
                 out = dict(rec)
                 out["TimeSer"] = ts
@@ -459,11 +566,30 @@ def prepare_analysis_records(
         )
         rem = int((~mask).sum())
         group_meta[key]["outliers_removed"] = rem
+        group_meta[key]["values_clipped"] = 0
         for rec, keep in zip(recs, mask):
             if keep:
                 sanitized.append(rec)
 
     return sanitized, dict(group_meta)
+
+
+def _iqr_fence_bounds(
+    values: Sequence[float],
+    iqr_k: float = 1.5,
+    min_samples: int = 10,
+) -> Tuple[Optional[float], Optional[float]]:
+    """Return (lower, upper) Tukey fences, or (None, None) if not applicable."""
+    arr = np.asarray(values, dtype=float)
+    n = len(arr)
+    if n < min_samples:
+        return None, None
+    q1 = float(np.percentile(arr, 25))
+    q3 = float(np.percentile(arr, 75))
+    iqr = q3 - q1
+    if iqr == 0:
+        return None, None
+    return q1 - iqr_k * iqr, q3 + iqr_k * iqr
 
 
 # ---------------------------------------------------------------------------
@@ -790,6 +916,7 @@ def compute_statistics(
         "sizes": [],
         "fidelity": [],
         "memory_peak": [],
+        "stream_modes": [],
         "language": None,
         "serializer_version": None,
     })
@@ -807,6 +934,8 @@ def compute_statistics(
         stats[key]["language"] = lang
         if r.get("SerializerVersion"):
             stats[key]["serializer_version"] = r["SerializerVersion"]
+        if r.get("StreamMode"):
+            stats[key]["stream_modes"].append(str(r["StreamMode"]).strip())
         if "FidelityScore" in r and r["FidelityScore"] is not None:
             try:
                 stats[key]["fidelity"].append(float(r["FidelityScore"]))
@@ -833,6 +962,7 @@ def compute_statistics(
         times_total = data["times_total"]
         m = meta.get(key) or {}
         rem_t = int(m.get("outliers_removed", 0))
+        values_clipped = int(m.get("values_clipped", 0))
         warmup_skipped = int(m.get("warmup_skipped", 0))
         runs_raw = int(m.get("runs_raw", len(times_total) + warmup_skipped + rem_t))
         total_outliers += rem_t
@@ -868,6 +998,7 @@ def compute_statistics(
             "runs_raw": runs_raw,
             "warmup_skipped": warmup_skipped,
             "outliers_removed": rem_t,
+            "values_clipped": values_clipped,
             # Extended scientific metrics
             **ser_stats,
             **deser_stats,
@@ -877,6 +1008,22 @@ def compute_statistics(
             # Retain filtered series for effect-size / A-B (not serialized by default consumers)
             "_times_total_filtered": times_total,
         }
+        entry["filter"] = _build_filter_block(
+            policy_id=m.get("filter_policy"),
+            cfg=cfg,
+            entry=entry,
+            meta=m,
+        )
+        # B-6: majority StreamMode label for this group (stream I/O rows)
+        sms = [s for s in (data.get("stream_modes") or []) if s]
+        if sms:
+            # mode() for majority; stable fallback
+            try:
+                from collections import Counter
+
+                entry["StreamMode"] = Counter(sms).most_common(1)[0][0]
+            except Exception:
+                entry["StreamMode"] = sms[0]
         results[key] = entry
 
     # Effect sizes: within (language, test_data, mode) compare each serializer to fastest mean
@@ -894,9 +1041,332 @@ def compute_statistics(
     return results
 
 
+def config_for_filter_policy(
+    base_config: Optional[Dict[str, Any]],
+    policy_id: str,
+) -> Dict[str, Any]:
+    """Return a stats config with outlier settings forced to a named policy."""
+    if policy_id not in FILTER_POLICY_SPECS:
+        raise ValueError(
+            f"Unknown filter policy {policy_id!r}; expected one of {list(FILTER_POLICY_SPECS)}"
+        )
+    cfg = dict(base_config or load_stats_config())
+    spec = FILTER_POLICY_SPECS[policy_id]
+    cfg["outlier_method"] = spec["outlier_method"]
+    if spec.get("iqr_k") is not None:
+        cfg["iqr_k"] = float(spec["iqr_k"])
+    return cfg
+
+
+def filter_policy_catalog() -> Dict[str, Dict[str, Any]]:
+    """Public catalog of filter policies (no internal-only fields)."""
+    out: Dict[str, Dict[str, Any]] = {}
+    for pid, spec in FILTER_POLICY_SPECS.items():
+        out[pid] = {
+            "id": pid,
+            "label": spec["label"],
+            "description": spec["description"],
+            "outlier_method": spec["outlier_method"],
+            "iqr_k": spec.get("iqr_k"),
+            "winsorize_percentiles": spec.get("winsorize_percentiles"),
+            "paired": spec.get("paired"),
+            "min_samples_for_outlier_filter": _DEFAULT_STATS_CFG[
+                "min_samples_for_outlier_filter"
+            ],
+            "exclude_warmup": _DEFAULT_STATS_CFG["exclude_warmup"],
+        }
+    return out
+
+
+def _infer_policy_id(cfg: Dict[str, Any]) -> Optional[str]:
+    method = str(cfg.get("outlier_method") or "iqr").lower()
+    if method == "none":
+        return "all"
+    if method == "winsorize":
+        return "winsorize_5_95"
+    if method == "iqr":
+        k = float(cfg.get("iqr_k", 1.5))
+        if abs(k - 1.5) < 1e-9:
+            return "iqr_1.5"
+        if abs(k - 3.0) < 1e-9:
+            return "iqr_3"
+    return None
+
+
+# Group identity fields shared across filter-policy variants (schema 2.2).
+_EXPORT_IDENTITY_KEYS: Tuple[str, ...] = (
+    "serializer",
+    "test_data",
+    "type_config_hash",
+    "data_type_instance_count",
+    "mode",
+    "language",
+    "serializer_version",
+)
+
+
+def _build_filter_block(
+    policy_id: Optional[str],
+    cfg: Dict[str, Any],
+    entry: Dict[str, Any],
+    meta: Dict[str, Any],
+    *,
+    include_catalog_text: bool = False,
+) -> Dict[str, Any]:
+    """Provenance block describing how this group's sample was filtered.
+
+    By default omits ``label`` / ``description`` (schema 2.2 recommendation D):
+    those live once in ``filter_policies``. Pass ``include_catalog_text=True``
+    for in-memory full blocks (e.g. multi_policy before export slim).
+    """
+    pid = policy_id or _infer_policy_id(cfg)
+    spec = FILTER_POLICY_SPECS.get(pid or "", {})
+    method = str(cfg.get("outlier_method") or spec.get("outlier_method") or "iqr")
+    iqr_k = cfg.get("iqr_k") if method == "iqr" else spec.get("iqr_k")
+    winsor = (
+        list(spec.get("winsorize_percentiles") or [5.0, 95.0])
+        if method == "winsorize"
+        else None
+    )
+    paired = spec.get("paired")
+    if paired is None and method == "iqr":
+        paired = True
+    if method == "winsorize":
+        paired = False
+    if method == "none":
+        paired = None
+
+    block: Dict[str, Any] = {
+        "policy": pid,
+        "method": method,
+        "iqr_k": float(iqr_k) if iqr_k is not None and method == "iqr" else None,
+        "winsorize_percentiles": winsor,
+        "paired": paired,
+        "exclude_warmup": bool(cfg.get("exclude_warmup", True)),
+        "min_samples_for_outlier_filter": int(
+            cfg.get("min_samples_for_outlier_filter", 10)
+        ),
+        "runs_raw": int(entry.get("runs_raw") or 0),
+        "warmup_skipped": int(entry.get("warmup_skipped") or 0),
+        "runs_kept": int(entry.get("runs") or 0),
+        "outliers_removed": int(entry.get("outliers_removed") or 0),
+        "values_clipped": int(entry.get("values_clipped") or 0),
+        "fence_total_low_ns": meta.get("fence_total_low_ns"),
+        "fence_total_high_ns": meta.get("fence_total_high_ns"),
+        "fence_ser_low_ns": meta.get("fence_ser_low_ns"),
+        "fence_ser_high_ns": meta.get("fence_ser_high_ns"),
+        "fence_deser_low_ns": meta.get("fence_deser_low_ns"),
+        "fence_deser_high_ns": meta.get("fence_deser_high_ns"),
+    }
+    if include_catalog_text:
+        block["label"] = spec.get("label") or method
+        block["description"] = spec.get("description")
+    return block
+
+
+def slim_filter_block(filter_block: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Drop catalog-duplicated text from a per-group filter block (rec D)."""
+    if not filter_block:
+        return filter_block
+    return {
+        k: v
+        for k, v in filter_block.items()
+        if k not in ("label", "description")
+    }
+
+
+def public_stats_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Drop private underscore keys for JSON export."""
+    return {k: v for k, v in entry.items() if not str(k).startswith("_")}
+
+
+def compute_pareto_front(groups: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Classical 2D Pareto: minimize avg_time_total_ns and median_size_bytes."""
+    front: List[Dict[str, Any]] = []
+    workloads: Dict[Tuple[Any, Any], List[Dict[str, Any]]] = {}
+    for g in groups:
+        wkey = (g.get("test_data"), g.get("mode"))
+        workloads.setdefault(wkey, []).append(g)
+    for items in workloads.values():
+        for item in items:
+            t = item.get("avg_time_total_ns")
+            s = item.get("median_size_bytes")
+            if t is None or s is None:
+                continue
+            dominated = False
+            for other in items:
+                if other is item:
+                    continue
+                ot = other.get("avg_time_total_ns")
+                os_ = other.get("median_size_bytes")
+                if ot is None or os_ is None:
+                    continue
+                if (ot <= t and os_ < s) or (ot < t and os_ <= s):
+                    dominated = True
+                    break
+            if not dominated:
+                front.append(
+                    {
+                        "serializer": item.get("serializer"),
+                        "test_data": item.get("test_data"),
+                        "mode": item.get("mode"),
+                        "time": t,
+                        "size": s,
+                        "filter_policy": (item.get("filter") or {}).get("policy"),
+                    }
+                )
+    return front
+
+
+def compute_statistics_multi_policy(
+    records: List[Dict],
+    config: Optional[Dict[str, Any]] = None,
+    language_hint: Optional[str] = None,
+    policies: Optional[Sequence[str]] = None,
+) -> Dict[str, Dict]:
+    """Compute full stats under each named filter policy.
+
+    Returns ``{policy_id: {group_key: entry}}``. Each entry includes a
+    ``filter`` provenance block. Effect sizes are recomputed per policy
+    (comparisons only among groups sharing that sample set).
+    """
+    base = config or load_stats_config()
+    policy_ids = list(policies) if policies is not None else list(FILTER_POLICY_IDS)
+    result: Dict[str, Dict] = {}
+    for pid in policy_ids:
+        cfg = config_for_filter_policy(base, pid)
+        clean, meta = prepare_analysis_records(
+            records, config=cfg, language_hint=language_hint
+        )
+        # Tag meta so entries get the stable policy id
+        for key in meta:
+            meta[key]["filter_policy"] = pid
+        stats = compute_statistics(
+            clean,
+            config=cfg,
+            language_hint=language_hint,
+            pre_sanitized=True,
+            group_meta=meta,
+        )
+        # Ensure policy id is set even for empty-meta edge cases
+        for entry in stats.values():
+            fb = entry.get("filter") or {}
+            fb["policy"] = pid
+            entry["filter"] = slim_filter_block(fb)
+        result[pid] = stats
+    return result
+
+
+def build_stats_export_payload(
+    by_policy: Dict[str, Dict],
+    language: str,
+    default_policy: str = DEFAULT_FILTER_POLICY,
+    generated: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Assemble schema **2.2** compact multi-policy stats export.
+
+    Size reductions vs 2.1:
+    - **B** no duplicate flat ``groups`` list equal to default policy
+    - **C** identity once + ``variants`` per policy (no ``groups_by_policy`` blow-up)
+    - **D** filter blocks omit catalog ``label``/``description``
+    - Pareto fronts omitted (dashboard recomputes from metrics)
+
+    Dashboard expands variants client-side. Prefer publishing as
+    ``stats_<lang>_latest.json.gz`` (recommendation A).
+    """
+    import datetime as _dt
+
+    if default_policy not in by_policy and by_policy:
+        default_policy = next(iter(by_policy))
+
+    # Preserve policy order: FILTER_POLICY_IDS first, then any extras
+    policy_order: List[str] = [p for p in FILTER_POLICY_IDS if p in by_policy]
+    for p in by_policy:
+        if p not in policy_order:
+            policy_order.append(p)
+
+    # Union of group keys across policies (stable sort for determinism)
+    all_keys: List[Any] = sorted(
+        {k for stats in by_policy.values() for k in stats.keys()},
+        key=lambda k: tuple(str(x) for x in (k if isinstance(k, tuple) else (k,))),
+    )
+
+    catalog = filter_policy_catalog()
+    slim_groups: List[Dict[str, Any]] = []
+
+    for key in all_keys:
+        # Identity from first available policy entry
+        base_pub: Optional[Dict[str, Any]] = None
+        for pid in policy_order:
+            if key in by_policy[pid]:
+                base_pub = public_stats_entry(by_policy[pid][key])
+                break
+        if not base_pub:
+            continue
+
+        identity: Dict[str, Any] = {
+            k: base_pub.get(k) for k in _EXPORT_IDENTITY_KEYS
+        }
+        if base_pub.get("StreamMode") is not None:
+            identity["StreamMode"] = base_pub.get("StreamMode")
+
+        variants: Dict[str, Dict[str, Any]] = {}
+        for pid in policy_order:
+            if key not in by_policy[pid]:
+                continue
+            pub = public_stats_entry(by_policy[pid][key])
+            metrics = {
+                k: v
+                for k, v in pub.items()
+                if k not in _EXPORT_IDENTITY_KEYS and k != "StreamMode"
+            }
+            if isinstance(metrics.get("filter"), dict):
+                metrics["filter"] = slim_filter_block(metrics["filter"])
+            variants[pid] = metrics
+
+            # Refresh catalog min_samples / warmup from first seen filter
+            fb = metrics.get("filter") or {}
+            if pid in catalog:
+                if fb.get("min_samples_for_outlier_filter") is not None:
+                    catalog[pid]["min_samples_for_outlier_filter"] = fb[
+                        "min_samples_for_outlier_filter"
+                    ]
+                if fb.get("exclude_warmup") is not None:
+                    catalog[pid]["exclude_warmup"] = fb["exclude_warmup"]
+
+        slim_groups.append({**identity, "variants": variants})
+
+    return {
+        "schema_version": "2.2",
+        "generated": generated or _dt.datetime.now().isoformat(),
+        "language": language,
+        "default_filter_policy": default_policy,
+        "filter_policies": catalog,
+        "questions": {
+            "Q1": "How fast?",
+            "Q2": "How compact?",
+            "Q3": "How stable?",
+            "Q4": "Under which workloads does it win?",
+        },
+        "groups": slim_groups,
+    }
+
+
 def _attach_effect_sizes(results: Dict, cfg: Dict[str, Any]) -> None:
-    """Attach effect size vs fastest serializer in same (lang, data, instance, mode) group."""
-    thr = (cfg.get("effect_sizes") or {}).get("cliffs_delta_thresholds")
+    """Attach effect size + MWU vs fastest in same (lang, data, instance, mode) group.
+
+    Multiplicity: Holm correction is applied **within each group only**.
+    Multi-way Results treat these as exploratory; see methodology.
+    """
+    eff = cfg.get("effect_sizes") or {}
+    thr = eff.get("cliffs_delta_thresholds")
+    vs = eff.get("vs_fastest") or {}
+    ref_mode = str(vs.get("reference") or "median").strip().lower()
+    mcc = str(vs.get("multiple_comparison") or "holm").strip().lower()
+    ht = cfg.get("hypothesis_tests") or {}
+    alpha = float(ht.get("alpha", 0.05))
+    run_test = bool(ht.get("enabled", True)) and str(vs.get("test") or "mann_whitney_u") == "mann_whitney_u"
+
     groups: Dict[Tuple, List[Any]] = defaultdict(list)
     for key, entry in results.items():
         gkey = (
@@ -908,29 +1378,76 @@ def _attach_effect_sizes(results: Dict, cfg: Dict[str, Any]) -> None:
         )
         groups[gkey].append((key, entry))
 
+    def _ref_score(entry: Dict[str, Any]) -> float:
+        if ref_mode == "median":
+            v = entry.get("total_median_ns")
+            if v is not None and v == v:  # not NaN
+                return float(v)
+        return float(entry.get("avg_time_total_ns") or float("inf"))
+
     for gkey, items in groups.items():
         if len(items) < 2:
             for _, entry in items:
                 entry["effect_vs_fastest_cliffs_delta"] = 0.0
                 entry["effect_vs_fastest_cliffs_label"] = "reference"
                 entry["effect_vs_fastest_hedges_g"] = 0.0
+                entry["effect_vs_fastest_p_value"] = None
+                entry["effect_vs_fastest_p_value_holm"] = None
+                entry["effect_vs_fastest_significant_holm"] = None
                 entry["fastest_in_group"] = entry["serializer"]
+                entry["effect_vs_fastest_exploratory"] = True
             continue
-        fastest_key, fastest_entry = min(items, key=lambda t: t[1]["avg_time_total_ns"] or float("inf"))
+
+        fastest_key, fastest_entry = min(items, key=lambda t: _ref_score(t[1]))
         fast_times = fastest_entry.get("_times_total_filtered") or []
+
+        # Collect MWU p-values for non-reference members (stable order)
+        non_ref: List[Tuple[Any, Dict[str, Any]]] = []
+        raw_ps: List[float] = []
         for key, entry in items:
-            entry["fastest_in_group"] = fastest_entry["serializer"]
             if key == fastest_key:
-                entry["effect_vs_fastest_cliffs_delta"] = 0.0
-                entry["effect_vs_fastest_cliffs_label"] = "reference"
-                entry["effect_vs_fastest_hedges_g"] = 0.0
                 continue
             mine = entry.get("_times_total_filtered") or []
-            cd = cliffs_delta(mine, fast_times)
-            hg = hedges_g(mine, fast_times)
+            p = 1.0
+            if run_test and len(mine) >= 2 and len(fast_times) >= 2:
+                _u, p = mann_whitney_u(mine, fast_times)
+            raw_ps.append(float(p))
+            non_ref.append((key, entry))
+
+        if mcc == "holm" and raw_ps:
+            adj_ps = holm_correction(raw_ps)
+        else:
+            adj_ps = list(raw_ps)
+
+        for (key, entry), p_raw, p_adj in zip(non_ref, raw_ps, adj_ps):
+            entry["fastest_in_group"] = fastest_entry["serializer"]
+            entry["effect_vs_fastest_exploratory"] = True
+            mine = entry.get("_times_total_filtered") or []
+            cd = cliffs_delta(mine, fast_times) if mine and fast_times else 0.0
+            hg = hedges_g(mine, fast_times) if mine and fast_times else 0.0
             entry["effect_vs_fastest_cliffs_delta"] = cd
             entry["effect_vs_fastest_cliffs_label"] = cliffs_delta_label(cd, thr)
             entry["effect_vs_fastest_hedges_g"] = hg
+            if run_test and len(mine) >= 2 and len(fast_times) >= 2:
+                entry["effect_vs_fastest_p_value"] = p_raw
+                entry["effect_vs_fastest_p_value_holm"] = p_adj
+                entry["effect_vs_fastest_significant_holm"] = bool(p_adj < alpha)
+            else:
+                entry["effect_vs_fastest_p_value"] = None
+                entry["effect_vs_fastest_p_value_holm"] = None
+                entry["effect_vs_fastest_significant_holm"] = None
+
+        for key, entry in items:
+            if key != fastest_key:
+                continue
+            entry["fastest_in_group"] = entry["serializer"]
+            entry["effect_vs_fastest_cliffs_delta"] = 0.0
+            entry["effect_vs_fastest_cliffs_label"] = "reference"
+            entry["effect_vs_fastest_hedges_g"] = 0.0
+            entry["effect_vs_fastest_p_value"] = None
+            entry["effect_vs_fastest_p_value_holm"] = None
+            entry["effect_vs_fastest_significant_holm"] = None
+            entry["effect_vs_fastest_exploratory"] = True
 
 
 def compare_versions(

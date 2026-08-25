@@ -238,65 +238,68 @@ pub struct Event {
 // Generators
 // ---------------------------------------------------------------------------
 
-/// Deterministic xorshift64* RNG (within-language seed mixing).
+use rand::{Rng as _, RngCore};
+use rand_pcg::Lcg64Xsh32;
+
+/// Nothing-up-my-sleeve constants: first digits of π (same approach as
+/// [rust_serialization_benchmark](https://github.com/djkoloski/rust_serialization_benchmark)).
+const PI_STATE: u64 = 3_141_592_653;
+const PI_STREAM: u64 = 5_897_932_384;
+
+/// FNV-1a-ish mix so (suite_seed, type_id, instance_index) → distinct stream.
+/// The golden-ratio constant is a standard avalanche multiplier (2^64/φ), not a secret.
+pub fn mix_seed(seed: u64, type_id: &str, idx: i32) -> u64 {
+    let mut h = seed;
+    for b in type_id.bytes() {
+        h = (h ^ b as u64).wrapping_mul(0x0100_0000_01B3);
+    }
+    h ^= (idx as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    if h == 0 {
+        1
+    } else {
+        h
+    }
+}
+
+/// Deterministic PCG-XSH-RR RNG for fixture generation (within-language only).
+///
+/// Seeded from `mix_seed(suite_seed, type_id, idx) ^ PI_STATE` with stream
+/// `PI_STREAM`. Same `(seed, type_id, type_config, instance_index)` → same
+/// instance across runs; streams are **not** required to match other languages.
 pub struct Rng {
-    state: u64,
+    inner: Lcg64Xsh32,
 }
 
 impl Rng {
-    pub fn new(seed: u64) -> Self {
+    pub fn new(mixed_seed: u64) -> Self {
+        let state = mixed_seed ^ PI_STATE;
         Self {
-            state: if seed == 0 {
-                0x9E3779B97F4A7C15
-            } else {
-                seed
-            },
+            inner: Lcg64Xsh32::new(state, PI_STREAM),
         }
-    }
-
-    fn next_u64(&mut self) -> u64 {
-        let mut x = self.state;
-        x ^= x << 13;
-        x ^= x >> 7;
-        x ^= x << 17;
-        self.state = x;
-        x
     }
 
     pub fn next_int(&mut self, lo: i32, hi: i32) -> i32 {
         if hi <= lo {
             return lo;
         }
-        lo + (self.next_u64() % (hi - lo + 1) as u64) as i32
+        self.inner.gen_range(lo..=hi)
     }
 
     pub fn next_bool(&mut self) -> bool {
-        self.next_u64() & 1 == 1
+        self.inner.gen_bool(0.5)
     }
 
     pub fn next_f64(&mut self) -> f64 {
-        (self.next_u64() >> 11) as f64 / ((1u64 << 53) as f64)
+        // Match prior harness scale: unit interval via 53-bit mantissa.
+        (self.inner.next_u64() >> 11) as f64 / ((1u64 << 53) as f64)
     }
 
     pub fn word(&mut self, min_l: usize, max_l: usize) -> String {
         let n = self.next_int(min_l as i32, max_l as i32) as usize;
         const A: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
         (0..n)
-            .map(|_| A[(self.next_u64() % 26) as usize] as char)
+            .map(|_| A[self.inner.gen_range(0..26)] as char)
             .collect()
-    }
-}
-
-pub fn mix_seed(seed: u64, type_id: &str, idx: i32) -> u64 {
-    let mut h = seed;
-    for b in type_id.bytes() {
-        h = (h ^ b as u64).wrapping_mul(0x100000001B3);
-    }
-    h ^= (idx as u64).wrapping_mul(0x9E3779B97F4A7C15);
-    if h == 0 {
-        1
-    } else {
-        h
     }
 }
 

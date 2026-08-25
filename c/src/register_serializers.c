@@ -64,5 +64,8 @@ void register_all_serializers(serializer_t *out, int *count) {
 #ifdef HAS_ZCBOR
     bench_register_zcbor(out, count);
 #endif
+#ifdef HAS_LIBYAML
+    bench_register_yaml(out, count);
+#endif
     fprintf(stderr, "[bench-c] registered %d serializers\n", *count);
 }

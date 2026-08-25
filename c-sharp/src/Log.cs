@@ -78,7 +78,7 @@ namespace GLD.SerializerBenchmark
             get { return (TimeSer + TimeDeser) > 0 ? 1_000_000_000.0 / (TimeSer + TimeDeser) : 0; }
         }
 
-        /// <summary>Harness language id for multi-language CSV schema.</summary>
+        /// <summary>Benchmark-runner language id for multi-language CSV schema.</summary>
         public string Language { get { return "csharp"; } }
 
         /// <summary>Peak memory if measured; 0 when not tracked.</summary>
@@ -95,6 +95,21 @@ namespace GLD.SerializerBenchmark
 
         /// <summary>Hash of resolved type_config for this cell.</summary>
         public string TypeConfigHash { get; set; } = "";
+
+        /// <summary>B-6 stream honesty: native | text_on_stream | adapted (stream rows only).</summary>
+        public string StreamMode { get; set; } = "";
+
+        /// <summary>Monotonic process order of written timed rows (B-1); -1 if unset.</summary>
+        public int RunOrder { get; set; } = -1;
+
+        /// <summary>Position within shuffled serializer list for this rep; -1 if unset.</summary>
+        public int SchedulePosition { get; set; } = -1;
+
+        /// <summary>One-shot gzip(6) of written bytes (not timed). 0 if unset.</summary>
+        public int SizeGzip { get; set; }
+
+        /// <summary>One-shot zstd(3) of written bytes (not timed). 0 if unavailable.</summary>
+        public int SizeZstd { get; set; }
     }
 
     public class LogStorage
@@ -130,7 +145,8 @@ namespace GLD.SerializerBenchmark
             var fileHeaderLine =
                 "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName," +
                 "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser," +
-                "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash";
+                "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,DataTypeInstanceCount,TypeConfigHash," +
+                "StreamMode,RunOrder,SchedulePosition,SizeGzip,SizeZstd";
             fileHeaderLine = fileHeaderLine.Replace(",", _separator);
             _logFileStreamWriter.WriteLine(fileHeaderLine);
 
@@ -150,7 +166,12 @@ namespace GLD.SerializerBenchmark
                 log.OpPerSecSer, log.OpPerSecDeser, log.OpPerSecSerAndDeser,
                 log.MemoryPeakBytes, log.FidelityScore.ToString("F2"),
                 log.DataTypeInstanceCount > 0 ? log.DataTypeInstanceCount : 1,
-                log.TypeConfigHash ?? ""
+                log.TypeConfigHash ?? "",
+                log.StreamMode ?? "",
+                log.RunOrder >= 0 ? log.RunOrder.ToString() : "",
+                log.SchedulePosition >= 0 ? log.SchedulePosition.ToString() : "",
+                log.SizeGzip > 0 ? log.SizeGzip.ToString() : "",
+                log.SizeZstd > 0 ? log.SizeZstd.ToString() : ""
                 );
             _logFileStreamWriter.WriteLine(line);
         }

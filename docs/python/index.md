@@ -1,21 +1,25 @@
-# Python
+---
+title: "Python"
+---
+
+Python
+======
 
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
+## Benchmark runner
 
-## Suite fixtures
+- Directory: `python/` (repository root)
+- Output: monorepo `logs/python/YYYY-MM-DD-HHMMSS.csv` (`Language=python`, times in **nanoseconds**)
+- Runner: `python/scripts/run-benchmarks.sh` (or project docs for modes)
+- Registration: [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py)
+- Modes: `bytes` and `stream`
 
-Type ids: `message`, `document`, `telemetry`, `strings`, `event`.  
-Run configs: `config/library/`. Results may label batch cells as `type@n=<instance_count>`.  
-See [Test Data](../analysis/test_data_configuration.md).
-
-## Serializers in this suite (16)
-
-Registered in [`python/src/benchmark/runner.py`](../../python/src/benchmark/runner.py). Log names in `logs/python/YYYY-MM-DD-HHMMSS.csv` (nanoseconds). Modes: `bytes` and `stream`.
+## Serializers
 
 | Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
 |----------|----------|---------|---------------------------------|-------------|-------|
-| avro | Schema | `fastavro` | record dict | native | Compact schemaless size; dict/union path slower than protobuf C++ |
+| avro | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
 | cbor2 | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | cloudpickle | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
 | dill | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
@@ -48,21 +52,27 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 
 - **Size is real:** schemaless Avro omits field names (schema out-of-band).
 - **Speed is mostly library/runtime:** timed path is only `schemaless_writer`/`reader` on a pre-built dict + cached `parse_schema`. fastavro (Cython) still loses to protobuf message `SerializeToString` by ~20–30× on nested types because of Python-dict field walks and null-unions.
-- **Measurement:** the harness no longer runs `tracemalloc` during timed ser/des (it was inflating alloc-heavy codecs ~2–3×).
+- **Measurement:** the benchmark runner no longer runs `tracemalloc` during timed ser/des (it was inflating alloc-heavy codecs ~2–3×).
 
 #### Why flatbuffers and dill ops/s look low
 
 - **flatbuffers (serialize):** the official Python package builds with a pure-Python `Builder`. Expect ~100×+ slower ser than `protobuf` on the same POCO. C++/Rust FlatBuffers are a different performance class; this suite measures the Python binding.
 - **flatbuffers (deserialize):** timed path is zero-copy `GetRootAs` + a thin view. Full field materialization is *not* forced inside the timer (FlatBuffers' model: pay on field access).
-- **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these fixtures. Prefer pickle when you do not need dill's dynamic-object features.
+- **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these data types. Prefer pickle when you do not need dill's dynamic-object features.
 
 ### Other caveats
-
 
 - `tracemalloc` under-counts C/Rust extension allocations.
 - Fidelity is semantic, not strict type identity (dict vs dataclass, enum vs int, datetime ms truncation).
 
-Harness: [`python/README.md`](../../python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Benchmark runner: [`python/README.md`](../../python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=python&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 
 ## The Global Interpreter Lock (GIL)
 

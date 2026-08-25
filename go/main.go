@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -83,6 +84,8 @@ func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, des
 	if err != nil {
 		return
 	}
+	// KeepAlive: prevent compiler from DCE'ing timed work (issue #59).
+	runtime.KeepAlive(buf)
 	size = len(buf)
 
 	t1 := time.Now()
@@ -91,6 +94,7 @@ func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, des
 	if err != nil {
 		return
 	}
+	runtime.KeepAlive(out)
 	// Domain conversion is intentionally outside the timer (fair codec measurement).
 	out, err = toDomain(ser, out)
 	if err != nil {
@@ -102,25 +106,27 @@ func measureBytes(ser serializers.BenchSerializer, fx model.Fixture) (serNs, des
 	return
 }
 
-func measureStream(ser serializers.BenchSerializer, fx model.Fixture) (serNs, deserNs uint64, size int, err error) {
-	buf := &bytes.Buffer{}
-	buf.Grow(4096)
+// measureStream reuses streamBuf across reps (caller owns it; issue #59 buffer policy).
+func measureStream(ser serializers.BenchSerializer, fx model.Fixture, streamBuf *bytes.Buffer) (serNs, deserNs uint64, size int, err error) {
+	streamBuf.Reset()
 
 	t0 := time.Now()
-	n, err := ser.SerializeStream(fx, buf)
+	n, err := ser.SerializeStream(fx, streamBuf)
 	serNs = uint64(time.Since(t0).Nanoseconds())
 	if err != nil {
 		return
 	}
+	runtime.KeepAlive(streamBuf)
 	size = n
 
-	r := bytes.NewReader(buf.Bytes())
+	r := bytes.NewReader(streamBuf.Bytes())
 	t1 := time.Now()
 	out, err := ser.DeserializeStream(r)
 	deserNs = uint64(time.Since(t1).Nanoseconds())
 	if err != nil {
 		return
 	}
+	runtime.KeepAlive(out)
 	out, err = toDomain(ser, out)
 	if err != nil {
 		return
@@ -225,14 +231,27 @@ func main() {
 			typeConfigHash: c.TypeConfigHash,
 		})
 	}
-	fmt.Printf("[PROGRESS] Go Data Model v2: %d serializers, %d cells, %d reps, modes=%v\n",
-		len(sers), len(work), repetitions, modes)
+	strategy := resolveScheduleStrategy()
+	recordRO := resolveRecordRunOrder()
+	fmt.Printf("[PROGRESS] Go Data Model v2: %d serializers, %d cells, %d reps, modes=%v schedule=%s\n",
+		len(sers), len(work), repetitions, modes, strategy)
 
 	var errors []benchError
+	runOrder := 0
 
 	for _, w := range work {
 		fx := w.fx
 		fmt.Printf("[PROGRESS] Testing Data: %s (N=%d)\n", fx.Name, w.instanceCount)
+
+		// Untimed prepare once per cell; per-serializer stream buffers (B-1).
+		type prepared struct {
+			ser       serializers.BenchSerializer
+			streamBuf *bytes.Buffer
+			sizeGzip  int
+			sizeZstd  int
+		}
+		var ready []prepared
+		failed := map[string]bool{}
 		for _, ser := range sers {
 			if !ser.Supports(fx.Name) {
 				continue
@@ -246,18 +265,57 @@ func main() {
 					repetition:     0,
 					errorText:      err.Error(),
 				})
+				failed[ser.Name()] = true
 				continue
 			}
-			// Log every successful rep including i==0 (warmup). Analysis drops warmup later.
-			for _, mode := range modes {
-				for i := uint32(0); i < repetitions; i++ {
+			gz, zs := 0, 0
+			if raw, serr := ser.SerializeBytes(fx); serr == nil {
+				gz, zs = compressSizes(raw)
+			}
+			ready = append(ready, prepared{
+				ser:       ser,
+				streamBuf: bytes.NewBuffer(make([]byte, 0, 64*1024)),
+				sizeGzip:  gz,
+				sizeZstd:  zs,
+			})
+		}
+		byName := map[string]prepared{}
+		for _, p := range ready {
+			byName[p.ser.Name()] = p
+		}
+
+		// Log every successful rep including i==0 (warmup). Analysis drops warmup later.
+		for _, mode := range modes {
+			for i := uint32(0); i < repetitions; i++ {
+				var order []prepared
+				if strategy == "none" {
+					order = ready
+				} else {
+					var names []string
+					for _, p := range ready {
+						if failed[p.ser.Name()] {
+							continue
+						}
+						names = append(names, p.ser.Name())
+					}
+					shuffled := fisherYatesStrings(names, deriveScheduleSeed(
+						seed, fx.Name, w.instanceCount, w.typeConfigHash, mode, i))
+					for _, nm := range shuffled {
+						order = append(order, byName[nm])
+					}
+				}
+				for pos, p := range order {
+					if failed[p.ser.Name()] {
+						continue
+					}
+					ser := p.ser
 					var serNs, deserNs uint64
 					var size int
 					var merr error
 					if mode == "bytes" {
 						serNs, deserNs, size, merr = measureBytes(ser, fx)
 					} else {
-						serNs, deserNs, size, merr = measureStream(ser, fx)
+						serNs, deserNs, size, merr = measureStream(ser, fx, p.streamBuf)
 					}
 					if merr != nil {
 						fmt.Fprintf(os.Stderr, "[ERROR] %s / %s / %s: %v\n", ser.Name(), fx.Name, mode, merr)
@@ -268,14 +326,21 @@ func main() {
 							repetition:     i,
 							errorText:      merr.Error(),
 						})
-						// Stop further reps for this mode; failure is deterministic enough.
-						break
+						failed[ser.Name()] = true
+						continue
+					}
+					ro, sp := -1, -1
+					if recordRO {
+						ro, sp = runOrder, pos
+						runOrder++
 					}
 					_ = logger.WriteRow(
 						mode, fx.Name, repetitions, i, ser.Name(),
 						serNs, deserNs, size, 1.0,
 						ser.Version(), ser.NativeKind().String(), ser.StreamMode().String(),
 						w.instanceCount, w.typeConfigHash,
+						ro, sp,
+						p.sizeGzip, p.sizeZstd,
 					)
 				}
 			}

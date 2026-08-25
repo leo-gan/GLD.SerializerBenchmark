@@ -1,0 +1,42 @@
+{
+  "about": "Preview copy for the plan. When this experiment is opened, that folder's save_sample.py will write the official sample.json. Do not edit by hand.",
+  "source": "--kind telemetry",
+  "builder": "python/src/benchmark/data_v2/generator.py",
+  "cells": [
+    {
+      "kind": "telemetry",
+      "settings": {
+        "points": 8,
+        "number_type": "float64",
+        "tag_count": 2,
+        "string_len": {
+          "min": 3,
+          "max": 10
+        }
+      },
+      "settings_hash": "29d4d61726cc",
+      "how_many_records": 1,
+      "seed": 42,
+      "records": [
+        {
+          "source": "bwd",
+          "ts": 1704103565427,
+          "tags": [
+            "kvlhje",
+            "cshtvh"
+          ],
+          "values": [
+            86.94935066438121,
+            80.85878799624511,
+            13.340070236279256,
+            21.917136163568962,
+            12.733590694524366,
+            68.78890651137503,
+            80.93992282268184,
+            40.85598496387092
+          ]
+        }
+      ]
+    }
+  ]
+}

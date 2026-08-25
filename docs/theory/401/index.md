@@ -1,30 +1,43 @@
 # Serialization 401: Implementing Contemporary Serializers
 
-> This course walks through Protocol Buffers binary encoding on the wire, then follows how Python, Rust, and C runtimes turn those bytes into language values. A small subset lab ties the theory to code you write yourself. It is aimed at people who build or deeply integrate codecs—not only people who choose formats from a menu.
+This course teaches how Protocol Buffers works at the byte level. You will also learn how three language libraries turn those bytes into ordinary values and back again. A later set of articles then opens the **timed call sites** of the libraries that lead on this suite’s **document** fixture, one language at a time, and follows those calls into the library source.
+
+| Jump | |
+|------|--|
+| **Prereqs** | [101](../101/index.md) · [201](../201/index.md) (schema / wire ideas) |
+| **Sibling** | [301 production judgment](../301/index.md) — *whether / which*, not *how bytes* |
+| **Suite** | [Add a serializer](../../analysis/ADDING_A_SERIALIZER.md) · [Dashboard](../../dashboard/) |
+
+**Protocol Buffers** is a popular schema-driven binary format. You describe message shapes in a `.proto` file. Tools then generate code that can encode and decode those messages. This elective walks through that wire format first. It then follows the paths taken by Python, Rust, and C libraries. A small hands-on lab connects the theory to code you write yourself. After that, nine language articles compare the libraries that lead on this suite’s document fixture by reading their timed functions, not by repeating the 201 format essays.
+
+The course is for people who want to implement, debug, or deeply integrate codecs. It is not only for people who choose a format from a list of options. You do not need to have written a serializer from scratch already. You do need intermediate reading comfort in at least one of the languages used in this suite. You also need a working memory of schema-dependent binary ideas from Serialization 201.
 
 ## Who this is for
 
-You should take this elective if you need to **implement, debug, or deeply integrate** serializers. It sits after [Serialization 201](../201/index.md) and is deliberately more hands-on than the production-judgment track. It does **not** replace [Serialization 301](../301/index.md): 301 is about multi-constraint product choices under real pressure; 401 is about wire rules and runtime paths.
+Take this elective if you need to **implement, debug, or deeply integrate** serializers. It comes after [Serialization 201](../201/index.md). It is deliberately more hands-on than the production-judgment track. It does **not** replace [Serialization 301](../301/index.md).
 
-You do not need to have written a codec from scratch already. You do need intermediate reading comfort in at least one of Python, Rust, or C, and a working memory of schema-dependent binary ideas from 201.
+Course 301 is about multi-constraint product choices under real pressure. Course 401 is about wire rules and runtime paths. You will learn what each byte means. You will also learn how a library walks from a language value to those bytes and back.
+
+In short, 401 teaches the *how* of encoding and decoding. 301 teaches the *whether* and *which* of production decisions.
 
 ## Prerequisites
 
 | Type | Requirement |
 |------|-------------|
 | **Hard** | [101](../101/index.md) and [201](../201/index.md) (schema identity, encode cost, evolution, dynamic vs IDL binary) |
-| **Soft** | [301](../301/index.md) is recommended (trust boundaries, polyglot estates, honest measurement) |
+| **Soft** | [301](../301/index.md) is recommended (trust boundaries, multi-language systems, honest measurement) |
 | **Skills** | Intermediate reading level in at least one of Python, Rust, or C |
 
 ## Learning outcomes
 
 By the end of this course you should be able to:
 
-1. **Encode and decode** core Protocol Buffers wire structures on paper and with tables: tags (keys that name a field), varints (variable-length integers), length-delimited fields, nested messages, simple repeated fields, and skipping unknown fields.  
-2. **Trace** encode and decode paths in Python (`google.protobuf`), Rust (`prost`), and C (`protobuf-c`), including **buffer ownership** (who allocates the bytes, who frees them, and how long a buffer must stay valid).  
-3. **Contrast** the classic C runtime (protobuf-c) with the embedded-oriented design of **nanopb** (a C library that prefers static size budgets over free-form heap trees).  
-4. **Build** a mini subset encoder/decoder and **validate** it against golden byte sequences and at least one official parser.  
-5. **State** deliberate omissions honestly—this lab is a teaching subset, not a full production Protocol Buffers implementation.
+1. **Encode and decode** core Protocol Buffers wire structures on paper and with tables. That includes **tags** (small keys that name which field is next), **varints** (variable-length integers), length-delimited fields, nested messages, simple repeated fields, and the rule for skipping unknown fields.
+2. **Trace** encode and decode paths in Python (`google.protobuf`), Rust (`prost`), and C (`protobuf-c`). You should also explain **buffer ownership**: who allocates the bytes, who frees them, and how long a buffer must stay valid.
+3. **Contrast** the classic C runtime (protobuf-c) with the embedded-oriented design of **nanopb**. Nanopb is a C library that prefers static size budgets over free-form heap trees.
+4. **Build** a mini subset encoder/decoder. **Validate** it against golden byte sequences and at least one official parser.
+5. **State** deliberate omissions honestly. This lab is a teaching subset. It is not a full production Protocol Buffers implementation.
+6. **Read two library call paths in one language** and explain, from the source, why one finishes more encode-and-decode cycles per second (or writes fewer bytes) on this suite’s **document** fixture.
 
 ## How this course fits the program
 
@@ -35,9 +48,11 @@ By the end of this course you should be able to:
 | [301](../301/index.md) | Production judgment (core advanced track) |
 | **401 (this course)** | Implementer elective — wire format, language paths, and a thin subset lab |
 
-This course teaches **wire encoding, runtime paths, and a thin subset lab**. It is not a full reimplementation of Protocol Buffers, and it is not a multi-constraint product-choice guide (that is 301).
+This course teaches **wire encoding, runtime paths, and a thin subset lab**. It is not a full reimplementation of Protocol Buffers. It is also not a multi-constraint product-choice guide. That role belongs to 301.
 
 ## Modules
+
+The table below lists every article in this course. For each article, it states what you should be able to do after reading it.
 
 | Article | You should be able to… |
 |---------|------------------------|
@@ -49,15 +64,40 @@ This course teaches **wire encoding, runtime paths, and a thin subset lab**. It 
 | [C: nanopb vs protobuf-c](protobuf-c-nanopb-compare.md) | Choose a heap-friendly C engine versus a static-budget C engine for a deployment |
 | [Same bytes, three runtimes](protobuf-cross-language-fidelity.md) | Design interop matrix tests; separate bit-identical encodings from logical fidelity |
 
-**Suggested path** (this matches the self-check below; the side navigation lists the same pages):
+### Language winners in code
 
-1. [Wire format](protobuf-wire-format.md)  
-2. [Lab](lab-mini-protobuf-encoder.md) *(start as soon as the wire article is readable)*  
-3. [Python](protobuf-python.md) → [Rust](protobuf-rust-prost.md) → [C protobuf-c](protobuf-c-protobuf-c.md)  
-4. [nanopb compare](protobuf-c-nanopb-compare.md)  
-5. [Cross-language fidelity](protobuf-cross-language-fidelity.md)  
+These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/).
 
-The flagship schema in this benchmark suite is `schemas/v2/protobuf/benchmark_v2.proto`. Teaching pages intentionally use a much smaller message called **MiniUser**. MiniUser is not the suite schema; it exists so you can study hex dumps without drowning in fields.
+The first nine pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two engines, same Protocol Buffers bytes and three JavaScript runtimes, an in-place crate used as a classical decoder, and a Dashboard row whose timer does not measure the famous library.
+
+| Article | You should be able to… |
+|---------|------------------------|
+| [Python: msgspec-msgpack vs orjson](python-msgspec-vs-orjson.md) | Show why a positional MessagePack Struct decodes faster than Rust JSON over dictionaries |
+| [Python: msgspec JSON vs MessagePack](python-msgspec-json-vs-msgpack.md) | Hold the library still and isolate JSON tokens from MessagePack tags |
+| [Python: orjson vs json](python-orjson-vs-json.md) | Show why the same 448-byte JSON can differ by a factor of five |
+| [Rust: Speedy vs Bincode](rust-speedy-vs-bincode.md) | Show why generated `write_to` plus fixed-width integers beats Serde plus variable-length integers |
+| [Rust: Speedy vs Postcard](rust-speedy-vs-postcard.md) | Show compactness as a width choice that can stay on Serde |
+| [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | Show that in-place access only helps if the timed path uses it |
+| [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
+| [C++: Bitsery vs YAS](cpp-bitsery-vs-yas.md) | Show why one-byte lengths and a reused buffer beat eight-byte lengths and a 20 KiB stream |
+| [C++: the simdjson row](cpp-simdjson-wrapper.md) | Read a Dashboard row whose encode is a cache copy and whose decode parses twice |
+| [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Show positional IL stores versus a type-and-identifier prefix on every field |
+| [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Show two cached positional plans, and why the Avro schema walk costs a little more |
+| [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
+| [JavaScript: JSON vs google-protobuf](javascript-json-vs-protobuf.md) | Show that timed protobuf encode is a cached `Buffer`, and that `JSON.parse` beats a JS tag loop |
+| [JavaScript: three Protobuf engines](javascript-three-protobufs.md) | Compare google-protobuf, protobufjs, and protobuf-es on the same 155 bytes |
+| [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md) | Show why vtable loads can beat a smaller tag stream |
+
+**Suggested path.** This order matches the self-check below. The side navigation lists the same pages.
+
+1. [Wire format](protobuf-wire-format.md)
+2. [Lab](lab-mini-protobuf-encoder.md) *(start as soon as the wire article is readable)*
+3. [Python](protobuf-python.md) → [Rust](protobuf-rust-prost.md) → [C protobuf-c](protobuf-c-protobuf-c.md)
+4. [nanopb compare](protobuf-c-nanopb-compare.md)
+5. [Cross-language fidelity](protobuf-cross-language-fidelity.md)
+6. One language-winner article in a language you read fluently (table above)
+
+The flagship schema in this benchmark suite is `schemas/v2/protobuf/benchmark_v2.proto`. Teaching pages intentionally use a much smaller message called **MiniUser**. MiniUser is not the suite schema. It exists so you can study hex dumps without drowning in fields.
 
 ## Lab notebooks (Python / Colab)
 
@@ -71,7 +111,9 @@ If you want the same golden hex sequences G1–G5 in another language, see the m
 
 ## Three engines at a glance
 
-The **wire format** (the layout of tags and payloads on the byte stream) is shared. The **codec engineering**—how each library walks the schema, allocates buffers, and reports errors—differs a lot:
+In this section we compare how four libraries relate to the same wire format.
+
+The **wire format** is the layout of tags and payloads on the byte stream. That layout is shared. Python, Rust, and C can all speak the same binary Protocol Buffers. What differs is **codec engineering**. Each library walks the schema in its own way. Each library allocates buffers differently. Each library reports errors differently.
 
 | | **Python** (`google.protobuf`) | **Rust** (`prost`) | **C** (`protobuf-c`) | **C** (nanopb) |
 |--|--------------------------------|--------------------|----------------------|----------------|
@@ -84,25 +126,29 @@ Details appear in the language-path articles and in [nanopb compare](protobuf-c-
 
 ## Honesty rules
 
-The program-wide rules still apply: there are no universal winners; implementation quality beats brand name; suite **Results** pages own measured numbers.  
+The program-wide rules still apply. There are no universal winners. Implementation quality beats brand name. The **Dashboard** owns measured numbers.
+
 **401-specific honesty:**
 
-1. **Wire truth is shared; runtimes differ.** Python, Rust, and C can all speak the same binary layout and still own buffers differently.  
-2. **The subset lab labels its omissions.** Packed repeated fields, zigzag signed integers, maps, oneofs, and full production hardening are out of scope on purpose.  
-3. **Suite harnesses illustrate integration.** They are not the reference design for how you should structure production Protocol Buffers.  
-4. **Results are optional cost context.** Speed tables are not the focus of this course.  
-5. **Hostile input is a 301 topic.** For operational controls on untrusted payloads, see [301 untrusted input](../301/untrusted-input.md). Codec-side bounds (truncated varints, overlong lengths) still belong in every decoder.  
+1. **Wire truth is shared; runtimes differ.** Python, Rust, and C can all speak the same binary layout. They can still own buffers differently.
+2. **The subset lab labels its omissions.** Packed repeated fields, zigzag signed integers, maps, oneofs, and full production hardening are out of scope on purpose.
+3. **Suite benchmark runners illustrate integration.** They are not the reference design for how you should structure production Protocol Buffers.
+4. **Dashboard numbers are optional cost context.** Speed tables are not the focus of the Protocol Buffers sequence. The language-winner articles quote one L1 slice so you can attach a number to a line of code. They do not crown a universal library.
+5. **Hostile input is a 301 topic.** For operational controls on untrusted payloads, see [301 untrusted input](../301/untrusted-input.md). Codec-side bounds still belong in every decoder. Examples include truncated varints and overlong lengths.
 6. **Language tours are parallel, not ranked.** This course does not crown “Rust wins.”
 
 ## Assessment (self-check)
 
-1. Complete the lab golden vectors **G1–G5** (including the empty G2), unknown-field skip, bounds failures, and at least one official-parser cross-check.  
-2. Explain pack/unpack **ownership** in one of Python, Rust, or C: who allocates, who frees, and what must stay valid during the call.  
-3. State when **nanopb** is preferable to **protobuf-c**, and when the reverse is true—see [nanopb compare](protobuf-c-nanopb-compare.md).  
-4. Design a three-language encode/decode **matrix test** and say when bit-identity (`memcmp` of encodings) is required versus when logical equality is enough—see [cross-language fidelity](protobuf-cross-language-fidelity.md).
+Use the following checklist to test yourself after you finish the modules.
+
+1. Complete the lab golden vectors **G1–G5** (including the empty G2). Also complete unknown-field skip, bounds failures, and at least one official-parser cross-check.
+2. Explain pack/unpack **ownership** in one of Python, Rust, or C. Who allocates? Who frees? What must stay valid during the call?
+3. State when **nanopb** is preferable to **protobuf-c**, and when the reverse is true. See [nanopb compare](protobuf-c-nanopb-compare.md).
+4. Design a three-language encode/decode **matrix test**. Say when bit-identity (`memcmp` of encodings) is required. Say when logical equality is enough. See [cross-language fidelity](protobuf-cross-language-fidelity.md).
+5. Open one language-winner article. Quote the two timed functions. State whether the speed gap is a **format** difference, an **implementation** difference, or a **runner** difference (work moved into `prepare`).
 
 ## Where to go next
 
-- [Serialization 201](../201/index.md) if schema-dependent concepts feel rusty.  
-- [Serialization 301](../301/index.md) for multi-constraint product choices.  
+- [Serialization 201](../201/index.md) if schema-dependent concepts feel rusty.
+- [Serialization 301](../301/index.md) for multi-constraint product choices.
 - Shared suite schema in this repository: `schemas/v2/protobuf/benchmark_v2.proto`.

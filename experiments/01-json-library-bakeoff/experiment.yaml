@@ -1,0 +1,136 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment. A later editor or UI should
+# load and save this file only.
+#
+# Schema: experiments/lib/experiment.config.schema.json
+
+schema: gld.experiment.config/1
+id: 01-json-library-bakeoff
+title: Which JSON library is fastest?
+question: We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?
+story:
+  why: Most websites already speak JSON. Changing that format is expensive. First we ask whether a faster JSON library is enough.
+  example: A shop’s public API sends one order as JSON. Partners and browsers already expect that text.
+  tradeoff: A faster library can help a lot. A library that checks types is slower on purpose — that extra time buys safety, not speed.
+
+sample:
+  kind: document
+  records_per_write: 1
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes, stream]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  require_named_fields: true
+  # Do not crown a single winner. Group libraries by how often they are
+  # slower than the fastest on this sample (Cliff's delta).
+  # similar = we cannot tell them apart here
+  # close   = a small gap; a different record could change the order
+  # slower  = a clear gap on this sample
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+# enabled: false skips that language without deleting its libraries.
+languages:
+  - id: python
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: ships with Python}
+      - {name: orjson, writes_named_fields: true, role: fast writer (Rust core)}
+      - {name: rapidjson, writes_named_fields: true, role: fast writer (C++ core)}
+      - {name: msgspec, writes_named_fields: false, role: typed; writes a list of values, not named fields}
+      - {name: pydantic, writes_named_fields: true, role: checks types at the public door}
+      - {name: mashumaro, writes_named_fields: true, role: typed helper; uses orjson for the text}
+      - {name: serpyco-rs, writes_named_fields: true, role: typed helper; uses orjson for the text}
+
+  - id: go
+    enabled: true
+    libraries:
+      - {name: encoding/json, writes_named_fields: true, role: ships with Go}
+      - {name: sonic, writes_named_fields: true, role: fast writer}
+      - {name: goccy/go-json, writes_named_fields: true, role: fast writer, same API as encoding/json}
+      - {name: jsoniter, writes_named_fields: true, role: fast writer}
+      - {name: segmentio/encoding/json, writes_named_fields: true, role: production fork of encoding/json}
+      - {name: ugorji/json, writes_named_fields: true, role: multi-format library, JSON path}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: common default in Java services}
+      - {name: gson, writes_named_fields: true, role: Google JSON library}
+      - {name: fastjson2, writes_named_fields: true, role: fast writer}
+      - {name: dsl-json, writes_named_fields: true, role: fast writer}
+      - {name: moshi, writes_named_fields: true, role: Square JSON library}
+      - {name: jsoniter, writes_named_fields: true, role: fast writer}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: JSON.stringify, writes_named_fields: true, role: ships with JavaScript}
+      - {name: fast-json-stringify, writes_named_fields: true, role: compiled writer; read is JSON.parse}
+      - {name: simdjson-parse+JSON.stringify, writes_named_fields: true, role: fast read only; write is JSON.stringify}
+
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: serde_json, writes_named_fields: true, role: usual Rust JSON library}
+      - {name: simd-json, writes_named_fields: true, role: fast read; write is serde_json}
+      - {name: sonic-rs, writes_named_fields: true, role: fast writer}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: cJSON, writes_named_fields: true, role: small common C JSON library}
+      - {name: yyjson, writes_named_fields: true, role: fast C JSON library}
+      - {name: jansson, writes_named_fields: true, role: common C JSON library}
+      - {name: parson, writes_named_fields: true, role: small C JSON library}
+      - {name: json-c, writes_named_fields: true, role: system JSON library on many Linux machines}
+
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: nlohmann_json, writes_named_fields: true, role: common C++ JSON library}
+      - {name: rapidjson, writes_named_fields: true, role: fast C++ JSON library}
+      - {name: simdjson, writes_named_fields: true, role: fast read; write is prepared JSON text}
+      - {name: arduinojson, writes_named_fields: true, role: JSON for small devices}
+      - {name: yyjson, writes_named_fields: true, role: same C library as in the C run}
+
+  - id: csharp
+    enabled: true
+    libraries:
+      - {name: Json.Net, writes_named_fields: true, role: Newtonsoft.Json}
+      - {name: Json.Net (Helper), writes_named_fields: true, role: Newtonsoft helper path}
+      - {name: System.Text.Json, writes_named_fields: true, role: ships with modern .NET}
+      - {name: SpanJson, writes_named_fields: true, role: fast writer}
+      - {name: Utf8Json, writes_named_fields: true, role: fast writer}
+      - {name: Jil, writes_named_fields: true, role: fast writer}
+      - {name: NetJSON, writes_named_fields: true, role: JSON library}
+      - {name: ServiceStack Json, writes_named_fields: true, role: ServiceStack JSON}
+      - {name: fastJson, writes_named_fields: true, role: JSON library}
+      - {name: FsPicklerJson, writes_named_fields: true, role: FsPickler JSON path}
+      - {name: MS DataContract Json, writes_named_fields: true, role: DataContractJsonSerializer}
+      - {name: MS Bond Json, writes_named_fields: true, role: Bond JSON protocol}
+
+  - id: swift
+    enabled: true
+    libraries:
+      - {name: Foundation.JSONEncoder, writes_named_fields: true, role: ships with Swift}
+      - {name: IkigaJSON, writes_named_fields: true, role: server JSON library}

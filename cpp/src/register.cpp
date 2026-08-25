@@ -6,6 +6,7 @@
 namespace bench {
 
 SerializerPtr make_nlohmann_json();
+SerializerPtr make_glaze();
 SerializerPtr make_rapidjson();
 SerializerPtr make_simdjson();
 SerializerPtr make_arduinojson();
@@ -33,6 +34,7 @@ SerializerPtr make_thrift();
 SerializerPtr make_capnproto();
 SerializerPtr make_flexbuffers();
 SerializerPtr make_flatbuffers();
+SerializerPtr make_yaml_cpp();
 
 static void add(std::vector<SerializerPtr>& v, SerializerPtr p) {
   if (p) v.push_back(std::move(p));
@@ -41,6 +43,7 @@ static void add(std::vector<SerializerPtr>& v, SerializerPtr p) {
 std::vector<SerializerPtr> all_serializers() {
   std::vector<SerializerPtr> v;
   add(v, make_nlohmann_json());
+  add(v, make_glaze());
   add(v, make_rapidjson());
   add(v, make_simdjson());
   add(v, make_arduinojson());
@@ -68,6 +71,7 @@ std::vector<SerializerPtr> all_serializers() {
   add(v, make_capnproto());
   add(v, make_flexbuffers());
   add(v, make_flatbuffers());
+  add(v, make_yaml_cpp());
   return v;
 }
 

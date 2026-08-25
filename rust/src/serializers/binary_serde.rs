@@ -5,18 +5,11 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
-use super::{take_rearm, ver, BenchSerializer, CountWrite, StreamMode};
+use super::{ver, BenchSerializer, CountWrite, StreamMode};
 
-pub struct RmpSerde {
-    buf: Vec<u8>,
-}
-impl Default for RmpSerde {
-    fn default() -> Self {
-        Self {
-            buf: Vec::with_capacity(4096),
-        }
-    }
-}
+#[derive(Default)]
+pub struct RmpSerde;
+
 impl BenchSerializer for RmpSerde {
     fn name(&self) -> &'static str {
         "rmp-serde"
@@ -25,31 +18,21 @@ impl BenchSerializer for RmpSerde {
         ver("rmp-serde")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
-        self.buf.clear();
         Ok(())
     }
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
-        // Optimal: named maps into reused buffer via Serializer (to_vec_named allocates).
-        self.buf.clear();
-        let mut ser = rmp_serde::Serializer::new(&mut self.buf).with_struct_map();
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        let mut ser = rmp_serde::Serializer::new(&mut *out).with_struct_map();
         fixture.serialize(&mut ser)?;
-        Ok(take_rearm(&mut self.buf))
+        Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         Ok(rmp_serde::from_slice(data)?)
     }
 }
 
-pub struct CiboriumSer {
-    buf: Vec<u8>,
-}
-impl Default for CiboriumSer {
-    fn default() -> Self {
-        Self {
-            buf: Vec::with_capacity(4096),
-        }
-    }
-}
+#[derive(Default)]
+pub struct CiboriumSer;
+
 impl BenchSerializer for CiboriumSer {
     fn name(&self) -> &'static str {
         "ciborium"
@@ -61,14 +44,11 @@ impl BenchSerializer for CiboriumSer {
         StreamMode::Native
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
-        self.buf.clear();
         Ok(())
     }
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
-        // Optimal: into_writer into reused buffer; take (no clone of the payload).
-        self.buf.clear();
-        ciborium::into_writer(fixture, &mut self.buf)?;
-        Ok(take_rearm(&mut self.buf))
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        ciborium::into_writer(fixture, &mut *out)?;
+        Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         Ok(ciborium::from_reader(data)?)
@@ -85,13 +65,11 @@ impl BenchSerializer for CiboriumSer {
 
 pub struct BincodeSer {
     config: bincode::config::Configuration,
-    buf: Vec<u8>,
 }
 impl Default for BincodeSer {
     fn default() -> Self {
         Self {
             config: bincode::config::standard(),
-            buf: Vec::with_capacity(4096),
         }
     }
 }
@@ -108,14 +86,11 @@ impl BenchSerializer for BincodeSer {
         StreamMode::Adapted
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
-        self.buf.clear();
         Ok(())
     }
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
-        // Optimal: encode_into_slice/vec into reused capacity when possible.
-        self.buf.clear();
-        bincode::serde::encode_into_std_write(fixture, &mut self.buf, self.config)?;
-        Ok(take_rearm(&mut self.buf))
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        bincode::serde::encode_into_std_write(fixture, out, self.config)?;
+        Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         let (v, _): (Fixture, usize) = bincode::serde::decode_from_slice(data, self.config)?;
@@ -123,16 +98,9 @@ impl BenchSerializer for BincodeSer {
     }
 }
 
-pub struct PostcardSer {
-    buf: Vec<u8>,
-}
-impl Default for PostcardSer {
-    fn default() -> Self {
-        Self {
-            buf: Vec::with_capacity(4096),
-        }
-    }
-}
+#[derive(Default)]
+pub struct PostcardSer;
+
 impl BenchSerializer for PostcardSer {
     fn name(&self) -> &'static str {
         "postcard"
@@ -141,29 +109,22 @@ impl BenchSerializer for PostcardSer {
         ver("postcard")
     }
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
-        self.buf.clear();
         Ok(())
     }
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
-        // Optimal: extend into reused Vec (to_allocvec always allocates fresh).
-        // to_extend takes Extend by value and returns it with capacity preserved.
-        self.buf.clear();
-        let buf = postcard::to_extend(fixture, std::mem::take(&mut self.buf))?;
-        // re-arm for next call
-        self.buf = Vec::with_capacity(buf.capacity().max(4096));
-        Ok(buf)
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        // to_extend appends into the existing Vec (capacity preserved by caller).
+        let filled = postcard::to_extend(fixture, std::mem::take(out))?;
+        *out = filled;
+        Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         Ok(postcard::from_bytes(data)?)
     }
 }
 
+#[derive(Default)]
 pub struct BitcodeSer;
-impl Default for BitcodeSer {
-    fn default() -> Self {
-        Self
-    }
-}
+
 impl BenchSerializer for BitcodeSer {
     fn name(&self) -> &'static str {
         "bitcode"
@@ -174,20 +135,20 @@ impl BenchSerializer for BitcodeSer {
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())
     }
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
-        Ok(bitcode::serialize(fixture)?)
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        // Library returns a fresh Vec; append into harness buffer.
+        let bytes = bitcode::serialize(fixture)?;
+        out.extend_from_slice(&bytes);
+        Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         Ok(bitcode::deserialize(data)?)
     }
 }
 
+#[derive(Default)]
 pub struct FlexbuffersSer;
-impl Default for FlexbuffersSer {
-    fn default() -> Self {
-        Self
-    }
-}
+
 impl BenchSerializer for FlexbuffersSer {
     fn name(&self) -> &'static str {
         "flexbuffers"
@@ -198,10 +159,11 @@ impl BenchSerializer for FlexbuffersSer {
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())
     }
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
         let mut s = flexbuffers::FlexbufferSerializer::new();
         fixture.serialize(&mut s)?;
-        Ok(s.view().to_vec())
+        out.extend_from_slice(s.view());
+        Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         let r = flexbuffers::Reader::get_root(data)?;
@@ -209,15 +171,9 @@ impl BenchSerializer for FlexbuffersSer {
     }
 }
 
-// We need kind tracking for minicbor/rkyv/speedy/nanoserde deserializers.
-// Store last fixture name on each serializer that needs it.
-
+#[derive(Default)]
 pub struct BsonSer;
-impl Default for BsonSer {
-    fn default() -> Self {
-        Self
-    }
-}
+
 impl BenchSerializer for BsonSer {
     fn name(&self) -> &'static str {
         "bson"
@@ -228,10 +184,13 @@ impl BenchSerializer for BsonSer {
     fn prepare(&mut self, _: &Fixture) -> Result<()> {
         Ok(())
     }
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
-        // BSON documents need a map/struct root; wrap enum as document via serde.
-        let doc = bson::to_vec(fixture)?;
-        Ok(doc)
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        // bson 2.x has no serde `to_writer` (only `Document::to_writer` after
+        // materializing a Document). `to_vec` is the public one-shot path;
+        // append into the harness-owned buffer so capacity still reuses across reps.
+        let bytes = bson::to_vec(fixture)?;
+        out.extend_from_slice(&bytes);
+        Ok(())
     }
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
         Ok(bson::from_slice(data)?)

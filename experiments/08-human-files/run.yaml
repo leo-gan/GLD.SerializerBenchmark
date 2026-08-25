@@ -1,0 +1,24 @@
+# Generated from experiment.yaml. Edit experiment.yaml, not this file.
+id: 08-human-files
+description: Files people edit are not a request path
+data_model_version: 2
+types:
+- type_id: document
+  type_config: {}
+- type_id: strings
+  type_config: {}
+data_type_instance_count:
+- 1
+compression:
+  mode: size_only
+  algorithms:
+  - gzip_6
+  - zstd_3
+execution:
+  mode: full
+  io_modes:
+  - bytes
+budget:
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50

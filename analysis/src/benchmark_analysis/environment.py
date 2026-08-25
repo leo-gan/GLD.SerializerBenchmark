@@ -22,6 +22,7 @@ Or::
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import platform
@@ -157,7 +158,7 @@ def _infer_language(result_csv_path: Optional[str]) -> str:
         return (os.environ.get("BENCHMARK_LANGUAGE") or "").strip()
     low = str(result_csv_path).replace("\\", "/").lower()
     # Longer ids first so /logs/cpp/ is not mistaken for bare c.
-    for token in ("csharp", "python", "rust", "javascript", "java", "cpp", "go"):
+    for token in ("csharp", "python", "rust", "javascript", "java", "cpp", "swift", "go"):
         if f"/{token}/" in low:
             return token
     parts = [p for p in low.split("/") if p]
@@ -165,6 +166,8 @@ def _infer_language(result_csv_path: Optional[str]) -> str:
         return "cpp"
     if "java" in parts:
         return "java"
+    if "swift" in parts:
+        return "swift"
     if "c" in parts:
         return "c"
     return (os.environ.get("BENCHMARK_LANGUAGE") or "").strip()
@@ -239,24 +242,99 @@ def _serializers_block_from_csv(result_csv_path: Optional[str]) -> Dict[str, Any
         return {"error": str(exc)}
 
 
+def _public_cwd(cwd: Optional[str] = None) -> str:
+    """Return cwd as a repo-relative public path (no private absolute prefix).
+
+    Format: ``<repo-dirname>[/<path-inside-repo>]``, e.g.
+    ``seriailizer-benchmark/swift`` or ``seriailizer-benchmark`` when at root.
+
+    This keeps ``*.configs.json`` sidecars free of host home-directory paths.
+    """
+    cwd_path = Path(cwd or os.getcwd()).resolve()
+    try:
+        from .config_loader import repo_root
+
+        root = repo_root().resolve()
+    except Exception:
+        root = None
+        for p in [cwd_path, *cwd_path.parents]:
+            if (p / "config" / "benchmark_config.yaml").is_file():
+                root = p
+                break
+    if root is None:
+        # Outside monorepo: never emit a full home path; last component only.
+        return cwd_path.name or "."
+
+    repo_name = root.name
+    try:
+        rel = cwd_path.relative_to(root)
+    except ValueError:
+        return repo_name
+    rel_s = rel.as_posix()
+    if rel_s in (".", ""):
+        return repo_name
+    return f"{repo_name}/{rel_s}"
+
+
+def _cpu_governor() -> Optional[str]:
+    """Best-effort CPU frequency governor (Linux); None if unavailable."""
+    # Prefer cpu0; do not require root.
+    path = Path("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+    try:
+        if path.is_file():
+            return path.read_text(encoding="utf-8").strip() or None
+    except OSError:
+        pass
+    return None
+
+
+def _machine_id(cpu: Dict[str, Any], os_block: Dict[str, Any]) -> str:
+    """Stable short fingerprint for multi-machine claims.
+
+    Not a security identifier — only enough to tell “same host class” apart
+    across sessions without storing the raw hostname in public docs by default.
+    """
+    parts = [
+        str(cpu.get("model") or ""),
+        str(cpu.get("architecture") or platform.machine() or ""),
+        str(os_block.get("system") or platform.system() or ""),
+        str(os_block.get("release") or ""),
+        str(cpu.get("logical_cores") or os.cpu_count() or ""),
+    ]
+    # Optional: include hostname only in the hash material (not exported raw)
+    # so two identical VMs on different hosts still differ when hostnames do.
+    host = platform.node() or ""
+    raw = "|".join(parts + [host])
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
 def _gather_environment() -> Dict[str, Any]:
-    return {
+    cpu = _cpu_info()
+    os_block = {
+        "system": platform.system(),
+        "release": platform.release(),
+        "version": platform.version(),
+        "architecture": platform.machine(),
+    }
+    gov = _cpu_governor()
+    env: Dict[str, Any] = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        "os": {
-            "system": platform.system(),
-            "release": platform.release(),
-            "version": platform.version(),
-            "architecture": platform.machine(),
-        },
-        "cpu": _cpu_info(),
+        "os": os_block,
+        "cpu": cpu,
         "memory": _memory_info(),
         "runtimes": _runtime_versions(),
         "git": _git_info(),
         "process": {
             "pid": os.getpid(),
-            "cwd": os.getcwd(),
+            "cwd": _public_cwd(),
         },
+        # Claim scoping (single-session default; multi-session uses machine_id)
+        "machine_id": _machine_id(cpu, os_block),
+        "claim_level_hint": "L1_single_session",
     }
+    if gov is not None:
+        env["cpu_governor"] = gov
+    return env
 
 
 def configs_path_for_csv(result_csv_path: str) -> Path:
@@ -411,6 +489,7 @@ def important_config_summary(doc: Optional[Dict[str, Any]]) -> List[str]:
             "c": "gcc",
             "cpp": "g++",
             "java": "java",
+            "swift": "swift",  # may be absent until runtime capture adds it
         }
         k = key_map.get(lang_l)
         if k and runtimes.get(k):

@@ -16,7 +16,7 @@ from .stats import (
     load_stats_config,
     prepare_analysis_records,
 )
-from .regression import check_regression, save_baseline
+from .regression import check_regression, load_regression_config, save_baseline
 
 
 # Matches result filename format: 2026-06-12-123415.csv
@@ -29,7 +29,7 @@ def _KNOWN_LANGS() -> tuple:
 
         return known_language_ids()
     except Exception:
-        return ("rust", "python", "csharp", "c", "javascript", "go", "java", "cpp")
+        return ("rust", "python", "csharp", "c", "javascript", "go", "java", "cpp", "swift")
 
 
 def _LANG_ALIASES() -> dict:
@@ -271,18 +271,173 @@ def _resolve_logs_assignment(
     return lang, resolved
 
 
+def _expand_multi_session_specs(specs: Sequence[str]) -> List[str]:
+    """Flatten repeated flags and comma-separated tokens."""
+    out: List[str] = []
+    for spec in specs:
+        for part in str(spec).split(","):
+            part = part.strip()
+            if part:
+                out.append(part)
+    return out
+
+
+def _resolve_multi_session_paths(
+    specs: Sequence[str],
+    *,
+    logs_root: Path,
+    languages: Optional[Sequence[str]] = None,
+) -> Dict[str, List[str]]:
+    """Resolve multi-session tokens to ``{language: [csv_path, ...]}``.
+
+    Accepted token forms:
+    - path to a CSV file
+    - ``LANG:stem`` or ``LANG:latest`` shorthand under logs_root
+    - ``LANG=stem`` (same as ``LANG:stem``; useful with commas: ``python=a,python=b``)
+    - bare language when ``-l`` is set is not enough alone — need at least two stems
+    """
+    by_lang: Dict[str, List[str]] = {}
+    tokens = _expand_multi_session_specs(specs)
+    # Support LANG=stem1 style (split left=right once)
+    normalized: List[Tuple[Optional[str], str]] = []
+    for tok in tokens:
+        if "=" in tok and not Path(tok).exists() and not tok.startswith("/"):
+            left, right = tok.split("=", 1)
+            left, right = left.strip(), right.strip()
+            if re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", left) and right:
+                lang = _try_normalize_language(left) or left.lower()
+                # right may still be stem or path
+                if ":" not in right and not Path(right).exists():
+                    normalized.append((lang, f"{lang}:{right}"))
+                else:
+                    normalized.append((lang, right))
+                continue
+        normalized.append((None, tok))
+
+    for forced_lang, tok in normalized:
+        path = _resolve_log_spec(tok, logs_root=logs_root)
+        if not path or not os.path.isfile(path):
+            raise SystemExit(
+                f"Cannot resolve --multi-session token {tok!r} under {logs_root}"
+            )
+        lang = forced_lang or _infer_language_from_path(path)
+        if lang is None and languages and len(languages) == 1:
+            lang = _normalize_language(languages[0])
+        if lang is None:
+            raise SystemExit(
+                f"Cannot determine language for --multi-session {tok!r}. "
+                f"Use LANG:stem or pair with -l LANG."
+            )
+        by_lang.setdefault(lang, []).append(path)
+
+    # De-dupe while preserving order
+    for lang in list(by_lang):
+        seen = set()
+        uniq: List[str] = []
+        for p in by_lang[lang]:
+            if p not in seen:
+                seen.add(p)
+                uniq.append(p)
+        by_lang[lang] = uniq
+
+    if languages:
+        wanted = {_normalize_language(x) for x in languages}
+        by_lang = {k: v for k, v in by_lang.items() if k in wanted}
+
+    return by_lang
+
+
+def _run_multi_session(
+    *,
+    specs: Sequence[str],
+    logs_root: Path,
+    reports_root: Path,
+    languages: Optional[Sequence[str]],
+    stats_config: Optional[Dict] = None,
+) -> None:
+    """Multi-session aggregation: write JSON + markdown per language."""
+    import json
+    import datetime
+
+    from .multi_session import (
+        aggregate_multi_session,
+        load_stats_for_csv,
+        machine_id_from_sidecar,
+        multi_session_markdown,
+    )
+
+    by_lang = _resolve_multi_session_paths(
+        specs, logs_root=logs_root, languages=languages
+    )
+    if not by_lang:
+        print("Error: --multi-session resolved to no CSV paths.")
+        sys.exit(1)
+
+    os.makedirs(str(reports_root), exist_ok=True)
+    for lang, paths in sorted(by_lang.items()):
+        if len(paths) < 2:
+            print(
+                f"Error: multi-session for '{lang}' needs ≥2 distinct CSVs "
+                f"(got {len(paths)}). Pass more --multi-session tokens."
+            )
+            sys.exit(1)
+        sessions: List[Dict] = []
+        for p in paths:
+            stem = Path(p).stem
+            stats = load_stats_for_csv(
+                p, language_hint=lang, stats_config=stats_config
+            )
+            sessions.append(
+                {
+                    "run_id": stem,
+                    "machine_id": machine_id_from_sidecar(p),
+                    "stats": stats,
+                }
+            )
+            print(f"  session {stem}: {len(stats)} groups from {p}")
+        report = aggregate_multi_session(sessions, language=lang)
+        report["generated"] = datetime.datetime.now().isoformat()
+        report["source_paths"] = paths
+        json_path = reports_root / f"multi_session_{lang}.json"
+        md_path = reports_root / f"multi_session_{lang}.md"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write(multi_session_markdown(report))
+        print(
+            f"Multi-session ({lang}): claim_level={report.get('claim_level')} "
+            f"n_sessions={report.get('n_sessions')} "
+            f"machines={report.get('machine_ids') or ['(unknown)']}"
+        )
+        print(f"  Wrote {json_path}")
+        print(f"  Wrote {md_path}")
+        # Console: top rank-frequency rows
+        for row in (report.get("rank_stability") or [])[:8]:
+            top = (row.get("fastest_frequency") or [{}])[0]
+            print(
+                f"  {row.get('test_data')} n={row.get('data_type_instance_count')} "
+                f"{row.get('mode')}: most-often-fastest="
+                f"{top.get('serializer')} "
+                f"({top.get('wins')}/{row.get('n_sessions_ranked')} sessions)"
+            )
+
+
 def _generate_artifacts(
     *,
     all_records: Dict[str, List[Dict]],
     all_stats: Dict,
     lang_paths: Dict[str, Optional[str]],
-    publish_root: Path,
-    docs_dir: Path,
     reports_root: Path,
     stats_config: Optional[Dict] = None,
     pre_sanitized: bool = True,
+    write_markdown: bool = True,
+    write_violins: bool = False,
 ) -> None:
-    """Write hub index, per-language results tables, and latency distributions.
+    """Write unpublished language reports and optional latency distributions.
+
+    Output lives under ``reports_root`` (``reports/<docs_dir>/results.md``,
+    and ``reports/plots/violin/`` only when ``write_violins``). Never writes
+    ``docs/<lang>/results.md``.
 
     ``all_records`` should be the *same* sanitized population used to build
     ``all_stats`` (see :func:`prepare_analysis_records`) so plots and tables
@@ -291,18 +446,22 @@ def _generate_artifacts(
     # Lazy import: reports pulls matplotlib (heavy / optional in some envs).
     from .reports import generate_language_results_pages, generate_violin_plots
 
-    plots_dir = str(publish_root / "plots" / "violin")
     lang_sources = {k: v for k, v in lang_paths.items() if v}
-    violin_images = generate_violin_plots(
-        plots_dir,
-        multi_lang_records=all_records,
-        lang_sources=lang_sources,
-        stats_config=stats_config,
-        pre_sanitized=pre_sanitized,
-    )
+    # Empty unless --violins: do not embed missing PNG paths in the markdown.
+    violin_images: Dict = {}
+    if write_violins:
+        plots_dir = str(reports_root / "plots" / "violin")
+        violin_images = generate_violin_plots(
+            plots_dir,
+            multi_lang_records=all_records,
+            lang_sources=lang_sources,
+            stats_config=stats_config,
+            pre_sanitized=pre_sanitized,
+        )
 
-    # docs/analysis/BENCHMARK_SUMMARY.md is a static hub — do not regenerate it.
-    docs_root = str(docs_dir) if docs_dir.is_dir() else str(reports_root)
+    if not write_markdown:
+        return
+
     metrics_profile = (
         os.environ.get("BENCHMARK_METRICS_PROFILE")
         or (stats_config or {}).get("_metrics_profile")
@@ -311,7 +470,7 @@ def _generate_artifacts(
     generate_language_results_pages(
         multi_lang_stats=all_stats,
         violin_images=violin_images,
-        docs_root=docs_root,
+        docs_root=str(reports_root),
         lang_sources=lang_sources,
         metrics_profile=str(metrics_profile),
     )
@@ -333,14 +492,17 @@ def main():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Analyze serializer benchmarks and publish site artifacts "
-            "(results tables + latency distributions)."
+            "Analyze serializer benchmarks and write unpublished reports "
+            "(stats JSON + language markdown; violins only with --violins)."
         ),
         epilog=(
             "By default, loads the latest timestamped CSV under logs/<lang>/ and writes:\n"
-            "  docs/<lang>/results.md\n"
-            "  docs/analysis/plots/violin/<lang>_*.png\n"
+            "  reports/stats_<lang>_latest.json\n"
+            "  reports/<docs_dir>/results.md   (e.g. reports/c-sharp/results.md)\n"
+            "With --violins:\n"
+            "  reports/plots/violin/<lang>_*.png\n"
             "(docs/analysis/BENCHMARK_SUMMARY.md is a static hub and is not overwritten.)\n"
+            "Do not commit reports/<docs_dir>/results.md to the published site.\n"
             "\n"
             "Examples:\n"
             "  analyze-benchmarks\n"
@@ -384,7 +546,17 @@ def main():
     parser.add_argument(
         "--skip-generate",
         action="store_true",
-        help="Do not write docs/plots (use with --compare-a/--check-regression/--save-baseline only)",
+        help="Do not write reports markdown/plots (use with --compare-a/--check-regression/--save-baseline only)",
+    )
+    parser.add_argument(
+        "--violins",
+        action="store_true",
+        help="Write unpublished violin PNGs under reports/plots/violin/ (skipped by default)",
+    )
+    parser.add_argument(
+        "--no-markdown-report",
+        action="store_true",
+        help="Skip unpublished reports/<docs_dir>/results.md (stats JSON is still written)",
     )
     parser.add_argument("--check-regression", action="store_true", help="Check for regressions")
     parser.add_argument(
@@ -392,6 +564,12 @@ def main():
         type=float,
         default=_default_threshold,
         help="Regression threshold percent (default: regression.threshold_percent in config)",
+    )
+    parser.add_argument(
+        "--regression-combine",
+        choices=["and", "or", "practical_only", "statistical_only"],
+        default=None,
+        help="How to combine practical %% and CI arms (default: regression.combine in config, usually and)",
     )
     parser.add_argument(
         "--baseline-file",
@@ -424,6 +602,18 @@ def main():
         action="store_true",
         help="List available result files per language and exit",
     )
+    parser.add_argument(
+        "--multi-session",
+        action="append",
+        default=[],
+        metavar="CSV_OR_SHORTHAND",
+        help=(
+            "Multi-session aggregate (claim level L2/L3 tooling). "
+            "Pass two+ CSV paths or LANG:stem shorthands; repeat the flag or use commas. "
+            "Also accepts LANG=stem1,stem2. Writes reports/multi_session_<lang>.json "
+            "and .md. See docs/analysis/CLAIMS_AND_REPLICATION.md."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -432,6 +622,17 @@ def main():
         stats_cfg["_metrics_profile"] = args.metrics_profile
         os.environ["BENCHMARK_METRICS_PROFILE"] = args.metrics_profile
     logs_root = Path(args.logs_root)
+
+    # Multi-session aggregation (early exit — does not need full matrix load)
+    if args.multi_session:
+        _run_multi_session(
+            specs=args.multi_session,
+            logs_root=logs_root,
+            reports_root=reports_root,
+            languages=args.languages,
+            stats_config=stats_cfg,
+        )
+        return
 
     if args.list:
         print("Available result files (latest marked with *):")
@@ -495,70 +696,40 @@ def main():
         recs, skipped = parse_csv_file(path, language_hint=lang)
         total_loaded += len(recs)
         if recs:
-            # One sanitize pass → same population for tables and latency distributions.
-            clean, meta = prepare_analysis_records(
+            # Multi-policy stats for dashboard outlier research; default policy
+            # still feeds markdown tables / latency distributions.
+            from .stats import (
+                DEFAULT_FILTER_POLICY,
+                build_stats_export_payload,
+                compute_statistics_multi_policy,
+                config_for_filter_policy,
+            )
+
+            by_policy = compute_statistics_multi_policy(
                 recs, config=stats_cfg, language_hint=lang
+            )
+            default_pid = DEFAULT_FILTER_POLICY
+            if default_pid not in by_policy:
+                default_pid = next(iter(by_policy), DEFAULT_FILTER_POLICY)
+            st = by_policy.get(default_pid) or {}
+            all_stats.update(st)
+
+            # Sanitize once under default policy for shared plot population
+            default_cfg = config_for_filter_policy(stats_cfg, default_pid)
+            clean, _meta = prepare_analysis_records(
+                recs, config=default_cfg, language_hint=lang
             )
             all_records[lang] = clean
             total_sanitized += len(clean)
-            st = compute_statistics(
-                clean,
-                config=stats_cfg,
-                language_hint=lang,
-                pre_sanitized=True,
-                group_meta=meta,
-            )
-            all_stats.update(st)
-            
-            # Export to machine-readable JSON: reports/stats_<lang>_latest.json
+
+            # Export machine-readable JSON with all filter policies
             try:
                 import json
-                import datetime
-                os.makedirs(str(reports_root), exist_ok=True)
-                groups_list = []
-                for entry in st.values():
-                    # Strip private helper keys (like _times_total_filtered)
-                    clean_entry = {k: v for k, v in entry.items() if not k.startswith("_")}
-                    groups_list.append(clean_entry)
-                
-                # Dynamic Pareto front computation
-                pareto_front = []
-                workloads = {}
-                for g in groups_list:
-                    wkey = (g["test_data"], g["mode"])
-                    workloads.setdefault(wkey, []).append(g)
-                for wkey, items in workloads.items():
-                    for item in items:
-                        dominated = False
-                        for other in items:
-                            if other == item:
-                                continue
-                            if ((other["avg_time_total_ns"] <= item["avg_time_total_ns"] and other["median_size_bytes"] < item["median_size_bytes"]) or
-                                (other["avg_time_total_ns"] < item["avg_time_total_ns"] and other["median_size_bytes"] <= item["median_size_bytes"])):
-                                dominated = True
-                                break
-                        if not dominated:
-                            pareto_front.append({
-                                "serializer": item["serializer"],
-                                "test_data": item["test_data"],
-                                "mode": item["mode"],
-                                "time": item["avg_time_total_ns"],
-                                "size": item["median_size_bytes"]
-                            })
 
-                export_data = {
-                    "schema_version": "2.0",
-                    "generated": datetime.datetime.now().isoformat(),
-                    "language": lang,
-                    "questions": {
-                        "Q1": "How fast?",
-                        "Q2": "How compact?",
-                        "Q3": "How stable?",
-                        "Q4": "Under which workloads does it win?"
-                    },
-                    "groups": groups_list,
-                    "pareto_front": pareto_front
-                }
+                os.makedirs(str(reports_root), exist_ok=True)
+                export_data = build_stats_export_payload(
+                    by_policy, language=lang, default_policy=default_pid
+                )
                 latest_json_path = reports_root / f"stats_{lang}_latest.json"
                 with open(latest_json_path, "w", encoding="utf-8") as f:
                     json.dump(export_data, f, indent=2)
@@ -567,7 +738,8 @@ def main():
 
             print(
                 f"Loaded {len(recs)} {lang} records from {os.path.basename(path)} "
-                f"-> {len(clean)} after sanitize, {len(st)} stat groups "
+                f"-> {len(clean)} after sanitize ({default_pid}), {len(st)} stat groups "
+                f"× {len(by_policy)} filter policies "
                 f"(parse-skipped {skipped})"
             )
         else:
@@ -580,11 +752,6 @@ def main():
 
     os.makedirs(str(reports_root), exist_ok=True)
 
-    repo_root = _repo_root()
-    docs_dir = repo_root / "docs"
-    docs_analysis = docs_dir / "analysis"
-    publish_root = docs_analysis if docs_analysis.is_dir() else reports_root
-
     if not args.skip_generate:
         if total_loaded == 0:
             print("No records loaded; skipping artifact generation.")
@@ -593,11 +760,11 @@ def main():
                 all_records=all_records,
                 all_stats=all_stats,
                 lang_paths=lang_paths,
-                publish_root=publish_root,
-                docs_dir=docs_dir,
                 reports_root=reports_root,
                 stats_config=stats_cfg,
                 pre_sanitized=True,
+                write_markdown=not args.no_markdown_report,
+                write_violins=args.violins,
             )
 
     if args.compare_a and args.compare_b:
@@ -645,15 +812,61 @@ def main():
     # Regression gate: never save a degraded baseline when a regression is detected.
     # --save-baseline only runs after a clean check (or when check is not requested).
     if args.check_regression:
+        reg_cfg = load_regression_config()
+        if args.regression_combine:
+            reg_cfg["combine"] = args.regression_combine
         has_regression, regressions = check_regression(
             all_stats,
             args.baseline_file,
             args.regression_threshold,
+            config=reg_cfg,
         )
+        details = getattr(check_regression, "last_details", []) or []
+        # Summary counts
+        from collections import Counter
+
+        counts = Counter(d.get("classification") for d in details)
+        print(
+            "Regression check "
+            f"(combine={reg_cfg.get('combine')}, threshold={args.regression_threshold}%): "
+            f"regression={counts.get('regression', 0)} "
+            f"unclear={counts.get('unclear', 0)} "
+            f"equivalent={counts.get('equivalent', 0)} "
+            f"improvement={counts.get('improvement', 0)} "
+            f"ok={counts.get('ok', 0)}"
+        )
+        # Machine-readable report
+        try:
+            import json
+            import datetime
+
+            report_path = Path(args.baseline_file).resolve().parent / "regression_report.json"
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(report_path, "w", encoding="utf-8") as rf:
+                json.dump(
+                    {
+                        "generated": datetime.datetime.now().isoformat(),
+                        "baseline_file": args.baseline_file,
+                        "combine": reg_cfg.get("combine"),
+                        "threshold_percent": args.regression_threshold,
+                        "metric": reg_cfg.get("metric"),
+                        "counts": dict(counts),
+                        "has_regression": has_regression,
+                        "messages": regressions,
+                        "details": details,
+                    },
+                    rf,
+                    indent=2,
+                )
+            print(f"Regression report: {report_path}")
+        except Exception as exc:
+            print(f"Warning: could not write regression_report.json: {exc}")
+
         if has_regression:
-            print(f"REGRESSION: {len(regressions)} entries exceeded threshold")
+            print(f"REGRESSION: {counts.get('regression', 0)} entries failed the gate")
             for r in regressions[:20]:
-                print(f"  {r}")
+                if r.startswith("REGRESSION"):
+                    print(f"  {r}")
             if args.save_baseline:
                 print(
                     "Note: --save-baseline skipped because a regression was detected "
@@ -662,7 +875,8 @@ def main():
             sys.exit(1)
 
     if args.save_baseline:
-        save_baseline(all_stats, args.baseline_file)
+        reg_cfg = load_regression_config()
+        save_baseline(all_stats, args.baseline_file, config=reg_cfg)
         print(f"Saved baseline to {args.baseline_file}")
 
 

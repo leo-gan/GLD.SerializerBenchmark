@@ -2,7 +2,7 @@
 
 Hands-on companions to the [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) theory track.
 
-> **Honesty:** timings and sizes here are **illustrative**. Suite language **Results** own harness truth.
+> **Honesty:** timings and sizes here are **illustrative**. Suite language **Results** own benchmark-runner truth.
 
 ## How to run
 
@@ -32,7 +32,7 @@ jupyter lab docs/theory/notebooks/
 ## Design rules
 
 1. **Python-first** on Colab; multi-language only as thin companions (P4).
-2. Prefer **stdlib** + a few pinned deps; avoid pulling the full suite harness.
+2. Prefer **stdlib** + a few pinned deps; avoid pulling the full suite benchmark runner.
 3. Reuse teaching schemas (**MiniUser**, small sensor/order records)—not full suite fixtures.
 4. Link back to the article; do not fork a second curriculum.
 5. Notebook microbenchmarks never rank libraries globally.

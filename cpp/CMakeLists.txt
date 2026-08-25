@@ -9,6 +9,20 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-O2> $<$<COMPILE_LANGUAGE:C>:-O2> -Wall)
 
+find_package(ZLIB REQUIRED)
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+  pkg_check_modules(LIBZSTD QUIET libzstd)
+endif()
+if(LIBZSTD_FOUND)
+  add_compile_definitions(HAS_ZSTD=1)
+  include_directories(${LIBZSTD_INCLUDE_DIRS})
+  link_libraries(${LIBZSTD_LIBRARIES})
+  message(STATUS "compress: libzstd REAL")
+else()
+  message(STATUS "compress: libzstd SKIPPED (SizeZstd will be empty)")
+endif()
+
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
 set(CPP_TP "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
@@ -156,6 +170,27 @@ target_include_directories(zpp_bits_hdr INTERFACE ${CPP_TP}/zpp_bits)
 add_library(yas_hdr INTERFACE)
 target_include_directories(yas_hdr INTERFACE ${CPP_TP}/yas/include)
 
+# glaze — last C++20 release (v3+ requires C++23 / GCC 12+)
+FetchContent_Declare(glaze
+  GIT_REPOSITORY https://github.com/stephenberry/glaze.git
+  GIT_TAG v2.9.5
+  GIT_SHALLOW TRUE
+  SOURCE_DIR ${CPP_TP}/glaze
+)
+set(glaze_ENABLE_AVX2 OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glaze)
+
+FetchContent_Declare(yaml_cpp
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+  GIT_TAG 0.8.0
+  GIT_SHALLOW TRUE
+  SOURCE_DIR ${CPP_TP}/yaml-cpp
+)
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(yaml_cpp)
+
 add_library(cista_hdr INTERFACE)
 target_include_directories(cista_hdr INTERFACE ${CPP_TP}/cista/include)
 # single-header layout fallback
@@ -171,10 +206,13 @@ set(BENCH_SOURCES
   src/main.cpp
   src/data_v2.cpp
   src/csv_log.cpp
+  src/schedule.cpp
   src/cells.cpp
   src/register.cpp
   src/serializers/ser_json.cpp
+  src/serializers/ser_glaze.cpp
   src/serializers/ser_binary.cpp
+  src/serializers/ser_jsoncons.cpp
   src/serializers/ser_cereal.cpp
   src/serializers/ser_bitsery.cpp
   src/serializers/ser_zpp_bits.cpp
@@ -187,6 +225,7 @@ set(BENCH_SOURCES
   src/serializers/ser_boost.cpp
   src/serializers/ser_capnp.cpp
   src/serializers/ser_schema.cpp
+  src/serializers/ser_yaml.cpp
 )
 
 # ---- Optional: official Google libprotobuf (suite sysroot or system) ----
@@ -248,6 +287,7 @@ target_include_directories(serializer_benchmark_cpp PRIVATE
 )
 target_link_libraries(serializer_benchmark_cpp PRIVATE
   nlohmann_json::nlohmann_json
+  glaze::glaze
   simdjson
   ArduinoJson
   yyjson
@@ -259,6 +299,8 @@ target_link_libraries(serializer_benchmark_cpp PRIVATE
   yas_hdr
   cista_hdr
   pthread
+  ZLIB::ZLIB
+  yaml-cpp
 )
 
 if(BENCH_HAS_LIBPROTOBUF)
@@ -304,9 +346,12 @@ endif()
 set(TEST_SOURCES
   tests/test_roundtrip.cpp
   src/data_v2.cpp
+  src/schedule.cpp
   src/register.cpp
   src/serializers/ser_json.cpp
+  src/serializers/ser_glaze.cpp
   src/serializers/ser_binary.cpp
+  src/serializers/ser_jsoncons.cpp
   src/serializers/ser_cereal.cpp
   src/serializers/ser_bitsery.cpp
   src/serializers/ser_zpp_bits.cpp
@@ -319,6 +364,7 @@ set(TEST_SOURCES
   src/serializers/ser_boost.cpp
   src/serializers/ser_capnp.cpp
   src/serializers/ser_schema.cpp
+  src/serializers/ser_yaml.cpp
 )
 if(BENCH_HAS_LIBPROTOBUF)
   list(APPEND TEST_SOURCES src/serializers/ser_protobuf_lib.cpp ${PB_GEN_CC})
@@ -335,6 +381,7 @@ target_include_directories(cpp_serializer_tests PRIVATE
 )
 target_link_libraries(cpp_serializer_tests PRIVATE
   nlohmann_json::nlohmann_json
+  glaze::glaze
   simdjson
   ArduinoJson
   yyjson
@@ -346,6 +393,8 @@ target_link_libraries(cpp_serializer_tests PRIVATE
   yas_hdr
   cista_hdr
   pthread
+  ZLIB::ZLIB
+  yaml-cpp
 )
 if(TARGET msgpack-cxx)
   target_link_libraries(cpp_serializer_tests PRIVATE msgpack-cxx)
@@ -467,4 +516,4 @@ enable_testing()
 add_test(NAME cpp_roundtrip COMMAND cpp_serializer_tests)
 
 
-message(STATUS "C++ serializer benchmark configured (23 codecs)")
+message(STATUS "C++ serializer benchmark configured (28+ codecs)")

@@ -24,6 +24,9 @@ flexbuffers = "2"
 rkyv = { version = "0.8", features = ["std", "bytecheck", "alloc"] }
 minicbor = { version = "0.25", features = ["std", "derive"] }
 prost = "0.13"
+# High-perf Avro datum codec (wire-compatible with apache-avro; avoids Value intermediate).
+# Official apache-avro 0.21 deser is multi-× slower than serde_json on small records.
+serde_avro_fast = "2"
 chrono = { version = "0.4", features = ["serde"] }
 csv = "1"
 clap = { version = "4", features = ["derive"] }
@@ -33,6 +36,13 @@ bson = "2"
 nanoserde = "0.1.37"  # ^0.1.37 → latest 0.1.x only (0.2 is a separate minor line)
 speedy = "0.8"
 bytes = "1"
+# Deterministic fixture generation (see data.rs — nothing-up-my-sleeve π seeds).
+rand = "0.8"
+rand_pcg = "0.3"
+sha2 = "0.10"
+serde_yaml = "0.9"
+flate2 = "1"
+zstd = "0.13"
 
 [build-dependencies]
 prost-build = "0.13"

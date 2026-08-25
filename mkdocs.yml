@@ -1,5 +1,5 @@
 site_name: Multi-Language Serializer Benchmark
-site_description: Multi-language serialization performance comparison.
+site_description: Fair multi-language serializer benchmarks — live dashboard, course, and open methodology.
 site_url: https://leo-gan.github.io/GLD.SerializerBenchmark/
 repo_url: https://github.com/leo-gan/GLD.SerializerBenchmark
 repo_name: leo-gan/GLD.SerializerBenchmark
@@ -10,11 +10,12 @@ exclude_docs: |
 
 theme:
   name: material
+  custom_dir: docs_theme
   features:
-    # Header: top-level sections as tabs (Serialization, C#, Python, …)
+    # Header tabs: Dashboard | Experiments | Learn | Languages | Method
     - navigation.tabs
     - navigation.tabs.sticky
-    # Left sidebar: sections under the active tab
+    # Left sidebar: sections under the active tab (Languages, Learn, Method)
     - navigation.sections
     - navigation.tracking
     - navigation.instant
@@ -38,7 +39,7 @@ theme:
 plugins:
   - redirects:
       redirect_maps:
-        'index.md': 'theory/101/index.md'
+        # Site root is docs/index.md (documentation home). Theory entry stays under Learn.
         'theory/index.md': 'theory/101/index.md'
         'theory/historical_perspective.md': 'theory/101/historical_perspective.md'
         'theory/data_science_perspective.md': 'theory/101/data_science_perspective.md'
@@ -58,6 +59,17 @@ plugins:
         'serializers/native.md': 'analysis/serialization_categories.md'
         'architecture/index.md': 'analysis/architecture.md'
         'architecture/ADDING_A_LANGUAGE.md': 'analysis/ADDING_A_LANGUAGE.md'
+        'architecture/ADDING_A_SERIALIZER.md': 'analysis/ADDING_A_SERIALIZER.md'
+        'c/results.md': 'c/index.md'
+        'c-sharp/results.md': 'c-sharp/index.md'
+        'cpp/results.md': 'cpp/index.md'
+        'go/results.md': 'go/index.md'
+        'java/results.md': 'java/index.md'
+        'javascript/results.md': 'javascript/index.md'
+        'python/results.md': 'python/index.md'
+        'rust/results.md': 'rust/index.md'
+        'swift/results.md': 'swift/index.md'
+        'analysis/BENCHMARK_SUMMARY.md': 'analysis/CLAIMS_AND_REPLICATION.md'
 
 markdown_extensions:
   - attr_list
@@ -72,8 +84,19 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
 
+# Languages sidebar: compact "Lang · Dashboard" rows (see languages-nav.*).
+extra_css:
+  - stylesheets/languages-nav.css
+  - stylesheets/site-home.css
+extra_javascript:
+  - javascripts/languages-nav.js
+
+# Top tabs: Dashboard | Experiments | Learn | Languages | Method
+# Nested items appear in the left sidebar under the active tab (Material has no true ▾ dropdown).
 nav:
-  - Serialization:
+  - Dashboard: dashboard/
+  - Experiments: experiments/index.md
+  - Learn:
       - 101:
           - Overview: theory/101/index.md
           - Historical: theory/101/historical_perspective.md
@@ -121,37 +144,50 @@ nav:
           - "C: nanopb vs protobuf-c": theory/401/protobuf-c-nanopb-compare.md
           - "Lab: mini Protobuf encoder": theory/401/lab-mini-protobuf-encoder.md
           - "Same bytes, three runtimes": theory/401/protobuf-cross-language-fidelity.md
-  - C#:
-      - Overview: c-sharp/index.md
-      - Results: c-sharp/results.md
-  - Python:
-      - Overview: python/index.md
-      - Results: python/results.md
-  - Rust:
-      - Overview: rust/index.md
-      - Results: rust/results.md
-  - C:
-      - Overview: c/index.md
-      - Results: c/results.md
-  - JavaScript:
-      - Overview: javascript/index.md
-      - Results: javascript/results.md
-  - Go:
-      - Overview: go/index.md
-      - Results: go/results.md
-  - Java:
-      - Overview: java/index.md
-      - Results: java/results.md
-  - C++:
-      - Overview: cpp/index.md
-      - Results: cpp/results.md
-  - Benchmarks:
+          - "Python: msgspec vs orjson": theory/401/python-msgspec-vs-orjson.md
+          - "Python: msgspec JSON vs MessagePack": theory/401/python-msgspec-json-vs-msgpack.md
+          - "Python: orjson vs json": theory/401/python-orjson-vs-json.md
+          - "Rust: Speedy vs Bincode": theory/401/rust-speedy-vs-bincode.md
+          - "Rust: Speedy vs Postcard": theory/401/rust-speedy-vs-postcard.md
+          - "Rust: rkyv vs Speedy": theory/401/rust-rkyv-vs-speedy.md
+          - "C: custom-binary vs ubj": theory/401/c-custom-binary-vs-ubj.md
+          - "C++: Bitsery vs YAS": theory/401/cpp-bitsery-vs-yas.md
+          - "C++: the simdjson row": theory/401/cpp-simdjson-wrapper.md
+          - "C#: BinaryPack vs Bond": theory/401/csharp-binarypack-vs-bond.md
+          - "Go: kelindar vs Avro": theory/401/go-kelindar-vs-avro.md
+          - "Java: Protostuff vs protobuf": theory/401/java-protostuff-vs-protobuf.md
+          - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
+          - "JavaScript: three Protobuf engines": theory/401/javascript-three-protobufs.md
+          - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
+  - Languages:
+      # Alphabetical by display name. One-child nest so languages-nav.js
+      # can inject a Dashboard sibling (flat items have no children).
+      - C:
+          - Overview: c/index.md
+      - C#:
+          - Overview: c-sharp/index.md
+      - C++:
+          - Overview: cpp/index.md
+      - Go:
+          - Overview: go/index.md
+      - Java:
+          - Overview: java/index.md
+      - JavaScript:
+          - Overview: javascript/index.md
+      - Python:
+          - Overview: python/index.md
+      - Rust:
+          - Overview: rust/index.md
+      - Swift:
+          - Overview: swift/index.md
+  - Method:
       - Overview: analysis/index.md
-      - 📊 Dashboard: dashboard/
       - Architecture: analysis/architecture.md
+      - Modes: analysis/modes.md
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md
+      - Adding a Serializer: analysis/ADDING_A_SERIALIZER.md
       - Categories: analysis/serialization_categories.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Metrics: analysis/METRICS.md
+      - Claims and replication: analysis/CLAIMS_AND_REPLICATION.md
       - Test Data: analysis/test_data_configuration.md
-      - Results Summary: analysis/BENCHMARK_SUMMARY.md

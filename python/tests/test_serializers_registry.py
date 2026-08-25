@@ -62,7 +62,7 @@ def test_full_runner_registry_size():
     names = {s.name for s in ALL_SERIALIZERS}
     for required in (
         "json", "orjson", "msgspec", "pydantic", "mashumaro", "serpyco-rs",
-        "msgpack", "cbor2", "protobuf", "avro", "flatbuffers",
+        "msgpack", "cbor2", "protobuf", "avro", "flatbuffers", "yaml",
         "pickle", "cloudpickle", "dill",
     ):
         assert required in names

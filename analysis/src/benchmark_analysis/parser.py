@@ -92,6 +92,10 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
                     record["SizeGzip"] = int(float(row["SizeGzip"]))
                 if "SizeZstd" in row and row["SizeZstd"] not in (None, ""):
                     record["SizeZstd"] = int(float(row["SizeZstd"]))
+                if "RunOrder" in row and row["RunOrder"] not in (None, ""):
+                    record["RunOrder"] = int(float(row["RunOrder"]))
+                if "SchedulePosition" in row and row["SchedulePosition"] not in (None, ""):
+                    record["SchedulePosition"] = int(float(row["SchedulePosition"]))
                 records.append(record)
             except (ValueError, KeyError, TypeError) as e:
                 skipped += 1

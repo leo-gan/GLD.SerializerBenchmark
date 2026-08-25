@@ -356,16 +356,16 @@ VIOLIN_TOP_N_SERIALIZERS = 5
 _MODE_DISPLAY = {
     "bytes": "bytes mode",
     "stream": "stream mode",
-    "string": "bytes mode",  # C#/some harnesses log "string" for the buffer API
+    "string": "bytes mode",  # C#/some benchmark runners log "string" for the buffer API
     "buffer": "bytes mode",
 }
 
 
 def _normalize_mode(mode: str) -> str:
-    """Canonical harness API mode: bytes (in-memory buffer) | stream.
+    """Canonical benchmark-runner API mode: bytes (in-memory buffer) | stream.
 
     Aligns with dashboard ``normalizeMode``: CSV may say ``string`` / ``Stream``
-    / ``bytes`` / ``buffer`` depending on language harness.
+    / ``bytes`` / ``buffer`` depending on language benchmark runner.
     """
     key = (mode or "").strip().lower()
     if key in ("bytes", "string", "buffer"):
@@ -376,7 +376,7 @@ def _normalize_mode(mode: str) -> str:
 
 
 def _display_mode(mode: str) -> str:
-    """Label harness API mode so it is not confused with payload size."""
+    """Label benchmark-runner API mode so it is not confused with payload size."""
     key = _normalize_mode(mode)
     return _MODE_DISPLAY.get(key, mode or key)
 
@@ -525,7 +525,16 @@ def _time_ns_to_display_us(value_key: str) -> bool:
     )
 
 
-def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, title: str) -> str:
+def _pivot_table_md(
+    stats: Dict,
+    rows_dim: str,
+    cols_dim: str,
+    value_key: str,
+    title: str,
+    *,
+    include_row_average: bool = False,
+    prefer_bytes_mode: bool = False,
+) -> str:
     """Generate a markdown pivot table from stats dict.
 
     Semantic best-in-column values are bold (ops/throughput: max; time/size: min).
@@ -533,6 +542,10 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
 
     Latency metrics stored as ``*_ns`` are shown in **microseconds** (÷1000) as
     plain numbers (no K/M suffixes), so ~5400 ns appears as ``5.4`` not ``5.4K``.
+
+    When ``include_row_average`` is true, insert an **Average** column after the
+    row label. For Ops/s this matches the Dashboard ``all@all`` rule: unweighted
+    mean of the per-cell values (each type × n column) for that serializer.
     """
     lines = [f"\n### {title}\n"]
 
@@ -549,12 +562,25 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         lines.append("*No data available*\n")
         return '\n'.join(lines)
 
-    # When columns are harness modes, spell out "bytes mode" / "stream mode"
+    # When columns are runner I/O modes, spell out "bytes mode" / "stream mode"
     def _col_label(cv: str, unit: str = "") -> str:
         base = _display_mode(cv) if cols_dim == "mode" else cv
         if unit:
             return f"{base} ({unit})"
         return base
+
+    def _pick_entry(matching: List[Dict]) -> Optional[Dict]:
+        if not matching:
+            return None
+        if not prefer_bytes_mode:
+            return matching[0]
+        bytes_m = [
+            s
+            for s in matching
+            if _normalize_mode(str(s.get("mode") or s.get("StringOrStream") or ""))
+            == "bytes"
+        ]
+        return bytes_m[0] if bytes_m else matching[0]
 
     higher = _higher_is_better(value_key)
     # Display latency in µs (analysis/stats remain nanoseconds in memory/CSV).
@@ -568,14 +594,26 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             matching = [
                 s for s in stats.values() if s[rows_dim] == rv and s[cols_dim] == cv
             ]
-            if not matching:
+            entry = _pick_entry(matching)
+            if not entry:
                 cell[(rv, cv)] = None
                 continue
-            val = matching[0].get(value_key)
+            val = entry.get(value_key)
             if isinstance(val, (int, float)) and not isinstance(val, bool) and val == val:
                 cell[(rv, cv)] = float(val) / display_scale
             else:
                 cell[(rv, cv)] = None
+
+    # all@all-style row average: mean of per-fixture cell values (type × n).
+    row_avg: Dict[str, Optional[float]] = {}
+    if include_row_average:
+        for rv in row_vals:
+            vals = [
+                cell[(rv, cv)]
+                for cv in col_vals
+                if cell[(rv, cv)] is not None
+            ]
+            row_avg[rv] = (sum(vals) / len(vals)) if vals else None
 
     col_units: Dict[str, tuple] = {}
     col_best: Dict[str, Optional[float]] = {}
@@ -588,15 +626,27 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
             col_units[cv] = _pick_column_unit(displayed)
         col_best[cv] = _column_best(displayed, higher_is_better=higher)
 
+    avg_unit = (1.0, "")
+    avg_best: Optional[float] = None
+    if include_row_average:
+        avg_vals = [v for v in row_avg.values() if v is not None]
+        if to_us:
+            avg_unit = (1.0, "")
+        else:
+            avg_unit = _pick_column_unit(avg_vals)
+        avg_best = _column_best(avg_vals, higher_is_better=higher)
+
     # Header (unit in column title when scaled, unless value_key is avg_ops_per_sec)
     show_unit = (value_key != "avg_ops_per_sec")
-    header = (
-        f"| {rows_dim} | "
-        + " | ".join(_col_label(cv, col_units[cv][1] if show_unit else "") for cv in col_vals)
-        + " |"
+    header_parts = [rows_dim]
+    if include_row_average:
+        u = avg_unit[1] if show_unit else ""
+        header_parts.append(f"Average ({u})" if u else "Average")
+    header_parts.extend(
+        _col_label(cv, col_units[cv][1] if show_unit else "") for cv in col_vals
     )
-    lines.append(header)
-    lines.append("|" + "---|" * (len(col_vals) + 1))
+    lines.append("| " + " | ".join(header_parts) + " |")
+    lines.append("|" + "---|" * len(header_parts))
 
     # Rows — all cells in a column share that column's unit; best is bold
     for rv in row_vals:
@@ -612,6 +662,14 @@ def _pivot_table_md(stats: Dict, rows_dim: str, cols_dim: str, value_key: str, t
         else:
             display_name = rv
         row_cells = [display_name]
+        if include_row_average:
+            av = row_avg.get(rv)
+            if av is None:
+                row_cells.append("-")
+            else:
+                div, unit = avg_unit
+                is_best = avg_best is not None and av == avg_best
+                row_cells.append(_format_in_unit(av, div, unit, bold=is_best))
         for cv in col_vals:
             val = cell[(rv, cv)]
             if val is None:
@@ -750,14 +808,12 @@ def _category_pivot_md(stats: Dict, lang_id: str, title: str) -> str:
     lines = [
         f"### {title}",
         "",
-        "Compare serializers **within the same paradigm** (not across JSON vs zero-copy).",
-        "Values are mean Ser+Deser **ops/s** over fixtures, using the harness "
-        "**bytes mode** only (buffer API: encode to a byte buffer / decode from a slice — "
-        "not “number of bytes”). Higher is better. Stream mode is excluded here. "
-        "Rows are sorted by **serializer name**. "
-        "Each numeric column uses **one** unit (K or M) for the whole column, "
-        "with **2 significant digits** (display only; CSV unchanged). "
-        "**Bold** = best in column (ops/s: highest).",
+        "Compare serializers **inside the same family** only (for example JSON with JSON, "
+        "not JSON with a zero-copy schema codec). "
+        "Each value is mean serialize+deserialize **operations per second** across data types, "
+        "using **bytes mode** only (the in-memory buffer API — not “payload size in bytes”). "
+        "Higher is better. Stream mode is left out of this ranking. "
+        "Rows are sorted by serializer name; **bold** marks the highest ops/s in the column.",
         "",
     ]
     for cat in sorted(by_cat.keys()):
@@ -818,10 +874,11 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
     doc = _load_lang_run_config(csv_path)
     # Indent body by 4 spaces so it stays inside the collapsed details block.
     body: List[str] = [
-        "Key fields from the run sidecar (`*.configs.json`, or legacy "
-        "`*.environment.json`). Full metric definitions: "
-        "[Metrics catalog](../analysis/METRICS.md). "
-        "Optional blocks (`dataset`, `serializers`) appear only when captured.",
+        "These fields come from the run sidecar next to the CSV "
+        "(`*.configs.json`, or older `*.environment.json` files). "
+        "They describe the machine and the run setup, not the timing formulas. "
+        "For metric definitions, see the [Metrics catalog](../analysis/METRICS.md). "
+        "Optional blocks (`dataset`, `serializers`) appear only when the benchmark runner recorded them.",
         "",
     ]
     if csv_path:
@@ -833,14 +890,16 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
     else:
         body.append(
             "- *No sidecar config found beside the latest CSV "
-            "(re-run harness with environment capture to populate).*"
+            "(re-run the benchmark runner with environment capture to populate).*"
         )
     if doc:
         ds = doc.get("dataset") if isinstance(doc.get("dataset"), dict) else {}
         if ds.get("fixtures"):
             names = [f.get("name") for f in ds["fixtures"] if isinstance(f, dict) and f.get("name")]
             if names:
-                body.append(f"- **Fixtures (config):** {', '.join(str(n) for n in names)}")
+                body.append(
+                    f"- **Data types (config):** {', '.join(str(n) for n in names)}"
+                )
         ser = doc.get("serializers") if isinstance(doc.get("serializers"), dict) else {}
         items = ser.get("items") if isinstance(ser.get("items"), list) else []
         if items:
@@ -867,6 +926,72 @@ def _config_section_md(lang_id: str, csv_path: Optional[str]) -> str:
     return "\n".join(lines)
 
 
+def _sample_filter_banner_md() -> str:
+    """Explain *how outliers were filtered* for Markdown results tables.
+
+    This is the same choice as the Dashboard toolbar **Samples** control
+    (IQR / all trials / winsorize) — not a “number of samples” column.
+    Language Results use the analysis config’s single default policy.
+    """
+    exclude_warmup = True
+    method = "iqr"
+    iqr_k = 1.5
+    try:
+        from .config_loader import load_master_config
+
+        stats_cfg = (load_master_config().get("statistics") or {})
+        exclude_warmup = bool(stats_cfg.get("exclude_warmup", True))
+        method = str(stats_cfg.get("outlier_method") or "iqr").strip().lower()
+        iqr_k = float(stats_cfg.get("iqr_k", 1.5))
+    except Exception:
+        pass
+
+    warmup_bit = (
+        "First the first timed repetition is dropped as warmup "
+        "(`RepetitionIndex == 0`). Then "
+        if exclude_warmup
+        else "Warmup rows are kept. Then "
+    )
+    if method == "iqr":
+        policy_name = f"IQR k={iqr_k:g}"
+        dash_label = f"IQR k={iqr_k:g}" + (" (default)" if abs(iqr_k - 1.5) < 1e-9 else "")
+        dash_id = "iqr_1.5" if abs(iqr_k - 1.5) < 1e-9 else f"iqr_{iqr_k:g}"
+        detail = (
+            f"outliers are removed with **paired Tukey {policy_name}** — the same "
+            f"rule as the Dashboard **Samples** menu item **“{dash_label}”** "
+            f"(`{dash_id}`). A whole trial is dropped if serialize, deserialize, or "
+            "total time falls outside the fences."
+        )
+    elif method == "winsorize":
+        detail = (
+            "extremes are **winsorized at the 5th/95th percentile** — the same rule "
+            "as Dashboard **Samples → Winsorize 5–95%** (`winsorize_5_95`). "
+            "Values are clipped; trials are not dropped."
+        )
+    elif method in ("none", "off", "disabled"):
+        detail = (
+            "no outlier filter is applied after warmup — the same as Dashboard "
+            "**Samples → All trials** (`all`)."
+        )
+    else:
+        detail = (
+            f"outlier handling is **{method}** "
+            "(see analysis config `statistics.outlier_method`)."
+        )
+
+    return (
+        f"> **How these numbers were filtered (Dashboard “Samples”):** {warmup_bit}"
+        f"{detail} "
+        "Raw CSVs still store every trial. "
+        "On the Dashboard you can switch among four **Samples** policies without "
+        "re-running the benchmark; this Results page is the **default policy only**. "
+        "Details: [Analysis methodology — outlier filtering]"
+        "(../analysis/ANALYSIS_METHODOLOGY.md#outlier-filtering) · "
+        "[Dashboard filter policies]"
+        "(../analysis/ANALYSIS_METHODOLOGY.md#dashboard-filter-policies-multi-aggregation-export)."
+    )
+
+
 def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
     """Compact multi-way table: high-importance scientific fields (median-first)."""
     from .metrics_catalog import MULTI_WAY_SUMMARY_FIELDS, filter_field_ids, load_metrics_config
@@ -876,7 +1001,12 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
     cfg = load_metrics_config()
     field_ids = [f[0] for f in MULTI_WAY_SUMMARY_FIELDS]
     keep = set(filter_field_ids(field_ids, profile=profile, metrics_cfg=cfg))
-    cols = [c for c in MULTI_WAY_SUMMARY_FIELDS if c[0] in keep and c[0] != "serializer_version"]
+    cols = [
+        c
+        for c in MULTI_WAY_SUMMARY_FIELDS
+        if c[0] in keep
+        and c[0] not in ("serializer_version", "mean_fidelity", "runs")
+    ]
     if not cols:
         return ""
 
@@ -895,13 +1025,10 @@ def _scientific_summary_md(stats: Dict, profile: str = "multi_way") -> str:
     lines = [
         "### Summary",
         "",
-        "Default multi-serializer view shows **high-importance** metrics only "
-        "([METRICS.md](../analysis/METRICS.md)). "
-        "Rows are sorted by **serializer name**. "
-        "**Bold** marks the semantic best value in each column (lowest latency / size; "
-        "highest ops/s). "
-        "Pairwise / version A/B reports use the full metric set. "
-        "Latency cells are **µs** (analysis storage remains ns).",
+        "One row per serializer (averaged across data types; bytes mode preferred when both exist). "
+        "Only **high-importance** columns appear here by default "
+        "([Metrics catalog](../analysis/METRICS.md)). "
+        "Times are **µs**. **Bold** = best in that column.",
         "",
     ]
     headers = ["serializer"] + [c[1] for c in cols]
@@ -1021,14 +1148,15 @@ def _total_time_pivot_table_md(stats: Dict) -> str:
     if not serializers:
         return ""
 
+    # Values are ns→µs in _get_val; units live on the column headers only.
     lines = ["\n### Total Time\n"]
     
     headers = [
-        "serializer", 
-        "bytes mode/mean", 
-        "bytes mode/median", 
-        "stream mode/mean", 
-        "stream mode/median"
+        "serializer",
+        "bytes mode/mean (µs)",
+        "bytes mode/median (µs)",
+        "stream mode/mean (µs)",
+        "stream mode/median (µs)",
     ]
     lines.append("| " + " | ".join(headers) + " |")
     lines.append("|" + "---|" * len(headers))
@@ -1122,7 +1250,11 @@ def generate_language_results_pages(
     lang_sources: Optional[Dict[str, str]] = None,
     metrics_profile: str = "multi_way",
 ) -> List[str]:
-    """Write ``docs/<lang>/results.md`` with pivots + violin embeds per language.
+    """Write ``<docs_root>/<docs_dir>/results.md`` (unpublished language report).
+
+    ``docs_root`` is typically ``reports/`` so C# lands at
+    ``reports/c-sharp/results.md`` via ``_lang_docs_dir_map``. Pass empty
+    ``violin_images`` to omit latency-chart embeds.
 
     Multi-way pages emphasize **high-importance** metrics (see METRICS.md).
     Important run-config fields from ``*.configs.json`` are published when present.
@@ -1169,14 +1301,81 @@ def generate_language_results_pages(
             "",
             f"**Generated:** {datetime.now().isoformat()}",
             "",
-            "Published **local snapshot** (not regenerated by GitHub Actions). "
-            "Numbers may differ if you re-run benchmarks on another machine.",
+            f"This page is a **snapshot of measured numbers** for {title} on **one machine, "
+            "one session** (claim level **L1**). "
+            "Continuous integration deploys the documentation site; it does **not** re-run "
+            "analysis when docs are published. Re-running benchmarks on another computer "
+            "will usually change the numbers a little. "
+            "Stronger multi-session / multi-machine claims need more evidence — see "
+            "[Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).",
             "",
-            f"Serializer inventory and caveats: [{title} overview](index.md). "
-            "Methods: [Analysis Methodology](../analysis/ANALYSIS_METHODOLOGY.md). "
-            "Metric definitions & importance tiers: [Metrics catalog](../analysis/METRICS.md).",
+            f"| Topic | Where to read |",
+            f"|-------|---------------|",
+            f"| Which libraries we measure, and caveats | [{title} overview](index.md) |",
+            f"| I/O modes and run modes | [Modes](../analysis/modes.md) |",
+            f"| How CSVs become these tables | [Analysis methodology](../analysis/ANALYSIS_METHODOLOGY.md) |",
+            f"| What each metric means | [Metrics catalog](../analysis/METRICS.md) |",
+            f"| What you may claim (L1/L2/L3) | [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md) |",
+            f"| All languages’ result links | [Results summary](../analysis/BENCHMARK_SUMMARY.md) |",
+            "",
+            "## How to read these tables",
+            "",
+            "Compare serializers **inside this language**. Prefer the same "
+            "[category](../analysis/serialization_categories.md) "
+            "(for example JSON with JSON) and the same "
+            "[I/O mode](../analysis/modes.md) "
+            "so the comparison stays fair.",
+            "",
+            "| Term | Meaning |",
+            "|------|---------|",
+            "| **data type** | Sample shape: `message`, `document`, `telemetry`, `strings`, or `event` "
+            "(CSV `TestDataName`; older text may say “fixture”) |",
+            "| **bytes mode** | In-memory buffer API (encode to bytes / decode from a buffer). "
+            "On C# this is often the **string** path — see [Modes](../analysis/modes.md). |",
+            "| **stream mode** | Stream-style API (write/read through a stream). "
+            "May be native or adapted — see [Modes](../analysis/modes.md). |",
+            "| **µs** | Microseconds (one microsecond = 1000 nanoseconds). Tables show µs; raw CSVs store nanoseconds. |",
+            "| **Ops/s** | Operations per second from mean total time — higher is faster |",
+            "| **Bold** | Best value in that column (lowest time/size; highest ops/s). Ties are all bolded. |",
+            "",
+            "Rows are sorted by **serializer name** (easy lookup), not by rank. "
+            "Batch workloads appear as **Data type · N instances** "
+            "(for example Message · 100 instances). "
+            "Default multi-serializer tables show **high-importance** metrics only; "
+            "pairwise / version A/B reports can show the full set "
+            "([Metrics](../analysis/METRICS.md)).",
             "",
         ]
+
+        # Outlier / aggregation policy = Dashboard "Samples" control (not a count column).
+        lines.append(_sample_filter_banner_md())
+        lines.append("")
+
+        # Exploratory ranking banner (multi-way effect-vs-fastest is descriptive)
+        lines.append(
+            "> **Exploratory ranks:** effect sizes vs the fastest codec are **descriptive**. "
+            "When we attach Holm-adjusted tests, they only correct for many serializers "
+            "**inside one** (data type × batch size × I/O mode) group — not for every "
+            "comparison on this page. Prefer pairwise A/B "
+            "(`analyze-benchmarks --compare-a … --compare-b …`) for confirmatory checks. "
+            "See [Analysis methodology — ranks](../analysis/ANALYSIS_METHODOLOGY.md#exploratory-ranks)."
+        )
+        lines.append("")
+
+        # Stream honesty banner (native / text_on_stream / adapted)
+        try:
+            from .stream_honesty import (
+                stream_honesty_banner_md,
+                summarize_stream_modes_from_stats,
+            )
+
+            honesty = summarize_stream_modes_from_stats(stats or {})
+            # Prefer raw records if available on plot_meta / lang_sources later;
+            # stats entries may lack StreamMode — still emit no-stream banner.
+            lines.append(stream_honesty_banner_md(honesty))
+            lines.append("")
+        except Exception:
+            pass
 
         if stats:
             # Show type@n=<instance_count> so N=1 vs N=100 do not collapse.
@@ -1197,21 +1396,7 @@ def generate_language_results_pages(
                     e2["test_data"] = _format_fixture_display(base)
                 display_stats[k] = e2
 
-            lines.append("## Pivot tables")
-            lines.append("")
-            lines.append(
-                "Multi-way leaderboards emphasize **high-importance** metrics "
-                "(configurable via `metrics.multi_way` in master config). "
-                "Harness **modes** (CSV `StringOrStream`): **bytes mode** = in-memory buffer "
-                "API; **stream mode** = write/read through a stream-like path. "
-                "These names are *not* payload sizes. "
-                "In each table, rows are sorted by **serializer name**; "
-                "**bold** marks the semantic best value in that column "
-                "(lowest time; highest ops/s). Ties are all bolded. "
-                "Latency tables are in **microseconds** (µs). "
-                "Batch fixtures show as **Type · N instances** "
-                "(from `DataTypeInstanceCount`; e.g. Message · 100 instances)."
-            )
+            lines.append("## Summary tables")
             lines.append("")
             sci = _scientific_summary_md(
                 display_stats,
@@ -1227,6 +1412,9 @@ def generate_language_results_pages(
                     "test_data",
                     "avg_ops_per_sec",
                     "Ops/Sec",
+                    # Dashboard all@all: unweighted mean of type×n ops/s (bytes preferred).
+                    include_row_average=True,
+                    prefer_bytes_mode=True,
                 )
             )
             cat_md = _category_pivot_md(
@@ -1240,16 +1428,21 @@ def generate_language_results_pages(
                 lines.append("### Fidelity notes (Rust)")
                 lines.append("")
                 lines.append(
+                    "These notes explain odd-looking correctness or speed edges on Rust only:"
+                )
+                lines.append("")
+                lines.append(
                     "- **prost** maps ISO timestamps through millisecond integers; "
-                    "harness fidelity allows date-string drift on types that carry timestamps "
-                    "(e.g. message/event/document/telemetry)."
+                    "the benchmark runner allows date-string drift on types that carry timestamps "
+                    "(message, event, document, telemetry)."
                 )
                 lines.append(
-                    "- **rkyv** timed deserialize **materializes** owned values for comparison; "
-                    "pure `access` (zero-copy) would be faster and is documented on the overview."
+                    "- **rkyv** timed deserialize **builds owned values** for comparison; "
+                    "a pure zero-copy `access` path would be faster and is documented on the overview."
                 )
                 lines.append(
-                    "- **simd-json** serialize uses `serde_json` (crate optimizes parse)."
+                    "- **simd-json** serialize still goes through `serde_json` "
+                    "(the crate focuses on parse speed)."
                 )
                 lines.append("")
         else:
@@ -1261,10 +1454,24 @@ def generate_language_results_pages(
             lines.append("## Latency distributions")
             lines.append("")
             lines.append(
-                "Each figure pairs **mean bars** (left: ser / deser mean µs, linear from 0) "
-                "with **split violins** (right: full sample density, linear from 0). "
-                "**Top 5 serializers by mean total time** per fixture (display only; tables list all). "
-                "Provenance (fixture, CSV path, modes, *n*) is printed on each image."
+                "Each figure is a picture of **how long** serialize and deserialize took "
+                "across many trials for one **data type** (and batch size):"
+            )
+            lines.append("")
+            lines.append(
+                "- **Left — mean bars:** average serialize time and average deserialize time "
+                "in microseconds (scale starts at 0)."
+            )
+            lines.append(
+                "- **Right — split violins:** the full distribution of sample times "
+                "(thickness shows where trials cluster)."
+            )
+            lines.append(
+                "- **Top 5 only:** charts show the five fastest serializers by mean total time "
+                "for that data type so the picture stays readable. Tables above still list everyone."
+            )
+            lines.append(
+                "- Each image also prints the data type, source CSV, modes, and sample size."
             )
             lines.append("")
             for dtype, fname in items:
@@ -1277,11 +1484,11 @@ def generate_language_results_pages(
             lines.append("*No latency distributions for this language in the current snapshot.*")
             lines.append("")
 
-        lines.append("## Regenerate")
+        lines.append("## How to regenerate this page")
         lines.append("")
         lines.append(
-            "Published snapshots are produced **locally** (not by GitHub Actions). "
-            "After running benchmarks (each run creates a timestamped `YYYY-MM-DD-HHMMSS.csv`):"
+            "Snapshots are produced on a developer machine. "
+            "After a benchmark-runner run (each run writes a timestamped `YYYY-MM-DD-HHMMSS.csv`):"
         )
         lines.append("")
         lines.append("```bash")
@@ -1290,10 +1497,11 @@ def generate_language_results_pages(
         lines.append("```")
         lines.append("")
         lines.append(
-            "That refreshes this language's results tables and latency distributions under "
-            "`docs/analysis/plots/violin/`. The hub "
-            "[Benchmark Results](../analysis/BENCHMARK_SUMMARY.md) is a **static** index "
-            "and is not rewritten. Commit the updated `results.md` / plot paths as needed."
+            "That writes unpublished tables under `reports/<docs_dir>/results.md` "
+            "and, with `--violins`, latency images under `reports/plots/violin/`. "
+            "The hub [Results summary](../analysis/BENCHMARK_SUMMARY.md) is a **static** "
+            "link index and is not rewritten by the CLI. "
+            "Do not commit `reports/<docs_dir>/results.md` to the published site."
         )
         lines.append("")
         # Collapsed at end: title always visible, body hidden by default (Material ??? details).
@@ -1304,7 +1512,7 @@ def generate_language_results_pages(
         with open(out_path, "w", encoding="utf-8") as f:
             f.write("\n".join(lines))
         written.append(out_path)
-        print(f"Language results written to: {out_path}")
+        print(f"Unpublished language report written to: {out_path}")
 
     return written
 

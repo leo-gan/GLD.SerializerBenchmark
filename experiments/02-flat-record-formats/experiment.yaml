@@ -1,0 +1,123 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 02-flat-record-formats
+title: Should two services inside the company stop using JSON?
+question: On one small record, how do JSON, MessagePack, and Protocol Buffers compare?
+story:
+  why: Inside a company you may pick a denser format. That is a real cost (new tools, harder debugging). We measure whether the gain is large.
+  example: Two services you own swap a small request on a private network. No browser is on this path.
+  tradeoff: JSON is easy to read at 3 a.m. The other two write smaller bytes. Protocol Buffers needs a shared field list. MessagePack does not.
+
+sample:
+  kind: message
+  records_per_write: [1, 100]
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes, stream]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  # Mixed formats: every listed library is in the comparison set.
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: python
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: JSON — ships with Python}
+      - {name: orjson, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: msgspec-msgpack, writes_named_fields: true, role: MessagePack — msgspec}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: go
+    enabled: true
+    libraries:
+      - {name: encoding/json, writes_named_fields: true, role: JSON — ships with Go}
+      - {name: goccy/go-json, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: vmihailenco/msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: shamaton/msgpack, writes_named_fields: true, role: MessagePack — fast Go writer}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON — common default}
+      - {name: jsoniter, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: JSON.stringify, writes_named_fields: true, role: JSON — ships with JavaScript}
+      - {name: msgpackr, writes_named_fields: true, role: MessagePack}
+      - {name: "@msgpack/msgpack", writes_named_fields: true, role: MessagePack — official package}
+      - {name: protobuf-es, writes_named_fields: true, role: Protocol Buffers}
+      - {name: protobufjs, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: serde_json, writes_named_fields: true, role: JSON — usual Rust library}
+      - {name: sonic-rs, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: rmp-serde, writes_named_fields: true, role: MessagePack}
+      - {name: prost, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: yyjson, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: cJSON, writes_named_fields: true, role: JSON — common C library}
+      - {name: mpack, writes_named_fields: true, role: MessagePack}
+      - {name: msgpack-c, writes_named_fields: true, role: MessagePack — official C library}
+      # Suite name is protobuf-c (not "protobuf"). Google libprotobuf C did not run here.
+      - {name: protobuf-c, writes_named_fields: true, role: Protocol Buffers — protobuf-c (timed path is the suite wire codec)}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — in-tree wire helper}
+
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: nlohmann_json, writes_named_fields: true, role: JSON — common C++ library}
+      - {name: simdjson, writes_named_fields: true, role: JSON — fast read from Experiment 1}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+      # Official libprotobuf is in the suite list but did not register on this machine.
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — in-tree wire helper}
+
+  - id: csharp
+    enabled: true
+    libraries:
+      - {name: System.Text.Json, writes_named_fields: true, role: JSON — ships with modern .NET}
+      - {name: SpanJson, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: Google.Protobuf, writes_named_fields: true, role: Protocol Buffers — Google library}
+      - {name: ProtoBuf, writes_named_fields: true, role: Protocol Buffers — protobuf-net}
+      - {name: MessagePack-CSharp, writes_named_fields: true, role: MessagePack}
+
+  - id: swift
+    enabled: true
+    libraries:
+      - {name: Foundation.JSONEncoder, writes_named_fields: true, role: JSON — ships with Swift}
+      - {name: IkigaJSON, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: SwiftMsgpack, writes_named_fields: true, role: MessagePack}
+      - {name: SwiftProtobuf, writes_named_fields: true, role: Protocol Buffers}

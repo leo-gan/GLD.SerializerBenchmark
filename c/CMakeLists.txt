@@ -17,7 +17,9 @@ set(BENCH_SOURCES
   src/data.c
   src/data_v2.c
   src/run_v2.c
+  src/schedule.c
   src/csv_log.c
+  src/compress.c
   src/batch_cell.c
   src/runner.c
   src/register_serializers.c
@@ -25,10 +27,26 @@ set(BENCH_SOURCES
   src/serializers/ser_custom_binary.c
 )
 set(BENCH_LIBS m)
+find_package(ZLIB REQUIRED)
+list(APPEND BENCH_LIBS ZLIB::ZLIB)
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+  pkg_check_modules(LIBZSTD QUIET libzstd)
+endif()
+if(LIBZSTD_FOUND)
+  list(APPEND BENCH_LIBS ${LIBZSTD_LIBRARIES})
+  add_compile_definitions(HAS_ZSTD=1)
+  message(STATUS "compress: libzstd REAL")
+else()
+  message(STATUS "compress: libzstd SKIPPED (SizeZstd will be empty)")
+endif()
 set(BENCH_INCLUDES
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+if(LIBZSTD_FOUND)
+  list(APPEND BENCH_INCLUDES ${LIBZSTD_INCLUDE_DIRS})
+endif()
 add_compile_definitions(HAS_CUSTOM_BINARY=1)
 
 if(EXISTS ${TP}/cJSON/cJSON.c)
@@ -229,6 +247,28 @@ if(EXISTS ${TP_BUILD}/avro-c/src/libavro.a)
   endif()
   add_compile_definitions(HAS_AVRO_C=1)
   message(STATUS "serializer: avro-c REAL")
+endif()
+
+if(EXISTS ${TP}/libyaml/src/api.c AND EXISTS ${TP}/libyaml/include/yaml.h)
+  list(APPEND BENCH_SOURCES
+    ${TP}/libyaml/src/api.c
+    ${TP}/libyaml/src/dumper.c
+    ${TP}/libyaml/src/emitter.c
+    ${TP}/libyaml/src/loader.c
+    ${TP}/libyaml/src/parser.c
+    ${TP}/libyaml/src/reader.c
+    ${TP}/libyaml/src/scanner.c
+    ${TP}/libyaml/src/writer.c
+    src/serializers/ser_yaml.c)
+  list(APPEND BENCH_INCLUDES ${TP}/libyaml/include)
+  add_compile_definitions(
+    HAS_LIBYAML=1
+    YAML_DECLARE_STATIC=1
+    YAML_VERSION_MAJOR=0
+    YAML_VERSION_MINOR=2
+    YAML_VERSION_PATCH=5
+    YAML_VERSION_STRING="0.2.5")
+  message(STATUS "serializer: libyaml REAL")
 endif()
 
 if(EXISTS ${TP}/zcbor/src/zcbor_encode.c)

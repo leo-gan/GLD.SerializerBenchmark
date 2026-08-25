@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gld.experiment.config/1",
+  "title": "Experiment settings",
+  "description": "One file per experiment. A UI should load and save this document.",
+  "type": "object",
+  "required": ["schema", "id", "question", "sample", "run", "languages"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "gld.experiment.config/1" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string" },
+    "question": { "type": "string", "minLength": 1 },
+    "story": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Short plain-language notes for docs and the dashboard.",
+      "properties": {
+        "why": { "type": "string" },
+        "example": { "type": "string" },
+        "tradeoff": { "type": "string" }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "required": ["kind", "records_per_write"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["message", "document", "telemetry", "strings", "event"]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["message", "document", "telemetry", "strings", "event"]
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          ]
+        },
+        "records_per_write": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 1 },
+              "minItems": 1
+            }
+          ]
+        },
+        "seed": { "type": "integer" },
+        "settings": { "type": "object" },
+        "saved_as": { "type": "string" }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string", "enum": ["smoke", "all-single", "full", "research"] },
+        "io_modes": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["bytes", "stream"] },
+          "minItems": 1
+        },
+        "compression": { "type": "string", "enum": ["none", "size_only", "timed"] },
+        "compression_algorithms": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "soft_seconds_per_10_serializers": { "type": "integer", "minimum": 1 },
+        "hard_cap_seconds": { "type": "integer", "minimum": 1 },
+        "reps_fallback": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "drop_first_trial": { "type": "boolean" },
+        "filter_id": { "type": "string" },
+        "main_io": { "type": "string", "enum": ["memory", "stream"] },
+        "require_named_fields": { "type": "boolean" },
+        "top_group": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "method": { "const": "cliffs_delta_vs_fastest" },
+            "similar_max": { "type": "number", "minimum": 0, "maximum": 1 },
+            "close_max": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "results": { "type": "string" },
+        "summary": { "type": "string" }
+      }
+    },
+    "languages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "libraries"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["python", "go", "java", "javascript", "rust", "c", "cpp", "csharp", "swift"]
+          },
+          "enabled": { "type": "boolean" },
+          "libraries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "writes_named_fields": { "type": "boolean" },
+                "role": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

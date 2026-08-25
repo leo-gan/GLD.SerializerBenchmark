@@ -20,6 +20,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />
     <PackageReference Include="protobuf-net" Version="2.*" />
+    <PackageReference Include="LightProto" Version="1.*" />
     <PackageReference Include="Jil" Version="2.*" />
     <PackageReference Include="ServiceStack.Text" Version="6.*" />
     <PackageReference Include="Bond.Core.CSharp" Version="9.*" />
@@ -42,6 +43,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Google.Protobuf" Version="3.*" />
+    <PackageReference Include="Apache.Avro" Version="1.*" />
     <PackageReference Include="GroBuf" Version="1.*" />
     <!-- 0.x: float only within the current minor (0.12.*) -->
     <PackageReference Include="Hyperion" Version="0.12.*" />
@@ -53,6 +55,7 @@
     <PackageReference Include="YAXLib" Version="4.*" />
     <PackageReference Include="ZeroFormatter" Version="1.*" />
     <PackageReference Include="BinaryPack" Version="1.*" />
+    <PackageReference Include="MessagePack" Version="2.*" />
     <PackageReference Include="MemoryPack" Version="1.*" />
     <PackageReference Include="MemoryPack.Generator" Version="1.*">
       <PrivateAssets>all</PrivateAssets>

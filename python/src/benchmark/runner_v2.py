@@ -8,6 +8,7 @@ Usage:
 Env:
     BENCHMARK_RUN_CONFIG  path to run config YAML (default: config/library/default.yaml)
     BENCHMARK_SEED        int seed (default: 42)
+    BENCHMARK_SCHEDULE    none | block_shuffle (default from master config)
     LOG_DIR               logs root
 """
 
@@ -41,6 +42,7 @@ from .serializers import (
     MsgspecSerializer,
     OrjsonSerializer,
     PickleSerializer,
+    PyYamlSerializer,
     ProtobufSerializer,
     PydanticSerializer,
     RapidjsonSerializer,
@@ -64,6 +66,7 @@ ALL_SERIALIZERS = [
     ProtobufSerializer(),
     AvroSerializer(),
     FlatBuffersSerializer(),
+    PyYamlSerializer(),
     PickleSerializer(),
     CloudpickleSerializer(),
     DillSerializer(),
@@ -160,11 +163,13 @@ def _prepare_for_serializer(
         native = protobuf_bridge.to_pb(src)
         return native, payload, type(instances[0])
 
-    # Generic path: dataclass or list of dataclasses
+    # Generic path: dataclass or list of dataclasses. Batch cells pass the
+    # parameterized list[T] so typed codecs can be built ahead of timing.
     tip = type(instances[0]) if instances else dict
-    serializer.prepare(type_id, tip if n == 1 else list)
-    serializable = serializer.prepare_data(payload, type_id, tip if n == 1 else list)
-    return serializable, payload, tip if n == 1 else list
+    td_type = tip if n == 1 else list[tip]
+    serializer.prepare(type_id, td_type)
+    serializable = serializer.prepare_data(payload, type_id, td_type)
+    return serializable, payload, td_type
 
 
 def run_v2(
@@ -217,14 +222,40 @@ def run_v2(
     storage = LogStorage(str(ts_file))
     errors: List[BenchmarkError] = []
 
+    # Schedule: block_shuffle (default) or none — see docs/analysis/architecture.md
+    try:
+        from benchmark_analysis.schedule import (
+            resolve_record_run_order,
+            resolve_schedule_strategy,
+            shuffle_serializer_names,
+        )
+    except ImportError:
+        root2 = _repo_root()
+        if root2:
+            s = str(root2 / "analysis" / "src")
+            if s not in sys.path:
+                sys.path.insert(0, s)
+        from benchmark_analysis.schedule import (
+            resolve_record_run_order,
+            resolve_schedule_strategy,
+            shuffle_serializer_names,
+        )
+
+    schedule_strategy = resolve_schedule_strategy()
+    record_run_order = resolve_record_run_order()
     print(f"[PROGRESS] Data Model v2 run config={resolved['run_config']['path']}")
     print(f"[PROGRESS] cells={len(cells)} serializers={len(serializers)} reps={repetitions}")
+    print(f"[PROGRESS] schedule={schedule_strategy} record_run_order={record_run_order}")
     print(f"[PROGRESS] soft_budget≈{soft}s hard_cap={hard}s → {ts_file}")
 
     io_modes = (resolved.get("execution") or {}).get("io_modes") or ["bytes", "stream"]
     compress_mode = (resolved.get("compression") or {}).get("mode") or "none"
+    run_order = 0
+    hard_stop = False
 
     for cell in cells:
+        if hard_stop:
+            break
         type_id = cell["type_id"]
         n = int(cell["data_type_instance_count"])
         cfg = cell["type_config"]
@@ -233,10 +264,10 @@ def run_v2(
 
         instances = instances_for_cell(type_id, cfg, seed=seed, data_type_instance_count=n)
 
+        # Untimed prepare once per (cell, serializer)
+        prepared: Dict[str, Tuple[Serializer, Any, Any, type, int, int]] = {}
+        failed_prepare: set = set()
         for serializer in serializers:
-            if time.monotonic() - t_start > hard:
-                print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
-                break
             if not serializer.supports(type_id):
                 continue
             try:
@@ -252,8 +283,8 @@ def run_v2(
                     error_text=f"prepare: {type(exc).__name__}: {exc}",
                 )
                 err.try_add_to(errors)
+                failed_prepare.add(serializer.name)
                 continue
-
             size_gz = size_zstd = 0
             if compress_mode == "size_only":
                 try:
@@ -261,27 +292,124 @@ def run_v2(
                     size_gz, size_zstd = _compress_sizes(raw)
                 except Exception:
                     pass
+            prepared[serializer.name] = (
+                serializer,
+                serializable,
+                expected,
+                tip,
+                size_gz,
+                size_zstd,
+            )
 
-            for mode in io_modes:
-                _run_reps_v2(
-                    serializer,
-                    serializable,
-                    expected,
-                    type_id,
-                    tip,
-                    repetitions,
-                    mode,
-                    storage,
-                    errors,
-                    data_type_instance_count=n,
-                    type_config_hash=th,
-                    size_gzip=size_gz,
-                    size_zstd=size_zstd,
-                )
-            save_errors(errors, str(error_file))
+        # Runtime failures (skip remaining reps for that serializer)
+        failed_runtime: set = set(failed_prepare)
+
+        if schedule_strategy == "none":
+            # Legacy nesting: serializer → mode → all reps
+            for ser_name, pack in prepared.items():
+                if hard_stop:
+                    break
+                if time.monotonic() - t_start > hard:
+                    print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
+                    hard_stop = True
+                    break
+                serializer, serializable, expected, tip, size_gz, size_zstd = pack
+                for mode in io_modes:
+                    run_order = _run_reps_v2(
+                        serializer,
+                        serializable,
+                        expected,
+                        type_id,
+                        tip,
+                        repetitions,
+                        mode,
+                        storage,
+                        errors,
+                        data_type_instance_count=n,
+                        type_config_hash=th,
+                        size_gzip=size_gz,
+                        size_zstd=size_zstd,
+                        run_order_start=run_order,
+                        record_run_order=record_run_order,
+                        schedule_position=0,
+                    )
+                save_errors(errors, str(error_file))
         else:
-            continue
-        break  # hard cap outer
+            # block_shuffle: mode → rep → shuffled serializers
+            eligible_names = list(prepared.keys())
+            mem_cache: Dict[str, int] = {}
+            for mode in io_modes:
+                if hard_stop:
+                    break
+                for i in range(repetitions):
+                    if time.monotonic() - t_start > hard:
+                        print(f"[ERROR] Hard cap {hard}s exceeded; stopping.")
+                        hard_stop = True
+                        break
+                    pool = [nm for nm in eligible_names if nm not in failed_runtime]
+                    order_names = shuffle_serializer_names(
+                        pool,
+                        base_seed=seed,
+                        type_id=type_id,
+                        instance_count=n,
+                        type_config_hash=th,
+                        mode=mode,
+                        rep=i,
+                    )
+                    for pos, ser_name in enumerate(order_names):
+                        serializer, serializable, expected, tip, size_gz, size_zstd = prepared[
+                            ser_name
+                        ]
+                        log = BenchmarkLog(
+                            string_or_stream=mode,
+                            test_data_name=type_id,
+                            repetitions=repetitions,
+                            repetition_index=i,
+                            serializer_name=serializer.name,
+                            serializer_version=serializer.version,
+                            data_type_instance_count=n,
+                            type_config_hash=th,
+                            size_gzip_bytes=size_gz,
+                            size_zstd_bytes=size_zstd,
+                            native_kind=getattr(serializer, "native_kind", "") or "",
+                            stream_mode=(
+                                (getattr(serializer, "stream_mode", "") or "")
+                                if mode == "stream"
+                                else ""
+                            ),
+                        )
+                        try:
+                            measure_memory = ser_name not in mem_cache
+                            _single_v2(
+                                serializer,
+                                serializable,
+                                expected,
+                                mode,
+                                log,
+                                measure_memory=measure_memory,
+                            )
+                            if measure_memory:
+                                mem_cache[ser_name] = log.memory_peak_bytes
+                            else:
+                                log.memory_peak_bytes = mem_cache.get(ser_name, 0)
+                        except Exception as exc:
+                            if ser_name not in failed_runtime:
+                                err = BenchmarkError(
+                                    string_or_stream=mode,
+                                    test_data_name=type_id,
+                                    serializer_name=serializer.name,
+                                    repetition=i,
+                                    error_text=f"{type(exc).__name__}: {exc}",
+                                )
+                                err.try_add_to(errors)
+                                failed_runtime.add(ser_name)
+                            continue
+                        if record_run_order:
+                            log.run_order = run_order
+                            log.schedule_position = pos
+                            run_order += 1
+                        storage.write(log)
+                save_errors(errors, str(error_file))
 
     storage.close()
     logs = storage.read_all()
@@ -309,6 +437,11 @@ def run_v2(
                     "cells": resolved["cells"],
                     "compression": resolved.get("compression"),
                     "execution": resolved.get("execution"),
+                },
+                "schedule": {
+                    "strategy": schedule_strategy,
+                    "seed": seed,
+                    "record_run_order": record_run_order,
                 },
                 "serializers": [{"name": s.name, "version": s.version} for s in serializers],
             },
@@ -346,9 +479,14 @@ def _run_reps_v2(
     type_config_hash: str,
     size_gzip: int,
     size_zstd: int,
-) -> None:
+    run_order_start: int = 0,
+    record_run_order: bool = True,
+    schedule_position: int = 0,
+) -> int:
+    """Legacy path (strategy=none): all reps for one serializer×mode. Returns next RunOrder."""
     was_error = False
     cached_memory_peak = 0
+    run_order = run_order_start
     for i in range(repetitions):
         log = BenchmarkLog(
             string_or_stream=mode,
@@ -361,6 +499,10 @@ def _run_reps_v2(
             type_config_hash=type_config_hash,
             size_gzip_bytes=size_gzip,
             size_zstd_bytes=size_zstd,
+            native_kind=getattr(serializer, "native_kind", "") or "",
+            stream_mode=(
+                (getattr(serializer, "stream_mode", "") or "") if mode == "stream" else ""
+            ),
         )
         try:
             measure_memory = not was_error and cached_memory_peak == 0
@@ -389,7 +531,12 @@ def _run_reps_v2(
                 was_error = True
             continue
         if not was_error:
+            if record_run_order:
+                log.run_order = run_order
+                log.schedule_position = schedule_position
+                run_order += 1
             storage.write(log)
+    return run_order
 
 
 def _single_v2(

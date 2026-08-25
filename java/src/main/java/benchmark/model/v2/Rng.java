@@ -1,6 +1,11 @@
 package benchmark.model.v2;
 
-/** Deterministic xorshift64* style PRNG (aligned with other harnesses). */
+/**
+ * Deterministic xorshift64* PRNG (within-language only).
+ *
+ * <p>Zero seed uses {@code floor(2^64/φ) = 0x9E3779B97F4A7C15} (golden ratio;
+ * nothing-up-my-sleeve avalanche constant). Suite seed: {@code BENCHMARK_SEED}.
+ */
 public final class Rng {
   private long state;
 

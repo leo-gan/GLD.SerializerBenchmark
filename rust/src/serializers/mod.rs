@@ -4,12 +4,25 @@
 //! *outside* the timed loop so configs, scratch buffers, and native conversions
 //! are not part of the measurement.
 //!
+//! ## Timing / buffer policy (issue #59)
+//!
+//! - **Output buffer:** the harness owns a reusable `Vec<u8>`, clears it before
+//!   each timed serialize, and passes it to [`BenchSerializer::serialize_into`].
+//!   Capacity is reused across repetitions so cold allocation falls into warmup
+//!   (rep 0), which analysis drops when `exclude_warmup` is set. Timed work is
+//!   encode into that buffer (including amortized growth if capacity is short).
+//! - **Optimization barriers:** the harness applies [`std::hint::black_box`] to
+//!   inputs and outputs of timed calls so LLVM cannot DCE or hoist work.
+//! - **Fixture kind:** direct codecs bind a monomorphic encode/decode fn in
+//!   `prepare` so the timed path is not a multi-way `match fixture`.
+//!
 //! Layout (one family / concern per file, matching Go/Python/C):
 //! - [`json`] — serde_json, simd-json, sonic-rs
 //! - [`binary_serde`] — rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson
 //! - [`direct`] — minicbor, rkyv, nanoserde, speedy
 //! - [`prost_ser`] — prost + fixture conversion
-//! - [`kinded`] — shared macro for kind-tracked direct codecs
+//! - [`avro_ser`] — serde_avro_fast (Avro binary datum)
+//! - [`kinded`] — shared kind-tracked direct codec macro
 
 use crate::data::Fixture;
 use anyhow::Result;
@@ -18,18 +31,22 @@ use std::io::{Read, Write};
 // Locked dependency versions from Cargo.lock (build.rs → OUT_DIR/dep_versions.rs).
 include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
 
+mod avro_ser;
 mod binary_serde;
 mod direct;
 mod json;
 mod kinded;
 mod prost_ser;
+mod yaml;
 
+use avro_ser::AvroFastSer;
 use binary_serde::{
     BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, PostcardSer, RmpSerde,
 };
 use direct::{MinicborDirect, NanoserdeSer, RkyvSer, SpeedySer};
 use json::{SerdeJson, SimdJson, SonicRs};
 use prost_ser::ProstSer;
+use yaml::SerdeYaml;
 
 #[inline]
 pub(crate) fn ver(crate_name: &str) -> &'static str {
@@ -50,16 +67,6 @@ impl Write for CountWrite<'_> {
     fn flush(&mut self) -> std::io::Result<()> {
         self.inner.flush()
     }
-}
-
-/// Move filled buffer out for return while re-arming `slot` with equal capacity
-/// so the next encode reuses the allocation (mem::take alone drops capacity).
-#[inline]
-pub(crate) fn take_rearm(slot: &mut Vec<u8>) -> Vec<u8> {
-    let out = std::mem::take(slot);
-    let cap = out.capacity().max(4096);
-    *slot = Vec::with_capacity(cap);
-    out
 }
 
 /// How stream mode is implemented (mirrors Python `stream_mode`).
@@ -97,18 +104,26 @@ pub trait BenchSerializer: Send {
         true
     }
 
-    /// Untimed: build reusable codec state / native payloads for this fixture.
+    /// Untimed: build reusable codec state / bind kind-specific encode fns.
     fn prepare(&mut self, fixture: &Fixture) -> Result<()>;
 
-    /// Timed: serialize using prepared state + fixture as needed.
-    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>>;
+    /// Timed: encode `fixture` into `out` (caller cleared; capacity reused).
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()>;
 
     /// Timed: deserialize into a `Fixture` for semantic fidelity checks.
     fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture>;
 
-    /// Timed stream serialize (default: adapted bytes path).
+    /// Convenience for tests: allocate a fresh buffer (not the timed path).
+    fn serialize_bytes(&mut self, fixture: &Fixture) -> Result<Vec<u8>> {
+        let mut out = Vec::with_capacity(4096);
+        self.serialize_into(fixture, &mut out)?;
+        Ok(out)
+    }
+
+    /// Timed stream serialize (default: adapted bytes path into `w`).
     fn serialize_stream(&mut self, fixture: &Fixture, w: &mut dyn Write) -> Result<usize> {
-        let data = self.serialize_bytes(fixture)?;
+        let mut data = Vec::with_capacity(4096);
+        self.serialize_into(fixture, &mut data)?;
         w.write_all(&data)?;
         Ok(data.len())
     }
@@ -143,8 +158,10 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(MinicborDirect::default()),
         Box::new(RkyvSer::default()),
         Box::new(ProstSer::default()),
+        Box::new(AvroFastSer::default()),
         Box::new(NanoserdeSer::default()),
         Box::new(SpeedySer::default()),
+        Box::new(SerdeYaml::default()),
     ]
 }
 
@@ -199,14 +216,30 @@ mod tests {
     }
 
     #[test]
-    fn buffer_reuse_serde_json_deterministic() {
+    fn serialize_into_serde_json_deterministic() {
         let fx = make_one("document", 1, 0, 4, 32, 32, 4).unwrap();
         let mut s = SerdeJson::default();
         s.prepare(&fx).unwrap();
-        let a = s.serialize_bytes(&fx).unwrap();
-        s.prepare(&fx).unwrap();
-        let b = s.serialize_bytes(&fx).unwrap();
+        let mut a = Vec::new();
+        s.serialize_into(&fx, &mut a).unwrap();
+        let mut b = Vec::new();
+        s.serialize_into(&fx, &mut b).unwrap();
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn serialize_into_reuses_capacity() {
+        let fx = make_one("message", 1, 0, 8, 32, 32, 4).unwrap();
+        let mut s = SerdeJson::default();
+        s.prepare(&fx).unwrap();
+        let mut buf = Vec::with_capacity(4096);
+        s.serialize_into(&fx, &mut buf).unwrap();
+        let cap_after_first = buf.capacity();
+        assert!(cap_after_first >= buf.len());
+        buf.clear();
+        s.serialize_into(&fx, &mut buf).unwrap();
+        // clear keeps capacity; second encode must not shrink the allocation.
+        assert_eq!(buf.capacity(), cap_after_first);
     }
 
     #[test]
@@ -215,9 +248,17 @@ mod tests {
         let mut s = CiboriumSer::default();
         s.prepare(&fx).unwrap();
         let a = s.serialize_bytes(&fx).unwrap();
-        s.prepare(&fx).unwrap();
         let b = s.serialize_bytes(&fx).unwrap();
         assert_eq!(a, b);
         assert!(!a.is_empty());
+    }
+
+    #[test]
+    fn fixture_generation_is_deterministic() {
+        let a = make_one("telemetry", 42, 0, 8, 32, 32, 4).unwrap();
+        let b = make_one("telemetry", 42, 0, 8, 32, 32, 4).unwrap();
+        assert_eq!(a, b);
+        let c = make_one("telemetry", 42, 1, 8, 32, 32, 4).unwrap();
+        assert_ne!(a, c);
     }
 }

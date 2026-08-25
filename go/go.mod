@@ -17,11 +17,12 @@ require (
 	github.com/hamba/avro/v2 v2.31.0
 	github.com/json-iterator/go v1.1.12
 	github.com/kelindar/binary v1.0.19
+	github.com/klauspost/compress v1.18.2
 	github.com/linkedin/goavro/v2 v2.15.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/segmentio/encoding v0.5.4
 	github.com/shamaton/msgpack/v3 v3.1.2
-	github.com/ugorji/go/codec v1.3.1
+	github.com/ugorji/go/codec v1.3.2
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	go.mongodb.org/mongo-driver v1.17.9
 	google.golang.org/protobuf v1.36.11

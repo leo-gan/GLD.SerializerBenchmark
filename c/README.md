@@ -1,6 +1,6 @@
 # C Serializer Benchmark
 
-Native C harness emitting timestamped `logs/c/YYYY-MM-DD-HHMMSS.csv` (nanoseconds, `Language=c`).
+Native C benchmark runner emitting timestamped `logs/c/YYYY-MM-DD-HHMMSS.csv` (nanoseconds, `Language=c`).
 
 ## Serializers (20)
 
@@ -35,3 +35,4 @@ cmake --build c/build --target c_serializer_tests
 ```
 
 Analysis: `analyze-benchmarks -l c` (see root README).
+

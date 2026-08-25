@@ -1,37 +1,57 @@
 name: Benchmark CI
 
-# Per-language smoke when that harness changes; analysis unit tests when analysis/
-# or shared config/scripts change. Shared schemas/** still fan out to all language
-# jobs (fixture contract). Summaries/plots are committed under docs/ — not built here.
+# Per-language smoke when that language's *source* changes; analysis unit tests when
+# analysis/ or shared config/scripts change. Shared schemas/** still fans out to all
+# language jobs. Pure docs/prose PRs are skipped via paths-ignore (workflow-level).
+# Summaries/plots are committed under docs/ — not built here.
 #
-# Harnesses run natively (no Docker): each job installs the language toolchain
-# (dotnet / uv / rustup / go / node / cmake / g++ / jdk+maven) before scripts/run-benchmarks.sh.
+# Benchmark runners run natively (no Docker): each job installs the language toolchain
+# before scripts/run-benchmarks.sh.
 #
-# Why a C#-only commit on a mixed PR still showed every language job:
-# dorny/paths-filter on pull_request compares the *whole PR* to the base branch.
-# Older filters also listed config/scripts/workflow on *every* language, so any
-# shared-file change forced the full matrix. Language jobs now key mainly on
-# their own tree.
+# Path policy (aligned with prepare-pr detect-changed-langs.sh):
+# - Workflow paths-ignore: pure docs/prose PRs never start this workflow.
+# - dorny filters use *positive* globs only. Do NOT add '!…' negation rules:
+#   with predicate-quantifier "some" (dorny default), each pattern is a separate
+#   matcher, and a standalone '!foo/**/*.md' matches almost every path that is
+#   *not* that pattern — so every language job incorrectly ran on every PR.
+# - Prose under a lang tree is still skipped for pure-docs PRs via paths-ignore.
+# - pull_request filters still compare the *whole PR* to the base branch.
 
 on:
   push:
     branches: [main, master]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
+      - '**/*.md'
+      - '**/*.mdx'
+      - '**/*.rst'
+      - '**/*.txt'
+      - '**/README'
+      - '**/README.*'
+      - 'LICENSE'
+      - 'LICENSE.*'
       - '.gitignore'
       - 'docs/**'
       - 'mkdocs.yml'
       - 'site/**'
+      - 'dashboard/**'
+      - '.grok/**'
   pull_request:
     branches: [main, master]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
+      - '**/*.md'
+      - '**/*.mdx'
+      - '**/*.rst'
+      - '**/*.txt'
+      - '**/README'
+      - '**/README.*'
+      - 'LICENSE'
+      - 'LICENSE.*'
       - '.gitignore'
       - 'docs/**'
       - 'mkdocs.yml'
       - 'site/**'
+      - 'dashboard/**'
+      - '.grok/**'
   workflow_dispatch:
     inputs:
       mode:
@@ -56,6 +76,7 @@ jobs:
       go: ${{ steps.filter.outputs.go }}
       java: ${{ steps.filter.outputs.java }}
       cpp: ${{ steps.filter.outputs.cpp }}
+      swift: ${{ steps.filter.outputs.swift }}
       analysis: ${{ steps.filter.outputs.analysis }}
     steps:
       - uses: actions/checkout@v4
@@ -66,6 +87,9 @@ jobs:
         with:
           # pull_request: all files in the PR vs base (not only the tip commit).
           # push: files in the push. workflow_dispatch: jobs use inputs, not filters.
+          # Positive globs only — see header comment (standalone '!…' is unsafe with some).
+          # schemas/** still selects all languages when any schema path changes.
+          # Note: 'c/**' does not match 'c-sharp/**' (trailing slash segment required).
           filters: |
             csharp:
               - 'c-sharp/**'
@@ -91,6 +115,9 @@ jobs:
             cpp:
               - 'cpp/**'
               - 'schemas/**'
+            swift:
+              - 'swift/**'
+              - 'schemas/**'
             analysis:
               - 'analysis/**'
               - 'config/benchmark_config.yaml'
@@ -112,10 +139,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET SDK 8
+      # SDK 9 for LightProto source generator (Roslyn 4.14+); SDK 8 for net8.0 TFM.
+      - name: Setup .NET SDK 8 and 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: |
+            8.0.x
+            9.0.x
 
       # resolve_run_config.py (v2 cells) needs PyYAML; analysis package optional for sidecars
       - name: Setup Python for run-config resolution
@@ -332,6 +362,40 @@ jobs:
           cd cpp
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+
+  swift-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.swift == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps (cmake, g++, libstdc++)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake g++ libstdc++-12-dev
+
+      - name: Install Swift toolchain + Cap'n Proto
+        run: ./scripts/install-host-requirements.sh swift
+
+      - name: Setup Python for run-config resolution
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML (resolve_run_config)
+        run: pip install pyyaml
+
+      - name: Check host requirements (swift)
+        run: ./scripts/check-host-requirements.sh swift
+
+      - name: Run Swift Benchmark
+        run: |
+          cd swift
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
   analysis-unit-tests:
     needs: changes
     if: >-
@@ -366,5 +430,6 @@ jobs:
           $PY scripts/read-config.py --enabled-langs | grep -qw go
           $PY scripts/read-config.py --enabled-langs | grep -qw java
           $PY scripts/read-config.py --enabled-langs | grep -qw cpp
-          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|cpp)\|'
+          $PY scripts/read-config.py --enabled-langs | grep -qw swift
+          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|cpp|swift)\|'
           test "$($PY scripts/read-config.py --mode-reps smoke)" = "2"

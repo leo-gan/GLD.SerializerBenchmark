@@ -8,7 +8,9 @@ using BinaryPack;
 namespace GLD.SerializerBenchmark.Serializers
 {
     /// <summary>
-    /// BinaryPack: BinaryConverter.Serialize/Deserialize&lt;T&gt; bound from primary type only.
+    /// BinaryPack: BinaryConverter.Serialize/Deserialize&lt;T&gt; bound from primary type only
+    /// (domain types on the timed path — not a JSON envelope).
+    /// String mode is Base64 of the byte payload; stream mode uses BinaryPack's Stream API.
     /// https://github.com/Sergio0694/BinaryPack
     /// </summary>
     internal class BinaryPackSerializerSer : SerDeser

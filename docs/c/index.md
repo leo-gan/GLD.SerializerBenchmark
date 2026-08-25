@@ -1,8 +1,13 @@
-# C
+---
+title: "C"
+---
 
-C serialization is fragmented: each library owns its own object model (DOM trees, streams, generated structs). The harness uses **Data Model v2 only** (`message` · `document` · `telemetry` · `strings` · `event`).
+C
+===
 
-## Harness
+C serialization is fragmented: each library owns its own object model (DOM trees, streams, generated structs).
+
+## Benchmark runner
 
 - `c/` (repository root)
 - Logs: `logs/c/YYYY-MM-DD-HHMMSS.csv`
@@ -11,19 +16,19 @@ C serialization is fragmented: each library owns its own object model (DOM trees
 - Registration: [`c/src/register_serializers.c`](../../c/src/register_serializers.c)
 - **Domain shape:** map-style codecs use a single visitor in [`c/src/v2_codec.c`](../../c/src/v2_codec.c) (`v2_write_fixture` / `v2_read_fixture`). Wrappers implement library ops only—they do not hard-code V2 field graphs.
 
-## Serializers (20)
+## Serializers
 
 | Name | Category | Timed path (what the row measures) |
 |------|----------|-------------------------------------|
 | cJSON, yyjson, jansson, parson, json-c | JSON | Library DOM build + print / parse via visitor ops |
-| mpack, msgpack-c | Binary | Fixed-buffer map pack + tree/object unpack via visitor ops |
-| tinycbor, libcbor, libcbor-stream, qcbor, zcbor | Binary/schema | Native CBOR map encode via visitor ops (`libcbor` = DOM API, `libcbor-stream` = streaming `cbor_encode_*`); decode via each library's native walker (tinycbor buffer walker, libcbor `cbor_load`), interoperable CBOR |
-| libbson | Binary | `bson_append_*` / `bson_iter_*` via visitor ops |
-| ubj | Binary | In-tree UBJSON markers around suite V2 binary payload (`bin_*`) |
 | custom-binary | Binary | Suite length-prefixed V2 baseline (`bin_write_fixture` / `bin_read_fixture`) |
-| **protobuf** | Schema | **Google libprotobuf** `SerializeToArray` / `ParseFromArray` on generated `benchmark_v2.proto` messages |
-| nanopb, protobuf-c, protobuf-wire | Schema | Shared in-tree **proto3 wire** for V2 (`fixture_pb_v2.h`, same field tags as `schemas/v2/protobuf/benchmark_v2.proto`). Log names stay separate for historical comparison; **not** full nanopb stream codegen, protoc-gen-c descriptors, or Google upb. |
 | flatcc, avro-c | Schema | Real flatcc builder / avro-c iface write-read wrapping V2 payload bytes |
+| libbson | Binary | `bson_append_*` / `bson_iter_*` via visitor ops |
+| mpack, msgpack-c | Binary | Fixed-buffer map pack + tree/object unpack via visitor ops |
+| nanopb, protobuf-c, protobuf-wire | Schema | Shared in-tree **proto3 wire** for V2 (`fixture_pb_v2.h`, same field tags as `schemas/v2/protobuf/benchmark_v2.proto`). Log names stay separate for historical comparison; **not** full nanopb stream codegen, protoc-gen-c descriptors, or Google upb. |
+| **protobuf** | Schema | **Google libprotobuf** `SerializeToArray` / `ParseFromArray` on generated `benchmark_v2.proto` messages |
+| tinycbor, libcbor, libcbor-stream, qcbor, zcbor | Binary/schema | Native CBOR map encode via visitor ops (`libcbor` = DOM API, `libcbor-stream` = streaming `cbor_encode_*`); decode via each library's native walker (tinycbor buffer walker, libcbor `cbor_load`). Do not read `libcbor-stream` deserialize as a streaming decoder. |
+| ubj | Binary | In-tree UBJSON markers around suite V2 binary payload (`bin_*`) |
 
 Pins: [`c/third_party/VERSIONS.md`](../../c/third_party/VERSIONS.md).
 
@@ -35,16 +40,14 @@ Pins: [`c/third_party/VERSIONS.md`](../../c/third_party/VERSIONS.md).
 - **Symbol prefixing:** `parson` and `tinycbor` are linked with renamed symbols so they co-exist with `jansson` and `libcbor`.
 - A serializer is registered only when its library is linked (CMake configure log `serializer: … REAL`).
 
-## Suite types
+### Stream honesty
 
-`message`, `document`, `telemetry`, `strings`, `event` (see [Test Data](../analysis/test_data_configuration.md)).
+Stream mode uses an in-memory `FILE*` (`fmemopen`) wrapper around full encode/decode buffers — **`StreamMode=adapted`** for every stream row. It is not a per-library incremental stream API. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
 
-## Tests
+## Numbers
 
-```bash
-cmake -S c -B c/build -DCMAKE_BUILD_TYPE=Release
-cmake --build c/build --target c_serializer_tests
-./c/build/c_serializer_tests
-```
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=c&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 
-Also: [`c/README.md`](../../c/README.md). [Serialization Categories](../analysis/serialization_categories.md).

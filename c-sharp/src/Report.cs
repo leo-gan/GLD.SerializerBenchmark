@@ -17,7 +17,7 @@ namespace GLD.SerializerBenchmark
             // human-readable average table. The raw CSV written by LogStorage
             // always retains every successful rep (including warmup). Analysis
             // (benchmark_analysis) re-reads the full file and applies its own
-            // exclude_warmup / outlier policy — harnesses must not trim logs.
+            // exclude_warmup / outlier policy — benchmark runners must not trim logs.
             // When repetitions == 1, index 0 is the only data point; keep it here.
             var filteredLogs = repetitions > 1
                 ? logs.Where(w => w.RepetitionIndex != 0)

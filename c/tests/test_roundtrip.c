@@ -1,5 +1,6 @@
 /* Round-trip tests for all registered C serializers — Data Model v2 only. */
 #include "bench.h"
+#include "schedule.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -14,6 +15,16 @@ static int checks = 0;
         fprintf(stderr, "FAIL: " fmt "\n", ##__VA_ARGS__); \
     } \
 } while (0)
+
+static void test_compress_sizes(void) {
+    size_t gz = 0, zs = 0;
+    bench_compress_sizes((const uint8_t *)"hello", 5, &gz, &zs);
+    CHECK(gz >= 20 && gz <= 40, "gzip(hello)=%zu want ~25", gz);
+    /* zstd is optional */
+    (void)zs;
+    bench_compress_sizes(NULL, 0, &gz, &zs);
+    CHECK(gz == 0 && zs == 0, "empty compress should be 0,0");
+}
 
 static void test_all_roundtrips(void) {
     serializer_t sers[BENCH_MAX_SERIALIZERS];
@@ -51,6 +62,16 @@ static void test_all_roundtrips(void) {
     }
 }
 
+static void test_telemetry_points_from_config(void) {
+    test_fixture_t fx;
+    data_make_one(&fx, TD_TELEMETRY, 42, 0, 8, 8, 32, 4);
+    CHECK(fx.telemetry.value_count == 8, "points 8 got %d", fx.telemetry.value_count);
+    data_make_one(&fx, TD_TELEMETRY, 42, 0, 8, 128, 32, 4);
+    CHECK(fx.telemetry.value_count == 128, "points 128 got %d", fx.telemetry.value_count);
+    data_make_one(&fx, TD_TELEMETRY, 42, 0, 8, 512, 32, 4);
+    CHECK(fx.telemetry.value_count == 512, "points 512 got %d", fx.telemetry.value_count);
+}
+
 static void test_v2_type_names(void) {
     test_fixture_t fixtures[TD_COUNT];
     data_init_all(fixtures, TD_COUNT, 1);
@@ -61,9 +82,24 @@ static void test_v2_type_names(void) {
     }
 }
 
+static void test_schedule_golden(void) {
+    int rc = schedule_verify_golden();
+    CHECK(rc == 0, "B-1 schedule golden vector rc=%d (expect A,B,C → C,B,A)", rc);
+    uint64_t seed = schedule_derive_seed(42, "message", 1, "abc", "bytes", 0);
+    CHECK(seed == 15992650003647724414ULL, "golden seed %llu", (unsigned long long)seed);
+    const char *names[] = {"A", "B", "C"};
+    const char *out[3];
+    schedule_fisher_yates_cstr(names, 3, seed, out);
+    CHECK(strcmp(out[0], "C") == 0 && strcmp(out[1], "B") == 0 && strcmp(out[2], "A") == 0,
+          "golden perm %s,%s,%s", out[0], out[1], out[2]);
+}
+
 int main(void) {
     printf("C serializer roundtrip tests (Data Model v2)\n");
+    test_schedule_golden();
     test_v2_type_names();
+    test_telemetry_points_from_config();
+    test_compress_sizes();
     test_all_roundtrips();
     printf("%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;

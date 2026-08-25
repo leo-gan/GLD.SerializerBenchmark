@@ -42,4 +42,12 @@ class RoundtripTest {
           () -> "fidelity failed for " + ser.name() + " on " + type);
     }
   }
+
+  @Test
+  void compressSizesGzipHello() {
+    int[] c = Compress.sizes("hello".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    assertTrue(c[0] >= 20 && c[0] <= 40, "gzip=" + c[0]);
+    int[] empty = Compress.sizes(new byte[0]);
+    assertTrue(empty[0] == 0 && empty[1] == 0);
+  }
 }

@@ -11,6 +11,7 @@ from .binary_cbor2 import Cbor2Serializer
 from .schema_protobuf import ProtobufSerializer
 from .schema_avro import AvroSerializer
 from .schema_flatbuffers import FlatBuffersSerializer
+from .human_yaml import PyYamlSerializer
 from .native_pickle import PickleSerializer
 from .native_cloudpickle import CloudpickleSerializer
 from .native_dill import DillSerializer
@@ -30,6 +31,7 @@ __all__ = [
     "ProtobufSerializer",
     "AvroSerializer",
     "FlatBuffersSerializer",
+    "PyYamlSerializer",
     "PickleSerializer",
     "CloudpickleSerializer",
     "DillSerializer",

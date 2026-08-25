@@ -12,9 +12,10 @@ rust/src/serializers/
   binary_serde.rs  # rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson
   direct.rs        # minicbor, rkyv, nanoserde, speedy
   prost_ser.rs     # prost + fixture conversion
+  avro_ser.rs      # serde_avro_fast (Avro binary datum)
 ```
 
-## Serializers (15)
+## Serializers (16)
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
@@ -31,14 +32,24 @@ rust/src/serializers/
 | minicbor | CBOR | direct `Encode`/`Decode` |
 | rkyv | Zero-copy | timed path materializes owned `T` for fidelity |
 | prost | Protobuf | convert in `prepare`; timed codec only |
+| serde_avro_fast | Schema | schema + `SerializerConfig` once; `to_datum` / `from_datum_slice` |
 | nanoserde | Binary | `SerBin` / `DeBin` |
 | speedy | Binary | `Writable` / `Readable` |
 
 ### Call-path contract
 
-1. `prepare` — untimed  
-2. `serialize_bytes` / `deserialize_bytes` — timed  
+1. `prepare` — untimed (bind kind-specific encode fns, codec config)  
+2. `serialize_into` / `deserialize_bytes` — timed  
 3. Stream: **native** or **adapted**
+
+### Timing methodology (issue #59)
+
+| Concern | Policy |
+|---------|--------|
+| **Output buffer** | Benchmark runner owns a reusable `Vec<u8>`, `clear()`s before each timed encode, reuses capacity across reps. Cold allocation is expected in warmup (rep 0; dropped when `exclude_warmup` is set). Timed work is encode into that buffer. |
+| **Optimization barriers** | `std::hint::black_box` on timed inputs and outputs. |
+| **Fixture kind** | Direct codecs (`minicbor`, `rkyv`, …) bind a monomorphic encode fn in `prepare` so the timed path is not a multi-way `match fixture`. |
+| **RNG** | `rand_pcg::Lcg64Xsh32` with nothing-up-my-sleeve π digits + suite `BENCHMARK_SEED` mix (within-language determinism only). |
 
 ### Not yet in suite
 

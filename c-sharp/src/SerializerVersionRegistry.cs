@@ -18,6 +18,7 @@ namespace GLD.SerializerBenchmark
                 ["Json.Net"] = "Newtonsoft.Json",
                 ["Json.Net (Helper)"] = "Newtonsoft.Json",
                 ["ProtoBuf"] = "protobuf-net",
+                ["LightProto"] = "LightProto",
                 ["Jil"] = "Jil",
                 ["ServiceStack Json"] = "ServiceStack.Text",
                 ["ServiceStack"] = "ServiceStack.Text",
@@ -36,6 +37,7 @@ namespace GLD.SerializerBenchmark
                 ["FlatSharp"] = "FlatSharp",
                 ["FluentSerializer"] = "FluentSerializer.Json",
                 ["Google.Protobuf"] = "Google.Protobuf",
+                ["Apache.Avro"] = "Avro",
                 ["GroBuf"] = "GroBuf",
                 ["Hyperion"] = "Hyperion",
                 ["NetSerializer"] = "NetSerializer",
@@ -47,6 +49,7 @@ namespace GLD.SerializerBenchmark
                 ["ZeroFormatter"] = "ZeroFormatter",
                 ["BinaryPack"] = "BinaryPack",
                 ["MemoryPack"] = "MemoryPack",
+                ["MessagePack-CSharp"] = "MessagePack",
                 ["Migrant"] = "Migrant",
             };
 

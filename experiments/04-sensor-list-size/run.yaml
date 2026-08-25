@@ -1,0 +1,33 @@
+# Generated from experiment.yaml. Edit experiment.yaml, not this file.
+id: 04-sensor-list-size
+description: When is JSON too large for a sensor list?
+data_model_version: 2
+types:
+- type_id: telemetry
+  type_config:
+    points: 8
+- type_id: telemetry
+  type_config:
+    points: 32
+- type_id: telemetry
+  type_config:
+    points: 128
+- type_id: telemetry
+  type_config:
+    points: 512
+data_type_instance_count:
+- 1
+compression:
+  mode: size_only
+  algorithms:
+  - gzip_6
+  - zstd_3
+execution:
+  mode: full
+  io_modes:
+  - bytes
+  - stream
+budget:
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50

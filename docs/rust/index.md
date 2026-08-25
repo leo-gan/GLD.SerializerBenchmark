@@ -1,15 +1,20 @@
-# Rust
+---
+title: "Rust"
+---
+
+Rust
+====
 
 Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends. A second tier (**rkyv**, FlatBuffers, Cap’n Proto) targets zero-copy access.
 
-## Benchmark harness
+## Benchmark runner
 
 - Directory: `rust/` (repository root)
 - Output: monorepo `logs/rust/YYYY-MM-DD-HHMMSS.csv` (`Language=rust`, times in **nanoseconds**)
 - Runner: `rust/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `cargo run --release -- <reps>`
 - Registration: [`rust/src/serializers/mod.rs`](../../rust/src/serializers/mod.rs) (family modules under `serializers/`)
 
-## Serializers (15)
+## Serializers
 
 | Serializer | Category | Crate | Native path | Stream | Notes |
 |------------|----------|-------|-------------|--------|-------|
@@ -24,6 +29,7 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 | prost | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
 | rkyv | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
 | rmp-serde | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
+| serde_avro_fast | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records) |
 | serde_json | JSON | `serde_json` | Serde `Fixture` | native | Baseline |
 | simd-json | JSON | `simd-json` | SIMD **parse**; ser via serde_json | adapted | Honest split responsibilities |
 | sonic-rs | JSON | `sonic-rs` | Serde-compatible SIMD JSON | adapted | Hot-path JSON |
@@ -39,19 +45,35 @@ for rep:
   fidelity(expected, actual)     # untimed
 ```
 
-### Suite fixtures
-
-Type ids: `message`, `document`, `telemetry`, `strings`, `event`.
-
 ### Caveats
 
-- **simd-json serialize** is `serde_json` (crate optimizes parse).
-- **rkyv:** access-only (zero-copy without materialize) would be faster; suite materializes for a fair owned-value fidelity check.
-- **prost** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
+These notes explain odd-looking correctness or speed edges on Rust only:
+
+- **prost** maps ISO timestamps through millisecond integers; the benchmark runner allows date-string drift on types that carry timestamps (message, event, document, telemetry).
+- **rkyv** timed deserialize **builds owned values** for comparison; a pure zero-copy `access` path would be faster.
+- **simd-json** serialize still goes through `serde_json` (the crate focuses on parse speed).
 - **flatbuffers / capnp:** not registered yet (codegen weight); flexbuffers partially covers FB-family schemaless use.
 - Stream mode is **native** only where noted; others are adapted bytes+cursor.
 
 Also: [`rust/README.md`](../../rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+
+## How to rank
+
+Compare serializers **inside the same family** only (JSON with JSON, not JSON with a zero-copy schema codec). Rank in **bytes mode** only (the in-memory buffer API — not “payload size in bytes”). Stream mode is left out of this ranking.
+
+| Family | Members |
+|--------|---------|
+| JSON | `serde_json`, `simd-json`, `sonic-rs` |
+| Rust-centric binary | `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy` |
+| Schema / zero-copy | `flexbuffers`, `rkyv`, `prost` |
+| Schemaless binary (interop) | `bson`, `ciborium`, `minicbor`, `rmp-serde` |
+
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=rust&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 
 ## Design choices
 

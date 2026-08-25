@@ -29,9 +29,12 @@ public final class Registry {
           new Entry("jackson-smile", JacksonSmileSer::new),
           new Entry("ion", IonSer::new),
           new Entry("bson", BsonSer::new),
+          new Entry("jackson-yaml", JacksonYamlSer::new),
           // Schema
           new Entry("protobuf", ProtobufSer::new),
-          new Entry("avro", AvroSer::new));
+          new Entry("avro", AvroSer::new),
+          new Entry("flatbuffers", FlatBuffersSer::new),
+          new Entry("capnproto", CapnProtoSer::new));
 
   private Registry() {}
 

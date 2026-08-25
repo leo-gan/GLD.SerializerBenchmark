@@ -1,0 +1,100 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 08-human-files
+title: Can we send YAML on the live path?
+question: On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
+story:
+  why: YAML, TOML, and XML exist so people can edit files. They were not built for a live request.
+  example: A service reads a config file at start. Someone proposes sending that same YAML on every request.
+  tradeoff: Keep YAML on disk if people edit it. Convert once at start. Use JSON (or a denser format) on the live path.
+
+sample:
+  kind: [document, strings]
+  records_per_write: 1
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: python
+    enabled: true
+    libraries:
+      - {name: orjson, writes_named_fields: true, role: JSON}
+      - {name: yaml, writes_named_fields: true, role: YAML — PyYAML}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON}
+      - {name: jackson-yaml, writes_named_fields: true, role: YAML — Jackson}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: JSON.stringify, writes_named_fields: true, role: JSON}
+      - {name: js-yaml, writes_named_fields: true, role: YAML}
+
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: serde_json, writes_named_fields: true, role: JSON}
+      - {name: serde_yaml, writes_named_fields: true, role: YAML}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: yyjson, writes_named_fields: true, role: JSON}
+      - {name: libyaml, writes_named_fields: true, role: YAML}
+
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: nlohmann_json, writes_named_fields: true, role: JSON}
+      - {name: yaml-cpp, writes_named_fields: true, role: YAML}
+
+  - id: go
+    enabled: true
+    libraries:
+      - {name: goccy/go-json, writes_named_fields: true, role: JSON}
+      - {name: goccy/go-yaml, writes_named_fields: true, role: YAML}
+      - {name: pelletier/go-toml, writes_named_fields: true, role: TOML}
+
+  - id: swift
+    enabled: true
+    libraries:
+      - {name: IkigaJSON, writes_named_fields: true, role: JSON}
+      - {name: Yams, writes_named_fields: true, role: YAML}
+      - {name: TOML, writes_named_fields: true, role: TOML}
+      - {name: XMLCoder, writes_named_fields: true, role: XML}
+
+  - id: csharp
+    enabled: true
+    libraries:
+      - {name: System.Text.Json, writes_named_fields: true, role: JSON}
+      - {name: YamlDotNet, writes_named_fields: true, role: YAML}
+      - {name: MS XmlSerializer, writes_named_fields: true, role: XML}

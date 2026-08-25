@@ -1,0 +1,59 @@
+{
+  "about": "Preview copy for the plan. When this experiment is opened, that folder's save_sample.py will write the official sample.json. Do not edit by hand.",
+  "source": "--kind strings",
+  "builder": "python/src/benchmark/data_v2/generator.py",
+  "cells": [
+    {
+      "kind": "strings",
+      "settings": {
+        "count": 32,
+        "string_len": {
+          "min": 3,
+          "max": 16
+        },
+        "duplication": 0.1
+      },
+      "settings_hash": "68ff6ad99f20",
+      "how_many_records": 1,
+      "seed": 42,
+      "records": [
+        {
+          "items": [
+            "onnmcmdfqriecps",
+            "nbfhfgtn",
+            "oronfndvtdn",
+            "efeupquqezcr",
+            "gssadmn",
+            "ufjfax",
+            "tbbakcpsbpfnysl",
+            "pudhprco",
+            "zkee",
+            "bpxyjtkrfkb",
+            "rkmhpiat",
+            "ninrvvceyoek",
+            "lgiuthadhdy",
+            "pudhprco",
+            "sryvhceinkfhwqf",
+            "nvximx",
+            "zmfvpgl",
+            "uifalrypxduedjn",
+            "xkvlsmob",
+            "gbipzp",
+            "sninhnufxol",
+            "jexfvv",
+            "hkxxclrwrdno",
+            "bpxyjtkrfkb",
+            "dsh",
+            "sqzgakfx",
+            "hchwgnembavdop",
+            "nrcnmdrbcgdrxw",
+            "pifpefppirh",
+            "yuiv",
+            "riq",
+            "hrxskgubnexas"
+          ]
+        }
+      ]
+    }
+  ]
+}

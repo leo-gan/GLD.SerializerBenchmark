@@ -1,0 +1,98 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 07-write-once-read-many
+title: Fast to write, or fast to read?
+question: If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
+story:
+  why: Some libraries make reading cheap (look at the bytes as they arrived). Writing can be more expensive. Adding write + read hides that split.
+  example: A game asset, a replay file, or a buffer one program builds and another reads many times — sometimes only a few fields.
+  tradeoff: Good when you write once and read often. Poor when you change the record on every request. Look at write and read separately. Do not add them.
+
+sample:
+  kind: [document, telemetry]
+  records_per_write: 1
+  seed: 42
+  settings:
+    points: 512
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+languages:
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}
+      - {name: flexbuffers, writes_named_fields: true, role: FlexBuffers}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — in-tree wire helper}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers — official libprotobuf}
+
+  - id: csharp
+    enabled: true
+    libraries:
+      - {name: FlatSharp, writes_named_fields: true, role: FlatBuffers-like on .NET}
+      - {name: ZeroFormatter, writes_named_fields: true, role: read-in-place / fewer objects}
+      - {name: MemoryPack, writes_named_fields: true, role: fewer new objects}
+      - {name: ProtoBuf, writes_named_fields: true, role: Protocol Buffers — protobuf-net}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: flexbuffers, writes_named_fields: true, role: FlexBuffers}
+
+  - id: python
+    enabled: true
+    libraries:
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers — Python builder is slow; do not reject the format from this row}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: rkyv, writes_named_fields: true, role: rkyv — timed read builds a full value}
+      - {name: prost, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: flatcc, writes_named_fields: true, role: FlatBuffers — C}
+      - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — wire helper}
+
+  - id: swift
+    enabled: true
+    libraries:
+      - {name: FlatBuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: CapnProto, writes_named_fields: true, role: Cap’n Proto}
+      - {name: SwiftProtobuf, writes_named_fields: true, role: Protocol Buffers}

@@ -110,6 +110,21 @@
       <artifactId>jackson-dataformat-ion</artifactId>
       <version>${jackson.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.flatbuffers</groupId>
+      <artifactId>flatbuffers-java</artifactId>
+      <version>24.3.25</version>
+    </dependency>
+    <dependency>
+      <groupId>org.capnproto</groupId>
+      <artifactId>runtime</artifactId>
+      <version>0.1.16</version>
+    </dependency>
 
     <!-- Schema / IDL -->
     <dependency>

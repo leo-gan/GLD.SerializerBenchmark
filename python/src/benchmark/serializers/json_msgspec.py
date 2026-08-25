@@ -211,8 +211,14 @@ class MsgspecMessagePackSerializer(_MsgspecStructSerializer):
         return msgspec.msgpack.Decoder(type=typ)
 
 
-def _msgspec_type_for(typ: type) -> Any:
-    return _STRUCT_TYPES.get(typ, typ)
+def _msgspec_type_for(typ: Any) -> Any:
+    if typ in _STRUCT_TYPES:
+        return _STRUCT_TYPES[typ]
+    if get_origin(typ) is list:
+        args = get_args(typ)
+        if args:
+            return list[_msgspec_type_for(args[0])]
+    return typ
 
 
 def _to_msgspec_struct(obj: Any) -> Any:

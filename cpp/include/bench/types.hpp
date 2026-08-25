@@ -99,7 +99,8 @@ struct Event {
   }
 };
 
-// xorshift64* RNG matching other language harnesses (within-language seed mixing).
+// Deterministic xorshift64* (within-language only). Zero-seed / avalanche uses
+// floor(2^64/φ)=0x9E3779B97F4A7C15 (golden ratio; nothing-up-my-sleeve).
 class Rng {
  public:
   explicit Rng(uint64_t seed) : state_(seed == 0 ? 0x9E3779B97F4A7C15ULL : seed) {}

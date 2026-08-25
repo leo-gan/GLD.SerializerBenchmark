@@ -2,12 +2,31 @@
 //!
 //! Builds first-class V2 `Fixture` variants (Message/Document/Telemetry/Strings/Event)
 //! directly from generators.
+//!
+//! ## Timing contract (issue #59)
+//!
+//! - Harness owns a reusable serialize buffer; `clear()` before each timed encode.
+//! - Capacity is preserved across reps so cold allocation is mostly warmup (rep 0).
+//! - [`std::hint::black_box`] on timed inputs/outputs prevents optimization leakage.
+//! - Direct codecs bind type-specific encode fns in `prepare` (outside the timer).
+//!
+//! ## Schedule (B-1)
+//!
+//! - Default `BENCHMARK_SCHEDULE=block_shuffle`: cell → prepare all → mode → rep →
+//!   Fisher–Yates shuffle serializers → timed trials (per-serializer buffers).
+//! - `none`: legacy serializer → mode → rep order.
 
+use crate::compress::compress_sizes;
 use crate::csv_log::CsvLogger;
 use crate::data::{self, fidelity, Fixture};
+use crate::schedule::{
+    derive_schedule_seed, fisher_yates, resolve_record_run_order, resolve_schedule_strategy,
+};
 use crate::serializers::{all_serializers, BenchSerializer, StreamMode};
 use anyhow::{Context, Result};
 use serde_json::Value;
+use std::collections::HashMap;
+use std::hint::black_box;
 use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
@@ -25,6 +44,17 @@ impl Cell {
     fn primary(&self) -> &Fixture {
         &self.fixtures[0]
     }
+}
+
+/// Per-serializer harness state for one cell (untimed prepare + exclusive buffers).
+struct PreparedSer {
+    /// Index into the outer `serializers` vec.
+    idx: usize,
+    name: String,
+    /// Serialize output buffer (capacity reused across reps for this serializer only).
+    ser_buf: Vec<u8>,
+    /// Per-item scratch for N>1 batch framing.
+    cell_scratch: Vec<u8>,
 }
 
 fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
@@ -100,28 +130,32 @@ fn load_cells(run_config: &str, seed: u64) -> Result<(Vec<Cell>, Vec<String>)> {
     Ok((out_cells, modes))
 }
 
-/// Encode one cell: N=1 → raw codec bytes; N>1 → u32 LE count + (u32 LE len + payload)×N.
+/// Encode one cell into `out` (caller cleared): N=1 → raw codec bytes;
+/// N>1 → u32 LE count + (u32 LE len + payload)×N.
 /// Matches C `bench_serialize_cell` so DataTypeInstanceCount reflects real batch work.
-fn serialize_cell_bytes(
+/// `scratch` is a harness-owned per-item buffer reused across the batch and across reps.
+fn serialize_cell_into(
     ser: &mut dyn BenchSerializer,
     fixtures: &[Fixture],
-) -> Result<Vec<u8>> {
+    out: &mut Vec<u8>,
+    scratch: &mut Vec<u8>,
+) -> Result<()> {
     if fixtures.is_empty() {
         anyhow::bail!("empty batch");
     }
     if fixtures.len() == 1 {
-        return ser.serialize_bytes(&fixtures[0]);
+        return ser.serialize_into(black_box(&fixtures[0]), out);
     }
     let n = fixtures.len() as u32;
-    let mut out = Vec::with_capacity(4 + fixtures.len() * 64);
     out.extend_from_slice(&n.to_le_bytes());
     for fx in fixtures {
-        let part = ser.serialize_bytes(fx)?;
-        let len = part.len() as u32;
+        scratch.clear();
+        ser.serialize_into(black_box(fx), scratch)?;
+        let len = scratch.len() as u32;
         out.extend_from_slice(&len.to_le_bytes());
-        out.extend_from_slice(&part);
+        out.extend_from_slice(scratch);
     }
-    Ok(out)
+    Ok(())
 }
 
 fn deserialize_cell_bytes(
@@ -130,12 +164,12 @@ fn deserialize_cell_bytes(
     expected: &[Fixture],
 ) -> Result<Vec<Fixture>> {
     if expected.len() == 1 {
-        return Ok(vec![ser.deserialize_bytes(buf)?]);
+        return Ok(vec![ser.deserialize_bytes(black_box(buf))?]);
     }
     if buf.len() < 4 {
         anyhow::bail!("batch frame too short");
     }
-    let n = u32::from_le_bytes(buf[0..4].try_into()? ) as usize;
+    let n = u32::from_le_bytes(buf[0..4].try_into()?) as usize;
     if n != expected.len() {
         anyhow::bail!("batch count {n} != expected {}", expected.len());
     }
@@ -150,29 +184,10 @@ fn deserialize_cell_bytes(
         if o + item_len > buf.len() {
             anyhow::bail!("truncated batch payload");
         }
-        out.push(ser.deserialize_bytes(&buf[o..o + item_len])?);
+        out.push(ser.deserialize_bytes(black_box(&buf[o..o + item_len]))?);
         o += item_len;
     }
     Ok(out)
-}
-
-fn serialize_cell_stream(
-    ser: &mut dyn BenchSerializer,
-    fixtures: &[Fixture],
-    w: &mut dyn std::io::Write,
-) -> Result<usize> {
-    // Adapted: build full cell bytes then write (stream size = framed payload length).
-    let data = serialize_cell_bytes(ser, fixtures)?;
-    w.write_all(&data)?;
-    Ok(data.len())
-}
-
-fn deserialize_cell_stream(
-    ser: &mut dyn BenchSerializer,
-    buf: &[u8],
-    expected: &[Fixture],
-) -> Result<Vec<Fixture>> {
-    deserialize_cell_bytes(ser, buf, expected)
 }
 
 fn check_batch_fidelity(expected: &[Fixture], got: &[Fixture]) -> Result<()> {
@@ -188,6 +203,117 @@ fn check_batch_fidelity(expected: &[Fixture], got: &[Fixture]) -> Result<()> {
             anyhow::bail!("fidelity failed for {}", a.name());
         }
     }
+    Ok(())
+}
+
+fn native_kind_str(ser: &dyn BenchSerializer) -> &'static str {
+    match ser.native_kind() {
+        crate::serializers::NativeKind::Serde => "serde",
+        crate::serializers::NativeKind::Message => "message",
+        crate::serializers::NativeKind::Archive => "archive",
+        crate::serializers::NativeKind::Direct => "direct",
+    }
+}
+
+fn stream_mode_str(ser: &dyn BenchSerializer, mode: &str, n_instances: usize) -> &'static str {
+    // B-6: multi-instance stream uses batch-framed bytes APIs → adapted even if codec is native.
+    if mode == "stream" && n_instances > 1 {
+        return "adapted";
+    }
+    match ser.stream_mode() {
+        StreamMode::Native => "native",
+        StreamMode::Adapted => "adapted",
+    }
+}
+
+/// Timed serialize+deserialize for one (serializer, cell, mode).
+fn measure_trial(
+    ser: &mut dyn BenchSerializer,
+    cell: &Cell,
+    mode: &str,
+    ser_buf: &mut Vec<u8>,
+    cell_scratch: &mut Vec<u8>,
+) -> Result<(u128, u128, usize)> {
+    ser_buf.clear();
+    cell_scratch.clear();
+    let t0 = Instant::now();
+    if mode == "stream" {
+        // B-6: for native stream codecs, timed ser AND deser must use stream APIs.
+        // Batch N>1 still uses length-prefixed frames (bytes API) → always adapted path.
+        if cell.fixtures.len() == 1 {
+            let n = ser.serialize_stream(
+                black_box(&cell.fixtures[0]),
+                black_box(&mut *ser_buf),
+            )?;
+            let ser_ns = t0.elapsed().as_nanos();
+            black_box(n);
+            let t1 = Instant::now();
+            let mut cursor = std::io::Cursor::new(ser_buf.as_slice());
+            let out = ser.deserialize_stream(black_box(&mut cursor))?;
+            let deser_ns = t1.elapsed().as_nanos();
+            black_box(&out);
+            check_batch_fidelity(&cell.fixtures, &[out])?;
+            Ok((ser_ns, deser_ns, n))
+        } else {
+            // Multi-instance stream uses batch framing + deserialize_bytes (adapted).
+            serialize_cell_into(ser, &cell.fixtures, ser_buf, cell_scratch)?;
+            let ser_ns = t0.elapsed().as_nanos();
+            black_box(ser_buf.len());
+            let t1 = Instant::now();
+            let outs = deserialize_cell_bytes(ser, ser_buf, &cell.fixtures)?;
+            let deser_ns = t1.elapsed().as_nanos();
+            black_box(&outs);
+            check_batch_fidelity(&cell.fixtures, &outs)?;
+            Ok((ser_ns, deser_ns, ser_buf.len()))
+        }
+    } else {
+        serialize_cell_into(ser, &cell.fixtures, ser_buf, cell_scratch)?;
+        let ser_ns = t0.elapsed().as_nanos();
+        black_box(ser_buf.len());
+        let t1 = Instant::now();
+        let outs = deserialize_cell_bytes(ser, ser_buf, &cell.fixtures)?;
+        let deser_ns = t1.elapsed().as_nanos();
+        black_box(&outs);
+        check_batch_fidelity(&cell.fixtures, &outs)?;
+        Ok((ser_ns, deser_ns, ser_buf.len()))
+    }
+}
+
+fn write_success(
+    logger: &mut CsvLogger,
+    ser: &dyn BenchSerializer,
+    cell: &Cell,
+    mode: &str,
+    repetitions: u32,
+    rep_index: u32,
+    ser_ns: u128,
+    deser_ns: u128,
+    size: usize,
+    size_gzip: usize,
+    size_zstd: usize,
+    run_order: Option<i32>,
+    schedule_position: Option<i32>,
+) -> Result<()> {
+    logger.write_row_v2(
+        mode,
+        &cell.type_id,
+        repetitions,
+        rep_index,
+        ser.name(),
+        ser_ns,
+        deser_ns,
+        size,
+        1.0,
+        ser.version(),
+        native_kind_str(ser),
+        stream_mode_str(ser, mode, cell.fixtures.len()),
+        cell.instance_count as u32,
+        &cell.type_config_hash,
+        run_order,
+        schedule_position,
+        size_gzip,
+        size_zstd,
+    )?;
     Ok(())
 }
 
@@ -213,14 +339,29 @@ pub fn run_v2(
         serializers.retain(|s| s.name().to_lowercase().contains(&f));
     }
 
+    let strategy = resolve_schedule_strategy();
+    let record_ro = resolve_record_run_order();
+    let mut global_run_order: i32 = 0;
+
     let mut logger = CsvLogger::create(log_path)?;
     println!(
-        "[PROGRESS] Rust Data Model v2: {} serializers, {} cells, {} reps, modes={:?}",
+        "[PROGRESS] Rust Data Model v2: {} serializers, {} cells, {} reps, modes={:?} schedule={}",
         serializers.len(),
         cells.len(),
         repetitions,
-        modes
+        modes,
+        strategy
     );
+    println!(
+        "[PROGRESS] schedule={} record_run_order={} seed={}",
+        strategy, record_ro, seed
+    );
+
+    let mode_list: Vec<&str> = if modes.is_empty() {
+        vec!["bytes"]
+    } else {
+        modes.iter().map(|s| s.as_str()).collect()
+    };
 
     for cell in &cells {
         println!(
@@ -228,91 +369,167 @@ pub fn run_v2(
             cell.type_id, cell.instance_count
         );
         let primary = cell.primary();
-        for ser in serializers.iter_mut() {
-            if !ser.supports(primary.name()) {
-                // still try — some support by type_id only
-                if !ser.supports(&cell.type_id) {
-                    continue;
-                }
-            }
-            // Prepare on first instance shape (codecs cache type state).
-            if let Err(e) = ser.prepare(primary) {
-                eprintln!("[ERROR] prepare {} / {} : {}", ser.name(), cell.type_id, e);
+
+        // Untimed prepare once per (cell, serializer); exclusive buffers per serializer (B-1).
+        let mut prepared: Vec<PreparedSer> = Vec::new();
+        let mut failed: HashMap<String, bool> = HashMap::new();
+
+        for (idx, ser) in serializers.iter_mut().enumerate() {
+            if !ser.supports(primary.name()) && !ser.supports(&cell.type_id) {
                 continue;
             }
-            let mode_list: Vec<&str> = if modes.is_empty() {
-                vec!["bytes"]
-            } else {
-                modes.iter().map(|s| s.as_str()).collect()
-            };
-            for mode in mode_list {
-                let mut had_error = false;
-                for i in 0..repetitions {
-                    if had_error {
-                        break;
+            if let Err(e) = ser.prepare(primary) {
+                eprintln!("[ERROR] prepare {} / {} : {}", ser.name(), cell.type_id, e);
+                failed.insert(ser.name().to_string(), true);
+                continue;
+            }
+            prepared.push(PreparedSer {
+                idx,
+                name: ser.name().to_string(),
+                ser_buf: Vec::with_capacity(64 * 1024),
+                cell_scratch: Vec::with_capacity(4096),
+            });
+        }
+
+        if strategy == "none" {
+            // Legacy nesting: serializer → mode → all reps
+            for p_i in 0..prepared.len() {
+                let name = prepared[p_i].name.clone();
+                if failed.get(&name).copied().unwrap_or(false) {
+                    continue;
+                }
+                for mode in &mode_list {
+                    let mut had_error = false;
+                    for i in 0..repetitions {
+                        if had_error {
+                            break;
+                        }
+                        let idx = prepared[p_i].idx;
+                        let measured = {
+                            let p = &mut prepared[p_i];
+                            measure_trial(
+                                serializers[idx].as_mut(),
+                                cell,
+                                mode,
+                                &mut p.ser_buf,
+                                &mut p.cell_scratch,
+                            )
+                        };
+                        match measured {
+                            Ok((ser_ns, deser_ns, size)) => {
+                                let (gz, zs) = compress_sizes(&prepared[p_i].ser_buf);
+                                let (ro, sp) = if record_ro {
+                                    let ro = global_run_order;
+                                    global_run_order += 1;
+                                    (Some(ro), Some(0))
+                                } else {
+                                    (None, None)
+                                };
+                                write_success(
+                                    &mut logger,
+                                    serializers[idx].as_ref(),
+                                    cell,
+                                    mode,
+                                    repetitions,
+                                    i,
+                                    ser_ns,
+                                    deser_ns,
+                                    size,
+                                    gz,
+                                    zs,
+                                    ro,
+                                    sp,
+                                )?;
+                            }
+                            Err(e) => {
+                                eprintln!(
+                                    "[ERROR] {} / {} / {} : {}",
+                                    name, cell.type_id, mode, e
+                                );
+                                had_error = true;
+                                failed.insert(name.clone(), true);
+                            }
+                        }
                     }
-                    let measured = (|| -> Result<(u128, u128, usize)> {
-                        // Batch cells: frame N single-item payloads (same as C harness).
-                        // N=1 is a thin passthrough — no framing overhead.
-                        if mode == "stream" {
-                            let mut buf = Vec::new();
-                            let t0 = Instant::now();
-                            let size = serialize_cell_stream(ser.as_mut(), &cell.fixtures, &mut buf)?;
-                            let ser_ns = t0.elapsed().as_nanos();
-                            let t1 = Instant::now();
-                            let outs = deserialize_cell_stream(ser.as_mut(), &buf, &cell.fixtures)?;
-                            let deser_ns = t1.elapsed().as_nanos();
-                            check_batch_fidelity(&cell.fixtures, &outs)?;
-                            Ok((ser_ns, deser_ns, size))
-                        } else {
-                            let t0 = Instant::now();
-                            let buf = serialize_cell_bytes(ser.as_mut(), &cell.fixtures)?;
-                            let ser_ns = t0.elapsed().as_nanos();
-                            let t1 = Instant::now();
-                            let outs = deserialize_cell_bytes(ser.as_mut(), &buf, &cell.fixtures)?;
-                            let deser_ns = t1.elapsed().as_nanos();
-                            check_batch_fidelity(&cell.fixtures, &outs)?;
-                            Ok((ser_ns, deser_ns, buf.len()))
+                }
+            }
+        } else {
+            // block_shuffle: mode → rep → shuffled serializers
+            for mode in &mode_list {
+                for i in 0..repetitions {
+                    let eligible_names: Vec<String> = prepared
+                        .iter()
+                        .filter(|p| !failed.get(&p.name).copied().unwrap_or(false))
+                        .map(|p| p.name.clone())
+                        .collect();
+                    let shuffle_seed = derive_schedule_seed(
+                        seed,
+                        &cell.type_id,
+                        cell.instance_count,
+                        &cell.type_config_hash,
+                        mode,
+                        i,
+                    );
+                    let order_names = fisher_yates(&eligible_names, shuffle_seed);
+                    // name → position in `prepared`
+                    let name_to_prep: HashMap<String, usize> = prepared
+                        .iter()
+                        .enumerate()
+                        .map(|(pi, p)| (p.name.clone(), pi))
+                        .collect();
+
+                    for (pos, ser_name) in order_names.iter().enumerate() {
+                        if failed.get(ser_name).copied().unwrap_or(false) {
+                            continue;
                         }
-                    })();
-                    match measured {
-                        Ok((ser_ns, deser_ns, size)) => {
-                            let nk = match ser.native_kind() {
-                                crate::serializers::NativeKind::Serde => "serde",
-                                crate::serializers::NativeKind::Message => "message",
-                                crate::serializers::NativeKind::Archive => "archive",
-                                crate::serializers::NativeKind::Direct => "direct",
-                            };
-                            let sm = match ser.stream_mode() {
-                                StreamMode::Native => "native",
-                                StreamMode::Adapted => "adapted",
-                            };
-                            logger.write_row_v2(
+                        let p_i = match name_to_prep.get(ser_name) {
+                            Some(&pi) => pi,
+                            None => continue,
+                        };
+                        let idx = prepared[p_i].idx;
+                        let measured = {
+                            let p = &mut prepared[p_i];
+                            measure_trial(
+                                serializers[idx].as_mut(),
+                                cell,
                                 mode,
-                                &cell.type_id,
-                                repetitions,
-                                i,
-                                ser.name(),
-                                ser_ns,
-                                deser_ns,
-                                size,
-                                1.0,
-                                ser.version(),
-                                nk,
-                                sm,
-                                cell.instance_count as u32,
-                                &cell.type_config_hash,
-                            )?;
-                        }
-                        Err(e) => {
-                            eprintln!(
-                                "[ERROR] {} / {} / {} : {}",
-                                ser.name(),
-                                cell.type_id,
-                                mode,
-                                e
-                            );
-                            had_error = true;
+                                &mut p.ser_buf,
+                                &mut p.cell_scratch,
+                            )
+                        };
+                        match measured {
+                            Ok((ser_ns, deser_ns, size)) => {
+                                let (gz, zs) = compress_sizes(&prepared[p_i].ser_buf);
+                                let (ro, sp) = if record_ro {
+                                    let ro = global_run_order;
+                                    global_run_order += 1;
+                                    (Some(ro), Some(pos as i32))
+                                } else {
+                                    (None, None)
+                                };
+                                write_success(
+                                    &mut logger,
+                                    serializers[idx].as_ref(),
+                                    cell,
+                                    mode,
+                                    repetitions,
+                                    i,
+                                    ser_ns,
+                                    deser_ns,
+                                    size,
+                                    gz,
+                                    zs,
+                                    ro,
+                                    sp,
+                                )?;
+                            }
+                            Err(e) => {
+                                eprintln!(
+                                    "[ERROR] {} / {} / {} : {}",
+                                    ser_name, cell.type_id, mode, e
+                                );
+                                failed.insert(ser_name.clone(), true);
+                            }
                         }
                     }
                 }

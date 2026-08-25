@@ -121,6 +121,13 @@ def regression_threshold(config_path: Optional[str | Path] = None) -> float:
     return float(dig(cfg, "regression.threshold_percent", 10.0))
 
 
+def regression_config(config_path: Optional[str | Path] = None) -> Dict[str, Any]:
+    """Full ``regression:`` block with defaults (see regression.load_regression_config)."""
+    from .regression import load_regression_config
+
+    return load_regression_config(str(config_path) if config_path else None)
+
+
 def language_entries(config_path: Optional[str | Path] = None) -> Dict[str, Dict[str, Any]]:
     """Map language id -> language block from ``languages:``."""
     cfg = load_master_config(config_path)
@@ -137,7 +144,7 @@ def known_language_ids(config_path: Optional[str | Path] = None) -> Tuple[str, .
 
 
 def enabled_languages(config_path: Optional[str | Path] = None) -> List[Dict[str, Any]]:
-    """Enabled language harness descriptors for orchestration.
+    """Enabled language benchmark-runner descriptors for orchestration.
 
     Each item: ``{id, display_name, runner_dir, runner_script, log_dir, ...}``.
     """

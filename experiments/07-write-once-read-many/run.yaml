@@ -1,0 +1,25 @@
+# Generated from experiment.yaml. Edit experiment.yaml, not this file.
+id: 07-write-once-read-many
+description: Write once, read many times
+data_model_version: 2
+types:
+- type_id: document
+  type_config: {}
+- type_id: telemetry
+  type_config:
+    points: 512
+data_type_instance_count:
+- 1
+compression:
+  mode: size_only
+  algorithms:
+  - gzip_6
+  - zstd_3
+execution:
+  mode: full
+  io_modes:
+  - bytes
+budget:
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50

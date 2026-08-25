@@ -1,33 +1,47 @@
 # Benchmark architecture
 
-**Job of this page:** how the suite is laid out, who it serves, how the harness times work, and where config lives.
+This page describes **how the suite is built**: folder layout, who the measurements are for, what is timed, and where configuration lives.
 
-| For this instead… | Go here |
-|-------------------|---------|
-| Statistics (warmup, IQR, bootstrap, effect sizes) | [Analysis methodology](ANALYSIS_METHODOLOGY.md) |
-| Fixtures and size knobs | [Test Data](test_data_configuration.md) |
-| Paradigms / registered families | [Serialization categories](serialization_categories.md) |
-| Extending the matrix | [Adding a language](ADDING_A_LANGUAGE.md) |
-| Published numbers | [Benchmark Results](BENCHMARK_SUMMARY.md) · language **Results** |
+Think of it as the **lab design** for the experiment. How we turn raw timings into tables is covered in [Analysis methodology](ANALYSIS_METHODOLOGY.md).
+
+| If you need… | Go here |
+|--------------|---------|
+| Statistics (warmup, outliers, confidence intervals) | [Analysis methodology](ANALYSIS_METHODOLOGY.md) |
+| Sample data shapes and size knobs | [Test data](test_data_configuration.md) |
+| JSON vs binary vs schema families | [Serialization categories](serialization_categories.md) |
+| How to add another language | [Adding a language](ADDING_A_LANGUAGE.md) |
+| How to add one library to an existing language | [Adding a serializer](ADDING_A_SERIALIZER.md) |
+| Published numbers | [Dashboard](../dashboard/) · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 
 ---
 
-## Goals (four audiences, one pipeline)
+## Learning goals
 
-Everyone uses the **same harness contract and analysis path**; the question changes.
+By the end of this page you should be able to:
 
-| Audience | Primary question | Suite hooks |
-|----------|------------------|-------------|
-| **Researchers** | Are within-language rankings defensible? | Fixed fixtures, modes (`smoke`…`research`), warmup exclusion, IQR, bootstrap CIs, effect sizes — details in [methodology](ANALYSIS_METHODOLOGY.md) |
-| **Serializer authors** | Did *this* library get better or worse? | Stable names/fixtures; `analyze-benchmarks --compare-a` / `--compare-b`; optional `--check-regression` |
-| **System integrators** | What fits *our* shapes and runtime? | Tunable `test_data_config.json`, dual I/O modes, language inventories, same CSV path for private runs |
-| **Maintainers** | Add a language without rewriting analysis? | Registry in `benchmark_config.yaml` + checklist in [Adding a language](ADDING_A_LANGUAGE.md) |
+1. Name the main folders of the repository and what each one is for.
+2. Explain the difference between **setup work** and **timed work**.
+3. List the rules every language **benchmark runner** (older docs: *harness*) must follow so results stay comparable.
+4. Choose a **run mode** (smoke, full, research, …) for your purpose.
+
+---
+
+## One pipeline, four kinds of reader
+
+Everyone uses the **same measurement contract** and the **same analysis path**. What changes is the question you bring:
+
+| Reader | Primary question | How the suite helps |
+|--------|------------------|---------------------|
+| **Student or researcher** | Are the rankings inside one language trustworthy? | Fixed data types, run modes, warmup exclusion, outlier handling, confidence intervals, effect sizes — see [methodology](ANALYSIS_METHODOLOGY.md) |
+| **Library author** | Can I drop in my codec? Did it get better or worse? | [Adding a serializer](ADDING_A_SERIALIZER.md); stable names + `--compare-a` / `--compare-b`; optional regression check |
+| **System builder** | What fits *our* data shapes and runtime? | Tunable test-data config, two I/O modes, language inventories, same CSV format for private runs |
+| **Maintainer** | Can I add a language without rewriting analysis? | Registry in `benchmark_config.yaml` plus the [Adding a language](ADDING_A_LANGUAGE.md) checklist |
 
 **Typical paths**
 
-- Research / publish snapshot: `./scripts/run-all-benchmarks.sh -m full -b` → `analyze-benchmarks` → commit language **Results** / plots.  
-- Author A/B: two CSVs of the same language → `analyze-benchmarks --compare-a lang:stampA --compare-b lang:stampB`.  
-- Integrator: adjust fixture sizes → one-language harness → private or committed **Results**.
+- **Publish a snapshot:** run all benchmark runners in `full` mode, run `analyze-benchmarks`, then `python3 dashboard/scripts/sync-data.py` and commit packed Dashboard data.
+- **Author A/B test:** two CSVs of the same language → compare with `--compare-a` / `--compare-b`.
+- **Private experiment:** change data-type sizes, run one language, keep unpublished reports under `reports/` or pack a local Dashboard.
 
 ---
 
@@ -35,74 +49,180 @@ Everyone uses the **same harness contract and analysis path**; the question chan
 
 | Path | Role |
 |------|------|
-| `config/benchmark_config.yaml` | Modes, stats defaults, language registry, CSV schema |
-| `schemas/` | `test_data_config.json`, protos, shared shape knobs |
-| `logs/<language>/` | Timestamped result CSVs (`YYYY-MM-DD-HHMMSS.csv`, gitignored) |
-| `analysis/` | Python analysis package (CLI: `analyze-benchmarks`) |
-| `python/` · `c-sharp/` · `rust/` · `c/` · `javascript/` · `go/` · `java/` · `cpp/` | Language harnesses |
-| `docs/` | MkDocs site (inventories, results snapshots, analysis pages) |
-| `scripts/run-all-benchmarks.sh` | Multi-language orchestrator |
+| `config/benchmark_config.yaml` | Run modes, statistics defaults, language list, CSV column schema |
+| `schemas/` | Shared data catalog, Protocol Buffers and related wire definitions |
+| `logs/<language>/` | Timestamped result CSVs (gitignored; not published as raw files) |
+| `analysis/` | Python package that implements the `analyze-benchmarks` command |
+| `python/`, `c-sharp/`, `rust/`, `c/`, `javascript/`, `go/`, `java/`, `cpp/`, `swift/` | One benchmark runner per language |
+| `docs/` | MkDocs site: theory, inventories, Dashboard, this analysis section |
+| `scripts/run-all-benchmarks.sh` | Orchestrates multi-language runs |
 
-Published site numbers are regenerated **locally** into `docs/<lang>/results.md` and `docs/analysis/plots/violin/`. CI deploys MkDocs only ([regeneration](BENCHMARK_SUMMARY.md#regenerating-language-snapshots)).
-
----
-
-## Measurement model
-
-What is timed (and what is not):
-
-1. **Untimed prepare** — codecs, schemas, buffers, serializer-native model build (language-specific; Rust often folds prepare into one step before the loop).  
-2. **Timed loop** (each repetition `i`):
-   - `serialize(obj)` → `TimeSer`
-   - `deserialize(bytes)` → `TimeDeser`
-   - fidelity check (failure → errors CSV; not a performance win)
-3. **Warmup** — repetition `i = 0` is excluded from aggregates by analysis.
-
-CSV modes are **I/O API paths** (`bytes` / `stream`, or legacy C# `string` / `stream`)—not payload size labels. Results pages show them as **bytes mode** / **stream mode**.
+Published site numbers are packed **on a developer machine** into `docs/dashboard/data/<lang>_latest.json.gz` via `dashboard/scripts/sync-data.py` (from `reports/stats_<lang>_latest.json`). Continuous integration only deploys the documentation site; it does not re-run the full analysis. See [Claims and replication](CLAIMS_AND_REPLICATION.md).
 
 ---
 
-## Harness contract (summary)
+## What we measure {#measurement-model}
+
+A fair timing experiment separates **preparation** (do this once, untimed) from **the loop** (do this many times, timed).
+
+### Step by step
+
+1. **Prepare (not timed)**  
+   Load schemas, create codecs, allocate buffers, build the in-memory object the serializer expects. Different languages do this slightly differently; the rule is the same: setup must not sit inside the stopwatch.
+
+2. **Timed loop** (for each repetition `i`):
+   - `serialize(object)` → record **serialize time**
+   - `deserialize(bytes)` → record **deserialize time**
+   - Check **fidelity** (does the data still mean the same thing?). Failures go to an errors file; a broken round-trip is never treated as a speed win.
+
+3. **Warmup**  
+   The first repetition (`i = 0`) is still written to the CSV, but analysis **drops** it from averages. That removes cold-start effects such as just-in-time compilation or first-time cache misses.
+
+### I/O modes (API path, not payload size)
+
+CSV rows also record how the serializer was called:
+
+| Label on the Dashboard | Meaning |
+|------------------------|---------|
+| **bytes mode** | Work with in-memory byte arrays (or equivalent; C# often uses **string**) |
+| **stream mode** | Work through a stream-style API |
+
+These names describe the **programming interface**, not whether the payload is “large” or “small.”
+
+**Full explanation** (why both exist, C# string/Base64, native vs adapted stream, fair comparison): **[Modes](modes.md)**.
+
+---
+
+## Timing rules (suite-wide) {#timing-methodology-suite-wide-issue-59}
+
+These policies keep native and managed languages from accidentally measuring different things (see also issue #59 in the project history).
+
+| Concern | Policy |
+|---------|--------|
+| **Output buffer** | Prefer a **runner-owned** buffer (or a pre-sized scratch buffer) that is cleared and reused across repetitions. Cold allocation should land in warmup. Document the language’s choice. Do not mix “always allocate fresh” and “reuse buffer” across serializers of the same language without documenting both. |
+| **Optimization barriers** | On optimizing native compilers (C, C++, Rust, …), force the compiler to keep timed inputs and outputs “alive” (`black_box`, `DoNotOptimize`, `KeepAlive`, or the language equivalent). Otherwise the compiler may delete the work as unused. |
+| **Data-type dispatch** | Bind type-specific encode paths during **prepare** (function pointers, closures, monomorphic helpers). The timed serialize path should not pay for a large `switch`/`match` on data type when the data type is fixed for the whole cell. |
+| **Random numbers** | Generation must be deterministic **within one language**. Prefer a well-known pseudo-random generator, seed it from `BENCHMARK_SEED` / `reproducibility.random_seed`, and document magic constants. Cross-language **identical** payloads are **not** required. |
+| **Stream capacity floors** | If the runner grows a stream buffer floor across reps, keep it **per serializer**, not shared across codecs (interleaved schedules would otherwise amortize one codec’s growth onto another). |
+
+Rust’s benchmark runner is a useful reference implementation: `rust/README.md` and `rust/src/run_v2.rs`.
+
+---
+
+## Timed-trial schedule (block shuffle) {#timed-trial-schedule}
+
+By default, benchmark runners use **`reproducibility.schedule.strategy: block_shuffle`** so serializer identity is not confounded with wall-clock position (thermal throttling, frequency drift).
+
+### Nesting
+
+```text
+for cell in cells:                         # fixed resolve / YAML order
+  prepare every eligible serializer        # UNTimed, once per cell
+  for mode in io_modes:                    # sequential mode blocks
+    for rep in 0 .. repetitions-1:
+      order = FisherYates(serializers, seed = H(...))
+      for ser in order:
+        timed serialize + deserialize
+        write CSV row (RepetitionIndex = rep; optional RunOrder)
+```
+
+- **Cells** stay outer and fixed (different prepare cost; clear progress/budget).
+- **I/O modes** stay sequential blocks (comparisons are within mode).
+- **Serializers** are reshuffled **each rep** (Fisher–Yates).
+- Escape hatch: `strategy: none` or env `BENCHMARK_SCHEDULE=none` restores legacy fixed order / older nesting.
+
+### Normative seed recipe (all languages)
+
+```text
+key = "{base_seed}|{type_id}|{instance_count}|{type_config_hash}|{mode}|{rep}"
+mode normalized: string|buffer → bytes; Stream → stream; then lowercase
+u64 = first 8 bytes of SHA-256(utf-8 key) as little-endian
+PRNG = SplitMix64(u64)
+Fisher–Yates: for i = n-1 .. 1: j = next_u64() % (i+1); swap i,j
+```
+
+`base_seed` is `BENCHMARK_SEED` / `reproducibility.random_seed`. Do **not** advance the payload-generation PRNG for shuffling.
+
+**Golden vector** (must match `analysis/tests/test_schedule.py`):
+
+| Input | Value |
+|-------|--------|
+| names | `A`, `B`, `C` |
+| base_seed | `42` |
+| type_id / n / hash / mode / rep | `message` / `1` / `abc` / `bytes` / `0` |
+| **result order** | **`C`, `B`, `A`** |
+
+Reference implementation: `analysis/src/benchmark_analysis/schedule.py`.
+
+### Optional CSV columns
+
+| Column | Meaning |
+|--------|---------|
+| `RunOrder` | Monotonic 0-based index of **written** result rows in process order |
+| `SchedulePosition` | Index of the serializer within the shuffled list for that rep |
+
+Analysis groups by matrix keys, not file order; these columns are for audits and diagnostics.
+
+---
+
+## Benchmark runner contract (summary) {#harness-contract-summary}
+
+Every language runner must satisfy this contract so analysis can treat files the same way.
 
 | Requirement | Detail |
 |-------------|--------|
-| Output | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` matching `csv_schema` |
+| Output file | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` matching `csv_schema` |
 | `Language` column | Language id (`csharp`, `python`, `rust`, …) |
-| Time unit | **Nanoseconds** for all harnesses (including C#) |
+| Time unit | **Nanoseconds** for every benchmark runner (including C#) |
 | Modes | `bytes` / `stream` (C# may use `string` / `stream`) |
-| Timed section | Serialize + deserialize only |
+| Schedule | Default `block_shuffle`; see [Timed-trial schedule](#timed-trial-schedule) |
+| Timed section | Serialize and deserialize only |
 | Fidelity | Round-trip check; failures → `logs/<lang>/<ts>.errors.csv` |
-| Seed | `schemas/test_data_config.json` / config `reproducibility.random_seed` |
+| Seed | From `schemas` / master config `reproducibility.random_seed` |
+| Methodology | Buffer reuse, barriers, prepare-bound kind — see [Timing rules](#timing-methodology-suite-wide-issue-59) above |
 
 Full implementer checklist: [Adding a language](ADDING_A_LANGUAGE.md).
 
 ---
 
-## Analysis pipeline (pointer only)
+## From CSV to published numbers (preview)
 
-CSV → normalize units → drop warmup → optional IQR → descriptive stats → bootstrap CI on mean → within-group effect sizes → optional A/B tests.
+```text
+Load CSV
+  → convert times to a common unit
+  → drop warmup row
+  → optional outlier filter
+  → means, medians, percentiles
+  → bootstrap confidence interval on the mean
+  → effect sizes vs the fastest serializer in the group
+  → optional A/B tests between two versions
+```
 
-Defaults: `statistics:` / `modes:` in `config/benchmark_config.yaml`. **Authoritative detail:** [Analysis methodology](ANALYSIS_METHODOLOGY.md).
+Defaults live under `statistics:` and `modes:` in `config/benchmark_config.yaml`. The authoritative walkthrough is [Analysis methodology](ANALYSIS_METHODOLOGY.md).
 
 ---
 
-## Run modes (repetitions)
+## Run modes (how many repetitions) {#run-modes-how-many-repetitions}
 
-From `modes:` in `config/benchmark_config.yaml` (do not hard-code counts in runners—use `bench_mode_reps`):
+Run modes come from `modes:` in `config/benchmark_config.yaml`. Runners should call `bench_mode_reps` rather than hard-coding counts.
 
 | Mode | Repetitions | Intent |
 |------|-------------|--------|
-| `smoke` | 2 | Minimal sanity / CI fast path |
-| `all-single` | 10 | Quick full-matrix pass |
+| `smoke` | 2 | Minimal sanity check / fast continuous-integration path |
+| `all-single` | 10 | Quick pass over the full matrix |
 | `full` | 100 | Publication-quality run |
 | `research` | 500 | High-power statistical study |
 
-Warmup policy: harnesses **always log** every successful rep (including index 0). Analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true (`reproducibility.warmup_repetitions` = **1**). Outlier filtering is analysis-only as well — raw `logs/<lang>/*.csv` files are never rewritten by the stats pipeline.
+**When to pick which mode, and how this differs from I/O mode:** **[Modes — run modes](modes.md#part-2--run-modes-how-heavy-the-experiment-is)**.
+
+**Warmup policy:** benchmark runners **always log** every successful repetition, including index 0. Analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true (the configured warmup count is **1**). Outlier filtering is also analysis-only. Raw files under `logs/<lang>/` are never rewritten by the stats pipeline.
+
+---
 
 ## Configuration map
 
-| Concern | File / page |
-|---------|-------------|
-| Run modes, stats, languages, paths | `config/benchmark_config.yaml` |
-| Payload shape and seed | `schemas/data_catalog_v2.yaml` + `config/library/` — [Test Data](test_data_configuration.md) |
-| Paradigm inventories | [Serialization categories](serialization_categories.md) + language **Overview** pages |
+| Concern | Where it lives |
+|---------|----------------|
+| Run modes, stats, languages, paths | `config/benchmark_config.yaml` — [Modes](modes.md) |
+| Payload shapes and seed | `schemas/data_catalog_v2.yaml` + `config/library/` — [Test data](test_data_configuration.md) |
+| Paradigm inventories | [Serialization categories](serialization_categories.md) + each language **Overview** |

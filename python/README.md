@@ -1,6 +1,6 @@
 # Python Serializer Benchmark
 
-Host harness evaluating **16 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
+Host benchmark runner evaluating **16 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
@@ -36,7 +36,7 @@ Every serializer is tested in **both modes**. Libraries without a native stream 
 
 | Metric | How It Is Measured | Rationale |
 | :--- | :--- | :--- |
-| **Throughput (ops/sec)** | `1_000_000_000 / nanoseconds` for serialize, deserialize, and combined. | Same formula as other harnesses. |
+| **Throughput (ops/sec)** | `1_000_000_000 / nanoseconds` for serialize, deserialize, and combined. | Same formula as other benchmark runners. |
 | **Latency** | Total elapsed nanoseconds per repetition; **all** indices written to CSV (including warmup index 0). Analysis may exclude warmup. | Raw logs stay complete for re-analysis. |
 | **Memory Allocation** | `tracemalloc` peak allocated bytes during each repetition. | C-extension allocations may be under-counted. |
 | **Output Size** | `len(bytes)` or `BytesIO.tell()`. | Comparable across languages. |
@@ -106,9 +106,13 @@ Override with `LOG_DIR` (if the path does not end in `python`, results go to `$L
 
 ### Add a serializer
 
+Full checklist (version column, honesty rules, results, PR): **[Adding a serializer](../docs/analysis/ADDING_A_SERIALIZER.md)**.
+
 1. Implement `Serializer` in `src/benchmark/serializers/`.
 2. Register in `ALL_SERIALIZERS` (`runner_v2` / package entry).
 3. Add dependency to `pyproject.toml` and `uv sync`.
+4. Ensure installed package version is reported for CSV `SerializerVersion`.
+5. Document in `docs/python/` inventory if present; re-run benchmarks + `analyze-benchmarks -l python`.
 
 ### Add a fixture type
 

@@ -1,9 +1,17 @@
 #include "bench/csv_log.hpp"
 
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <stdexcept>
 #include <tuple>
+#include <utility>
 #include <vector>
+#include <zlib.h>
+
+#ifdef HAS_ZSTD
+#include <zstd.h>
+#endif
 
 namespace bench {
 
@@ -14,7 +22,7 @@ CsvLogger::CsvLogger(const std::string& path) {
                "Language,StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,"
                "SerializerVersion,TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,"
                "OpPerSecSerAndDeser,MemoryPeakBytes,FidelityScore,NativeKind,StreamMode,"
-               "DataTypeInstanceCount,TypeConfigHash\n");
+               "DataTypeInstanceCount,TypeConfigHash,RunOrder,SchedulePosition,SizeGzip,SizeZstd\n");
 }
 
 CsvLogger::~CsvLogger() {
@@ -25,18 +33,56 @@ void CsvLogger::write_row(const std::string& mode, const std::string& test_data,
                           int rep_idx, const std::string& ser, const std::string& version,
                           uint64_t ser_ns, uint64_t deser_ns, size_t size, double fidelity,
                           const std::string& native_kind, const std::string& stream_mode,
-                          int instance_count, const std::string& type_config_hash) {
+                          int instance_count, const std::string& type_config_hash, int run_order,
+                          int schedule_position, size_t size_gzip, size_t size_zstd) {
   uint64_t tot = ser_ns + deser_ns;
   double ops_s = ser_ns ? 1e9 / static_cast<double>(ser_ns) : 0;
   double ops_d = deser_ns ? 1e9 / static_cast<double>(deser_ns) : 0;
   double ops_t = tot ? 1e9 / static_cast<double>(tot) : 0;
   if (instance_count < 1) instance_count = 1;
+  char ro[32] = "", sp[32] = "", gz[32] = "", zs[32] = "";
+  if (run_order >= 0) std::snprintf(ro, sizeof ro, "%d", run_order);
+  if (schedule_position >= 0) std::snprintf(sp, sizeof sp, "%d", schedule_position);
+  if (size_gzip > 0) std::snprintf(gz, sizeof gz, "%zu", size_gzip);
+  if (size_zstd > 0) std::snprintf(zs, sizeof zs, "%zu", size_zstd);
   std::fprintf(f_,
-               "cpp,%s,%s,%d,%d,%s,%s,%llu,%llu,%zu,%llu,%.6f,%.6f,%.6f,0,%.1f,%s,%s,%d,%s\n",
+               "cpp,%s,%s,%d,%d,%s,%s,%llu,%llu,%zu,%llu,%.6f,%.6f,%.6f,0,%.1f,%s,%s,%d,%s,%s,%s,%s,%s\n",
                mode.c_str(), test_data.c_str(), reps, rep_idx, ser.c_str(), version.c_str(),
                static_cast<unsigned long long>(ser_ns), static_cast<unsigned long long>(deser_ns),
                size, static_cast<unsigned long long>(tot), ops_s, ops_d, ops_t, fidelity,
-               native_kind.c_str(), stream_mode.c_str(), instance_count, type_config_hash.c_str());
+               native_kind.c_str(), stream_mode.c_str(), instance_count, type_config_hash.c_str(),
+               ro, sp, gz, zs);
+}
+
+std::pair<size_t, size_t> compress_sizes(const uint8_t* data, size_t n) {
+  if (!data || n == 0) return {0, 0};
+  size_t gz = 0;
+  z_stream strm;
+  std::memset(&strm, 0, sizeof strm);
+  if (deflateInit2(&strm, 6, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) == Z_OK) {
+    uLong bound = compressBound(static_cast<uLong>(n)) + 32;
+    auto* out = static_cast<uint8_t*>(std::malloc(bound));
+    if (out) {
+      strm.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(data));
+      strm.avail_in = static_cast<uInt>(n);
+      strm.next_out = out;
+      strm.avail_out = static_cast<uInt>(bound);
+      if (deflate(&strm, Z_FINISH) == Z_STREAM_END) gz = static_cast<size_t>(strm.total_out);
+      std::free(out);
+    }
+    deflateEnd(&strm);
+  }
+  size_t zs = 0;
+#ifdef HAS_ZSTD
+  size_t bound = ZSTD_compressBound(n);
+  void* out = std::malloc(bound);
+  if (out) {
+    size_t got = ZSTD_compress(out, bound, data, n, 3);
+    if (!ZSTD_isError(got)) zs = got;
+    std::free(out);
+  }
+#endif
+  return {gz, zs};
 }
 
 void save_errors(

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify host toolchains needed by language harnesses (does not install).
+# Verify host toolchains needed by language benchmark runners (does not install).
 # Usage:
 #   ./scripts/check-host-requirements.sh           # all enabled languages + analysis
 #   ./scripts/check-host-requirements.sh csharp python
@@ -33,19 +33,27 @@ need_cmd() {
 check_analysis() {
   echo "analysis (configs.json / analyze-benchmarks)"
   need_cmd python3 "Python 3.10+ recommended" || true
-  need_cmd uv "https://docs.astral.sh/uv/ — also used by python harness" || true
+  need_cmd uv "https://docs.astral.sh/uv/ — also used by python benchmark runner" || true
 }
 
 check_csharp() {
   echo "csharp"
+  # SDK 9+ required so LightProto's generator (Roslyn 4.14+) runs; net8 TFM still needs 8.x runtime/packs.
   if command -v dotnet >/dev/null 2>&1; then
-    if dotnet --list-sdks 2>/dev/null | grep -qE '^8\.'; then
-      ok "dotnet SDK 8.x ($(dotnet --version 2>/dev/null))"
+    local sdks
+    sdks="$(dotnet --list-sdks 2>/dev/null | tr '\n' ' ')"
+    if echo "$sdks" | grep -qE '(^|[[:space:]])9\.'; then
+      ok "dotnet SDK 9.x present ($sdks)"
+      if ! echo "$sdks" | grep -qE '(^|[[:space:]])8\.'; then
+        warn "dotnet SDK 8.x missing — net8.0 TFM targeting pack may be pulled on first build"
+      fi
+    elif echo "$sdks" | grep -qE '(^|[[:space:]])8\.'; then
+      miss "dotnet SDK 9.x required for LightProto source generator (found only: $sdks)"
     else
-      miss "dotnet SDK 8.x (found: $(dotnet --list-sdks 2>/dev/null | tr '\n' ' '))"
+      miss "dotnet SDK 9.x (found: $sdks)"
     fi
   else
-    miss "dotnet — install .NET SDK 8: https://dotnet.microsoft.com/download"
+    miss "dotnet — install .NET SDK 9: ./scripts/install-host-requirements.sh csharp"
   fi
 }
 
@@ -135,7 +143,32 @@ check_c() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c java cpp)
+
+check_swift() {
+  echo "swift"
+  if [[ -x "${HOME}/.local/swift/usr/bin/swift" ]]; then
+    export PATH="${HOME}/.local/swift/usr/bin:${PATH}"
+  fi
+  if command -v swift >/dev/null 2>&1; then
+    ok "swift ($(swift --version 2>/dev/null | head -1))"
+  else
+    miss "swift — ./scripts/install-host-requirements.sh swift"
+  fi
+  local prefix="${HOME}/.local"
+  if [[ -f "${prefix}/include/capnp/generated-header-support.h" ]]; then
+    ok "capnproto headers (${prefix}/include/capnp)"
+  else
+    miss "capnproto C++ headers — ./scripts/install-host-requirements.sh swift (installs Cap'n Proto ${prefix})"
+  fi
+  if [[ -f "${prefix}/lib/libcapnp.so" ]] || [[ -f "${prefix}/lib/libcapnp.a" ]] \
+    || [[ -f "${prefix}/lib64/libcapnp.so" ]] || [[ -f "${prefix}/lib64/libcapnp.a" ]]; then
+    ok "libcapnp under ${prefix}/lib"
+  else
+    miss "libcapnp — ./scripts/install-host-requirements.sh swift"
+  fi
+}
+
+KNOWN=(analysis csharp python go rust javascript c java cpp swift)
 
 resolve_targets() {
   local args=("$@")
@@ -148,7 +181,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java cpp)
+      TARGETS+=(csharp python go rust javascript c java cpp swift)
     fi
     return
   fi
@@ -175,6 +208,7 @@ for t in "${TARGETS[@]}"; do
     c|native) check_c ;;
     java|jdk|jvm) check_java ;;
     cpp|c++|cxx|cplusplus) check_cpp ;;
+    swift) check_swift ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;
   esac
   echo

@@ -12,7 +12,7 @@
 /* Data Model v2 only — message / document / telemetry / strings / event */
 
 #define V2_MAX_CHILDREN 16
-#define V2_MAX_POINTS 64
+#define V2_MAX_POINTS 512
 #define V2_MAX_STRINGS 64
 #define V2_MAX_TAGS 8
 #define V2_MAX_ATTRS 16
@@ -108,6 +108,9 @@ typedef struct {
     int (*serialize)(const test_fixture_t *fx, uint8_t *buf, size_t buf_cap, size_t *out_len);
     int (*deserialize)(const uint8_t *buf, size_t len, test_fixture_t *out_fx, test_data_kind_t kind);
     bool (*fidelity)(const test_fixture_t *a, const test_fixture_t *b);
+    /* Optional native FILE* path. NULL → adapted encode-then-fwrite. */
+    int (*serialize_fp)(const test_fixture_t *fx, FILE *f, size_t *out_len);
+    int (*deserialize_fp)(FILE *f, test_fixture_t *out_fx, test_data_kind_t kind);
 } serializer_t;
 
 #ifdef __cplusplus
@@ -127,8 +130,14 @@ void csv_logger_write(csv_logger_t *L, const char *mode, const char *td,
                       int reps, int rep_idx, const char *ser,
                       uint64_t ser_ns, uint64_t deser_ns, size_t size,
                       double fidelity, const char *version,
-                      int instance_count, const char *type_config_hash);
+                      int instance_count, const char *type_config_hash,
+                      const char *stream_mode,
+                      int run_order, int schedule_position,
+                      size_t size_gzip, size_t size_zstd);
 void csv_logger_close(csv_logger_t *L);
+
+/* One-shot gzip(6) / zstd(3) of already-written bytes. Not timed. zstd is 0 if libzstd is absent. */
+void bench_compress_sizes(const uint8_t *data, size_t n, size_t *out_gzip, size_t *out_zstd);
 
 int bench_serialize_cell(const serializer_t *S, const test_fixture_t *fx,
                          uint8_t *buf, size_t buf_cap, size_t *out_len);
@@ -166,9 +175,24 @@ void bench_register_protobuf_google(serializer_t *out, int *count);
 #endif
 void bench_register_flatcc(serializer_t *out, int *count);
 void bench_register_avro_c(serializer_t *out, int *count);
+void bench_register_yaml(serializer_t *out, int *count);
 void bench_register_zcbor(serializer_t *out, int *count);
 
 int bench_stream_write_all(const uint8_t *buf, size_t len);
 int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len);
+
+/* Optimization barrier (issue #59): prevent the compiler from DCE'ing timed work. */
+static inline void bench_do_not_optimize(const void *p) {
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("" : : "g"(p) : "memory");
+#else
+    (void)p;
+#endif
+}
+static inline void bench_clobber_memory(void) {
+#if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("" : : : "memory");
+#endif
+}
 
 #endif
