@@ -6,7 +6,13 @@ On this suite’s **document** fixture, one instance, in-memory buffer mode, **B
 
 This page compares the two C++ call sites and the library code they invoke.
 
-Numbers are from the committed C++ **Results** snapshot. See [C++ Results](../../cpp/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=cpp&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=bitsery&ser=bitsery&ser=yas#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [C++ overview](../../cpp/)
 
 ## Short answer
 
@@ -114,11 +120,11 @@ YAS (niXman, mid-2010s) is a general archive library in the Boost.Serialization 
 
 ## What you give up
 
-Bitsery’s layout is a private contract. There are no field numbers. Adding a field in the middle breaks old readers. YAS can grow into JSON with the same macros; Bitsery cannot. If you need evolution, the C++ Results page’s **protobuf** and **Avro** rows are the relevant comparison, not this pair.
+Bitsery’s layout is a private contract. There are no field numbers. Adding a field in the middle breaks old readers. YAS can grow into JSON with the same macros; Bitsery cannot. If you need evolution, the C++ Dashboard **protobuf** and **Avro** rows are the relevant comparison, not this pair.
 
 A fairer YAS configuration would add `yas::compacted` and `yas::no_header`. This suite does not. The measured gap is therefore “Bitsery’s defaults versus YAS’s archive defaults,” which is how both libraries are commonly first used.
 
-A JSON row on the same Results page is a different lesson: [what the simdjson row times](cpp-simdjson-wrapper.md).
+A JSON row on the same Dashboard slice is a different lesson: [what the simdjson row times](cpp-simdjson-wrapper.md).
 
 ## Self-check
 

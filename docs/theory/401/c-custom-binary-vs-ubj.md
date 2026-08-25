@@ -6,7 +6,13 @@ On this suite’s **document** fixture, one instance, in-memory buffer mode, the
 
 This page places those lines side by side. After reading it you should be able to say what extra stores the UBJSON wrapper performs, and why that wrapper exists at all.
 
-Numbers are from the committed C **Results** snapshot. See [C Results](../../c/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=c&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=custom-binary&ser=custom-binary&ser=ubj#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [C overview](../../c/)
 
 ## Short answer
 
@@ -115,7 +121,7 @@ custom-binary is **not** an interchange format. Another language, or another C c
 
 ubj, even in this minimal form, is closer to a document: a reader can see that a map contains `kind` and `payload`. [UBJSON](https://ubjson.org/) (late 2000s, a binary cousin of JSON) was designed for that inspectability. The suite’s wrapper is a teaching envelope, not a full UBJSON implementation of the document fields.
 
-If you want compactness *and* a real schema in C, look at **nanopb** and **protobuf-c** on the same Results page (154 bytes, about 1.3 million cycles per second). Those paths are compared as engines in [nanopb versus protobuf-c](protobuf-c-nanopb-compare.md). They lose the stopwatch to custom-binary because they write tags and variable-length integers instead of host `memcpy`. They win as a contract.
+If you want compactness *and* a real schema in C, look at **nanopb** and **protobuf-c** on the same Dashboard slice (154 bytes, about 1.3 million cycles per second). Those paths are compared as engines in [nanopb versus protobuf-c](protobuf-c-nanopb-compare.md). They lose the stopwatch to custom-binary because they write tags and variable-length integers instead of host `memcpy`. They win as a contract.
 
 ## Self-check
 

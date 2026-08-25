@@ -6,7 +6,13 @@ On this suite’s **document** fixture, one instance, **orjson** and the standar
 
 This page compares the two timed wrappers and the library functions they call. After reading it you should be able to point at the extra `str` and the missed cached encoder in the standard-library path.
 
-Numbers are from the committed Python **Results** snapshot. See [Python Results](../../python/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=json&ser=orjson&ser=json#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [Python overview](../../python/)
 
 ## Short answer
 

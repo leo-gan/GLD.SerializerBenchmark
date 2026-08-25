@@ -82,7 +82,7 @@ These are convenient for object graphs inside one runtime. Treat them as **unsaf
 
 ## Performance mechanics
 
-Numbers belong on **Results** pages. These are the mechanisms those numbers come from. Understanding the mechanisms helps you interpret any benchmark.
+Numbers belong on the [Dashboard](../../dashboard/). These are the mechanisms those numbers come from. Understanding the mechanisms helps you interpret any benchmark.
 
 ### Data locality and processor caches
 
@@ -219,7 +219,7 @@ user2.ParseFromString(data)
 3. **Performance is layout, allocations, and parsing**—not a single brand name.  
 4. **Untrusted deserialize is a security boundary.** Native serializers are not “just faster JSON.”  
 5. **Evolution is a process** of identifiers, registries, and API versions. It is not only a file format.  
-6. **Measure on your payloads** with this suite’s topologies and your language’s **Results**.
+6. **Measure on your payloads** with this suite’s topologies and your language’s [Dashboard](../../dashboard/) slice.
 
 ---
 

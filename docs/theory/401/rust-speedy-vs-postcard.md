@@ -6,7 +6,13 @@
 
 This page holds “no field names” still and compares two compact binaries: Speedy’s native `Writable` with four- and eight-byte integers, versus Postcard’s Serde encoder with postcard-varints.
 
-Numbers are from the committed Rust **Results** snapshot (document, one instance). See [Rust Results](../../rust/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=rust&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=speedy&ser=speedy&ser=postcard#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [Rust overview](../../rust/)
 
 ## Short answer
 

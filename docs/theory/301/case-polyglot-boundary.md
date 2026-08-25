@@ -28,10 +28,10 @@ In other words, local language convenience ends where the shared hop begins.
 
 | Option | Sketch |
 |--------|--------|
-| **A. Protobuf IDL plus code generation** | Shared protos; per-language libraries chosen from Results |
+| **A. Protobuf IDL plus code generation** | Shared protos; per-language libraries chosen from the Dashboard |
 | **B. JSON plus JSON Schema** | Uniform text; validate on each side |
 | **C. MessagePack ad hoc** | Compact; organization-owned schemas |
-| **D. Each language picks its favorite** | Local Results winners only |
+| **D. Each language picks its favorite** | Local Dashboard winners only |
 
 ---
 
@@ -53,7 +53,7 @@ This matters because option D maximizes local microbenchmark wins. It minimizes 
 
 **Prefer A** if the organization will own one shared proto code repository for many projects and continuous-integration breaking checks. See [two schema cultures](two-schema-cultures.md) and [multi-language systems (polyglot estates)](polyglot-estates.md). **Prefer B** if debug and simplicity outweigh density and requests per second allow. Still enforce a schema. Use the [public API contracts](public-api-contracts.md) pattern internally. **C** is acceptable only with explicit schema docs and tests that check every language implements the same contract. **Reject D**.
 
-Pick **implementations per language** via suite Results within the chosen family. See [implementation variance](implementation-variance.md).
+Pick **implementations per language** via the Dashboard within the chosen family. See [implementation variance](implementation-variance.md).
 
 ---
 
@@ -73,7 +73,7 @@ An **interop matrix** means this: encode a golden fixture in each language and d
 
 1. Freeze the schema. Implement the matrix. See [multi-language systems (polyglot estates)](polyglot-estates.md) and [401 fidelity](../401/protobuf-cross-language-fidelity.md).
 2. Fix failures. Cover defaults, field names, and packing.
-3. Then pin per-language libraries via suite Results.
+3. Then pin per-language libraries via the Dashboard.
 4. Document version pins and the CI gate.
 
 ### Decision rule

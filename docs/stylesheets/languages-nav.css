@@ -1,5 +1,5 @@
 /**
- * Languages sidebar: "Rust · Results"
+ * Languages sidebar: "C# · Dashboard"
  * Flat sibling links; not Material nested-toggle targets.
  */
 
@@ -18,14 +18,14 @@
   display: none !important;
 }
 
-/* Original nested Overview/Results tree — hidden source of URLs only */
+/* Original nested Overview tree — hidden source of URLs only */
 .md-sidebar--primary .lang-nav-row > .lang-nav-source,
 .md-sidebar--primary .lang-nav-row > label.md-nav__link {
   display: none !important;
 }
 
 .md-sidebar--primary .lang-nav-row > a.lang-nav-name,
-.md-sidebar--primary .lang-nav-row > a.lang-nav-results-link {
+.md-sidebar--primary .lang-nav-row > a.lang-nav-dash-link {
   position: relative;
   z-index: 1;
   display: inline;
@@ -42,18 +42,18 @@
   font-weight: 600;
 }
 
-.md-sidebar--primary .lang-nav-row > a.lang-nav-results-link {
+.md-sidebar--primary .lang-nav-row > a.lang-nav-dash-link {
   font-weight: 500;
   color: var(--md-default-fg-color--light);
 }
 
 .md-sidebar--primary .lang-nav-row > a.lang-nav-name:hover,
-.md-sidebar--primary .lang-nav-row > a.lang-nav-results-link:hover {
+.md-sidebar--primary .lang-nav-row > a.lang-nav-dash-link:hover {
   color: var(--md-accent-fg-color);
 }
 
 .md-sidebar--primary .lang-nav-row > a.lang-nav-name.lang-nav-active,
-.md-sidebar--primary .lang-nav-row > a.lang-nav-results-link.lang-nav-active {
+.md-sidebar--primary .lang-nav-row > a.lang-nav-dash-link.lang-nav-active {
   font-weight: 700;
   color: var(--md-typeset-a-color);
 }

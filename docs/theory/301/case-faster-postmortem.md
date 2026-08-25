@@ -8,7 +8,7 @@ A **postmortem** is a structured review after an incident or failed change. It a
 
 ## Context and goals
 
-**Setting:** After a traffic ramp, 99th-percentile latency (*p99*: 99% of requests are faster than this) of a Go service climbs. A popular post claims “switch to X binary format for 10×.” An engineer opens suite Results. The engineer picks the top name on a mixed chart. The engineer plans a week-long rewrite.
+**Setting:** After a traffic ramp, 99th-percentile latency (*p99*: 99% of requests are faster than this) of a Go service climbs. A popular post claims “switch to X binary format for 10×.” An engineer opens the Dashboard. The engineer picks the top name on a mixed chart. The engineer plans a week-long rewrite.
 
 **Goals of this postmortem:** Separate **wrong benchmark**, **wrong paradigm**, and **wrong payload**. The next fix should be targeted.
 
@@ -41,7 +41,7 @@ A **hypothesis** here is a testable explanation. You should falsify cheap hypoth
 
 | Action | Speed of learning | Risk |
 |--------|-------------------|------|
-| Profile plus a fair Results slice | Fast | Low |
+| Profile plus a fair Dashboard slice | Fast | Low |
 | Swap library within the same family | Medium | Low to medium |
 | Change the wire format | Slow | High (clients) |
 | Rewrite business logic | Slow | High |
@@ -52,7 +52,7 @@ This matters because the order of investigation should match cost. Learn fast an
 
 ## Recommendation (under these constraints)
 
-**Before any format rewrite:** (1) confirm serialization is on the critical path via profiling; (2) re-read Results with [using this suite](using-this-suite.md) discipline (same language, paradigm, fixture, mode, and metric); (3) try the best-in-family library and payload fixes; (4) only then consider a paradigm change with an explicit contract migration.
+**Before any format rewrite:** (1) confirm serialization is on the critical path via profiling; (2) re-read the Dashboard with [using this suite](using-this-suite.md) discipline (same language, paradigm, fixture, mode, and metric); (3) try the best-in-family library and payload fixes; (4) only then consider a paradigm change with an explicit contract migration.
 
 In the composite postmortem, the root cause was **unbounded JSON allocations on a deep graph** plus a **slow library**. The root cause was not “JSON is impossible.” Switching libraries and flattening the data-transfer object restored the reliability target. A cross-stack Protobuf migration was not required.
 
@@ -73,7 +73,7 @@ A **data-transfer object (DTO)** is a structure used to carry data across a boun
 ### Procedure
 
 1. Profile. Confirm serialize and deserialize is on the critical path (H4).
-2. Fair Results within the **same family** (H1). See [using this suite](using-this-suite.md).
+2. Fair Dashboard numbers within the **same family** (H1). See [using this suite](using-this-suite.md).
 3. Inspect payload shape and allocations (H3). See [latency tails](latency-tails-and-gc.md).
 4. Only if the family cannot meet the reliability target, revisit paradigm (H2).
 5. Check compression and network (H5) before rewrite.

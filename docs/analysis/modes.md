@@ -1,6 +1,6 @@
 # Benchmark modes
 
-This page explains the two different meanings of **mode** in this project. Both show up in docs, scripts, and Results tables. Mixing them up is a common source of confusion.
+This page explains the two different meanings of **mode** in this project. Both show up in docs, scripts, and the Dashboard Mode filter. Mixing them up is a common source of confusion.
 
 | Name | Question it answers | Example values |
 |------|---------------------|----------------|
@@ -16,7 +16,7 @@ A third related idea is **batch size N** (1 vs 100 instances in one call). That 
 After this page you should be able to:
 
 1. Tell I/O mode and run mode apart in one sentence each.
-2. Explain why Results show **bytes mode** and **stream mode** side by side.
+2. Explain why the Dashboard Mode filter shows **bytes** and **stream** side by side.
 3. Choose a run mode for a quick check vs a publishable snapshot.
 4. Avoid unfair comparisons (different modes, or “adapted” stream vs a real stream API).
 
@@ -49,9 +49,9 @@ This suite measures **both call shapes** when the language runner supports them,
 
 ### What the labels mean
 
-On **Results** pages you usually see:
+On the **Dashboard** Mode filter you usually see:
 
-| Label on Results | Everyday meaning | Typical CSV value (`StringOrStream`) |
+| Label on Dashboard | Everyday meaning | Typical CSV value (`StringOrStream`) |
 |------------------|------------------|--------------------------------------|
 | **bytes mode** | In-memory buffer (or language equivalent) | `bytes`, `buffer`, or C# **`string`** |
 | **stream mode** | Stream-style write/read | `stream` or `Stream` |
@@ -71,7 +71,7 @@ Setup (schemas, maps, buffer pools) stays **outside** the stopwatch. Details: [A
 
 Most languages log the in-memory path as `bytes`. **C#** often logs it as **`string`**, because many .NET libraries expose `Serialize` / `Deserialize` that return or take a `string`.
 
-| Language family | In-memory path in CSV | Results label |
+| Language family | In-memory path in CSV | Dashboard label |
 |-----------------|----------------------|---------------|
 | Python, Rust, Go, Java, C, C++, JS, Swift | `bytes` (or similar) | **bytes mode** |
 | C# | `string` | still shown as **bytes mode** in multi-language tables for consistency |
@@ -88,7 +88,7 @@ C#-specific notes: [C# overview — string vs stream](../c-sharp/index.md#string
 
 Not every “stream mode” row is a deep, true streaming API.
 
-| Kind | What the runner does | How to read Results |
+| Kind | What the runner does | How to read the Dashboard |
 |------|----------------------|---------------------|
 | **Native stream** | Calls the library’s real stream (or reader/writer) API | Best evidence for “stream performance” of that library |
 | **Text writer on a stream** | Library writes text through a writer attached to a stream (common for JSON/YAML) | Still a real library path; not the same as binary stream APIs |
@@ -110,7 +110,7 @@ Rules:
 - Do **not** label `native` if either timed half is still the bytes API.
 - If the timed stream path is **identical** to bytes (label-only “stream”), the benchmark runner must **not emit stream rows** for that language/codec.
 
-Language Results pages show a short **stream honesty** banner from these labels. See [Metrics — StreamMode](METRICS.md).
+The Dashboard shows a **stream honesty** chip next to Mode from these labels. See [Metrics — StreamMode](METRICS.md).
 
 If stream and bytes (or string) times are almost the same, check the language **Overview** and the banner. Many suites mark adapted paths there. Methodology also notes that stream is not always incremental: [Analysis methodology — limitations](ANALYSIS_METHODOLOGY.md#limitations).
 
@@ -120,7 +120,7 @@ If stream and bytes (or string) times are almost the same, check the language **
 |-------|----------------|
 | Raw CSV | Column `StringOrStream` |
 | Analysis groups | Part of the group key: language + serializer + data type + **I/O mode** |
-| Results tables | Columns or labels **bytes mode** / **stream mode** |
+| Dashboard | Mode filter **bytes** / **stream** |
 | Fair ranking | Compare serializers in the **same** language, same data type, same **I/O mode** |
 
 ### Fair comparison checklist (I/O)
@@ -150,7 +150,7 @@ Run modes are defined in `config/benchmark_config.yaml` under `modes:`. Scripts 
 |----------|----------------------|--------|-------------|
 | **smoke** | 2 | Smallest useful run | “Does this still work?” CI, local quick check |
 | **all-single** | 10 | Short full matrix | Fast multi-serializer pass before a long run |
-| **full** | 100 | Publication-quality | Numbers you commit to Results / the site |
+| **full** | 100 | Publication-quality | Numbers you pack into the Dashboard / the site |
 | **research** | 500 | High sample count | Statistics papers, tight confidence intervals |
 
 Exact repetition counts live in config; if config changes, this table should be updated to match.
@@ -173,7 +173,7 @@ So: **smoke** is not “a different I/O mode.” It is “fewer timed repetition
 |------|--------|
 | I changed one serializer and want a quick green light | `smoke` |
 | I want a full matrix without waiting forever | `all-single` |
-| I will publish or commit Results tables | `full` |
+| I will publish or commit Dashboard data | `full` |
 | I need strong statistical power | `research` |
 
 Example:
@@ -204,18 +204,18 @@ DataTypeInstanceCount=100, SerializerName=orjson, RepetitionIndex=3, ...
 
 Read as: Python, **bytes** I/O mode, data type **message**, batch **N=100**, library **orjson**, 4th timed try (index 3).
 
-### Results tables
+### Dashboard tables
 
-- **Summary** rows often average across data types; they still prefer one I/O mode when both exist (usually the in-memory path).  
-- **Total time** pivots often show bytes and stream columns side by side.  
-- **Ops/s** tables break out data types (and N) so you can see which workload matters.
+- **Overview** ranks the current data-type and Mode slice (usually the in-memory path).  
+- Switch the Mode filter to compare **bytes** and **stream** for the same fixture.  
+- **Details** breaks out median / std / P95 / P99 so you can see which workload matters.
 
-If two columns look almost equal, open [stream honesty](#three-levels-of-stream-honesty) before concluding the library’s stream API is “free.”
+If stream and bytes look almost equal, open [stream honesty](#three-levels-of-stream-honesty) before concluding the library’s stream API is “free.”
 
 ### Dashboard and regenerate
 
-- Published tables come from a chosen run (often `full`).  
-- Regenerating: [Results summary](BENCHMARK_SUMMARY.md).  
+- Published numbers come from a chosen run (often `full`), packed via `dashboard/scripts/sync-data.py`.  
+- Regeneration and claim levels: [Claims and replication](CLAIMS_AND_REPLICATION.md).  
 - Metrics names: [Metrics catalog](METRICS.md) (`StringOrStream`).
 
 ---

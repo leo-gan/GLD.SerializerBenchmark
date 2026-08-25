@@ -74,7 +74,7 @@ Even when the producer is trusted, size limits remain a good default. When the p
 | Putting limits only at the gateway | A sidecar or admin path bypasses them |
 | Validating only after building full language objects in memory | You already paid the denial-of-service cost |
 | Never running fuzz tests | Edge cases ship straight to production |
-| Choosing a codec by Results alone | A fast but unsafe path wins the architecture decision record |
+| Choosing a codec by Dashboard numbers alone | A fast but unsafe path wins the architecture decision record |
 
 For example, suppose validation runs only after you have already built a giant object tree in memory. A malicious payload has already hurt you. That is true even if you eventually reject it.
 
@@ -93,7 +93,7 @@ The pickle path is the incident class that ends careers. The depth bomb is the o
 | Resource | Role |
 |----------|------|
 | Language **Overview** | Notes on native codecs and fidelity—not security proofs |
-| **Results** | Encode and decode cost under **benign** fixtures |
+| **Dashboard** | Encode and decode cost under **benign** fixtures |
 | [Using this suite](using-this-suite.md) | Why you must not treat speed as safety |
 | [Trust boundaries](trust-boundaries.md) | Portable versus native policy |
 
@@ -117,7 +117,7 @@ This benchmark runner does **not** run adversarial fuzz campaigns. It does not c
 2. Verify **hard limits** on body size, depth, and collection cardinality before or during parse.
 3. Confirm that native, pickle, and Java serialization paths are **banned** on untrusted routes.
 4. Optionally fuzz or inject adversarial fixtures. Watch process memory and time-to-failure.
-5. Use suite Results only for performance among **safe** portable codecs.
+5. Use the Dashboard only for performance among **safe** portable codecs.
 
 ### Decision rule
 
@@ -164,4 +164,4 @@ This benchmark runner does **not** run adversarial fuzz campaigns. It does not c
 - Deserialize is an **attack surface**. Design limits first.
 - Portable formats plus validation plus size and depth caps is the default for untrusted bytes.
 - Native deserialize is a special case of “trusted only.”
-- Suite Results answer cost under honest fixtures. They do not answer adversarial hardness.
+- Dashboard numbers answer cost under honest fixtures. They do not answer adversarial hardness.

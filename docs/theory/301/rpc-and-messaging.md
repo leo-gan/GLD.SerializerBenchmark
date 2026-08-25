@@ -83,7 +83,7 @@ A better split uses a thin `AuthorizePayment` RPC. It uses an `OrderPlaced` even
 | Resource | Role |
 |----------|------|
 | Fixtures | Record shapes for codec cost—not architecture proof |
-| **Results** | Cost of encoding a *given* shape |
+| **Dashboard** | Cost of encoding a *given* shape |
 | [Row vs columnar](row-vs-columnar.md) | Batch analytics path |
 | [Using this suite](using-this-suite.md) | Same fixture when comparing libraries |
 

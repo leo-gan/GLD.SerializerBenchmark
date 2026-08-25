@@ -61,7 +61,7 @@ This matters because the “fastest” option on a suite chart is often the wors
 
 ## Recommendation (under these constraints)
 
-**Prefer A (JSON plus a hard contract)** as the default public surface. Invest in OpenAPI or JSON Schema, or an equivalent. Invest in server-side validation. Invest in **per-language JSON library** selection using suite Results. See [implementation variance](implementation-variance.md).
+**Prefer A (JSON plus a hard contract)** as the default public surface. Invest in OpenAPI or JSON Schema, or an equivalent. Invest in server-side validation. Invest in **per-language JSON library** selection using the Dashboard. See [implementation variance](implementation-variance.md).
 
 **Consider B** only when measured evidence shows JSON cannot meet reliability targets (*service-level objectives*) **after** library and payload-shape work. A non-trivial client set must also adopt binary. Own content-type negotiation and tests that check every language implements the same contract for both encodings.
 

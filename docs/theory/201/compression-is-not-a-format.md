@@ -85,7 +85,7 @@ These representations remain **interpretable under format rules**. A gzip bitstr
 
 ### Worked size intuition (order-of-magnitude, not a benchmark)
 
-Consider *N* identical logical records, each with the same three field names. Numbers in this table are teaching intuition only. Suite **Results** own benchmark-runner truth for measured codecs.
+Consider *N* identical logical records, each with the same three field names. Numbers in this table are teaching intuition only. The **Dashboard** owns benchmark-runner truth for measured codecs.
 
 | Approach | What is repeated *N* times | Typical implication |
 |----------|----------------------------|---------------------|
@@ -135,7 +135,7 @@ Compressed untrusted data has a history of **decompression bombs**. Those are sm
 
 ## In this suite
 
-The benchmark runner measures **serializer** behaviour. That means encode and decode of logical fixtures. It is not a full matrix of compress-wrapped transports. **Results** should not be read as “gzip is unnecessary” or “binary is mandatory.” Use them to select a codec family and implementation. Evaluate compression on the deployment path separately, or as an explicit follow-on experiment outside the core tables.
+The benchmark runner measures **serializer** behaviour. That means encode and decode of logical fixtures. It is not a full matrix of compress-wrapped transports. Dashboard numbers should not be read as “gzip is unnecessary” or “binary is mandatory.” Use them to select a codec family and implementation. Evaluate compression on the deployment path separately, or as an explicit follow-on experiment outside the core tables.
 
 ---
 
@@ -157,6 +157,6 @@ The benchmark runner measures **serializer** behaviour. That means encode and de
 - Dense, schema-aware encodings remove redundancy that a compressor would otherwise re-discover. They often have better access properties as well.
 - Account for **processor time and latency**, not only compressed size.
 - Columnar and format-aware encoding for analytics differ from message codecs for remote procedure calls.
-- Suite **Results** inform codec choice. Re-measure with compression on the actual wire if compression is part of the design.
+- The **Dashboard** informs codec choice. Re-measure with compression on the actual wire if compression is part of the design.
 
 ---

@@ -80,7 +80,7 @@ An orders API must change `amount` from floating point to integer cents. The tea
 
 | Resource | Role |
 |----------|------|
-| **Results** | Cost of encoding two shapes during dual-write, if you model that scenario |
+| **Dashboard** | Cost of encoding two shapes during dual-write, if you model that scenario |
 | Fixtures | Stable logical models—not multi-version simulators |
 | Capstones | Decision context for REST, events, and RPC |
 

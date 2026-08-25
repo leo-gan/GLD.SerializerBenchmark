@@ -136,7 +136,7 @@ Logical value: `id = 42`, `label = "x"`.
 | Schemaless binary | Python `msgpack` / `cbor2`; JavaScript `msgpackr` / `cbor-x`; Go MessagePack/CBOR libraries; Rust `rmp-serde` / CBOR crates; C mpack/msgpack/cbor variants |
 | Schema-driven | Protocol Buffers bindings where registered; other IDL or schema codecs per language |
 
-Compare **within one language**. Prefer same-family charts when asking whether a library is competitive in its class. Cross-family ranking tables are decision inputs only when the workload genuinely lies on the boundary. See [Serialization categories](../../analysis/serialization_categories.md) and language **Results**.
+Compare **within one language**. Prefer same-family charts when asking whether a library is competitive in its class. Cross-family ranking tables are decision inputs only when the workload genuinely lies on the boundary. See [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/).
 
 ---
 
@@ -156,7 +156,7 @@ Compare **within one language**. Prefer same-family charts when asking whether a
 - Dynamic binary is roughly a JSON-like data model with a binary encoding. The organization still owns the contract.
 - IDL binary is a shared schema, field numbers, code generation, and an evolution process.
 - Size and speed depend on implementation and on whether keys or names remain on the wire.
-- Use suite **Results** per language. Do not treat informal ranking articles as policy.
+- Use the **Dashboard** per language. Do not treat informal ranking articles as policy.
 - Match process cost to the lifetime of the contract and the number of languages that share it.
 
 ---

@@ -72,7 +72,7 @@ A game-state blob of 100KB or more is read by many services. Each request needs 
 | Resource | Role |
 |----------|------|
 | Language **Overview** | Whether FlatBuffers-class entries are registered |
-| **Results** | Same-language comparison; note validation settings if documented |
+| **Dashboard** | Same-language comparison; note validation settings if documented |
 | [Using this suite](using-this-suite.md) | Fair paradigm-local reads |
 
 Absence from a language benchmark runner means “not measured.” It does not mean “bad technology.”
@@ -93,7 +93,7 @@ Absence from a language benchmark runner means “not measured.” It does not m
 
 1. Measure end-to-end time for the **actual access pattern**. Do not measure only full parse.
 2. Include **verify** step cost on untrusted or untrusted-adjacent paths.
-3. Compare relevant serializers in suite Results. Read caveats for fidelity and access patterns.
+3. Compare relevant serializers on the Dashboard. Read Overview caveats for fidelity and access patterns.
 4. Chaos-test. Corrupt a buffer and ensure the verifier fails closed.
 5. Decide whether to adopt zero-copy or stick with ordinary deserialize.
 

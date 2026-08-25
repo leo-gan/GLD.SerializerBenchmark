@@ -152,7 +152,8 @@ BENCHMARK_TS=2026-07-02-173247 ./scripts/verify-results.sh
 
 ```bash
 analyze-benchmarks
-git add docs/analysis docs/*/results.md && git commit -m "docs: refresh benchmark snapshot"
+python3 dashboard/scripts/sync-data.py
+git add dashboard/public/data/ && git commit -m "docs: refresh Dashboard snapshot"
 ```
 
 CI does not write these files.

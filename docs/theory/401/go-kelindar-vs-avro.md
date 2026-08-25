@@ -6,7 +6,13 @@ On this suite’s **document** fixture, one instance, in-memory buffer mode, **k
 
 This page compares the two timed wrappers and the library code they invoke.
 
-Numbers are from the committed Go **Results** snapshot. See [Go Results](../../go/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=go&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=kelindar/binary&ser=kelindar/binary&ser=hamba/avro#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [Go overview](../../go/)
 
 ## Short answer
 

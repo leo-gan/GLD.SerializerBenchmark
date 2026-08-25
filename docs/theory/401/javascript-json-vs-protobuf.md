@@ -6,7 +6,13 @@ On this suite’s **document** fixture, one instance, in-memory buffer mode, **`
 
 This page looks at the actual timed functions. After reading it you should be able to say why the protobuf *encode* number is 431 nanoseconds, why decode is 5648, and why V8’s JSON path still wins the total.
 
-Numbers are from the committed JavaScript **Results** snapshot. See [JavaScript Results](../../javascript/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=javascript&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=JSON.stringify&ser=JSON.stringify&ser=google-protobuf#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [JavaScript overview](../../javascript/)
 
 ## Short answer
 
@@ -105,7 +111,7 @@ The same 155-byte encoding in **protobufjs** and **protobuf-es**, with encode ac
 
 ## Honesty
 
-1. **Do not quote 431 ns as protobuf encode speed.** A fair encode would call `jspbEncode` or `serializeBinary` inside the timer. The `protobuf-es` row on the same Results page does time `toBinary` and is much slower.
+1. **Do not quote 431 ns as protobuf encode speed.** A fair encode would call `jspbEncode` or `serializeBinary` inside the timer. The `protobuf-es` row on the same Dashboard slice does time `toBinary` and is much slower.
 2. The 155-byte size is real. Tags and variable-length integers do omit names.
 3. A larger document, or a native addon decoder, would change the rank. This page explains *this* runner.
 

@@ -263,7 +263,7 @@ Verify these with any official parser that loads an equivalent `.proto` (see the
 |-------|------|
 | `schemas/v2/protobuf/benchmark_v2.proto` | Real multi-message suite schema—much larger than MiniUser |
 | [Python](protobuf-python.md) / [Rust](protobuf-rust-prost.md) / [C](protobuf-c-protobuf-c.md) | Language runtime implementations of **this** wire format |
-| [301 using this suite](../301/using-this-suite.md) | How not to misuse Results when comparing libraries |
+| [301 using this suite](../301/using-this-suite.md) | How not to misuse Dashboard numbers when comparing libraries |
 
 Wire layout is language-agnostic. Buffer ownership (who allocates and who frees) is covered in each language-path article.
 

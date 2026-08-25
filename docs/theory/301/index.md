@@ -46,7 +46,7 @@ By the end of this course you should be able to:
 2. **Distinguish** operational schema cultures without re-deriving wire rules from scratch. One example is Avro-style writer and reader resolution. Another is Protobuf field-number discipline.
 3. **Evaluate** workload fit. That includes row versus columnar storage at system scale. It includes multi-language (*polyglot*) contracts across languages. It also includes the different shapes of **RPC** versus messaging payloads. **RPC** means remote procedure call. It is a synchronous request and response between services.
 4. **Critique** benchmark claims. Use this suite’s rules about paradigm families and single-language comparisons.
-5. **Recommend** a format family or approach under stated constraints. **Justify** the recommendation with serialization categories and language **Results**.
+5. **Recommend** a format family or approach under stated constraints. **Justify** the recommendation with serialization categories and the Dashboard.
 6. **Identify** what this benchmark runner cannot answer. That skill stops you from over-claiming.
 
 ---
@@ -60,7 +60,7 @@ By the end of this course you should be able to:
 | **301 (this course)** | Production judgment — what to ship under real constraints |
 | [401](../401/index.md) | Implementer elective — wire formats, language paths, and a hands-on lab |
 
-The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s benchmark runner, use the [Dashboard](../../dashboard/) and each language’s **Results**. For how the suite measures, see [Method](../../analysis/index.md).
+The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s benchmark runner, use the [Dashboard](../../dashboard/). For how the suite measures, see [Method](../../analysis/index.md).
 
 ---
 
@@ -109,7 +109,7 @@ You do not need to read every article in order. Pick a track that matches the pr
 
 | Article | You should be able to… |
 |---------|------------------------|
-| [Using this suite without fooling yourself](using-this-suite.md) | Read Results within one paradigm family and one language |
+| [Using this suite without fooling yourself](using-this-suite.md) | Read Dashboard numbers within one paradigm family and one language |
 | [Implementation variance within a family](implementation-variance.md) | Choose libraries without ranking formats globally |
 | [Latency tails, allocations, and GC](latency-tails-and-gc.md) | Judge 99th-percentile latency (*p99*: 99% of requests are faster than this) and allocation pressure. |
 | [Compression as a system choice](compression-as-system-choice.md) | Place gzip or zstd in the stack without treating compression as a format |
@@ -151,7 +151,7 @@ The same program rules apply as in 101 and 201:
 3. Payload shape matters. Dense records and deep graphs are different jobs.
 4. Compare within one paradigm family and within one language before making cross-cutting claims.
 5. Security and trust are first-class concerns. They are not afterthoughts.
-6. Numbers in prose are illustrative. Language **Results** own the suite truth for this benchmark runner.
+6. Numbers in prose are illustrative. The **Dashboard** owns measured numbers for this benchmark runner.
 
 **301-specific guidance:** every article includes **Experiments**. Those sections cover setup, procedure, and a decision rule for that page’s problem. Every article also includes **Metrics**. Those are the primary signals for that experiment’s conclusion. Every article also includes a section on **what this suite cannot tell you**. Prefer failure modes and decision tables over encyclopedias of wire formats.
 
@@ -166,5 +166,5 @@ Treat the capstone case studies as the course exam. Under fixed constraints, rec
 ## Where to go next
 
 - Finish or skim [Serialization 201](../201/index.md) if the mechanisms feel rusty.
-- Use [Serialization categories](../../analysis/serialization_categories.md) and language **Results** for suite evidence.
+- Use [Serialization categories](../../analysis/serialization_categories.md) and the [Dashboard](../../dashboard/) for suite evidence.
 - Move to [Serialization 401](../401/index.md) if you build or deeply integrate codecs.

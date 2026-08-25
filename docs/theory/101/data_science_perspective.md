@@ -220,7 +220,7 @@ Validation is how you keep the flexibility of schemaless formats without surpris
 
 This repository benchmarks **serializers** across languages and categories. Those categories include the JSON family, schemaless binary, schema-driven, and language-native formats. That work is invaluable for **encode and decode cost** of in-memory objects.
 
-Data platform success also depends on **input/output layout, compression, partitioning, cluster execution, and schema governance**. Those topics are larger than a single serialize call. Use suite **Results** to compare libraries. Use this page to pick the **paradigm** before you micro-optimize a codec.
+Data platform success also depends on **input/output layout, compression, partitioning, cluster execution, and schema governance**. Those topics are larger than a single serialize call. Use the [Dashboard](../../dashboard/) to compare libraries. Use this page to pick the **paradigm** before you micro-optimize a codec.
 
 ---
 

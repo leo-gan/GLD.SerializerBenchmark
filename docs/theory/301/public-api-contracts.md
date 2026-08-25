@@ -61,7 +61,7 @@ For example, suppose partner companies build against your API. A field rename wi
 
 ## Real-world sketch
 
-A fintech publishes OpenAPI 3. It generates TypeScript and Kotlin clients. Continuous integration fails if the server’s request models drift from the specification. A “quick” field rename without a version bump is blocked. Later performance work swaps Python JSON libraries using suite Results. That work does not touch the public contract at all.
+A fintech publishes OpenAPI 3. It generates TypeScript and Kotlin clients. Continuous integration fails if the server’s request models drift from the specification. A “quick” field rename without a version bump is blocked. Later performance work swaps Python JSON libraries using the Dashboard. That work does not touch the public contract at all.
 
 In other words, the contract stayed stable while the implementation improved. That is the separation you want.
 
@@ -71,7 +71,7 @@ In other words, the contract stayed stable while the implementation improved. Th
 
 | Resource | Role |
 |----------|------|
-| JSON-family **Results** | Pick implementations per language |
+| JSON-family **Dashboard** slice | Pick implementations per language |
 | [Categories](../../analysis/serialization_categories.md) | JSON versus other families |
 | [Using this suite](using-this-suite.md) | Fair comparisons inside a family |
 

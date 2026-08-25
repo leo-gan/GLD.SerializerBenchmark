@@ -1,26 +1,39 @@
 /**
- * Languages sidebar: compact rows "Rust · Results".
+ * Languages sidebar: compact rows "C# · Dashboard".
  * - Language name → Overview URL
- * - Results → results page
+ * - Dashboard → /dashboard/?lang=<catalog-id>
  * - Flat sibling <a> elements (not Material nested-toggle targets)
  *
  * Why the name was unclickable before: Material treats the first
  * `.md-nav__link` under `.md-nav__item--nested` as the expand/collapse
- * control and intercepts its click. Results lived deeper and still worked.
+ * control and intercepts its click.
  */
 (function () {
+  const DOCS_DIR_TO_LANG = {
+    "c-sharp": "csharp",
+    c: "c",
+    cpp: "cpp",
+    go: "go",
+    java: "java",
+    javascript: "javascript",
+    python: "python",
+    rust: "rust",
+    swift: "swift",
+  };
+
+  function catalogIdFromOverviewHref(href) {
+    // Resolve first: Material emits href="./" for the *current* Overview
+    // (verified: site/c-sharp/index.html C# item is "./"; on /python/ the
+    // same item is "../c-sharp/"). Splitting "./" would yield lang=".".
+    const url = new URL(href || "./", window.location.href);
+    const folder = url.pathname.replace(/\/+$/, "").split("/").pop();
+    return DOCS_DIR_TO_LANG[folder] || folder;
+  }
+
   function linkLabel(a) {
     if (!a) return "";
     const ellipsis = a.querySelector(".md-ellipsis");
     return (ellipsis ? ellipsis.textContent : a.textContent).trim();
-  }
-
-  function directPageItems(li) {
-    const ul = li.querySelector(":scope > .md-nav > .md-nav__list");
-    if (!ul) return null;
-    return Array.from(ul.children).filter(
-      (el) => el.classList && el.classList.contains("md-nav__item")
-    );
   }
 
   function pageAnchor(item) {
@@ -29,7 +42,7 @@
       if (a.closest(".md-nav--secondary")) continue;
       if (
         a.classList.contains("lang-nav-name") ||
-        a.classList.contains("lang-nav-results-link")
+        a.classList.contains("lang-nav-dash-link")
       ) {
         continue;
       }
@@ -67,12 +80,10 @@
         const items = Array.from(ul.children).filter(
           (el) => el.classList && el.classList.contains("md-nav__item")
         );
-        if (items.length !== 2) return;
+        if (items.length < 1) return;
 
         let overviewA = null;
-        let resultsA = null;
         let overviewActive = false;
-        let resultsActive = false;
 
         items.forEach((item) => {
           const a = pageAnchor(item);
@@ -82,19 +93,22 @@
             overviewActive =
               !!(a && a.classList.contains("md-nav__link--active")) ||
               item.classList.contains("md-nav__item--active");
-          } else if (label === "Results") {
-            resultsA = a;
-            resultsActive =
-              !!(a && a.classList.contains("md-nav__link--active")) ||
-              item.classList.contains("md-nav__item--active");
           }
         });
+        // One-child nest: the only child is Overview.
+        if (!overviewA && items.length === 1) {
+          overviewA = pageAnchor(items[0]);
+          overviewActive =
+            !!(overviewA && overviewA.classList.contains("md-nav__link--active")) ||
+            items[0].classList.contains("md-nav__item--active");
+        }
+        // Leftover Results sibling during a mixed tree: ignore it.
 
-        if (!overviewA || !resultsA) return;
+        if (!overviewA) return;
 
         const oldLabel = li.querySelector(":scope > label.md-nav__link");
         let name = "Language";
-        const prior = li.querySelector(":scope > a.lang-nav-name .md-ellipsis");
+        const prior = li.querySelector(":scope > a.lang-nav-name .md-ellipsis, :scope > a.lang-nav-name .lang-nav-label");
         if (prior && prior.textContent.trim()) {
           name = prior.textContent.trim();
         } else if (oldLabel) {
@@ -121,6 +135,10 @@
           oldLabel.setAttribute("aria-hidden", "true");
         }
 
+        // Drop a leftover Results sibling from a previous JS version.
+        const leftoverResults = li.querySelector(":scope > a.lang-nav-results-link");
+        if (leftoverResults) leftoverResults.remove();
+
         // Plain anchors — do NOT use md-nav__link (Material intercepts those
         // on nested items as the expand control).
         const nameLink = ensureEl(li, "a.lang-nav-name", () => {
@@ -138,9 +156,9 @@
           s.textContent = "·";
           return s;
         });
-        const resultsLink = ensureEl(li, "a.lang-nav-results-link", () => {
+        const dashLink = ensureEl(li, "a.lang-nav-dash-link", () => {
           const a = document.createElement("a");
-          a.className = "lang-nav-results-link";
+          a.className = "lang-nav-dash-link";
           const span = document.createElement("span");
           span.className = "lang-nav-label";
           a.appendChild(span);
@@ -150,7 +168,7 @@
         // Stable visual order
         li.appendChild(nameLink);
         li.appendChild(sep);
-        li.appendChild(resultsLink);
+        li.appendChild(dashLink);
 
         nameLink.href = overviewA.getAttribute("href") || overviewA.href;
         nameLink.title = `${name} overview`;
@@ -158,11 +176,17 @@
         if (nameSpan) nameSpan.textContent = name;
         nameLink.classList.toggle("lang-nav-active", overviewActive);
 
-        resultsLink.href = resultsA.getAttribute("href") || resultsA.href;
-        resultsLink.title = `${name} results`;
-        const resSpan = resultsLink.querySelector(".lang-nav-label");
-        if (resSpan) resSpan.textContent = "Results";
-        resultsLink.classList.toggle("lang-nav-active", resultsActive);
+        const dashUrl = new URL("../dashboard/", window.location.href);
+        dashUrl.searchParams.set(
+          "lang",
+          catalogIdFromOverviewHref(overviewA.getAttribute("href"))
+        );
+        dashLink.href = dashUrl.href;
+        dashLink.title = `${name} Dashboard`;
+        const dashSpan = dashLink.querySelector(".lang-nav-label");
+        if (dashSpan) dashSpan.textContent = "Dashboard";
+        // Deep link, not an in-section current page — never mark active.
+        dashLink.classList.remove("lang-nav-active");
       });
   }
 

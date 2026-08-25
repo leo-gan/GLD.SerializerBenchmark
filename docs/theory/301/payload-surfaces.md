@@ -86,7 +86,7 @@ A better design uses structured error codes. It uses correlation identifiers. It
 | Resource | Role |
 |----------|------|
 | Fixtures | Synthetic data—not a privacy model for your product |
-| **Results** | Size and time only |
+| **Dashboard** | Size and time only |
 | [Using this suite](using-this-suite.md) | Measurement honesty, not compliance guidance |
 
 ---

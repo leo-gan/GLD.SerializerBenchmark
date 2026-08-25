@@ -93,8 +93,8 @@ Source `scripts/lib/config.sh` and use `bench_mode_reps "$MODE"` (reads `modes.<
 ## 5. Documentation
 
 - `docs/<lang>/index.md` — ecosystem overview, registered inventory, caveats.
-- After benchmarks: run `analyze-benchmarks` so `docs/<lang>/results.md` can be produced when logs exist.
-- Register Overview and Results under the **Languages** tab (and **Method** if needed) in `mkdocs.yml`.
+- After benchmarks: run `analyze-benchmarks` (unpublished `reports/<docs_dir>/results.md`) and `python3 dashboard/scripts/sync-data.py` so Dashboard packed data updates.
+- Register Overview under the **Languages** tab as a one-child nest in `mkdocs.yml`. The sidebar injects a Dashboard sibling.
 
 ---
 
@@ -111,7 +111,7 @@ analyze-benchmarks --logs go=logs/go
 Also check:
 
 - `_KNOWN_LANGS` fallbacks and aliases in `analysis/` if config is unreadable.
-- `generate_language_results_pages` / language maps in `reports.py` (and docs-dir maps) when the docs folder id differs from the language id (for example `csharp` → `docs/c-sharp/`).
+- `generate_language_results_pages` / language maps in `reports.py` (and docs-dir maps) when the folder id differs from the language id (for example `csharp` → `reports/c-sharp/`).
 - Host scripts: `scripts/check-host-requirements.sh`, `scripts/install-host-requirements.sh`.
 - Prepare-PR language detect: `.grok/skills/prepare-pr/scripts/detect-changed-langs.sh`.
 

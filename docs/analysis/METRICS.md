@@ -11,7 +11,7 @@ How those numbers are produced (warmup, outlier filter, shared sanitize for tabl
 After this page you should be able to:
 
 1. Distinguish **CSV columns** written by benchmark runners from **group metrics** computed by analysis.
-2. Read the **importance** tags (high / medium / low) and know which appear on Results by default.
+2. Read the **importance** tags (high / medium / low) and know which appear on Dashboard Details / Compare by default.
 3. Explain multi-way versus pairwise reporting in one sentence.
 
 ---
@@ -20,7 +20,7 @@ After this page you should be able to:
 
 | Tier | Meaning |
 |------|---------|
-| **high** | Shown on multi-serializer leaderboards and language Results by default |
+| **high** | Shown on multi-serializer leaderboards and Dashboard Details / Compare by default |
 | **medium** | Used in pairwise / version A/B reports, or in multi-way views when config includes medium |
 | **low** | Full profile / research only (`--metrics-profile full` or pairwise catalog) |
 
@@ -102,7 +102,7 @@ After warmup drop and optional outlier filter, analysis groups rows by:
 | `effect_vs_fastest_exploratory` | Always true for multi-way attach (exploratory labeling) | — | JSON |
 | `mann_whitney_u` / `p_value` / `p_value_holm` | Two-sample [nonparametric](https://en.wikipedia.org/wiki/Nonparametric_statistics "Nonparametric statistics") test between version A and B | medium–high for pairwise | `--compare-a` / `--compare-b` |
 
-**Reading tip:** multi-way Results treat ranks as **exploratory**. Prefer [Claims and replication](CLAIMS_AND_REPLICATION.md) for L1/L2/L3 language, and pairwise A/B for confirmatory library comparisons.
+**Reading tip:** multi-way Dashboard ranks are **exploratory**. Prefer [Claims and replication](CLAIMS_AND_REPLICATION.md) for L1/L2/L3 language, and pairwise A/B for confirmatory library comparisons.
 
 Full URL list: [Analysis methodology — References](ANALYSIS_METHODOLOGY.md#references).
 
@@ -121,7 +121,7 @@ Full URL list: [Analysis methodology — References](ANALYSIS_METHODOLOGY.md#ref
 
 | Mode | When it runs | Metrics shown |
 |------|--------------|---------------|
-| **Multi-way** | Default language Results; three or more serializers in a group | Importance tiers listed under `metrics.multi_way.include_importance` (default: **high only**) |
+| **Multi-way** | Default Dashboard Details / Compare; three or more serializers in a group | Importance tiers listed under `metrics.multi_way.include_importance` (default: **high only**) |
 | **Pairwise** | `--compare-a` / `--compare-b`, exactly two serializers, or `--metrics-profile pairwise` | high + medium + low (full catalog for the pair) |
 | **Full** | `--metrics-profile full` | Everything computed |
 
@@ -147,7 +147,7 @@ logs/<lang>/YYYY-MM-DD-HHMMSS.configs.json
 
 Legacy `*.environment.json` files are still loaded and treated as the `environment` block.
 
-Important fields from this sidecar are summarized on published Results pages and plot footers when present.
+Important fields from this sidecar are summarized in Dashboard run chrome (one-line identity plus the Run configuration panel) when present.
 
 ---
 

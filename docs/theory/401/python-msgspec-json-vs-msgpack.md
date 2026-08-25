@@ -6,7 +6,13 @@ The [msgspec-msgpack versus orjson](python-msgspec-vs-orjson.md) page compares t
 
 This page holds the library still. Both rows use the same `array_like` Structs, the same C core, and the same untimed conversion from a dataclass. Only the encoder class changes. After reading it you should be able to say what remains when names are already gone and the implementation is already native.
 
-Numbers are from the committed Python **Results** snapshot (document, one instance, in-memory buffer mode). See [Python Results](../../python/results.md).
+Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
+from this suite’s packed Dashboard data. They illustrate the gap; they are
+not a universal ranking.
+
+[Open this slice on the Dashboard](../../dashboard/?lang=python&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=msgspec&ser=msgspec&ser=msgspec-msgpack#compare)
+· [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
+· [Python overview](../../python/)
 
 ## Short answer
 

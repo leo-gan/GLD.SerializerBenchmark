@@ -155,7 +155,7 @@ The label “JSON” covers both pedagogical recursive parsers and highly optimi
 
 ## In this suite
 
-Language **Results** pages and the [dashboard](../../dashboard/) report measured encode and decode behaviour for registered libraries. Those libraries cover the JSON family, schemaless binary, schema-driven, and language-native codecs where present. Prefer comparisons **within one language**. Where possible, also stay **within one family**. Cross-language “winners” are not interchangeable.
+The [Dashboard](../../dashboard/) reports measured encode and decode behaviour for registered libraries. Those libraries cover the JSON family, schemaless binary, schema-driven, and language-native codecs where present. Prefer comparisons **within one language**. Where possible, also stay **within one family**. Cross-language “winners” are not interchangeable.
 
 Methodology and metric definitions appear in [Analysis methodology](../../analysis/ANALYSIS_METHODOLOGY.md) and [Metrics](../../analysis/METRICS.md). Quantitative statements in prose are illustrative. Suite measurements are authoritative for this benchmark runner.
 
@@ -177,7 +177,7 @@ Methodology and metric definitions appear in [Analysis methodology](../../analys
 - Distinctive costs of text formats often come from **structure discovery** and **decimal numeric conversion**. They do not come from “using characters” in the abstract.
 - Binary encodings remove some costs and introduce others. Tags, variable-length integers, and schema tooling are examples.
 - In managed languages, **allocation rate** is a first-class performance concern.
-- Prefer paradigm-local, same-language evidence from **Results** over informal ranking articles.
+- Prefer paradigm-local, same-language evidence from the **Dashboard** over informal ranking articles.
 - Format choice should reflect the full constraint set. Debugging, evolution, and multiple languages matter, not processor time alone.
 
 ---

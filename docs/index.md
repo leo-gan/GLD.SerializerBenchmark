@@ -27,16 +27,16 @@ ideally one format family), not to crown a single global winner.
 | Interactive charts, Pareto trade-offs, compare lab | **[Dashboard](dashboard/)** |
 | One-question tests (why we do not only use the big table) | **[Experiments](experiments/)** |
 | Course on formats and trade-offs (101–401) | **[Learn](theory/101/)** |
-| Per-language library lists and result tables | **[Languages](c/)** (sidebar: C, C#, C++, …) |
+| Per-language library lists and caveats | **[Languages](c/)** (sidebar: C, C#, C++, …) |
 | Methodology, metrics, how to add a codec | **[Method](analysis/)** |
 
 ---
 
 ## Same data · same pipeline
 
-The live **Dashboard** is the interactive view of the same measurements. Pick a
-language and a data type, then read speed vs size and the ranking. Per-language
-tables also live on each **Results** page.
+The live **Dashboard** is the published home for measured numbers. Pick a
+language and a data type, then read speed vs size and the ranking. Language
+indexes list the roster and caveats.
 
 [![Live Dashboard: language and data-type filters, speed vs size scatter, and throughput ranking](assets/dashboard-overview.jpg){ width="780" }](dashboard/)
 
@@ -48,15 +48,15 @@ Nine runners share the same fixtures and analysis rules.
 
 | Language | Serializers |
 |----------|------------:|
-| [C](c/) · [Results](c/results/) | 20 |
-| [C#](c-sharp/) · [Results](c-sharp/results/) | 38 |
-| [C++](cpp/) · [Results](cpp/results/) | 27+ |
-| [Go](go/) · [Results](go/results/) | 19 |
-| [Java](java/) · [Results](java/results/) | 18 |
-| [JavaScript](javascript/) · [Results](javascript/results/) | 20 |
-| [Python](python/) · [Results](python/results/) | 16 |
-| [Rust](rust/) · [Results](rust/results/) | 16 |
-| [Swift](swift/) · [Results](swift/results/) | 14 |
+| [C](c/) · [Dashboard](dashboard/?lang=c) | 20 |
+| [C#](c-sharp/) · [Dashboard](dashboard/?lang=csharp) | 38 |
+| [C++](cpp/) · [Dashboard](dashboard/?lang=cpp) | 27+ |
+| [Go](go/) · [Dashboard](dashboard/?lang=go) | 19 |
+| [Java](java/) · [Dashboard](dashboard/?lang=java) | 18 |
+| [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 20 |
+| [Python](python/) · [Dashboard](dashboard/?lang=python) | 16 |
+| [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 16 |
+| [Swift](swift/) · [Dashboard](dashboard/?lang=swift) | 14 |
 
 ---
 
