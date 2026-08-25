@@ -1841,6 +1841,16 @@ function averageGroupsForSerializer(serializer, entries, meta) {
   }
   if (version) row.serializer_version = version;
 
+  const streamModes = [
+    ...new Set(
+      entries
+        .map((e) => e.StreamMode)
+        .filter((v) => v != null && String(v).trim() !== '')
+        .map((v) => String(v))
+    ),
+  ];
+  if (streamModes.length === 1) row.StreamMode = streamModes[0];
+
   const numericKeys = new Set();
   for (const e of entries) {
     for (const [k, v] of Object.entries(e)) {
@@ -2166,6 +2176,7 @@ function filterAndRefresh() {
 
   updateKPIs();
   updateFilterPolicyMeta();
+  updateStreamHonestyChip();
   populateBaselineSelect();
   populateSameSerAddSelect();
   renderSameSelectionChips();
@@ -2373,6 +2384,72 @@ function modeDisplayLabel(norm) {
   if (norm === 'bytes') return 'bytes / string';
   if (norm === 'stream') return 'stream';
   return norm || '—';
+}
+
+/** Canonical StreamMode on a group; empty/unknown → "". */
+function normalizeStreamMode(value) {
+  let s = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[-\s]/g, '_');
+  if (s === 'text' || s === 'text_writer' || s === 'textonstream') s = 'text_on_stream';
+  if (s === 'native' || s === 'text_on_stream' || s === 'adapted') return s;
+  return s;
+}
+
+function honestyDisplayLabel(streamMode) {
+  const sm = normalizeStreamMode(streamMode);
+  if (sm === 'native') return 'native';
+  if (sm === 'text_on_stream') return 'text';
+  if (sm === 'adapted') return 'adapted';
+  return '—';
+}
+
+/** Count StreamMode on stream I/O rows only (language-level, allGroups). */
+function summarizeStreamHonesty(groups) {
+  const counts = { native: 0, text_on_stream: 0, adapted: 0, unlabeled: 0 };
+  let streamRows = 0;
+  for (const g of groups || []) {
+    if (normalizeMode(g.mode) !== 'stream') continue;
+    streamRows += 1;
+    const sm = normalizeStreamMode(g.StreamMode);
+    if (sm === 'native') counts.native += 1;
+    else if (sm === 'text_on_stream') counts.text_on_stream += 1;
+    else if (sm === 'adapted') counts.adapted += 1;
+    else counts.unlabeled += 1;
+  }
+  return { streamRows, counts };
+}
+
+function updateStreamHonestyChip() {
+  const chip = document.getElementById('stream-honesty-chip');
+  if (!chip) return;
+  const { streamRows, counts } = summarizeStreamHonesty(state.allGroups);
+  if (streamRows <= 0) {
+    chip.hidden = true;
+    chip.textContent = '';
+    chip.removeAttribute('title');
+    return;
+  }
+  const { native, text_on_stream, adapted, unlabeled } = counts;
+  const allAdapted = adapted === streamRows && unlabeled === 0;
+  const allUnlabeled = unlabeled === streamRows;
+  let text;
+  if (allUnlabeled) {
+    text = 'stream rows unlabeled — treat as adapted';
+  } else if (allAdapted) {
+    text = 'stream: all adapted — not incremental I/O';
+  } else {
+    const parts = [];
+    if (native) parts.push(`${native} native`);
+    if (text_on_stream) parts.push(`${text_on_stream} text`);
+    if (adapted) parts.push(`${adapted} adapted`);
+    if (unlabeled) parts.push(`${unlabeled} unlabeled`);
+    text = `stream: ${parts.join(' · ')}`;
+  }
+  chip.textContent = text;
+  chip.title = text;
+  chip.hidden = false;
 }
 
 /**
@@ -3085,9 +3162,11 @@ function renderTable() {
   tbody.innerHTML = '';
 
   const isOps = state.rosterMetric === 'ops';
+  const showHonesty = normalizeMode(state.currentMode) === 'stream';
   if (table) {
     table.classList.toggle('view-ops', isOps);
     table.classList.toggle('view-latency', !isOps);
+    table.classList.toggle('view-stream', showHonesty);
   }
 
   // Enrich with derived ops stats for sort + cells
@@ -3180,7 +3259,7 @@ function renderTable() {
     }
   }
 
-  const colCount = 1 + metricKeys.length;
+  const colCount = 1 + (showHonesty ? 1 : 0) + metricKeys.length;
   if (rows.length === 0) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td colspan="${colCount}" style="text-align:center;color:var(--text-muted);">No serializers match search query</td>`;
@@ -3208,6 +3287,16 @@ function renderTable() {
       ? `${r.serializer} @ ${r.serializer_version}`
       : r.serializer;
     tr.appendChild(tdName);
+
+    const tdHonesty = document.createElement('td');
+    tdHonesty.className = 'str roster-col-honesty';
+    const honestyLabel = honestyDisplayLabel(r.StreamMode);
+    tdHonesty.textContent = honestyLabel;
+    if (honestyLabel === 'adapted') {
+      tdHonesty.title =
+        'Adapted stream: in-memory encode/decode then dump to a stream. Do not treat as incremental I/O.';
+    }
+    tr.appendChild(tdHonesty);
 
     metricKeys.forEach(({ key, higherIsBetter }) => {
       const td = document.createElement('td');
@@ -3449,7 +3538,9 @@ function copyRosterMarkdown() {
     : state.compareBaseline || '—';
   const u = scales.latency.header;
   const oHdr = scales.ops.header;
+  const showHonesty = normalizeMode(state.currentMode) === 'stream';
   const headers = ['Serializer'];
+  if (showHonesty) headers.push('Honesty');
   metricSpecs.forEach(({ key, label }) => {
     if (key.startsWith('ops_')) headers.push(`${label} (${oHdr})`);
     else if (key.endsWith('_ns')) headers.push(`${label} (${u})`);
@@ -3476,7 +3567,7 @@ function copyRosterMarkdown() {
     })(),
     ``,
     `| ${headers.join(' | ')} |`,
-    `|${headers.map((h, i) => (i === 0 || h === 'Pareto' ? '---' : '---:')).join('|')}|`,
+    `|${headers.map((h, i) => (i === 0 || h === 'Pareto' || h === 'Honesty' ? '---' : '---:')).join('|')}|`,
   ];
   rows.forEach((r) => {
     const opt = state.paretoSerializerNames.includes(r.serializer) ? 'yes' : '';
@@ -3494,7 +3585,8 @@ function copyRosterMarkdown() {
     });
     const name =
       serializerLabelFromGroup(r) + (isBaseline ? ' (baseline)' : '');
-    lines.push(`| ${name} | ${cells.join(' | ')} | ${opt} |`);
+    const honestyCell = showHonesty ? ` ${honestyDisplayLabel(r.StreamMode)} |` : '';
+    lines.push(`| ${name} |${honestyCell} ${cells.join(' | ')} | ${opt} |`);
   });
   copyText(lines.join('\n'), 'Roster Markdown copied');
 }
