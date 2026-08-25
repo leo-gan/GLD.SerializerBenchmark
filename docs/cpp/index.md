@@ -126,6 +126,13 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 
 Also: [`cpp/README.md`](../../cpp/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=cpp&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
+
 ## Design choices
 
 1. **Prepare outside the loop** — DOM trees, packers, flexbuffers builders, domain→wire convert.

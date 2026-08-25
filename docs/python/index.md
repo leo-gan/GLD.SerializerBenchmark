@@ -67,6 +67,13 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 
 Benchmark runner: [`python/README.md`](../../python/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=python&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
+
 ## The Global Interpreter Lock (GIL)
 
 In CPython, the GIL prevents multiple native threads from executing Python bytecodes simultaneously. This has massive implications for serialization in multithreaded web servers (like FastAPI or Flask).

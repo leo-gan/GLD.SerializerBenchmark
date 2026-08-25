@@ -47,13 +47,33 @@ for rep:
 
 ### Caveats
 
-- **simd-json serialize** is `serde_json` (crate optimizes parse).
-- **rkyv:** access-only (zero-copy without materialize) would be faster; suite materializes for a fair owned-value fidelity check.
-- **prost** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
+These notes explain odd-looking correctness or speed edges on Rust only:
+
+- **prost** maps ISO timestamps through millisecond integers; the benchmark runner allows date-string drift on types that carry timestamps (message, event, document, telemetry).
+- **rkyv** timed deserialize **builds owned values** for comparison; a pure zero-copy `access` path would be faster.
+- **simd-json** serialize still goes through `serde_json` (the crate focuses on parse speed).
 - **flatbuffers / capnp:** not registered yet (codegen weight); flexbuffers partially covers FB-family schemaless use.
 - Stream mode is **native** only where noted; others are adapted bytes+cursor.
 
 Also: [`rust/README.md`](../../rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+
+## How to rank
+
+Compare serializers **inside the same family** only (JSON with JSON, not JSON with a zero-copy schema codec). Rank in **bytes mode** only (the in-memory buffer API — not “payload size in bytes”). Stream mode is left out of this ranking.
+
+| Family | Members |
+|--------|---------|
+| JSON | `serde_json`, `simd-json`, `sonic-rs` |
+| Rust-centric binary | `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy` |
+| Schema / zero-copy | `flexbuffers`, `rkyv`, `prost` |
+| Schemaless binary (interop) | `bson`, `ciborium`, `minicbor`, `rmp-serde` |
+
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=rust&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
 
 ## Design choices
 

@@ -55,3 +55,10 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 - **prepare()** builds native messages and compiles schemas outside the timed path.
 
 Also: [`javascript/README.md`](../../javascript/README.md).
+
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=javascript&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).

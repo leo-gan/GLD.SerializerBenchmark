@@ -51,3 +51,10 @@ fidelity                         # untimed, float-tolerant
 - TOML uses mattt/swift-toml (toml++); Linux builds may need GCC 11 `libstdc++` include flags (set in `run-benchmarks.sh`).
 
 Also: [`swift/README.md`](../../swift/README.md).
+
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=swift&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).

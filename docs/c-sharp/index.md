@@ -104,6 +104,13 @@ When stream ≈ string within a few percent on Results, check which kind applies
 
 Benchmark runner: [`c-sharp/README.md`](../../c-sharp/README.md). Categories & format trade-offs: [Serialization Categories](../analysis/serialization_categories.md).
 
+## Numbers
+
+Measured numbers for this language live on the
+[Dashboard](../dashboard/?lang=csharp&data=document@n=1&mode=bytes)
+(pre-filtered). Claim level is **L1** (one machine, one session) —
+see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
+
 ## The Power of `Span<T>` and `Memory<T>`
 
 Historically, reading a byte array meant copying parts of it into new arrays. Modern serializers can create a window over existing memory without allocating new objects. Serializers in this suite that lean on modern layouts include **MemoryPack** and **FlatSharp** (among others).
