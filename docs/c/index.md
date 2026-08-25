@@ -27,7 +27,7 @@ C serialization is fragmented: each library owns its own object model (DOM trees
 | mpack, msgpack-c | Binary | Fixed-buffer map pack + tree/object unpack via visitor ops |
 | nanopb, protobuf-c, protobuf-wire | Schema | Shared in-tree **proto3 wire** for V2 (`fixture_pb_v2.h`, same field tags as `schemas/v2/protobuf/benchmark_v2.proto`). Log names stay separate for historical comparison; **not** full nanopb stream codegen, protoc-gen-c descriptors, or Google upb. |
 | **protobuf** | Schema | **Google libprotobuf** `SerializeToArray` / `ParseFromArray` on generated `benchmark_v2.proto` messages |
-| tinycbor, cbor-encode (libcbor), qcbor, zcbor | Binary/schema | Native CBOR map encode via visitor ops; decode via tinycbor map walker (standard CBOR interop) where noted |
+| tinycbor, libcbor, libcbor-stream, qcbor, zcbor | Binary/schema | Native CBOR map encode via visitor ops (`libcbor` = DOM API, `libcbor-stream` = streaming `cbor_encode_*`); decode via each library's native walker (tinycbor buffer walker, libcbor `cbor_load`). Do not read `libcbor-stream` deserialize as a streaming decoder. |
 | ubj | Binary | In-tree UBJSON markers around suite V2 binary payload (`bin_*`) |
 
 Pins: [`c/third_party/VERSIONS.md`](../../c/third_party/VERSIONS.md).

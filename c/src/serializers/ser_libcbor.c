@@ -18,10 +18,25 @@ typedef struct {
 } lcw;
 
 static cbor_item_t *mk_str(const char *s) { return cbor_build_string(s ? s : ""); }
+/* Pick narrowest integer builder so serialize emits minimum-width CBOR heads,
+   matching what the streaming encoder produces (RFC 8949 §4.2.1). */
 static cbor_item_t *mk_sint(int64_t v) {
-    if (v >= 0) return cbor_build_uint64((uint64_t)v);
-    return cbor_build_negint64((uint64_t)(-1 - v));
+    if (v >= 0) {
+        uint64_t u = (uint64_t)v;
+        if (u <= UINT8_MAX)  return cbor_build_uint8((uint8_t)u);
+        if (u <= UINT16_MAX) return cbor_build_uint16((uint16_t)u);
+        if (u <= UINT32_MAX) return cbor_build_uint32((uint32_t)u);
+        return cbor_build_uint64(u);
+    }
+    uint64_t u = (uint64_t)(-1 - v);
+    if (u <= UINT8_MAX)  return cbor_build_negint8((uint8_t)u);
+    if (u <= UINT16_MAX) return cbor_build_negint16((uint16_t)u);
+    if (u <= UINT32_MAX) return cbor_build_negint32((uint32_t)u);
+    return cbor_build_negint64(u);
 }
+
+extern void lc_arena_install(void);
+extern void lc_arena_reset(void);
 
 static int attach(lcw *c, cbor_item_t *item) {
     if (!item) { c->err = 1; return -1; }
@@ -109,25 +124,25 @@ static int w_f64(void *ctx, double v) { return attach(ctx, cbor_build_float8(v))
 static int w_str(void *ctx, const char *s) { return attach(ctx, mk_str(s)); }
 
 static int ser(const test_fixture_t *fx, uint8_t *buf, size_t cap, size_t *ol) {
+    lc_arena_install();
+    lc_arena_reset();
     lcw c = {0};
     v2_writer_t w = {
         .ctx = &c, .begin_map = w_begin_map, .end_map = w_end_map,
         .begin_array = w_begin_array, .end_array = w_end_array,
         .key = w_key, .put_bool = w_bool, .put_i64 = w_i64, .put_f64 = w_f64, .put_str = w_str,
     };
-    if (v2_write_fixture(fx, &w) != 0 || c.err || !c.root) {
-        if (c.root) cbor_decref(&c.root);
-        return -1;
-    }
+    if (v2_write_fixture(fx, &w) != 0 || c.err || !c.root) return -1;
     size_t len = cbor_serialize(c.root, buf, cap);
-    cbor_decref(&c.root);
+    /* Arena reclaims the whole tree on next call — no decref walk needed. */
     if (len == 0 || len > cap) return -1;
     *ol = len;
     return 0;
 }
+int bench_libcbor_de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind);
 static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kind_t kind) {
-    return bench_tinycbor_de(buf, len, out, kind);
+    return bench_libcbor_de(buf, len, out, kind);
 }
 void bench_register_libcbor(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "cbor-encode", "0.11.0", "binary", prep, ser, de, fidelity_fx);
+    BENCH_ADD(o, c, "libcbor", "0.11.0", "binary", prep, ser, de, fidelity_fx);
 }

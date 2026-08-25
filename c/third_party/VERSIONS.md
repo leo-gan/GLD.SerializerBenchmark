@@ -10,7 +10,7 @@
 | mpack | v1.1 | MessagePack |
 | msgpack-c | c-6.0.1 | MessagePack |
 | tinycbor | v0.6.0 | CBOR (symbol-prefixed `tc_`) |
-| libcbor | v0.11.0 | CBOR (`cbor-encode`) |
+| libcbor | v0.11.0 | CBOR (`libcbor` DOM row, `libcbor-stream` streaming row) |
 | QCBOR | v1.5.1 / master | CBOR |
 | ubj | in-tree minimal UBJSON in `ser_ubj.c` | UBJSON |
 | libbson | mongo-c-driver 1.27.5 (bson only) | BSON |

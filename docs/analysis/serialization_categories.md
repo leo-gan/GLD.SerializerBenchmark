@@ -85,7 +85,7 @@ Examples use **log `SerializerName` values** from language overviews (not always
 - **Examples in suite:**
   - **Python:** `msgpack`, `msgspec-msgpack`, `cbor2`
   - **Rust:** `rmp-serde`, `ciborium`, `minicbor`, `bson`, `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy`, `flexbuffers`
-  - **C:** `mpack`, `msgpack-c`, `tinycbor`, `cbor-encode`, `qcbor`, `ubj`, `libbson`, `custom-binary`
+  - **C:** `mpack`, `msgpack-c`, `tinycbor`, `libcbor`, `libcbor-stream`, `qcbor`, `ubj`, `libbson`, `custom-binary`
   - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `bson`, `bser`, `sia`
   - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `ugorji/msgpack`, `fxamacker/cbor`, `ugorji/cbor`, `kelindar/binary`, `mongo-bson`
   - **Java:** `kryo`, `fory`, `protostuff`, `hessian`, `msgpack`, `jackson-cbor`, `jackson-smile`, `ion`, `bson`

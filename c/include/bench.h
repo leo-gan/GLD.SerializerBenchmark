@@ -143,6 +143,9 @@ int bench_serialize_cell(const serializer_t *S, const test_fixture_t *fx,
                          uint8_t *buf, size_t buf_cap, size_t *out_len);
 int bench_deserialize_cell(const serializer_t *S, const uint8_t *buf, size_t len,
                            test_fixture_t *out_fx, test_data_kind_t kind);
+uint64_t bench_now_ns(void);
+bool bench_fidelity_cell(const serializer_t *S, const test_fixture_t *a,
+                         const test_fixture_t *b);
 
 void register_all_serializers(serializer_t *out, int *count);
 
@@ -155,6 +158,7 @@ void bench_register_mpack(serializer_t *out, int *count);
 void bench_register_msgpack_c(serializer_t *out, int *count);
 void bench_register_tinycbor(serializer_t *out, int *count);
 void bench_register_libcbor(serializer_t *out, int *count);
+void bench_register_libcbor_stream(serializer_t *out, int *count);
 void bench_register_qcbor(serializer_t *out, int *count);
 void bench_register_ubj(serializer_t *out, int *count);
 void bench_register_libbson(serializer_t *out, int *count);

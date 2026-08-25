@@ -116,11 +116,14 @@ if(EXISTS ${TP_BUILD}/tinycbor_pref/libtinycbor_tc.a)
 endif()
 
 if(EXISTS ${TP_BUILD}/libcbor/src/libcbor.a)
-  list(APPEND BENCH_SOURCES src/serializers/ser_libcbor.c)
+  list(APPEND BENCH_SOURCES
+    src/serializers/ser_libcbor.c
+    src/serializers/ser_libcbor_stream.c
+    src/serializers/ser_libcbor_common.c)
   list(APPEND BENCH_INCLUDES ${TP}/libcbor/src ${TP_BUILD}/libcbor ${TP_BUILD}/libcbor/src)
   list(APPEND BENCH_LIBS ${TP_BUILD}/libcbor/src/libcbor.a)
   add_compile_definitions(HAS_LIBCBOR=1)
-  message(STATUS "serializer: libcbor/cbor-encode REAL")
+  message(STATUS "serializer: libcbor + libcbor-stream REAL")
 endif()
 
 if(EXISTS ${TP}/QCBOR/src/qcbor_encode.c)

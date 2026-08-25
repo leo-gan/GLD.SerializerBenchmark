@@ -29,6 +29,7 @@ void register_all_serializers(serializer_t *out, int *count) {
 #endif
 #ifdef HAS_LIBCBOR
     bench_register_libcbor(out, count);
+    bench_register_libcbor_stream(out, count);
 #endif
 #ifdef HAS_QCBOR
     bench_register_qcbor(out, count);
