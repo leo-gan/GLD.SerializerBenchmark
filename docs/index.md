@@ -28,7 +28,7 @@ ideally one format family), not to crown a single global winner.
 | One-question tests (why we do not only use the big table) | **[Experiments](experiments/)** |
 | Course on formats and trade-offs (101–401) | **[Learn](theory/101/)** |
 | Per-language library lists and caveats | **[Languages](c/)** (sidebar: C, C#, C++, …) |
-| Methodology, metrics, how to add a codec | **[Method](analysis/)** |
+| Methodology, metrics, how to add a codec | **[Benchmarks](analysis/)** |
 
 ---
 
@@ -80,4 +80,4 @@ Then return to the **[Dashboard](dashboard/)** with clearer questions.
 - Payload shape changes costs a great deal.  
 - Numbers on this site are from **this** suite’s runners and analysis—not a universal ranking of all software.
 
-Full methodology: [Method overview](analysis/) · [Analysis methodology](analysis/ANALYSIS_METHODOLOGY/) · [Claims and replication](analysis/CLAIMS_AND_REPLICATION/).
+Full methodology: [Benchmarks overview](analysis/) · [Analysis methodology](analysis/ANALYSIS_METHODOLOGY/) · [Claims and replication](analysis/CLAIMS_AND_REPLICATION/).

@@ -213,7 +213,7 @@ Run modes come from `modes:` in `config/benchmark_config.yaml`. Runners should c
 | `full` | 100 | Publication-quality run |
 | `research` | 500 | High-power statistical study |
 
-**When to pick which mode, and how this differs from I/O mode:** **[Modes — run modes](modes.md#part-2--run-modes-how-heavy-the-experiment-is)**.
+**When to pick which mode, and how this differs from I/O mode:** **[Modes — run modes](modes.md#part-2-run-modes-how-heavy-the-experiment-is)**.
 
 **Warmup policy:** benchmark runners **always log** every successful repetition, including index 0. Analysis drops `RepetitionIndex == 0` when `statistics.exclude_warmup` is true (the configured warmup count is **1**). Outlier filtering is also analysis-only. Raw files under `logs/<lang>/` are never rewritten by the stats pipeline.
 

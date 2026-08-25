@@ -23,7 +23,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 **Surfaces (default):** root `README.md` + `dashboard/` (built into `docs/dashboard/`).  
 
-When the user asks for **deep** validation, expand to: storefront `docs/index.md`, **all** language overviews, theory level indices (101–401), Method section indices, plus dashboard visuals—still **without** fattening README against `README_EDITING.md`.
+When the user asks for **deep** validation, expand to: storefront `docs/index.md`, **all** language overviews, theory level indices (101–401), Benchmarks section indices, plus dashboard visuals—still **without** fattening README against `README_EDITING.md`.
 
 ---
 
@@ -159,4 +159,4 @@ Do **not** force `PREPARE_PR_BENCH_ALL` for copy/UI-only work.
 
 - **prepare-pr** — test / optional bench / analyze / sync-data / push / PR
 - **clean-logs** — prune logs; unrelated to prose unless disk blocks work
-- Site tabs: Dashboard · Learn · Languages · Method
+- Site tabs: Learn · Languages · Benchmarks · Dashboard · Experiments

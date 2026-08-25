@@ -81,7 +81,7 @@
           (el) => el.classList && el.classList.contains("md-nav__item")
         );
         // Language rows only: Overview-only, or Overview + leftover Results.
-        // Do not compact Learn 101/201/301/401 or Method (they also have an Overview child).
+        // Do not compact Learn 101/201/301/401 or Benchmarks (they also have an Overview child).
         const labels = items.map((item) => linkLabel(pageAnchor(item)));
         const leftoverResults = labels.includes("Results");
         if (!(items.length === 1 || (items.length === 2 && leftoverResults))) return;

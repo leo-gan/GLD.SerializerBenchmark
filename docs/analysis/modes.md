@@ -84,7 +84,7 @@ On C#, for **binary** libraries, that string is often **Base64** text of the rea
 
 C#-specific notes: [C# overview — string vs stream](../c-sharp/index.md#string-mode-vs-stream-mode).
 
-### Three levels of “stream” honesty
+### Three levels of “stream” honesty {#three-levels-of-stream-honesty}
 
 Not every “stream mode” row is a deep, true streaming API.
 
@@ -133,7 +133,7 @@ If stream and bytes (or string) times are almost the same, check the language **
 
 ---
 
-## Part 2 — Run modes (how heavy the experiment is)
+## Part 2 — Run modes (how heavy the experiment is) {#part-2-run-modes-how-heavy-the-experiment-is}
 
 ### Why several run modes?
 

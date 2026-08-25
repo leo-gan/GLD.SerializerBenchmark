@@ -63,7 +63,7 @@ These keep rankings comparable. Violating them produces “suspicious” numbers
 
 CSV column **`SerializerVersion`** (immediately after `SerializerName`) must show the **installed** package/crate/module version at runtime — not a hard-coded string in most cases.
 
-### Hot path before full matrix (required)
+### Hot path before full matrix (required) {#hot-path-before-full-matrix-required}
 
 A PR that only “compiles and round-trips” is incomplete for this suite. **Correctness and the documented hot path land in the same first PR** — do not wait for a later “performance pass” after published numbers look slow.
 

@@ -12,7 +12,7 @@ Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, I
 - Directory: `swift/`
 - Output: `logs/swift/YYYY-MM-DD-HHMMSS.csv` (`Language=swift`, times in **nanoseconds**)
 - Runner: `swift/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
-- Registration: [`swift/Sources/SerializerBenchmarkCore/Serializers/Registry.swift`](../../swift/Sources/SerializerBenchmarkCore/Serializers/Registry.swift)
+- Registration: [`swift/Sources/SerializerBenchmarkCore/Serializers/Registry.swift`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/swift/Sources/SerializerBenchmarkCore/Serializers/Registry.swift)
 
 ## Serializers
 
@@ -50,7 +50,7 @@ fidelity                         # untimed, float-tolerant
 - Cap’n Proto has no maintained first-class Swift codegen; the benchmark runner uses the **official C++ library** via `CapnpBridge` (requires `libcapnp` / `libkj`, typically under `~/.local`).
 - TOML uses mattt/swift-toml (toml++); Linux builds may need GCC 11 `libstdc++` include flags (set in `run-benchmarks.sh`).
 
-Also: [`swift/README.md`](../../swift/README.md).
+Also: [`swift/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/swift/README.md).
 
 ## Numbers
 

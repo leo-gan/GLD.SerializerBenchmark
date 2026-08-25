@@ -12,7 +12,7 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 - Directory: `rust/` (repository root)
 - Output: monorepo `logs/rust/YYYY-MM-DD-HHMMSS.csv` (`Language=rust`, times in **nanoseconds**)
 - Runner: `rust/scripts/run-benchmarks.sh {smoke|all-single|full|research}` or `cargo run --release -- <reps>`
-- Registration: [`rust/src/serializers/mod.rs`](../../rust/src/serializers/mod.rs) (family modules under `serializers/`)
+- Registration: [`rust/src/serializers/mod.rs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/rust/src/serializers/mod.rs) (family modules under `serializers/`)
 
 ## Serializers
 
@@ -55,7 +55,7 @@ These notes explain odd-looking correctness or speed edges on Rust only:
 - **flatbuffers / capnp:** not registered yet (codegen weight); flexbuffers partially covers FB-family schemaless use.
 - Stream mode is **native** only where noted; others are adapted bytes+cursor.
 
-Also: [`rust/README.md`](../../rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
+Also: [`rust/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/rust/README.md). [Serialization Categories](../analysis/serialization_categories.md).
 
 ## How to rank
 

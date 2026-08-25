@@ -12,7 +12,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 - `javascript/` (repository root)
 - Logs: `logs/javascript/YYYY-MM-DD-HHMMSS.csv`
 - Requires Node ≥ 18
-- Registration: modular under [`javascript/src/serializers/`](../../javascript/src/serializers/)
+- Registration: modular under [`javascript/src/serializers/`](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/javascript/src/serializers)
 - `prepare()` compiles schemas / reuses encoder instances outside timed loops
 - Protobuf codegen: `npm run generate:protobuf` (protobuf-es + google-protobuf; needs suite protoc sysroot for jspb stubs)
 
@@ -54,7 +54,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 - **devalue** is a framework-oriented value codec (SvelteKit), not a portable wire standard.
 - **prepare()** builds native messages and compiles schemas outside the timed path.
 
-Also: [`javascript/README.md`](../../javascript/README.md).
+Also: [`javascript/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/javascript/README.md).
 
 ## Numbers
 
