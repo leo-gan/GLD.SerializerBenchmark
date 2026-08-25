@@ -1344,14 +1344,100 @@ footer {
 }
 
 .run-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.45rem;
   padding: 0.3rem 0.7rem;
   font-size: 0.75rem;
   color: var(--text-secondary);
   line-height: 1.3;
 }
 
+.run-meta-claim {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.3;
+  border-radius: 3px;
+  background: var(--bg-blue-light);
+  color: var(--color-blue);
+  text-decoration: none;
+}
+
+.run-meta-claim:hover {
+  text-decoration: underline;
+}
+
+.run-meta-sep {
+  color: var(--text-muted);
+}
+
 .run-meta-text {
   font-variant-numeric: tabular-nums;
+}
+
+.run-config-toggle {
+  background: transparent;
+  border: none;
+  color: var(--color-blue);
+  font-family: var(--font-family);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.run-config-toggle:hover {
+  text-decoration: underline;
+}
+
+.run-config-panel {
+  flex: 1 0 100%;
+  margin-top: 0.2rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.run-config-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.12rem 0.75rem;
+  margin: 0;
+}
+
+.run-config-list dt {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.run-config-list dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.run-config-empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.run-config-serializers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.run-config-serializers li {
+  color: var(--text-primary);
 }
 
 .chart-toolbar {
