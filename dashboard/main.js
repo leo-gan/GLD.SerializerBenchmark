@@ -371,7 +371,9 @@ function applySavedSettings(saved) {
     state.currentLanguage = saved.currentLanguage;
   }
   if (typeof saved.currentTestData === 'string') state.currentTestData = saved.currentTestData;
-  if (typeof saved.currentMode === 'string') state.currentMode = saved.currentMode;
+  if (typeof saved.currentMode === 'string') {
+    state.currentMode = normalizeMode(saved.currentMode) || saved.currentMode;
+  }
   if (saved.displayMetric === 'ops' || saved.displayMetric === 'time') {
     state.displayMetric = saved.displayMetric;
   }
@@ -427,7 +429,7 @@ function applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
   if (p.has('lang')) state.currentLanguage = p.get('lang');
   if (p.has('data')) state.currentTestData = p.get('data');
-  if (p.has('mode')) state.currentMode = p.get('mode');
+  if (p.has('mode')) state.currentMode = normalizeMode(p.get('mode')) || p.get('mode');
   if (p.get('metric') === 'ops' || p.get('metric') === 'time') state.displayMetric = p.get('metric');
   if (p.get('scope') === 'cross' || p.get('scope') === 'same') state.compareScope = p.get('scope');
   if (p.has('baseline')) state.compareBaseline = p.get('baseline');
@@ -436,6 +438,9 @@ function applyUrlParams() {
     state.rankSort = p.get('rank');
     setRankSort(state.rankSort);
   }
+  if (p.has('policy')) state.filterPolicy = p.get('policy');
+  const sers = p.getAll('ser').filter(Boolean);
+  if (sers.length) state.detailSerializers = sers.slice(0, MAX_COMPARE_COLUMNS);
   setChartLogScale(state.chartLogScale);
 }
 
@@ -444,12 +449,18 @@ function syncUrlFromState() {
     const p = new URLSearchParams();
     p.set('lang', state.currentLanguage);
     if (state.currentTestData) p.set('data', state.currentTestData);
-    if (state.currentMode) p.set('mode', state.currentMode);
+    const mode = normalizeMode(state.currentMode) || state.currentMode;
+    if (mode) p.set('mode', mode);
     p.set('metric', state.displayMetric);
     if (state.compareScope === 'cross') p.set('scope', 'cross');
     if (state.compareBaseline) p.set('baseline', state.compareBaseline);
     if (state.chartLogScale) p.set('log', '1');
     if (state.rankSort === 'size') p.set('rank', 'size');
+    if (state.filterPolicy && state.filterPolicy !== DEFAULT_FILTER_POLICY) {
+      p.set('policy', state.filterPolicy);
+    }
+    const sers = (state.detailSerializers || []).filter(Boolean).slice(0, MAX_COMPARE_COLUMNS);
+    for (const s of sers) p.append('ser', s);
     const qs = p.toString();
     const url = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash || ''}`;
     window.history.replaceState(null, '', url);
@@ -1533,21 +1544,26 @@ function applyFilterPolicyToAllGroups({ refreshSelectors = false } = {}) {
   if (refreshSelectors) {
     const discovered = discoverFixtureOptions(state.allGroups);
     const testDataOptions = discovered.all;
-    const modeOptions = [...new Set(state.allGroups.map((g) => g.mode))];
+    const modeOptions = [
+      ...new Set(state.allGroups.map((g) => normalizeMode(g.mode)).filter(Boolean)),
+    ];
 
     populateFixtureSelect(testDataOptions);
     populateFixtureSelect(testDataOptions, {
       selectId: 'same-data-select',
       previous: state.currentTestData,
     });
-    populateSelect('mode-select', modeOptions);
-    populateSelect('same-mode-select', modeOptions);
+    populateSelect('mode-select', modeOptions, modeDisplayLabel);
+    populateSelect('same-mode-select', modeOptions, modeDisplayLabel);
 
     if (!testDataOptions.includes(state.currentTestData)) {
       state.currentTestData =
         pickPreferredFixture(discovered.natural) || testDataOptions[0] || '';
     }
-    if (!modeOptions.includes(state.currentMode)) {
+    const wantMode = normalizeMode(state.currentMode) || state.currentMode;
+    if (modeOptions.includes(wantMode)) {
+      state.currentMode = wantMode;
+    } else {
       state.currentMode = modeOptions[0] || '';
     }
   }
@@ -1685,7 +1701,7 @@ function discoverMetricKeys(groups) {
   }
 }
 
-function populateSelect(id, options) {
+function populateSelect(id, options, labelFn) {
   const sel = document.getElementById(id);
   if (!sel) return;
   const prev = sel.value;
@@ -1693,7 +1709,7 @@ function populateSelect(id, options) {
   options.forEach((o) => {
     const opt = document.createElement('option');
     opt.value = o;
-    opt.textContent = o;
+    opt.textContent = typeof labelFn === 'function' ? labelFn(o) : o;
     sel.appendChild(opt);
   });
   if (options.includes(prev)) sel.value = prev;
@@ -1894,7 +1910,7 @@ function buildCompoundedFixtureGroups(allGroups, base, nA, nB, mode) {
   const want = new Set([nA, nB]);
   const matched = (allGroups || []).filter((g) => {
     if (baseTypeId(g.test_data) !== base) return false;
-    if (String(g.mode) !== String(mode)) return false;
+    if (normalizeMode(g.mode) !== normalizeMode(mode)) return false;
     const n = instanceCount(g);
     return n != null && want.has(n);
   });
@@ -1952,7 +1968,7 @@ function buildCompoundedFixtureGroups(allGroups, base, nA, nB, mode) {
 function buildAllTypesAtNGroups(allGroups, n, mode) {
   const matched = (allGroups || []).filter((g) => {
     if (!SUITE_TYPE_IDS.includes(baseTypeId(g.test_data))) return false;
-    if (String(g.mode) !== String(mode)) return false;
+    if (normalizeMode(g.mode) !== normalizeMode(mode)) return false;
     return instanceCount(g) === n;
   });
 
@@ -2009,7 +2025,7 @@ function buildAllTypesAtNGroups(allGroups, n, mode) {
 function buildAllAllGroups(allGroups, mode) {
   const matched = (allGroups || []).filter((g) => {
     if (!SUITE_TYPE_IDS.includes(baseTypeId(g.test_data))) return false;
-    return String(g.mode) === String(mode);
+    return normalizeMode(g.mode) === normalizeMode(mode);
   });
 
   const bySer = new Map();
@@ -2138,7 +2154,9 @@ function resolveFixtureGroups() {
     return buildAllAllGroups(state.allGroups, mode);
   }
   return state.allGroups.filter(
-    (g) => g.test_data === state.currentTestData && g.mode === mode
+    (g) =>
+      g.test_data === state.currentTestData &&
+      normalizeMode(g.mode) === normalizeMode(mode)
   );
 }
 
