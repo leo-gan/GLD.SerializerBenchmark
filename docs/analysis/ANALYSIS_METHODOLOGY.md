@@ -14,7 +14,7 @@ If architecture is the lab setup, methodology is the **lab notebook**: what we k
 | Paradigms | [Serialization categories](serialization_categories.md) |
 | How to regenerate published numbers | [Dashboard](../dashboard/) via `sync-data.py` · [Claims and replication](CLAIMS_AND_REPLICATION.md) |
 
-Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml). Regeneration is **local** (`analyze-benchmarks`); continuous integration does not re-run analysis for publication.
+Defaults live under `statistics:` and `modes:` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml). Regeneration is **local** (`analyze-benchmarks`); continuous integration does not re-run analysis for publication.
 
 ---
 
@@ -158,7 +158,7 @@ Published numbers live on the [Dashboard](../dashboard/). Those reports are PR-d
 
 ### Bootstrap confidence interval on the mean
 
-When bootstrap is enabled (default), analysis resamples the total-time series many times using the **[bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics) "Bootstrapping (statistics) — resampling to estimate uncertainty")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** (**percentile** method: 2000 iterations, 95% [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, seed 42) and reports:
+When bootstrap is enabled (default), analysis resamples the total-time series many times using the **[bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29 "Bootstrapping (statistics) — resampling to estimate uncertainty")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />** (**percentile** method: 2000 iterations, 95% [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval — range of plausible values for a parameter")<img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, seed 42) and reports:
 
 - `total_ci_low_ns`
 - `total_ci_high_ns`
@@ -282,7 +282,7 @@ analyze-benchmarks --save-baseline   # only if check passes (or check not reques
 
 A machine-readable summary is written to `reports/regression_report.json` when you check.
 
-Config lives under `regression:` in [`config/benchmark_config.yaml`](../../config/benchmark_config.yaml).
+Config lives under `regression:` in [`config/benchmark_config.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml).
 
 ---
 
@@ -373,7 +373,7 @@ Honest methodology includes what the suite **cannot** claim.
 | Interquartile range (IQR) | [en.wikipedia.org/wiki/Interquartile_range](https://en.wikipedia.org/wiki/Interquartile_range) |
 | John Tukey | [en.wikipedia.org/wiki/John_Tukey](https://en.wikipedia.org/wiki/John_Tukey) |
 | Confidence interval | [en.wikipedia.org/wiki/Confidence_interval](https://en.wikipedia.org/wiki/Confidence_interval) |
-| Bootstrapping | [en.wikipedia.org/wiki/Bootstrapping_(statistics)](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)) |
+| Bootstrapping | [en.wikipedia.org/wiki/Bootstrapping_(statistics)](https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29) |
 | Effect size | [en.wikipedia.org/wiki/Effect_size](https://en.wikipedia.org/wiki/Effect_size) |
 | Cliff’s delta | [Effect size § ordinal data](https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data) |
 | Hedges’ g | [Effect size § Hedges' g](https://en.wikipedia.org/wiki/Effect_size#Hedges'_g) |

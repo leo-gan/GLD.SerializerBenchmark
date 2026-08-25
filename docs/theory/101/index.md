@@ -6,7 +6,7 @@ Welcome to Serialization 101. This course is a starting point for anyone who wan
 |------|--|
 | **This track** | Three lenses below · then [201 mechanisms](../201/index.md) |
 | **See numbers** | [Dashboard](../../dashboard/) · language **Overview** for roster |
-| **How we measure** | [Method](../../analysis/index.md) |
+| **How we measure** | [Benchmarks](../../analysis/index.md) |
 
 By the end of this theory track you should be able to:
 
@@ -15,7 +15,7 @@ By the end of this theory track you should be able to:
 3. Choose a format for a specific kind of work by using the right lens. One lens is data work. Another lens is services and systems.
 4. Connect the ideas in these pages to measured libraries in this multi-language benchmark suite.
 
-Theory alone does not tell you what to ship in production. Use this course to build vocabulary and judgment. Then check real numbers on the [Dashboard](../../dashboard/). Language **Overview** pages list the roster and caveats. For how those numbers are produced, see [Method](../../analysis/index.md).
+Theory alone does not tell you what to ship in production. Use this course to build vocabulary and judgment. Then check real numbers on the [Dashboard](../../dashboard/). Language **Overview** pages list the roster and caveats. For how those numbers are produced, see [Benchmarks](../../analysis/index.md).
 
 ---
 

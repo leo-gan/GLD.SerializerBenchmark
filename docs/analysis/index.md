@@ -1,8 +1,8 @@
-# Method
+# Benchmarks
 
-This section explains **how this project measures serializers**, not the theory of formats themselves. On the site it lives under the **Method** tab. Live interactive results live under the **Dashboard** tab.
+This section explains **how this project measures serializers**, not the theory of formats themselves. On the site it lives under the **Benchmarks** tab. Live interactive results live under the **Dashboard** tab.
 
-If Learn / Serialization 101 answers *“what is serialization?”*, Method answers *“how do we time it fairly, and what do the numbers mean?”*
+If Learn / Serialization 101 answers *“what is serialization?”*, Benchmarks answers *“how do we time it fairly, and what do the numbers mean?”*
 
 You do not need to be a performance engineer to read these pages. They are written for introductory computer science students and for anyone who wants a clear picture of the suite before diving into tables and plots.
 

@@ -6,11 +6,11 @@ Think of it as the **shared homework assignment**. Each language implements the 
 
 | Resource | Path |
 |----------|------|
-| Type catalog | [`schemas/data_catalog_v2.yaml`](../../schemas/data_catalog_v2.yaml) |
-| Run configs | [`config/library/`](../../config/library/) |
-| Wire schemas | [`schemas/v2/`](../../schemas/v2/) |
-| Default matrix | [`config/library/default.yaml`](../../config/library/default.yaml) |
-| Smoke matrix | [`config/library/smoke.yaml`](../../config/library/smoke.yaml) |
+| Type catalog | [`schemas/data_catalog_v2.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/schemas/data_catalog_v2.yaml) |
+| Run configs | [`config/library/`](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/config/library) |
+| Wire schemas | [`schemas/v2/`](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/schemas/v2) |
+| Default matrix | [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) |
+| Smoke matrix | [`config/library/smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) |
 
 **Type ids:** `message` · `document` · `telemetry` · `strings` · `event`
 
@@ -203,8 +203,8 @@ Prefer this wrapper over a package-level stream of top-level `repeated` messages
 
 | File | Matrix |
 |------|--------|
-| [`config/library/smoke.yaml`](../../config/library/smoke.yaml) | `message`, `telemetry` × `[1]` |
-| [`config/library/default.yaml`](../../config/library/default.yaml) | five types × `[1, 100]` |
+| [`config/library/smoke.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/smoke.yaml) | `message`, `telemetry` × `[1]` |
+| [`config/library/default.yaml`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/library/default.yaml) | five types × `[1, 100]` |
 
 Resolve a config to see the expanded cell list:
 

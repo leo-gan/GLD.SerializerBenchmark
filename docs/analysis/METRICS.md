@@ -72,7 +72,7 @@ After warmup drop and optional outlier filter, analysis groups rows by:
 | `total_mean_ns` / `ser_mean_ns` / `deser_mean_ns` | Arithmetic means | medium | no |
 | `total_std_ns` / `*_mad_ns` / `*_cv` | Dispersion (spread) | medium | no (context) |
 | `total_p5_ns` … `total_p99_ns` | Percentiles | medium (p95/p99) / low (others) | no |
-| `total_ci_low_ns` / `total_ci_high_ns` | [Bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics) "Bootstrapping (statistics)") [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval") on **mean** total | medium | — |
+| `total_ci_low_ns` / `total_ci_high_ns` | [Bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29 "Bootstrapping (statistics)") [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval "Confidence interval") on **mean** total | medium | — |
 | `avg_ops_per_sec` | `1e9 / total_mean_ns` | high (display) | **yes** |
 | `runs` / `runs_raw` / `warmup_skipped` / `outliers_removed` | Sample provenance | high | — |
 | `values_clipped` | Rows touched by winsorize (0 for drop filters) | medium | — |

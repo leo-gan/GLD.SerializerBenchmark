@@ -12,10 +12,10 @@ theme:
   name: material
   custom_dir: docs_theme
   features:
-    # Header tabs: Dashboard | Experiments | Learn | Languages | Method
+    # Header tabs: Learn | Languages | Benchmarks | Dashboard | Experiments
     - navigation.tabs
     - navigation.tabs.sticky
-    # Left sidebar: sections under the active tab (Languages, Learn, Method)
+    # Left sidebar: sections under the active tab (Learn, Languages, Benchmarks)
     - navigation.sections
     - navigation.tracking
     - navigation.instant
@@ -91,11 +91,9 @@ extra_css:
 extra_javascript:
   - javascripts/languages-nav.js
 
-# Top tabs: Dashboard | Experiments | Learn | Languages | Method
+# Top tabs: Learn | Languages | Benchmarks | Dashboard | Experiments
 # Nested items appear in the left sidebar under the active tab (Material has no true ▾ dropdown).
 nav:
-  - Dashboard: dashboard/
-  - Experiments: experiments/index.md
   - Learn:
       - 101:
           - Overview: theory/101/index.md
@@ -180,14 +178,16 @@ nav:
           - Overview: rust/index.md
       - Swift:
           - Overview: swift/index.md
-  - Method:
+  - Benchmarks:
       - Overview: analysis/index.md
       - Architecture: analysis/architecture.md
       - Modes: analysis/modes.md
-      - Adding a Language: analysis/ADDING_A_LANGUAGE.md
-      - Adding a Serializer: analysis/ADDING_A_SERIALIZER.md
       - Categories: analysis/serialization_categories.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md
       - Metrics: analysis/METRICS.md
       - Claims and replication: analysis/CLAIMS_AND_REPLICATION.md
       - Test Data: analysis/test_data_configuration.md
+      - Adding a Serializer: analysis/ADDING_A_SERIALIZER.md
+      - Adding a Language: analysis/ADDING_A_LANGUAGE.md
+  - Dashboard: dashboard/
+  - Experiments: experiments/index.md

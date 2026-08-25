@@ -6,7 +6,7 @@
 |------|--|
 | **Prereqs** | [101](../101/index.md) · [201](../201/index.md) |
 | **Implementers** | [401 elective](../401/index.md) |
-| **Measure** | [Dashboard](../../dashboard/) · [using this suite](using-this-suite.md) · [Method](../../analysis/index.md) |
+| **Measure** | [Dashboard](../../dashboard/) · [using this suite](using-this-suite.md) · [Benchmarks](../../analysis/index.md) |
 
 In this course you will not re-learn wire encoding from scratch. Instead you will practice **judgment under constraints**. A first-year computer science student who has finished [Serialization 101](../101/index.md) and [Serialization 201](../201/index.md) should be able to follow every article. The technical depth stays. The language aims to teach rather than to impress.
 
@@ -60,7 +60,7 @@ By the end of this course you should be able to:
 | **301 (this course)** | Production judgment — what to ship under real constraints |
 | [401](../401/index.md) | Implementer elective — wire formats, language paths, and a hands-on lab |
 
-The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s benchmark runner, use the [Dashboard](../../dashboard/). For how the suite measures, see [Method](../../analysis/index.md).
+The default path through the program is **101, then 201, then 301**. For measured evidence on this project’s benchmark runner, use the [Dashboard](../../dashboard/). For how the suite measures, see [Benchmarks](../../analysis/index.md).
 
 ---
 
