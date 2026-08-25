@@ -80,7 +80,11 @@
         const items = Array.from(ul.children).filter(
           (el) => el.classList && el.classList.contains("md-nav__item")
         );
-        if (items.length < 1) return;
+        // Language rows only: Overview-only, or Overview + leftover Results.
+        // Do not compact Learn 101/201/301/401 or Method (they also have an Overview child).
+        const labels = items.map((item) => linkLabel(pageAnchor(item)));
+        const leftoverResults = labels.includes("Results");
+        if (!(items.length === 1 || (items.length === 2 && leftoverResults))) return;
 
         let overviewA = null;
         let overviewActive = false;
@@ -102,7 +106,6 @@
             !!(overviewA && overviewA.classList.contains("md-nav__link--active")) ||
             items[0].classList.contains("md-nav__item--active");
         }
-        // Leftover Results sibling during a mixed tree: ignore it.
 
         if (!overviewA) return;
 
@@ -136,8 +139,8 @@
         }
 
         // Drop a leftover Results sibling from a previous JS version.
-        const leftoverResults = li.querySelector(":scope > a.lang-nav-results-link");
-        if (leftoverResults) leftoverResults.remove();
+        const staleResultsLink = li.querySelector(":scope > a.lang-nav-results-link");
+        if (staleResultsLink) staleResultsLink.remove();
 
         // Plain anchors — do NOT use md-nav__link (Material intercepts those
         // on nested items as the expand control).

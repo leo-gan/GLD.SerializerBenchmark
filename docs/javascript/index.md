@@ -43,7 +43,7 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 ### Stream I/O
 
-**Not measured.** The Node suite times the same buffer `serialize` / `deserialize` path for every codec; there is no distinct stream API loop. The benchmark runner emits **bytes only** so Results do not claim a second I/O mode. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
+**Not measured.** The Node suite times the same buffer `serialize` / `deserialize` path for every codec; there is no distinct stream API loop. The benchmark runner emits **bytes only** so the Dashboard / this runner does not claim a second I/O mode. See [Modes — stream honesty](../analysis/modes.md#three-levels-of-stream-honesty).
 
 ### Notes
 
