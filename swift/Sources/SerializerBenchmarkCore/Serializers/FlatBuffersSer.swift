@@ -4,7 +4,8 @@ import FlatBuffers
 // MARK: - Google FlatBuffers (official Swift runtime)
 // Docs: https://flatbuffers.dev/flatbuffers_guide_use_swift.html
 // Optimal: reuse FlatBufferBuilder.clear(); finish + sizedByteArray; getRoot + field reads.
-// Domain materialize is timed (zero-copy root alone is not a suite deserialize).
+// 401 pair with SwiftProtobuf: both time suite value → bytes → suite value.
+// Timed decode includes domain materialize (same end object as SwiftProtobuf).
 
 public final class FlatBuffersSerializer: BenchSerializer {
     public let name = "FlatBuffers"

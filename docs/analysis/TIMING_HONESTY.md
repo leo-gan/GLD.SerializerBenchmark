@@ -58,11 +58,11 @@ Building that object is **prepare**. Writing it out is **serialize**.
 2. **Do not time schema compile, type registration, or `MakeGenericMethod`.**  
    Those belong in `prepare`. If the first timed call still builds the serializer, the first repetition is warmup (dropped) but later reps must not rebuild it.
 
-3. **Domain ↔ library maps are untimed when the runner can do it.**  
-   C#, Go, Java, and Swift convert back to the suite value **after** the timer. Python’s fidelity accepts some native objects. JavaScript today compares the `deserialize` return value immediately, so a remap there is still on the clock. New JavaScript work should add an untimed `toDomain` hook rather than hide copies inside `deserialize`.
+3. **Domain ↔ library maps are untimed when the runner can do it — except a 401 pair that must share one end-to-end path.**  
+   C#, Go, and most Java/Swift rows convert back to the suite value **after** the timer. The Java Protostuff / protobuf-java pair and the Swift FlatBuffers / SwiftProtobuf pair time suite value → bytes → suite value on both sides, because one library’s native type *is* the suite object.
 
 4. **Both adapters in one 401 comparison must time the same kind of work.**  
-   If one row encodes a prepared generated message and the other encodes a live suite object, say so in the article, or change one adapter. Do not present that pair as “library A is faster than library B” without the contract difference.
+   Those two pairs now share the suite-value path. Do not revert one adapter to “prepared native only” without changing the other.
 
 5. **Encode N instances when the cell says N.**  
    `DataTypeInstanceCount=100` means the timed call encodes 100 values (or one documented batch frame of 100). Encoding one value and writing `100` is a critical bug.
@@ -81,6 +81,7 @@ Building that object is **prepare**. Writing it out is **serialize**.
 | C# in-memory path is a `string` | Many .NET APIs return strings | Binary codecs often Base64 that string. Both sides of a C# pair must do the same. Do not compare those nanoseconds to a Rust `Vec<u8>` row. |
 | Envelope / teaching wrapper | C `ubj` wraps custom-binary | The 401 page must say the envelope is the measured extra work. |
 | In-place layout used as a classical decoder | rkyv `from_bytes` builds an owned struct | The 401 rkyv page must say `access` is not timed. |
+| 401 pair whose other library has no separate native type | Protostuff and FlatBuffers encode the suite object | Both sides time suite value → bytes → suite value. |
 
 If you need a new exception, write it on the language Overview **and** next to the Dashboard claim. Do not invent a silent one.
 
@@ -110,10 +111,10 @@ Checked against the adapters in this repository after the google-protobuf encode
 | [C++: simdjson](../theory/401/cpp-simdjson-wrapper.md) | Encode is nlohmann `dump` of a prepared object. Decode is simdjson parse, then a DOM walk | Encode is **not** simdjson. Must stay labelled. |
 | [C#: BinaryPack vs Bond Fast](../theory/401/csharp-binarypack-vs-bond.md) | Both encode then Base64 on the string path | Same extra work. Honest **within C#**. |
 | [Go: kelindar vs Avro](../theory/401/go-kelindar-vs-avro.md) | Both encode domain structs | Same work. Honest. |
-| [Java: Protostuff vs protobuf-java](../theory/401/java-protostuff-vs-protobuf.md) | Protostuff encodes a live POJO. protobuf-java encodes a prepared generated message; `toDomain` is after the timer | **Different work.** The article states it. Do not treat the decode column as the same quantity. |
+| [Java: Protostuff vs protobuf-java](../theory/401/java-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. protobuf-java still builds a generated message in the middle | Same work at the suite boundary. |
 | [JavaScript: JSON vs google-protobuf](../theory/401/javascript-json-vs-protobuf.md) | Both encode and decode on the clock | Same work. Honest (after the copy bug was fixed). |
 | [JavaScript: three protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize`. Decode rebuilds a library message; `toDomain` copies after the timer | Encode is the same kind of work. Decode implementations still differ. |
-| [Swift: FlatBuffers vs SwiftProtobuf](../theory/401/swift-flatbuffers-vs-protobuf.md) | FlatBuffers copies into the suite `Document` on the clock. SwiftProtobuf stops at a generated `Message` | **Different work.** The article states it. |
+| [Swift: FlatBuffers vs SwiftProtobuf](../theory/401/swift-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
 
 ## Remaining contract gaps (not 401 pairs)
 

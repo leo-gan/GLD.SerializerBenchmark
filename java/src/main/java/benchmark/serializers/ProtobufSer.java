@@ -25,9 +25,9 @@ import java.util.List;
 /**
  * Protocol Buffers (protobuf-java) — official Google runtime.
  *
- * <p>Recommended fair path (aligned with Go/Python harnesses): convert domain → Message in
- * {@code prepare} (untimed); timed section is only {@code toByteArray}/{@code parseFrom};
- * domain conversion after deserialize is untimed via {@link #toDomain}.
+ * <p>401 pair with Protostuff: both time suite value → bytes → suite value. {@code prepare}
+ * only binds the parser. Timed serialize is {@code toProto}+{@code toByteArray}; timed
+ * deserialize is {@code parseFrom}+{@code fromProto}. {@link #toDomain} is identity.
  *
  * @see <a href="https://protobuf.dev/getting-started/javatutorial/">Protobuf Java tutorial</a>
  */
@@ -67,29 +67,29 @@ public final class ProtobufSer implements BenchSerializer {
 
   @Override
   public byte[] serializeBytes(Fixture fx) {
-    return prepared.toByteArray();
+    return toProto(fx).toByteArray();
   }
 
   @Override
   public Object deserializeBytes(byte[] data) throws Exception {
-    return parser.parseFrom(data);
+    return fromProto(typeId, batch, parser.parseFrom(data));
   }
 
   @Override
   public int serializeStream(Fixture fx, OutputStream out) throws Exception {
-    prepared.writeTo(out);
-    return prepared.getSerializedSize();
+    MessageLite msg = toProto(fx);
+    msg.writeTo(out);
+    return msg.getSerializedSize();
   }
 
   @Override
   public Object deserializeStream(InputStream in) throws Exception {
-    return parser.parseFrom(in);
+    return fromProto(typeId, batch, parser.parseFrom(in));
   }
 
   @Override
   public Object toDomain(Object decoded) {
-    if (!(decoded instanceof MessageLite ml)) return decoded;
-    return fromProto(typeId, batch, ml);
+    return decoded;
   }
 
   private static MessageLite toProto(Fixture fx) {

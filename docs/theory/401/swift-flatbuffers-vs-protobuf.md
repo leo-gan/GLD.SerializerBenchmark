@@ -20,7 +20,7 @@ FlatBuffers is faster than SwiftProtobuf on this slice (132 thousand versus 114 
 
 FlatBuffers is faster because encode and decode are **table construction and offset arithmetic**: a field is a vtable slot plus a load. SwiftProtobuf writes fewer bytes because encode is **field numbers plus variable-length integers** and there is no vtable. Smaller is not faster here.
 
-The two adapters do not time the same application work. FlatBuffers copies the result into the suite’s domain `Document` during the timed decode. SwiftProtobuf’s timed decode stops at a generated `Message`. The later domain copy is not timed. FlatBuffers is still faster even though it does more of the application’s work.
+Both adapters now time the same work: suite `Document` in, bytes, suite `Document` out. FlatBuffers is faster because encode and decode are table construction and offset loads. SwiftProtobuf still writes the smaller message.
 
 | | FlatBuffers | SwiftProtobuf |
 |--|-------------|---------------|
@@ -57,14 +57,16 @@ return benchmark_v2_Document.createDocument(...)
 
 `endTable` writes a **vtable**: a small table of 16-bit offsets that says where each field lives (`FlatBufferBuilder.endTable`).
 
-**SwiftProtobuf** converts the domain object in untimed `prepare`, then times `serializedData()` / `init(serializedBytes:)` (`Protobuf.swift`):
+**SwiftProtobuf** (`Protobuf.swift`) converts the suite value on the timed path, same end object as FlatBuffers:
 
 ```swift
 public func serializeBytes(_ fixture: Fixture) throws -> Data {
-    return try native.serializedData()
+    let msg = try ProtobufBridge.toProtobuf(fixture)
+    return try msg.serializedData()
 }
 public func deserializeBytes(_ data: Data) throws -> Any {
-    return try decodeNative(data)
+    let msg = try decodeNative(data)
+    return try ProtobufBridge.toDomain(msg, fixture: prepared)
 }
 ```
 
@@ -119,7 +121,7 @@ SwiftProtobuf decode is `nextFieldNumber()` (a variable-length integer) in a loo
 
 On a document with eight items, eight vtables plus padding still cost less processor time in this runner than eight nested field loops. The extra bytes are sequential and cheap. The extra branches are not.
 
-This suite does **not** stop at a FlatBuffers view. `documentDomain` copies strings and items into the suite `Document`, and that copy is timed. A production reader that only needed `status` could skip that copy. The comparison is therefore conservative toward SwiftProtobuf.
+This suite does **not** stop at a FlatBuffers view. `documentDomain` copies strings and items into the suite `Document`, and that copy is timed. SwiftProtobuf now pays the matching copy (`toDomain`) on the same clock. A production FlatBuffers reader that only needed `status` could still skip the copy. The pair is no longer biased by timer placement.
 
 ## What you give up
 
@@ -137,4 +139,4 @@ If the document is a public log, SwiftProtobuf’s 155 bytes and skip rules are 
 
 1. Why can FlatBuffers be both larger and faster on the same record?
 2. Which bytes in the 440-byte image have no counterpart in the 155-byte image?
-3. The runner times FlatBuffers’ domain copy and does not time SwiftProtobuf’s. In which direction does that bias the rank?
+3. Both rows now copy into a suite `Document` on the timed decode. What would change in the FlatBuffers rank if decode stopped at the vtable view and never copied?
