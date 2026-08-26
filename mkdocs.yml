@@ -181,6 +181,7 @@ nav:
   - Benchmarks:
       - Overview: analysis/index.md
       - Architecture: analysis/architecture.md
+      - Timing honesty: analysis/TIMING_HONESTY.md
       - Modes: analysis/modes.md
       - Categories: analysis/serialization_categories.md
       - Methodology: analysis/ANALYSIS_METHODOLOGY.md

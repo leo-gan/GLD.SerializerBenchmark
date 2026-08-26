@@ -154,11 +154,13 @@ class SimdjsonSer final : public ISerializer {
   void prepare(const Fixture& fx) override {
     type_id_ = fx.type_id;
     n_ = fx.instance_count;
-    cached_json_ = value_to_json(fx.value).dump();
+    // Native JSON object only. Timed serialize must write the bytes.
+    prepared_ = value_to_json(fx.value);
   }
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    return std::vector<uint8_t>(cached_json_.begin(), cached_json_.end());
+    std::string s = prepared_.dump();
+    return std::vector<uint8_t>(s.begin(), s.end());
   }
 
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
@@ -172,7 +174,7 @@ class SimdjsonSer final : public ISerializer {
  private:
   std::string type_id_;
   int n_ = 1;
-  std::string cached_json_;
+  nlohmann::json prepared_;
   simdjson::dom::parser parser_;
 };
 

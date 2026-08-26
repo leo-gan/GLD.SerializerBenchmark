@@ -65,7 +65,7 @@ For **each** I/O mode, the stopwatch covers:
 1. Serialize using that mode’s API  
 2. Deserialize using that mode’s API  
 
-Setup (schemas, maps, buffer pools) stays **outside** the stopwatch. Details: [Architecture — what we measure](architecture.md#measurement-model).
+Setup (schemas, maps, buffer pools) is **not timed**. Details: [Architecture — what we measure](architecture.md#measurement-model) and [Timing honesty](TIMING_HONESTY.md).
 
 ### C# special case: “string” instead of “bytes”
 

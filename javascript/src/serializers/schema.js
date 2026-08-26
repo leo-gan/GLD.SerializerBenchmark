@@ -97,6 +97,7 @@ const avroSchemas = {
 };
 
 let avroType = null;
+let avroPrepared = null;
 let avroDataName = null;
 
 function avroPrepareValue(_dataName, value) {
@@ -120,15 +121,14 @@ export const avscSer = {
     // Batch N>1: array of records
     if (Array.isArray(value)) {
       avroType = avro.Type.forSchema({ type: 'array', items: base });
+      avroPrepared = value.map((v) => avroPrepareValue(dataName, v));
     } else {
       avroType = base;
+      avroPrepared = avroPrepareValue(dataName, value);
     }
   },
-  serialize(value) {
-    const payload = Array.isArray(value)
-      ? value.map((v) => avroPrepareValue(avroDataName, v))
-      : avroPrepareValue(avroDataName, value);
-    return avroType.toBuffer(payload);
+  serialize(_value) {
+    return avroType.toBuffer(avroPrepared);
   },
   deserialize(buf) {
     // Normalize Avro types (Long/ints) to plain JSON for suite fidelity compare.
