@@ -16,6 +16,8 @@ not a universal ranking.
 
 ## Short answer
 
+Bitsery is faster than YAS (1.10 million versus 0.83 million cycles per second) and writes 84 fewer bytes. We can see that in the table.
+
 Bitsery writes a positional little-endian image with **one-byte length prefixes** for short strings and lists, into a **reused** `std::vector`. YAS writes the same fields with **eight-byte lengths** and a **seven-byte archive header**, and it constructs a fresh 20 KiB stream on every encode.
 
 | | Bitsery 5.2.4 | YAS (binary) |
@@ -52,7 +54,7 @@ auto written = ser.adapter().writtenBytesCount();
 return {buf_.begin(), buf_.begin() + written};
 ```
 
-**YAS** (`cpp/src/serializers/ser_yas.cpp`) uses `YAS_OBJECT_NVP`. In binary mode the names are *not* written — they exist so the same macro can also speak JSON — but every `yas::save` builds a new stream:
+**YAS** (`cpp/src/serializers/ser_yas.cpp`) uses `YAS_OBJECT_NVP`. In binary mode the names are *not* written — they exist so the same macro can also encode JSON — but every `yas::save` builds a new stream:
 
 ```cpp
 constexpr auto kFlags = yas::mem | yas::binary;

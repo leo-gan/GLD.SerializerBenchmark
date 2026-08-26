@@ -155,7 +155,7 @@ nav:
           - "Go: kelindar vs Avro": theory/401/go-kelindar-vs-avro.md
           - "Java: Protostuff vs protobuf": theory/401/java-protostuff-vs-protobuf.md
           - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
-          - "JavaScript: three Protobuf engines": theory/401/javascript-three-protobufs.md
+          - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
           - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
   - Languages:
       # Alphabetical by display name. One-child nest so languages-nav.js

@@ -16,12 +16,12 @@ not a universal ranking.
 
 ## Short answer
 
-The simdjson wrapper does **not** time simdjson encode. It does **not** time “simdjson parse into a `Document`.”
+Glaze is faster than the simdjson row (378 thousand versus 78 thousand cycles per second). We can see that in the table. The simdjson row does **not** time simdjson encode. It does **not** time “simdjson parse into a `Document`.”
 
 1. **Encode** copies a `std::string` that `prepare` built with **nlohmann::json** (`value_to_json(...).dump()`). 217 ns is a `vector` construction from that cache.
-2. **Decode** runs simdjson’s DOM parse, then `simdjson::minify`, then **nlohmann::json::parse** on the minified text, then `json_to_value`. The famous parser is the first third of a longer pipeline.
+2. **Decode** runs simdjson’s DOM parse, then `simdjson::minify`, then **nlohmann::json::parse** on the minified text, then `json_to_value`. simdjson’s parser is the first third of a longer pipeline.
 
-Glaze writes JSON from the C++ struct on the clock and reads JSON back into that struct. That is why Glaze wins the total while “losing” the encode column.
+Glaze writes JSON from the C++ struct during the timed encode and reads JSON back into that struct during the timed decode. That is why Glaze has the higher cycle rate even though its encode time is longer than 217 ns. The 217 ns figure is a copy, not a JSON write.
 
 | | simdjson (this wrapper) | Glaze 2.9.5 | nlohmann |
 |--|-------------------------|-------------|----------|
@@ -30,7 +30,7 @@ Glaze writes JSON from the C++ struct on the clock and reads JSON back into that
 | Decode | **12.6 µs** (parse + minify + parse + map) | **1.94 µs** | 8.84 µs |
 | Encoded size | **458 B** | **458 B** | **458 B** |
 
-Equal size: all three emit compact JSON. Unequal clocks: only Glaze and nlohmann time a full codec.
+Equal size: all three emit compact JSON. The timed work is not the same: only Glaze and nlohmann time a full encode and decode.
 
 ## The timed functions
 
@@ -59,7 +59,7 @@ Value deserialize_bytes(const std::vector<uint8_t>& data) override {
 
 The comment above the class states the intent: “DOM parse (library strength); ser = prepared minified JSON.” The leaderboard does not repeat that sentence. Students who only read the table will mis-rank the library.
 
-**Glaze**, for contrast (`cpp/src/serializers/ser_glaze.cpp`), writes on the clock:
+**Glaze**, for contrast (`cpp/src/serializers/ser_glaze.cpp`), writes during the timed encode:
 
 ```cpp
 std::vector<uint8_t> serialize_bytes(const Fixture&) override {
@@ -89,7 +89,7 @@ nlohmann alone (8.84 µs decode) parses once and maps once. Glaze (1.94 µs) nev
 
 JavaScript’s row `simdjson-parse+JSON.stringify` is the same shape: a parse-focused library plus a second tool to produce suite values. Decode there is about 15 µs. The lesson travels.
 
-The [google-protobuf encode cache](javascript-json-vs-protobuf.md) is the sibling warning on the encode side: if `prepare` does the real work, the encode column measures a copy.
+An earlier JavaScript google-protobuf adapter had the same encode-side problem: if `prepare` writes the bytes, the encode column measures a copy. That adapter now encodes in `serialize`. See [JSON versus google-protobuf](javascript-json-vs-protobuf.md).
 
 ## How to read any “DOM” row
 
@@ -99,7 +99,7 @@ When `native_kind` is `dom` (this wrapper reports exactly that), ask:
 2. Does decode stop at the library’s document model, or does it parse again into another model?
 3. Is there a struct-backed JSON row (here: Glaze) that times the path an application would actually write?
 
-If the answers are “copy,” “parse again,” and “yes,” do not use the row to rank the famous library against Glaze.
+If the answers are “copy,” “parse again,” and “yes,” do not use the row to rank simdjson against Glaze.
 
 **History.** simdjson answered a 2010s question: can we find `{`, `}`, and `"` in a JSON byte stream with one processor instruction on many bytes? The papers are about **parse**. They are not about “replace nlohmann in a benchmark runner.” Using the parse as a stage in a longer pipeline is normal. Reporting that pipeline under the name `simdjson` is what this page exists to unpack.
 

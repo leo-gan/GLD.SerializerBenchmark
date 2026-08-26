@@ -16,7 +16,9 @@ not a universal ranking.
 
 ## Short answer
 
-Both omit names. Speedy copies each integer at its native width and each length as a `u32`. Postcard writes a **variable-length integer** (seven data bits per byte, high bit continues) for integers, lengths, and the `Fixture` variant index. Small numbers become one byte. That is why Postcard is **114 bytes** and Speedy is **214**. Speedy still wins the stopwatch because it never asks “how many bytes does this need?” and it never visits Serde.
+Speedy is faster than Postcard (2.84 million versus 1.73 million cycles per second). Postcard writes the smaller message (114 bytes versus 214). We can see both facts in the table.
+
+Both omit field names. Speedy copies each integer at its native width and each length as a `u32`. Postcard writes a **variable-length integer** (seven data bits per byte, high bit continues) for integers, lengths, and the `Fixture` variant index. Small numbers become one byte. That is why Postcard is **114 bytes** and Speedy is **214**. Speedy is still faster because it never asks “how many bytes does this need?” and it never visits Serde.
 
 | | Speedy 0.8.7 | Postcard 1.1.3 | Bincode 2.0.1 |
 |--|--------------|----------------|---------------|
@@ -25,7 +27,7 @@ Both omit names. Speedy copies each integer at its native width and each length 
 | Decode | **264 ns** | 414 ns | 573 ns |
 | Encoded size | 214 B | **114 B** | 122 B |
 
-Postcard is the size winner of the fast Rust binaries. Speedy is the speed winner. Bincode is neither.
+Postcard writes the smallest message among the fast Rust binaries. Speedy has the highest cycle rate. Bincode is neither the smallest nor the fastest.
 
 ## The two timed call sites
 
@@ -91,7 +93,7 @@ Decode walks the same varints in reverse (`try_take_varint_u32`). Each integer i
 | Bytes for a length 3 string | 4 + 3 | 1 + 3 |
 | Branches | Endian swap if needed (none here) | “Is it less than 128?” per integer |
 
-Postcard still beats Bincode because its Serde encoder is thinner (no `standard()` width tags such as “this is a two-byte int”) and because `to_extend` reuses the runner’s vector. The idea — variable-length integers — is the same family as Bincode’s `standard()` config. The engineering is tighter.
+Postcard is still faster than Bincode because its Serde encoder is thinner (no `standard()` width prefixes such as “this is a two-byte int”) and because `to_extend` reuses the runner’s vector. The idea — variable-length integers — is the same family as Bincode’s `standard()` config. The engineering is tighter.
 
 ## What you give up
 

@@ -16,6 +16,8 @@ not a universal ranking. The C# “string” path (canonical `mode=bytes`) Base6
 
 ## Short answer
 
+BinaryPack is faster than Bond Fast on this slice (about 190–210 thousand versus 160–190 thousand cycles per second). We can see the rank in the table.
+
 BinaryPack emits **raw fields in declaration order**. Bond Fast emits **a type byte and a 16-bit field identifier in front of every value**. Both specialize the encode function ahead of time. Bond pays extra stores (and extra reads) on every field in exchange for a skip rule: a reader can ignore an unknown identifier.
 
 | | BinaryPack | Bond Fast |
@@ -27,7 +29,7 @@ BinaryPack emits **raw fields in declaration order**. Bond Fast emits **a type b
 
 ## The two timed call sites
 
-**BinaryPack** binds a closed generic once and, on the clock, serializes then Base64-encodes (`c-sharp/src/Serializers/BinaryPackSerializerSer.cs`):
+**BinaryPack** binds a closed generic once and, during the timed call, serializes then Base64-encodes (`c-sharp/src/Serializers/BinaryPackSerializerSer.cs`):
 
 ```csharp
 public override string Serialize(object serializable)
@@ -91,7 +93,7 @@ public void WriteFieldBegin(BondDataType type, ushort id, Metadata metadata)
 
 The serializer itself is specialized. `Serializer<W>` compiles an `Action<object, W>` from expression trees (`cs/src/core/Serializer.cs`). The runner skips Bond’s code generator (`BondSkipCodegen=true`) and uses that runtime compile. So Bond is *not* reflecting on every call. It is still writing three extra bytes per field, and it still allocates a fresh `OutputBuffer` in this wrapper.
 
-**History.** Bond exists because Microsoft needed a schema that many languages could share, with a defined way to add fields. The type-and-id prefix is the same pressure that produced ASN.1 tags in 1984 and Protocol Buffers field numbers in the 2000s. BinaryPack exists because some .NET services only ever talk to themselves and want the processor to store, not to tag.
+**History.** Bond exists because Microsoft needed a schema that many languages could share, with a defined way to add fields. The type-and-id prefix is the same pressure that produced ASN.1 tags in 1984 and Protocol Buffers field numbers in the 2000s. BinaryPack exists because some .NET services only ever talk to themselves and want the processor to store the value, not to prefix a type and identifier.
 
 ## Side-by-side: one `int` field
 
@@ -102,11 +104,11 @@ The serializer itself is specialized. `Serializer<W>` compiles an `Action<object
 | The value | 4 bytes, little-endian | 4 bytes, little-endian |
 | Unknown-field rule | None | Reader can skip by type |
 
-Eight line items, each with three fields, plus the document header: the tag tax is tens of bytes and a comparable number of extra stores.
+Eight line items, each with three fields, plus the document header: the type-and-identifier prefix is tens of bytes and a comparable number of extra stores.
 
 ## Honesty
 
-1. **Base64 is on the clock** for both. Do not compare these sizes to Rust or C byte counts.
+1. **Base64 is timed** for both. Do not compare these sizes to Rust or C byte counts.
 2. **MemoryPack** is also specialized (source-generated formatters on the models). This runner calls the non-generic `MemoryPackSerializer.Serialize(Type, object)` API, so the measured MemoryPack row is not the fastest MemoryPack path. That is why this page uses Bond Fast as the schema-driven counterpart.
 3. Bond Compact would change the integer encoding. It is a different row on the Dashboard.
 

@@ -1,14 +1,15 @@
-# JavaScript: three engines, one Protocol Buffers document
+# JavaScript: three Protocol Buffers libraries, one encoding
 
 ## Why this article exists
 
-The [JSON versus google-protobuf](javascript-json-vs-protobuf.md) page showed that this runner’s google-protobuf **encode** is a cached `Buffer`. A fair question follows: what happens when two other JavaScript libraries speak the **same 155-byte** encoding and actually run encode on the clock?
+The [JSON versus google-protobuf](javascript-json-vs-protobuf.md) page compared one Protocol Buffers library with `JSON.stringify`. A fair question follows. What happens when two other JavaScript libraries write the **same 155-byte** Protocol Buffers message?
 
-This page places **google-protobuf**, **protobufjs**, and **protobuf-es** side by side. After reading it you should be able to say which functions are timed, why the three totals differ by a factor of five, and how this extends [Same bytes, three runtimes](protobuf-cross-language-fidelity.md) without leaving JavaScript.
+This page places **google-protobuf**, **protobufjs**, and **protobuf-es** side by side. After reading it you should be able to name the functions that are timed, explain why the three totals differ, and relate the result to [Same bytes, three runtimes](protobuf-cross-language-fidelity.md), which asked the same question across languages.
 
 Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+from this suite’s packed Dashboard data, after google-protobuf encode was
+moved into timed `serialize`. They illustrate the gap; they are not a
+universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/?lang=javascript&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=google-protobuf&ser=google-protobuf&ser=protobufjs&ser=protobuf-es#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
@@ -16,27 +17,42 @@ not a universal ranking.
 
 ## Short answer
 
-All three emit **155 bytes** of proto3 binary: field numbers 1–4, variable-length integers, no names. The stopwatch is not measuring the format. It is measuring three different machines that write and read those tags, and three different decisions about `prepare`.
+All three libraries write the same **155-byte** proto3 message. The message uses field numbers 1 through 4 and variable-length integers. It does not store field names. Because the three encodings have the same length, compactness cannot explain the speed difference.
 
-| | google-protobuf (as timed) | protobufjs | protobuf-es |
-|--|----------------------------|------------|-------------|
-| Mean encode + decode | **164 thousand / s** | 41 thousand / s | 29 thousand / s |
-| Encode | **431 ns** | 7.3 µs | 21 µs |
-| Decode | **5648 ns** | 17 µs | 13 µs |
+The JavaScript runner calls three methods on each adapter.
+
+- `prepare(dataName, value)` runs once. It is **not** timed. It may store the data type and build a library message. It must not write the output bytes.
+- `serialize(value)` runs many times. It is timed. That time is reported as encode.
+- `deserialize(buf)` runs many times. It is timed. That time is reported as decode.
+
+All three adapters now write the 155 bytes inside `serialize`. The encode column therefore measures the same kind of work: walk a value and emit Protocol Buffers bytes.
+
+On this slice, protobufjs and google-protobuf encode in about **8 µs**. protobuf-es takes 22 µs. We can see that in the Encode row of the table.
+
+**google-protobuf is the fastest decoder** (6.0 µs). protobuf-es takes 14 µs. protobufjs takes 17 µs. google-protobuf builds an ordinary JavaScript object directly. The other two first build a library message and then copy that message into an ordinary object. The second copy is included in the measured time.
+
+On total cycles per second, google-protobuf is first (about 70 thousand) because decode is much shorter. protobufjs is next (40 thousand). protobuf-es is last (27 thousand). None of the three decoders runs inside V8’s built-in C++ runtime. Each walks the byte stream in JavaScript.
+
+| | google-protobuf | protobufjs | protobuf-es |
+|--|-----------------|------------|-------------|
+| Mean encode + decode | **70 thousand / s** | 40 thousand / s | 27 thousand / s |
+| Encode | 8.4 µs | **8.0 µs** | 22 µs |
+| Decode | **6.0 µs** | 17 µs | 14 µs |
 | Encoded size | **155 B** | **155 B** | **155 B** |
 
-google-protobuf’s encode is **not** an encode. protobufjs times `Type.encode(...).finish()`. protobuf-es times `toBinary`. Decode is a JavaScript tag loop in every row. None of these is V8-native.
+An earlier version of this adapter encoded in `prepare` and timed only a `Buffer` copy. That made google-protobuf look about five times as fast as protobuf-es. The copy was not an encode. The table above is the fair comparison.
 
 ## The three timed call sites
 
-**google-protobuf** (`javascript/src/serializers/modern.js`) encodes in untimed `prepare`:
+**google-protobuf** (`javascript/src/serializers/modern.js`) stores the data type in `prepare` and encodes in `serialize`:
 
 ```javascript
 prepare(dataName, value) {
-  jspbBytes = jspbEncode(dataName, value);   // untimed
+  jspbDataName = dataName;
+  jspbIsBatch = Array.isArray(value);
 },
-serialize(_value) {
-  const u8 = jspbBytes;
+serialize(value) {
+  const u8 = jspbEncode(jspbDataName, value);   // timed
   return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
 },
 deserialize(buf) {
@@ -44,9 +60,9 @@ deserialize(buf) {
 },
 ```
 
-`jspbEncode` uses `BinaryWriter` primitives (`writeString`, `writeInt32`, `writeMessage`). Those calls are real Protocol Buffers writes. They run once, before the clock.
+`jspbEncode` uses `BinaryWriter` primitives (`writeString`, `writeInt32`, `writeMessage`). Those calls are real Protocol Buffers writes. They now run on every timed encode.
 
-**protobufjs** (`javascript/src/serializers/schema.js`) builds a message in `prepare` and times encode:
+**protobufjs** (`javascript/src/serializers/schema.js`) builds a message in `prepare` and encodes in `serialize`:
 
 ```javascript
 prepare(dataName, value) {
@@ -62,7 +78,7 @@ deserialize(buf) {
 },
 ```
 
-**protobuf-es** (`@bufbuild/protobuf` in `modern.js`) builds a typed message in `prepare` and times `toBinary`:
+**protobuf-es** (`@bufbuild/protobuf` in `modern.js`) builds a typed message in `prepare` and encodes in `serialize`:
 
 ```javascript
 prepare(dataName, value) {
@@ -74,42 +90,42 @@ serialize(_value) {
 },
 deserialize(buf) {
   const msg = fromBinary(esSchema, u8);
-  return fromEsItem(esDataName, msg);      // domain copy is on the clock
+  return fromEsItem(esDataName, msg);      // the field copy is timed
 },
 ```
 
-So the encode column is three different quantities:
+The encode column therefore reports three real encodes:
 
-1. copy an existing `Uint8Array` into a Node `Buffer`;
-2. walk a protobufjs message and emit tags;
-3. walk a protobuf-es message and emit tags.
+1. walk the document with google-protobuf `BinaryWriter`;
+2. walk a protobufjs message and write Protocol Buffers bytes;
+3. walk a protobuf-es message and write Protocol Buffers bytes.
 
-Only (2) and (3) answer “how expensive is JavaScript Protocol Buffers encode?”
+That is the fair answer to “how long does a JavaScript Protocol Buffers encode take on this suite?”
 
-## Why decode is the honest half
+## Why the decode times differ
 
-Every decode walks tags in JavaScript.
+Every decode walks the 155-byte message in JavaScript.
 
-google-protobuf’s `jspbReadDocument` allocates a `BinaryReader` for the document, another for `meta`, and one per line item. Eight items means ten reader loops. Details are on the JSON comparison page.
+google-protobuf’s `jspbReadDocument` allocates a `BinaryReader` for the document, another for the nested `meta` message, and one reader for each line item. Eight items means ten reader loops. Details are on the JSON comparison page. The decoder writes an ordinary object. There is no second copy after decode. That is why its decode time is the shortest of the three.
 
-protobufjs `Type.decode` is a generated-or-reflected field loop that fills a protobufjs message, then `fromPbValue` copies it to a plain object (`toJSON` or a spread). That second copy is on the clock and is part of the 17 µs.
+protobufjs `Type.decode` walks each field and fills a protobufjs message. The field list may come from generated code or from a descriptor loaded at run time. Then `fromPbValue` copies that message into an ordinary object (`toJSON` or a spread). The second copy runs during the timed `deserialize` call. It is part of the 17 µs.
 
-protobuf-es `fromBinary` fills a protobuf-es message, then `fromEsItem` copies fields into a suite object. That copy is also on the clock (13 µs total). It is still faster than protobufjs here because the decode core is newer and typed, not because the bytes differ.
+protobuf-es `fromBinary` fills a protobuf-es message. Then `fromEsItem` copies the fields into an ordinary object that the rest of the suite can compare. That copy also runs during the timed `deserialize` call. The total is 14 µs. The bytes are the same as the other two rows, so the extra time is in the decoder and in the copy, not in the encoding.
 
-**History.** Protocol Buffers (Google, open-sourced 2008) specified the tags. `protoc --js_out` and the `google-protobuf` runtime brought that specification into browsers as `BinaryWriter` / `BinaryReader`. [protobufjs](https://github.com/protobufjs/protobuf.js) (Daniel Wirtz and contributors) loaded a `.proto` or a JSON descriptor at run time so teams could skip the compiler. [protobuf-es](https://github.com/bufbuild/protobuf-es) (Buf, early 2020s) generated TypeScript-first types and `toBinary` / `fromBinary`. Three engines, one wire article: [Protocol Buffers wire format](protobuf-wire-format.md).
+**History.** Protocol Buffers (Google, open-sourced 2008) defined the binary layout: a field number, a wire type, and a payload. `protoc --js_out` and the `google-protobuf` runtime brought that specification into browsers as `BinaryWriter` / `BinaryReader`. [protobufjs](https://github.com/protobufjs/protobuf.js) (Daniel Wirtz and contributors) loaded a `.proto` file or a JSON descriptor at run time so teams could skip the compiler. [protobuf-es](https://github.com/bufbuild/protobuf-es) (Buf, early 2020s) generated TypeScript-first types and `toBinary` / `fromBinary`. Three libraries, one binary layout: [Protocol Buffers wire format](protobuf-wire-format.md).
 
 ## How to read the leaderboard
 
-If you rank by ops/s, google-protobuf “wins.” If you add 431 ns + 5648 ns you are adding a buffer copy to a real decode. A fairer encode for that row would call `jspbEncode` inside `serialize`. The total would move toward protobufjs, not toward `JSON.stringify`.
+If you rank the three rows by cycles per second, google-protobuf is first. That ranking is no longer a buffer copy plus a decode. It is a real encode plus a decode that builds an ordinary object in one step.
 
-If you rank by encode alone, you are ranking timer placement. protobuf-es looks worst (21 µs) because it does the work the first row deferred.
+If you rank the three rows by encode time alone, protobufjs and google-protobuf are nearly equal (8.0 µs and 8.4 µs). protobuf-es is last (22 µs). All three numbers are encodes.
 
-If you rank by size, all three tie. That is the format.
+If you rank the three rows by encoded size, they are equal. All three write the same Protocol Buffers message. Size does not explain the speed gap.
 
-This is the JavaScript companion to [Same bytes, three runtimes](protobuf-cross-language-fidelity.md): there the languages differ and the bytes should match; here the language is one and the bytes do match, so the remaining story is the engine and the clock.
+This page is the JavaScript companion to [Same bytes, three runtimes](protobuf-cross-language-fidelity.md). There the languages differ and the bytes should match. Here the language is JavaScript and the bytes do match. The remaining difference is how each library writes and reads those bytes.
 
 ## Self-check
 
-1. Which of the three `serialize` functions would you show a colleague who asked “how long does Protocol Buffers encode take in JavaScript on this suite?”
-2. Why does equal size (155 B) prove the speed gap is not compactness?
-3. protobuf-es times a domain copy on decode; google-protobuf builds a plain object directly. In which direction does that bias the decode column?
+1. Which of the three `serialize` functions has the shortest encode time on this slice, and which library call does it make?
+2. Why does equal size (155 B) prove that the speed gap is not caused by a more compact encoding?
+3. protobuf-es copies fields into an ordinary object during timed decode. google-protobuf builds that ordinary object directly. In which direction does the extra copy bias the decode column?

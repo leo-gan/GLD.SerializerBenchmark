@@ -16,7 +16,9 @@ not a universal ranking.
 
 ## Short answer
 
-**ubj does not use a third-party UBJSON library.** It writes the *same* packed record that custom-binary writes, then wraps that record in a small UBJSON map with two keys, `"kind"` and `"payload"`. Custom-binary skips the wrap. That is the entire race.
+custom-binary is faster than ubj (3.78 million versus 2.62 million cycles per second) and writes 37 fewer bytes. We can see that in the table.
+
+**ubj does not use a third-party UBJSON library.** It writes the *same* packed record that custom-binary writes, then wraps that record in a small UBJSON map with two keys, `"kind"` and `"payload"`. Custom-binary skips the wrap. That is the whole difference.
 
 | | custom-binary | ubj |
 |--|---------------|-----|
@@ -25,9 +27,9 @@ not a universal ranking.
 | Decode | **108 ns** | 143 ns |
 | Encoded size | **196 B** | 233 B |
 
-196 + 37 = 233. The 37 extra bytes are the envelope. The extra time is a second copy plus type tags and big-endian integers.
+196 + 37 = 233. The 37 extra bytes are the envelope. The extra time is a second copy plus type letters and big-endian integers.
 
-## The winning encode: copy fields in order
+## The custom-binary encode: copy fields in order
 
 `c/src/serializers/ser_custom_binary.c` is a one-function wrapper:
 
@@ -69,7 +71,7 @@ Decode is the inverse into a `document_t` that already contains a fixed array of
 
 **History.** This is the packed record of [Serialization 101](../101/historical_perspective.md): declare the order and the widths, then copy. Sun’s XDR (1987) did the same with big-endian integers and alignment. The C baseline here uses host byte order and two-byte lengths because the runner and the reader are the same process. It is a measurement baseline, not a public contract.
 
-## The runner-up: the same bytes, then an envelope
+## The ubj encode: the same bytes, then an envelope
 
 `c/src/serializers/ser_ubj.c` first calls that same function into a 64 KiB stack buffer, then writes a UBJSON object:
 
@@ -91,7 +93,7 @@ A UBJSON integer is a type letter plus a **big-endian** four-byte value:
 
 ```c
 static int w_i32(uint8_t **p, uint8_t *end, int32_t v) {
-    if (w_char(p, end, 'l')) return -1;   /* type tag: int32 */
+    if (w_char(p, end, 'l')) return -1;   /* type letter: int32 */
     uint32_t uv = (uint32_t)v;
     (*p)[0] = (uint8_t)((uv >> 24) & 0xff);
     (*p)[1] = (uint8_t)((uv >> 16) & 0xff);
@@ -108,10 +110,10 @@ A key is that integer (the length) plus the letters of the name. The payload is 
 
 | Extra work in ubj | What the CPU does |
 |-------------------|-------------------|
-| First `bin_write_fixture` into `raw[65536]` | The *entire* winning encode, before the envelope starts |
+| First `bin_write_fixture` into `raw[65536]` | The *entire* custom-binary encode, before the envelope starts |
 | `{` `"kind"` integer `"payload"` array `}` | Type letters, two English keys, big-endian lengths |
 | `memcpy` of the 196-byte payload into the envelope | A second copy of every field |
-| Decode: scan keys with `strcmp`, then `bin_read_fixture` | The winning decode, after a parse |
+| Decode: scan keys with `strcmp`, then `bin_read_fixture` | The custom-binary decode, after a parse |
 
 On a little-endian host, custom-binary’s `memcpy` of an `i32` is one unaligned store. ubj’s `w_i32` is a type byte plus four shifts. It does that for every length in the envelope, not for the inner document fields — those were already written the fast way.
 
@@ -121,7 +123,7 @@ custom-binary is **not** an interchange format. Another language, or another C c
 
 ubj, even in this minimal form, is closer to a document: a reader can see that a map contains `kind` and `payload`. [UBJSON](https://ubjson.org/) (late 2000s, a binary cousin of JSON) was designed for that inspectability. The suite’s wrapper is a teaching envelope, not a full UBJSON implementation of the document fields.
 
-If you want compactness *and* a real schema in C, look at **nanopb** and **protobuf-c** on the same Dashboard slice (154 bytes, about 1.3 million cycles per second). Those paths are compared as engines in [nanopb versus protobuf-c](protobuf-c-nanopb-compare.md). They lose the stopwatch to custom-binary because they write tags and variable-length integers instead of host `memcpy`. They win as a contract.
+If you want compactness *and* a real schema in C, look at **nanopb** and **protobuf-c** on the same Dashboard slice (154 bytes, about 1.3 million cycles per second). Those paths are compared as C libraries in [nanopb versus protobuf-c](protobuf-c-nanopb-compare.md). They are slower than custom-binary because they write field numbers and variable-length integers instead of host `memcpy`. They are the better contract.
 
 ## Self-check
 

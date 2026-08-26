@@ -16,9 +16,11 @@ not a universal ranking.
 
 ## Short answer
 
-FlatBuffers wins the stopwatch because encode and decode are **table construction and offset arithmetic**. SwiftProtobuf wins the tape measure because encode is **tags plus variable-length integers** and there is no vtable.
+FlatBuffers is faster than SwiftProtobuf on this slice (132 thousand versus 114 thousand cycles per second). SwiftProtobuf writes the smaller message (155 bytes versus 440). We can see both facts in the table.
 
-The runner is not perfectly symmetric. FlatBuffers *times* the copy into the suite’s domain `Document`. SwiftProtobuf’s timer stops at a generated `Message`; the later domain copy is off the clock. FlatBuffers still wins while doing more of the application’s work.
+FlatBuffers is faster because encode and decode are **table construction and offset arithmetic**: a field is a vtable slot plus a load. SwiftProtobuf writes fewer bytes because encode is **field numbers plus variable-length integers** and there is no vtable. Smaller is not faster here.
+
+The two adapters do not time the same application work. FlatBuffers copies the result into the suite’s domain `Document` during the timed decode. SwiftProtobuf’s timed decode stops at a generated `Message`. The later domain copy is not timed. FlatBuffers is still faster even though it does more of the application’s work.
 
 | | FlatBuffers | SwiftProtobuf |
 |--|-------------|---------------|
@@ -66,7 +68,7 @@ public func deserializeBytes(_ data: Data) throws -> Any {
 }
 ```
 
-`serializedData()` first walks the message to compute the size, allocates `Data` of that length, then walks again to write (`Message+BinaryAdditions.swift`). Each present field is a tag plus a payload:
+`serializedData()` first walks the message to compute the size, allocates `Data` of that length, then walks again to write (`Message+BinaryAdditions.swift`). Each present field is a field number plus a payload:
 
 ```swift
 // Generated Document.traverse
@@ -91,13 +93,13 @@ The information is the same. The layout is not.
 
 | Cost in FlatBuffers | Cost in Protocol Buffers |
 |---------------------|--------------------------|
-| A vtable per table (Document, Meta, each Item, plus `FixtureRoot`) | A one-byte tag for field numbers 1–4 |
+| A vtable per table (Document, Meta, each Item, plus `FixtureRoot`) | A one-byte header for field numbers 1–4 |
 | Four-byte offsets to strings, vectors, and nested tables | A variable-length length plus UTF-8 |
 | `Int32` / `Int64` stored at full width, with alignment padding | Variable-length integers (a small `status` is one byte) |
 | A vector of eight item *offsets* (32 bytes) plus eight item tables | Eight tagged nested messages |
 | An extra 11-slot `FixtureRoot` so one buffer can hold any fixture kind | The root *is* the `Document` |
 
-440 bytes is close to JSON’s 448 on this fixture because both pay a per-field directory (vtables or names) plus padding. 155 bytes is the compact tag stream taught in the [Protocol Buffers wire format](protobuf-wire-format.md) article.
+440 bytes is close to JSON’s 448 on this fixture because both pay a per-field directory (vtables or names) plus padding. 155 bytes is the compact Protocol Buffers layout taught in the [Protocol Buffers wire format](protobuf-wire-format.md) article.
 
 **History.** [Wouter van Oortmerssen](https://en.wikipedia.org/wiki/Wouter_van_Oortmerssen) released FlatBuffers at Google around 2014 so that games and mobile clients could read a field without building a parallel object tree. Kenton Varda’s Cap’n Proto (2013) is the sibling idea. Protocol Buffers (open-sourced 2008) optimized the opposite moment: many small service messages, density, and skip-based evolution. See [201 in-place access](../201/zero-copy.md) and the [historical perspective](../101/historical_perspective.md).
 
@@ -113,17 +115,17 @@ public var status: Int32 {
 }
 ```
 
-SwiftProtobuf decode is `nextFieldNumber()` (a variable-length integer) in a loop, then a `switch` that fills properties. Encode pays *two* visits (size, then write) and a tag per field.
+SwiftProtobuf decode is `nextFieldNumber()` (a variable-length integer) in a loop, then a `switch` that fills properties. Encode pays *two* visits (size, then write) and a field-number header per field.
 
-On a document with eight items, eight vtables plus padding still cost less processor time in this runner than eight nested tag loops. The extra bytes are sequential and cheap. The extra branches are not.
+On a document with eight items, eight vtables plus padding still cost less processor time in this runner than eight nested field loops. The extra bytes are sequential and cheap. The extra branches are not.
 
-This suite does **not** stop at a FlatBuffers view. `documentDomain` copies strings and items into the suite `Document`, and that copy is on the clock. A production reader that only needed `status` could skip that copy. The comparison is therefore conservative toward SwiftProtobuf.
+This suite does **not** stop at a FlatBuffers view. `documentDomain` copies strings and items into the suite `Document`, and that copy is timed. A production reader that only needed `status` could skip that copy. The comparison is therefore conservative toward SwiftProtobuf.
 
 ## What you give up
 
 | Axis | FlatBuffers | SwiftProtobuf |
 |------|-------------|---------------|
-| Size on this fixture | Larger (vtables, padding, root wrapper) | Smaller (tags, varints) |
+| Size on this fixture | Larger (vtables, padding, root wrapper) | Smaller (field numbers, varints) |
 | Read one field | Offset + load | Must parse up to that field (or the whole message, as timed) |
 | Evolution | Schema + vtable slots | Field numbers, skip unknowns |
 | Mutation | Rebuild the buffer | Rebuild the message and encode |

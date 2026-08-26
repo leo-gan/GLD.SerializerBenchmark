@@ -221,7 +221,7 @@ On failure, unpack returns **NULL**. It should not leak partial trees—the impl
 | Typical use | C without heavy templates | Rust type system |
 | Teaching value | Offsets and labels are explicit | Trait methods are explicit |
 
-Both emit the **same wire format** if schemas and field numbers match. The hub [three engines table](index.md#three-engines-at-a-glance) includes Python and nanopb as well.
+Both emit the **same binary layout** if schemas and field numbers match. The hub [four-library table](index.md#four-protocol-buffers-libraries-at-a-glance) includes Python and nanopb as well.
 
 ## nanopb comparison box
 
@@ -285,5 +285,5 @@ Do not rank C against Python or Rust from the Dashboard alone ([cross-language f
 - protobuf-c is **generated layout plus a shared descriptor runtime**.
 - Pack is a **size walk then a pack walk**, with tag|wire plus payload type dispatch.
 - Unpack is **scan → lookup → parse/merge → heap message** (see the G1 scan sketch).
-- Same wire as Python and Rust; different engineering of the engine.
+- Same wire as Python and Rust; different engineering of the library.
 - Parallel articles: [Python](protobuf-python.md), [Rust prost](protobuf-rust-prost.md).

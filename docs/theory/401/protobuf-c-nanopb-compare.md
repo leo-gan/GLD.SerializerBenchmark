@@ -4,7 +4,7 @@
 
 Both **protobuf-c** and **nanopb** claim “Protocol Buffers for C.” They optimize for different worlds. **protobuf-c** targets general services with heap-allocated messages. **nanopb** targets **embedded** systems with static memory budgets. Treating them as interchangeable APIs produces the wrong memory model, the wrong failure modes, and unfair suite comparisons.
 
-In this article you will compare the two engines along allocation, size limits, APIs, and typical failure modes. After reading it, you should be able to choose which C engine fits a deployment. You should also be able to explain why a valid Protocol Buffers message can still be rejected by nanopb.
+In this article you will compare the two C libraries along allocation, size limits, APIs, and typical failure modes. After reading it, you should be able to choose which C library fits a deployment. You should also be able to explain why a valid Protocol Buffers message can still be rejected by nanopb.
 
 ## Short answer
 
@@ -24,10 +24,10 @@ The **wire format** remains Protocol Buffers binary ([wire format](protobuf-wire
 
 ## Mental model
 
-Picture two libraries speaking the same byte language but living under different memory contracts. The tags, varints, and length-delimited fields are the same. The way each library stores values in C memory is not.
+Picture two libraries that encode and decode the same Protocol Buffers bytes but live under different memory contracts. The field numbers, variable-length integers, and length-delimited fields are the same. The way each library stores values in C memory is not.
 
 ```text
-  Same wire (tags, varints, LEN fields)
+  Same wire (field numbers, varints, LEN fields)
            │
      ┌─────┴──────┐
      ▼            ▼
@@ -180,7 +180,7 @@ A message that is valid Protocol Buffers for protobuf-c can still be **rejected*
 | Sensor stream with a fixed maximum number of samples | **nanopb** |
 | Team already owns protobuf-c everywhere | Stay with it; do not dual-stack without a reason |
 
-Whether to use Protocol Buffers at all is a [301](../301/index.md) product and multi-language (*polyglot*) question. This page is about **which C engine** once that choice is made.
+Whether to use Protocol Buffers at all is a [301](../301/index.md) product and multi-language (*polyglot*) question. This page is about **which C library** once that choice is made.
 
 ## In this suite
 
@@ -192,14 +192,14 @@ Whether to use Protocol Buffers at all is a [301](../301/index.md) product and m
 | `protobuf-wire` | In-tree proto3 tags only (not Google upb) |
 | [Open this slice on the Dashboard](../../dashboard/?lang=c&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=protobuf-c&ser=nanopb&ser=protobuf-c#compare) | Compare **within C** and the schema-driven family ([301 using this suite](../301/using-this-suite.md)) |
 
-Do **not** treat suite `nanopb` vs `protobuf-c` rows as a head-to-head of full library stacks until each times its native generated path. The article above still describes the real engines for product choices outside the suite.
+Do **not** treat suite `nanopb` vs `protobuf-c` rows as a head-to-head of full library stacks until each times its native generated path. The article above still describes the real libraries for product choices outside the suite.
 
 ## Common mistakes
 
 - Using nanopb without setting max sizes, then “fixing” by enabling unbounded dynamic mode everywhere (that loses the point of nanopb).
 - Assuming nanopb decode allocates like protobuf-c.
 - Mixing generated headers from different generators in one translation unit.
-- Cross-ranking C Dashboard numbers against Python or Rust when choosing an engine ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
+- Cross-ranking C Dashboard numbers against Python or Rust when choosing a library ([cross-language fidelity](protobuf-cross-language-fidelity.md)).
 - Calling a max-size reject a “wire bug” when the peer used protobuf-c with no caps.
 
 ## What this article is not

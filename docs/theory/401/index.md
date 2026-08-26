@@ -61,21 +61,21 @@ The table below lists every article in this course. For each article, it states 
 | [Python: google.protobuf path](protobuf-python.md) | Trace codegen → backend → `SerializeToString` / `ParseFromString` and who owns the bytes |
 | [Rust: prost path](protobuf-rust-prost.md) | Trace `encoded_len` / `encode_raw` / `merge_field` and monomorphized (per-type specialized) codegen |
 | [C: protobuf-c path](protobuf-c-protobuf-c.md) | Trace descriptor-driven pack/unpack and heap free discipline |
-| [C: nanopb vs protobuf-c](protobuf-c-nanopb-compare.md) | Choose a heap-friendly C engine versus a static-budget C engine for a deployment |
+| [C: nanopb vs protobuf-c](protobuf-c-nanopb-compare.md) | Choose a heap-friendly C library versus a static-budget C library for a deployment |
 | [Same bytes, three runtimes](protobuf-cross-language-fidelity.md) | Design interop matrix tests; separate bit-identical encodings from logical fidelity |
 
-### Language winners in code
+### Language comparisons in code
 
 These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/).
 
-The first nine pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two engines, same Protocol Buffers bytes and three JavaScript runtimes, an in-place crate used as a classical decoder, and a Dashboard row whose timer does not measure the famous library.
+The first nine pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, and a Dashboard row that does not time the library named in the row.
 
 | Article | You should be able to… |
 |---------|------------------------|
 | [Python: msgspec-msgpack vs orjson](python-msgspec-vs-orjson.md) | Show why a positional MessagePack Struct decodes faster than Rust JSON over dictionaries |
-| [Python: msgspec JSON vs MessagePack](python-msgspec-json-vs-msgpack.md) | Hold the library still and isolate JSON tokens from MessagePack tags |
+| [Python: msgspec JSON vs MessagePack](python-msgspec-json-vs-msgpack.md) | Hold the library still and isolate JSON tokens from MessagePack type codes |
 | [Python: orjson vs json](python-orjson-vs-json.md) | Show why the same 448-byte JSON can differ by a factor of five |
-| [Rust: Speedy vs Bincode](rust-speedy-vs-bincode.md) | Show why generated `write_to` plus fixed-width integers beats Serde plus variable-length integers |
+| [Rust: Speedy vs Bincode](rust-speedy-vs-bincode.md) | Show why generated `write_to` plus fixed-width integers is faster than Serde plus variable-length integers |
 | [Rust: Speedy vs Postcard](rust-speedy-vs-postcard.md) | Show compactness as a width choice that can stay on Serde |
 | [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | Show that in-place access only helps if the timed path uses it |
 | [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
@@ -84,9 +84,9 @@ The first nine pages take the speed or size leader in each language and ask why 
 | [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Show positional IL stores versus a type-and-identifier prefix on every field |
 | [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Show two cached positional plans, and why the Avro schema walk costs a little more |
 | [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
-| [JavaScript: JSON vs google-protobuf](javascript-json-vs-protobuf.md) | Show that timed protobuf encode is a cached `Buffer`, and that `JSON.parse` beats a JS tag loop |
-| [JavaScript: three Protobuf engines](javascript-three-protobufs.md) | Compare google-protobuf, protobufjs, and protobuf-es on the same 155 bytes |
-| [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md) | Show why vtable loads can beat a smaller tag stream |
+| [JavaScript: JSON vs google-protobuf](javascript-json-vs-protobuf.md) | Show that V8’s native JSON path is faster than a real JavaScript Protocol Buffers encode and decode, even though JSON is larger |
+| [JavaScript: three Protocol Buffers libraries](javascript-three-protobufs.md) | Compare google-protobuf, protobufjs, and protobuf-es on the same 155 bytes |
+| [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md) | Show why vtable loads can beat a smaller Protocol Buffers stream |
 
 **Suggested path.** This order matches the self-check below. The side navigation lists the same pages.
 
@@ -95,7 +95,7 @@ The first nine pages take the speed or size leader in each language and ask why 
 3. [Python](protobuf-python.md) → [Rust](protobuf-rust-prost.md) → [C protobuf-c](protobuf-c-protobuf-c.md)
 4. [nanopb compare](protobuf-c-nanopb-compare.md)
 5. [Cross-language fidelity](protobuf-cross-language-fidelity.md)
-6. One language-winner article in a language you read fluently (table above)
+6. One language-comparison article in a language you read fluently (table above)
 
 The flagship schema in this benchmark suite is `schemas/v2/protobuf/benchmark_v2.proto`. Teaching pages intentionally use a much smaller message called **MiniUser**. MiniUser is not the suite schema. It exists so you can study hex dumps without drowning in fields.
 
@@ -109,11 +109,11 @@ The flagship schema in this benchmark suite is `schemas/v2/protobuf/benchmark_v2
 Index and install notes live in the [notebooks README](../notebooks/README.md).  
 If you want the same golden hex sequences G1–G5 in another language, see the multi-language homework companions: [companions/go](../notebooks/companions/go/) · [companions/rust](../notebooks/companions/rust/).
 
-## Three engines at a glance
+## Four Protocol Buffers libraries at a glance
 
-In this section we compare how four libraries relate to the same wire format.
+In this section we compare how four libraries relate to the same binary layout.
 
-The **wire format** is the layout of tags and payloads on the byte stream. That layout is shared. Python, Rust, and C can all speak the same binary Protocol Buffers. What differs is **codec engineering**. Each library walks the schema in its own way. Each library allocates buffers differently. Each library reports errors differently.
+The **wire format** is the layout of field numbers, wire types, and payloads on the byte stream. That layout is shared. Python, Rust, and C can all encode and decode the same Protocol Buffers bytes. What differs is **codec engineering**. Each library walks the schema in its own way. Each library allocates buffers differently. Each library reports errors differently.
 
 | | **Python** (`google.protobuf`) | **Rust** (`prost`) | **C** (`protobuf-c`) | **C** (nanopb) |
 |--|--------------------------------|--------------------|----------------------|----------------|
@@ -130,10 +130,10 @@ The program-wide rules still apply. There are no universal winners. Implementati
 
 **401-specific honesty:**
 
-1. **Wire truth is shared; runtimes differ.** Python, Rust, and C can all speak the same binary layout. They can still own buffers differently.
+1. **Wire truth is shared; runtimes differ.** Python, Rust, and C can all encode and decode the same binary layout. They can still own buffers differently.
 2. **The subset lab labels its omissions.** Packed repeated fields, zigzag signed integers, maps, oneofs, and full production hardening are out of scope on purpose.
 3. **Suite benchmark runners illustrate integration.** They are not the reference design for how you should structure production Protocol Buffers.
-4. **Dashboard numbers are optional cost context.** Speed tables are not the focus of the Protocol Buffers sequence. The language-winner articles quote one L1 slice so you can attach a number to a line of code. They do not crown a universal library.
+4. **Dashboard numbers are optional cost context.** Speed tables are not the focus of the Protocol Buffers sequence. The language-comparison articles quote one L1 slice so you can attach a number to a line of code. They do not name a universal library.
 5. **Hostile input is a 301 topic.** For operational controls on untrusted payloads, see [301 untrusted input](../301/untrusted-input.md). Codec-side bounds still belong in every decoder. Examples include truncated varints and overlong lengths.
 6. **Language tours are parallel, not ranked.** This course does not crown “Rust wins.”
 
@@ -145,7 +145,7 @@ Use the following checklist to test yourself after you finish the modules.
 2. Explain pack/unpack **ownership** in one of Python, Rust, or C. Who allocates? Who frees? What must stay valid during the call?
 3. State when **nanopb** is preferable to **protobuf-c**, and when the reverse is true. See [nanopb compare](protobuf-c-nanopb-compare.md).
 4. Design a three-language encode/decode **matrix test**. Say when bit-identity (`memcmp` of encodings) is required. Say when logical equality is enough. See [cross-language fidelity](protobuf-cross-language-fidelity.md).
-5. Open one language-winner article. Quote the two timed functions. State whether the speed gap is a **format** difference, an **implementation** difference, or a **runner** difference (work moved into `prepare`).
+5. Open one language-comparison article. Quote the two timed functions. State whether the speed gap is an **encoding** difference (the bytes on the wire), an **implementation** difference (how the library writes those bytes), or a **runner** difference (work moved into untimed `prepare`).
 
 ## Where to go next
 
