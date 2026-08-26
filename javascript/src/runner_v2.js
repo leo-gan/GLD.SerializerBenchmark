@@ -166,8 +166,9 @@ for (const cell of cells) {
           const t0 = nowNs();
           const buf = ser.serialize(value);
           const t1 = nowNs();
-          const out = ser.deserialize(buf);
+          const native = ser.deserialize(buf);
           const t2 = nowNs();
+          const out = typeof ser.toDomain === 'function' ? ser.toDomain(native) : native;
           const serNs = Number(t1 - t0);
           const deserNs = Number(t2 - t1);
           const total = serNs + deserNs;

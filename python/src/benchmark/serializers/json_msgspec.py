@@ -131,7 +131,7 @@ class _MsgspecStructSerializer(Serializer):
     codec_name = "msgspec"
     package_name = "msgspec"
     native_kind = "struct"
-    stream_mode = "native"
+    stream_mode = "adapted"
 
     def __init__(self) -> None:
         super().__init__()

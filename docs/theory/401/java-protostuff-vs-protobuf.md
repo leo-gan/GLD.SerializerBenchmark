@@ -16,20 +16,22 @@ not a universal ranking.
 
 ## Short answer
 
-Protostuff completes more encode-and-decode cycles per second than protobuf-java (59 thousand versus 36 thousand). We can see that in the table. Both write 155 bytes, so size cannot explain the difference.
+Protostuff completes more encode-and-decode cycles per second than protobuf-java (59 thousand versus 36 thousand on the last packed L1 slice). We can see that in the table. Both write 155 bytes, so size cannot explain the difference.
 
-**Encode:** protobuf-java is often *faster*. The runner converts the domain object to a generated message in untimed `prepare`, then times `toByteArray()` on that prepared message.
+Both adapters now time the same work: suite `Document` in, bytes, suite `Document` out.
 
-**Decode:** Protostuff is much faster. It allocates a plain suite `Document` with public fields and fills those fields. protobuf-java’s `parseFrom` builds an immutable generated graph (builders, bit fields, UTF-8 checks). The runner does **not** time the later copy back to the domain type.
+**Encode:** Protostuff walks public fields of the live POJO through a cached `RuntimeSchema`. protobuf-java first copies that POJO into a generated message (`toProto`), then calls `toByteArray()`.
 
-Protostuff has the higher total cycle rate because decode dominates.
+**Decode:** Protostuff allocates a plain `Document` and fills its fields. protobuf-java’s `parseFrom` builds an immutable generated graph, then `fromProto` copies that graph into a suite `Document`. Both copies are timed.
+
+Protostuff has the higher total cycle rate because it never builds the generated graph.
 
 | | Protostuff | protobuf-java | jsoniter |
 |--|------------|---------------|----------|
 | Mean encode + decode, document, *n* = 1 | **59 thousand / s** | 36 thousand / s | 49 thousand / s |
 | Encoded size | **155 B** | **155 B** | 440 B |
-| Timed encode input | Domain POJO | Prepared generated message | Domain POJO |
-| Timed decode output | Domain POJO | Generated message | Domain POJO |
+| Timed encode input | Domain POJO | Domain POJO → generated message | Domain POJO |
+| Timed decode output | Domain POJO | Generated message → domain POJO | Domain POJO |
 
 jsoniter is second on this fixture because a generated JSON encoder is fast — and then it writes 440 bytes of names. It falls behind as the payload grows.
 
@@ -53,22 +55,21 @@ public Object deserializeBytes(byte[] data) {
 }
 ```
 
-**protobuf-java** (`java/src/main/java/benchmark/serializers/ProtobufSer.java`) does the domain-to-proto mapping in untimed `prepare`:
+**protobuf-java** (`java/src/main/java/benchmark/serializers/ProtobufSer.java`) binds the parser in `prepare` and converts on the timed path:
 
 ```java
 public void prepare(Fixture fx) {
-    prepared = toProto(fx);
-    parser = prepared.getParserForType();
+    parser = toProto(fx).getParserForType();
 }
 public byte[] serializeBytes(Fixture fx) {
-    return prepared.toByteArray();
+    return toProto(fx).toByteArray();
 }
 public Object deserializeBytes(byte[] data) {
-    return parser.parseFrom(data);
+    return fromProto(typeId, batch, parser.parseFrom(data));
 }
 ```
 
-There is no `Message.clear()` / reuse of a single builder. Each decode allocates a new generated message.
+There is no `Message.clear()` / reuse of a single builder. Each decode allocates a new generated message, then copies it into a suite object.
 
 ## Why the sizes match
 
@@ -100,19 +101,15 @@ public final void writeTo(Output output, T message) {
 }
 ```
 
-## Why encode favours protobuf-java here
+## Why encode can still favour protobuf-java
 
-`toByteArray()` on a prepared immutable message uses a memoized size and writes once into `new byte[size]` (`AbstractMessageLite`). Protostuff must walk public fields of a live POJO through runtime accessors, even with a cached schema. The `LinkedBuffer` avoids some allocation; it does not make the walk cheaper than a generated `writeTo`.
-
-So if you only looked at encode nanoseconds, you might rank protobuf-java first. The suite reports encode **plus** decode.
+`toByteArray()` on a generated message uses a memoized size and writes once into `new byte[size]` (`AbstractMessageLite`). That write is still cheaper than Protostuff’s runtime field walk. protobuf-java now also pays `toProto` on the clock. The generated write is often still faster than the runtime walk; the suite reports encode **plus** decode.
 
 ## Why decode favours Protostuff
 
 Protostuff’s `newMessage()` is a plain `new Document()`. `mergeFrom` writes `id`, `status`, `meta`, and `items` as ordinary Java fields.
 
-protobuf-java’s `parseFrom` constructs generated types. Those types track presence bits, validate UTF-8, and keep unknown fields. They are the right objects for a long-lived public API. They are heavier than a POJO when all you need is the suite’s fidelity check.
-
-The runner copies protobuf messages back to domain objects **after** the timed decode (`toDomain`). The decode gap is therefore still codec work, not the mapping.
+protobuf-java’s `parseFrom` constructs generated types. Those types track presence bits, validate UTF-8, and keep unknown fields. Then `fromProto` copies them into a suite `Document`. Both steps are timed. The extra graph is why decode is slower, not a missing copy after the timer.
 
 **History.** Protocol Buffers (Google, open-sourced 2008) generated the immutable message class so that many languages would share one contract. [Protostuff](https://github.com/protostuff/protostuff) (David Yu and contributors, late 2000s) asked a different question: can we write a Protocol Buffers byte stream from an existing POJO, without `protoc`? `RuntimeSchema` is that answer. The speed you see is “fill the object you already have,” not “a denser encoding.”
 
@@ -123,5 +120,5 @@ Protostuff’s runtime schema follows Java declaration order. A `.proto` that nu
 ## Self-check
 
 1. Why is equal size evidence that the encoding is not the speed story?
-2. Which library would pull ahead if the runner timed `toProto` + `toByteArray` together?
+2. Both rows now time a suite `Document` on encode and on decode. What extra objects does the protobuf-java row still build that Protostuff does not?
 3. Why is jsoniter faster than protobuf-java on this one-instance document and still the wrong library to copy into a multi-language log?

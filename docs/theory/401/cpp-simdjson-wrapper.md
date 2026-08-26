@@ -2,9 +2,9 @@
 
 ## Why this article exists
 
-simdjson is famous for parsing JSON at very high speed (Geoff Langdale and Daniel Lemire, papers 2018–2019). On this suite’s **document** fixture, one instance, the row named **simdjson** reports encode at **217 nanoseconds** and decode at **12.6 microseconds**. Glaze, a C++ JSON library that really encodes and decodes the document, sits at 706 ns encode and 1.94 µs decode, and finishes about **4.8 times** as many total cycles per second.
+simdjson is famous for parsing JSON at very high speed (Geoff Langdale and Daniel Lemire, papers 2018–2019). It has **no encoder**. The suite still needs an encode column, so this wrapper writes JSON with **nlohmann::json** and reads JSON with simdjson plus a second parse.
 
-A results table invites the wrong sentence: “simdjson is slow to decode.” This page opens the wrapper. After reading it you should be able to say what those 217 ns copy, why decode calls **two** JSON parsers, and how to read any row that sets `native_kind` to `dom`.
+A results table invites the wrong sentence: “simdjson is slow to decode.” This page opens the wrapper. After reading it you should be able to say which library writes the bytes, why decode calls **two** JSON parsers, and how to read any row that sets `native_kind` to `dom`. The [timing contract](../../analysis/TIMING_HONESTY.md) is why encode must be a real write, not a copy of bytes built in `prepare`.
 
 Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
@@ -16,21 +16,21 @@ not a universal ranking.
 
 ## Short answer
 
-Glaze is faster than the simdjson row (378 thousand versus 78 thousand cycles per second). We can see that in the table. The simdjson row does **not** time simdjson encode. It does **not** time “simdjson parse into a `Document`.”
+Glaze is faster than the simdjson row (378 thousand versus 78 thousand cycles per second on the last packed L1 slice). We can see that in the table. The simdjson row does **not** time simdjson encode. simdjson cannot encode. It does **not** time “simdjson parse into a suite `Document`.”
 
-1. **Encode** copies a `std::string` that `prepare` built with **nlohmann::json** (`value_to_json(...).dump()`). 217 ns is a `vector` construction from that cache.
-2. **Decode** runs simdjson’s DOM parse, then `simdjson::minify`, then **nlohmann::json::parse** on the minified text, then `json_to_value`. simdjson’s parser is the first third of a longer pipeline.
+1. **Encode** writes compact JSON with **nlohmann::json** (`prepared_.dump()`). `prepare` only builds the nlohmann object. That is the same kind of encode as the nlohmann row. An older adapter cached the dump and timed a `vector` copy (217 ns). That copy is gone.
+2. **Decode** runs simdjson’s DOM parse, then walks that DOM into the suite value. It does not parse the JSON text a second time.
 
-Glaze writes JSON from the C++ struct during the timed encode and reads JSON back into that struct during the timed decode. That is why Glaze has the higher cycle rate even though its encode time is longer than 217 ns. The 217 ns figure is a copy, not a JSON write.
+Glaze writes JSON from the C++ struct during the timed encode and reads JSON back into that struct during the timed decode. That is why Glaze has the higher cycle rate. The decode column is the one that contains simdjson, and it still includes two extra stages.
 
 | | simdjson (this wrapper) | Glaze 2.9.5 | nlohmann |
 |--|-------------------------|-------------|----------|
 | Mean encode + decode, document, *n* = 1 | 78 thousand / s | **378 thousand / s** | 83 thousand / s |
-| Encode | **217 ns** (copy of cached text) | 706 ns (real JSON write) | 3.22 µs |
-| Decode | **12.6 µs** (parse + minify + parse + map) | **1.94 µs** | 8.84 µs |
+| Encode | nlohmann `dump()` (was 217 ns when it was a copy) | 706 ns (struct JSON write) | 3.22 µs |
+| Decode | **12.6 µs** (last published L1: parse + minify + parse) | **1.94 µs** | 8.84 µs |
 | Encoded size | **458 B** | **458 B** | **458 B** |
 
-Equal size: all three emit compact JSON. The timed work is not the same: only Glaze and nlohmann time a full encode and decode.
+Equal size: all three emit compact JSON. Decode is not comparable to Glaze: only Glaze stops at one struct.
 
 ## The timed functions
 
@@ -40,20 +40,19 @@ Equal size: all three emit compact JSON. The timed work is not the same: only Gl
 void prepare(const Fixture& fx) override {
     type_id_ = fx.type_id;
     n_ = fx.instance_count;
-    cached_json_ = value_to_json(fx.value).dump();   // nlohmann, untimed
+    prepared_ = value_to_json(fx.value);   // nlohmann object, untimed
 }
 
 std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    return std::vector<uint8_t>(cached_json_.begin(), cached_json_.end());
+    std::string s = prepared_.dump();      // timed JSON write
+    return std::vector<uint8_t>(s.begin(), s.end());
 }
 
 Value deserialize_bytes(const std::vector<uint8_t>& data) override {
     simdjson::padded_string ps(
         reinterpret_cast<const char*>(data.data()), data.size());
     simdjson::dom::element el = parser_.parse(ps);   // simdjson — real
-    std::string minified = simdjson::minify(el);     // extra pass
-    auto j = nlohmann::json::parse(minified);        // second parser
-    return json_to_value(j, type_id_, n_);           // DOM → domain
+    return json_to_value(simd_to_json(el), type_id_, n_);
 }
 ```
 
@@ -99,12 +98,12 @@ When `native_kind` is `dom` (this wrapper reports exactly that), ask:
 2. Does decode stop at the library’s document model, or does it parse again into another model?
 3. Is there a struct-backed JSON row (here: Glaze) that times the path an application would actually write?
 
-If the answers are “copy,” “parse again,” and “yes,” do not use the row to rank simdjson against Glaze.
+If encode is a second library’s dump, decode parses again, and a struct-backed row exists, do not use this row to rank simdjson against Glaze.
 
 **History.** simdjson answered a 2010s question: can we find `{`, `}`, and `"` in a JSON byte stream with one processor instruction on many bytes? The papers are about **parse**. They are not about “replace nlohmann in a benchmark runner.” Using the parse as a stage in a longer pipeline is normal. Reporting that pipeline under the name `simdjson` is what this page exists to unpack.
 
 ## Self-check
 
-1. What does the 217 ns encode allocate, and what library produced the characters it copies?
-2. List the two `parse` calls inside `deserialize_bytes`. Which one is simdjson?
+1. Which library’s function writes the bytes in `serialize_bytes`, and why is that function not simdjson?
+2. After the contract fix, how many times is the JSON text parsed in `deserialize_bytes`? Which library does that parse?
 3. You want to measure “simdjson into `bench::Document`.” Which two stages would you delete or replace, and what would you expect to happen to the 12.6 µs?

@@ -6,7 +6,7 @@ import io
 import json
 from typing import Any, Dict, List, Type
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from .base import Serializer
 from ..converters import to_dict
@@ -87,6 +87,7 @@ class PydanticSerializer(Serializer):
     def __init__(self) -> None:
         super().__init__()
         self._model: Type[BaseModel] | None = None
+        self._list_adapter: TypeAdapter | None = None
 
     @property
     def name(self) -> str:
@@ -95,12 +96,14 @@ class PydanticSerializer(Serializer):
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
         self._model = None if test_data_type is list else _MODEL_MAP.get(test_data_type)
+        self._list_adapter = None
 
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
         if isinstance(obj, list):
             if obj and self._model is None:
                 self._model = _MODEL_MAP.get(type(obj[0]))
             if self._model:
+                self._list_adapter = TypeAdapter(list[self._model])
                 return [self._model.model_validate(to_dict(x)) for x in obj]
             return to_dict(obj)
         if self._model is None:
@@ -111,20 +114,19 @@ class PydanticSerializer(Serializer):
 
     def serialize_bytes(self, obj: Any) -> bytes:
         if isinstance(obj, list):
-            return json.dumps(
-                [x.model_dump() if isinstance(x, BaseModel) else x for x in obj]
-            ).encode()
+            if self._list_adapter is not None:
+                return self._list_adapter.dump_json(obj)
+            return json.dumps(obj).encode()
         if isinstance(obj, BaseModel):
             return obj.model_dump_json().encode()
         return json.dumps(obj).encode()
 
     def deserialize_bytes(self, data: bytes) -> Any:
-        raw = json.loads(data)
+        if self._list_adapter is not None:
+            return self._list_adapter.validate_json(data)
         if self._model is None:
-            return raw
-        if isinstance(raw, list):
-            return [self._model.model_validate(x) for x in raw]
-        return self._model.model_validate(raw)
+            return json.loads(data)
+        return self._model.model_validate_json(data)
 
     def serialize_stream(self, obj: Any, stream: io.BytesIO) -> None:
         stream.write(self.serialize_bytes(obj))

@@ -4,7 +4,7 @@ msgpack benchmark wrapper.
 Call-path: prepare_data converts dataclasses to dicts (untimed).
 Timed path reuses a msgpack.Packer (documented high-performance path — avoids
 per-call Packer allocation inside packb) and unpackb for bytes decode.
-Stream mode uses native pack/unpack.
+Stream serialize writes packed bytes; deserialize uses unpack on the stream.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from ..converters import to_dict
 
 class MsgpackSerializer(Serializer):
     native_kind = "dict"
-    stream_mode = "native"
+    stream_mode = "adapted"
 
     def __init__(self) -> None:
         super().__init__()

@@ -97,6 +97,7 @@ const avroSchemas = {
 };
 
 let avroType = null;
+let avroPrepared = null;
 let avroDataName = null;
 
 function avroPrepareValue(_dataName, value) {
@@ -120,19 +121,20 @@ export const avscSer = {
     // Batch N>1: array of records
     if (Array.isArray(value)) {
       avroType = avro.Type.forSchema({ type: 'array', items: base });
+      avroPrepared = value.map((v) => avroPrepareValue(dataName, v));
     } else {
       avroType = base;
+      avroPrepared = avroPrepareValue(dataName, value);
     }
   },
-  serialize(value) {
-    const payload = Array.isArray(value)
-      ? value.map((v) => avroPrepareValue(avroDataName, v))
-      : avroPrepareValue(avroDataName, value);
-    return avroType.toBuffer(payload);
+  serialize(_value) {
+    return avroType.toBuffer(avroPrepared);
   },
   deserialize(buf) {
+    return avroType.fromBuffer(Buffer.from(buf));
+  },
+  toDomain(raw) {
     // Normalize Avro types (Long/ints) to plain JSON for suite fidelity compare.
-    const raw = avroType.fromBuffer(Buffer.from(buf));
     return JSON.parse(JSON.stringify(raw));
   },
 };
@@ -403,7 +405,9 @@ export const pbSer = {
   },
   deserialize(buf) {
     const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-    const decoded = pbType.decode(u8);
+    return pbType.decode(u8);
+  },
+  toDomain(decoded) {
     return fromPbValue(pbDataName, decoded, pbIsBatch);
   },
 };
@@ -836,7 +840,9 @@ export const flexbuffersSer = {
     const raw = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
     // flexbuffers toObject needs a standalone ArrayBuffer in some builds
     const ab = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
-    const obj = flexToObject(ab);
+    return flexToObject(ab);
+  },
+  toDomain(obj) {
     return flexNeedsRestore ? flexRestoreSanitized(obj) : obj;
   },
 };

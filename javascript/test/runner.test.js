@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { allFixturesV2, deepEqual, makeOne, V2_TYPE_IDS } from '../src/data.js';
 import { ALL_SERIALIZERS } from '../src/serializers/index.js';
+import { asDomain } from '../src/serializers/common.js';
 import { compressSizes } from '../src/compress.js';
 import {
   deriveScheduleSeed,
@@ -69,7 +70,7 @@ test('all V2 fixtures roundtrip for every supporting serializer', () => {
       ser.prepare(fx.name, fx.value);
       const buf = ser.serialize(fx.value);
       assert.ok(buf && (buf.length ?? Buffer.byteLength(buf)) > 0, `${ser.name}/${fx.name} empty`);
-      const out = ser.deserialize(buf);
+      const out = asDomain(ser, ser.deserialize(buf));
       if (ser.name.startsWith('simdjson')) {
         /* number coercion allowed */
       } else if (!deepEqual(fx.value, out)) {
@@ -95,7 +96,7 @@ test('JSON serializer roundtrips message', () => {
   const fx = allFixturesV2(42).find((f) => f.name === 'message');
   ser.prepare(fx.name, fx.value);
   const buf = ser.serialize(fx.value);
-  const out = ser.deserialize(buf);
+  const out = asDomain(ser, ser.deserialize(buf));
   assert.ok(deepEqual(fx.value, out));
 });
 
@@ -104,7 +105,7 @@ test('msgpackr roundtrips document', () => {
   const fx = allFixturesV2(42).find((f) => f.name === 'document');
   ser.prepare(fx.name, fx.value);
   const buf = ser.serialize(fx.value);
-  const out = ser.deserialize(buf);
+  const out = asDomain(ser, ser.deserialize(buf));
   assert.ok(deepEqual(fx.value, out));
 });
 
@@ -116,7 +117,7 @@ test('protobuf-es and google-protobuf roundtrip all V2 types', () => {
     for (const fx of fixtures) {
       ser.prepare(fx.name, fx.value);
       const buf = ser.serialize(fx.value);
-      const out = ser.deserialize(buf);
+      const out = asDomain(ser, ser.deserialize(buf));
       if (!deepEqual(fx.value, out)) {
         assert.fail(
           `${name}/${fx.name} fidelity mismatch\n` +

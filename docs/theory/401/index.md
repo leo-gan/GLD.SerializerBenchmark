@@ -66,7 +66,7 @@ The table below lists every article in this course. For each article, it states 
 
 ### Language comparisons in code
 
-These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/).
+These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/). Both call sites in a pair must follow the same [timing contract](../../analysis/TIMING_HONESTY.md).
 
 The first nine pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, and a Dashboard row that does not time the library named in the row.
 
@@ -80,7 +80,7 @@ The first nine pages take the speed or size leader in each language and ask why 
 | [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | Show that in-place access only helps if the timed path uses it |
 | [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
 | [C++: Bitsery vs YAS](cpp-bitsery-vs-yas.md) | Show why one-byte lengths and a reused buffer beat eight-byte lengths and a 20 KiB stream |
-| [C++: the simdjson row](cpp-simdjson-wrapper.md) | Read a Dashboard row whose encode is a cache copy and whose decode parses twice |
+| [C++: the simdjson row](cpp-simdjson-wrapper.md) | Read a Dashboard row whose encode is nlohmann `dump` and whose decode is simdjson parse plus a DOM walk |
 | [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Show positional IL stores versus a type-and-identifier prefix on every field |
 | [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Show two cached positional plans, and why the Avro schema walk costs a little more |
 | [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |

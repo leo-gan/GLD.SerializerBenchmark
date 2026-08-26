@@ -68,7 +68,7 @@ A fair timing experiment separates **preparation** (do this once, untimed) from 
 ### Step by step
 
 1. **Prepare (not timed)**  
-   Load schemas, create codecs, allocate buffers, build the in-memory object the serializer expects. Different languages do this slightly differently; the rule is the same: setup must not sit inside the stopwatch.
+   Load schemas, create codecs, allocate buffers, build the in-memory object the serializer expects. Different languages do this slightly differently; the rule is the same: setup is not timed. **Do not write the output bytes here.** The full contract is **[Timing honesty](TIMING_HONESTY.md)**.
 
 2. **Timed loop** (for each repetition `i`):
    - `serialize(object)` → record **serialize time**

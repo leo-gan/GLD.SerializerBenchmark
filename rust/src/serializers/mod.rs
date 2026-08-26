@@ -107,6 +107,14 @@ pub trait BenchSerializer: Send {
     /// Untimed: build reusable codec state / bind kind-specific encode fns.
     fn prepare(&mut self, fixture: &Fixture) -> Result<()>;
 
+    /// Untimed: prepare every instance in the cell (default: first fixture only).
+    fn prepare_many(&mut self, fixtures: &[Fixture]) -> Result<()> {
+        self.prepare(&fixtures[0])
+    }
+
+    /// Untimed: reset per-cell encode cursor before a serialize pass.
+    fn begin_cell_encode(&mut self) {}
+
     /// Timed: encode `fixture` into `out` (caller cleared; capacity reused).
     fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()>;
 

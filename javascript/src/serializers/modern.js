@@ -453,7 +453,9 @@ export const protobufEsSer = {
   },
   deserialize(buf) {
     const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-    const msg = fromBinary(esSchema, u8);
+    return fromBinary(esSchema, u8);
+  },
+  toDomain(msg) {
     if (esIsBatch) {
       return [...(msg.items ?? [])].map((it) => fromEsItem(esDataName, it));
     }

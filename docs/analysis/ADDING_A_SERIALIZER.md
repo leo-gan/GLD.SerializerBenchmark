@@ -35,14 +35,14 @@ Pick an existing sibling under `<lang>/…/Serializers/` (or equivalent) and cop
 
 ## Shared rules (all languages)
 
-These keep rankings comparable. Violating them produces “suspicious” numbers even when the library is fine.
+These keep rankings comparable. Violating them produces “suspicious” numbers even when the library is fine. The full contract is **[Timing honesty](TIMING_HONESTY.md)**.
 
 ### Timing honesty
 
 | Do | Don’t |
 |----|--------|
 | Time **serialize** and **deserialize** only | Time schema compile, codegen, type registration, domain↔native maps, or buffer setup |
-| Put setup in **prepare / Initialize / PrepareData** (untimed) | Allocate a brand-new encoder every call when the library documents reuse |
+| Put setup in **prepare / Initialize / PrepareData** (untimed) | Write the **output bytes** in `prepare` and copy them in `serialize`, or allocate a new encoder every call when the library documents reuse |
 | Reuse readers/writers/encoders/decoders when the API allows | Copy a “new X every call” snippet from Getting Started into the timed loop without checking reuse |
 | Use real library stream APIs for **stream** mode when they exist; emit `StreamMode=native` or `text_on_stream` | Make stream a free alias of the string/bytes path, or label `native` while still using bytes APIs |
 | Encode **N instances** when the cell says `DataTypeInstanceCount=N` | Label N but serialize one object |

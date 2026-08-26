@@ -201,6 +201,25 @@ def _protobuf_field_value(msg: Any, name: str) -> Any:
     return value
 
 
+def _named_fields(obj: Any, names: List[str]) -> Dict[str, Any]:
+    """Read `names` from a dataclass, dict, protobuf message, or attribute object."""
+    if is_dataclass(obj):
+        return {f.name: getattr(obj, f.name, _MISSING) for f in fields(obj)}
+    if isinstance(obj, dict):
+        return obj
+    if _is_protobuf_message(obj):
+        return {name: _protobuf_field_value(obj, name) for name in names}
+    out: Dict[str, Any] = {}
+    for name in names:
+        if hasattr(obj, name):
+            out[name] = getattr(obj, name, _MISSING)
+        elif hasattr(obj, f"_{name}"):
+            out[name] = getattr(obj, f"_{name}", _MISSING)
+        else:
+            out[name] = _MISSING
+    return out
+
+
 def _compare_dataclass(
     expected: Any,
     actual: Any,
@@ -208,47 +227,19 @@ def _compare_dataclass(
     errors: List[str],
     visited: Set[Tuple[int, int]],
 ) -> bool:
-    """Compare two dataclass instances field-by-field."""
-    # Handle circular references: track by id pairs
+    """Compare a dataclass to another object field-by-field."""
     pair = (id(expected), id(actual))
     if pair in visited:
         return True
     visited.add(pair)
 
-    expected_fields = {f.name: getattr(expected, f.name, _MISSING) for f in fields(expected)}
-
-    # If actual is a dataclass of a *different* type, still compare by field names
-    if is_dataclass(actual):
-        actual_fields = {f.name: getattr(actual, f.name, _MISSING) for f in fields(actual)}
-    elif isinstance(actual, dict):
-        actual_fields = actual
-    elif _is_protobuf_message(actual):
-        actual_fields = {name: _protobuf_field_value(actual, name) for name in expected_fields}
-    else:
-        # msgspec.Struct / other attribute-bearing objects
-        actual_fields = {}
-        for name in expected_fields:
-            if hasattr(actual, name):
-                actual_fields[name] = getattr(actual, name, _MISSING)
-            elif hasattr(actual, f"_{name}"):
-                actual_fields[name] = getattr(actual, f"_{name}", _MISSING)
-            else:
-                actual_fields[name] = _MISSING
+    expected_fields = {f.name: getattr(expected, f.name) for f in fields(expected)}
+    actual_fields = _named_fields(actual, list(expected_fields))
 
     ok = True
     for name, e_val in expected_fields.items():
         a_val = actual_fields.get(name, _MISSING)
-        if e_val is _MISSING and a_val is _MISSING:
-            continue
-        if e_val is _MISSING:
-            # Expected object has no such field; actual carried an unexpected value.
-            errors.append(
-                f"{path}.{name}: expected <missing>, actual {_fmt_value(a_val)}"
-            )
-            ok = False
-            continue
         if a_val is _MISSING:
-            # Expected a concrete value; actual object had no field / key.
             errors.append(
                 f"{path}.{name}: expected {_fmt_value(e_val)}, actual <missing>"
             )
@@ -256,7 +247,6 @@ def _compare_dataclass(
             continue
         if not _deep_equal_impl(e_val, a_val, f"{path}.{name}", errors, visited):
             ok = False
-
     return ok
 
 
@@ -278,12 +268,7 @@ def _deep_equal_impl(
         errors.append(f"{path}: None mismatch {expected!r} vs {actual!r}")
         return False
 
-    # Dataclass comparison (fast path for common case)
     if is_dataclass(expected):
-        return _compare_dataclass(expected, actual, path, errors, visited)
-
-    # If actual is a dataclass but expected isn't, still try field-by-field
-    if is_dataclass(actual):
         return _compare_dataclass(expected, actual, path, errors, visited)
 
     # Sequence-like

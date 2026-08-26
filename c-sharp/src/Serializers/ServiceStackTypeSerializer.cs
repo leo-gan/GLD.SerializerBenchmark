@@ -1,7 +1,6 @@
 ///
 /// https://github.com/ServiceStack/ServiceStack.Text
 /// PM> Install-Package ServiceStack.Text
-/// TODO: DateTime fields is still under work.
 
 using System.IO;
 using ServiceStack.Text;

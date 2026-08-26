@@ -70,14 +70,16 @@ Full mode guide: [Modes](modes.md). Data-type glossary: [Test data — vocabular
 **Suggested order for a first visit**
 
 1. **[Architecture](architecture.md)** — lab design and what is timed  
-2. **[Modes](modes.md)** + **[Test data](test_data_configuration.md)** — what the columns mean  
-3. **[Methodology](ANALYSIS_METHODOLOGY.md)** — warmup, filters, uncertainty  
-4. **[Metrics](METRICS.md)** when a column name is opaque  
-5. **[Claims and replication](CLAIMS_AND_REPLICATION.md)** before publishing a blog or paper claim  
+2. **[Timing honesty](TIMING_HONESTY.md)** — what `prepare` may do, and what `serialize` must do  
+3. **[Modes](modes.md)** + **[Test data](test_data_configuration.md)** — what the columns mean  
+4. **[Methodology](ANALYSIS_METHODOLOGY.md)** — warmup, filters, uncertainty  
+5. **[Metrics](METRICS.md)** when a column name is opaque  
+6. **[Claims and replication](CLAIMS_AND_REPLICATION.md)** before publishing a blog or paper claim  
 
 | Page | What you will learn | Start here if you want… |
 |------|---------------------|-------------------------|
 | **[Architecture](architecture.md)** | How the repository is organized and how timing works | The measurement design |
+| **[Timing honesty](TIMING_HONESTY.md)** | What belongs in `prepare` vs the timed encode/decode | “Is this row measuring a real encode?” |
 | **[Modes](modes.md)** | I/O modes (bytes/stream) and run modes (smoke…research) | Why the Dashboard Mode filter has two paths; which run preset to use |
 | **[Categories](serialization_categories.md)** | Four families of serializers (JSON, binary, schema-driven, native) | Fair “apples to apples” groups |
 | **[Test data](test_data_configuration.md)** | The five sample data types and how sizes are chosen | What we serialize |

@@ -1,10 +1,10 @@
 ///
 /// https://mbraceproject.github.io/FsPickler/
 /// PM> Install-Package FsPickler.Json
-/// TODO: DateTime fields is still under work.
 
 using System;
 using System.IO;
+using System.Text;
 using MBrace.FsPickler.Json;
 
 namespace GLD.SerializerBenchmark.Serializers
@@ -25,13 +25,13 @@ namespace GLD.SerializerBenchmark.Serializers
             using (var ms = new MemoryStream())
             {
                 _serializer.Serialize(ms, serializable);
-                return Convert.ToBase64String(ms.ToArray());
+                return Encoding.UTF8.GetString(ms.ToArray());
             }
         }
 
         public override object Deserialize(string serialized)
         {
-            var b = Convert.FromBase64String(serialized);
+            var b = Encoding.UTF8.GetBytes(serialized);
             using (var stream = new MemoryStream(b))
             {
                 //stream.Seek(0, SeekOrigin.Begin);

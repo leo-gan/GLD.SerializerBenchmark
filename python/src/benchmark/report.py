@@ -167,6 +167,8 @@ class LogStorage:
                     size_zstd_bytes=int(float(row["SizeZstd"] or 0))
                     if row.get("SizeZstd") not in (None, "")
                     else 0,
+                    native_kind=row.get("NativeKind") or "",
+                    stream_mode=row.get("StreamMode") or "",
                     run_order=int(float(row["RunOrder"]))
                     if row.get("RunOrder") not in (None, "")
                     else -1,

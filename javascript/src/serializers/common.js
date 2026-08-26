@@ -42,6 +42,11 @@ export function jsonClone(value) {
 }
 
 /** Prefer zero-copy string view when buf is already a Buffer. */
+/** Apply untimed toDomain when the adapter provides it. */
+export function asDomain(ser, native) {
+  return typeof ser.toDomain === 'function' ? ser.toDomain(native) : native;
+}
+
 export function bufToUtf8(buf) {
   if (Buffer.isBuffer(buf)) return buf.toString('utf8');
   if (buf instanceof Uint8Array) {
