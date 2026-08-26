@@ -42,7 +42,7 @@ export PATH="${HOME}/.local/go/bin:${HOME}/.cargo/bin:${HOME}/.dotnet:${HOME}/.l
 4. **Shared sample** at the experiment root (`sample.json`). Language folders hold **results** only (`results.md`, `results.json`). **Do not commit experiment logs** (CSVs under `<lang>/logs/`). Those stay on the machine that ran the timing. Saved results are enough.
 5. **Do not compare write times across languages.** Size is the only roughly fair cross-language number, and only when both sides write the same field description.
 6. **Do not crown a single winner.** Use `top_group` (similar / close / slower via Cliff’s delta vs the fastest library in the comparison set). Not “top 5%.”
-7. **Plain language** in `README.md`, `results.md`, and the PLAN update. If a word is not everyday English, define it or drop it.
+7. **Textbook language** in `experiment.yaml` (`story.example`, `story.tradeoff`, `story.why`), `README.md`, `results.md`, the Dashboard, and the PLAN update. Write for a high-school student: complete sentences, no slang, no telegraphic fragments, no unexplained jargon. The Dashboard copies `story` from `experiment.yaml`.
 8. **Do not overwrite** published site tables (`docs/<lang>/results.md`) or dashboard `*_latest.json.gz` unless the user asked to publish suite numbers.
 9. After the run, **update `experiments/PLAN.md`**: mark the item done, add an **After Experiment *n*** block, change later questions only if the finding requires it. Do not rewrite old findings.
 

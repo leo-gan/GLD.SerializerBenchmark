@@ -326,7 +326,7 @@ A Python-only library is not a candidate here. That is Experiment 3.
 | Shared description of fields | Optional | Only if you write one yourselves | Yes (field numbers) |
 | Works in many languages | Yes | Usually | Yes, where the generator exists |
 | Years of old and new software together | You must invent a process | You must invent a process | Designed for adding fields |
-| Debug at 3 a.m. | Easy | Medium | Needs extra tools |
+| A person can read the bytes | Easy | Medium | Needs extra tools |
 | Fit for stable, dense records | Fine if fast enough | Fine if you stay careful | Strong |
 
 “Internal” does **not** mean “a Python-only library is fine.” It means you may choose a denser format that **other languages can still read**.
@@ -474,7 +474,7 @@ Python is only the cloud side, not the device.
 
 ### Costs and benefits
 
-- JSON is the friend of the person at 3 a.m. CBOR is the friend of the radio.
+- JSON is easy for a person to read. CBOR is built so a small radio can send fewer bytes.
 - MessagePack and CBOR stay flexible. Protocol Buffers stay small as the list grows **if** the field list is stable.
 - On a microcontroller, the size of the **library in flash** can matter more than 40 extra bytes on the wire. This benchmark measures the message, not the flash image.
 

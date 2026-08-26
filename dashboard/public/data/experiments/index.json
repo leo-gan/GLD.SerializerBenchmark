@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-08-17T21:16:54Z",
+  "generated_at": "2026-08-26T23:10:14Z",
   "count": 13,
   "with_results": 13,
   "experiments": [
@@ -10,11 +10,11 @@
       "number": 1,
       "slug": "json-library-bakeoff",
       "title": "Which JSON library is fastest?",
-      "question": "We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?",
+      "question": "We have to send JSON (the usual web text). Each timed call is one shop order \u2014 an id, a status, and eight line items, about 450 bytes \u2014 not a file of many orders. Which JSON library is fastest?",
       "story": {
         "why": "Most websites already speak JSON. Changing that format is expensive. First we ask whether a faster JSON library is enough.",
-        "example": "A shop\u2019s public API sends one order as JSON. Partners and browsers already expect that text.",
-        "tradeoff": "A faster library can help a lot. A library that checks types is slower on purpose \u2014 that extra time buys safety, not speed."
+        "example": "When a shop\u2019s website sends one order to a partner, it almost always uses JSON, because browsers and other companies already know how to read that text.",
+        "tradeoff": "A faster JSON library can reduce the time spent writing and reading the text. A library that also checks that each field has the expected type will take longer. That extra time is spent on safety, not on speed."
       },
       "sample_preview": [
         {
@@ -110,8 +110,8 @@
       "question": "On one small record, how do JSON, MessagePack, and Protocol Buffers compare?",
       "story": {
         "why": "Inside a company you may pick a denser format. That is a real cost (new tools, harder debugging). We measure whether the gain is large.",
-        "example": "Two services you own swap a small request on a private network. No browser is on this path.",
-        "tradeoff": "JSON is easy to read at 3 a.m. The other two write smaller bytes. Protocol Buffers needs a shared field list. MessagePack does not."
+        "example": "Imagine two programs that your company owns. They send a small record to each other on a private network. No web browser is involved.",
+        "tradeoff": "JSON is ordinary text, so a person can open the bytes and read the field names. MessagePack and Protocol Buffers usually write fewer bytes. Protocol Buffers requires both sides to share a list of field names and numbers before they talk. MessagePack does not require that shared list."
       },
       "sample_preview": [
         {
@@ -211,8 +211,8 @@
       "question": "On one small record, is a format only one language can read faster than a format other languages can read?",
       "story": {
         "why": "Formats like Python pickle are built for one language talking to itself. Next year another service may need the same bytes.",
-        "example": "A cache or a job queue that \u201conly we write today.\u201d Next quarter a second program cannot open the key.",
-        "tradeoff": "A one-language format can store rich objects. Other languages cannot read it. Some of these readers can run code \u2014 that is a safety problem."
+        "example": "Suppose you store a value in a cache today and only your Python program writes that value. A few months later a second program, written in another language, cannot read the stored bytes.",
+        "tradeoff": "A format built for one language can store that language\u2019s objects in full. Programs written in other languages cannot read those bytes. Some of these formats can also run stored code when they read, which is a security risk."
       },
       "sample_preview": [
         {
@@ -265,8 +265,8 @@
       "question": "As a list of sensor numbers grows, when does JSON no longer fit a small radio packet?",
       "story": {
         "why": "A radio packet has a size limit. JSON is easy to read but writes extra text around every number.",
-        "example": "A device sends 8, then 32, then 128, then 512 readings. We mark two example limits: 128 bytes and 512 bytes.",
-        "tradeoff": "Stay on JSON if it still fits, so people can read the packets. Leave JSON when the packet overflows and a denser format still fits."
+        "example": "A small device sends a list of sensor readings. We grow the list from 8 readings to 32, then 128, then 512. Many radios can send at most 128 bytes or 512 bytes in one packet, and we use those two sizes as limits.",
+        "tradeoff": "If the JSON text still fits in the packet, it is reasonable to keep JSON so that people can read the bytes. If JSON no longer fits, and a more compact format still fits, then the compact format is the one that can be sent."
       },
       "sample_preview": [
         {
@@ -1036,8 +1036,8 @@
       "question": "On one \u201csomething happened\u201d record, how do Avro, Protocol Buffers, and JSON compare on size and write time?",
       "story": {
         "why": "Event logs keep facts for months. Size drives disk cost. Write time drives the producer\u2019s CPU. Compatibility (old and new software together) is why Avro and Protocol Buffers exist.",
-        "example": "\u201cOrder placed\u201d is written many times a day and stored for months. Outside parties still get JSON at the edge.",
-        "tradeoff": "JSON is easy to read and can drift. Avro and Protocol Buffers are smaller. Speed cannot override a failed compatibility story."
+        "example": "A shop writes an \u201corder placed\u201d record many times each day and keeps those records for months. Customers and partners still receive JSON at the public edge of the system.",
+        "tradeoff": "JSON is easy for people to read, but old and new software can silently disagree about the fields. Avro and Protocol Buffers usually write fewer bytes and were designed so that old and new software can work together. A faster format is not useful if old and new versions cannot both read the log."
       },
       "sample_preview": [
         {
@@ -1165,8 +1165,8 @@
       "question": "On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?",
       "story": {
         "why": "BSON, Smile, and Ion were built for databases and skip-through documents, not for a simple \u201cwrite it all, read it all\u201d call.",
-        "example": "A program talking to MongoDB (BSON) or Java services talking to Elasticsearch (Smile).",
-        "tradeoff": "These formats spend bytes so a reader can skip a field. This test always reads the whole record, so that extra may look like a loss."
+        "example": "BSON is the format MongoDB stores on disk. Smile is a compact format that some Java services use with Elasticsearch. In both cases the database is meant to skip through a large document.",
+        "tradeoff": "These formats spend extra bytes so that a reader can skip a field it does not need. This experiment always reads the whole record, so that extra cost can look like a loss even when it would help a real database."
       },
       "sample_preview": [
         {
@@ -1247,8 +1247,8 @@
       "question": "If we build a record once and read it many times, how do FlatBuffers and Cap\u2019n Proto split write time and read time?",
       "story": {
         "why": "Some libraries make reading cheap (look at the bytes as they arrived). Writing can be more expensive. Adding write + read hides that split.",
-        "example": "A game asset, a replay file, or a buffer one program builds and another reads many times \u2014 sometimes only a few fields.",
-        "tradeoff": "Good when you write once and read often. Poor when you change the record on every request. Look at write and read separately. Do not add them."
+        "example": "Think of a game file that is written once and then read many times, or a replay that many players open. Sometimes the reader needs only a few fields, not the whole record.",
+        "tradeoff": "These libraries help when you write the record once and read it many times. They help less when you change the record on every request. Judge write time and read time separately. Do not add the two times together and treat the sum as the whole story."
       },
       "sample_preview": [
         {
@@ -1868,8 +1868,8 @@
       "question": "On the same records, how much slower and larger are YAML, TOML, and XML than JSON?",
       "story": {
         "why": "YAML, TOML, and XML exist so people can edit files. They were not built for a live request.",
-        "example": "A service reads a config file at start. Someone proposes sending that same YAML on every request.",
-        "tradeoff": "Keep YAML on disk if people edit it. Convert once at start. Use JSON (or a denser format) on the live path."
+        "example": "A service often reads a configuration file when it starts. YAML is a text format that people edit by hand. Someone may then propose sending that same YAML on every live request.",
+        "tradeoff": "If people edit the file, YAML on disk is reasonable. Convert it once when the service starts. On the live request path, use JSON or a more compact format that was built for machines."
       },
       "sample_preview": [
         {
@@ -1981,8 +1981,8 @@
       "question": "After gzip or zstd, does JSON stay larger than a dense binary format?",
       "story": {
         "why": "Teams often turn compression on for everything. It finds repeated words. Tiny messages can get slower, because the processor work exceeds the bytes you save.",
-        "example": "A public web page (large text) versus a chatty internal ping (a few dozen bytes).",
-        "tradeoff": "On repeated words, compression can pull JSON next to a dense format. On numbers, the format still matters. Do not compress tiny control calls."
+        "example": "Compare a public web page, which is a large piece of text, with a small internal status message of a few dozen bytes.",
+        "tradeoff": "When the text repeats many words, compressing JSON can make it almost as small as a compact binary format. When the payload is mostly numbers, the original format still decides the size. Compressing a tiny control message often costs more processor time than it saves in bytes."
       },
       "sample_preview": [
         {
@@ -2224,8 +2224,8 @@
       "question": "Does the library that is fastest for one record stay fastest when we write one hundred records at once?",
       "story": {
         "why": "A web call is usually one body. A log shipper often writes many records at once. Some libraries have a large cost every time you call them. That cost vanishes in a batch.",
-        "example": "One \u201cget user\u201d request versus a telemetry exporter that sends 100 readings in one write.",
-        "tradeoff": "Quote the number of records that matches the product. A chart of 100 records is not evidence for a one-record call."
+        "example": "A typical web request sends one record, such as one user\u2019s details. A telemetry program may send one hundred readings in a single write.",
+        "tradeoff": "Report the time for the number of records your product actually writes. The time for one hundred records is not evidence for a call that writes one record."
       },
       "sample_preview": [
         {
@@ -2384,8 +2384,8 @@
       "question": "When we write as if to a file, which libraries really write as they go, and does the ranking change?",
       "story": {
         "why": "A cache uses a block of bytes in memory. A file or socket writes as you go. Some \u201cstream\u201d numbers are a full result that is then copied.",
-        "example": "Saving a cache key versus writing a file or a network socket.",
-        "tradeoff": "Only treat a real stream path as evidence for a file. If the product is a cache, the in-memory number is the one that matters."
+        "example": "Saving a value in an in-memory cache is different from writing a file or sending bytes on a network connection.",
+        "tradeoff": "Use a true stream measurement only when you are judging a file or a network write. If the product is a cache, the in-memory measurement is the one that matters."
       },
       "sample_preview": [
         {
@@ -2451,8 +2451,8 @@
       "question": "If one library can write several formats, how much of the difference is the format, and how much is that library?",
       "story": {
         "why": "People say \u201cwe switched to binary\u201d as if the name were the whole decision. Two libraries that both write JSON can still differ a lot.",
-        "example": "Jackson in Java can write JSON, MessagePack, Smile, and more. We hold Jackson still and only change what it writes.",
-        "tradeoff": "This tells you about that one library, not about every MessagePack library in the world. \u201cMove to binary\u201d without naming the library is not a plan."
+        "example": "In Java, the Jackson library can write JSON and several other formats. We keep Jackson fixed and change only the format it writes, so the library itself is not the variable.",
+        "tradeoff": "The result describes this one library. It does not describe every library that writes MessagePack. Changing format without naming the library is not a complete plan."
       },
       "sample_preview": [
         {
@@ -2528,8 +2528,8 @@
       "question": "Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?",
       "story": {
         "why": "One run on one computer is one evening\u2019s measurement. A ranking that flips when we change the data or the cleaning rule was never a fact about the libraries.",
-        "example": "The fastest JSON library on one order may not stay fastest on a list of words, or when we write 100 records at once.",
-        "tradeoff": "A large gap that holds on every sample is a stable fact. A close contest that swaps places is too close to name a winner."
+        "example": "The JSON library that is fastest on one shop order may not be fastest on a list of words, or when we write one hundred records at once.",
+        "tradeoff": "If one library is much faster on every sample we tried, that difference is stable enough to report. If two libraries keep exchanging first place, the contest is too close to name a single winner."
       },
       "sample_preview": [
         {

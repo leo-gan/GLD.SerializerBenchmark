@@ -7,8 +7,8 @@ title: Are database formats better for a normal service call?
 question: On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
 story:
   why: BSON, Smile, and Ion were built for databases and skip-through documents, not for a simple “write it all, read it all” call.
-  example: A program talking to MongoDB (BSON) or Java services talking to Elasticsearch (Smile).
-  tradeoff: These formats spend bytes so a reader can skip a field. This test always reads the whole record, so that extra may look like a loss.
+  example: BSON is the format MongoDB stores on disk. Smile is a compact format that some Java services use with Elasticsearch. In both cases the database is meant to skip through a large document.
+  tradeoff: These formats spend extra bytes so that a reader can skip a field it does not need. This experiment always reads the whole record, so that extra cost can look like a loss even when it would help a real database.
 
 sample:
   kind: document

@@ -7,8 +7,8 @@ title: Is it the format, or the library?
 question: If one library can write several formats, how much of the difference is the format, and how much is that library?
 story:
   why: People say “we switched to binary” as if the name were the whole decision. Two libraries that both write JSON can still differ a lot.
-  example: Jackson in Java can write JSON, MessagePack, Smile, and more. We hold Jackson still and only change what it writes.
-  tradeoff: This tells you about that one library, not about every MessagePack library in the world. “Move to binary” without naming the library is not a plan.
+  example: In Java, the Jackson library can write JSON and several other formats. We keep Jackson fixed and change only the format it writes, so the library itself is not the variable.
+  tradeoff: The result describes this one library. It does not describe every library that writes MessagePack. Changing format without naming the library is not a complete plan.
 
 sample:
   kind: document

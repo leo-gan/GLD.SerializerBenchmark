@@ -113,9 +113,9 @@ A different record, or a hundred records instead of one, can change the order. E
 
 We have to send JSON (the usual web text). Changing that format is expensive. First we ask whether a faster JSON library is enough.
 
-**Example:** A shop’s public API sends one order as JSON. Partners and browsers already expect that text.
+**Example:** When a shop’s website sends one order to a partner, it almost always uses JSON, because browsers and other companies already know how to read that text.
 
-**Trade-off:** A faster library can help a lot. A library that checks types is slower on purpose — that extra time buys safety.
+**Trade-off:** A faster JSON library can reduce the time spent writing and reading the text. A library that also checks that each field has the expected type will take longer. That extra time is spent on safety, not on speed.
 
 **What counts:** only libraries that write named JSON (`{"id": …}`). A JSON list is a different payload, so it is not in this contest.
 
@@ -127,9 +127,9 @@ We have to send JSON (the usual web text). Changing that format is expensive. Fi
 
 Inside a company you may pick a denser format. That has a real cost (new tools, harder debugging). We measure whether the gain is large.
 
-**Example:** Two services you own swap a small request on a private network. No browser is on this path.
+**Example:** Imagine two programs that your company owns. They send a small record to each other on a private network. No web browser is involved.
 
-**Trade-off:** JSON is easy to read at 3 a.m. MessagePack and Protocol Buffers write smaller bytes. Protocol Buffers needs a shared field list.
+**Trade-off:** JSON is ordinary text, so a person can open the bytes and read the field names. MessagePack and Protocol Buffers usually write fewer bytes. Protocol Buffers requires both sides to share a list of field names and numbers before they talk. MessagePack does not require that shared list.
 
 **Sample:** one flat record (eight fields, no nesting).
 
@@ -139,9 +139,9 @@ Inside a company you may pick a denser format. That has a real cost (new tools, 
 
 Formats like Python pickle are built for one language talking to itself. Next year another service may need the same bytes.
 
-**Example:** A cache or a job queue that “only we write today.”
+**Example:** Suppose you store a value in a cache today and only your Python program writes that value. A few months later a second program, written in another language, cannot read the stored bytes.
 
-**Trade-off:** Other languages cannot read it. Some of these readers can run code — that is a safety problem.
+**Trade-off:** A format built for one language can store that language’s objects in full. Programs written in other languages cannot read those bytes. Some of these formats can also run stored code when they read, which is a security risk.
 
 **Sample:** the same flat record as experiment 2.
 
@@ -151,9 +151,9 @@ Formats like Python pickle are built for one language talking to itself. Next ye
 
 A radio packet has a size limit. JSON writes extra text around every number.
 
-**Example:** A device sends 8, then 32, then 128, then 512 readings. We mark two example limits: 128 bytes and 512 bytes.
+**Example:** A small device sends a list of sensor readings. We grow the list from 8 readings to 32, then 128, then 512. Many radios can send at most 128 bytes or 512 bytes in one packet, and we use those two sizes as limits.
 
-**Trade-off:** Stay on JSON if it still fits, so people can read the packets. Leave JSON when the packet overflows and a denser format still fits.
+**Trade-off:** If the JSON text still fits in the packet, it is reasonable to keep JSON so that people can read the bytes. If JSON no longer fits, and a more compact format still fits, then the compact format is the one that can be sent.
 
 **Sample:** a sensor record with a growing list of numbers.
 
@@ -163,9 +163,9 @@ A radio packet has a size limit. JSON writes extra text around every number.
 
 Event logs keep facts for months. Size drives disk cost. Write time drives the producer’s CPU.
 
-**Example:** “Order placed” is written many times a day and stored for months. Outside parties still get JSON at the edge.
+**Example:** A shop writes an “order placed” record many times each day and keeps those records for months. Customers and partners still receive JSON at the public edge of the system.
 
-**Trade-off:** JSON is easy to read and can drift. Avro and Protocol Buffers are smaller. Speed cannot override a failed compatibility story.
+**Trade-off:** JSON is easy for people to read, but old and new software can silently disagree about the fields. Avro and Protocol Buffers usually write fewer bytes and were designed so that old and new software can work together. A faster format is not useful if old and new versions cannot both read the log.
 
 **Sample:** one event (who, when, what kind, four extra attributes).
 
@@ -175,9 +175,9 @@ Event logs keep facts for months. Size drives disk cost. Write time drives the p
 
 BSON, Smile, and Ion were built for databases, not for a simple “write it all, read it all” call.
 
-**Example:** A program talking to MongoDB, or Java services talking to Elasticsearch.
+**Example:** BSON is the format MongoDB stores on disk. Smile is a compact format that some Java services use with Elasticsearch. In both cases the database is meant to skip through a large document.
 
-**Trade-off:** These formats spend bytes so a reader can skip a field. This test always reads the whole record, so that extra may look like a loss.
+**Trade-off:** These formats spend extra bytes so that a reader can skip a field it does not need. This experiment always reads the whole record, so that extra cost can look like a loss even when it would help a real database.
 
 **Sample:** the same small order as experiment 1.
 
@@ -187,9 +187,9 @@ BSON, Smile, and Ion were built for databases, not for a simple “write it all,
 
 Some libraries make reading cheap (look at the bytes as they arrived). Writing can be more expensive. Adding write + read hides that split.
 
-**Example:** A game asset or a replay file that one program builds and another reads many times.
+**Example:** Think of a game file that is written once and then read many times, or a replay that many players open. Sometimes the reader needs only a few fields, not the whole record.
 
-**Trade-off:** Good when you write once and read often. Poor when you change the record on every request. Look at write and read separately.
+**Trade-off:** These libraries help when you write the record once and read it many times. They help less when you change the record on every request. Judge write time and read time separately. Do not add the two times together and treat the sum as the whole story.
 
 **Sample:** one order, and a long list of sensor numbers.
 
@@ -199,9 +199,9 @@ Some libraries make reading cheap (look at the bytes as they arrived). Writing c
 
 YAML, TOML, and XML exist so people can edit files. They were not built for a live request.
 
-**Example:** A service reads a config file at start. Someone proposes sending that same YAML on every request.
+**Example:** A service often reads a configuration file when it starts. YAML is a text format that people edit by hand. Someone may then propose sending that same YAML on every live request.
 
-**Trade-off:** Keep YAML on disk if people edit it. Convert once at start. Use JSON (or a denser format) on the live path.
+**Trade-off:** If people edit the file, YAML on disk is reasonable. Convert it once when the service starts. On the live request path, use JSON or a more compact format that was built for machines.
 
 **Sample:** one order, and a list of words.
 
@@ -211,9 +211,9 @@ YAML, TOML, and XML exist so people can edit files. They were not built for a li
 
 Teams often turn compression on for everything. Tiny messages can get slower, because the processor work exceeds the bytes you save.
 
-**Example:** A public web page (large text) versus a chatty internal ping (a few dozen bytes).
+**Example:** Compare a public web page, which is a large piece of text, with a small internal status message of a few dozen bytes.
 
-**Trade-off:** On repeated words, compression can pull JSON next to a dense format. On numbers, the format still matters. Do not compress tiny control calls.
+**Trade-off:** When the text repeats many words, compressing JSON can make it almost as small as a compact binary format. When the payload is mostly numbers, the original format still decides the size. Compressing a tiny control message often costs more processor time than it saves in bytes.
 
 **Sample:** a list of words, a sensor list, and a tiny record.
 
@@ -223,9 +223,9 @@ Teams often turn compression on for everything. Tiny messages can get slower, be
 
 A web call is usually one body. A log shipper often writes many records at once. Some libraries have a large cost every time you call them.
 
-**Example:** One “get user” request versus a telemetry exporter that sends 100 readings in one write.
+**Example:** A typical web request sends one record, such as one user’s details. A telemetry program may send one hundred readings in a single write.
 
-**Trade-off:** Quote the number of records that matches the product. A chart of 100 records is not evidence for a one-record call.
+**Trade-off:** Report the time for the number of records your product actually writes. The time for one hundred records is not evidence for a call that writes one record.
 
 **Sample:** a flat record and an event, at 1 and at 100.
 
@@ -235,9 +235,9 @@ A web call is usually one body. A log shipper often writes many records at once.
 
 A cache uses a block of bytes in memory. A file or socket writes as you go. Some “stream” numbers are a full result that is then copied.
 
-**Example:** Saving a cache key versus writing a file or a network socket.
+**Example:** Saving a value in an in-memory cache is different from writing a file or sending bytes on a network connection.
 
-**Trade-off:** Only treat a real stream path as evidence for a file. If the product is a cache, the in-memory number is the one that matters.
+**Trade-off:** Use a true stream measurement only when you are judging a file or a network write. If the product is a cache, the in-memory measurement is the one that matters.
 
 **Sample:** one order, in memory and as if to a file.
 
@@ -247,9 +247,9 @@ A cache uses a block of bytes in memory. A file or socket writes as you go. Some
 
 People say “we switched to binary” as if the name were the whole decision. Two libraries that both write JSON can still differ a lot.
 
-**Example:** Jackson in Java can write JSON, MessagePack, Smile, and more. We hold Jackson still and only change what it writes.
+**Example:** In Java, the Jackson library can write JSON and several other formats. We keep Jackson fixed and change only the format it writes, so the library itself is not the variable.
 
-**Trade-off:** This tells you about that one library, not about every MessagePack library in the world.
+**Trade-off:** The result describes this one library. It does not describe every library that writes MessagePack. Changing format without naming the library is not a complete plan.
 
 **Sample:** one order.
 
@@ -259,9 +259,9 @@ People say “we switched to binary” as if the name were the whole decision. T
 
 One run on one computer is one evening’s measurement. A ranking that flips when we change the data was never a fact about the libraries.
 
-**Example:** The fastest JSON library on one order may not stay fastest on a list of words, or when we write 100 records at once.
+**Example:** The JSON library that is fastest on one shop order may not be fastest on a list of words, or when we write one hundred records at once.
 
-**Trade-off:** A large gap that holds on every sample is a stable fact. A close contest that swaps places is too close to name a winner.
+**Trade-off:** If one library is much faster on every sample we tried, that difference is stable enough to report. If two libraries keep exchanging first place, the contest is too close to name a single winner.
 
 **Sample:** every record shape in this project, at 1 and at 100.
 

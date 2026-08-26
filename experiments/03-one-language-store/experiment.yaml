@@ -7,8 +7,8 @@ title: Is a one-language format worth the lock-in?
 question: On one small record, is a format only one language can read faster than a format other languages can read?
 story:
   why: Formats like Python pickle are built for one language talking to itself. Next year another service may need the same bytes.
-  example: A cache or a job queue that “only we write today.” Next quarter a second program cannot open the key.
-  tradeoff: A one-language format can store rich objects. Other languages cannot read it. Some of these readers can run code — that is a safety problem.
+  example: Suppose you store a value in a cache today and only your Python program writes that value. A few months later a second program, written in another language, cannot read the stored bytes.
+  tradeoff: A format built for one language can store that language’s objects in full. Programs written in other languages cannot read those bytes. Some of these formats can also run stored code when they read, which is a security risk.
 
 sample:
   kind: message

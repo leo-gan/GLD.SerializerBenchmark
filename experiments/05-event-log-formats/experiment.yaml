@@ -7,8 +7,8 @@ title: What should we use for an event log?
 question: On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
 story:
   why: Event logs keep facts for months. Size drives disk cost. Write time drives the producer’s CPU. Compatibility (old and new software together) is why Avro and Protocol Buffers exist.
-  example: “Order placed” is written many times a day and stored for months. Outside parties still get JSON at the edge.
-  tradeoff: JSON is easy to read and can drift. Avro and Protocol Buffers are smaller. Speed cannot override a failed compatibility story.
+  example: A shop writes an “order placed” record many times each day and keeps those records for months. Customers and partners still receive JSON at the public edge of the system.
+  tradeoff: JSON is easy for people to read, but old and new software can silently disagree about the fields. Avro and Protocol Buffers usually write fewer bytes and were designed so that old and new software can work together. A faster format is not useful if old and new versions cannot both read the log.
 
 sample:
   kind: event
