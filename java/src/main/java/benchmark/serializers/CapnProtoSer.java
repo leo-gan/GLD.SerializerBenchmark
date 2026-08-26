@@ -24,6 +24,8 @@ import java.util.List;
 public final class CapnProtoSer implements BenchSerializer {
   private String typeId;
   private boolean batch;
+  /** Sized in {@link #prepare} so the timed path does not grow or miss. */
+  private int writeBufSize = 64 * 1024;
 
   @Override
   public String name() {
@@ -49,13 +51,14 @@ public final class CapnProtoSer implements BenchSerializer {
   public void prepare(Fixture fx) {
     typeId = fx.name;
     batch = TypeUtil.isList(fx.value);
+    writeBufSize = sizedBuffer(fx);
   }
 
   @Override
   public byte[] serializeBytes(Fixture fx) throws Exception {
     MessageBuilder mb = new MessageBuilder();
     fill(mb, fx.value);
-    ArrayOutputStream os = new ArrayOutputStream(ByteBuffer.allocate(Math.max(4096, estimate(fx))));
+    ArrayOutputStream os = new ArrayOutputStream(ByteBuffer.allocate(writeBufSize));
     Serialize.write(os, mb);
     ByteBuffer bb = os.getWriteBuffer().duplicate();
     bb.flip();
@@ -83,8 +86,19 @@ public final class CapnProtoSer implements BenchSerializer {
     return readRoot(reader);
   }
 
-  private int estimate(Fixture fx) {
-    return 64 * 1024;
+  private int sizedBuffer(Fixture fx) {
+    MessageBuilder mb = new MessageBuilder();
+    fill(mb, fx.value);
+    int size = 64 * 1024;
+    while (size <= 16 * 1024 * 1024) {
+      try {
+        Serialize.write(new ArrayOutputStream(ByteBuffer.allocate(size)), mb);
+        return size;
+      } catch (IOException e) {
+        size *= 2;
+      }
+    }
+    throw new IllegalStateException("capnproto payload exceeds 16 MiB");
   }
 
   private void fill(MessageBuilder mb, Object value) {
