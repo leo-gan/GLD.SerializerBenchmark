@@ -1,7 +1,6 @@
 ///
 /// https://mbraceproject.github.io/FsPickler/
 /// PM> Install-Package FsPickler
-/// TODO: DateTime fields is still under work.
 
 using System;
 using System.IO;
