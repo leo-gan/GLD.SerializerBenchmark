@@ -14,7 +14,7 @@
     "story": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Short plain-language notes for docs and the dashboard.",
+      "description": "Textbook notes for docs and the dashboard (high-school reader: complete sentences, no slang, no telegraphic fragments).",
       "properties": {
         "why": { "type": "string" },
         "example": { "type": "string" },

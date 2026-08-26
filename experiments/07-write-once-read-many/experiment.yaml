@@ -7,8 +7,8 @@ title: Fast to write, or fast to read?
 question: If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
 story:
   why: Some libraries make reading cheap (look at the bytes as they arrived). Writing can be more expensive. Adding write + read hides that split.
-  example: A game asset, a replay file, or a buffer one program builds and another reads many times — sometimes only a few fields.
-  tradeoff: Good when you write once and read often. Poor when you change the record on every request. Look at write and read separately. Do not add them.
+  example: Think of a game file that is written once and then read many times, or a replay that many players open. Sometimes the reader needs only a few fields, not the whole record.
+  tradeoff: These libraries help when you write the record once and read it many times. They help less when you change the record on every request. Judge write time and read time separately. Do not add the two times together and treat the sum as the whole story.
 
 sample:
   kind: [document, telemetry]

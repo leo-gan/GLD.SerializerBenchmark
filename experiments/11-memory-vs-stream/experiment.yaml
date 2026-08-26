@@ -7,8 +7,8 @@ title: Does writing to a file change the ranking?
 question: When we write as if to a file, which libraries really write as they go, and does the ranking change?
 story:
   why: A cache uses a block of bytes in memory. A file or socket writes as you go. Some “stream” numbers are a full result that is then copied.
-  example: Saving a cache key versus writing a file or a network socket.
-  tradeoff: Only treat a real stream path as evidence for a file. If the product is a cache, the in-memory number is the one that matters.
+  example: Saving a value in an in-memory cache is different from writing a file or sending bytes on a network connection.
+  tradeoff: Use a true stream measurement only when you are judging a file or a network write. If the product is a cache, the in-memory measurement is the one that matters.
 
 sample:
   kind: document

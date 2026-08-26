@@ -7,8 +7,8 @@ title: Does one record rank the same as one hundred?
 question: Does the library that is fastest for one record stay fastest when we write one hundred records at once?
 story:
   why: A web call is usually one body. A log shipper often writes many records at once. Some libraries have a large cost every time you call them. That cost vanishes in a batch.
-  example: One “get user” request versus a telemetry exporter that sends 100 readings in one write.
-  tradeoff: Quote the number of records that matches the product. A chart of 100 records is not evidence for a one-record call.
+  example: A typical web request sends one record, such as one user’s details. A telemetry program may send one hundred readings in a single write.
+  tradeoff: Report the time for the number of records your product actually writes. The time for one hundred records is not evidence for a call that writes one record.
 
 sample:
   kind: [message, event]

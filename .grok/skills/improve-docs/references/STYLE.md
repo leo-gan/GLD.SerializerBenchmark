@@ -26,10 +26,16 @@ Keep it simple. Prefer delete and clarify over decorate.
 
 ### Voice
 
-- Direct, calm, technical. Not marketing hype (“blazing”, “crush”).
+- **Textbook quality for a high-school student.** Complete sentences. One idea, then the reason. Define a term the first time it is not everyday English.
+- No slang (“at 3 a.m.”, “chatty ping”, “get user”).
+- No telegraphic fragments (“Keep YAML on disk. Convert once.”). Write the sentence out.
+- No unexplained jargon (stream, socket, pickle, gzip) unless the next sentence says what it is.
+- Direct, calm. Not marketing hype (“blazing”, “crush”).
 - “We measure …” not “We revolutionize …”.
 - **No slogan stacks** under the title (“Same A. Same B. Same C.”).
 - **No lede hedges** that argue with imaginary critics (“not marketing microbenchmarks”).
+
+This rule applies to **every** reader-facing surface: Dashboard story cards (Why / Example / Trade-off), experiment YAML, `docs/experiments/`, Learn pages, README. The Dashboard reads Example and Trade-off from `experiments/*/experiment.yaml` via `sync-experiments.py`.
 
 ### README-specific (authoritative)
 

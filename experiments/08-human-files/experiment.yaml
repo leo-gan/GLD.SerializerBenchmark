@@ -7,8 +7,8 @@ title: Can we send YAML on the live path?
 question: On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
 story:
   why: YAML, TOML, and XML exist so people can edit files. They were not built for a live request.
-  example: A service reads a config file at start. Someone proposes sending that same YAML on every request.
-  tradeoff: Keep YAML on disk if people edit it. Convert once at start. Use JSON (or a denser format) on the live path.
+  example: A service often reads a configuration file when it starts. YAML is a text format that people edit by hand. Someone may then propose sending that same YAML on every live request.
+  tradeoff: If people edit the file, YAML on disk is reasonable. Convert it once when the service starts. On the live request path, use JSON or a more compact format that was built for machines.
 
 sample:
   kind: [document, strings]
