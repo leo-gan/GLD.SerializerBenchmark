@@ -4,7 +4,7 @@
 
 rkyv is designed so a reader can use the received buffer **in place**. Product language calls that zero-copy. On this suite’s **document** fixture, one instance, **Speedy** is still faster, and rkyv’s message is **larger**. The Rust overview already notes that timed rkyv decode **materializes owned values**. This page opens those two call sites and the library functions they invoke, so the note becomes something you can see in code.
 
-After reading it you should be able to say what `rkyv::from_bytes` does that `rkyv::access` would not, and why an in-place layout can lose a stopwatch that demands a `Document`.
+After reading it you should be able to say what `rkyv::from_bytes` does that `rkyv::access` would not, and why an in-place layout can be slower when the runner demands an owned `Document`.
 
 Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
 from this suite’s packed Dashboard data. They illustrate the gap; they are
@@ -15,6 +15,8 @@ not a universal ranking.
 · [Rust overview](../../rust/)
 
 ## Short answer
+
+Speedy is faster than rkyv on this slice (2.84 million versus 1.64 million cycles per second) and writes a smaller message (214 B versus 272 B). We can see that in the table.
 
 In-place access is an **application-programming-interface**, not a prize you collect by choosing a crate. This runner asks both libraries for an owned `Document`. Speedy reads a packed image into that struct. rkyv first builds an archived layout (alignment, relative pointers), then **deserializes that archive into a second owned `Document`**. You pay construction and you pay a classical copy. Decode is not faster. Encode is much slower. Size grows because of padding.
 
@@ -75,7 +77,7 @@ That is why encode is 314 ns rather than 88, and why the image is 272 bytes rath
 
 **History.** The idea is the same pressure that produced Cap’n Proto (Kenton Varda, 2013) and FlatBuffers (Wouter van Oortmerssen, 2014): do not build a second object tree if the program will only read a few fields. See [201 in-place access](../201/zero-copy.md) and the [historical perspective](../101/historical_perspective.md). rkyv brings that idea into Rust’s type system. It only helps if the timed path *stops* at the archived view.
 
-## Side-by-side: what the clock includes
+## Side-by-side: what the timed calls include
 
 | Step | Speedy (timed) | rkyv as timed here | rkyv `access` (not timed) |
 |------|----------------|--------------------|---------------------------|

@@ -101,7 +101,7 @@ If bit-identity fails but logical cross-decode works, document **why** (field or
 
 ### 5. Golden vectors for the subset you hand-rolled
 
-Use the [lab](lab-mini-protobuf-encoder.md) goldens (for example `08 01 12 03 41 64 61`) as the **minimal cross-runtime test**. Encode the same logical `MiniUser` in Python, Rust, and C. Then decode in the other two runtimes. That is the cheapest way to prove that your three implementations actually speak the same wire language.
+Use the [lab](lab-mini-protobuf-encoder.md) goldens (for example `08 01 12 03 41 64 61`) as the **minimal cross-runtime test**. Encode the same logical `MiniUser` in Python, Rust, and C. Then decode in the other two runtimes. That is the cheapest way to prove that your three implementations encode and decode the same Protocol Buffers bytes.
 
 ### 6. Track known semantic footguns
 
@@ -137,7 +137,7 @@ Teaching schema only—create `mini.proto` (same as the [lab](lab-mini-protobuf-
 | 1 | Write `mini.proto` with MiniUser fields 1–4 as in the lab. |
 | 2 | **Python:** `protoc --python_out=. mini.proto` → `mini_pb2.MiniUser`, set fields, call `SerializeToString()`, assert hex equals the golden (or logical equality after parse). |
 | 3 | **Rust:** `prost-build` on `mini.proto` (or a temporary `build.rs`), call `encode_to_vec()`, same asserts. |
-| 4 | **C:** `protoc --c_out=. mini.proto`, pack with protobuf-c (or label nanopb separately—**do not mix engines mid-matrix without labeling**). |
+| 4 | **C:** `protoc --c_out=. mini.proto`, pack with protobuf-c (or label nanopb separately—**do not mix libraries mid-matrix without labeling**). |
 | 5 | Cross-decode: feed each language’s bytes into the other two decoders; check `id==1` and `name=="Ada"`. |
 | 6 | Record whether the three encodes are bit-identical (`memcmp` or `==` on bytes). |
 | 7 | Append the unknown field `28 63` to the Python bytes; confirm Rust and C still yield id and name (skip-unknown). |

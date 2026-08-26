@@ -16,7 +16,7 @@ not a universal ranking.
 
 ## Short answer
 
-Speedy is faster because it does **less work per field**, not because it has a hidden algorithm.
+Speedy is about 2.2 times as fast as Bincode on this slice (2.84 million versus 1.29 million cycles per second). We can see that in the table. Speedy is faster because it does **less work per field**, not because it has a hidden algorithm.
 
 1. **Speedy writes the concrete `Document`.** The timed function already knows the type. The compiler emits one straight-line `write_to` that stores each field in declaration order.
 2. **Bincode writes through Serde.** The timed function accepts the `Fixture` enumeration and asks Serde to *visit* it. Each field becomes a virtual call into `serialize_i32`, `serialize_str`, and so on. Those methods then encode the value.
@@ -32,7 +32,7 @@ The advantage is therefore a pair of engineering choices: **specialize the encod
 | Decode time | 264 ns | 573 ns |
 | Encoded size | 214 B | **122 B** |
 
-Speedy is the speed winner. Bincode is the size winner of this pair. **Postcard** (1.73 million / s, 114 B) sits between them and is the size leader among the fast Rust binaries. This page stays with Speedy versus Bincode, as those two make the design contrast sharpest.
+Speedy is faster. Bincode writes the smaller message of this pair. **Postcard** (1.73 million / s, 114 B) sits between them and is the smallest among the fast Rust binaries. This page stays with Speedy versus Bincode, as those two make the design contrast sharpest.
 
 ## Prerequisites
 
@@ -93,7 +93,7 @@ pub enum Fixture {
 }
 ```
 
-So the first thing Bincode writes is a **variant index**, and the first thing it reads is that index plus a full `Fixture`. Speedy never writes that tag. Part of the measured gap is this wrapper difference. The larger part, as the crate sources show, is still inside the two libraries.
+So the first thing Bincode writes is a **variant index**, and the first thing it reads is that index plus a full `Fixture`. Speedy never writes that index. Part of the measured gap is this wrapper difference. The larger part, as the crate sources show, is still inside the two libraries.
 
 The configuration Bincode uses is `bincode::config::standard()`:
 
@@ -274,7 +274,7 @@ Bincode, through Serde, calls `serialize_seq` with a length, encodes that length
 | API surface | Own `Readable` / `Writable` traits | You derive Speedy in addition to (or instead of) Serde |
 | Safety on untrusted input | Bounds-checked reads, not a full verifier | Still your responsibility; see [301 untrusted input](../301/untrusted-input.md) |
 
-Bincode’s Serde path is the better default when the same struct must also speak JSON or MessagePack, or when message size on the network matters more than a few hundred nanoseconds. Postcard in this suite is the reminder that you can stay on Serde, keep variable-length integers, and still be faster than Bincode — it writes the `Fixture` with a tighter encoder (`postcard::to_extend`). Speedy still wins the stopwatch because it leaves Serde entirely. That pair is written out in [Speedy versus Postcard](rust-speedy-vs-postcard.md). In-place archives are a different lesson: [rkyv versus Speedy](rust-rkyv-vs-speedy.md).
+Bincode’s Serde path is the better default when the same struct must also encode as JSON or MessagePack, or when message size on the network matters more than a few hundred nanoseconds. Postcard in this suite is the reminder that you can stay on Serde, keep variable-length integers, and still be faster than Bincode — it writes the `Fixture` with a tighter encoder (`postcard::to_extend`). Speedy is still faster because it leaves Serde entirely. That pair is written out in [Speedy versus Postcard](rust-speedy-vs-postcard.md). In-place archives are a different lesson: [rkyv versus Speedy](rust-rkyv-vs-speedy.md).
 
 ## Honesty
 

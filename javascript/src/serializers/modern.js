@@ -31,8 +31,6 @@ const { BinaryWriter, BinaryReader } = require('google-protobuf');
 
 let jspbDataName = null;
 let jspbIsBatch = false;
-/** Pre-encoded bytes from prepare (untimed); serialize returns a copy view. */
-let jspbBytes = null;
 
 function jspbWriteMessage(w, v) {
   w.writeBool(1, Boolean(v.f_bool));
@@ -287,10 +285,11 @@ export const googleProtobufSer = {
   prepare(dataName, value) {
     jspbDataName = dataName;
     jspbIsBatch = Array.isArray(value);
-    jspbBytes = jspbEncode(dataName, value);
   },
-  serialize(_value) {
-    const u8 = jspbBytes;
+  serialize(value) {
+    // Encode on every timed call. Caching the output bytes in prepare would
+    // measure a Buffer copy, not Protocol Buffers encode.
+    const u8 = jspbEncode(jspbDataName, value);
     return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
   },
   deserialize(buf) {

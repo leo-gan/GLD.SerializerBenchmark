@@ -1,14 +1,15 @@
-# JavaScript: why `JSON.stringify` beats google-protobuf on Document
+# JavaScript: why `JSON.stringify` is faster than google-protobuf on Document
 
 ## Why this article exists
 
 On this suite’s **document** fixture, one instance, in-memory buffer mode, **`JSON.stringify`** finishes more encode-and-decode cycles per second than **google-protobuf**, even though JSON is 448 bytes and Protocol Buffers is 155. That result surprises people who have just read that binary encodings are smaller and therefore faster.
 
-This page looks at the actual timed functions. After reading it you should be able to say why the protobuf *encode* number is 431 nanoseconds, why decode is 5648, and why V8’s JSON path still wins the total.
+This page looks at the actual timed functions. After reading it you should be able to say why `JSON.stringify` is faster than a real google-protobuf encode, why `JSON.parse` is faster than the JavaScript decoder, and why the smaller 155-byte message does not win on this document.
 
 Numbers in the table below are a **quoted L1 slice** (document, n=1, bytes)
-from this suite’s packed Dashboard data. They illustrate the gap; they are
-not a universal ranking.
+from this suite’s packed Dashboard data, after google-protobuf encode was
+moved into timed `serialize`. They illustrate the gap; they are not a
+universal ranking.
 
 [Open this slice on the Dashboard](../../dashboard/?lang=javascript&data=document@n=1&mode=bytes&metric=ops&policy=iqr_1.5&baseline=JSON.stringify&ser=JSON.stringify&ser=google-protobuf#compare)
 · [Claims (L1)](../../analysis/CLAIMS_AND_REPLICATION/)
@@ -16,18 +17,20 @@ not a universal ranking.
 
 ## Short answer
 
-Two facts, both in the wrapper, explain the table.
+Two facts explain the table.
 
-1. **Timed protobuf encode is not an encode.** `prepare` (untimed) writes the Protocol Buffers bytes once. The timed `serialize` only wraps those bytes in a Node `Buffer`. 431 ns is a buffer view, not `serializeBinary`.
-2. **Timed protobuf decode is a JavaScript field loop.** It allocates a reader per nested message, walks tags, and builds plain objects. `JSON.parse` is native C++ inside V8. 3196 ns of native parse beats 5648 ns of user-land tag walking.
+1. **Timed protobuf encode is a real encode.** `serialize` calls `jspbEncode`, which writes the document with `BinaryWriter`. That takes 8.4 µs. `JSON.stringify` is native C++ inside V8. It takes 2.9 µs.
+2. **Timed protobuf decode is a JavaScript field loop.** It allocates a reader per nested message, reads each field number, and builds plain objects. `JSON.parse` is also native C++ inside V8. 3.6 µs of native parse is faster than 6.0 µs of JavaScript decode.
 
-JSON still writes every field name. That costs size. It does not cost enough *time*, on this small document, to lose to a JavaScript protobuf decoder.
+JSON still writes every field name. That costs size (448 B versus 155 B). It does not cost enough *time*, on this small document, to lose to a JavaScript Protocol Buffers library.
 
-| | `JSON.stringify` | google-protobuf (as timed) | fast-json-stringify |
-|--|------------------|----------------------------|---------------------|
-| Mean encode + decode, document, *n* = 1 | **174 thousand / s** | 164 thousand / s | 107 thousand / s |
-| Encode | 2538 ns | **431 ns** (cached bytes → `Buffer`) | slower JS stringify |
-| Decode | **3196 ns** (`JSON.parse`) | 5648 ns (JS `BinaryReader`) | `JSON.parse` (same) |
+An earlier adapter encoded in `prepare` and timed only a `Buffer` copy (431 ns). That made google-protobuf look almost as fast as `JSON.stringify`. The table below is the fair comparison.
+
+| | `JSON.stringify` | google-protobuf | fast-json-stringify |
+|--|------------------|-----------------|---------------------|
+| Mean encode + decode, document, *n* = 1 | **154 thousand / s** | 70 thousand / s | 100 thousand / s |
+| Encode | **2.9 µs** | 8.4 µs | 6.2 µs |
+| Decode | **3.6 µs** (`JSON.parse`) | 6.0 µs (JS `BinaryReader`) | `JSON.parse` (same) |
 | Encoded size | 448 B | **155 B** | 448 B |
 
 ## The two timed call sites
@@ -43,16 +46,15 @@ deserialize(buf) {
 },
 ```
 
-**google-protobuf** (`javascript/src/serializers/modern.js`) encodes in `prepare`:
+**google-protobuf** (`javascript/src/serializers/modern.js`) stores the data type in `prepare` and encodes in `serialize`:
 
 ```javascript
 prepare(dataName, value) {
   jspbDataName = dataName;
   jspbIsBatch = Array.isArray(value);
-  jspbBytes = jspbEncode(dataName, value);   // untimed
 },
-serialize(_value) {
-  const u8 = jspbBytes;
+serialize(value) {
+  const u8 = jspbEncode(jspbDataName, value);   // timed
   return Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
 },
 deserialize(buf) {
@@ -61,7 +63,7 @@ deserialize(buf) {
 },
 ```
 
-The runner times `serialize` / `deserialize` after `prepare` (`javascript/src/runner_v2.js`). Generated `Document.serializeBinary` exists in `javascript/src/generated/google/js_fixtures_pb.cjs`. This wrapper does not call it on the clock.
+The runner times `serialize` / `deserialize` after `prepare` (`javascript/src/runner_v2.js`). Generated `Document.serializeBinary` exists in `javascript/src/generated/google/js_fixtures_pb.cjs`. This wrapper uses the same `BinaryWriter` primitives as those generated stubs.
 
 ## What decode actually does
 
@@ -97,26 +99,26 @@ function jspbReadDocument(r) {
 
 The official generated decoder is the same algorithm with setters (`deserializeBinaryFromReader`). Switching to it would not make decode native.
 
-## Why `fast-json-stringify` loses to `JSON.stringify`
+## Why `JSON.stringify` is faster than `fast-json-stringify`
 
-`fast-json-stringify` compiles a JavaScript function in `prepare`, then concatenates strings in user land. Short strings even fall back to `JSON.stringify` for escaping. Decode is still `JSON.parse`. So this row measures **generated JavaScript encode versus V8’s C++ encode**, with the same parse. V8 wins. That is implementation quality inside one format, the third idea on the [Rust comparison](rust-speedy-vs-bincode.md) (specialize the path — here the specialized path is already inside the engine).
+`fast-json-stringify` compiles a JavaScript function in `prepare`, then concatenates strings in user land. Short strings even fall back to `JSON.stringify` for escaping. Decode is still `JSON.parse`. So this row measures **generated JavaScript encode versus V8’s C++ encode**, with the same parse. V8 is faster. That is implementation quality inside one encoding, the third idea on the [Rust comparison](rust-speedy-vs-bincode.md) (specialize the path — here the specialized path is already inside V8).
 
 ## History
 
-JSON is the web default because browsers already spoke it ([Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford), early 2000s). V8’s `JSON.parse` / `JSON.stringify` have been tuned for more than a decade. Protocol Buffers in JavaScript is a port of a binary tag machine into the language that also hosts that tuned parser. On a 448-byte document, the native parser is the faster machine, even though it reads more bytes.
+JSON is the web default because browsers already used it ([Douglas Crockford](https://en.wikipedia.org/wiki/Douglas_Crockford), early 2000s). V8’s `JSON.parse` / `JSON.stringify` have been tuned for more than a decade. Protocol Buffers in JavaScript walks field numbers and payloads in ordinary JavaScript, in the same language that hosts that tuned parser. On a 448-byte document, the native parser is faster, even though it reads more bytes.
 
 [Serialization 201](../201/encode-decode-cost.md) warned that “binary versus text” is not one cost. This page is that warning in one language’s source.
 
-The same 155-byte encoding in **protobufjs** and **protobuf-es**, with encode actually on the clock, is [three Protocol Buffers engines](javascript-three-protobufs.md).
+The same 155-byte encoding in **protobufjs** and **protobuf-es** is [three Protocol Buffers libraries](javascript-three-protobufs.md).
 
 ## Honesty
 
-1. **Do not quote 431 ns as protobuf encode speed.** A fair encode would call `jspbEncode` or `serializeBinary` inside the timer. The `protobuf-es` row on the same Dashboard slice does time `toBinary` and is much slower.
-2. The 155-byte size is real. Tags and variable-length integers do omit names.
+1. Both columns are now real encode and real decode. JSON is still faster on this document because V8’s JSON functions are native C++ and the Protocol Buffers path is JavaScript.
+2. The 155-byte size is real. Field numbers and variable-length integers omit names.
 3. A larger document, or a native addon decoder, would change the rank. This page explains *this* runner.
 
 ## Self-check
 
-1. Add the two protobuf times: 431 + 5648. Add the two JSON times: 2538 + 3196. Which half of the protobuf total is “not really encode”?
+1. Add the two protobuf times: 8.4 µs + 6.0 µs. Add the two JSON times: 2.9 µs + 3.6 µs. Which half of the protobuf total is now the larger cost?
 2. Why does `fast-json-stringify` sharing `JSON.parse` with `JSON.stringify` predict that it cannot win on decode?
-3. What would you change in `googleProtobufSer.serialize` to make the encode column honest, and what would you expect to happen to ops/s?
+3. Why can JSON be both larger (448 B) and faster than Protocol Buffers (155 B) on this document?

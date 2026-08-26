@@ -2,7 +2,7 @@
 
 ## Why this article exists
 
-On this suite’s **document** fixture, one instance, **orjson** and the standard library `json` module emit the **same 448 bytes**. orjson finishes about **five times** as many encode-and-decode cycles per second. There is no format lesson here. The bytes are JSON objects with the same keys. The gap is how each library walks a Python dictionary and how it hands bytes back to the caller.
+On this suite’s **document** fixture, one instance, **orjson** and the standard library `json` module emit the **same 448 bytes**. orjson finishes about **five times** as many encode-and-decode cycles per second. The encodings are the same JSON objects with the same keys. The gap is how each library walks a Python dictionary and how it hands bytes back to the caller.
 
 This page compares the two timed wrappers and the library functions they call. After reading it you should be able to point at the extra `str` and the missed cached encoder in the standard-library path.
 
@@ -16,6 +16,8 @@ not a universal ranking.
 
 ## Short answer
 
+orjson is about five times as fast as the standard library on this slice. We can see that in the table (242 thousand versus 48 thousand cycles per second). Both write 448 bytes of JSON, so size cannot explain the difference.
+
 orjson writes UTF-8 **bytes** in Rust and parses those bytes back into dictionaries. The standard-library wrapper builds a Python **Unicode string**, then encodes it to UTF-8, and it constructs a new `JSONEncoder` on every call because `separators=(",", ":")` misses the cached encoder. Decode first turns bytes back into a `str`. Same JSON. Five times the work.
 
 | | orjson 3.11.9 | stdlib json (Python 3.14) |
@@ -25,7 +27,7 @@ orjson writes UTF-8 **bytes** in Rust and parses those bytes back into dictionar
 | Decode | **2.50 µs** | 8.53 µs |
 | Encoded size | **448 B** | **448 B** |
 
-Equal size is the teaching fact. Speed is implementation.
+Equal size is the teaching fact. The speed difference is implementation, not a different encoding.
 
 ## The two timed call sites
 
@@ -81,13 +83,13 @@ The C accelerator `_json` then parses Unicode. orjson never builds that intermed
 
 ## What orjson does instead
 
-orjson (`dumps` / `loads` in the Rust crate `ijl/orjson`) takes a Python object and writes UTF-8 into a byte buffer. `loads` parses those bytes and allocates dictionaries. There is still a dictionary per nested record — this is not msgspec’s typed Struct path. The win versus the standard library is:
+orjson (`dumps` / `loads` in the Rust crate `ijl/orjson`) takes a Python object and writes UTF-8 into a byte buffer. `loads` parses those bytes and allocates dictionaries. There is still a dictionary per nested record — this is not msgspec’s typed Struct path. orjson is faster than the standard library for three reasons:
 
-1. no Unicode detour;
-2. no per-call `JSONEncoder` construction;
-3. a Rust inner loop that examines many characters at once (the simdjson tradition of Geoff Langdale and Daniel Lemire, 2018–2019).
+1. it does not build an intermediate Unicode string;
+2. it does not construct a `JSONEncoder` on every call;
+3. its Rust inner loop examines many characters at once (the simdjson tradition of Geoff Langdale and Daniel Lemire, 2018–2019).
 
-**History.** The standard library’s `json` module (Bob Ippolito and contributors, Python 2.6 onward) is the portable, always-there encoder. It was written to be correct and maintainable, not to win a microbenchmark. orjson (late 2010s) exists because web services paid real time for that portability. The format did not change. The path from a `dict` to bytes did.
+**History.** The standard library’s `json` module (Bob Ippolito and contributors, Python 2.6 onward) is the portable, always-there encoder. It was written to be correct and maintainable, not to be the fastest JSON implementation. orjson (late 2010s) exists because web services paid real time for that portability. The JSON encoding did not change. The path from a `dict` to bytes did.
 
 ## What this page is not
 
