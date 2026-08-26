@@ -13,9 +13,9 @@ namespace GLD.SerializerBenchmark.Serializers
         private Serializer<CompactBinaryWriter<OutputBuffer>> _serializer;
         private Serializer<CompactBinaryWriter<OutputStream>> _serializerStream;
 
-        private void Ensure()
+        public override void Initialize(Type serializablePrimaryType, System.Collections.Generic.List<Type> serializableSecondaryTypes = null)
         {
-            if (!JustInitialized) return;
+            base.Initialize(serializablePrimaryType, serializableSecondaryTypes);
             _serializer = new Serializer<CompactBinaryWriter<OutputBuffer>>(_primaryType);
             _deserializer = new Deserializer<CompactBinaryReader<InputBuffer>>(_primaryType);
             _serializerStream = new Serializer<CompactBinaryWriter<OutputStream>>(_primaryType);
@@ -27,7 +27,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
-            Ensure();
             var output = new OutputBuffer(2 * 1024);
             var writer = new CompactBinaryWriter<OutputBuffer>(output);
             _serializer.Serialize(serializable, writer);
@@ -36,14 +35,12 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(string serialized)
         {
-            Ensure();
             var input = new InputBuffer(Convert.FromBase64String(serialized));
             return _deserializer.Deserialize(new CompactBinaryReader<InputBuffer>(input));
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            Ensure();
             var output = new OutputStream(outputStream);
             _serializerStream.Serialize(serializable, new CompactBinaryWriter<OutputStream>(output));
             output.Flush();
@@ -51,7 +48,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
-            Ensure();
             inputStream.Seek(0, SeekOrigin.Begin);
             return _deserializerStream.Deserialize(new CompactBinaryReader<InputStream>(new InputStream(inputStream)));
         }

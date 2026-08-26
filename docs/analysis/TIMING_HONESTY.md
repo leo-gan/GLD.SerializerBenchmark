@@ -107,12 +107,12 @@ Checked against the adapters in this repository after the google-protobuf encode
 | [Rust: rkyv vs Speedy](../theory/401/rust-rkyv-vs-speedy.md) | Both fill an owned `Document`; rkyv does not use `access` | Documented. Honest for that choice. |
 | [C: custom-binary vs ubj](../theory/401/c-custom-binary-vs-ubj.md) | ubj encodes custom-binary, then an envelope | Documented. Honest for that choice. |
 | [C++: Bitsery vs YAS](../theory/401/cpp-bitsery-vs-yas.md) | Both encode the C++ value | Same work. Honest. |
-| [C++: simdjson](../theory/401/cpp-simdjson-wrapper.md) | Encode writes JSON from a prepared DOM. Decode is simdjson + another parse | Encode is **not** simdjson. Must stay labelled. |
+| [C++: simdjson](../theory/401/cpp-simdjson-wrapper.md) | Encode is nlohmann `dump` of a prepared object. Decode is simdjson parse, then a DOM walk | Encode is **not** simdjson. Must stay labelled. |
 | [C#: BinaryPack vs Bond Fast](../theory/401/csharp-binarypack-vs-bond.md) | Both encode then Base64 on the string path | Same extra work. Honest **within C#**. |
 | [Go: kelindar vs Avro](../theory/401/go-kelindar-vs-avro.md) | Both encode domain structs | Same work. Honest. |
 | [Java: Protostuff vs protobuf-java](../theory/401/java-protostuff-vs-protobuf.md) | Protostuff encodes a live POJO. protobuf-java encodes a prepared generated message; `toDomain` is after the timer | **Different work.** The article states it. Do not treat the decode column as the same quantity. |
 | [JavaScript: JSON vs google-protobuf](../theory/401/javascript-json-vs-protobuf.md) | Both encode and decode on the clock | Same work. Honest (after the copy bug was fixed). |
-| [JavaScript: three protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize`. protobufjs / protobuf-es still copy fields to a suite object during timed decode | Encode is the same kind of work. Decode is **not** (google-protobuf builds a plain object; the others remap). The article states it. |
+| [JavaScript: three protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize`. Decode rebuilds a library message; `toDomain` copies after the timer | Encode is the same kind of work. Decode implementations still differ. |
 | [Swift: FlatBuffers vs SwiftProtobuf](../theory/401/swift-flatbuffers-vs-protobuf.md) | FlatBuffers copies into the suite `Document` on the clock. SwiftProtobuf stops at a generated `Message` | **Different work.** The article states it. |
 
 ## Remaining contract gaps (not 401 pairs)
@@ -121,15 +121,11 @@ These rows violate the contract or mix two contracts. They are listed so a later
 
 | Gap | Where | What is wrong |
 |-----|--------|----------------|
-| Parse-then-reparse | C++ rapidjson, yyjson, arduinojson, simdjson decode | Timed decode calls the named library, then builds a nlohmann document (ArduinoJson’s own parse result is unused). |
-| Domain map on the clock | Rust `prost` encode (`*_to_pb` inside timed ser); C `protobuf` `to_proto` / `from_proto` on the clock | Other protobuf rows convert in `prepare` / after the timer. |
-| Fixture vs inner struct | Rust Serde rows vs Speedy / rkyv / minicbor | Same as the 401 Speedy articles. |
-| JS fidelity has no `toDomain` hook | protobufjs, protobuf-es, avsc, flexbuffers | Remap or `JSON.parse(JSON.stringify)` sits in timed `deserialize`. |
-| Stream labelled `native` | Python msgspec, msgspec-msgpack, msgpack | Stream is encode-to-buffer then `write`. |
-| Envelope instead of native model | C avro-c, flatcc, ubj | Timed path wraps custom-binary. |
-| C nanopb / protobuf-c / protobuf-wire | C schema rows | Same in-tree `pb_v2_encode` body under three names. |
-| C# JSON Base64 | System.Text.Json, DataContract JSON on the string path | Other C# JSON rows return JSON text. |
-| Lazy construct on first timed call | C# Bond `Ensure`, some XML/JSON ctors | Warmup drops rep 0; still move construction to `prepare`. |
+| Domain map on the clock | C `protobuf` `to_proto` / `from_proto` on every timed call | The C runner passes a distinct fixture per instance, so convert-in-prepare cannot cover N>1 without a `prepare_many` hook. Rust `prost` now converts every instance in untimed `prepare_many`. |
+| Fixture vs inner struct | Rust Serde rows vs Speedy / rkyv / minicbor | Same as the 401 Speedy articles. Documented, not a silent bug. |
+| Envelope instead of native model | C avro-c, flatcc, ubj | Timed path wraps custom-binary. Teaching rows; see the C 401 article. |
+| C nanopb / protobuf-c / protobuf-wire | C schema rows | Same in-tree `pb_v2_encode` body under three names. Wiring the real libraries is a separate implementation task. |
+| Some C# XML/JSON ctors still lazy | DataContract XML, XmlSerializer | Warmup drops rep 0. Bond now builds in `Initialize`. |
 
 ## Related pages
 

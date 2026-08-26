@@ -12,11 +12,115 @@
 #include <yyjson.h>
 #include <ArduinoJson.h>
 
+#include <cstdint>
 #include <cstring>
 #include <sstream>
 
 namespace bench {
 namespace {
+
+nlohmann::json rapid_to_json(const rapidjson::Value& v) {
+  if (v.IsNull()) return nullptr;
+  if (v.IsBool()) return v.GetBool();
+  if (v.IsInt64()) return v.GetInt64();
+  if (v.IsUint64()) return v.GetUint64();
+  if (v.IsDouble()) return v.GetDouble();
+  if (v.IsString()) return std::string(v.GetString(), v.GetStringLength());
+  if (v.IsArray()) {
+    nlohmann::json a = nlohmann::json::array();
+    for (auto it = v.Begin(); it != v.End(); ++it) a.push_back(rapid_to_json(*it));
+    return a;
+  }
+  if (v.IsObject()) {
+    nlohmann::json o = nlohmann::json::object();
+    for (auto it = v.MemberBegin(); it != v.MemberEnd(); ++it) {
+      o[std::string(it->name.GetString(), it->name.GetStringLength())] = rapid_to_json(it->value);
+    }
+    return o;
+  }
+  return nullptr;
+}
+
+nlohmann::json simd_to_json(simdjson::dom::element e) {
+  switch (e.type()) {
+    case simdjson::dom::element_type::ARRAY: {
+      nlohmann::json a = nlohmann::json::array();
+      for (auto x : e.get_array()) a.push_back(simd_to_json(x));
+      return a;
+    }
+    case simdjson::dom::element_type::OBJECT: {
+      nlohmann::json o = nlohmann::json::object();
+      for (auto [k, v] : e.get_object()) o[std::string(k)] = simd_to_json(v);
+      return o;
+    }
+    case simdjson::dom::element_type::STRING:
+      return std::string(e.get_string().value());
+    case simdjson::dom::element_type::INT64:
+      return int64_t(e.get_int64());
+    case simdjson::dom::element_type::UINT64:
+      return uint64_t(e.get_uint64());
+    case simdjson::dom::element_type::DOUBLE:
+      return double(e.get_double());
+    case simdjson::dom::element_type::BOOL:
+      return bool(e.get_bool());
+    case simdjson::dom::element_type::NULL_VALUE:
+    default:
+      return nullptr;
+  }
+}
+
+nlohmann::json yy_to_json(yyjson_val* v) {
+  if (!v) return nullptr;
+  switch (yyjson_get_type(v)) {
+    case YYJSON_TYPE_NULL:
+      return nullptr;
+    case YYJSON_TYPE_BOOL:
+      return yyjson_get_bool(v);
+    case YYJSON_TYPE_NUM:
+      if (yyjson_is_int(v)) return yyjson_get_sint(v);
+      if (yyjson_is_uint(v)) return yyjson_get_uint(v);
+      return yyjson_get_real(v);
+    case YYJSON_TYPE_STR:
+      return std::string(yyjson_get_str(v), yyjson_get_len(v));
+    case YYJSON_TYPE_ARR: {
+      nlohmann::json a = nlohmann::json::array();
+      size_t idx, max;
+      yyjson_val* hit;
+      yyjson_arr_foreach(v, idx, max, hit) a.push_back(yy_to_json(hit));
+      return a;
+    }
+    case YYJSON_TYPE_OBJ: {
+      nlohmann::json o = nlohmann::json::object();
+      size_t idx, max;
+      yyjson_val *key, *hit;
+      yyjson_obj_foreach(v, idx, max, key, hit) {
+        o[std::string(yyjson_get_str(key), yyjson_get_len(key))] = yy_to_json(hit);
+      }
+      return o;
+    }
+    default:
+      return nullptr;
+  }
+}
+
+nlohmann::json aj_to_json(JsonVariantConst v) {
+  if (v.isNull()) return nullptr;
+  if (v.is<bool>()) return v.as<bool>();
+  if (v.is<const char*>()) return std::string(v.as<const char*>());
+  if (v.is<double>()) return v.as<double>();
+  if (v.is<long>()) return v.as<long>();
+  if (v.is<JsonArrayConst>()) {
+    nlohmann::json a = nlohmann::json::array();
+    for (JsonVariantConst x : v.as<JsonArrayConst>()) a.push_back(aj_to_json(x));
+    return a;
+  }
+  if (v.is<JsonObjectConst>()) {
+    nlohmann::json o = nlohmann::json::object();
+    for (JsonPairConst kv : v.as<JsonObjectConst>()) o[kv.key().c_str()] = aj_to_json(kv.value());
+    return o;
+  }
+  return nullptr;
+}
 
 // ---------------------------------------------------------------------------
 // nlohmann/json — de-facto C++ JSON. Optimal: compact dump / parse iterators.
@@ -104,11 +208,7 @@ class RapidJsonSer final : public ISerializer {
     std::string tmp(data.begin(), data.end());
     doc.Parse(tmp.c_str());
     if (doc.HasParseError()) throw std::runtime_error("rapidjson parse error");
-    rapidjson::StringBuffer sb;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-    doc.Accept(writer);
-    auto j = nlohmann::json::parse(sb.GetString(), sb.GetString() + sb.GetSize());
-    return json_to_value(j, type_id_, n_);
+    return json_to_value(rapid_to_json(doc), type_id_, n_);
   }
 
   // Docs (rapidjson.org Stream): Writer<OStreamWrapper> / ParseStream(IStreamWrapper).
@@ -127,11 +227,7 @@ class RapidJsonSer final : public ISerializer {
     rapidjson::Document doc;
     doc.ParseStream(isw);
     if (doc.HasParseError()) throw std::runtime_error("rapidjson ParseStream error");
-    rapidjson::StringBuffer sb;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-    doc.Accept(writer);
-    auto j = nlohmann::json::parse(sb.GetString(), sb.GetString() + sb.GetSize());
-    return json_to_value(j, type_id_, n_);
+    return json_to_value(rapid_to_json(doc), type_id_, n_);
   }
 
  private:
@@ -166,9 +262,7 @@ class SimdjsonSer final : public ISerializer {
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
     simdjson::padded_string ps(reinterpret_cast<const char*>(data.data()), data.size());
     simdjson::dom::element el = parser_.parse(ps);
-    std::string minified = simdjson::minify(el);
-    auto j = nlohmann::json::parse(minified);
-    return json_to_value(j, type_id_, n_);
+    return json_to_value(simd_to_json(el), type_id_, n_);
   }
 
  private:
@@ -210,11 +304,7 @@ class ArduinoJsonSer final : public ISerializer {
     JsonDocument d;
     auto err = deserializeJson(d, data.data(), data.size());
     if (err) throw std::runtime_error(std::string("ArduinoJson deser: ") + err.c_str());
-    // Domain convert from the same UTF-8 (ArduinoJson may re-emit shortened floats).
-    // Same DOM→suite pattern as rapidjson/yyjson peers.
-    auto j = nlohmann::json::parse(reinterpret_cast<const char*>(data.data()),
-                                   reinterpret_cast<const char*>(data.data()) + data.size());
-    return json_to_value(j, type_id_, n_);
+    return json_to_value(aj_to_json(d.as<JsonVariantConst>()), type_id_, n_);
   }
 
   // Docs: serializeJson(doc, stream) / deserializeJson(doc, stream).
@@ -230,10 +320,7 @@ class ArduinoJsonSer final : public ISerializer {
     VecInStream is(data);
     auto err = deserializeJson(d, is);
     if (err) throw std::runtime_error(std::string("ArduinoJson stream deser: ") + err.c_str());
-    // Domain via UTF-8 reparse of input (same fidelity path as bytes mode).
-    auto j = nlohmann::json::parse(reinterpret_cast<const char*>(data.data()),
-                                   reinterpret_cast<const char*>(data.data()) + data.size());
-    return json_to_value(j, type_id_, n_);
+    return json_to_value(aj_to_json(d.as<JsonVariantConst>()), type_id_, n_);
   }
 
  private:
@@ -278,12 +365,8 @@ class YyjsonSer final : public ISerializer {
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
     yyjson_doc* doc = yyjson_read(reinterpret_cast<const char*>(data.data()), data.size(), 0);
     if (!doc) throw std::runtime_error("yyjson_read failed");
-    size_t len = 0;
-    char* out = yyjson_write(doc, 0, &len);
+    auto j = yy_to_json(yyjson_doc_get_root(doc));
     yyjson_doc_free(doc);
-    if (!out) throw std::runtime_error("yyjson_write failed");
-    auto j = nlohmann::json::parse(out, out + len);
-    free(out);
     return json_to_value(j, type_id_, n_);
   }
 

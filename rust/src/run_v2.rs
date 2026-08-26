@@ -143,6 +143,7 @@ fn serialize_cell_into(
     if fixtures.is_empty() {
         anyhow::bail!("empty batch");
     }
+    ser.begin_cell_encode();
     if fixtures.len() == 1 {
         return ser.serialize_into(black_box(&fixtures[0]), out);
     }
@@ -378,7 +379,7 @@ pub fn run_v2(
             if !ser.supports(primary.name()) && !ser.supports(&cell.type_id) {
                 continue;
             }
-            if let Err(e) = ser.prepare(primary) {
+            if let Err(e) = ser.prepare_many(&cell.fixtures) {
                 eprintln!("[ERROR] prepare {} / {} : {}", ser.name(), cell.type_id, e);
                 failed.insert(ser.name().to_string(), true);
                 continue;

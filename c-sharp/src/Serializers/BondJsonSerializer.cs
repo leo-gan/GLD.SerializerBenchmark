@@ -9,9 +9,9 @@ namespace GLD.SerializerBenchmark.Serializers
         private Deserializer<SimpleJsonReader> _deserializer;
         private Serializer<SimpleJsonWriter> _serializer;
 
-        private void Ensure()
+        public override void Initialize(System.Type serializablePrimaryType, System.Collections.Generic.List<System.Type> serializableSecondaryTypes = null)
         {
-            if (!JustInitialized) return;
+            base.Initialize(serializablePrimaryType, serializableSecondaryTypes);
             _serializer = new Serializer<SimpleJsonWriter>(_primaryType);
             _deserializer = new Deserializer<SimpleJsonReader>(_primaryType);
             JustInitialized = false;
@@ -21,7 +21,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
-            Ensure();
             using var tw = new StringWriter();
             _serializer.Serialize(serializable, new SimpleJsonWriter(tw));
             return tw.ToString();
@@ -29,14 +28,12 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(string serialized)
         {
-            Ensure();
             using var tr = new StringReader(serialized);
             return _deserializer.Deserialize(new SimpleJsonReader(tr));
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            Ensure();
             var writer = new SimpleJsonWriter(outputStream);
             _serializer.Serialize(serializable, writer);
             writer.Flush();
@@ -44,7 +41,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
-            Ensure();
             inputStream.Seek(0, SeekOrigin.Begin);
             return _deserializer.Deserialize(new SimpleJsonReader(inputStream));
         }

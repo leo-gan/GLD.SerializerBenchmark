@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Text.Json;
 
@@ -18,14 +17,12 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
-            var bytes = JsonSerializer.SerializeToUtf8Bytes(_native ?? serializable, Options);
-            return Convert.ToBase64String(bytes);
+            return JsonSerializer.Serialize(_native ?? serializable, Options);
         }
 
         public override object Deserialize(string serialized)
         {
-            var bytes = Convert.FromBase64String(serialized);
-            return JsonSerializer.Deserialize(bytes, _primaryType, Options);
+            return JsonSerializer.Deserialize(serialized, _primaryType, Options);
         }
 
         public override void Serialize(object serializable, Stream outputStream)

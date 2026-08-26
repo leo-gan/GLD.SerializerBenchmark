@@ -13,9 +13,9 @@ namespace GLD.SerializerBenchmark.Serializers
         private Serializer<FastBinaryWriter<OutputBuffer>> _serializer;
         private Serializer<FastBinaryWriter<OutputStream>> _serializerStream;
 
-        private void Ensure()
+        public override void Initialize(Type serializablePrimaryType, System.Collections.Generic.List<Type> serializableSecondaryTypes = null)
         {
-            if (!JustInitialized) return;
+            base.Initialize(serializablePrimaryType, serializableSecondaryTypes);
             _serializer = new Serializer<FastBinaryWriter<OutputBuffer>>(_primaryType);
             _deserializer = new Deserializer<FastBinaryReader<InputBuffer>>(_primaryType);
             _serializerStream = new Serializer<FastBinaryWriter<OutputStream>>(_primaryType);
@@ -27,7 +27,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override string Serialize(object serializable)
         {
-            Ensure();
             var output = new OutputBuffer(2 * 1024);
             _serializer.Serialize(serializable, new FastBinaryWriter<OutputBuffer>(output));
             return Convert.ToBase64String(output.Data.Array, output.Data.Offset, output.Data.Count);
@@ -35,14 +34,12 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(string serialized)
         {
-            Ensure();
             var input = new InputBuffer(Convert.FromBase64String(serialized));
             return _deserializer.Deserialize(new FastBinaryReader<InputBuffer>(input));
         }
 
         public override void Serialize(object serializable, Stream outputStream)
         {
-            Ensure();
             var output = new OutputStream(outputStream);
             _serializerStream.Serialize(serializable, new FastBinaryWriter<OutputStream>(output));
             output.Flush();
@@ -50,7 +47,6 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override object Deserialize(Stream inputStream)
         {
-            Ensure();
             inputStream.Seek(0, SeekOrigin.Begin);
             return _deserializerStream.Deserialize(new FastBinaryReader<InputStream>(new InputStream(inputStream)));
         }

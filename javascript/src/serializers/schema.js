@@ -131,8 +131,10 @@ export const avscSer = {
     return avroType.toBuffer(avroPrepared);
   },
   deserialize(buf) {
+    return avroType.fromBuffer(Buffer.from(buf));
+  },
+  toDomain(raw) {
     // Normalize Avro types (Long/ints) to plain JSON for suite fidelity compare.
-    const raw = avroType.fromBuffer(Buffer.from(buf));
     return JSON.parse(JSON.stringify(raw));
   },
 };
@@ -403,7 +405,9 @@ export const pbSer = {
   },
   deserialize(buf) {
     const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-    const decoded = pbType.decode(u8);
+    return pbType.decode(u8);
+  },
+  toDomain(decoded) {
     return fromPbValue(pbDataName, decoded, pbIsBatch);
   },
 };
@@ -836,7 +840,9 @@ export const flexbuffersSer = {
     const raw = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
     // flexbuffers toObject needs a standalone ArrayBuffer in some builds
     const ab = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
-    const obj = flexToObject(ab);
+    return flexToObject(ab);
+  },
+  toDomain(obj) {
     return flexNeedsRestore ? flexRestoreSanitized(obj) : obj;
   },
 };

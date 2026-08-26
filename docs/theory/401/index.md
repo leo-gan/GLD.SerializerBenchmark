@@ -80,7 +80,7 @@ The first nine pages take the speed or size leader in each language and ask why 
 | [Rust: rkyv vs Speedy](rust-rkyv-vs-speedy.md) | Show that in-place access only helps if the timed path uses it |
 | [C: custom-binary vs ubj](c-custom-binary-vs-ubj.md) | Show that ubj is the same packed record plus a 37-byte envelope and a second copy |
 | [C++: Bitsery vs YAS](cpp-bitsery-vs-yas.md) | Show why one-byte lengths and a reused buffer beat eight-byte lengths and a 20 KiB stream |
-| [C++: the simdjson row](cpp-simdjson-wrapper.md) | Read a Dashboard row whose encode is nlohmann `dump` and whose decode parses twice |
+| [C++: the simdjson row](cpp-simdjson-wrapper.md) | Read a Dashboard row whose encode is nlohmann `dump` and whose decode is simdjson parse plus a DOM walk |
 | [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Show positional IL stores versus a type-and-identifier prefix on every field |
 | [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Show two cached positional plans, and why the Avro schema walk costs a little more |
 | [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |

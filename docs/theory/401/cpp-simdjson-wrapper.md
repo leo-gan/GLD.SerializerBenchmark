@@ -19,7 +19,7 @@ not a universal ranking.
 Glaze is faster than the simdjson row (378 thousand versus 78 thousand cycles per second on the last packed L1 slice). We can see that in the table. The simdjson row does **not** time simdjson encode. simdjson cannot encode. It does **not** time “simdjson parse into a suite `Document`.”
 
 1. **Encode** writes compact JSON with **nlohmann::json** (`prepared_.dump()`). `prepare` only builds the nlohmann object. That is the same kind of encode as the nlohmann row. An older adapter cached the dump and timed a `vector` copy (217 ns). That copy is gone.
-2. **Decode** runs simdjson’s DOM parse, then `simdjson::minify`, then **nlohmann::json::parse** on the minified text, then `json_to_value`. simdjson’s parser is the first third of a longer pipeline.
+2. **Decode** runs simdjson’s DOM parse, then walks that DOM into the suite value. It does not parse the JSON text a second time.
 
 Glaze writes JSON from the C++ struct during the timed encode and reads JSON back into that struct during the timed decode. That is why Glaze has the higher cycle rate. The decode column is the one that contains simdjson, and it still includes two extra stages.
 
@@ -27,7 +27,7 @@ Glaze writes JSON from the C++ struct during the timed encode and reads JSON bac
 |--|-------------------------|-------------|----------|
 | Mean encode + decode, document, *n* = 1 | 78 thousand / s | **378 thousand / s** | 83 thousand / s |
 | Encode | nlohmann `dump()` (was 217 ns when it was a copy) | 706 ns (struct JSON write) | 3.22 µs |
-| Decode | **12.6 µs** (parse + minify + parse + map) | **1.94 µs** | 8.84 µs |
+| Decode | **12.6 µs** (last published L1: parse + minify + parse) | **1.94 µs** | 8.84 µs |
 | Encoded size | **458 B** | **458 B** | **458 B** |
 
 Equal size: all three emit compact JSON. Decode is not comparable to Glaze: only Glaze stops at one struct.
@@ -52,9 +52,7 @@ Value deserialize_bytes(const std::vector<uint8_t>& data) override {
     simdjson::padded_string ps(
         reinterpret_cast<const char*>(data.data()), data.size());
     simdjson::dom::element el = parser_.parse(ps);   // simdjson — real
-    std::string minified = simdjson::minify(el);     // extra pass
-    auto j = nlohmann::json::parse(minified);        // second parser
-    return json_to_value(j, type_id_, n_);           // DOM → domain
+    return json_to_value(simd_to_json(el), type_id_, n_);
 }
 ```
 
@@ -107,5 +105,5 @@ If encode is a second library’s dump, decode parses again, and a struct-backed
 ## Self-check
 
 1. Which library’s function writes the bytes in `serialize_bytes`, and why is that function not simdjson?
-2. List the two `parse` calls inside `deserialize_bytes`. Which one is simdjson?
+2. After the contract fix, how many times is the JSON text parsed in `deserialize_bytes`? Which library does that parse?
 3. You want to measure “simdjson into `bench::Document`.” Which two stages would you delete or replace, and what would you expect to happen to the 12.6 µs?
