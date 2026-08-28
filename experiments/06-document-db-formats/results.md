@@ -1,7 +1,7 @@
-# Do BSON, Smile, and Ion beat JSON and MessagePack?
+# Are database formats better for a normal service call?
 
-**Question:** On one nested order, do BSON, Smile, and Ion win a write-and-read contest against JSON and MessagePack?
-**Date:** 2026-08-17
+**Question:** On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
+**Date:** 2026-08-28
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -15,6 +15,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | Language | Status | Not clearly slower | Small gap | Time/size front | Full table |
 |----------|--------|--------------------|-----------|-----------------|------------|
 | java | ok | `jackson-smile`, `jackson`, `jackson-cbor` | — | `jackson-smile` | [java/results.md](java/results.md) |
+| kotlin | ok | `jackson-cbor`, `jackson` | — | `jackson-cbor`, `msgpack`, `kotlinx-ion` | [kotlin/results.md](kotlin/results.md) |
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify`, `msgpackr` | [javascript/results.md](javascript/results.md) |
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `vmihailenco/msgpack` | [go/results.md](go/results.md) |
 | rust | ok | `rmp-serde` | — | `rmp-serde` | [rust/results.md](rust/results.md) |
@@ -37,6 +38,18 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | msgpack | 150 | 317 | MessagePack — Jackson | slower |
 | bson | 171 | 517 | BSON | slower |
 | ion | 297 | 380 | Ion — Jackson | slower |
+
+### kotlin
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| jackson-cbor | 140 | 334 | CBOR — Jackson | fastest |
+| jackson | 150 | 440 | JSON — Jackson | similar |
+| msgpack | 162 | 317 | MessagePack | slower |
+| kotlinx-ion | 183 | 234 | Ion | slower |
+| kbson | 191 | 1032 | BSON | slower |
 
 ### javascript
 

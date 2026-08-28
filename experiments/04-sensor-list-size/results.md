@@ -1,7 +1,7 @@
-# When is JSON too large for a sensor list?
+# When is JSON too big for a sensor?
 
-**Question:** As the list of numbers grows, when does JSON’s size become more than a small radio packet can hold?
-**Date:** 2026-08-17
+**Question:** As a list of sensor numbers grows, when does JSON no longer fit a small radio packet?
+**Date:** 2026-08-28
 **Sample:** `telemetry`, one record, list lengths [8, 32, 128, 512] · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -37,6 +37,17 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 | qcbor | 129 | 342 | 1212 | 4666 | >128, >512 | CBOR — small-device writer |
 | zcbor | 132 | 344 | 1214 | 4667 | >128, >512 | CBOR — structured (zcbor) |
 | cJSON | 226 | 667 | 2448 | 9482 | >128, >512 | JSON — common C library |
+
+### kotlin
+
+| Library | 8 nums | 32 nums | 128 nums | 512 nums | vs 128 / 512 at 512 nums | Role |
+|---------|--------|--------|--------|--------|--------------------------|------|
+| moshi-codegen | 220 | 663 | 2407 | 9363 | >128, >512 | JSON — fast writer from Experiment 1 |
+| protobuf | 94 | 291 | 1061 | 4128 | >128, >512 | Protocol Buffers |
+| kotlinx-cbor | 127 | 347 | 1213 | 4664 | >128, >512 | CBOR |
+| kotlinx-json | 220 | 663 | 2407 | 9363 | >128, >512 | JSON — compiler-generated kotlinx.serialization |
+| jackson-cbor | 125 | 346 | 1212 | 4664 | >128, >512 | CBOR — Jackson |
+| msgpack | 124 | 346 | 1212 | 4663 | >128, >512 | MessagePack |
 
 ## Time and groups, by list length
 
@@ -141,6 +152,52 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 | tinycbor | 1195 | 4666 | slower |
 | qcbor | 1209 | 4666 | slower |
 | zcbor | 1302 | 4667 | slower |
+
+### kotlin
+
+**8 numbers** — not clearly slower: `moshi-codegen`, `protobuf`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-codegen | 52.2 | 220 | fastest |
+| protobuf | 54.2 | 94 | similar |
+| kotlinx-cbor | 77.5 | 127 | slower |
+| kotlinx-json | 109 | 220 | slower |
+| jackson-cbor | 137 | 125 | slower |
+| msgpack | 157 | 124 | slower |
+
+**32 numbers** — not clearly slower: `protobuf`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf | 27.3 | 291 | fastest |
+| moshi-codegen | 40.8 | 663 | slower |
+| kotlinx-cbor | 46.2 | 347 | slower |
+| jackson-cbor | 71.4 | 346 | slower |
+| kotlinx-json | 77.6 | 663 | slower |
+| msgpack | 92.3 | 346 | slower |
+
+**128 numbers** — not clearly slower: `protobuf`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf | 19.4 | 1061 | fastest |
+| kotlinx-cbor | 33.0 | 1213 | slower |
+| jackson-cbor | 54.5 | 1212 | slower |
+| moshi-codegen | 56.4 | 2407 | slower |
+| msgpack | 67.1 | 1212 | slower |
+| kotlinx-json | 82.0 | 2407 | slower |
+
+**512 numbers** — not clearly slower: `protobuf`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf | 25.3 | 4128 | fastest |
+| kotlinx-cbor | 56.3 | 4664 | slower |
+| jackson-cbor | 72.7 | 4664 | slower |
+| msgpack | 78.0 | 4663 | slower |
+| kotlinx-json | 168 | 9363 | slower |
+| moshi-codegen | 169 | 9363 | slower |
 
 ## What we saw
 

@@ -1,7 +1,7 @@
-# Is the ranking an accident?
+# Does the ranking stay the same if we change the data?
 
-**Question:** Do the named-JSON ranks from Experiment 1 stay the same if we change the sample, the number of records per write, or the cleaning rule?
-**Date:** 2026-08-17
+**Question:** Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?
+**Date:** 2026-08-28
 **Sample:** `['document', 'message', 'telemetry', 'event', 'strings']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -15,6 +15,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | orjson | orjson | orjson | orjson | orjson | yes | [python/results.md](python/results.md) |
 | go | goccy/go-json | segmentio/encoding/json | sonic | goccy/go-json | sonic | no | [go/results.md](go/results.md) |
 | java | jsoniter | jsoniter | jsoniter | dsl-json | dsl-json | no | [java/results.md](java/results.md) |
+| kotlin | moshi-reflect | moshi-reflect | moshi-reflect | moshi-reflect | moshi-reflect | yes | [kotlin/results.md](kotlin/results.md) |
 | javascript | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | yes | [javascript/results.md](javascript/results.md) |
 | rust | sonic-rs | sonic-rs | sonic-rs | sonic-rs | sonic-rs | yes | [rust/results.md](rust/results.md) |
 | c | yyjson | yyjson | yyjson | yyjson | yyjson | yes | [c/results.md](c/results.md) |
@@ -41,6 +42,11 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | java | C (sensor) | jsoniter | jsoniter | yes |
 | java | D (event) | dsl-json | jsoniter | no |
 | java | E (words) | dsl-json | jsoniter | no |
+| kotlin | A (order) | moshi-reflect | moshi-codegen | no |
+| kotlin | B (flat) | moshi-reflect | moshi-reflect | yes |
+| kotlin | C (sensor) | moshi-reflect | jackson | no |
+| kotlin | D (event) | moshi-reflect | moshi-codegen | no |
+| kotlin | E (words) | moshi-reflect | jackson | no |
 | javascript | A (order) | JSON.stringify | JSON.stringify | yes |
 | javascript | B (flat) | JSON.stringify | JSON.stringify | yes |
 | javascript | C (sensor) | JSON.stringify | JSON.stringify | yes |
@@ -79,6 +85,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | ok | `orjson` | — |
 | go | ok | `goccy/go-json`, `segmentio/encoding/json` | `sonic` |
 | java | ok | `jsoniter` | — |
+| kotlin | ok | `moshi-reflect`, `moshi-codegen` | — |
 | javascript | ok | `JSON.stringify` | — |
 | rust | ok | `sonic-rs` | — |
 | c | ok | `yyjson` | — |
@@ -423,6 +430,108 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | jackson | 978 | 65958 | slower |
 | gson | 1470 | 65958 | slower |
 | moshi | 1521 | 65958 | slower |
+
+### kotlin
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-reflect | 50.4 | 440 | fastest |
+| moshi-codegen | 51.5 | 440 | similar |
+| kotlinx-json | 103 | 440 | slower |
+| gson | 103 | 440 | slower |
+| jackson | 153 | 440 | slower |
+
+**A (order), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-codegen | 403 | 44604 | fastest |
+| moshi-reflect | 412 | 44604 | similar |
+| kotlinx-json | 443 | 44604 | slower |
+| jackson | 545 | 44604 | slower |
+| gson | 743 | 44604 | slower |
+
+**D (event), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-reflect | 10.9 | 254 | fastest |
+| moshi-codegen | 11.0 | 254 | similar |
+| kotlinx-json | 12.5 | 254 | slower |
+| gson | 16.9 | 254 | slower |
+| jackson | 21.1 | 254 | slower |
+
+**D (event), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-codegen | 215 | 25446 | fastest |
+| moshi-reflect | 216 | 25446 | similar |
+| kotlinx-json | 231 | 25446 | slower |
+| jackson | 269 | 25446 | slower |
+| gson | 361 | 25446 | slower |
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-reflect | 18.4 | 158 | fastest |
+| moshi-codegen | 19.1 | 158 | similar |
+| kotlinx-json | 35.7 | 158 | slower |
+| gson | 45.5 | 158 | slower |
+| jackson | 55.3 | 158 | slower |
+
+**B (flat), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-reflect | 191 | 15546 | fastest |
+| moshi-codegen | 195 | 15546 | similar |
+| kotlinx-json | 209 | 15546 | slower |
+| jackson | 265 | 15546 | slower |
+| gson | 351 | 15546 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-reflect | 7.95 | 411 | fastest |
+| moshi-codegen | 8.10 | 411 | similar |
+| gson | 11.0 | 411 | slower |
+| kotlinx-json | 12.3 | 411 | slower |
+| jackson | 16.6 | 411 | slower |
+
+**E (words), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jackson | 263 | 41431 | fastest |
+| moshi-codegen | 334 | 41431 | slower |
+| moshi-reflect | 336 | 41431 | slower |
+| kotlinx-json | 349 | 41431 | slower |
+| gson | 436 | 41431 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-reflect | 39.5 | 663 | fastest |
+| moshi-codegen | 40.0 | 663 | similar |
+| gson | 46.7 | 663 | slower |
+| kotlinx-json | 51.8 | 663 | slower |
+| jackson | 65.8 | 663 | slower |
+
+**C (sensor), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jackson | 1025 | 65958 | fastest |
+| kotlinx-json | 1038 | 65958 | similar |
+| gson | 1202 | 65958 | slower |
+| moshi-reflect | 1253 | 65958 | slower |
+| moshi-codegen | 1265 | 65958 | slower |
 
 ### javascript
 

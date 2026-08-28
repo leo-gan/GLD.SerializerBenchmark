@@ -5,11 +5,12 @@ description: >
   run full test suites, full benchmarks only for languages changed on the branch
   (detect-changed-langs.sh; override with PREPARE_PR_LANGS / PREPARE_PR_BENCH_ALL),
   fail on error-CSV regressions for those languages, regenerate analysis for them,
-  update dashboard data (sync-data.py), commit, push, and draft a short PR
-  description. Use when the user runs /prepare-pr, says "prepare a PR",
-  "ready for review", "pre-PR gate", or "full PR validation".
+  time every experiment that lists those languages, update dashboard data
+  (sync-data.py), commit, push, and draft a short PR description. Use when the
+  user runs /prepare-pr, says "prepare a PR", "ready for review", "pre-PR gate",
+  or "full PR validation".
 metadata:
-  short-description: "Test, changed-lang full bench, analyze, dashboard, PR"
+  short-description: "Test, changed-lang full bench, experiments, analyze, dashboard, PR"
 ---
 
 # /prepare-pr — Pre-PR validation gate
@@ -135,7 +136,7 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 
 Also considers unstaged/staged working-tree paths so uncommitted benchmark-runner source edits still trigger a re-bench.
 
-**Empty `CHANGED_LANGS`:** skip step 4 full benchmarks (e.g. skill-only or docs-only PR). Still run analysis only if you intentionally regenerated logs; otherwise continue to dashboard sync (no churn expected) and commit.
+**Empty `CHANGED_LANGS`:** skip step 4 full benchmarks and step 7 experiments (e.g. skill-only or docs-only PR). Still run analysis only if you intentionally regenerated logs; otherwise continue to dashboard sync (no churn expected) and commit.
 
 **Override examples:**
 
@@ -223,7 +224,28 @@ Hard fail if analysis exits non-zero for a language that was re-benched.
 
 ---
 
-## 7. Update dashboard data (**required**)
+## 7. Time experiments (**changed languages**)
+
+The Experiments Dashboard tab lists only languages that have `status: ok` in that experiment’s `results.json`. Adding a language to `experiment.yaml` is not enough. After a language bench, **time every experiment that enables that language**.
+
+```bash
+if [[ -z "${CHANGED_LANGS// }" ]]; then
+  echo "[prepare-pr] No changed languages — skipping experiments"
+else
+  .grok/skills/prepare-pr/scripts/run-experiments-for-langs.sh $CHANGED_LANGS
+fi
+```
+
+- Discovers `experiments/*/experiment.yaml`. Skips a folder when the language is absent or `enabled: false`.
+- Each run is `./experiments/<id>/run.sh <lang>` (sample + listed libraries for that language only).
+- `summarize.py --all` must keep an existing `<lang>/results.json` when that folder has no CSV. A one-language `run.sh <lang>` must not call `--all` (leftover CSVs would rewrite other languages). `--language` already writes the combined `results.json`.
+- Long-running: high timeout. Hard fail if any experiment run exits non-zero.
+
+Do **not** time experiments for unchanged languages unless `PREPARE_PR_BENCH_ALL=1` (then `CHANGED_LANGS` is already every enabled language).
+
+---
+
+## 8. Update dashboard data (**required**)
 
 After benchmarks + analysis (or a no-bench skill-only path), **always** refresh the analytics web dashboard payloads from the latest logs. This is a **first-class gate step**, not optional.
 
@@ -257,13 +279,13 @@ PY
 
 Hard fail if `sync-data.py` exits non-zero or any enabled language is missing a `*_latest.json.gz` after sync.
 
-**Do not** force-add raw `logs/**` CSVs (gitignored). **Do** stage updated `dashboard/public/data/*` in step 8.
+**Do not** force-add raw `logs/**` CSVs (gitignored). **Do** stage updated `dashboard/public/data/*` in step 9.
 
 Avoid re-running sync solely to “touch” files when content is already current (gzip recompression can churn binaries with identical JSON).
 
 ---
 
-## 8. Commit
+## 9. Commit
 
 ```bash
 git status
@@ -271,7 +293,7 @@ git diff --stat
 git log -5 --oneline
 ```
 
-- Stage **source**, **published docs for changed langs** (results, plots), **skill files**, and **dashboard data**.
+- Stage **source**, **published docs for changed langs** (results, plots), **skill files**, **experiment `results.json` / `results.md`**, and **dashboard data**.
 - Prefer not mass-touching unrelated language `docs/*/results.md` / violin plots unless those langs were re-benched or analysis was intentionally full-matrix.
 - **Do not** force-add gitignored `logs/**` raw CSVs.
 - If nothing to commit: print that and continue to push if remote is behind.
@@ -280,7 +302,7 @@ git log -5 --oneline
 
 ---
 
-## 9. Push
+## 10. Push
 
 User invoked prepare-pr (explicit intent to publish the branch):
 
@@ -292,7 +314,7 @@ On rejection: report output and **stop**.
 
 ---
 
-## 10. Short PR description
+## 11. Short PR description
 
 Build a short body from `git log origin/master..HEAD` (or `main`) and validation results:
 
@@ -303,9 +325,10 @@ Build a short body from `git log origin/master..HEAD` (or `main`) and validation
 ## Validation
 - Tests: analysis / python / js (pass)
 - Benchmarks: <mode>, langs `<CHANGED_LANGS or all/none>`, stem(s) `<STEM>`
+- Experiments: timed for `<CHANGED_LANGS>` (or skipped)
 - Error CSVs: clean for re-benched languages (or list failures — should not ship)
 - Analysis: results + violin plots for re-benched languages
-- Dashboard: `sync-data.py` → `*_latest.json.gz` + `available_runs.json`
+- Dashboard: `sync-data.py` → `*_latest.json.gz` + `available_runs.json` + experiment catalog
 
 ## Notes
 - …
@@ -332,6 +355,7 @@ If no `gh`: print title + body for the user to paste on GitHub.
 |--------|---------|
 | `.grok/skills/prepare-pr/scripts/detect-changed-langs.sh [BASE]` | Print space-separated language ids to full-bench (see step 3) |
 | `.grok/skills/prepare-pr/scripts/check-error-csvs.sh [STEM] [LANGS]` | Exit 1 on **new** error keys (regression) or any rows (strict); optional lang filter |
+| `.grok/skills/prepare-pr/scripts/run-experiments-for-langs.sh [LANGS]` | Time every experiment that enables the given languages (see step 7) |
 | `dashboard/scripts/sync-data.py` | Build compressed dashboard payloads + `available_runs.json` from latest logs |
 
 ---
@@ -345,6 +369,7 @@ If no `gh`: print title + body for the user to paste on GitHub.
 | Benchmarks fail (for any selected language) | Stop |
 | Error CSV regression on a re-benched language | Stop |
 | Analysis fails for a re-benched language | Stop |
+| An experiment run fails for a changed language | Stop |
 | Dashboard `sync-data.py` fails or missing `*_latest.json.gz` | Stop |
 | Push rejected | Stop; report |
 

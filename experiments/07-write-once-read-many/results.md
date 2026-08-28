@@ -1,7 +1,7 @@
-# Write once, read many times
+# Fast to write, or fast to read?
 
-**Question:** For a record we build once and read many times, how do FlatBuffers and Cap’n Proto split write time and read time, compared with Protocol Buffers?
-**Date:** 2026-08-17
+**Question:** If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
+**Date:** 2026-08-28
 **Sample:** `['document', 'telemetry']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -15,6 +15,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | flatbuffers | — | protobuf | — | — | no | [cpp/results.md](cpp/results.md) |
 | csharp | ZeroFormatter | — | MemoryPack | — | — | no | [csharp/results.md](csharp/results.md) |
 | java | flatbuffers | — | flatbuffers | — | — | no | [java/results.md](java/results.md) |
+| kotlin | flatbuffers | — | flatbuffers | — | — | no | [kotlin/results.md](kotlin/results.md) |
 | javascript | flatbuffers | — | flatbuffers | — | — | no | [javascript/results.md](javascript/results.md) |
 | python | protobuf | — | protobuf | — | — | no | [python/results.md](python/results.md) |
 | rust | rkyv | — | rkyv | — | — | no | [rust/results.md](rust/results.md) |
@@ -31,6 +32,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | C (sensor) | MemoryPack | — | no |
 | java | A (order) | flatbuffers | — | no |
 | java | C (sensor) | flatbuffers | — | no |
+| kotlin | A (order) | flatbuffers | — | no |
+| kotlin | C (sensor) | flatbuffers | — | no |
 | javascript | A (order) | flatbuffers | — | no |
 | javascript | C (sensor) | flatbuffers | — | no |
 | python | A (order) | protobuf | — | no |
@@ -49,6 +52,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | ok | `flatbuffers` | — |
 | csharp | ok | `ZeroFormatter` | — |
 | java | ok | `flatbuffers` | `protobuf` |
+| kotlin | ok | `flatbuffers` | `protobuf` |
 | javascript | ok | `flatbuffers` | — |
 | python | ok | `protobuf` | — |
 | rust | ok | `rkyv` | — |
@@ -116,6 +120,24 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | flatbuffers | 25.7 | 20.9 | 4192 | fastest |
 | capnproto | 64.9 | 37.1 | 4184 | slower |
 | protobuf | 44.6 | 58.9 | 4128 | slower |
+
+### kotlin
+
+**A (order), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| flatbuffers | 27.5 | 18.9 | 416 | fastest |
+| protobuf | 30.2 | 27.3 | 155 | close |
+| capnproto | 52.5 | 39.1 | 376 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| flatbuffers | 72.0 | 51.5 | 4192 | fastest |
+| protobuf | 78.8 | 52.2 | 4128 | similar |
+| capnproto | 91.2 | 67.1 | 4184 | slower |
 
 ### javascript
 

@@ -1,7 +1,7 @@
-# An event log: size and write time only
+# What should we use for an event log?
 
-**Question:** On one event, how do Avro, Protocol Buffers, and JSON compare on size and write time?
-**Date:** 2026-08-17
+**Question:** On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
+**Date:** 2026-08-28
 **Sample:** `event`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -16,6 +16,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 |----------|--------|--------------------|-----------|-----------------|------------|
 | python | ok | `orjson` | — | `orjson`, `protobuf`, `avro` | [python/results.md](python/results.md) |
 | java | ok | `protobuf` | — | `protobuf`, `avro` | [java/results.md](java/results.md) |
+| kotlin | ok | `protobuf` | — | `protobuf`, `avro` | [kotlin/results.md](kotlin/results.md) |
 | go | ok | `hamba/avro` | — | `hamba/avro`, `linkedin/goavro` | [go/results.md](go/results.md) |
 | csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `Apache.Avro` | [csharp/results.md](csharp/results.md) |
 | rust | ok | `serde_avro_fast`, `sonic-rs` | — | `serde_avro_fast` | [rust/results.md](rust/results.md) |
@@ -30,6 +31,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 |----------|--------|--------------------|-----------|-----------------|
 | python | ok | `protobuf` | — | `protobuf`, `avro` |
 | java | ok | `protobuf` | — | `protobuf`, `avro` |
+| kotlin | ok | `protobuf` | `avro4k`, `avro` | `protobuf`, `avro4k` |
 | go | ok | `hamba/avro` | — | `hamba/avro`, `linkedin/goavro` |
 | csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `Apache.Avro` |
 | rust | ok | `sonic-rs` | — | `sonic-rs`, `serde_avro_fast` |
@@ -77,6 +79,26 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 | protobuf | 129 | 12477 | Protocol Buffers | fastest |
 | jackson | 219 | 25446 | JSON — common default | slower |
 | avro | 223 | 10448 | Avro | slower |
+
+### kotlin
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf | 47.6 | 123 | Protocol Buffers | fastest |
+| avro | 120 | 105 | Avro | slower |
+| avro4k | 133 | 105 | Avro — avro4k | slower |
+| jackson | 140 | 254 | JSON — common default | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf | 226 | 12477 | Protocol Buffers | fastest |
+| avro4k | 235 | 10448 | Avro — avro4k | close |
+| avro | 276 | 10448 | Avro | close |
+| jackson | 363 | 25446 | JSON — common default | slower |
 
 ### go
 

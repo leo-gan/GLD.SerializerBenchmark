@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-08-26T23:10:14Z",
+  "generated_at": "2026-08-28T01:20:06Z",
   "count": 13,
   "with_results": 13,
   "experiments": [
@@ -47,7 +47,7 @@
       ],
       "has_results": true,
       "payload": "experiments/01-json-library-bakeoff.json.gz",
-      "generated_at": "2026-08-16T22:26:57Z",
+      "generated_at": "2026-08-28T01:11:17Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -67,6 +67,11 @@
           "id": "java",
           "status": "ok",
           "rows": 12
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 10
         },
         {
           "id": "javascript",
@@ -99,7 +104,7 @@
           "rows": 4
         }
       ],
-      "source_bytes": 96725
+      "source_bytes": 107143
     },
     {
       "id": "02-flat-record-formats",
@@ -145,7 +150,7 @@
       ],
       "has_results": true,
       "payload": "experiments/02-flat-record-formats.json.gz",
-      "generated_at": "2026-08-17T20:04:10Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": "message",
         "n": [
@@ -168,6 +173,11 @@
           "id": "java",
           "status": "missing",
           "rows": 0
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 20
         },
         {
           "id": "javascript",
@@ -200,7 +210,7 @@
           "rows": 0
         }
       ],
-      "source_bytes": 23461
+      "source_bytes": 44693
     },
     {
       "id": "03-one-language-store",
@@ -232,7 +242,7 @@
       ],
       "has_results": true,
       "payload": "experiments/03-one-language-store.json.gz",
-      "generated_at": "2026-08-16T23:01:23Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": "message",
         "n": 1
@@ -249,12 +259,17 @@
           "rows": 12
         },
         {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 8
+        },
+        {
           "id": "go",
           "status": "ok",
           "rows": 6
         }
       ],
-      "source_bytes": 33240
+      "source_bytes": 42149
     },
     {
       "id": "04-sensor-list-size",
@@ -1008,7 +1023,7 @@
       ],
       "has_results": true,
       "payload": "experiments/04-sensor-list-size.json.gz",
-      "generated_at": "2026-08-17T18:36:01Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": "telemetry",
         "n": 1
@@ -1023,9 +1038,14 @@
           "id": "c",
           "status": "ok",
           "rows": 64
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 48
         }
       ],
-      "source_bytes": 122228
+      "source_bytes": 175258
     },
     {
       "id": "05-event-log-formats",
@@ -1099,7 +1119,7 @@
       ],
       "has_results": true,
       "payload": "experiments/05-event-log-formats.json.gz",
-      "generated_at": "2026-08-17T18:39:22Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": "event",
         "n": [
@@ -1117,6 +1137,11 @@
           "id": "java",
           "status": "ok",
           "rows": 12
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 16
         },
         {
           "id": "go",
@@ -1154,7 +1179,7 @@
           "rows": 12
         }
       ],
-      "source_bytes": 124848
+      "source_bytes": 142008
     },
     {
       "id": "06-document-db-formats",
@@ -1199,7 +1224,7 @@
       ],
       "has_results": true,
       "payload": "experiments/06-document-db-formats.json.gz",
-      "generated_at": "2026-08-17T18:40:43Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -1209,6 +1234,11 @@
           "id": "java",
           "status": "ok",
           "rows": 6
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 5
         },
         {
           "id": "javascript",
@@ -1236,7 +1266,7 @@
           "rows": 3
         }
       ],
-      "source_bytes": 29865
+      "source_bytes": 35902
     },
     {
       "id": "07-write-once-read-many",
@@ -1807,7 +1837,7 @@
       ],
       "has_results": true,
       "payload": "experiments/07-write-once-read-many.json.gz",
-      "generated_at": "2026-08-17T20:03:08Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": [
           "document",
@@ -1828,6 +1858,11 @@
         },
         {
           "id": "java",
+          "status": "ok",
+          "rows": 6
+        },
+        {
+          "id": "kotlin",
           "status": "ok",
           "rows": 6
         },
@@ -1857,7 +1892,7 @@
           "rows": 6
         }
       ],
-      "source_bytes": 71195
+      "source_bytes": 78845
     },
     {
       "id": "08-human-files",
@@ -1915,7 +1950,7 @@
       ],
       "has_results": true,
       "payload": "experiments/08-human-files.json.gz",
-      "generated_at": "2026-08-17T20:03:41Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": [
           "document",
@@ -1933,6 +1968,11 @@
           "id": "java",
           "status": "ok",
           "rows": 4
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 6
         },
         {
           "id": "javascript",
@@ -1970,7 +2010,7 @@
           "rows": 12
         }
       ],
-      "source_bytes": 67524
+      "source_bytes": 74933
     },
     {
       "id": "09-compression-size",
@@ -2157,7 +2197,7 @@
       ],
       "has_results": true,
       "payload": "experiments/09-compression-size.json.gz",
-      "generated_at": "2026-08-17T18:59:52Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": [
           "strings",
@@ -2179,6 +2219,11 @@
         },
         {
           "id": "java",
+          "status": "ok",
+          "rows": 12
+        },
+        {
+          "id": "kotlin",
           "status": "ok",
           "rows": 12
         },
@@ -2213,7 +2258,7 @@
           "rows": 12
         }
       ],
-      "source_bytes": 146484
+      "source_bytes": 161070
     },
     {
       "id": "10-one-vs-hundred",
@@ -2315,7 +2360,7 @@
       ],
       "has_results": true,
       "payload": "experiments/10-one-vs-hundred.json.gz",
-      "generated_at": "2026-08-17T20:05:20Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": [
           "message",
@@ -2339,6 +2384,11 @@
         },
         {
           "id": "java",
+          "status": "ok",
+          "rows": 16
+        },
+        {
+          "id": "kotlin",
           "status": "ok",
           "rows": 16
         },
@@ -2373,7 +2423,7 @@
           "rows": 16
         }
       ],
-      "source_bytes": 238414
+      "source_bytes": 257030
     },
     {
       "id": "11-memory-vs-stream",
@@ -2418,7 +2468,7 @@
       ],
       "has_results": true,
       "payload": "experiments/11-memory-vs-stream.json.gz",
-      "generated_at": "2026-08-17T18:09:34Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2435,12 +2485,17 @@
           "rows": 8
         },
         {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 8
+        },
+        {
           "id": "cpp",
           "status": "ok",
           "rows": 8
         }
       ],
-      "source_bytes": 26925
+      "source_bytes": 35725
     },
     {
       "id": "12-format-vs-library",
@@ -2485,7 +2540,7 @@
       ],
       "has_results": true,
       "payload": "experiments/12-format-vs-library.json.gz",
-      "generated_at": "2026-08-17T17:33:34Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2495,6 +2550,11 @@
           "id": "java",
           "status": "ok",
           "rows": 14
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 16
         },
         {
           "id": "cpp",
@@ -2517,7 +2577,7 @@
           "rows": 3
         }
       ],
-      "source_bytes": 54055
+      "source_bytes": 70990
     },
     {
       "id": "13-ranking-accident",
@@ -2617,7 +2677,7 @@
       ],
       "has_results": true,
       "payload": "experiments/13-ranking-accident.json.gz",
-      "generated_at": "2026-08-17T17:54:57Z",
+      "generated_at": "2026-08-28T01:19:40Z",
       "sample": {
         "kind": [
           "document",
@@ -2646,6 +2706,11 @@
           "id": "java",
           "status": "ok",
           "rows": 60
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 50
         },
         {
           "id": "javascript",
@@ -2678,7 +2743,7 @@
           "rows": 20
         }
       ],
-      "source_bytes": 716417
+      "source_bytes": 772772
     }
   ]
 }

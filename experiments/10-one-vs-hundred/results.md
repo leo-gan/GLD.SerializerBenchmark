@@ -1,7 +1,7 @@
-# One record versus one hundred
+# Does one record rank the same as one hundred?
 
-**Question:** Does the library that wins at one record still win at one hundred records in a single write?
-**Date:** 2026-08-17
+**Question:** Does the library that is fastest for one record stay fastest when we write one hundred records at once?
+**Date:** 2026-08-28
 **Sample:** `['message', 'event']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -15,6 +15,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | — | orjson | — | orjson | — | no | [python/results.md](python/results.md) |
 | go | — | protobuf | — | protobuf | — | no | [go/results.md](go/results.md) |
 | java | — | protobuf | — | jsoniter | — | no | [java/results.md](java/results.md) |
+| kotlin | — | protobuf | — | moshi-codegen | — | no | [kotlin/results.md](kotlin/results.md) |
 | javascript | — | JSON.stringify | — | JSON.stringify | — | no | [javascript/results.md](javascript/results.md) |
 | rust | — | prost | — | rmp-serde | — | no | [rust/results.md](rust/results.md) |
 | c | — | protobuf-c | — | protobuf-wire | — | no | [c/results.md](c/results.md) |
@@ -32,6 +33,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | D (event) | protobuf | goccy/go-json | no |
 | java | B (flat) | protobuf | protobuf | yes |
 | java | D (event) | jsoniter | jsoniter | yes |
+| kotlin | B (flat) | protobuf | protobuf | yes |
+| kotlin | D (event) | moshi-codegen | protobuf | no |
 | javascript | B (flat) | JSON.stringify | JSON.stringify | yes |
 | javascript | D (event) | JSON.stringify | msgpackr | no |
 | rust | B (flat) | prost | prost | yes |
@@ -52,6 +55,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | ok | — | — |
 | go | ok | — | — |
 | java | ok | — | — |
+| kotlin | ok | — | — |
 | javascript | ok | — | — |
 | rust | ok | — | — |
 | c | ok | — | — |
@@ -182,6 +186,44 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | jsoniter | 146 | 14804 | slower |
 | jackson | 229 | 15546 | slower |
 | msgpack | 275 | 11031 | slower |
+
+### kotlin
+
+**D (event), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-codegen | 19.1 | 254 | fastest |
+| protobuf | 26.7 | 123 | slower |
+| jackson | 65.5 | 254 | slower |
+| msgpack | 66.8 | 196 | slower |
+
+**D (event), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf | 186 | 12477 | fastest |
+| moshi-codegen | 228 | 25446 | slower |
+| jackson | 322 | 25446 | slower |
+| msgpack | 413 | 19548 | slower |
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf | 35.0 | 50 | fastest |
+| moshi-codegen | 47.5 | 158 | slower |
+| msgpack | 132 | 114 | slower |
+| jackson | 147 | 158 | slower |
+
+**B (flat), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf | 120 | 4841 | fastest |
+| moshi-codegen | 225 | 15546 | slower |
+| jackson | 338 | 15546 | slower |
+| msgpack | 388 | 11031 | slower |
 
 ### javascript
 

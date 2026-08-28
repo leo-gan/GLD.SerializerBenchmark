@@ -1,7 +1,7 @@
-# Is the difference the format, or the library?
+# Is it the format, or the library?
 
-**Question:** If one library can write several formats, how much of the speed and size difference is the format, and how much is that library?
-**Date:** 2026-08-17
+**Question:** If one library can write several formats, how much of the difference is the format, and how much is that library?
+**Date:** 2026-08-28
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -15,6 +15,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | Language | Status | Not clearly slower | Small gap | Time/size front | Full table |
 |----------|--------|--------------------|-----------|-----------------|------------|
 | java | ok | `jsoniter` | — | `jsoniter`, `jackson-smile` | [java/results.md](java/results.md) |
+| kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `kotlinx-cbor`, `kotlinx-protobuf` | [kotlin/results.md](kotlin/results.md) |
 | cpp | ok | `nlohmann_json` | — | `nlohmann_json`, `nlohmann_cbor`, `nlohmann_msgpack` | [cpp/results.md](cpp/results.md) |
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `ugorji/msgpack`, `shamaton/msgpack` | [go/results.md](go/results.md) |
 | csharp | ok | `MS Bond Fast` | — | `MS Bond Fast`, `MS Bond Compact` | [csharp/results.md](csharp/results.md) |
@@ -37,6 +38,21 @@ Every listed library (same library across formats, and same format across librar
 | jackson | 110 | 440 | Jackson — JSON | slower |
 | msgpack | 132 | 317 | Jackson — MessagePack | slower |
 | ion | 258 | 380 | Jackson — Ion | slower |
+
+### kotlin
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| moshi-codegen | 48.2 | 440 | JSON — another library (Moshi) | fastest |
+| kotlinx-cbor | 70.0 | 335 | kotlinx.serialization — CBOR | slower |
+| kotlinx-protobuf | 76.6 | 155 | kotlinx.serialization — ProtoBuf | slower |
+| kotlinx-json | 95.3 | 440 | kotlinx.serialization — JSON | slower |
+| gson | 100.0 | 440 | JSON — another library (Gson) | slower |
+| jackson-cbor | 144 | 334 | Jackson — CBOR | slower |
+| jackson | 144 | 440 | Jackson — JSON | slower |
+| msgpack | 170 | 317 | MessagePack | slower |
 
 ### cpp
 
