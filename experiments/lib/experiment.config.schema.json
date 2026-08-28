@@ -115,7 +115,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "enum": ["python", "go", "java", "javascript", "rust", "c", "cpp", "csharp", "swift", "kotlin", "php"]
+            "enum": ["python", "go", "java", "javascript", "rust", "c", "cpp", "csharp", "swift", "kotlin", "php", "zig"]
           },
           "enabled": { "type": "boolean" },
           "libraries": {

@@ -101,3 +101,10 @@ languages:
       - {name: IkigaJSON, writes_named_fields: true, role: JSON — Experiment 1}
       - {name: SwiftBSON, writes_named_fields: true, role: BSON}
       - {name: SwiftMsgpack, writes_named_fields: true, role: MessagePack}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: JSON}
+      - {name: serde.msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: serde.zon, writes_named_fields: true, role: ZON}

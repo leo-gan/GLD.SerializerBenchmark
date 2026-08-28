@@ -83,3 +83,11 @@ languages:
       - {name: encoding/gob, writes_named_fields: true, role: one language — gob}
       - {name: goccy/go-json, writes_named_fields: true, role: other languages can read — JSON}
       - {name: protobuf, writes_named_fields: true, role: other languages can read — Protocol Buffers}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: comptime-bin, writes_named_fields: true, role: one language — comptime packed}
+      - {name: s2s, writes_named_fields: true, role: one language — s2s stream}
+      - {name: std.json, writes_named_fields: true, role: other languages can read — JSON}
+      - {name: serde.msgpack, writes_named_fields: true, role: other languages can read — MessagePack}

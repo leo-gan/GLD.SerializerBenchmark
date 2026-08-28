@@ -10,7 +10,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
 
 # User-local toolchains (same places install-host-requirements.sh uses).
-export PATH="${HOME}/.local/go/bin:${HOME}/.cargo/bin:${HOME}/.dotnet:${PATH}"
+export PATH="${HOME}/.local/go/bin:${HOME}/.cargo/bin:${HOME}/.dotnet:${HOME}/.local/zig:${PATH}"
 
 declare -A RUNNER=(
   [python]="$REPO/python/scripts/run-benchmarks.sh"
@@ -24,6 +24,7 @@ declare -A RUNNER=(
   [cpp]="$REPO/cpp/scripts/run-benchmarks.sh"
   [csharp]="$REPO/c-sharp/scripts/run-benchmarks.sh"
   [swift]="$REPO/swift/scripts/run-benchmarks.sh"
+  [zig]="$REPO/zig/scripts/run-benchmarks.sh"
 )
 
 # experiment.yaml is the file to edit. run.yaml is written from it.

@@ -221,6 +221,7 @@ paths:
     php: logs/php
     cpp: logs/cpp
     swift: logs/swift
+    zig: logs/zig
   # Result files are timestamped to preserve history across runs.
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
@@ -1129,6 +1130,87 @@ languages:
         package: ext-yaml
         rationale: "PECL LibYAML"
         optimal_api: "yaml_emit / yaml_parse"
+
+  zig:
+    display_name: Zig
+    enabled: true
+    runner_dir: zig
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/zig
+    time_unit: nanoseconds
+    docs_dir: docs/zig
+    min_zig_version: "0.16.0"
+    serializers:
+      - name: std.json
+        category: json
+        package: std.json
+        rationale: "Official stdlib typed parseFromSlice + Stringify"
+        optimal_api: "std.json.Stringify.value / std.json.parseFromSlice"
+      - name: std.json.scanner
+        category: json
+        package: std.json
+        rationale: "Official stdlib streaming Scanner + parseFromTokenSource"
+        optimal_api: "std.json.Scanner + parseFromTokenSource"
+      - name: comptime-bin
+        category: binary
+        package: in-tree
+        rationale: "Idiomatic comptime @typeInfo byte-packed baseline (literal @bitCast cannot encode slices)"
+        optimal_api: "comptime field walk; LE ints; u32-length strings"
+      - name: serde.json
+        category: json
+        package: serde.zig
+        rationale: "Comptime @typeInfo framework — JSON path"
+        optimal_api: "serde.json.toSlice / fromSlice"
+      - name: serde.msgpack
+        category: binary
+        package: serde.zig
+        rationale: "Same comptime API as serde.json — MessagePack"
+        optimal_api: "serde.msgpack.toSlice / fromSlice"
+      - name: serde.yaml
+        category: text
+        package: serde.zig
+        rationale: "Same comptime API — YAML"
+        optimal_api: "serde.yaml.toSlice / fromSlice"
+      - name: serde.toml
+        category: text
+        package: serde.zig
+        rationale: "Same comptime API — TOML"
+        optimal_api: "serde.toml.toSlice / fromSlice"
+      - name: serde.zon
+        category: text
+        package: serde.zig
+        rationale: "Same comptime API — Zig Object Notation"
+        optimal_api: "serde.zon.toSlice / fromSlice"
+      - name: serde.xml
+        category: text
+        package: serde.zig
+        rationale: "Same comptime API — XML (flat fixtures)"
+        optimal_api: "serde.xml.toSlice / fromSlice"
+      - name: std.zon
+        category: text
+        package: std.zon
+        rationale: "Official Zig Object Notation parser/stringifier"
+        optimal_api: "std.zon.stringify.serialize / std.zon.parse.fromSliceAlloc"
+      - name: zig-msgpack
+        category: binary
+        package: zigcc/zig-msgpack
+        rationale: "Official MessagePack.org Zig implementation"
+        optimal_api: "PackerIO.write / read on Payload"
+      - name: msgpack.zig
+        category: binary
+        package: lalinsky/msgpack.zig
+        rationale: "Typed MessagePack encode/decodeFromSlice"
+        optimal_api: "msgpack.encode / decodeFromSlice"
+      - name: zbor
+        category: binary
+        package: r4gus/zbor
+        rationale: "Native Zig CBOR (RFC 8949)"
+        optimal_api: "zbor.stringify / DataItem.new + zbor.parse"
+      - name: s2s
+        category: binary
+        package: ziglibs/s2s
+        rationale: "Native binary struct-to-stream"
+        optimal_api: "s2s.serialize / deserializeAlloc"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

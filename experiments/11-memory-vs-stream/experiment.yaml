@@ -79,3 +79,10 @@ languages:
       - {name: simdjson, writes_named_fields: true, role: JSON — fast read}
       - {name: msgpack, writes_named_fields: true, role: MessagePack}
       - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — wire helper}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: JSON}
+      - {name: std.json.scanner, writes_named_fields: true, role: JSON — streaming parser}
+      - {name: serde.msgpack, writes_named_fields: true, role: MessagePack}

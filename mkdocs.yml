@@ -160,6 +160,7 @@ nav:
           - "Kotlin: kotlinx-json vs Moshi": theory/401/kotlin-kotlinx-json-vs-moshi.md
           - "Kotlin: FlatBuffers vs protobuf": theory/401/kotlin-flatbuffers-vs-protobuf.md
           - "PHP: JSON vs protobuf": theory/401/php-json-vs-protobuf.md
+          - "Zig: std.json vs serde.json": theory/401/zig-std-json-vs-serde-json.md
           - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
           - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
           - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
@@ -188,6 +189,8 @@ nav:
           - Overview: rust/index.md
       - Swift:
           - Overview: swift/index.md
+      - Zig:
+          - Overview: zig/index.md
   - Benchmarks:
       - Overview: analysis/index.md
       - Architecture: analysis/architecture.md

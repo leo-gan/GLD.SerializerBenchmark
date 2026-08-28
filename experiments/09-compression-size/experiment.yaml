@@ -126,3 +126,10 @@ languages:
       - {name: IkigaJSON, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
       - {name: SwiftMsgpack, writes_named_fields: true, role: MessagePack}
       - {name: SwiftProtobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: JSON — stdlib}
+      - {name: serde.msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: comptime-bin, writes_named_fields: true, role: packed binary}

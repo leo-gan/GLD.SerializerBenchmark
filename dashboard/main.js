@@ -121,6 +121,7 @@ const LANGUAGE_CATALOG = [
   { id: 'python', label: 'Python' },
   { id: 'rust', label: 'Rust' },
   { id: 'swift', label: 'Swift' },
+  { id: 'zig', label: 'Zig' },
 ];
 
 const CROSS_LANG_METRICS = [
@@ -1191,6 +1192,7 @@ function updateRunMeta() {
       c: 'gcc',
       cpp: 'g++',
       swift: 'Swift',
+      zig: 'Zig',
     }[state.currentLanguage] || 'runtime';
   if (runtimes[rtKey]) {
     // Strip redundant product name if the version string already starts with it
@@ -1220,6 +1222,7 @@ const RUNTIME_KEY_BY_LANG = {
   kotlin: 'java',
   php: 'php',
   swift: 'swift',
+  zig: 'zig',
 };
 
 function firstLine(value) {

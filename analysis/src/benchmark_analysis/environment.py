@@ -158,7 +158,7 @@ def _infer_language(result_csv_path: Optional[str]) -> str:
         return (os.environ.get("BENCHMARK_LANGUAGE") or "").strip()
     low = str(result_csv_path).replace("\\", "/").lower()
     # Longer ids first so /logs/cpp/ is not mistaken for bare c.
-    for token in ("csharp", "python", "rust", "javascript", "kotlin", "java", "php", "cpp", "swift", "go"):
+    for token in ("csharp", "python", "rust", "javascript", "kotlin", "java", "php", "cpp", "swift", "zig", "go"):
         if f"/{token}/" in low:
             return token
     parts = [p for p in low.split("/") if p]

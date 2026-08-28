@@ -44,6 +44,7 @@ const LANG_LABELS = {
   php: 'PHP',
   cpp: 'C++',
   swift: 'Swift',
+  zig: 'Zig',
 };
 const KIND_LABELS = {
   document: 'one order',

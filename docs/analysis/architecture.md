@@ -53,7 +53,7 @@ Everyone uses the **same measurement contract** and the **same analysis path**. 
 | `schemas/` | Shared data catalog, Protocol Buffers and related wire definitions |
 | `logs/<language>/` | Timestamped result CSVs (gitignored; not published as raw files) |
 | `analysis/` | Python package that implements the `analyze-benchmarks` command |
-| `python/`, `c-sharp/`, `rust/`, `c/`, `javascript/`, `go/`, `java/`, `kotlin/`, `php/`, `cpp/`, `swift/` | One benchmark runner per language |
+| `python/`, `c-sharp/`, `rust/`, `c/`, `javascript/`, `go/`, `java/`, `kotlin/`, `php/`, `cpp/`, `swift/`, `zig/` | One benchmark runner per language |
 | `docs/` | MkDocs site: theory, inventories, Dashboard, this analysis section |
 | `scripts/run-all-benchmarks.sh` | Orchestrates multi-language runs |
 

@@ -21,6 +21,7 @@
     python: "python",
     rust: "rust",
     swift: "swift",
+    zig: "zig",
   };
 
   function catalogIdFromOverviewHref(href) {

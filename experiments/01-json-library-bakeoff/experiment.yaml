@@ -150,3 +150,10 @@ languages:
     libraries:
       - {name: Foundation.JSONEncoder, writes_named_fields: true, role: ships with Swift}
       - {name: IkigaJSON, writes_named_fields: true, role: server JSON library}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: official stdlib typed JSON}
+      - {name: std.json.scanner, writes_named_fields: true, role: official streaming Scanner}
+      - {name: serde.json, writes_named_fields: true, role: comptime framework — JSON}
