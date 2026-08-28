@@ -115,6 +115,7 @@ Checked against the adapters in this repository after the google-protobuf encode
 | [Kotlin: Protostuff vs protobuf](../theory/401/kotlin-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. Official protobuf rows still build a generated message in the middle | Same work at the suite boundary. |
 | [Kotlin: kotlinx-json vs Moshi](../theory/401/kotlin-kotlinx-json-vs-moshi.md) | Both dump/load a suite `Document` as named JSON | Same work. Honest. |
 | [Kotlin: FlatBuffers vs protobuf](../theory/401/kotlin-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
+| [PHP: JSON vs protobuf](../theory/401/php-json-vs-protobuf.md) | Both time suite arrays → bytes → suite arrays. protobuf still builds a generated message in the middle | Same work at the suite boundary. |
 | [JavaScript: JSON vs google-protobuf](../theory/401/javascript-json-vs-protobuf.md) | Both encode and decode on the clock | Same work. Honest (after the copy bug was fixed). |
 | [JavaScript: three protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize`. Decode rebuilds a library message; `toDomain` copies after the timer | Encode is the same kind of work. Decode implementations still differ. |
 | [Swift: FlatBuffers vs SwiftProtobuf](../theory/401/swift-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |

@@ -36,7 +36,7 @@ if [[ "${PREPARE_PR_BENCH_ALL:-0}" == "1" ]]; then
     done <<< "$runners"
     echo "${ids[*]}"
   else
-    echo "csharp python rust c javascript go java kotlin cpp swift"
+    echo "csharp python rust c javascript go java kotlin php cpp swift"
   fi
   echo "[detect-changed-langs] PREPARE_PR_BENCH_ALL=1 → all enabled" >&2
   exit 0
@@ -148,6 +148,9 @@ for p in "${PATHS[@]}"; do
     kotlin/*)
       HIT[kotlin]=1
       ;;
+    php/*)
+      HIT[php]=1
+      ;;
     cpp/*|c++/*|cxx/*)
       HIT[cpp]=1
       ;;
@@ -168,14 +171,14 @@ if [[ "$SHARED_FORCE_ALL" -eq 1 ]]; then
     done <<< "$runners"
     echo "${ids[*]}"
   else
-    echo "csharp python rust c javascript go java kotlin cpp swift"
+    echo "csharp python rust c javascript go java kotlin php cpp swift"
   fi
   echo "[detect-changed-langs] shared path change vs $BASE_REF → all enabled languages" >&2
   exit 0
 fi
 
 ids=()
-for id in csharp python rust c javascript go java kotlin cpp swift; do
+for id in csharp python rust c javascript go java kotlin php cpp swift; do
   [[ -n "${HIT[$id]:-}" ]] && ids+=("$id")
 done
 

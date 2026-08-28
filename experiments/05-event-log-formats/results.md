@@ -17,6 +17,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | python | ok | `orjson` | — | `orjson`, `protobuf`, `avro` | [python/results.md](python/results.md) |
 | java | ok | `protobuf` | — | `protobuf`, `avro` | [java/results.md](java/results.md) |
 | kotlin | ok | `protobuf` | — | `protobuf`, `avro` | [kotlin/results.md](kotlin/results.md) |
+| php | ok | `json` | — | `json`, `avro` | [php/results.md](php/results.md) |
 | go | ok | `hamba/avro` | — | `hamba/avro`, `linkedin/goavro` | [go/results.md](go/results.md) |
 | csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `Apache.Avro` | [csharp/results.md](csharp/results.md) |
 | rust | ok | `serde_avro_fast`, `sonic-rs` | — | `serde_avro_fast` | [rust/results.md](rust/results.md) |
@@ -32,6 +33,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | python | ok | `protobuf` | — | `protobuf`, `avro` |
 | java | ok | `protobuf` | — | `protobuf`, `avro` |
 | kotlin | ok | `protobuf` | `avro4k`, `avro` | `protobuf`, `avro4k` |
+| php | ok | `json` | — | `json`, `avro` |
 | go | ok | `hamba/avro` | — | `hamba/avro`, `linkedin/goavro` |
 | csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `Apache.Avro` |
 | rust | ok | `sonic-rs` | — | `sonic-rs`, `serde_avro_fast` |
@@ -99,6 +101,24 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 | avro4k | 235 | 10448 | Avro — avro4k | close |
 | avro | 276 | 10448 | Avro | close |
 | jackson | 363 | 25446 | JSON — common default | slower |
+
+### php
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json | 3.48 | 267 | JSON — stdlib | fastest |
+| avro | 48.4 | 115 | Avro | slower |
+| protobuf | 107 | 133 | Protocol Buffers | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json | 207 | 25976 | JSON — stdlib | fastest |
+| avro | 3713 | 10678 | Avro | slower |
+| protobuf | 9419 | 12717 | Protocol Buffers | slower |
 
 ### go
 

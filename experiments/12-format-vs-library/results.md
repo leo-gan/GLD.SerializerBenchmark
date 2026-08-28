@@ -16,6 +16,7 @@ We do not name a single winner. This sample is one small order. A different reco
 |----------|--------|--------------------|-----------|-----------------|------------|
 | java | ok | `jsoniter` | — | `jsoniter`, `jackson-smile` | [java/results.md](java/results.md) |
 | kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `kotlinx-cbor`, `kotlinx-protobuf` | [kotlin/results.md](kotlin/results.md) |
+| php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | cpp | ok | `nlohmann_json` | — | `nlohmann_json`, `nlohmann_cbor`, `nlohmann_msgpack` | [cpp/results.md](cpp/results.md) |
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `ugorji/msgpack`, `shamaton/msgpack` | [go/results.md](go/results.md) |
 | csharp | ok | `MS Bond Fast` | — | `MS Bond Fast`, `MS Bond Compact` | [csharp/results.md](csharp/results.md) |
@@ -53,6 +54,19 @@ Every listed library (same library across formats, and same format across librar
 | jackson-cbor | 144 | 334 | Jackson — CBOR | slower |
 | jackson | 144 | 440 | Jackson — JSON | slower |
 | msgpack | 170 | 317 | MessagePack | slower |
+
+### php
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json | 5.76 | 454 | stdlib — JSON | fastest |
+| symfony-json | 7.76 | 454 | Symfony — JSON | slower |
+| rybakit-msgpack | 21.7 | 335 | rybakit — MessagePack | slower |
+| protobuf | 197 | 160 | google/protobuf | slower |
+| cbor | 240 | 339 | cbor-php — CBOR | slower |
+| yaml | 282 | 515 | Symfony — YAML | slower |
 
 ### cpp
 

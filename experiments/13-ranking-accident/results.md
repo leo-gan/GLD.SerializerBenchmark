@@ -16,6 +16,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | goccy/go-json | segmentio/encoding/json | sonic | goccy/go-json | sonic | no | [go/results.md](go/results.md) |
 | java | jsoniter | jsoniter | jsoniter | dsl-json | dsl-json | no | [java/results.md](java/results.md) |
 | kotlin | moshi-reflect | moshi-reflect | moshi-reflect | moshi-reflect | moshi-reflect | yes | [kotlin/results.md](kotlin/results.md) |
+| php | json | json | json | json | json | yes | [php/results.md](php/results.md) |
 | javascript | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | yes | [javascript/results.md](javascript/results.md) |
 | rust | sonic-rs | sonic-rs | sonic-rs | sonic-rs | sonic-rs | yes | [rust/results.md](rust/results.md) |
 | c | yyjson | yyjson | yyjson | yyjson | yyjson | yes | [c/results.md](c/results.md) |
@@ -47,6 +48,11 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | kotlin | C (sensor) | moshi-reflect | jackson | no |
 | kotlin | D (event) | moshi-reflect | moshi-codegen | no |
 | kotlin | E (words) | moshi-reflect | jackson | no |
+| php | A (order) | json | json | yes |
+| php | B (flat) | json | json | yes |
+| php | C (sensor) | json | json | yes |
+| php | D (event) | json | json | yes |
+| php | E (words) | json | json | yes |
 | javascript | A (order) | JSON.stringify | JSON.stringify | yes |
 | javascript | B (flat) | JSON.stringify | JSON.stringify | yes |
 | javascript | C (sensor) | JSON.stringify | JSON.stringify | yes |
@@ -86,6 +92,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | ok | `goccy/go-json`, `segmentio/encoding/json` | `sonic` |
 | java | ok | `jsoniter` | — |
 | kotlin | ok | `moshi-reflect`, `moshi-codegen` | — |
+| php | ok | `json` | — |
 | javascript | ok | `JSON.stringify` | — |
 | rust | ok | `sonic-rs` | — |
 | c | ok | `yyjson` | — |
@@ -532,6 +539,88 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | gson | 1202 | 65958 | slower |
 | moshi-reflect | 1253 | 65958 | slower |
 | moshi-codegen | 1265 | 65958 | slower |
+
+### php
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 6.18 | 454 | fastest |
+| symfony-json | 8.26 | 454 | slower |
+| jms-json | 35.9 | 454 | slower |
+
+**A (order), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 430 | 45480 | fastest |
+| symfony-json | 436 | 45480 | similar |
+| jms-json | 1338 | 45480 | slower |
+
+**D (event), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 3.84 | 267 | fastest |
+| symfony-json | 5.76 | 267 | slower |
+| jms-json | 26.5 | 267 | slower |
+
+**D (event), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 221 | 25976 | fastest |
+| symfony-json | 230 | 25976 | close |
+| jms-json | 678 | 25976 | slower |
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 3.00 | 168 | fastest |
+| symfony-json | 4.96 | 168 | slower |
+| jms-json | 23.7 | 168 | slower |
+
+**B (flat), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 164 | 16337 | fastest |
+| symfony-json | 166 | 16337 | close |
+| jms-json | 381 | 16337 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 3.23 | 326 | fastest |
+| symfony-json | 4.93 | 326 | slower |
+| jms-json | 25.7 | 326 | slower |
+
+**E (words), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 251 | 34941 | fastest |
+| symfony-json | 260 | 34941 | slower |
+| jms-json | 907 | 34941 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 23.8 | 654 | fastest |
+| symfony-json | 26.2 | 654 | slower |
+| jms-json | 53.3 | 654 | slower |
+
+**C (sensor), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 2098 | 65984 | fastest |
+| symfony-json | 2106 | 65984 | similar |
+| jms-json | 3012 | 65984 | slower |
 
 ### javascript
 

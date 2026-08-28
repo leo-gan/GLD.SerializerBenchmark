@@ -277,7 +277,45 @@ install_c_hint() {
   echo "[NOTE] C third-party libs are built by c/scripts/fetch-and-build-deps.sh on first run."
 }
 
-KNOWN=(analysis csharp python go rust javascript c java kotlin cpp swift)
+install_php() {
+  bench_extend_host_path
+  export PATH="${HOME}/.local/php/bin:${HOME}/.local/bin:${PATH}"
+  if command -v php >/dev/null 2>&1; then
+    echo "[OK] php already present: $(php -v | head -1)"
+  else
+    local arch php_arch
+    arch="$(uname -m)"
+    case "$arch" in
+      x86_64) php_arch=x86_64 ;;
+      aarch64|arm64) php_arch=aarch64 ;;
+      *) echo "[ERROR] Unsupported arch for static PHP: $arch" >&2; exit 1 ;;
+    esac
+    local url="https://dl.static-php.dev/static-php-cli/common/php-8.3.19-cli-linux-${php_arch}.tar.gz"
+    echo "[INFO] Installing static PHP 8.3 CLI to ~/.local/php from ${url} ..."
+    mkdir -p "${HOME}/.local/php/bin" /tmp/php-cli-install
+    curl -fL "$url" -o /tmp/php-cli-install/php.tar.gz
+    tar -xzf /tmp/php-cli-install/php.tar.gz -C /tmp/php-cli-install
+    local bin
+    bin="$(find /tmp/php-cli-install -type f -name php -perm -u+x | head -1)"
+    if [[ -z "$bin" ]]; then
+      echo "[ERROR] php binary missing from archive" >&2
+      exit 1
+    fi
+    install -m 0755 "$bin" "${HOME}/.local/php/bin/php"
+    echo "[OK] $(php -v | head -1)"
+  fi
+  if command -v composer >/dev/null 2>&1; then
+    echo "[OK] composer already present: $(composer -V | head -1)"
+    return
+  fi
+  echo "[INFO] Installing composer to ~/.local/bin ..."
+  mkdir -p "${HOME}/.local/bin"
+  curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+  php /tmp/composer-setup.php --install-dir="${HOME}/.local/bin" --filename=composer --quiet
+  echo "[OK] $(composer -V | head -1)"
+}
+
+KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift)
 
 resolve_targets() {
   local args=("$@")
@@ -289,7 +327,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java kotlin cpp swift)
+      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift)
     fi
     return
   fi
@@ -332,6 +370,9 @@ for t in "${TARGETS[@]}"; do
       ;;
     kotlin|kt)
       install_java
+      ;;
+    php)
+      install_php
       ;;
     cpp|c++|cxx|cplusplus)
       install_cpp

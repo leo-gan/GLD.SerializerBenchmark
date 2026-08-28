@@ -46,6 +46,7 @@ Compare 100+ serialization libraries across **ten languages**.
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 20
 - [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 26
+- [PHP](https://leo-gan.github.io/GLD.SerializerBenchmark/php/) — 15
 - [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 16
 - [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 16
 - [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 14

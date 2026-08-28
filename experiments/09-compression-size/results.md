@@ -16,6 +16,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | — | protobuf | protobuf | — | protobuf | no | [go/results.md](go/results.md) |
 | java | — | protobuf | jsoniter | — | jsoniter | no | [java/results.md](java/results.md) |
 | kotlin | — | protobuf | protobuf | — | moshi-codegen | no | [kotlin/results.md](kotlin/results.md) |
+| php | — | json | rybakit-msgpack | — | json | no | [php/results.md](php/results.md) |
 | javascript | — | JSON.stringify | msgpackr | — | JSON.stringify | no | [javascript/results.md](javascript/results.md) |
 | rust | — | prost | prost | — | rmp-serde | no | [rust/results.md](rust/results.md) |
 | c | — | protobuf-wire | protobuf-wire | — | protobuf-wire | no | [c/results.md](c/results.md) |
@@ -39,6 +40,9 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | kotlin | B (flat) | protobuf | — | no |
 | kotlin | C (sensor) | protobuf | — | no |
 | kotlin | E (words) | moshi-codegen | — | no |
+| php | B (flat) | json | — | no |
+| php | C (sensor) | rybakit-msgpack | — | no |
+| php | E (words) | json | — | no |
 | javascript | B (flat) | JSON.stringify | — | no |
 | javascript | C (sensor) | msgpackr | — | no |
 | javascript | E (words) | JSON.stringify | — | no |
@@ -66,6 +70,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | ok | — | — |
 | java | ok | — | — |
 | kotlin | ok | — | — |
+| php | ok | — | — |
 | javascript | ok | — | — |
 | rust | ok | — | — |
 | c | ok | — | — |
@@ -190,6 +195,32 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | moshi-codegen | 102 | 2407 | slower |
 | msgpack | 170 | 1212 | slower |
 | jackson | 199 | 2407 | slower |
+
+### php
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 2.78 | 168 | fastest |
+| rybakit-msgpack | 8.80 | 126 | slower |
+| protobuf | 47.8 | 54 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 3.00 | 326 | fastest |
+| rybakit-msgpack | 12.3 | 261 | slower |
+| protobuf | 115 | 283 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| rybakit-msgpack | 50.7 | 1203 | fastest |
+| json | 83.2 | 2406 | slower |
+| protobuf | 277 | 1052 | slower |
 
 ### javascript
 

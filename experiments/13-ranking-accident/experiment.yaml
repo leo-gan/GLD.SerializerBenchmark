@@ -83,6 +83,13 @@ languages:
       - {name: moshi-reflect, writes_named_fields: true, role: Moshi reflection}
       - {name: gson, writes_named_fields: true, role: Google JSON library}
 
+  - id: php
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: stdlib json_encode / json_decode}
+      - {name: symfony-json, writes_named_fields: true, role: Symfony Serializer JSON}
+      - {name: jms-json, writes_named_fields: true, role: JMS Serializer JSON}
+
   - id: javascript
     enabled: true
     libraries:

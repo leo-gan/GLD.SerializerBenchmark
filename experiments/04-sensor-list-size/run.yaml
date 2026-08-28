@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 04-sensor-list-size
-description: When is JSON too large for a sensor list?
+description: When is JSON too big for a sensor?
 data_model_version: 2
 types:
 - type_id: telemetry

@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 07-write-once-read-many
-description: Write once, read many times
+description: Fast to write, or fast to read?
 data_model_version: 2
 types:
 - type_id: document

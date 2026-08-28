@@ -87,6 +87,33 @@ check_javascript() {
 }
 
 
+check_php() {
+  echo "php"
+  local php_bin=""
+  if [[ -x "${HOME}/.local/php/bin/php" ]]; then
+    php_bin="${HOME}/.local/php/bin/php"
+  elif command -v php >/dev/null 2>&1; then
+    php_bin="$(command -v php)"
+  fi
+  if [[ -n "$php_bin" ]]; then
+    ver="$("$php_bin" -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')"
+    major="$("$php_bin" -r 'echo PHP_MAJOR_VERSION;')"
+    minor="$("$php_bin" -r 'echo PHP_MINOR_VERSION;')"
+    if [[ "$major" -gt 8 || ( "$major" -eq 8 && "$minor" -ge 2 ) ]]; then
+      ok "php $("$php_bin" -v | head -1)"
+    else
+      miss "php 8.2+ (found: $ver) — ./scripts/install-host-requirements.sh php"
+    fi
+  else
+    miss "php 8.2+ — ./scripts/install-host-requirements.sh php"
+  fi
+  if [[ -x "${HOME}/.local/bin/composer" ]] || command -v composer >/dev/null 2>&1; then
+    ok "composer"
+  else
+    miss "composer — ./scripts/install-host-requirements.sh php"
+  fi
+}
+
 check_kotlin() {
   echo "kotlin"
   local java_bin=""
@@ -195,7 +222,7 @@ check_swift() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c java kotlin cpp swift)
+KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift)
 
 resolve_targets() {
   local args=("$@")
@@ -208,7 +235,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java kotlin cpp swift)
+      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift)
     fi
     return
   fi
@@ -235,6 +262,7 @@ for t in "${TARGETS[@]}"; do
     c|native) check_c ;;
     java|jdk|jvm) check_java ;;
     kotlin|kt) check_kotlin ;;
+    php) check_php ;;
     cpp|c++|cxx|cplusplus) check_cpp ;;
     swift) check_swift ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;

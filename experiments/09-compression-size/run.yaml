@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 09-compression-size
-description: Just turn compression on
+description: Does squeezing the bytes make JSON small enough?
 data_model_version: 2
 types:
 - type_id: strings

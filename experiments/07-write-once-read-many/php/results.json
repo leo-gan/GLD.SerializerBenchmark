@@ -1,0 +1,122 @@
+{
+  "status": "ok",
+  "language": "php",
+  "csv": "experiments/07-write-once-read-many/php/logs/php/2026-08-28-113609.csv",
+  "error": null,
+  "top_groups": [
+    {
+      "method": "cliffs_delta_vs_fastest",
+      "kind": "document",
+      "n": 1,
+      "io": "memory",
+      "similar_max": 0.147,
+      "close_max": 0.33,
+      "reference": "protobuf",
+      "similar": [
+        "protobuf"
+      ],
+      "close": [],
+      "time_size_front": [
+        "protobuf"
+      ]
+    },
+    {
+      "method": "cliffs_delta_vs_fastest",
+      "kind": "telemetry",
+      "n": 1,
+      "io": "memory",
+      "similar_max": 0.147,
+      "close_max": 0.33,
+      "reference": "protobuf",
+      "similar": [
+        "protobuf"
+      ],
+      "close": [],
+      "time_size_front": [
+        "protobuf"
+      ]
+    }
+  ],
+  "top_group": {
+    "method": "cliffs_delta_vs_fastest",
+    "kind": "document",
+    "n": 1,
+    "io": "memory",
+    "similar_max": 0.147,
+    "close_max": 0.33,
+    "reference": "protobuf",
+    "similar": [
+      "protobuf"
+    ],
+    "close": [],
+    "time_size_front": [
+      "protobuf"
+    ]
+  },
+  "rows": [
+    {
+      "library": "protobuf",
+      "kind": "document",
+      "n": 1,
+      "version": "v4.33.6+php",
+      "role": "Protocol Buffers",
+      "writes_named_fields": true,
+      "io": "memory",
+      "stream_kind": "copied",
+      "write_median_ns": 128957,
+      "read_median_ns": 71275,
+      "total_median_ns": 200439,
+      "write_median_us": 128.957,
+      "read_median_us": 71.275,
+      "total_median_us": 200.439,
+      "total_mean_ns": 200474,
+      "total_p95_ns": 217050,
+      "total_p99_ns": 217957,
+      "total_ci_low_ns": 198451,
+      "total_ci_high_ns": 202374,
+      "size_bytes": 160,
+      "size_gzip_bytes": 2060,
+      "fidelity": 1.0,
+      "runs": 81,
+      "runs_raw": 100,
+      "outliers_removed": 18,
+      "in_comparison": true,
+      "tier": "fastest",
+      "cliffs_delta_vs_fastest": 0.0,
+      "cliffs_label": "reference",
+      "on_time_size_front": true
+    },
+    {
+      "library": "protobuf",
+      "kind": "telemetry",
+      "n": 1,
+      "version": "v4.33.6+php",
+      "role": "Protocol Buffers",
+      "writes_named_fields": true,
+      "io": "memory",
+      "stream_kind": "copied",
+      "write_median_ns": 594797,
+      "read_median_ns": 369568,
+      "total_median_ns": 964110,
+      "write_median_us": 594.797,
+      "read_median_us": 369.568,
+      "total_median_us": 964.11,
+      "total_mean_ns": 964470,
+      "total_p95_ns": 1000506,
+      "total_p99_ns": 1009060,
+      "total_ci_low_ns": 959878,
+      "total_ci_high_ns": 968847,
+      "size_bytes": 4124,
+      "size_gzip_bytes": 2060,
+      "fidelity": 1.0,
+      "runs": 85,
+      "runs_raw": 100,
+      "outliers_removed": 14,
+      "in_comparison": true,
+      "tier": "fastest",
+      "cliffs_delta_vs_fastest": 0.0,
+      "cliffs_label": "reference",
+      "on_time_size_front": true
+    }
+  ]
+}

@@ -15,6 +15,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | orjson | — | — | — | orjson | no | [python/results.md](python/results.md) |
 | java | jackson | — | — | — | jackson | no | [java/results.md](java/results.md) |
 | kotlin | jackson | — | — | — | jackson | no | [kotlin/results.md](kotlin/results.md) |
+| php | json | — | — | — | json | no | [php/results.md](php/results.md) |
 | javascript | JSON.stringify | — | — | — | JSON.stringify | no | [javascript/results.md](javascript/results.md) |
 | rust | serde_json | — | — | — | serde_json | no | [rust/results.md](rust/results.md) |
 | c | yyjson | — | — | — | yyjson | no | [c/results.md](c/results.md) |
@@ -33,6 +34,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | java | E (words) | jackson | — | no |
 | kotlin | A (order) | jackson | — | no |
 | kotlin | E (words) | jackson | — | no |
+| php | A (order) | json | — | no |
+| php | E (words) | json | — | no |
 | javascript | A (order) | JSON.stringify | — | no |
 | javascript | E (words) | JSON.stringify | — | no |
 | rust | A (order) | serde_json | — | no |
@@ -55,6 +58,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | ok | `orjson` | — |
 | java | ok | `jackson` | — |
 | kotlin | ok | `jackson` | — |
+| php | ok | `json` | — |
 | javascript | ok | `JSON.stringify` | — |
 | rust | ok | `serde_json` | — |
 | c | ok | `yyjson` | — |
@@ -114,6 +118,22 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | jackson | 61.2 | 411 | fastest |
 | tomlkt | 112 | 570 | slower |
 | kaml | 286 | 470 | slower |
+
+### php
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 6.33 | 454 | fastest |
+| yaml | 294 | 515 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 3.26 | 326 | fastest |
+| yaml | 194 | 386 | slower |
 
 ### javascript
 

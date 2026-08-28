@@ -143,6 +143,7 @@ Add the library to the language package manifest and restore/build once:
 | JavaScript | `javascript/package.json` → `npm install` |
 | Java | `java/pom.xml` → `mvn -q -DskipTests package` |
 | Kotlin | `kotlin/build.gradle.kts` → `./gradlew shadowJar` |
+| PHP | `php/composer.json` → `composer install` |
 | C / C++ / Swift | language README (system or vendored deps) |
 
 Pin a sensible range (for example NuGet `1.*`, cargo compatible versions). Prefer the latest stable major the suite already uses for peers.
@@ -162,6 +163,7 @@ Typical locations:
 | JavaScript | `javascript/src/serializers/` | suite interface |
 | Java | `java/src/main/java/benchmark/serializers/` | suite interface |
 | Kotlin | `kotlin/src/main/kotlin/benchmark/serializers/` | suite interface |
+| PHP | `php/src/Serializers/` | suite interface |
 
 **Name property:** stable display string used as CSV `SerializerName` (for example `LightProto`, `ProtoBuf`). Do not change existing names without a docs migration.
 

@@ -76,6 +76,7 @@ jobs:
       go: ${{ steps.filter.outputs.go }}
       java: ${{ steps.filter.outputs.java }}
       kotlin: ${{ steps.filter.outputs.kotlin }}
+      php: ${{ steps.filter.outputs.php }}
       cpp: ${{ steps.filter.outputs.cpp }}
       swift: ${{ steps.filter.outputs.swift }}
       analysis: ${{ steps.filter.outputs.analysis }}
@@ -115,6 +116,9 @@ jobs:
               - 'schemas/**'
             kotlin:
               - 'kotlin/**'
+              - 'schemas/**'
+            php:
+              - 'php/**'
               - 'schemas/**'
             cpp:
               - 'cpp/**'
@@ -368,6 +372,38 @@ jobs:
           cd kotlin
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+  php-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.php == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+          coverage: none
+
+      - name: Setup Python for run-config resolution
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML (resolve_run_config)
+        run: pip install pyyaml
+
+      - name: Check host requirements (php)
+        run: ./scripts/check-host-requirements.sh php
+
+      - name: Run PHP Benchmark
+        run: |
+          cd php
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
   cpp-benchmark:
     needs: changes
     if: >-
@@ -467,7 +503,8 @@ jobs:
           $PY scripts/read-config.py --enabled-langs | grep -qw go
           $PY scripts/read-config.py --enabled-langs | grep -qw java
           $PY scripts/read-config.py --enabled-langs | grep -qw kotlin
+          $PY scripts/read-config.py --enabled-langs | grep -qw php
           $PY scripts/read-config.py --enabled-langs | grep -qw cpp
           $PY scripts/read-config.py --enabled-langs | grep -qw swift
-          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|kotlin|cpp|swift)\|'
+          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|kotlin|php|cpp|swift)\|'
           test "$($PY scripts/read-config.py --mode-reps smoke)" = "2"

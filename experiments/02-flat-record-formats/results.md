@@ -18,6 +18,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | go | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [go/results.md](go/results.md) |
 | java | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [java/results.md](java/results.md) |
 | kotlin | ok | `protobuf` | — | `protobuf` | [kotlin/results.md](kotlin/results.md) |
+| php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | javascript | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [javascript/results.md](javascript/results.md) |
 | rust | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [rust/results.md](rust/results.md) |
 | c | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [c/results.md](c/results.md) |
@@ -33,6 +34,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | go | missing | — | — | — |
 | java | missing | — | — | — |
 | kotlin | ok | `protobuf` | — | `protobuf` |
+| php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` |
 | javascript | missing | — | — | — |
 | rust | missing | — | — | — |
 | c | missing | — | — | — |
@@ -77,6 +79,24 @@ no CSV in this language folder yet
 | kotlinx-json | 246 | 15546 | JSON — compiler-generated kotlinx.serialization | slower |
 | jackson | 356 | 15546 | JSON — common default | slower |
 | msgpack | 368 | 11031 | MessagePack | slower |
+
+### php
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json | 2.83 | 168 | JSON — stdlib | fastest |
+| rybakit-msgpack | 8.49 | 126 | MessagePack | slower |
+| protobuf | 47.0 | 54 | Protocol Buffers | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json | 157 | 16337 | JSON — stdlib | fastest |
+| rybakit-msgpack | 417 | 11818 | MessagePack | slower |
+| protobuf | 3623 | 4665 | Protocol Buffers | slower |
 
 ### javascript
 

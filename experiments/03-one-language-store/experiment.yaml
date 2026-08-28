@@ -70,6 +70,13 @@ languages:
       - {name: kotlinx-json, writes_named_fields: true, role: other languages can read — JSON}
       - {name: protobuf, writes_named_fields: true, role: other languages can read — Protocol Buffers}
 
+  - id: php
+    enabled: true
+    libraries:
+      - {name: serialize, writes_named_fields: true, role: one language — PHP serialize}
+      - {name: json, writes_named_fields: true, role: other languages can read — JSON}
+      - {name: rybakit-msgpack, writes_named_fields: true, role: other languages can read — MessagePack}
+
   - id: go
     enabled: true
     libraries:

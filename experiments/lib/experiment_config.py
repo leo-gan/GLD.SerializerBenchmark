@@ -29,6 +29,7 @@ RUNNERS: dict[str, str] = {
     "csharp": "c-sharp/scripts/run-benchmarks.sh",
     "swift": "swift/scripts/run-benchmarks.sh",
     "kotlin": "kotlin/scripts/run-benchmarks.sh",
+    "php": "php/scripts/run-benchmarks.sh",
 }
 
 

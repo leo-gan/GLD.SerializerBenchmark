@@ -60,6 +60,12 @@ languages:
       - {name: kaml, writes_named_fields: true, role: YAML — kaml}
       - {name: tomlkt, writes_named_fields: true, role: TOML}
 
+  - id: php
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: JSON}
+      - {name: yaml, writes_named_fields: true, role: YAML — Symfony}
+
   - id: javascript
     enabled: true
     libraries:

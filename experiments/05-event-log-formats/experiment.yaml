@@ -63,6 +63,13 @@ languages:
       - {name: avro4k, writes_named_fields: true, role: Avro — avro4k}
       - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
 
+  - id: php
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: JSON — stdlib}
+      - {name: avro, writes_named_fields: true, role: Avro}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
   - id: go
     enabled: true
     libraries:

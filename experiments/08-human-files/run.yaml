@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 08-human-files
-description: Files people edit are not a request path
+description: Can we send YAML on the live path?
 data_model_version: 2
 types:
 - type_id: document

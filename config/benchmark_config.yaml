@@ -218,6 +218,7 @@ paths:
     go: logs/go
     java: logs/java
     kotlin: logs/kotlin
+    php: logs/php
     cpp: logs/cpp
     swift: logs/swift
   # Result files are timestamped to preserve history across runs.
@@ -1042,6 +1043,92 @@ languages:
         package: org.apache.thrift:libthrift
         rationale: "Apache Thrift compact protocol from Kotlin"
         optimal_api: "TCompactProtocol + TMemoryBuffer; field ids match suite proto"
+
+  php:
+    display_name: PHP
+    enabled: true
+    runner_dir: php
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/php
+    time_unit: nanoseconds
+    docs_dir: docs/php
+    min_php_version: "8.2"
+    serializers:
+      - name: json
+        category: json
+        package: php-json
+        rationale: "stdlib json_encode / json_decode"
+        optimal_api: "json_encode($v, JSON_THROW_ON_ERROR); json_decode($s, true, 512, JSON_THROW_ON_ERROR)"
+      - name: simdjson
+        category: json
+        package: ext-simdjson
+        rationale: "PECL SIMDJSON decode; encode is json_encode (same honesty as the C++ simdjson row)"
+        optimal_api: "json_encode + simdjson_decode"
+      - name: serialize
+        category: binary
+        package: php-serialize
+        rationale: "PHP native serialize/unserialize — one language only"
+        optimal_api: "serialize / unserialize"
+      - name: igbinary
+        category: binary
+        package: ext-igbinary
+        rationale: "PECL igbinary — C replacement for serialize"
+        optimal_api: "igbinary_serialize / igbinary_unserialize"
+      - name: msgpack-pecl
+        category: binary
+        package: ext-msgpack
+        rationale: "PECL MessagePack C extension"
+        optimal_api: "msgpack_pack / msgpack_unpack"
+      - name: rybakit-msgpack
+        category: binary
+        package: rybakit/msgpack
+        rationale: "Pure-PHP MessagePack (baseline vs PECL)"
+        optimal_api: "Packer::pack / BufferUnpacker::reset()->unpack"
+      - name: protobuf
+        category: schema
+        package: google/protobuf
+        rationale: "Official protobuf PHP; uses ext-protobuf when loaded"
+        optimal_api: "serializeToString / mergeFromString on generated messages"
+      - name: symfony-json
+        category: json
+        package: symfony/serializer
+        rationale: "Symfony Serializer JSON encoder"
+        optimal_api: "Serializer::serialize/deserialize format=json"
+      - name: symfony-xml
+        category: text
+        package: symfony/serializer
+        rationale: "Symfony Serializer XML encoder"
+        optimal_api: "Serializer::serialize/deserialize format=xml"
+      - name: jms-json
+        category: json
+        package: jms/serializer
+        rationale: "JMS Serializer JSON"
+        optimal_api: "SerializerInterface::serialize/deserialize json"
+      - name: bson
+        category: binary
+        package: ext-mongodb
+        rationale: "Official MongoDB BSON (ext-mongodb)"
+        optimal_api: "MongoDB\\BSON\\Document::fromPHP / fromBSON"
+      - name: avro
+        category: schema
+        package: flix-tech/avro-php
+        rationale: "Apache Avro binary via official PHP library fork"
+        optimal_api: "AvroIODatumWriter / AvroIODatumReader"
+      - name: cbor
+        category: binary
+        package: spomky-labs/cbor-php
+        rationale: "RFC 8949 CBOR"
+        optimal_api: "Encoder::encode / Decoder::decode+normalize"
+      - name: yaml
+        category: text
+        package: symfony/yaml
+        rationale: "Symfony YAML (pure PHP)"
+        optimal_api: "Yaml::dump / Yaml::parse"
+      - name: yaml-pecl
+        category: text
+        package: ext-yaml
+        rationale: "PECL LibYAML"
+        optimal_api: "yaml_emit / yaml_parse"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

@@ -16,6 +16,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 |----------|--------|--------------------|-----------|-----------------|------------|
 | java | ok | `jackson-smile`, `jackson`, `jackson-cbor` | — | `jackson-smile` | [java/results.md](java/results.md) |
 | kotlin | ok | `jackson-cbor`, `jackson` | — | `jackson-cbor`, `msgpack`, `kotlinx-ion` | [kotlin/results.md](kotlin/results.md) |
+| php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify`, `msgpackr` | [javascript/results.md](javascript/results.md) |
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `vmihailenco/msgpack` | [go/results.md](go/results.md) |
 | rust | ok | `rmp-serde` | — | `rmp-serde` | [rust/results.md](rust/results.md) |
@@ -50,6 +51,16 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | msgpack | 162 | 317 | MessagePack | slower |
 | kotlinx-ion | 183 | 234 | Ion | slower |
 | kbson | 191 | 1032 | BSON | slower |
+
+### php
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json | 5.97 | 454 | JSON | fastest |
+| rybakit-msgpack | 22.2 | 335 | MessagePack | slower |
+| cbor | 243 | 339 | CBOR | slower |
 
 ### javascript
 

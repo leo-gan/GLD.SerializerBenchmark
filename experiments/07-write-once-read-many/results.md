@@ -16,6 +16,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | ZeroFormatter | — | MemoryPack | — | — | no | [csharp/results.md](csharp/results.md) |
 | java | flatbuffers | — | flatbuffers | — | — | no | [java/results.md](java/results.md) |
 | kotlin | flatbuffers | — | flatbuffers | — | — | no | [kotlin/results.md](kotlin/results.md) |
+| php | protobuf | — | protobuf | — | — | no | [php/results.md](php/results.md) |
 | javascript | flatbuffers | — | flatbuffers | — | — | no | [javascript/results.md](javascript/results.md) |
 | python | protobuf | — | protobuf | — | — | no | [python/results.md](python/results.md) |
 | rust | rkyv | — | rkyv | — | — | no | [rust/results.md](rust/results.md) |
@@ -34,6 +35,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | java | C (sensor) | flatbuffers | — | no |
 | kotlin | A (order) | flatbuffers | — | no |
 | kotlin | C (sensor) | flatbuffers | — | no |
+| php | A (order) | protobuf | — | no |
+| php | C (sensor) | protobuf | — | no |
 | javascript | A (order) | flatbuffers | — | no |
 | javascript | C (sensor) | flatbuffers | — | no |
 | python | A (order) | protobuf | — | no |
@@ -53,6 +56,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | ok | `ZeroFormatter` | — |
 | java | ok | `flatbuffers` | `protobuf` |
 | kotlin | ok | `flatbuffers` | `protobuf` |
+| php | ok | `protobuf` | — |
 | javascript | ok | `flatbuffers` | — |
 | python | ok | `protobuf` | — |
 | rust | ok | `rkyv` | — |
@@ -138,6 +142,20 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | flatbuffers | 72.0 | 51.5 | 4192 | fastest |
 | protobuf | 78.8 | 52.2 | 4128 | similar |
 | capnproto | 91.2 | 67.1 | 4184 | slower |
+
+### php
+
+**A (order), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| protobuf | 129 | 71.3 | 160 | fastest |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| protobuf | 595 | 370 | 4124 | fastest |
 
 ### javascript
 

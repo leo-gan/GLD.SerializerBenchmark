@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 13-ranking-accident
-description: Is the ranking an accident?
+description: Does the ranking stay the same if we change the data?
 data_model_version: 2
 types:
 - type_id: document

@@ -17,6 +17,7 @@
     java: "java",
     javascript: "javascript",
     kotlin: "kotlin",
+    php: "php",
     python: "python",
     rust: "rust",
     swift: "swift",

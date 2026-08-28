@@ -67,6 +67,7 @@ plugins:
         'java/results.md': 'java/index.md'
         'javascript/results.md': 'javascript/index.md'
         'kotlin/results.md': 'kotlin/index.md'
+        'php/results.md': 'php/index.md'
         'python/results.md': 'python/index.md'
         'rust/results.md': 'rust/index.md'
         'swift/results.md': 'swift/index.md'
@@ -158,6 +159,7 @@ nav:
           - "Kotlin: Protostuff vs protobuf": theory/401/kotlin-protostuff-vs-protobuf.md
           - "Kotlin: kotlinx-json vs Moshi": theory/401/kotlin-kotlinx-json-vs-moshi.md
           - "Kotlin: FlatBuffers vs protobuf": theory/401/kotlin-flatbuffers-vs-protobuf.md
+          - "PHP: JSON vs protobuf": theory/401/php-json-vs-protobuf.md
           - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
           - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
           - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
@@ -178,6 +180,8 @@ nav:
           - Overview: javascript/index.md
       - Kotlin:
           - Overview: kotlin/index.md
+      - PHP:
+          - Overview: php/index.md
       - Python:
           - Overview: python/index.md
       - Rust:

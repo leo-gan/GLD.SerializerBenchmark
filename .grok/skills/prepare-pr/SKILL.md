@@ -88,6 +88,12 @@ Kotlin (optional): if JDK 17+ and `kotlin/gradlew` exist:
 ( cd kotlin && ./gradlew test -q ) || echo "[WARN] kotlin tests failed or skipped"
 ```
 
+PHP (optional): if `php` 8.2+ and `php/vendor/autoload.php` exist:
+
+```bash
+( cd php && php tests/HarnessTest.php ) || echo "[WARN] php tests failed or skipped"
+```
+
 C++ (optional): if `cmake` and a C++20 compiler are available:
 
 ```bash
@@ -124,6 +130,7 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 | `go/**` | → `go` |
 | `java/**` | → `java` |
 | `kotlin/**` | → `kotlin` |
+| `php/**` | → `php` |
 | `cpp/**` | → `cpp` |
 | `swift/**` | → `swift` |
 | **Shared (force all enabled langs)** — only *real* contract inputs | |
@@ -170,7 +177,7 @@ else
 fi
 ```
 
-- Language id must match `config/benchmark_config.yaml` / `run-all-benchmarks.sh -l` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`, `kotlin`, `cpp`, `swift`).
+- Language id must match `config/benchmark_config.yaml` / `run-all-benchmarks.sh -l` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`).
 - Capture `BENCHMARK_TS` / stem from the log (`Run timestamp:`) or the newest result CSV under `logs/<lang>/` for **each** changed language.
 - Long-running: high timeout / background + monitor.
 
