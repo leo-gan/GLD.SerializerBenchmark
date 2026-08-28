@@ -110,14 +110,15 @@ function pickPreferredFixture(options) {
 }
 
 const LANGUAGE_CATALOG = [
-  { id: 'csharp', label: 'C#' },
-  { id: 'rust', label: 'Rust' },
-  { id: 'go', label: 'Go' },
-  { id: 'python', label: 'Python' },
-  { id: 'javascript', label: 'JavaScript' },
   { id: 'c', label: 'C' },
-  { id: 'java', label: 'Java' },
+  { id: 'csharp', label: 'C#' },
   { id: 'cpp', label: 'C++' },
+  { id: 'go', label: 'Go' },
+  { id: 'java', label: 'Java' },
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'kotlin', label: 'Kotlin' },
+  { id: 'python', label: 'Python' },
+  { id: 'rust', label: 'Rust' },
   { id: 'swift', label: 'Swift' },
 ];
 
@@ -1184,6 +1185,7 @@ function updateRunMeta() {
       rust: 'rustc',
       go: 'Go',
       java: 'Java',
+      kotlin: 'Kotlin',
       c: 'gcc',
       cpp: 'g++',
       swift: 'Swift',
@@ -1213,6 +1215,7 @@ const RUNTIME_KEY_BY_LANG = {
   c: 'gcc',
   cpp: 'g++',
   java: 'java',
+  kotlin: 'java',
   swift: 'swift',
 };
 

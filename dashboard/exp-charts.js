@@ -299,6 +299,7 @@ const LANG_AXIS = {
   javascript: 'JavaScript',
   c: 'C',
   java: 'Java',
+  kotlin: 'Kotlin',
   cpp: 'C++',
   swift: 'Swift',
 };

@@ -277,7 +277,7 @@ install_c_hint() {
   echo "[NOTE] C third-party libs are built by c/scripts/fetch-and-build-deps.sh on first run."
 }
 
-KNOWN=(analysis csharp python go rust javascript c java cpp swift)
+KNOWN=(analysis csharp python go rust javascript c java kotlin cpp swift)
 
 resolve_targets() {
   local args=("$@")
@@ -289,7 +289,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java cpp swift)
+      TARGETS+=(csharp python go rust javascript c java kotlin cpp swift)
     fi
     return
   fi
@@ -328,6 +328,9 @@ for t in "${TARGETS[@]}"; do
       install_c_hint
       ;;
     java|jdk|jvm)
+      install_java
+      ;;
+    kotlin|kt)
       install_java
       ;;
     cpp|c++|cxx|cplusplus)

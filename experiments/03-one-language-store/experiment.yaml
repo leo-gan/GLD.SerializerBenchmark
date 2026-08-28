@@ -62,6 +62,14 @@ languages:
       - {name: jsoniter, writes_named_fields: true, role: other languages can read — JSON}
       - {name: protobuf, writes_named_fields: true, role: other languages can read — Protocol Buffers}
 
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: kryo, writes_named_fields: true, role: one language — Kryo}
+      - {name: fory, writes_named_fields: true, role: one language — Apache Fory}
+      - {name: kotlinx-json, writes_named_fields: true, role: other languages can read — JSON}
+      - {name: protobuf, writes_named_fields: true, role: other languages can read — Protocol Buffers}
+
   - id: go
     enabled: true
     libraries:

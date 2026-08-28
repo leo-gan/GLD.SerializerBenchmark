@@ -40,6 +40,7 @@ const LANG_LABELS = {
   javascript: 'JavaScript',
   c: 'C',
   java: 'Java',
+  kotlin: 'Kotlin',
   cpp: 'C++',
   swift: 'Swift',
 };

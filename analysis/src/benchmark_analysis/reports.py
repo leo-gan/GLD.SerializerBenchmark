@@ -702,6 +702,8 @@ def _lang_display_map() -> dict:
             "go": "Go",
             "cpp": "C++",
             "java": "Java",
+            "kotlin": "Kotlin",
+            "swift": "Swift",
         }
 
 
@@ -720,6 +722,8 @@ def _lang_docs_dir_map() -> dict:
             "go": "go",
             "cpp": "cpp",
             "java": "java",
+            "kotlin": "kotlin",
+            "swift": "swift",
         }
 
 
@@ -729,7 +733,7 @@ def _lang_order_list() -> list:
 
         return list(lang_order())
     except Exception:
-        return ["csharp", "python", "rust", "c", "javascript", "go", "java", "cpp"]
+        return ["csharp", "python", "rust", "c", "javascript", "go", "java", "kotlin", "cpp", "swift"]
 
 
 def _normalize_lang_id(lang: str) -> str:

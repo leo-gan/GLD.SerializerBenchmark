@@ -74,7 +74,7 @@ See [Test data](test_data_configuration.md) for field shapes and batch rules.
 
 - Expand cells with `./scripts/resolve_run_config.py`.
 - Emit CSV columns `DataTypeInstanceCount` and `TypeConfigHash` when measuring batch cells.
-- Generators live under each language tree (for example `python/.../data_v2`, `go/model/v2`, `rust/src/data_v2.rs`, `javascript/src/data_v2.js`).
+- Generators live under each language tree (for example `python/.../data_v2`, `go/model/v2`, `rust/src/data_v2.rs`, `javascript/src/data_v2.js`, `kotlin/.../model/v2`).
 - Wire schemas: `schemas/v2/` and `scripts/schemas/generate-all.sh`.
 - Catalog defaults: `schemas/data_catalog_v2.yaml`.
 

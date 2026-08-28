@@ -81,6 +81,12 @@ Java (optional): if JDK 17+ and Maven are available:
 ( cd java && mvn -q test ) || echo "[WARN] java tests failed or skipped"
 ```
 
+Kotlin (optional): if JDK 17+ and `kotlin/gradlew` exist:
+
+```bash
+( cd kotlin && ./gradlew test -q ) || echo "[WARN] kotlin tests failed or skipped"
+```
+
 C++ (optional): if `cmake` and a C++20 compiler are available:
 
 ```bash
@@ -116,6 +122,7 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 | `javascript/**` | → `javascript` |
 | `go/**` | → `go` |
 | `java/**` | → `java` |
+| `kotlin/**` | → `kotlin` |
 | `cpp/**` | → `cpp` |
 | `swift/**` | → `swift` |
 | **Shared (force all enabled langs)** — only *real* contract inputs | |
@@ -162,7 +169,7 @@ else
 fi
 ```
 
-- Language id must match `config/benchmark_config.yaml` / `run-all-benchmarks.sh -l` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`, `cpp`).
+- Language id must match `config/benchmark_config.yaml` / `run-all-benchmarks.sh -l` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`, `kotlin`, `cpp`, `swift`).
 - Capture `BENCHMARK_TS` / stem from the log (`Run timestamp:`) or the newest result CSV under `logs/<lang>/` for **each** changed language.
 - Long-running: high timeout / background + monitor.
 

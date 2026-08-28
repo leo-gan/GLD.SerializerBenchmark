@@ -78,6 +78,22 @@ def test_infer_language_from_path_cpp_not_c(tmp_path):
     assert recs[0]["Language"] == "cpp"
 
 
+def test_infer_language_from_path_kotlin_not_java(tmp_path):
+    """logs/kotlin must not be mistaken for Language=java."""
+    from benchmark_analysis.parser import parse_csv_file
+    d = tmp_path / "logs" / "kotlin"
+    d.mkdir(parents=True)
+    csv = d / "2026-08-27-120000.csv"
+    csv.write_text(
+        "StringOrStream,TestDataName,Repetitions,RepetitionIndex,SerializerName,"
+        "TimeSer,TimeDeser,Size,TimeSerAndDeser,OpPerSecSer,OpPerSecDeser,OpPerSecSerAndDeser\n"
+        "bytes,message,2,0,kotlinx-json,1,2,3,3,1,1,1\n"
+    )
+    recs, _ = parse_csv_file(str(csv))
+    assert recs
+    assert recs[0]["Language"] == "kotlin"
+
+
 def test_parse_size_gzip_zstd():
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
         w = csv.writer(f)

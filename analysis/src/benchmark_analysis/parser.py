@@ -32,7 +32,9 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
             ("/javascript/", "javascript"),
             ("/logs/go/", "go"),
             ("/go/", "go"),
+            ("/kotlin/", "kotlin"),
             ("/java/", "java"),
+            ("/swift/", "swift"),
             ("/cpp/", "cpp"),
             ("/logs/c/", "c"),
         ):
@@ -45,8 +47,12 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
             parts = [p for p in low.split("/") if p]
             if "cpp" in parts or "c++" in parts or "cxx" in parts:
                 language_hint = "cpp"
+            elif "kotlin" in parts:
+                language_hint = "kotlin"
             elif "java" in parts:
                 language_hint = "java"
+            elif "swift" in parts:
+                language_hint = "swift"
             elif "c" in parts:
                 language_hint = "c"
             elif low.endswith(("/c", "/c/", "/c.csv")):

@@ -87,6 +87,33 @@ check_javascript() {
 }
 
 
+check_kotlin() {
+  echo "kotlin"
+  local java_bin=""
+  if [[ -x "${HOME}/.local/jdk-21/bin/java" ]]; then
+    java_bin="${HOME}/.local/jdk-21/bin/java"
+  elif command -v java >/dev/null 2>&1; then
+    java_bin="$(command -v java)"
+  fi
+  if [[ -n "$java_bin" ]]; then
+    ver="$("$java_bin" -version 2>&1 | head -1)"
+    major="$("$java_bin" -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.specification.version/ {print $2}' | tr -d ' \r' | cut -d. -f1)"
+    if [[ -n "$major" && "$major" -ge 17 ]]; then
+      ok "java $ver"
+    else
+      miss "java 17+ (found: $ver) — ./scripts/install-host-requirements.sh kotlin"
+    fi
+  else
+    miss "java 17+ — ./scripts/install-host-requirements.sh kotlin"
+  fi
+  if [[ -x "${PROJECT_ROOT}/kotlin/gradlew" ]]; then
+    ok "kotlin/gradlew (in-tree Gradle wrapper)"
+  else
+    miss "kotlin/gradlew — Gradle wrapper missing from the repo"
+  fi
+}
+
+
 check_java() {
   echo "java"
   local java_bin=""
@@ -168,7 +195,7 @@ check_swift() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c java cpp swift)
+KNOWN=(analysis csharp python go rust javascript c java kotlin cpp swift)
 
 resolve_targets() {
   local args=("$@")
@@ -181,7 +208,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java cpp swift)
+      TARGETS+=(csharp python go rust javascript c java kotlin cpp swift)
     fi
     return
   fi
@@ -207,6 +234,7 @@ for t in "${TARGETS[@]}"; do
     javascript|js|node) check_javascript ;;
     c|native) check_c ;;
     java|jdk|jvm) check_java ;;
+    kotlin|kt) check_kotlin ;;
     cpp|c++|cxx|cplusplus) check_cpp ;;
     swift) check_swift ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;

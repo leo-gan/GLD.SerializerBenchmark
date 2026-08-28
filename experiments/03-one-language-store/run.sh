@@ -16,6 +16,7 @@ declare -A RUNNER=(
   [python]="$REPO/python/scripts/run-benchmarks.sh"
   [go]="$REPO/go/scripts/run-benchmarks.sh"
   [java]="$REPO/java/scripts/run-benchmarks.sh"
+  [kotlin]="$REPO/kotlin/scripts/run-benchmarks.sh"
   [javascript]="$REPO/javascript/scripts/run-benchmarks.sh"
   [rust]="$REPO/rust/scripts/run-benchmarks.sh"
   [c]="$REPO/c/scripts/run-benchmarks.sh"

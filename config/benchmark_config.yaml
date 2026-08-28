@@ -217,6 +217,7 @@ paths:
     javascript: logs/javascript
     go: logs/go
     java: logs/java
+    kotlin: logs/kotlin
     cpp: logs/cpp
     swift: logs/swift
   # Result files are timestamped to preserve history across runs.
@@ -900,6 +901,147 @@ languages:
         package: org.apache.avro:avro
         rationale: "Apache Avro reflect binding for data pipelines"
         optimal_api: "ReflectDatumWriter/Reader + reused BinaryEncoder/Decoder"
+
+  kotlin:
+    display_name: Kotlin
+    enabled: true
+    runner_dir: kotlin
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/kotlin
+    time_unit: nanoseconds
+    docs_dir: docs/kotlin
+    min_java_version: "17"
+    serializers:
+      - name: kotlinx-json
+        category: json
+        package: org.jetbrains.kotlinx:kotlinx-serialization-json
+        rationale: "Canonical Kotlin serialization (compiler-generated serializers)"
+        optimal_api: "Json.encodeToStream / decodeFromStream; reuse Json + KSerializer"
+      - name: kotlinx-properties
+        category: text
+        package: org.jetbrains.kotlinx:kotlinx-serialization-properties
+        rationale: "Official kotlinx.serialization Properties format (flat key-value)"
+        optimal_api: "Properties.encodeToStringMap / decodeFromStringMap + java.util.Properties store/load"
+      - name: kotlinx-hocon
+        category: text
+        package: org.jetbrains.kotlinx:kotlinx-serialization-hocon
+        rationale: "Official kotlinx.serialization HOCON (Lightbend Config, JVM)"
+        optimal_api: "Hocon.encodeToConfig / decodeFromConfig; wrap lists as items table"
+      - name: kaml
+        category: text
+        package: com.charleskorn.kaml:kaml
+        rationale: "YAML for kotlinx.serialization (same @Serializable core)"
+        optimal_api: "Yaml.encodeToString / decodeFromString"
+      - name: jackson
+        category: json
+        package: com.fasterxml.jackson.module:jackson-module-kotlin
+        rationale: "Dominant JVM JSON with first-class Kotlin data-class support"
+        optimal_api: "jacksonObjectMapper + typed ObjectWriter/ObjectReader"
+      - name: moshi-codegen
+        category: json
+        package: com.squareup.moshi:moshi-kotlin-codegen
+        rationale: "Square Moshi generated adapters (KSP @JsonClass)"
+        optimal_api: "reuse Moshi + generated JsonAdapter; Okio Buffer"
+      - name: moshi-reflect
+        category: json
+        package: com.squareup.moshi:moshi-kotlin
+        rationale: "Moshi KotlinJsonAdapterFactory — measures reflection vs codegen"
+        optimal_api: "Moshi.Builder().add(KotlinJsonAdapterFactory()) first"
+      - name: gson
+        category: json
+        package: com.google.code.gson:gson
+        rationale: "Google Gson — widespread JVM JSON baseline"
+        optimal_api: "reuse Gson; toJson/fromJson with Type; JsonWriter/JsonReader"
+      - name: kotlinx-cbor
+        category: binary
+        package: org.jetbrains.kotlinx:kotlinx-serialization-cbor
+        rationale: "Official Kotlin CBOR format"
+        optimal_api: "Cbor.encodeToByteArray / decodeFromByteArray"
+      - name: jackson-cbor
+        category: binary
+        package: com.fasterxml.jackson.dataformat:jackson-dataformat-cbor
+        rationale: "IETF CBOR via Jackson + Kotlin module"
+        optimal_api: "CBORMapper writeValueAsBytes/readValue"
+      - name: msgpack
+        category: binary
+        package: org.msgpack:jackson-dataformat-msgpack
+        rationale: "Official msgpack-java Jackson binding + Kotlin module"
+        optimal_api: "MessagePackMapper + typed writer/reader"
+      - name: obor
+        category: binary
+        package: net.orandja.obor:obor
+        rationale: "Alternative Kotlin CBOR on kotlinx.serialization"
+        optimal_api: "Cbor.encodeToByteArray / decodeFromByteArray"
+      - name: kryo
+        category: binary
+        package: com.esotericsoftware:kryo
+        rationale: "Dominant high-performance JVM binary (caches/RPC)"
+        optimal_api: "reuse Kryo + Output/Input; writeClassAndObject"
+      - name: fory
+        category: binary
+        package: org.apache.fory:fory-core
+        rationale: "Apache Fory JIT binary — top modern JVM serializer"
+        optimal_api: "Fory.builder Language.JAVA + codegen; serialize/deserialize"
+      - name: protostuff
+        category: binary
+        package: io.protostuff:protostuff-runtime
+        rationale: "Protobuf-style POJO binary without .proto"
+        optimal_api: "RuntimeSchema + LinkedBuffer; ProtostuffIOUtil"
+      - name: kbson
+        category: binary
+        package: com.github.jershell:kbson
+        rationale: "BSON for kotlinx.serialization"
+        optimal_api: "KBson.dump / load"
+      - name: kotlinx-ion
+        category: binary
+        package: com.amazon.ion:ion-java
+        rationale: "Amazon Ion binary via kotlinx encoder + official ion-java"
+        optimal_api: "IonWriter/IonReader through kotlinx BinaryFormat"
+      - name: tomlkt
+        category: text
+        package: net.peanuuutz.tomlkt:tomlkt
+        rationale: "Mature Kotlin multiplatform TOML 1.0"
+        optimal_api: "Toml.encodeToString / decodeFromString; wrap lists as items table"
+      - name: kotlinx-protobuf
+        category: schema
+        package: org.jetbrains.kotlinx:kotlinx-serialization-protobuf
+        rationale: "Official Kotlin Protocol Buffers (no .proto)"
+        optimal_api: "ProtoBuf.encodeToByteArray / decodeFromByteArray"
+      - name: protobuf
+        category: schema
+        package: com.google.protobuf:protobuf-java
+        rationale: "Official Protocol Buffers Java runtime used from Kotlin"
+        optimal_api: "toByteArray/parseFrom on generated messages"
+      - name: protobuf-kotlin
+        category: schema
+        package: com.google.protobuf:protobuf-kotlin
+        rationale: "Official protobuf-kotlin generated DSL on the shared suite .proto"
+        optimal_api: "Kotlin DSL builders (message { }) then toByteArray/parseFrom"
+      - name: flatbuffers
+        category: schema
+        package: com.google.flatbuffers:flatbuffers-java
+        rationale: "Official FlatBuffers JVM runtime + generated tables"
+        optimal_api: "reused FlatBufferBuilder; finish / getRootAs"
+      - name: capnproto
+        category: schema
+        package: org.capnproto:runtime
+        rationale: "Official Cap'n Proto JVM runtime + generated schema"
+        optimal_api: "MessageBuilder + Serialize.write / Serialize.read"
+      - name: avro4k
+        category: schema
+        package: com.github.avro-kotlin.avro4k:avro4k-core
+        rationale: "Kotlin-native Apache Avro via kotlinx.serialization"
+        optimal_api: "Avro.encodeToByteArray / decodeFromByteArray"
+      - name: avro
+        category: schema
+        package: org.apache.avro:avro
+        rationale: "Apache Avro reflect binding for data pipelines"
+        optimal_api: "ReflectDatumWriter/Reader + reused BinaryEncoder/Decoder"
+      - name: thrift
+        category: schema
+        package: org.apache.thrift:libthrift
+        rationale: "Apache Thrift compact protocol from Kotlin"
+        optimal_api: "TCompactProtocol + TMemoryBuffer; field ids match suite proto"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

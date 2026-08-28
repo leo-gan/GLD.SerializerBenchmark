@@ -16,6 +16,7 @@
     go: "go",
     java: "java",
     javascript: "javascript",
+    kotlin: "kotlin",
     python: "python",
     rust: "rust",
     swift: "swift",
