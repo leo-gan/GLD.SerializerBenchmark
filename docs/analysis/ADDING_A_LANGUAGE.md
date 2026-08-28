@@ -80,6 +80,7 @@ If your config uses `paths.language_log_dirs`, add `php: logs/php`.
 | `.github/workflows/benchmark-ci.yml` | `changes` output, `dorny/paths-filter` `php/**`, `php-benchmark` job, analysis grep |
 | `mkdocs.yml` **Languages** nest | one-child Overview, **alphabetical by display name** |
 | root `README.md` Supported languages | link + serializer count, **alphabetical** |
+| `docs/index.md` Languages table | same order; bump the runner count in the lead sentence |
 | `docs/analysis/index.md` language table | same order |
 | `docs/analysis/architecture.md` runner-folder list | add `php/` |
 | `docs/analysis/ADDING_A_SERIALIZER.md` | build + serializer-dir rows |

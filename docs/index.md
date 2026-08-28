@@ -6,7 +6,7 @@ hide:
   - title
 ---
 
-Compare **100+** serialization libraries across **ten languages** with fair
+Compare **200+** serialization libraries across **11 languages** with fair
 within-language rankings—not marketing microbenchmarks.
 
 [Open live Dashboard](dashboard/){ .md-button .md-button--primary }
@@ -44,7 +44,7 @@ indexes list the roster and caveats.
 
 ## Languages
 
-Ten runners share the same fixtures and analysis rules.
+Eleven runners share the same fixtures and analysis rules.
 
 | Language | Serializers |
 |----------|------------:|
@@ -55,6 +55,7 @@ Ten runners share the same fixtures and analysis rules.
 | [Java](java/) · [Dashboard](dashboard/?lang=java) | 18 |
 | [JavaScript](javascript/) · [Dashboard](dashboard/?lang=javascript) | 20 |
 | [Kotlin](kotlin/) · [Dashboard](dashboard/?lang=kotlin) | 26 |
+| [PHP](php/) · [Dashboard](dashboard/?lang=php) | 15 |
 | [Python](python/) · [Dashboard](dashboard/?lang=python) | 16 |
 | [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 16 |
 | [Swift](swift/) · [Dashboard](dashboard/?lang=swift) | 14 |
