@@ -1,30 +1,12 @@
-# Just turn compression on
+# Does squeezing the bytes make JSON small enough?
 
 **Question:** After gzip or zstd, does JSON stay larger than a dense binary format?
-**Date:** 2026-08-17
+**Date:** 2026-08-28
 **Sample:** `['strings', 'telemetry', 'message']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
 
-Times in two languages are **not** one contest. **Size after gzip** is the number this experiment asks for. Full tables with gzip columns live in each language folder.
-
-## Size after gzip (bytes)
-
-Named JSON versus Protocol Buffers (or that language’s dense binary stand-in). Same seed, same three samples.
-
-| Language | E words JSON | E gzip | E protobuf | E pb gzip | C numbers JSON | C gzip | C protobuf | C pb gzip | B tiny JSON | B gzip | B protobuf | B pb gzip |
-|----------|--------------|--------|------------|-----------|----------------|--------|------------|-----------|-------------|--------|------------|-----------|
-| python | 410 | 270 | 367 | 266 | 2407 | 1317 | 1061 | 1080 | 168 | 138 | 50 | 71 |
-| go | 411 | 291 | 368 | 278 | 2407 | 1227 | 1061 | 1084 | 168 | 142 | 50 | 75 |
-| java | 411 | 281 | 368 | 278 | 2407 | 1317 | 1061 | 1080 | 158 | 141 | 50 | 71 |
-| javascript | 411 | 286 | 368 | 275 | 2407 | 1221 | 1061 | 1076 | 168 | 137 | 50 | 71 |
-| rust | 390 | 270 | 335 | 256 | 2420 | 1335 | 1054 | 1068 | 182 | 148 | 55 | 78 |
-| c | 399 | 276 | 356 | 270 | 2409 | 1324 | 1181 | 1139 | 171 | 141 | 56 | 77 |
-| cpp | 411 | 281 | 368 | 278 | 2400 | 1305 | 1180 | 1141 | 168 | 138 | 50 | 71 |
-| csharp | 410 | 272 | 492 | 386 | 2407 | 1320 | 1416 | 1102 | 157 | 139 | 68 | 88 |
-| swift | 411 | 281 | 368 | 278 | 2407 | 1317 | 1061 | 1080 | 168 | 138 | 50 | 71 |
-
-Java `jsoniter` writes a smaller JSON on Sample C (1328 → 745 gzip) than `jackson` (2407 → 1317). The table uses named JSON that matches the other languages (`jackson` / `SpanJson` / `orjson`).
+Times in two languages are **not** one contest. Named JSON only. A rank that flips when the sample or the stall rule changes was never a fact about the libraries.
 
 ## Does the fastest named-JSON library stay the same? (N = 1)
 
@@ -33,6 +15,7 @@ Java `jsoniter` writes a smaller JSON on Sample C (1328 → 745 gzip) than `jack
 | python | — | orjson | msgspec-msgpack | — | orjson | no | [python/results.md](python/results.md) |
 | go | — | protobuf | protobuf | — | protobuf | no | [go/results.md](go/results.md) |
 | java | — | protobuf | jsoniter | — | jsoniter | no | [java/results.md](java/results.md) |
+| kotlin | — | protobuf | protobuf | — | moshi-codegen | no | [kotlin/results.md](kotlin/results.md) |
 | javascript | — | JSON.stringify | msgpackr | — | JSON.stringify | no | [javascript/results.md](javascript/results.md) |
 | rust | — | prost | prost | — | rmp-serde | no | [rust/results.md](rust/results.md) |
 | c | — | protobuf-wire | protobuf-wire | — | protobuf-wire | no | [c/results.md](c/results.md) |
@@ -53,6 +36,9 @@ Java `jsoniter` writes a smaller JSON on Sample C (1328 → 745 gzip) than `jack
 | java | B (flat) | protobuf | — | no |
 | java | C (sensor) | jsoniter | — | no |
 | java | E (words) | jsoniter | — | no |
+| kotlin | B (flat) | protobuf | — | no |
+| kotlin | C (sensor) | protobuf | — | no |
+| kotlin | E (words) | moshi-codegen | — | no |
 | javascript | B (flat) | JSON.stringify | — | no |
 | javascript | C (sensor) | msgpackr | — | no |
 | javascript | E (words) | JSON.stringify | — | no |
@@ -79,6 +65,7 @@ Java `jsoniter` writes a smaller JSON on Sample C (1328 → 745 gzip) than `jack
 | python | ok | — | — |
 | go | ok | — | — |
 | java | ok | — | — |
+| kotlin | ok | — | — |
 | javascript | ok | — | — |
 | rust | ok | — | — |
 | c | ok | — | — |
@@ -174,6 +161,35 @@ Java `jsoniter` writes a smaller JSON on Sample C (1328 → 745 gzip) than `jack
 | protobuf | 55.4 | 1061 | slower |
 | msgpack | 76.1 | 1212 | slower |
 | jackson | 103 | 2407 | slower |
+
+### kotlin
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf | 20.5 | 50 | fastest |
+| moshi-codegen | 23.5 | 158 | similar |
+| jackson | 73.5 | 158 | slower |
+| msgpack | 78.4 | 114 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-codegen | 38.2 | 411 | fastest |
+| protobuf | 41.3 | 368 | similar |
+| jackson | 106 | 411 | slower |
+| msgpack | 121 | 346 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf | 59.2 | 1061 | fastest |
+| moshi-codegen | 102 | 2407 | slower |
+| msgpack | 170 | 1212 | slower |
+| jackson | 199 | 2407 | slower |
 
 ### javascript
 
@@ -345,17 +361,19 @@ Java `jsoniter` writes a smaller JSON on Sample C (1328 → 745 gzip) than `jack
 
 ## What we saw
 
-The story is the same in every language we ran.
+On named JSON, some languages keep one first place; others flip.
 
-- **Words (Sample E):** gzip pulls named JSON next to Protocol Buffers (about 270–290 vs 256–278 bytes). C# `Google.Protobuf` is larger on this sample (492 raw, 386 gzip) because that writer keeps more envelope; `SpanJson` gzip is 272.
-- **Numbers (Sample C):** the format still matters. Named JSON stays about 1220–1335 after gzip; protobuf / wire stays about 1068–1141 (C# protobuf 1102). gzip does **not** erase the extra field names and decimal digits.
-- **Tiny record (Sample B):** gzip **enlarges** protobuf (50–68 → 71–88) and only shaves a little off JSON (168 → 137–148). Do not compress chatty control calls.
+- **Python:** `orjson` is first on every sample and at both 1 and 100 records. On Sample A it is about **5.3 times** faster than `json`. That ratio stays put if we keep every trial after warm-up, drop more stalls (IQR 3.0), or keep the first trial. Experiment 1 is a stable fact for named JSON in Python.
+- **JavaScript, C, Rust, Swift (N = 1):** the Experiment 1 name stays first on every sample (`JSON.stringify`, `yyjson`, `sonic-rs`, `IkigaJSON`).
+- **Go, Java, C++, C#:** the first place **depends on the sample**. Go moves among `goccy/go-json`, `segmentio/encoding/json`, and `sonic`. Java is `jsoniter` on A–C and `dsl-json` on D–E. C++ moves among `simdjson`, `yyjson`, and `nlohmann_json`. C# is `SpanJson` except `NetJSON` on the sensor list.
+- **1 vs 100:** Python, JavaScript, and C keep the same name. Go, Swift, and some Java / Rust / C++ / C# cells flip. Quote the number of records that matches the product.
 
-Do not leave JSON *for size* on text-heavy bodies if HTTP already compresses. Do not treat write times in two languages as one contest.
+Never quote a rank without naming the sample and N. A close contest (Go on Sample A) is not the same kind of fact as `orjson` versus `json`.
 
 ## What this page is not
 
 - It is not a ranking of languages.
-- It is not how long gzip itself takes (we record compressed **size**, once).
-- It is not a production capture that already went through HTTP compression.
+- It is not three separate evenings on this machine.
+- It is not shuffled-order vs fixed-order (the runner always shuffles blocks).
+- It is not two versions of the same library.
 

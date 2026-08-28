@@ -99,10 +99,14 @@ for lang in "${LANGS[@]}"; do
   fi
 done
 
-(
-  cd "$REPO/analysis"
-  uv run python "$HERE/summarize.py" --all
-)
+# --language already refreshed the combined results.json. --all rebuilds
+# every language from leftover CSVs and would rewrite other languages.
+if [[ $# -eq 0 ]]; then
+  (
+    cd "$REPO/analysis"
+    uv run python "$HERE/summarize.py" --all
+  )
+fi
 
 if [[ ${#failed[@]} -gt 0 ]]; then
   echo "[exp-13] failed: ${failed[*]}" >&2

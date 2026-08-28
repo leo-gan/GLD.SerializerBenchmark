@@ -1,7 +1,7 @@
-# What do we pay to stay readable by other languages?
+# Is a one-language format worth the lock-in?
 
-**Question:** On one flat record, how much faster is a one-language library than a library another language can read?
-**Date:** 2026-08-16
+**Question:** On one small record, is a format only one language can read faster than a format other languages can read?
+**Date:** 2026-08-28
 **Sample:** `message`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -16,6 +16,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 |----------|--------|--------------------|-----------|-----------------|------------|
 | python | ok | `orjson` | `msgspec-msgpack` | `orjson`, `msgspec-msgpack`, `protobuf` | [python/results.md](python/results.md) |
 | java | ok | `protobuf` | — | `protobuf`, `kryo` | [java/results.md](java/results.md) |
+| kotlin | ok | `protobuf` | — | `protobuf`, `kryo` | [kotlin/results.md](kotlin/results.md) |
 | go | ok | `protobuf` | — | `protobuf` | [go/results.md](go/results.md) |
 
 ## In memory, by language
@@ -47,6 +48,17 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | kryo | 42.1 | 46 | one language — Kryo | slower |
 | hessian | 42.5 | 143 | one language — Hessian2 | slower |
 | java-serialization | 119 | 206 | one language — JDK ObjectOutputStream | slower |
+
+### kotlin
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf | 39.0 | 50 | other languages can read — Protocol Buffers | fastest |
+| fory | 51.2 | 133 | one language — Apache Fory | slower |
+| kryo | 59.6 | 46 | one language — Kryo | slower |
+| kotlinx-json | 108 | 158 | other languages can read — JSON | slower |
 
 ### go
 

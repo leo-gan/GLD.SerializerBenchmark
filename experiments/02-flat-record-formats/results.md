@@ -1,7 +1,7 @@
-# Should an internal service leave JSON?
+# Should two services inside the company stop using JSON?
 
-**Question:** On one flat record, how do ordinary named JSON, MessagePack, and Protocol Buffers compare?
-**Date:** 2026-08-17
+**Question:** On one small record, how do JSON, MessagePack, and Protocol Buffers compare?
+**Date:** 2026-08-28
 **Sample:** `message`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -17,6 +17,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | python | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [python/results.md](python/results.md) |
 | go | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [go/results.md](go/results.md) |
 | java | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [java/results.md](java/results.md) |
+| kotlin | ok | `protobuf` | — | `protobuf` | [kotlin/results.md](kotlin/results.md) |
 | javascript | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [javascript/results.md](javascript/results.md) |
 | rust | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [rust/results.md](rust/results.md) |
 | c | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [c/results.md](c/results.md) |
@@ -31,6 +32,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | python | missing | — | — | — |
 | go | missing | — | — | — |
 | java | missing | — | — | — |
+| kotlin | ok | `protobuf` | — | `protobuf` |
 | javascript | missing | — | — | — |
 | rust | missing | — | — | — |
 | c | missing | — | — | — |
@@ -53,6 +55,28 @@ no CSV in this language folder yet
 ### java
 
 no CSV in this language folder yet
+
+### kotlin
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf | 37.8 | 50 | Protocol Buffers | fastest |
+| moshi-codegen | 50.0 | 158 | JSON — fast writer from Experiment 1 | slower |
+| kotlinx-json | 102 | 158 | JSON — compiler-generated kotlinx.serialization | slower |
+| msgpack | 151 | 114 | MessagePack | slower |
+| jackson | 158 | 158 | JSON — common default | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf | 110 | 4841 | Protocol Buffers | fastest |
+| moshi-codegen | 222 | 15546 | JSON — fast writer from Experiment 1 | slower |
+| kotlinx-json | 246 | 15546 | JSON — compiler-generated kotlinx.serialization | slower |
+| jackson | 356 | 15546 | JSON — common default | slower |
+| msgpack | 368 | 11031 | MessagePack | slower |
 
 ### javascript
 

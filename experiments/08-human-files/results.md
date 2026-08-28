@@ -1,7 +1,7 @@
-# Files people edit are not a request path
+# Can we send YAML on the live path?
 
 **Question:** On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
-**Date:** 2026-08-17
+**Date:** 2026-08-28
 **Sample:** `['document', 'strings']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -14,6 +14,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |----------|---------|--------|----------|---------|---------|------------|------------|
 | python | orjson | — | — | — | orjson | no | [python/results.md](python/results.md) |
 | java | jackson | — | — | — | jackson | no | [java/results.md](java/results.md) |
+| kotlin | jackson | — | — | — | jackson | no | [kotlin/results.md](kotlin/results.md) |
 | javascript | JSON.stringify | — | — | — | JSON.stringify | no | [javascript/results.md](javascript/results.md) |
 | rust | serde_json | — | — | — | serde_json | no | [rust/results.md](rust/results.md) |
 | c | yyjson | — | — | — | yyjson | no | [c/results.md](c/results.md) |
@@ -30,6 +31,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | python | E (words) | orjson | — | no |
 | java | A (order) | jackson | — | no |
 | java | E (words) | jackson | — | no |
+| kotlin | A (order) | jackson | — | no |
+| kotlin | E (words) | jackson | — | no |
 | javascript | A (order) | JSON.stringify | — | no |
 | javascript | E (words) | JSON.stringify | — | no |
 | rust | A (order) | serde_json | — | no |
@@ -51,6 +54,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |----------|--------|--------------------|-----------|
 | python | ok | `orjson` | — |
 | java | ok | `jackson` | — |
+| kotlin | ok | `jackson` | — |
 | javascript | ok | `JSON.stringify` | — |
 | rust | ok | `serde_json` | — |
 | c | ok | `yyjson` | — |
@@ -92,6 +96,24 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |---------|-------------------|--------------|-------|
 | jackson | 31.1 | 411 | fastest |
 | jackson-yaml | 149 | 471 | slower |
+
+### kotlin
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jackson | 154 | 440 | fastest |
+| tomlkt | 250 | 499 | slower |
+| kaml | 584 | 440 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| jackson | 61.2 | 411 | fastest |
+| tomlkt | 112 | 570 | slower |
+| kaml | 286 | 470 | slower |
 
 ### javascript
 

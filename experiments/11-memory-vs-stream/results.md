@@ -1,7 +1,7 @@
-# Writing into memory versus writing as if to a file
+# Does writing to a file change the ranking?
 
-**Question:** When the product writes to a file or socket, which libraries really write as they go, and does that change the ranking we saw in memory?
-**Date:** 2026-08-17
+**Question:** When we write as if to a file, which libraries really write as they go, and does the ranking change?
+**Date:** 2026-08-28
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -16,6 +16,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 |----------|--------|--------------------|-----------|-----------------|------------|
 | go | ok | `goccy/go-json`, `protobuf` | — | `goccy/go-json`, `protobuf` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter`, `protobuf` | [java/results.md](java/results.md) |
+| kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
 
 ## In memory, by language
@@ -43,6 +44,17 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | protobuf | 61.2 | 155 | Protocol Buffers | slower |
 | jackson | 105 | 440 | JSON — common default | slower |
 | msgpack | 128 | 317 | MessagePack | slower |
+
+### kotlin
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| moshi-codegen | 48.2 | 440 | JSON | fastest |
+| protobuf | 62.3 | 155 | Protocol Buffers | slower |
+| jackson | 144 | 440 | JSON — common default | slower |
+| msgpack | 170 | 317 | MessagePack | slower |
 
 ### cpp
 
