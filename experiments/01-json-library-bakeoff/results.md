@@ -1,7 +1,7 @@
-# If we must keep JSON, which library should we use?
+# Which JSON library is fastest?
 
-**Question:** If we must keep JSON, which library is best for one nested document?
-**Date:** 2026-08-16
+**Question:** We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?
+**Date:** 2026-08-28
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -17,6 +17,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | python | ok | `orjson` | — | `orjson` | [python/results.md](python/results.md) |
 | go | ok | `goccy/go-json` | `segmentio/encoding/json`, `sonic` | `goccy/go-json` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter` | [java/results.md](java/results.md) |
+| kotlin | ok | `moshi-codegen`, `moshi-reflect` | — | `moshi-codegen` | [kotlin/results.md](kotlin/results.md) |
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify` | [javascript/results.md](javascript/results.md) |
 | rust | ok | `sonic-rs` | — | `sonic-rs` | [rust/results.md](rust/results.md) |
 | c | ok | `yyjson` | — | `yyjson` | [c/results.md](c/results.md) |
@@ -60,6 +61,16 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 | moshi | 84.2 | 440 | slower |
 | jackson | 92.8 | 440 | slower |
 | dsl-json | 92.9 | 440 | slower |
+
+### kotlin
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| moshi-codegen | 51.0 | 440 | fastest |
+| moshi-reflect | 52.2 | 440 | similar |
+| kotlinx-json | 105 | 440 | slower |
+| gson | 110 | 440 | slower |
+| jackson | 161 | 440 | slower |
 
 ### javascript
 

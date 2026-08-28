@@ -571,6 +571,11 @@ def main() -> int:
         for lang in catalog:
             csv_path = _latest_csv(lang)
             if csv_path is None:
+                existing = HERE / lang / "results.json"
+                if existing.is_file():
+                    languages[lang] = json.loads(existing.read_text(encoding="utf-8"))
+                    print(f"{lang}: kept existing results.json (no CSV)")
+                    continue
                 languages[lang] = {
                     "status": "missing",
                     "language": lang,

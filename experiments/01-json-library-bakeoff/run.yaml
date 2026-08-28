@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 01-json-library-bakeoff
-description: If we must keep JSON, which library should we use?
+description: Which JSON library is fastest?
 data_model_version: 2
 types:
 - type_id: document

@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-08-26T23:10:14Z",
+  "generated_at": "2026-08-28T01:11:28Z",
   "count": 13,
   "with_results": 13,
   "experiments": [
@@ -47,7 +47,7 @@
       ],
       "has_results": true,
       "payload": "experiments/01-json-library-bakeoff.json.gz",
-      "generated_at": "2026-08-16T22:26:57Z",
+      "generated_at": "2026-08-28T01:11:17Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -67,6 +67,11 @@
           "id": "java",
           "status": "ok",
           "rows": 12
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 10
         },
         {
           "id": "javascript",
@@ -99,7 +104,7 @@
           "rows": 4
         }
       ],
-      "source_bytes": 96725
+      "source_bytes": 107143
     },
     {
       "id": "02-flat-record-formats",
