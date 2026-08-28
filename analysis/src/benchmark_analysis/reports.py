@@ -733,7 +733,7 @@ def _lang_order_list() -> list:
 
         return list(lang_order())
     except Exception:
-        return ["csharp", "python", "rust", "c", "javascript", "go", "java", "kotlin", "cpp", "swift"]
+        return ["csharp", "python", "rust", "c", "javascript", "go", "java", "kotlin", "php", "cpp", "swift"]
 
 
 def _normalize_lang_id(lang: str) -> str:

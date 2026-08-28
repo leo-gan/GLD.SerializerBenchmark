@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 02-flat-record-formats
-description: Should an internal service leave JSON?
+description: Should two services inside the company stop using JSON?
 data_model_version: 2
 types:
 - type_id: message

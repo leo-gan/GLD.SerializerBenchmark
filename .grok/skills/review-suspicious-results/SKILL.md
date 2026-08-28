@@ -42,7 +42,7 @@ Optional overrides:
 
 | Env / flag | Meaning |
 |------------|---------|
-| `REVIEW_LANGS` | Space/comma language ids (default: all with stats/logs: `c csharp python rust javascript go java kotlin cpp swift`) |
+| `REVIEW_LANGS` | Space/comma language ids (default: all with stats/logs: `c csharp python rust javascript go java kotlin php cpp swift`) |
 | `REVIEW_FIXTURE` | Suite type focus (default: `message`; also scan all n=1 cells) |
 | `REVIEW_MODE` | Bench mode after fixes: `smoke` \| `all-single` \| `full` (default **`all-single`**) |
 | `REVIEW_FIX=0` | Report only; do not edit code or re-bench |
@@ -219,7 +219,7 @@ nonsense rankings vs JSON.
 ## 1. Scope
 
 ```bash
-LANGS="${REVIEW_LANGS:-c csharp python rust javascript go java kotlin cpp swift}"
+LANGS="${REVIEW_LANGS:-c csharp python rust javascript go java kotlin php cpp swift}"
 # normalize commas → spaces
 LANGS="${LANGS//,/ }"
 echo "Review languages: $LANGS"

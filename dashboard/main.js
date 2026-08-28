@@ -117,6 +117,7 @@ const LANGUAGE_CATALOG = [
   { id: 'java', label: 'Java' },
   { id: 'javascript', label: 'JavaScript' },
   { id: 'kotlin', label: 'Kotlin' },
+  { id: 'php', label: 'PHP' },
   { id: 'python', label: 'Python' },
   { id: 'rust', label: 'Rust' },
   { id: 'swift', label: 'Swift' },
@@ -1186,6 +1187,7 @@ function updateRunMeta() {
       go: 'Go',
       java: 'Java',
       kotlin: 'Kotlin',
+      php: 'PHP',
       c: 'gcc',
       cpp: 'g++',
       swift: 'Swift',
@@ -1216,6 +1218,7 @@ const RUNTIME_KEY_BY_LANG = {
   cpp: 'g++',
   java: 'java',
   kotlin: 'java',
+  php: 'php',
   swift: 'swift',
 };
 

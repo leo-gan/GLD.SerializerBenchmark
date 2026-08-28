@@ -17,6 +17,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | python | ok | `orjson` | `msgspec-msgpack` | `orjson`, `msgspec-msgpack`, `protobuf` | [python/results.md](python/results.md) |
 | java | ok | `protobuf` | — | `protobuf`, `kryo` | [java/results.md](java/results.md) |
 | kotlin | ok | `protobuf` | — | `protobuf`, `kryo` | [kotlin/results.md](kotlin/results.md) |
+| php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
 | go | ok | `protobuf` | — | `protobuf` | [go/results.md](go/results.md) |
 
 ## In memory, by language
@@ -59,6 +60,16 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | fory | 51.2 | 133 | one language — Apache Fory | slower |
 | kryo | 59.6 | 46 | one language — Kryo | slower |
 | kotlinx-json | 108 | 158 | other languages can read — JSON | slower |
+
+### php
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json | 2.89 | 168 | other languages can read — JSON | fastest |
+| serialize | 3.78 | 222 | one language — PHP serialize | slower |
+| rybakit-msgpack | 8.78 | 126 | other languages can read — MessagePack | slower |
 
 ### go
 

@@ -1,0 +1,28 @@
+{
+  "name": "gld/serializer-benchmark-php",
+  "description": "PHP runner for the multi-language serializer benchmark",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "ext-json": "*",
+    "ext-zlib": "*",
+    "flix-tech/avro-php": "^5.1",
+    "google/protobuf": "^4.29",
+    "jms/serializer": "^3.32",
+    "rybakit/msgpack": "^0.9",
+    "spomky-labs/cbor-php": "^3.0",
+    "symfony/property-access": "^7.2",
+    "symfony/serializer": "^7.2",
+    "symfony/yaml": "^7.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "Benchmark\\": "src/",
+      "Benchmark\\V2\\": "src/Generated/Benchmark/V2/",
+      "GPBMetadata\\": "src/Generated/GPBMetadata/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  }
+}

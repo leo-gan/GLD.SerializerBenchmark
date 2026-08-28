@@ -73,6 +73,11 @@ languages:
       - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}
       - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
 
+  - id: php
+    enabled: true
+    libraries:
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
   - id: javascript
     enabled: true
     libraries:

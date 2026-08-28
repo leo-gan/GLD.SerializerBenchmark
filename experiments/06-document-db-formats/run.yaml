@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 06-document-db-formats
-description: Do BSON, Smile, and Ion beat JSON and MessagePack?
+description: Are database formats better for a normal service call?
 data_model_version: 2
 types:
 - type_id: document

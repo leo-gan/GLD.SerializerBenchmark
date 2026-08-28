@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 05-event-log-formats
-description: 'An event log: size and write time only'
+description: What should we use for an event log?
 data_model_version: 2
 types:
 - type_id: event

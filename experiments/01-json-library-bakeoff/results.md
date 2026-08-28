@@ -18,6 +18,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | go | ok | `goccy/go-json` | `segmentio/encoding/json`, `sonic` | `goccy/go-json` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter` | [java/results.md](java/results.md) |
 | kotlin | ok | `moshi-codegen`, `moshi-reflect` | — | `moshi-codegen` | [kotlin/results.md](kotlin/results.md) |
+| php | ok | `json` | — | `json` | [php/results.md](php/results.md) |
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify` | [javascript/results.md](javascript/results.md) |
 | rust | ok | `sonic-rs` | — | `sonic-rs` | [rust/results.md](rust/results.md) |
 | c | ok | `yyjson` | — | `yyjson` | [c/results.md](c/results.md) |
@@ -71,6 +72,14 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 | kotlinx-json | 105 | 440 | slower |
 | gson | 110 | 440 | slower |
 | jackson | 161 | 440 | slower |
+
+### php
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 6.07 | 454 | fastest |
+| symfony-json | 7.59 | 454 | slower |
+| jms-json | 34.6 | 454 | slower |
 
 ### javascript
 

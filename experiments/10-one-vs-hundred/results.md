@@ -16,6 +16,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | — | protobuf | — | protobuf | — | no | [go/results.md](go/results.md) |
 | java | — | protobuf | — | jsoniter | — | no | [java/results.md](java/results.md) |
 | kotlin | — | protobuf | — | moshi-codegen | — | no | [kotlin/results.md](kotlin/results.md) |
+| php | — | json | — | json | — | no | [php/results.md](php/results.md) |
 | javascript | — | JSON.stringify | — | JSON.stringify | — | no | [javascript/results.md](javascript/results.md) |
 | rust | — | prost | — | rmp-serde | — | no | [rust/results.md](rust/results.md) |
 | c | — | protobuf-c | — | protobuf-wire | — | no | [c/results.md](c/results.md) |
@@ -35,6 +36,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | java | D (event) | jsoniter | jsoniter | yes |
 | kotlin | B (flat) | protobuf | protobuf | yes |
 | kotlin | D (event) | moshi-codegen | protobuf | no |
+| php | B (flat) | json | json | yes |
+| php | D (event) | json | json | yes |
 | javascript | B (flat) | JSON.stringify | JSON.stringify | yes |
 | javascript | D (event) | JSON.stringify | msgpackr | no |
 | rust | B (flat) | prost | prost | yes |
@@ -56,6 +59,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | ok | — | — |
 | java | ok | — | — |
 | kotlin | ok | — | — |
+| php | ok | — | — |
 | javascript | ok | — | — |
 | rust | ok | — | — |
 | c | ok | — | — |
@@ -224,6 +228,40 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | moshi-codegen | 225 | 15546 | slower |
 | jackson | 338 | 15546 | slower |
 | msgpack | 388 | 11031 | slower |
+
+### php
+
+**D (event), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 3.67 | 267 | fastest |
+| rybakit-msgpack | 13.0 | 209 | slower |
+| protobuf | 105 | 133 | slower |
+
+**D (event), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 217 | 25976 | fastest |
+| rybakit-msgpack | 776 | 20078 | slower |
+| protobuf | 9265 | 12717 | slower |
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 2.87 | 168 | fastest |
+| rybakit-msgpack | 8.83 | 126 | slower |
+| protobuf | 48.3 | 54 | slower |
+
+**B (flat), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 158 | 16337 | fastest |
+| rybakit-msgpack | 419 | 11818 | slower |
+| protobuf | 3626 | 4665 | slower |
 
 ### javascript
 

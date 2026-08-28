@@ -49,6 +49,15 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 | jackson-cbor | 125 | 346 | 1212 | 4664 | >128, >512 | CBOR — Jackson |
 | msgpack | 124 | 346 | 1212 | 4663 | >128, >512 | MessagePack |
 
+### php
+
+| Library | 8 nums | 32 nums | 128 nums | 512 nums | vs 128 / 512 at 512 nums | Role |
+|---------|--------|--------|--------|--------|--------------------------|------|
+| json | 217 | 654 | 2406 | 9380 | >128, >512 | JSON — stdlib |
+| rybakit-msgpack | 121 | 339 | 1203 | 4659 | >128, >512 | MessagePack |
+| protobuf | 91 | 284 | 1052 | 4124 | >128, >512 | Protocol Buffers |
+| cbor | 120 | 337 | 1201 | 4658 | >128, >512 | CBOR |
+
 ## Time and groups, by list length
 
 Write + read middle values in microseconds. Lower is better **inside that language**.
@@ -198,6 +207,44 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 | msgpack | 78.0 | 4663 | slower |
 | kotlinx-json | 168 | 9363 | slower |
 | moshi-codegen | 169 | 9363 | slower |
+
+### php
+
+**8 numbers** — not clearly slower: `json`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| json | 7.66 | 217 | fastest |
+| rybakit-msgpack | 11.1 | 121 | slower |
+| protobuf | 65.9 | 91 | slower |
+| cbor | 153 | 120 | slower |
+
+**32 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| rybakit-msgpack | 19.9 | 339 | fastest |
+| json | 23.5 | 654 | slower |
+| protobuf | 109 | 284 | slower |
+| cbor | 441 | 337 | slower |
+
+**128 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| rybakit-msgpack | 53.3 | 1203 | fastest |
+| json | 87.2 | 2406 | slower |
+| protobuf | 288 | 1052 | slower |
+| cbor | 1630 | 1201 | slower |
+
+**512 numbers** — not clearly slower: `rybakit-msgpack`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| rybakit-msgpack | 173 | 4659 | fastest |
+| json | 317 | 9380 | slower |
+| protobuf | 940 | 4124 | slower |
+| cbor | 6126 | 4658 | slower |
 
 ## What we saw
 

@@ -74,6 +74,13 @@ languages:
       - {name: msgpack, writes_named_fields: true, role: MessagePack}
       - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
 
+  - id: php
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: JSON — stdlib}
+      - {name: rybakit-msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
   - id: javascript
     enabled: true
     libraries:

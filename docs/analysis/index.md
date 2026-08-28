@@ -107,13 +107,14 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | Java | **18** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
 | JavaScript | **20** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
 | Kotlin | **26** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
+| PHP | **15** | [Overview](../php/index.md) | [Dashboard](../dashboard/?lang=php) |
 | Python | **16** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
 | Rust | **16** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
 | Swift | **14** | [Overview](../swift/index.md) | [Dashboard](../dashboard/?lang=swift) |
 
 † In JavaScript, `simdjson` is optional (it needs a native addon). If that addon fails to build, the rest of the run still continues without it.
 
-**Log language ids** (the `Language` column in CSVs) use short names such as `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `kotlin`, `cpp`, and `swift`. Documentation folders sometimes differ (for example `docs/c-sharp/` for C#).
+**Log language ids** (the `Language` column in CSVs) use short names such as `csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, and `swift`. Documentation folders sometimes differ (for example `docs/c-sharp/` for C#).
 
 To refresh published numbers after a local run, pack Dashboard data with `python3 dashboard/scripts/sync-data.py`. Regeneration and claim levels: [Claims and replication](CLAIMS_AND_REPLICATION.md).
 

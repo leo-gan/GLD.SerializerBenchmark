@@ -65,6 +65,16 @@ languages:
       - {name: gson, writes_named_fields: true, role: JSON — another library (Gson)}
       - {name: msgpack, writes_named_fields: true, role: MessagePack}
 
+  - id: php
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: stdlib — JSON}
+      - {name: symfony-json, writes_named_fields: true, role: Symfony — JSON}
+      - {name: cbor, writes_named_fields: true, role: cbor-php — CBOR}
+      - {name: rybakit-msgpack, writes_named_fields: true, role: rybakit — MessagePack}
+      - {name: protobuf, writes_named_fields: true, role: google/protobuf}
+      - {name: yaml, writes_named_fields: true, role: Symfony — YAML}
+
   - id: cpp
     enabled: true
     libraries:

@@ -17,6 +17,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | go | ok | `goccy/go-json`, `protobuf` | — | `goccy/go-json`, `protobuf` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter`, `protobuf` | [java/results.md](java/results.md) |
 | kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
+| php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
 
 ## In memory, by language
@@ -55,6 +56,16 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | protobuf | 62.3 | 155 | Protocol Buffers | slower |
 | jackson | 144 | 440 | JSON — common default | slower |
 | msgpack | 170 | 317 | MessagePack | slower |
+
+### php
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| json | 6.04 | 454 | JSON | fastest |
+| rybakit-msgpack | 22.5 | 335 | MessagePack | slower |
+| protobuf | 201 | 160 | Protocol Buffers | slower |
 
 ### cpp
 

@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 10-one-vs-hundred
-description: One record versus one hundred
+description: Does one record rank the same as one hundred?
 data_model_version: 2
 types:
 - type_id: message

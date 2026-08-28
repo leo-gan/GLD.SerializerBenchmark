@@ -60,6 +60,13 @@ languages:
       - {name: kbson, writes_named_fields: true, role: BSON}
       - {name: msgpack, writes_named_fields: true, role: MessagePack}
 
+  - id: php
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: JSON}
+      - {name: cbor, writes_named_fields: true, role: CBOR}
+      - {name: rybakit-msgpack, writes_named_fields: true, role: MessagePack}
+
   - id: javascript
     enabled: true
     libraries:

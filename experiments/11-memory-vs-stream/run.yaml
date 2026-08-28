@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 11-memory-vs-stream
-description: Writing into memory versus writing as if to a file
+description: Does writing to a file change the ranking?
 data_model_version: 2
 types:
 - type_id: document

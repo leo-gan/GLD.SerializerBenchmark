@@ -1,6 +1,6 @@
 # Generated from experiment.yaml. Edit experiment.yaml, not this file.
 id: 12-format-vs-library
-description: Is the difference the format, or the library?
+description: Is it the format, or the library?
 data_model_version: 2
 types:
 - type_id: document
