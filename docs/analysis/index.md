@@ -100,15 +100,15 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 
 | Language | Serializers (registered) | Overview | Dashboard |
 |----------|--------------------------|----------|-----------|
-| C# | **38** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
-| Python | **16** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
-| Rust | **16** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
 | C | **20** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
-| JavaScript | **20** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
+| C# | **38** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
+| C++ | **27+** | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
 | Go | **19** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
 | Java | **18** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
+| JavaScript | **20** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
 | Kotlin | **26** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
-| C++ | **27+** | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
+| Python | **16** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
+| Rust | **16** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
 | Swift | **14** | [Overview](../swift/index.md) | [Dashboard](../dashboard/?lang=swift) |
 
 † In JavaScript, `simdjson` is optional (it needs a native addon). If that addon fails to build, the rest of the run still continues without it.

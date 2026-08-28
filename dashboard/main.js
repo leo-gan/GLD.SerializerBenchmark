@@ -110,15 +110,15 @@ function pickPreferredFixture(options) {
 }
 
 const LANGUAGE_CATALOG = [
-  { id: 'csharp', label: 'C#' },
-  { id: 'rust', label: 'Rust' },
-  { id: 'go', label: 'Go' },
-  { id: 'python', label: 'Python' },
-  { id: 'javascript', label: 'JavaScript' },
   { id: 'c', label: 'C' },
-  { id: 'java', label: 'Java' },
-  { id: 'kotlin', label: 'Kotlin' },
+  { id: 'csharp', label: 'C#' },
   { id: 'cpp', label: 'C++' },
+  { id: 'go', label: 'Go' },
+  { id: 'java', label: 'Java' },
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'kotlin', label: 'Kotlin' },
+  { id: 'python', label: 'Python' },
+  { id: 'rust', label: 'Rust' },
   { id: 'swift', label: 'Swift' },
 ];
 

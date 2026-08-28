@@ -81,6 +81,15 @@ languages:
       - {name: moshi, writes_named_fields: true, role: Square JSON library}
       - {name: jsoniter, writes_named_fields: true, role: fast writer}
 
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: kotlinx-json, writes_named_fields: true, role: compiler-generated kotlinx.serialization JSON}
+      - {name: jackson, writes_named_fields: true, role: Jackson Kotlin module}
+      - {name: moshi-codegen, writes_named_fields: true, role: Moshi generated adapters}
+      - {name: moshi-reflect, writes_named_fields: true, role: Moshi reflection}
+      - {name: gson, writes_named_fields: true, role: Google JSON library}
+
   - id: javascript
     enabled: true
     libraries:

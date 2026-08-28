@@ -8,7 +8,7 @@ This course teaches how Protocol Buffers works at the byte level. You will also 
 | **Sibling** | [301 production judgment](../301/index.md) — *whether / which*, not *how bytes* |
 | **Suite** | [Add a serializer](../../analysis/ADDING_A_SERIALIZER.md) · [Dashboard](../../dashboard/) |
 
-**Protocol Buffers** is a popular schema-driven binary format. You describe message shapes in a `.proto` file. Tools then generate code that can encode and decode those messages. This elective walks through that wire format first. It then follows the paths taken by Python, Rust, and C libraries. A small hands-on lab connects the theory to code you write yourself. After that, nine language articles compare the libraries that lead on this suite’s document fixture by reading their timed functions, not by repeating the 201 format essays.
+**Protocol Buffers** is a popular schema-driven binary format. You describe message shapes in a `.proto` file. Tools then generate code that can encode and decode those messages. This elective walks through that wire format first. It then follows the paths taken by Python, Rust, and C libraries. A small hands-on lab connects the theory to code you write yourself. After that, ten language articles compare the libraries that lead on this suite’s document fixture by reading their timed functions, not by repeating the 201 format essays.
 
 The course is for people who want to implement, debug, or deeply integrate codecs. It is not only for people who choose a format from a list of options. You do not need to have written a serializer from scratch already. You do need intermediate reading comfort in at least one of the languages used in this suite. You also need a working memory of schema-dependent binary ideas from Serialization 201.
 
@@ -68,7 +68,7 @@ The table below lists every article in this course. For each article, it states 
 
 These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/). Both call sites in a pair must follow the same [timing contract](../../analysis/TIMING_HONESTY.md).
 
-The first nine pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, and a Dashboard row that does not time the library named in the row.
+The first ten pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, and a Dashboard row that does not time the library named in the row.
 
 | Article | You should be able to… |
 |---------|------------------------|
@@ -84,6 +84,7 @@ The first nine pages take the speed or size leader in each language and ask why 
 | [C#: BinaryPack vs Bond Fast](csharp-binarypack-vs-bond.md) | Show positional IL stores versus a type-and-identifier prefix on every field |
 | [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Show two cached positional plans, and why the Avro schema walk costs a little more |
 | [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
+| [Kotlin: Protostuff vs protobuf](kotlin-protostuff-vs-protobuf.md) | Show the same 155-byte pair on Kotlin, and why the Kotlin DSL row matches protobuf-java |
 | [JavaScript: JSON vs google-protobuf](javascript-json-vs-protobuf.md) | Show that V8’s native JSON path is faster than a real JavaScript Protocol Buffers encode and decode, even though JSON is larger |
 | [JavaScript: three Protocol Buffers libraries](javascript-three-protobufs.md) | Compare google-protobuf, protobufjs, and protobuf-es on the same 155 bytes |
 | [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md) | Show why vtable loads can beat a smaller Protocol Buffers stream |
