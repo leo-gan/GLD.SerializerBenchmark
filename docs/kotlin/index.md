@@ -61,7 +61,7 @@ for rep:
 
 - **kryo**, **fory**, and **protostuff** are not universal cross-language wire formats.
 - **moshi-codegen** vs **moshi-reflect** share the same domain types; reflection adds `KotlinJsonAdapterFactory` first so it wins over generated adapters.
-- **tomlkt** and **kotlinx-hocon** cannot encode a root array; batches are wrapped as a table.
+- **tomlkt**, **kotlinx-hocon**, and **kbson** wrap N>1 fixtures as a table `{ batch = [...] }` (TOML/HOCON have no root array; BSON forbids a root array). The wrap key is `batch`, not `items`, so it does not collide with `Document.items` / `Strings.items`.
 - **protobuf** uses the Java builder API; **protobuf-kotlin** uses the generated Kotlin DSL on the same wire types.
 - **kotlinx-ion** uses official `ion-java` through a kotlinx `BinaryFormat` (the community `kotlinx-serialization-ion` artifact is JitPack-only and unmaintained).
 - Stream mode is **native** only where noted; others are adapted bytes+buffer.

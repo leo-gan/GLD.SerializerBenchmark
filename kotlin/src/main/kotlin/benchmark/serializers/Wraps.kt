@@ -11,19 +11,19 @@ import kotlinx.serialization.Serializable
 /** Table-root wrappers for formats that cannot encode a bare list (HOCON, Properties). */
 object Wraps {
     @Serializable
-    data class MessageWrap(val items: List<Message>)
+    data class MessageWrap(val batch: List<Message>)
 
     @Serializable
-    data class DocumentWrap(val items: List<Document>)
+    data class DocumentWrap(val batch: List<Document>)
 
     @Serializable
-    data class TelemetryWrap(val items: List<Telemetry>)
+    data class TelemetryWrap(val batch: List<Telemetry>)
 
     @Serializable
-    data class StringsWrap(val items: List<Strings>)
+    data class StringsWrap(val batch: List<Strings>)
 
     @Serializable
-    data class EventWrap(val items: List<Event>)
+    data class EventWrap(val batch: List<Event>)
 
     fun serializer(typeId: String): KSerializer<Any> {
         @Suppress("UNCHECKED_CAST")
@@ -50,11 +50,11 @@ object Wraps {
 
     fun unwrap(typeId: String, decoded: Any): Any =
         when (typeId) {
-            "message" -> (decoded as MessageWrap).items
-            "document" -> (decoded as DocumentWrap).items
-            "telemetry" -> (decoded as TelemetryWrap).items
-            "strings" -> (decoded as StringsWrap).items
-            "event" -> (decoded as EventWrap).items
+            "message" -> (decoded as MessageWrap).batch
+            "document" -> (decoded as DocumentWrap).batch
+            "telemetry" -> (decoded as TelemetryWrap).batch
+            "strings" -> (decoded as StringsWrap).batch
+            "event" -> (decoded as EventWrap).batch
             else -> decoded
         }
 }
