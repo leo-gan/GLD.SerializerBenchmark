@@ -53,6 +53,13 @@ languages:
       - {name: jackson, writes_named_fields: true, role: JSON}
       - {name: jackson-yaml, writes_named_fields: true, role: YAML — Jackson}
 
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON}
+      - {name: kaml, writes_named_fields: true, role: YAML — kaml}
+      - {name: tomlkt, writes_named_fields: true, role: TOML}
+
   - id: javascript
     enabled: true
     libraries:

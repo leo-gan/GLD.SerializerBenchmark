@@ -51,6 +51,15 @@ languages:
       - {name: bson, writes_named_fields: true, role: BSON}
       - {name: msgpack, writes_named_fields: true, role: MessagePack — Jackson}
 
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON — Jackson}
+      - {name: jackson-cbor, writes_named_fields: true, role: CBOR — Jackson}
+      - {name: kotlinx-ion, writes_named_fields: true, role: Ion}
+      - {name: kbson, writes_named_fields: true, role: BSON}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+
   - id: javascript
     enabled: true
     libraries:

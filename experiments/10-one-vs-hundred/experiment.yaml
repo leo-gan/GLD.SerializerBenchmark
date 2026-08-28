@@ -68,6 +68,14 @@ languages:
       - {name: msgpack, writes_named_fields: true, role: MessagePack}
       - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
 
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON — common default}
+      - {name: moshi-codegen, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
   - id: javascript
     enabled: true
     libraries:

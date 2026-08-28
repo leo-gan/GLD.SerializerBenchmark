@@ -53,6 +53,18 @@ languages:
       - {name: gson, writes_named_fields: true, role: JSON — another library (Gson)}
       - {name: jsoniter, writes_named_fields: true, role: "JSON — another library (jsoniter, Experiment 1)"}
 
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: kotlinx-json, writes_named_fields: true, role: kotlinx.serialization — JSON}
+      - {name: kotlinx-cbor, writes_named_fields: true, role: kotlinx.serialization — CBOR}
+      - {name: kotlinx-protobuf, writes_named_fields: true, role: kotlinx.serialization — ProtoBuf}
+      - {name: jackson, writes_named_fields: true, role: Jackson — JSON}
+      - {name: jackson-cbor, writes_named_fields: true, role: Jackson — CBOR}
+      - {name: moshi-codegen, writes_named_fields: true, role: JSON — another library (Moshi)}
+      - {name: gson, writes_named_fields: true, role: JSON — another library (Gson)}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+
   - id: cpp
     enabled: true
     libraries:

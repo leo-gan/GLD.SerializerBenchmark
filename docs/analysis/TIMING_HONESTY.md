@@ -112,6 +112,9 @@ Checked against the adapters in this repository after the google-protobuf encode
 | [C#: BinaryPack vs Bond Fast](../theory/401/csharp-binarypack-vs-bond.md) | Both encode then Base64 on the string path | Same extra work. Honest **within C#**. |
 | [Go: kelindar vs Avro](../theory/401/go-kelindar-vs-avro.md) | Both encode domain structs | Same work. Honest. |
 | [Java: Protostuff vs protobuf-java](../theory/401/java-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. protobuf-java still builds a generated message in the middle | Same work at the suite boundary. |
+| [Kotlin: Protostuff vs protobuf](../theory/401/kotlin-protostuff-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document`. Official protobuf rows still build a generated message in the middle | Same work at the suite boundary. |
+| [Kotlin: kotlinx-json vs Moshi](../theory/401/kotlin-kotlinx-json-vs-moshi.md) | Both dump/load a suite `Document` as named JSON | Same work. Honest. |
+| [Kotlin: FlatBuffers vs protobuf](../theory/401/kotlin-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
 | [JavaScript: JSON vs google-protobuf](../theory/401/javascript-json-vs-protobuf.md) | Both encode and decode on the clock | Same work. Honest (after the copy bug was fixed). |
 | [JavaScript: three protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize`. Decode rebuilds a library message; `toDomain` copies after the timer | Encode is the same kind of work. Decode implementations still differ. |
 | [Swift: FlatBuffers vs SwiftProtobuf](../theory/401/swift-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |

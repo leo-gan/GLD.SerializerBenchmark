@@ -156,6 +156,8 @@ nav:
           - "Go: kelindar vs Avro": theory/401/go-kelindar-vs-avro.md
           - "Java: Protostuff vs protobuf": theory/401/java-protostuff-vs-protobuf.md
           - "Kotlin: Protostuff vs protobuf": theory/401/kotlin-protostuff-vs-protobuf.md
+          - "Kotlin: kotlinx-json vs Moshi": theory/401/kotlin-kotlinx-json-vs-moshi.md
+          - "Kotlin: FlatBuffers vs protobuf": theory/401/kotlin-flatbuffers-vs-protobuf.md
           - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
           - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
           - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md

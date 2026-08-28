@@ -64,3 +64,13 @@ languages:
       - {name: mpack, writes_named_fields: true, role: MessagePack}
       - {name: nanopb, writes_named_fields: true, role: Protocol Buffers — nanopb (read the C page before quoting)}
       - {name: protobuf-wire, writes_named_fields: true, role: Protocol Buffers — in-tree wire helper}
+
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: kotlinx-json, writes_named_fields: true, role: JSON — compiler-generated kotlinx.serialization}
+      - {name: moshi-codegen, writes_named_fields: true, role: JSON — fast writer from Experiment 1}
+      - {name: kotlinx-cbor, writes_named_fields: true, role: CBOR}
+      - {name: jackson-cbor, writes_named_fields: true, role: CBOR — Jackson}
+      - {name: msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}

@@ -55,6 +55,14 @@ languages:
       - {name: avro, writes_named_fields: true, role: Avro}
       - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
 
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: JSON — common default}
+      - {name: avro, writes_named_fields: true, role: Avro}
+      - {name: avro4k, writes_named_fields: true, role: Avro — avro4k}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
   - id: go
     enabled: true
     libraries:

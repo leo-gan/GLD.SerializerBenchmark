@@ -68,7 +68,7 @@ The table below lists every article in this course. For each article, it states 
 
 These articles do not repeat the 201 “text versus binary” essays. Each one opens two **timed call sites** in this repository, then follows those calls into the library. The fixture is **document**, one instance, unless the article says otherwise. Measured numbers live on the [Dashboard](../../dashboard/). Both call sites in a pair must follow the same [timing contract](../../analysis/TIMING_HONESTY.md).
 
-The first ten pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, and a Dashboard row that does not time the library named in the row.
+The first ten pages take the speed or size leader in each language and ask why it leads. The later pages hold one variable still: same library and two encodings, same JSON and two libraries, same Protocol Buffers bytes and three JavaScript libraries, an in-place crate used as a classical decoder, a Dashboard row that does not time the library named in the row, and the Kotlin pairs that keep JSON or keep a schema format while changing the library.
 
 | Article | You should be able to… |
 |---------|------------------------|
@@ -85,6 +85,8 @@ The first ten pages take the speed or size leader in each language and ask why i
 | [Go: kelindar/binary vs hamba/avro](go-kelindar-vs-avro.md) | Show two cached positional plans, and why the Avro schema walk costs a little more |
 | [Java: Protostuff vs protobuf-java](java-protostuff-vs-protobuf.md) | Show why equal 155-byte messages still differ: POJO merge versus generated `parseFrom` |
 | [Kotlin: Protostuff vs protobuf](kotlin-protostuff-vs-protobuf.md) | Show the same 155-byte pair on Kotlin, and why the Kotlin DSL row matches protobuf-java |
+| [Kotlin: kotlinx-json vs Moshi](kotlin-kotlinx-json-vs-moshi.md) | Show why the same 440-byte JSON can differ between kotlinx.serialization and a generated Moshi adapter |
+| [Kotlin: FlatBuffers vs protobuf](kotlin-flatbuffers-vs-protobuf.md) | Show why vtable loads can beat a smaller Protocol Buffers stream on the Kotlin harness |
 | [JavaScript: JSON vs google-protobuf](javascript-json-vs-protobuf.md) | Show that V8’s native JSON path is faster than a real JavaScript Protocol Buffers encode and decode, even though JSON is larger |
 | [JavaScript: three Protocol Buffers libraries](javascript-three-protobufs.md) | Compare google-protobuf, protobufjs, and protobuf-es on the same 155 bytes |
 | [Swift: FlatBuffers vs SwiftProtobuf](swift-flatbuffers-vs-protobuf.md) | Show why vtable loads can beat a smaller Protocol Buffers stream |
