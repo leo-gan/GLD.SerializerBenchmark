@@ -142,6 +142,13 @@ c-sharp/build_user/
 # Java harness (java/)
 # -----------------------------------------------------------------------------
 java/target/
+
+# -----------------------------------------------------------------------------
+# Kotlin harness (kotlin/)
+# -----------------------------------------------------------------------------
+kotlin/build/
+kotlin/.gradle/
+kotlin/.kotlin/
 java/.classpath
 java/.project
 java/.settings/

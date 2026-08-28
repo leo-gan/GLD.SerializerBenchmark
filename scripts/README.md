@@ -35,6 +35,7 @@ Benchmark runners assume compilers/runtimes are already on the machine. That is 
 | rust | rustc/cargo | `cargo build --release` |
 | javascript | Node.js + npm | `npm install` |
 | java | JDK 17+ + Maven | `mvn package` |
+| kotlin | JDK 17+ | `./gradlew shadowJar` (wrapper in `kotlin/`) |
 | c | cmake, curl, … | `fetch-and-build-deps.sh` + cmake |
 | analysis | python3 + uv | `uv pip install -e analysis/` |
 

@@ -66,6 +66,7 @@ plugins:
         'go/results.md': 'go/index.md'
         'java/results.md': 'java/index.md'
         'javascript/results.md': 'javascript/index.md'
+        'kotlin/results.md': 'kotlin/index.md'
         'python/results.md': 'python/index.md'
         'rust/results.md': 'rust/index.md'
         'swift/results.md': 'swift/index.md'
@@ -172,6 +173,8 @@ nav:
           - Overview: java/index.md
       - JavaScript:
           - Overview: javascript/index.md
+      - Kotlin:
+          - Overview: kotlin/index.md
       - Python:
           - Overview: python/index.md
       - Rust:

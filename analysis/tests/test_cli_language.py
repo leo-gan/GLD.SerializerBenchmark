@@ -24,6 +24,8 @@ def test_normalize_language_aliases():
     assert _normalize_language("java") == "java"
     assert _normalize_language("jdk") == "java"
     assert _normalize_language("jvm") == "java"
+    assert _normalize_language("kotlin") == "kotlin"
+    assert _normalize_language("kt") == "kotlin"
     assert _normalize_language("cpp") == "cpp"
     assert _normalize_language("c++") == "cpp"
     assert _normalize_language("cxx") == "cpp"

@@ -24,7 +24,7 @@ from pathlib import Path
 
 
 STEM_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
-DEFAULT_LANGS = ["c", "csharp", "python", "rust", "javascript", "go", "java"]
+DEFAULT_LANGS = ["c", "csharp", "python", "rust", "javascript", "go", "java", "kotlin", "cpp", "swift"]
 
 
 def repo_root() -> Path:

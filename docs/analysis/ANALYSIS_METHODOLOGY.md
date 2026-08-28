@@ -34,7 +34,7 @@ By the end of this page you should be able to:
 | Source | Role |
 |--------|------|
 | `logs/<lang>/YYYY-MM-DD-HHMMSS.csv` | Per-language benchmark runner output (gitignored) |
-| `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `cpp`, `swift`, …) |
+| `Language` column | Language id (`csharp`, `python`, `rust`, `c`, `javascript`, `go`, `java`, `kotlin`, `cpp`, `swift`, …) |
 | `csv_schema` in master config | Required and optional columns |
 
 **Core columns** you will see often:

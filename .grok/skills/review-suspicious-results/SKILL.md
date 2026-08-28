@@ -42,7 +42,7 @@ Optional overrides:
 
 | Env / flag | Meaning |
 |------------|---------|
-| `REVIEW_LANGS` | Space/comma language ids (default: all with stats/logs: `c csharp python rust javascript go java cpp`) |
+| `REVIEW_LANGS` | Space/comma language ids (default: all with stats/logs: `c csharp python rust javascript go java kotlin cpp swift`) |
 | `REVIEW_FIXTURE` | Suite type focus (default: `message`; also scan all n=1 cells) |
 | `REVIEW_MODE` | Bench mode after fixes: `smoke` \| `all-single` \| `full` (default **`all-single`**) |
 | `REVIEW_FIX=0` | Report only; do not edit code or re-bench |
@@ -219,7 +219,7 @@ nonsense rankings vs JSON.
 ## 1. Scope
 
 ```bash
-LANGS="${REVIEW_LANGS:-c csharp python rust javascript go java cpp}"
+LANGS="${REVIEW_LANGS:-c csharp python rust javascript go java kotlin cpp swift}"
 # normalize commas → spaces
 LANGS="${LANGS//,/ }"
 echo "Review languages: $LANGS"
@@ -321,6 +321,7 @@ If harness is wrong, fix harness; do not churn serializer wrappers or mark “ex
 | Rust | docs.rs + crate README |
 | Go | pkg.go.dev + module README |
 | JavaScript | npm package README + GitHub |
+| Java / Kotlin | Maven Central + GitHub README / library tutorial |
 | C | upstream project README / man pages / header docs |
 
 Use tools: `web_search`, `open_page` / browse, local `node_modules` / crate docs, vendored `third_party` READMEs.
@@ -365,6 +366,7 @@ Open the monorepo wrapper **and** the batch/runner paths:
 | go | `go/serializers/*` | go runner / fixture batch build |
 | javascript | `javascript/src/serializers/*` | JS runner / fixture array for N |
 | java | `java/src/main/java/benchmark/serializers/*` | Main / Cells / instance count |
+| kotlin | `kotlin/src/main/kotlin/benchmark/serializers/*` | Main / Cells / instance count |
 | cpp | `cpp/src/serializers/*` | `register.cpp` / runner cells |
 | c | `c/src/serializers/*` | **`c/src/run_v2.c`**, **`c/src/batch_cell.c`** |
 
@@ -489,7 +491,7 @@ Manual sanity (optional, when scanner output is thin):
 python3 -c "
 import json, statistics as st
 from pathlib import Path
-for lang in ['c','csharp','python','rust','javascript','go','java','cpp']:
+for lang in ['c','csharp','python','rust','javascript','go','java','kotlin','cpp','swift']:
   p=Path(f'reports/stats_{lang}_latest.json')
   if not p.is_file():
     p=Path(f'dashboard/public/data/stats_{lang}_latest.json')

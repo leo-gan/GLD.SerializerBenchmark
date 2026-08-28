@@ -1,6 +1,6 @@
 # Benchmark Analysis
 
-Python package for analyzing serializer benchmark results across all language benchmark runners (C#, Python, Rust, C, JavaScript, Go).
+Python package for analyzing serializer benchmark results across all language benchmark runners (C#, Python, Rust, C, JavaScript, Go, Java, Kotlin, C++, Swift).
 
 ## Installation
 

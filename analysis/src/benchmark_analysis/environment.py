@@ -158,12 +158,14 @@ def _infer_language(result_csv_path: Optional[str]) -> str:
         return (os.environ.get("BENCHMARK_LANGUAGE") or "").strip()
     low = str(result_csv_path).replace("\\", "/").lower()
     # Longer ids first so /logs/cpp/ is not mistaken for bare c.
-    for token in ("csharp", "python", "rust", "javascript", "java", "cpp", "swift", "go"):
+    for token in ("csharp", "python", "rust", "javascript", "kotlin", "java", "cpp", "swift", "go"):
         if f"/{token}/" in low:
             return token
     parts = [p for p in low.split("/") if p]
     if "cpp" in parts or "c++" in parts or "cxx" in parts:
         return "cpp"
+    if "kotlin" in parts:
+        return "kotlin"
     if "java" in parts:
         return "java"
     if "swift" in parts:
@@ -489,6 +491,7 @@ def important_config_summary(doc: Optional[Dict[str, Any]]) -> List[str]:
             "c": "gcc",
             "cpp": "g++",
             "java": "java",
+            "kotlin": "java",
             "swift": "swift",  # may be absent until runtime capture adds it
         }
         k = key_map.get(lang_l)
