@@ -111,3 +111,11 @@ languages:
       - {name: System.Text.Json, writes_named_fields: true, role: JSON}
       - {name: YamlDotNet, writes_named_fields: true, role: YAML}
       - {name: MS XmlSerializer, writes_named_fields: true, role: XML}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: JSON}
+      - {name: serde.toml, writes_named_fields: true, role: TOML}
+      - {name: serde.zon, writes_named_fields: true, role: ZON}
+      - {name: std.zon, writes_named_fields: true, role: official std.zon}

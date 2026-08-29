@@ -6,7 +6,7 @@ hide:
   - title
 ---
 
-Compare **200+** serialization libraries across **11 languages** with fair
+Compare **200+** serialization libraries across **12 languages** with fair
 within-language rankings—not marketing microbenchmarks.
 
 [Open live Dashboard](dashboard/){ .md-button .md-button--primary }
@@ -44,7 +44,7 @@ indexes list the roster and caveats.
 
 ## Languages
 
-Eleven runners share the same fixtures and analysis rules.
+Twelve runners share the same fixtures and analysis rules.
 
 | Language | Serializers |
 |----------|------------:|
@@ -59,6 +59,7 @@ Eleven runners share the same fixtures and analysis rules.
 | [Python](python/) · [Dashboard](dashboard/?lang=python) | 16 |
 | [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 16 |
 | [Swift](swift/) · [Dashboard](dashboard/?lang=swift) | 14 |
+| [Zig](zig/) · [Dashboard](dashboard/?lang=zig) | 17 |
 
 ---
 

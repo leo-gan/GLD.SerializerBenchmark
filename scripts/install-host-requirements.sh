@@ -189,7 +189,8 @@ install_capnp() {
   cmake -S "$src/c++" -B "$work/build" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$prefix" \
-    -DBUILD_TESTING=OFF
+    -DBUILD_TESTING=OFF \
+    -DBUILD_SHARED_LIBS=ON
   cmake --build "$work/build" -j"$(nproc 2>/dev/null || echo 2)"
   cmake --install "$work/build"
   rm -rf "$work"
@@ -315,7 +316,38 @@ install_php() {
   echo "[OK] $(composer -V | head -1)"
 }
 
-KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift)
+install_zig() {
+  bench_extend_host_path
+  export PATH="${HOME}/.local/zig:${PATH}"
+  if command -v zig >/dev/null 2>&1; then
+    ver="$(zig version 2>/dev/null || true)"
+    case "$ver" in
+      0.16.*)
+        echo "[OK] zig already present: $ver"
+        return
+        ;;
+    esac
+  fi
+  local arch zig_arch
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64) zig_arch=x86_64 ;;
+    aarch64|arm64) zig_arch=aarch64 ;;
+    *) echo "[ERROR] Unsupported arch for Zig: $arch" >&2; exit 1 ;;
+  esac
+  local ver=0.16.0
+  local url="https://ziglang.org/download/${ver}/zig-${zig_arch}-linux-${ver}.tar.xz"
+  echo "[INFO] Installing Zig ${ver} to ~/.local/zig from ${url} ..."
+  mkdir -p "${HOME}/.local" /tmp/zig-install
+  curl -fL "$url" -o /tmp/zig-install/zig.tar.xz
+  rm -rf "${HOME}/.local/zig-${zig_arch}-linux-${ver}"
+  tar -C "${HOME}/.local" -xf /tmp/zig-install/zig.tar.xz
+  ln -sfn "${HOME}/.local/zig-${zig_arch}-linux-${ver}" "${HOME}/.local/zig"
+  export PATH="${HOME}/.local/zig:${PATH}"
+  echo "[OK] $(zig version)"
+}
+
+KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig)
 
 resolve_targets() {
   local args=("$@")
@@ -327,7 +359,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift)
+      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig)
     fi
     return
   fi
@@ -379,6 +411,10 @@ for t in "${TARGETS[@]}"; do
       ;;
     swift)
       install_swift
+      ;;
+    zig)
+      install_zig
+      install_capnp
       ;;
     *)
       echo "[ERROR] Unknown target: $t" >&2

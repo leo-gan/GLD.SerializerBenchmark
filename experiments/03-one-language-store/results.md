@@ -1,7 +1,7 @@
 # Is a one-language format worth the lock-in?
 
 **Question:** On one small record, is a format only one language can read faster than a format other languages can read?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `message`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -19,6 +19,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | kotlin | ok | `protobuf` | — | `protobuf`, `kryo` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
 | go | ok | `protobuf` | — | `protobuf` | [go/results.md](go/results.md) |
+| zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
 
 ## In memory, by language
 
@@ -80,6 +81,20 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | protobuf | 1.10 | 50 | other languages can read — Protocol Buffers | fastest |
 | goccy/go-json | 1.70 | 168 | other languages can read — JSON | slower |
 | encoding/gob | 14.6 | 173 | one language — gob | slower |
+
+### zig
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| comptime-bin | 0.15 | 57 | one language — comptime packed | fastest |
+| s2s | 0.21 | 73 | one language — s2s stream | slower |
+| protobuf | 0.28 | 50 | other languages can read — Protocol Buffers | slower |
+| flatbuffers | 0.31 | 108 | other languages can read — FlatBuffers | slower |
+| serde.msgpack | 0.49 | 124 | other languages can read — MessagePack | slower |
+| std.json | 1.12 | 168 | other languages can read — JSON | slower |
+| capnproto | 2.09 | 96 | other languages can read — Cap’n Proto | slower |
 
 ## What we saw
 

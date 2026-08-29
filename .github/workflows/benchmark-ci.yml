@@ -79,6 +79,7 @@ jobs:
       php: ${{ steps.filter.outputs.php }}
       cpp: ${{ steps.filter.outputs.cpp }}
       swift: ${{ steps.filter.outputs.swift }}
+      zig: ${{ steps.filter.outputs.zig }}
       analysis: ${{ steps.filter.outputs.analysis }}
     steps:
       - uses: actions/checkout@v4
@@ -125,6 +126,9 @@ jobs:
               - 'schemas/**'
             swift:
               - 'swift/**'
+              - 'schemas/**'
+            zig:
+              - 'zig/**'
               - 'schemas/**'
             analysis:
               - 'analysis/**'
@@ -469,6 +473,41 @@ jobs:
           cd swift
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+  zig-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.zig == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Zig toolchain
+        run: ./scripts/install-host-requirements.sh zig
+
+      - name: Setup Python for run-config resolution
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML (resolve_run_config)
+        run: pip install pyyaml
+
+      - name: Check host requirements (zig)
+        run: ./scripts/check-host-requirements.sh zig
+
+      - name: Run Zig tests
+        run: |
+          export PATH="${HOME}/.local/zig:${PATH}"
+          cd zig
+          zig build test
+
+      - name: Run Zig Benchmark
+        run: |
+          export PATH="${HOME}/.local/zig:${PATH}"
+          cd zig
+          ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
   analysis-unit-tests:
     needs: changes
     if: >-
@@ -506,5 +545,6 @@ jobs:
           $PY scripts/read-config.py --enabled-langs | grep -qw php
           $PY scripts/read-config.py --enabled-langs | grep -qw cpp
           $PY scripts/read-config.py --enabled-langs | grep -qw swift
-          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|kotlin|php|cpp|swift)\|'
+          $PY scripts/read-config.py --enabled-langs | grep -qw zig
+          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|kotlin|php|cpp|swift|zig)\|'
           test "$($PY scripts/read-config.py --mode-reps smoke)" = "2"

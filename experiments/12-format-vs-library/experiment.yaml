@@ -109,3 +109,18 @@ languages:
       - {name: protobuf-es, writes_named_fields: true, role: Protocol Buffers — protobuf-es}
       - {name: protobufjs, writes_named_fields: true, role: Protocol Buffers — protobufjs}
       - {name: google-protobuf, writes_named_fields: true, role: Protocol Buffers — google-protobuf}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: stdlib — JSON}
+      - {name: serde.json, writes_named_fields: true, role: serde.zig — JSON}
+      - {name: serde.msgpack, writes_named_fields: true, role: serde.zig — MessagePack}
+      - {name: zig-msgpack, writes_named_fields: true, role: zigcc — MessagePack}
+      - {name: zbor, writes_named_fields: true, role: zbor — CBOR}
+      - {name: comptime-bin, writes_named_fields: true, role: in-tree — packed}
+      - {name: s2s, writes_named_fields: true, role: s2s — native binary}
+      - {name: serde.toml, writes_named_fields: true, role: serde.zig — TOML}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers — zig-protobuf}
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}

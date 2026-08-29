@@ -82,3 +82,14 @@ languages:
       - {name: cbor, writes_named_fields: true, role: CBOR}
       - {name: rybakit-msgpack, writes_named_fields: true, role: MessagePack}
       - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: JSON — stdlib}
+      - {name: serde.msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: comptime-bin, writes_named_fields: true, role: comptime packed}
+      - {name: serde.json, writes_named_fields: true, role: JSON — serde.zig}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}

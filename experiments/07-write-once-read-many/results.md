@@ -1,7 +1,7 @@
 # Fast to write, or fast to read?
 
 **Question:** If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `['document', 'telemetry']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -22,6 +22,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | rust | rkyv | — | rkyv | — | — | no | [rust/results.md](rust/results.md) |
 | c | flatcc | — | protobuf-wire | — | — | no | [c/results.md](c/results.md) |
 | swift | FlatBuffers | — | SwiftProtobuf | — | — | no | [swift/results.md](swift/results.md) |
+| zig | comptime-bin | — | comptime-bin | — | — | no | [zig/results.md](zig/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -47,6 +48,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | c | C (sensor) | protobuf-wire | — | no |
 | swift | A (order) | FlatBuffers | — | no |
 | swift | C (sensor) | SwiftProtobuf | — | no |
+| zig | A (order) | comptime-bin | — | no |
+| zig | C (sensor) | comptime-bin | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -62,6 +65,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | rust | ok | `rkyv` | — |
 | c | ok | `flatcc` | — |
 | swift | ok | `FlatBuffers` | — |
+| zig | ok | `comptime-bin` | — |
 
 ## In memory, by language and sample
 
@@ -238,6 +242,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | SwiftProtobuf | 5.73 | 4.90 | 4128 | fastest |
 | FlatBuffers | 5.62 | 8.36 | 4216 | slower |
 | CapnProto | 33.9 | 15.2 | 4184 | slower |
+
+### zig
+
+**A (order), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| comptime-bin | 0.16 | 0.23 | 214 | fastest |
+| flatbuffers | 0.71 | 0.38 | 468 | slower |
+| protobuf | 0.60 | 0.54 | 155 | slower |
+| serde.msgpack | 1.05 | 0.66 | 325 | slower |
+| capnproto | 3.57 | 4.13 | 376 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| comptime-bin | 1.33 | 0.37 | 4140 | fastest |
+| capnproto | 2.79 | 2.43 | 4184 | slower |
+| serde.msgpack | 3.18 | 1.91 | 4663 | slower |
+| flatbuffers | 6.23 | 0.55 | 4188 | slower |
+| protobuf | 3.81 | 3.47 | 4128 | slower |
 
 ## What we saw
 

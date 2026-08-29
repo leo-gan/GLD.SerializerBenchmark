@@ -144,6 +144,7 @@ Add the library to the language package manifest and restore/build once:
 | Java | `java/pom.xml` → `mvn -q -DskipTests package` |
 | Kotlin | `kotlin/build.gradle.kts` → `./gradlew shadowJar` |
 | PHP | `php/composer.json` → `composer install` |
+| Zig | `zig/build.zig.zon` → `zig build` |
 | C / C++ / Swift | language README (system or vendored deps) |
 
 Pin a sensible range (for example NuGet `1.*`, cargo compatible versions). Prefer the latest stable major the suite already uses for peers.
@@ -164,6 +165,7 @@ Typical locations:
 | Java | `java/src/main/java/benchmark/serializers/` | suite interface |
 | Kotlin | `kotlin/src/main/kotlin/benchmark/serializers/` | suite interface |
 | PHP | `php/src/Serializers/` | suite interface |
+| Zig | `zig/src/` | suite vtable + registry |
 
 **Name property:** stable display string used as CSV `SerializerName` (for example `LightProto`, `ProtoBuf`). Do not change existing names without a docs migration.
 

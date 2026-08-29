@@ -15,6 +15,8 @@ Canonical **wire** definitions for schema-driven serializers. Logical field mean
 ./scripts/schemas/check-generated.sh   # CI drift check (when outputs committed)
 ```
 
+Per-language scripts also exist (same `.proto`): `go/scripts/generate-protobuf.sh`, `php/scripts/generate-protobuf.sh`, `zig/scripts/generate-protobuf.sh`, Rust `build.rs` (prost). FlatBuffers / Cap’n Proto for Zig: `zig/scripts/generate-flatbuffers.sh` and `zig/scripts/generate-capnp.sh` (from `cpp/schemas/`).
+
 Tool pins: [`scripts/schemas/tool-versions.env`](../../scripts/schemas/tool-versions.env).
 
 ## Batch convention

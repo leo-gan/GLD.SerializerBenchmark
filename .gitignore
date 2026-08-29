@@ -171,3 +171,8 @@ cpp/third_party/**
 # Swift
 swift/.build/
 swift/.swiftpm/
+
+# Zig
+zig/.zig-cache/
+zig/zig-out/
+zig/zig-pkg/

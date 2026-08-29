@@ -303,6 +303,7 @@ const LANG_AXIS = {
   php: 'PHP',
   cpp: 'C++',
   swift: 'Swift',
+  zig: 'Zig',
 };
 
 function langAxis(id) {

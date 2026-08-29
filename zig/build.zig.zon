@@ -1,0 +1,43 @@
+.{
+    .name = .serializer_benchmark_zig,
+    .version = "0.1.0",
+    .fingerprint = 0xaab3c9771598c1e6,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .serde = .{
+            .url = "https://github.com/OrlovEvgeny/serde.zig/archive/refs/tags/v1.0.7.tar.gz",
+            .hash = "serde-1.0.1-1DszT3MjEADZkgXH6IsH3gs1Pm12UGyhagpV22EEch7x",
+        },
+        .zig_msgpack = .{
+            .url = "https://github.com/zigcc/zig-msgpack/archive/refs/heads/main.tar.gz",
+            .hash = "zig_msgpack-0.0.14-evvueL5SBQACmim6j6klQ9wWIIG_UxGlPvVYdiNy0KT8",
+        },
+        .zbor = .{
+            .url = "https://codeberg.org/r4gus/zbor/archive/0.21.0.tar.gz",
+            .hash = "zbor-0.21.0-kr-CoMd7AwAj1t5CJoR8CoYr9CLQCNwBTNZEYYE9SBk0",
+        },
+        .msgpack_lalinsky = .{
+            .url = "https://github.com/lalinsky/msgpack.zig/archive/refs/heads/master.tar.gz",
+            .hash = "msgpack-0.7.0-ZOu9PAEaAgAM7pv6xQ8PCdm0uiD3cjgQq5SA3SjzodW5",
+        },
+        .s2s = .{
+            .url = "https://github.com/ziglibs/s2s/archive/refs/heads/master.tar.gz",
+            .hash = "s2s-0.0.1-qt8ajXF9AABu59Lb3VhU2fa84NnRRpLsds6qQUOwJcOx",
+        },
+        .protobuf = .{
+            .url = "git+https://github.com/Arwalk/zig-protobuf?ref=master#b794f99323cead7f1794ae68554d0311cc309857",
+            .hash = "protobuf-5.0.0-0e82ahZiKwC5Yrh4psANoUzrV_H4CQU1EsOIY9Zdyap_",
+        },
+        .flatbuffers = .{
+            .url = "https://github.com/nDimensional/zig-flatbuffers/archive/refs/tags/v0.2.1.tar.gz",
+            .hash = "flatbuffers-0.2.1-Ntd6Dj4tAgAaAnjU4WN1nBvxfeZ0yHDW1JNCNr1i1EKB",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "scripts",
+        "README.md",
+    },
+}

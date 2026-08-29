@@ -1,7 +1,7 @@
 # Does squeezing the bytes make JSON small enough?
 
 **Question:** After gzip or zstd, does JSON stay larger than a dense binary format?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `['strings', 'telemetry', 'message']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,6 +23,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | — | protobuf-wire | msgpack | — | protobuf-wire | no | [cpp/results.md](cpp/results.md) |
 | csharp | — | SpanJson | Google.Protobuf | — | Google.Protobuf | no | [csharp/results.md](csharp/results.md) |
 | swift | — | SwiftProtobuf | SwiftProtobuf | — | SwiftProtobuf | no | [swift/results.md](swift/results.md) |
+| zig | — | comptime-bin | comptime-bin | — | comptime-bin | no | [zig/results.md](zig/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -61,6 +62,9 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | B (flat) | SwiftProtobuf | — | no |
 | swift | C (sensor) | SwiftProtobuf | — | no |
 | swift | E (words) | SwiftProtobuf | — | no |
+| zig | B (flat) | comptime-bin | — | no |
+| zig | C (sensor) | comptime-bin | — | no |
+| zig | E (words) | comptime-bin | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -77,6 +81,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | ok | — | — |
 | csharp | ok | — | — |
 | swift | ok | — | — |
+| zig | ok | — | — |
 
 ## In memory, by language and sample
 
@@ -389,6 +394,41 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | IkigaJSON | 126 | 2407 | slower |
 | Foundation.JSONEncoder | 136 | 2407 | slower |
 | SwiftMsgpack | 173 | 1212 | slower |
+
+### zig
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 0.17 | 57 | fastest |
+| protobuf | 0.30 | 50 | slower |
+| flatbuffers | 0.33 | 108 | slower |
+| serde.msgpack | 0.53 | 124 | slower |
+| std.json | 1.20 | 168 | slower |
+| capnproto | 2.75 | 96 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 0.85 | 436 | fastest |
+| flatbuffers | 0.88 | 660 | close |
+| protobuf | 1.23 | 368 | slower |
+| serde.msgpack | 1.39 | 346 | slower |
+| std.json | 3.23 | 411 | slower |
+| capnproto | 15.1 | 736 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 0.67 | 1073 | fastest |
+| flatbuffers | 0.71 | 1124 | close |
+| serde.msgpack | 2.19 | 1212 | slower |
+| protobuf | 2.61 | 1061 | slower |
+| capnproto | 5.02 | 1120 | slower |
+| std.json | 12.9 | 2407 | slower |
 
 ## What we saw
 

@@ -49,7 +49,7 @@ def main():
     # Ensure target directory exists
     os.makedirs(target_data_dir, exist_ok=True)
 
-    languages = ["csharp", "rust", "go", "python", "javascript", "c", "java", "kotlin", "php", "cpp", "swift"]
+    languages = ["csharp", "rust", "go", "python", "javascript", "c", "java", "kotlin", "php", "cpp", "swift", "zig"]
     available_runs = {}
 
     for lang in languages:

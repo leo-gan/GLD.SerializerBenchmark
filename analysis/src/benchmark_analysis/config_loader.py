@@ -141,7 +141,7 @@ def known_language_ids(config_path: Optional[str | Path] = None) -> Tuple[str, .
     entries = language_entries(config_path)
     if entries:
         return tuple(sorted(entries.keys()))
-    return ("csharp", "python", "rust", "c", "javascript", "go", "java", "kotlin", "php", "cpp", "swift")
+    return ("csharp", "python", "rust", "c", "javascript", "go", "java", "kotlin", "php", "cpp", "swift", "zig")
 
 
 def enabled_languages(config_path: Optional[str | Path] = None) -> List[Dict[str, Any]]:

@@ -1,7 +1,7 @@
 # Should two services inside the company stop using JSON?
 
 **Question:** On one small record, how do JSON, MessagePack, and Protocol Buffers compare?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `message`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -25,6 +25,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | cpp | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [cpp/results.md](cpp/results.md) |
 | csharp | ok | `SpanJson` | `Google.Protobuf` | `SpanJson`, `Google.Protobuf` | [csharp/results.md](csharp/results.md) |
 | swift | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [swift/results.md](swift/results.md) |
+| zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
 
 ## At a glance (100 records per write)
 
@@ -41,6 +42,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | cpp | missing | — | — | — |
 | csharp | ok | `MessagePack-CSharp`, `Google.Protobuf` | `ProtoBuf`, `SpanJson` | `MessagePack-CSharp`, `Google.Protobuf` |
 | swift | missing | — | — | — |
+| zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` |
 
 ## In memory, by language
 
@@ -139,6 +141,34 @@ no CSV in this language folder yet
 ### swift
 
 no CSV in this language folder yet
+
+### zig
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| comptime-bin | 0.16 | 57 | comptime byte-packed binary | fastest |
+| protobuf | 0.30 | 50 | Protocol Buffers | slower |
+| flatbuffers | 0.33 | 108 | FlatBuffers | slower |
+| serde.msgpack | 0.54 | 124 | MessagePack — serde.zig | slower |
+| zbor | 0.95 | 124 | CBOR — zbor | slower |
+| std.json | 1.24 | 168 | JSON — stdlib | slower |
+| zig-msgpack | 1.53 | 124 | MessagePack — zigcc | slower |
+| capnproto | 2.79 | 96 | Cap’n Proto | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| comptime-bin | 6.98 | 5758 | comptime byte-packed binary | fastest |
+| flatbuffers | 15.6 | 10644 | FlatBuffers | slower |
+| protobuf | 15.9 | 5045 | Protocol Buffers | slower |
+| serde.msgpack | 32.6 | 12432 | MessagePack — serde.zig | slower |
+| zbor | 74.0 | 12432 | CBOR — zbor | slower |
+| std.json | 96.9 | 16849 | JSON — stdlib | slower |
+| zig-msgpack | 126 | 12432 | MessagePack — zigcc | slower |
+| capnproto | 181 | 9572 | Cap’n Proto | slower |
 
 ## What we saw
 

@@ -222,7 +222,37 @@ check_swift() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift)
+check_zig() {
+  echo "zig"
+  if [[ -x "${HOME}/.local/zig/zig" ]]; then
+    export PATH="${HOME}/.local/zig:${PATH}"
+  elif [[ -x "${HOME}/.local/zig-x86_64-linux-0.16.0/zig" ]]; then
+    export PATH="${HOME}/.local/zig-x86_64-linux-0.16.0:${PATH}"
+  fi
+  if command -v zig >/dev/null 2>&1; then
+    ver="$(zig version 2>/dev/null || true)"
+    case "$ver" in
+      0.16.*) ok "zig $ver" ;;
+      *) miss "zig 0.16.x (found: ${ver:-unknown}) — ./scripts/install-host-requirements.sh zig" ;;
+    esac
+  else
+    miss "zig 0.16.x — ./scripts/install-host-requirements.sh zig"
+  fi
+  local prefix="${HOME}/.local"
+  if [[ -f "${prefix}/include/capnp/generated-header-support.h" ]]; then
+    ok "capnproto headers (${prefix}/include/capnp)"
+  else
+    miss "capnproto C++ headers — ./scripts/install-host-requirements.sh zig"
+  fi
+  if [[ -f "${prefix}/lib/libcapnp.so" ]] || [[ -f "${prefix}/lib/libcapnp.a" ]] \
+    || [[ -f "${prefix}/lib64/libcapnp.so" ]] || [[ -f "${prefix}/lib64/libcapnp.a" ]]; then
+    ok "libcapnp under ${prefix}/lib"
+  else
+    miss "libcapnp — ./scripts/install-host-requirements.sh zig"
+  fi
+}
+
+KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig)
 
 resolve_targets() {
   local args=("$@")
@@ -235,7 +265,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift)
+      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig)
     fi
     return
   fi
@@ -265,6 +295,7 @@ for t in "${TARGETS[@]}"; do
     php) check_php ;;
     cpp|c++|cxx|cplusplus) check_cpp ;;
     swift) check_swift ;;
+    zig) check_zig ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;
   esac
   echo

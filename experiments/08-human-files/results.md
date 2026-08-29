@@ -1,7 +1,7 @@
 # Can we send YAML on the live path?
 
 **Question:** On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `['document', 'strings']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,6 +23,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | goccy/go-json | — | — | — | goccy/go-json | no | [go/results.md](go/results.md) |
 | swift | IkigaJSON | — | — | — | IkigaJSON | no | [swift/results.md](swift/results.md) |
 | csharp | System.Text.Json | — | — | — | System.Text.Json | no | [csharp/results.md](csharp/results.md) |
+| zig | serde.zon | — | — | — | serde.zon | no | [zig/results.md](zig/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -50,6 +51,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | E (words) | IkigaJSON | — | no |
 | csharp | A (order) | System.Text.Json | — | no |
 | csharp | E (words) | System.Text.Json | — | no |
+| zig | A (order) | serde.zon | — | no |
+| zig | E (words) | serde.zon | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -66,6 +69,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | go | ok | `goccy/go-json` | — |
 | swift | ok | `IkigaJSON` | — |
 | csharp | ok | `System.Text.Json` | `MS XmlSerializer` |
+| zig | ok | `serde.zon` | — |
 
 ## In memory, by language and sample
 
@@ -254,6 +258,26 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | System.Text.Json | 60.3 | 548 | fastest |
 | MS XmlSerializer | 140 | 1187 | slower |
 | YamlDotNet | 746 | 406 | slower |
+
+### zig
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.zon | 3.40 | 994 | fastest |
+| std.json | 3.84 | 448 | slower |
+| serde.toml | 5.70 | 508 | slower |
+| std.zon | 8.30 | 429 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.zon | 2.53 | 713 | fastest |
+| std.json | 3.56 | 411 | slower |
+| serde.toml | 3.72 | 441 | slower |
+| std.zon | 6.35 | 412 | slower |
 
 ## What we saw
 

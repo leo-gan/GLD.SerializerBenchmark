@@ -30,6 +30,7 @@ RUNNERS: dict[str, str] = {
     "swift": "swift/scripts/run-benchmarks.sh",
     "kotlin": "kotlin/scripts/run-benchmarks.sh",
     "php": "php/scripts/run-benchmarks.sh",
+    "zig": "zig/scripts/run-benchmarks.sh",
 }
 
 

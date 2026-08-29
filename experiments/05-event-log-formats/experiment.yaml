@@ -121,3 +121,13 @@ languages:
       - {name: IkigaJSON, writes_named_fields: true, role: JSON — Experiment 1}
       - {name: SwiftAvroCore, writes_named_fields: true, role: Avro}
       - {name: SwiftProtobuf, writes_named_fields: true, role: Protocol Buffers}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: JSON — stdlib}
+      - {name: serde.json, writes_named_fields: true, role: JSON — serde.zig}
+      - {name: serde.msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}
