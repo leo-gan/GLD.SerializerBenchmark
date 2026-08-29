@@ -29,10 +29,22 @@ fn applyCapnp(b: *std.Build, mod: *std.Build.Module, prefix: []const u8) void {
     mod.linkSystemLibrary("capnp", .{});
     mod.linkSystemLibrary("kj", .{});
     mod.link_libcpp = false;
+    // needed=false so the linker gets -lstdc++ (not Darwin -needed-lstdc++).
+    mod.addLibraryPath(.{ .cwd_relative = "/usr/lib/x86_64-linux-gnu" });
     mod.link_objects.append(b.allocator, .{
         .system_lib = .{
             .name = "stdc++",
-            .needed = true,
+            .needed = false,
+            .weak = false,
+            .use_pkg_config = .no,
+            .preferred_link_mode = .dynamic,
+            .search_strategy = .paths_first,
+        },
+    }) catch @panic("OOM");
+    mod.link_objects.append(b.allocator, .{
+        .system_lib = .{
+            .name = "gcc_s",
+            .needed = false,
             .weak = false,
             .use_pkg_config = .no,
             .preferred_link_mode = .dynamic,
