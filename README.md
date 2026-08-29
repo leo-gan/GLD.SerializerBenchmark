@@ -50,7 +50,7 @@ Compare 200+ serialization libraries across **12 languages**.
 - [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 16
 - [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 16
 - [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 14
-- [Zig](https://leo-gan.github.io/GLD.SerializerBenchmark/zig/) — 14
+- [Zig](https://leo-gan.github.io/GLD.SerializerBenchmark/zig/) — 17
 
 [Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/) · [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/).
 

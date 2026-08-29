@@ -1211,6 +1211,21 @@ languages:
         package: ziglibs/s2s
         rationale: "Native binary struct-to-stream"
         optimal_api: "s2s.serialize / deserializeAlloc"
+      - name: protobuf
+        category: schema
+        package: Arwalk/zig-protobuf
+        rationale: "Generated messages from schemas/v2/protobuf/benchmark_v2.proto"
+        optimal_api: "Message.encode / Message.decode (prepare copies suite → generated)"
+      - name: flatbuffers
+        category: schema
+        package: nDimensional/zig-flatbuffers
+        rationale: "Generated tables from cpp/schemas/benchmark.fbs"
+        optimal_api: "Builder.writeTable / decodeRoot (prepare stores fixtures)"
+      - name: capnproto
+        category: schema
+        package: capnproto C++ 1.0.2
+        rationale: "Official C++ runtime from cpp/schemas/benchmark.capnp (no Zig 0.16 plugin)"
+        optimal_api: "MallocMessageBuilder / FlatArrayMessageReader via CapnpBridge"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

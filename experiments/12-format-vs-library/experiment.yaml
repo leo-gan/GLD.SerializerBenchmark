@@ -121,3 +121,6 @@ languages:
       - {name: comptime-bin, writes_named_fields: true, role: in-tree — packed}
       - {name: s2s, writes_named_fields: true, role: s2s — native binary}
       - {name: serde.toml, writes_named_fields: true, role: serde.zig — TOML}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers — zig-protobuf}
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}

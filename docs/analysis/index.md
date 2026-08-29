@@ -111,7 +111,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | Python | **16** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
 | Rust | **16** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
 | Swift | **14** | [Overview](../swift/index.md) | [Dashboard](../dashboard/?lang=swift) |
-| Zig | **14** | [Overview](../zig/index.md) | [Dashboard](../dashboard/?lang=zig) |
+| Zig | **17** | [Overview](../zig/index.md) | [Dashboard](../dashboard/?lang=zig) |
 
 † In JavaScript, `simdjson` is optional (it needs a native addon). If that addon fails to build, the rest of the run still continues without it.
 

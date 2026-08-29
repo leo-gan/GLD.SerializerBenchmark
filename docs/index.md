@@ -59,7 +59,7 @@ Twelve runners share the same fixtures and analysis rules.
 | [Python](python/) · [Dashboard](dashboard/?lang=python) | 16 |
 | [Rust](rust/) · [Dashboard](dashboard/?lang=rust) | 16 |
 | [Swift](swift/) · [Dashboard](dashboard/?lang=swift) | 14 |
-| [Zig](zig/) · [Dashboard](dashboard/?lang=zig) | 14 |
+| [Zig](zig/) · [Dashboard](dashboard/?lang=zig) | 17 |
 
 ---
 

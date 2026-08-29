@@ -413,6 +413,7 @@ for t in "${TARGETS[@]}"; do
       ;;
     zig)
       install_zig
+      install_capnp
       ;;
     *)
       echo "[ERROR] Unknown target: $t" >&2

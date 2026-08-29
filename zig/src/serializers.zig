@@ -1,8 +1,6 @@
 //! Serializer trait, registry, and first-wave implementations.
 //!
-//! Mixed candidate list (see docs/zig/index.md): std.json two official APIs,
-//! idiomatic comptime-packed binary, plus optional third-party formats wired
-//! through the same interface.
+//! Registry of wired serializers (see docs/zig/index.md).
 
 const std = @import("std");
 const data = @import("data.zig");
@@ -11,6 +9,9 @@ const json_util = @import("json_util.zig");
 const packed_bin = @import("packed_bin.zig");
 const serde_ser = @import("serde_ser.zig");
 const extra = @import("extra.zig");
+const proto_ser = @import("proto_ser.zig");
+const fb_ser = @import("fb_ser.zig");
+const capnp_ser = @import("capnp_ser.zig");
 
 pub const StreamMode = enum {
     native,
@@ -51,7 +52,8 @@ pub const Serializer = struct {
     vtable: *const VTable,
 
     pub const VTable = struct {
-        prepare: *const fn (ctx: *anyopaque, fixtures: []const data.Fixture) anyerror!void,
+        prepare: *const fn (ctx: *anyopaque, allocator: std.mem.Allocator, fixtures: []const data.Fixture) anyerror!void,
+        begin_encode: *const fn (ctx: *anyopaque) void = Dummy.beginEncode,
         serialize: *const fn (ctx: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) anyerror!void,
         deserialize: *const fn (ctx: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) anyerror!data.Fixture,
         supports: *const fn (type_id: []const u8) bool = supportAll,
@@ -61,8 +63,12 @@ pub const Serializer = struct {
         return self.vtable.supports(type_id);
     }
 
-    pub fn prepare(self: Serializer, fixtures: []const data.Fixture) !void {
-        return self.vtable.prepare(self.ctx, fixtures);
+    pub fn prepare(self: Serializer, allocator: std.mem.Allocator, fixtures: []const data.Fixture) !void {
+        return self.vtable.prepare(self.ctx, allocator, fixtures);
+    }
+
+    pub fn beginEncode(self: Serializer) void {
+        self.vtable.begin_encode(self.ctx);
     }
 
     pub fn serialize(self: Serializer, fx: data.Fixture, out: *buf_mod.Buf) !void {
@@ -75,7 +81,8 @@ pub const Serializer = struct {
 };
 
 const Dummy = struct {
-    fn prepare(_: *anyopaque, _: []const data.Fixture) !void {}
+    fn prepare(_: *anyopaque, _: std.mem.Allocator, _: []const data.Fixture) !void {}
+    fn beginEncode(_: *anyopaque) void {}
 };
 
 fn supportAll(_: []const u8) bool {
@@ -272,7 +279,26 @@ fn extraS2sDe(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, 
     return extra.decodeS2s(allocator, type_id, bytes);
 }
 
-pub fn allSerializers() [14]Serializer {
+const protobuf_vtable = Serializer.VTable{
+    .prepare = proto_ser.prepare,
+    .begin_encode = proto_ser.beginEncode,
+    .serialize = proto_ser.serialize,
+    .deserialize = proto_ser.deserialize,
+};
+const flatbuffers_vtable = Serializer.VTable{
+    .prepare = fb_ser.prepare,
+    .begin_encode = fb_ser.beginEncode,
+    .serialize = fb_ser.serialize,
+    .deserialize = fb_ser.deserialize,
+};
+const capnproto_vtable = Serializer.VTable{
+    .prepare = capnp_ser.prepare,
+    .begin_encode = capnp_ser.beginEncode,
+    .serialize = capnp_ser.serialize,
+    .deserialize = capnp_ser.deserialize,
+};
+
+pub fn allSerializers() [17]Serializer {
     return .{
         .{
             .name = "std.json",
@@ -386,11 +412,42 @@ pub fn allSerializers() [14]Serializer {
             .ctx = @ptrCast(&s2s_state),
             .vtable = &s2s_vtable,
         },
+        .{
+            .name = "protobuf",
+            .version = proto_ser.version,
+            .stream_mode = .adapted,
+            .native_kind = .message,
+            .ctx = @ptrCast(&proto_ser.state),
+            .vtable = &protobuf_vtable,
+        },
+        .{
+            .name = "flatbuffers",
+            .version = fb_ser.version,
+            .stream_mode = .adapted,
+            .native_kind = .message,
+            .ctx = @ptrCast(&fb_ser.state),
+            .vtable = &flatbuffers_vtable,
+        },
+        .{
+            .name = "capnproto",
+            .version = capnp_ser.version,
+            .stream_mode = .adapted,
+            .native_kind = .message,
+            .ctx = @ptrCast(&capnp_ser.state),
+            .vtable = &capnproto_vtable,
+        },
     };
 }
 
 fn builtinZigVersion() []const u8 {
     return @import("builtin").zig_version_string;
+}
+
+fn named(all: []const Serializer, name: []const u8) ?Serializer {
+    for (all) |s| {
+        if (std.mem.eql(u8, s.name, name)) return s;
+    }
+    return null;
 }
 
 pub fn select(filter: []const u8, out: []Serializer) usize {
@@ -414,6 +471,7 @@ test "std.json document round-trip" {
     const fx = try data.makeOne(arena.allocator(), "document", 42, 0, .{});
     var out = try buf_mod.Buf.initCapacity(arena.allocator(), 1024);
     const sers = allSerializers();
+    try sers[0].prepare(arena.allocator(), &.{fx});
     try sers[0].serialize(fx, &out);
     try std.testing.expect(out.len > 10);
     const back = try sers[0].deserialize(arena.allocator(), "document", out.items());
@@ -426,6 +484,7 @@ test "std.json.scanner message round-trip" {
     const fx = try data.makeOne(arena.allocator(), "message", 42, 0, .{});
     var out = try buf_mod.Buf.initCapacity(arena.allocator(), 512);
     const sers = allSerializers();
+    try sers[1].prepare(arena.allocator(), &.{fx});
     try sers[1].serialize(fx, &out);
     const back = try sers[1].deserialize(arena.allocator(), "message", out.items());
     try std.testing.expect(data.fidelity(fx, back));
@@ -440,6 +499,7 @@ test "comptime-bin all v2 types" {
     for (kinds) |tid| {
         const fx = try data.makeOne(arena.allocator(), tid, 7, 0, .{});
         var out = try buf_mod.Buf.initCapacity(arena.allocator(), 2048);
+        try packed_ser.prepare(arena.allocator(), &.{fx});
         try packed_ser.serialize(fx, &out);
         try std.testing.expect(out.len > 0);
         const back = try packed_ser.deserialize(arena.allocator(), tid, out.items());
@@ -453,6 +513,7 @@ test "serde.json document round-trip" {
     const fx = try data.makeOne(arena.allocator(), "document", 42, 0, .{});
     var out = try buf_mod.Buf.initCapacity(arena.allocator(), 2048);
     const sers = allSerializers();
+    try sers[3].prepare(arena.allocator(), &.{fx});
     try sers[3].serialize(fx, &out);
     try std.testing.expect(out.len > 10);
     const back = try sers[3].deserialize(arena.allocator(), "document", out.items());
@@ -467,6 +528,11 @@ test "all supporting serializers round-trip document" {
     for (sers) |s| {
         if (!s.supports("document")) continue;
         var out = try buf_mod.Buf.initCapacity(arena.allocator(), 8192);
+        s.prepare(arena.allocator(), &.{fx}) catch |e| {
+            std.debug.print("prepare fail {s}: {s}\n", .{ s.name, @errorName(e) });
+            return e;
+        };
+        s.beginEncode();
         s.serialize(fx, &out) catch |e| {
             std.debug.print("ser fail {s}: {s}\n", .{ s.name, @errorName(e) });
             return e;
@@ -488,6 +554,11 @@ test "all serializers round-trip message" {
     for (sers) |s| {
         if (!s.supports("message")) continue;
         var out = try buf_mod.Buf.initCapacity(arena.allocator(), 4096);
+        s.prepare(arena.allocator(), &.{fx}) catch |e| {
+            std.debug.print("prepare fail {s}: {s}\n", .{ s.name, @errorName(e) });
+            return e;
+        };
+        s.beginEncode();
         s.serialize(fx, &out) catch |e| {
             std.debug.print("ser fail {s}: {s}\n", .{ s.name, @errorName(e) });
             return e;
@@ -501,10 +572,60 @@ test "all serializers round-trip message" {
     }
 }
 
+test "schema serializers all v2 types" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const sers = allSerializers();
+    const names = [_][]const u8{ "protobuf", "flatbuffers", "capnproto" };
+    const kinds = [_][]const u8{ "message", "document", "telemetry", "strings", "event" };
+    for (names) |name| {
+        const ser = named(&sers, name) orelse return error.MissingSchemaSerializer;
+        for (kinds) |tid| {
+            const fx = try data.makeOne(arena.allocator(), tid, 7, 0, .{});
+            var out = try buf_mod.Buf.initCapacity(arena.allocator(), 2048);
+            try ser.prepare(arena.allocator(), &.{fx});
+            ser.beginEncode();
+            try ser.serialize(fx, &out);
+            try std.testing.expect(out.len > 0);
+            const back = try ser.deserialize(arena.allocator(), tid, out.items());
+            try std.testing.expect(data.fidelity(fx, back));
+        }
+    }
+}
+
+test "protobuf all v2 types" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const sers = allSerializers();
+    const pb_ser = named(&sers, "protobuf") orelse return error.MissingProtobuf;
+    const kinds = [_][]const u8{ "message", "document", "telemetry", "strings", "event" };
+    for (kinds) |tid| {
+        const fx = try data.makeOne(arena.allocator(), tid, 7, 0, .{});
+        var out = try buf_mod.Buf.initCapacity(arena.allocator(), 2048);
+        try pb_ser.prepare(arena.allocator(), &.{fx});
+        pb_ser.beginEncode();
+        try pb_ser.serialize(fx, &out);
+        try std.testing.expect(out.len > 0);
+        const back = try pb_ser.deserialize(arena.allocator(), tid, out.items());
+        try std.testing.expect(data.fidelity(fx, back));
+    }
+}
+
 test "registry includes std.json" {
     var tmp: [24]Serializer = undefined;
     const n = select("", &tmp);
-    try std.testing.expect(n >= 14);
+    try std.testing.expect(n >= 17);
+    var found_pb = false;
+    var found_fb = false;
+    var found_capnp = false;
+    for (tmp[0..n]) |s| {
+        if (std.mem.eql(u8, s.name, "protobuf")) found_pb = true;
+        if (std.mem.eql(u8, s.name, "flatbuffers")) found_fb = true;
+        if (std.mem.eql(u8, s.name, "capnproto")) found_capnp = true;
+    }
+    try std.testing.expect(found_pb);
+    try std.testing.expect(found_fb);
+    try std.testing.expect(found_capnp);
     var found = false;
     for (tmp[0..n]) |s| {
         if (std.mem.eql(u8, s.name, "std.json")) found = true;

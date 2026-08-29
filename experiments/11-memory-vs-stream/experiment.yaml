@@ -86,3 +86,6 @@ languages:
       - {name: std.json, writes_named_fields: true, role: JSON}
       - {name: std.json.scanner, writes_named_fields: true, role: JSON — streaming parser}
       - {name: serde.msgpack, writes_named_fields: true, role: MessagePack}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}

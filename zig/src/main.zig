@@ -11,6 +11,9 @@ pub const json_util = @import("json_util.zig");
 pub const compress = @import("compress.zig");
 pub const serde_ser = @import("serde_ser.zig");
 pub const extra = @import("extra.zig");
+pub const proto_ser = @import("proto_ser.zig");
+pub const fb_ser = @import("fb_ser.zig");
+pub const capnp_ser = @import("capnp_ser.zig");
 
 /// Args (from run-benchmarks.sh):
 ///   REPS LOG_PATH RESOLVED_JSON [serFilter] [dataFilter] [seed] [schedule]

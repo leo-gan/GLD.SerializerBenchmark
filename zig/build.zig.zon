@@ -24,6 +24,14 @@
             .url = "https://github.com/ziglibs/s2s/archive/refs/heads/master.tar.gz",
             .hash = "s2s-0.0.1-qt8ajXF9AABu59Lb3VhU2fa84NnRRpLsds6qQUOwJcOx",
         },
+        .protobuf = .{
+            .url = "git+https://github.com/Arwalk/zig-protobuf?ref=master#b794f99323cead7f1794ae68554d0311cc309857",
+            .hash = "protobuf-5.0.0-0e82ahZiKwC5Yrh4psANoUzrV_H4CQU1EsOIY9Zdyap_",
+        },
+        .flatbuffers = .{
+            .url = "https://github.com/nDimensional/zig-flatbuffers/archive/refs/tags/v0.2.1.tar.gz",
+            .hash = "flatbuffers-0.2.1-Ntd6Dj4tAgAaAnjU4WN1nBvxfeZ0yHDW1JNCNr1i1EKB",
+        },
     },
     .paths = .{
         "build.zig",

@@ -103,6 +103,7 @@ fn serializeCell(
     out: *buf_mod.Buf,
     scratch: *buf_mod.Buf,
 ) !void {
+    ser.beginEncode();
     if (fixtures.len == 1) {
         try ser.serialize(fixtures[0], out);
         return;
@@ -221,7 +222,7 @@ pub fn run(allocator: std.mem.Allocator, io: std.Io, opt: Options) !void {
         var nready: usize = 0;
         for (sers, 0..) |ser, i| {
             if (!ser.supports(cell.type_id)) continue;
-            ser.prepare(cell.fixtures) catch |e| {
+            ser.prepare(allocator, cell.fixtures) catch |e| {
                 std.debug.print("[ERROR] prepare {s} / {s}: {s}\n", .{ ser.name, cell.type_id, @errorName(e) });
                 errors.write(cell.type_id, ser.name, "prepare", 0, @errorName(e));
                 continue;

@@ -30,7 +30,7 @@ const value = try serde.json.fromSlice(Document, allocator, bytes);
 
 Both rows write named JSON fields. Stream mode for `std.json` is `text_on_stream` (text written through a writer). `serde.json` is `adapted` in this first wave (slice in, slice out).
 
-A third row, `std.json.scanner`, keeps the same stringify path and decodes with `std.json.Scanner` + `parseFromTokenSource`. That is the official streaming parser from the first intake list.
+A third row, `std.json.scanner`, keeps the same stringify path and decodes with `std.json.Scanner` + `parseFromTokenSource`.
 
 ## What to look at on the Dashboard
 

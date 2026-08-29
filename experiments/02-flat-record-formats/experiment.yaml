@@ -146,3 +146,6 @@ languages:
       - {name: zig-msgpack, writes_named_fields: true, role: MessagePack — zigcc}
       - {name: zbor, writes_named_fields: true, role: CBOR — zbor}
       - {name: comptime-bin, writes_named_fields: true, role: comptime byte-packed binary}
+      - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
+      - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
+      - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}

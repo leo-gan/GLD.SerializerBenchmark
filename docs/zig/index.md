@@ -5,7 +5,7 @@ title: "Zig"
 Zig
 ===
 
-Zig is in this suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin runtime reflection, C# source generation, or Rust derive macros. The runner times official `std.json` (typed `parseFromSlice` versus streaming `Scanner` / `parseFromTokenSource`) against an in-tree comptime byte-packed baseline and against **serde.zig**, a format-agnostic framework that uses the same `@typeInfo` walk for JSON, MessagePack, YAML, TOML, and ZON.
+Zig is in this suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin runtime reflection, C# source generation, or Rust derive macros. The runner times official `std.json` (typed `parseFromSlice` versus streaming `Scanner` / `parseFromTokenSource`) against an in-tree comptime byte-packed baseline, against **serde.zig**, a format-agnostic framework that uses the same `@typeInfo` walk for JSON, MessagePack, YAML, TOML, and ZON, and against **schema codecs** (Protocol Buffers, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
 
 ## Benchmark runner
 
@@ -35,37 +35,26 @@ The shell script resolves the run config to JSON. The Zig binary does not spawn 
 | msgpack.zig | Binary | lalinsky/msgpack.zig 0.7.0 | native | Typed `encode` / `decodeFromSlice` |
 | zbor | Binary | r4gus/zbor 0.21.0 | adapted | Native Zig CBOR (`stringify` / `parse`) |
 | s2s | Binary | ziglibs/s2s | native | Native binary “struct to stream” |
-
-## Mixed candidate list (what we took from both intake lists)
-
-The two intake lists were merged. Stars are priority, not a measured rank.
-
-| Candidate | Format | Priority | Status |
-|-----------|--------|----------|--------|
-| std.json (`parseFromSlice`) | JSON | ⭐⭐⭐⭐⭐ | **wired** |
-| std.json (`Scanner` / streaming) | JSON | ⭐⭐⭐⭐⭐ | **wired** |
-| serde.zig (JSON / MessagePack / YAML / TOML / ZON) | multi | ⭐⭐⭐⭐⭐ | **wired** (those five formats) |
-| comptime-bin / raw packed streams | binary | ⭐⭐⭐⭐ | **wired** (byte-packed `@typeInfo`; literal `@bitCast` cannot encode slices) |
-| std.zon | ZON | ⭐⭐⭐⭐ | **wired** (`std.zon`) |
-| zig-msgpack (zigcc) | MessagePack | ⭐⭐⭐⭐⭐ | **wired** |
-| zbor | CBOR | ⭐⭐⭐⭐⭐ | **wired** |
-| zig-protobuf (Arwalk) | Protobuf | ⭐⭐⭐⭐⭐ | not yet — needs 0.16 codegen step |
-| protobuf.zig / protobuf-zig | Protobuf | ⭐⭐⭐⭐ | not yet — alternative once Arwalk lands |
-| flatbuffers-zig | FlatBuffers | ⭐⭐⭐⭐⭐ | not yet — codegen + `flatc` |
-| capnproto-zig | Cap’n Proto | ⭐⭐⭐⭐ | skipped — targets Zig 0.17-dev |
-| ziggy | Ziggy | ⭐⭐⭐⭐ | skipped — package `build.zig` requires Zig 0.17 / lsp_kit |
-| simdjson-zig | JSON SIMD | ⭐⭐⭐ | not yet — C++ binding |
-| getty + getty-json | JSON | ⭐⭐⭐ | stale vs 0.16 |
-| zig-json / zjson | JSON | ⭐⭐⭐ | not yet — std + serde already cover JSON |
-| zig-cbor (neurocyte) | CBOR | ⭐⭐⭐ | skipped — uses removed `@typeInfo` `decl_names` on 0.16; zbor is the CBOR row |
-| msgpack.zig | MessagePack | ⭐⭐⭐ | **wired** (lalinsky/msgpack.zig; mrosbar tree is unmaintained) |
-| zig-serialization / zserialize / bincode-zig | binary | ⭐⭐⭐ | **s2s** wired as the native binary stream row; bincode-zig not on 0.16 |
-| zson | JSON-like | ⭐⭐⭐ | not yet |
-| zig-toml / zig-yaml | TOML / YAML | ⭐⭐ | covered by serde.toml / serde.yaml |
-| XML / CSV | text | ⭐⭐ | **serde.xml** wired (flat types). CSV skipped — nested fixtures are not a table |
+| protobuf | Schema | Arwalk/zig-protobuf 5.0.0 | adapted | Generated from `schemas/v2/protobuf/benchmark_v2.proto`. Prepare copies suite → generated message; timed path is `encode` / `decode` |
+| flatbuffers | Schema | nDimensional/zig-flatbuffers 0.2.1 | adapted | Generated from `cpp/schemas/benchmark.fbs`. Timed path is `Builder.writeTable` / `decodeRoot` |
+| capnproto | Schema | Cap’n Proto C++ 1.0.2 | adapted | Generated from `cpp/schemas/benchmark.capnp`. Official C++ runtime via a C ABI (same pattern as Swift). Zig 0.16 has no native plugin |
 
 ## Not a `@bitCast` of the whole fixture
 
 A live suite value has `[]const u8` slices. `@bitCast` of that type is not a portable encoding. `comptime-bin` is the honest idiomatic stand-in: comptime reflection writes a length-prefixed little-endian image.
+
+## Schema generation
+
+These rows compile the **same** suite IDLs as the other languages. They do not invent Zig-only schemas.
+
+| Row | Shared schema | Regenerate |
+|-----|---------------|------------|
+| protobuf | `schemas/v2/protobuf/benchmark_v2.proto` | `./zig/scripts/generate-protobuf.sh` |
+| flatbuffers | `cpp/schemas/benchmark.fbs` | `./zig/scripts/generate-flatbuffers.sh` |
+| capnproto | `cpp/schemas/benchmark.capnp` | `./zig/scripts/generate-capnp.sh` |
+
+Prepare copies each suite fixture into the library’s native form (untimed). The timer measures encode and decode only. Fidelity copies back to the suite struct after decode.
+
+`capnproto` uses the official C++ library (like Swift) because the Zig Cap’n Proto plugin requires Zig 0.17-dev. The host needs `libcapnp` / `libkj` under `~/.local` (`./scripts/install-host-requirements.sh zig`).
 
 [Dashboard](../dashboard/?lang=zig&data=document@n=1&mode=bytes)

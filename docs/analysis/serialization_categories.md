@@ -22,7 +22,7 @@ By the end of this page you should be able to:
 
 **Rule of thumb:** compare serializers **within the same paradigm** and **within one language**. Cross-language and cross-paradigm “winners” are not interchangeable.
 
-Registered counts (Overview source of truth): C# **36** · Python **16** · Rust **15** · C **20** · JavaScript **20** (simdjson optional) · Go **19** · Java **18** · C++ **27+** · Swift **14**.
+Registered counts (Overview source of truth): C# **36** · Python **16** · Rust **15** · C **20** · JavaScript **20** (simdjson optional) · Go **19** · Java **18** · C++ **27+** · Swift **14** · Zig **17**.
 
 ---
 
@@ -113,6 +113,7 @@ Examples use **log `SerializerName` values** from language overviews (not always
   - **Go:** `protobuf`, `hamba/avro`, `linkedin/goavro`
   - **Java:** `protobuf`, `avro`
   - **C++:** `protobuf` (libprotobuf), `protobuf-wire` (in-tree), `avro`/`avro_c`, `thrift`, `capnproto`, `flatbuffers`, `flexbuffers`
+  - **Zig:** `protobuf` (Arwalk/zig-protobuf from the shared `.proto`), `flatbuffers` (nDimensional/zig-flatbuffers from the shared `.fbs`), `capnproto` (official C++ runtime from the shared `.capnp`)
 
 ### Language-native
 
