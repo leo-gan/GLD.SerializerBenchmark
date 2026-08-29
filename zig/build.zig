@@ -15,17 +15,30 @@ fn applyCapnp(b: *std.Build, mod: *std.Build.Module, prefix: []const u8) void {
     mod.addIncludePath(.{ .cwd_relative = inc });
     mod.addLibraryPath(.{ .cwd_relative = lib });
     mod.addRPath(.{ .cwd_relative = lib });
+    // Match official libkj/libcapnp (GCC/libstdc++). Zig's -lc++ does not
+    // provide std::exception_ptr symbols those archives reference.
+    const cxx_flags = &.{ "-std=c++17", "-fPIC", "-stdlib=libstdc++" };
     mod.addCSourceFile(.{
         .file = b.path("src/gen/capnp/benchmark.capnp.cpp"),
-        .flags = &.{ "-std=c++17", "-fPIC" },
+        .flags = cxx_flags,
     });
     mod.addCSourceFile(.{
         .file = b.path("src/capnp/capnp_bridge.cpp"),
-        .flags = &.{ "-std=c++17", "-fPIC" },
+        .flags = cxx_flags,
     });
     mod.linkSystemLibrary("capnp", .{});
     mod.linkSystemLibrary("kj", .{});
-    mod.link_libcpp = true;
+    mod.link_libcpp = false;
+    mod.link_objects.append(b.allocator, .{
+        .system_lib = .{
+            .name = "stdc++",
+            .needed = true,
+            .weak = false,
+            .use_pkg_config = .no,
+            .preferred_link_mode = .dynamic,
+            .search_strategy = .paths_first,
+        },
+    }) catch @panic("OOM");
 }
 
 pub fn build(b: *std.Build) void {
