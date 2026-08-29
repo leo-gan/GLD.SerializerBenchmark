@@ -1,7 +1,7 @@
 # What should we use for an event log?
 
 **Question:** On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `event`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -25,6 +25,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | c | ok | `protobuf-wire` | — | `protobuf-wire` | [c/results.md](c/results.md) |
 | cpp | ok | `avro` | — | `avro` | [cpp/results.md](cpp/results.md) |
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` | [swift/results.md](swift/results.md) |
+| zig | ok | `protobuf` | — | `protobuf` | [zig/results.md](zig/results.md) |
 
 ## At a glance (100 records per write)
 
@@ -41,6 +42,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | c | ok | `protobuf-wire` | — | `protobuf-wire` |
 | cpp | ok | `avro` | — | `avro` |
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` |
+| zig | ok | `flatbuffers` | — | `flatbuffers`, `protobuf` |
 
 ## In memory, by language
 
@@ -251,6 +253,30 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 | SwiftProtobuf | 231 | 12477 | Protocol Buffers | fastest |
 | IkigaJSON | 1644 | 25746 | JSON — Experiment 1 | slower |
 | SwiftAvroCore | 5368 | 10448 | Avro | slower |
+
+### zig
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf | 0.70 | 123 | Protocol Buffers | fastest |
+| flatbuffers | 0.73 | 296 | FlatBuffers | slower |
+| serde.msgpack | 0.95 | 199 | MessagePack | slower |
+| serde.json | 1.35 | 257 | JSON — serde.zig | slower |
+| std.json | 2.01 | 257 | JSON — stdlib | slower |
+| capnproto | 6.34 | 256 | Cap’n Proto | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| flatbuffers | 38.7 | 31124 | FlatBuffers | fastest |
+| protobuf | 50.7 | 12649 | Protocol Buffers | slower |
+| serde.msgpack | 66.7 | 20249 | MessagePack | slower |
+| serde.json | 128 | 26049 | JSON — serde.zig | slower |
+| std.json | 181 | 26049 | JSON — stdlib | slower |
+| capnproto | 588 | 26820 | Cap’n Proto | slower |
 
 ## What we saw
 

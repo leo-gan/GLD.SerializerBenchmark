@@ -1,7 +1,7 @@
 # Does the ranking stay the same if we change the data?
 
 **Question:** Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `['document', 'message', 'telemetry', 'event', 'strings']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,6 +23,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | simdjson | yyjson | nlohmann_json | yyjson | simdjson | no | [cpp/results.md](cpp/results.md) |
 | csharp | SpanJson | SpanJson | NetJSON | SpanJson | SpanJson | no | [csharp/results.md](csharp/results.md) |
 | swift | IkigaJSON | IkigaJSON | IkigaJSON | IkigaJSON | IkigaJSON | yes | [swift/results.md](swift/results.md) |
+| zig | serde.json | serde.json | serde.json | serde.json | serde.json | yes | [zig/results.md](zig/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -83,6 +84,11 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | C (sensor) | IkigaJSON | IkigaJSON | yes |
 | swift | D (event) | IkigaJSON | Foundation.JSONEncoder | no |
 | swift | E (words) | IkigaJSON | IkigaJSON | yes |
+| zig | A (order) | serde.json | serde.json | yes |
+| zig | B (flat) | serde.json | serde.json | yes |
+| zig | C (sensor) | serde.json | serde.json | yes |
+| zig | D (event) | serde.json | serde.json | yes |
+| zig | E (words) | serde.json | serde.json | yes |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -99,6 +105,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | ok | `simdjson`, `nlohmann_json` | — |
 | csharp | ok | `SpanJson` | — |
 | swift | ok | `IkigaJSON` | — |
+| zig | ok | `serde.json` | — |
 
 ## In memory, by language and sample
 
@@ -1233,6 +1240,88 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 |---------|-------------------|--------------|-------|
 | IkigaJSON | 3294 | 65958 | fastest |
 | Foundation.JSONEncoder | 3439 | 65958 | slower |
+
+### zig
+
+**A (order), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 2.38 | 448 | fastest |
+| std.json.scanner | 3.40 | 448 | slower |
+| std.json | 3.41 | 448 | slower |
+
+**A (order), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 233 | 45707 | fastest |
+| std.json.scanner | 332 | 45707 | slower |
+| std.json | 332 | 45707 | slower |
+
+**D (event), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 1.40 | 257 | fastest |
+| std.json | 2.07 | 257 | slower |
+| std.json.scanner | 2.08 | 257 | slower |
+
+**D (event), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 134 | 26049 | fastest |
+| std.json.scanner | 188 | 26049 | slower |
+| std.json | 188 | 26049 | slower |
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 1.02 | 168 | fastest |
+| std.json.scanner | 1.22 | 168 | slower |
+| std.json | 1.23 | 168 | slower |
+
+**B (flat), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 80.9 | 16849 | fastest |
+| std.json.scanner | 95.2 | 16849 | slower |
+| std.json | 95.4 | 16849 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 1.95 | 411 | fastest |
+| std.json.scanner | 3.05 | 411 | slower |
+| std.json | 3.14 | 411 | slower |
+
+**E (words), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 217 | 41734 | fastest |
+| std.json.scanner | 358 | 41734 | slower |
+| std.json | 359 | 41734 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 2.90 | 663 | fastest |
+| std.json | 3.81 | 663 | slower |
+| std.json.scanner | 3.82 | 663 | slower |
+
+**C (sensor), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| serde.json | 291 | 66261 | fastest |
+| std.json.scanner | 364 | 66261 | slower |
+| std.json | 364 | 66261 | slower |
 
 ## What we saw
 

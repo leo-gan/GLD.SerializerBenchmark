@@ -1,7 +1,7 @@
 # Are database formats better for a normal service call?
 
 **Question:** On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -22,6 +22,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | rust | ok | `rmp-serde` | — | `rmp-serde` | [rust/results.md](rust/results.md) |
 | c | ok | `mpack` | — | `mpack` | [c/results.md](c/results.md) |
 | swift | ok | `IkigaJSON` | — | `IkigaJSON`, `SwiftMsgpack` | [swift/results.md](swift/results.md) |
+| zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
 
 ## In memory, by language
 
@@ -111,6 +112,19 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | IkigaJSON | 49.4 | 448 | JSON — Experiment 1 | fastest |
 | SwiftMsgpack | 78.2 | 329 | MessagePack | slower |
 | SwiftBSON | 102 | 525 | BSON | slower |
+
+### zig
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| flatbuffers | 2.64 | 468 | FlatBuffers | fastest |
+| protobuf | 2.78 | 155 | Protocol Buffers | close |
+| serde.msgpack | 3.74 | 325 | MessagePack | slower |
+| serde.zon | 6.26 | 994 | ZON | slower |
+| std.json | 7.92 | 448 | JSON | slower |
+| capnproto | 25.9 | 376 | Cap’n Proto | slower |
 
 ## What we saw
 

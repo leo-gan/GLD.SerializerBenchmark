@@ -1,7 +1,7 @@
 # Is it the format, or the library?
 
 **Question:** If one library can write several formats, how much of the difference is the format, and how much is that library?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -21,6 +21,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `ugorji/msgpack`, `shamaton/msgpack` | [go/results.md](go/results.md) |
 | csharp | ok | `MS Bond Fast` | — | `MS Bond Fast`, `MS Bond Compact` | [csharp/results.md](csharp/results.md) |
 | javascript | ok | `google-protobuf` | — | `google-protobuf` | [javascript/results.md](javascript/results.md) |
+| zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
 
 ## In memory, by language
 
@@ -114,6 +115,24 @@ Every listed library (same library across formats, and same format across librar
 | google-protobuf | 16.0 | 155 | Protocol Buffers — google-protobuf | fastest |
 | protobufjs | 38.7 | 155 | Protocol Buffers — protobufjs | slower |
 | protobuf-es | 68.9 | 155 | Protocol Buffers — protobuf-es | slower |
+
+### zig
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| comptime-bin | 0.38 | 214 | in-tree — packed | fastest |
+| s2s | 0.55 | 266 | s2s — native binary | slower |
+| flatbuffers | 1.06 | 468 | FlatBuffers | slower |
+| protobuf | 1.10 | 155 | Protocol Buffers — zig-protobuf | slower |
+| serde.msgpack | 1.66 | 325 | serde.zig — MessagePack | slower |
+| serde.json | 2.47 | 448 | serde.zig — JSON | slower |
+| std.json | 3.46 | 448 | stdlib — JSON | slower |
+| zbor | 3.97 | 332 | zbor — CBOR | slower |
+| serde.toml | 5.06 | 508 | serde.zig — TOML | slower |
+| zig-msgpack | 5.35 | 325 | zigcc — MessagePack | slower |
+| capnproto | 7.57 | 376 | Cap’n Proto | slower |
 
 ## What we saw
 

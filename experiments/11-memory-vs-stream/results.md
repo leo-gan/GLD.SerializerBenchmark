@@ -1,7 +1,7 @@
 # Does writing to a file change the ranking?
 
 **Question:** When we write as if to a file, which libraries really write as they go, and does the ranking change?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -19,6 +19,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
+| zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
 
 ## In memory, by language
 
@@ -77,6 +78,19 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | msgpack | 2.74 | 332 | MessagePack | slower |
 | simdjson | 9.11 | 458 | JSON — fast read | slower |
 | nlohmann_json | 9.19 | 458 | JSON | slower |
+
+### zig
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| flatbuffers | 1.09 | 468 | FlatBuffers | fastest |
+| protobuf | 1.12 | 155 | Protocol Buffers | close |
+| serde.msgpack | 1.76 | 325 | MessagePack | slower |
+| std.json | 3.69 | 448 | JSON | slower |
+| std.json.scanner | 3.71 | 448 | JSON — streaming parser | slower |
+| capnproto | 7.87 | 376 | Cap’n Proto | slower |
 
 ## What we saw
 

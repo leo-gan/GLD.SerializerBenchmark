@@ -1,7 +1,7 @@
 # Does one record rank the same as one hundred?
 
 **Question:** Does the library that is fastest for one record stay fastest when we write one hundred records at once?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `['message', 'event']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,6 +23,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | — | protobuf-wire | — | protobuf-wire | — | no | [cpp/results.md](cpp/results.md) |
 | csharp | — | SpanJson | — | SpanJson | — | no | [csharp/results.md](csharp/results.md) |
 | swift | — | SwiftProtobuf | — | SwiftProtobuf | — | no | [swift/results.md](swift/results.md) |
+| zig | — | comptime-bin | — | comptime-bin | — | no | [zig/results.md](zig/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -50,6 +51,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | D (event) | SpanJson | SpanJson | yes |
 | swift | B (flat) | SwiftProtobuf | SwiftProtobuf | yes |
 | swift | D (event) | SwiftProtobuf | SwiftProtobuf | yes |
+| zig | B (flat) | comptime-bin | comptime-bin | yes |
+| zig | D (event) | comptime-bin | comptime-bin | yes |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -66,6 +69,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | ok | — | — |
 | csharp | ok | — | — |
 | swift | ok | — | — |
+| zig | ok | — | — |
 
 ## In memory, by language and sample
 
@@ -506,6 +510,52 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | Foundation.JSONEncoder | 703 | 16546 | slower |
 | IkigaJSON | 797 | 16546 | slower |
 | SwiftMsgpack | 1191 | 12041 | slower |
+
+### zig
+
+**D (event), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 0.36 | 142 | fastest |
+| protobuf | 0.71 | 123 | slower |
+| flatbuffers | 0.73 | 296 | slower |
+| serde.msgpack | 0.94 | 199 | slower |
+| std.json | 2.03 | 257 | slower |
+| capnproto | 6.66 | 256 | slower |
+
+**D (event), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 24.8 | 14549 | fastest |
+| flatbuffers | 38.2 | 31124 | slower |
+| protobuf | 51.3 | 12649 | slower |
+| serde.msgpack | 67.5 | 20249 | slower |
+| std.json | 183 | 26049 | slower |
+| capnproto | 601 | 26820 | slower |
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 0.17 | 57 | fastest |
+| protobuf | 0.30 | 50 | slower |
+| flatbuffers | 0.34 | 108 | slower |
+| serde.msgpack | 0.54 | 124 | slower |
+| std.json | 1.23 | 168 | slower |
+| capnproto | 2.28 | 96 | slower |
+
+**B (flat), 100 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 6.99 | 5758 | fastest |
+| protobuf | 15.3 | 5045 | slower |
+| flatbuffers | 15.7 | 10644 | slower |
+| serde.msgpack | 31.7 | 12432 | slower |
+| std.json | 93.6 | 16849 | slower |
+| capnproto | 178 | 9572 | slower |
 
 ## What we saw
 

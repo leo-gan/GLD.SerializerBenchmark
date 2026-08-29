@@ -1,7 +1,7 @@
 # When is JSON too big for a sensor?
 
 **Question:** As a list of sensor numbers grows, when does JSON no longer fit a small radio packet?
-**Date:** 2026-08-28
+**Date:** 2026-08-29
 **Sample:** `telemetry`, one record, list lengths [8, 32, 128, 512] · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -57,6 +57,18 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 | rybakit-msgpack | 121 | 339 | 1203 | 4659 | >128, >512 | MessagePack |
 | protobuf | 91 | 284 | 1052 | 4124 | >128, >512 | Protocol Buffers |
 | cbor | 120 | 337 | 1201 | 4658 | >128, >512 | CBOR |
+
+### zig
+
+| Library | 8 nums | 32 nums | 128 nums | 512 nums | vs 128 / 512 at 512 nums | Role |
+|---------|--------|--------|--------|--------|--------------------------|------|
+| comptime-bin | 107 | 303 | 1073 | 4140 | >128, >512 | comptime packed |
+| flatbuffers | 156 | 348 | 1124 | 4188 | >128, >512 | FlatBuffers |
+| serde.msgpack | 124 | 346 | 1212 | 4663 | >128, >512 | MessagePack |
+| protobuf | 94 | 291 | 1061 | 4128 | >128, >512 | Protocol Buffers |
+| serde.json | 220 | 663 | 2407 | 9363 | >128, >512 | JSON — serde.zig |
+| std.json | 220 | 663 | 2407 | 9363 | >128, >512 | JSON — stdlib |
+| capnproto | 152 | 344 | 1120 | 4184 | >128, >512 | Cap’n Proto |
 
 ## Time and groups, by list length
 
@@ -245,6 +257,56 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 | json | 317 | 9380 | slower |
 | protobuf | 940 | 4124 | slower |
 | cbor | 6126 | 4658 | slower |
+
+### zig
+
+**8 numbers** — not clearly slower: `comptime-bin`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 0.24 | 107 | fastest |
+| flatbuffers | 0.39 | 156 | slower |
+| serde.msgpack | 0.59 | 124 | slower |
+| protobuf | 0.61 | 94 | slower |
+| serde.json | 1.16 | 220 | slower |
+| std.json | 1.66 | 220 | slower |
+| capnproto | 3.34 | 152 | slower |
+
+**32 numbers** — not clearly slower: `comptime-bin`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 0.33 | 303 | fastest |
+| flatbuffers | 0.49 | 348 | slower |
+| protobuf | 1.12 | 291 | slower |
+| serde.msgpack | 1.15 | 346 | slower |
+| serde.json | 2.77 | 663 | slower |
+| capnproto | 3.46 | 344 | slower |
+| std.json | 3.65 | 663 | slower |
+
+**128 numbers** — not clearly slower: `comptime-bin`. Small gap: `flatbuffers`.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 0.58 | 1073 | fastest |
+| flatbuffers | 0.62 | 1124 | close |
+| serde.msgpack | 1.98 | 1212 | slower |
+| protobuf | 2.23 | 1061 | slower |
+| capnproto | 3.77 | 1120 | slower |
+| serde.json | 8.79 | 2407 | slower |
+| std.json | 11.0 | 2407 | slower |
+
+**512 numbers** — not clearly slower: `comptime-bin`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| comptime-bin | 1.61 | 4140 | fastest |
+| serde.msgpack | 4.82 | 4663 | slower |
+| capnproto | 4.93 | 4184 | slower |
+| flatbuffers | 6.65 | 4188 | slower |
+| protobuf | 6.94 | 4128 | slower |
+| serde.json | 35.5 | 9363 | slower |
+| std.json | 42.6 | 9363 | slower |
 
 ## What we saw
 

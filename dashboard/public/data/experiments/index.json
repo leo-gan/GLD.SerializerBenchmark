@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-08-28T18:37:12Z",
+  "generated_at": "2026-08-29T00:35:16Z",
   "count": 13,
   "with_results": 13,
   "experiments": [
@@ -47,7 +47,7 @@
       ],
       "has_results": true,
       "payload": "experiments/01-json-library-bakeoff.json.gz",
-      "generated_at": "2026-08-28T18:35:47Z",
+      "generated_at": "2026-08-29T00:34:01Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -107,9 +107,14 @@
           "id": "swift",
           "status": "ok",
           "rows": 4
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 6
         }
       ],
-      "source_bytes": 113455
+      "source_bytes": 119769
     },
     {
       "id": "02-flat-record-formats",
@@ -155,7 +160,7 @@
       ],
       "has_results": true,
       "payload": "experiments/02-flat-record-formats.json.gz",
-      "generated_at": "2026-08-28T18:35:52Z",
+      "generated_at": "2026-08-29T00:34:02Z",
       "sample": {
         "kind": "message",
         "n": [
@@ -218,9 +223,14 @@
           "id": "swift",
           "status": "missing",
           "rows": 0
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 32
         }
       ],
-      "source_bytes": 57948
+      "source_bytes": 90549
     },
     {
       "id": "03-one-language-store",
@@ -252,7 +262,7 @@
       ],
       "has_results": true,
       "payload": "experiments/03-one-language-store.json.gz",
-      "generated_at": "2026-08-28T18:35:53Z",
+      "generated_at": "2026-08-29T00:34:03Z",
       "sample": {
         "kind": "message",
         "n": 1
@@ -282,9 +292,14 @@
           "id": "go",
           "status": "ok",
           "rows": 6
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 14
         }
       ],
-      "source_bytes": 49049
+      "source_bytes": 63780
     },
     {
       "id": "04-sensor-list-size",
@@ -1038,7 +1053,7 @@
       ],
       "has_results": true,
       "payload": "experiments/04-sensor-list-size.json.gz",
-      "generated_at": "2026-08-28T18:35:59Z",
+      "generated_at": "2026-08-29T00:34:05Z",
       "sample": {
         "kind": "telemetry",
         "n": 1
@@ -1063,9 +1078,14 @@
           "id": "php",
           "status": "ok",
           "rows": 32
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 56
         }
       ],
-      "source_bytes": 211273
+      "source_bytes": 271646
     },
     {
       "id": "05-event-log-formats",
@@ -1139,7 +1159,7 @@
       ],
       "has_results": true,
       "payload": "experiments/05-event-log-formats.json.gz",
-      "generated_at": "2026-08-28T18:36:08Z",
+      "generated_at": "2026-08-29T00:34:07Z",
       "sample": {
         "kind": "event",
         "n": [
@@ -1202,9 +1222,14 @@
           "id": "swift",
           "status": "ok",
           "rows": 12
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 24
         }
       ],
-      "source_bytes": 155144
+      "source_bytes": 179873
     },
     {
       "id": "06-document-db-formats",
@@ -1249,7 +1274,7 @@
       ],
       "has_results": true,
       "payload": "experiments/06-document-db-formats.json.gz",
-      "generated_at": "2026-08-28T18:36:09Z",
+      "generated_at": "2026-08-29T00:34:08Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -1294,9 +1319,14 @@
           "id": "swift",
           "status": "ok",
           "rows": 3
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 6
         }
       ],
-      "source_bytes": 39774
+      "source_bytes": 46642
     },
     {
       "id": "07-write-once-read-many",
@@ -1867,7 +1897,7 @@
       ],
       "has_results": true,
       "payload": "experiments/07-write-once-read-many.json.gz",
-      "generated_at": "2026-08-28T18:36:12Z",
+      "generated_at": "2026-08-29T00:34:10Z",
       "sample": {
         "kind": [
           "document",
@@ -1925,9 +1955,14 @@
           "id": "swift",
           "status": "ok",
           "rows": 6
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 10
         }
       ],
-      "source_bytes": 82276
+      "source_bytes": 93739
     },
     {
       "id": "08-human-files",
@@ -1985,7 +2020,7 @@
       ],
       "has_results": true,
       "payload": "experiments/08-human-files.json.gz",
-      "generated_at": "2026-08-28T18:36:13Z",
+      "generated_at": "2026-08-29T00:34:11Z",
       "sample": {
         "kind": [
           "document",
@@ -2048,9 +2083,14 @@
           "id": "csharp",
           "status": "ok",
           "rows": 12
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 8
         }
       ],
-      "source_bytes": 80295
+      "source_bytes": 89760
     },
     {
       "id": "09-compression-size",
@@ -2237,7 +2277,7 @@
       ],
       "has_results": true,
       "payload": "experiments/09-compression-size.json.gz",
-      "generated_at": "2026-08-28T18:36:14Z",
+      "generated_at": "2026-08-29T00:34:12Z",
       "sample": {
         "kind": [
           "strings",
@@ -2301,9 +2341,14 @@
           "id": "swift",
           "status": "ok",
           "rows": 12
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 18
         }
       ],
-      "source_bytes": 172363
+      "source_bytes": 192928
     },
     {
       "id": "10-one-vs-hundred",
@@ -2405,7 +2450,7 @@
       ],
       "has_results": true,
       "payload": "experiments/10-one-vs-hundred.json.gz",
-      "generated_at": "2026-08-28T18:36:22Z",
+      "generated_at": "2026-08-29T00:34:14Z",
       "sample": {
         "kind": [
           "message",
@@ -2471,9 +2516,14 @@
           "id": "swift",
           "status": "ok",
           "rows": 16
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 24
         }
       ],
-      "source_bytes": 271600
+      "source_bytes": 297993
     },
     {
       "id": "11-memory-vs-stream",
@@ -2518,7 +2568,7 @@
       ],
       "has_results": true,
       "payload": "experiments/11-memory-vs-stream.json.gz",
-      "generated_at": "2026-08-28T18:36:23Z",
+      "generated_at": "2026-08-29T00:34:15Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2548,9 +2598,14 @@
           "id": "cpp",
           "status": "ok",
           "rows": 8
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 12
         }
       ],
-      "source_bytes": 42584
+      "source_bytes": 55241
     },
     {
       "id": "12-format-vs-library",
@@ -2595,7 +2650,7 @@
       ],
       "has_results": true,
       "payload": "experiments/12-format-vs-library.json.gz",
-      "generated_at": "2026-08-28T18:36:24Z",
+      "generated_at": "2026-08-29T00:34:16Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2635,9 +2690,14 @@
           "id": "javascript",
           "status": "ok",
           "rows": 3
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 22
         }
       ],
-      "source_bytes": 83807
+      "source_bytes": 106139
     },
     {
       "id": "13-ranking-accident",
@@ -2737,7 +2797,7 @@
       ],
       "has_results": true,
       "payload": "experiments/13-ranking-accident.json.gz",
-      "generated_at": "2026-08-28T18:36:58Z",
+      "generated_at": "2026-08-29T00:34:20Z",
       "sample": {
         "kind": [
           "document",
@@ -2806,9 +2866,14 @@
           "id": "swift",
           "status": "ok",
           "rows": 20
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 30
         }
       ],
-      "source_bytes": 808266
+      "source_bytes": 843700
     }
   ]
 }
