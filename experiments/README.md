@@ -21,6 +21,7 @@ Plain-language pages: [docs/experiments](../docs/experiments/index.md). The inte
 - Experiment 11: [`11-memory-vs-stream/`](11-memory-vs-stream/) · [`results.md`](11-memory-vs-stream/results.md) · [`results.json`](11-memory-vs-stream/results.json)
 - Experiment 12: [`12-format-vs-library/`](12-format-vs-library/) · [`results.md`](12-format-vs-library/results.md) · [`results.json`](12-format-vs-library/results.json)
 - Experiment 13: [`13-ranking-accident/`](13-ranking-accident/) · [`results.md`](13-ranking-accident/results.md) · [`results.json`](13-ranking-accident/results.json)
+- Experiment 14: [`14-starter-kit/`](14-starter-kit/) · [`results.md`](14-starter-kit/results.md) · [`results.json`](14-starter-kit/results.json)
 - Preview copies for later experiments: [`samples/`](samples/)
 
 | # | Folder | Status | Question |
@@ -38,5 +39,6 @@ Plain-language pages: [docs/experiments](../docs/experiments/index.md). The inte
 | 11 | [11-memory-vs-stream](11-memory-vs-stream/) | **Done** | Does writing to a file change the ranking? |
 | 12 | [12-format-vs-library](12-format-vs-library/) | **Done** | Is it the format, or the library? |
 | 13 | [13-ranking-accident](13-ranking-accident/) | **Done** | Does the ranking stay the same if we change the data? |
+| 14 | [14-starter-kit](14-starter-kit/) | **Done** | What is a starter kit of serializers for typical jobs? |
 
 Do **1, then 2, then 3, then 4, then 12, then 13** first. Full reasons live in the plan.

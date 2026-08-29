@@ -267,13 +267,25 @@ One run on one computer is one evening’s measurement. A ranking that flips whe
 
 [Dashboard](../dashboard/#experiments/13-ranking-accident)
 
+### 14. What is a starter kit of serializers for typical jobs?
+
+A team often needs to start today, not after ranking every library. We time a short list that covers three usual jobs: public JSON, compact bytes inside the company, and a shared field file.
+
+**Example:** You are starting a shop service. Partners will call you with JSON. Later you may add a private path to another service you own, and still later a second language may need the same record.
+
+**Trade-off:** This is a place to begin, not a prize. Built-in JSON is familiar. The faster JSON library from Experiment 1 writes the same named text. MessagePack writes fewer bytes and does not need a shared field file. Protocol Buffers is usually smaller still, but both sides must share the field numbers. Pick the row that matches the job you have.
+
+**Sample:** the same small order as experiment 1.
+
+[Dashboard](../dashboard/#experiments/14-starter-kit) · [Folder](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/experiments/14-starter-kit)
+
 ---
 
 ## The records we use
 
 The words look random because a small number generator built them. That is on purpose: every run with the same seed produces the same words.
 
-**One order** (experiments 1, 6, 7, 8, 12):
+**One order** (experiments 1, 6, 7, 8, 12, 14):
 
 ```json
 {

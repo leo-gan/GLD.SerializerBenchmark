@@ -1,0 +1,139 @@
+# Single settings file for this experiment.
+# Change this file to change the experiment.
+
+schema: gld.experiment.config/1
+id: 14-starter-kit
+title: What is a starter kit of serializers for typical jobs?
+question: If we do not want to rank every library first, which few serializers cover the usual jobs — public JSON, compact bytes inside the company, and a shared field file — on one shop order?
+story:
+  why: A team often needs to start today, not after a bake-off of twenty libraries. Three jobs come up again and again. A public website almost always speaks JSON. Two services you own may send compact bytes with no shared field file. Two languages that must stay in lockstep may share a field file such as Protocol Buffers. This experiment times one library for each of those jobs, plus the language’s built-in JSON when that is not already the fast public choice.
+  example: Imagine you are starting a shop service. Partners will call you with JSON. Later you may add a private path to another service you own, and still later a second language may need the same record. You want a short list to start with, not a ranking of the whole roster.
+  tradeoff: A starter kit is a place to begin, not a prize. The built-in JSON library is familiar. The faster JSON library from Experiment 1 writes the same named text. MessagePack writes fewer bytes and does not need a shared field file. Protocol Buffers is usually smaller still, but both sides must share the field numbers. We do not name one winner. Read the similar and close sets, and pick the row that matches the job you actually have.
+
+sample:
+  kind: document
+  records_per_write: 1
+  seed: 42
+  settings: {}
+  saved_as: sample.json
+
+run:
+  mode: full
+  io_modes: [bytes, stream]
+  compression: size_only
+  compression_algorithms: [gzip_6, zstd_3]
+  soft_seconds_per_10_serializers: 60
+  hard_cap_seconds: 600
+  reps_fallback: 50
+
+analysis:
+  drop_first_trial: true
+  filter_id: iqr_1.5
+  main_io: memory
+  # Mixed jobs: JSON, MessagePack, and Protocol Buffers in one list.
+  require_named_fields: false
+  top_group:
+    method: cliffs_delta_vs_fastest
+    similar_max: 0.147
+    close_max: 0.33
+
+paths:
+  results: results.json
+  summary: results.md
+
+# One library per job when we can. Built-in JSON stays when it is not
+# already the fastest named JSON from Experiment 1.
+languages:
+  - id: python
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: public JSON — ships with Python}
+      - {name: orjson, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: msgspec-msgpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: protobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: go
+    enabled: true
+    libraries:
+      - {name: encoding/json, writes_named_fields: true, role: public JSON — ships with Go}
+      - {name: goccy/go-json, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: vmihailenco/msgpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: protobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: java
+    enabled: true
+    libraries:
+      - {name: jackson, writes_named_fields: true, role: public JSON — common default in Java services}
+      - {name: jsoniter, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: msgpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: protobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: kotlin
+    enabled: true
+    libraries:
+      - {name: kotlinx-json, writes_named_fields: true, role: public JSON — compiler-generated kotlinx.serialization}
+      - {name: moshi-codegen, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: msgpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: protobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: php
+    enabled: true
+    libraries:
+      - {name: json, writes_named_fields: true, role: public JSON — ships with PHP (also fastest in Experiment 1)}
+      - {name: rybakit-msgpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: protobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: javascript
+    enabled: true
+    libraries:
+      - {name: JSON.stringify, writes_named_fields: true, role: public JSON — ships with JavaScript (also fastest in Experiment 1)}
+      - {name: msgpackr, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: google-protobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: rust
+    enabled: true
+    libraries:
+      - {name: serde_json, writes_named_fields: true, role: public JSON — usual Rust library}
+      - {name: sonic-rs, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: rmp-serde, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: prost, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: c
+    enabled: true
+    libraries:
+      - {name: cJSON, writes_named_fields: true, role: public JSON — small common C library}
+      - {name: yyjson, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: mpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: protobuf-c, writes_named_fields: true, role: shared schema — Protocol Buffers (timed path is the suite wire codec)}
+
+  - id: cpp
+    enabled: true
+    libraries:
+      - {name: nlohmann_json, writes_named_fields: true, role: public JSON — common C++ library}
+      - {name: simdjson, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: msgpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: protobuf-wire, writes_named_fields: true, role: shared schema — Protocol Buffers (in-tree wire helper)}
+
+  - id: csharp
+    enabled: true
+    libraries:
+      - {name: System.Text.Json, writes_named_fields: true, role: public JSON — ships with modern .NET}
+      - {name: SpanJson, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: MessagePack-CSharp, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: Google.Protobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: swift
+    enabled: true
+    libraries:
+      - {name: Foundation.JSONEncoder, writes_named_fields: true, role: public JSON — ships with Swift}
+      - {name: IkigaJSON, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: SwiftMsgpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: SwiftProtobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
+
+  - id: zig
+    enabled: true
+    libraries:
+      - {name: std.json, writes_named_fields: true, role: public JSON — ships with Zig}
+      - {name: serde.json, writes_named_fields: true, role: public JSON — fastest named JSON from Experiment 1}
+      - {name: serde.msgpack, writes_named_fields: true, role: compact internal bytes — MessagePack, no shared field file}
+      - {name: protobuf, writes_named_fields: true, role: shared schema — Protocol Buffers}
