@@ -1,9 +1,11 @@
 name: Benchmark CI
 
 # Per-language smoke when that language's *source* changes; analysis unit tests when
-# analysis/ or shared config/scripts change. Shared schemas/** still fans out to all
-# language jobs. Pure docs/prose PRs are skipped via paths-ignore (workflow-level).
-# Summaries/plots are committed under docs/ — not built here.
+# analysis/ or shared config/scripts change. Real shared contracts
+# (schemas/data_catalog_v2.yaml, schemas/v2/**/*.proto) still fan out to all
+# language jobs. Prose under schemas/ (README.md) must not. Pure docs/prose PRs
+# are skipped via paths-ignore (workflow-level). Summaries/plots are committed
+# under docs/ — not built here.
 #
 # Benchmark runners run natively (no Docker): each job installs the language toolchain
 # before scripts/run-benchmarks.sh.
@@ -14,6 +16,8 @@ name: Benchmark CI
 #   with predicate-quantifier "some" (dorny default), each pattern is a separate
 #   matcher, and a standalone '!foo/**/*.md' matches almost every path that is
 #   *not* that pattern — so every language job incorrectly ran on every PR.
+# - Do not use schemas/** — it matches schemas/v2/README.md and fans out
+#   every language job when a language PR also edits that README.
 # - Prose under a lang tree is still skipped for pure-docs PRs via paths-ignore.
 # - pull_request filters still compare the *whole PR* to the base branch.
 
@@ -91,49 +95,62 @@ jobs:
           # pull_request: all files in the PR vs base (not only the tip commit).
           # push: files in the push. workflow_dispatch: jobs use inputs, not filters.
           # Positive globs only — see header comment (standalone '!…' is unsafe with some).
-          # schemas/** still selects all languages when any schema path changes.
+          # Shared *contracts* select every language; schemas/v2/README.md must not.
           # Note: 'c/**' does not match 'c-sharp/**' (trailing slash segment required).
           filters: |
             csharp:
               - 'c-sharp/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             python:
               - 'python/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             rust:
               - 'rust/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             c:
               - 'c/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             javascript:
               - 'javascript/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             go:
               - 'go/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             java:
               - 'java/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             kotlin:
               - 'kotlin/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             php:
               - 'php/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             cpp:
               - 'cpp/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             swift:
               - 'swift/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             zig:
               - 'zig/**'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
             analysis:
               - 'analysis/**'
               - 'config/benchmark_config.yaml'
-              - 'schemas/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
               - 'scripts/lib/**'
               - 'scripts/read-config.py'
               - 'scripts/run-all-benchmarks.sh'

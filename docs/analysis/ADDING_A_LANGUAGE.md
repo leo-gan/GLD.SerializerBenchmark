@@ -234,7 +234,7 @@ Host scripts: `scripts/check-host-requirements.sh`, `scripts/install-host-requir
 
 Update **`.github/workflows/benchmark-ci.yml`**:
 
-1. `changes` job outputs and a `dorny/paths-filter` entry for `runner_dir/**` (and `schemas/**` if shared test data apply).
+1. `changes` job outputs and a `dorny/paths-filter` entry for `runner_dir/**` (and `schemas/data_catalog_v2.yaml` / `schemas/v2/**/*.proto` if shared contracts apply — not `schemas/**`, which would also match `schemas/v2/README.md` and start every language job).
 2. A new `*-benchmark` job: install the toolchain, run `check-host-requirements.sh <id>`, run `./scripts/run-benchmarks.sh` (smoke by default).
 3. Analysis smoke step: assert the new id appears in `--enabled-langs` / `--lang-runners`.
 
