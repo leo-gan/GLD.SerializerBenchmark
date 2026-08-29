@@ -201,7 +201,7 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 11 | **done** (2026-08-17) | Does writing to a file change the ranking? |
 | 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | Is it the format, or the library? |
 | 13 | **done** (2026-08-17, [PR #90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)) | Does the ranking stay the same if we change the data? |
-| 14 | **done** (2026-08-29) | What is a starter kit of serializers for typical jobs? |
+| 14 | **done** (2026-08-29, [PR #135](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/135)) | What is a starter kit of serializers for typical jobs? |
 
 Run **1, then 2, then 3, then 4, then 12, then 13** first, unless a result forces a detour. Experiment 14 is a later, practical question: a short list to start with, after those ranks exist.
 
@@ -1048,7 +1048,7 @@ Never quote a rank without naming the sample and N. A close contest (Go on Sampl
 
 ## Experiment 14 — What is a starter kit of serializers for typical jobs?
 
-**Status:** done for all twelve languages (2026-08-29).  
+**Status:** done for all twelve languages (2026-08-29, [PR #135](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/135)).  
 **Folder:** [14-starter-kit](14-starter-kit/). Combined page: [results.md](14-starter-kit/results.md). Combined JSON: [results.json](14-starter-kit/results.json).  
 **Sample:** Sample A, one record, saved as [14-starter-kit/sample.json](14-starter-kit/sample.json).
 
@@ -1338,6 +1338,7 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 ## After Experiment 14
 
 - **Date:** 2026-08-29
+- **PR:** [#135](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/135)
 - **Sample:** [14-starter-kit/sample.json](14-starter-kit/sample.json) (Sample A, one record)
 - **Folder:** [14-starter-kit](14-starter-kit/) · [combined page](14-starter-kit/results.md) · [combined JSON](14-starter-kit/results.json)
 - **Finding:** All twelve languages ran. Times are not one contest. We do not name a single winner. On this one shop order, the fastest row in the kit is not always the public JSON seat. In Python, `orjson` is similar to `msgspec-msgpack`. In Go and Kotlin, the fast JSON library sits with Protocol Buffers in the similar set. In PHP, JavaScript, Java, and C#, the public JSON seat is the fastest row. In Rust, C, C++, Swift, and Zig, a Protocol Buffers row is fastest and about three times smaller than named JSON. Start with the job, then look at the clock. C and C++ Protocol Buffers rows are the suite wire path, not official Google `libprotobuf`.
