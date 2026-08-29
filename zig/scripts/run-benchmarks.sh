@@ -53,6 +53,8 @@ fi
 echo "[INFO] Building Zig benchmark (release, mode=$MODE reps=$REPS seed=$BENCHMARK_SEED) $(zig version)..."
 cd "$ZIG_DIR"
 zig build -Doptimize=ReleaseFast
+# Cap’n Proto C ABI is a system-linked .so (not Zig LLD + libkj.a).
+export LD_LIBRARY_PATH="${ZIG_DIR}/zig-out/lib:${HOME}/.local/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 ARGS=("$REPS")
 if [[ "$MODE" != "custom" ]]; then

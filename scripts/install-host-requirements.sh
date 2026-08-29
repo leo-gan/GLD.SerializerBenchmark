@@ -189,7 +189,8 @@ install_capnp() {
   cmake -S "$src/c++" -B "$work/build" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$prefix" \
-    -DBUILD_TESTING=OFF
+    -DBUILD_TESTING=OFF \
+    -DBUILD_SHARED_LIBS=ON
   cmake --build "$work/build" -j"$(nproc 2>/dev/null || echo 2)"
   cmake --install "$work/build"
   rm -rf "$work"
