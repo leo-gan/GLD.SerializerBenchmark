@@ -1,8 +1,8 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-08-29T00:35:16Z",
-  "count": 13,
-  "with_results": 13,
+  "generated_at": "2026-08-29T01:25:09Z",
+  "count": 14,
+  "with_results": 14,
   "experiments": [
     {
       "id": "01-json-library-bakeoff",
@@ -2874,6 +2874,118 @@
         }
       ],
       "source_bytes": 843700
+    },
+    {
+      "id": "14-starter-kit",
+      "folder": "14-starter-kit",
+      "number": 14,
+      "slug": "starter-kit",
+      "title": "What is a starter kit of serializers for typical jobs?",
+      "question": "If we do not want to rank every library first, which few serializers cover the usual jobs \u2014 public JSON, compact bytes inside the company, and a shared field file \u2014 on one shop order?",
+      "story": {
+        "why": "A team often needs to start today, not after a bake-off of twenty libraries. Three jobs come up again and again. A public website almost always speaks JSON. Two services you own may send compact bytes with no shared field file. Two languages that must stay in lockstep may share a field file such as Protocol Buffers. This experiment times one library for each of those jobs, plus the language\u2019s built-in JSON when that is not already the fast public choice.",
+        "example": "Imagine you are starting a shop service. Partners will call you with JSON. Later you may add a private path to another service you own, and still later a second language may need the same record. You want a short list to start with, not a ranking of the whole roster.",
+        "tradeoff": "A starter kit is a place to begin, not a prize. The built-in JSON library is familiar. The faster JSON library from Experiment 1 writes the same named text. MessagePack writes fewer bytes and does not need a shared field file. Protocol Buffers is usually smaller still, but both sides must share the field numbers. We do not name one winner. Read the similar and close sets, and pick the row that matches the job you actually have."
+      },
+      "sample_preview": [
+        {
+          "kind": "document",
+          "how_many": 1,
+          "record": {
+            "id": "btimcpxm",
+            "status": 4,
+            "meta": {
+              "region": "al",
+              "version": 3
+            },
+            "items": [
+              {
+                "sku": "ytgl",
+                "qty": 10,
+                "price_minor": 55613
+              },
+              {
+                "sku": "sdwkhokqmf",
+                "qty": 38,
+                "price_minor": 2461
+              },
+              {
+                "_more": 6
+              }
+            ]
+          }
+        }
+      ],
+      "has_results": true,
+      "payload": "experiments/14-starter-kit.json.gz",
+      "generated_at": "2026-08-29T01:24:34Z",
+      "sample": {
+        "kind": "document",
+        "n": 1
+      },
+      "languages": [
+        {
+          "id": "python",
+          "status": "ok",
+          "rows": 8
+        },
+        {
+          "id": "go",
+          "status": "ok",
+          "rows": 8
+        },
+        {
+          "id": "java",
+          "status": "ok",
+          "rows": 8
+        },
+        {
+          "id": "kotlin",
+          "status": "ok",
+          "rows": 8
+        },
+        {
+          "id": "php",
+          "status": "ok",
+          "rows": 6
+        },
+        {
+          "id": "javascript",
+          "status": "ok",
+          "rows": 3
+        },
+        {
+          "id": "rust",
+          "status": "ok",
+          "rows": 7
+        },
+        {
+          "id": "c",
+          "status": "ok",
+          "rows": 8
+        },
+        {
+          "id": "cpp",
+          "status": "ok",
+          "rows": 8
+        },
+        {
+          "id": "csharp",
+          "status": "ok",
+          "rows": 8
+        },
+        {
+          "id": "swift",
+          "status": "ok",
+          "rows": 8
+        },
+        {
+          "id": "zig",
+          "status": "ok",
+          "rows": 8
+        }
+      ],
+      "source_bytes": 93530
     }
   ]
 }

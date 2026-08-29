@@ -87,7 +87,7 @@ Preview copies for experiments not yet opened live in [`samples/`](samples/).
 ### Sample A — one order (`document`)
 
 Saved: [`samples/document.n1.json`](samples/document.n1.json)  
-Used by: Experiment 1 (and 6, 7, 8, 12)
+Used by: Experiment 1 (and 6, 7, 8, 12, 14)
 
 This is one record, like a small order: an id, a status, a region, a version, and **eight line items**. Each line item has a stock-keeping code, a quantity, and a price in cents.
 
@@ -201,8 +201,9 @@ Some experiments write **one hundred** records in a single call (a batch). We do
 | 11 | **done** (2026-08-17) | Does writing to a file change the ranking? |
 | 12 | **done** (2026-08-17, [PR #89](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/89)) | Is it the format, or the library? |
 | 13 | **done** (2026-08-17, [PR #90](https://github.com/leo-gan/GLD.SerializerBenchmark/pull/90)) | Does the ranking stay the same if we change the data? |
+| 14 | **done** (2026-08-29) | What is a starter kit of serializers for typical jobs? |
 
-Run **1, then 2, then 3, then 4, then 12, then 13** first, unless a result forces a detour.
+Run **1, then 2, then 3, then 4, then 12, then 13** first, unless a result forces a detour. Experiment 14 is a later, practical question: a short list to start with, after those ranks exist.
 
 ---
 
@@ -1045,6 +1046,96 @@ Never quote a rank without naming the sample and N. A close contest (Go on Sampl
 
 ---
 
+## Experiment 14 — What is a starter kit of serializers for typical jobs?
+
+**Status:** done for all twelve languages (2026-08-29).  
+**Folder:** [14-starter-kit](14-starter-kit/). Combined page: [results.md](14-starter-kit/results.md). Combined JSON: [results.json](14-starter-kit/results.json).  
+**Sample:** Sample A, one record, saved as [14-starter-kit/sample.json](14-starter-kit/sample.json).
+
+### The question
+
+Experiments 1–13 rank libraries inside one job. A builder who is new to the suite still has to pick a first library today.
+
+> For Sample A, in each language, which few serializers cover the usual jobs — public named JSON, compact bytes with no shared field file, and a shared field file — so a team can start, and only later optimize?
+
+This is **not** “what is the fastest serializer.” It is “what is a short, honest kit.”
+
+### Why these jobs exist
+
+| Job | Why it keeps coming back |
+|-----|--------------------------|
+| Public JSON | Browsers, phones, and partners already speak it. Experiment 1 asked which JSON library is fast enough. |
+| Compact bytes inside the company | MessagePack exists because JSON was too large on a private path and the team did not want a `.proto` file. Experiment 2 asked whether leaving JSON is worth it. |
+| Shared field file | Protocol Buffers exists so two languages can add fields without breaking old readers. Experiment 2 and Experiment 5 used it for that reason. |
+
+A one-language store (`pickle`, `gob`) is **not** in the kit. Experiment 3 found no speed gain on ordinary fields, and another language cannot read the bytes.
+
+### Who we compare
+
+Three or four names per language. Roles name the **job**.
+
+| Seat | How we pick the name |
+|------|----------------------|
+| Familiar public JSON | The library that ships with the language, or the common default (Jackson in Java) |
+| Fast public JSON | The fastest **named** JSON library from Experiment 1, when that is a different name |
+| Compact internal bytes | One MessagePack library from Experiment 2 |
+| Shared schema | One Protocol Buffers library from Experiment 2 |
+
+PHP and JavaScript keep one JSON seat: the built-in library was already the fastest named JSON in Experiment 1.
+
+We mix formats on purpose. `require_named_fields` is false. Groups compare every listed library. That does **not** mean “pick the fastest row for every job.” A Protocol Buffers row that is fastest is still the wrong public website format.
+
+### How we decide
+
+| If we see… | Then… |
+|------------|--------|
+| The built-in JSON library is close to the Experiment 1 fast JSON library | Start with the built-in library. Change it only if the later bake-off still shows a large gap. |
+| MessagePack is clearly smaller, and time is similar or better | It is a fair **internal** default when you do not want a field file. |
+| Protocol Buffers is clearly smaller or faster | It is the fair default when two languages must share the path. |
+| Gaps are small on this one order | The starter kit is still useful as a **menu**. The clock is not telling you to rewrite. |
+
+Do **not** crown one winner. Report the similar and close sets, then map each row back to its job.
+
+### Costs and benefits
+
+- A short list is easier to start with than the full Dashboard. It also hides libraries that win other jobs (FlatBuffers for a game file, Avro for a long-lived log).
+- The kit uses Experiment 1 and Experiment 2 names so we do not invent a fourth ranking.
+- C and C++ Protocol Buffers rows are the suite wire path, not official Google `libprotobuf`. Read those names with care.
+
+### What this experiment cannot tell us
+
+- Whether the kit still holds on Sample B, Sample E, or 100 records in one write (Experiments 10 and 13 already warn that ranks move)
+- Whether YAML belongs on the live path (Experiment 8 said no)
+- Whether BSON is a good service format (Experiment 6 said no)
+- A world ranking across languages
+
+### What we found (2026-08-29)
+
+The same short kit was timed in all twelve languages. Times are **not** one contest. We do not name a single winner. Read the **role** on each row.
+
+On this one shop order, the fastest row in the kit is **not** always the public JSON seat. That is expected. A faster Protocol Buffers row is still the wrong public website format.
+
+| Language | Not clearly slower (in memory) | Size of that row | Public JSON still close? |
+|----------|--------------------------------|------------------|--------------------------|
+| Python | `msgspec-msgpack`, `orjson` | 129 bytes (JSON 448) | Yes — `orjson` is similar |
+| Go | `goccy/go-json`, `protobuf` | 448 / 155 bytes | Yes — the fast JSON library is in the similar set |
+| Java | `jsoniter` | 440 bytes | Yes — that *is* the public JSON seat |
+| Kotlin | `moshi-codegen`, `protobuf` | 440 / 155 bytes | Yes — the fast JSON library is in the similar set |
+| PHP | `json` | 454 bytes | Yes — built-in JSON is fastest here |
+| JavaScript | `JSON.stringify` | 448 bytes | Yes — built-in JSON is fastest here |
+| Rust | `prost` | 155 bytes | No — public JSON is slower on this sample |
+| C | `protobuf-c` | 166 bytes | No. Timed path is the suite wire codec. |
+| C++ | `protobuf-wire` | 164 bytes | No. In-tree helper, not official `libprotobuf`. |
+| C# | `SpanJson` | 440 bytes | Yes — that *is* the public JSON seat |
+| Swift | `SwiftProtobuf` | 155 bytes | No |
+| Zig | `protobuf` | 155 bytes | No |
+
+Start with the **job**, then look at the clock. For a public website, use the public JSON seat (`orjson`, `goccy/go-json`, `jsoniter`, `moshi-codegen`, `json`, `JSON.stringify`, `SpanJson`, …). For a private path with no field file, MessagePack is smaller (129–397 bytes versus about 440–460 for named JSON) and is close in time only in Python. For two languages that must share a field file, Protocol Buffers is the smallest common size (about 155 bytes) and is similar in time in Go and Kotlin.
+
+**What this changes later:** Nothing about Experiments 1–13. Those remain the way to optimize after you have started. Do not skip Experiment 1 just because the kit already names a fast JSON library — the kit is a menu, not a bake-off.
+
+---
+
 ## What this laboratory cannot measure
 
 These are real questions. We do not pretend to answer them here.
@@ -1244,6 +1335,17 @@ On Sample A in Python, `json` took about 22 microseconds to write and read. `orj
 
 ---
 
+## After Experiment 14
+
+- **Date:** 2026-08-29
+- **Sample:** [14-starter-kit/sample.json](14-starter-kit/sample.json) (Sample A, one record)
+- **Folder:** [14-starter-kit](14-starter-kit/) · [combined page](14-starter-kit/results.md) · [combined JSON](14-starter-kit/results.json)
+- **Finding:** All twelve languages ran. Times are not one contest. We do not name a single winner. On this one shop order, the fastest row in the kit is not always the public JSON seat. In Python, `orjson` is similar to `msgspec-msgpack`. In Go and Kotlin, the fast JSON library sits with Protocol Buffers in the similar set. In PHP, JavaScript, Java, and C#, the public JSON seat is the fastest row. In Rust, C, C++, Swift, and Zig, a Protocol Buffers row is fastest and about three times smaller than named JSON. Start with the job, then look at the clock. C and C++ Protocol Buffers rows are the suite wire path, not official Google `libprotobuf`.
+- **What this changes later:** Nothing about Experiments 1–13. Those remain the way to optimize after you have started.
+- **What this does not answer:** Other samples; 100 records in one write; YAML on the live path; BSON as a service format; a world ranking.
+
+---
+
 ## Not covered
 
 These are languages or measurements the **planned** experiments asked for, or that a reader would reasonably expect, that this laboratory **did not run** or **cannot measure**. Each row has a serious reason and a concrete fix.
@@ -1275,7 +1377,7 @@ These are languages or measurements the **planned** experiments asked for, or th
 | 13 | Another processor | One computer | Repeat Experiment 13 on another CPU |
 | All | Cross-language write times | Clocks and memory systems differ | Never treat them as one contest. Size is the only roughly fair number, and only with the same field description |
 
-The first-wave path **1 → 2 → 3 → 4 → 12 → 13** is done. Experiments **5–11** are done for the languages the plan named and the suite can actually measure.
+The first-wave path **1 → 2 → 3 → 4 → 12 → 13** is done. Experiments **5–11** are done for the languages the plan named and the suite can actually measure. Experiment **14** is a later starter-kit question on top of those ranks.
 
 ---
 
