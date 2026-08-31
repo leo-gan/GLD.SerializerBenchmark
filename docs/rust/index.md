@@ -7,6 +7,40 @@ Rust
 
 Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends. A second tier (**rkyv**, FlatBuffers, Cap’n Proto) targets zero-copy access.
 
+## Runtime
+
+### What it is
+
+Rust compiles to **native machine code**. There is no virtual machine and no garbage collector. Memory is released when values go out of scope. That rule is called **ownership**. Because of it, a Rust microsecond is a different kind of number from a C#, Java, or Python microsecond.
+
+| | This suite |
+|---|---|
+| Edition | Rust **2021** |
+| Host toolchain | `rustc` and `cargo`, usually installed with rustup |
+| Prepare | `./scripts/install-host-requirements.sh rust` |
+| Run | `cargo build --release` through `rust/scripts/run-benchmarks.sh` |
+| Memory | Ownership. No garbage collector. |
+
+### What this suite runs
+
+The `--release` flag turns on optimizations. A `cargo run` without `--release` uses the Debug profile and is not comparable to the Dashboard. `prost` code is generated at build time by `build.rs`. Most rows go through **serde**, which is Rust’s shared serialize-and-deserialize trait. A few libraries (`minicbor`, `rkyv`, `nanoserde`, `speedy`, `prost`) use their own traits instead.
+
+### What changes the numbers
+
+Building without `--release` is the error that changes the numbers the most, because Debug Rust is far slower than optimized Rust. After that, the useful comparison is still inside one family: JSON with JSON, not JSON with a zero-copy schema codec.
+
+`rkyv` deserialize on the timed path **builds owned values** so the suite can check fidelity. A pure zero-copy `access` of the archived bytes would be faster and is not what this row measures. `simd-json` only accelerates parse; serialize still goes through `serde_json`.
+
+### Suite-specific gotchas
+
+Stream mode is native only where the serializer table says so. Elsewhere the stream path is the bytes path written through a cursor.
+
+These times cannot be ranked against a garbage-collected language as one contest.
+
+### Where to go next
+
+The steps to install the toolchain and run the benchmark are in [`rust/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/rust/README.md). The language overview is [The Rust Book](https://doc.rust-lang.org/book/).
+
 ## Benchmark runner
 
 - Directory: `rust/` (repository root)

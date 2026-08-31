@@ -7,6 +7,38 @@ Go
 
 Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), and **schema/IDL** stacks (protobuf, Avro).
 
+## Runtime
+
+### What it is
+
+Go compiles to **native machine code** before the process starts. There is no Java-style virtual machine and no intermediate language such as .NET IL. The compiler still embeds a small **runtime** in every binary. That runtime includes a concurrent garbage collector, a scheduler for goroutines (Go’s lightweight threads), and the stacks those goroutines use. You do not install a separate “Go VM” in order to run the benchmark.
+
+| | This suite |
+|---|---|
+| Language / module | Go **1.24** (`go.mod` toolchain `go1.24.13`) |
+| Host bootstrap | Go **1.22 or newer**. `GOTOOLCHAIN=auto` may download 1.24. |
+| Prepare | `./scripts/install-host-requirements.sh go` installs into `~/.local/go` |
+| Run | `go/scripts/run-benchmarks.sh` runs `go build` and then the binary |
+| Memory | Concurrent garbage collector inside the Go runtime |
+
+### What this suite runs
+
+The runner is a normal `go build` of the `go/` tree with the compiler’s default optimizations. The install script only needs a bootstrap compiler. If that bootstrap is older than the version pinned in `go.mod`, the Go toolchain setting `GOTOOLCHAIN=auto` downloads the exact version the module asks for.
+
+### What changes the numbers
+
+Go’s garbage collector is designed for short pauses, but allocation still matters. Rows that reuse an `Encoder`, an `EncMode`, or a buffer — sonic’s `Pretouch`, ugorji Handles — often pull ahead of `encoding/json` for that reason. SIMD libraries such as sonic also depend on the host CPU. `encoding/gob` and `kelindar/binary` are Go-only wire formats.
+
+### Suite-specific gotchas
+
+**protobuf** and **linkedin/goavro** have no native stream API in this suite. Their stream rows are **adapted**: the timed path is still bytes, then a write or read of those bytes.
+
+These times cannot be ranked against another language.
+
+### Where to go next
+
+The steps to install the toolchain and run the benchmark are in [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md). The language overview is the [Go documentation](https://go.dev/doc/).
+
 ## Benchmark runner
 
 - Directory: `go/` (repository root)

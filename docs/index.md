@@ -27,7 +27,7 @@ ideally one format family), not to crown a single global winner.
 | Interactive charts, Pareto trade-offs, compare lab | **[Dashboard](dashboard/)** |
 | One-question tests (why we do not only use the big table) | **[Experiments](experiments/)** |
 | Course on formats and trade-offs (101–401) | **[Learn](theory/101/)** |
-| Per-language library lists and caveats | **[Languages](c/)** (sidebar: C, C#, C++, …) |
+| Per-language runtime primer, library lists, and caveats | **[Languages](c/)** (sidebar: C, C#, C++, …) |
 | Methodology, metrics, how to add a codec | **[Benchmarks](analysis/)** |
 
 ---

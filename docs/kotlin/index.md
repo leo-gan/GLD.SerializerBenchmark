@@ -7,13 +7,49 @@ Kotlin
 
 Kotlin’s serialization landscape spans the **kotlinx.serialization format family** (JSON, CBOR, ProtoBuf, Properties, HOCON) plus **kaml** YAML on the same `@Serializable` types; **JVM JSON** (Jackson Kotlin, Moshi codegen vs reflection, Gson); **high-performance JVM binary** (Kryo, Apache Fory, Protostuff); **portable binary** (Jackson CBOR, MessagePack, Obor, KBson, Amazon Ion); **text** (tomlkt); and **schema/IDL** stacks (protobuf-java, protobuf-kotlin, FlatBuffers, Cap'n Proto, Avro4k, Apache Avro, Thrift).
 
+## Runtime
+
+### What it is
+
+Kotlin is a programming language. This runner targets the **same JVM** as [Java](../java/): bytecode on HotSpot, just-in-time compilation, and garbage collection. Kotlin can also compile to native code or to JavaScript. This suite does not measure those backends. It measures Kotlin running on the JVM.
+
+| | This suite |
+|---|---|
+| Target | JVM **21** (`jvmToolchain(21)`), Kotlin **2.1** |
+| Host JDK | JDK **17 or newer** is accepted. The same Temurin 21 install as Java is used. |
+| Build | Gradle wrapper in `kotlin/` (not Maven) |
+| Prepare | `./scripts/install-host-requirements.sh kotlin` |
+| Run | `kotlin/scripts/run-benchmarks.sh` (`./gradlew shadowJar`) |
+| Memory | JVM garbage collector (HotSpot) |
+
+### What this suite runs
+
+Kotlin 2.1 compiles to Java 21 bytecode. The Gradle wrapper is checked into `kotlin/`, so you do not install Gradle yourself. Domain types are `@Serializable` data classes with `@JvmField`, so JVM reflection codecs such as Jackson, Kryo, and Moshi see public fields.
+
+### What changes the numbers
+
+Warmup and garbage collection work the same way as on Java: the first repetitions pay for JIT compilation, and later ones are closer to steady state. **kotlinx.serialization** generates encode and decode methods at compile time. **moshi-codegen** uses KSP (Kotlin Symbol Processing) to generate an adapter. **moshi-reflect** uses reflection on the same types and is slower.
+
+Sharing a JVM with Java does not make the Java and Kotlin rows one measurement. The wrappers and the domain types are different.
+
+### Suite-specific gotchas
+
+**kryo**, **fory**, and **protostuff** encode JVM object graphs. They are not portable to other languages.
+
+When a cell has more than one instance, the TOML, HOCON, and BSON rows wrap the payload as `{ batch = [...] }`. Those formats cannot use a bare array as the document root.
+
+Kotlin times cannot be ranked against Java, or against any other language, as a single contest.
+
+### Where to go next
+
+The steps to install the toolchain and run the benchmark are in [`kotlin/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/kotlin/README.md). JetBrains’ overview is [Kotlin/JVM](https://kotlinlang.org/docs/jvm-get-started.html). For garbage collection and latency, see [Latency tails and GC](../theory/301/latency-tails-and-gc.md).
+
 ## Benchmark runner
 
 - Directory: `kotlin/` (repository root)
 - Output: monorepo `logs/kotlin/YYYY-MM-DD-HHMMSS.csv` (`Language=kotlin`, times in **nanoseconds**)
 - Runner: `kotlin/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Registration: [`kotlin/src/main/kotlin/benchmark/serializers/Registry.kt`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/kotlin/src/main/kotlin/benchmark/serializers/Registry.kt)
-- Requires **JDK 17+** (benchmark runner targets 21). Gradle wrapper is in-tree.
 
 ## Serializers
 
