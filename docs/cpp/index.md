@@ -7,6 +7,41 @@ C++
 
 C++ serialization spans **header-only JSON** (nlohmann, RapidJSON, ArduinoJson, **glaze**), **SIMD parse** (simdjson), **C libraries callable from C++** (yyjson), **schemaless binary** (MessagePack, cereal, bitsery, zpp_bits, CBOR/BSON via jsoncons), and **schema / zero-copy** families (official **libprotobuf**, in-tree Protobuf wire, FlatBuffers, FlexBuffers).
 
+## Runtime
+
+### What it is
+
+C++ compiles to **native machine code**. There is no virtual machine. This runner requires **C++20**. Memory is mostly handled by **RAII** (Resource Acquisition Is Initialization): an object frees its resources in its destructor when it goes out of scope. That is still not a garbage collector. Leaks and extra copies remain the programmer’s problem, and the library’s.
+
+| | This suite |
+|---|---|
+| Language | **C++20** (required) |
+| Build | CMake 3.16 or newer, **Release** configuration, `g++` or `clang++` |
+| Dependencies | CMake `FetchContent` downloads into `cpp/third_party/` (network needed once) |
+| Prepare | A C++20 compiler and cmake. Check with `./scripts/check-host-requirements.sh cpp`. |
+| Run | `cpp/scripts/run-benchmarks.sh` |
+| Memory | RAII and the heap. No garbage collector. |
+
+### What this suite runs
+
+The first CMake configure downloads the pinned third-party libraries. Official protobuf is a separate sysroot created by `cpp/scripts/setup-protobuf-sysroot.sh`. It is not the system `libprotobuf`. **glaze** is pinned to v2.9.5 because glaze v3 and later require C++23.
+
+### What changes the numbers
+
+The compiler’s optimization level changes the numbers more than almost anything else. Header-only JSON (nlohmann) and SIMD parse (simdjson) are different designs. They belong in the same ranking only when you stay inside one family.
+
+A C library called from C++, such as yyjson, is a C++ *call path*. It is not a second measurement of the C suite. See [C vs C++](#c-vs-c-clear-separation).
+
+### Suite-specific gotchas
+
+**simdjson** is optimized for parse. Serialize in this suite is prepared minified JSON, so that row does not claim a SIMD encoder.
+
+These times cannot be ranked against C, C#, or Python as one contest.
+
+### Where to go next
+
+The steps to install the toolchain and run the benchmark are in [`cpp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/README.md). The language reference is [C++ on cppreference](https://en.cppreference.com/w/cpp).
+
 ## Benchmark runner
 
 - Directory: `cpp/` (repository root)

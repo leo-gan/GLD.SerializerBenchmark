@@ -154,7 +154,7 @@ Honor `LOG_DIR` and `BENCHMARK_RUN_CONFIG` so lab experiments can point at `expe
 
 ## 6. Documentation
 
-- `docs/<lang>/index.md` — ecosystem overview, registered inventory, caveats.
+- `docs/<lang>/index.md` — ecosystem overview, a short **Runtime** section (what the platform is, what this suite targets, what changes the numbers, gotchas), registered inventory, caveats. Match the headings used by the existing language pages.
 - After benchmarks: run `analyze-benchmarks` (unpublished `reports/<docs_dir>/results.md`) and pack Dashboard data (step 8).
 - Register Overview under the **Languages** tab as a one-child nest in `mkdocs.yml`. The sidebar injects a Dashboard sibling.
 - Keep **Supported languages** lists alphabetical by display name (README, docs analysis index, MkDocs Languages).

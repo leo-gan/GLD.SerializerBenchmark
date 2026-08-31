@@ -7,11 +7,46 @@ JavaScript
 
 Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
+## Runtime
+
+### What it is
+
+This suite measures **Node.js**, not JavaScript running in a web browser. Node.js is a command-line host that embeds the **V8** JavaScript engine, which is the same engine Chrome uses. V8 **JIT**-compiles (just-in-time compiles) hot functions into native code and reclaims unused objects with a garbage collector. Node also provides `Buffer`, `require`/`import`, and native addons written in C++.
+
+| | This suite |
+|---|---|
+| Host | **Node.js 18 or newer** and npm |
+| Engine | V8 inside Node.js, not a browser |
+| Prepare | Install Node with your package manager, then run `npm install` in `javascript/` |
+| Run | `javascript/scripts/run-benchmarks.sh` |
+| Memory | V8 garbage collector |
+
+### What this suite runs
+
+`package.json` requires Node 18 or newer. Timing uses `performance.now()` and converts the result to nanoseconds. There is **no stream mode**. Every codec is timed on in-memory buffers only.
+
+### What changes the numbers
+
+V8 compiles hot functions after they have run a few times, so early repetitions can be slower than later ones. Libraries that reuse an `Encoder` or `Packr` instance, such as `cbor-x` and `msgpackr`, avoid setup work on every call. `v8-serialize` is a Node-only format. It is not JSON and it is not portable to other languages. Optional native addons such as `simdjson` are left out of a run when they are not installed.
+
+Calling `JSON.stringify` in a browser on the same payload is a different environment from this Node runner.
+
+### Suite-specific gotchas
+
+**devalue** is a framework value codec used by tools such as SvelteKit. It is not a portable wire format.
+
+The row named **simdjson-parse+JSON.stringify** uses SIMD only for parse. Serialize is still the standard `JSON.stringify`.
+
+These times cannot be ranked against another language, or against a browser.
+
+### Where to go next
+
+The steps to install Node and run the benchmark are in [`javascript/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/javascript/README.md). The platform overview is [Introduction to Node.js](https://nodejs.org/en/learn/getting-started/introduction-to-nodejs).
+
 ## Benchmark runner
 
 - `javascript/` (repository root)
 - Logs: `logs/javascript/YYYY-MM-DD-HHMMSS.csv`
-- Requires Node ≥ 18
 - Registration: modular under [`javascript/src/serializers/`](https://github.com/leo-gan/GLD.SerializerBenchmark/tree/master/javascript/src/serializers)
 - `prepare()` compiles schemas / reuses encoder instances outside timed loops
 - Protobuf codegen: `npm run generate:protobuf` (protobuf-es + google-protobuf; needs suite protoc sysroot for jspb stubs)

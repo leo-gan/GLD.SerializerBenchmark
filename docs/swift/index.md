@@ -7,6 +7,40 @@ Swift
 
 Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto).
 
+## Runtime
+
+### What it is
+
+Swift compiles to **native machine code**. Memory is managed with **ARC** (Automatic Reference Counting). An object is freed when the last reference to it goes away. That is not the same as the tracing garbage collector used by .NET or the JVM. Swift is not treated here as an Apple-only language. This runner is built and timed on **Linux** as well.
+
+| | This suite |
+|---|---|
+| Tools | Swift **5.10 or newer** (`Package.swift`). The install script places Swift **6.x** under `~/.local/swift`. |
+| Build | Swift Package Manager (`swift build -c release`) |
+| Prepare | `./scripts/install-host-requirements.sh swift` |
+| Run | `swift/scripts/run-benchmarks.sh` |
+| Memory | Automatic reference counting, not a tracing garbage collector |
+
+### What this suite runs
+
+The runner is built in the **release** configuration, which turns on optimizations. Codable wrappers never import the suite types. They see a type-erased `Fixture` value instead. Schema codecs (Protobuf, FlatBuffers, Avro, Cap’n Proto) convert between the suite objects and each library’s native type **outside** the timer.
+
+### What changes the numbers
+
+ARC still has a cost: every extra retain and release is work. Foundation JSON on Linux is not the same binary as Foundation JSON on Apple platforms. **Cap’n Proto** in this suite is the official **C++** library, reached through `CapnpBridge` and `libcapnp` / `libkj` under `~/.local`. It is not a pure-Swift runtime.
+
+### Suite-specific gotchas
+
+Stream mode is **adapted** for every registered codec. The timed path is still bytes, then a write or read of those bytes.
+
+Linux TOML builds may need GCC 11 `libstdc++` include flags. The run script already sets those flags.
+
+These times cannot be ranked against another language.
+
+### Where to go next
+
+The steps to install the toolchain and run the benchmark are in [`swift/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/swift/README.md). The language overview is [About Swift](https://www.swift.org/about/).
+
 ## Benchmark runner
 
 - Directory: `swift/`

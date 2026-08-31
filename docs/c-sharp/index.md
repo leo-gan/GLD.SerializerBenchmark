@@ -7,6 +7,48 @@ C#
 
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With modern .NET memory primitives (`Span<T>`, `Memory<T>`) and source generators, the landscape shifted from heavy reflection-based engines to lower-allocation, code-generated libraries.
 
+## Runtime
+
+### What it is
+
+C# is a programming language. It runs on **.NET**, a platform made of a virtual machine and a standard library. The virtual machine is called the **CLR** (Common Language Runtime). C# compiles first to an intermediate form named **IL**. The first time a method actually runs, the CLR translates that IL into native machine code. That late translation is called **JIT** (just-in-time compilation). Memory that the program no longer uses is reclaimed by a **garbage collector (GC)**. The programmer does not free objects by hand.
+
+The label “.NET 8” names the **target framework**: the set of runtime APIs the compiled program is allowed to call. The **SDK** is the compiler and the rest of the build tools. In this suite those two version numbers are not the same.
+
+| | This suite |
+|---|---|
+| Target | `net8.0` (.NET 8 APIs) |
+| Host SDK | .NET SDK **9+** (SDK 8 targeting pack also installed) |
+| Prepare | `./scripts/install-host-requirements.sh csharp` installs into `~/.dotnet` |
+| Run | `dotnet build` and `dotnet run -c Release` through `c-sharp/scripts/run-benchmarks.sh` |
+| Memory | Tracing garbage collector. No Docker. |
+
+### What this suite runs
+
+The project file targets `net8.0`, so the finished program uses the .NET 8 API surface. The machine that builds it still needs .NET SDK 9 or newer, because LightProto’s source generator requires Roslyn 4.14. A **source generator** is a compiler plugin that writes extra C# while the project builds. If only SDK 8 is installed, the project compiles, but LightProto never generates its parsers and every LightProto cell fails.
+
+We build and run in the **Release** configuration, which turns on optimizations. The **Debug** configuration is slower, and the Dashboard numbers do not come from it. The `dotnet` tools live under the user’s home directory. There is no Docker container.
+
+### What changes the numbers
+
+The JIT compiles methods on first use, so the earliest repetitions are often slower than later ones. Analysis may drop those warmup rows. Creating many temporary strings or buffers makes the garbage collector pause the process. A library that looks faster on average can still lose on the slowest requests (the **latency tail**).
+
+Modern codecs such as MemoryPack, FlatSharp, and SpanJson avoid extra copies by using `Span<T>`: a window over memory that already exists, rather than a new array. Source generators (MemoryPack, LightProto) write the encode and decode methods at build time. They therefore need a new enough SDK even when the target framework is still net8. Libraries that discover types by **reflection** (inspecting objects at run time) are simpler to write and usually allocate more.
+
+### Suite-specific gotchas
+
+Apex.Serialization was removed because it crashes on .NET 8. ZeroFormatter’s dynamic IL path is also broken on net8, so the suite uses `KeyTuple` shapes instead.
+
+On the **string** path, binary codecs usually encode the payload as Base64. That extra encode and decode runs inside the timer. See [string vs stream](#string-mode-vs-stream-mode).
+
+ExtendedXmlSerializer and Migrant do not serialize the suite objects as native XML or binary. They serialize a JSON envelope. See [envelope codecs](#envelope-codecs-not-native-domain-wire).
+
+These times cannot be ranked against another language. The runtimes and garbage collectors are different.
+
+### Where to go next
+
+The steps to install the toolchain and run the benchmark are in [`c-sharp/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/README.md). Microsoft’s overview of the platform is [What is .NET](https://learn.microsoft.com/dotnet/core/introduction). For how garbage collection shows up in latency, see [Latency tails and GC](../theory/301/latency-tails-and-gc.md).
+
 ## Benchmark runner
 
 - Directory: `c-sharp/` (repository root)
@@ -110,15 +152,3 @@ Measured numbers for this language live on the
 [Dashboard](../dashboard/?lang=csharp&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
-
-## The Power of `Span<T>` and `Memory<T>`
-
-Historically, reading a byte array meant copying parts of it into new arrays. Modern serializers can create a window over existing memory without allocating new objects. Serializers in this suite that lean on modern layouts include **MemoryPack** and **FlatSharp** (among others).
-
-## AOT and Source Generators
-
-Reflection is slow and breaks down in AOT scenarios. Source generators produce hard-coded serialization methods at build time. In this suite, **MemoryPack** is the clearest example of that approach.
-
-## The Garbage Collector (GC) Pressure
-
-In high-throughput .NET applications, a common bottleneck is Garbage Collection from temporary strings or buffers. Choosing a serializer is often as much about allocations as about raw CPU time.

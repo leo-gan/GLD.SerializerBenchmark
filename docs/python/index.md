@@ -7,6 +7,44 @@ Python
 
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
+## Runtime
+
+### What it is
+
+This suite measures **CPython**, the usual C implementation of the Python interpreter. Other implementations such as PyPy are not used here. CPython compiles source to bytecode and then runs that bytecode in a virtual machine. Almost every value is a heap object with a type pointer and a reference count. That design makes Python easy to write and expensive to decode into, because even a small integer is a full object.
+
+The **Global Interpreter Lock (GIL)** is a lock that lets only one thread run Python bytecode at a time inside a process. If a decode takes 10 ms of Python bytecode, the whole process is blocked for those 10 ms, unless the library releases the GIL while it works in C, C++, or Rust.
+
+| | This suite |
+|---|---|
+| Interpreter | CPython **3.12 or newer**. Not PyPy or Jython. |
+| Host toolchain | [uv](https://docs.astral.sh/uv/) (`uv sync`) |
+| Prepare | `./scripts/install-host-requirements.sh python` |
+| Run | `python/scripts/run-benchmarks.sh` |
+| Memory | Reference counting plus a cyclic garbage collector. The GIL is present. |
+
+### What this suite runs
+
+`python/pyproject.toml` requires Python 3.12 or newer. The `uv` tool creates a local virtual environment and installs the packages listed in the lock file. The benchmark runner is ordinary CPython on the command line. It is not a web server such as FastAPI or Flask.
+
+### What changes the numbers
+
+Libraries with a C or Rust core, such as `orjson`, `msgspec`, and `protobuf`, spend most of the timed path outside the interpreter. They can release the GIL while they parse bytes. Pure-Python paths, such as `dill` serialize and the official FlatBuffers Builder, stay inside the virtual machine and look much slower.
+
+Deserializing into a `dict` is usually cheaper than building a class or a Pydantic model, because constructing Python objects is itself expensive. The `tracemalloc` tool under-counts allocations that happen inside C or Rust extensions.
+
+### Suite-specific gotchas
+
+The official FlatBuffers Python package builds with a pure-Python Builder. The C++ and Rust FlatBuffers libraries are a different speed class. This suite measures the Python binding. See [caveats](#why-flatbuffers-and-dill-opss-look-low).
+
+`pickle`, `cloudpickle`, and `dill` work only in Python. Loading untrusted input with them can run arbitrary code.
+
+These times cannot be ranked against another language.
+
+### Where to go next
+
+The steps to install the toolchain and run the benchmark are in [`python/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/python/README.md). The language overview is [The Python interpreter](https://docs.python.org/3/tutorial/interpreter.html). For the GIL and garbage collection in latency, see [Latency tails and GC](../theory/301/latency-tails-and-gc.md).
+
 ## Benchmark runner
 
 - Directory: `python/` (repository root)
@@ -73,25 +111,3 @@ Measured numbers for this language live on the
 [Dashboard](../dashboard/?lang=python&data=document@n=1&mode=bytes)
 (pre-filtered). Claim level is **L1** (one machine, one session) —
 see [Claims and replication](../analysis/CLAIMS_AND_REPLICATION.md).
-
-## The Global Interpreter Lock (GIL)
-
-In CPython, the GIL prevents multiple native threads from executing Python bytecodes simultaneously. This has massive implications for serialization in multithreaded web servers (like FastAPI or Flask).
-If a JSON payload takes 10ms to deserialize, the entire Python process is blocked for that 10ms.
-
-**The Solution:** The fastest Python serializers are written in C, C++, or Rust. They release the GIL while parsing the raw bytes and only reacquire it at the very end when they must instantiate the Python dictionary or object, allowing true concurrent processing.
-
-## Object Instantiation Overhead
-
-In Python, every object (even a simple integer) is a full-fledged heap-allocated structure with a reference count and a type pointer. Dictionaries have significant memory overhead compared to C structs.
-
-*   **Dicts vs. Classes:** Deserializing into a standard Python `dict` is generally much faster than instantiating custom classes or Pydantic models.
-*   **Slots:** If you must deserialize into classes, using `__slots__` reduces memory footprint and slightly speeds up attribute assignment.
-
-## Pickling vs. Standard Formats
-
-`pickle` is Python's built-in serialization format. It is deeply integrated into the language and can serialize almost arbitrary Python objects, including functions and classes.
-
-*   **Security:** `pickle` is notoriously insecure. Unpickling malicious data can execute arbitrary code on your machine.
-*   **Interoperability:** `pickle` is entirely Python-specific.
-*   **Performance:** While the C implementation in modern Python is fast, it is often outperformed by specialized binary serializers like `msgpack` or `orjson`.

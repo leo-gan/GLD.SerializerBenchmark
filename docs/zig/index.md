@@ -7,13 +7,47 @@ Zig
 
 Zig is in this suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin runtime reflection, C# source generation, or Rust derive macros. The runner times official `std.json` (typed `parseFromSlice` versus streaming `Scanner` / `parseFromTokenSource`) against an in-tree comptime byte-packed baseline, against **serde.zig**, a format-agnostic framework that uses the same `@typeInfo` walk for JSON, MessagePack, YAML, TOML, and ZON, and against **schema codecs** (Protocol Buffers, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
 
+## Runtime
+
+### What it is
+
+Zig compiles to **native machine code**. There is no hidden virtual machine and no garbage collector. Allocation is explicit: the benchmark runner passes allocators in. **Comptime** means the compiler can run Zig code while it builds. `@typeInfo` walks a struct at compile time instead of using Java-style reflection at run time.
+
+| | This suite |
+|---|---|
+| Compiler | Zig **0.16.x**. Version 0.15 or 0.17 will not build this tree. |
+| Prepare | `./scripts/install-host-requirements.sh zig` installs into `~/.local/zig` |
+| Run | `zig/scripts/run-benchmarks.sh` (`zig build`) |
+| Memory | Explicit allocators. No garbage collector. |
+
+### What this suite runs
+
+Zig still changes in breaking ways between minor versions, so the host script installs 0.16.x and the checker rejects any other series. The Zig binary does not start Python. Cap’n Proto uses the official C++ library, because Zig 0.16 has no native Cap’n Proto plugin.
+
+### What changes the numbers
+
+Building without optimizations is the error that changes the numbers the most, because an unoptimized Zig binary is far slower than a release build. Codecs that use comptime, such as `std.json`, serde.zig, and `comptime-bin`, generate the field walk while the program compiles.
+
+A `@bitCast` of a live suite value is not a valid encoding. Slices inside that value are pointers, not payload bytes. See [Not a `@bitCast`](#not-a-bitcast-of-the-whole-fixture).
+
+### Suite-specific gotchas
+
+The `capnproto` row needs `libcapnp` and `libkj` under `~/.local`.
+
+Some serde.zig rows support only the **message** and **strings** data types.
+
+These times cannot be ranked against another language.
+
+### Where to go next
+
+The steps to install the toolchain and run the benchmark are in [`zig/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/zig/README.md). The language overview is [Zig overview](https://ziglang.org/learn/overview/).
+
 ## Benchmark runner
 
 - Directory: `zig/` (repository root)
 - Output: `logs/zig/YYYY-MM-DD-HHMMSS.csv` (`Language=zig`, times in **nanoseconds**)
 - Runner: `zig/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Registration: `zig/src/serializers.zig`
-- Zig version: **0.16.x** (`./scripts/install-host-requirements.sh zig`)
 
 The shell script resolves the run config to JSON. The Zig binary does not spawn Python. Prepare is untimed. The harness owns a reusable output buffer per serializer. Timed I/O is serialize plus deserialize only. Schedule is SHA-256 + SplitMix64 Fisher–Yates (golden vector `C, B, A`).
 
