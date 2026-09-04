@@ -1,0 +1,5289 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Fair multi-language serializer benchmarks — live dashboard, course, and open methodology.">
+      
+      
+      
+        <link rel="canonical" href="https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/">
+      
+      
+        <link rel="prev" href="../test_data_configuration/">
+      
+      
+        <link rel="next" href="../ADDING_A_LANGUAGE/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Adding a Serializer - Multi-Language Serializer Benchmark</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/languages-nav.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/site-home.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adding-a-serializer" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Multi-Language Serializer Benchmark" class="md-header__button md-logo" aria-label="Multi-Language Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Multi-Language Serializer Benchmark
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Adding a Serializer
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/leo-gan/GLD.SerializerBenchmark" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    leo-gan/GLD.SerializerBenchmark
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../theory/101/" class="md-tabs__link">
+          
+  
+  
+  Learn
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../c/" class="md-tabs__link">
+          
+  
+  
+  Languages
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../dashboard/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Dashboard
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../experiments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Experiments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Multi-Language Serializer Benchmark" class="md-nav__button md-logo" aria-label="Multi-Language Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Multi-Language Serializer Benchmark
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/leo-gan/GLD.SerializerBenchmark" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    leo-gan/GLD.SerializerBenchmark
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Learn
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Learn
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_1" id="__nav_1_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    101
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    101
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/101/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/101/historical_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Historical
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/101/data_science_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Science
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/101/engineer_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    201
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    201
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/memory-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/encode-decode-cost/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Encode/decode cost
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/self-describing-vs-schema-dependent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-describing vs schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/schema-evolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema evolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/dynamic-vs-idl-binary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamic vs IDL binary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/zero-copy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zero-copy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/compression-is-not-a-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compression vs format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    301
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    301
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/trust-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/untrusted-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Untrusted input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/payload-surfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Payload surfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/two-schema-cultures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Two schema cultures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/schema-registries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema registries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/public-api-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public API contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/versioning-in-the-wild/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning in the wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/row-vs-columnar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Row vs columnar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/polyglot-estates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot estates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/rpc-and-messaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RPC and messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/zero-copy-in-production/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zero-copy in production
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/caching-and-queues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Caching and queues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/using-this-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using this suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/implementation-variance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation variance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/latency-tails-and-gc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Latency tails and GC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/compression-as-system-choice/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compression as system choice
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-public-rest-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: public REST API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-internal-rpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: internal RPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-event-stream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: event backbone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-analytics-lake/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: analytics lake
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-polyglot-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: polyglot boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-faster-postmortem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: faster postmortem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    401
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    401
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-wire-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protobuf wire format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: google.protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-rust-prost/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: prost
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-c-protobuf-c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: protobuf-c
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-c-nanopb-compare/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: nanopb vs protobuf-c
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/lab-mini-protobuf-encoder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab: mini Protobuf encoder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-cross-language-fidelity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Same bytes, three runtimes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/python-msgspec-vs-orjson/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: msgspec vs orjson
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/python-msgspec-json-vs-msgpack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: msgspec JSON vs MessagePack
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/python-orjson-vs-json/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: orjson vs json
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/rust-speedy-vs-bincode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: Speedy vs Bincode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/rust-speedy-vs-postcard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: Speedy vs Postcard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/rust-rkyv-vs-speedy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: rkyv vs Speedy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/c-custom-binary-vs-ubj/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: custom-binary vs ubj
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/cpp-bitsery-vs-yas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++: Bitsery vs YAS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/cpp-simdjson-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++: the simdjson row
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/csharp-binarypack-vs-bond/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C#: BinaryPack vs Bond
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/go-kelindar-vs-avro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go: kelindar vs Avro
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/java-protostuff-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java: Protostuff vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/kotlin-protostuff-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: Protostuff vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/kotlin-kotlinx-json-vs-moshi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: kotlinx-json vs Moshi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/kotlin-flatbuffers-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: FlatBuffers vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/php-json-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP: JSON vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/zig-std-json-vs-serde-json/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zig: std.json vs serde.json
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/javascript-json-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript: JSON vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/javascript-three-protobufs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript: three Protocol Buffers libraries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/swift-flatbuffers-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swift: FlatBuffers vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Languages
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Languages
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C#
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C#
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-sharp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C++
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cpp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Go
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../go/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Java
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../java/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    JavaScript
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kotlin
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../kotlin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    PHP
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../php/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Python
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swift
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Swift
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../swift/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_12" id="__nav_2_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zig
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Zig
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../zig/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIMING_HONESTY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Timing honesty
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serialization_categories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Categories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ANALYSIS_METHODOLOGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../METRICS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CLAIMS_AND_REPLICATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claims and replication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../test_data_configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Serializer
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Serializer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learning goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before you start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shared-rules-all-languages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared rules (all languages)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Shared rules (all languages)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#timing-honesty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timing honesty
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#correctness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Correctness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hot-path-before-full-matrix-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hot path before full matrix (required)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hot path before full matrix (required)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-read-package-docs-and-examples-for-the-tight-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Read package docs and examples for the tight loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-prefer-the-librarys-recommended-high-throughput-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Prefer the library’s recommended high-throughput path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-microbench-or-peer-smoke-before-the-full-language-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Microbench or peer-smoke before the full language matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-case-study-apacheavro-on-c-what-went-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Case study: Apache.Avro on C# (what went wrong)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist-every-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checklist (every language)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Checklist (every language)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-dependency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Dependency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-wrapper-correct-and-hot-path-complete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Wrapper (correct and hot-path complete)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-register-in-the-runner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Register in the runner
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-version-reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Version reporting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-domain-model-attributes-maps-only-if-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Domain model / attributes / maps (only if needed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-toolchain-source-generators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Toolchain / source generators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-inventory-and-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Inventory and counts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-build-peer-smoke-then-full-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Build, peer-smoke, then full results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-pull-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Pull request
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-walkthrough-most-common-contributor-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C# walkthrough (most common contributor path)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sanity-checks-reviewers-will-look-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sanity checks reviewers will look for
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADDING_A_LANGUAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Language
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../experiments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learning goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before you start
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shared-rules-all-languages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared rules (all languages)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Shared rules (all languages)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#timing-honesty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timing honesty
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Isolation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#correctness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Correctness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version column
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hot-path-before-full-matrix-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hot path before full matrix (required)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hot path before full matrix (required)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-read-package-docs-and-examples-for-the-tight-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Read package docs and examples for the tight loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-prefer-the-librarys-recommended-high-throughput-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Prefer the library’s recommended high-throughput path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-microbench-or-peer-smoke-before-the-full-language-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Microbench or peer-smoke before the full language matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-case-study-apacheavro-on-c-what-went-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Case study: Apache.Avro on C# (what went wrong)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist-every-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checklist (every language)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Checklist (every language)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-dependency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Dependency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-wrapper-correct-and-hot-path-complete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Wrapper (correct and hot-path complete)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-register-in-the-runner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Register in the runner
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-version-reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Version reporting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-domain-model-attributes-maps-only-if-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Domain model / attributes / maps (only if needed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-toolchain-source-generators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Toolchain / source generators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-inventory-and-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Inventory and counts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-build-peer-smoke-then-full-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Build, peer-smoke, then full results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-pull-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Pull request
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-walkthrough-most-common-contributor-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C# walkthrough (most common contributor path)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sanity-checks-reviewers-will-look-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sanity checks reviewers will look for
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  
+
+<h1 id="adding-a-serializer">Adding a serializer</h1>
+<p>Checklist for <strong>library authors and contributors</strong> who want to add one codec to an
+<strong>existing</strong> language tree. You do <strong>not</strong> need to add a language for this.</p>
+<p>Adding a whole language: <a href="../ADDING_A_LANGUAGE/">Adding a language</a>.<br />
+Background: <a href="../architecture/">Architecture</a> · <a href="../modes/">Modes</a> · <a href="../METRICS/">Metrics</a>.</p>
+<hr />
+<h2 id="learning-goals">Learning goals</h2>
+<p>After this page you should be able to:</p>
+<ol>
+<li>Wire a library into one language’s benchmark runner so it appears in the CSV.</li>
+<li>Land a <strong>performance-complete</strong> client (documented hot path, not only a correct round-trip).</li>
+<li>Fill <code>SerializerVersion</code>, inventory docs, and counts correctly.</li>
+<li>Run a smoke/full bench, regenerate published results, and open a PR that reviewers can merge.</li>
+</ol>
+<hr />
+<h2 id="before-you-start">Before you start</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Which <strong>language</strong> tree? (<code>c-sharp/</code>, <code>python/</code>, …)</td>
+<td>Each tree has its own interface and registration list</td>
+</tr>
+<tr>
+<td>Can the library serialize the <strong>suite domain types</strong>?</td>
+<td>Prefer the library’s normal path on domain POCOs; use untimed maps only when the codec needs a native shape</td>
+</tr>
+<tr>
+<td>What is the library’s <strong>recommended</strong> ser/de entry point?</td>
+<td>README “Getting started” snippets are often <em>minimal</em>, not <em>optimal</em> for a tight loop</td>
+</tr>
+<tr>
+<td>Source generators / AOT / special toolchain?</td>
+<td>Document host SDK requirements (example: LightProto needs <strong>.NET SDK 9+</strong> for its generator while the project still targets net8.0)</td>
+</tr>
+<tr>
+<td>Default configuration only?</td>
+<td>The suite measures <strong>library defaults</strong>, not hand-tuned production settings</td>
+</tr>
+</tbody>
+</table>
+<p>Pick an existing sibling under <code>&lt;lang&gt;/…/Serializers/</code> (or equivalent) and copy its structure.</p>
+<hr />
+<h2 id="shared-rules-all-languages">Shared rules (all languages)</h2>
+<p>These keep rankings comparable. Violating them produces “suspicious” numbers even when the library is fine. The full contract is <strong><a href="../TIMING_HONESTY/">Timing honesty</a></strong>.</p>
+<h3 id="timing-honesty">Timing honesty</h3>
+<table>
+<thead>
+<tr>
+<th>Do</th>
+<th>Don’t</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time <strong>serialize</strong> and <strong>deserialize</strong> only</td>
+<td>Time schema compile, codegen, type registration, domain↔native maps, or buffer setup</td>
+</tr>
+<tr>
+<td>Put setup in <strong>prepare / Initialize / PrepareData</strong> (untimed)</td>
+<td>Write the <strong>output bytes</strong> in <code>prepare</code> and copy them in <code>serialize</code>, or allocate a new encoder every call when the library documents reuse</td>
+</tr>
+<tr>
+<td>Reuse readers/writers/encoders/decoders when the API allows</td>
+<td>Copy a “new X every call” snippet from Getting Started into the timed loop without checking reuse</td>
+</tr>
+<tr>
+<td>Use real library stream APIs for <strong>stream</strong> mode when they exist; emit <code>StreamMode=native</code> or <code>text_on_stream</code></td>
+<td>Make stream a free alias of the string/bytes path, or label <code>native</code> while still using bytes APIs</td>
+</tr>
+<tr>
+<td>Encode <strong>N instances</strong> when the cell says <code>DataTypeInstanceCount=N</code></td>
+<td>Label N but serialize one object</td>
+</tr>
+</tbody>
+</table>
+<h3 id="isolation">Isolation</h3>
+<ul>
+<li>Wrapper code should <strong>not</strong> hard-code suite type names (<code>Message</code>, <code>Telemetry</code>, …) when the runner can pass <code>Type</code> / generics / maps.</li>
+<li>Library-specific contracts (generated protobuf messages, FlatBuffer tables, CSV row DTOs) are fine in dedicated folders.</li>
+<li>Isolation does <strong>not</strong> force a slow path: bind typed APIs from a runtime <code>Type</code> (e.g. <code>MakeGenericType</code> + compiled delegates) when that matches the library’s fast entry points.</li>
+</ul>
+<h3 id="correctness">Correctness</h3>
+<ul>
+<li>Round-trip must pass the suite <strong>fidelity</strong> check (<code>FidelityScore</code> ≈ 1.0).</li>
+<li>Failures go to <code>logs/&lt;lang&gt;/&lt;ts&gt;.errors.csv</code> (only when there are errors).</li>
+<li>Prefer native wire formats over “JSON stuffed into another codec” envelopes. If an envelope is unavoidable, document it on the language inventory page (see C# envelope codecs).</li>
+</ul>
+<h3 id="version-column">Version column</h3>
+<p>CSV column <strong><code>SerializerVersion</code></strong> (immediately after <code>SerializerName</code>) must show the <strong>installed</strong> package/crate/module version at runtime — not a hard-coded string in most cases.</p>
+<h3 id="hot-path-before-full-matrix-required">Hot path before full matrix (required)</h3>
+<p>A PR that only “compiles and round-trips” is incomplete for this suite. <strong>Correctness and the documented hot path land in the same first PR</strong> — do not wait for a later “performance pass” after published numbers look slow.</p>
+<h4 id="1-read-package-docs-and-examples-for-the-tight-loop">1. Read package docs <em>and</em> examples for the tight loop</h4>
+<p>For the language/ecosystem of the library, open at least one of:</p>
+<ul>
+<li>Official README / tutorial / “Getting started”</li>
+<li>API reference (docs.rs, nuget.org, pkg.go.dev, …)</li>
+<li>Upstream <strong>examples</strong> or perf samples that show serialize/deserialize in a loop</li>
+</ul>
+<p>Record the entry points you will call (e.g. <code>ReflectWriter&lt;T&gt;.Write</code>, <code>write_avro_datum_ref</code>, <code>Marshal</code>).</p>
+<p>Getting-started samples often allocate a new encoder/decoder per call for clarity. That is fine for demos; <strong>it is usually wrong for the timed path</strong> if the library can reuse instances.</p>
+<h4 id="2-prefer-the-librarys-recommended-high-throughput-path">2. Prefer the library’s recommended high-throughput path</h4>
+<table>
+<thead>
+<tr>
+<th>Prefer</th>
+<th>Avoid on the timed path (unless docs force it)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Typed / generic writers bound once (<code>Writer&lt;T&gt;</code>, frozen API, monomorphic fn)</td>
+<td>Unrelated “default object” APIs that re-resolve types every call</td>
+</tr>
+<tr>
+<td>Schema / <code>ClassCache</code> / <code>RuntimeTypeModel</code> / codec config built <strong>once</strong> in prepare</td>
+<td>Rebuild schema or reflection metadata every serialize</td>
+</tr>
+<tr>
+<td>Reused buffers and encoders when the type holds only a <code>Stream</code> / slice</td>
+<td><code>new BinaryEncoder(stream)</code> every rep when a long-lived encoder works</td>
+</tr>
+<tr>
+<td><code>Read(reuse, …)</code> / decode-into when the library supports it</td>
+<td>Always allocate a fresh root object when reuse is safe and documented</td>
+</tr>
+<tr>
+<td>Single-pass ser/de to the domain or native type</td>
+<td>Extra intermediate graphs when docs offer a direct path (e.g. avoid an unneeded <code>Value</code> round-trip on <strong>serialize</strong> if a direct writer exists)</td>
+</tr>
+</tbody>
+</table>
+<p>If the only public API is inherently two-step (example: some Avro crates decode to a generic value then <code>from_value</code>), document that in the inventory as <strong>expected</strong> library behavior — after you confirm there is no faster public API.</p>
+<h4 id="3-microbench-or-peer-smoke-before-the-full-language-matrix">3. Microbench or peer-smoke before the full language matrix</h4>
+<p>Before <code>full</code> / publishing Dashboard data:</p>
+<pre class="highlight"><code class="language-bash"># Example: C# — your codec only, message, enough reps to ignore warmup
+cd c-sharp &amp;&amp; ./scripts/run-benchmarks.sh custom 30 YourSerializerName message</code></pre>
+<p>Then compare <strong>order of magnitude</strong> against an existing peer in the <strong>same family</strong> (e.g. other schema codecs: protobuf / Bond / FlatBuffers peers — not MemoryPack vs YAML).</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Size matches family peers; ops within ~2–3× of a peer of similar design</td>
+<td>Good enough to proceed to full</td>
+</tr>
+<tr>
+<td>Size wrong (0/1, or ≪ peers)</td>
+<td>Fix harness / batch framing first (LABEL≠WORK)</td>
+</tr>
+<tr>
+<td>Size OK but ops ≪ peers by ~5–10×</td>
+<td>Re-check docs for reuse, typed API, prepare placement — <strong>do not publish full numbers yet</strong></td>
+</tr>
+<tr>
+<td>Still slow after hot-path audit</td>
+<td>Document as expected library cost; cite docs</td>
+</tr>
+</tbody>
+</table>
+<p>A <strong>30-second local microbench</strong> of “snippet path” vs “reuse path” (same payload, N ≥ 10⁵ in a tiny console app) is often enough to catch multi-× mistakes before any suite full run.</p>
+<h4 id="4-case-study-apacheavro-on-c-what-went-wrong">4. Case study: Apache.Avro on C# (what went wrong)</h4>
+<p>First landing used <code>ReflectDefaultWriter</code> + <code>Read&lt;object&gt;</code> + <strong>new</strong> <code>BinaryEncoder</code>/<code>BinaryDecoder</code> every call. Round-trips and sizes matched Java/Go Avro, but <strong>message@n=1 Stream</strong> was ~4× slower than necessary.</p>
+<p>Official <a href="https://avro.apache.org/docs/1.12.0/api/csharp/html/md_src_apache_main_Reflect_README.html">Reflect README</a> shows <code>ReflectWriter&lt;T&gt;</code> / <code>ReflectReader&lt;T&gt;</code> and a shared <code>ClassCache</code>. Local microbench then showed:</p>
+<ul>
+<li>Typed writer + <strong>reused</strong> encoder ≫ default writer + new encoder each call  </li>
+<li>Typed reader + <strong>reused</strong> decoder + <strong>reuse object</strong> on <code>Read</code> ≫ <code>Read(null, new BinaryDecoder(…))</code> every call  </li>
+</ul>
+<p>Isolation was preserved by binding <code>ReflectWriter&lt;&gt;</code> / <code>ReflectReader&lt;&gt;</code> from the runtime primary <code>Type</code> in <code>Initialize</code> (compiled delegates), not by hard-coding suite type names.</p>
+<p><strong>Lesson:</strong> “Works like the docs sample” ≠ “optimal for a microbenchmark harness.” Do the hot-path pass <strong>before</strong> full-matrix results.</p>
+<hr />
+<h2 id="checklist-every-language">Checklist (every language)</h2>
+<p>Use this as a PR self-review list.</p>
+<h3 id="1-dependency">1. Dependency</h3>
+<p>Add the library to the language package manifest and restore/build once:</p>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Manifest / restore</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C#</td>
+<td><code>c-sharp/src/GLD.SerializerBenchmark.csproj</code> → <code>dotnet restore</code> / <code>dotnet build</code></td>
+</tr>
+<tr>
+<td>Python</td>
+<td><code>python/pyproject.toml</code> → <code>uv sync</code></td>
+</tr>
+<tr>
+<td>Rust</td>
+<td><code>rust/Cargo.toml</code> → <code>cargo build --release</code></td>
+</tr>
+<tr>
+<td>Go</td>
+<td><code>go/go.mod</code> → <code>go get</code> / <code>go build</code></td>
+</tr>
+<tr>
+<td>JavaScript</td>
+<td><code>javascript/package.json</code> → <code>npm install</code></td>
+</tr>
+<tr>
+<td>Java</td>
+<td><code>java/pom.xml</code> → <code>mvn -q -DskipTests package</code></td>
+</tr>
+<tr>
+<td>Kotlin</td>
+<td><code>kotlin/build.gradle.kts</code> → <code>./gradlew shadowJar</code></td>
+</tr>
+<tr>
+<td>PHP</td>
+<td><code>php/composer.json</code> → <code>composer install</code></td>
+</tr>
+<tr>
+<td>Zig</td>
+<td><code>zig/build.zig.zon</code> → <code>zig build</code></td>
+</tr>
+<tr>
+<td>C / C++ / Swift</td>
+<td>language README (system or vendored deps)</td>
+</tr>
+</tbody>
+</table>
+<p>Pin a sensible range (for example NuGet <code>1.*</code>, cargo compatible versions). Prefer the latest stable major the suite already uses for peers.</p>
+<h3 id="2-wrapper-correct-and-hot-path-complete">2. Wrapper (correct <strong>and</strong> hot-path complete)</h3>
+<p>Implement the language’s serializer interface (name + ser/deser for <strong>bytes/string</strong> and <strong>stream</strong>).</p>
+<p>Typical locations:</p>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Wrapper directory</th>
+<th>Interface / base</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C#</td>
+<td><code>c-sharp/src/Serializers/</code></td>
+<td><code>ISerDeser</code> / <code>SerDeser</code></td>
+</tr>
+<tr>
+<td>Python</td>
+<td><code>python/src/benchmark/serializers/</code></td>
+<td><code>Serializer</code> protocol</td>
+</tr>
+<tr>
+<td>Rust</td>
+<td><code>rust/src/serializers/</code></td>
+<td>suite trait + registry</td>
+</tr>
+<tr>
+<td>Go</td>
+<td><code>go/serializers/</code></td>
+<td>suite interface</td>
+</tr>
+<tr>
+<td>JavaScript</td>
+<td><code>javascript/src/serializers/</code></td>
+<td>suite interface</td>
+</tr>
+<tr>
+<td>Java</td>
+<td><code>java/src/main/java/benchmark/serializers/</code></td>
+<td>suite interface</td>
+</tr>
+<tr>
+<td>Kotlin</td>
+<td><code>kotlin/src/main/kotlin/benchmark/serializers/</code></td>
+<td>suite interface</td>
+</tr>
+<tr>
+<td>PHP</td>
+<td><code>php/src/Serializers/</code></td>
+<td>suite interface</td>
+</tr>
+<tr>
+<td>Zig</td>
+<td><code>zig/src/</code></td>
+<td>suite vtable + registry</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Name property:</strong> stable display string used as CSV <code>SerializerName</code> (for example <code>LightProto</code>, <code>ProtoBuf</code>). Do not change existing names without a docs migration.</p>
+<p><strong>Prepare path:</strong> override prepare/Initialize when you need one-time compile, maps, or cached readers/writers.</p>
+<p><strong>Hot path (same PR as the wrapper):</strong> apply <a href="#hot-path-before-full-matrix-required">Hot path before full matrix</a>. Do not ship a “v1 correct, v2 fast later” client for this suite.</p>
+<h3 id="3-register-in-the-runner">3. Register in the runner</h3>
+<p>Add an instance to the language’s “all serializers” list so smoke/full runs include it.</p>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Registration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C#</td>
+<td><code>c-sharp/src/Program.cs</code> (<code>allSerializers</code>)</td>
+</tr>
+<tr>
+<td>Python</td>
+<td><code>ALL_SERIALIZERS</code> in the package entry / <code>runner_v2</code></td>
+</tr>
+<tr>
+<td>Others</td>
+<td>See that language’s README <strong>How to Extend</strong> section</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-version-reporting">4. Version reporting</h3>
+<p>Ensure <code>SerializerVersion</code> is non-empty in the CSV.</p>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>C#</strong></td>
+<td>Map <code>Name</code> → assembly simple name in <code>c-sharp/src/SerializerVersionRegistry.cs</code> (default <code>SerDeser.Version</code> reads this). Assembly name is usually the NuGet package id (for example <code>LightProto</code> → <code>"LightProto"</code>).</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>Return installed distribution version from the wrapper (see existing serializers).</td>
+</tr>
+<tr>
+<td>Rust</td>
+<td>Crate version from <code>CARGO_PKG_VERSION</code> or equivalent already used by peers.</td>
+</tr>
+<tr>
+<td>Others</td>
+<td>Mirror an existing peer in the same tree.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Smoke check:</strong> after a short run, open the CSV and confirm your row shows a real version (for example <code>1.3.4</code>), not blank.</p>
+<h3 id="5-domain-model-attributes-maps-only-if-needed">5. Domain model / attributes / maps (only if needed)</h3>
+<ul>
+<li><strong>Attribute-driven codecs</strong> (protobuf-net, LightProto, MemoryPack, Bond, …): mark suite domain types under the language’s models folder (C#: <code>c-sharp/src/TestData/V2/Models.cs</code>). Keep member orders/tags aligned with the suite catalog when the wire format is schema-like.</li>
+<li><strong>IDL / codegen codecs</strong> (official protobuf, FlatBuffers, Avro, …): keep generated types separate; convert domain ↔ native in <strong>untimed</strong> <code>PrepareData</code> / <code>ToDomain</code> (see existing FlatSharp / Google.Protobuf clients).</li>
+<li><strong>Unsupported shapes:</strong> implement <code>Supports(testDataName)</code> (or equivalent) and skip cleanly rather than erroring every cell.</li>
+</ul>
+<h3 id="6-toolchain-source-generators">6. Toolchain / source generators</h3>
+<p>If the library needs a <strong>newer compiler or analyzer</strong> than the suite’s default host:</p>
+<ol>
+<li>Document it in the language README <strong>Requirements</strong>.</li>
+<li>Update <code>scripts/install-host-requirements.sh</code> and <code>scripts/check-host-requirements.sh</code> if install/check should enforce it.</li>
+<li>Update CI (<code>.github/workflows/benchmark-ci.yml</code>) so smoke jobs use a compatible SDK.</li>
+</ol>
+<p>Example lesson from LightProto: the package builds on .NET 8 targeting packs, but its <strong>source generator requires Roslyn 4.14+ (.NET SDK 9+)</strong>. With SDK 8 alone the project compiles, parsers are never generated, and every cell fails with <code>No ProtoParser registered…</code>.</p>
+<h3 id="7-inventory-and-counts">7. Inventory and counts</h3>
+<p>Update human-facing inventory so the site matches the runner:</p>
+<ol>
+<li>Language overview table — for example <code>docs/c-sharp/index.md</code> (log name, category, one-line notes).</li>
+<li>Language README serializer count (if it states a number).</li>
+<li>Root <code>README.md</code> language bullet count (if present).</li>
+<li>Comment in <code>config/benchmark_config.yaml</code> for that language (if it mentions a count).</li>
+<li>Stream/string honesty notes if the path is adapted or Base64-on-string (binary codecs on C# string mode usually Base64).</li>
+<li>Optional one-line <strong>call-path</strong> note when the library has a known slow public API (e.g. Reflect vs codegen, two-step Avro deser).</li>
+</ol>
+<h3 id="8-build-peer-smoke-then-full-results">8. Build, peer-smoke, then full results</h3>
+<p>From the repo root (toolchains via <code>./scripts/install-host-requirements.sh &lt;lang&gt;</code> if needed):</p>
+<pre class="highlight"><code class="language-bash"># Peer-smoke: your serializer only, enough reps to ignore warmup (example: C#)
+cd c-sharp &amp;&amp; ./scripts/run-benchmarks.sh custom 30 YourSerializerName message
+
+# Spot-check size + ops vs a same-family peer already in the suite, then:
+
+# Full matrix for the language (preferred before merge)
+cd ..
+./scripts/run-all-benchmarks.sh --mode full --lang csharp --analyze</code></pre>
+<p>Confirm:</p>
+<ul>
+<li>CSV has rows for your <code>SerializerName</code> with non-empty <code>SerializerVersion</code>.</li>
+<li><code>FidelityScore</code> is <code>1.00</code> (or document known limitations).</li>
+<li>No new unexpected rows in <code>*.errors.csv</code>.</li>
+<li><strong>Ops/s (or total time) is not an unexplained multi-× outlier</strong> vs same-family peers after the hot-path audit.</li>
+<li><code>size(n=100)/size(n=1)</code> roughly scales with N for binary codecs.</li>
+<li>Dashboard Details / Compare: <code>python3 dashboard/scripts/sync-data.py</code> (commit <code>dashboard/public/data/&lt;lang&gt;_latest.json.gz</code> if you publish dashboard data).</li>
+<li>Unpublished report: <code>analyze-benchmarks</code> writes <code>reports/&lt;docs_dir&gt;/results.md</code> (do not commit to the site).</li>
+</ul>
+<h3 id="9-pull-request">9. Pull request</h3>
+<table>
+<thead>
+<tr>
+<th>Include</th>
+<th>Avoid</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wrapper + registration + dependency</td>
+<td>Untuned “it compiles” without a smoke CSV</td>
+</tr>
+<tr>
+<td>Hot-path client (reuse / typed API / prepare)</td>
+<td>Publishing full numbers on a known multi-×-slow snippet path</td>
+</tr>
+<tr>
+<td>Version map / version getter</td>
+<td>Blank <code>SerializerVersion</code></td>
+</tr>
+<tr>
+<td>Docs inventory + count bumps</td>
+<td>Regenerating unrelated languages’ results</td>
+</tr>
+<tr>
+<td>Full (or at least all-single) run for <strong>that</strong> language</td>
+<td>Force-adding gitignored raw <code>logs/**</code> CSVs unless the project asks for them</td>
+</tr>
+<tr>
+<td>Short PR notes: library link, call-path notes, honesty caveats, SDK needs</td>
+<td>Scope creep into analysis core</td>
+</tr>
+</tbody>
+</table>
+<p>Fork PRs may need a maintainer to <strong>Approve and run workflows</strong> before CI jobs start.</p>
+<hr />
+<h2 id="c-walkthrough-most-common-contributor-path">C# walkthrough (most common contributor path)</h2>
+<p>Concrete files for .NET:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>File / action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Package</td>
+<td><code>c-sharp/src/GLD.SerializerBenchmark.csproj</code> — <code>&lt;PackageReference Include="YourLib" Version="…" /&gt;</code></td>
+</tr>
+<tr>
+<td>Wrapper</td>
+<td><code>c-sharp/src/Serializers/YourLibSerializer.cs</code> — subclass <code>SerDeser</code></td>
+</tr>
+<tr>
+<td>Register</td>
+<td><code>c-sharp/src/Program.cs</code> — <code>new YourLibSerializer()</code> in the list</td>
+</tr>
+<tr>
+<td>Version</td>
+<td><code>c-sharp/src/SerializerVersionRegistry.cs</code> — <code>["YourLogName"] = "Assembly.Name"</code></td>
+</tr>
+<tr>
+<td>Domain attrs</td>
+<td><code>c-sharp/src/TestData/V2/Models.cs</code> — only if the library needs attributes on POCOs</td>
+</tr>
+<tr>
+<td>Map / contracts</td>
+<td><code>Serializers/Contracts/</code>, <code>TestData/V2/Maps/</code> — only if native types differ</td>
+</tr>
+<tr>
+<td>Inventory</td>
+<td><code>docs/c-sharp/index.md</code> + counts in <code>c-sharp/README.md</code>, root <code>README.md</code>, <code>config/benchmark_config.yaml</code></td>
+</tr>
+<tr>
+<td>Host SDK</td>
+<td><code>c-sharp/README.md</code> Requirements; install/check scripts + CI if generators need a newer SDK</td>
+</tr>
+</tbody>
+</table>
+<p>Minimal wrapper shape:</p>
+<pre class="highlight"><code class="language-csharp">namespace GLD.SerializerBenchmark.Serializers
+{
+    internal class YourLibSerializer : SerDeser
+    {
+        public override string Name =&gt; "YourLib"; // CSV SerializerName; must match version map key
+
+        // Prefer: Initialize/PrepareData for one-time setup (schema, ClassCache, compiled model, …)
+
+        public override string Serialize(object serializable) { /* … */ }
+        public override object Deserialize(string serialized) { /* … */ }
+        public override void Serialize(object serializable, Stream outputStream) { /* … */ }
+        public override object Deserialize(Stream inputStream) { /* … */ }
+    }
+}</code></pre>
+<p><code>SerDeser.Version</code> already calls <code>SerializerVersionRegistry.Resolve(Name)</code>. You only add the map entry unless you override <code>Version</code>.</p>
+<p><strong>Binary on string mode:</strong> return Base64 of the byte payload (same as ProtoBuf / MemoryPack) so the column stays a <code>string</code> while size still reflects wire length after decode in analysis conventions used by peers.</p>
+<p><strong>C# hot-path habits (same PR):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Habit</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Build schema / <code>RuntimeTypeModel</code> / formatters in <code>Initialize</code> or <code>PrepareData</code></td>
+<td>Untimed setup</td>
+</tr>
+<tr>
+<td>Prefer typed APIs (<code>Something&lt;T&gt;</code>) bound once from <code>Type</code></td>
+<td>Avoid re-resolving via <code>object</code> every call</td>
+</tr>
+<tr>
+<td>Reuse <code>MemoryStream</code> + encoder/decoder on the <strong>string/Base64</strong> path when the library allows</td>
+<td>Official samples often <code>new</code> every time; the timed path should not</td>
+</tr>
+<tr>
+<td>Pass a <strong>reuse</strong> instance into deserialize when the API supports it</td>
+<td>Cuts alloc on the hot loop</td>
+</tr>
+<tr>
+<td>Stream path: real library write/read on the harness <code>Stream</code></td>
+<td>Do not invent a slow redirect layer unless measurements show it helps</td>
+</tr>
+</tbody>
+</table>
+<p>Reference client that went through this audit: <code>c-sharp/src/Serializers/ApacheAvroSerializerSer.cs</code> (typed Reflect + reuse on the string path).</p>
+<p><strong>Verify version + peer-smoke locally:</strong></p>
+<pre class="highlight"><code class="language-bash">export PATH="$HOME/.dotnet:$PATH"
+export DOTNET_ROOT="$HOME/.dotnet"
+cd c-sharp
+./scripts/run-benchmarks.sh custom 30 YourLib message
+# inspect logs/csharp/&lt;latest&gt;.csv → SerializerVersion, FidelityScore, TimeSer/TimeDeser
+# compare ops order-of-magnitude to an existing schema peer (e.g. Google.Protobuf, ProtoBuf)</code></pre>
+<hr />
+<h2 id="sanity-checks-reviewers-will-look-for">Sanity checks reviewers will look for</h2>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Healthy</th>
+<th>Suspicious</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Size vs peer same family</td>
+<td>Same order of magnitude (e.g. protobuf / Avro peers agree)</td>
+<td>Size 0/1 with fidelity 1.0</td>
+</tr>
+<tr>
+<td><code>size(n=100)/size(n=1)</code></td>
+<td>Roughly ~50–150 for real batches</td>
+<td>Ratio ≈ 1 (LABEL≠WORK)</td>
+</tr>
+<tr>
+<td>Ops/s vs same-family peer</td>
+<td>Within a few × of a similar design (after hot-path audit)</td>
+<td>Multi-× slower with “new encoder every call” still in the wrapper</td>
+</tr>
+<tr>
+<td>Fidelity</td>
+<td>1.0</td>
+<td>Failures or skipped checks</td>
+</tr>
+<tr>
+<td>Version</td>
+<td>Semver / package version</td>
+<td>Empty</td>
+</tr>
+<tr>
+<td>Stream vs string (binary)</td>
+<td>String size ≈ 4/3 stream if Base64</td>
+<td>Identical size and identical code path without docs</td>
+</tr>
+<tr>
+<td>Prepare vs timed</td>
+<td>Schema/cache only in prepare</td>
+<td>Schema parse or heavy reflection every rep</td>
+</tr>
+</tbody>
+</table>
+<p>Deeper audit process: maintainers may run the repo’s <strong>review-suspicious-results</strong> skill (outlier scan + package-docs check). That process should be a <strong>safety net</strong>, not the first time the hot path is considered — do the <a href="#hot-path-before-full-matrix-required">hot-path section</a> yourself before opening the PR.</p>
+<hr />
+<h2 id="related-pages">Related pages</h2>
+<ul>
+<li><a href="../ADDING_A_LANGUAGE/">Adding a language</a> — new runtime tree, not one codec</li>
+<li><a href="../architecture/">Architecture</a> — timing model and folder layout</li>
+<li><a href="../modes/">Modes</a> — bytes/string vs stream</li>
+<li><a href="../test_data_configuration/">Test data</a> — suite type ids and batch cells</li>
+<li><a href="../METRICS/">Metrics</a> — CSV columns including <code>SerializerVersion</code></li>
+<li><a href="../serialization_categories/">Serialization categories</a> — compare within family when judging “too slow”</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.tracking", "navigation.instant", "navigation.top", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/languages-nav.js"></script>
+      
+    
+  </body>
+</html>

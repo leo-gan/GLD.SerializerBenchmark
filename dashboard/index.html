@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive dashboard presenting performance analytics, trade-offs, and comparisons for serialization libraries.">
+  <title>Dashboard · Multi-Language Serializer Benchmark</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <!-- Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script type="module" crossorigin src="./assets/index-BE-bgyZv.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BSXokCW9.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-bar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-product">Multi-Language Serializer Benchmark</span>
+          <span class="brand-context">Dashboard</span>
+        </div>
+      </div>
+      <button type="button" id="nav-toggle" class="nav-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="main-nav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+    </div>
+    <nav id="main-nav" class="main-nav" aria-label="Site and dashboard navigation">
+      <ul class="site-links" aria-label="Site sections">
+        <li><a href="../theory/101/" id="nav-site-learn">Learn</a></li>
+        <li><a href="../c/" id="nav-site-languages">Languages</a></li>
+        <li><a href="../analysis/" id="nav-site-method">Benchmarks</a></li>
+        <li><a href="./" class="current-section" id="nav-site-dashboard" aria-current="page">Dashboard</a></li>
+        <li><a href="../experiments/" id="nav-site-experiments">Experiments</a></li>
+        <li>
+          <a
+            href="https://github.com/leo-gan/GLD.SerializerBenchmark"
+            id="nav-site-github"
+            class="site-link-icon"
+            rel="noopener noreferrer"
+            target="_blank"
+            aria-label="GitHub repository"
+            title="GitHub"
+          >
+            <svg class="github-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/>
+            </svg>
+          </a>
+        </li>
+      </ul>
+      <ul class="nav-links section-nav" aria-label="Dashboard sections">
+        <li class="active"><a href="#dashboard" id="nav-dash-link">Overview</a></li>
+        <li><a href="#detailed-analytics" id="nav-table-link">Details</a></li>
+        <li><a href="#compare" id="nav-compare-link">Compare</a></li>
+        <li><a href="#history-custom" id="nav-history-link">History</a></li>
+        <li><a href="#experiments" id="nav-experiments-link">Experiments</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <section class="exp-root" id="experiments" aria-label="Experiments">
+      <p class="section-help">Loading experiments…</p>
+    </section>
+    
+    <!-- Controls/Filters Toolbar -->
+    <section class="glass-panel toolbar">
+      <div class="filter-group filter-group-primary" aria-label="Primary filters">
+        <span class="filter-label filter-label-primary">Language:</span>
+        <div class="select-wrapper">
+          <select id="lang-select" aria-label="Select Language">
+            <!-- Options filled from LANGUAGE_CATALOG in main.js; static fallback: -->
+            <option value="c">C</option>
+            <option value="csharp">C#</option>
+            <option value="cpp">C++</option>
+            <option value="go">Go</option>
+            <option value="java">Java</option>
+            <option value="javascript">JavaScript</option>
+            <option value="kotlin">Kotlin</option>
+            <option value="python">Python</option>
+            <option value="rust">Rust</option>
+            <option value="swift">Swift</option>
+          </select>
+        </div>
+
+        <span class="filter-label filter-label-primary" title="Payload shape (suite data type), e.g. message@n=1">Data type:</span>
+        <div class="select-wrapper">
+          <select id="data-select" aria-label="Select data type">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group filter-group-secondary" aria-label="Secondary filters">
+        <span class="filter-label" title="API path timed: in-memory bytes (or string) vs stream-style APIs — not payload size">Mode:</span>
+        <div class="select-wrapper">
+          <select id="mode-select" aria-label="Select mode (bytes or stream)">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+        <a id="stream-honesty-chip" class="honesty-chip" hidden
+           href="../analysis/modes/#three-levels-of-stream-honesty"></a>
+
+        <span class="filter-label" title="Which trials feed tables, charts, and Pareto after warmup (default drops statistical outliers)">Samples:</span>
+        <div class="select-wrapper">
+          <select id="filter-policy-select" aria-label="Sample filter policy for aggregations" title="Default IQR drops outlier trials; choose All trials to include everything after warmup">
+            <option value="iqr_1.5">IQR k=1.5 (default)</option>
+            <option value="all">All trials</option>
+            <option value="iqr_3">IQR k=3 (loose)</option>
+            <option value="winsorize_5_95">Winsorize 5–95%</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="btn-ops-sec" aria-label="View Operations Per Second">Ops/Sec</button>
+        <button class="tab-btn" id="btn-time-ns" aria-label="View Time In Nanoseconds">Latency (ns)</button>
+      </div>
+    </section>
+
+    <div id="filter-policy-meta" class="filter-policy-meta glass-panel" hidden>
+      <span id="filter-policy-meta-text" class="filter-policy-meta-text"></span>
+    </div>
+
+    <div id="run-meta" class="run-meta glass-panel" hidden>
+      <a id="run-meta-claim" class="run-meta-claim"
+         href="../analysis/CLAIMS_AND_REPLICATION/">L1</a>
+      <span class="run-meta-sep" aria-hidden="true">·</span>
+      <span id="run-meta-text" class="run-meta-text"></span>
+      <button type="button" id="run-config-toggle" class="run-config-toggle"
+              aria-expanded="false" aria-controls="run-config-panel">
+        Run configuration
+      </button>
+      <div id="run-config-panel" class="run-config-panel" hidden></div>
+    </div>
+
+    <!-- First-visit orientation (dismissible; see main.js ORIENTATION_KEY) -->
+    <aside id="orientation-banner" class="orientation-banner glass-panel" role="note">
+      <div class="orientation-body">
+        <p class="orientation-lead">
+          <strong>Start here:</strong> pick a <strong>language</strong> and <strong>data type</strong>, then read the scatter (speed vs size) and ranking.
+          Compare libraries <strong>within one language</strong> — cross-language times are directional only.
+        </p>
+        <p class="orientation-gloss section-help">
+          <strong>Pareto</strong> = best speed/size trade-offs ·
+          <strong>Mode</strong> = bytes vs stream API ·
+          <strong>Samples</strong> = which trials after warmup (default drops outliers) ·
+          <a href="../analysis/" id="orientation-method-link">Benchmarks</a> ·
+          <a href="../theory/101/" id="orientation-learn-link">Learn 101</a>
+        </p>
+      </div>
+      <button type="button" id="orientation-dismiss" class="orientation-dismiss tab-btn chart-tool-btn" title="Hide this tip">Got it</button>
+    </aside>
+
+    <!-- KPI Summary Cards -->
+    <section class="summary-grid" aria-live="polite">
+      <div class="glass-panel kpi-card kpi-card-count">
+        <span class="kpi-title">Libraries</span>
+        <span class="kpi-value" id="kpi-total">Loading…</span>
+        <span class="kpi-desc">In this language · data type · mode</span>
+      </div>
+      <div class="glass-panel kpi-card featured">
+        <span class="kpi-title">Fastest</span>
+        <span class="kpi-value kpi-value-name" id="kpi-fastest">Loading…</span>
+        <span class="kpi-desc" id="kpi-fastest-val">Lowest median latency</span>
+      </div>
+      <div class="glass-panel kpi-card green">
+        <span class="kpi-title">Most compact</span>
+        <span class="kpi-value kpi-value-name" id="kpi-compact">Loading…</span>
+        <span class="kpi-desc" id="kpi-compact-val">Smallest median payload</span>
+      </div>
+      <div class="glass-panel kpi-card kpi-card-pareto">
+        <span class="kpi-title">Pareto set</span>
+        <span class="kpi-value" id="kpi-pareto">Loading…</span>
+        <span class="kpi-desc">Undominated speed / size trade-offs</span>
+      </div>
+    </section>
+
+    <!-- Visualizations Layout -->
+    <section class="charts-grid" id="dashboard">
+      <div class="glass-panel chart-panel">
+        <div class="chart-header">
+          <h2 class="chart-title">Speed vs size</h2>
+          <div class="chart-toolbar">
+            <span class="badge badge-cyan" id="scatter-badge">Pareto front</span>
+            <button type="button" id="btn-chart-log" class="tab-btn chart-tool-btn" title="Toggle log scale on scatter X axis">Log X</button>
+            <button type="button" id="btn-export-scatter" class="tab-btn chart-tool-btn" title="Download scatter PNG">PNG</button>
+          </div>
+        </div>
+        <p class="section-help chart-axis-help">
+          Each point is one serializer.
+          <strong>Right / up</strong> = faster ops/s · <strong>left</strong> = smaller payload.
+          Highlighted = Pareto (no other library is both faster and smaller).
+        </p>
+        <div class="chart-container">
+          <canvas id="scatter-chart"></canvas>
+          <div id="scatter-empty" class="chart-empty" hidden>No serializers match this filter. Change data type or mode.</div>
+        </div>
+      </div>
+
+      <div class="glass-panel chart-panel">
+        <div class="chart-header">
+          <h2 class="chart-title" id="bar-chart-title">Throughput &amp; size ranking</h2>
+          <div class="chart-toolbar">
+            <span class="filter-label" style="margin:0;">Sort</span>
+            <button type="button" id="btn-rank-sort-size" class="tab-btn chart-tool-btn" title="Sort by median size (compact first)">Size</button>
+            <button type="button" id="btn-rank-sort-speed" class="tab-btn chart-tool-btn active" title="Sort by ops/s (highest first)">Ops/s</button>
+            <button type="button" id="btn-export-bar" class="tab-btn chart-tool-btn" title="Download ranking PNG">PNG</button>
+          </div>
+        </div>
+        <p class="section-help ranking-help" id="ranking-help">
+          Diverging view:
+          <span class="rank-legend-size">◀ size</span> left ·
+          <span class="rank-legend-speed">ops/s ▶</span> right.
+          Each side is normalized to the chart max (100); hover for absolute values.
+        </p>
+        <div class="chart-container ranking-chart-single">
+          <canvas id="bar-chart"></canvas>
+          <div id="bar-empty" class="chart-empty" hidden>No serializers match this filter.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detailed Analytics Table (full roster) -->
+    <section class="glass-panel table-panel" id="detailed-analytics">
+      <div class="table-header-row">
+        <div>
+          <h2 class="chart-title">Detailed Analytics</h2>
+          <p class="section-help" id="detailed-analytics-help">
+            Roster with Median / Std / P95 / P99 for speed or latency, plus median size.
+            Pareto-optimal rows are highlighted. Cells: <code>value (ratio×)</code> vs baseline.
+          </p>
+        </div>
+        <div class="table-header-actions">
+          <div class="tabs roster-metric-tabs" role="tablist" aria-label="Detailed Analytics speed metric">
+            <button type="button" class="tab-btn active" id="btn-roster-ops">Ops/s</button>
+            <button type="button" class="tab-btn" id="btn-roster-latency">Latency</button>
+          </div>
+          <label class="filter-label" for="roster-baseline-select" style="margin:0;">Baseline</label>
+          <div class="select-wrapper">
+            <select id="roster-baseline-select" aria-label="Roster baseline serializer"></select>
+          </div>
+          <button type="button" id="btn-copy-roster-md" class="tab-btn" style="font-size:0.8rem;">Copy Markdown</button>
+          <div class="search-input-wrapper">
+            <input type="text" id="table-search" class="search-input" placeholder="Search serializers…" aria-label="Search serializers">
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="analytics-table" class="data-table view-ops">
+          <thead>
+            <tr>
+              <th id="th-serializer" class="str sort-asc">Serializer</th>
+              <th id="th-honesty" class="str roster-col-honesty">Honesty</th>
+              <!-- Ops/s stats (shown when roster view = ops) -->
+              <th id="th-ops-median" class="num roster-col-ops">Median</th>
+              <th id="th-ops-std" class="num roster-col-ops">Std</th>
+              <th id="th-ops-p95" class="num roster-col-ops">P95</th>
+              <th id="th-ops-p99" class="num roster-col-ops">P99</th>
+              <!-- Latency stats (shown when roster view = latency) -->
+              <th id="th-lat-median" class="num roster-col-latency">Median</th>
+              <th id="th-lat-std" class="num roster-col-latency">Std</th>
+              <th id="th-lat-p95" class="num roster-col-latency">P95</th>
+              <th id="th-lat-p99" class="num roster-col-latency">P99</th>
+              <th id="th-size" class="num">Median size (bytes)</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Unified Compare lab -->
+    <section class="glass-panel comparison-section" id="compare">
+      <!-- Dense 2-row toolbar + optional metrics panel -->
+      <div class="compare-controls-compact">
+        <div class="compare-ctrl-row compare-ctrl-row-main">
+          <h2 class="chart-title compare-h2">Compare</h2>
+          <div class="compare-scope-tabs tabs" role="tablist">
+            <button type="button" class="tab-btn active" id="btn-compare-same" data-scope="same">Same language</button>
+            <button type="button" class="tab-btn" id="btn-compare-xl" data-scope="cross">Cross-language</button>
+          </div>
+          <span class="badge badge-slate" id="compare-scope-badge" hidden>Same language</span>
+
+          <div class="filter-group compare-lab-filters-inline" id="compare-same-filters">
+            <span class="filter-label" title="Payload shape (suite data type)">Data type</span>
+            <div class="select-wrapper">
+              <select id="same-data-select" aria-label="Same-language data type"></select>
+            </div>
+            <span class="filter-label" title="Bytes vs stream API path">Mode</span>
+            <div class="select-wrapper">
+              <select id="same-mode-select" aria-label="Same-language mode"></select>
+            </div>
+            <span class="filter-label">Baseline</span>
+            <div class="select-wrapper">
+              <select id="compare-baseline-select" aria-label="Baseline serializer"></select>
+            </div>
+          </div>
+
+          <div class="filter-group compare-lab-filters-inline" id="compare-xl-filters" hidden>
+            <span class="filter-label" title="Payload shape (suite data type)">Data type</span>
+            <div class="select-wrapper">
+              <select id="xl-data-select" aria-label="Cross-language data type"></select>
+            </div>
+            <span class="filter-label" title="Bytes vs stream API path">Mode</span>
+            <div class="select-wrapper">
+              <select id="xl-mode-select" aria-label="Cross-language mode"></select>
+            </div>
+            <span class="filter-label">Baseline</span>
+            <div class="select-wrapper">
+              <select id="compare-xl-baseline-select" aria-label="Cross-language baseline"></select>
+            </div>
+          </div>
+
+          <span class="compare-status-line" id="compare-status-line">0 serializers · 0 metrics</span>
+          <button type="button" id="btn-copy-compare-md" class="tab-btn chart-tool-btn compare-copy-btn">Copy Markdown</button>
+        </div>
+
+        <div class="compare-ctrl-row compare-ctrl-row-selected">
+          <div id="compare-same-panel" class="compare-inline-add">
+            <div class="select-wrapper same-lang-wrap">
+              <select id="same-lang-select" aria-label="Language for comparison"></select>
+            </div>
+            <input type="search" id="same-ser-search" class="compare-search-input" placeholder="Filter…" aria-label="Filter serializers to add" autocomplete="off">
+            <div class="select-wrapper compare-add-select-wrap">
+              <select id="same-ser-add-select" aria-label="Serializer to add"></select>
+            </div>
+            <button type="button" id="same-ser-add-btn" class="tab-btn chart-tool-btn">Add</button>
+          </div>
+
+          <div id="xl-add-panel" class="compare-inline-add xl-add-panel" hidden>
+            <div class="select-wrapper xl-lang-wrap">
+              <select id="xl-add-lang" aria-label="Language to add"></select>
+            </div>
+            <div class="select-wrapper xl-add-ser-wrap">
+              <select id="xl-add-serializer" aria-label="Serializer to add"></select>
+            </div>
+            <button type="button" id="xl-add-btn" class="tab-btn chart-tool-btn">Add</button>
+          </div>
+
+          <div id="same-selection-chips" class="chip-groups chip-groups-compact" aria-label="Selected serializers"></div>
+          <div id="xl-selection-chips" class="chip-groups chip-groups-compact" hidden aria-label="Selected serializers for comparison"></div>
+
+          <div class="metrics-checklist-actions compare-sel-actions">
+            <button type="button" id="xl-reset-pareto" class="link-btn" hidden title="Up to 2 Pareto-optimal per language">Pareto</button>
+            <button type="button" id="detail-ser-select-none" class="link-btn">Clear</button>
+            <button type="button" id="detail-ser-select-all" class="link-btn">All</button>
+          </div>
+        </div>
+
+        <div class="compare-ctrl-row compare-ctrl-row-metrics">
+          <span class="filter-label">Metrics</span>
+          <span class="badge badge-slate" id="metrics-selected-count">0</span>
+          <div class="metrics-preset-row" role="group" aria-label="Metric presets">
+            <button type="button" class="preset-btn active" data-preset="defaults" id="metrics-select-default">Defaults</button>
+            <button type="button" class="preset-btn" data-preset="latency" id="metrics-preset-latency">Latency</button>
+            <button type="button" class="preset-btn" data-preset="size" id="metrics-preset-size">Size</button>
+            <button type="button" class="preset-btn" data-preset="custom" id="metrics-edit-toggle">Custom ▾</button>
+          </div>
+          <div class="metrics-checklist-actions">
+            <button type="button" id="metrics-select-all" class="link-btn">All</button>
+            <button type="button" id="metrics-select-none" class="link-btn">None</button>
+          </div>
+          <span id="compare-selected-count" class="badge badge-slate" hidden>0</span>
+        </div>
+        <div id="metrics-panel-body" class="metrics-panel-body" hidden>
+          <div id="metrics-checklist" class="metrics-checklist metrics-checklist-accordion" role="group" aria-label="Metric checklist by group"></div>
+        </div>
+
+        <p id="compare-xl-disclaimer" class="compare-xl-hint" hidden title="Runtimes, GCs, and hosts differ">
+          Cross-lang times are directional only
+        </p>
+
+        <div id="detail-serializer-checklist" hidden></div>
+      </div>
+
+      <div class="table-container xl-table-wrap compare-table-wrap">
+        <table id="serializer-metrics-table" class="data-table compare-matrix-table">
+          <thead id="serializer-metrics-head">
+            <tr><th class="str">Metric</th></tr>
+          </thead>
+          <tbody id="serializer-metrics-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- History & Custom Runs Section -->
+    <section class="glass-panel" id="history-custom">
+      <div class="chart-header">
+        <h2 class="chart-title">History &amp; Custom Runs</h2>
+      </div>
+      <p class="section-help">Load a past run from local logs (dev server) or upload a stats JSON file (works on GitHub Pages too).</p>
+
+      <div class="compare-pickers">
+        <div class="picker-card utility-card">
+          <h3 class="utility-card-title">Historical Runs</h3>
+          <p class="section-help" id="history-local-note">
+            Select a run timestamp to download raw files or inspect them. Requires a local logs tree.
+          </p>
+          <p class="section-help" id="history-pages-note" hidden>
+            Raw log downloads are unavailable on the static site. Use <strong>Upload Custom Stats</strong> or the packed latest data.
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <label for="history-run-select" class="filter-label">Available runs</label>
+            <div class="select-wrapper">
+              <select id="history-run-select" style="width: 100%;">
+                <option value="">— No runs loaded —</option>
+              </select>
+            </div>
+          </div>
+          <div class="utility-actions">
+            <button id="download-csv-btn" class="tab-btn" style="font-size: 0.85rem;" disabled>Download CSV</button>
+            <button id="download-config-btn" class="tab-btn" style="font-size: 0.85rem;" disabled>Download Config</button>
+            <button id="download-error-btn" class="tab-btn" style="font-size: 0.85rem;" disabled>Download Errors</button>
+            <button id="load-history-btn" class="tab-btn active" style="font-size: 0.85rem;" disabled>Load to Inspect</button>
+          </div>
+        </div>
+
+        <div class="picker-card utility-card">
+          <h3 class="utility-card-title">Upload Custom Stats</h3>
+          <p class="section-help">Drop a computed stats JSON file (e.g. <code>stats_*.json</code>).</p>
+          <div id="drop-zone" class="dropzone">
+            <span class="dropzone-icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </span>
+            <h4 style="font-size: 0.95rem;">Drag &amp; drop stats JSON</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Or click to browse</p>
+            <input type="file" id="file-input" style="display: none;" accept=".json">
+          </div>
+          <div id="upload-status" style="font-weight: 500; text-align: center; font-size: 0.9rem; display: none;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Serializer Benchmark Dashboard. Built for high-performance benchmarking analysis.</p>
+  </footer>
+
+  <!-- App logic scripts -->
+</body>
+</html>

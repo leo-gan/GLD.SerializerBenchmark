@@ -1,0 +1,5096 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Fair multi-language serializer benchmarks — live dashboard, course, and open methodology.">
+      
+      
+      
+        <link rel="canonical" href="https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/memory-layout/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../encode-decode-cost/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Memory layout - Multi-Language Serializer Benchmark</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/languages-nav.css">
+    
+      <link rel="stylesheet" href="../../../stylesheets/site-home.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#memory-layout" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Multi-Language Serializer Benchmark" class="md-header__button md-logo" aria-label="Multi-Language Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Multi-Language Serializer Benchmark
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Memory layout
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/leo-gan/GLD.SerializerBenchmark" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    leo-gan/GLD.SerializerBenchmark
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../101/" class="md-tabs__link">
+          
+  
+  
+  Learn
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../c/" class="md-tabs__link">
+          
+  
+  
+  Languages
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../analysis/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../dashboard/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Dashboard
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../experiments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Experiments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Multi-Language Serializer Benchmark" class="md-nav__button md-logo" aria-label="Multi-Language Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Multi-Language Serializer Benchmark
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/leo-gan/GLD.SerializerBenchmark" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    leo-gan/GLD.SerializerBenchmark
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Learn
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Learn
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_1" id="__nav_1_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    101
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    101
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../101/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../101/historical_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Historical
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../101/data_science_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Science
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../101/engineer_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    201
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    201
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory layout
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#short-answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short answer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mental-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mental model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it works
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How it works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#representations-of-common-values-as-bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Representations of common values as bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#field-order-and-padding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field order and padding
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Field order and padding">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-padding-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why padding exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#identical-fields-different-layouts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identical fields, different layouts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uninterpreted-memory-dump" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Uninterpreted memory dump
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#same-record-in-two-languages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Same record in two languages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endianness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endianness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alignment-and-zero-copy-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alignment and zero-copy formats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#managed-objects-and-graphs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managed objects and graphs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Managed objects and graphs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nested-object-with-a-string-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nested object with a string field
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-reference-one-object-two-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared reference (one object, two paths)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contrast-with-an-inline-c-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contrast with an inline C structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#costs-and-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Costs and constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#illustrative-scenario" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Illustrative scenario
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#in-this-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In this suite
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-errors-of-practice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common errors of practice
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../encode-decode-cost/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Encode/decode cost
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../self-describing-vs-schema-dependent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-describing vs schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../schema-evolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema evolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dynamic-vs-idl-binary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamic vs IDL binary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../zero-copy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zero-copy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compression-is-not-a-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compression vs format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    301
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    301
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/trust-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/untrusted-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Untrusted input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/payload-surfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Payload surfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/two-schema-cultures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Two schema cultures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/schema-registries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema registries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/public-api-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public API contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/versioning-in-the-wild/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning in the wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/row-vs-columnar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Row vs columnar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/polyglot-estates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot estates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/rpc-and-messaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RPC and messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/zero-copy-in-production/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zero-copy in production
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/caching-and-queues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Caching and queues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/using-this-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using this suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/implementation-variance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation variance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/latency-tails-and-gc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Latency tails and GC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/compression-as-system-choice/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compression as system choice
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/case-public-rest-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: public REST API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/case-internal-rpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: internal RPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/case-event-stream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: event backbone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/case-analytics-lake/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: analytics lake
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/case-polyglot-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: polyglot boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../301/case-faster-postmortem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: faster postmortem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    401
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    401
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/protobuf-wire-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protobuf wire format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/protobuf-python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: google.protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/protobuf-rust-prost/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: prost
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/protobuf-c-protobuf-c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: protobuf-c
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/protobuf-c-nanopb-compare/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: nanopb vs protobuf-c
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/lab-mini-protobuf-encoder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab: mini Protobuf encoder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/protobuf-cross-language-fidelity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Same bytes, three runtimes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/python-msgspec-vs-orjson/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: msgspec vs orjson
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/python-msgspec-json-vs-msgpack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: msgspec JSON vs MessagePack
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/python-orjson-vs-json/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: orjson vs json
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/rust-speedy-vs-bincode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: Speedy vs Bincode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/rust-speedy-vs-postcard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: Speedy vs Postcard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/rust-rkyv-vs-speedy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: rkyv vs Speedy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/c-custom-binary-vs-ubj/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: custom-binary vs ubj
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/cpp-bitsery-vs-yas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++: Bitsery vs YAS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/cpp-simdjson-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++: the simdjson row
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/csharp-binarypack-vs-bond/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C#: BinaryPack vs Bond
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/go-kelindar-vs-avro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go: kelindar vs Avro
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/java-protostuff-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java: Protostuff vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/kotlin-protostuff-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: Protostuff vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/kotlin-kotlinx-json-vs-moshi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: kotlinx-json vs Moshi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/kotlin-flatbuffers-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: FlatBuffers vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/php-json-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP: JSON vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/zig-std-json-vs-serde-json/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zig: std.json vs serde.json
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/javascript-json-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript: JSON vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/javascript-three-protobufs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript: three Protocol Buffers libraries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../401/swift-flatbuffers-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swift: FlatBuffers vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Languages
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Languages
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C#
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C#
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../c-sharp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C++
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../cpp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Go
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../go/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Java
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../java/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    JavaScript
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kotlin
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../kotlin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    PHP
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../php/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Python
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../rust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swift
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Swift
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../swift/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_12" id="__nav_2_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zig
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Zig
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../zig/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/TIMING_HONESTY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Timing honesty
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/serialization_categories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Categories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/ANALYSIS_METHODOLOGY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/METRICS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/CLAIMS_AND_REPLICATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claims and replication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/test_data_configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/ADDING_A_SERIALIZER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Serializer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../analysis/ADDING_A_LANGUAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Language
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../experiments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#short-answer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short answer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mental-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mental model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it works
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How it works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#representations-of-common-values-as-bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Representations of common values as bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#field-order-and-padding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field order and padding
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Field order and padding">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-padding-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why padding exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#identical-fields-different-layouts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identical fields, different layouts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uninterpreted-memory-dump" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Uninterpreted memory dump
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#same-record-in-two-languages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Same record in two languages
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#endianness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endianness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alignment-and-zero-copy-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alignment and zero-copy formats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#managed-objects-and-graphs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managed objects and graphs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Managed objects and graphs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nested-object-with-a-string-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nested object with a string field
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-reference-one-object-two-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared reference (one object, two paths)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contrast-with-an-inline-c-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contrast with an inline C structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#costs-and-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Costs and constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#illustrative-scenario" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Illustrative scenario
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#in-this-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In this suite
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-errors-of-practice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common errors of practice
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  
+
+<h1 id="memory-layout">Memory layout</h1>
+<h2 id="problem">Problem</h2>
+<p>Imagine you have a structure in C, a record in Go, or an object graph in a language such as Python or Java. That data sits somewhere in the process’s <strong>address space</strong>. The address space is the region of memory that process is allowed to use. Writing that region straight to disk or to a network socket can look very cheap. You need no schema file and no serialization library. On <em>this</em> machine you can often get high throughput.</p>
+<p>A second process may then try to read those same bytes. That second process might be written in another language. It might run on another processor architecture. It might use different structure-packing rules. It can then obtain incorrect values, crash, or silently misread numbers. Serialization exists largely because <strong>in-memory layout is not a contract between machines</strong>.</p>
+<p>In other words: what is efficient for one process on one machine is not, by itself, a portable way to share data.</p>
+<hr />
+<h2 id="short-answer">Short answer</h2>
+<p>Compilers and language runtimes place fields in memory for <strong>the local processor and operating environment</strong>. That placement includes native integer widths, pointer sizes, and <strong>alignment padding</strong>. Alignment padding is unused bytes inserted so fields sit on convenient addresses. Placement also often includes <strong>host byte order</strong>. Host byte order is the order in which multi-byte numbers are stored. Those rules exist so <em>this</em> machine can run efficiently. They are not designed so that another machine can understand the same bytes.</p>
+<p>Networks and durable storage only exchange a <strong>linear sequence of bytes under an agreed interpretation</strong>. A portable format must define field order, sizes (or length prefixes), padding (or its absence), and <strong>endianness</strong>. Endianness is the byte order for multi-byte values. Alternatively, the format must be self-describing enough that readers do not need to assume the writer’s in-memory layout. Raw memory dumps optimize for one process image. Interchange formats optimize for a shared contract.</p>
+<hr />
+<h2 id="mental-model">Mental model</h2>
+<p>Think of main memory as a linear array of <strong>bytes</strong>. A byte is an integer value from 0 through 255. Each byte has an address: 0, 1, 2, and so on. Program variables and objects are <strong>contiguous or linked groups of those bytes</strong>. They are interpreted under a rule such as “these four bytes constitute a 32-bit integer” or “these eight bytes constitute an address of further bytes.”</p>
+<pre class="highlight"><code class="language-text">  In-memory (one process)              On the wire (agreed contract)
+  ┌─────────────────────┐              ┌──────────────────────────┐
+  │ numbers, padding,   │   serialize  │ fixed or tagged fields   │
+  │ pointers into heap  │  ────────►   │ agreed sizes and order   │
+  │ runtime metadata    │              │ no host-only pointers    │
+  └─────────────────────┘              └──────────────────────────┘
+         ▲                                        │
+         │              deserialize               │
+         └────────────────────────────────────────┘
+              rebuild local objects or views</code></pre>
+<p>A dump of process-local memory includes padding, pointer addresses, and host-specific byte order. Another machine cannot treat that sequence as the same values unless both sides <strong>define a contract</strong>. In other words, both sides need a serialization format.</p>
+<hr />
+<h2 id="how-it-works">How it works</h2>
+<h3 id="representations-of-common-values-as-bytes">Representations of common values as bytes</h3>
+<p>You do not need detailed processor microarchitecture for this course. The essential questions are simpler. <strong>How many bytes does this value occupy?</strong> <strong>Does the variable store the value itself or a reference to bytes stored elsewhere?</strong></p>
+<table>
+<thead>
+<tr>
+<th>Kind of value (typical modern desktop or server)</th>
+<th>Width</th>
+<th>What sits at the variable’s address</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Small integer (8-bit unsigned)</td>
+<td>1 byte</td>
+<td>The integer itself (0–255)</td>
+</tr>
+<tr>
+<td>32-bit integer (for example C <code>int32_t</code>)</td>
+<td>4 bytes</td>
+<td>The integer, split across four bytes; the order depends on endianness</td>
+</tr>
+<tr>
+<td>64-bit integer</td>
+<td>8 bytes</td>
+<td>The same idea as above, using eight bytes</td>
+</tr>
+<tr>
+<td>32-bit binary floating-point (<code>float</code>)</td>
+<td>4 bytes</td>
+<td>An IEEE 754 bit pattern—not the decimal characters of a printed number</td>
+</tr>
+<tr>
+<td>64-bit binary floating-point (<code>double</code>)</td>
+<td>8 bytes</td>
+<td>The same idea as above, using eight bytes</td>
+</tr>
+<tr>
+<td>Fixed array of three bytes</td>
+<td>3 bytes (padding may follow inside a structure)</td>
+<td>Those three bytes in order</td>
+</tr>
+<tr>
+<td>Text string in C (<code>char *</code>)</td>
+<td>Pointer width (often 8 bytes on 64-bit processes)</td>
+<td>An <strong>address</strong> of character data elsewhere—not the characters themselves</td>
+</tr>
+<tr>
+<td>Text string in Python, Java, C#, or JavaScript</td>
+<td>A <strong>reference</strong> to a heap object</td>
+<td>Length, character data, and type metadata live in that object, not as one simple blob at the variable</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Integer example (before endianness).</strong> The integer 305 419 896 is commonly written in hexadecimal as <code>0x12345678</code>. As a 32-bit integer it occupies <strong>four</strong> bytes. Which address receives <code>0x12</code> versus <code>0x78</code> is a matter of <strong>endianness</strong>, discussed below. The teaching point is simple: <strong>the value is not stored as the decimal characters</strong> <code>3</code> <code>0</code> <code>5</code> … unless you deliberately use a text format such as JSON.</p>
+<p><strong>Floating-point example.</strong> The value <code>1.5</code> as a 32-bit binary float is a specific 32-bit pattern defined by IEEE 754. It is not the three characters <code>1</code>, <code>.</code>, and <code>5</code>. Text is appropriate for human display. Processors perform arithmetic on the binary pattern.</p>
+<p><strong>String example (why copying the variable fails as interchange).</strong> Consider a string variable on a typical 64-bit process:</p>
+<pre class="highlight"><code class="language-text">  Variable `name` (eight bytes on a typical 64-bit process):
+  ┌──────────────────────────┐
+  │  address 0x7ff…abc0      │  ──pointer──►  heap: 'A' 'd' 'a' '\0'
+  └──────────────────────────┘                 (or a richer string object)</code></pre>
+<p>If you copy only those eight bytes, you copy an <strong>address that is meaningless in another process</strong>. A serialization format must transmit the <strong>character data</strong> with length or terminator rules. It must not transmit the pointer.</p>
+<h3 id="field-order-and-padding">Field order and padding</h3>
+<p>A <strong>structure</strong> or <strong>record</strong> is several fields placed at successive addresses. Two facts matter for binary dumps:</p>
+<ol>
+<li><strong>Order</strong> — which field occupies the lower addresses. In C-like languages this is often declaration order, though that is not a universal law.</li>
+<li><strong>Padding</strong> — unused bytes inserted so that the <em>next</em> field begins at an address the processor can load efficiently. Multiples of four or eight are common examples.</li>
+</ol>
+<h4 id="why-padding-exists">Why padding exists</h4>
+<p>Many processors load a four-byte integer most efficiently when its starting address is a <strong>multiple of four</strong>. They load an eight-byte quantity most efficiently when the address is a multiple of eight. Compilers <strong>align</strong> fields to such boundaries by inserting unused <strong>padding</strong> bytes. Those bytes do not appear in your source code. They still appear in memory. They still appear in an uninterpreted memory dump.</p>
+<p>Here are simplified rules used by many C compilers on common desktop and server platforms. Exact rules depend on the compiler, operating system, and CPU:</p>
+<ul>
+<li>a one-byte field may begin at any address;</li>
+<li>a four-byte field begins at an address divisible by four;</li>
+<li>an eight-byte field or pointer on a typical 64-bit platform begins at an address divisible by eight.</li>
+</ul>
+<p>The instructional conclusion is that <strong>unused gaps appear</strong> between fields, even when you never wrote them.</p>
+<h4 id="identical-fields-different-layouts">Identical fields, different layouts</h4>
+<p>Consider three logical fields:</p>
+<ul>
+<li><code>flag</code> — one byte (for example 0 or 1);</li>
+<li><code>id</code> — four-byte integer;</li>
+<li><code>score</code> — eight-byte integer (or a pointer-sized field).</li>
+</ul>
+<p><strong>Layout 1 — order <code>flag</code>, <code>id</code>, <code>score</code> (typical 64-bit C-like padding):</strong></p>
+<p><img alt="In-memory layout with padding: flag, pad, id, score" src="../../assets/diagrams/201-memory-padding.svg#only-light" />
+<img alt="In-memory layout with padding: flag, pad, id, score" src="../../assets/diagrams/201-memory-padding-dark.svg#only-dark" /></p>
+<pre class="highlight"><code class="language-text">  offset  0:  flag          [1 byte]
+  offset  1:  pad pad pad   [3 bytes]   ← so that id begins at a multiple of 4
+  offset  4:  id            [4 bytes]
+  offset  8:  score         [8 bytes]
+  ---------------------------------
+  total size often 16 bytes, although only 13 bytes carry domain data</code></pre>
+<p>In this diagram, an <strong>offset</strong> is the distance in bytes from the start of the structure. Offset 0 is the first byte. Offset 4 is four bytes later.</p>
+<p><strong>Layout 2 — order <code>score</code>, <code>id</code>, <code>flag</code>:</strong></p>
+<pre class="highlight"><code class="language-text">  offset  0:  score         [8 bytes]
+  offset  8:  id            [4 bytes]
+  offset 12:  flag          [1 byte]
+  offset 13:  pad pad pad   [3 bytes]   ← structure size often rounded to 16
+  ---------------------------------
+  total size often still 16 bytes, but field positions differ</code></pre>
+<p>Even when both layouts occupy 16 bytes, a reader that assumes Layout 1 and receives Layout 2 misinterprets <code>id</code> and <code>score</code>. If sizes differ across compilers or packing attributes (for example <code>#pragma pack</code>), the offsets diverge even further.</p>
+<p><strong>Conclusion:</strong> agreeing that both parties “have flag, id, and score” is <strong>not enough</strong> for an uninterpreted binary dump. The parties need agreed <strong>order, sizes, and padding</strong>. Alternatively, they need a format that encodes fields without host padding.</p>
+<h4 id="uninterpreted-memory-dump">Uninterpreted memory dump</h4>
+<p>Consider Layout 1 with <code>flag = 1</code>, <code>id = 42</code>, and <code>score = 7</code> on a <strong>little-endian</strong> host. Little-endian means the least significant byte sits at the <strong>lowest</strong> address. That is the usual rule on x86 and many ARM systems. Hexadecimal byte values use two digits per byte. For example, <code>2a</code> means decimal 42.</p>
+<p>Here is a byte-by-byte map. Each row is one address, and the field borders cannot drift:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Offset</th>
+<th style="text-align: center;">Byte (hex)</th>
+<th>Belongs to</th>
+<th>Role in the value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td style="text-align: center;"><code>01</code></td>
+<td><strong>flag</strong></td>
+<td>entire value → <strong>1</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: center;"><code>00</code></td>
+<td>pad</td>
+<td>unused</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;"><code>00</code></td>
+<td>pad</td>
+<td>unused</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;"><code>00</code></td>
+<td>pad</td>
+<td>unused</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;"><code>2a</code></td>
+<td><strong>id</strong></td>
+<td>least significant byte (<code>2a</code>₁₆ = 42₁₀)</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>id</strong></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>id</strong></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>id</strong></td>
+<td>most significant byte → together <strong>id = 42</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;"><code>07</code></td>
+<td><strong>score</strong></td>
+<td>least significant byte (<code>07</code>₁₆ = 7₁₀)</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>score</strong></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>score</strong></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>score</strong></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>score</strong></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>score</strong></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>score</strong></td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td style="text-align: center;"><code>00</code></td>
+<td><strong>score</strong></td>
+<td>most significant byte → together <strong>score = 7</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Here is a compact one-line view. Each column is exactly three characters (<code>NN</code> plus a space), so the <code>field</code> markers line up under the same offsets as <code>byte</code>:</p>
+<pre class="highlight"><code class="language-text">offset  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 
+byte    01 00 00 00 2a 00 00 00 07 00 00 00 00 00 00 00 
+field   F  p  p  p  I  I  I  I  S  S  S  S  S  S  S  S  </code></pre>
+<p>Legend: <strong>F</strong> is <code>flag</code> (value <strong>1</strong> at offset 00 only). <strong>p</strong> is padding. <strong>I</strong> is <code>id</code> in little-endian form (<strong>42</strong> from <code>2a 00 00 00</code> at offsets 04–07). <strong>S</strong> is <code>score</code> in little-endian form (<strong>7</strong> from <code>07</code> followed by seven <code>00</code> bytes at offsets 08–15). Trailing zeros on multi-byte fields are high-order bits of a small number. They do <strong>not</strong> mean the whole value is zero.</p>
+<p><strong>Same layout with <code>id = 43</code></strong> (still <code>flag = 1</code>, <code>score = 7</code>): only the byte under the first <strong>I</strong> changes (<code>2a</code> → <code>2b</code>, because 43₁₀ = <code>2b</code>₁₆).</p>
+<pre class="highlight"><code class="language-text">offset  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 
+byte    01 00 00 00 2b 00 00 00 07 00 00 00 00 00 00 00 
+field   F  p  p  p  I  I  I  I  S  S  S  S  S  S  S  S  </code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Decimal</th>
+<th>Hex</th>
+<th>Little-endian 4-byte pattern for <code>id</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">42</td>
+<td><code>2a</code></td>
+<td><code>2a 00 00 00</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td><code>2b</code></td>
+<td><code>2b 00 00 00</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">256</td>
+<td><code>100</code></td>
+<td><code>00 01 00 00</code> (the second byte becomes non-zero)</td>
+</tr>
+<tr>
+<td style="text-align: right;">7 as 64-bit <code>score</code></td>
+<td><code>7</code></td>
+<td><code>07 00 00 00 00 00 00 00</code></td>
+</tr>
+</tbody>
+</table>
+<p>On a <strong>big-endian</strong> host the multi-byte fields would reverse byte order within each field. For example, <code>id = 42</code> would appear as <code>00 00 00 2a</code>. That is why uninterpreted dumps are not portable across endianness. The next section develops endianness more carefully.</p>
+<p>A portable format might transmit only domain data under an explicit rule. For example: “one-byte flag, then four-byte little-endian <code>id</code>, then eight-byte little-endian <code>score</code>,” <strong>without</strong> the three padding zeros. Or it might use JSON, MessagePack, or Protocol Buffers so that field identity does not depend on host offsets.</p>
+<h4 id="same-record-in-two-languages">Same record in two languages</h4>
+<pre class="highlight"><code class="language-c">/* C (illustrative) */
+struct Player { char flag; int32_t id; int64_t score; };</code></pre>
+<pre class="highlight"><code class="language-python"># Python — not a C memory layout
+player = {"flag": 1, "id": 42, "score": 7}</code></pre>
+<p>The Python dictionary is built from references and hash-table machinery in the interpreter heap. There is <strong>no</strong> single 16-byte image equivalent to the C structure. “Binary dump of my object” is meaningful, if at all, <strong>only inside one language and one compiler/runtime on one platform</strong>. Even then, it often fails for managed objects.</p>
+<h3 id="endianness">Endianness</h3>
+<p>A multi-byte integer is stored as <strong>several bytes in a defined order</strong>. Two common conventions are:</p>
+<ul>
+<li><strong>Big-endian (BE):</strong> the most significant byte sits at the lowest address. This is similar to writing the decimal numeral 1234 from left to right.</li>
+<li><strong>Little-endian (LE):</strong> the least significant byte sits at the lowest address. This is common on x86/x86-64 and many ARM hosts.</li>
+</ul>
+<p><strong>Example:</strong> 32-bit value <code>0x12345678</code> (decimal 305 419 896):</p>
+<p><img alt="Endianness: big-endian vs little-endian byte order for 0x12345678" src="../../assets/diagrams/201-endianness.svg#only-light" />
+<img alt="Endianness: big-endian vs little-endian byte order for 0x12345678" src="../../assets/diagrams/201-endianness-dark.svg#only-dark" /></p>
+<p>If a little-endian writer emits those four bytes and a big-endian reader loads them as a native integer <strong>without conversion</strong>, the reader obtains a different numeric value. Network protocols historically adopted a <strong>network byte order</strong>. Classical Internet Protocol stacks used big-endian. Every serialization format must <strong>document</strong> endianness. Alternatively, it can avoid host integers as the interchange unit. Decimal text in JSON is one example of that alternative. See also the <a href="../../101/historical_perspective/">historical perspective</a>.</p>
+<p>Binary floating-point values face the same byte-order considerations when stored in memory.</p>
+<h3 id="alignment-and-zero-copy-formats">Alignment and zero-copy formats</h3>
+<p>Formats designed for <strong>in-place reads</strong> place fields so that a host can load integers from buffer offsets with limited extra work. FlatBuffers-class designs are an example. See <a href="../zero-copy/">Zero-copy</a>. They typically assume a documented endianness. That arrangement is not the absence of a format. It is a <strong>layout specification</strong> that resembles a convenient memory image while still forbidding raw host pointers into another process’s heap.</p>
+<p>This matters because zero-copy designs can <em>look</em> like “just memory.” They are still carefully defined contracts, not accidental dumps of process state.</p>
+<h3 id="managed-objects-and-graphs">Managed objects and graphs</h3>
+<p>In C, a small structure may store integers <strong>inline</strong>. The bytes of <code>id</code> sit inside the structure itself. In managed languages such as Python, Java, C#, and JavaScript, a “record” or “object” is often a <strong>graph</strong>. The variable holds a <strong>reference</strong>. A reference is an address-like handle into a heap managed by the runtime. Fields may be further references to strings, lists, or nested objects. Those addresses are meaningful only inside <strong>this process</strong> and <strong>this runtime</strong>. They must not be treated as portable data.</p>
+<p>Serializing such a structure “as memory” would require:</p>
+<ol>
+<li>following every reference to the objects it points to;</li>
+<li>defining behaviour for <strong>shared</strong> objects (one object reachable by two paths) and <strong>cycles</strong> (A refers to B and B refers to A);</li>
+<li>recording <strong>type</strong> information so that the receiver can reconstruct objects of the correct kinds.</li>
+</ol>
+<h4 id="nested-object-with-a-string-field">Nested object with a string field</h4>
+<p>Logical value in Python (the same idea applies in Java, C#, or JavaScript):</p>
+<pre class="highlight"><code class="language-python">player = {"id": 42, "name": "Ada"}</code></pre>
+<p>Illustrative layout in the heap (addresses are fictional):</p>
+<pre class="highlight"><code class="language-text">  Variable `player` ──ref──►  Map object @ 0xA100
+                                │
+                                ├─ key "id"   ──ref──►  Int object (value 42) @ 0xB200
+                                │
+                                └─ key "name" ──ref──►  String object @ 0xC300
+                                                         characters: 'A' 'd' 'a'
+                                                         length / type metadata …</code></pre>
+<p>What a naïve “dump of <code>player</code>” would capture depends on the language. It is <strong>not</strong> the twelve bytes of a packed C <code>struct { int32_t id; char name[4]; }</code>. More often you would obtain only the <strong>reference</strong> to the map (a machine word), or a runtime-specific object header. Neither of those can be interpreted by another process as “id 42 and name Ada.”</p>
+<p>A portable encoding must emit the <strong>logical content</strong>, for example:</p>
+<pre class="highlight"><code class="language-json">{"id": 42, "name": "Ada"}</code></pre>
+<p>or an equivalent binary form that stores the integer 42 and the character data of <code>"Ada"</code>. It must not store the heap addresses <code>0xA100</code>, <code>0xB200</code>, or <code>0xC300</code>.</p>
+<h4 id="shared-reference-one-object-two-paths">Shared reference (one object, two paths)</h4>
+<pre class="highlight"><code class="language-python">label = "urgent"
+task_a = {"title": label}
+task_b = {"title": label}   # same string object, not a second copy</code></pre>
+<pre class="highlight"><code class="language-text">  task_a ──► { title ──┐ }
+                       ├──► String "urgent" @ 0xD400
+  task_b ──► { title ──┘ }</code></pre>
+<p>In memory there is <strong>one</strong> string object and <strong>two</strong> references to it. A graph-aware native serializer may record that sharing. It writes the string once, then two back-references. A simple tree encoding (typical JSON) writes the characters twice:</p>
+<pre class="highlight"><code class="language-json">{"title": "urgent"}
+{"title": "urgent"}</code></pre>
+<p>Both approaches can be correct for a given product. They are simply <strong>different contracts</strong>. An uninterpreted memory dump does not choose either contract. It only freezes process-local addresses that are useless elsewhere.</p>
+<h4 id="cycle">Cycle</h4>
+<pre class="highlight"><code class="language-python">a = {}
+b = {"peer": a}
+a["peer"] = b</code></pre>
+<pre class="highlight"><code class="language-text">  a @ 0xE100 ──peer──► b @ 0xE200
+       ▲                    │
+       └──────peer──────────┘</code></pre>
+<p>A depth-first “copy every field” walk never terminates unless the serializer <strong>detects</strong> objects it has already visited. Language-native tools such as Python <code>pickle</code> implement such detection for <strong>one</strong> runtime. Portable message formats often <strong>forbid</strong> cycles. Alternatively, they require the application to replace cycles with explicit identifiers, for example integer keys into a table of nodes.</p>
+<h4 id="contrast-with-an-inline-c-structure">Contrast with an inline C structure</h4>
+<pre class="highlight"><code class="language-c">struct Player {
+    int32_t id;
+    char name[4];   /* fixed inline storage: 'A','d','a','\0' — still not a general string model */
+};</code></pre>
+<p>Here <code>id</code> and the four <code>name</code> bytes can sit <strong>inside</strong> one contiguous block, plus the padding rules from earlier sections. Even so, as soon as <code>name</code> becomes a <code>char *</code> pointer to a heap buffer, the C picture becomes a small graph as well. The structure holds an address, and the characters live elsewhere.</p>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>What is stored for a string field</th>
+<th>Portable as a raw dump?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Inline fixed array in C</td>
+<td>Character bytes inside the structure</td>
+<td>Only if size, order, and character encoding are agreed</td>
+</tr>
+<tr>
+<td>Managed object / <code>char *</code></td>
+<td>Reference (address or handle) to data elsewhere</td>
+<td><strong>No</strong> — addresses are process-local</td>
+</tr>
+<tr>
+<td>JSON / MessagePack / schema codec</td>
+<td>Length or delimiters plus character bytes (or field numbers plus values)</td>
+<td><strong>Yes</strong>, under that format’s rules</td>
+</tr>
+<tr>
+<td>Language-native graph serializer (<code>pickle</code>, Java serialization, and similar)</td>
+<td>Runtime type tags, handles, and payload for <strong>that</strong> virtual machine</td>
+<td>Only within the <strong>same</strong> language/runtime family; unsafe on untrusted input</td>
+</tr>
+</tbody>
+</table>
+<p>Language-native serializers walk graphs for <strong>one</strong> runtime. Portable formats ordinarily flatten data to <strong>trees or tables of values</strong>. Numbers, character data for strings, and nested records are examples. They never mean “here is a heap address from this virtual machine.”</p>
+<hr />
+<h2 id="costs-and-constraints">Costs and constraints</h2>
+<p>The table below summarizes how layout and format choices affect different design axes. “What usually stays true” is the constraint you cannot wish away.</p>
+<table>
+<thead>
+<tr>
+<th>Axis</th>
+<th>What changes with layout and format choices</th>
+<th>What usually stays true</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Processor time</td>
+<td>Byte swaps or copies when host endianness differs from the wire; scanning padding versus dense packing</td>
+<td>You still need <em>some</em> layout rule</td>
+</tr>
+<tr>
+<td>Memory / allocations</td>
+<td>Dense packed buffers versus pointer-rich graphs</td>
+<td>There is no free solution that ignores portability</td>
+</tr>
+<tr>
+<td>Size / bandwidth</td>
+<td>Padding wastes bytes; pointers become identifiers or nested payloads</td>
+<td>Raw <code>sizeof</code> dumps are not free portability</td>
+</tr>
+<tr>
+<td>Operability</td>
+<td>Hexadecimal dumps of packed formats need a decoder to understand</td>
+<td>Informal dumps can look simple in a single-host debugger</td>
+</tr>
+<tr>
+<td>Security / trust</td>
+<td>Accepting raw native images from untrusted parties is hazardous</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="illustrative-scenario">Illustrative scenario</h2>
+<p>A game client on a little-endian laptop writes player state with an uninterpreted copy of a packed C structure and uploads it to a backend. The backend may use a different compiler or CPU convention for field layout. It may use a managed language that stores fields in an entirely different way for <strong>garbage collection</strong>. Garbage collection (GC) is automatic reclamation of unused memory. Inventory counts become incorrect. The defect looks like application logic until someone compares the byte sequences with an endian-aware viewer.</p>
+<p>A durable remedy is not an informal document describing structure packing. It is an explicit format shared by both ends. Even a simple length-prefixed little-endian layout can work. A schema-driven codec can work as well.</p>
+<hr />
+<h2 id="in-this-suite">In this suite</h2>
+<p>The benchmark runner measures <strong>codecs</strong>, not raw structure dumps. Each registered serializer implements a defined encode and decode path over the same logical fixtures. That choice is deliberate. Portable interchange is the subject of multi-language comparison.</p>
+<p>The <strong>Dashboard</strong> therefore reflects the cost of <em>those</em> contracts. JSON text, MessagePack tags, Protocol Buffers field encodings, and similar mechanisms are what you measure. An uninterpreted memory-copy baseline is not. For family groupings, see <a href="../../../analysis/serialization_categories/">Serialization categories</a>.</p>
+<hr />
+<h2 id="common-errors-of-practice">Common errors of practice</h2>
+<ul>
+<li>Treating <code>sizeof</code> together with an uninterpreted binary write as if that combination were a multi-language interface.</li>
+<li>Forgetting that <strong>padding and field order</strong> are decisions of the compiler and platform. They are not merely part of how you picture the domain object in your head.</li>
+<li>Assuming that because little-endian hosts are common, endianness no longer matters. <strong>Embedded systems, network equipment, and file formats</strong> still need a written rule.</li>
+<li>Confusing <strong>host layout</strong> with <strong>zero-copy wire layout</strong>. The latter is designed, versioned, and free of host pointers into another process’s heap.</li>
+<li>Transmitting language-native serializations of object graphs across a trust boundary. See security notes in the <a href="../../101/engineer_perspective/">engineering perspective</a>.</li>
+</ul>
+<hr />
+<h2 id="key-takeaways">Key takeaways</h2>
+<ul>
+<li>In-memory layout optimizes for one processor and runtime. The wire optimizes for a shared contract.</li>
+<li>Padding, field order, pointer representation, and endianness all prevent uninterpreted dumps from working as interchange.</li>
+<li>Portable formats replace host assumptions with explicit sizes, order, and byte order. Alternatively, they use self-describing tags.</li>
+<li>Zero-copy formats still define a layout. They make that layout readable in place instead of rebuilding a full object graph.</li>
+<li>Multi-language systems need an agreed encoding, not merely a shared C header file.</li>
+<li>Measure real codecs on representative payloads. A local memory-copy microbenchmark is not an interchange strategy.</li>
+</ul>
+<hr />
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.tracking", "navigation.instant", "navigation.top", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../../javascripts/languages-nav.js"></script>
+      
+    
+  </body>
+</html>

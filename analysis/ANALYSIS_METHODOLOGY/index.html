@@ -1,0 +1,5495 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Fair multi-language serializer benchmarks — live dashboard, course, and open methodology.">
+      
+      
+      
+        <link rel="canonical" href="https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/">
+      
+      
+        <link rel="prev" href="../serialization_categories/">
+      
+      
+        <link rel="next" href="../METRICS/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Methodology - Multi-Language Serializer Benchmark</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/languages-nav.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/site-home.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#analysis-methodology" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Multi-Language Serializer Benchmark" class="md-header__button md-logo" aria-label="Multi-Language Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Multi-Language Serializer Benchmark
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Methodology
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/leo-gan/GLD.SerializerBenchmark" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    leo-gan/GLD.SerializerBenchmark
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../theory/101/" class="md-tabs__link">
+          
+  
+  
+  Learn
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../c/" class="md-tabs__link">
+          
+  
+  
+  Languages
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../dashboard/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Dashboard
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../experiments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Experiments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Multi-Language Serializer Benchmark" class="md-nav__button md-logo" aria-label="Multi-Language Serializer Benchmark" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Multi-Language Serializer Benchmark
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/leo-gan/GLD.SerializerBenchmark" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    leo-gan/GLD.SerializerBenchmark
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Learn
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Learn
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_1" id="__nav_1_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    101
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    101
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/101/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/101/historical_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Historical
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/101/data_science_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Science
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/101/engineer_perspective/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    201
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    201
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/memory-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/encode-decode-cost/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Encode/decode cost
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/self-describing-vs-schema-dependent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-describing vs schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/schema-evolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema evolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/dynamic-vs-idl-binary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamic vs IDL binary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/zero-copy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zero-copy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/201/compression-is-not-a-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compression vs format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    301
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    301
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/trust-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/untrusted-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Untrusted input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/payload-surfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Payload surfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/two-schema-cultures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Two schema cultures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/schema-registries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema registries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/public-api-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public API contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/versioning-in-the-wild/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning in the wild
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/row-vs-columnar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Row vs columnar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/polyglot-estates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot estates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/rpc-and-messaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RPC and messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/zero-copy-in-production/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zero-copy in production
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/caching-and-queues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Caching and queues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/using-this-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using this suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/implementation-variance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Implementation variance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/latency-tails-and-gc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Latency tails and GC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/compression-as-system-choice/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compression as system choice
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-public-rest-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: public REST API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-internal-rpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: internal RPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-event-stream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: event backbone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-analytics-lake/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: analytics lake
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-polyglot-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: polyglot boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/301/case-faster-postmortem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Case: faster postmortem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_1_4" id="__nav_1_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    401
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    401
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-wire-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protobuf wire format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: google.protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-rust-prost/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: prost
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-c-protobuf-c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: protobuf-c
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-c-nanopb-compare/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: nanopb vs protobuf-c
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/lab-mini-protobuf-encoder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab: mini Protobuf encoder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/protobuf-cross-language-fidelity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Same bytes, three runtimes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/python-msgspec-vs-orjson/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: msgspec vs orjson
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/python-msgspec-json-vs-msgpack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: msgspec JSON vs MessagePack
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/python-orjson-vs-json/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python: orjson vs json
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/rust-speedy-vs-bincode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: Speedy vs Bincode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/rust-speedy-vs-postcard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: Speedy vs Postcard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/rust-rkyv-vs-speedy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust: rkyv vs Speedy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/c-custom-binary-vs-ubj/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C: custom-binary vs ubj
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/cpp-bitsery-vs-yas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++: Bitsery vs YAS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/cpp-simdjson-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++: the simdjson row
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/csharp-binarypack-vs-bond/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C#: BinaryPack vs Bond
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/go-kelindar-vs-avro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go: kelindar vs Avro
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/java-protostuff-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java: Protostuff vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/kotlin-protostuff-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: Protostuff vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/kotlin-kotlinx-json-vs-moshi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: kotlinx-json vs Moshi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/kotlin-flatbuffers-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin: FlatBuffers vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/php-json-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP: JSON vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/zig-std-json-vs-serde-json/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zig: std.json vs serde.json
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/javascript-json-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript: JSON vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/javascript-three-protobufs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript: three Protocol Buffers libraries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../theory/401/swift-flatbuffers-vs-protobuf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swift: FlatBuffers vs protobuf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Languages
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Languages
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C#
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C#
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-sharp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C++
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cpp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Go
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../go/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Java
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../java/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JavaScript
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    JavaScript
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../javascript/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlin
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kotlin
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../kotlin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    PHP
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../php/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Python
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../rust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Swift
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Swift
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../swift/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_12" id="__nav_2_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zig
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Zig
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../zig/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TIMING_HONESTY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Timing honesty
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serialization_categories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Categories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learning goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#time-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time units
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#warmup-exclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warmup exclusion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outlier-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outlier filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-filter-policies-multi-aggregation-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard filter policies (multi-aggregation export)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#descriptive-statistics-per-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptive statistics (per group)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bootstrap-confidence-interval-on-the-mean" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bootstrap confidence interval on the mean
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#effect-sizes-versus-the-fastest-in-the-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Effect sizes versus the fastest in the group
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exploratory-ranks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exploratory ranks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Exploratory ranks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-problem-are-we-solving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What problem are we solving?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-we-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What we do
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plain-language-takeaway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plain-language takeaway
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-ab-same-language-two-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version A/B (same language, two runs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regression-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regression gate
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Regression gate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-problem-are-we-solving_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What problem are we solving?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-went-wrong-with-the-old-rule-or" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What went wrong with the old rule (OR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-we-do-now-and" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What we do now (AND)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cliffs-optional-when-we-saved-samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cliff’s δ (optional, when we saved samples)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#baseline-file-what-we-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Baseline file (what we store)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-session-claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-session and multi-machine claims
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multi-session and multi-machine claims">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-one-run-is-not-enough-for-strong-claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why one run is not enough for strong claims
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aggregate-several-csvs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregate several CSVs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methodological-disclosures-for-careful-readers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methodological disclosures (for careful readers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="References">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wikipedia-statistical-terms-used-on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wikipedia (statistical terms used on this page)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../METRICS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CLAIMS_AND_REPLICATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claims and replication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../test_data_configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADDING_A_SERIALIZER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Serializer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADDING_A_LANGUAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding a Language
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../experiments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#learning-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learning goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#time-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time units
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#warmup-exclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warmup exclusion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#outlier-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outlier filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-filter-policies-multi-aggregation-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard filter policies (multi-aggregation export)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#descriptive-statistics-per-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptive statistics (per group)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bootstrap-confidence-interval-on-the-mean" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bootstrap confidence interval on the mean
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#effect-sizes-versus-the-fastest-in-the-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Effect sizes versus the fastest in the group
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exploratory-ranks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exploratory ranks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Exploratory ranks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-problem-are-we-solving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What problem are we solving?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-we-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What we do
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plain-language-takeaway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plain-language takeaway
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-ab-same-language-two-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version A/B (same language, two runs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regression-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regression gate
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Regression gate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-problem-are-we-solving_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What problem are we solving?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-went-wrong-with-the-old-rule-or" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What went wrong with the old rule (OR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-we-do-now-and" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What we do now (AND)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cliffs-optional-when-we-saved-samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cliff’s δ (optional, when we saved samples)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#baseline-file-what-we-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Baseline file (what we store)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-session-claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-session and multi-machine claims
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multi-session and multi-machine claims">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-one-run-is-not-enough-for-strong-claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why one run is not enough for strong claims
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aggregate-several-csvs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregate several CSVs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methodological-disclosures-for-careful-readers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methodological disclosures (for careful readers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="References">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wikipedia-statistical-terms-used-on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wikipedia (statistical terms used on this page)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  
+
+<h1 id="analysis-methodology">Analysis methodology</h1>
+<p>This page explains how the <strong>analysis package</strong> turns raw benchmark-runner CSVs into group statistics, effect sizes, Dashboard numbers, and unpublished language reports.</p>
+<p>If architecture is the lab setup, methodology is the <strong>lab notebook</strong>: what we keep, what we drop, and how we summarize.</p>
+<p><strong>Metric names and importance tiers:</strong> <a href="../METRICS/">Metrics catalog</a>.</p>
+<table>
+<thead>
+<tr>
+<th>If you need…</th>
+<th>Go here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>What the benchmark runner times / suite layout</td>
+<td><a href="../architecture/">Benchmark architecture</a></td>
+</tr>
+<tr>
+<td>I/O modes and run modes</td>
+<td><a href="../modes/">Modes</a></td>
+</tr>
+<tr>
+<td>Data-type meanings</td>
+<td><a href="../test_data_configuration/">Test data</a></td>
+</tr>
+<tr>
+<td>Paradigms</td>
+<td><a href="../serialization_categories/">Serialization categories</a></td>
+</tr>
+<tr>
+<td>How to regenerate published numbers</td>
+<td><a href="../dashboard/">Dashboard</a> via <code>sync-data.py</code> · <a href="../CLAIMS_AND_REPLICATION/">Claims and replication</a></td>
+</tr>
+</tbody>
+</table>
+<p>Defaults live under <code>statistics:</code> and <code>modes:</code> in <a href="https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml"><code>config/benchmark_config.yaml</code></a>. Regeneration is <strong>local</strong> (<code>analyze-benchmarks</code>); continuous integration does not re-run analysis for publication.</p>
+<hr />
+<h2 id="learning-goals">Learning goals</h2>
+<p>By the end of this page you should be able to:</p>
+<ol>
+<li>Trace a CSV row from load → warmup drop → outlier filter → summary statistics.</li>
+<li>Explain why warmup and outlier rules exist (and that they run only in analysis).</li>
+<li>Read a confidence interval and an effect size in plain language.</li>
+<li>Know what the published outputs are and where they are written.</li>
+</ol>
+<hr />
+<h2 id="inputs">Inputs</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>logs/&lt;lang&gt;/YYYY-MM-DD-HHMMSS.csv</code></td>
+<td>Per-language benchmark runner output (gitignored)</td>
+</tr>
+<tr>
+<td><code>Language</code> column</td>
+<td>Language id (<code>csharp</code>, <code>python</code>, <code>rust</code>, <code>c</code>, <code>javascript</code>, <code>go</code>, <code>java</code>, <code>kotlin</code>, <code>php</code>, <code>cpp</code>, <code>swift</code>, <code>zig</code>, …)</td>
+</tr>
+<tr>
+<td><code>csv_schema</code> in master config</td>
+<td>Required and optional columns</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Core columns</strong> you will see often:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Everyday meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SerializerName</code></td>
+<td>Which library</td>
+</tr>
+<tr>
+<td><code>SerializerVersion</code></td>
+<td>Installed package or crate version (right after the name)</td>
+</tr>
+<tr>
+<td><code>TestDataName</code></td>
+<td>Which sample data type (<code>message</code>, <code>document</code>, …)</td>
+</tr>
+<tr>
+<td><code>StringOrStream</code></td>
+<td>API mode (<code>bytes</code> / <code>stream</code>, or legacy aliases)</td>
+</tr>
+<tr>
+<td><code>RepetitionIndex</code></td>
+<td>Which trial in the loop (<code>0</code> is warmup for analysis)</td>
+</tr>
+<tr>
+<td><code>TimeSer</code>, <code>TimeDeser</code>, <code>TimeSerAndDeser</code></td>
+<td>Times in <strong>nanoseconds</strong></td>
+</tr>
+<tr>
+<td><code>Size</code></td>
+<td>Encoded size in <strong>bytes</strong></td>
+</tr>
+<tr>
+<td>Ops/sec fields</td>
+<td>Throughput estimates (analysis may recompute from means)</td>
+</tr>
+</tbody>
+</table>
+<p>Optional columns include peak memory, fidelity score, and call-path metadata.</p>
+<hr />
+<h2 id="the-pipeline">The pipeline</h2>
+<p>Processing is <strong>per group</strong>. A group is one combination of:</p>
+<pre class="highlight"><code class="language-text">(Language, SerializerName, TestDataName, StringOrStream)</code></pre>
+<p>One function, <code>prepare_analysis_records</code> in <code>stats.py</code>, performs steps 1–3. <strong>Tables and charts both consume that output</strong>, so they cannot disagree about which trials were kept or which units were used.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What happens</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Load CSV; normalize time units from config</td>
+<td>Every language reports nanoseconds; analysis applies one consistent scale</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Drop warmup (<code>RepetitionIndex == 0</code> when enabled)</td>
+<td>Removes cold-start spikes (JIT, first allocations, cold caches)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Optional <strong>all-or-nothing</strong> outlier filter (default Tukey IQR)</td>
+<td>Softens rare stalls (GC, OS noise) without rewriting raw logs</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Descriptive statistics</td>
+<td>Means, medians, spread, percentiles</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Bootstrap confidence interval on the mean</td>
+<td>How stable is the average?</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Effect sizes vs the fastest serializer in the group</td>
+<td>Is the gap large, or just noise?</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Optional version A/B tests</td>
+<td>Did <em>this library</em> change between two runs?</td>
+</tr>
+</tbody>
+</table>
+<h3 id="time-units">Time units</h3>
+<p>All benchmark runners write times in <strong>nanoseconds</strong> (including C#). Analysis reads the scale once from master config (<code>csv_schema.time_unit</code>, optionally overridden per language) and uses the same factor everywhere. It does <strong>not</strong> guess units from medians or language names.</p>
+<p>Published <strong>latency</strong> tables use <strong>microseconds</strong> (µs = ns ÷ 1000). Latency charts also use µs and usually show the <strong>top five</strong> serializers by mean total time per data type so plots stay readable.</p>
+<h3 id="warmup-exclusion">Warmup exclusion</h3>
+<p><strong>Benchmark runners write full raw CSVs.</strong> Every successful timed repetition is logged, including index <code>0</code>. Runners must not drop warmup, apply IQR, or otherwise “clean” data before writing.</p>
+<p><strong>Analysis only</strong> applies the policy: if <code>statistics.exclude_warmup</code> is true (default), rows with <strong><code>RepetitionIndex == 0</code></strong> are dropped inside <code>prepare_analysis_records</code> before outlier filtering and summaries.</p>
+<p>Useful provenance fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>warmup_skipped</code></td>
+<td>How many warmup rows were dropped</td>
+</tr>
+<tr>
+<td><code>runs_raw</code></td>
+<td>Sample size before warmup drop (still reflects the full log)</td>
+</tr>
+<tr>
+<td><code>runs</code></td>
+<td>Final sample size after warmup and outlier steps</td>
+</tr>
+</tbody>
+</table>
+<p>Configured warmup length: <code>reproducibility.warmup_repetitions</code> = <strong>1</strong>.</p>
+<h3 id="outlier-filtering">Outlier filtering</h3>
+<p>Default method: <strong><a href="https://en.wikipedia.org/wiki/John_Tukey" title="John Tukey — invented exploratory data analysis and popularized boxplot/IQR fences">John Tukey</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> <a href="https://en.wikipedia.org/wiki/Interquartile_range" title="Interquartile range — spread of the middle 50% of values">interquartile range (IQR)</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /></strong> fences (<code>statistics.outlier_method: iqr</code>, <code>iqr_k: 1.5</code>), applied <strong>all-or-nothing</strong> across the three times of each repetition (serialize, deserialize, total).</p>
+<p><strong>Idea in plain language:</strong> look at the middle half of the data (from the 25th to the 75th <a href="https://en.wikipedia.org/wiki/Percentile" title="Percentile — value below which a given percentage of observations fall">percentile</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />). Anything far outside fences built from that middle half is treated as an <a href="https://en.wikipedia.org/wiki/Outlier" title="Outlier — observation far from the bulk of the data">outlier</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. If <em>any</em> of the three times is an outlier, the <strong>whole repetition</strong> is dropped so the three series stay paired.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Default behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fences</td>
+<td><code>[Q1 − k·IQR, Q3 + k·IQR]</code> computed <strong>separately</strong> on serialize, deserialize, and total</td>
+</tr>
+<tr>
+<td>Keep rule</td>
+<td>A row is kept only if it sits <strong>inside all three</strong> fences</td>
+</tr>
+<tr>
+<td>Group size</td>
+<td>Apply only if there are at least <code>min_samples_for_outlier_filter</code> samples (10)</td>
+</tr>
+<tr>
+<td>IQR = 0 for a metric</td>
+<td>That metric does not remove anyone</td>
+</tr>
+<tr>
+<td>Would drop the entire group</td>
+<td>Keep the original series</td>
+</tr>
+<tr>
+<td>Method <code>none</code></td>
+<td>Skip filtering</td>
+</tr>
+<tr>
+<td>Method <code>winsorize</code></td>
+<td><a href="https://en.wikipedia.org/wiki/Winsorizing" title="Winsorizing — replace extreme values with less extreme ones">Winsorize</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />: clip each series at the 5th and 95th percentiles; never drop rows</td>
+</tr>
+</tbody>
+</table>
+<p>Removed count: <code>outliers_removed</code>. Final <code>runs</code> is the same for serialize, deserialize, and total. IQR mainly stabilizes the <strong>mean</strong> against rare stalls; always look at dispersion and <a href="https://en.wikipedia.org/wiki/Confidence_interval" title="Confidence interval — range of plausible values for a parameter">confidence intervals</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> too.</p>
+<h3 id="dashboard-filter-policies-multi-aggregation-export">Dashboard filter policies (multi-aggregation export)</h3>
+<p>Machine-readable <code>stats_&lt;lang&gt;_latest.json</code> (schema <strong>2.2</strong>, published as <strong><code>.json.gz</code></strong>) recomputes every group under <strong>four fixed sample policies</strong> so the dashboard can research outliers without re-running filters in the browser:</p>
+<table>
+<thead>
+<tr>
+<th>Policy id</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>all</code></td>
+<td>Post-warmup only; no drop, no winsorize</td>
+</tr>
+<tr>
+<td><code>iqr_1.5</code></td>
+<td>Paired IQR with <strong>k = 1.5</strong> (canonical / default rankings)</td>
+</tr>
+<tr>
+<td><code>iqr_3</code></td>
+<td>Paired IQR with <strong>k = 3</strong> (looser fences)</td>
+</tr>
+<tr>
+<td><code>winsorize_5_95</code></td>
+<td>Clip each series at the 5th/95th percentile; <strong>n</strong> unchanged (<code>values_clipped</code> counts affected rows)</td>
+</tr>
+</tbody>
+</table>
+<p>Export fields (compact):</p>
+<ul>
+<li><code>default_filter_policy</code> — usually <code>iqr_1.5</code></li>
+<li><code>filter_policies</code> — catalog once (label, description, method, k, …)</li>
+<li><code>groups[]</code> — identity fields once + <code>variants.&lt;policy&gt;</code> metrics (no duplicated flat lists)</li>
+<li>per-variant <code>filter</code> — counts / fences / method only (labels live in the catalog)</li>
+<li>Pareto is <strong>not</strong> precomputed; the dashboard recalculates from the active policy metrics</li>
+</ul>
+<p>Published dashboard path: <code>dashboard/public/data/stats_&lt;lang&gt;_latest.json.gz</code> (gzip of the same JSON).</p>
+<p>Markdown language pages still use the configured single <code>statistics.outlier_method</code> path (default IQR 1.5). The multi-policy pack is for the interactive dashboard <strong>Samples</strong> control.</p>
+<h3 id="descriptive-statistics-per-group">Descriptive statistics (per group)</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>What we report</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Central tendency</td>
+<td><a href="https://en.wikipedia.org/wiki/Arithmetic_mean" title="Arithmetic mean — average">Mean</a> and <a href="https://en.wikipedia.org/wiki/Median" title="Median — middle value when sorted">median</a> of serialize / deserialize / total times</td>
+</tr>
+<tr>
+<td>Dispersion</td>
+<td><a href="https://en.wikipedia.org/wiki/Standard_deviation" title="Standard deviation — typical distance from the mean">Standard deviation</a>, <a href="https://en.wikipedia.org/wiki/Median_absolute_deviation" title="Median absolute deviation — robust scale measure">median absolute deviation (MAD)</a>, <a href="https://en.wikipedia.org/wiki/Coefficient_of_variation" title="Coefficient of variation — std / mean">coefficient of variation</a>, min/max, percentiles (default 5, 25, 50, 75, 95, 99)</td>
+</tr>
+<tr>
+<td>Size</td>
+<td>Median serialized <code>Size</code> (bytes)</td>
+</tr>
+<tr>
+<td>Throughput</td>
+<td>Operations per second from mean total time</td>
+</tr>
+<tr>
+<td>Provenance</td>
+<td><code>runs</code>, <code>runs_raw</code>, <code>warmup_skipped</code>, <code>outliers_removed</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Display-only</strong> rules on unpublished <code>reports/&lt;docs_dir&gt;/results.md</code> (the CSV on disk is unchanged):</p>
+<ul>
+<li>I/O modes labeled <strong>bytes mode</strong> / <strong>stream mode</strong></li>
+<li>Large numbers: one unit per column (K or M) with about two significant digits</li>
+<li><strong>Bold</strong> cells mark the semantic best value (lowest time; highest ops/s; ties all bolded)</li>
+<li><strong>Rust</strong> reports also include within-category mean ops/s rankings in bytes mode</li>
+</ul>
+<p>Published numbers live on the <a href="../dashboard/">Dashboard</a>. Those reports are PR-diff blobs, not site pages.</p>
+<h3 id="bootstrap-confidence-interval-on-the-mean">Bootstrap confidence interval on the mean</h3>
+<p>When bootstrap is enabled (default), analysis resamples the total-time series many times using the <strong><a href="https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29" title="Bootstrapping (statistics) — resampling to estimate uncertainty">bootstrap</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /></strong> (<strong>percentile</strong> method: 2000 iterations, 95% <a href="https://en.wikipedia.org/wiki/Confidence_interval" title="Confidence interval — range of plausible values for a parameter">confidence interval</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />, seed 42) and reports:</p>
+<ul>
+<li><code>total_ci_low_ns</code></li>
+<li><code>total_ci_high_ns</code></li>
+</ul>
+<p><strong>Plain language:</strong> “If we repeated this experiment many times, the true mean would usually fall between these two numbers.”</p>
+<p>Produced only when the post-filter sample size is at least <code>min_samples_for_inference</code> (default 5); otherwise the interval collapses to the point estimate.</p>
+<h3 id="effect-sizes-versus-the-fastest-in-the-group">Effect sizes versus the fastest in the group</h3>
+<p>When <a href="https://en.wikipedia.org/wiki/Effect_size" title="Effect size — how large a difference is, not only whether it is significant">effect sizes</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> are enabled (default), each serializer is compared—inside the same language, data type, batch size, and I/O mode—to the <strong>fastest</strong> peer. The reference is chosen by <strong>lowest median total time</strong> when available (falls back to mean). That matches the <a href="https://en.wikipedia.org/wiki/Nonparametric_statistics" title="Nonparametric statistics — methods that avoid strong distribution assumptions">nonparametric</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> story of the suite.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Role in plain language</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><a href="https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data" title="Cliff’s delta — probability one sample is larger than another">Cliff’s δ (delta)</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /></strong></td>
+<td>How often this library is slower or faster than the reference, without assuming a normal distribution</td>
+</tr>
+<tr>
+<td><strong><a href="https://en.wikipedia.org/wiki/Effect_size#Hedges'_g" title="Hedges’ g — standardized mean difference with small-sample correction">Hedges’ g</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /></strong></td>
+<td>Standardized mean difference with a small-sample correction</td>
+</tr>
+<tr>
+<td><strong><a href="https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test" title="Mann–Whitney U test — nonparametric two-sample rank test">Mann–Whitney U</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /> + <a href="https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method" title="Holm–Bonferroni method — stepwise p-value adjustment for multiple tests">Holm</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /></strong></td>
+<td>Optional <a href="https://en.wikipedia.org/wiki/P-value" title="P-value — probability of data as extreme as observed under the null">p-values</a> vs the reference; Holm adjusts for <strong>many serializers in that one group only</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Use these for <strong>within-language</strong> interpretation. Do not treat them as cross-runtime rankings. Multi-way tables treat ranks as <strong>exploratory</strong> — see <a href="#exploratory-ranks">Exploratory ranks</a>.</p>
+<h3 id="exploratory-ranks">Exploratory ranks</h3>
+<p>This section is written for a <strong>first-year university student</strong>.</p>
+<h4 id="what-problem-are-we-solving">What problem are we solving?</h4>
+<p>A Dashboard slice often shows <strong>many</strong> libraries side by side. Picking a “winner” and then testing every other library against that winner is like running <strong>many quizzes at once</strong> — the <a href="https://en.wikipedia.org/wiki/Multiple_comparisons_problem" title="Multiple comparisons problem — more tests raise the chance of false positives">multiple comparisons problem</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" />. If you celebrate every small “significant” mark without adjusting for how many quizzes you ran, you overstate confidence.</p>
+<h4 id="what-we-do">What we do</h4>
+<ol>
+<li><strong>Show effect sizes</strong> (<a href="https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data" title="Cliff’s delta">Cliff’s δ</a> label, and in machine-readable JSON also <a href="https://en.wikipedia.org/wiki/Effect_size#Hedges'_g" title="Hedges’ g">Hedges’ g</a>) so you can see <em>how large</em> a gap looks.</li>
+<li><strong>Attach <a href="https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test" title="Mann–Whitney U test">Mann–Whitney</a> <a href="https://en.wikipedia.org/wiki/P-value" title="P-value">p-values</a></strong> vs the group’s fastest codec when samples allow.</li>
+<li><strong><a href="https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method" title="Holm–Bonferroni method">Holm</a>-adjust those p-values inside the group</strong> <code>(language × data type × type-config × batch N × I/O mode)</code> only — not across every cell on the page.</li>
+<li><strong>Label multi-way Dashboard ranks as exploratory.</strong> Prefer <strong>pairwise A/B</strong> (<code>--compare-a</code> / <code>--compare-b</code>) when you need a confirmatory “did <em>this</em> change beat <em>that</em> baseline?” answer.</li>
+</ol>
+<h4 id="plain-language-takeaway">Plain-language takeaway</h4>
+<blockquote>
+<p>Scores (effect sizes) help you browse. Adjusted p-values inside one group reduce “many quizzes” mistakes. They are <strong>not</strong> a global <a href="https://en.wikipedia.org/wiki/Family-wise_error_rate" title="Family-wise error rate — chance of any false positive in a family of tests">family-wise</a> guarantee for the whole Dashboard roster, and default published ranks are still <strong>L1 single-session</strong> evidence (<a href="../CLAIMS_AND_REPLICATION/">Claims and replication</a>).</p>
+</blockquote>
+<p>Config knobs live under <code>statistics.effect_sizes.vs_fastest</code> (defaults in code if YAML omits them): <code>reference: median</code>, <code>test: mann_whitney_u</code>, <code>multiple_comparison: holm</code>.</p>
+<h3 id="version-ab-same-language-two-runs">Version A/B (same language, two runs)</h3>
+<p>Library authors often care about <em>their</em> change, not a global leaderboard:</p>
+<pre class="highlight"><code class="language-bash">./scripts/run-all-benchmarks.sh -m full
+analyze-benchmarks --compare-a csharp:190424 --compare-b csharp:191316
+# or:
+analyze-benchmarks --compare-a rust:185249 --compare-b rust:191316</code></pre>
+<p>This writes <code>reports/VERSION_COMPARE.md</code> (under <code>paths.reports_root</code>, default <code>reports/</code>) with percent change, <a href="https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data" title="Cliff’s delta">Cliff’s δ</a>, <a href="https://en.wikipedia.org/wiki/Effect_size#Hedges'_g" title="Hedges’ g">Hedges’ g</a>, <strong><a href="https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test" title="Mann–Whitney U test">Mann–Whitney U</a></strong>, and <strong><a href="https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method" title="Holm–Bonferroni method">Holm</a></strong>-adjusted p-values when hypothesis tests are enabled (<code>alpha</code> 0.05).</p>
+<p>Regression gates: <code>analyze-benchmarks --check-regression</code> against <code>paths.baseline_filename</code> (default <code>reports/baseline.json</code>); save a baseline with <code>--save-baseline</code>. Details: <a href="#regression-gate">Regression gate</a>.</p>
+<hr />
+<h2 id="regression-gate">Regression gate</h2>
+<p>This section is written for a <strong>first-year university student</strong>. No advanced stats course required.</p>
+<h3 id="what-problem-are-we-solving_1">What problem are we solving?</h3>
+<p>Imagine you measured how long a library takes to serialize data <strong>yesterday</strong> (the <strong>baseline</strong>), and you measure again <strong>today</strong> (the <strong>current</strong> run).</p>
+<ul>
+<li>Some days the computer is a bit busier (other programs, heat, random noise).</li>
+<li>So today’s <em>average</em> can look 12% slower even when the library did <strong>not</strong> really get worse.</li>
+</ul>
+<p>If our quality gate shouted “REGRESSION!” every time the average wiggled, we would get <strong>false alarms</strong> and stop trusting the gate.</p>
+<h3 id="what-went-wrong-with-the-old-rule-or">What went wrong with the old rule (OR)</h3>
+<p>The old gate used two checks and failed if <strong>either</strong> was true (logical <strong>OR</strong>):</p>
+<ol>
+<li><strong>Practical check:</strong> “Is the point estimate more than 10% slower than baseline?”</li>
+<li><strong>Statistical check:</strong> “Is even the <em>optimistic</em> end of our confidence interval still more than 10% slower?”</li>
+</ol>
+<p>With <strong>OR</strong>, a noisy average alone could fail the gate even when the confidence interval still said “this might still be about the same.” That is like failing a student for one shaky quiz question while the rest of the exam looks fine.</p>
+<h3 id="what-we-do-now-and">What we do now (AND)</h3>
+<p>By default the gate uses logical <strong>AND</strong>:</p>
+<blockquote>
+<p>Fail only if the run looks <strong>practically</strong> slower <strong>and</strong> the data still look slower even if we give the new run the benefit of the doubt (CI lower bound).</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Plain meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Practical</strong></td>
+<td>Median (preferred) or mean total time is more than <code>threshold_percent</code> (default 10%) worse than baseline</td>
+</tr>
+<tr>
+<td><strong>Statistical</strong></td>
+<td>The lower end of the bootstrap CI on the <strong>mean</strong> is still above <code>baseline × (1 + threshold/100)</code></td>
+</tr>
+</tbody>
+</table>
+<p>So:</p>
+<ul>
+<li><strong>Practical yes + statistical no</strong> → classified <strong>unclear</strong> (investigate; do not hard-fail by default).</li>
+<li><strong>Both yes</strong> → <strong>regression</strong> (exit code 1; baseline is not overwritten).</li>
+<li><strong>Within threshold</strong> (and Cliff’s δ negligible when samples exist) → <strong>equivalent</strong>.</li>
+</ul>
+<p>You can restore the old noisier behavior with <code>regression.combine: or</code> or <code>--regression-combine or</code>.</p>
+<h3 id="cliffs-optional-when-we-saved-samples">Cliff’s δ (optional, when we saved samples)</h3>
+<p>If the baseline file stores a sample of old timings, we also compute <strong><a href="https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data" title="Cliff’s delta — nonparametric effect size">Cliff’s δ</a><img src="https://en.wikipedia.org/static/images/icons/wikipedia.png" alt="" width="14" height="14" style="vertical-align: text-bottom; margin-left: 0.15em;" /></strong> between current and baseline samples (positive ≈ current slower). By default δ is <strong>diagnostic</strong> only (<code>require_for_fail: false</code>). That keeps the gate simple while still reporting a nonparametric effect size.</p>
+<h3 id="baseline-file-what-we-store">Baseline file (what we store)</h3>
+<p><code>reports/baseline.json</code> (schema v2) stores, per group:</p>
+<ul>
+<li>median and mean total time, CI, ops/s, size, run count  </li>
+<li>optional capped list of sample times (for δ)  </li>
+<li>keys that include <strong>language, serializer, data type, batch N, type-config hash, I/O mode</strong> so N=1 and N=100 do not collide  </li>
+</ul>
+<p>Legacy flat baselines (older keys without N/hash) are still <strong>read</strong> for one migration cycle; re-save with <code>--save-baseline</code> after a clean run.</p>
+<h3 id="commands">Commands</h3>
+<pre class="highlight"><code class="language-bash">analyze-benchmarks --check-regression
+analyze-benchmarks --check-regression --regression-threshold 5 --regression-combine and
+analyze-benchmarks --save-baseline   # only if check passes (or check not requested)</code></pre>
+<p>A machine-readable summary is written to <code>reports/regression_report.json</code> when you check.</p>
+<p>Config lives under <code>regression:</code> in <a href="https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/config/benchmark_config.yaml"><code>config/benchmark_config.yaml</code></a>.</p>
+<hr />
+<h2 id="multi-session-claims">Multi-session and multi-machine claims</h2>
+<p>This section is written for a <strong>first-year university student</strong>. Full ladder: <a href="../CLAIMS_AND_REPLICATION/">Claims and replication</a>.</p>
+<h3 id="why-one-run-is-not-enough-for-strong-claims">Why one run is not enough for strong claims</h3>
+<p>One full matrix on one laptop is a <strong>snapshot</strong>. Noise (other programs, thermal state, cloud neighbors) can move ranks a little. Stronger language needs <strong>more races</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Evidence</th>
+<th>Example claim</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>L1</strong></td>
+<td>One session, one host</td>
+<td>“On this machine, this session, ….”</td>
+</tr>
+<tr>
+<td><strong>L2</strong></td>
+<td>≥3 sessions, same known <code>machine_id</code></td>
+<td>“Stable across repeated sessions on this host….”</td>
+</tr>
+<tr>
+<td><strong>L2 (host unknown)</strong></td>
+<td>≥3 sessions, missing sidecars</td>
+<td>“Repeated sessions, but host fingerprint missing….”</td>
+</tr>
+<tr>
+<td><strong>L3</strong></td>
+<td>≥2 distinct <code>machine_id</code>s</td>
+<td>“Consistent across machines in this set….”</td>
+</tr>
+</tbody>
+</table>
+<p>Default Dashboard packed latest is <strong>L1</strong>. Sidecars store <code>environment.machine_id</code> so analysis can tell hosts apart.</p>
+<h3 id="aggregate-several-csvs">Aggregate several CSVs</h3>
+<pre class="highlight"><code class="language-bash">analyze-benchmarks --list -l python
+analyze-benchmarks \
+  --multi-session python:STEM1 \
+  --multi-session python:STEM2 \
+  --multi-session python:STEM3</code></pre>
+<p>Writes <code>reports/multi_session_&lt;lang&gt;.json</code> and <code>.md</code> with:</p>
+<ul>
+<li>median-of-session-medians and IQR across sessions  </li>
+<li>how often each serializer is fastest (rank stability)  </li>
+<li>heuristic <code>claim_level</code> (<code>L2_…</code> / <code>L3_…</code>)</li>
+</ul>
+<p>For research-oriented L2/L3 collection tips and soft host checks, see <a href="../CLAIMS_AND_REPLICATION/">Claims and replication</a>.</p>
+<hr />
+<h2 id="outputs">Outputs</h2>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reports/stats_&lt;lang&gt;_latest.json</code></td>
+<td>Multi-policy stats export (Dashboard sync input; <strong>always</strong> written)</td>
+</tr>
+<tr>
+<td><code>reports/&lt;docs_dir&gt;/results.md</code></td>
+<td>Unpublished language report (pivot tables + exploratory-rank banner). Default on; <code>--no-markdown-report</code> skips. <code>csharp</code> → <code>reports/c-sharp/results.md</code>. Do not commit to the site.</td>
+</tr>
+<tr>
+<td><code>reports/plots/violin/*.png</code></td>
+<td>Combined mean bars (serialize/deserialize) plus split violin shapes (µs, linear from 0; top five by mean total). <strong>Opt-in</strong> via <code>--violins</code>.</td>
+</tr>
+<tr>
+<td><a href="../dashboard/">Dashboard</a></td>
+<td>Published L1 numbers (packed via <code>sync-data.py</code>; not written by the CLI)</td>
+</tr>
+<tr>
+<td><code>logs/&lt;lang&gt;/*.configs.json</code></td>
+<td>Run sidecar: environment (<code>machine_id</code>, optional governor), dataset / serializer metadata (legacy <code>*.environment.json</code> still works)</td>
+</tr>
+<tr>
+<td><code>reports/multi_session_&lt;lang&gt;.json</code> / <code>.md</code></td>
+<td>Optional L2/L3 aggregate from <code>--multi-session</code></td>
+</tr>
+<tr>
+<td>Console</td>
+<td>Load counts, warmup and outlier tallies</td>
+</tr>
+</tbody>
+</table>
+<p>Latency charts use the <strong>same</strong> sanitized records as the summary tables. There is no separate hidden filter for plots. Display may still limit charts to the top five serializers by mean time; that does not change table membership.</p>
+<p>How to run the CLI: <code>analyze-benchmarks</code> writes <code>reports/</code>; pack the Dashboard with <code>python3 dashboard/scripts/sync-data.py</code>. Claim levels: <a href="../CLAIMS_AND_REPLICATION/">Claims and replication</a>.</p>
+<hr />
+<h2 id="limitations">Limitations</h2>
+<p>Honest methodology includes what the suite <strong>cannot</strong> claim.</p>
+<ul>
+<li><strong>Cross-language absolute times</strong> are directional at best. Garbage collection, allocators, and runtimes differ. Prefer within-language ranks and effect sizes.</li>
+<li><strong>Run order:</strong> default benchmark-runner schedule is <strong>block_shuffle</strong> (serializers reshuffled each rep within a cell×mode). This reduces thermal/order confounds vs serializer-outer fixed order. Escape hatch: <code>BENCHMARK_SCHEDULE=none</code>. See <a href="../architecture/#timed-trial-schedule">architecture — schedule</a>.</li>
+<li><strong>C</strong> default builds may use portable stand-ins under real library names—see the <a href="../../c/">C overview</a>.</li>
+<li><strong>Rust</strong> paths such as <code>prost</code>, <code>rkyv</code>, and <code>minicbor</code> use concrete native codecs; timed <code>rkyv</code> deserialize <strong>materializes</strong> owned values for fidelity—see the <a href="../../rust/">Rust overview</a>.</li>
+<li><strong>Stream</strong> mode is not always a true incremental API. New runs must label stream rows with CSV <code>StreamMode</code> (<code>native</code> / <code>text_on_stream</code> / <code>adapted</code>). Languages that only alias bytes must <strong>not</strong> emit stream rows. See <a href="../modes/#three-levels-of-stream-honesty">Modes — stream honesty</a>.</li>
+<li><strong>Fidelity</strong> is semantic or structural, not bit-identical across formats.</li>
+<li>Outlier removal and warmup policy affect means; always read <code>runs</code>, confidence intervals, and effect sizes together.</li>
+</ul>
+<h3 id="methodological-disclosures-for-careful-readers">Methodological disclosures (for careful readers)</h3>
+<ul>
+<li><strong>Bootstrap reproducibility:</strong> each group gets a <em>derived</em> seed (base bootstrap seed mixed with a stable hash of language + serializer + data type + mode + series prefix) so intervals are independent across groups yet fully reproducible.</li>
+<li><strong>Paired series:</strong> serialize, deserialize, and total times share one all-or-nothing keep-mask.</li>
+<li><strong>Mann–Whitney:</strong> uses SciPy when available (tie-aware); otherwise a pure-NumPy fallback with tie-corrected variance and continuity correction.</li>
+<li><strong>Regression gates:</strong> default combine is <strong>and</strong> (practical % and CI support). <code>--save-baseline</code> is skipped when <code>--check-regression</code> fails, so a degraded run cannot overwrite the gate baseline. See <a href="#regression-gate">Regression gate</a>.</li>
+<li><strong>Effect vs fastest:</strong> reference is <strong>median</strong> total by default; Mann–Whitney + <strong>within-group Holm</strong> when hypothesis tests are enabled. Multi-way ranks are <strong>exploratory</strong> (<a href="#exploratory-ranks">Exploratory ranks</a>).</li>
+<li><strong>Claim scope:</strong> default Dashboard packed latest is <strong>L1</strong> single-session / single-host. Multi-session tooling does not rewrite the Dashboard automatically (<a href="../CLAIMS_AND_REPLICATION/">Claims and replication</a>).</li>
+<li><strong>Cliff’s δ for large N:</strong> if the full pair count exceeds about two million, a seeded 100 000-pair random sample is used.</li>
+<li>Some documented config keys are parsed for documentation but do not yet change runtime behaviour; the implementation still computes the full rich metric set.</li>
+</ul>
+<h2 id="references">References</h2>
+<h3 id="wikipedia-statistical-terms-used-on-this-page">Wikipedia (statistical terms used on this page)</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Interquartile range (IQR)</td>
+<td><a href="https://en.wikipedia.org/wiki/Interquartile_range">en.wikipedia.org/wiki/Interquartile_range</a></td>
+</tr>
+<tr>
+<td>John Tukey</td>
+<td><a href="https://en.wikipedia.org/wiki/John_Tukey">en.wikipedia.org/wiki/John_Tukey</a></td>
+</tr>
+<tr>
+<td>Confidence interval</td>
+<td><a href="https://en.wikipedia.org/wiki/Confidence_interval">en.wikipedia.org/wiki/Confidence_interval</a></td>
+</tr>
+<tr>
+<td>Bootstrapping</td>
+<td><a href="https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29">en.wikipedia.org/wiki/Bootstrapping_(statistics)</a></td>
+</tr>
+<tr>
+<td>Effect size</td>
+<td><a href="https://en.wikipedia.org/wiki/Effect_size">en.wikipedia.org/wiki/Effect_size</a></td>
+</tr>
+<tr>
+<td>Cliff’s delta</td>
+<td><a href="https://en.wikipedia.org/wiki/Effect_size#Effect_size_for_ordinal_data">Effect size § ordinal data</a></td>
+</tr>
+<tr>
+<td>Hedges’ g</td>
+<td><a href="https://en.wikipedia.org/wiki/Effect_size#Hedges'_g">Effect size § Hedges' g</a></td>
+</tr>
+<tr>
+<td>Mann–Whitney U test</td>
+<td><a href="https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test">en.wikipedia.org/wiki/Mann–Whitney_U_test</a></td>
+</tr>
+<tr>
+<td>Holm–Bonferroni method</td>
+<td><a href="https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method">en.wikipedia.org/wiki/Holm–Bonferroni_method</a></td>
+</tr>
+<tr>
+<td>P-value</td>
+<td><a href="https://en.wikipedia.org/wiki/P-value">en.wikipedia.org/wiki/P-value</a></td>
+</tr>
+<tr>
+<td>Multiple comparisons problem</td>
+<td><a href="https://en.wikipedia.org/wiki/Multiple_comparisons_problem">en.wikipedia.org/wiki/Multiple_comparisons_problem</a></td>
+</tr>
+<tr>
+<td>Family-wise error rate</td>
+<td><a href="https://en.wikipedia.org/wiki/Family-wise_error_rate">en.wikipedia.org/wiki/Family-wise_error_rate</a></td>
+</tr>
+<tr>
+<td>Nonparametric statistics</td>
+<td><a href="https://en.wikipedia.org/wiki/Nonparametric_statistics">en.wikipedia.org/wiki/Nonparametric_statistics</a></td>
+</tr>
+<tr>
+<td>Median</td>
+<td><a href="https://en.wikipedia.org/wiki/Median">en.wikipedia.org/wiki/Median</a></td>
+</tr>
+<tr>
+<td>Median absolute deviation</td>
+<td><a href="https://en.wikipedia.org/wiki/Median_absolute_deviation">en.wikipedia.org/wiki/Median_absolute_deviation</a></td>
+</tr>
+<tr>
+<td>Winsorizing</td>
+<td><a href="https://en.wikipedia.org/wiki/Winsorizing">en.wikipedia.org/wiki/Winsorizing</a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="other">Other</h3>
+<ul>
+<li>Tukey, J.W. (1977). <em>Exploratory Data Analysis</em> (IQR fences).</li>
+<li><a href="https://seaborn.pydata.org/generated/seaborn.catplot.html">Seaborn violin / catplot</a>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.tracking", "navigation.instant", "navigation.top", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/languages-nav.js"></script>
+      
+    
+  </body>
+</html>
