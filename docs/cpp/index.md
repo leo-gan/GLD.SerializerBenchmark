@@ -60,7 +60,7 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 | avro_c | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++; stream adapted |
 | bitsery | Binary | bitsery | serializer `object`/`container` | Explicit schema |
 | boost_serialization | Binary | Boost.Serialization | binary_o/iarchive (bytes + stream) | Optional (system lib); **native stream** |
-| capnproto | Schema | Cap'n Proto | flat array bytes; `writeMessage` / `InputStreamMessageReader` stream | Zero-copy schema; **native stream** |
+| capnproto | Schema | Cap'n Proto | `messageToFlatArray` / `writeMessage` of a prepared `MallocMessageBuilder`; decode is `FlatArrayMessageReader` / `InputStreamMessageReader` | Domain fill is `prepare`; field walk is `to_domain`. **native stream** |
 | cereal | Binary | cereal | `BinaryOutput/InputArchive` on ostream/istream | C++-native archives; **native stream** |
 | cista | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
 | custom_binary | Binary | harness | length-prefixed fields | Baseline; stream adapted |
@@ -154,6 +154,7 @@ Some projects are C libraries with a pure C API. They are valid from C++ via `ex
 - **glaze** is pinned to **v2.9.5**, the last release that builds as C++20. Glaze v3+ requires C++23 (GCC 12+ / Clang 15+). This pin measures JSON via `write_json` / `read_json` on suite structs; CBOR is not registered (it landed after the C++20 line). Stream is **adapted**.
 - **simdjson** is optimized for parse; serialize is prepared minified JSON (same honesty as Rust/JS suite entries).
 - **protobuf** is official **libprotobuf** + protoc-generated stubs from `schemas/v2/protobuf/benchmark_v2.proto` (requires `cpp/scripts/setup-protobuf-sysroot.sh`). Domain→Message conversion is untimed (`prepare` / `to_domain`).
+- **capnproto** follows the same split: `prepare` fills a reused `MallocMessageBuilder`; the timer covers `messageToFlatArray` / `writeMessage` and reader setup; `to_domain` walks fields into suite structs. That matches libprotobuf and the [timing contract](../analysis/TIMING_HONESTY.md).
 - **protobuf-wire** is the previous in-tree proto3 field-tag codec (no libprotobuf); kept for comparison when the sysroot is absent or for wire-only baselines.
 - **flatbuffers** blob-root path embeds suite payload via `FlatBufferBuilder` (typed tables generated when `flatc` runs).
 - Stream mode is **native** where the library exposes streams/buffers and the benchmark runner uses them (`VecOutStream`/`VecInStream`, Cap’n Proto `writeMessage`, msgpack packer/unpacker, etc.); others are **adapted** (stream path = bytes path).
