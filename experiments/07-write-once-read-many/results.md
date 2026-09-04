@@ -1,7 +1,7 @@
 # Fast to write, or fast to read?
 
 **Question:** If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `['document', 'telemetry']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -12,7 +12,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Language | A order | B flat | C sensor | D event | E words | Same as A? | Full table |
 |----------|---------|--------|----------|---------|---------|------------|------------|
-| cpp | flatbuffers | — | protobuf | — | — | no | [cpp/results.md](cpp/results.md) |
+| cpp | capnproto | — | capnproto | — | — | no | [cpp/results.md](cpp/results.md) |
 | csharp | ZeroFormatter | — | MemoryPack | — | — | no | [csharp/results.md](csharp/results.md) |
 | java | flatbuffers | — | flatbuffers | — | — | no | [java/results.md](java/results.md) |
 | kotlin | flatbuffers | — | flatbuffers | — | — | no | [kotlin/results.md](kotlin/results.md) |
@@ -28,8 +28,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Language | Sample | Fastest at 1 | Fastest at 100 | Same? |
 |----------|--------|--------------|----------------|-------|
-| cpp | A (order) | flatbuffers | — | no |
-| cpp | C (sensor) | protobuf | — | no |
+| cpp | A (order) | capnproto | — | no |
+| cpp | C (sensor) | capnproto | — | no |
 | csharp | A (order) | ZeroFormatter | — | no |
 | csharp | C (sensor) | MemoryPack | — | no |
 | java | A (order) | flatbuffers | — | no |
@@ -55,7 +55,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Language | Status | Not clearly slower | Small gap |
 |----------|--------|--------------------|-----------|
-| cpp | ok | `flatbuffers` | — |
+| cpp | ok | `capnproto` | — |
 | csharp | ok | `ZeroFormatter` | — |
 | java | ok | `flatbuffers` | `protobuf` |
 | kotlin | ok | `flatbuffers` | `protobuf` |
@@ -75,21 +75,21 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| flatbuffers | 0.33 | 0.94 | 188 | fastest |
-| capnproto | 0.78 | 0.76 | 392 | slower |
-| protobuf | 0.58 | 0.99 | 164 | slower |
-| protobuf-wire | 1.65 | 0.87 | 164 | slower |
-| flexbuffers | 6.77 | 6.41 | 467 | slower |
+| capnproto | 1.09 | 1.66 | 392 | fastest |
+| flatbuffers | 1.20 | 2.51 | 188 | slower |
+| protobuf | 2.58 | 3.29 | 164 | slower |
+| protobuf-wire | 3.82 | 2.30 | 164 | slower |
+| flexbuffers | 12.5 | 15.0 | 467 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| protobuf | 0.72 | 0.63 | 4127 | fastest |
-| capnproto | 1.18 | 1.73 | 4184 | slower |
-| flatbuffers | 0.58 | 3.41 | 4660 | slower |
-| protobuf-wire | 11.7 | 3.20 | 4636 | slower |
-| flexbuffers | 9.26 | 13.1 | 4743 | slower |
+| capnproto | 3.16 | 3.27 | 4184 | fastest |
+| protobuf | 3.40 | 3.03 | 4127 | similar |
+| flatbuffers | 2.18 | 9.13 | 4660 | slower |
+| protobuf-wire | 20.5 | 8.89 | 4636 | slower |
+| flexbuffers | 22.9 | 33.6 | 4743 | slower |
 
 ### csharp
 

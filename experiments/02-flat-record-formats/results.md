@@ -1,7 +1,7 @@
 # Should two services inside the company stop using JSON?
 
 **Question:** On one small record, how do JSON, MessagePack, and Protocol Buffers compare?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `message`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -22,7 +22,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | javascript | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [javascript/results.md](javascript/results.md) |
 | rust | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [rust/results.md](rust/results.md) |
 | c | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [c/results.md](c/results.md) |
-| cpp | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [cpp/results.md](cpp/results.md) |
+| cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
 | csharp | ok | `SpanJson` | `Google.Protobuf` | `SpanJson`, `Google.Protobuf` | [csharp/results.md](csharp/results.md) |
 | swift | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [swift/results.md](swift/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
@@ -39,7 +39,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | javascript | missing | — | — | — |
 | rust | missing | — | — | — |
 | c | missing | — | — | — |
-| cpp | missing | — | — | — |
+| cpp | ok | `protobuf-wire` | — | `protobuf-wire` |
 | csharp | ok | `MessagePack-CSharp`, `Google.Protobuf` | `ProtoBuf`, `SpanJson` | `MessagePack-CSharp`, `Google.Protobuf` |
 | swift | missing | — | — | — |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` |
@@ -114,7 +114,23 @@ no CSV in this language folder yet
 
 ### cpp
 
-no CSV in this language folder yet
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf-wire | 2.25 | 50 | Protocol Buffers — in-tree wire helper | fastest |
+| msgpack | 4.15 | 124 | MessagePack | slower |
+| simdjson | 10.2 | 168 | JSON — fast read from Experiment 1 | slower |
+| nlohmann_json | 12.9 | 168 | JSON — common C++ library | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf-wire | 53.6 | 4841 | Protocol Buffers — in-tree wire helper | fastest |
+| msgpack | 64.6 | 12031 | MessagePack | slower |
+| simdjson | 245 | 16546 | JSON — fast read from Experiment 1 | slower |
+| nlohmann_json | 357 | 16546 | JSON — common C++ library | slower |
 
 ### csharp
 

@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-08-29T01:25:09Z",
+  "generated_at": "2026-09-04T18:20:06Z",
   "count": 14,
   "with_results": 14,
   "experiments": [
@@ -47,7 +47,7 @@
       ],
       "has_results": true,
       "payload": "experiments/01-json-library-bakeoff.json.gz",
-      "generated_at": "2026-08-29T00:34:01Z",
+      "generated_at": "2026-09-04T18:17:44Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -114,7 +114,7 @@
           "rows": 6
         }
       ],
-      "source_bytes": 119769
+      "source_bytes": 119771
     },
     {
       "id": "02-flat-record-formats",
@@ -160,7 +160,7 @@
       ],
       "has_results": true,
       "payload": "experiments/02-flat-record-formats.json.gz",
-      "generated_at": "2026-08-29T00:34:02Z",
+      "generated_at": "2026-09-04T18:17:53Z",
       "sample": {
         "kind": "message",
         "n": [
@@ -211,8 +211,8 @@
         },
         {
           "id": "cpp",
-          "status": "missing",
-          "rows": 0
+          "status": "ok",
+          "rows": 16
         },
         {
           "id": "csharp",
@@ -230,7 +230,7 @@
           "rows": 32
         }
       ],
-      "source_bytes": 90549
+      "source_bytes": 107631
     },
     {
       "id": "03-one-language-store",
@@ -1159,7 +1159,7 @@
       ],
       "has_results": true,
       "payload": "experiments/05-event-log-formats.json.gz",
-      "generated_at": "2026-08-29T00:34:07Z",
+      "generated_at": "2026-09-04T18:18:09Z",
       "sample": {
         "kind": "event",
         "n": [
@@ -1229,7 +1229,7 @@
           "rows": 24
         }
       ],
-      "source_bytes": 179873
+      "source_bytes": 179918
     },
     {
       "id": "06-document-db-formats",
@@ -1897,7 +1897,7 @@
       ],
       "has_results": true,
       "payload": "experiments/07-write-once-read-many.json.gz",
-      "generated_at": "2026-08-29T00:34:10Z",
+      "generated_at": "2026-09-04T18:18:16Z",
       "sample": {
         "kind": [
           "document",
@@ -1962,7 +1962,7 @@
           "rows": 10
         }
       ],
-      "source_bytes": 93739
+      "source_bytes": 93865
     },
     {
       "id": "08-human-files",
@@ -2020,7 +2020,7 @@
       ],
       "has_results": true,
       "payload": "experiments/08-human-files.json.gz",
-      "generated_at": "2026-08-29T00:34:11Z",
+      "generated_at": "2026-09-04T18:18:21Z",
       "sample": {
         "kind": [
           "document",
@@ -2090,7 +2090,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 89760
+      "source_bytes": 89774
     },
     {
       "id": "09-compression-size",
@@ -2277,7 +2277,7 @@
       ],
       "has_results": true,
       "payload": "experiments/09-compression-size.json.gz",
-      "generated_at": "2026-08-29T00:34:12Z",
+      "generated_at": "2026-09-04T18:18:27Z",
       "sample": {
         "kind": [
           "strings",
@@ -2348,7 +2348,7 @@
           "rows": 18
         }
       ],
-      "source_bytes": 192928
+      "source_bytes": 193020
     },
     {
       "id": "10-one-vs-hundred",
@@ -2450,7 +2450,7 @@
       ],
       "has_results": true,
       "payload": "experiments/10-one-vs-hundred.json.gz",
-      "generated_at": "2026-08-29T00:34:14Z",
+      "generated_at": "2026-09-04T18:18:46Z",
       "sample": {
         "kind": [
           "message",
@@ -2523,7 +2523,7 @@
           "rows": 24
         }
       ],
-      "source_bytes": 297993
+      "source_bytes": 298091
     },
     {
       "id": "11-memory-vs-stream",
@@ -2568,7 +2568,7 @@
       ],
       "has_results": true,
       "payload": "experiments/11-memory-vs-stream.json.gz",
-      "generated_at": "2026-08-29T00:34:15Z",
+      "generated_at": "2026-09-04T18:18:51Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2605,7 +2605,7 @@
           "rows": 12
         }
       ],
-      "source_bytes": 55241
+      "source_bytes": 55270
     },
     {
       "id": "12-format-vs-library",
@@ -2650,7 +2650,7 @@
       ],
       "has_results": true,
       "payload": "experiments/12-format-vs-library.json.gz",
-      "generated_at": "2026-08-29T00:34:16Z",
+      "generated_at": "2026-09-04T18:18:57Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2697,7 +2697,7 @@
           "rows": 22
         }
       ],
-      "source_bytes": 106139
+      "source_bytes": 106389
     },
     {
       "id": "13-ranking-accident",
@@ -2797,7 +2797,7 @@
       ],
       "has_results": true,
       "payload": "experiments/13-ranking-accident.json.gz",
-      "generated_at": "2026-08-29T00:34:20Z",
+      "generated_at": "2026-09-04T18:19:45Z",
       "sample": {
         "kind": [
           "document",
@@ -2873,7 +2873,7 @@
           "rows": 30
         }
       ],
-      "source_bytes": 843700
+      "source_bytes": 843597
     },
     {
       "id": "14-starter-kit",
@@ -2918,7 +2918,7 @@
       ],
       "has_results": true,
       "payload": "experiments/14-starter-kit.json.gz",
-      "generated_at": "2026-08-29T01:24:34Z",
+      "generated_at": "2026-09-04T18:19:52Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2985,7 +2985,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 93530
+      "source_bytes": 93547
     }
   ]
 }

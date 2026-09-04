@@ -1,7 +1,7 @@
 # Does squeezing the bytes make JSON small enough?
 
 **Question:** After gzip or zstd, does JSON stay larger than a dense binary format?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `['strings', 'telemetry', 'message']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -317,28 +317,28 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 0.98 | 50 | fastest |
-| msgpack | 1.79 | 124 | slower |
-| nlohmann_json | 5.09 | 168 | slower |
-| simdjson | 5.79 | 168 | slower |
+| protobuf-wire | 2.44 | 50 | fastest |
+| msgpack | 4.75 | 124 | slower |
+| simdjson | 9.75 | 168 | slower |
+| nlohmann_json | 13.5 | 168 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 1.91 | 368 | fastest |
-| msgpack | 2.17 | 346 | slower |
-| nlohmann_json | 7.15 | 411 | slower |
-| simdjson | 7.39 | 411 | slower |
+| protobuf-wire | 3.90 | 368 | fastest |
+| msgpack | 5.08 | 346 | slower |
+| simdjson | 15.4 | 411 | slower |
+| nlohmann_json | 18.1 | 411 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| msgpack | 3.67 | 1206 | fastest |
-| protobuf-wire | 5.07 | 1180 | slower |
-| nlohmann_json | 34.0 | 2400 | slower |
-| simdjson | 37.8 | 2400 | slower |
+| msgpack | 10.8 | 1206 | fastest |
+| protobuf-wire | 11.8 | 1180 | close |
+| simdjson | 46.1 | 2400 | slower |
+| nlohmann_json | 83.8 | 2400 | slower |
 
 ### csharp
 

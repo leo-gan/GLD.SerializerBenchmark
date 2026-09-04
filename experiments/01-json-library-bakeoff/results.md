@@ -1,7 +1,7 @@
 # Which JSON library is fastest?
 
 **Question:** We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -22,7 +22,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | javascript | ok | `JSON.stringify` | — | `JSON.stringify` | [javascript/results.md](javascript/results.md) |
 | rust | ok | `sonic-rs` | — | `sonic-rs` | [rust/results.md](rust/results.md) |
 | c | ok | `yyjson` | — | `yyjson` | [c/results.md](c/results.md) |
-| cpp | ok | `simdjson` | — | `simdjson` | [cpp/results.md](cpp/results.md) |
+| cpp | ok | `yyjson` | — | `yyjson` | [cpp/results.md](cpp/results.md) |
 | csharp | ok | `SpanJson` | — | `SpanJson` | [csharp/results.md](csharp/results.md) |
 | swift | ok | `IkigaJSON` | — | `IkigaJSON` | [swift/results.md](swift/results.md) |
 | zig | ok | `serde.json` | — | `serde.json` | [zig/results.md](zig/results.md) |
@@ -112,11 +112,11 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| simdjson | 9.11 | 458 | fastest |
-| nlohmann_json | 9.71 | 458 | slower |
-| yyjson | 10.1 | 458 | slower |
-| rapidjson | 13.4 | 458 | slower |
-| arduinojson | 15.6 | 458 | slower |
+| yyjson | 23.5 | 458 | fastest |
+| rapidjson | 26.8 | 458 | slower |
+| simdjson | 29.3 | 458 | slower |
+| arduinojson | 35.2 | 458 | slower |
+| nlohmann_json | 35.4 | 458 | slower |
 
 ### csharp
 

@@ -1,7 +1,7 @@
 # Can we send YAML on the live path?
 
 **Question:** On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `['document', 'strings']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -193,15 +193,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| nlohmann_json | 12.6 | 458 | fastest |
-| yaml-cpp | 165 | 486 | slower |
+| nlohmann_json | 19.4 | 458 | fastest |
+| yaml-cpp | 236 | 486 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| nlohmann_json | 8.33 | 411 | fastest |
-| yaml-cpp | 128 | 470 | slower |
+| nlohmann_json | 13.3 | 411 | fastest |
+| yaml-cpp | 185 | 470 | slower |
 
 ### go
 
