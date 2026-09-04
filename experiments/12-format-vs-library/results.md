@@ -1,7 +1,7 @@
 # Is it the format, or the library?
 
 **Question:** If one library can write several formats, how much of the difference is the format, and how much is that library?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -17,7 +17,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | java | ok | `jsoniter` | — | `jsoniter`, `jackson-smile` | [java/results.md](java/results.md) |
 | kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `kotlinx-cbor`, `kotlinx-protobuf` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
-| cpp | ok | `nlohmann_json` | — | `nlohmann_json`, `nlohmann_cbor`, `nlohmann_msgpack` | [cpp/results.md](cpp/results.md) |
+| cpp | ok | `nlohmann_json`, `nlohmann_bson`, `nlohmann_msgpack`, `nlohmann_cbor`, `nlohmann_ubjson` | — | `nlohmann_json`, `nlohmann_msgpack` | [cpp/results.md](cpp/results.md) |
 | go | ok | `goccy/go-json` | — | `goccy/go-json`, `ugorji/msgpack`, `shamaton/msgpack` | [go/results.md](go/results.md) |
 | csharp | ok | `MS Bond Fast` | — | `MS Bond Fast`, `MS Bond Compact` | [csharp/results.md](csharp/results.md) |
 | javascript | ok | `google-protobuf` | — | `google-protobuf` | [javascript/results.md](javascript/results.md) |
@@ -75,11 +75,11 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| nlohmann_json | 9.07 | 458 | nlohmann — JSON | fastest |
-| nlohmann_cbor | 9.61 | 338 | nlohmann — CBOR | slower |
-| nlohmann_bson | 9.71 | 502 | nlohmann — BSON | slower |
-| nlohmann_msgpack | 9.85 | 332 | nlohmann — MessagePack | slower |
-| nlohmann_ubjson | 10.1 | 409 | nlohmann — UBJSON | slower |
+| nlohmann_json | 26.0 | 458 | nlohmann — JSON | fastest |
+| nlohmann_bson | 26.0 | 502 | nlohmann — BSON | similar |
+| nlohmann_msgpack | 26.1 | 332 | nlohmann — MessagePack | similar |
+| nlohmann_cbor | 26.4 | 338 | nlohmann — CBOR | similar |
+| nlohmann_ubjson | 27.0 | 409 | nlohmann — UBJSON | similar |
 
 ### go
 

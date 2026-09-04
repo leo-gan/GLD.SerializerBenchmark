@@ -1,7 +1,7 @@
 # Does one record rank the same as one hundred?
 
 **Question:** Does the library that is fastest for one record stay fastest when we write one hundred records at once?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `['message', 'event']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -399,37 +399,37 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 1.49 | 138 | fastest |
-| msgpack | 1.90 | 214 | slower |
-| simdjson | 5.55 | 272 | slower |
-| nlohmann_json | 5.74 | 272 | slower |
+| protobuf-wire | 3.85 | 138 | fastest |
+| msgpack | 4.57 | 214 | slower |
+| simdjson | 12.0 | 272 | slower |
+| nlohmann_json | 15.2 | 272 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| msgpack | 84.1 | 19565 | fastest |
-| protobuf-wire | 121 | 12183 | slower |
-| simdjson | 378 | 25463 | slower |
-| nlohmann_json | 411 | 25463 | slower |
+| msgpack | 201 | 19565 | fastest |
+| protobuf-wire | 268 | 12183 | slower |
+| simdjson | 848 | 25463 | slower |
+| nlohmann_json | 1136 | 25463 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 0.56 | 50 | fastest |
-| msgpack | 1.18 | 124 | slower |
-| nlohmann_json | 3.75 | 168 | slower |
-| simdjson | 3.77 | 168 | slower |
+| protobuf-wire | 2.81 | 50 | fastest |
+| msgpack | 5.24 | 124 | slower |
+| simdjson | 12.3 | 168 | slower |
+| nlohmann_json | 16.2 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 40.2 | 4841 | fastest |
-| msgpack | 47.0 | 12031 | slower |
-| simdjson | 241 | 16546 | slower |
-| nlohmann_json | 245 | 16546 | slower |
+| protobuf-wire | 86.8 | 4841 | fastest |
+| msgpack | 109 | 12031 | slower |
+| simdjson | 458 | 16546 | slower |
+| nlohmann_json | 627 | 16546 | slower |
 
 ### csharp
 

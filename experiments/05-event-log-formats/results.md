@@ -1,7 +1,7 @@
 # What should we use for an event log?
 
 **Question:** On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `event`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -222,19 +222,19 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| avro | 0.92 | 120 | Avro | fastest |
-| protobuf-wire | 1.43 | 138 | Protocol Buffers — wire helper | slower |
-| avro_c | 3.74 | 120 | Avro — C library from C++ | slower |
-| nlohmann_json | 5.64 | 272 | JSON | slower |
+| avro | 2.89 | 120 | Avro | fastest |
+| protobuf-wire | 4.22 | 138 | Protocol Buffers — wire helper | slower |
+| avro_c | 12.1 | 120 | Avro — C library from C++ | slower |
+| nlohmann_json | 14.5 | 272 | JSON | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| avro | 44.7 | 10165 | Avro | fastest |
-| protobuf-wire | 112 | 12183 | Protocol Buffers — wire helper | slower |
-| avro_c | 227 | 10165 | Avro — C library from C++ | slower |
-| nlohmann_json | 386 | 25463 | JSON | slower |
+| avro | 72.9 | 10165 | Avro | fastest |
+| protobuf-wire | 171 | 12183 | Protocol Buffers — wire helper | slower |
+| avro_c | 365 | 10165 | Avro — C library from C++ | slower |
+| nlohmann_json | 631 | 25463 | JSON | slower |
 
 ### swift
 

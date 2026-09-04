@@ -120,6 +120,7 @@ Checked against the adapters in this repository after the google-protobuf encode
 | Zig `protobuf` (Arwalk/zig-protobuf) | Prepare copies suite → generated message. Timed path is `encode` / `decode`. Domain copy-back is after decode (same shape as Rust `prost`) | Honest schema row. |
 | Zig `flatbuffers` | Prepare stores fixtures. Timed path is `Builder.writeTable` / `decodeRoot` | Honest schema row. |
 | Zig `capnproto` | Prepare fills C structs. Timed path is official C++ `MallocMessageBuilder` / `FlatArrayMessageReader` | Honest schema row (C++ runtime, same as Swift). |
+| C++ `capnproto` | Prepare fills `MallocMessageBuilder`. Timed path is `messageToFlatArray` / `writeMessage` and `FlatArrayMessageReader` / `InputStreamMessageReader`. `to_domain` walks fields | Honest schema row (same split as C++ `protobuf`). |
 | [JavaScript: JSON vs google-protobuf](../theory/401/javascript-json-vs-protobuf.md) | Both encode and decode on the clock | Same work. Honest (after the copy bug was fixed). |
 | [JavaScript: three protobufs](../theory/401/javascript-three-protobufs.md) | All three encode in `serialize`. Decode rebuilds a library message; `toDomain` copies after the timer | Encode is the same kind of work. Decode implementations still differ. |
 | [Swift: FlatBuffers vs SwiftProtobuf](../theory/401/swift-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |

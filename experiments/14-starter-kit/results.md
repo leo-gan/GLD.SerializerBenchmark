@@ -1,7 +1,7 @@
 # What is a starter kit of serializers for typical jobs?
 
 **Question:** If we do not want to rank every library first, which few serializers cover the usual jobs — public JSON, compact bytes inside the company, and a shared field file — on one shop order?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -105,10 +105,10 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| protobuf-wire | 3.19 | 164 | shared schema — Protocol Buffers (in-tree wire helper) | fastest |
-| msgpack | 3.55 | 332 | compact internal bytes — MessagePack | slower |
-| simdjson | 9.69 | 458 | public JSON — fastest named JSON from Experiment 1 | slower |
-| nlohmann_json | 12.4 | 458 | public JSON — common C++ library | slower |
+| protobuf-wire | 6.08 | 164 | shared schema — Protocol Buffers (in-tree wire helper) | fastest |
+| msgpack | 7.62 | 332 | compact internal bytes — MessagePack | slower |
+| simdjson | 17.9 | 458 | public JSON — fastest named JSON from Experiment 1 | slower |
+| nlohmann_json | 21.8 | 458 | public JSON — common C++ library | slower |
 
 ### csharp
 

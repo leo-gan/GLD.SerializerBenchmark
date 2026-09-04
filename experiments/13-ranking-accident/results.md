@@ -1,7 +1,7 @@
 # Does the ranking stay the same if we change the data?
 
 **Question:** Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?
-**Date:** 2026-08-29
+**Date:** 2026-09-04
 **Sample:** `['document', 'message', 'telemetry', 'event', 'strings']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -20,7 +20,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | javascript | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | JSON.stringify | yes | [javascript/results.md](javascript/results.md) |
 | rust | sonic-rs | sonic-rs | sonic-rs | sonic-rs | sonic-rs | yes | [rust/results.md](rust/results.md) |
 | c | yyjson | yyjson | yyjson | yyjson | yyjson | yes | [c/results.md](c/results.md) |
-| cpp | simdjson | yyjson | nlohmann_json | yyjson | simdjson | no | [cpp/results.md](cpp/results.md) |
+| cpp | yyjson | yyjson | yyjson | yyjson | yyjson | yes | [cpp/results.md](cpp/results.md) |
 | csharp | SpanJson | SpanJson | NetJSON | SpanJson | SpanJson | no | [csharp/results.md](csharp/results.md) |
 | swift | IkigaJSON | IkigaJSON | IkigaJSON | IkigaJSON | IkigaJSON | yes | [swift/results.md](swift/results.md) |
 | zig | serde.json | serde.json | serde.json | serde.json | serde.json | yes | [zig/results.md](zig/results.md) |
@@ -69,11 +69,11 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | c | C (sensor) | yyjson | yyjson | yes |
 | c | D (event) | yyjson | yyjson | yes |
 | c | E (words) | yyjson | yyjson | yes |
-| cpp | A (order) | simdjson | simdjson | yes |
-| cpp | B (flat) | yyjson | simdjson | no |
-| cpp | C (sensor) | nlohmann_json | nlohmann_json | yes |
-| cpp | D (event) | yyjson | simdjson | no |
-| cpp | E (words) | simdjson | simdjson | yes |
+| cpp | A (order) | yyjson | yyjson | yes |
+| cpp | B (flat) | yyjson | yyjson | yes |
+| cpp | C (sensor) | yyjson | yyjson | yes |
+| cpp | D (event) | yyjson | yyjson | yes |
+| cpp | E (words) | yyjson | yyjson | yes |
 | csharp | A (order) | SpanJson | SpanJson | yes |
 | csharp | B (flat) | SpanJson | SpanJson | yes |
 | csharp | C (sensor) | NetJSON | SpanJson | no |
@@ -102,7 +102,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | javascript | ok | `JSON.stringify` | — |
 | rust | ok | `sonic-rs` | — |
 | c | ok | `yyjson` | — |
-| cpp | ok | `simdjson`, `nlohmann_json` | — |
+| cpp | ok | `yyjson` | — |
 | csharp | ok | `SpanJson` | — |
 | swift | ok | `IkigaJSON` | — |
 | zig | ok | `serde.json` | — |
@@ -901,101 +901,101 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| simdjson | 9.20 | 458 | fastest |
-| nlohmann_json | 9.42 | 458 | similar |
-| yyjson | 9.91 | 458 | slower |
-| rapidjson | 12.9 | 458 | slower |
-| arduinojson | 14.2 | 458 | slower |
+| yyjson | 15.1 | 458 | fastest |
+| simdjson | 17.3 | 458 | slower |
+| rapidjson | 18.4 | 458 | slower |
+| nlohmann_json | 21.7 | 458 | slower |
+| arduinojson | 25.2 | 458 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| simdjson | 688 | 45507 | fastest |
-| yyjson | 699 | 45507 | close |
-| nlohmann_json | 728 | 45507 | slower |
+| yyjson | 629 | 45507 | fastest |
+| simdjson | 875 | 45507 | slower |
 | rapidjson | 908 | 45507 | slower |
-| arduinojson | 5011 | 45507 | slower |
+| nlohmann_json | 1123 | 45507 | slower |
+| arduinojson | 9083 | 45507 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 5.44 | 272 | fastest |
-| simdjson | 5.75 | 272 | slower |
-| nlohmann_json | 6.04 | 272 | slower |
-| rapidjson | 8.15 | 272 | slower |
-| arduinojson | 9.23 | 272 | slower |
+| yyjson | 7.46 | 272 | fastest |
+| simdjson | 9.86 | 272 | slower |
+| rapidjson | 11.0 | 272 | slower |
+| nlohmann_json | 12.4 | 272 | slower |
+| arduinojson | 14.3 | 272 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| simdjson | 368 | 25463 | fastest |
-| yyjson | 403 | 25463 | slower |
-| nlohmann_json | 429 | 25463 | slower |
-| rapidjson | 510 | 25463 | slower |
-| arduinojson | 3472 | 25463 | slower |
+| yyjson | 349 | 25463 | fastest |
+| simdjson | 455 | 25463 | slower |
+| rapidjson | 487 | 25463 | slower |
+| nlohmann_json | 633 | 25463 | slower |
+| arduinojson | 5089 | 25463 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 3.65 | 168 | fastest |
-| nlohmann_json | 3.87 | 168 | slower |
-| simdjson | 3.94 | 168 | slower |
-| rapidjson | 5.12 | 168 | slower |
-| arduinojson | 5.30 | 162 | slower |
+| yyjson | 4.03 | 168 | fastest |
+| simdjson | 5.38 | 168 | slower |
+| rapidjson | 5.48 | 168 | slower |
+| nlohmann_json | 7.83 | 168 | slower |
+| arduinojson | 8.34 | 162 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| simdjson | 236 | 16546 | fastest |
-| nlohmann_json | 242 | 16546 | slower |
-| yyjson | 245 | 16546 | slower |
-| rapidjson | 329 | 16543 | slower |
-| arduinojson | 510 | 15916 | slower |
+| yyjson | 182 | 16546 | fastest |
+| simdjson | 253 | 16546 | slower |
+| rapidjson | 264 | 16543 | slower |
+| nlohmann_json | 390 | 16546 | slower |
+| arduinojson | 597 | 15916 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| simdjson | 6.81 | 411 | fastest |
-| yyjson | 7.28 | 411 | close |
-| nlohmann_json | 7.51 | 411 | slower |
-| rapidjson | 10.2 | 411 | slower |
-| arduinojson | 12.1 | 411 | slower |
+| yyjson | 7.12 | 411 | fastest |
+| simdjson | 9.50 | 411 | slower |
+| rapidjson | 10.1 | 411 | slower |
+| nlohmann_json | 11.6 | 411 | slower |
+| arduinojson | 14.6 | 411 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| simdjson | 484 | 41431 | fastest |
-| nlohmann_json | 544 | 41431 | slower |
-| yyjson | 571 | 41431 | slower |
-| rapidjson | 692 | 41431 | slower |
-| arduinojson | 10857 | 41431 | slower |
+| yyjson | 568 | 41431 | fastest |
+| simdjson | 669 | 41431 | slower |
+| rapidjson | 732 | 41431 | slower |
+| nlohmann_json | 973 | 41431 | slower |
+| arduinojson | 19011 | 41431 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| nlohmann_json | 11.3 | 658 | fastest |
-| arduinojson | 12.1 | 455 | slower |
-| yyjson | 12.1 | 658 | slower |
-| simdjson | 12.2 | 658 | slower |
-| rapidjson | 15.2 | 658 | slower |
+| yyjson | 9.25 | 658 | fastest |
+| simdjson | 12.4 | 658 | slower |
+| arduinojson | 13.2 | 455 | slower |
+| rapidjson | 13.4 | 658 | slower |
+| nlohmann_json | 20.2 | 658 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| nlohmann_json | 904 | 65970 | fastest |
-| simdjson | 959 | 65970 | slower |
-| yyjson | 1016 | 65966 | slower |
-| arduinojson | 1102 | 45907 | slower |
-| rapidjson | 1282 | 65833 | slower |
+| yyjson | 467 | 65966 | fastest |
+| simdjson | 674 | 65970 | slower |
+| rapidjson | 701 | 65833 | slower |
+| arduinojson | 1010 | 45907 | slower |
+| nlohmann_json | 1347 | 65970 | slower |
 
 ### csharp
 

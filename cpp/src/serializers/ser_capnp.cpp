@@ -8,15 +8,30 @@
 #include <kj/io.h>
 #endif
 
+#include <cstring>
+#include <memory>
 #include <stdexcept>
 
 // Cap'n Proto — high-value zero-copy schema codec (C++ first-class).
-// Bytes: messageToFlatArray / FlatArrayMessageReader.
-// Stream: writeMessage(VectorOutputStream) / InputStreamMessageReader(ArrayInputStream).
+// Timing contract (same as libprotobuf): suite→MessageBuilder in prepare;
+// timed path is flatten/write + MessageReader setup; domain walk in to_domain.
+// See capnproto/capnproto#2730.
 
 namespace bench {
 #if defined(HAS_CAPNP) && HAS_CAPNP
 namespace {
+
+class VecOutStream final : public kj::OutputStream {
+ public:
+  explicit VecOutStream(std::vector<uint8_t>& buf) : buf_(buf) {}
+  void write(const void* buffer, size_t size) override {
+    const auto* p = static_cast<const uint8_t*>(buffer);
+    buf_.insert(buf_.end(), p, p + size);
+  }
+
+ private:
+  std::vector<uint8_t>& buf_;
+};
 
 class CapnpSer final : public ISerializer {
  public:
@@ -29,41 +44,67 @@ class CapnpSer final : public ISerializer {
     type_id_ = fx.type_id;
     n_ = fx.instance_count;
     value_ = fx.value;
+    reader_.reset();
+    in_stream_.reset();
+    builder_ = std::make_unique<capnp::MallocMessageBuilder>();
+    fill_root(*builder_);
+    const size_t words = capnp::computeSerializedSizeInWords(*builder_);
+    ser_buf_.clear();
+    ser_buf_.reserve(words * sizeof(capnp::word) + 64);
+    word_scratch_.reserve(words + 8);
   }
 
   std::vector<uint8_t> serialize_bytes(const Fixture&) override {
-    capnp::MallocMessageBuilder msg;
-    fill_root(msg);
-    kj::Array<capnp::word> words = capnp::messageToFlatArray(msg);
+    if (!builder_) throw std::runtime_error("capnp: prepare required");
+    // messageToFlatArray is the documented in-memory emit (capnp/serialize.h).
+    kj::Array<capnp::word> words = capnp::messageToFlatArray(*builder_);
     auto bytes = words.asBytes();
-    return std::vector<uint8_t>(bytes.begin(), bytes.end());
+    ser_buf_.assign(bytes.begin(), bytes.end());
+    return ser_buf_;
   }
 
   Value deserialize_bytes(const std::vector<uint8_t>& data) override {
     if (data.size() % sizeof(capnp::word) != 0)
       throw std::runtime_error("capnp: size not multiple of word");
-    kj::ArrayPtr<const capnp::word> words(
-        reinterpret_cast<const capnp::word*>(data.data()), data.size() / sizeof(capnp::word));
-    capnp::FlatArrayMessageReader reader(words);
-    return read_from(reader);
+    // Copy into an aligned word buffer we own so the reader does not alias
+    // the runner's vector (and so decode is not a misaligned reinterpret_cast).
+    reader_.reset();
+    in_stream_.reset();
+    const size_t nwords = data.size() / sizeof(capnp::word);
+    word_scratch_.resize(nwords);
+    if (nwords > 0) std::memcpy(word_scratch_.data(), data.data(), data.size());
+    reader_ = std::make_unique<capnp::FlatArrayMessageReader>(
+        kj::arrayPtr(word_scratch_.data(), nwords));
+    touch_root(*reader_);
+    return Message{};
   }
 
   // Docs (capnp/serialize.h): writeMessage(OutputStream&) / InputStreamMessageReader.
   size_t serialize_stream(const Fixture&, std::vector<uint8_t>& out) override {
-    capnp::MallocMessageBuilder msg;
-    fill_root(msg);
-    kj::VectorOutputStream vos;
-    capnp::writeMessage(vos, msg);
-    auto arr = vos.getArray();
-    out.assign(arr.begin(), arr.end());
+    if (!builder_) throw std::runtime_error("capnp: prepare required");
+    VecOutStream vos(out);
+    capnp::writeMessage(vos, *builder_);
     return out.size();
   }
 
   Value deserialize_stream(const std::vector<uint8_t>& data) override {
-    kj::ArrayInputStream ais(kj::ArrayPtr<const kj::byte>(
-        reinterpret_cast<const kj::byte*>(data.data()), data.size()));
-    capnp::InputStreamMessageReader reader(ais);
-    return read_from(reader);
+    reader_.reset();
+    in_stream_.reset();
+    in_bytes_.assign(data.begin(), data.end());
+    in_stream_ = std::make_unique<kj::ArrayInputStream>(kj::ArrayPtr<const kj::byte>(
+        reinterpret_cast<const kj::byte*>(in_bytes_.data()), in_bytes_.size()));
+    // Scratch space is the reuse hook Kenton pointed at (InputStreamMessageReader ctor).
+    if (word_scratch_.size() < 64) word_scratch_.resize(64);
+    reader_ = std::make_unique<capnp::InputStreamMessageReader>(
+        *in_stream_, capnp::ReaderOptions(),
+        kj::arrayPtr(word_scratch_.data(), word_scratch_.size()));
+    touch_root(*reader_);
+    return Message{};
+  }
+
+  Value to_domain(Value /*decoded*/) override {
+    if (!reader_) throw std::runtime_error("capnp: deserialize required");
+    return read_from(*reader_);
   }
 
  private:
@@ -113,6 +154,27 @@ class CapnpSer final : public ISerializer {
       } else {
         fill_event(msg.initRoot<::Event>(), std::get<Event>(value_));
       }
+    }
+  }
+
+  void touch_root(capnp::MessageReader& reader) {
+    // Force the reader to resolve the root pointer (Cap'n Proto decode).
+    // Field walk into suite types stays in to_domain.
+    if (type_id_ == "message") {
+      if (n_ > 1) (void)reader.getRoot<::BatchMessage>();
+      else (void)reader.getRoot<::Message>();
+    } else if (type_id_ == "document") {
+      if (n_ > 1) (void)reader.getRoot<::BatchDocument>();
+      else (void)reader.getRoot<::Document>();
+    } else if (type_id_ == "telemetry") {
+      if (n_ > 1) (void)reader.getRoot<::BatchTelemetry>();
+      else (void)reader.getRoot<::Telemetry>();
+    } else if (type_id_ == "strings") {
+      if (n_ > 1) (void)reader.getRoot<::BatchStrings>();
+      else (void)reader.getRoot<::Strings>();
+    } else {
+      if (n_ > 1) (void)reader.getRoot<::BatchEvent>();
+      else (void)reader.getRoot<::Event>();
     }
   }
 
@@ -249,6 +311,12 @@ class CapnpSer final : public ISerializer {
   std::string type_id_;
   int n_ = 1;
   Value value_;
+  std::unique_ptr<capnp::MallocMessageBuilder> builder_;
+  std::vector<uint8_t> ser_buf_;
+  std::vector<capnp::word> word_scratch_;
+  std::vector<uint8_t> in_bytes_;
+  std::unique_ptr<kj::ArrayInputStream> in_stream_;
+  std::unique_ptr<capnp::MessageReader> reader_;
 };
 
 }  // namespace
