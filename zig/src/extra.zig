@@ -89,24 +89,19 @@ pub fn encodeLalinsky(fx: data.Fixture, out: *buf_mod.Buf) !void {
 
 pub fn decodeLalinsky(allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
     if (std.mem.eql(u8, type_id, "message")) {
-        const parsed = try msgpack_l.decodeFromSlice(data.Message, allocator, bytes);
-        return .{ .message = parsed.value };
+        return .{ .message = try msgpack_l.decodeFromSliceLeaky(data.Message, allocator, bytes) };
     }
     if (std.mem.eql(u8, type_id, "document")) {
-        const parsed = try msgpack_l.decodeFromSlice(data.Document, allocator, bytes);
-        return .{ .document = parsed.value };
+        return .{ .document = try msgpack_l.decodeFromSliceLeaky(data.Document, allocator, bytes) };
     }
     if (std.mem.eql(u8, type_id, "telemetry")) {
-        const parsed = try msgpack_l.decodeFromSlice(data.Telemetry, allocator, bytes);
-        return .{ .telemetry = parsed.value };
+        return .{ .telemetry = try msgpack_l.decodeFromSliceLeaky(data.Telemetry, allocator, bytes) };
     }
     if (std.mem.eql(u8, type_id, "strings")) {
-        const parsed = try msgpack_l.decodeFromSlice(data.Strings, allocator, bytes);
-        return .{ .strings = parsed.value };
+        return .{ .strings = try msgpack_l.decodeFromSliceLeaky(data.Strings, allocator, bytes) };
     }
     if (std.mem.eql(u8, type_id, "event")) {
-        const parsed = try msgpack_l.decodeFromSlice(data.Event, allocator, bytes);
-        return .{ .event = parsed.value };
+        return .{ .event = try msgpack_l.decodeFromSliceLeaky(data.Event, allocator, bytes) };
     }
     return error.UnknownTypeId;
 }
