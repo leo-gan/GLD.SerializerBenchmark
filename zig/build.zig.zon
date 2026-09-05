@@ -17,8 +17,8 @@
             .hash = "zbor-0.21.0-kr-CoMd7AwAj1t5CJoR8CoYr9CLQCNwBTNZEYYE9SBk0",
         },
         .msgpack_lalinsky = .{
-            .url = "https://github.com/lalinsky/msgpack.zig/archive/refs/heads/master.tar.gz",
-            .hash = "msgpack-0.7.0-ZOu9PAEaAgAM7pv6xQ8PCdm0uiD3cjgQq5SA3SjzodW5",
+            .url = "https://github.com/lalinsky/msgpack.zig/archive/refs/tags/v0.9.0.tar.gz",
+            .hash = "msgpack-0.9.0-ZOu9PEGgAgDvbGsCCi8OPV-n25bHqJniaZYM45BMJT4a",
         },
         .s2s = .{
             .url = "https://github.com/ziglibs/s2s/archive/refs/heads/master.tar.gz",

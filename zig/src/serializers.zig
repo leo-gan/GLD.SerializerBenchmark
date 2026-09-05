@@ -398,7 +398,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "msgpack.zig",
-            .version = "0.7.0",
+            .version = "0.9.0",
             .stream_mode = .native,
             .native_kind = .direct,
             .ctx = @ptrCast(&msgpack_l_state),
