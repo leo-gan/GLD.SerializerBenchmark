@@ -742,6 +742,11 @@ languages:
         package: github.com/shamaton/msgpack/v3
         rationale: "High-performance pure-Go MessagePack (benchmark staple)"
         optimal_api: "Marshal/Unmarshal; native stream MarshalWrite/UnmarshalRead"
+      - name: shamaton/msgpack (array)
+        category: binary
+        package: github.com/shamaton/msgpack/v3
+        rationale: "Struct-as-array encoding variant (no field-name keys, closer to schema-based formats)"
+        optimal_api: "MarshalAsArray/UnmarshalAsArray; native stream MarshalWriteAsArray/UnmarshalReadAsArray"
 
       - name: ugorji/msgpack
         category: binary

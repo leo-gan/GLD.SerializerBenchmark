@@ -64,6 +64,7 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 | protobuf | Schema | protobuf + gen | Message in prepare | **adapted** | MarshalAppend; ToDomain untimed; no native stream API |
 | segmentio/encoding/json | JSON | segmentio/encoding | drop-in API | native | Production fork |
 | shamaton/msgpack | MessagePack | msgpack/v3 | Marshal/Unmarshal | **native** | Stream `MarshalWrite`/`UnmarshalRead` |
+| shamaton/msgpack (array) | MessagePack | msgpack/v3 | MarshalAsArray/UnmarshalAsArray | **native** | Struct-as-array (no field-name keys); stream `MarshalWriteAsArray`/`UnmarshalReadAsArray` |
 | sonic | JSON | bytedance/sonic | `ConfigDefault` + Pretouch | native | SIMD-oriented hot path |
 | ugorji/cbor | CBOR | ugorji/go/codec | CborHandle + EncoderBytes | native | go-codec multi-format |
 | ugorji/json | JSON | ugorji/go/codec | JsonHandle + EncoderBytes | native | go-codec multi-format |
