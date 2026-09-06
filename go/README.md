@@ -14,6 +14,7 @@ Part of the [Multi-Language Serializer Benchmark](../README.md).
 | ugorji/json | JSON | `github.com/ugorji/go/codec` | `JsonHandle` + `NewEncoderBytes`/`ResetBytes` |
 | vmihailenco/msgpack | MessagePack | `github.com/vmihailenco/msgpack/v5` | **reused `Encoder.Reset`** + buffer |
 | shamaton/msgpack | MessagePack | `github.com/shamaton/msgpack/v3` | `Marshal`/`Unmarshal`; **native stream** `MarshalWrite`/`UnmarshalRead` |
+| shamaton/msgpack (array) | MessagePack | `github.com/shamaton/msgpack/v3` | `MarshalAsArray`/`UnmarshalAsArray`; **native stream** `MarshalWriteAsArray`/`UnmarshalReadAsArray` (struct-as-array, no field-name keys) |
 | ugorji/msgpack | MessagePack | `github.com/ugorji/go/codec` | `MsgpackHandle` + EncoderBytes reuse |
 | fxamacker/cbor | CBOR | `github.com/fxamacker/cbor/v2` | reused `EncMode`/`DecMode` |
 | ugorji/cbor | CBOR | `github.com/ugorji/go/codec` | `CborHandle` + EncoderBytes reuse |
