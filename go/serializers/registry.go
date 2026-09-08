@@ -13,6 +13,7 @@ func All() []BenchSerializer {
 		// Binary schemaless
 		newVmihailencoMsgpack(),
 		newShamatonMsgpack(),
+		newShamatonMsgpackArray(),
 		newUgorjiMsgpack(),
 		newFxamackerCBOR(),
 		newUgorjiCBOR(),
