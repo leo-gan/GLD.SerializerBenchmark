@@ -1,7 +1,7 @@
 # Does squeezing the bytes make JSON small enough?
 
 **Question:** After gzip or zstd, does JSON stay larger than a dense binary format?
-**Date:** 2026-09-04
+**Date:** 2026-09-08
 **Sample:** `['strings', 'telemetry', 'message']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -24,6 +24,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | — | SpanJson | Google.Protobuf | — | Google.Protobuf | no | [csharp/results.md](csharp/results.md) |
 | swift | — | SwiftProtobuf | SwiftProtobuf | — | SwiftProtobuf | no | [swift/results.md](swift/results.md) |
 | zig | — | comptime-bin | comptime-bin | — | comptime-bin | no | [zig/results.md](zig/results.md) |
+| mojo | — | mojo-avro | mojo-avro | — | EmberJson | no | [mojo/results.md](mojo/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -65,6 +66,9 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | zig | B (flat) | comptime-bin | — | no |
 | zig | C (sensor) | comptime-bin | — | no |
 | zig | E (words) | comptime-bin | — | no |
+| mojo | B (flat) | mojo-avro | — | no |
+| mojo | C (sensor) | mojo-avro | — | no |
+| mojo | E (words) | EmberJson | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -82,6 +86,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | ok | — | — |
 | swift | ok | — | — |
 | zig | ok | — | — |
+| mojo | ok | — | — |
 
 ## In memory, by language and sample
 
@@ -429,6 +434,41 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | protobuf | 2.61 | 1061 | slower |
 | capnproto | 5.02 | 1120 | slower |
 | std.json | 12.9 | 2407 | slower |
+
+### mojo
+
+**B (flat), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| mojo-avro | 0.56 | 44 | fastest |
+| mojo-protobuf | 0.58 | 50 | slower |
+| EmberJson | 0.82 | 168 | slower |
+| mojo-cbor | 1.55 | 124 | slower |
+| mojo-toml | 13.2 | 167 | slower |
+| ehsanmok-json | 14.2 | 168 | slower |
+
+**E (words), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| EmberJson | 1.74 | 411 | fastest |
+| mojo-avro | 4.43 | 338 | slower |
+| mojo-cbor | 4.55 | 345 | slower |
+| mojo-protobuf | 5.02 | 368 | slower |
+| mojo-toml | 31.0 | 441 | slower |
+| ehsanmok-json | 56.2 | 411 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| mojo-avro | 3.08 | 1071 | fastest |
+| mojo-protobuf | 4.71 | 1073 | slower |
+| mojo-cbor | 5.30 | 1223 | slower |
+| EmberJson | 9.28 | 2419 | slower |
+| mojo-toml | 169 | 2546 | slower |
+| ehsanmok-json | 500 | 2419 | slower |
 
 ## What we saw
 

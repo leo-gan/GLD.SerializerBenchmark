@@ -35,6 +35,9 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
             ("/kotlin/", "kotlin"),
             ("/java/", "java"),
             ("/swift/", "swift"),
+            ("/mojo/", "mojo"),
+            ("/php/", "php"),
+            ("/zig/", "zig"),
             ("/cpp/", "cpp"),
             ("/logs/c/", "c"),
         ):
@@ -53,6 +56,8 @@ def parse_csv_file(filepath: str, language_hint: Optional[str] = None) -> Tuple[
                 language_hint = "java"
             elif "swift" in parts:
                 language_hint = "swift"
+            elif "mojo" in parts:
+                language_hint = "mojo"
             elif "c" in parts:
                 language_hint = "c"
             elif low.endswith(("/c", "/c/", "/c.csv")):

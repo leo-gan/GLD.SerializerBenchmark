@@ -41,6 +41,7 @@ const LANG_LABELS = {
   c: 'C',
   java: 'Java',
   kotlin: 'Kotlin',
+  mojo: 'Mojo',
   php: 'PHP',
   cpp: 'C++',
   swift: 'Swift',

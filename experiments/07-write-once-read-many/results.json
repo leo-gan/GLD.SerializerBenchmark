@@ -18,7 +18,7 @@
     "main_io": "memory",
     "require_named_fields": false
   },
-  "generated_at": "2026-09-04T18:18:16Z",
+  "generated_at": "2026-09-08T22:54:00Z",
   "languages": {
     "cpp": {
       "status": "ok",
@@ -3125,6 +3125,192 @@
           "cliffs_delta_vs_fastest": 1.0,
           "cliffs_label": "large",
           "on_time_size_front": true
+        }
+      ]
+    },
+    "mojo": {
+      "status": "ok",
+      "language": "mojo",
+      "csv": "experiments/07-write-once-read-many/mojo/logs/mojo/2026-09-08-155354.csv",
+      "error": null,
+      "top_groups": [
+        {
+          "method": "cliffs_delta_vs_fastest",
+          "kind": "document",
+          "n": 1,
+          "io": "memory",
+          "similar_max": 0.147,
+          "close_max": 0.33,
+          "reference": "mojo-avro",
+          "similar": [
+            "mojo-avro"
+          ],
+          "close": [],
+          "time_size_front": [
+            "mojo-avro"
+          ]
+        },
+        {
+          "method": "cliffs_delta_vs_fastest",
+          "kind": "telemetry",
+          "n": 1,
+          "io": "memory",
+          "similar_max": 0.147,
+          "close_max": 0.33,
+          "reference": "mojo-avro",
+          "similar": [
+            "mojo-avro"
+          ],
+          "close": [],
+          "time_size_front": [
+            "mojo-avro"
+          ]
+        }
+      ],
+      "top_group": {
+        "method": "cliffs_delta_vs_fastest",
+        "kind": "document",
+        "n": 1,
+        "io": "memory",
+        "similar_max": 0.147,
+        "close_max": 0.33,
+        "reference": "mojo-avro",
+        "similar": [
+          "mojo-avro"
+        ],
+        "close": [],
+        "time_size_front": [
+          "mojo-avro"
+        ]
+      },
+      "rows": [
+        {
+          "library": "mojo-avro",
+          "kind": "document",
+          "n": 1,
+          "version": "0.4.0",
+          "role": "Avro",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 208,
+          "read_median_ns": 1478,
+          "total_median_ns": 1695,
+          "write_median_us": 0.2075,
+          "read_median_us": 1.4775,
+          "total_median_us": 1.695,
+          "total_mean_ns": 1696,
+          "total_p95_ns": 1867,
+          "total_p99_ns": 1903,
+          "total_ci_low_ns": 1676,
+          "total_ci_high_ns": 1717,
+          "size_bytes": 118,
+          "size_gzip_bytes": 0,
+          "fidelity": 1.0,
+          "runs": 88,
+          "runs_raw": 100,
+          "outliers_removed": 11,
+          "in_comparison": true,
+          "tier": "fastest",
+          "cliffs_delta_vs_fastest": 0.0,
+          "cliffs_label": "reference",
+          "on_time_size_front": true
+        },
+        {
+          "library": "mojo-protobuf",
+          "kind": "document",
+          "n": 1,
+          "version": "0.6.0",
+          "role": "Protocol Buffers",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 552,
+          "read_median_ns": 1778,
+          "total_median_ns": 2334,
+          "write_median_us": 0.552,
+          "read_median_us": 1.778,
+          "total_median_us": 2.3335,
+          "total_mean_ns": 2334,
+          "total_p95_ns": 2531,
+          "total_p99_ns": 2614,
+          "total_ci_low_ns": 2311,
+          "total_ci_high_ns": 2357,
+          "size_bytes": 157,
+          "size_gzip_bytes": 0,
+          "fidelity": 1.0,
+          "runs": 88,
+          "runs_raw": 100,
+          "outliers_removed": 11,
+          "in_comparison": true,
+          "tier": "slower",
+          "cliffs_delta_vs_fastest": 1.0,
+          "cliffs_label": "large",
+          "on_time_size_front": false
+        },
+        {
+          "library": "mojo-avro",
+          "kind": "telemetry",
+          "n": 1,
+          "version": "0.4.0",
+          "role": "Avro",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 3221,
+          "read_median_ns": 8357,
+          "total_median_ns": 11589,
+          "write_median_us": 3.221,
+          "read_median_us": 8.357,
+          "total_median_us": 11.589,
+          "total_mean_ns": 11601,
+          "total_p95_ns": 14200,
+          "total_p99_ns": 15653,
+          "total_ci_low_ns": 11270,
+          "total_ci_high_ns": 11937,
+          "size_bytes": 4135,
+          "size_gzip_bytes": 0,
+          "fidelity": 1.0,
+          "runs": 91,
+          "runs_raw": 100,
+          "outliers_removed": 8,
+          "in_comparison": true,
+          "tier": "fastest",
+          "cliffs_delta_vs_fastest": 0.0,
+          "cliffs_label": "reference",
+          "on_time_size_front": true
+        },
+        {
+          "library": "mojo-protobuf",
+          "kind": "telemetry",
+          "n": 1,
+          "version": "0.6.0",
+          "role": "Protocol Buffers",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 4298,
+          "read_median_ns": 11362,
+          "total_median_ns": 15683,
+          "write_median_us": 4.2975,
+          "read_median_us": 11.362,
+          "total_median_us": 15.683,
+          "total_mean_ns": 15758,
+          "total_p95_ns": 20669,
+          "total_p99_ns": 22005,
+          "total_ci_low_ns": 15260,
+          "total_ci_high_ns": 16239,
+          "size_bytes": 4137,
+          "size_gzip_bytes": 0,
+          "fidelity": 1.0,
+          "runs": 92,
+          "runs_raw": 100,
+          "outliers_removed": 7,
+          "in_comparison": true,
+          "tier": "slower",
+          "cliffs_delta_vs_fastest": 0.882,
+          "cliffs_label": "large",
+          "on_time_size_front": false
         }
       ]
     }

@@ -1,7 +1,7 @@
 # Fast to write, or fast to read?
 
 **Question:** If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
-**Date:** 2026-09-04
+**Date:** 2026-09-08
 **Sample:** `['document', 'telemetry']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,6 +23,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | c | flatcc | — | protobuf-wire | — | — | no | [c/results.md](c/results.md) |
 | swift | FlatBuffers | — | SwiftProtobuf | — | — | no | [swift/results.md](swift/results.md) |
 | zig | comptime-bin | — | comptime-bin | — | — | no | [zig/results.md](zig/results.md) |
+| mojo | mojo-avro | — | mojo-avro | — | — | no | [mojo/results.md](mojo/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -50,6 +51,8 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | C (sensor) | SwiftProtobuf | — | no |
 | zig | A (order) | comptime-bin | — | no |
 | zig | C (sensor) | comptime-bin | — | no |
+| mojo | A (order) | mojo-avro | — | no |
+| mojo | C (sensor) | mojo-avro | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -66,6 +69,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | c | ok | `flatcc` | — |
 | swift | ok | `FlatBuffers` | — |
 | zig | ok | `comptime-bin` | — |
+| mojo | ok | `mojo-avro` | — |
 
 ## In memory, by language and sample
 
@@ -264,6 +268,22 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | serde.msgpack | 3.18 | 1.91 | 4663 | slower |
 | flatbuffers | 6.23 | 0.55 | 4188 | slower |
 | protobuf | 3.81 | 3.47 | 4128 | slower |
+
+### mojo
+
+**A (order), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| mojo-avro | 0.21 | 1.48 | 118 | fastest |
+| mojo-protobuf | 0.55 | 1.78 | 157 | slower |
+
+**C (sensor), 1 record(s)**
+
+| Library | Write (µs) | Read (µs) | Size (bytes) | Group |
+|---------|------------|-----------|--------------|-------|
+| mojo-avro | 3.22 | 8.36 | 4135 | fastest |
+| mojo-protobuf | 4.30 | 11.4 | 4137 | slower |
 
 ## What we saw
 

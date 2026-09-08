@@ -1,7 +1,7 @@
 # When is JSON too big for a sensor?
 
 **Question:** As a list of sensor numbers grows, when does JSON no longer fit a small radio packet?
-**Date:** 2026-08-29
+**Date:** 2026-09-08
 **Sample:** `telemetry`, one record, list lengths [8, 32, 128, 512] · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -69,6 +69,17 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 | serde.json | 220 | 663 | 2407 | 9363 | >128, >512 | JSON — serde.zig |
 | std.json | 220 | 663 | 2407 | 9363 | >128, >512 | JSON — stdlib |
 | capnproto | 152 | 344 | 1120 | 4184 | >128, >512 | Cap’n Proto |
+
+### mojo
+
+| Library | 8 nums | 32 nums | 128 nums | 512 nums | vs 128 / 512 at 512 nums | Role |
+|---------|--------|--------|--------|--------|--------------------------|------|
+| mojo-avro | 103 | 295 | 1071 | 4135 | >128, >512 | Avro |
+| EmberJson | 229 | 668 | 2419 | 9368 | >128, >512 | JSON — EmberJson |
+| mojo-cbor | 135 | 352 | 1223 | 4672 | >128, >512 | CBOR |
+| mojo-protobuf | 105 | 298 | 1073 | 4137 | >128, >512 | Protocol Buffers |
+| mojo-toml | 236 | 699 | 2546 | 9879 | >128, >512 | TOML |
+| ehsanmok-json | 229 | 668 | 2419 | 9368 | >128, >512 | JSON — ehsanmok/json |
 
 ## Time and groups, by list length
 
@@ -307,6 +318,52 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 | protobuf | 6.94 | 4128 | slower |
 | serde.json | 35.5 | 9363 | slower |
 | std.json | 42.6 | 9363 | slower |
+
+### mojo
+
+**8 numbers** — not clearly slower: `mojo-avro`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| mojo-avro | 1.00 | 103 | fastest |
+| EmberJson | 1.47 | 229 | slower |
+| mojo-cbor | 1.50 | 135 | slower |
+| mojo-protobuf | 1.57 | 105 | slower |
+| mojo-toml | 20.3 | 236 | slower |
+| ehsanmok-json | 21.2 | 229 | slower |
+
+**32 numbers** — not clearly slower: `mojo-avro`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| mojo-avro | 1.46 | 295 | fastest |
+| mojo-cbor | 2.33 | 352 | slower |
+| mojo-protobuf | 2.37 | 298 | slower |
+| EmberJson | 3.14 | 668 | slower |
+| mojo-toml | 51.7 | 699 | slower |
+| ehsanmok-json | 74.7 | 668 | slower |
+
+**128 numbers** — not clearly slower: `mojo-avro`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| mojo-avro | 3.04 | 1071 | fastest |
+| mojo-protobuf | 4.75 | 1073 | slower |
+| mojo-cbor | 5.31 | 1223 | slower |
+| EmberJson | 9.45 | 2419 | slower |
+| mojo-toml | 172 | 2546 | slower |
+| ehsanmok-json | 509 | 2419 | slower |
+
+**512 numbers** — not clearly slower: `mojo-avro`. Small gap: —.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| mojo-avro | 9.37 | 4135 | fastest |
+| mojo-protobuf | 13.6 | 4137 | slower |
+| mojo-cbor | 16.8 | 4672 | slower |
+| EmberJson | 36.8 | 9368 | slower |
+| mojo-toml | 643 | 9879 | slower |
+| ehsanmok-json | 6187 | 9368 | slower |
 
 ## What we saw
 

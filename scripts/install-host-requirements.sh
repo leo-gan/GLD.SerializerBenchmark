@@ -347,7 +347,24 @@ install_zig() {
   echo "[OK] $(zig version)"
 }
 
-KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig)
+install_mojo() {
+  bench_extend_host_path
+  if [[ -x "${HOME}/.pixi/bin/pixi" ]]; then
+    export PATH="${HOME}/.pixi/bin:${PATH}"
+  fi
+  if ! command -v pixi >/dev/null 2>&1; then
+    echo "[INFO] Installing pixi to ~/.pixi ..."
+    curl -fsSL https://pixi.sh/install.sh | bash
+    export PATH="${HOME}/.pixi/bin:${PATH}"
+  else
+    echo "[OK] pixi already present: $(pixi --version 2>/dev/null | head -1)"
+  fi
+  echo "[INFO] pixi install in mojo/ (Mojo 1.0 + EmberJson + mojo-avro)..."
+  (cd "$PROJECT_ROOT/mojo" && pixi install)
+  echo "[OK] $(cd "$PROJECT_ROOT/mojo" && pixi run mojo --version)"
+}
+
+KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig mojo)
 
 resolve_targets() {
   local args=("$@")
@@ -359,7 +376,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig)
+      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig mojo)
     fi
     return
   fi
@@ -415,6 +432,9 @@ for t in "${TARGETS[@]}"; do
     zig)
       install_zig
       install_capnp
+      ;;
+    mojo)
+      install_mojo
       ;;
     *)
       echo "[ERROR] Unknown target: $t" >&2

@@ -157,3 +157,9 @@ languages:
       - {name: std.json, writes_named_fields: true, role: official stdlib typed JSON}
       - {name: std.json.scanner, writes_named_fields: true, role: official streaming Scanner}
       - {name: serde.json, writes_named_fields: true, role: comptime framework — JSON}
+
+  - id: mojo
+    enabled: true
+    libraries:
+      - {name: EmberJson, writes_named_fields: true, role: pure-Mojo JSON}
+      - {name: ehsanmok-json, writes_named_fields: true, role: JSON — ehsanmok/json}

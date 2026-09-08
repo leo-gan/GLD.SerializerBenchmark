@@ -161,6 +161,7 @@ nav:
           - "Kotlin: FlatBuffers vs protobuf": theory/401/kotlin-flatbuffers-vs-protobuf.md
           - "PHP: JSON vs protobuf": theory/401/php-json-vs-protobuf.md
           - "Zig: std.json vs serde.json": theory/401/zig-std-json-vs-serde-json.md
+          - "Mojo: EmberJson vs mojo-avro": theory/401/mojo-emberjson-vs-avro.md
           - "JavaScript: JSON vs protobuf": theory/401/javascript-json-vs-protobuf.md
           - "JavaScript: three Protocol Buffers libraries": theory/401/javascript-three-protobufs.md
           - "Swift: FlatBuffers vs protobuf": theory/401/swift-flatbuffers-vs-protobuf.md
@@ -181,6 +182,8 @@ nav:
           - Overview: javascript/index.md
       - Kotlin:
           - Overview: kotlin/index.md
+      - Mojo:
+          - Overview: mojo/index.md
       - PHP:
           - Overview: php/index.md
       - Python:

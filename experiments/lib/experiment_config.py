@@ -31,6 +31,7 @@ RUNNERS: dict[str, str] = {
     "kotlin": "kotlin/scripts/run-benchmarks.sh",
     "php": "php/scripts/run-benchmarks.sh",
     "zig": "zig/scripts/run-benchmarks.sh",
+    "mojo": "mojo/scripts/run-benchmarks.sh",
 }
 
 

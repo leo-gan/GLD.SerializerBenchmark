@@ -300,6 +300,7 @@ const LANG_AXIS = {
   c: 'C',
   java: 'Java',
   kotlin: 'Kotlin',
+  mojo: 'Mojo',
   php: 'PHP',
   cpp: 'C++',
   swift: 'Swift',

@@ -119,3 +119,10 @@ languages:
       - {name: serde.toml, writes_named_fields: true, role: TOML}
       - {name: serde.zon, writes_named_fields: true, role: ZON}
       - {name: std.zon, writes_named_fields: true, role: official std.zon}
+
+  - id: mojo
+    enabled: true
+    libraries:
+      - {name: EmberJson, writes_named_fields: true, role: JSON}
+      - {name: ehsanmok-json, writes_named_fields: true, role: JSON — ehsanmok/json}
+      - {name: mojo-toml, writes_named_fields: true, role: TOML}

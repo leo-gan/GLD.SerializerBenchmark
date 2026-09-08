@@ -1,7 +1,7 @@
 # What is a starter kit of serializers for typical jobs?
 
 **Question:** If we do not want to rank every library first, which few serializers cover the usual jobs — public JSON, compact bytes inside the company, and a shared field file — on one shop order?
-**Date:** 2026-09-04
+**Date:** 2026-09-08
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -26,6 +26,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | csharp | ok | `SpanJson` | — | `SpanJson`, `MessagePack-CSharp` | [csharp/results.md](csharp/results.md) |
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf` | [swift/results.md](swift/results.md) |
 | zig | ok | `protobuf` | — | `protobuf` | [zig/results.md](zig/results.md) |
+| mojo | ok | `mojo-avro` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## In memory, by language
 
@@ -136,6 +137,17 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 | serde.msgpack | 1.67 | 325 | compact internal bytes — MessagePack | slower |
 | serde.json | 2.42 | 448 | public JSON — fastest named JSON from Experiment 1 | slower |
 | std.json | 3.42 | 448 | public JSON — ships with Zig | slower |
+
+### mojo
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| mojo-avro | 1.51 | 118 | Avro | fastest |
+| EmberJson | 1.96 | 452 | JSON — EmberJson | slower |
+| mojo-protobuf | 2.09 | 157 | Protocol Buffers | slower |
+| mojo-cbor | 4.14 | 329 | CBOR | slower |
+| ehsanmok-json | 56.3 | 452 | JSON — ehsanmok/json | slower |
+| mojo-toml | 70.3 | 489 | TOML | slower |
 
 ## What this page is not
 

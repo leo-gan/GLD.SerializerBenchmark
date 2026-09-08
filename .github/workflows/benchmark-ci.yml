@@ -84,6 +84,7 @@ jobs:
       cpp: ${{ steps.filter.outputs.cpp }}
       swift: ${{ steps.filter.outputs.swift }}
       zig: ${{ steps.filter.outputs.zig }}
+      mojo: ${{ steps.filter.outputs.mojo }}
       analysis: ${{ steps.filter.outputs.analysis }}
     steps:
       - uses: actions/checkout@v4
@@ -144,6 +145,10 @@ jobs:
               - 'schemas/v2/**/*.proto'
             zig:
               - 'zig/**'
+              - 'schemas/data_catalog_v2.yaml'
+              - 'schemas/v2/**/*.proto'
+            mojo:
+              - 'mojo/**'
               - 'schemas/data_catalog_v2.yaml'
               - 'schemas/v2/**/*.proto'
             analysis:
@@ -525,6 +530,42 @@ jobs:
           cd zig
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
+  mojo-benchmark:
+    needs: changes
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.mojo == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Mojo toolchain
+        run: ./scripts/install-host-requirements.sh mojo
+
+      - name: Setup Python for run-config resolution
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML (resolve_run_config)
+        run: pip install pyyaml
+
+      - name: Check host requirements (mojo)
+        run: |
+          export PATH="${HOME}/.pixi/bin:${PATH}"
+          ./scripts/check-host-requirements.sh mojo
+
+      - name: Run Mojo roundtrip tests
+        run: |
+          export PATH="${HOME}/.pixi/bin:${PATH}"
+          cd mojo
+          pixi run test
+
+      - name: Run Mojo Benchmark
+        run: |
+          export PATH="${HOME}/.pixi/bin:${PATH}"
+          ./mojo/scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
+
   analysis-unit-tests:
     needs: changes
     if: >-
@@ -563,5 +604,6 @@ jobs:
           $PY scripts/read-config.py --enabled-langs | grep -qw cpp
           $PY scripts/read-config.py --enabled-langs | grep -qw swift
           $PY scripts/read-config.py --enabled-langs | grep -qw zig
-          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|kotlin|php|cpp|swift|zig)\|'
+          $PY scripts/read-config.py --enabled-langs | grep -qw mojo
+          $PY scripts/read-config.py --lang-runners | grep -E '^(csharp|python|rust|c|javascript|go|java|kotlin|php|cpp|swift|zig|mojo)\|'
           test "$($PY scripts/read-config.py --mode-reps smoke)" = "2"

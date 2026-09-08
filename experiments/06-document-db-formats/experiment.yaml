@@ -111,3 +111,10 @@ languages:
       - {name: protobuf, writes_named_fields: true, role: Protocol Buffers}
       - {name: flatbuffers, writes_named_fields: true, role: FlatBuffers}
       - {name: capnproto, writes_named_fields: true, role: Cap’n Proto}
+
+  - id: mojo
+    enabled: true
+    libraries:
+      - {name: EmberJson, writes_named_fields: true, role: JSON}
+      - {name: ehsanmok-json, writes_named_fields: true, role: JSON — ehsanmok/json}
+      - {name: mojo-cbor, writes_named_fields: true, role: CBOR}

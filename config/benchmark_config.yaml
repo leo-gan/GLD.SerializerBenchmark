@@ -222,6 +222,7 @@ paths:
     cpp: logs/cpp
     swift: logs/swift
     zig: logs/zig
+    mojo: logs/mojo
   # Result files are timestamped to preserve history across runs.
   # Each run creates (same stem):
   #   YYYY-MM-DD-HHMMSS.csv
@@ -1226,6 +1227,48 @@ languages:
         package: capnproto C++ 1.0.2
         rationale: "Official C++ runtime from cpp/schemas/benchmark.capnp (no Zig 0.16 plugin)"
         optimal_api: "MallocMessageBuilder / FlatArrayMessageReader via CapnpBridge"
+
+  mojo:
+    display_name: Mojo
+    enabled: true
+    runner_dir: mojo
+    runner_script: scripts/run-benchmarks.sh
+    log_dir: logs/mojo
+    time_unit: nanoseconds
+    docs_dir: docs/mojo
+    min_mojo_version: "1.0.0"
+    stream_policy: bytes_only
+    serializers:
+      - name: EmberJson
+        category: json
+        package: emberjson
+        rationale: "Widely adopted pure-Mojo JSON (reflection serialize / deserialize)"
+        optimal_api: "serialize(struct) / deserialize[T](text)"
+      - name: ehsanmok-json
+        category: json
+        package: ehsanmok/json
+        rationale: "High-performance Mojo JSON (SIMD CPU parser; official loads/dumps Value API)"
+        optimal_api: "dumps(Value) / loads(text) — reflection does not cover Int32 or List[struct]"
+      - name: mojo-cbor
+        category: binary
+        package: leo-gan/gld-cbor
+        rationale: "Pure-Mojo CBOR (RFC 8949) via CborDatum encode / decode"
+        optimal_api: "cbor.encode / cbor.decode on CborDatum types"
+      - name: mojo-protobuf
+        category: schema
+        package: leo-gan/gld-protobuf
+        rationale: "Pure-Mojo Protocol Buffers generated from the suite .proto"
+        optimal_api: "Message.encode / Message.decode (domain convert untimed)"
+      - name: mojo-avro
+        category: schema
+        package: leo-gan/gld-avro
+        rationale: "Pure-Mojo Apache Avro binary via AvroDatum encode / decode"
+        optimal_api: "avro.encode / avro.decode on AvroDatum types"
+      - name: mojo-toml
+        category: text
+        package: DataBooth/mojo-toml
+        rationale: "Pure-Mojo TOML 1.0 parser and writer"
+        optimal_api: "to_toml(Dict) / parse(text)"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language
