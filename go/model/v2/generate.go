@@ -7,56 +7,56 @@ package v2
 
 // Message is a single-level mixed-primitive record.
 type Message struct {
-	FBool    bool    `json:"f_bool" avro:"f_bool"`
-	FInt32   int32   `json:"f_int32" avro:"f_int32"`
-	FInt64   int64   `json:"f_int64" avro:"f_int64"`
-	FFloat64 float64 `json:"f_float64" avro:"f_float64"`
-	FString  string  `json:"f_string" avro:"f_string"`
-	FBool2   bool    `json:"f_bool_2" avro:"f_bool_2"`
-	FInt32_2 int32   `json:"f_int32_2" avro:"f_int32_2"`
-	FString2 string  `json:"f_string_2" avro:"f_string_2"`
+	FBool    bool    `json:"f_bool" avro:"f_bool" msgpack:"f_bool"`
+	FInt32   int32   `json:"f_int32" avro:"f_int32" msgpack:"f_int32"`
+	FInt64   int64   `json:"f_int64" avro:"f_int64" msgpack:"f_int64"`
+	FFloat64 float64 `json:"f_float64" avro:"f_float64" msgpack:"f_float64"`
+	FString  string  `json:"f_string" avro:"f_string" msgpack:"f_string"`
+	FBool2   bool    `json:"f_bool_2" avro:"f_bool_2" msgpack:"f_bool_2"`
+	FInt32_2 int32   `json:"f_int32_2" avro:"f_int32_2" msgpack:"f_int32_2"`
+	FString2 string  `json:"f_string_2" avro:"f_string_2" msgpack:"f_string_2"`
 }
 
 type DocumentMeta struct {
-	Region  string `json:"region" avro:"region"`
-	Version int32  `json:"version" avro:"version"`
+	Region  string `json:"region" avro:"region" msgpack:"region"`
+	Version int32  `json:"version" avro:"version" msgpack:"version"`
 }
 
 type DocumentItem struct {
-	SKU        string `json:"sku" avro:"sku"`
-	Qty        int32  `json:"qty" avro:"qty"`
-	PriceMinor int64  `json:"price_minor" avro:"price_minor"`
+	SKU        string `json:"sku" avro:"sku" msgpack:"sku"`
+	Qty        int32  `json:"qty" avro:"qty" msgpack:"qty"`
+	PriceMinor int64  `json:"price_minor" avro:"price_minor" msgpack:"price_minor"`
 }
 
 type Document struct {
-	ID     string         `json:"id" avro:"id"`
-	Status int32          `json:"status" avro:"status"`
-	Meta   DocumentMeta   `json:"meta" avro:"meta"`
-	Items  []DocumentItem `json:"items" avro:"items"`
+	ID     string         `json:"id" avro:"id" msgpack:"id"`
+	Status int32          `json:"status" avro:"status" msgpack:"status"`
+	Meta   DocumentMeta   `json:"meta" avro:"meta" msgpack:"meta"`
+	Items  []DocumentItem `json:"items" avro:"items" msgpack:"items"`
 }
 
 type Telemetry struct {
-	Source string    `json:"source" avro:"source"`
-	TS     int64     `json:"ts" avro:"ts"`
-	Tags   []string  `json:"tags" avro:"tags"`
-	Values []float64 `json:"values" avro:"values"`
+	Source string    `json:"source" avro:"source" msgpack:"source"`
+	TS     int64     `json:"ts" avro:"ts" msgpack:"ts"`
+	Tags   []string  `json:"tags" avro:"tags" msgpack:"tags"`
+	Values []float64 `json:"values" avro:"values" msgpack:"values"`
 }
 
 type Strings struct {
-	Items []string `json:"items" avro:"items"`
+	Items []string `json:"items" avro:"items" msgpack:"items"`
 }
 
 type EventAttr struct {
-	Key   string `json:"key" avro:"key"`
-	Value string `json:"value" avro:"value"`
+	Key   string `json:"key" avro:"key" msgpack:"key"`
+	Value string `json:"value" avro:"value" msgpack:"value"`
 }
 
 type Event struct {
-	EventID     string      `json:"event_id" avro:"event_id"`
-	EventType   string      `json:"event_type" avro:"event_type"`
-	OccurredAt  int64       `json:"occurred_at" avro:"occurred_at"`
-	Producer    string      `json:"producer" avro:"producer"`
-	Attrs       []EventAttr `json:"attrs" avro:"attrs"`
+	EventID     string      `json:"event_id" avro:"event_id" msgpack:"event_id"`
+	EventType   string      `json:"event_type" avro:"event_type" msgpack:"event_type"`
+	OccurredAt  int64       `json:"occurred_at" avro:"occurred_at" msgpack:"occurred_at"`
+	Producer    string      `json:"producer" avro:"producer" msgpack:"producer"`
+	Attrs       []EventAttr `json:"attrs" avro:"attrs" msgpack:"attrs"`
 }
 
 const baseTSMS int64 = 1704067200000
