@@ -117,6 +117,7 @@ const LANGUAGE_CATALOG = [
   { id: 'java', label: 'Java' },
   { id: 'javascript', label: 'JavaScript' },
   { id: 'kotlin', label: 'Kotlin' },
+  { id: 'mojo', label: 'Mojo' },
   { id: 'php', label: 'PHP' },
   { id: 'python', label: 'Python' },
   { id: 'rust', label: 'Rust' },

@@ -252,7 +252,28 @@ check_zig() {
   fi
 }
 
-KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig)
+check_mojo() {
+  echo "mojo"
+  if [[ -x "${HOME}/.pixi/bin/pixi" ]]; then
+    export PATH="${HOME}/.pixi/bin:${PATH}"
+  fi
+  if command -v pixi >/dev/null 2>&1; then
+    ok "pixi ($(pixi --version 2>/dev/null | head -1))"
+  else
+    miss "pixi — ./scripts/install-host-requirements.sh mojo"
+  fi
+  if [[ -d "$PROJECT_ROOT/mojo" ]]; then
+    if (cd "$PROJECT_ROOT/mojo" && pixi run mojo --version >/dev/null 2>&1); then
+      ok "mojo ($(cd "$PROJECT_ROOT/mojo" && pixi run mojo --version 2>/dev/null | head -1))"
+    else
+      miss "mojo 1.0 in mojo/ pixi env — ./scripts/install-host-requirements.sh mojo"
+    fi
+  else
+    miss "mojo/ runner tree"
+  fi
+}
+
+KNOWN=(analysis csharp python go rust javascript c java kotlin php cpp swift zig mojo)
 
 resolve_targets() {
   local args=("$@")
@@ -265,7 +286,7 @@ resolve_targets() {
       # shellcheck disable=SC2206
       TARGETS+=( $enabled )
     else
-      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig)
+      TARGETS+=(csharp python go rust javascript c java kotlin php cpp swift zig mojo)
     fi
     return
   fi
@@ -296,6 +317,7 @@ for t in "${TARGETS[@]}"; do
     cpp|c++|cxx|cplusplus) check_cpp ;;
     swift) check_swift ;;
     zig) check_zig ;;
+    mojo) check_mojo ;;
     *) echo -e "${YELLOW}Unknown target: $t${NC}"; FAIL=1 ;;
   esac
   echo

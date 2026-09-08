@@ -1,0 +1,6 @@
+.pixi/
+serializer-benchmark-mojo
+vendor/gld-cbor/
+vendor/gld-protobuf/
+vendor/mojo-toml/
+vendor/bin/

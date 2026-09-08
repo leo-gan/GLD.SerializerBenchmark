@@ -117,6 +117,7 @@ Checked against the adapters in this repository after the google-protobuf encode
 | [Kotlin: FlatBuffers vs protobuf](../theory/401/kotlin-flatbuffers-vs-protobuf.md) | Both time suite `Document` → bytes → suite `Document` | Same work at the suite boundary. |
 | [PHP: JSON vs protobuf](../theory/401/php-json-vs-protobuf.md) | Both time suite arrays → bytes → suite arrays. protobuf still builds a generated message in the middle | Same work at the suite boundary. |
 | [Zig: std.json vs serde.json](../theory/401/zig-std-json-vs-serde-json.md) | Both time suite structs → JSON bytes → suite structs | Same comptime `@typeInfo` idea, two libraries. |
+| [Mojo: EmberJson vs mojo-avro](../theory/401/mojo-emberjson-vs-avro.md) | EmberJson times `serialize` / `deserialize`. Avro times `encode` / `decode` on `AvroDatum`. | Same suite `Document`; JSON text vs Avro binary. |
 | Zig `protobuf` (Arwalk/zig-protobuf) | Prepare copies suite → generated message. Timed path is `encode` / `decode`. Domain copy-back is after decode (same shape as Rust `prost`) | Honest schema row. |
 | Zig `flatbuffers` | Prepare stores fixtures. Timed path is `Builder.writeTable` / `decodeRoot` | Honest schema row. |
 | Zig `capnproto` | Prepare fills C structs. Timed path is official C++ `MallocMessageBuilder` / `FlatArrayMessageReader` | Honest schema row (C++ runtime, same as Swift). |

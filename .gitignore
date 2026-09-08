@@ -176,3 +176,11 @@ swift/.swiftpm/
 zig/.zig-cache/
 zig/zig-out/
 zig/zig-pkg/
+
+# Mojo
+mojo/.pixi/
+mojo/serializer-benchmark-mojo
+mojo/vendor/gld-cbor/
+mojo/vendor/gld-protobuf/
+mojo/vendor/mojo-toml/
+mojo/vendor/bin/

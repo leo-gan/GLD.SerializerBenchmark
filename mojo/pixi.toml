@@ -1,0 +1,25 @@
+[workspace]
+name = "serializer-benchmark-mojo"
+version = "0.1.0"
+description = "Mojo serializer benchmark runner for Data Model v2"
+authors = ["GLD.SerializerBenchmark"]
+channels = [
+    "https://conda.modular.com/max",
+    "https://repo.prefix.dev/modular-community",
+    "https://prefix.dev/leo-gan/leo-gan",
+    "conda-forge",
+]
+platforms = ["linux-64"]
+
+[dependencies]
+mojo = "==1.0.0"
+emberjson = ">=0.3.4,<0.4"
+# Avro owns the shared `runtime`/`wire`/`json` conda module names.
+# CBOR and Protobuf are compiled from vendor/ (prefixed internals).
+mojo-avro = "*"
+
+[tasks]
+version = "mojo --version"
+build = "mojo build -I src src/main.mojo -o serializer-benchmark-mojo"
+run = "mojo run -I src src/main.mojo"
+test = "mojo run -I src -I vendor/cbor_src -I vendor/pb_src -I vendor/toml_src -I vendor/ehsanmok_src tests/test_roundtrip.mojo"

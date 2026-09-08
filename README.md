@@ -4,9 +4,9 @@
 [![Dashboard](https://img.shields.io/badge/dashboard%20%7C%20live-brightgreen?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)
 [![Serialization 101](https://img.shields.io/badge/Serialization%20101-8A2BE2?style=flat-square)](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Languages](https://img.shields.io/badge/languages-12-informational?style=flat-square)](#supported-languages)
+[![Languages](https://img.shields.io/badge/languages-13-informational?style=flat-square)](#supported-languages)
 
-Compare 200+ serialization libraries across **12 languages**.
+Compare 200+ serialization libraries across **13 languages**.
 
 | Start here | |
 |------------|--|
@@ -46,6 +46,7 @@ Compare 200+ serialization libraries across **12 languages**.
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
 - [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 20
 - [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 26
+- [Mojo](https://leo-gan.github.io/GLD.SerializerBenchmark/mojo/) — 6
 - [PHP](https://leo-gan.github.io/GLD.SerializerBenchmark/php/) — 15
 - [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 16
 - [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 16

@@ -52,6 +52,7 @@ def test_seed_and_languages():
     assert "cpp" in ids
     assert "swift" in ids
     assert "zig" in ids
+    assert "mojo" in ids
     enabled = {e["id"] for e in enabled_languages()}
     assert "go" in enabled
     assert "java" in enabled
@@ -59,8 +60,10 @@ def test_seed_and_languages():
     assert "cpp" in enabled
     assert "swift" in enabled
     assert "zig" in enabled
+    assert "mojo" in enabled
     assert language_docs_dir("csharp") == "c-sharp"
     assert language_docs_dir("java") == "java"
     assert language_docs_dir("kotlin") == "kotlin"
     assert language_docs_dir("cpp") == "cpp"
     assert language_docs_dir("swift") == "swift"
+    assert language_docs_dir("mojo") == "mojo"
