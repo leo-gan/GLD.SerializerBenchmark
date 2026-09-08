@@ -1,7 +1,7 @@
 # Should two services inside the company stop using JSON?
 
 **Question:** On one small record, how do JSON, MessagePack, and Protocol Buffers compare?
-**Date:** 2026-09-04
+**Date:** 2026-09-08
 **Sample:** `message`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -26,6 +26,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | csharp | ok | `SpanJson` | `Google.Protobuf` | `SpanJson`, `Google.Protobuf` | [csharp/results.md](csharp/results.md) |
 | swift | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [swift/results.md](swift/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
+| mojo | ok | `mojo-avro` | `mojo-protobuf` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## At a glance (100 records per write)
 
@@ -43,6 +44,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | csharp | ok | `MessagePack-CSharp`, `Google.Protobuf` | `ProtoBuf`, `SpanJson` | `MessagePack-CSharp`, `Google.Protobuf` |
 | swift | missing | — | — | — |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` |
+| mojo | ok | `mojo-avro` | — | `mojo-avro` |
 
 ## In memory, by language
 
@@ -185,6 +187,30 @@ no CSV in this language folder yet
 | std.json | 96.9 | 16849 | JSON — stdlib | slower |
 | zig-msgpack | 126 | 12432 | MessagePack — zigcc | slower |
 | capnproto | 181 | 9572 | Cap’n Proto | slower |
+
+### mojo
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| mojo-avro | 0.53 | 44 | Avro | fastest |
+| mojo-protobuf | 0.55 | 50 | Protocol Buffers | close |
+| EmberJson | 0.78 | 168 | JSON — EmberJson | slower |
+| mojo-cbor | 1.48 | 124 | CBOR | slower |
+| mojo-toml | 12.3 | 167 | TOML | slower |
+| ehsanmok-json | 13.5 | 168 | JSON — ehsanmok/json | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| mojo-avro | 36.6 | 4051 | Avro | fastest |
+| mojo-protobuf | 42.0 | 4841 | Protocol Buffers | slower |
+| EmberJson | 52.3 | 16556 | JSON — EmberJson | slower |
+| mojo-cbor | 128 | 12037 | CBOR | slower |
+| mojo-toml | 1548 | 17554 | TOML | slower |
+| ehsanmok-json | 4192 | 16556 | JSON — ehsanmok/json | slower |
 
 ## What we saw
 

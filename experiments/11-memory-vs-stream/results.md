@@ -1,7 +1,7 @@
 # Does writing to a file change the ranking?
 
 **Question:** When we write as if to a file, which libraries really write as they go, and does the ranking change?
-**Date:** 2026-09-04
+**Date:** 2026-09-08
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -20,6 +20,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
 | zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
+| mojo | ok | `mojo-avro` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## In memory, by language
 
@@ -91,6 +92,19 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | std.json | 3.69 | 448 | JSON | slower |
 | std.json.scanner | 3.71 | 448 | JSON — streaming parser | slower |
 | capnproto | 7.87 | 376 | Cap’n Proto | slower |
+
+### mojo
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| mojo-avro | 1.63 | 118 | Avro | fastest |
+| EmberJson | 2.12 | 452 | JSON — EmberJson | slower |
+| mojo-protobuf | 2.28 | 157 | Protocol Buffers | slower |
+| mojo-cbor | 4.54 | 329 | CBOR | slower |
+| ehsanmok-json | 61.4 | 452 | JSON — ehsanmok/json | slower |
+| mojo-toml | 76.9 | 489 | TOML | slower |
 
 ## What we saw
 

@@ -15,7 +15,7 @@
     "main_io": "memory",
     "require_named_fields": true
   },
-  "generated_at": "2026-09-04T18:17:44Z",
+  "generated_at": "2026-09-08T22:53:23Z",
   "languages": {
     "python": {
       "status": "ok",
@@ -3779,6 +3779,87 @@
           "tier": null,
           "cliffs_delta_vs_fastest": null,
           "cliffs_label": null,
+          "on_time_size_front": false
+        }
+      ]
+    },
+    "mojo": {
+      "status": "ok",
+      "language": "mojo",
+      "csv": "experiments/01-json-library-bakeoff/mojo/logs/mojo/2026-09-08-155318.csv",
+      "error": null,
+      "top_group": {
+        "method": "cliffs_delta_vs_fastest",
+        "similar_max": 0.147,
+        "close_max": 0.33,
+        "reference": "EmberJson",
+        "similar": [
+          "EmberJson"
+        ],
+        "close": [],
+        "time_size_front": [
+          "EmberJson"
+        ]
+      },
+      "rows": [
+        {
+          "library": "EmberJson",
+          "version": "0.3.4",
+          "role": "pure-Mojo JSON",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 475,
+          "read_median_ns": 1499,
+          "total_median_ns": 1983,
+          "write_median_us": 0.475,
+          "read_median_us": 1.499,
+          "total_median_us": 1.983,
+          "total_mean_ns": 1976,
+          "total_p95_ns": 2051,
+          "total_p99_ns": 2109,
+          "total_ci_low_ns": 1963,
+          "total_ci_high_ns": 1989,
+          "size_bytes": 452,
+          "size_gzip_bytes": 0,
+          "fidelity": 1.0,
+          "runs": 74,
+          "runs_raw": 100,
+          "outliers_removed": 25,
+          "in_comparison": true,
+          "tier": "fastest",
+          "cliffs_delta_vs_fastest": 0.0,
+          "cliffs_label": "reference",
+          "on_time_size_front": true
+        },
+        {
+          "library": "ehsanmok-json",
+          "version": "0.3.0",
+          "role": "JSON — ehsanmok/json",
+          "writes_named_fields": true,
+          "io": "memory",
+          "stream_kind": null,
+          "write_median_ns": 53162,
+          "read_median_ns": 5670,
+          "total_median_ns": 58844,
+          "write_median_us": 53.162,
+          "read_median_us": 5.6705,
+          "total_median_us": 58.844,
+          "total_mean_ns": 58776,
+          "total_p95_ns": 60414,
+          "total_p99_ns": 60725,
+          "total_ci_low_ns": 58570,
+          "total_ci_high_ns": 58979,
+          "size_bytes": 452,
+          "size_gzip_bytes": 0,
+          "fidelity": 1.0,
+          "runs": 76,
+          "runs_raw": 100,
+          "outliers_removed": 23,
+          "in_comparison": true,
+          "tier": "slower",
+          "cliffs_delta_vs_fastest": 1.0,
+          "cliffs_label": "large",
           "on_time_size_front": false
         }
       ]

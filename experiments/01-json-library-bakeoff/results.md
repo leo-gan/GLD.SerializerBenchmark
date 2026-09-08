@@ -1,7 +1,7 @@
 # Which JSON library is fastest?
 
 **Question:** We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?
-**Date:** 2026-09-04
+**Date:** 2026-09-08
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -26,6 +26,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | csharp | ok | `SpanJson` | — | `SpanJson` | [csharp/results.md](csharp/results.md) |
 | swift | ok | `IkigaJSON` | — | `IkigaJSON` | [swift/results.md](swift/results.md) |
 | zig | ok | `serde.json` | — | `serde.json` | [zig/results.md](zig/results.md) |
+| mojo | ok | `EmberJson` | — | `EmberJson` | [mojo/results.md](mojo/results.md) |
 
 ## Named JSON, in memory, by language
 
@@ -149,6 +150,13 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 | serde.json | 2.61 | 448 | fastest |
 | std.json.scanner | 3.70 | 448 | slower |
 | std.json | 3.70 | 448 | slower |
+
+### mojo
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| EmberJson | 1.98 | 452 | fastest |
+| ehsanmok-json | 58.8 | 452 | slower |
 
 ## What this page is not
 

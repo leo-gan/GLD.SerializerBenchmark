@@ -1,7 +1,7 @@
 # Is a one-language format worth the lock-in?
 
 **Question:** On one small record, is a format only one language can read faster than a format other languages can read?
-**Date:** 2026-08-29
+**Date:** 2026-09-08
 **Sample:** `message`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -20,6 +20,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
 | go | ok | `protobuf` | — | `protobuf` | [go/results.md](go/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
+| mojo | ok | `mojo-avro` | `mojo-protobuf` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## In memory, by language
 
@@ -95,6 +96,19 @@ Every listed library (one-language, and libraries other languages can read). Tim
 | serde.msgpack | 0.49 | 124 | other languages can read — MessagePack | slower |
 | std.json | 1.12 | 168 | other languages can read — JSON | slower |
 | capnproto | 2.09 | 96 | other languages can read — Cap’n Proto | slower |
+
+### mojo
+
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| mojo-avro | 0.55 | 44 | Avro | fastest |
+| mojo-protobuf | 0.57 | 50 | Protocol Buffers | close |
+| EmberJson | 0.85 | 168 | JSON — EmberJson | slower |
+| mojo-cbor | 1.53 | 124 | CBOR | slower |
+| mojo-toml | 12.9 | 167 | TOML | slower |
+| ehsanmok-json | 14.2 | 168 | JSON — ehsanmok/json | slower |
 
 ## What we saw
 
