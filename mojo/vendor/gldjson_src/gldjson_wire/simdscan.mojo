@@ -1,18 +1,21 @@
 from std.bit import count_trailing_zeros
 from std.collections import Span
 from std.memory.unsafe import pack_bits
+from std.sys import simd_width_of
 
 
-comptime SCAN_W = 16
+comptime SCAN_W = simd_width_of[DType.uint8]()
 
 
+@always_inline
 def _first_set(bits: Int) -> Int:
     """EmberJson / simdjson: ctz, not a 16-step scalar walk."""
     if bits == 0:
         return SCAN_W
-    return Int(count_trailing_zeros(UInt32(bits)))
+    return Int(count_trailing_zeros(UInt64(bits)))
 
 
+@always_inline
 def skip_ws_span[origin: ImmOrigin](data: Span[Byte, origin], mut pos: Int):
     """Advance `pos` over space / tab / LF / CR. Compact JSON returns in one load."""
     var n = len(data)
@@ -50,6 +53,7 @@ def first_escape_or_quote[origin: ImmOrigin](data: Span[Byte, origin], start: In
     return scan_plain_string(data, start, ascii)
 
 
+@always_inline
 def scan_plain_string[
     origin: ImmOrigin
 ](data: Span[Byte, origin], start: Int, mut ascii: Bool) -> Int:

@@ -64,7 +64,7 @@ def encoded_int_len(v: Int64) -> Int:
 
 
 def write_int_digits(mut dest: List[Byte], mut pos: Int, v: Int64):
-    """yyjson two-digit write. `encoded_int_len` already counted digits."""
+    """Yyjson two-digit write. `encoded_int_len` already counted digits."""
     var n = encoded_int_len(v)
     write_int_known(dest, pos, v, n)
 
@@ -108,6 +108,7 @@ def write_int_known(mut dest: List[Byte], mut pos: Int, v: Int64, n: Int):
     pos = start + n
 
 
+@always_inline
 def _is_eight_digits(w: UInt64) -> Bool:
     """EmberJson / simdjson: all 8 bytes are ASCII digits. Needs 8 readable bytes."""
     return (
@@ -116,6 +117,7 @@ def _is_eight_digits(w: UInt64) -> Bool:
     ) == UInt64(0x3333333333333333)
 
 
+@always_inline
 def _parse_eight_digits(w: UInt64) -> UInt64:
     """sonic-cpp / EmberJson SWAR 8-digit accumulate."""
     var val = w
@@ -125,14 +127,17 @@ def _parse_eight_digits(w: UInt64) -> UInt64:
     return val
 
 
+@always_inline
 def _load_u64_at[origin: ImmOrigin](data: Span[Byte, origin], pos: Int) -> UInt64:
     return data.unsafe_ptr().unsafe_offset(pos).unsafe_bitcast[UInt64]()[]
 
 
+@always_inline
 def _load_u32_at[origin: ImmOrigin](data: Span[Byte, origin], pos: Int) -> UInt32:
     return data.unsafe_ptr().unsafe_offset(pos).unsafe_bitcast[UInt32]()[]
 
 
+@always_inline
 def _is_four_digits(w: UInt32) -> Bool:
     """Same 8-digit SWAR test, 4-byte lane. Needs 4 readable bytes."""
     return (
@@ -141,6 +146,7 @@ def _is_four_digits(w: UInt32) -> Bool:
     ) == UInt32(0x33333333)
 
 
+@always_inline
 def _parse_four_digits(w: UInt32) -> UInt64:
     """4-digit SWAR. Multiplies stay in UInt64; UInt32 overflows on 9999."""
     var v = UInt64(w & UInt32(0x0F0F0F0F))
@@ -533,6 +539,7 @@ def parse_int[
     return acc
 
 
+@always_inline
 def _pow10f(k: Int) -> Float64:
     """EmberJson POWER_OF_TEN values. If-chain: InlineArray needs materialize."""
     if k == 0:
