@@ -3,7 +3,7 @@ from std.memory import unsafe_memcpy
 
 from gldjson_runtime.error import DecodeError
 from gldjson_wire.classify import MAX_ITEM_BYTES, hex_digit
-from gldjson_wire.simdscan import first_escape_or_quote, needs_escape_bytes
+from gldjson_wire.simdscan import needs_escape_bytes, scan_plain_string
 from gldjson_wire.utf8 import string_from_utf8
 
 
@@ -103,8 +103,8 @@ def parse_string[
         raise DecodeError(DecodeError.KIND_SYNTAX, pos)
     var start = pos
     pos += 1
-    # Fast path: SIMD scan to the first quote, backslash, or control byte.
-    var scan = first_escape_or_quote(data, pos)
+    var ascii = True
+    var scan = scan_plain_string(data, pos, ascii)
     var escaped = scan < len(data) and Int(data[scan]) == 92
     if scan < len(data) and Int(data[scan]) < 32:
         raise DecodeError(DecodeError.KIND_ESCAPE, scan)
@@ -112,13 +112,6 @@ def parse_string[
         var n = scan - pos
         if n > MAX_ITEM_BYTES:
             raise DecodeError(DecodeError.KIND_RANGE, start)
-        var ascii = True
-        var i = pos
-        while i < scan:
-            if Int(data[i]) >= 128:
-                ascii = False
-                break
-            i += 1
         var s: String
         if ascii:
             s = String(unsafe_from_utf8=data[pos:scan])

@@ -117,6 +117,7 @@ def write_float_list(mut w: WireWriter, items: List[Float64], options: EncodeOpt
     w.write_byte(Byte(91))
     var i = 0
     if options.mode != EncodeOptions.PRETTY:
+        w.ensure(2 + len(items) * 24)
         while i < len(items):
             if i > 0:
                 w.write_byte(Byte(44))
@@ -159,6 +160,7 @@ def write_string_list(mut w: WireWriter, items: List[String], options: EncodeOpt
     w.write_byte(Byte(91))
     var i = 0
     if options.mode != EncodeOptions.PRETTY:
+        w.ensure(2 + len(items) * 24)
         while i < len(items):
             if i > 0:
                 w.write_byte(Byte(44))

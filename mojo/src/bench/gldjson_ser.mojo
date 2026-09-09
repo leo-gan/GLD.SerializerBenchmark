@@ -368,7 +368,7 @@ struct GldJsonSer:
         return "mojo-json"
 
     def serialize_bytes(self, fx: Fixture) raises -> List[Byte]:
-        var cap = 2048
+        var cap = 1024
         if fx.n > 1:
             cap = 65536
         var w = WireWriter(capacity=cap)
@@ -447,6 +447,7 @@ struct GldJsonSer:
         )
         var r = WireReader(data)
         if fx.type_id == "message":
+            out.messages = List[Message](capacity=fx.n)
             if fx.n == 1:
                 out.messages.append(_dec_msg(r))
             else:
@@ -463,6 +464,7 @@ struct GldJsonSer:
                 r.eat_here(93)
                 _close(r)
         elif fx.type_id == "document":
+            out.documents = List[Document](capacity=fx.n)
             if fx.n == 1:
                 out.documents.append(_dec_doc(r))
             else:
@@ -479,6 +481,7 @@ struct GldJsonSer:
                 r.eat_here(93)
                 _close(r)
         elif fx.type_id == "telemetry":
+            out.telemetries = List[Telemetry](capacity=fx.n)
             if fx.n == 1:
                 out.telemetries.append(_dec_tel(r))
             else:
@@ -495,6 +498,7 @@ struct GldJsonSer:
                 r.eat_here(93)
                 _close(r)
         elif fx.type_id == "strings":
+            out.strings = List[Strings](capacity=fx.n)
             if fx.n == 1:
                 out.strings.append(_dec_str(r))
             else:
@@ -511,6 +515,7 @@ struct GldJsonSer:
                 r.eat_here(93)
                 _close(r)
         else:
+            out.events = List[Event](capacity=fx.n)
             if fx.n == 1:
                 out.events.append(_dec_ev(r))
             else:
