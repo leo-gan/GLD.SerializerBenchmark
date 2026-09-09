@@ -116,11 +116,19 @@ def read_float_here[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeE
 def write_float_list(mut w: WireWriter, items: List[Float64], options: EncodeOptions):
     w.write_byte(Byte(91))
     var i = 0
+    if options.mode != EncodeOptions.PRETTY:
+        while i < len(items):
+            if i > 0:
+                w.write_byte(Byte(44))
+            w.write_float(items[i])
+            i += 1
+        w.write_byte(Byte(93))
+        return
     while i < len(items):
         w.write_member_sep(options, i == 0)
         w.write_float(items[i])
         i += 1
-    if options.mode == EncodeOptions.PRETTY and len(items) > 0:
+    if len(items) > 0:
         w.write_byte(Byte(10))
         w.write_indent(options)
     w.write_byte(Byte(93))
@@ -129,11 +137,19 @@ def write_float_list(mut w: WireWriter, items: List[Float64], options: EncodeOpt
 def write_int_list(mut w: WireWriter, items: List[Int64], options: EncodeOptions):
     w.write_byte(Byte(91))
     var i = 0
+    if options.mode != EncodeOptions.PRETTY:
+        while i < len(items):
+            if i > 0:
+                w.write_byte(Byte(44))
+            w.write_int(items[i])
+            i += 1
+        w.write_byte(Byte(93))
+        return
     while i < len(items):
         w.write_member_sep(options, i == 0)
         w.write_int(items[i])
         i += 1
-    if options.mode == EncodeOptions.PRETTY and len(items) > 0:
+    if len(items) > 0:
         w.write_byte(Byte(10))
         w.write_indent(options)
     w.write_byte(Byte(93))
@@ -142,11 +158,19 @@ def write_int_list(mut w: WireWriter, items: List[Int64], options: EncodeOptions
 def write_string_list(mut w: WireWriter, items: List[String], options: EncodeOptions):
     w.write_byte(Byte(91))
     var i = 0
+    if options.mode != EncodeOptions.PRETTY:
+        while i < len(items):
+            if i > 0:
+                w.write_byte(Byte(44))
+            w.write_string(items[i])
+            i += 1
+        w.write_byte(Byte(93))
+        return
     while i < len(items):
         w.write_member_sep(options, i == 0)
         w.write_string(items[i])
         i += 1
-    if options.mode == EncodeOptions.PRETTY and len(items) > 0:
+    if len(items) > 0:
         w.write_byte(Byte(10))
         w.write_indent(options)
     w.write_byte(Byte(93))
@@ -155,13 +179,13 @@ def write_string_list(mut w: WireWriter, items: List[String], options: EncodeOpt
 def read_float_list[
     origin: ImmOrigin
 ](mut r: WireReader[origin]) raises DecodeError -> List[Float64]:
-    var out = List[Float64]()
+    var out = List[Float64](capacity=32)
     r.eat(91)
     if r.peek() == 93:
         r.eat(93)
         return out^
     while True:
-        out.append(read_float(r))
+        out.append(read_float_here(r))
         var s = r.peek()
         if s == 93:
             r.eat(93)
@@ -174,13 +198,13 @@ def read_float_list[
 def read_int_list[
     origin: ImmOrigin
 ](mut r: WireReader[origin]) raises DecodeError -> List[Int64]:
-    var out = List[Int64]()
+    var out = List[Int64](capacity=32)
     r.eat(91)
     if r.peek() == 93:
         r.eat(93)
         return out^
     while True:
-        out.append(r.read_number().i)
+        out.append(r.read_int_here())
         var s = r.peek()
         if s == 93:
             r.eat(93)
@@ -193,13 +217,13 @@ def read_int_list[
 def read_string_list[
     origin: ImmOrigin
 ](mut r: WireReader[origin]) raises DecodeError -> List[String]:
-    var out = List[String]()
+    var out = List[String](capacity=32)
     r.eat(91)
     if r.peek() == 93:
         r.eat(93)
         return out^
     while True:
-        out.append(r.read_string())
+        out.append(r.read_string_here())
         var s = r.peek()
         if s == 93:
             r.eat(93)

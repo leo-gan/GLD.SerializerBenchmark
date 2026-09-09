@@ -112,7 +112,18 @@ def parse_string[
         var n = scan - pos
         if n > MAX_ITEM_BYTES:
             raise DecodeError(DecodeError.KIND_RANGE, start)
-        var s = string_from_utf8(data[pos:scan], start)
+        var ascii = True
+        var i = pos
+        while i < scan:
+            if Int(data[i]) >= 128:
+                ascii = False
+                break
+            i += 1
+        var s: String
+        if ascii:
+            s = String(unsafe_from_utf8=data[pos:scan])
+        else:
+            s = string_from_utf8(data[pos:scan], start)
         pos = scan + 1
         return s^
     var out = List[Byte]()
