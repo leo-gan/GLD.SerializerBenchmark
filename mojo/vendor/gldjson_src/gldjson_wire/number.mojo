@@ -64,6 +64,12 @@ def encoded_int_len(v: Int64) -> Int:
 
 
 def write_int_digits(mut dest: List[Byte], mut pos: Int, v: Int64):
+    """yyjson two-digit write. `encoded_int_len` already counted digits."""
+    var n = encoded_int_len(v)
+    write_int_known(dest, pos, v, n)
+
+
+def write_int_known(mut dest: List[Byte], mut pos: Int, v: Int64, n: Int):
     if v == Int64(0):
         dest[pos] = Byte(48)
         pos += 1
@@ -77,27 +83,46 @@ def write_int_digits(mut dest: List[Byte], mut pos: Int, v: Int64):
             pos += 1
             i += 1
         return
+    var start = pos
     var mag = v
     if v < Int64(0):
         dest[pos] = Byte(45)
-        pos += 1
         mag = -v
-    var end = pos
+    var write = start + n
     var x = mag
-    while True:
-        end += 1
-        x = x // Int64(10)
-        if x == Int64(0):
-            break
-    var write = end
-    x = mag
-    while True:
+    while x >= Int64(100):
+        var r = Int(x % Int64(100))
+        write -= 2
+        dest[write] = Byte(48 + r // 10)
+        dest[write + 1] = Byte(48 + r % 10)
+        x = x // Int64(100)
+    write -= 1
+    dest[write] = Byte(48 + Int(x % Int64(10)))
+    if x >= Int64(10):
         write -= 1
-        dest[write] = Byte(48 + Int(x % Int64(10)))
-        x = x // Int64(10)
-        if x == Int64(0):
-            break
-    pos = end
+        dest[write] = Byte(48 + Int(x // Int64(10)))
+    pos = start + n
+
+
+def _is_eight_digits(w: UInt64) -> Bool:
+    """EmberJson / simdjson: all 8 bytes are ASCII digits. Needs 8 readable bytes."""
+    return (
+        (w & UInt64(0xF0F0F0F0F0F0F0F0))
+        | (((w + UInt64(0x0606060606060606)) & UInt64(0xF0F0F0F0F0F0F0F0)) >> UInt64(4))
+    ) == UInt64(0x3333333333333333)
+
+
+def _parse_eight_digits(w: UInt64) -> UInt64:
+    """sonic-cpp / EmberJson SWAR 8-digit accumulate."""
+    var val = w
+    val = (val & UInt64(0x0F0F0F0F0F0F0F0F)) * UInt64(2561) >> UInt64(8)
+    val = (val & UInt64(0x00FF00FF00FF00FF)) * UInt64(6553601) >> UInt64(16)
+    val = (val & UInt64(0x0000FFFF0000FFFF)) * UInt64(42949672960001) >> UInt64(32)
+    return val
+
+
+def _load_u64_at[origin: ImmOrigin](data: Span[Byte, origin], pos: Int) -> UInt64:
+    return data.unsafe_ptr().unsafe_offset(pos).unsafe_bitcast[UInt64]()[]
 
 
 def encoded_float_len(v: Float64) -> Int:
@@ -282,6 +307,16 @@ def parse_number[
                 raise DecodeError(DecodeError.KIND_NUMBER, start)
     else:
         var nd = 0
+        while pos + 8 <= len(data):
+            var w = _load_u64_at(data, pos)
+            if not _is_eight_digits(w):
+                break
+            nd += 8
+            if nd <= 18:
+                acc = acc * Int64(100000000) + Int64(_parse_eight_digits(w))
+            else:
+                overflow = True
+            pos += 8
         while pos < len(data):
             var d = Int(data[pos]) - 48
             if d < 0 or d > 9:
@@ -359,6 +394,17 @@ def parse_int[
         if pos < len(data) and is_digit(Int(data[pos])):
             raise DecodeError(DecodeError.KIND_NUMBER, start)
     else:
+        while pos + 8 <= len(data):
+            var w = _load_u64_at(data, pos)
+            if not _is_eight_digits(w):
+                break
+            nd += 8
+            if nd <= 18:
+                acc = acc * Int64(100000000) + Int64(_parse_eight_digits(w))
+            else:
+                pos = start
+                return parse_number(data, pos).i
+            pos += 8
         while pos < len(data):
             var d = Int(data[pos]) - 48
             if d < 0 or d > 9:
@@ -409,6 +455,15 @@ def _try_fast_float[
         i += 1
         nd = 1
     else:
+        while i + 8 <= end:
+            var w = _load_u64_at(data, i)
+            if not _is_eight_digits(w):
+                break
+            nd += 8
+            if nd > 18:
+                return False
+            acc = acc * Int64(100000000) + Int64(_parse_eight_digits(w))
+            i += 8
         while i < end:
             var d = Int(data[i]) - 48
             if d < 0 or d > 9:
@@ -421,6 +476,15 @@ def _try_fast_float[
     if i < end and Int(data[i]) == 46:
         i += 1
         var fs = i
+        while i + 8 <= end:
+            var w = _load_u64_at(data, i)
+            if not _is_eight_digits(w):
+                break
+            nd += 8
+            if nd > 18:
+                return False
+            acc = acc * Int64(100000000) + Int64(_parse_eight_digits(w))
+            i += 8
         while i < end:
             var d = Int(data[i]) - 48
             if d < 0 or d > 9:
