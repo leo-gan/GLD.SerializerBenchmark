@@ -3,17 +3,12 @@ from std.memory import unsafe_memcpy
 
 from gldjson_runtime.error import DecodeError
 from gldjson_wire.classify import MAX_ITEM_BYTES, hex_digit
+from gldjson_wire.simdscan import first_escape_or_quote, needs_escape_bytes
 from gldjson_wire.utf8 import string_from_utf8
 
 
 def needs_escape[origin: ImmOrigin](data: Span[Byte, origin]) -> Bool:
-    var i = 0
-    while i < len(data):
-        var c = Int(data[i])
-        if c < 32 or c == 34 or c == 92:
-            return True
-        i += 1
-    return False
+    return needs_escape_bytes(data)
 
 
 def encoded_string_len(s: String) -> Int:
@@ -108,19 +103,11 @@ def parse_string[
         raise DecodeError(DecodeError.KIND_SYNTAX, pos)
     var start = pos
     pos += 1
-    # Fast path: no backslash and no control bytes before the closing quote.
-    var scan = pos
-    var escaped = False
-    while scan < len(data):
-        var c = Int(data[scan])
-        if c == 34:
-            break
-        if c == 92:
-            escaped = True
-            break
-        if c < 32:
-            raise DecodeError(DecodeError.KIND_ESCAPE, scan)
-        scan += 1
+    # Fast path: SIMD scan to the first quote, backslash, or control byte.
+    var scan = first_escape_or_quote(data, pos)
+    var escaped = scan < len(data) and Int(data[scan]) == 92
+    if scan < len(data) and Int(data[scan]) < 32:
+        raise DecodeError(DecodeError.KIND_ESCAPE, scan)
     if not escaped and scan < len(data) and Int(data[scan]) == 34:
         var n = scan - pos
         if n > MAX_ITEM_BYTES:

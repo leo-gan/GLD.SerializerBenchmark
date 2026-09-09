@@ -6,8 +6,8 @@ from gldjson import (
     EncodeOptions,
     WireReader,
     WireWriter,
-    read_bool,
-    read_float,
+    read_bool_here,
+    read_float_here,
     read_float_list,
     read_string_list,
     write_float_list,
@@ -48,28 +48,81 @@ def _enc_msg(m: Message, mut w: WireWriter):
     w.write_byte(Byte(125))
 
 
+def _syn[origin: ImmOrigin](r: WireReader[origin]) raises DecodeError:
+    raise DecodeError(DecodeError.KIND_SYNTAX, r.pos)
+
+
+def _need64[origin: ImmOrigin](mut r: WireReader[origin], n: Int, w: UInt64) raises DecodeError:
+    if r.pos + n > len(r.data) or r.load_u64() != w:
+        _syn(r)
+
+
+def _need32[origin: ImmOrigin](mut r: WireReader[origin], n: Int, w: UInt32) raises DecodeError:
+    if r.pos + n > len(r.data) or r.load_u32_at(0) != w:
+        _syn(r)
+
+
+def _byte[origin: ImmOrigin](r: WireReader[origin], off: Int, b: Int) raises DecodeError:
+    if Int(r.data[r.pos + off]) != b:
+        _syn(r)
+
+
+def _close[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError:
+    if r.pos >= len(r.data) or Int(r.data[r.pos]) != 125:
+        _syn(r)
+    r.pos += 1
+
+
 def _dec_msg[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Message:
     var m = Message()
     r.eat(123)
-    if r.try_eat_bytes("\"f_bool\":".as_bytes()):
-        m.f_bool = read_bool(r)
-        if r.try_eat_bytes(",\"f_int32\":".as_bytes()):
-            m.f_int32 = Int32(r.read_number().i)
-            if r.try_eat_bytes(",\"f_int64\":".as_bytes()):
-                m.f_int64 = r.read_number().i
-                if r.try_eat_bytes(",\"f_float64\":".as_bytes()):
-                    m.f_float64 = read_float(r)
-                    if r.try_eat_bytes(",\"f_string\":".as_bytes()):
-                        m.f_string = r.read_string()
-                        if r.try_eat_bytes(",\"f_bool_2\":".as_bytes()):
-                            m.f_bool_2 = read_bool(r)
-                            if r.try_eat_bytes(",\"f_int32_2\":".as_bytes()):
-                                m.f_int32_2 = Int32(r.read_number().i)
-                                if r.try_eat_bytes(",\"f_string_2\":".as_bytes()):
-                                    m.f_string_2 = r.read_string()
-                                    if r.try_eat_bytes("}".as_bytes()):
-                                        return m^
-    raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
+    _need64(r, 9, UInt64(2480480018956772898))
+    _byte(r, 8, 58)
+    r.pos += 9
+    m.f_bool = read_bool_here(r)
+    _need64(r, 11, UInt64(3707709792083911212))
+    _byte(r, 8, 50)
+    _byte(r, 9, 34)
+    _byte(r, 10, 58)
+    r.pos += 11
+    m.f_int32 = Int32(r.read_int_here())
+    _need64(r, 11, UInt64(3923882574197695020))
+    _byte(r, 8, 52)
+    _byte(r, 9, 34)
+    _byte(r, 10, 58)
+    r.pos += 11
+    m.f_int64 = r.read_int_here()
+    _need64(r, 13, UInt64(7020949531036885548))
+    if r.load_u32_at(8) != UInt32(573847156):
+        _syn(r)
+    _byte(r, 12, 58)
+    r.pos += 13
+    m.f_float64 = read_float_here(r)
+    _need64(r, 12, UInt64(7598263560198038060))
+    if r.load_u32_at(8) != UInt32(975333230):
+        _syn(r)
+    r.pos += 12
+    m.f_string = r.read_string_here()
+    _need64(r, 12, UInt64(7813586346809106988))
+    if r.load_u32_at(8) != UInt32(975319647):
+        _syn(r)
+    r.pos += 12
+    m.f_bool_2 = read_bool_here(r)
+    _need64(r, 13, UInt64(3707709792083911212))
+    if r.load_u32_at(8) != UInt32(573726514):
+        _syn(r)
+    _byte(r, 12, 58)
+    r.pos += 13
+    m.f_int32_2 = Int32(r.read_int_here())
+    _need64(r, 14, UInt64(7598263560198038060))
+    if r.load_u32_at(8) != UInt32(845113198):
+        _syn(r)
+    _byte(r, 12, 34)
+    _byte(r, 13, 58)
+    r.pos += 14
+    m.f_string_2 = r.read_string_here()
+    _close(r)
+    return m^
 
 
 def _enc_doc(d: Document, mut w: WireWriter):
@@ -103,42 +156,67 @@ def _enc_doc(d: Document, mut w: WireWriter):
 def _dec_doc[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Document:
     var d = Document()
     r.eat(123)
-    if not r.try_eat_bytes("\"id\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    d.id = r.read_string()
-    if not r.try_eat_bytes(",\"status\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    d.status = Int32(r.read_number().i)
-    if not r.try_eat_bytes(",\"meta\":{\"region\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    d.meta.region = r.read_string()
-    if not r.try_eat_bytes(",\"version\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    d.meta.version = Int32(r.read_number().i)
-    if not r.try_eat_bytes("},\"items\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    r.eat(91)
-    if r.peek() != 93:
+    _need32(r, 5, UInt32(577005858))
+    _byte(r, 4, 58)
+    r.pos += 5
+    d.id = r.read_string_here()
+    _need64(r, 10, UInt64(8319683848551211564))
+    _byte(r, 8, 34)
+    _byte(r, 9, 58)
+    r.pos += 10
+    d.status = Int32(r.read_int_here())
+    _need64(r, 18, UInt64(4189017755953734188))
+    if r.load_u32_at(8) != UInt32(1701978747):
+        _syn(r)
+    _byte(r, 12, 103)
+    _byte(r, 13, 105)
+    _byte(r, 14, 111)
+    _byte(r, 15, 110)
+    _byte(r, 16, 34)
+    _byte(r, 17, 58)
+    r.pos += 18
+    d.meta.region = r.read_string_here()
+    _need64(r, 11, UInt64(8028074745930326572))
+    _byte(r, 8, 110)
+    _byte(r, 9, 34)
+    _byte(r, 10, 58)
+    r.pos += 11
+    d.meta.version = Int32(r.read_int_here())
+    _need64(r, 10, UInt64(8317415637477633149))
+    _byte(r, 8, 34)
+    _byte(r, 9, 58)
+    r.pos += 10
+    r.eat_here(91)
+    if r.pos < len(r.data) and Int(r.data[r.pos]) != 93:
         while True:
             var it = DocumentItem()
-            r.eat(123)
-            if not r.try_eat_bytes("\"sku\":".as_bytes()):
-                raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-            it.sku = r.read_string()
-            if not r.try_eat_bytes(",\"qty\":".as_bytes()):
-                raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-            it.qty = Int32(r.read_number().i)
-            if not r.try_eat_bytes(",\"price_minor\":".as_bytes()):
-                raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-            it.price_minor = r.read_number().i
-            r.eat(125)
+            _need32(r, 7, UInt32(1802707579))
+            _byte(r, 4, 117)
+            _byte(r, 5, 34)
+            _byte(r, 6, 58)
+            r.pos += 7
+            it.sku = r.read_string_here()
+            _need32(r, 7, UInt32(1953571372))
+            _byte(r, 4, 121)
+            _byte(r, 5, 34)
+            _byte(r, 6, 58)
+            r.pos += 7
+            it.qty = Int32(r.read_int_here())
+            _need64(r, 15, UInt64(6874009710793597484))
+            if r.load_u32_at(8) != UInt32(1869506925):
+                _syn(r)
+            _byte(r, 12, 114)
+            _byte(r, 13, 34)
+            _byte(r, 14, 58)
+            r.pos += 15
+            it.price_minor = r.read_int_here()
+            _close(r)
             d.items.append(it^)
-            var s = r.peek()
-            if s == 93:
+            if r.pos < len(r.data) and Int(r.data[r.pos]) == 93:
                 break
-            r.eat(44)
-    r.eat(93)
-    r.eat(125)
+            r.eat_here(44)
+    r.eat_here(93)
+    _close(r)
     return d^
 
 
@@ -158,19 +236,24 @@ def _enc_tel(t: Telemetry, mut w: WireWriter):
 def _dec_tel[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Telemetry:
     var t = Telemetry()
     r.eat(123)
-    if not r.try_eat_bytes("\"source\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    t.source = r.read_string()
-    if not r.try_eat_bytes(",\"ts\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    t.ts = r.read_number().i
-    if not r.try_eat_bytes(",\"tags\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
+    _need64(r, 9, UInt64(2478496513184985890))
+    _byte(r, 8, 58)
+    r.pos += 9
+    t.source = r.read_string_here()
+    _need32(r, 6, UInt32(1936990764))
+    _byte(r, 4, 34)
+    _byte(r, 5, 58)
+    r.pos += 6
+    t.ts = r.read_int_here()
+    _need64(r, 8, UInt64(4189037491261809196))
+    r.pos += 8
     t.tags = read_string_list(r)
-    if not r.try_eat_bytes(",\"values\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
+    _need64(r, 10, UInt64(8315181395361538604))
+    _byte(r, 8, 34)
+    _byte(r, 9, 58)
+    r.pos += 10
     t.values = read_float_list(r)
-    r.eat(125)
+    _close(r)
     return t^
 
 
@@ -184,10 +267,10 @@ def _enc_str(s: Strings, mut w: WireWriter):
 def _dec_str[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Strings:
     var s = Strings()
     r.eat(123)
-    if not r.try_eat_bytes("\"items\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
+    _need64(r, 8, UInt64(4189037517098740002))
+    r.pos += 8
     s.items = read_string_list(r)
-    r.eat(125)
+    _close(r)
     return s^
 
 
@@ -220,39 +303,56 @@ def _enc_ev(e: Event, mut w: WireWriter):
 def _dec_ev[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Event:
     var e = Event()
     r.eat(123)
-    if not r.try_eat_bytes("\"event_id\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    e.event_id = r.read_string()
-    if not r.try_eat_bytes(",\"event_type\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    e.event_type = r.read_string()
-    if not r.try_eat_bytes(",\"occurred_at\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    e.occurred_at = r.read_number().i
-    if not r.try_eat_bytes(",\"producer\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    e.producer = r.read_string()
-    if not r.try_eat_bytes(",\"attrs\":".as_bytes()):
-        raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-    r.eat(91)
-    if r.peek() != 93:
+    _need64(r, 11, UInt64(7592915514267428130))
+    _byte(r, 8, 100)
+    _byte(r, 9, 34)
+    _byte(r, 10, 58)
+    r.pos += 11
+    e.event_id = r.read_string_here()
+    _need64(r, 14, UInt64(6878243912958681644))
+    if r.load_u32_at(8) != UInt32(1701869940):
+        _syn(r)
+    _byte(r, 12, 34)
+    _byte(r, 13, 58)
+    r.pos += 14
+    e.event_type = r.read_string_here()
+    _need64(r, 15, UInt64(8246782937399239212))
+    if r.load_u32_at(8) != UInt32(1633641573):
+        _syn(r)
+    _byte(r, 12, 116)
+    _byte(r, 13, 34)
+    _byte(r, 14, 58)
+    r.pos += 15
+    e.occurred_at = r.read_int_here()
+    _need64(r, 12, UInt64(7166744811854111276))
+    if r.load_u32_at(8) != UInt32(975336037):
+        _syn(r)
+    r.pos += 12
+    e.producer = r.read_string_here()
+    _need64(r, 9, UInt64(2482453664105570860))
+    _byte(r, 8, 58)
+    r.pos += 9
+    r.eat_here(91)
+    if r.pos < len(r.data) and Int(r.data[r.pos]) != 93:
         while True:
             var a = EventAttr()
-            r.eat(123)
-            if not r.try_eat_bytes("\"key\":".as_bytes()):
-                raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-            a.key = r.read_string()
-            if not r.try_eat_bytes(",\"value\":".as_bytes()):
-                raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-            a.value = r.read_string()
-            r.eat(125)
+            _need32(r, 7, UInt32(1701519995))
+            _byte(r, 4, 121)
+            _byte(r, 5, 34)
+            _byte(r, 6, 58)
+            r.pos += 7
+            a.key = r.read_string_here()
+            _need64(r, 9, UInt64(2478516278289375788))
+            _byte(r, 8, 58)
+            r.pos += 9
+            a.value = r.read_string_here()
+            _close(r)
             e.attrs.append(a^)
-            var s = r.peek()
-            if s == 93:
+            if r.pos < len(r.data) and Int(r.data[r.pos]) == 93:
                 break
-            r.eat(44)
-    r.eat(93)
-    r.eat(125)
+            r.eat_here(44)
+    r.eat_here(93)
+    _close(r)
     return e^
 
 
@@ -269,7 +369,7 @@ struct GldJsonSer:
         var cap = 256
         if fx.n > 1:
             cap = 65536
-        var w = WireWriter(capacity=cap, exact=False)
+        var w = WireWriter(capacity=cap)
         if fx.type_id == "message":
             if fx.n == 1:
                 _enc_msg(fx.messages[0], w)
@@ -337,108 +437,93 @@ struct GldJsonSer:
             fx.type_id,
             fx.n,
             fx.hash,
-            fx.messages.copy(),
-            fx.documents.copy(),
-            fx.telemetries.copy(),
-            fx.strings.copy(),
-            fx.events.copy(),
+            List[Message](),
+            List[Document](),
+            List[Telemetry](),
+            List[Strings](),
+            List[Event](),
         )
         var r = WireReader(data)
         if fx.type_id == "message":
             if fx.n == 1:
-                out.messages = List[Message]()
                 out.messages.append(_dec_msg(r))
             else:
                 r.eat(123)
-                if not r.try_eat_bytes("\"items\":".as_bytes()):
-                    raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-                r.eat(91)
-                out.messages = List[Message]()
-                if r.peek() != 93:
+                _need64(r, 8, UInt64(4189037517098740002))
+                r.pos += 8
+                r.eat_here(91)
+                if r.pos < len(r.data) and Int(r.data[r.pos]) != 93:
                     while True:
                         out.messages.append(_dec_msg(r))
-                        var s = r.peek()
-                        if s == 93:
+                        if r.pos < len(r.data) and Int(r.data[r.pos]) == 93:
                             break
-                        r.eat(44)
-                r.eat(93)
-                r.eat(125)
+                        r.eat_here(44)
+                r.eat_here(93)
+                _close(r)
         elif fx.type_id == "document":
             if fx.n == 1:
-                out.documents = List[Document]()
                 out.documents.append(_dec_doc(r))
             else:
                 r.eat(123)
-                if not r.try_eat_bytes("\"items\":".as_bytes()):
-                    raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-                r.eat(91)
-                out.documents = List[Document]()
-                if r.peek() != 93:
+                _need64(r, 8, UInt64(4189037517098740002))
+                r.pos += 8
+                r.eat_here(91)
+                if r.pos < len(r.data) and Int(r.data[r.pos]) != 93:
                     while True:
                         out.documents.append(_dec_doc(r))
-                        var s = r.peek()
-                        if s == 93:
+                        if r.pos < len(r.data) and Int(r.data[r.pos]) == 93:
                             break
-                        r.eat(44)
-                r.eat(93)
-                r.eat(125)
+                        r.eat_here(44)
+                r.eat_here(93)
+                _close(r)
         elif fx.type_id == "telemetry":
             if fx.n == 1:
-                out.telemetries = List[Telemetry]()
                 out.telemetries.append(_dec_tel(r))
             else:
                 r.eat(123)
-                if not r.try_eat_bytes("\"items\":".as_bytes()):
-                    raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-                r.eat(91)
-                out.telemetries = List[Telemetry]()
-                if r.peek() != 93:
+                _need64(r, 8, UInt64(4189037517098740002))
+                r.pos += 8
+                r.eat_here(91)
+                if r.pos < len(r.data) and Int(r.data[r.pos]) != 93:
                     while True:
                         out.telemetries.append(_dec_tel(r))
-                        var s = r.peek()
-                        if s == 93:
+                        if r.pos < len(r.data) and Int(r.data[r.pos]) == 93:
                             break
-                        r.eat(44)
-                r.eat(93)
-                r.eat(125)
+                        r.eat_here(44)
+                r.eat_here(93)
+                _close(r)
         elif fx.type_id == "strings":
             if fx.n == 1:
-                out.strings = List[Strings]()
                 out.strings.append(_dec_str(r))
             else:
                 r.eat(123)
-                if not r.try_eat_bytes("\"items\":".as_bytes()):
-                    raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-                r.eat(91)
-                out.strings = List[Strings]()
-                if r.peek() != 93:
+                _need64(r, 8, UInt64(4189037517098740002))
+                r.pos += 8
+                r.eat_here(91)
+                if r.pos < len(r.data) and Int(r.data[r.pos]) != 93:
                     while True:
                         out.strings.append(_dec_str(r))
-                        var s = r.peek()
-                        if s == 93:
+                        if r.pos < len(r.data) and Int(r.data[r.pos]) == 93:
                             break
-                        r.eat(44)
-                r.eat(93)
-                r.eat(125)
+                        r.eat_here(44)
+                r.eat_here(93)
+                _close(r)
         else:
             if fx.n == 1:
-                out.events = List[Event]()
                 out.events.append(_dec_ev(r))
             else:
                 r.eat(123)
-                if not r.try_eat_bytes("\"items\":".as_bytes()):
-                    raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
-                r.eat(91)
-                out.events = List[Event]()
-                if r.peek() != 93:
+                _need64(r, 8, UInt64(4189037517098740002))
+                r.pos += 8
+                r.eat_here(91)
+                if r.pos < len(r.data) and Int(r.data[r.pos]) != 93:
                     while True:
                         out.events.append(_dec_ev(r))
-                        var s = r.peek()
-                        if s == 93:
+                        if r.pos < len(r.data) and Int(r.data[r.pos]) == 93:
                             break
-                        r.eat(44)
-                r.eat(93)
-                r.eat(125)
+                        r.eat_here(44)
+                r.eat_here(93)
+                _close(r)
         return out^
 
     def check(self, fx: Fixture, data: List[Byte]) raises -> Bool:

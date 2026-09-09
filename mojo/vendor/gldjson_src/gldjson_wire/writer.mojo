@@ -18,11 +18,14 @@ struct WireWriter(Movable):
     var pos: Int
     var pretty_depth: Int
 
-    def __init__(out self, *, capacity: Int = 64, exact: Bool = False):
-        if exact and capacity > 0:
+    def __init__(out self, *, capacity: Int = 64, exact: Bool = True):
+        # Always pre-size the length (yyjson / glaze). `capacity=` used to
+        # reserve only, so every write_byte resized from len 0.
+        _ = exact
+        if capacity > 0:
             self.buf = List[Byte](unsafe_uninit_length=capacity)
         else:
-            self.buf = List[Byte](capacity=capacity)
+            self.buf = List[Byte]()
         self.pos = 0
         self.pretty_depth = 0
 
@@ -57,13 +60,29 @@ struct WireWriter(Movable):
         self.write_bytes(s.as_bytes())
 
     def write_null(mut self):
-        self.write_literal("null")
+        self.ensure(4)
+        self.buf[self.pos] = Byte(110)
+        self.buf[self.pos + 1] = Byte(117)
+        self.buf[self.pos + 2] = Byte(108)
+        self.buf[self.pos + 3] = Byte(108)
+        self.pos += 4
 
     def write_bool(mut self, v: Bool):
         if v:
-            self.write_literal("true")
+            self.ensure(4)
+            self.buf[self.pos] = Byte(116)
+            self.buf[self.pos + 1] = Byte(114)
+            self.buf[self.pos + 2] = Byte(117)
+            self.buf[self.pos + 3] = Byte(101)
+            self.pos += 4
         else:
-            self.write_literal("false")
+            self.ensure(5)
+            self.buf[self.pos] = Byte(102)
+            self.buf[self.pos + 1] = Byte(97)
+            self.buf[self.pos + 2] = Byte(108)
+            self.buf[self.pos + 3] = Byte(115)
+            self.buf[self.pos + 4] = Byte(101)
+            self.pos += 5
 
     def write_int(mut self, v: Int64):
         var n = encoded_int_len(v)
@@ -71,10 +90,7 @@ struct WireWriter(Movable):
         write_int_digits(self.buf, self.pos, v)
 
     def write_float(mut self, v: Float64):
-        var n = encoded_float_len(v)
-        if n < 1:
-            n = 24
-        self.ensure(n)
+        self.ensure(32)
         try:
             write_float_digits(self.buf, self.pos, v)
         except _:

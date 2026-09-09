@@ -1,9 +1,10 @@
-from std.collections import List, Span
+from std.collections import Span
 
 from gldjson_runtime.error import DecodeError
 from gldjson_runtime.options import DecodeOptions
-from gldjson_wire.classify import MAX_COUNT, MAX_DEPTH, is_ws
-from gldjson_wire.number import NumberTok, parse_number
+from gldjson_wire.classify import MAX_COUNT, MAX_DEPTH
+from gldjson_wire.number import NumberTok, parse_int, parse_number
+from gldjson_wire.simdscan import skip_ws_span
 from gldjson_wire.string import parse_string
 
 
@@ -12,8 +13,6 @@ struct WireReader[origin: ImmOrigin](Movable):
     var pos: Int
     var depth: Int
     var options: DecodeOptions
-    var positions: List[UInt32]
-    var idx: Int
 
     def __init__(
         out self,
@@ -26,12 +25,6 @@ struct WireReader[origin: ImmOrigin](Movable):
         self.pos = 0
         self.depth = depth
         self.options = options
-        self.positions = List[UInt32]()
-        self.idx = 0
-        if len(data) >= 3:
-            if Int(data[0]) == 0xEF and Int(data[1]) == 0xBB and Int(data[2]) == 0xBF:
-                # Rejected on first skip / peek. Stored so skip_ws can raise.
-                pass
 
     def remaining(self) -> Int:
         return len(self.data) - self.pos
@@ -39,9 +32,26 @@ struct WireReader[origin: ImmOrigin](Movable):
     def position(self) -> Int:
         return self.pos
 
-    def ensure_index(mut self) raises DecodeError:
-        _ = self.positions
-        _ = self.idx
+    def load_u64(self) -> UInt64:
+        """Unaligned little-endian 8 bytes at `pos`. Caller checked length."""
+        return (
+            self.data.unsafe_ptr()
+            .unsafe_offset(self.pos)
+            .unsafe_bitcast[UInt64]()[]
+        )
+
+    def load_u32_at(self, off: Int) -> UInt32:
+        """Unaligned little-endian 4 bytes at `pos + off`. Caller checked length."""
+        return (
+            self.data.unsafe_ptr()
+            .unsafe_offset(self.pos + off)
+            .unsafe_bitcast[UInt32]()[]
+        )
+
+    def eat_here(mut self, ch: Int) raises DecodeError:
+        if self.pos >= len(self.data) or Int(self.data[self.pos]) != ch:
+            raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
+        self.pos += 1
 
     def skip_ws(mut self) raises DecodeError:
         if self.pos == 0 and len(self.data) >= 3:
@@ -51,12 +61,9 @@ struct WireReader[origin: ImmOrigin](Movable):
                 and Int(self.data[2]) == 0xBF
             ):
                 raise DecodeError(DecodeError.KIND_SYNTAX, 0)
-        while self.pos < len(self.data):
-            var c = Int(self.data[self.pos])
-            if is_ws(c):
-                self.pos += 1
-            else:
-                return
+        var p = self.pos
+        skip_ws_span(self.data, p)
+        self.pos = p
 
     def peek(mut self) raises DecodeError -> Int:
         self.skip_ws()
@@ -92,31 +99,65 @@ struct WireReader[origin: ImmOrigin](Movable):
             self.depth -= 1
 
     def read_null(mut self) raises DecodeError:
-        self._lit("null")
+        self.skip_ws()
+        self._eat4(110, 117, 108, 108)
 
     def read_true(mut self) raises DecodeError:
-        self._lit("true")
+        self.skip_ws()
+        self._eat4(116, 114, 117, 101)
 
     def read_false(mut self) raises DecodeError:
-        self._lit("false")
-
-    def _lit(mut self, word: String) raises DecodeError:
         self.skip_ws()
-        var b = word.as_bytes()
-        var i = 0
-        while i < len(b):
-            if self.pos >= len(self.data) or Int(self.data[self.pos]) != Int(b[i]):
-                raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
-            self.pos += 1
-            i += 1
+        self._eat5(102, 97, 108, 115, 101)
+
+    def read_true_here(mut self) raises DecodeError:
+        self._eat4(116, 114, 117, 101)
+
+    def read_false_here(mut self) raises DecodeError:
+        self._eat5(102, 97, 108, 115, 101)
+
+    def _eat4(mut self, a: Int, b: Int, c: Int, d: Int) raises DecodeError:
+        if self.pos + 4 > len(self.data):
+            raise DecodeError(DecodeError.KIND_EOF, self.pos)
+        var want = (
+            UInt32(a)
+            | (UInt32(b) << 8)
+            | (UInt32(c) << 16)
+            | (UInt32(d) << 24)
+        )
+        if self.load_u32_at(0) != want:
+            raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
+        self.pos += 4
+
+    def _eat5(mut self, a: Int, b: Int, c: Int, d: Int, e: Int) raises DecodeError:
+        if self.pos + 5 > len(self.data):
+            raise DecodeError(DecodeError.KIND_EOF, self.pos)
+        var want = (
+            UInt32(a)
+            | (UInt32(b) << 8)
+            | (UInt32(c) << 16)
+            | (UInt32(d) << 24)
+        )
+        if self.load_u32_at(0) != want or Int(self.data[self.pos + 4]) != e:
+            raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
+        self.pos += 5
 
     def read_string(mut self) raises DecodeError -> String:
         self.skip_ws()
         return parse_string(self.data, self.pos)
 
+    def read_string_here(mut self) raises DecodeError -> String:
+        return parse_string(self.data, self.pos)
+
     def read_number(mut self) raises DecodeError -> NumberTok:
         self.skip_ws()
         return parse_number(self.data, self.pos)
+
+    def read_number_here(mut self) raises DecodeError -> NumberTok:
+        return parse_number(self.data, self.pos)
+
+    def read_int_here(mut self) raises DecodeError -> Int64:
+        return parse_int(self.data, self.pos)
 
     def skip_value(mut self) raises DecodeError:
         var c = self.peek()
