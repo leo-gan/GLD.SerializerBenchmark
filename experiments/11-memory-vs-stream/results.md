@@ -1,7 +1,7 @@
 # Does writing to a file change the ranking?
 
 **Question:** When we write as if to a file, which libraries really write as they go, and does the ranking change?
-**Date:** 2026-09-08
+**Date:** 2026-09-09
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -99,12 +99,13 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 1.63 | 118 | Avro | fastest |
-| EmberJson | 2.12 | 452 | JSON — EmberJson | slower |
-| mojo-protobuf | 2.28 | 157 | Protocol Buffers | slower |
-| mojo-cbor | 4.54 | 329 | CBOR | slower |
-| ehsanmok-json | 61.4 | 452 | JSON — ehsanmok/json | slower |
-| mojo-toml | 76.9 | 489 | TOML | slower |
+| mojo-avro | 1.60 | 118 | Avro | fastest |
+| EmberJson | 2.05 | 452 | JSON — EmberJson | slower |
+| mojo-protobuf | 2.21 | 157 | Protocol Buffers | slower |
+| mojo-cbor | 4.42 | 329 | CBOR | slower |
+| mojo-json | 5.03 | 452 | JSON — mojo-json | slower |
+| ehsanmok-json | 60.4 | 452 | JSON — ehsanmok/json | slower |
+| mojo-toml | 73.7 | 489 | TOML | slower |
 
 ## What we saw
 

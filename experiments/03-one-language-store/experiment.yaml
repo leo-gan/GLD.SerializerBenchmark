@@ -99,6 +99,7 @@ languages:
     enabled: true
     libraries:
       - {name: EmberJson, writes_named_fields: true, role: JSON — EmberJson}
+      - {name: mojo-json, writes_named_fields: true, role: JSON — mojo-json}
       - {name: ehsanmok-json, writes_named_fields: true, role: JSON — ehsanmok/json}
       - {name: mojo-cbor, writes_named_fields: true, role: CBOR}
       - {name: mojo-protobuf, writes_named_fields: true, role: Protocol Buffers}

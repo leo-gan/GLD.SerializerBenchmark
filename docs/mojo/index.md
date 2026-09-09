@@ -54,6 +54,7 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 |------------|----------|---------|--------|-------|
 | EmberJson | JSON | emberjson 0.3.4 | bytes only | Reflection `serialize` / `deserialize` |
 | ehsanmok-json | JSON | ehsanmok/json 0.3.0 | bytes only | `dumps` / `loads` on `Value` (CPU parser) |
+| mojo-json | JSON | leo-gan/gld-json 0.2.0 | bytes only | Typed WireWriter / WireReader (vendored as `gldjson`) |
 | mojo-cbor | Binary | leo-gan/gld-cbor 0.6.0 | bytes only | `CborDatum` encode / decode |
 | mojo-protobuf | Schema | leo-gan/gld-protobuf 0.6.0 | bytes only | Generated from suite `.proto` |
 | mojo-avro | Schema | leo-gan/gld-avro 0.4.0 | bytes only | `AvroDatum` encode / decode |

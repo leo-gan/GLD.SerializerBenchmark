@@ -56,7 +56,7 @@ PYTHONPATH="$PROJECT_ROOT/analysis/src${PYTHONPATH:+:$PYTHONPATH}" \
     "${BENCHMARK_RUN_CONFIG}" --seed "$BENCHMARK_SEED" > "$RESOLVED"
 export BENCHMARK_RESOLVED_JSON="$RESOLVED"
 
-INCLUDE=(-I src -I vendor/cbor_src -I vendor/pb_src -I vendor/toml_src -I vendor/ehsanmok_src)
+INCLUDE=(-I src -I vendor/cbor_src -I vendor/pb_src -I vendor/toml_src -I vendor/ehsanmok_src -I vendor/gldjson_src)
 export LOG_DIR
 ARGS=("$REPS")
 [[ -n "$FILTER_SER" ]] && ARGS+=("$FILTER_SER")

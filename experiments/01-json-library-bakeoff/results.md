@@ -1,7 +1,7 @@
 # Which JSON library is fastest?
 
 **Question:** We have to send JSON (the usual web text). Each timed call is one shop order — an id, a status, and eight line items, about 450 bytes — not a file of many orders. Which JSON library is fastest?
-**Date:** 2026-09-08
+**Date:** 2026-09-09
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -155,8 +155,9 @@ Only libraries that write ordinary named fields, in-memory call. Times are middl
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.98 | 452 | fastest |
-| ehsanmok-json | 58.8 | 452 | slower |
+| EmberJson | 1.92 | 452 | fastest |
+| mojo-json | 4.65 | 452 | slower |
+| ehsanmok-json | 56.2 | 452 | slower |
 
 ## What this page is not
 

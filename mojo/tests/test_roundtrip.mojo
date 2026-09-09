@@ -5,6 +5,7 @@ from bench.cbor_ser import CborSer
 from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.toml_ser import TomlSer
+from bench.gldjson_ser import GldJsonSer
 
 
 def _roundtrip_all(type_id: String) raises:
@@ -16,6 +17,7 @@ def _roundtrip_all(type_id: String) raises:
     var avro = AvroSer()
     var proto = ProtobufSer()
     var toml = TomlSer()
+    var gldj = GldJsonSer()
     if not ember.check(fx, ember.serialize_bytes(fx)):
         raise Error("emberjson fidelity " + type_id)
     if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
@@ -28,6 +30,8 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("protobuf fidelity " + type_id)
     if not toml.check(fx, toml.serialize_bytes(fx)):
         raise Error("toml fidelity " + type_id)
+    if not gldj.check(fx, gldj.serialize_bytes(fx)):
+        raise Error("mojo-json fidelity " + type_id)
 
 
 def main() raises:

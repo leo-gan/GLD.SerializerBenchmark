@@ -1,7 +1,7 @@
 # Does squeezing the bytes make JSON small enough?
 
 **Question:** After gzip or zstd, does JSON stay larger than a dense binary format?
-**Date:** 2026-09-08
+**Date:** 2026-09-09
 **Sample:** `['strings', 'telemetry', 'message']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -441,34 +441,37 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 0.56 | 44 | fastest |
-| mojo-protobuf | 0.58 | 50 | slower |
-| EmberJson | 0.82 | 168 | slower |
-| mojo-cbor | 1.55 | 124 | slower |
-| mojo-toml | 13.2 | 167 | slower |
-| ehsanmok-json | 14.2 | 168 | slower |
+| mojo-avro | 0.58 | 44 | fastest |
+| mojo-protobuf | 0.60 | 50 | slower |
+| EmberJson | 0.83 | 168 | slower |
+| mojo-cbor | 1.59 | 124 | slower |
+| mojo-json | 2.08 | 168 | slower |
+| mojo-toml | 13.3 | 167 | slower |
+| ehsanmok-json | 14.7 | 168 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.74 | 411 | fastest |
-| mojo-avro | 4.43 | 338 | slower |
-| mojo-cbor | 4.55 | 345 | slower |
-| mojo-protobuf | 5.02 | 368 | slower |
-| mojo-toml | 31.0 | 441 | slower |
-| ehsanmok-json | 56.2 | 411 | slower |
+| EmberJson | 1.81 | 411 | fastest |
+| mojo-avro | 4.63 | 338 | slower |
+| mojo-cbor | 4.81 | 345 | slower |
+| mojo-protobuf | 5.21 | 368 | slower |
+| mojo-json | 7.93 | 411 | slower |
+| mojo-toml | 32.8 | 441 | slower |
+| ehsanmok-json | 59.6 | 411 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 3.08 | 1071 | fastest |
-| mojo-protobuf | 4.71 | 1073 | slower |
-| mojo-cbor | 5.30 | 1223 | slower |
-| EmberJson | 9.28 | 2419 | slower |
-| mojo-toml | 169 | 2546 | slower |
-| ehsanmok-json | 500 | 2419 | slower |
+| mojo-avro | 3.43 | 1071 | fastest |
+| mojo-protobuf | 4.98 | 1073 | slower |
+| mojo-cbor | 5.67 | 1223 | slower |
+| EmberJson | 10.3 | 2419 | slower |
+| mojo-json | 156 | 2419 | slower |
+| mojo-toml | 178 | 2546 | slower |
+| ehsanmok-json | 531 | 2419 | slower |
 
 ## What we saw
 

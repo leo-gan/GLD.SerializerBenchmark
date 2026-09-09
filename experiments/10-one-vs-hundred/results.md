@@ -1,7 +1,7 @@
 # Does one record rank the same as one hundred?
 
 **Question:** Does the library that is fastest for one record stay fastest when we write one hundred records at once?
-**Date:** 2026-09-08
+**Date:** 2026-09-09
 **Sample:** `['message', 'event']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -567,45 +567,49 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.35 | 290 | fastest |
-| mojo-avro | 1.95 | 138 | slower |
-| mojo-protobuf | 2.21 | 156 | slower |
-| mojo-cbor | 3.24 | 232 | slower |
-| ehsanmok-json | 28.3 | 290 | slower |
-| mojo-toml | 32.4 | 304 | slower |
+| EmberJson | 1.28 | 290 | fastest |
+| mojo-avro | 1.88 | 138 | slower |
+| mojo-protobuf | 2.14 | 156 | slower |
+| mojo-json | 3.08 | 290 | slower |
+| mojo-cbor | 3.11 | 232 | slower |
+| ehsanmok-json | 27.7 | 290 | slower |
+| mojo-toml | 31.1 | 304 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 117 | 27675 | fastest |
-| mojo-avro | 182 | 12367 | slower |
-| mojo-protobuf | 208 | 14449 | slower |
-| mojo-cbor | 302 | 21773 | slower |
-| mojo-toml | 4748 | 29873 | slower |
-| ehsanmok-json | 10224 | 27675 | slower |
+| EmberJson | 113 | 27675 | fastest |
+| mojo-avro | 178 | 12367 | slower |
+| mojo-protobuf | 200 | 14449 | slower |
+| mojo-json | 262 | 27675 | slower |
+| mojo-cbor | 293 | 21773 | slower |
+| mojo-toml | 4645 | 29873 | slower |
+| ehsanmok-json | 9897 | 27675 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 0.54 | 44 | fastest |
-| mojo-protobuf | 0.55 | 50 | close |
-| EmberJson | 0.79 | 168 | slower |
-| mojo-cbor | 1.47 | 124 | slower |
-| mojo-toml | 12.3 | 167 | slower |
-| ehsanmok-json | 13.5 | 168 | slower |
+| mojo-avro | 0.55 | 44 | fastest |
+| mojo-protobuf | 0.56 | 50 | similar |
+| EmberJson | 0.78 | 168 | slower |
+| mojo-cbor | 1.50 | 124 | slower |
+| mojo-json | 1.94 | 168 | slower |
+| mojo-toml | 12.4 | 167 | slower |
+| ehsanmok-json | 13.9 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 37.5 | 4051 | fastest |
-| mojo-protobuf | 42.7 | 4841 | slower |
-| EmberJson | 52.6 | 16556 | slower |
-| mojo-cbor | 128 | 12037 | slower |
-| mojo-toml | 1567 | 17554 | slower |
-| ehsanmok-json | 4270 | 16556 | slower |
+| mojo-avro | 36.0 | 4051 | fastest |
+| mojo-protobuf | 40.4 | 4841 | slower |
+| EmberJson | 49.0 | 16556 | slower |
+| mojo-cbor | 123 | 12037 | slower |
+| mojo-json | 172 | 16556 | slower |
+| mojo-toml | 1488 | 17554 | slower |
+| ehsanmok-json | 4080 | 16556 | slower |
 
 ## What we saw
 

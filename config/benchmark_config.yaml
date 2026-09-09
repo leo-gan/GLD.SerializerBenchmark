@@ -1254,6 +1254,11 @@ languages:
         package: ehsanmok/json
         rationale: "High-performance Mojo JSON (SIMD CPU parser; official loads/dumps Value API)"
         optimal_api: "dumps(Value) / loads(text) — reflection does not cover Int32 or List[struct]"
+      - name: mojo-json
+        category: json
+        package: leo-gan/gld-json
+        rationale: "Pure-Mojo JSON (RFC 8259) via typed WireWriter / WireReader"
+        optimal_api: "gldjson WireWriter / WireReader on suite types (vendored as gldjson)"
       - name: mojo-cbor
         category: binary
         package: leo-gan/gld-cbor
