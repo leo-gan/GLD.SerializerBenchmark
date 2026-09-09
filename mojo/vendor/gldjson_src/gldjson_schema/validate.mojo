@@ -46,7 +46,7 @@ def validate(doc: SchemaDoc, inst: JsonValue) -> ValidationResult:
 
 
 def _check(doc: SchemaDoc, tid: Int, inst: JsonValue, path: String) -> ValidationResult:
-    var ty = doc.types[tid]
+    var ty = doc.types[tid].copy()
     if ty.kind == ST_REF:
         return _check(doc, ty.inner, inst, path)
     if ty.kind == ST_OPTIONAL:
@@ -91,7 +91,7 @@ def _check(doc: SchemaDoc, tid: Int, inst: JsonValue, path: String) -> Validatio
             return ValidationResult(path, VK_TYPE)
         var i = 0
         while i < len(ty.props):
-            var p = ty.props[i]
+            var p = ty.props[i].copy()
             var present = True
             var child = JsonValue()
             try:

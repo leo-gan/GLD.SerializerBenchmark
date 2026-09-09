@@ -25,11 +25,11 @@ trait JsonDatum(Copyable, Movable, Defaultable, Deinitable):
 def encode[
     T: JsonDatum
 ](value: T, options: EncodeOptions = EncodeOptions.compact) -> List[Byte]:
-    # Over-allocate and let the cursor writer grow. Skipping encoded_len
-    # on the hot path is the main encode win versus a two-pass walk.
-    var cap = value.encoded_len(options)
-    if cap < 64:
-        cap = 64
+    # Skip encoded_len on the hot path (glaze / yyjson: one write into a
+    # reused or over-sized buffer). 256 bytes covers every n=1 suite type.
+    var cap = 256
+    if options.mode == EncodeOptions.PRETTY:
+        cap = 512
     var w = WireWriter(capacity=cap, exact=True)
     value.encode_to(w, options)
     return w^.finish()
@@ -60,9 +60,10 @@ def decode[
     var msg = T()
     var r = WireReader[origin](buf, options)
     msg.decode_from(r)
-    r.skip_ws()
-    if r.remaining() > 0:
-        raise DecodeError(DecodeError.KIND_TRAILING, r.position())
+    if r.pos != len(r.data):
+        r.skip_ws()
+        if r.remaining() > 0:
+            raise DecodeError(DecodeError.KIND_TRAILING, r.position())
     return msg^
 
 
@@ -77,16 +78,36 @@ def from_value[T: JsonDatum](v: JsonValue) raises DecodeError -> T:
 def read_bool[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Bool:
     var c = r.peek()
     if c == 116:
-        r.read_true()
+        r.read_true_here()
         return True
     if c == 102:
-        r.read_false()
+        r.read_false_here()
         return False
     raise DecodeError(DecodeError.KIND_TYPE, r.position())
 
 
+def read_bool_here[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Bool:
+    if r.pos >= len(r.data):
+        raise DecodeError(DecodeError.KIND_EOF, r.pos)
+    var c = Int(r.data[r.pos])
+    if c == 116:
+        r.read_true_here()
+        return True
+    if c == 102:
+        r.read_false_here()
+        return False
+    raise DecodeError(DecodeError.KIND_TYPE, r.pos)
+
+
 def read_float[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Float64:
     var tok = r.read_number()
+    if tok.is_int:
+        return Float64(tok.i)
+    return tok.f
+
+
+def read_float_here[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Float64:
+    var tok = r.read_number_here()
     if tok.is_int:
         return Float64(tok.i)
     return tok.f

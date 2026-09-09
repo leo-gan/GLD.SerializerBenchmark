@@ -85,7 +85,7 @@ def create_merge_patch(source: JsonValue, target: JsonValue) -> JsonValue:
                     if child.is_object() and child.count() == 0:
                         pass
                     else:
-                        pairs.append((p[0], child))
+                        pairs.append((p[0], child^))
                 elif not json_equal(p[1], tv):
                     pairs.append((p[0], pointer_set(tv, "", tv)))
             except _:
