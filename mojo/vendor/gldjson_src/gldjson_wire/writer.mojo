@@ -3,7 +3,12 @@ from std.memory import unsafe_memcpy
 
 from gldjson_runtime.error import DecodeError
 from gldjson_runtime.options import EncodeOptions
-from gldjson_wire.number import encoded_float_len, encoded_int_len, write_float_digits, write_int_digits
+from gldjson_wire.number import (
+    encoded_float_len,
+    encoded_int_len,
+    write_float_digits,
+    write_int_known,
+)
 from gldjson_wire.string import encoded_string_len, needs_escape, write_string_escaped
 
 
@@ -97,7 +102,12 @@ struct WireWriter(Movable):
     def write_int(mut self, v: Int64):
         var n = encoded_int_len(v)
         self.ensure(n)
-        write_int_digits(self.buf, self.pos, v)
+        write_int_known(self.buf, self.pos, v, n)
+
+    def finish_keep(deinit self, mut n: Int) -> List[Byte]:
+        """Return the buffer without shrinking. glaze reused-dest path."""
+        n = self.pos
+        return self.buf^
 
     def write_float(mut self, v: Float64):
         self.ensure(32)

@@ -186,6 +186,14 @@ def read_float_list[
         return out^
     while True:
         out.append(read_float_here(r))
+        if r.pos < len(r.data):
+            var c = Int(r.data[r.pos])
+            if c == 93:
+                r.pos += 1
+                return out^
+            if c == 44:
+                r.pos += 1
+                continue
         var s = r.peek()
         if s == 93:
             r.eat(93)
@@ -205,6 +213,14 @@ def read_int_list[
         return out^
     while True:
         out.append(r.read_int_here())
+        if r.pos < len(r.data):
+            var c = Int(r.data[r.pos])
+            if c == 93:
+                r.pos += 1
+                return out^
+            if c == 44:
+                r.pos += 1
+                continue
         var s = r.peek()
         if s == 93:
             r.eat(93)
@@ -224,6 +240,14 @@ def read_string_list[
         return out^
     while True:
         out.append(r.read_string_here())
+        if r.pos < len(r.data):
+            var c = Int(r.data[r.pos])
+            if c == 93:
+                r.pos += 1
+                return out^
+            if c == 44:
+                r.pos += 1
+                continue
         var s = r.peek()
         if s == 93:
             r.eat(93)
