@@ -155,6 +155,7 @@ def _enc_doc(d: Document, mut w: WireWriter):
 
 def _dec_doc[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Document:
     var d = Document()
+    d.items = List[DocumentItem](capacity=8)
     r.eat(123)
     _need32(r, 5, UInt32(577005858))
     _byte(r, 4, 58)
@@ -302,6 +303,7 @@ def _enc_ev(e: Event, mut w: WireWriter):
 
 def _dec_ev[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Event:
     var e = Event()
+    e.attrs = List[EventAttr](capacity=4)
     r.eat(123)
     _need64(r, 11, UInt64(7592915514267428130))
     _byte(r, 8, 100)
@@ -366,7 +368,7 @@ struct GldJsonSer:
         return "mojo-json"
 
     def serialize_bytes(self, fx: Fixture) raises -> List[Byte]:
-        var cap = 256
+        var cap = 2048
         if fx.n > 1:
             cap = 65536
         var w = WireWriter(capacity=cap)

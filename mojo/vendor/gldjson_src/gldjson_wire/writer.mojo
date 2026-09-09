@@ -4,7 +4,7 @@ from std.memory import unsafe_memcpy
 from gldjson_runtime.error import DecodeError
 from gldjson_runtime.options import EncodeOptions
 from gldjson_wire.number import encoded_float_len, encoded_int_len, write_float_digits, write_int_digits
-from gldjson_wire.string import encoded_string_len, write_string_escaped
+from gldjson_wire.string import encoded_string_len, needs_escape, write_string_escaped
 
 
 struct WireWriter(Movable):
@@ -56,6 +56,16 @@ struct WireWriter(Movable):
         )
         self.pos += n
 
+    def write_u64(mut self, w: UInt64):
+        self.ensure(8)
+        self.buf.unsafe_ptr().unsafe_offset(self.pos).unsafe_bitcast[UInt64]()[] = w
+        self.pos += 8
+
+    def write_u32(mut self, w: UInt32):
+        self.ensure(4)
+        self.buf.unsafe_ptr().unsafe_offset(self.pos).unsafe_bitcast[UInt32]()[] = w
+        self.pos += 4
+
     def write_literal(mut self, s: String):
         self.write_bytes(s.as_bytes())
 
@@ -97,8 +107,21 @@ struct WireWriter(Movable):
             self.write_literal("0")
 
     def write_string(mut self, s: String):
-        var n = encoded_string_len(s)
-        self.ensure(n)
+        var b = s.as_bytes()
+        var n = len(b)
+        if not needs_escape(b):
+            self.ensure(n + 2)
+            self.buf[self.pos] = Byte(34)
+            if n > 0:
+                unsafe_memcpy(
+                    dest=self.buf.unsafe_ptr().unsafe_offset(self.pos + 1),
+                    src=b.unsafe_ptr(),
+                    count=n,
+                )
+            self.buf[self.pos + n + 1] = Byte(34)
+            self.pos += n + 2
+            return
+        self.ensure(encoded_string_len(s))
         write_string_escaped(self.buf, self.pos, s)
 
     def write_indent(mut self, options: EncodeOptions):
