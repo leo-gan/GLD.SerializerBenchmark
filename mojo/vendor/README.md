@@ -1,10 +1,10 @@
 # Vendored Mojo libraries
 
-`cbor_src/` and `pb_src/` are copies of `leo-gan/gld-cbor` and
-`leo-gan/gld-protobuf` with colliding top-level packages renamed
-(`runtime` → `cbor_runtime` / `pb_runtime`, `wire` → `cbor_wire` /
-`pb_wire`, and so on). mojo-avro’s conda package owns `runtime`, `wire`,
-and `json` in one pixi env.
+`gldjson_src/`, `cbor_src/` and `pb_src/` are copies of `leo-gan/gld-json`,
+`leo-gan/gld-cbor` and `leo-gan/gld-protobuf` with colliding top-level packages
+renamed (`json` → `gldjson`, `runtime` → `gldjson_runtime` / `cbor_runtime` /
+`pb_runtime`, `wire` → `gldjson_wire` / `cbor_wire` / `pb_wire`). mojo-avro’s
+conda package owns `runtime`, `wire`, and `json` in one pixi env.
 
 `toml_src/` is `DataBooth/mojo-toml` unchanged (`toml` does not collide).
 

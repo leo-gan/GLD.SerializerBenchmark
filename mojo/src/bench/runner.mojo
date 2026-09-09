@@ -11,6 +11,7 @@ from bench.cbor_ser import CborSer
 from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.toml_ser import TomlSer
+from bench.gldjson_ser import GldJsonSer
 
 
 def _contains(hay: String, needle: String) -> Bool:
@@ -184,6 +185,7 @@ def run() raises:
     var avro = AvroSer()
     var proto = ProtobufSer()
     var toml = TomlSer()
+    var gldj = GldJsonSer()
     var names = List[String]()
     names.append(ember.name())
     names.append(ehsan.name())
@@ -191,6 +193,7 @@ def run() raises:
     names.append(avro.name())
     names.append(proto.name())
     names.append(toml.name())
+    names.append(gldj.name())
     if ser_filter.byte_length() > 0:
         var filtered = List[String]()
         var ni = 0
@@ -241,6 +244,8 @@ def run() raises:
                     _ = avro.serialize_bytes(fx)
                 elif nm == proto.name():
                     _ = proto.serialize_bytes(fx)
+                elif nm == gldj.name():
+                    _ = gldj.serialize_bytes(fx)
                 else:
                     _ = toml.serialize_bytes(fx)
                 ready.append(nm)
@@ -324,6 +329,18 @@ def run() raises:
                             var buf = proto.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = proto.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == gldj.name():
+                            ver = gldj.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = gldj.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = gldj.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1

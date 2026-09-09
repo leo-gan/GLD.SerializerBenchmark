@@ -1,7 +1,7 @@
 # Can we send YAML on the live path?
 
 **Question:** On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
-**Date:** 2026-09-08
+**Date:** 2026-09-09
 **Sample:** `['document', 'strings']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -289,17 +289,19 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 2.07 | 452 | fastest |
-| ehsanmok-json | 59.4 | 452 | slower |
-| mojo-toml | 75.2 | 489 | slower |
+| EmberJson | 2.23 | 452 | fastest |
+| mojo-json | 5.26 | 452 | slower |
+| ehsanmok-json | 62.4 | 452 | slower |
+| mojo-toml | 76.4 | 489 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.84 | 411 | fastest |
-| mojo-toml | 32.0 | 441 | slower |
-| ehsanmok-json | 57.7 | 411 | slower |
+| EmberJson | 1.79 | 411 | fastest |
+| mojo-json | 7.93 | 411 | slower |
+| mojo-toml | 32.8 | 441 | slower |
+| ehsanmok-json | 59.6 | 411 | slower |
 
 ## What we saw
 

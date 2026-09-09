@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Refresh vendored Mojo libraries and rewrite colliding package names.
-# Run from repo root or mojo/. Commits should keep vendor/{cbor_src,pb_src,toml_src}.
+# Run from repo root or mojo/. Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src}.
 set -euo pipefail
 MOJO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$MOJO_DIR"
@@ -8,6 +8,7 @@ mkdir -p vendor
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
+git clone --depth 1 https://github.com/leo-gan/gld-json.git "$tmp/gld-json"
 git clone --depth 1 https://github.com/leo-gan/gld-cbor.git "$tmp/gld-cbor"
 git clone --depth 1 https://github.com/leo-gan/gld-protobuf.git "$tmp/gld-protobuf"
 git clone --depth 1 https://github.com/DataBooth/mojo-toml.git "$tmp/mojo-toml"
@@ -45,6 +46,17 @@ def rewrite_tree(src: Path, dest: Path, mapping: dict[str, str]) -> None:
         if text != orig:
             path.write_text(text, encoding="utf-8")
 
+rewrite_tree(
+    src_root / "gld-json" / "src",
+    mojo / "vendor" / "gldjson_src",
+    {
+        "runtime": "gldjson_runtime",
+        "wire": "gldjson_wire",
+        "schema": "gldjson_schema",
+        "codegen": "gldjson_codegen",
+        "json": "gldjson",
+    },
+)
 rewrite_tree(
     src_root / "gld-cbor" / "src",
     mojo / "vendor" / "cbor_src",
