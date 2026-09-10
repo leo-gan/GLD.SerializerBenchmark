@@ -4,13 +4,14 @@
   "type": "project",
   "require": {
     "php": ">=8.2",
+    "ext-gmp": "*",
     "ext-json": "*",
     "ext-zlib": "*",
     "flix-tech/avro-php": "^5.1",
     "google/protobuf": "^4.29",
     "jms/serializer": "^3.32",
     "rybakit/msgpack": "^0.9",
-    "spomky-labs/cbor-php": "^3.0",
+    "spomky-labs/cbor-php": "^3.3.5",
     "symfony/property-access": "^7.2",
     "symfony/serializer": "^7.2",
     "symfony/yaml": "^7.2"
