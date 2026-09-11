@@ -1,0 +1,88 @@
+{
+  "format": "hocon",
+  "standard": "HOCON",
+  "version": "1",
+  "standard_url": "https://github.com/lightbend/config/blob/main/HOCON.md",
+  "provenance": "original-work",
+  "notes": "Original cases from the Lightbend HOCON spec.",
+  "cases": [
+    {
+      "id": "hocon-empty-object",
+      "title": "Empty object",
+      "section": "API / syntax",
+      "section_title": "object",
+      "section_url": "https://github.com/lightbend/config/blob/main/HOCON.md",
+      "paragraph": "An object is braces around fields. {} is valid.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "{}",
+      "decoded": {}
+    },
+    {
+      "id": "hocon-unquoted",
+      "title": "Unquoted key and value",
+      "section": "Unquoted strings",
+      "section_title": "unquoted",
+      "section_url": "https://github.com/lightbend/config/blob/main/HOCON.md",
+      "paragraph": "Keys and values may be unquoted if they are simple tokens.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "harbor = kelp"
+    },
+    {
+      "id": "hocon-equals",
+      "title": "Equals is a separator",
+      "section": "Separators",
+      "section_title": "= or :",
+      "section_url": "https://github.com/lightbend/config/blob/main/HOCON.md",
+      "paragraph": "A field may use = or : between key and value.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "harbor: kelp"
+    },
+    {
+      "id": "hocon-comment",
+      "title": "// comment is whitespace",
+      "section": "Comments",
+      "section_title": "//",
+      "section_url": "https://github.com/lightbend/config/blob/main/HOCON.md",
+      "paragraph": "// starts a comment to end of line.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "harbor = kelp // berth"
+    },
+    {
+      "id": "hocon-nested",
+      "title": "Nested object",
+      "section": "API / syntax",
+      "section_title": "object",
+      "section_url": "https://github.com/lightbend/config/blob/main/HOCON.md",
+      "paragraph": "Values may be nested objects.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "harbor { berth = 7 }"
+    },
+    {
+      "id": "hocon-unclosed",
+      "title": "Unclosed object",
+      "section": "API / syntax",
+      "section_title": "object",
+      "section_url": "https://github.com/lightbend/config/blob/main/HOCON.md",
+      "paragraph": "An object must close with }.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "harbor { berth = 7"
+    },
+    {
+      "id": "hocon-bare-eq",
+      "title": "Equals without a key",
+      "section": "Separators",
+      "section_title": "= or :",
+      "section_url": "https://github.com/lightbend/config/blob/main/HOCON.md",
+      "paragraph": "A separator must follow a key.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "= kelp"
+    }
+  ]
+}

@@ -4,8 +4,8 @@ Serializer quality has two public questions:
 
 | Question | Command |
 |----------|---------|
-| How fast / how big? | [`./scripts/run-all-benchmarks.sh`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/scripts/run-all-benchmarks.sh) |
-| Does it match the cited spec section? | [`./scripts/run-compliance.sh`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/scripts/run-compliance.sh) |
+| How fast / how big? | `./scripts/run-all-benchmarks.sh` |
+| Does it match the cited spec section? | `./scripts/run-compliance.sh` |
 
 This tab explains the catalog. **Live pass/fail numbers live only on the
 [Dashboard → Compliance](../dashboard/#compliance)** view — the same rule
@@ -19,6 +19,11 @@ as timings (Dashboard, not these pages).
 | TOML 0.5 / 1.0 / 1.1 | [TOML](toml.md) |
 | CBOR RFC 7049 / 8949 | [CBOR](cbor.md) |
 | MessagePack 2008 / 2013 / 2017 | [MessagePack](msgpack.md) |
+| Protocol Buffers / Avro / BSON / FlatBuffers | [Protocol Buffers](protobuf.md), [Avro](avro.md), [BSON](bson.md), [FlatBuffers](flatbuffers.md) |
+| Amazon Ion 1.0 / 1.1 | [Amazon Ion](ion.md) |
+| UBJSON Draft 8 / 9 / 12 | [UBJSON](ubjson.md) |
+| Smile 1.0 / shared / 1.0.4 | [Smile](smile.md) |
+| Thrift, Cap’n Proto, Bond, Bebop, HOCON, plist, ZON | catalogs under `compliance/data/` |
 | Plug in another language | [Language adapters](adapters.md) |
 | Why we did not vendor suite X | [Legal provenance](legal.md) |
 
@@ -34,9 +39,25 @@ binary cousins** that this suite already benches.
 | TOML | 0.5.0, 1.0.0, 1.1.0 | `tomllib` (1.0) |
 | CBOR | RFC 7049, RFC 8949 | `cbor2` |
 | MessagePack | pre-2013 raw, 2013 str/bin/ext, 2017 timestamp | `msgpack`, `msgspec-msgpack` |
+| Protocol Buffers | proto2, proto3, proto3 JSON | `protobuf` |
+| Avro | 1.8, 1.11, 1.12 | `fastavro` |
+| BSON | 1.0, 1.1, 1.1 decimal128 | `bson` / pymongo |
+| FlatBuffers | FlexBuffers, tables, file-id | `flexbuffers` |
+| Amazon Ion | 1.0 text, 1.0 binary, 1.1 | `amazon-ion` |
+| UBJSON | Draft 8, Draft 9, Draft 12 | `py-ubjson` |
+| Smile | 1.0, 1.0 shared names, 1.0.4 | `newsmile` |
+| Thrift | binary, compact | (catalog; Python adapter not wired) |
+| Cap’n Proto | encoding, packed | (catalog; needs generated code) |
+| Bond | compact, fast | (catalog) |
+| Bebop | 1 | JS `bebop` (limited) |
+| HOCON | 1 | (catalog) |
+| Apple plist | XML, binary | `plistlib` |
+| ZON | 1 | (catalog) |
 
-Protobuf, Avro, BSON, XML, and UBJSON are documented as *researched,
-not shipped* on the [legal](legal.md) page (license or scope).
+XML is out of scope (user request). Language-native and private
+binaries (pickle, gob, Kryo, …) are on the Dashboard under
+**Standard → No public spec**: one column, no pass/fail cells, so they
+stay selectable as a group.
 
 ## How a case is written
 

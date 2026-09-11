@@ -1,0 +1,104 @@
+{
+  "format": "smile",
+  "standard": "Smile 1.0 shared names",
+  "version": "1.0-shared",
+  "standard_url": "https://github.com/FasterXML/smile-format-specification/blob/master/smile-specification.md",
+  "provenance": "original-work",
+  "notes": "Header bit 0 (shared property names) and back-references.",
+  "cases": [
+    {
+      "id": "smile-shared-header-object",
+      "title": "Header bit 0 enables shared property names",
+      "section": "Header",
+      "section_title": "flags byte",
+      "section_url": "https://github.com/FasterXML/smile-format-specification/blob/master/smile-specification.md#high-level-format",
+      "paragraph": "Flags bit 0 (mask 0x01) means the encoder recorded property names for back-references.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "3a290a01fa806ec2fb",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 1
+      }
+    },
+    {
+      "id": "smile-shared-two-objects",
+      "title": "Second object may back-reference key n",
+      "section": "Shared names",
+      "section_title": "short shared key",
+      "section_url": "https://github.com/FasterXML/smile-format-specification/blob/master/smile-specification.md#tokens-key-mode",
+      "paragraph": "After a property name of length ≤ 64, a later key may be a 1-byte back-reference 0x40+index.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "3a290a01f8fa806ec2fbfa40c4fbf9",
+      "input_encoding": "hex",
+      "decoded": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "smile-shared-repeat-inline",
+      "title": "Repeating the key bytes is still valid",
+      "section": "Shared names",
+      "section_title": "short ASCII names",
+      "section_url": "https://github.com/FasterXML/smile-format-specification/blob/master/smile-specification.md#tokens-key-mode",
+      "paragraph": "Shared-name mode does not forbid writing the key again in full.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "3a290a01f8fa806ec2fbfa806ec4fbf9",
+      "input_encoding": "hex",
+      "decoded": [
+        {
+          "n": 1
+        },
+        {
+          "n": 2
+        }
+      ]
+    },
+    {
+      "id": "smile-shared-ref-without-table",
+      "title": "Shared value ref 0x01 with empty table",
+      "section": "Short Shared Value",
+      "section_title": "0x01–0x1F",
+      "section_url": "https://github.com/FasterXML/smile-format-specification/blob/master/smile-specification.md#tokens-value-mode",
+      "paragraph": "Token 0x01 is a back-reference. With no prior string it is not well-formed.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "3a290a0001",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "smile-object-n",
+      "title": "Object n=7",
+      "section": "Key tokens",
+      "section_title": "short ASCII names",
+      "section_url": "https://github.com/FasterXML/smile-format-specification/blob/master/smile-specification.md#tokens-key-mode",
+      "paragraph": "A one-byte field name uses key token 0x80 plus the ASCII byte, then a value token.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "3a290a00fa806ecefb",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 7
+      }
+    },
+    {
+      "id": "smile-no-header",
+      "title": "Missing smiley header",
+      "section": "Header",
+      "section_title": "4-byte header",
+      "section_url": "https://github.com/FasterXML/smile-format-specification/blob/master/smile-specification.md#high-level-format",
+      "paragraph": "A Smile section starts with 0x3A 0x29 0x0A and a flags byte.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "21",
+      "input_encoding": "hex"
+    }
+  ]
+}

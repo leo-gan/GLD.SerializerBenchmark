@@ -72,6 +72,7 @@ def report_to_json(report: Report) -> dict:
                 "language": language,
                 "format": r.suite.format,
                 "standard": r.suite.standard,
+                "standard_url": r.suite.standard_url,
                 "version": r.suite.version,
                 "version_key": f"{r.suite.format}.{r.suite.version}",
                 "serializer": r.adapter,
@@ -110,9 +111,9 @@ def report_to_json(report: Report) -> dict:
         "scope": {
             "formats": sorted({r.suite.format for r in report.results}),
             "note": (
-                "Full official parse suites (MIT/BSD) plus original extras: "
-                "JSONTestSuite, yaml-test-suite, toml-test, msgpack-test-suite, "
-                "cbor-wg vectors. Not yet: Protobuf, Avro, BSON, XML."
+                "Official parse suites (MIT/BSD/Apache) plus original extras. "
+                "XML is out of scope. Language-native / private binaries have "
+                "no public spec column."
             ),
         },
         "passed": report.passed,
@@ -130,6 +131,7 @@ def report_to_json(report: Report) -> dict:
                 "serializer_version": r.serializer_version,
                 "format": r.suite.format,
                 "standard": r.suite.standard,
+                "standard_url": r.suite.standard_url,
                 "version": r.suite.version,
                 "version_key": f"{r.suite.format}.{r.suite.version}",
                 "requirement": r.case.requirement,

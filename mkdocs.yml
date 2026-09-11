@@ -219,6 +219,9 @@ nav:
       - Avro: compliance/avro.md
       - BSON: compliance/bson.md
       - FlatBuffers: compliance/flatbuffers.md
+      - Amazon Ion: compliance/ion.md
+      - UBJSON: compliance/ubjson.md
+      - Smile: compliance/smile.md
       - Reading failures: compliance/reading-results.md
       - Language adapters: compliance/adapters.md
       - Legal provenance: compliance/legal.md

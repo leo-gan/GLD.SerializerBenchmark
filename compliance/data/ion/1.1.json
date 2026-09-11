@@ -1,0 +1,68 @@
+{
+  "format": "ion",
+  "standard": "Amazon Ion 1.1",
+  "version": "1.1",
+  "standard_url": "https://amazon-ion.github.io/ion-docs/books/ion-1-1/",
+  "provenance": "original-work",
+  "notes": "Original 1.1 IVM / compatibility cases. amazon.ion 0.x is a 1.0 reader.",
+  "cases": [
+    {
+      "id": "ion11-text-ivm",
+      "title": "Ion 1.1 text version marker",
+      "section": "Version markers",
+      "section_title": "Ion 1.1 IVM",
+      "section_url": "https://amazon-ion.github.io/ion-docs/books/ion-1-1/",
+      "paragraph": "The text IVM $ion_1_1 selects Ion 1.1. A 1.1 processor must accept it.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "$ion_1_1 7"
+    },
+    {
+      "id": "ion11-binary-ivm",
+      "title": "Ion 1.1 binary version marker",
+      "section": "Version markers",
+      "section_title": "Ion 1.1 BVM",
+      "section_url": "https://amazon-ion.github.io/ion-docs/books/ion-1-1/",
+      "paragraph": "The binary version marker for Ion 1.1 is 0xE0 0x01 0x01 0xEA.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "e00101ea0f",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "ion11-reads-10-text",
+      "title": "Ion 1.1 processor reads Ion 1.0 text",
+      "section": "Compatibility",
+      "section_title": "1.0 documents",
+      "section_url": "https://amazon-ion.github.io/ion-docs/books/ion-1-1/",
+      "paragraph": "An Ion 1.1 processor must still accept an Ion 1.0 text document.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "$ion_1_0 {harbor: kelp}"
+    },
+    {
+      "id": "ion11-reads-10-binary",
+      "title": "Ion 1.1 processor reads Ion 1.0 binary",
+      "section": "Compatibility",
+      "section_title": "1.0 documents",
+      "section_url": "https://amazon-ion.github.io/ion-docs/books/ion-1-1/",
+      "paragraph": "An Ion 1.1 processor must still accept the Ion 1.0 BVM 0xE0 0x01 0x00 0xEA.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "e00100ea11",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "ion11-unsupported-major",
+      "title": "Unknown major version is not Ion 1.1",
+      "section": "Version markers",
+      "section_title": "Ion 1.1 IVM",
+      "section_url": "https://amazon-ion.github.io/ion-docs/books/ion-1-1/",
+      "paragraph": "A BVM whose major version is not 1 is not a supported Ion stream.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "e00200ea",
+      "input_encoding": "hex"
+    }
+  ]
+}

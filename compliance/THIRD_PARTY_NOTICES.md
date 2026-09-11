@@ -65,3 +65,6 @@ Full license texts are copied under `compliance/vendor/`.
 | toml-lang/toml-test | MIT (TOML authors, 2018) | `toml-1.0.0-*`, `toml-1.1.0-*` |
 | kawanet/msgpack-test-suite | MIT (Yusuke Kawasaki, 2017–2018) | `mps-*` |
 | cbor-wg/cbor-test-vectors | BSD-2-Clause (IETF CBOR WG, 2017) | `cbor-wg-*` |
+| amazon-ion/ion-tests | Apache-2.0 (Amazon.com, 2007–2016) | `ion-good-*`, `ion-bad-*` |
+| apache/avro `test_io` encodings | Apache-2.0 (ASF) | `avro-io-*` |
+| google/flatbuffers `gold_flexbuffer_example.bin` | Apache-2.0 (Google) | `fb-flex-gold` |

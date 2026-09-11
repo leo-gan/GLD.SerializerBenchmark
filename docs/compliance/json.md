@@ -44,8 +44,10 @@ Typical catalog pattern (report-only):
   number token” MUST NOT cases. `orjson` / `msgspec` reject them.
 - Almost nobody implements UTF-16 for 7159 §8.1.
 
-## Official suite we did not vendor
+## Official suite
 
 [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite) is MIT and
-would have been legal to copy. We wrote original cases so every FAIL
-can name an RFC section. Details: [legal provenance](legal.md).
+is vendored (`jts-*` ids). Each file name is mapped onto an RFC 8259
+section URL so a FAIL still names a paragraph. Original extras
+(`harbor` / `kelp`) sit beside those files. Details:
+[legal provenance](legal.md).

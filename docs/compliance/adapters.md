@@ -25,8 +25,13 @@ Package: `python/src/compliance/`.
 
 ```text
 compliance.catalog     load the catalog
-compliance.adapters    json / orjson / msgspec / rapidjson / yaml /
-                       tomllib / cbor2 / msgpack
+compliance.adapters    json / orjson / msgspec / rapidjson / pydantic /
+                       mashumaro / serpyco-rs / yaml / tomllib / cbor2 /
+                       msgpack / protobuf / fastavro / bson / flexbuffers /
+                       amazon-ion / py-ubjson / newsmile / plistlib
+
+JavaScript: `javascript/src/compliance.mjs` (JSON.parse, js-yaml,
+cbor-x, msgpackr, bson, avsc, flexbuffers, protobufjs wire scan).
 compliance.runner      run_suites()
 compliance.report       format_summary() / JSON sidecar
 ```
@@ -35,7 +40,7 @@ Public command (from the repo root):
 
 ```bash
 ./scripts/run-compliance.sh
-./scripts/run-compliance.sh --format json --adapter orjson
+./scripts/run-compliance.sh --format json --serializer orjson
 ./scripts/run-compliance.sh --detailed --json-out logs/compliance/out.json
 ```
 

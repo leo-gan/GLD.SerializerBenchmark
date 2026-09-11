@@ -1,0 +1,58 @@
+{
+  "format": "capnp",
+  "standard": "Cap'n Proto encoding",
+  "version": "encoding",
+  "standard_url": "https://capnproto.org/encoding.html",
+  "provenance": "original-work",
+  "notes": "Well-formedness of the pointer / segment framing. Table contents need generated code.",
+  "cases": [
+    {
+      "id": "capnp-empty-struct",
+      "title": "Empty struct pointer is null",
+      "section": "Pointers",
+      "section_title": "struct",
+      "section_url": "https://capnproto.org/encoding.html",
+      "paragraph": "A null pointer is eight zero bytes and means an empty / default value.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0000000000000000",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "capnp-trunc",
+      "title": "Shorter than one pointer word",
+      "section": "Pointers",
+      "section_title": "word",
+      "section_url": "https://capnproto.org/encoding.html",
+      "paragraph": "Every pointer is 64 bits. A 4-byte buffer is not a message.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "00000000",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "capnp-empty",
+      "title": "Empty buffer is not a message",
+      "section": "Messages",
+      "section_title": "segment table",
+      "section_url": "https://capnproto.org/encoding.html",
+      "paragraph": "A message starts with a segment-count word.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "capnp-seg-trunc",
+      "title": "Segment table claims a segment that is missing",
+      "section": "Messages",
+      "section_title": "segment table",
+      "section_url": "https://capnproto.org/encoding.html",
+      "paragraph": "The first word is (segment count − 1). The declared words must follow.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "00000000",
+      "input_encoding": "hex"
+    }
+  ]
+}

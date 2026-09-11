@@ -51,6 +51,11 @@ body.dash-view-compliance #experiments {
   overflow-x: auto;
 }
 
+.cmp-heat-list {
+  width: auto;
+  max-width: 28rem;
+}
+
 .cmp-heat th,
 .cmp-heat td {
   text-align: center;
@@ -63,6 +68,18 @@ body.dash-view-compliance #experiments {
 .cmp-heat tbody th {
   text-align: left;
   white-space: nowrap;
+}
+
+.cmp-heat thead th a.cmp-col-spec {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  font-weight: 600;
+}
+
+.cmp-heat thead th a.cmp-col-spec:hover,
+.cmp-heat thead th a.cmp-col-spec:focus-visible {
+  color: var(--color-blue, #1a73e8);
 }
 
 .cmp-ver {

@@ -33,8 +33,8 @@ Both current libraries understand 2013+ types, so they pass the 2008
 raw cases that overlap the str family. A decoder that still treated
 raw as opaque bytes only would fail the `decoded: "a"` cases.
 
-## Official suite we did not vendor
+## Official suite
 
 [kawanet/msgpack-test-suite](https://github.com/kawanet/msgpack-test-suite)
-is MIT. We recreated hex vectors from the published type chart with
-original grouping. See [legal provenance](legal.md).
+is MIT and is vendored (`mps-*` ids). Original extras cover the
+pre-2013 raw chart. See [legal provenance](legal.md).

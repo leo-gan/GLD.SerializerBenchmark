@@ -1,0 +1,46 @@
+{
+  "format": "bond",
+  "standard": "Microsoft Bond Fast Binary",
+  "version": "fast",
+  "standard_url": "https://microsoft.github.io/bond/manual/bond_cpp.html",
+  "provenance": "original-work",
+  "notes": "Fast Binary also terminates a struct with BT_STOP.",
+  "cases": [
+    {
+      "id": "bond-empty",
+      "title": "Empty Compact Binary payload",
+      "section": "Compact Binary",
+      "section_title": "BT_STOP",
+      "section_url": "https://microsoft.github.io/bond/manual/bond_cpp.html",
+      "paragraph": "A struct ends with BT_STOP (0x00).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "bond-trunc",
+      "title": "Empty buffer is not a Bond struct",
+      "section": "Compact Binary",
+      "section_title": "BT_STOP",
+      "section_url": "https://microsoft.github.io/bond/manual/bond_cpp.html",
+      "paragraph": "A payload must include the STOP terminator.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "bond-bad-type",
+      "title": "Unknown type nibble",
+      "section": "Compact Binary",
+      "section_title": "field tag",
+      "section_url": "https://microsoft.github.io/bond/manual/bond_cpp.html",
+      "paragraph": "The low nibble of a field tag is a Bond type id.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0f01",
+      "input_encoding": "hex"
+    }
+  ]
+}

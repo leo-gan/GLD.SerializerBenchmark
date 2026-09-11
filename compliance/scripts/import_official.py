@@ -183,7 +183,11 @@ def import_yaml() -> None:
                     tags = " ".join(str(t) for t in tags)
                 fail = bool(item.get("fail")) or "error" in str(tags).split()
                 spec = item.get("from") or ""
-                url = spec if isinstance(spec, str) and spec.startswith("http") else "https://yaml.org/spec/1.2.2/"
+                url = "https://yaml.org/spec/1.2.2/"
+                if isinstance(spec, str) and spec.startswith("http"):
+                    candidate = spec.split()[0]
+                    if "yaml.org/spec/" in candidate:
+                        url = candidate
                 name = item.get("name") or path.stem
                 yml = item["yaml"]
                 if not isinstance(yml, str):

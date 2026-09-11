@@ -11,6 +11,35 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "amazon-ion"
+version = "0.15.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jsonconversion" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cf/23/c46168793ce4b59e77856f2cb4f84904175a41ddf12614d2dd94b47416de/amazon_ion-0.15.0.tar.gz", hash = "sha256:1b9e642232dd3a87b61ba8f17f7d7660b8ea14be03baca6e5f4d0a7fd9a01d06", size = 1334417, upload-time = "2026-09-11T01:22:28.866Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2b/cb/8d90edfac50d412ba09267b24492f34f8632644728f8e60f6d490a523f79/amazon_ion-0.15.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:cb79d308220a9dacbde319514f5dd683263699a999065b21ca705be074fff2aa", size = 520142, upload-time = "2026-09-11T01:21:51.728Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/ee/bf190212c01a2f10080ebd03b2dafc3755bbd8b104dbf57b6d0ccd094704/amazon_ion-0.15.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:ba360228f972cc8afc109e8204985de0bcf37020445a6db9946e9424b12b88de", size = 500251, upload-time = "2026-09-11T01:21:52.916Z" },
+    { url = "https://files.pythonhosted.org/packages/56/1d/17ba2b567881af2f4dd905322a493e4ce0981267b63675bae39cad2ae45a/amazon_ion-0.15.0-cp312-cp312-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:71429061a92c202f8a5ddfffdd45313b53d5bf22813f0d678d2fcffd4d07dd9c", size = 624500, upload-time = "2026-09-11T01:21:54.396Z" },
+    { url = "https://files.pythonhosted.org/packages/be/52/be06db7954a41691c9128dcf1e1711e9557bb41ca0b077aeb394890572ed/amazon_ion-0.15.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:2e329e38e61c997d6680a209aa8d272be5259035f3d165c59c587c8232cfa769", size = 576901, upload-time = "2026-09-11T01:21:55.881Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/bb/ba805e1d3916841b8f1b1899a47348134fd7092ed14565e67fcd5297438e/amazon_ion-0.15.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f33c79136c4568f5c3306c882b49186791b98a978802c65710def866b4fd51d9", size = 574907, upload-time = "2026-09-11T01:21:57.108Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/55/5067c60df8259e3127ba4bc0db621b1819d92146047312264b759417871e/amazon_ion-0.15.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:45b92dca94aa4ecced98b0e075fcb7f6a5ad6d187d157c8124cfb7ae8605a7e5", size = 600886, upload-time = "2026-09-11T01:21:58.793Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/76/29eef73d2485200fd4359d35e3995061a01bb7c93cff271d06427adee07f/amazon_ion-0.15.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:c4417c296f3372015702949d10e9bc0ca73dfc7845d7b8a3fe94378f43a77bb8", size = 635903, upload-time = "2026-09-11T01:22:00.085Z" },
+    { url = "https://files.pythonhosted.org/packages/42/b2/0bc5593a5aa5657571815ac5abf87f845c99d849cfd2ab8b48939ec482c1/amazon_ion-0.15.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:958475dd11ecfaba9374b7c02223fa242a59c0781f208bfa9781de9e67ff3d3e", size = 582887, upload-time = "2026-09-11T01:22:01.605Z" },
+    { url = "https://files.pythonhosted.org/packages/66/7f/fbfe5b77c3fd16ca19d31dcd3be22813f27996a3ded6074987fe18ffe370/amazon_ion-0.15.0-cp312-cp312-win_amd64.whl", hash = "sha256:810a8e3c1e1a8a5672a93987c549b47230dc8b59d4184cead1a598641d3edfcc", size = 612757, upload-time = "2026-09-11T01:22:02.925Z" },
+    { url = "https://files.pythonhosted.org/packages/95/8d/e866da4834d1693f69f3e85ff3b3067dc6dad6624c8636e486e99d61336e/amazon_ion-0.15.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:1a5fbf65ec1ea6312f27c5bca865b6d8d9adbaeca203a845e8cccf146d11df7a", size = 520132, upload-time = "2026-09-11T01:22:04.199Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/37/ea1378639e91cc1e101ab540c5c20243e46d197a1639fe18958cad802ab7/amazon_ion-0.15.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:76f757e459aae3dfcb94b14ba05bd976786950a3651b18fcca75af99e4a0ba0d", size = 500255, upload-time = "2026-09-11T01:22:05.446Z" },
+    { url = "https://files.pythonhosted.org/packages/01/8c/f8cb4fe9164469c42c316fd46db782a27fb6351b5e55a11a5d783d0e532e/amazon_ion-0.15.0-cp313-cp313-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:66414edcfd23ad9321263dafc8eb907acb4c7f51be40e8d9d1810b8a8c9328d9", size = 624451, upload-time = "2026-09-11T01:22:06.724Z" },
+    { url = "https://files.pythonhosted.org/packages/b9/cc/903e22557d882d4150c9482443e384a8923ac64d3f4b97fe36c4b40dc15b/amazon_ion-0.15.0-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ed51b0e83c9c55cc984b1b6176d6826d0283536bb332d35f3def60433e6050dc", size = 576892, upload-time = "2026-09-11T01:22:08.019Z" },
+    { url = "https://files.pythonhosted.org/packages/50/2a/7e6fd87452c1e84e658e360bdc922de59023e8be3387563fb80a98a9018b/amazon_ion-0.15.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e2f95a797d7127d219ca6f2d5a4ca2503f9a355d7176188bb6d40d7e09de41d9", size = 574892, upload-time = "2026-09-11T01:22:09.514Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/5a/da2b3dabc4c4db28f98381ee357b3d44e98d788190a595ab3ba12d6fcabb/amazon_ion-0.15.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:4d2f266ff8f9716e8ba2ef9fef0ec8dc840aea5f1ba7e4f321f8560d28221f34", size = 600849, upload-time = "2026-09-11T01:22:11.057Z" },
+    { url = "https://files.pythonhosted.org/packages/45/e6/3e702b104bf58a2d43416420237f1bf3cabfd5bede225c923db892dbd33b/amazon_ion-0.15.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:b196bda38939d589a72e3fa95379abf20f02f87f7b717796ef5b29461e731302", size = 635864, upload-time = "2026-09-11T01:22:12.316Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/77/de898ae4afe48cd9befde465fde54984b095a55adfba64a7a7298d46e7b7/amazon_ion-0.15.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:005c5bcbe27b9d4e8a848635ae2539d0567be777affe1df7c01beadbf4893182", size = 582895, upload-time = "2026-09-11T01:22:13.705Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/9b/e6988de83cd6cdb0725f2f92137c3ec458a4493a498dff7d27f0d6c0b7f5/amazon_ion-0.15.0-cp313-cp313-win_amd64.whl", hash = "sha256:9a78a071edcf133c6b65e51667efcdb6fce7af17ac7323caf99006342a1bb45a", size = 612773, upload-time = "2026-09-11T01:22:15.12Z" },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -277,6 +306,18 @@ wheels = [
 ]
 
 [[package]]
+name = "jsonconversion"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/90/8c/73c9f8fb727b4701473341e9b263f103a29b9b2047c79f8cc5b2c4d78a38/jsonconversion-1.2.1.tar.gz", hash = "sha256:c8a766d745a67529a1bf2ccda8f8dabfe496918019f8e81b734e1e6011ae0ce5", size = 9370, upload-time = "2025-11-12T08:37:54.707Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/87/52/def4fb548757ba7501bbd8763755d7cc2c2433cd91878074679770294eda/jsonconversion-1.2.1-py3-none-any.whl", hash = "sha256:def6ac964f148ff70f3cc2140f74064339bd25a2099994e78f2a7907603008ca", size = 10989, upload-time = "2025-11-12T08:37:53.36Z" },
+]
+
+[[package]]
 name = "kiwisolver"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -518,6 +559,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/42/b4/c0f54632103846b658a10930025f4de41c8724b5e4805a5f3b395586cb7e/msgspec-0.21.1-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:0d03867786e5d7ba25d666df4b11320c27170f4aeafcb8e3a8b0a50a4fb742ca", size = 231822, upload-time = "2026-04-12T21:44:46.343Z" },
     { url = "https://files.pythonhosted.org/packages/ea/1d/0d85cc79d0ccf5508e9c846cc66552a6a16bf92abd1dbd8362617f7b35cd/msgspec-0.21.1-cp314-cp314t-win_amd64.whl", hash = "sha256:740fbf1c9d59992ca3537d6fbe9ebbf9eaf726a65fbf31448e0ecbc710697a63", size = 206650, upload-time = "2026-04-12T21:44:47.601Z" },
     { url = "https://files.pythonhosted.org/packages/90/91/56c5d560f20e6c20e9e4f55bd0e458f7f162aa689ee350346c04c48eac0b/msgspec-0.21.1-cp314-cp314t-win_arm64.whl", hash = "sha256:0d2cc73df6058d811a126ac3a8ad63a4dfa210c82f9cf5a004802eaf4712de90", size = 183149, upload-time = "2026-04-12T21:44:48.833Z" },
+]
+
+[[package]]
+name = "newsmile"
+version = "1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5d/92/144afef942290b37fda8e72cacb749998e4a98669dce901c8fdb51ebeed0/newsmile-1.1.tar.gz", hash = "sha256:5f4a1e5694caf1cfac9d0282ec27175474895eb2847b9e30f3a22a150d8635cf", size = 299863, upload-time = "2022-11-07T05:52:55.144Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/83/36ea5528c8475ab5b0a153f00257d232352b379798d20514f571acb189b6/newsmile-1.1-py3-none-any.whl", hash = "sha256:8ea22483625a3471e2b9d47665acadf46c5becf428be6c2dfcd113130018fb8e", size = 8132, upload-time = "2022-11-07T05:52:52.033Z" },
 ]
 
 [[package]]
@@ -779,6 +829,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/19/8d0cb6f20a1ef7b18f1c8986ad5783f22f84cce39c6ce9a6e645ea55192e/protobuf-7.35.1-cp310-abi3-win_amd64.whl", hash = "sha256:230a75ddfc2de4806e56696ce9640c1cdfdb6543b7cfce98d42a4c0a0e7bdb87", size = 439996, upload-time = "2026-06-11T21:55:38.123Z" },
     { url = "https://files.pythonhosted.org/packages/19/c7/5f7c636ec43e0c545e28d1f1db71990108306f7bdcb89f069ba97e428e7f/protobuf-7.35.1-py3-none-any.whl", hash = "sha256:4bc97768d8fe4ad6743c8a19403e314511ed9f6d13205b687e52421c023ac1b9", size = 171659, upload-time = "2026-06-11T21:55:39.155Z" },
 ]
+
+[[package]]
+name = "py-ubjson"
+version = "0.16.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/c7/28220d37e041fe1df03e857fe48f768dcd30cd151480bf6f00da8713214a/py-ubjson-0.16.1.tar.gz", hash = "sha256:b9bfb8695a1c7e3632e800fb83c943bf67ed45ddd87cd0344851610c69a5a482", size = 50316, upload-time = "2020-04-18T15:05:57.698Z" }
 
 [[package]]
 name = "pydantic"
@@ -1080,6 +1136,7 @@ name = "serializer-benchmark"
 version = "0.2.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "amazon-ion" },
     { name = "cbor2" },
     { name = "cloudpickle" },
     { name = "dill" },
@@ -1088,8 +1145,10 @@ dependencies = [
     { name = "mashumaro" },
     { name = "msgpack" },
     { name = "msgspec" },
+    { name = "newsmile" },
     { name = "orjson" },
     { name = "protobuf" },
+    { name = "py-ubjson" },
     { name = "pydantic" },
     { name = "pymongo" },
     { name = "python-rapidjson" },
@@ -1114,6 +1173,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "amazon-ion", specifier = ">=0.13,<1" },
     { name = "cbor2", specifier = ">=6.0.0,<7" },
     { name = "cloudpickle", specifier = ">=3.1.0,<4" },
     { name = "dill", specifier = ">=0.3.9,<1" },
@@ -1123,10 +1183,12 @@ requires-dist = [
     { name = "matplotlib", marker = "extra == 'analysis'", specifier = ">=3.7.0" },
     { name = "msgpack", specifier = ">=1.1.0,<2" },
     { name = "msgspec", specifier = ">=0.19.0,<1" },
+    { name = "newsmile", specifier = ">=1.1,<2" },
     { name = "numpy", marker = "extra == 'analysis'", specifier = ">=1.24.0" },
     { name = "orjson", specifier = ">=3.10.0,<4" },
     { name = "pandas", marker = "extra == 'analysis'", specifier = ">=2.0.0" },
     { name = "protobuf", specifier = ">=7.34.1,<8" },
+    { name = "py-ubjson", specifier = ">=0.16,<1" },
     { name = "pydantic", specifier = ">=2.10,<3" },
     { name = "pymongo", specifier = ">=4.10,<5" },
     { name = "python-rapidjson", specifier = ">=1.20,<2" },

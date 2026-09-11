@@ -20,9 +20,11 @@ from pathlib import Path
 
 SCHEMA = "gld.dashboard.compliance/1"
 SCOPE_NOTE = (
-    "Full official parse suites (MIT/BSD) plus original extras: "
+    "Official parse suites (MIT/BSD/Apache) plus original extras: "
     "JSONTestSuite, yaml-test-suite, toml-test, msgpack-test-suite, "
-    "cbor-wg vectors. Not yet: Protobuf, Avro, BSON, XML."
+    "cbor-wg, ion-tests, apache/avro test_io. Schema formats expanded "
+    "to the published encoding rules. XML is out of scope. "
+    "Language-native / private binaries have no public spec column."
 )
 
 
@@ -32,16 +34,65 @@ def _paths() -> tuple[Path, Path, Path]:
     return repo, repo / "logs" / "compliance", dashboard / "public" / "data" / "compliance.json"
 
 
-def _pick_source(log_dir: Path) -> Path | None:
+def merge_reports(reports: list[dict]) -> dict:
+    """Combine per-language reports into one Dashboard payload."""
+    if not reports:
+        raise ValueError("no reports to merge")
+    if len(reports) == 1:
+        return reports[0]
+    results: list[dict] = []
+    catalog_errors: list[str] = []
+    serializer_errors: list[str] = []
+    langs: list[str] = []
+    for raw in reports:
+        lang = str(raw.get("language") or "python")
+        langs.append(lang)
+        results.extend(_normalize_results(raw.get("results") if isinstance(raw.get("results"), list) else [], lang))
+        catalog_errors.extend(raw.get("catalog_errors") or [])
+        serializer_errors.extend(raw.get("serializer_errors") or raw.get("adapter_errors") or [])
+    langs = sorted(set(langs))
+    passed = sum(1 for r in results if r.get("outcome") == "pass")
+    failed = sum(1 for r in results if r.get("outcome") == "fail")
+    skipped = sum(1 for r in results if r.get("outcome") == "skip")
+    errors = sum(1 for r in results if r.get("outcome") not in ("pass", "fail", "skip"))
+    return {
+        "schema": SCHEMA,
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "language": langs[0] if len(langs) == 1 else "all",
+        "languages": langs,
+        "policy": "report-only",
+        "scope": {
+            "formats": sorted({str(r.get("format") or "") for r in results if r.get("format")}),
+            "note": SCOPE_NOTE,
+        },
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "errors": errors,
+        "catalog_errors": catalog_errors,
+        "serializer_errors": serializer_errors,
+        "matrix": _matrix_from_results(results, langs[0] if langs else "python"),
+        "results": results,
+    }
+
+
+def _pick_sources(log_dir: Path) -> list[Path]:
+    named = []
+    for lang in ("python", "javascript", "go", "rust", "java", "csharp", "cpp", "c"):
+        p = log_dir / f"latest-{lang}.json"
+        if p.is_file() and p.stat().st_size > 0:
+            named.append(p)
+    if named:
+        return named
     latest = log_dir / "latest.json"
     if latest.is_file() and latest.stat().st_size > 0:
-        return latest
+        return [latest]
     stamped = sorted(
         (p for p in log_dir.glob("*.json") if p.name != "latest.json"),
         key=lambda p: p.stat().st_mtime,
         reverse=True,
     )
-    return stamped[0] if stamped else None
+    return stamped[:1] if stamped else []
 
 
 def _serializer(row: dict) -> str:
@@ -66,6 +117,7 @@ def _matrix_from_results(results: list[dict], default_lang: str = "python") -> l
                 "language": lang,
                 "format": fmt,
                 "standard": str(row.get("standard") or ""),
+                "standard_url": str(row.get("standard_url") or ""),
                 "version": ver,
                 "version_key": str(row.get("version_key") or f"{fmt}.{ver}"),
                 "serializer": ser,
@@ -158,27 +210,33 @@ def build_payload(raw: dict, source_name: str) -> dict:
 
 def main() -> int:
     _repo, log_dir, out_path = _paths()
-    src = _pick_source(log_dir)
-    if src is None:
+    srcs = _pick_sources(log_dir)
+    if not srcs:
         print(f"No compliance report under {log_dir}", file=sys.stderr)
         print("Run ./scripts/run-compliance.sh first.", file=sys.stderr)
         return 1
-    raw = json.loads(src.read_text(encoding="utf-8"))
-    if not isinstance(raw, dict):
-        print(f"{src} is not a JSON object", file=sys.stderr)
-        return 1
-    payload = build_payload(raw, src.name)
+    reports = []
+    for src in srcs:
+        raw = json.loads(src.read_bytes().decode("utf-8", errors="surrogatepass"))
+        if not isinstance(raw, dict):
+            print(f"{src} is not a JSON object", file=sys.stderr)
+            return 1
+        reports.append(raw)
+    merged = merge_reports(reports)
+    payload = build_payload(merged, "+".join(s.name for s in srcs))
     import gzip
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    blob = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    blob = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode(
+        "utf-8", errors="surrogatepass"
+    )
     gz_path = out_path.with_suffix(out_path.suffix + ".gz")
     gz_path.write_bytes(gzip.compress(blob, compresslevel=6))
     if out_path.is_file():
         out_path.unlink()
     print(
         f"Wrote {gz_path.relative_to(_repo)} "
-        f"from {src.name} ({payload['passed']} pass / {payload['failed']} fail / "
+        f"from {'+'.join(s.name for s in srcs)} ({payload['passed']} pass / {payload['failed']} fail / "
         f"{len(payload['results'])} rows, {len(blob)} bytes -> {gz_path.stat().st_size} gzip)"
     )
     return 0

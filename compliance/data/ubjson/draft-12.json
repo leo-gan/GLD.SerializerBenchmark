@@ -1,0 +1,306 @@
+{
+  "format": "ubjson",
+  "standard": "UBJSON Draft 12",
+  "version": "draft-12",
+  "standard_url": "https://ubjson.org/",
+  "provenance": "original-work",
+  "notes": "Current ubjson.org Draft 12: U, i, I, S, C, H, N, typed containers. Recreated.",
+  "cases": [
+    {
+      "id": "ubj-null",
+      "title": "Null is marker Z",
+      "section": "Null Value",
+      "section_title": "null",
+      "section_url": "https://ubjson.org/type-reference/value-types/#null-value",
+      "paragraph": "The null value is the single byte 0x5A (ASCII Z).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5a",
+      "input_encoding": "hex",
+      "decoded": null
+    },
+    {
+      "id": "ubj-true",
+      "title": "True is marker T",
+      "section": "Boolean Types",
+      "section_title": "true",
+      "section_url": "https://ubjson.org/type-reference/value-types/#boolean-types",
+      "paragraph": "The true value is the single byte 0x54 (ASCII T).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "54",
+      "input_encoding": "hex",
+      "decoded": true
+    },
+    {
+      "id": "ubj-false",
+      "title": "False is marker F",
+      "section": "Boolean Types",
+      "section_title": "false",
+      "section_url": "https://ubjson.org/type-reference/value-types/#boolean-types",
+      "paragraph": "The false value is the single byte 0x46 (ASCII F).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "46",
+      "input_encoding": "hex",
+      "decoded": false
+    },
+    {
+      "id": "ubj-empty",
+      "title": "Empty buffer is not a value",
+      "section": "Data Format",
+      "section_title": "marker",
+      "section_url": "https://ubjson.org/",
+      "paragraph": "Every value starts with a one-byte type marker.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "ubj-unknown-marker",
+      "title": "0x00 is not a type marker",
+      "section": "Type overview",
+      "section_title": "markers",
+      "section_url": "https://ubjson.org/",
+      "paragraph": "A type marker must be one of the defined ASCII markers.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "ubj-empty-array",
+      "title": "Empty streaming array",
+      "section": "Array Type",
+      "section_title": "array",
+      "section_url": "https://ubjson.org/type-reference/container-types/#array-type",
+      "paragraph": "An array is marker [ then values then ]. The empty array is two bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5b5d",
+      "input_encoding": "hex",
+      "decoded": []
+    },
+    {
+      "id": "ubj-empty-object",
+      "title": "Empty streaming object",
+      "section": "Object Type",
+      "section_title": "object",
+      "section_url": "https://ubjson.org/type-reference/container-types/#object-type",
+      "paragraph": "An object is marker { then key/value pairs then }. The empty object is two bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "7b7d",
+      "input_encoding": "hex",
+      "decoded": {}
+    },
+    {
+      "id": "ubj-array-two",
+      "title": "Array of two uint8 values",
+      "section": "Array Type",
+      "section_title": "array",
+      "section_url": "https://ubjson.org/type-reference/container-types/#array-type",
+      "paragraph": "Each element carries its own type marker unless the container is optimized.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5b550155025d",
+      "input_encoding": "hex",
+      "decoded": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "ubj-object-n",
+      "title": "Object n=7",
+      "section": "Object Type",
+      "section_title": "object",
+      "section_url": "https://ubjson.org/type-reference/container-types/#object-type",
+      "paragraph": "Each key is a string payload (integer length + UTF-8) without an S marker, then a typed value.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "7b55016e55077d",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 7
+      }
+    },
+    {
+      "id": "ubj-count-array",
+      "title": "Optimized array with count",
+      "section": "Optimized Format",
+      "section_title": "count",
+      "section_url": "https://ubjson.org/type-reference/container-types/#optimized-format",
+      "paragraph": "Marker # plus an integer numeric is the element count. The closer ] is then omitted.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5b235503550155025503",
+      "input_encoding": "hex",
+      "decoded": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "id": "ubj-count-object",
+      "title": "Optimized object with count 1",
+      "section": "Optimized Format",
+      "section_title": "count",
+      "section_url": "https://ubjson.org/type-reference/container-types/#optimized-format",
+      "paragraph": "An object may declare # count and omit the closer.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "7b23550155016e5507",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 7
+      }
+    },
+    {
+      "id": "ubj-unclosed-array",
+      "title": "Array without closer or count",
+      "section": "Array Type",
+      "section_title": "array",
+      "section_url": "https://ubjson.org/type-reference/container-types/#array-type",
+      "paragraph": "A streaming array must end with ] unless a count was given.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "5b5501",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "ubj-uint8",
+      "title": "uint8 marker U",
+      "section": "Numeric Types",
+      "section_title": "uint8",
+      "section_url": "https://ubjson.org/type-reference/value-types/#numeric-types",
+      "paragraph": "Draft 12 uint8 is marker U plus one payload byte (0–255).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5507",
+      "input_encoding": "hex",
+      "decoded": 7
+    },
+    {
+      "id": "ubj-int8",
+      "title": "int8 marker i",
+      "section": "Numeric Types",
+      "section_title": "int8",
+      "section_url": "https://ubjson.org/type-reference/value-types/#numeric-types",
+      "paragraph": "int8 is marker i plus one two's-complement byte.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "69ff",
+      "input_encoding": "hex",
+      "decoded": -1
+    },
+    {
+      "id": "ubj-int16",
+      "title": "int16 marker I",
+      "section": "Numeric Types",
+      "section_title": "int16",
+      "section_url": "https://ubjson.org/type-reference/value-types/#numeric-types",
+      "paragraph": "int16 is marker I plus two big-endian bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "490007",
+      "input_encoding": "hex",
+      "decoded": 7
+    },
+    {
+      "id": "ubj-string",
+      "title": "String S + uint8 length kelp",
+      "section": "String Type",
+      "section_title": "string",
+      "section_url": "https://ubjson.org/type-reference/value-types/#string-type",
+      "paragraph": "A string is marker S, an integer numeric length, and that many UTF-8 bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5355046b656c70",
+      "input_encoding": "hex",
+      "decoded": "kelp"
+    },
+    {
+      "id": "ubj-char",
+      "title": "Char marker C",
+      "section": "Char Type",
+      "section_title": "char",
+      "section_url": "https://ubjson.org/type-reference/value-types/#char-type",
+      "paragraph": "A char is marker C plus one ASCII byte.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "436b",
+      "input_encoding": "hex",
+      "decoded": "k"
+    },
+    {
+      "id": "ubj-highprec",
+      "title": "High-precision number H",
+      "section": "Numeric Types",
+      "section_title": "high-precision number",
+      "section_url": "https://ubjson.org/type-reference/value-types/#numeric-types",
+      "paragraph": "H is a decimal written as a length-prefixed ASCII numeric string. Draft 12 added this type.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "485504312e3235",
+      "input_encoding": "hex",
+      "notes": "Decoded type is library-defined (Decimal vs string). Accept-only."
+    },
+    {
+      "id": "ubj-noop-in-array",
+      "title": "No-op N is skipped inside a container",
+      "section": "No-Op Value",
+      "section_title": "noop",
+      "section_url": "https://ubjson.org/type-reference/value-types/#no-op-value",
+      "paragraph": "N is a valueless keep-alive. Inside a container it is not an element.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5b4e55075d",
+      "input_encoding": "hex",
+      "decoded": [
+        7
+      ]
+    },
+    {
+      "id": "ubj-typed-uint8-array",
+      "title": "Strongly typed uint8 array",
+      "section": "Optimized Format",
+      "section_title": "type and count",
+      "section_url": "https://ubjson.org/type-reference/container-types/#optimized-format",
+      "paragraph": "[$][U][#][count] then raw bytes with no per-element marker.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5b2455235503010203",
+      "input_encoding": "hex",
+      "decoded": {
+        "$hex": "010203"
+      }
+    },
+    {
+      "id": "ubj-truncated-uint8",
+      "title": "uint8 marker without payload",
+      "section": "Numeric Types",
+      "section_title": "uint8",
+      "section_url": "https://ubjson.org/type-reference/value-types/#numeric-types",
+      "paragraph": "U requires one payload byte.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "55",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "ubj-truncated-string",
+      "title": "String shorter than declared length",
+      "section": "String Type",
+      "section_title": "string",
+      "section_url": "https://ubjson.org/type-reference/value-types/#string-type",
+      "paragraph": "The declared length must be present in the remaining bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "5355046b65",
+      "input_encoding": "hex"
+    }
+  ]
+}

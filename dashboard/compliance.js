@@ -5,10 +5,12 @@
  * (fed by ./scripts/run-compliance.sh). Results live here, not in MkDocs pages.
  */
 import './compliance.css';
+import { serializerDisplayName } from './format.js';
 
 const DATA_URL = 'data/compliance.json.gz';
 const DATA_URL_PLAIN = 'data/compliance.json';
 const ALL_LANG = 'all';
+const NO_SPEC = 'no-spec';
 const FORMAT_LABELS = {
   json: 'JSON',
   yaml: 'YAML',
@@ -19,6 +21,47 @@ const FORMAT_LABELS = {
   avro: 'Avro',
   bson: 'BSON',
   flatbuffers: 'FlatBuffers',
+  ion: 'Amazon Ion',
+  ubjson: 'UBJSON',
+  smile: 'Smile',
+  thrift: 'Thrift',
+  capnp: "Cap'n Proto",
+  bond: 'Bond',
+  bebop: 'Bebop',
+  hocon: 'HOCON',
+  plist: 'Property List',
+  zon: 'ZON',
+  [NO_SPEC]: 'No public spec',
+};
+
+/** Bench serializers with no citable interchange spec. Names match language Overview tables. */
+const NO_SPEC_SERIALIZERS = {
+  python: ['pickle', 'cloudpickle', 'dill'],
+  javascript: ['v8-serializer', 'devalue', 'sia', 'bser'],
+  go: ['encoding/gob', 'kelindar/binary'],
+  java: ['java-serialization', 'fory', 'hessian', 'kryo', 'protostuff'],
+  kotlin: ['fory', 'kryo', 'protostuff'],
+  csharp: [
+    'BinaryPack',
+    'Ceras',
+    'ExtendedXmlSerializer',
+    'FsPickler',
+    'GroBuf',
+    'Hyperion',
+    'MemoryPack',
+    'Migrant',
+    'MS Binary',
+    'NetSerializer',
+    'ServiceStack',
+    'SharpSerializer',
+    'ZeroFormatter',
+  ],
+  rust: ['bincode', 'bitcode', 'nanoserde', 'postcard', 'rkyv', 'speedy'],
+  c: ['custom-binary', 'ubj'],
+  cpp: ['bitsery', 'boost_serialization', 'cereal', 'cista', 'custom_binary', 'yas', 'zpp_bits'],
+  swift: ['BinaryCodable'],
+  php: ['serialize', 'igbinary'],
+  zig: ['comptime-bin', 's2s'],
 };
 const LANG_LABELS = {
   csharp: 'C#',
@@ -38,6 +81,8 @@ const LANG_LABELS = {
 
 let payload = null;
 let loadError = null;
+/** language → { serializer name → version from latest bench stats } */
+let benchVersions = null;
 let ui = {
   lang: '',
   format: 'json',
@@ -63,9 +108,16 @@ function serializerOf(row) {
 }
 
 function serializerLabel(row) {
-  const name = serializerOf(row);
-  const ver = row?.serializer_version;
-  return ver ? `${name}:${ver}` : name;
+  return serializerDisplayName(serializerOf(row), row?.serializer_version);
+}
+
+function benchVersion(language, name) {
+  return benchVersions?.[language]?.[name] || '';
+}
+
+function noSpecLabel(entry, { withLang = false } = {}) {
+  const name = serializerDisplayName(entry.serializer, benchVersion(entry.language, entry.serializer));
+  return withLang ? `${langLabel(entry.language)} · ${name}` : name;
 }
 
 function formatLabel(id) {
@@ -88,6 +140,29 @@ function setComplianceView(on) {
     });
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
+}
+
+async function loadBenchVersions() {
+  if (benchVersions) return benchVersions;
+  benchVersions = {};
+  await Promise.all(
+    Object.keys(NO_SPEC_SERIALIZERS).map(async (lang) => {
+      try {
+        const doc = await fetchJsonMaybeGzip(`data/stats_${lang}_latest.json.gz`);
+        const map = {};
+        for (const g of doc.groups || []) {
+          const name = g?.serializer;
+          const ver = g?.serializer_version;
+          if (!name || map[name]) continue;
+          if (ver) map[name] = String(ver);
+        }
+        benchVersions[lang] = map;
+      } catch {
+        benchVersions[lang] = {};
+      }
+    }),
+  );
+  return benchVersions;
 }
 
 async function fetchJsonMaybeGzip(url) {
@@ -150,8 +225,29 @@ function pct(rate) {
 function languageIds() {
   const fromPayload = Array.isArray(payload?.languages) ? payload.languages.map(String) : [];
   const fromRows = unique(payload?.results || [], 'language');
-  const ids = fromPayload.length ? fromPayload : fromRows;
+  const fromNoSpec = Object.keys(NO_SPEC_SERIALIZERS);
+  const fromSuite = Object.keys(LANG_LABELS);
+  const ids = [];
+  const have = new Set();
+  for (const id of [...fromPayload, ...fromRows, ...fromNoSpec, ...fromSuite]) {
+    if (!id || have.has(id)) continue;
+    have.add(id);
+    ids.push(id);
+  }
   return ids.length ? ids : ['python'];
+}
+
+function noSpecEntries(lang) {
+  if (!lang || lang === ALL_LANG) {
+    return Object.entries(NO_SPEC_SERIALIZERS).flatMap(([language, names]) =>
+      names.map((serializer) => ({ language, serializer })),
+    );
+  }
+  return (NO_SPEC_SERIALIZERS[lang] || []).map((serializer) => ({ language: lang, serializer }));
+}
+
+function noSpecKey(entry) {
+  return `${entry.language}|${entry.serializer}`;
 }
 
 function rowsForLang() {
@@ -215,6 +311,31 @@ function specHtml(row) {
   return `<a href="${escapeHtml(row.section_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
 }
 
+function documentUrl(url) {
+  const raw = String(url || '').trim();
+  if (!raw.startsWith('http')) return '';
+  const hash = raw.indexOf('#');
+  return hash === -1 ? raw : raw.slice(0, hash);
+}
+
+function columnSpecUrl(column, rows) {
+  if (column.standard_url && String(column.standard_url).startsWith('http')) {
+    return String(column.standard_url);
+  }
+  const forCol = rows.filter((row) => String(row.standard) === column.key);
+  const suiteUrl = forCol.find((row) => String(row.standard_url || '').startsWith('http'));
+  if (suiteUrl) return String(suiteUrl.standard_url);
+  const sectionUrl = forCol.find((row) => String(row.section_url || '').startsWith('http'));
+  return documentUrl(sectionUrl?.section_url);
+}
+
+function columnTitleHtml(column, rows) {
+  const label = escapeHtml(column.standard);
+  const href = columnSpecUrl(column, rows);
+  if (!href) return label;
+  return `<a class="cmp-col-spec" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="Open the published standard">${label}</a>`;
+}
+
 function renderFailCard(row) {
   return `
     <article class="cmp-fail-card">
@@ -233,7 +354,32 @@ function renderFailCard(row) {
     </article>`;
 }
 
+function renderNoSpecHeatmap() {
+  const entries = noSpecEntries(ui.lang).filter((e) => {
+    if (!ui.serializer) return true;
+    return ui.serializer === e.serializer || ui.serializer === noSpecKey(e);
+  });
+  if (!entries.length) {
+    return '<p class="section-help">No language-native or private-binary serializers listed for this language.</p>';
+  }
+  const multiLang = ui.lang === ALL_LANG && languageIds().length > 1;
+  const body = entries
+    .map((e) => {
+      const label = noSpecLabel(e, { withLang: multiLang });
+      return `<tr><th scope="row">${escapeHtml(label)}</th></tr>`;
+    })
+    .join('');
+  return `
+    <div class="table-container cmp-heat-wrap">
+      <table class="data-table cmp-heat cmp-heat-list">
+        <thead><tr><th>Serializer</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>`;
+}
+
 function renderHeatmap(matrix) {
+  if (ui.format === NO_SPEC) return renderNoSpecHeatmap();
   if (!matrix.length) return '<p class="section-help">No matrix cells for this language.</p>';
   const filtered = matrix.filter((c) => {
     if (ui.format && String(c.format) !== ui.format) return false;
@@ -250,9 +396,15 @@ function renderHeatmap(matrix) {
     const key = String(cell.standard || '');
     if (!key || colKey.has(key)) continue;
     colKey.add(key);
-    columns.push({ key, standard: cell.standard, version: cell.version });
+    columns.push({
+      key,
+      standard: cell.standard,
+      version: cell.version,
+      standard_url: cell.standard_url || '',
+    });
   }
-  const head = columns.map((c) => `<th>${escapeHtml(c.standard)}</th>`).join('');
+  const caseRows = rowsForLang();
+  const head = columns.map((c) => `<th>${columnTitleHtml(c, caseRows)}</th>`).join('');
   const multiLang = ui.lang === ALL_LANG && languageIds().length > 1;
   const body = serializers
     .map((ser) => {
@@ -369,12 +521,19 @@ function renderMain(root) {
   if (!ui.lang || !tabIds.includes(ui.lang)) ui.lang = langIds[0] || ALL_LANG;
 
   const langRows = rowsForLang();
-  const kpis = kpisFrom(langRows);
+  const noSpec = ui.format === NO_SPEC;
+  const kpis = noSpec ? { passed: 0, failed: 0, skipped: 0, errors: 0, total: 0 } : kpisFrom(langRows);
   const judged = kpis.passed + kpis.failed;
   const rate = judged ? kpis.passed / judged : null;
   const formats = unique(langRows, 'format');
-  if (ui.format && !formats.includes(ui.format) && formats.length) ui.format = formats[0];
-  const serializers = unique(langRows.filter((r) => !ui.format || r.format === ui.format), serializerOf);
+  if (!formats.includes(NO_SPEC)) formats.push(NO_SPEC);
+  if (ui.format && ui.format !== NO_SPEC && !formats.includes(ui.format) && formats.length) {
+    ui.format = formats[0];
+  }
+  const noSpecList = noSpecEntries(ui.lang);
+  const serializers = noSpec
+    ? (ui.lang === ALL_LANG ? noSpecList.map(noSpecKey) : noSpecList.map((e) => e.serializer))
+    : unique(langRows.filter((r) => !ui.format || r.format === ui.format), serializerOf);
   const matrix = matrixForLang();
 
   root.innerHTML = `
@@ -390,22 +549,35 @@ function renderMain(root) {
     ${renderLangTabs(tabIds)}
     <p class="cmp-meta">
       ${escapeHtml(ui.lang === ALL_LANG ? 'All languages' : langLabel(ui.lang))}
-      · ${kpis.passed} pass
-      · ${kpis.failed} fail
-      · ${escapeHtml(pct(rate))} pass rate
-      · ${kpis.total} checks
+      ${
+        noSpec
+          ? ` · ${noSpecList.length} serializer${noSpecList.length === 1 ? '' : 's'} · not scored`
+          : ` · ${kpis.passed} pass · ${kpis.failed} fail · ${escapeHtml(pct(rate))} pass rate · ${kpis.total} checks`
+      }
       · ${escapeHtml(payload.generated_at || '')}
       · source ${escapeHtml(payload.source || 'compliance.json')}
     </p>
     <div class="cmp-filters">
       ${selectHtml('cmp-filter-standard', 'Standard', formats, ui.format, formatLabel)}
       ${selectHtml('cmp-filter-serializer', 'Serializer', serializers, ui.serializer, (name) => {
+        if (noSpec) {
+          if (name.includes('|')) {
+            const [lang, ser] = name.split('|');
+            return noSpecLabel({ language: lang, serializer: ser }, { withLang: true });
+          }
+          const hit = noSpecList.find((e) => e.serializer === name);
+          return hit ? noSpecLabel(hit) : name;
+        }
         const sample = langRows.find((r) => serializerOf(r) === name);
         return sample ? serializerLabel(sample) : name;
       })}
     </div>
-    <h3 class="cmp-kicker">Pass rate by serializer × standard version</h3>
-    <p class="section-help">Click a cell to open that serializer’s failures for that version.</p>
+    <h3 class="cmp-kicker">${noSpec ? 'Serializers with no public interchange spec' : 'Pass rate by serializer × standard version'}</h3>
+    <p class="section-help">${
+      noSpec
+        ? 'These codecs are language-native or library-private. There is no citable MUST / MUST NOT document, so this view is a group list only — no pass/fail cells.'
+        : 'Click a cell to open that serializer’s failures for that version.'
+    }</p>
     ${renderHeatmap(matrix)}
   `;
 
@@ -453,6 +625,7 @@ async function render() {
     renderEmpty(root, 'Compliance payload is empty.');
     return;
   }
+  if (ui.format === NO_SPEC) await loadBenchVersions();
   renderMain(root);
 }
 

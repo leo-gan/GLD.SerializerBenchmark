@@ -31,8 +31,9 @@ Catalog: `compliance/data/toml/`.
 
 That is expected and report-only.
 
-## Official suite we did not vendor
+## Official suite
 
-[toml-lang/toml-test](https://github.com/toml-lang/toml-test) is MIT.
-We wrote original cases with toml.io section links. See
-[legal provenance](legal.md).
+[toml-lang/toml-test](https://github.com/toml-lang/toml-test) is MIT
+and is vendored for 1.0 and 1.1 (`toml-1.0.0-*`, `toml-1.1.0-*`).
+TOML 0.5.0 has no official file list; those cases stay original.
+See [legal provenance](legal.md).

@@ -3,9 +3,525 @@
   "standard": "Apache Avro 1.12 binary",
   "version": "1.12",
   "standard_url": "https://avro.apache.org/docs/1.12.0/specification/",
-  "provenance": "original-work",
-  "notes": "Same primitive binary encoding as 1.11.",
+  "provenance": "apache/avro+original-work",
+  "notes": "Same binary encoding as 1.11 for these types.",
   "cases": [
+    {
+      "id": "avro-io-int-0",
+      "title": "Official zigzag int 0",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex",
+      "decoded": 0,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-int-m1",
+      "title": "Official zigzag int -1",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "01",
+      "input_encoding": "hex",
+      "decoded": -1,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-int-1",
+      "title": "Official zigzag int 1",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "02",
+      "input_encoding": "hex",
+      "decoded": 1,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-int-m2",
+      "title": "Official zigzag int -2",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "03",
+      "input_encoding": "hex",
+      "decoded": -2,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-int-2",
+      "title": "Official zigzag int 2",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "04",
+      "input_encoding": "hex",
+      "decoded": 2,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-int-m64",
+      "title": "Official zigzag int -64",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "7f",
+      "input_encoding": "hex",
+      "decoded": -64,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-int-64",
+      "title": "Official zigzag int 64",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "8001",
+      "input_encoding": "hex",
+      "decoded": 64,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-int-8192",
+      "title": "Official zigzag int 8192",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "808001",
+      "input_encoding": "hex",
+      "decoded": 8192,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-int-m8193",
+      "title": "Official zigzag int -8193",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "An int is written as a variable-length zigzag long. Vendored from apache/avro test_io.BINARY_ENCODINGS (Apache-2.0).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "818001",
+      "input_encoding": "hex",
+      "decoded": -8193,
+      "schema": "int",
+      "notes": "Vendored from apache/avro lang/py/avro/test/test_io.py BINARY_ENCODINGS."
+    },
+    {
+      "id": "avro-io-null",
+      "title": "Official datum null",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "",
+      "input_encoding": "hex",
+      "decoded": null,
+      "schema": "null",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-boolean-true",
+      "title": "Official datum boolean-true",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "01",
+      "input_encoding": "hex",
+      "decoded": true,
+      "schema": "boolean",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-boolean-false",
+      "title": "Official datum boolean-false",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex",
+      "decoded": false,
+      "schema": "boolean",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-string-kelp",
+      "title": "Official datum string-kelp",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "086b656c70",
+      "input_encoding": "hex",
+      "decoded": "kelp",
+      "schema": "string",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-bytes-kelp",
+      "title": "Official datum bytes-kelp",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "086b656c70",
+      "input_encoding": "hex",
+      "decoded": {
+        "$hex": "6b656c70"
+      },
+      "schema": "bytes",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-int-1234",
+      "title": "Official datum int-1234",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "a413",
+      "input_encoding": "hex",
+      "decoded": 1234,
+      "schema": "int",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-long-1234",
+      "title": "Official datum long-1234",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "a413",
+      "input_encoding": "hex",
+      "decoded": 1234,
+      "schema": "long",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-float-1",
+      "title": "Official datum float-1",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0000803f",
+      "input_encoding": "hex",
+      "decoded": 1.0,
+      "schema": "float",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-double-1",
+      "title": "Official datum double-1",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "000000000000f03f",
+      "input_encoding": "hex",
+      "decoded": 1.0,
+      "schema": "double",
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-enum-b",
+      "title": "Official datum enum-b",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "02",
+      "input_encoding": "hex",
+      "decoded": "B",
+      "schema": {
+        "type": "enum",
+        "name": "Harbor",
+        "symbols": [
+          "A",
+          "B"
+        ]
+      },
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-array-long",
+      "title": "Official datum array-long",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0602060400",
+      "input_encoding": "hex",
+      "decoded": [
+        1,
+        3,
+        2
+      ],
+      "schema": {
+        "type": "array",
+        "items": "long"
+      },
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-map-long",
+      "title": "Official datum map-long",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "040c686172626f7202086b656c700600",
+      "input_encoding": "hex",
+      "decoded": {
+        "harbor": 1,
+        "kelp": 3
+      },
+      "schema": {
+        "type": "map",
+        "values": "long"
+      },
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-union-null",
+      "title": "Official datum union-null",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "02",
+      "input_encoding": "hex",
+      "decoded": null,
+      "schema": [
+        "string",
+        "null",
+        "long"
+      ],
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-union-string",
+      "title": "Official datum union-string",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "02086b656c70",
+      "input_encoding": "hex",
+      "decoded": "kelp",
+      "schema": [
+        "null",
+        "string"
+      ],
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-record-f",
+      "title": "Official datum record-f",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0a",
+      "input_encoding": "hex",
+      "decoded": {
+        "f": 5
+      },
+      "schema": {
+        "type": "record",
+        "name": "Berth",
+        "fields": [
+          {
+            "name": "f",
+            "type": "long"
+          }
+        ]
+      },
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-io-fixed-1",
+      "title": "Official datum fixed-1",
+      "section": "4",
+      "section_title": "binary encoding",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#encodings",
+      "paragraph": "Schemaless binary encoding of one Avro value. Datum list follows apache/avro test_io.SCHEMAS_TO_VALIDATE (Apache-2.0); names were kept only where they are type names.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "42",
+      "input_encoding": "hex",
+      "decoded": {
+        "$hex": "42"
+      },
+      "schema": {
+        "type": "fixed",
+        "name": "Tide",
+        "size": 1
+      },
+      "notes": "Encoded from apache/avro official test datums (Apache-2.0)."
+    },
+    {
+      "id": "avro-trunc-int",
+      "title": "Truncated zigzag int",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "A continuation bit of 1 requires another byte.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "80",
+      "input_encoding": "hex",
+      "schema": "int"
+    },
+    {
+      "id": "avro-trunc-string",
+      "title": "String shorter than declared length",
+      "section": "4.3",
+      "section_title": "string",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-string",
+      "paragraph": "A string is a long length plus that many UTF-8 bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "086b65",
+      "input_encoding": "hex",
+      "schema": "string"
+    },
+    {
+      "id": "avro-union-bad-index",
+      "title": "Union branch index out of range",
+      "section": "4.4",
+      "section_title": "union",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#unions",
+      "paragraph": "The branch index must refer to an existing union arm.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "04",
+      "input_encoding": "hex",
+      "schema": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "id": "avro-enum-bad",
+      "title": "Enum index out of range",
+      "section": "4.3",
+      "section_title": "enum",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-enum",
+      "paragraph": "An enum is a zigzag int that must be a valid symbol index.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "04",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "enum",
+        "name": "Harbor",
+        "symbols": [
+          "A",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "avro-fixed-short",
+      "title": "Fixed value shorter than size",
+      "section": "4.3",
+      "section_title": "fixed",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-fixed",
+      "paragraph": "A fixed value is exactly size bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "42",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "fixed",
+        "name": "Tide",
+        "size": 4
+      }
+    },
+    {
+      "id": "avro-array-trunc",
+      "title": "Array block truncated",
+      "section": "4.4",
+      "section_title": "array",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-array",
+      "paragraph": "An array is a sequence of blocks ended by a zero count.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "02",
+      "input_encoding": "hex",
+      "schema": {
+        "type": "array",
+        "items": "long"
+      }
+    },
     {
       "id": "avro-int-0",
       "title": "Avro int 0",
@@ -161,22 +677,6 @@
       "input": "00",
       "input_encoding": "hex",
       "decoded": null,
-      "schema": [
-        "null",
-        "string"
-      ]
-    },
-    {
-      "id": "avro-union-bad-index",
-      "title": "Union branch index out of range",
-      "section": "4.4",
-      "section_title": "union",
-      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#unions",
-      "paragraph": "The branch index must refer to an existing union arm.",
-      "requirement": "MUST NOT",
-      "expect": "reject",
-      "input": "04",
-      "input_encoding": "hex",
       "schema": [
         "null",
         "string"

@@ -41,7 +41,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"top1\" :\u2423\n  \"key1\" : &alias1 scalar1\n'top2' :\u2423\n  'key2' : &alias2 scalar2\ntop3: &node3\u2423\n  *alias1 : scalar3\ntop4:\u2423\n  *alias2 : scalar4\ntop5   :\u2423\u2423\u2423\u2423\n  scalar5\ntop6:\u2423\n  &anchor6 'key6' : scalar6\n",
+      "input": "\"top1\" :␣\n  \"key1\" : &alias1 scalar1\n'top2' :␣\n  'key2' : &alias2 scalar2\ntop3: &node3␣\n  *alias1 : scalar3\ntop4:␣\n  *alias2 : scalar4\ntop5   :␣␣␣␣\n  scalar5\ntop6:␣\n  &anchor6 'key6' : scalar6\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/26DV.yaml (MIT)."
     },
@@ -132,7 +132,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- |1-\u220e\n",
+      "input": "--- |1-∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/2G84.yaml (MIT)."
     },
@@ -145,7 +145,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- |1+\u220e\n",
+      "input": "--- |1+∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/2G84.yaml (MIT)."
     },
@@ -284,7 +284,7 @@
       "title": "Plain Scalar looking like key, comment, anchor and tag",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://gist.github.com/anonymous/a98d50ce42a59b1e999552bea7a31f57 via @ingydotnet",
+      "section_url": "https://gist.github.com/anonymous/a98d50ce42a59b1e999552bea7a31f57",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -327,7 +327,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"2 leading\n    \\\u2014\u2014\u2014\u00bbtab\"\n",
+      "input": "\"2 leading\n    \\———»tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/3RLN.yaml (MIT)."
     },
@@ -340,7 +340,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"3 leading\n    \u2014\u2014\u2014\u2014\u00bbtab\"\n",
+      "input": "\"3 leading\n    ————»tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/3RLN.yaml (MIT)."
     },
@@ -366,7 +366,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"5 leading\n    \\\u2014\u2014\u2014\u00bb  tab\"\n",
+      "input": "\"5 leading\n    \\———»  tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/3RLN.yaml (MIT)."
     },
@@ -379,7 +379,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"6 leading\n    \u2014\u2014\u2014\u2014\u00bb  tab\"\n",
+      "input": "\"6 leading\n    ————»  tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/3RLN.yaml (MIT)."
     },
@@ -431,7 +431,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "---\na:\n\u2014\u2014\u2014\u00bbb:\n\u2014\u2014\u2014\u00bb\u2014\u2014\u2014\u00bbc: value\n",
+      "input": "---\na:\n———»b:\n———»———»c: value\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/4EJS.yaml (MIT)."
     },
@@ -548,7 +548,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- >\n ab\n cd\n\u2423\n ef\n\n\n gh\n",
+      "input": "--- >\n ab\n cd\n␣\n ef\n\n\n gh\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/4Q9F.yaml (MIT)."
     },
@@ -561,7 +561,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "- |\n detected\n- >\n\u2423\n\u2423\u2423\n  # detected\n- |1\n  explicit\n- >\n detected\n",
+      "input": "- |\n detected\n- >\n␣\n␣␣\n  # detected\n- |1\n  explicit\n- >\n detected\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/4QFQ.yaml (MIT)."
     },
@@ -574,7 +574,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "  [1, 2, 3]\u2423\u2423\n\u2423\u2423\u220e\n",
+      "input": "  [1, 2, 3]␣␣\n␣␣∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/4RWC.yaml (MIT)."
     },
@@ -626,7 +626,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "plain: text\n  lines\nquoted: \"text\n  \u2014\u00bblines\"\nblock: |\n  text\n   \u00bblines\n",
+      "input": "plain: text\n  lines\nquoted: \"text\n  —»lines\"\nblock: |\n  text\n   »lines\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/4ZYM.yaml (MIT)."
     },
@@ -648,7 +648,7 @@
       "title": "Flow Mapping",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/mapping.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#742-flow-mappings",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -674,7 +674,7 @@
       "title": "Construct Binary",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/yaml/pyyaml/blob/master/tests/data/construct-binary-py2.data",
+      "section_url": "https://yaml.org/spec/1.2.2/#83-block-scalars",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -743,7 +743,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "Folding:\n  \"Empty line\n   \u00bb\n  as a line feed\"\nChomping: |\n  Clipped empty lines\n\u2423\n\u21b5\n",
+      "input": "Folding:\n  \"Empty line\n   »\n  as a line feed\"\nChomping: |\n  Clipped empty lines\n␣\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/5GBF.yaml (MIT)."
     },
@@ -769,7 +769,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "block scalar: >\n\u2423\n\u2423\u2423\n\u2423\u2423\u2423\n invalid\n",
+      "input": "block scalar: >\n␣\n␣␣\n␣␣␣\n invalid\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/5LLU.yaml (MIT)."
     },
@@ -895,7 +895,7 @@
       "title": "Single Entry Block Sequence",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/sequence.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#741-flow-sequences",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -912,7 +912,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "- foo:\u2014\u00bb bar\n- - baz\n  -\u00bbbaz\n",
+      "input": "- foo:—» bar\n- - baz\n  -»baz\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/6BCT.yaml (MIT)."
     },
@@ -938,7 +938,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\u2014\u2014\u2014\u2014\u00bb[\n\u2014\u2014\u2014\u2014\u00bb]\n",
+      "input": "————»[\n————»]\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/6CA3.yaml (MIT)."
     },
@@ -964,7 +964,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- |+\n ab\n\u2423\n\u2423\u2423\n...\n",
+      "input": "--- |+\n ab\n␣\n␣␣\n...\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/6FWR.yaml (MIT)."
     },
@@ -990,7 +990,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "  # Leading comment line spaces are\n   # neither content nor indentation.\n\u2423\u2423\u2423\u2423\nNot indented:\n By one space: |\n    By four\n      spaces\n Flow style: [    # Leading spaces\n   By two,        # in flow style\n  Also by two,    # are neither\n  \u2014\u00bbStill by two   # content nor\n    ]             # indentation.\n",
+      "input": "  # Leading comment line spaces are\n   # neither content nor indentation.\n␣␣␣␣\nNot indented:\n By one space: |\n    By four\n      spaces\n Flow style: [    # Leading spaces\n   By two,        # in flow style\n  Also by two,    # are neither\n  —»Still by two   # content nor\n    ]             # indentation.\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/6HB6.yaml (MIT)."
     },
@@ -1146,7 +1146,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\n\"\n  foo\u2423\n\u2423\n    bar\n\n  baz\n\"\n",
+      "input": "---\n\"\n  foo␣\n␣\n    bar\n\n  baz\n\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/6WPF.yaml (MIT)."
     },
@@ -1211,7 +1211,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- |-\n ab\n\u2423\n\u2423\n...\n",
+      "input": "--- |-\n ab\n␣\n␣\n...\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/753E.yaml (MIT)."
     },
@@ -1224,7 +1224,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\" 1st non-empty\n\n 2nd non-empty\u2423\n\u2014\u2014\u2014\u00bb3rd non-empty \"\n",
+      "input": "\" 1st non-empty\n\n 2nd non-empty␣\n———»3rd non-empty \"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/7A4E.yaml (MIT)."
     },
@@ -1243,7 +1243,7 @@
     },
     {
       "id": "yts-7BUB-1",
-      "title": "Spec Example 2.10. Node for \u201cSammy Sosa\u201d appears twice in this document",
+      "title": "Spec Example 2.10. Node for “Sammy Sosa” appears twice in this document",
       "section": "1.2",
       "section_title": "YAML 1.2",
       "section_url": "http://www.yaml.org/spec/1.2/spec.html#id2760658",
@@ -1406,7 +1406,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "  # Comment\n\u2423\u2423\u2423\n\u21b5\n\u21b5\n",
+      "input": "  # Comment\n␣␣␣\n↵\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/8G76.yaml (MIT)."
     },
@@ -1467,7 +1467,7 @@
       "title": "Comment in plain multiline value",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://gist.github.com/anonymous/deeb1ace28d5bf21fb56d80c13e2dc69 via @ingydotnet",
+      "section_url": "https://gist.github.com/anonymous/deeb1ace28d5bf21fb56d80c13e2dc69",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
@@ -1484,7 +1484,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\n- &\ud83d\ude01 unicode anchor\n",
+      "input": "---\n- &😁 unicode anchor\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/8XYN.yaml (MIT)."
     },
@@ -1510,7 +1510,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- >-\n  trimmed\n\u2423\u2423\n\u2423\n\n  as\n  space\n",
+      "input": "--- >-\n  trimmed\n␣␣\n␣\n\n  as\n  space\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/93WF.yaml (MIT)."
     },
@@ -1536,7 +1536,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: |-\n \u2014\u2014\u00bbbar\n",
+      "input": "foo: |-\n ——»bar\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/96NN.yaml (MIT)."
     },
@@ -1549,7 +1549,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: |-\n \u2014\u2014\u00bbbar\u220e\n",
+      "input": "foo: |-\n ——»bar∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/96NN.yaml (MIT)."
     },
@@ -1623,7 +1623,7 @@
       "title": "Multi-level Mapping Indent",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/indent.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#61-indentation-spaces",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -1649,7 +1649,7 @@
       "title": "Simple Mapping Indent",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/indent.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#61-indentation-spaces",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -1688,7 +1688,7 @@
       "title": "Mapping starting at --- line",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://gist.github.com/anonymous/c728390e92ec93fb371ac77f21435cca via @ingydotnet",
+      "section_url": "https://gist.github.com/anonymous/c728390e92ec93fb371ac77f21435cca",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
@@ -1796,7 +1796,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\n\" 1st non-empty\n\n 2nd non-empty\u2423\n 3rd non-empty \"\n",
+      "input": "---\n\" 1st non-empty\n\n 2nd non-empty␣\n 3rd non-empty \"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/9TFX.yaml (MIT)."
     },
@@ -1835,7 +1835,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "a\nb\u2423\u2423\n  c\nd\n\ne\n",
+      "input": "a\nb␣␣\n  c\nd\n\ne\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/9YRD.yaml (MIT)."
     },
@@ -1848,7 +1848,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "? a\n: -\u00bbb\n  -  -\u2014\u00bbc\n     - d\n",
+      "input": "? a\n: -»b\n  -  -—»c\n     - d\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/A2M4.yaml (MIT)."
     },
@@ -1896,11 +1896,11 @@
       "title": "Empty Stream",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/misc.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\u220e\n",
+      "input": "∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/AVM7.yaml (MIT)."
     },
@@ -1939,7 +1939,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- >\n folded\n text\n\u21b5\n\u21b5\n",
+      "input": "--- >\n folded\n text\n↵\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/B3HG.yaml (MIT)."
     },
@@ -1971,7 +1971,7 @@
     },
     {
       "id": "yts-BEC7-1",
-      "title": "Spec Example 6.14. \u201cYAML\u201d directive",
+      "title": "Spec Example 6.14. “YAML” directive",
       "section": "1.2",
       "section_title": "YAML 1.2",
       "section_url": "http://www.yaml.org/spec/1.2/spec.html#id2781929",
@@ -2000,7 +2000,7 @@
       "title": "Comment between plain scalar lines",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://gist.github.com/anonymous/269f16d582fdd30a7dcf8c9249c5da7f via @ingydotnet",
+      "section_url": "https://gist.github.com/anonymous/269f16d582fdd30a7dcf8c9249c5da7f",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
@@ -2013,7 +2013,7 @@
       "title": "Node Anchor and Tag on Seperate Lines",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://gist.github.com/anonymous/f192e7dab6da31831f264dbf1947cb83 via @ingydotnet",
+      "section_url": "https://gist.github.com/anonymous/f192e7dab6da31831f264dbf1947cb83",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -2247,7 +2247,7 @@
       "title": "Single Pair Block Mapping",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/mapping.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#742-flow-mappings",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -2277,7 +2277,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "a: b\u2014\u2014\u2014\u00bb\nseq:\u2014\u2014\u2014\u00bb\n - a\u2014\u2014\u2014\u00bb\nc: d\u2014\u2014\u2014\u00bb#X\n",
+      "input": "a: b———»\nseq:———»\n - a———»\nc: d———»#X\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DC7X.yaml (MIT)."
     },
@@ -2303,7 +2303,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"2 trailing\\t\u2423\u2423\n    tab\"\n",
+      "input": "\"2 trailing\\t␣␣\n    tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DE56.yaml (MIT)."
     },
@@ -2316,7 +2316,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"3 trailing\\\u2014\u2014\u2014\u2014\u00bb\n    tab\"\n",
+      "input": "\"3 trailing\\————»\n    tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DE56.yaml (MIT)."
     },
@@ -2329,7 +2329,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"4 trailing\\\u2014\u2014\u2014\u2014\u00bb\u2423\u2423\n    tab\"\n",
+      "input": "\"4 trailing\\————»␣␣\n    tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DE56.yaml (MIT)."
     },
@@ -2342,7 +2342,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"5 trailing\u2014\u00bb\n    tab\"\n",
+      "input": "\"5 trailing—»\n    tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DE56.yaml (MIT)."
     },
@@ -2355,7 +2355,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"6 trailing\u2014\u00bb\u2423\u2423\n    tab\"\n",
+      "input": "\"6 trailing—»␣␣\n    tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DE56.yaml (MIT)."
     },
@@ -2377,7 +2377,7 @@
       "title": "Flow Sequence",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/sequence.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#741-flow-sequences",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -2420,7 +2420,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo:\n \u2014\u2014\u2014\u00bbbar\n",
+      "input": "foo:\n ———»bar\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2433,7 +2433,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "foo: \"bar\n\u2014\u2014\u2014\u2014\u00bbbaz\"\n",
+      "input": "foo: \"bar\n————»baz\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2446,7 +2446,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: \"bar\n  \u2014\u2014\u00bbbaz\"\n",
+      "input": "foo: \"bar\n  ——»baz\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2459,7 +2459,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": " \u2014\u2014\u2014\u00bb\nfoo: 1\n",
+      "input": " ———»\nfoo: 1\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2472,7 +2472,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: 1\n\u2014\u2014\u2014\u2014\u00bb\nbar: 2\n",
+      "input": "foo: 1\n————»\nbar: 2\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2485,7 +2485,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: 1\n \u2014\u2014\u2014\u00bb\nbar: 2\n",
+      "input": "foo: 1\n ———»\nbar: 2\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2498,7 +2498,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "foo:\n  a: 1\n  \u2014\u2014\u00bbb: 2\n",
+      "input": "foo:\n  a: 1\n  ——»b: 2\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2511,7 +2511,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "%YAML 1.2\n\u2014\u2014\u2014\u2014\u00bb\n---\n",
+      "input": "%YAML 1.2\n————»\n---\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2524,7 +2524,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: \"bar\n \u2014\u2014\u2014\u00bb \u2014\u2014\u00bb baz \u2014\u2014\u00bb \u2014\u2014\u00bb \"\n",
+      "input": "foo: \"bar\n ———» ——» baz ——» ——» \"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DK95.yaml (MIT)."
     },
@@ -2550,7 +2550,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "|\n\u2423\n\u2423\u2423\n  literal\n\u2423\u2423\u2423\n\u2423\u2423\n  text\n\n # Comment\n",
+      "input": "|\n␣\n␣␣\n  literal\n␣␣␣\n␣␣\n  text\n\n # Comment\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/DWX9.yaml (MIT)."
     },
@@ -2615,7 +2615,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\na\nb\u2423\u2423\n  c\nd\n\ne\n",
+      "input": "---\na\nb␣␣\n  c\nd\n\ne\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/EX5H.yaml (MIT)."
     },
@@ -2680,7 +2680,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": " # Strip\n  # Comments:\nstrip: |-\n  # text\n\u2423\u2423\n # Clip\n  # comments:\n\nclip: |\n  # text\n\u2423\n # Keep\n  # comments:\n\nkeep: |+\n  # text\n\n # Trail\n  # comments.\n",
+      "input": " # Strip\n  # Comments:\nstrip: |-\n  # text\n␣␣\n # Clip\n  # comments:\n\nclip: |\n  # text\n␣\n # Keep\n  # comments:\n\nkeep: |+\n  # text\n\n # Trail\n  # comments.\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/F8F9.yaml (MIT)."
     },
@@ -2823,7 +2823,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": ">\n folded\n text\n\u21b5\n\u21b5\n",
+      "input": ">\n folded\n text\n↵\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/G992.yaml (MIT)."
     },
@@ -2888,7 +2888,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: 1\n\nbar: 2\n\u2423\u2423\u2423\u2423\ntext: |\n  a\n\u2423\u2423\u2423\u2423\n  b\n\n  c\n\u2423\n  d\n",
+      "input": "foo: 1\n\nbar: 2\n␣␣␣␣\ntext: |\n  a\n␣␣␣␣\n  b\n\n  c\n␣\n  d\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/H2RW.yaml (MIT)."
     },
@@ -2901,7 +2901,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\nwanted: love \u2665 and peace \u262e\n",
+      "input": "---\nwanted: love ♥ and peace ☮\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/H3Z8.yaml (MIT)."
     },
@@ -2910,7 +2910,7 @@
       "title": "Node anchor not indented",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://gist.github.com/anonymous/f192e7dab6da31831f264dbf1947cb83 via @ingydotnet",
+      "section_url": "https://gist.github.com/anonymous/f192e7dab6da31831f264dbf1947cb83",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
@@ -3005,7 +3005,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "1st non-empty\n\n 2nd non-empty\u2423\n\u2014\u2014\u2014\u00bb3rd non-empty\n",
+      "input": "1st non-empty\n\n 2nd non-empty␣\n———»3rd non-empty\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/HS5T.yaml (MIT)."
     },
@@ -3014,7 +3014,7 @@
       "title": "Invalid Mapping in plain scalar",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://gist.github.com/anonymous/d305fd8e54cfe7a484088c91a8a2e533 via @ingydotnet",
+      "section_url": "https://gist.github.com/anonymous/d305fd8e54cfe7a484088c91a8a2e533",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
@@ -3044,7 +3044,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "# Tabs and spaces\nquoted: \"Quoted \u2014\u2014\u2014\u00bb\"\nblock:\u2014\u00bb|\n  void main() {\n  \u2014\u00bbprintf(\"Hello, world!\\n\");\n  }\n",
+      "input": "# Tabs and spaces\nquoted: \"Quoted ———»\"\nblock:—»|\n  void main() {\n  —»printf(\"Hello, world!\\n\");\n  }\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/J3BT.yaml (MIT)."
     },
@@ -3053,7 +3053,7 @@
       "title": "Multiple Pair Block Mapping",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/mapping.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#742-flow-mappings",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -3109,7 +3109,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "- |+\n\u21b5\n\u21b5\n",
+      "input": "- |+\n↵\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/JEF9.yaml (MIT)."
     },
@@ -3122,7 +3122,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "- |+\n\u2423\u2423\u2423\n",
+      "input": "- |+\n␣␣␣\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/JEF9.yaml (MIT)."
     },
@@ -3135,7 +3135,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "- |+\n\u2423\u2423\u2423\u220e\n",
+      "input": "- |+\n␣␣␣∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/JEF9.yaml (MIT)."
     },
@@ -3248,7 +3248,7 @@
       "title": "Multiple Entry Block Sequence",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/sequence.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#741-flow-sequences",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -3265,7 +3265,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": ">-\n  trimmed\n\u2423\u2423\n\u2423\n\n  as\n  space\n",
+      "input": ">-\n  trimmed\n␣␣\n␣\n\n  as\n  space\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/K527.yaml (MIT)."
     },
@@ -3278,7 +3278,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\u00bbscalar\n",
+      "input": "---»scalar\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/K54U.yaml (MIT)."
     },
@@ -3291,7 +3291,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "strip: >-\n\nclip: >\n\nkeep: |+\n\u21b5\n",
+      "input": "strip: >-\n\nclip: >\n\nkeep: |+\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/K858.yaml (MIT)."
     },
@@ -3317,7 +3317,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"2 inline\\\u2014\u2014\u00bbtab\"\n",
+      "input": "\"2 inline\\——»tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/KH5V.yaml (MIT)."
     },
@@ -3330,7 +3330,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"3 inline\u2014\u2014\u2014\u00bbtab\"\n",
+      "input": "\"3 inline———»tab\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/KH5V.yaml (MIT)."
     },
@@ -3352,7 +3352,7 @@
       "title": "Block Submapping",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/mapping.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#742-flow-mappings",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -3395,7 +3395,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: |\n  x\n\u2423\u2423\u2423\n",
+      "input": "foo: |\n  x\n␣␣␣\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/L24T.yaml (MIT)."
     },
@@ -3408,7 +3408,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: |\n  x\n\u2423\u2423\u2423\u220e\n",
+      "input": "foo: |\n  x\n␣␣␣∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/L24T.yaml (MIT)."
     },
@@ -3525,7 +3525,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "a: |\n ab\n\u2423\n cd\n ef\n\u2423\n\n...\n",
+      "input": "a: |\n ab\n␣\n cd\n ef\n␣\n\n...\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/M29M.yaml (MIT)."
     },
@@ -3629,7 +3629,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "|\n literal\n \u2014\u2014\u00bbtext\n\u21b5\n\u21b5\n",
+      "input": "|\n literal\n ——»text\n↵\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/M9B4.yaml (MIT)."
     },
@@ -3642,7 +3642,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": ">\n  foo\u2423\n\u2423\n  \u2014\u00bb bar\n\n  baz\n",
+      "input": ">\n  foo␣\n␣\n  —» bar\n\n  baz\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/MJS9.yaml (MIT)."
     },
@@ -3694,7 +3694,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "%YAML \u2014\u2014\u00bb 1.1\n---\n",
+      "input": "%YAML ——» 1.1\n---\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/MUS6.yaml (MIT)."
     },
@@ -3759,7 +3759,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "|-\n ab\n\u2423\n\u2423\n...\n",
+      "input": "|-\n ab\n␣\n␣\n...\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/MYW6.yaml (MIT)."
     },
@@ -3811,7 +3811,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\na: '\n  '\nb: '\u2423\u2423\n  '\nc: \"\n  \"\nd: \"\u2423\u2423\n  \"\ne: '\n\n  '\nf: \"\n\n  \"\ng: '\n\n\n  '\nh: \"\n\n\n  \"\n",
+      "input": "---\na: '\n  '\nb: '␣␣\n  '\nc: \"\n  \"\nd: \"␣␣\n  \"\ne: '\n\n  '\nf: \"\n\n  \"\ng: '\n\n\n  '\nh: \"\n\n\n  \"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/NAT4.yaml (MIT)."
     },
@@ -3824,7 +3824,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "key:\n  value\n  with\n  \u2014\u00bb\n  tabs\n",
+      "input": "key:\n  value\n  with\n  —»\n  tabs\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/NB6Z.yaml (MIT)."
     },
@@ -3837,7 +3837,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": ":\n\u21b5\n\u21b5\n",
+      "input": ":\n↵\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/NHX8.yaml (MIT)."
     },
@@ -3876,7 +3876,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"folded\u2423\nto a space,\u00bb\n\u2423\nto a line feed, or \u00bb\\\n \\ \u00bbnon-content\"\n",
+      "input": "\"folded␣\nto a space,»\n␣\nto a line feed, or »\\\n \\ »non-content\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/NP9H.yaml (MIT)."
     },
@@ -3889,7 +3889,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "- | # Empty header\u2193\n literal\n- >1 # Indentation indicator\u2193\n  folded\n- |+ # Chomping indicator\u2193\n keep\n\n- >1- # Both indicators\u2193\n  strip\n",
+      "input": "- | # Empty header↓\n literal\n- >1 # Indentation indicator↓\n  folded\n- |+ # Chomping indicator↓\n keep\n\n- >1- # Both indicators↓\n  strip\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/P2AD.yaml (MIT)."
     },
@@ -3928,7 +3928,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "key:    # Comment\n        # lines\n  value\n\u21b5\n\u21b5\n",
+      "input": "key:    # Comment\n        # lines\n  value\n↵\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/P94K.yaml (MIT)."
     },
@@ -3954,7 +3954,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "' 1st non-empty\n\n 2nd non-empty\u2423\n\u2014\u2014\u2014\u00bb3rd non-empty '\n",
+      "input": "' 1st non-empty\n\n 2nd non-empty␣\n———»3rd non-empty '\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/PRH3.yaml (MIT)."
     },
@@ -4006,7 +4006,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\u2014\u2014\u2014\u00bb{}\n",
+      "input": "———»{}\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Q5MG.yaml (MIT)."
     },
@@ -4032,7 +4032,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\n\"folded\u2423\nto a space,\n\u2423\nto a line feed, or \u00bb\\\n \\ \u00bbnon-content\"\n",
+      "input": "---\n\"folded␣\nto a space,\n␣\nto a line feed, or »\\\n \\ »non-content\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Q8AD.yaml (MIT)."
     },
@@ -4110,7 +4110,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "- |\n detected\n- >\n\u2423\n\u2423\u2423\n  # detected\n- |1\n  explicit\n- >\n \u2014\u2014\u00bb\n detected\n",
+      "input": "- |\n detected\n- >\n␣\n␣␣\n  # detected\n- |1\n  explicit\n- >\n ——»\n detected\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/R4YG.yaml (MIT)."
     },
@@ -4145,7 +4145,7 @@
       "title": "Sequence Indent",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/indent.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/#61-indentation-spaces",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -4262,7 +4262,7 @@
       "title": "Document with footer",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://github.com/ingydotnet/yaml-pegex-pm/blob/master/test/footer.tml",
+      "section_url": "https://yaml.org/spec/1.2.2/",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
@@ -4292,7 +4292,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "empty block scalar: >\n\u2423\n\u2423\u2423\n\u2423\u2423\u2423\n # comment\n",
+      "input": "empty block scalar: >\n␣\n␣␣\n␣␣␣\n # comment\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/S98Z.yaml (MIT)."
     },
@@ -4357,7 +4357,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "-\u220e\n",
+      "input": "-∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/SM9W.yaml (MIT)."
     },
@@ -4370,7 +4370,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": ":\u220e\n",
+      "input": ":∎\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/SM9W.yaml (MIT)."
     },
@@ -4461,7 +4461,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- |\n\u2423\n\u2423\u2423\n  literal\n\u2423\u2423\u2423\n\u2423\u2423\n  text\n\n # Comment\n",
+      "input": "--- |\n␣\n␣␣\n  literal\n␣␣␣\n␣␣\n  text\n\n # Comment\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/T26H.yaml (MIT)."
     },
@@ -4474,7 +4474,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "---\n' 1st non-empty\n\n 2nd non-empty\u2423\n 3rd non-empty '\n",
+      "input": "---\n' 1st non-empty\n\n 2nd non-empty␣\n 3rd non-empty '\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/T4YY.yaml (MIT)."
     },
@@ -4487,7 +4487,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "--- |\n literal\n \u2014\u2014\u00bbtext\n\u21b5\n\u21b5\n",
+      "input": "--- |\n literal\n ——»text\n↵\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/T5N4.yaml (MIT)."
     },
@@ -4539,7 +4539,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "\"\n  foo\u2423\n\u2423\n  \u2014\u00bb bar\n\n  baz\n\"\n",
+      "input": "\"\n  foo␣\n␣\n  —» bar\n\n  baz\n\"\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/TL85.yaml (MIT)."
     },
@@ -4552,13 +4552,13 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": ">\n ab\n cd\n\u2423\n ef\n\n\n gh\n",
+      "input": ">\n ab\n cd\n␣\n ef\n\n\n gh\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/TS54.yaml (MIT)."
     },
     {
       "id": "yts-U3C3-1",
-      "title": "Spec Example 6.16. \u201cTAG\u201d directive",
+      "title": "Spec Example 6.16. “TAG” directive",
       "section": "1.2",
       "section_title": "YAML 1.2",
       "section_url": "http://www.yaml.org/spec/1.2/spec.html#id2782252",
@@ -4721,7 +4721,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "x:\n - x\n  \u2014\u2014\u00bbx\n",
+      "input": "x:\n - x\n  ——»x\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/UV7Q.yaml (MIT)."
     },
@@ -4825,7 +4825,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "---\nblock scalar: |\n\u2423\u2423\u2423\u2423\u2423\n  more spaces at the beginning\n  are invalid\n",
+      "input": "---\nblock scalar: |\n␣␣␣␣␣\n  more spaces at the beginning\n  are invalid\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/W9L4.yaml (MIT)."
     },
@@ -4903,7 +4903,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "Folding:\n  \"Empty line\n\n  as a line feed\"\nChomping: |\n  Clipped empty lines\n\u2423\n\u21b5\n",
+      "input": "Folding:\n  \"Empty line\n\n  as a line feed\"\nChomping: |\n  Clipped empty lines\n␣\n↵\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/XV9V.yaml (MIT)."
     },
@@ -4942,7 +4942,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "foo: |\n\u2014\u2014\u2014\u2014\u00bb\nbar: 1\n",
+      "input": "foo: |\n————»\nbar: 1\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -4955,7 +4955,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "foo: |\n \u2014\u2014\u2014\u00bb\nbar: 1\n",
+      "input": "foo: |\n ———»\nbar: 1\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -4968,7 +4968,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "- [\n\u2014\u2014\u2014\u2014\u00bb\n foo\n ]\n",
+      "input": "- [\n————»\n foo\n ]\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -4981,7 +4981,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "- [\n\u2014\u2014\u2014\u2014\u00bbfoo,\n foo\n ]\n",
+      "input": "- [\n————»foo,\n foo\n ]\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -4994,7 +4994,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "-\u2014\u2014\u2014\u00bb-\n",
+      "input": "-———»-\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -5007,7 +5007,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "- \u2014\u2014\u00bb-\n",
+      "input": "- ——»-\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -5020,7 +5020,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "?\u2014\u2014\u2014\u00bb-\n",
+      "input": "?———»-\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -5033,7 +5033,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "? -\n:\u2014\u2014\u2014\u00bb-\n",
+      "input": "? -\n:———»-\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -5046,7 +5046,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "?\u2014\u2014\u2014\u00bbkey:\n",
+      "input": "?———»key:\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -5059,7 +5059,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",
-      "input": "? key:\n:\u2014\u2014\u2014\u00bbkey:\n",
+      "input": "? key:\n:———»key:\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -5072,7 +5072,7 @@
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST",
       "expect": "accept",
-      "input": "-\u2014\u2014\u2014\u00bb-1\n",
+      "input": "-———»-1\n",
       "input_encoding": "utf-8",
       "notes": "Vendored from yaml/yaml-test-suite src/Y79Y.yaml (MIT)."
     },
@@ -5133,7 +5133,7 @@
       "title": "Invalid mapping in plain single line value",
       "section": "1.2",
       "section_title": "YAML 1.2",
-      "section_url": "https://gist.github.com/anonymous/0c8db51d151baf8113205ba3ce71d1b4 via @ingydotnet",
+      "section_url": "https://gist.github.com/anonymous/0c8db51d151baf8113205ba3ce71d1b4",
       "paragraph": "Official yaml-test-suite item. fail/error tagged cases must be rejected; others must be accepted.",
       "requirement": "MUST NOT",
       "expect": "reject",

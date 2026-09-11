@@ -34,10 +34,11 @@ PyYAML `safe_load` is a **YAML 1.1** loader. It will:
 
 That is expected and report-only.
 
-## Why we did not copy the spec examples
+## Official suite and the spec legend
 
 The YAML spec legend is “freely copied, provided it is not modified.”
-That is a poor fit for a test file we edit. The official
+That is a poor fit for a test file we edit, so spec examples were not
+copied. The official
 [yaml-test-suite](https://github.com/yaml/yaml-test-suite) is MIT and
-would have been legal. We recreated rules with original names instead.
-See [legal provenance](legal.md).
+**is** vendored (`yts-*` ids). Original 1.1-vs-1.2 extras
+(`harbor` / `kelp`) sit beside it. See [legal provenance](legal.md).

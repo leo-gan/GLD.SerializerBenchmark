@@ -4,7 +4,7 @@
   "version": "1.1-decimal128",
   "standard_url": "https://bsonspec.org/spec.html",
   "provenance": "original-work",
-  "notes": "BSON 1.1 decimal128 only. Recreated; MongoDB corpus not used.",
+  "notes": "BSON 1.1 decimal128 plus framing rejects. Recreated.",
   "cases": [
     {
       "id": "bson-decimal128-zero",
@@ -42,6 +42,18 @@
       "requirement": "MUST NOT",
       "expect": "reject",
       "input": "0c000000106e00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "bson-missing-eoo",
+      "title": "Document without trailing NUL",
+      "section": "Basic Types",
+      "section_title": "document",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "Every document ends with 0x00.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0b000000106e0007000000",
       "input_encoding": "hex"
     }
   ]

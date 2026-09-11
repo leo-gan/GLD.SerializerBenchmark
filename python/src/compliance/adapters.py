@@ -40,6 +40,38 @@ class Adapter:
         return _package_version(self.package_name)
 
 
+def _pydantic_decode(data: bytes) -> Any:
+    from typing import Any as TypingAny
+
+    from pydantic import TypeAdapter
+
+    return TypeAdapter(TypingAny).validate_json(data)
+
+
+def _mashumaro_decode(data: bytes) -> Any:
+    from typing import Any as TypingAny
+
+    from mashumaro.codecs.orjson import ORJSONDecoder
+
+    return ORJSONDecoder(TypingAny).decode(data)
+
+
+def _serpyco_decode(data: bytes) -> Any:
+    import orjson
+    from serpyco_rs import Serializer
+
+    obj = orjson.loads(data)
+    if isinstance(obj, dict):
+        return Serializer(dict).load(obj)
+    return obj
+
+
+def _plist_decode(data: bytes) -> Any:
+    import plistlib
+
+    return plistlib.loads(data)
+
+
 def _json_stdlib_decode(data: bytes) -> Any:
     import json
 
@@ -217,6 +249,24 @@ def _flexbuffers_decode(data: bytes) -> Any:
     return root.Value
 
 
+def _ion_decode(data: bytes) -> Any:
+    from amazon.ion.simpleion import loads
+
+    return loads(data, single_value=False)
+
+
+def _ubjson_decode(data: bytes) -> Any:
+    import ubjson
+
+    return ubjson.loadb(data)
+
+
+def _smile_decode(data: bytes) -> Any:
+    from newsmile import SmileDecoder
+
+    return SmileDecoder().decode(data)
+
+
 def builtin_adapters() -> list[Adapter]:
     """Adapters that can be constructed; missing optional imports are skipped."""
     specs: list[tuple[str, str, DecodeFn, EncodeFn | None, str, str]] = [
@@ -224,6 +274,9 @@ def builtin_adapters() -> list[Adapter]:
         ("orjson", "json", _orjson_decode, _orjson_encode, "orjson", "orjson"),
         ("msgspec", "json", _msgspec_json_decode, _msgspec_json_encode, "msgspec.json", "msgspec"),
         ("rapidjson", "json", _rapidjson_decode, _rapidjson_encode, "python-rapidjson", "python-rapidjson"),
+        ("pydantic", "json", _pydantic_decode, None, "pydantic TypeAdapter(Any).validate_json", "pydantic"),
+        ("mashumaro", "json", _mashumaro_decode, None, "mashumaro ORJSONDecoder(Any)", "mashumaro"),
+        ("serpyco-rs", "json", _serpyco_decode, None, "orjson wire + serpyco-rs Serializer(dict)", "serpyco-rs"),
         ("yaml", "yaml", _yaml_decode, _yaml_encode, "PyYAML safe_load (YAML 1.1)", "PyYAML"),
         ("tomllib", "toml", _toml_decode, None, "Python 3.11+ tomllib (TOML 1.0)", "stdlib"),
         ("cbor2", "cbor", _cbor2_decode, _cbor2_encode, "cbor2", "cbor2"),
@@ -247,6 +300,10 @@ def builtin_adapters() -> list[Adapter]:
             "flatbuffers.flexbuffers",
             "flatbuffers",
         ),
+        ("amazon-ion", "ion", _ion_decode, None, "amazon.ion simpleion", "amazon-ion"),
+        ("py-ubjson", "ubjson", _ubjson_decode, None, "py-ubjson (Draft 12)", "py-ubjson"),
+        ("newsmile", "smile", _smile_decode, None, "newsmile SmileDecoder", "newsmile"),
+        ("plistlib", "plist", _plist_decode, None, "Python stdlib plistlib", "stdlib"),
     ]
     out: list[Adapter] = []
     for name, fmt, dec, enc, notes, package in specs:

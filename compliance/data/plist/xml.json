@@ -1,0 +1,80 @@
+{
+  "format": "plist",
+  "standard": "Apple XML property list",
+  "version": "xml",
+  "standard_url": "https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/UnderstandXMLPlist/UnderstandXMLPlist.html",
+  "provenance": "original-work",
+  "notes": "XML plist 1.0. Original values.",
+  "cases": [
+    {
+      "id": "plist-xml-empty-dict",
+      "title": "Empty XML dictionary",
+      "section": "XML Property Lists",
+      "section_title": "dict",
+      "section_url": "https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/UnderstandXMLPlist/UnderstandXMLPlist.html",
+      "paragraph": "A plist document wraps one value. An empty dict is valid.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><dict/></plist>",
+      "decoded": {}
+    },
+    {
+      "id": "plist-xml-string",
+      "title": "XML string kelp",
+      "section": "XML Property Lists",
+      "section_title": "string",
+      "section_url": "https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/UnderstandXMLPlist/UnderstandXMLPlist.html",
+      "paragraph": "A <string> element is a Unicode string.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><string>kelp</string></plist>",
+      "decoded": "kelp"
+    },
+    {
+      "id": "plist-xml-int",
+      "title": "XML integer 7",
+      "section": "XML Property Lists",
+      "section_title": "integer",
+      "section_url": "https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/UnderstandXMLPlist/UnderstandXMLPlist.html",
+      "paragraph": "An <integer> element is a signed integer.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><integer>7</integer></plist>",
+      "decoded": 7
+    },
+    {
+      "id": "plist-xml-true",
+      "title": "XML true",
+      "section": "XML Property Lists",
+      "section_title": "true",
+      "section_url": "https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/UnderstandXMLPlist/UnderstandXMLPlist.html",
+      "paragraph": "<true/> is the boolean true.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><true/></plist>",
+      "decoded": true
+    },
+    {
+      "id": "plist-xml-unclosed",
+      "title": "Unclosed plist",
+      "section": "XML Property Lists",
+      "section_title": "document",
+      "section_url": "https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/UnderstandXMLPlist/UnderstandXMLPlist.html",
+      "paragraph": "The document must be well-formed XML.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "<plist><dict>"
+    },
+    {
+      "id": "plist-xml-empty",
+      "title": "Empty buffer is not a plist",
+      "section": "XML Property Lists",
+      "section_title": "document",
+      "section_url": "https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/UnderstandXMLPlist/UnderstandXMLPlist.html",
+      "paragraph": "A plist is an XML document or a bplist.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": ""
+    }
+  ]
+}

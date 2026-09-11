@@ -24,12 +24,13 @@ print_usage() {
     cat << USAGE
 Usage: $(basename "$0") [OPTIONS]
 
-Run serialization compliance suites (JSON, YAML, TOML, CBOR, MessagePack).
+Run serialization compliance suites (JSON, YAML, TOML, CBOR, MessagePack,
+schema/binary cousins, Ion, UBJSON, Smile).
 This is the spec-quality counterpart to run-all-benchmarks.sh: same libraries,
 cited RFC/spec sections, no timings.
 
 OPTIONS:
-    -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack
+    -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack protobuf avro bson flatbuffers ion ubjson smile
     -s, --serializer NAME Limit to a serializer (repeatable): json orjson msgspec yaml …
     -d, --detailed        Print every case, not only the summary and failures
     -o, --json-out PATH   Write the machine-readable report (default: logs/compliance/<ts>.json)
@@ -98,6 +99,30 @@ set +e
 uv run python -m compliance "${ARGS[@]}"
 STATUS=$?
 set -e
+if [[ "$STATUS" -eq 0 ]]; then
+    cp -f "$JSON_OUT" "$LOG_DIR/latest-python.json"
+fi
+
+JS_STATUS=0
+if command -v node >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/javascript/src/compliance.mjs" ]]; then
+    echo ""
+    echo -e "${BLUE}JavaScript compliance…${NC}"
+    JS_OUT="$LOG_DIR/${TS}-javascript.json"
+    JS_ARGS=(--json-out "$JS_OUT")
+    for f in "${FORMATS[@]+"${FORMATS[@]}"}"; do
+        JS_ARGS+=(--format "$f")
+    done
+    # Do not forward Python serializer names. JS libraries have different names.
+    set +e
+    (cd "$PROJECT_ROOT/javascript" && node src/compliance.mjs "${JS_ARGS[@]}")
+    JS_STATUS=$?
+    set -e
+    if [[ "$JS_STATUS" -eq 0 ]]; then
+        cp -f "$JS_OUT" "$LOG_DIR/latest-javascript.json"
+    else
+        echo -e "${YELLOW}⚠ JavaScript compliance exited $JS_STATUS${NC}"
+    fi
+fi
 
 echo ""
 if [[ "$STATUS" -eq 0 ]]; then

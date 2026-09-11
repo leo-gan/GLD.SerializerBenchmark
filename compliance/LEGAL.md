@@ -125,17 +125,77 @@ Sources:
 | Google protobuf `conformance/` | BSD-style (Google) | Legal to copy, but it is a **runner protocol** plus generated messages, not a static catalog file. Out of scope for the text+IETF-binary first cut. |
 | Apache Avro `share/test` | Apache-2.0 | Legal to copy. Out of scope for this first cut. |
 | [cbor-wg/cbor-test-vectors](https://github.com/cbor-wg/cbor-test-vectors) | BSD-2-Clause | **Now vendored** (`cbor-wg-*` ids) from `tests/rfc8949/{good,bad}.edn`. License: `compliance/vendor/cbor-test-vectors.BSD-2-Clause.txt`. |
-| [dmitry-ra/ubjson-test-suite](https://github.com/dmitry-ra/ubjson-test-suite) | No OSI license in tree | Do not copy. |
+| [dmitry-ra/ubjson-test-suite](https://github.com/dmitry-ra/ubjson-test-suite) | No OSI license in tree | **Not copied.** `compliance/data/ubjson/` is original recreation. |
 | MongoDB [BSON corpus](https://github.com/mongodb/specifications) | **CC BY-NC-SA 3.0 US** | **Not copied.** `compliance/data/bson/` is original recreation. |
 
 XML is out of scope (user request). W3C XML tests were never imported.
 
 ### Protocol Buffers / Avro / FlatBuffers
 
-- Encoding rules from protobuf.dev, avro.apache.org, and flatbuffers.dev.
-- Cases are **original-work** (new field numbers, names `kelp` / `harbor`).
-- Google `conformance/` was not vendored (runner protocol, not a static catalog).
-- Apache Avro `share/test` was not copied; primitives were rewritten from the spec.
+- **Avro:** official `lang/py/avro/test/test_io.py` `BINARY_ENCODINGS` and
+  `SCHEMAS_TO_VALIDATE` datums are **Apache-2.0**. Encoded into
+  `compliance/data/avro/` (`avro-io-*`). License:
+  `compliance/vendor/avro.Apache-2.0.txt`.
+- **Protobuf:** Google `conformance/` is a **runner protocol**, not a
+  static file list. We did not vendor it. Cases cover the published
+  encoding guide and proto3 JSON mapping (original names).
+- **FlexBuffers:** official `tests/gold_flexbuffer_example.bin`
+  (Apache-2.0) plus a generated type matrix. License:
+  `compliance/vendor/flatbuffers.Apache-2.0.txt`.
+- **BSON:** MongoDB bson-corpus (and the copy inside libbson) is
+  **CC BY-NC-SA**. **Not copied.** Full type matrix recreated from
+  bsonspec.org.
+
+### Amazon Ion
+
+| Version | Note |
+|---------|------|
+| 1.0 text | Official `iontestdata` `*.ion` |
+| 1.0 binary | Official `iontestdata` `*.10n` |
+| 1.1 | Original IVM / compatibility cases |
+
+- Official suite: [amazon-ion/ion-tests](https://github.com/amazon-ion/ion-tests), **Apache-2.0**
+  (Copyright 2007–2016 Amazon.com, Inc. or its affiliates).
+- **Now vendored** (`ion-good-*`, `ion-bad-*`) from `iontestdata/{good,bad}`.
+  `good` → accept, `bad` → reject. Equivalence / non-equivalence folders are
+  still valid documents (accept-only; we do not score Ion data-model equality).
+- License: `compliance/vendor/ion-tests.Apache-2.0.txt`.
+- Ion 1.1 has no separate `iontestdata` tree in that repo; `ion/1.1.json` is
+  original-work (1.1 IVM `$ion_1_1` / `E0 01 01 EA`, plus 1.0 compatibility).
+
+### UBJSON
+
+| Version | Note |
+|---------|------|
+| Draft 8 | Literals Z/T/F plus retired markers B / s / a |
+| Draft 9 | Streaming `[` `]` `{` `}` and `#` count |
+| Draft 12 | Current ubjson.org: U, i, I, S, C, H, N, typed `$` |
+
+- Spec: [ubjson.org](https://ubjson.org/) (Apache-2.0). Type markers are facts.
+- [dmitry-ra/ubjson-test-suite](https://github.com/dmitry-ra/ubjson-test-suite)
+  has **no OSI license** in tree. **Not copied.** Catalog is original
+  (`harbor` / `kelp` / `n`).
+
+### Thrift / Cap’n Proto / Bond / Bebop / HOCON / plist / ZON
+
+- Specs are public. Cases are **original-work** well-formedness
+  (harbor / kelp). No third-party suite was copied.
+- Apple plist XML / binary: original documents; Python `plistlib`
+  is the first adapter.
+- Language-native and private binaries stay without a spec column.
+
+### Smile
+
+| Version | Note |
+|---------|------|
+| 1.0 | Header `:)\n`, literals, tiny ASCII, containers |
+| 1.0 shared names | Header bit 0 and key back-references |
+| 1.0.4 | 0x24 / 0x28 numbers, 0xFF end marker, reserved 0xFE |
+
+- Spec: [FasterXML/smile-format-specification](https://github.com/FasterXML/smile-format-specification)
+  (**BSD-2-Clause**). Token byte values are facts; case ids and titles are ours.
+- No official OSI-licensed test corpus was vendored. `pysmile` 0.2 is Python 2
+  and is not a dependency.
 
 ## How original cases were written
 

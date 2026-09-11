@@ -638,7 +638,7 @@ def write_bson() -> None:
 
 
 def write_flatbuffers() -> None:
-    spec = "https://flatbuffers.dev/flatbuffers_internals/"
+    spec = "https://flatbuffers.dev/internals/"
     flex = "https://flatbuffers.dev/flexbuffers.html"
     cases = [
         C(

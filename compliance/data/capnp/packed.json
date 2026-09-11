@@ -1,0 +1,34 @@
+{
+  "format": "capnp",
+  "standard": "Cap'n Proto packed encoding",
+  "version": "packed",
+  "standard_url": "https://capnproto.org/encoding.html#packing",
+  "provenance": "original-work",
+  "notes": "Packed stream is a compression of the same words.",
+  "cases": [
+    {
+      "id": "capnp-pack-empty",
+      "title": "Empty packed stream is not a message",
+      "section": "Packing",
+      "section_title": "packed",
+      "section_url": "https://capnproto.org/encoding.html#packing",
+      "paragraph": "A packed message still has a segment table after unpacking.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "capnp-pack-trunc",
+      "title": "Truncated packed tag",
+      "section": "Packing",
+      "section_title": "tag",
+      "section_url": "https://capnproto.org/encoding.html#packing",
+      "paragraph": "A tag byte that claims extra literal words must be followed by them.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "ff",
+      "input_encoding": "hex"
+    }
+  ]
+}

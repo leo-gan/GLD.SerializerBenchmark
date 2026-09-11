@@ -1,0 +1,78 @@
+{
+  "format": "zon",
+  "standard": "Zig Object Notation",
+  "version": "1",
+  "standard_url": "https://ziglang.org/documentation/master/#Zig-Object-Notation-ZON",
+  "provenance": "original-work",
+  "notes": "Original cases from the Zig language reference.",
+  "cases": [
+    {
+      "id": "zon-empty-struct",
+      "title": "Empty struct",
+      "section": "ZON",
+      "section_title": "struct",
+      "section_url": "https://ziglang.org/documentation/master/#Zig-Object-Notation-ZON",
+      "paragraph": "An anonymous struct is .{ }.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": ".{}"
+    },
+    {
+      "id": "zon-int",
+      "title": "Integer 7",
+      "section": "ZON",
+      "section_title": "number",
+      "section_url": "https://ziglang.org/documentation/master/#Zig-Object-Notation-ZON",
+      "paragraph": "A ZON document may be a single integer.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "7",
+      "decoded": 7
+    },
+    {
+      "id": "zon-string",
+      "title": "String kelp",
+      "section": "ZON",
+      "section_title": "string",
+      "section_url": "https://ziglang.org/documentation/master/#Zig-Object-Notation-ZON",
+      "paragraph": "A string is double-quoted.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "\"kelp\"",
+      "decoded": "kelp"
+    },
+    {
+      "id": "zon-field",
+      "title": "Named field harbor",
+      "section": "ZON",
+      "section_title": "struct",
+      "section_url": "https://ziglang.org/documentation/master/#Zig-Object-Notation-ZON",
+      "paragraph": "A field is .name = value,",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": ".{ .harbor = \"kelp\" }"
+    },
+    {
+      "id": "zon-unclosed",
+      "title": "Unclosed struct",
+      "section": "ZON",
+      "section_title": "struct",
+      "section_url": "https://ziglang.org/documentation/master/#Zig-Object-Notation-ZON",
+      "paragraph": "A struct must close with }.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": ".{ .harbor = \"kelp\""
+    },
+    {
+      "id": "zon-bare-eq",
+      "title": "Equals without a field name",
+      "section": "ZON",
+      "section_title": "struct",
+      "section_url": "https://ziglang.org/documentation/master/#Zig-Object-Notation-ZON",
+      "paragraph": "A field starts with a leading dot and a name.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": ".{ = 7 }"
+    }
+  ]
+}

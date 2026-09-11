@@ -1,7 +1,8 @@
 # Serialization compliance corpus
 
 Static, dependency-free catalog for **JSON**, **YAML**, **TOML**, **CBOR**,
-and **MessagePack**, with up to three industry versions of each standard.
+**MessagePack**, schema/binary cousins, **Amazon Ion**, **UBJSON**, and
+**Smile**, with up to three industry versions of each standard.
 
 This is the **spec-quality** counterpart to the speed benchmark.
 
@@ -79,6 +80,8 @@ Import official MIT/BSD suites (from local clones, no network at run time):
 
 ```bash
 python3 compliance/scripts/import_official.py /tmp/compliance-suites
+python3 compliance/scripts/import_ion.py /tmp/ion-tests
+python3 compliance/scripts/write_ubjson_smile.py
 ```
 
 ## Adding a language adapter

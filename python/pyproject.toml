@@ -29,6 +29,9 @@ dependencies = [
     "pyyaml>=6.0,<7",
     "pymongo>=4.10,<5",
     "zstandard>=0.23,<1",
+    "amazon-ion>=0.13,<1",
+    "py-ubjson>=0.16,<1",
+    "newsmile>=1.1,<2",
 ]
 
 [project.optional-dependencies]

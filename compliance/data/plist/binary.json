@@ -1,0 +1,34 @@
+{
+  "format": "plist",
+  "standard": "Apple binary property list",
+  "version": "binary",
+  "standard_url": "https://medium.com/@karaiskc/understanding-apples-binary-property-list-format-281e6da00dbd",
+  "provenance": "original-work",
+  "notes": "bplist magic / header rejects. Accept cases come from plistlib in the runner if needed.",
+  "cases": [
+    {
+      "id": "plist-bin-magic",
+      "title": "Binary plist starts with bplist",
+      "section": "Binary",
+      "section_title": "header",
+      "section_url": "https://medium.com/@karaiskc/understanding-apples-binary-property-list-format-281e6da00dbd",
+      "paragraph": "A binary plist begins with the ASCII magic bplist.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "00000000",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "plist-bin-short",
+      "title": "Truncated bplist header",
+      "section": "Binary",
+      "section_title": "header",
+      "section_url": "https://medium.com/@karaiskc/understanding-apples-binary-property-list-format-281e6da00dbd",
+      "paragraph": "The header is the 6-byte magic plus a 2-byte version.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "62706c697374",
+      "input_encoding": "hex"
+    }
+  ]
+}

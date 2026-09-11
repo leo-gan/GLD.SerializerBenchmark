@@ -16,24 +16,27 @@ clone of the repository. IETF Appendix A notices live in
 4. Otherwise we **recreate** the *rule* with new names, order, and
    cardinality, and we cite the section URL.
 
-This first delivery **vendors no third-party suite**. Catalog files say
-`"provenance": "original-work"` (CBOR Appendix A encodings add
-`+ietf-appendix-A`).
+Official MIT / BSD / Apache suites that we *did* vendor live under
+`compliance/data/` as catalog JSON. License texts are in
+`compliance/vendor/`. Original extras stay `"provenance": "original-work"`.
 
 ## Suites we looked at
 
 | Suite | License | Decision |
 |-------|---------|----------|
-| nst/JSONTestSuite | MIT | Legal to copy. **Not copied** — we needed RFC section URLs. |
-| yaml/yaml-test-suite | MIT | Legal to copy. **Not copied** — original names instead. |
+| nst/JSONTestSuite | MIT | **Vendored** (`jts-*`). |
+| yaml/yaml-test-suite | MIT | **Vendored** (`yts-*`). |
 | YAML spec examples | “copy, do not modify” | **Not copied.** |
-| toml-lang/toml-test | MIT | Legal to copy. **Not copied.** |
-| kawanet/msgpack-test-suite | MIT | Legal to copy. **Not copied.** |
+| toml-lang/toml-test | MIT | **Vendored** (`toml-1.0.0-*`, `toml-1.1.0-*`). |
+| kawanet/msgpack-test-suite | MIT | **Vendored** (`mps-*`). |
 | RFC 7049 / 8949 Appendix A | IETF Code Components (Revised BSD) | **Encodings used**, with the BSD notice. |
-| MongoDB BSON corpus | **CC BY-NC-SA 3.0 US** | **Cannot copy** into this MIT repo. Recreate if BSON is added. |
-| W3C XML tests | W3C Test Suite License / 3-clause BSD | Do not vendor the “shall not be changed” tests. Recreate if XML is added. |
-| protobuf `conformance/` | BSD-style | Legal, but it is a runner protocol. Out of scope here. |
-| Apache Avro tests | Apache-2.0 | Legal. Out of scope here. |
+| cbor-wg/cbor-test-vectors | BSD-2-Clause | **Vendored** (`cbor-wg-*`). |
+| amazon-ion/ion-tests | Apache-2.0 | **Vendored** (`ion-good-*`, `ion-bad-*`). |
+| MongoDB BSON corpus | **CC BY-NC-SA 3.0 US** | **Not copied.** Recreated under `compliance/data/bson/`. |
+| dmitry-ra/ubjson-test-suite | No OSI license | **Not copied.** Recreated under `compliance/data/ubjson/`. |
+| W3C XML tests | W3C Test Suite License / 3-clause BSD | XML is out of scope. |
+| protobuf `conformance/` | BSD-style | Legal, but it is a runner protocol. Not vendored. |
+| Apache Avro tests | Apache-2.0 | Legal. Primitives rewritten from the spec. |
 
 ## How a recreated case differs from a spec listing
 
