@@ -10,7 +10,7 @@ renamed (`json` → `gldjson`, `runtime` → `gldjson_runtime` / `cbor_runtime` 
 `toml_src/` is `DataBooth/mojo-toml` unchanged (`toml` does not collide).
 `gld-toml` is not published yet, so this harness does not vendor it.
 
-`ehsanmok_src/ehsanmok_json/` is `ehsanmok/json` v0.3.0 renamed off the `json`
+`ehsanmok_src/ehsanmok_json/` is `ehsanmok/json` v0.3.1 renamed off the `json`
 package name so it can live next to mojo-avro. `gpu/__init__.mojo` is a stub:
 the GPU path needs Modular `max`, and this harness times the CPU parser only.
 

@@ -111,9 +111,11 @@ def report_to_json(report: Report) -> dict:
         "scope": {
             "formats": sorted({r.suite.format for r in report.results}),
             "note": (
-                "Official parse suites (MIT/BSD/Apache) plus original extras. "
-                "XML is out of scope. Language-native / private binaries have "
-                "no public spec column."
+                "Each cell asks: did this library accept what the spec requires, "
+                "and reject what it forbids? Inputs are the official parse tests "
+                "for that format, plus cases written from the spec text. XML is "
+                "not scored. Private formats are listed under Standard → No "
+                "public spec, not graded."
             ),
         },
         "passed": report.passed,

@@ -9,6 +9,7 @@ from yaml import decode_value as yaml_decode
 from cbor import decode_value as cbor_decode
 from msgpack import decode_value as msgpack_decode
 from toml import parse as toml_parse
+from avro import GenericDatum, parse_avsc
 
 
 
@@ -143,6 +144,15 @@ def _try_cbor(buf: List[Byte]) raises:
 
 def _try_msgpack(buf: List[Byte]) raises:
     _ = msgpack_decode(buf)
+
+
+def _try_avro(buf: List[Byte], schema_json: String) raises:
+    var text = schema_json
+    if text.byte_length() == 0:
+        text = "\"int\""
+    var pool = parse_avsc(text)
+    var g = GenericDatum(pool^)
+    g.decode(buf)
 
 
 def _try_protobuf(buf: List[Byte], schema: String, text: String) raises:
@@ -284,6 +294,11 @@ def _run_one(
                 schema,
                 input_text,
             )
+        elif fmt == "avro":
+            _try_avro(
+                _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
+                schema,
+            )
         else:
             raise Error("no adapter")
         ok = True
@@ -419,7 +434,7 @@ def main() raises:
                 sers.append("EmberJson")
                 vers.append("0.3.4")
                 sers.append("ehsanmok-json")
-                vers.append("0.3.0")
+                vers.append("0.3.1")
                 sers.append("mojo-json")
                 vers.append("0.3.0")
             elif fmt == "yaml":
@@ -437,6 +452,9 @@ def main() raises:
             elif fmt == "protobuf":
                 sers.append("mojo-protobuf")
                 vers.append("0.6.0")
+            elif fmt == "avro":
+                sers.append("mojo-avro")
+                vers.append("0.4.0")
             else:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
                 var already = False
@@ -486,9 +504,12 @@ def main() raises:
                     section_url = ""
                 var schema = ""
                 try:
-                    schema = String(c["schema"].string())
+                    schema = String(c["schema"])
                 except:
-                    schema = ""
+                    try:
+                        schema = String(c["schema"].string())
+                    except:
+                        schema = ""
                 if _too_deep(input_text):
                     skipped += 1
                     ci += 1

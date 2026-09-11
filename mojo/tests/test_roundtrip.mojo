@@ -1,4 +1,4 @@
-from bench.data import TypeConfig, fidelity, make_one
+from bench.data import TypeConfig, make_cell, make_one
 from bench.emberjson_ser import EmberJsonSer
 from bench.ehsanmok_ser import EhsanJsonSer
 from bench.cbor_ser import CborSer
@@ -42,10 +42,20 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("mojo-msgpack fidelity " + type_id)
 
 
+def _ehsan_batch(type_id: String) raises:
+    var cfg = TypeConfig()
+    var fx = make_cell(type_id, cfg, UInt64(42), 100, "")
+    var ehsan = EhsanJsonSer()
+    if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
+        raise Error("ehsanmok-json fidelity n=100 " + type_id)
+
+
 def main() raises:
     _roundtrip_all("message")
     _roundtrip_all("document")
     _roundtrip_all("telemetry")
     _roundtrip_all("strings")
     _roundtrip_all("event")
+    _ehsan_batch("document")
+    _ehsan_batch("telemetry")
     print("ok")

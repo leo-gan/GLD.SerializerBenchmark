@@ -20,11 +20,11 @@ from pathlib import Path
 
 SCHEMA = "gld.dashboard.compliance/1"
 SCOPE_NOTE = (
-    "Official parse suites (MIT/BSD/Apache) plus original extras: "
-    "JSONTestSuite, yaml-test-suite, toml-test, msgpack-test-suite, "
-    "cbor-wg, ion-tests, apache/avro test_io. Schema formats expanded "
-    "to the published encoding rules. XML is out of scope. "
-    "Language-native / private binaries have no public spec column."
+    "Each cell asks: did this library accept what the spec requires, and "
+    "reject what it forbids? Inputs are the official parse tests for that "
+    "format, plus cases written from the spec text. XML is not scored. "
+    "Private formats (pickle, gob, Kryo, …) are listed under "
+    "Standard → No public spec, not graded."
 )
 
 

@@ -54,8 +54,13 @@ elif [[ -d "$SIBLING_ROOT/gld-toml/src/toml" ]]; then
 else
   git clone --depth 1 https://github.com/DataBooth/mojo-toml.git "$tmp/mojo-toml"
 fi
-if [[ ! -d "$tmp/ehsanmok-json/json" ]]; then
-  git clone --depth 1 --branch v0.3.0 https://github.com/ehsanmok/json.git "$tmp/ehsanmok-json"
+if [[ -d "$SIBLING_ROOT/ehsanmok-json/json" ]]; then
+  echo "[INFO] using sibling $SIBLING_ROOT/ehsanmok-json"
+  rm -rf "$tmp/ehsanmok-json"
+  mkdir -p "$tmp/ehsanmok-json"
+  cp -a "$SIBLING_ROOT/ehsanmok-json/json" "$tmp/ehsanmok-json/json"
+else
+  git clone --depth 1 --branch v0.3.1 https://github.com/ehsanmok/json.git "$tmp/ehsanmok-json"
 fi
 
 python3 - "$tmp" "$MOJO_DIR" <<'PY'

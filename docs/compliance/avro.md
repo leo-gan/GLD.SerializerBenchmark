@@ -40,6 +40,7 @@ table, stored as catalog JSON so nothing is downloaded at run time.
 **Schemaless** here means “one Avro value, no object-container file
 header,” not “no schema.” The schema still comes from the catalog.
 
-JavaScript `avsc` reads the same files. These primitives have been
-stable since 1.8, so the three columns should all pass on a current
-`fastavro` / `avsc`.
+JavaScript `avsc` reads the same files. Mojo `mojo-avro` uses
+`parse_avsc` plus `GenericDatum.decode` on the same catalog. These
+primitives have been stable since 1.8, so the three columns should
+all pass on a current `fastavro` / `avsc` / `mojo-avro`.

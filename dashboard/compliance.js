@@ -6,6 +6,14 @@
  */
 import './compliance.css';
 import { serializerDisplayName } from './format.js';
+import {
+  heatmapFromMatrix,
+  languageOf as languageOfCell,
+  matchesRow as matrixMatchesRow,
+  parseRowIdentity,
+  rowIdentity,
+  serializerOf,
+} from './compliance-matrix.js';
 
 const DATA_URL = 'data/compliance.json.gz';
 const DATA_URL_PLAIN = 'data/compliance.json';
@@ -103,8 +111,16 @@ function langLabel(id) {
   return LANG_LABELS[id] || id;
 }
 
-function serializerOf(row) {
-  return row?.serializer || row?.adapter || '';
+function isMultiLang() {
+  return ui.lang === ALL_LANG && languageIds().length > 1;
+}
+
+function languageOf(row) {
+  return languageOfCell(row, ui.lang === ALL_LANG ? '' : ui.lang);
+}
+
+function matchesRow(row, key) {
+  return matrixMatchesRow(row, key, ui.lang === ALL_LANG ? '' : ui.lang);
 }
 
 function serializerLabel(row) {
@@ -128,6 +144,12 @@ function noSpecLabel(entry, { withLang = false } = {}) {
 
 function formatLabel(id) {
   return FORMAT_LABELS[id] || id;
+}
+
+function sortedFormatIds() {
+  return Object.keys(FORMAT_LABELS).sort((a, b) =>
+    formatLabel(a).localeCompare(formatLabel(b), undefined, { sensitivity: 'base' }),
+  );
 }
 
 function parseHash() {
@@ -387,54 +409,33 @@ function renderNoSpecHeatmap() {
 function renderHeatmap(matrix) {
   if (ui.format === NO_SPEC) return renderNoSpecHeatmap();
   if (!matrix.length) return '<p class="section-help">No matrix cells for this language.</p>';
-  const filtered = matrix.filter((c) => {
-    if (ui.format && String(c.format) !== ui.format) return false;
-    if (ui.serializer && serializerOf(c) !== ui.serializer) return false;
-    return true;
+  const { columns, rows } = heatmapFromMatrix(matrix, {
+    format: ui.format,
+    serializerKey: ui.serializer,
   });
-  if (!filtered.length) {
+  if (!rows.length) {
     return '<p class="section-help">No results for this standard.</p><div id="cmp-fail-panel" class="cmp-fail-panel" hidden></div>';
-  }
-  const serializers = unique(filtered, serializerOf);
-  const columns = [];
-  const colKey = new Set();
-  for (const cell of filtered) {
-    const key = String(cell.standard || '');
-    if (!key || colKey.has(key)) continue;
-    colKey.add(key);
-    columns.push({
-      key,
-      standard: cell.standard,
-      version: cell.version,
-      standard_url: cell.standard_url || '',
-    });
   }
   const caseRows = rowsForLang();
   const head = columns.map((c) => `<th>${columnTitleHtml(c, caseRows)}</th>`).join('');
-  const multiLang = ui.lang === ALL_LANG && languageIds().length > 1;
-  const body = serializers
-    .map((ser) => {
-      const sample = filtered.find((m) => serializerOf(m) === ser) || {};
+  const multiLang = isMultiLang();
+  const body = rows
+    .map((row) => {
       const tds = columns
         .map((col) => {
-          const matches = filtered.filter(
-            (m) => serializerOf(m) === ser && String(m.standard) === col.key,
-          );
-          if (!matches.length) return '<td class="cmp-cell-empty">—</td>';
-          const passed = matches.reduce((n, c) => n + (c.passed || 0), 0);
-          const failed = matches.reduce((n, c) => n + (c.failed || 0), 0);
-          const total = matches.reduce((n, c) => n + (c.total || 0), 0);
-          const judged = passed + failed;
-          const rate = judged ? passed / judged : null;
+          const acc = row.byStandard.get(col.key);
+          if (!acc) return '<td class="cmp-cell-empty">—</td>';
+          const judged = acc.passed + acc.failed;
+          const rate = judged ? acc.passed / judged : null;
           return `<td class="${rateClass(rate)}">
-            <button type="button" class="cmp-cell-btn" data-cmp-ser="${escapeHtml(ser)}" data-cmp-std="${escapeHtml(col.key)}">
-              ${escapeHtml(pct(rate))} / ${passed}/${total}
+            <button type="button" class="cmp-cell-btn" data-cmp-ser="${escapeHtml(row.key)}" data-cmp-std="${escapeHtml(col.key)}">
+              ${escapeHtml(pct(rate))} / ${acc.passed}/${acc.total}
             </button>
           </td>`;
         })
         .join('');
-      let label = serializerLabel(sample);
-      if (multiLang) label = `${langLabel(sample.language || '')} · ${label}`;
+      let label = serializerLabel(row.sample);
+      if (multiLang) label = `${langLabel(row.language)} · ${label}`;
       return `<tr><th scope="row">${escapeHtml(label)}</th>${tds}</tr>`;
     })
     .join('');
@@ -451,7 +452,7 @@ function renderHeatmap(matrix) {
 function openCellPanel(serializer, standard) {
   const rows = rowsForLang().filter(
     (row) =>
-      serializerOf(row) === serializer &&
+      matchesRow(row, serializer) &&
       String(row.standard) === standard &&
       (!ui.format || String(row.format) === ui.format),
   );
@@ -533,23 +534,29 @@ function renderMain(root) {
   const rate = judged ? kpis.passed / judged : null;
   // Catalog families, not whatever the last run happened to emit.
   const liveFormats = new Set(unique(langRows, 'format'));
-  const formats = Object.keys(FORMAT_LABELS);
+  const formats = sortedFormatIds();
   const noSpecList = noSpecEntries(ui.lang);
   const serializers = noSpec
     ? (ui.lang === ALL_LANG ? noSpecList.map(noSpecKey) : noSpecList.map((e) => e.serializer))
-    : unique(langRows.filter((r) => !ui.format || r.format === ui.format), serializerOf);
+    : unique(langRows.filter((r) => !ui.format || r.format === ui.format), rowIdentity);
   const matrix = matrixForLang();
 
   root.innerHTML = `
     <div class="cmp-header">
       <h2 class="chart-title">Compliance</h2>
       <p class="section-help">
-        Spec quality for the same serializers the suite benches. Live numbers live here,
-        not on the documentation pages.
+        Same serializers as the Overview timings, scored against the published
+        format spec instead of a stopwatch.
         <a href="../compliance/">How the catalog is built</a>
       </p>
     </div>
-    <p class="cmp-scope">${escapeHtml(payload.scope?.note || '')}</p>
+    <p class="cmp-scope">
+      Each cell asks: did this library accept what the spec requires, and reject
+      what it forbids? The inputs are the official parse tests for that format,
+      plus cases written from the spec text. XML is not scored. Pickle, gob,
+      Kryo, and other private formats are under Standard → No public spec —
+      listed, not graded, because there is no public MUST / MUST NOT document.
+    </p>
     ${renderLangTabs(tabIds)}
     <p class="cmp-meta">
       ${escapeHtml(ui.lang === ALL_LANG ? 'All languages' : langLabel(ui.lang))}
@@ -575,6 +582,14 @@ function renderMain(root) {
           }
           const hit = noSpecList.find((e) => e.serializer === name);
           return hit ? noSpecLabel(hit) : name;
+        }
+        const qualified = parseRowIdentity(name);
+        if (qualified.language) {
+          const sample = langRows.find(
+            (r) => serializerOf(r) === qualified.serializer && languageOf(r) === qualified.language,
+          );
+          const label = sample ? serializerLabel(sample) : qualified.serializer;
+          return isMultiLang() ? `${langLabel(qualified.language)} · ${label}` : label;
         }
         const sample = langRows.find((r) => serializerOf(r) === name);
         return sample ? serializerLabel(sample) : name;
