@@ -1,0 +1,22 @@
+{
+  "format": "flatbuffers",
+  "standard": "FlatBuffers file identifier",
+  "version": "file-id",
+  "standard_url": "https://flatbuffers.dev/flatbuffers_internals/",
+  "provenance": "original-work",
+  "notes": "Optional 4-byte file identifier after the root offset.",
+  "cases": [
+    {
+      "id": "fb-id-truncated",
+      "title": "Identifier claimed but buffer too short",
+      "section": "File format",
+      "section_title": "file identifier",
+      "section_url": "https://flatbuffers.dev/flatbuffers_internals/",
+      "paragraph": "A file identifier is four bytes following the root uoffset.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "04000000",
+      "input_encoding": "hex"
+    }
+  ]
+}

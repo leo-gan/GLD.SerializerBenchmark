@@ -1,0 +1,186 @@
+{
+  "format": "avro",
+  "standard": "Apache Avro 1.11 binary",
+  "version": "1.11",
+  "standard_url": "https://avro.apache.org/docs/1.11.1/specification/",
+  "provenance": "original-work",
+  "notes": "Binary encoding from the Avro 1.11 specification. Original values.",
+  "cases": [
+    {
+      "id": "avro-int-0",
+      "title": "Avro int 0",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "int is a variable-length zigzag varint. 0 encodes as a single 0x00.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex",
+      "decoded": 0,
+      "schema": "int"
+    },
+    {
+      "id": "avro-int-1",
+      "title": "Avro int 1",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "Zigzag maps 1 to 2, encoded as 0x02.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "02",
+      "input_encoding": "hex",
+      "decoded": 1,
+      "schema": "int"
+    },
+    {
+      "id": "avro-int-neg1",
+      "title": "Avro int -1",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "Zigzag maps -1 to 1, encoded as 0x01.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "01",
+      "input_encoding": "hex",
+      "decoded": -1,
+      "schema": "int"
+    },
+    {
+      "id": "avro-bool-true",
+      "title": "Avro boolean true",
+      "section": "4.1",
+      "section_title": "boolean",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-boolean",
+      "paragraph": "boolean is a single byte, 0 or 1.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "01",
+      "input_encoding": "hex",
+      "decoded": true,
+      "schema": "boolean"
+    },
+    {
+      "id": "avro-string-kelp",
+      "title": "Avro string kelp",
+      "section": "4.3",
+      "section_title": "string",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-string",
+      "paragraph": "string is a long byte-count followed by UTF-8. Count 4 zigzag-encodes as 0x08.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "086b656c70",
+      "input_encoding": "hex",
+      "decoded": "kelp",
+      "schema": "string"
+    },
+    {
+      "id": "avro-bytes-empty",
+      "title": "Avro empty bytes",
+      "section": "4.3",
+      "section_title": "bytes",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-bytes",
+      "paragraph": "bytes is a long count plus that many raw bytes. Count 0 is 0x00.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex",
+      "decoded": {
+        "$hex": ""
+      },
+      "schema": "bytes"
+    },
+    {
+      "id": "avro-null",
+      "title": "Avro null has no payload",
+      "section": "4.1",
+      "section_title": "null",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-null",
+      "paragraph": "null is written as zero bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "",
+      "input_encoding": "hex",
+      "decoded": null,
+      "schema": "null"
+    },
+    {
+      "id": "avro-truncated-string",
+      "title": "String count longer than remaining bytes",
+      "section": "4.3",
+      "section_title": "string",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-string",
+      "paragraph": "The declared byte count must be present.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "086b65",
+      "input_encoding": "hex",
+      "schema": "string"
+    },
+    {
+      "id": "avro-truncated-int",
+      "title": "Truncated zigzag varint",
+      "section": "4.2",
+      "section_title": "int",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#schema-int",
+      "paragraph": "A continuation bit requires another byte.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "80",
+      "input_encoding": "hex",
+      "schema": "int"
+    },
+    {
+      "id": "avro-union-string",
+      "title": "Union [null, string] with a string",
+      "section": "4.4",
+      "section_title": "union",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#unions",
+      "paragraph": "A union writes the branch index as a long, then the value. Branch 1 is 0x02.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "02086b656c70",
+      "input_encoding": "hex",
+      "decoded": "kelp",
+      "schema": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "id": "avro-union-null",
+      "title": "Union [null, string] with null",
+      "section": "4.4",
+      "section_title": "union",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#unions",
+      "paragraph": "Branch 0 (null) is a single 0x00.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex",
+      "decoded": null,
+      "schema": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "id": "avro-union-bad-index",
+      "title": "Union branch index out of range",
+      "section": "4.4",
+      "section_title": "union",
+      "section_url": "https://avro.apache.org/docs/1.11.1/specification/#unions",
+      "paragraph": "The branch index must refer to an existing union arm.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "04",
+      "input_encoding": "hex",
+      "schema": [
+        "null",
+        "string"
+      ]
+    }
+  ]
+}

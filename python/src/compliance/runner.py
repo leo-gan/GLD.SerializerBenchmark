@@ -7,6 +7,7 @@ from typing import Iterable
 from .adapters import Adapter, builtin_adapters
 from .catalog import load_all_suites
 from .compare import preview, values_equal
+from .context import current_schema
 from .models import Case, CaseResult, Report, Suite
 
 LAST_REPORT: Report | None = None
@@ -85,14 +86,18 @@ def _run_one(suite: Suite, case: Case, adapter: Adapter) -> CaseResult:
         return _result(suite, case, adapter, "skip", detail="listed in skip_adapters")
 
     raw = case.input_bytes()
+    token = current_schema.set(case.schema)
     try:
-        observed = adapter.decode(raw)
-        decoded_ok = True
-        decode_error: str | None = None
-    except Exception as exc:  # noqa: BLE001 — library under test
-        observed = None
-        decoded_ok = False
-        decode_error = f"{type(exc).__name__}: {exc}"
+        try:
+            observed = adapter.decode(raw)
+            decoded_ok = True
+            decode_error: str | None = None
+        except Exception as exc:  # noqa: BLE001 — library under test
+            observed = None
+            decoded_ok = False
+            decode_error = f"{type(exc).__name__}: {exc}"
+    finally:
+        current_schema.reset(token)
 
     if case.expect == "any":
         return _result(

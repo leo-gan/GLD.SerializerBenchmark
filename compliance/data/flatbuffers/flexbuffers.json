@@ -1,0 +1,75 @@
+{
+  "format": "flatbuffers",
+  "standard": "FlexBuffers",
+  "version": "flexbuffers",
+  "standard_url": "https://flatbuffers.dev/flexbuffers.html",
+  "provenance": "original-work",
+  "notes": "Schemaless FlexBuffers (FlatBuffers sibling). Original values.",
+  "cases": [
+    {
+      "id": "fb-flex-int",
+      "title": "FlexBuffers integer 7",
+      "section": "FlexBuffers",
+      "section_title": "Numbers",
+      "section_url": "https://flatbuffers.dev/flexbuffers.html",
+      "paragraph": "A FlexBuffers integer root must decode to 7.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "070401",
+      "input_encoding": "hex",
+      "decoded": 7
+    },
+    {
+      "id": "fb-flex-string",
+      "title": "FlexBuffers string kelp",
+      "section": "FlexBuffers",
+      "section_title": "Strings",
+      "section_url": "https://flatbuffers.dev/flexbuffers.html",
+      "paragraph": "A FlexBuffers string root must decode to kelp.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "046b656c7000051401",
+      "input_encoding": "hex",
+      "decoded": "kelp"
+    },
+    {
+      "id": "fb-flex-map",
+      "title": "FlexBuffers map harbor=kelp",
+      "section": "FlexBuffers",
+      "section_title": "Maps",
+      "section_url": "https://flatbuffers.dev/flexbuffers.html",
+      "paragraph": "A FlexBuffers map is a vector of keys plus values.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "686172626f7200046b656c7000010e0101010a14022401",
+      "input_encoding": "hex",
+      "decoded": {
+        "harbor": "kelp"
+      }
+    },
+    {
+      "id": "fb-flex-empty",
+      "title": "Empty buffer is not a FlexBuffers root",
+      "section": "FlexBuffers",
+      "section_title": "Root",
+      "section_url": "https://flatbuffers.dev/flexbuffers.html",
+      "paragraph": "A root requires a parent width and type byte.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "fb-flex-truncated",
+      "title": "Truncated FlexBuffers buffer",
+      "section": "FlexBuffers",
+      "section_title": "Root",
+      "section_url": "https://flatbuffers.dev/flexbuffers.html",
+      "paragraph": "The root offset must land inside the buffer.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "00",
+      "input_encoding": "hex"
+    }
+  ]
+}

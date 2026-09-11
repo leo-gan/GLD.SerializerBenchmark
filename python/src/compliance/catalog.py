@@ -77,6 +77,7 @@ def _case_from_dict(item: dict[str, Any]) -> Case:
         has_decoded=has_decoded,
         notes=item.get("notes", ""),
         skip_adapters=tuple(skip),
+        schema=item.get("schema"),
     )
 
 

@@ -1,0 +1,48 @@
+{
+  "format": "bson",
+  "standard": "BSON 1.1 decimal128",
+  "version": "1.1-decimal128",
+  "standard_url": "https://bsonspec.org/spec.html",
+  "provenance": "original-work",
+  "notes": "BSON 1.1 decimal128 only. Recreated; MongoDB corpus not used.",
+  "cases": [
+    {
+      "id": "bson-decimal128-zero",
+      "title": "decimal128 canonical zero (type 0x13)",
+      "section": "BSON Types",
+      "section_title": "decimal128",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "BSON 1.1 added type 0x13 decimal128 (16-byte IEEE 754-2008 decimal). Recreated payload is canonical +0.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "180000001364000000000000000000000000000000403000",
+      "input_encoding": "hex",
+      "notes": "If the library has no decimal128, this may skip or fail. Not from MongoDB corpus."
+    },
+    {
+      "id": "bson-empty",
+      "title": "Empty document",
+      "section": "Basic Types",
+      "section_title": "document",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "A document is an int32 size, zero or more elements, and a trailing 0x00. The empty document is 5 bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0500000000",
+      "input_encoding": "hex",
+      "decoded": {}
+    },
+    {
+      "id": "bson-truncated",
+      "title": "Declared size longer than the buffer",
+      "section": "Basic Types",
+      "section_title": "document",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "The int32 size must match the actual byte length.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0c000000106e00",
+      "input_encoding": "hex"
+    }
+  ]
+}

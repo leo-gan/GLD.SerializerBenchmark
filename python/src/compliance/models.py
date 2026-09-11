@@ -32,6 +32,7 @@ class Case:
     has_decoded: bool = False
     notes: str = ""
     skip_adapters: tuple[str, ...] = ()
+    schema: Any = None
 
     def input_bytes(self) -> bytes:
         if self.input_encoding == "hex":

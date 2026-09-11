@@ -215,6 +215,10 @@ nav:
       - TOML: compliance/toml.md
       - CBOR: compliance/cbor.md
       - MessagePack: compliance/msgpack.md
+      - Protocol Buffers: compliance/protobuf.md
+      - Avro: compliance/avro.md
+      - BSON: compliance/bson.md
+      - FlatBuffers: compliance/flatbuffers.md
       - Reading failures: compliance/reading-results.md
       - Language adapters: compliance/adapters.md
       - Legal provenance: compliance/legal.md

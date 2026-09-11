@@ -15,6 +15,10 @@ const FORMAT_LABELS = {
   toml: 'TOML',
   cbor: 'CBOR',
   msgpack: 'MessagePack',
+  protobuf: 'Protocol Buffers',
+  avro: 'Avro',
+  bson: 'BSON',
+  flatbuffers: 'FlatBuffers',
 };
 const LANG_LABELS = {
   csharp: 'C#',

@@ -120,12 +120,22 @@ Sources:
 
 | Suite | License | Why not copied |
 |-------|---------|----------------|
-| MongoDB [BSON corpus](https://github.com/mongodb/specifications) | **CC BY-NC-SA 3.0 US** | Non-Commercial + ShareAlike. **Incompatible with this MIT repo.** If BSON is added later, recreate vectors. |
+| MongoDB [BSON corpus](https://github.com/mongodb/specifications) | **CC BY-NC-SA 3.0 US** | **Not copied.** Recreated under `compliance/data/bson/`. |
 | W3C XML / XSD test suites | W3C Test Suite License **or** W3C 3-clause BSD | Test Suite License: “The tests themselves shall NOT be changed.” Dual BSD exists but the documents are still W3C-copyrighted. Recreate if XML is added. |
 | Google protobuf `conformance/` | BSD-style (Google) | Legal to copy, but it is a **runner protocol** plus generated messages, not a static catalog file. Out of scope for the text+IETF-binary first cut. |
 | Apache Avro `share/test` | Apache-2.0 | Legal to copy. Out of scope for this first cut. |
 | [cbor-wg/cbor-test-vectors](https://github.com/cbor-wg/cbor-test-vectors) | BSD-2-Clause | **Now vendored** (`cbor-wg-*` ids) from `tests/rfc8949/{good,bad}.edn`. License: `compliance/vendor/cbor-test-vectors.BSD-2-Clause.txt`. |
-| [dmitry-ra/ubjson-test-suite](https://github.com/dmitry-ra/ubjson-test-suite) | No OSI license in tree | Do not copy. Recreate if UBJSON is added. |
+| [dmitry-ra/ubjson-test-suite](https://github.com/dmitry-ra/ubjson-test-suite) | No OSI license in tree | Do not copy. |
+| MongoDB [BSON corpus](https://github.com/mongodb/specifications) | **CC BY-NC-SA 3.0 US** | **Not copied.** `compliance/data/bson/` is original recreation. |
+
+XML is out of scope (user request). W3C XML tests were never imported.
+
+### Protocol Buffers / Avro / FlatBuffers
+
+- Encoding rules from protobuf.dev, avro.apache.org, and flatbuffers.dev.
+- Cases are **original-work** (new field numbers, names `kelp` / `harbor`).
+- Google `conformance/` was not vendored (runner protocol, not a static catalog).
+- Apache Avro `share/test` was not copied; primitives were rewritten from the spec.
 
 ## How original cases were written
 

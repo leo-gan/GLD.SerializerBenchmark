@@ -1,0 +1,34 @@
+{
+  "format": "flatbuffers",
+  "standard": "FlatBuffers internals",
+  "version": "tables",
+  "standard_url": "https://flatbuffers.dev/flatbuffers_internals/",
+  "provenance": "original-work",
+  "notes": "Table buffers need generated code; well-formedness rejects only.",
+  "cases": [
+    {
+      "id": "fb-empty",
+      "title": "Empty buffer is not a table",
+      "section": "Tables",
+      "section_title": "vtable",
+      "section_url": "https://flatbuffers.dev/flatbuffers_internals/",
+      "paragraph": "A table starts with a uoffset to a vtable.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "fb-short",
+      "title": "Shorter than a uoffset",
+      "section": "Tables",
+      "section_title": "vtable",
+      "section_url": "https://flatbuffers.dev/flatbuffers_internals/",
+      "paragraph": "The first four bytes are a little-endian uoffset.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0000",
+      "input_encoding": "hex"
+    }
+  ]
+}

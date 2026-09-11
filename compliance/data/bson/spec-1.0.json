@@ -1,0 +1,92 @@
+{
+  "format": "bson",
+  "standard": "BSON 1.0",
+  "version": "1.0",
+  "standard_url": "https://bsonspec.org/spec.html",
+  "provenance": "original-work",
+  "notes": "Same document framing as 1.1 for these types. Recreated; not MongoDB corpus.",
+  "cases": [
+    {
+      "id": "bson-empty",
+      "title": "Empty document",
+      "section": "Basic Types",
+      "section_title": "document",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "A document is an int32 size, zero or more elements, and a trailing 0x00. The empty document is 5 bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0500000000",
+      "input_encoding": "hex",
+      "decoded": {}
+    },
+    {
+      "id": "bson-int32",
+      "title": "int32 element n=7",
+      "section": "BSON Types",
+      "section_title": "int32",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "Type 0x10 is a cstring name plus a little-endian int32. Recreated; not from the MongoDB corpus.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0c000000106e000700000000",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 7
+      }
+    },
+    {
+      "id": "bson-string",
+      "title": "UTF-8 string s=kelp",
+      "section": "BSON Types",
+      "section_title": "string",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "Type 0x02 is a cstring name, int32 length including NUL, UTF-8 bytes, and NUL.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "11000000027300050000006b656c700000",
+      "input_encoding": "hex",
+      "decoded": {
+        "s": "kelp"
+      }
+    },
+    {
+      "id": "bson-bool-true",
+      "title": "Boolean ok=true",
+      "section": "BSON Types",
+      "section_title": "boolean",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "Type 0x08 is a cstring name plus one byte 0x00 or 0x01.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0a000000086f6b000100",
+      "input_encoding": "hex",
+      "decoded": {
+        "ok": true
+      }
+    },
+    {
+      "id": "bson-truncated",
+      "title": "Declared size longer than the buffer",
+      "section": "Basic Types",
+      "section_title": "document",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "The int32 size must match the actual byte length.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0c000000106e00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "bson-missing-eoo",
+      "title": "Document without trailing NUL",
+      "section": "Basic Types",
+      "section_title": "document",
+      "section_url": "https://bsonspec.org/spec.html",
+      "paragraph": "Every document ends with 0x00.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0b000000106e0007000000",
+      "input_encoding": "hex"
+    }
+  ]
+}
