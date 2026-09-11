@@ -525,11 +525,9 @@ function renderMain(root) {
   const kpis = noSpec ? { passed: 0, failed: 0, skipped: 0, errors: 0, total: 0 } : kpisFrom(langRows);
   const judged = kpis.passed + kpis.failed;
   const rate = judged ? kpis.passed / judged : null;
-  const formats = unique(langRows, 'format');
-  if (!formats.includes(NO_SPEC)) formats.push(NO_SPEC);
-  if (ui.format && ui.format !== NO_SPEC && !formats.includes(ui.format) && formats.length) {
-    ui.format = formats[0];
-  }
+  // Catalog families, not whatever the last run happened to emit.
+  const liveFormats = new Set(unique(langRows, 'format'));
+  const formats = Object.keys(FORMAT_LABELS);
   const noSpecList = noSpecEntries(ui.lang);
   const serializers = noSpec
     ? (ui.lang === ALL_LANG ? noSpecList.map(noSpecKey) : noSpecList.map((e) => e.serializer))
@@ -558,7 +556,11 @@ function renderMain(root) {
       · source ${escapeHtml(payload.source || 'compliance.json')}
     </p>
     <div class="cmp-filters">
-      ${selectHtml('cmp-filter-standard', 'Standard', formats, ui.format, formatLabel)}
+      ${selectHtml('cmp-filter-standard', 'Standard', formats, ui.format, (id) => {
+        const label = formatLabel(id);
+        if (id === NO_SPEC || liveFormats.has(id)) return label;
+        return `${label} (no live results)`;
+      })}
       ${selectHtml('cmp-filter-serializer', 'Serializer', serializers, ui.serializer, (name) => {
         if (noSpec) {
           if (name.includes('|')) {
@@ -576,7 +578,7 @@ function renderMain(root) {
     <p class="section-help">${
       noSpec
         ? 'These codecs are language-native or library-private. There is no citable MUST / MUST NOT document, so this view is a group list only — no pass/fail cells.'
-        : 'Click a cell to open that serializer’s failures for that version.'
+        : 'Standard is the catalog family (JSON, YAML, Protocol Buffers, …). Columns are that family’s versions. A family with no live rows for this language is listed as empty — run <code>./scripts/run-compliance.sh</code> to fill it. Click a cell to open that serializer’s failures for that version.'
     }</p>
     ${renderHeatmap(matrix)}
   `;
