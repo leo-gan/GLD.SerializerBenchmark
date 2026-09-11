@@ -39,7 +39,7 @@ binary cousins** that this suite already benches.
 | TOML | 0.5.0, 1.0.0, 1.1.0 | `tomllib` (1.0) |
 | CBOR | RFC 7049, RFC 8949 | `cbor2` |
 | MessagePack | pre-2013 raw, 2013 str/bin/ext, 2017 timestamp | `msgpack`, `msgspec-msgpack` |
-| Protocol Buffers | proto2, proto3, proto3 JSON | `protobuf` |
+| Protocol Buffers | proto2, proto3, proto3 JSON | `protobuf` (every language runner now has a Doc adapter) |
 | Avro | 1.8, 1.11, 1.12 | `fastavro` |
 | BSON | 1.0, 1.1, 1.1 decimal128 | `bson` / pymongo |
 | FlatBuffers | FlexBuffers, tables, file-id | `flexbuffers` |

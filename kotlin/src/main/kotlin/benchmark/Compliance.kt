@@ -12,6 +12,10 @@ import kotlin.io.path.isDirectory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import net.peanuuutz.tomlkt.Toml
+import com.google.protobuf.DescriptorProtos
+import com.google.protobuf.Descriptors
+import com.google.protobuf.DynamicMessage
+import com.google.protobuf.util.JsonFormat
 
 /** Kotlin compliance runner — same catalog as Python. */
 fun complianceMain(args: Array<String>) {
@@ -55,23 +59,60 @@ fun complianceMain(args: Array<String>) {
     }
 }
 
-private data class Adapter(val name: String, val format: String, val decode: (ByteArray) -> Any?)
+private data class Adapter(val name: String, val format: String, val decode: (ByteArray, String) -> Any?)
 
 private fun adapters(): List<Adapter> {
     val jackson = jacksonObjectMapper()
     val cbor = ObjectMapper(CBORFactory())
     return listOf(
-        Adapter("kotlinx-json", "json") { b ->
+        Adapter("kotlinx-json", "json") { b, _ ->
             if (b.count { it == '['.code.toByte() || it == '{'.code.toByte() } > 4_000) {
                 error("input too nested for this runner")
             }
             Json.parseToJsonElement(b.decodeToString())
         },
-        Adapter("jackson", "json") { jackson.readValue(it, Any::class.java) },
-        Adapter("kaml", "yaml") { Yaml.default.parseToYamlNode(it.decodeToString()) },
-        Adapter("jackson-cbor", "cbor") { cbor.readValue(it, Any::class.java) },
-        Adapter("tomlkt", "toml") { Toml.parseToTomlTable(it.decodeToString()) },
+        Adapter("jackson", "json") { b, _ -> jackson.readValue(b, Any::class.java) },
+        Adapter("kaml", "yaml") { b, _ -> Yaml.default.parseToYamlNode(b.decodeToString()) },
+        Adapter("jackson-cbor", "cbor") { b, _ -> cbor.readValue(b, Any::class.java) },
+        Adapter("tomlkt", "toml") { b, _ -> Toml.parseToTomlTable(b.decodeToString()) },
+        Adapter("protobuf", "protobuf") { b, schema -> decodeProtobuf(b, schema) },
     )
+}
+
+private fun decodeProtobuf(data: ByteArray, schema: String): Map<String, Any?> {
+    val desc = pbDoc()
+    val msg = if (schema == "json") {
+        val b = DynamicMessage.newBuilder(desc)
+        JsonFormat.parser().ignoringUnknownFields().merge(data.decodeToString(), b)
+        b.build()
+    } else {
+        DynamicMessage.parseFrom(desc, data)
+    }
+    return linkedMapOf(
+        "n" to msg.getField(desc.findFieldByName("n")),
+        "s" to msg.getField(desc.findFieldByName("s")),
+        "ok" to msg.getField(desc.findFieldByName("ok")),
+        "tags" to ArrayList(msg.getField(desc.findFieldByName("tags")) as List<*>),
+    )
+}
+
+private fun pbDoc(): Descriptors.Descriptor {
+    val msg = DescriptorProtos.DescriptorProto.newBuilder().setName("Doc")
+    fun field(name: String, n: Int, type: DescriptorProtos.FieldDescriptorProto.Type, repeated: Boolean) =
+        DescriptorProtos.FieldDescriptorProto.newBuilder()
+            .setName(name).setJsonName(name).setNumber(n).setType(type)
+            .setLabel(
+                if (repeated) DescriptorProtos.FieldDescriptorProto.Label.LABEL_REPEATED
+                else DescriptorProtos.FieldDescriptorProto.Label.LABEL_OPTIONAL
+            ).build()
+    msg.addField(field("n", 1, DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT32, false))
+    msg.addField(field("s", 2, DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING, false))
+    msg.addField(field("ok", 3, DescriptorProtos.FieldDescriptorProto.Type.TYPE_BOOL, false))
+    msg.addField(field("tags", 4, DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT32, true))
+    val file = DescriptorProtos.FileDescriptorProto.newBuilder()
+        .setName("compliance_doc.proto").setPackage("cmp").setSyntax("proto3")
+        .addMessageType(msg).build()
+    return Descriptors.FileDescriptor.buildFrom(file, emptyArray()).findMessageTypeByName("Doc")
 }
 
 private fun repoRoot(): Path {
@@ -141,7 +182,7 @@ private fun runOne(suite: Map<String, Any?>, c: Map<String, Any?>, a: Adapter): 
     var ok = true
     var err = ""
     try {
-        got = a.decode(inputBytes(c))
+        got = a.decode(inputBytes(c), c["schema"]?.toString().orEmpty())
     } catch (ex: Exception) {
         ok = false
         err = "${ex.javaClass.simpleName}: ${ex.message}"

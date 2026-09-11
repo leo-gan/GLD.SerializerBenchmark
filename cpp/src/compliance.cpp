@@ -1,6 +1,7 @@
 // C++ compliance runner (nlohmann JSON / CBOR / MessagePack / UBJSON / BSON).
 // Built ad-hoc by run-compliance.sh when nlohmann headers are present.
 #include <nlohmann/json.hpp>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -19,6 +20,88 @@ static std::string repo_root() {
     dir = dir.parent_path();
   }
   throw std::runtime_error("cannot locate compliance/data");
+}
+
+static uint64_t pb_varint(const std::vector<uint8_t>& d, size_t& i) {
+  uint64_t r = 0;
+  int shift = 0;
+  while (i < d.size()) {
+    uint8_t b = d[i++];
+    r |= uint64_t(b & 0x7f) << shift;
+    if ((b & 0x80) == 0) return r;
+    shift += 7;
+    if (shift > 63) throw std::runtime_error("varint too long");
+  }
+  throw std::runtime_error("truncated varint");
+}
+
+static int32_t pb_i32(uint64_t v) { return static_cast<int32_t>(v); }
+
+static json decode_protobuf(const std::vector<uint8_t>& raw, const std::string& schema) {
+  if (schema == "json") {
+    json v = json::parse(raw.begin(), raw.end());
+    if (!v.is_object()) throw std::runtime_error("proto3 JSON message must be an object");
+    json doc = {{"n", 0}, {"s", ""}, {"ok", false}, {"tags", json::array()}};
+    if (v.contains("n") && !v["n"].is_null()) {
+      if (v["n"].is_number_integer()) doc["n"] = v["n"].get<int>();
+      else if (v["n"].is_string()) doc["n"] = std::stoi(v["n"].get<std::string>());
+      else throw std::runtime_error("int32 must be a number or digit string");
+    }
+    if (v.contains("s") && !v["s"].is_null()) {
+      if (!v["s"].is_string()) throw std::runtime_error("s must be a string");
+      doc["s"] = v["s"];
+    }
+    if (v.contains("ok") && !v["ok"].is_null()) {
+      if (!v["ok"].is_boolean()) throw std::runtime_error("ok must be a bool");
+      doc["ok"] = v["ok"];
+    }
+    if (v.contains("tags") && !v["tags"].is_null()) {
+      if (!v["tags"].is_array()) throw std::runtime_error("tags must be an array");
+      json tags = json::array();
+      for (auto& t : v["tags"]) {
+        if (t.is_number_integer()) tags.push_back(t.get<int>());
+        else if (t.is_string()) tags.push_back(std::stoi(t.get<std::string>()));
+        else throw std::runtime_error("int32 must be a number or digit string");
+      }
+      doc["tags"] = tags;
+    }
+    return doc;
+  }
+  int32_t n = 0;
+  std::string s;
+  bool ok = false;
+  json tags = json::array();
+  size_t i = 0;
+  while (i < raw.size()) {
+    uint64_t key = pb_varint(raw, i);
+    uint32_t field = uint32_t(key >> 3);
+    uint32_t wt = uint32_t(key & 7);
+    if (wt == 0) {
+      uint64_t v = pb_varint(raw, i);
+      if (field == 1) n = pb_i32(v);
+      else if (field == 3) ok = v != 0;
+      else if (field == 4) tags.push_back(pb_i32(v));
+    } else if (wt == 1) {
+      if (i + 8 > raw.size()) throw std::runtime_error("truncated fixed64");
+      i += 8;
+    } else if (wt == 5) {
+      if (i + 4 > raw.size()) throw std::runtime_error("truncated fixed32");
+      i += 4;
+    } else if (wt == 2) {
+      uint64_t nlen = pb_varint(raw, i);
+      if (i + nlen > raw.size()) throw std::runtime_error("truncated length-delimited");
+      if (field == 2) s.assign(reinterpret_cast<const char*>(raw.data() + i), size_t(nlen));
+      else if (field == 4) {
+        size_t end = i + size_t(nlen);
+        size_t j = i;
+        while (j < end) tags.push_back(pb_i32(pb_varint(raw, j)));
+      }
+      i += size_t(nlen);
+    } else {
+      throw std::runtime_error("invalid wire type");
+    }
+  }
+  return json{{"n", n}, {"s", s}, {"ok", ok}, {"tags", tags}};
 }
 
 static std::vector<uint8_t> from_hex(const std::string& s) {
@@ -57,20 +140,22 @@ int main(int argc, char** argv) {
         for (auto& w : formats) if (w == fmt) ok = true;
         if (!ok) continue;
       }
-      auto decode = [&](const std::vector<uint8_t>& raw) -> json {
+      auto decode = [&](const std::vector<uint8_t>& raw, const std::string& schema) -> json {
         if (fmt == "json") return json::parse(raw.begin(), raw.end());
         if (fmt == "cbor") return json::from_cbor(raw, true, false);
         if (fmt == "msgpack") return json::from_msgpack(raw, true, false);
         if (fmt == "ubjson") return json::from_ubjson(raw, true, false);
         if (fmt == "bson") return json::from_bson(raw, true, false);
+        if (fmt == "protobuf") return decode_protobuf(raw, schema);
         throw std::runtime_error("no adapter");
       };
-      if (fmt != "json" && fmt != "cbor" && fmt != "msgpack" && fmt != "ubjson" && fmt != "bson") {
+      if (fmt != "json" && fmt != "cbor" && fmt != "msgpack" && fmt != "ubjson" && fmt != "bson" && fmt != "protobuf") {
         adapter_errs.push_back("No adapter registered for format " + fmt);
         continue;
       }
       std::string ser = "nlohmann_" + fmt;
       if (fmt == "json") ser = "nlohmann_json";
+      if (fmt == "protobuf") ser = "protobuf-wire";
       for (auto& c : suite["cases"]) {
         json row = {
           {"id", c.value("id", "")}, {"language", "cpp"}, {"serializer", ser},
@@ -92,7 +177,9 @@ int main(int argc, char** argv) {
             auto s = c.value("input", "");
             raw.assign(s.begin(), s.end());
           }
-          auto got = decode(raw);
+          std::string schema;
+          if (c.contains("schema") && c["schema"].is_string()) schema = c["schema"].get<std::string>();
+          auto got = decode(raw, schema);
           if (c.value("expect", "") == "reject") {
             row["outcome"] = "fail";
             row["detail"] = "parser accepted input the spec requires to be rejected";

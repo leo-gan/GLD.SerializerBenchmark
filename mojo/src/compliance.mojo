@@ -11,6 +11,7 @@ from msgpack import decode_value as msgpack_decode
 from toml import parse as toml_parse
 
 
+
 def _contains(hay: String, needle: String) -> Bool:
     if needle.byte_length() == 0:
         return True
@@ -144,6 +145,58 @@ def _try_msgpack(buf: List[Byte]) raises:
     _ = msgpack_decode(buf)
 
 
+def _try_protobuf(buf: List[Byte], schema: String, text: String) raises:
+    if schema == "json":
+        var v = parse(text)
+        try:
+            _ = v.object()
+        except:
+            raise Error("proto3 JSON message must be an object")
+        return
+    var i = 0
+    while i < len(buf):
+        var kv = _pb_varint(buf, i)
+        var key = kv[0]
+        i = kv[1]
+        var wt = Int(key & UInt64(7))
+        if wt == 0:
+            var vv = _pb_varint(buf, i)
+            i = vv[1]
+        elif wt == 1:
+            if i + 8 > len(buf):
+                raise Error("truncated fixed64")
+            i += 8
+        elif wt == 5:
+            if i + 4 > len(buf):
+                raise Error("truncated fixed32")
+            i += 4
+        elif wt == 2:
+            var ln = _pb_varint(buf, i)
+            i = ln[1]
+            var n = Int(ln[0])
+            if i + n > len(buf):
+                raise Error("truncated length-delimited")
+            i += n
+        else:
+            raise Error("invalid wire type")
+
+
+def _pb_varint(data: List[Byte], start: Int) raises -> Tuple[UInt64, Int]:
+    var i = start
+    var result = UInt64(0)
+    var shift = 0
+    while i < len(data):
+        var b = Int(data[i])
+        i += 1
+        result |= UInt64(b & 127) << UInt64(shift)
+        if (b & 128) == 0:
+            return (result, i)
+        shift += 7
+        if shift > 63:
+            raise Error("varint too long")
+    raise Error("truncated varint")
+
+
 def _row(
     id: String,
     ser: String,
@@ -205,6 +258,7 @@ def _run_one(
     section_url: String,
     input_text: String,
     enc: String,
+    schema: String,
 ) -> String:
     var ok = False
     var err = ""
@@ -224,6 +278,12 @@ def _run_one(
             _try_cbor(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "msgpack":
             _try_msgpack(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "protobuf":
+            _try_protobuf(
+                _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
+                schema,
+                input_text,
+            )
         else:
             raise Error("no adapter")
         ok = True
@@ -374,6 +434,9 @@ def main() raises:
             elif fmt == "msgpack":
                 sers.append("mojo-msgpack")
                 vers.append("0.3.0")
+            elif fmt == "protobuf":
+                sers.append("mojo-protobuf")
+                vers.append("0.6.0")
             else:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
                 var already = False
@@ -421,6 +484,11 @@ def main() raises:
                     section_url = String(c["section_url"].string())
                 except:
                     section_url = ""
+                var schema = ""
+                try:
+                    schema = String(c["schema"].string())
+                except:
+                    schema = ""
                 if _too_deep(input_text):
                     skipped += 1
                     ci += 1
@@ -440,6 +508,7 @@ def main() raises:
                         section_url,
                         input_text,
                         enc,
+                        schema,
                     )
                     if _contains(row, "\"outcome\":\"fail\""):
                         failed += 1
@@ -465,7 +534,7 @@ def main() raises:
         errs += "]"
         var rows = open(rows_path, "r").read()
         var head = (
-            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\"]},\"passed\":"
+            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\"]},\"passed\":"
             + String(passed)
             + ",\"failed\":"
             + String(failed)

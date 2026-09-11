@@ -37,6 +37,12 @@ JavaScript: `javascript/src/compliance.mjs`. Other languages have a
 `php/src/compliance.php`, `cpp/src/compliance.cpp`,
 `swift/compliance.swift`, `zig/src/compliance.zig`, `mojo/src/compliance.mojo`).
 `./scripts/run-compliance.sh` runs every toolchain it finds.
+
+Protobuf uses the catalog `Doc` message (`n`, `s`, `ok`, `tags`). Official
+runtimes (Python, Go, Java, Kotlin, Rust prost, C# Google.Protobuf /
+protobuf-net, JS protobufjs, PHP, Mojo gld-protobuf) decode it. C, C++,
+Swift, and Zig use a small wire reader that implements the same encoding
+guide so those columns are not empty.
 compliance.runner      run_suites()
 compliance.report       format_summary() / JSON sidecar
 ```

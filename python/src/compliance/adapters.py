@@ -214,7 +214,7 @@ def _protobuf_decode(data: bytes) -> Any:
         from google.protobuf.json_format import Parse
 
         msg = cls()
-        Parse(data.decode("utf-8"), msg)
+        Parse(data.decode("utf-8"), msg, ignore_unknown_fields=True)
         return {"n": msg.n, "s": msg.s, "ok": msg.ok, "tags": list(msg.tags)}
     msg = cls()
     msg.ParseFromString(data)

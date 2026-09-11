@@ -117,7 +117,153 @@ function builtinAdapters(): array
             return \MessagePack\MessagePack::unpack($b);
         }];
     }
+    if (class_exists(\Google\Protobuf\Internal\CodedInputStream::class)) {
+        $out[] = ['name' => 'protobuf', 'format' => 'protobuf', 'version' => '', 'decode' => function (string $b, $schema = '') {
+            return decodeProtobuf($b, (string) $schema);
+        }];
+    }
     return $out;
+}
+
+function decodeProtobuf(string $data, string $schema): array
+{
+    if ($schema === 'json') {
+        return protobufDocFromJson($data);
+    }
+    return protobufDocFromWire($data);
+}
+
+function protobufDocFromWire(string $data): array
+{
+    $n = 0;
+    $s = '';
+    $ok = false;
+    $tags = [];
+    $i = 0;
+    $len = strlen($data);
+    while ($i < $len) {
+        $key = protobufReadVarint($data, $i, $len);
+        $field = $key >> 3;
+        $wt = $key & 7;
+        if ($wt === 0) {
+            $v = protobufReadVarint($data, $i, $len);
+            if ($field === 1) {
+                $n = protobufZigzag32($v);
+            } elseif ($field === 3) {
+                $ok = $v !== 0;
+            } elseif ($field === 4) {
+                $tags[] = protobufZigzag32($v);
+            }
+        } elseif ($wt === 1) {
+            if ($i + 8 > $len) {
+                throw new RuntimeException('truncated fixed64');
+            }
+            $i += 8;
+        } elseif ($wt === 5) {
+            if ($i + 4 > $len) {
+                throw new RuntimeException('truncated fixed32');
+            }
+            $i += 4;
+        } elseif ($wt === 2) {
+            $nlen = protobufReadVarint($data, $i, $len);
+            if ($i + $nlen > $len) {
+                throw new RuntimeException('truncated length-delimited');
+            }
+            $payload = substr($data, $i, $nlen);
+            $i += $nlen;
+            if ($field === 2) {
+                $s = $payload;
+            } elseif ($field === 4) {
+                $j = 0;
+                $plen = strlen($payload);
+                while ($j < $plen) {
+                    $tags[] = protobufZigzag32(protobufReadVarint($payload, $j, $plen));
+                }
+            }
+        } else {
+            throw new RuntimeException('invalid wire type ' . $wt);
+        }
+    }
+    return ['n' => $n, 's' => $s, 'ok' => $ok, 'tags' => $tags];
+}
+
+function protobufReadVarint(string $data, int &$i, int $len): int
+{
+    $result = 0;
+    $shift = 0;
+    while ($i < $len) {
+        $b = ord($data[$i]);
+        $i++;
+        $result |= ($b & 0x7f) << $shift;
+        if (($b & 0x80) === 0) {
+            return $result;
+        }
+        $shift += 7;
+        if ($shift > 63) {
+            throw new RuntimeException('varint too long');
+        }
+    }
+    throw new RuntimeException('truncated varint');
+}
+
+function protobufZigzag32(int $v): int
+{
+    // catalog int32 fields are not zigzag; they are plain varint int32
+    if ($v > 0x7fffffff) {
+        return $v - 0x100000000;
+    }
+    return $v;
+}
+
+function protobufDocFromJson(string $data): array
+{
+    $probe = json_decode($data, false, 512, JSON_THROW_ON_ERROR);
+    if (!is_object($probe)) {
+        throw new RuntimeException('proto3 JSON message must be an object');
+    }
+    $v = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+    if (!is_array($v)) {
+        throw new RuntimeException('proto3 JSON message must be an object');
+    }
+    $n = 0;
+    $s = '';
+    $ok = false;
+    $tags = [];
+    if (array_key_exists('n', $v) && $v['n'] !== null) {
+        $n = protobufJsonInt32($v['n']);
+    }
+    if (array_key_exists('s', $v) && $v['s'] !== null) {
+        if (!is_string($v['s'])) {
+            throw new RuntimeException('s must be a string');
+        }
+        $s = $v['s'];
+    }
+    if (array_key_exists('ok', $v) && $v['ok'] !== null) {
+        if (!is_bool($v['ok'])) {
+            throw new RuntimeException('ok must be a bool');
+        }
+        $ok = $v['ok'];
+    }
+    if (array_key_exists('tags', $v) && $v['tags'] !== null) {
+        if (!is_array($v['tags'])) {
+            throw new RuntimeException('tags must be an array');
+        }
+        foreach ($v['tags'] as $t) {
+            $tags[] = protobufJsonInt32($t);
+        }
+    }
+    return ['n' => $n, 's' => $s, 'ok' => $ok, 'tags' => $tags];
+}
+
+function protobufJsonInt32(mixed $v): int
+{
+    if (is_int($v)) {
+        return $v;
+    }
+    if (is_string($v) && is_numeric($v) && preg_match('/^-?\d+$/', $v)) {
+        return (int) $v;
+    }
+    throw new RuntimeException('int32 must be a number or digit string');
 }
 
 function runOne(array $suite, array $c, array $a): array
@@ -147,7 +293,7 @@ function runOne(array $suite, array $c, array $a): array
     ];
     try {
         $raw = inputBytes($c);
-        $got = ($a['decode'])($raw);
+        $got = ($a['decode'])($raw, $c['schema'] ?? '');
         $ok = true;
         $err = '';
     } catch (Throwable $e) {

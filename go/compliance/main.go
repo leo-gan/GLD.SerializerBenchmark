@@ -30,6 +30,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type Case struct {
@@ -60,7 +66,7 @@ type Result map[string]any
 
 type adapter struct {
 	name, format, version string
-	decode                func([]byte) (any, error)
+	decode                func([]byte, string) (any, error)
 }
 
 func main() {
@@ -205,9 +211,20 @@ func inputBytes(c Case) ([]byte, error) {
 	}
 }
 
+func caseSchema(c Case) string {
+	if len(c.Schema) == 0 {
+		return ""
+	}
+	var s string
+	if err := json.Unmarshal(c.Schema, &s); err == nil {
+		return s
+	}
+	return strings.Trim(string(c.Schema), "\"")
+}
+
 func builtin() []adapter {
-	jsonDec := func(fn func([]byte, any) error) func([]byte) (any, error) {
-		return func(b []byte) (any, error) {
+	jsonDec := func(fn func([]byte, any) error) func([]byte, string) (any, error) {
+		return func(b []byte, _ string) (any, error) {
 			var v any
 			if err := fn(b, &v); err != nil {
 				return nil, err
@@ -215,7 +232,7 @@ func builtin() []adapter {
 			return v, nil
 		}
 	}
-	ugorjiJSON := func(b []byte) (any, error) {
+	ugorjiJSON := func(b []byte, _ string) (any, error) {
 		var v any
 		dec := ugorji.NewDecoderBytes(b, &ugorji.JsonHandle{})
 		if err := dec.Decode(&v); err != nil {
@@ -223,7 +240,7 @@ func builtin() []adapter {
 		}
 		return v, nil
 	}
-	ugorjiCBOR := func(b []byte) (any, error) {
+	ugorjiCBOR := func(b []byte, _ string) (any, error) {
 		var v any
 		dec := ugorji.NewDecoderBytes(b, &ugorji.CborHandle{})
 		if err := dec.Decode(&v); err != nil {
@@ -231,7 +248,7 @@ func builtin() []adapter {
 		}
 		return v, nil
 	}
-	ugorjiMP := func(b []byte) (any, error) {
+	ugorjiMP := func(b []byte, _ string) (any, error) {
 		var v any
 		dec := ugorji.NewDecoderBytes(b, &ugorji.MsgpackHandle{})
 		if err := dec.Decode(&v); err != nil {
@@ -253,7 +270,7 @@ func builtin() []adapter {
 		{"vmihailenco/msgpack", "msgpack", moduleVer("github.com/vmihailenco/msgpack/v5"), jsonDec(vmsgpack.Unmarshal)},
 		{"shamaton/msgpack", "msgpack", moduleVer("github.com/shamaton/msgpack/v3"), jsonDec(msgpack.Unmarshal)},
 		{"ugorji/msgpack", "msgpack", moduleVer("github.com/ugorji/go/codec"), ugorjiMP},
-		{"mongo-bson", "bson", moduleVer("go.mongodb.org/mongo-driver"), func(b []byte) (any, error) {
+		{"mongo-bson", "bson", moduleVer("go.mongodb.org/mongo-driver"), func(b []byte, _ string) (any, error) {
 			vr := bsonrw.NewBSONDocumentReader(b)
 			dec, err := bson.NewDecoder(vr)
 			if err != nil {
@@ -265,6 +282,73 @@ func builtin() []adapter {
 			}
 			return map[string]any(m), nil
 		}},
+		{"protobuf", "protobuf", moduleVer("google.golang.org/protobuf"), decodeProtobuf},
+	}
+}
+
+func decodeProtobuf(b []byte, schema string) (any, error) {
+	msg := dynamicpb.NewMessage(pbDocDesc())
+	if schema == "json" {
+		opts := protojson.UnmarshalOptions{DiscardUnknown: true}
+		if err := opts.Unmarshal(b, msg); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := proto.Unmarshal(b, msg); err != nil {
+			return nil, err
+		}
+	}
+	return pbDocMap(msg), nil
+}
+
+func pbDocDesc() protoreflect.MessageDescriptor {
+	fdp := &descriptorpb.FileDescriptorProto{
+		Name:    proto.String("compliance_doc.proto"),
+		Package: proto.String("cmp"),
+		Syntax:  proto.String("proto3"),
+		MessageType: []*descriptorpb.DescriptorProto{{
+			Name: proto.String("Doc"),
+			Field: []*descriptorpb.FieldDescriptorProto{
+				pbField("n", 1, descriptorpb.FieldDescriptorProto_TYPE_INT32, false),
+				pbField("s", 2, descriptorpb.FieldDescriptorProto_TYPE_STRING, false),
+				pbField("ok", 3, descriptorpb.FieldDescriptorProto_TYPE_BOOL, false),
+				pbField("tags", 4, descriptorpb.FieldDescriptorProto_TYPE_INT32, true),
+			},
+		}},
+	}
+	fd, err := protodesc.NewFile(fdp, nil)
+	if err != nil {
+		panic(err)
+	}
+	return fd.Messages().ByName("Doc")
+}
+
+func pbField(name string, num int32, typ descriptorpb.FieldDescriptorProto_Type, repeated bool) *descriptorpb.FieldDescriptorProto {
+	label := descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL
+	if repeated {
+		label = descriptorpb.FieldDescriptorProto_LABEL_REPEATED
+	}
+	return &descriptorpb.FieldDescriptorProto{
+		Name:     proto.String(name),
+		JsonName: proto.String(name),
+		Number:   proto.Int32(num),
+		Type:     typ.Enum(),
+		Label:    label.Enum(),
+	}
+}
+
+func pbDocMap(msg *dynamicpb.Message) map[string]any {
+	md := msg.Descriptor()
+	list := msg.Get(md.Fields().ByName("tags")).List()
+	tags := make([]any, list.Len())
+	for i := 0; i < list.Len(); i++ {
+		tags[i] = list.Get(i).Int()
+	}
+	return map[string]any{
+		"n":    msg.Get(md.Fields().ByName("n")).Int(),
+		"s":    msg.Get(md.Fields().ByName("s")).String(),
+		"ok":   msg.Get(md.Fields().ByName("ok")).Bool(),
+		"tags": tags,
 	}
 }
 
@@ -300,7 +384,7 @@ func runOne(suite Suite, c Case, a adapter) Result {
 		base["observed"] = err.Error()
 		return base
 	}
-	got, decErr := a.decode(raw)
+	got, decErr := a.decode(raw, caseSchema(c))
 	if c.Expect == "any" {
 		if decErr != nil {
 			base["observed"] = decErr.Error()

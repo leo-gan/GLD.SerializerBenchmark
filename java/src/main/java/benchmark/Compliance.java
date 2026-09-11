@@ -5,6 +5,10 @@ import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.gson.Gson;
+import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.util.JsonFormat;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -119,7 +123,7 @@ public final class Compliance {
 
   @FunctionalInterface
   private interface Fn {
-    Object apply(byte[] data) throws Exception;
+    Object apply(byte[] data, String schema) throws Exception;
   }
 
   private static List<Adapter> adapters() {
@@ -128,22 +132,73 @@ public final class Compliance {
     ObjectMapper msgpack = new ObjectMapper(new MessagePackFactory());
     Gson gson = new Gson();
     List<Adapter> out = new ArrayList<>();
-    out.add(new Adapter("jackson", "json", "", b -> JSON.readValue(b, Object.class)));
-    out.add(new Adapter("gson", "json", "", b -> gson.fromJson(new String(b, StandardCharsets.UTF_8), Object.class)));
-    out.add(new Adapter("jackson-cbor", "cbor", "", b -> cbor.readValue(b, Object.class)));
-    out.add(new Adapter("jackson-smile", "smile", "", b -> smile.readValue(b, Object.class)));
-    out.add(new Adapter("msgpack", "msgpack", "", b -> msgpack.readValue(b, Object.class)));
+    out.add(new Adapter("jackson", "json", "", (b, s) -> JSON.readValue(b, Object.class)));
+    out.add(new Adapter("gson", "json", "", (b, s) -> gson.fromJson(new String(b, StandardCharsets.UTF_8), Object.class)));
+    out.add(new Adapter("jackson-cbor", "cbor", "", (b, s) -> cbor.readValue(b, Object.class)));
+    out.add(new Adapter("jackson-smile", "smile", "", (b, s) -> smile.readValue(b, Object.class)));
+    out.add(new Adapter("msgpack", "msgpack", "", (b, s) -> msgpack.readValue(b, Object.class)));
     out.add(
         new Adapter(
             "bson",
             "bson",
             "",
-            b -> {
+            (b, s) -> {
               RawBsonDocument raw = new RawBsonDocument(b);
               return JSON.readValue(raw.toJson(), Object.class);
             }));
     ObjectMapper yaml = new YAMLMapper();
-    out.add(new Adapter("jackson-yaml", "yaml", "", b -> yaml.readValue(b, Object.class)));
+    out.add(new Adapter("jackson-yaml", "yaml", "", (b, s) -> yaml.readValue(b, Object.class)));
+    out.add(new Adapter("protobuf", "protobuf", "", Compliance::decodeProtobuf));
+    return out;
+  }
+
+  private static Descriptors.Descriptor pbDoc() throws Exception {
+    DescriptorProtos.DescriptorProto.Builder msg =
+        DescriptorProtos.DescriptorProto.newBuilder().setName("Doc");
+    msg.addField(pbField("n", 1, DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT32, false));
+    msg.addField(pbField("s", 2, DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING, false));
+    msg.addField(pbField("ok", 3, DescriptorProtos.FieldDescriptorProto.Type.TYPE_BOOL, false));
+    msg.addField(pbField("tags", 4, DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT32, true));
+    DescriptorProtos.FileDescriptorProto file =
+        DescriptorProtos.FileDescriptorProto.newBuilder()
+            .setName("compliance_doc.proto")
+            .setPackage("cmp")
+            .setSyntax("proto3")
+            .addMessageType(msg)
+            .build();
+    return Descriptors.FileDescriptor.buildFrom(file, new Descriptors.FileDescriptor[0])
+        .findMessageTypeByName("Doc");
+  }
+
+  private static DescriptorProtos.FieldDescriptorProto pbField(
+      String name, int number, DescriptorProtos.FieldDescriptorProto.Type type, boolean repeated) {
+    return DescriptorProtos.FieldDescriptorProto.newBuilder()
+        .setName(name)
+        .setJsonName(name)
+        .setNumber(number)
+        .setType(type)
+        .setLabel(
+            repeated
+                ? DescriptorProtos.FieldDescriptorProto.Label.LABEL_REPEATED
+                : DescriptorProtos.FieldDescriptorProto.Label.LABEL_OPTIONAL)
+        .build();
+  }
+
+  private static Map<String, Object> decodeProtobuf(byte[] data, String schema) throws Exception {
+    Descriptors.Descriptor desc = pbDoc();
+    DynamicMessage msg;
+    if ("json".equals(schema)) {
+      DynamicMessage.Builder b = DynamicMessage.newBuilder(desc);
+      JsonFormat.parser().ignoringUnknownFields().merge(new String(data, StandardCharsets.UTF_8), b);
+      msg = b.build();
+    } else {
+      msg = DynamicMessage.parseFrom(desc, data);
+    }
+    Map<String, Object> out = new LinkedHashMap<>();
+    out.put("n", msg.getField(desc.findFieldByName("n")));
+    out.put("s", msg.getField(desc.findFieldByName("s")));
+    out.put("ok", msg.getField(desc.findFieldByName("ok")));
+    out.put("tags", new ArrayList<>((List<?>) msg.getField(desc.findFieldByName("tags"))));
     return out;
   }
 
@@ -175,7 +230,7 @@ public final class Compliance {
     boolean ok;
     String err = "";
     try {
-      got = a.decode.apply(inputBytes(c));
+      got = a.decode.apply(inputBytes(c), String.valueOf(c.getOrDefault("schema", "")));
       ok = true;
     } catch (Exception ex) {
       got = null;

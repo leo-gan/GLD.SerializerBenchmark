@@ -37,15 +37,27 @@ length-prefixed run of those varints.
 
 Catalog: `compliance/data/protobuf/`.
 
-## Python serializer
+## Serializers
 
-`google.protobuf` on a tiny `Doc` message built at runtime (fields
-`n`, `s`, `ok`, `tags`). Binary cases call `ParseFromString`. JSON
-cases call `json_format.Parse`.
+The catalog `Doc` message is four fields: `n` (int32), `s` (string),
+`ok` (bool), `tags` (repeated int32). Official runtimes build that
+descriptor at runtime (same trick as Python). Languages without a
+dynamic descriptor API decode the same fields through the library’s
+wire reader (`CodedInputStream`, `protowire`, `protobufjs.Reader`,
+or the in-tree Mojo/C/C++/Zig/Swift wire helper).
+
+| Language | Serializer | Binary | proto3 JSON |
+|----------|------------|--------|-------------|
+| Python | `protobuf` | `ParseFromString` | `json_format.Parse` |
+| Go | `protobuf` | `proto.Unmarshal` + `dynamicpb` | `protojson` |
+| Java / Kotlin | `protobuf` | `DynamicMessage.parseFrom` | `JsonFormat` |
+| Rust | `prost` | `prost::Message::decode` | small proto3 JSON mapper |
+| C# | `Google.Protobuf`, `protobuf-net` | `CodedInputStream` / protobuf-net | proto3 JSON mapper |
+| JavaScript | `protobufjs` | `Reader` field decode | proto3 JSON mapper |
+| PHP | `protobuf` | varint / length reader | proto3 JSON mapper |
+| C / C++ / Swift / Zig | `protobuf-wire` | same encoding rules | proto3 JSON mapper |
+| Mojo | `mojo-protobuf` | `WireReader` | EmberJson + int32 rules |
 
 Typical catalog pattern (report-only): proto2 and proto3 binary cases
-pass on `google.protobuf`. The proto3 JSON column fails if the library
+pass on official runtimes. The proto3 JSON column fails if the library
 rejects a JSON form the mapping allows, or accepts one it forbids.
-
-JavaScript `protobufjs` only **scans the wire** (is every record
-complete?). It does not rebuild the `{n, s, ok, tags}` object.

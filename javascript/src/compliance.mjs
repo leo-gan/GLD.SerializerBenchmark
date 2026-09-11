@@ -34,6 +34,60 @@ function parseArgs(argv) {
   return out;
 }
 
+function decodeProtobufJs(protobuf, buf, schema) {
+  if (schema === 'json') {
+    const v = JSON.parse(buf.toString('utf8'));
+    if (v === null || typeof v !== 'object' || Array.isArray(v)) {
+      throw new Error('proto3 JSON message must be an object');
+    }
+    const doc = { n: 0, s: '', ok: false, tags: [] };
+    if (v.n != null) doc.n = pbInt32(v.n);
+    if (v.s != null) {
+      if (typeof v.s !== 'string') throw new Error('s must be a string');
+      doc.s = v.s;
+    }
+    if (v.ok != null) {
+      if (typeof v.ok !== 'boolean') throw new Error('ok must be a bool');
+      doc.ok = v.ok;
+    }
+    if (v.tags != null) {
+      if (!Array.isArray(v.tags)) throw new Error('tags must be an array');
+      doc.tags = v.tags.map(pbInt32);
+    }
+    return doc;
+  }
+  const r = protobuf.Reader.create(buf);
+  const doc = { n: 0, s: '', ok: false, tags: [] };
+  while (r.pos < r.len) {
+    const tag = r.uint32();
+    const field = tag >>> 3;
+    const wt = tag & 7;
+    if (field === 1 && wt === 0) doc.n = r.int32();
+    else if (field === 2 && wt === 2) {
+      const n = r.uint32();
+      if (r.pos + n > r.len) throw new Error('truncated length-delimited');
+      doc.s = Buffer.from(r.buf.subarray(r.pos, r.pos + n)).toString('utf8');
+      r.pos += n;
+    } else if (field === 3 && wt === 0) doc.ok = r.bool();
+    else if (field === 4 && wt === 0) doc.tags.push(r.int32());
+    else if (field === 4 && wt === 2) {
+      const n = r.uint32();
+      if (r.pos + n > r.len) throw new Error('truncated length-delimited');
+      const end = r.pos + n;
+      while (r.pos < end) doc.tags.push(r.int32());
+    } else {
+      r.skipType(wt);
+    }
+  }
+  return doc;
+}
+
+function pbInt32(v) {
+  if (typeof v === 'number' && Number.isFinite(v)) return v | 0;
+  if (typeof v === 'string' && /^-?\d+$/.test(v)) return Number(v);
+  throw new Error('int32 must be a number or digit string');
+}
+
 function inputBytes(c) {
   if (c.input_encoding === 'hex') {
     const compact = String(c.input || '').replace(/\s+/g, '');
@@ -169,18 +223,10 @@ function makeAdapters() {
   try {
     const protobuf = require('protobufjs');
     add(
-      'protobufjs-wire',
+      'protobufjs',
       'protobuf',
-      (buf, schema) => {
-        if (schema === 'json') return JSON.parse(buf.toString('utf8'));
-        const r = protobuf.Reader.create(buf);
-        while (r.pos < r.len) {
-          const tag = r.uint32();
-          r.skipType(tag & 7);
-        }
-        return Symbol.for('wire-ok');
-      },
-      'protobufjs Reader wire scan (well-formedness only)',
+      (buf, schema) => decodeProtobufJs(protobuf, buf, schema),
+      'protobufjs Reader + proto3 JSON mapping on cmp.Doc',
       'protobufjs',
     );
   } catch { /* optional */ }

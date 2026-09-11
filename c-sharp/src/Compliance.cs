@@ -7,6 +7,8 @@ using System.Text.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using YamlDotNet.Serialization;
+using Google.Protobuf;
+using ProtoBuf;
 
 namespace GLD.SerializerBenchmark
 {
@@ -90,10 +92,12 @@ namespace GLD.SerializerBenchmark
             var yaml = new DeserializerBuilder().Build();
             return new List<Adapter>
             {
-                new("System.Text.Json", "json", "", b => System.Text.Json.JsonSerializer.Deserialize<object>(b)),
-                new("Json.Net", "json", "", b => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
-                new("YamlDotNet", "yaml", "", b => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
-                new("MessagePack-CSharp", "msgpack", "", b => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
+                new("System.Text.Json", "json", "", (b, _) => System.Text.Json.JsonSerializer.Deserialize<object>(b)),
+                new("Json.Net", "json", "", (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
+                new("YamlDotNet", "yaml", "", (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
+                new("MessagePack-CSharp", "msgpack", "", (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
+                new("Google.Protobuf", "protobuf", "", DecodeGoogleProtobuf),
+                new("protobuf-net", "protobuf", "", DecodeProtobufNet),
             };
         }
 
@@ -128,7 +132,7 @@ namespace GLD.SerializerBenchmark
             var err = "";
             try
             {
-                got = a.Decode(InputBytes(c));
+                got = a.Decode(InputBytes(c), c.Schema != null && c.Schema.Type == JTokenType.String ? (string)c.Schema : "");
             }
             catch (Exception ex)
             {
@@ -291,15 +295,107 @@ namespace GLD.SerializerBenchmark
             [JsonProperty("input")] public string Input { get; set; }
             [JsonProperty("input_encoding")] public string InputEncoding { get; set; }
             [JsonProperty("decoded")] public JToken Decoded { get; set; }
+            [JsonProperty("schema")] public JToken Schema { get; set; }
         }
+
+        [ProtoContract]
+        private sealed class PbDoc
+        {
+            [ProtoMember(1)] public int N { get; set; }
+            [ProtoMember(2)] public string S { get; set; } = "";
+            [ProtoMember(3)] public bool Ok { get; set; }
+            [ProtoMember(4, IsPacked = true)] public List<int> Tags { get; set; } = new();
+        }
+
+        private static object DecodeGoogleProtobuf(byte[] data, string schema)
+        {
+            if (schema == "json")
+                return PbDocFromJson(data);
+            return PbDocFromWire(data);
+        }
+
+        private static object DecodeProtobufNet(byte[] data, string schema)
+        {
+            if (schema == "json")
+                return PbDocFromJson(data);
+            var doc = ProtoBuf.Serializer.Deserialize<PbDoc>(new MemoryStream(data));
+            return PbDocMap(doc);
+        }
+
+        private static Dictionary<string, object> PbDocFromWire(byte[] data)
+        {
+            var doc = new PbDoc();
+            var input = new CodedInputStream(data);
+            uint tag;
+            while ((tag = input.ReadTag()) != 0)
+            {
+                var field = WireFormat.GetTagFieldNumber(tag);
+                var wt = WireFormat.GetTagWireType(tag);
+                if (field == 1 && wt == WireFormat.WireType.Varint)
+                    doc.N = input.ReadInt32();
+                else if (field == 2 && wt == WireFormat.WireType.LengthDelimited)
+                    doc.S = input.ReadString();
+                else if (field == 3 && wt == WireFormat.WireType.Varint)
+                    doc.Ok = input.ReadBool();
+                else if (field == 4 && wt == WireFormat.WireType.Varint)
+                    doc.Tags.Add(input.ReadInt32());
+                else if (field == 4 && wt == WireFormat.WireType.LengthDelimited)
+                {
+                    var payload = input.ReadBytes();
+                    var inner = new CodedInputStream(payload.ToByteArray());
+                    while (!inner.IsAtEnd)
+                        doc.Tags.Add(inner.ReadInt32());
+                }
+                else if ((int)wt == 6 || (int)wt == 7)
+                    throw new InvalidOperationException("invalid wire type");
+                else
+                    input.SkipLastField();
+            }
+            return PbDocMap(doc);
+        }
+
+        private static Dictionary<string, object> PbDocFromJson(byte[] data)
+        {
+            var tok = JToken.Parse(Encoding.UTF8.GetString(data));
+            if (tok.Type != JTokenType.Object)
+                throw new InvalidOperationException("proto3 JSON message must be an object");
+            var obj = (JObject)tok;
+            var doc = new PbDoc();
+            if (obj["n"] != null && obj["n"].Type != JTokenType.Null)
+                doc.N = PbInt32(obj["n"]);
+            if (obj["s"] != null && obj["s"].Type != JTokenType.Null)
+                doc.S = obj["s"].Type == JTokenType.String ? (string)obj["s"] : throw new InvalidOperationException("s");
+            if (obj["ok"] != null && obj["ok"].Type != JTokenType.Null)
+                doc.Ok = obj["ok"].Type == JTokenType.Boolean ? (bool)obj["ok"] : throw new InvalidOperationException("ok");
+            if (obj["tags"] != null && obj["tags"].Type != JTokenType.Null)
+            {
+                if (obj["tags"].Type != JTokenType.Array)
+                    throw new InvalidOperationException("tags");
+                foreach (var t in (JArray)obj["tags"])
+                    doc.Tags.Add(PbInt32(t));
+            }
+            return PbDocMap(doc);
+        }
+
+        private static int PbInt32(JToken t)
+        {
+            if (t.Type == JTokenType.Integer)
+                return (int)t;
+            if (t.Type == JTokenType.String && int.TryParse((string)t, out var n))
+                return n;
+            throw new InvalidOperationException("int32 must be a number or digit string");
+        }
+
+        private static Dictionary<string, object> PbDocMap(PbDoc doc) =>
+            new() { ["n"] = doc.N, ["s"] = doc.S ?? "", ["ok"] = doc.Ok, ["tags"] = doc.Tags ?? new List<int>() };
 
         private sealed class Adapter
         {
             public string Name { get; }
             public string Format { get; }
             public string Version { get; }
-            public Func<byte[], object> Decode { get; }
-            public Adapter(string name, string format, string version, Func<byte[], object> decode)
+            public Func<byte[], string, object> Decode { get; }
+            public Adapter(string name, string format, string version, Func<byte[], string, object> decode)
             {
                 Name = name; Format = format; Version = version; Decode = decode;
             }
