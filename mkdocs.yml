@@ -12,7 +12,7 @@ theme:
   name: material
   custom_dir: docs_theme
   features:
-    # Header tabs: Learn | Languages | Benchmarks | Dashboard | Experiments
+    # Header tabs: Learn | Languages | Benchmarks | Dashboard | Experiments | Compliance
     - navigation.tabs
     - navigation.tabs.sticky
     # Left sidebar: sections under the active tab (Learn, Languages, Benchmarks)
@@ -93,7 +93,7 @@ extra_css:
 extra_javascript:
   - javascripts/languages-nav.js
 
-# Top tabs: Learn | Languages | Benchmarks | Dashboard | Experiments
+# Top tabs: Learn | Languages | Benchmarks | Dashboard | Experiments | Compliance
 # Nested items appear in the left sidebar under the active tab (Material has no true ▾ dropdown).
 nav:
   - Learn:
@@ -208,3 +208,13 @@ nav:
       - Adding a Language: analysis/ADDING_A_LANGUAGE.md
   - Dashboard: dashboard/
   - Experiments: experiments/index.md
+  - Compliance:
+      - Overview: compliance/index.md
+      - JSON: compliance/json.md
+      - YAML: compliance/yaml.md
+      - TOML: compliance/toml.md
+      - CBOR: compliance/cbor.md
+      - MessagePack: compliance/msgpack.md
+      - Reading failures: compliance/reading-results.md
+      - Language adapters: compliance/adapters.md
+      - Legal provenance: compliance/legal.md

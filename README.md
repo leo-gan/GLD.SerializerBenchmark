@@ -13,6 +13,7 @@ Compare 200+ serialization libraries across **13 languages**.
 | **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
 | **Numbers** | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) |
 | **Experiments** | [One-question tests](https://leo-gan.github.io/GLD.SerializerBenchmark/experiments/) |
+| **Compliance** | [RFC / spec catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/) |
 | **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) |
 | **Benchmarks** | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
 
@@ -57,9 +58,9 @@ Compare 200+ serialization libraries across **13 languages**.
 
 ---
 
-## Try it: benchmark Python serializers in ~60 seconds
+## Try it: two quality questions
 
-Requires a recent Python 3 and [uv](https://docs.astral.sh/uv/) (or pip). No Docker.
+Requires a recent Python 3 and [uv](https://docs.astral.sh/uv/). No Docker.
 
 ```bash
 git clone https://github.com/leo-gan/GLD.SerializerBenchmark.git
@@ -68,14 +69,21 @@ cd GLD.SerializerBenchmark
 ./scripts/check-host-requirements.sh python   # optional: see what's missing
 ./scripts/install-host-requirements.sh python # optional: user-local toolchains
 
+# How fast / how big?
 cd python && ./scripts/run-benchmarks.sh smoke
 # → logs/python/YYYY-MM-DD-HHMMSS.csv
+
+# Does it match the cited RFC / spec section?
+./scripts/run-compliance.sh
+# → logs/compliance/YYYY-MM-DD-HHMMSS.json
 ```
 
 Then open the [Python Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/?lang=python)
-(or run `analyze-benchmarks -l python` after installing the analysis package) to review the run.
+for timings, or [Dashboard · Compliance](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/#compliance)
+for spec misses. Catalog notes (not live numbers) live under
+[Compliance](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/).
 
-Prefer Rust? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
+Prefer Rust benches? `./scripts/run-all-benchmarks.sh --mode smoke --lang rust`
 
 ---
 

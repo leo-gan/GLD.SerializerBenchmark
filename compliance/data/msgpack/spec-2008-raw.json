@@ -1,0 +1,143 @@
+{
+  "format": "msgpack",
+  "standard": "MessagePack (pre-2013 raw)",
+  "version": "2008-raw",
+  "standard_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md",
+  "provenance": "original-work",
+  "notes": "Pre-str/bin chart. Official suite targets the 2013+ spec; original 2008 cases kept.",
+  "cases": [
+    {
+      "id": "mp08-pos-fixnum",
+      "title": "Positive fixint 0..127",
+      "section": "Type Chart",
+      "section_title": "Positive FixNum",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "0xxxxxxx stores a 7-bit non-negative integer in a single byte.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex",
+      "decoded": 0
+    },
+    {
+      "id": "mp08-neg-fixnum",
+      "title": "Negative fixint -1",
+      "section": "Type Chart",
+      "section_title": "Negative FixNum",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "111xxxxx stores a 5-bit negative integer.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "ff",
+      "input_encoding": "hex",
+      "decoded": -1
+    },
+    {
+      "id": "mp08-nil",
+      "title": "nil is 0xc0",
+      "section": "Type Chart",
+      "section_title": "nil",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "nil is the single byte 0xc0.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "c0",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "mp08-false-true",
+      "title": "false 0xc2 / true 0xc3",
+      "section": "Type Chart",
+      "section_title": "Boolean",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "false is 0xc2; true is 0xc3.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "c3",
+      "input_encoding": "hex",
+      "decoded": true
+    },
+    {
+      "id": "mp08-fixraw-a",
+      "title": "fixraw of one ASCII byte (legacy raw)",
+      "section": "Type Chart",
+      "section_title": "FixRaw",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "101xxxxx is fix raw: 5-bit length plus that many bytes. Pre-2013 this is the only string/bytes family.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "a161",
+      "input_encoding": "hex",
+      "decoded": "a",
+      "notes": "Modern decoders treat fixstr the same way for UTF-8."
+    },
+    {
+      "id": "mp08-fixarray",
+      "title": "fixarray of two integers",
+      "section": "Type Chart",
+      "section_title": "FixArray",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "1001xxxx is fix array: 4-bit length plus that many elements.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "920102",
+      "input_encoding": "hex",
+      "decoded": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "mp08-fixmap",
+      "title": "fixmap of one pair",
+      "section": "Type Chart",
+      "section_title": "FixMap",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "1000xxxx is fix map: 4-bit pair count plus key/value items.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "81a16101",
+      "input_encoding": "hex",
+      "decoded": {
+        "a": 1
+      }
+    },
+    {
+      "id": "mp08-uint8",
+      "title": "uint 8",
+      "section": "Type Chart",
+      "section_title": "uint 8",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "0xcc followed by one byte is an 8-bit unsigned integer.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "ccff",
+      "input_encoding": "hex",
+      "decoded": 255
+    },
+    {
+      "id": "mp08-truncated-uint8",
+      "title": "uint 8 without the extra byte is invalid",
+      "section": "Type Chart",
+      "section_title": "uint 8",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "The uint 8 format requires a following byte.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "cc",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "mp08-reserved-c1",
+      "title": "0xc1 is reserved / never used",
+      "section": "Type Chart",
+      "section_title": "never used",
+      "section_url": "https://github.com/msgpack/msgpack/blob/master/spec-old.md#type-chart",
+      "paragraph": "0xc1 is reserved and is not a valid MessagePack value.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "c1",
+      "input_encoding": "hex"
+    }
+  ]
+}

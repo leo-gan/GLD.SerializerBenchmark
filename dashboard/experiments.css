@@ -16,7 +16,8 @@ body.dash-view-experiments #compare,
 body.dash-view-experiments #history-custom,
 body.dash-view-experiments #orientation-banner,
 body.dash-view-experiments #run-meta,
-body.dash-view-experiments #filter-policy-meta {
+body.dash-view-experiments #filter-policy-meta,
+body.dash-view-experiments #compliance {
   display: none !important;
 }
 

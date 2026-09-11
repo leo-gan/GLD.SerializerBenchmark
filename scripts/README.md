@@ -1,6 +1,10 @@
-# Benchmark runner scripts
+# Local runner scripts
 
-Scripts for running benchmark runners and analysis **locally**. GitHub Actions may smoke-test benchmark runners, but **never** regenerates result tables or plots for documentation — those are committed under `docs/analysis/` after a local `analyze-benchmarks` run.
+Scripts for running benchmark runners, the compliance catalog, and analysis
+**locally**. GitHub Actions may smoke-test benchmark runners, but **never**
+regenerates result tables or plots for documentation — those are committed
+under `docs/analysis/` after a local `analyze-benchmarks` run. Compliance is
+also a local command (`run-compliance.sh`), not a CI job.
 
 Each benchmark run creates timestamped artifacts with the **same stem** (never overwritten):
 
@@ -73,6 +77,30 @@ source scripts/lib/config.sh && bench_mode_reps smoke
 ```
 
 Language `run-benchmarks.sh` scripts source `lib/config.sh` so mode repetition counts and `BENCHMARK_SEED` match the YAML.
+
+### `run-compliance.sh`
+
+Spec-quality counterpart to `run-all-benchmarks.sh`. Runs the JSON / YAML /
+TOML / CBOR / MessagePack catalog against Python adapters and prints
+RFC/spec-linked misses. **Not** a CI or pytest job.
+
+```bash
+./scripts/run-compliance.sh
+./scripts/run-compliance.sh --format json --adapter orjson
+./scripts/run-compliance.sh --detailed
+```
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format NAME` | Limit to `json`, `yaml`, `toml`, `cbor`, or `msgpack` (repeatable) |
+| `-a, --adapter NAME` | Limit to one library adapter (repeatable) |
+| `-d, --detailed` | Print every case |
+| `-o, --json-out PATH` | Report path (default `logs/compliance/<timestamp>.json`) |
+
+Library deviations do not fail the process. Exit `2` only if the catalog
+cannot be loaded. A full run updates `dashboard/public/data/compliance.json`
+for the Dashboard Compliance view. Catalog notes:
+[`docs/compliance/`](../docs/compliance/index.md).
 
 ### `run-all-benchmarks.sh`
 

@@ -68,7 +68,7 @@ mapfile -t PATHS < <({
 is_prose_or_meta() {
   local p="$1"
   case "$p" in
-    docs/*|dashboard/public/data/*|dashboard/dist/*|logs/*|reports/*|site/*|.grok/*)
+    docs/*|dashboard/public/data/*|dashboard/dist/*|logs/*|reports/*|site/*|.grok/*|compliance/*)
       return 0
       ;;
   esac
