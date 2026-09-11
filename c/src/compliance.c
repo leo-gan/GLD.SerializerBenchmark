@@ -131,11 +131,12 @@ int main(int argc, char **argv) {
         if (!first) fputc(',', out);
         first = 0;
         fprintf(out,
-          "{\"id\":\"%s\",\"language\":\"c\",\"serializer\":\"cJSON\",\"serializer_version\":\"\",\"format\":\"json\","
+          "{\"id\":\"%s\",\"language\":\"c\",\"serializer\":\"cJSON\",\"serializer_version\":\"%s\",\"format\":\"json\","
           "\"standard\":\"%s\",\"standard_url\":\"%s\",\"version\":\"%s\",\"version_key\":\"json.%s\","
           "\"requirement\":\"%s\",\"expect\":\"%s\",\"section\":\"\",\"section_title\":\"\",\"section_url\":\"%s\","
           "\"paragraph\":\"\",\"title\":\"\",\"input\":\"\",\"input_encoding\":\"utf-8\",\"detail\":\"\",\"observed\":\"%s\",\"outcome\":\"%s\"}",
           id,
+          cJSON_Version(),
           standard && standard->valuestring ? standard->valuestring : "",
           surl && surl->valuestring ? surl->valuestring : "",
           version && version->valuestring ? version->valuestring : "",
@@ -214,11 +215,12 @@ int main(int argc, char **argv) {
         if (!first) fputc(',', out);
         first = 0;
         fprintf(out,
-          "{\"id\":\"%s\",\"language\":\"c\",\"serializer\":\"protobuf-wire\",\"serializer_version\":\"\",\"format\":\"protobuf\","
+          "{\"id\":\"%s\",\"language\":\"c\",\"serializer\":\"protobuf-wire\",\"serializer_version\":\"%s\",\"format\":\"protobuf\","
           "\"standard\":\"%s\",\"standard_url\":\"%s\",\"version\":\"%s\",\"version_key\":\"protobuf.%s\","
           "\"requirement\":\"%s\",\"expect\":\"%s\",\"section\":\"\",\"section_title\":\"\",\"section_url\":\"%s\","
           "\"paragraph\":\"\",\"title\":\"\",\"input\":\"\",\"input_encoding\":\"%s\",\"detail\":\"\",\"observed\":\"%s\",\"outcome\":\"%s\"}",
           id,
+          "wire-v2",
           standard && standard->valuestring ? standard->valuestring : "",
           surl && surl->valuestring ? surl->valuestring : "",
           version && version->valuestring ? version->valuestring : "",

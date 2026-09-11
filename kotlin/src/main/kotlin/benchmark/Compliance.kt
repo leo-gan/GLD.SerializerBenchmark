@@ -12,6 +12,7 @@ import kotlin.io.path.isDirectory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import net.peanuuutz.tomlkt.Toml
+import benchmark.serializers.Versions
 import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
@@ -59,23 +60,38 @@ fun complianceMain(args: Array<String>) {
     }
 }
 
-private data class Adapter(val name: String, val format: String, val decode: (ByteArray, String) -> Any?)
+private data class Adapter(
+    val name: String,
+    val format: String,
+    val version: String,
+    val decode: (ByteArray, String) -> Any?,
+)
 
 private fun adapters(): List<Adapter> {
     val jackson = jacksonObjectMapper()
     val cbor = ObjectMapper(CBORFactory())
     return listOf(
-        Adapter("kotlinx-json", "json") { b, _ ->
+        Adapter("kotlinx-json", "json", Versions.of("kotlinx.serialization.json.Json")) { b, _ ->
             if (b.count { it == '['.code.toByte() || it == '{'.code.toByte() } > 4_000) {
                 error("input too nested for this runner")
             }
             Json.parseToJsonElement(b.decodeToString())
         },
-        Adapter("jackson", "json") { b, _ -> jackson.readValue(b, Any::class.java) },
-        Adapter("kaml", "yaml") { b, _ -> Yaml.default.parseToYamlNode(b.decodeToString()) },
-        Adapter("jackson-cbor", "cbor") { b, _ -> cbor.readValue(b, Any::class.java) },
-        Adapter("tomlkt", "toml") { b, _ -> Toml.parseToTomlTable(b.decodeToString()) },
-        Adapter("protobuf", "protobuf") { b, schema -> decodeProtobuf(b, schema) },
+        Adapter("jackson", "json", Versions.of(ObjectMapper::class.java)) { b, _ ->
+            jackson.readValue(b, Any::class.java)
+        },
+        Adapter("kaml", "yaml", Versions.of("com.charleskorn.kaml.Yaml")) { b, _ ->
+            Yaml.default.parseToYamlNode(b.decodeToString())
+        },
+        Adapter("jackson-cbor", "cbor", Versions.of(CBORFactory::class.java)) { b, _ ->
+            cbor.readValue(b, Any::class.java)
+        },
+        Adapter("tomlkt", "toml", Versions.of("net.peanuuutz.tomlkt.Toml")) { b, _ ->
+            Toml.parseToTomlTable(b.decodeToString())
+        },
+        Adapter("protobuf", "protobuf", Versions.of(com.google.protobuf.MessageLite::class.java)) { b, schema ->
+            decodeProtobuf(b, schema)
+        },
     )
 }
 
@@ -159,7 +175,7 @@ private fun runOne(suite: Map<String, Any?>, c: Map<String, Any?>, a: Adapter): 
         "id" to c["id"],
         "language" to "kotlin",
         "serializer" to a.name,
-        "serializer_version" to "",
+        "serializer_version" to a.version,
         "format" to suite["format"],
         "standard" to suite["standard"],
         "standard_url" to suite["standard_url"],

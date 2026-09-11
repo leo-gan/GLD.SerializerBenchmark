@@ -108,7 +108,13 @@ function serializerOf(row) {
 }
 
 function serializerLabel(row) {
-  return serializerDisplayName(serializerOf(row), row?.serializer_version);
+  const name = serializerOf(row);
+  const fromRow = row?.serializer_version == null ? '' : String(row.serializer_version).trim();
+  const ver =
+    fromRow && fromRow !== 'unknown' && fromRow !== '—'
+      ? fromRow
+      : benchVersion(String(row?.language || payload?.language || ''), name);
+  return serializerDisplayName(name, ver);
 }
 
 function benchVersion(language, name) {
@@ -146,7 +152,7 @@ async function loadBenchVersions() {
   if (benchVersions) return benchVersions;
   benchVersions = {};
   await Promise.all(
-    Object.keys(NO_SPEC_SERIALIZERS).map(async (lang) => {
+    Object.keys(LANG_LABELS).map(async (lang) => {
       try {
         const doc = await fetchJsonMaybeGzip(`data/stats_${lang}_latest.json.gz`);
         const map = {};
@@ -627,7 +633,7 @@ async function render() {
     renderEmpty(root, 'Compliance payload is empty.');
     return;
   }
-  if (ui.format === NO_SPEC) await loadBenchVersions();
+  await loadBenchVersions();
   renderMain(root);
 }
 

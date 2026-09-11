@@ -147,12 +147,14 @@ fn hex_decode(s: &str) -> Result<Vec<u8>> {
     Ok(out)
 }
 
+include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
+
 fn builtin() -> Vec<Adapter> {
     vec![
         Adapter {
             name: "serde_json",
             format: "json",
-            version: env!("CARGO_PKG_VERSION").to_string(),
+            version: crate_version("serde_json").to_string(),
             decode: |b, _| {
                 if too_deep(b) {
                     anyhow::bail!("input too nested for this runner");
@@ -163,7 +165,7 @@ fn builtin() -> Vec<Adapter> {
         Adapter {
             name: "sonic-rs",
             format: "json",
-            version: String::new(),
+            version: crate_version("sonic-rs").to_string(),
             decode: |b, _| {
                 if too_deep(b) {
                     anyhow::bail!("input too nested for this runner");
@@ -175,7 +177,7 @@ fn builtin() -> Vec<Adapter> {
         Adapter {
             name: "serde_yaml",
             format: "yaml",
-            version: String::new(),
+            version: crate_version("serde_yaml").to_string(),
             decode: |b, _| {
                 let v: serde_json::Value = serde_yaml::from_slice(b)?;
                 Ok(v)
@@ -184,7 +186,7 @@ fn builtin() -> Vec<Adapter> {
         Adapter {
             name: "ciborium",
             format: "cbor",
-            version: String::new(),
+            version: crate_version("ciborium").to_string(),
             decode: |b, _| {
                 let v: serde_json::Value = ciborium::from_reader(b).map_err(|e| anyhow::anyhow!("{e}"))?;
                 Ok(v)
@@ -193,7 +195,7 @@ fn builtin() -> Vec<Adapter> {
         Adapter {
             name: "rmp-serde",
             format: "msgpack",
-            version: String::new(),
+            version: crate_version("rmp-serde").to_string(),
             decode: |b, _| {
                 let v: serde_json::Value = rmp_serde::from_slice(b).map_err(|e| anyhow::anyhow!("{e}"))?;
                 Ok(v)
@@ -202,7 +204,7 @@ fn builtin() -> Vec<Adapter> {
         Adapter {
             name: "bson",
             format: "bson",
-            version: String::new(),
+            version: crate_version("bson").to_string(),
             decode: |b, _| {
                 let doc = bson::Document::from_reader(&mut std::io::Cursor::new(b))?;
                 Ok(serde_json::to_value(doc)?)
@@ -211,7 +213,7 @@ fn builtin() -> Vec<Adapter> {
         Adapter {
             name: "flexbuffers",
             format: "flatbuffers",
-            version: String::new(),
+            version: crate_version("flexbuffers").to_string(),
             decode: |b, _| {
                 let _ = flexbuffers::Reader::get_root(b).map_err(|e| anyhow::anyhow!("{e}"))?;
                 Ok(Value::Null)
@@ -220,7 +222,7 @@ fn builtin() -> Vec<Adapter> {
         Adapter {
             name: "prost",
             format: "protobuf",
-            version: String::new(),
+            version: crate_version("prost").to_string(),
             decode: decode_protobuf,
         },
     ]
@@ -380,11 +382,16 @@ fn values_equal(expected: &Value, observed: &Value) -> bool {
 
 fn preview(v: &Value) -> String {
     let s = v.to_string();
-    if s.len() > 120 {
-        format!("{}...", &s[..117])
-    } else {
-        s
+    if s.len() <= 120 {
+        return s;
     }
+    let end = s
+        .char_indices()
+        .map(|(i, _)| i)
+        .take_while(|i| *i <= 117)
+        .last()
+        .unwrap_or(0);
+    format!("{}...", &s[..end])
 }
 
 fn print_summary(results: &[Value], adapter_errs: &[String]) {

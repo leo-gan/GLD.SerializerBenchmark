@@ -15,6 +15,7 @@ namespace GLD.SerializerBenchmark
         private static readonly Dictionary<string, string> AssemblyByName =
             new(StringComparer.Ordinal)
             {
+                ["System.Text.Json"] = "System.Text.Json",
                 ["Json.Net"] = "Newtonsoft.Json",
                 ["Json.Net (Helper)"] = "Newtonsoft.Json",
                 ["ProtoBuf"] = "protobuf-net",
@@ -37,6 +38,7 @@ namespace GLD.SerializerBenchmark
                 ["FlatSharp"] = "FlatSharp",
                 ["FluentSerializer"] = "FluentSerializer.Json",
                 ["Google.Protobuf"] = "Google.Protobuf",
+                ["protobuf-net"] = "protobuf-net",
                 ["Apache.Avro"] = "Avro",
                 ["GroBuf"] = "GroBuf",
                 ["Hyperion"] = "Hyperion",

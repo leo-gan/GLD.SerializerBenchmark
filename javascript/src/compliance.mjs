@@ -16,6 +16,19 @@ const repoRoot = resolve(here, '../..');
 const catalogRoot = join(repoRoot, 'compliance/data');
 
 function pkgVersion(name) {
+  if (!name) return '';
+  const files = [
+    join(here, '../node_modules', name, 'package.json'),
+    join(repoRoot, 'javascript/node_modules', name, 'package.json'),
+  ];
+  for (const p of files) {
+    try {
+      const v = JSON.parse(readFileSync(p, 'utf8')).version;
+      if (v) return String(v);
+    } catch {
+      /* try the next resolver */
+    }
+  }
   try {
     return require(`${name}/package.json`).version || '';
   } catch {
@@ -183,6 +196,7 @@ function makeAdapters() {
   };
 
   add('JSON.parse', 'json', (buf) => JSON.parse(buf.toString('utf8')), 'Node JSON.parse', '');
+  adapters[adapters.length - 1].version = `node-${process.versions.node}`;
   try {
     const yaml = require('js-yaml');
     add('js-yaml', 'yaml', (buf) => yaml.load(buf.toString('utf8')), 'js-yaml load', 'js-yaml');

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import benchmark.serializers.Versions;
 import com.google.gson.Gson;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
@@ -132,23 +133,23 @@ public final class Compliance {
     ObjectMapper msgpack = new ObjectMapper(new MessagePackFactory());
     Gson gson = new Gson();
     List<Adapter> out = new ArrayList<>();
-    out.add(new Adapter("jackson", "json", "", (b, s) -> JSON.readValue(b, Object.class)));
-    out.add(new Adapter("gson", "json", "", (b, s) -> gson.fromJson(new String(b, StandardCharsets.UTF_8), Object.class)));
-    out.add(new Adapter("jackson-cbor", "cbor", "", (b, s) -> cbor.readValue(b, Object.class)));
-    out.add(new Adapter("jackson-smile", "smile", "", (b, s) -> smile.readValue(b, Object.class)));
-    out.add(new Adapter("msgpack", "msgpack", "", (b, s) -> msgpack.readValue(b, Object.class)));
+    out.add(new Adapter("jackson", "json", Versions.of(ObjectMapper.class), (b, s) -> JSON.readValue(b, Object.class)));
+    out.add(new Adapter("gson", "json", Versions.of(Gson.class), (b, s) -> gson.fromJson(new String(b, StandardCharsets.UTF_8), Object.class)));
+    out.add(new Adapter("jackson-cbor", "cbor", Versions.of(CBORFactory.class), (b, s) -> cbor.readValue(b, Object.class)));
+    out.add(new Adapter("jackson-smile", "smile", Versions.of(SmileFactory.class), (b, s) -> smile.readValue(b, Object.class)));
+    out.add(new Adapter("msgpack", "msgpack", Versions.of(MessagePackFactory.class), (b, s) -> msgpack.readValue(b, Object.class)));
     out.add(
         new Adapter(
             "bson",
             "bson",
-            "",
+            Versions.of(org.bson.BsonDocument.class),
             (b, s) -> {
               RawBsonDocument raw = new RawBsonDocument(b);
               return JSON.readValue(raw.toJson(), Object.class);
             }));
     ObjectMapper yaml = new YAMLMapper();
-    out.add(new Adapter("jackson-yaml", "yaml", "", (b, s) -> yaml.readValue(b, Object.class)));
-    out.add(new Adapter("protobuf", "protobuf", "", Compliance::decodeProtobuf));
+    out.add(new Adapter("jackson-yaml", "yaml", Versions.of(YAMLMapper.class), (b, s) -> yaml.readValue(b, Object.class)));
+    out.add(new Adapter("protobuf", "protobuf", Versions.of(com.google.protobuf.MessageLite.class), Compliance::decodeProtobuf));
     return out;
   }
 

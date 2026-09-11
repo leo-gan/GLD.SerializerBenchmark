@@ -92,12 +92,12 @@ namespace GLD.SerializerBenchmark
             var yaml = new DeserializerBuilder().Build();
             return new List<Adapter>
             {
-                new("System.Text.Json", "json", "", (b, _) => System.Text.Json.JsonSerializer.Deserialize<object>(b)),
-                new("Json.Net", "json", "", (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
-                new("YamlDotNet", "yaml", "", (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
-                new("MessagePack-CSharp", "msgpack", "", (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
-                new("Google.Protobuf", "protobuf", "", DecodeGoogleProtobuf),
-                new("protobuf-net", "protobuf", "", DecodeProtobufNet),
+                new("System.Text.Json", "json", SerializerVersionRegistry.Resolve("System.Text.Json"), (b, _) => System.Text.Json.JsonSerializer.Deserialize<object>(b)),
+                new("Json.Net", "json", SerializerVersionRegistry.Resolve("Json.Net"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
+                new("YamlDotNet", "yaml", SerializerVersionRegistry.Resolve("YamlDotNet"), (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
+                new("MessagePack-CSharp", "msgpack", SerializerVersionRegistry.Resolve("MessagePack-CSharp"), (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
+                new("Google.Protobuf", "protobuf", SerializerVersionRegistry.Resolve("Google.Protobuf"), DecodeGoogleProtobuf),
+                new("protobuf-net", "protobuf", SerializerVersionRegistry.Resolve("protobuf-net"), DecodeProtobufNet),
             };
         }
 
