@@ -24,6 +24,7 @@ reports/baseline.json
 *.sln.docstates
 .windsurf/
 .jbeval/
+.swift-version
 
 # -----------------------------------------------------------------------------
 # Python (python/, analysis/, root)

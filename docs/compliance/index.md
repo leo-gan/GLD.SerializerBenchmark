@@ -92,8 +92,13 @@ From the repository root (Python 3.12+ and [uv](https://docs.astral.sh/uv/)):
 
 The report lands in `logs/compliance/YYYY-MM-DD-HHMMSS.json`. A full
 (unfiltered) run also updates `dashboard/public/data/compliance.json`
-for the [Dashboard Compliance](../dashboard/#compliance) view. This is
-a **local quality command**, not a CI job and not part of `pytest`.
+for the [Dashboard Compliance](../dashboard/#compliance) view.
+
+`./scripts/run-compliance.sh` also runs every other language toolchain
+it finds. Each writes `logs/compliance/latest-<lang>.json`. The
+Dashboard merges them.
+
+This is a **local quality command**, not a CI job and not part of `pytest`.
 
 ## Policy: report-only
 

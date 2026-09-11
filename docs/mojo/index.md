@@ -5,7 +5,7 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for CBOR, Protocol Buffers, and Avro.
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, Protocol Buffers, Avro, YAML, and MessagePack.
 
 ## Runtime
 
@@ -33,7 +33,7 @@ Mojo 1.0 is a young compiler. A nightly compiler or a different pixi lock can mo
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native MessagePack, BSON, YAML, XML, or FlatBuffers library in this first wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures.
+There is no native BSON, XML, or FlatBuffers library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is not published yet, so TOML stays on DataBooth/mojo-toml.
 
 These times cannot be ranked against another language.
 
@@ -54,11 +54,13 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 |------------|----------|---------|--------|-------|
 | EmberJson | JSON | emberjson 0.3.4 | bytes only | Reflection `serialize` / `deserialize` |
 | ehsanmok-json | JSON | ehsanmok/json 0.3.0 | bytes only | `dumps` / `loads` on `Value` (CPU parser) |
-| mojo-json | JSON | leo-gan/gld-json 0.2.0 | bytes only | Typed WireWriter / WireReader (vendored as `gldjson`) |
+| mojo-json | JSON | leo-gan/gld-json 0.3.0 | bytes only | Typed WireWriter / WireReader (vendored as `gldjson`) |
 | mojo-cbor | Binary | leo-gan/gld-cbor 0.6.0 | bytes only | `CborDatum` encode / decode |
 | mojo-protobuf | Schema | leo-gan/gld-protobuf 0.6.0 | bytes only | Generated from suite `.proto` |
 | mojo-avro | Schema | leo-gan/gld-avro 0.4.0 | bytes only | `AvroDatum` encode / decode |
 | mojo-toml | Text | DataBooth/mojo-toml 0.9.1 | bytes only | `to_toml` / `parse` |
+| mojo-yaml | Text | leo-gan/gld-yaml 0.2.0 | bytes only | `YamlValue` encode / decode |
+| mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | bytes only | WireWriter / WireReader |
 
 ### Call-path contract
 

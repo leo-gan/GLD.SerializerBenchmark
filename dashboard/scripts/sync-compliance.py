@@ -78,7 +78,21 @@ def merge_reports(reports: list[dict]) -> dict:
 
 def _pick_sources(log_dir: Path) -> list[Path]:
     named = []
-    for lang in ("python", "javascript", "go", "rust", "java", "csharp", "cpp", "c"):
+    for lang in (
+        "python",
+        "javascript",
+        "go",
+        "rust",
+        "java",
+        "kotlin",
+        "csharp",
+        "cpp",
+        "c",
+        "php",
+        "swift",
+        "zig",
+        "mojo",
+    ):
         p = log_dir / f"latest-{lang}.json"
         if p.is_file() and p.stat().st_size > 0:
             named.append(p)

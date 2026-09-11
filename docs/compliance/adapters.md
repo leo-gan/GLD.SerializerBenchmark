@@ -30,8 +30,13 @@ compliance.adapters    json / orjson / msgspec / rapidjson / pydantic /
                        msgpack / protobuf / fastavro / bson / flexbuffers /
                        amazon-ion / py-ubjson / newsmile / plistlib
 
-JavaScript: `javascript/src/compliance.mjs` (JSON.parse, js-yaml,
-cbor-x, msgpackr, bson, avsc, flexbuffers, protobufjs wire scan).
+JavaScript: `javascript/src/compliance.mjs`. Other languages have a
+`compliance` entry next to the bench runner (`go/compliance`,
+`rust/src/bin/compliance.rs`, `java` `benchmark.Compliance`,
+`kotlin` `complianceMain`, `c-sharp` `dotnet run -- compliance`,
+`php/src/compliance.php`, `cpp/src/compliance.cpp`,
+`swift/compliance.swift`, `zig/src/compliance.zig`, `mojo/src/compliance.mojo`).
+`./scripts/run-compliance.sh` runs every toolchain it finds.
 compliance.runner      run_suites()
 compliance.report       format_summary() / JSON sidecar
 ```

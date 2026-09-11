@@ -2,19 +2,21 @@
 
 Native Mojo 1.0 benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
 
-## Serializers (7)
+## Serializers (9)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
 | EmberJson | JSON | emberjson 0.3.4 | Reflection `serialize` / `deserialize` |
 | ehsanmok-json | JSON | ehsanmok/json 0.3.0 | `dumps` / `loads` on `Value` |
-| mojo-json | JSON | leo-gan/gld-json | Typed WireWriter / WireReader encode / decode (vendored sources) |
+| mojo-json | JSON | leo-gan/gld-json 0.3.0 | Typed WireWriter / WireReader encode / decode (vendored sources) |
 | mojo-cbor | Binary | leo-gan/gld-cbor | `CborDatum` encode / decode (vendored sources) |
 | mojo-protobuf | Schema | leo-gan/gld-protobuf | Generated suite messages (vendored sources) |
 | mojo-avro | Schema | leo-gan/gld-avro | `AvroDatum` encode / decode (conda) |
 | mojo-toml | Text | DataBooth/mojo-toml | `to_toml` / `parse` (vendored source) |
+| mojo-yaml | Text | leo-gan/gld-yaml 0.2.0 | `YamlValue` encode / decode (vendored sources) |
+| mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | WireWriter / WireReader (vendored sources) |
 
-mojo-avro’s conda package owns the `runtime` / `wire` / `json` module names. JSON, CBOR, and Protobuf are compiled from `vendor/gldjson_src`, `vendor/cbor_src`, and `vendor/pb_src` with those internals renamed so they can live in one process.
+mojo-avro’s conda package owns the `runtime` / `wire` / `json` module names. JSON, CBOR, Protobuf, YAML, and MessagePack are compiled from `vendor/` with those internals renamed so they can live in one process. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub.
 
 ## Host tools
 

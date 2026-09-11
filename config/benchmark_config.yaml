@@ -1279,6 +1279,16 @@ languages:
         package: DataBooth/mojo-toml
         rationale: "Pure-Mojo TOML 1.0 parser and writer"
         optimal_api: "to_toml(Dict) / parse(text)"
+      - name: mojo-yaml
+        category: text
+        package: leo-gan/gld-yaml
+        rationale: "Pure-Mojo YAML 1.2 via YamlValue encode / decode"
+        optimal_api: "yaml.encode_value / yaml.decode_value (vendored as yaml_*)"
+      - name: mojo-msgpack
+        category: binary
+        package: leo-gan/gld-messagepack
+        rationale: "Pure-Mojo MessagePack via WireWriter / WireReader"
+        optimal_api: "msgpack WireWriter / WireReader on suite types (vendored as msgpack_*)"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language
