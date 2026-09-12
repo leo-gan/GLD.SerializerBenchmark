@@ -35,7 +35,7 @@ class MsgpackSer : BenchSerializer {
             writer = mapper.writerFor(fx.value.javaClass)
             reader = mapper.readerFor(fx.value.javaClass)
         }
-        reader.readValue(writer.writeValueAsBytes(fx.value))
+        reader.readValue<Any>(writer.writeValueAsBytes(fx.value))
     }
 
     override fun serializeBytes(fx: Fixture): ByteArray = writer.writeValueAsBytes(fx.value)
