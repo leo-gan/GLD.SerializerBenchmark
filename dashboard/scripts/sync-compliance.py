@@ -109,8 +109,21 @@ def _pick_sources(log_dir: Path) -> list[Path]:
     return stamped[:1] if stamped else []
 
 
-def _serializer(row: dict) -> str:
-    return str(row.get("serializer") or row.get("adapter") or "")
+# Compliance adapter names that must match the Overview / bench display name.
+SERIALIZER_ALIASES = {
+    ("csharp", "protobuf-net"): "ProtoBuf",
+    ("javascript", "JSON.parse"): "JSON.stringify",
+    ("python", "fastavro"): "avro",
+    ("swift", "Foundation.JSONSerialization"): "Foundation.JSONEncoder",
+    ("swift", "Foundation.PropertyListSerialization"): "Foundation.PropertyListEncoder",
+    ("mojo", "mojo-yaml"): "gld-yaml",
+}
+
+
+def _serializer(row: dict, language: str | None = None) -> str:
+    name = str(row.get("serializer") or row.get("adapter") or "")
+    lang = language if language is not None else _language(row)
+    return SERIALIZER_ALIASES.get((lang, name), name)
 
 
 def _language(row: dict, default: str = "python") -> str:
@@ -121,7 +134,7 @@ def _matrix_from_results(results: list[dict], default_lang: str = "python") -> l
     cells: dict[tuple[str, str, str, str, str], dict] = {}
     for row in results:
         lang = _language(row, default_lang)
-        ser = _serializer(row)
+        ser = _serializer(row, lang)
         fmt = str(row.get("format") or "")
         ver = str(row.get("version") or "")
         key = (lang, fmt, str(row.get("standard") or ""), ver, ser)
@@ -169,7 +182,7 @@ def _normalize_results(results: list[dict], default_lang: str) -> list[dict]:
             continue
         item = dict(row)
         item["language"] = _language(item, default_lang)
-        item["serializer"] = _serializer(item)
+        item["serializer"] = _serializer(item, item["language"])
         fmt = str(item.get("format") or "")
         ver = str(item.get("version") or "")
         item["version_key"] = str(item.get("version_key") or f"{fmt}.{ver}")
@@ -191,6 +204,7 @@ def build_payload(raw: dict, source_name: str) -> dict:
                 cell.setdefault("language", default_lang)
                 if "serializer" not in cell and "adapter" in cell:
                     cell["serializer"] = cell["adapter"]
+                cell["serializer"] = _serializer(cell, str(cell.get("language") or default_lang))
                 cell.setdefault(
                     "version_key",
                     f"{cell.get('format', '')}.{cell.get('version', '')}",

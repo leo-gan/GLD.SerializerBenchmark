@@ -1,7 +1,7 @@
 # Can we send YAML on the live path?
 
 **Question:** On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
-**Date:** 2026-09-09
+**Date:** 2026-09-12
 **Sample:** `['document', 'strings']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -24,7 +24,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | IkigaJSON | — | — | — | IkigaJSON | no | [swift/results.md](swift/results.md) |
 | csharp | System.Text.Json | — | — | — | System.Text.Json | no | [csharp/results.md](csharp/results.md) |
 | zig | serde.zon | — | — | — | serde.zon | no | [zig/results.md](zig/results.md) |
-| mojo | EmberJson | — | — | — | EmberJson | no | [mojo/results.md](mojo/results.md) |
+| mojo | mojo-json | — | — | — | EmberJson | no | [mojo/results.md](mojo/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -54,7 +54,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | E (words) | System.Text.Json | — | no |
 | zig | A (order) | serde.zon | — | no |
 | zig | E (words) | serde.zon | — | no |
-| mojo | A (order) | EmberJson | — | no |
+| mojo | A (order) | mojo-json | — | no |
 | mojo | E (words) | EmberJson | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
@@ -73,7 +73,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | ok | `IkigaJSON` | — |
 | csharp | ok | `System.Text.Json` | `MS XmlSerializer` |
 | zig | ok | `serde.zon` | — |
-| mojo | ok | `EmberJson` | — |
+| mojo | ok | `mojo-json` | — |
 
 ## In memory, by language and sample
 
@@ -289,19 +289,19 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 2.23 | 452 | fastest |
-| mojo-json | 5.26 | 452 | slower |
-| ehsanmok-json | 62.4 | 452 | slower |
-| mojo-toml | 76.4 | 489 | slower |
+| mojo-json | 1.75 | 452 | fastest |
+| EmberJson | 2.20 | 452 | slower |
+| ehsanmok-json | 7.44 | 452 | slower |
+| mojo-toml | 78.4 | 489 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.79 | 411 | fastest |
-| mojo-json | 7.93 | 411 | slower |
-| mojo-toml | 32.8 | 441 | slower |
-| ehsanmok-json | 59.6 | 411 | slower |
+| EmberJson | 1.90 | 411 | fastest |
+| mojo-json | 3.16 | 411 | slower |
+| ehsanmok-json | 5.62 | 411 | slower |
+| mojo-toml | 33.2 | 441 | slower |
 
 ## What we saw
 

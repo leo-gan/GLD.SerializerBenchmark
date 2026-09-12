@@ -1,0 +1,733 @@
+{
+  "schema": "gld.compliance.serializer-standards/1",
+  "languages": {
+    "c": {
+      "cJSON": [
+        "json"
+      ],
+      "jansson": [
+        "json"
+      ],
+      "yyjson": [
+        "json"
+      ],
+      "json-c": [
+        "json"
+      ],
+      "parson": [
+        "json"
+      ],
+      "mpack": [
+        "msgpack"
+      ],
+      "msgpack-c": [
+        "msgpack"
+      ],
+      "tinycbor": [
+        "cbor"
+      ],
+      "cbor-encode": [
+        "cbor"
+      ],
+      "libcbor": [
+        "cbor"
+      ],
+      "libcbor-stream": [
+        "cbor"
+      ],
+      "qcbor": [
+        "cbor"
+      ],
+      "zcbor": [
+        "cbor"
+      ],
+      "libbson": [
+        "bson"
+      ],
+      "ubj": [
+        "ubjson"
+      ],
+      "flatcc": [
+        "flatbuffers"
+      ],
+      "avro-c": [
+        "avro"
+      ],
+      "nanopb": [
+        "protobuf"
+      ],
+      "protobuf-c": [
+        "protobuf"
+      ],
+      "protobuf": [
+        "protobuf"
+      ],
+      "protobuf-wire": [
+        "protobuf"
+      ],
+      "custom-binary": []
+    },
+    "python": {
+      "json": [
+        "json"
+      ],
+      "orjson": [
+        "json"
+      ],
+      "msgspec": [
+        "json"
+      ],
+      "msgspec-msgpack": [
+        "msgpack"
+      ],
+      "rapidjson": [
+        "json"
+      ],
+      "pydantic": [
+        "json"
+      ],
+      "mashumaro": [
+        "json"
+      ],
+      "serpyco-rs": [
+        "json"
+      ],
+      "yaml": [
+        "yaml"
+      ],
+      "cbor2": [
+        "cbor"
+      ],
+      "msgpack": [
+        "msgpack"
+      ],
+      "protobuf": [
+        "protobuf"
+      ],
+      "avro": [
+        "avro"
+      ],
+      "flatbuffers": [
+        "flatbuffers"
+      ],
+      "pickle": [],
+      "cloudpickle": [],
+      "dill": [],
+      "tomllib": [
+        "toml"
+      ],
+      "amazon-ion": [
+        "ion"
+      ],
+      "bson": [
+        "bson"
+      ],
+      "flexbuffers": [
+        "flatbuffers"
+      ],
+      "newsmile": [
+        "smile"
+      ],
+      "plistlib": [
+        "plist"
+      ],
+      "py-ubjson": [
+        "ubjson"
+      ]
+    },
+    "javascript": {
+      "JSON.stringify": [
+        "json"
+      ],
+      "fast-json-stringify": [
+        "json"
+      ],
+      "simdjson-parse+JSON.stringify": [
+        "json"
+      ],
+      "js-yaml": [
+        "yaml"
+      ],
+      "@msgpack/msgpack": [
+        "msgpack"
+      ],
+      "msgpackr": [
+        "msgpack"
+      ],
+      "json-pack-msgpack": [
+        "msgpack"
+      ],
+      "cbor": [
+        "cbor"
+      ],
+      "cbor-x": [
+        "cbor"
+      ],
+      "bson": [
+        "bson"
+      ],
+      "avsc": [
+        "avro"
+      ],
+      "protobufjs": [
+        "protobuf"
+      ],
+      "protobuf-es": [
+        "protobuf"
+      ],
+      "google-protobuf": [
+        "protobuf"
+      ],
+      "flatbuffers": [
+        "flatbuffers"
+      ],
+      "flexbuffers": [
+        "flatbuffers"
+      ],
+      "bebop": [
+        "bebop"
+      ],
+      "v8-serializer": [],
+      "devalue": [],
+      "sia": [],
+      "bser": []
+    },
+    "go": {
+      "encoding/json": [
+        "json"
+      ],
+      "goccy/go-json": [
+        "json"
+      ],
+      "jsoniter": [
+        "json"
+      ],
+      "segmentio/encoding/json": [
+        "json"
+      ],
+      "sonic": [
+        "json"
+      ],
+      "ugorji/json": [
+        "json"
+      ],
+      "goccy/go-yaml": [
+        "yaml"
+      ],
+      "fxamacker/cbor": [
+        "cbor"
+      ],
+      "ugorji/cbor": [
+        "cbor"
+      ],
+      "vmihailenco/msgpack": [
+        "msgpack"
+      ],
+      "shamaton/msgpack": [
+        "msgpack"
+      ],
+      "ugorji/msgpack": [
+        "msgpack"
+      ],
+      "protobuf": [
+        "protobuf"
+      ],
+      "hamba/avro": [
+        "avro"
+      ],
+      "linkedin/goavro": [
+        "avro"
+      ],
+      "mongo-bson": [
+        "bson"
+      ],
+      "pelletier/go-toml": [
+        "toml"
+      ],
+      "encoding/gob": [],
+      "kelindar/binary": []
+    },
+    "java": {
+      "jackson": [
+        "json"
+      ],
+      "jackson-yaml": [
+        "yaml"
+      ],
+      "jackson-cbor": [
+        "cbor"
+      ],
+      "jackson-smile": [
+        "smile"
+      ],
+      "gson": [
+        "json"
+      ],
+      "fastjson2": [
+        "json"
+      ],
+      "dsl-json": [
+        "json"
+      ],
+      "moshi": [
+        "json"
+      ],
+      "jsoniter": [
+        "json"
+      ],
+      "msgpack": [
+        "msgpack"
+      ],
+      "protobuf": [
+        "protobuf"
+      ],
+      "avro": [
+        "avro"
+      ],
+      "bson": [
+        "bson"
+      ],
+      "ion": [
+        "ion"
+      ],
+      "flatbuffers": [
+        "flatbuffers"
+      ],
+      "capnproto": [
+        "capnp"
+      ],
+      "java-serialization": [],
+      "kryo": [],
+      "fory": [],
+      "hessian": [],
+      "protostuff": []
+    },
+    "kotlin": {
+      "kotlinx-json": [
+        "json"
+      ],
+      "jackson": [
+        "json"
+      ],
+      "jackson-cbor": [
+        "cbor"
+      ],
+      "gson": [
+        "json"
+      ],
+      "moshi-codegen": [
+        "json"
+      ],
+      "moshi-reflect": [
+        "json"
+      ],
+      "kaml": [
+        "yaml"
+      ],
+      "kotlinx-cbor": [
+        "cbor"
+      ],
+      "obor": [
+        "cbor"
+      ],
+      "msgpack": [
+        "msgpack"
+      ],
+      "protobuf": [
+        "protobuf"
+      ],
+      "protobuf-kotlin": [
+        "protobuf"
+      ],
+      "kotlinx-protobuf": [
+        "protobuf"
+      ],
+      "avro": [
+        "avro"
+      ],
+      "avro4k": [
+        "avro"
+      ],
+      "kbson": [
+        "bson"
+      ],
+      "kotlinx-ion": [
+        "ion"
+      ],
+      "kotlinx-hocon": [
+        "hocon"
+      ],
+      "tomlkt": [
+        "toml"
+      ],
+      "flatbuffers": [
+        "flatbuffers"
+      ],
+      "capnproto": [
+        "capnp"
+      ],
+      "thrift": [
+        "thrift"
+      ],
+      "kotlinx-properties": [],
+      "kryo": [],
+      "fory": [],
+      "protostuff": []
+    },
+    "csharp": {
+      "System.Text.Json": [
+        "json"
+      ],
+      "Json.Net": [
+        "json"
+      ],
+      "Json.Net (Helper)": [
+        "json"
+      ],
+      "Jil": [
+        "json"
+      ],
+      "SpanJson": [
+        "json"
+      ],
+      "Utf8Json": [
+        "json"
+      ],
+      "NetJSON": [
+        "json"
+      ],
+      "fastJson": [
+        "json"
+      ],
+      "ServiceStack Json": [
+        "json"
+      ],
+      "FsPicklerJson": [
+        "json"
+      ],
+      "MS DataContract Json": [
+        "json"
+      ],
+      "MS Bond Json": [
+        "json",
+        "bond"
+      ],
+      "YamlDotNet": [
+        "yaml"
+      ],
+      "SharpYaml": [
+        "yaml"
+      ],
+      "MessagePack-CSharp": [
+        "msgpack"
+      ],
+      "Google.Protobuf": [
+        "protobuf"
+      ],
+      "ProtoBuf": [
+        "protobuf"
+      ],
+      "LightProto": [
+        "protobuf"
+      ],
+      "Apache.Avro": [
+        "avro"
+      ],
+      "FlatSharp": [
+        "flatbuffers"
+      ],
+      "MS Bond Compact": [
+        "bond"
+      ],
+      "MS Bond Fast": [
+        "bond"
+      ],
+      "MS XmlSerializer": [],
+      "MS DataContract": [],
+      "YAXLib": [],
+      "ExtendedXmlSerializer": [],
+      "CsvHelper": [],
+      "MS Binary": [],
+      "BinaryPack": [],
+      "Ceras": [],
+      "FsPickler": [],
+      "GroBuf": [],
+      "Hyperion": [],
+      "MemoryPack": [],
+      "Migrant": [],
+      "NetSerializer": [],
+      "ServiceStack": [],
+      "SharpSerializer": [],
+      "ZeroFormatter": []
+    },
+    "rust": {
+      "serde_json": [
+        "json"
+      ],
+      "simd-json": [
+        "json"
+      ],
+      "sonic-rs": [
+        "json"
+      ],
+      "serde_yaml": [
+        "yaml"
+      ],
+      "ciborium": [
+        "cbor"
+      ],
+      "minicbor": [
+        "cbor"
+      ],
+      "rmp-serde": [
+        "msgpack"
+      ],
+      "prost": [
+        "protobuf"
+      ],
+      "serde_avro_fast": [
+        "avro"
+      ],
+      "bson": [
+        "bson"
+      ],
+      "flexbuffers": [
+        "flatbuffers"
+      ],
+      "bincode": [],
+      "bitcode": [],
+      "nanoserde": [],
+      "postcard": [],
+      "speedy": [],
+      "rkyv": []
+    },
+    "cpp": {
+      "nlohmann_json": [
+        "json"
+      ],
+      "nlohmann_cbor": [
+        "cbor"
+      ],
+      "nlohmann_msgpack": [
+        "msgpack"
+      ],
+      "nlohmann_bson": [
+        "bson"
+      ],
+      "nlohmann_ubjson": [
+        "ubjson"
+      ],
+      "rapidjson": [
+        "json"
+      ],
+      "simdjson": [
+        "json"
+      ],
+      "yyjson": [
+        "json"
+      ],
+      "arduinojson": [
+        "json"
+      ],
+      "glaze": [
+        "json"
+      ],
+      "yaml-cpp": [
+        "yaml"
+      ],
+      "msgpack": [
+        "msgpack"
+      ],
+      "jsoncons_msgpack": [
+        "msgpack"
+      ],
+      "jsoncons_cbor": [
+        "cbor"
+      ],
+      "jsoncons_bson": [
+        "bson"
+      ],
+      "protobuf": [
+        "protobuf"
+      ],
+      "protobuf-wire": [
+        "protobuf"
+      ],
+      "avro": [
+        "avro"
+      ],
+      "avro_c": [
+        "avro"
+      ],
+      "flatbuffers": [
+        "flatbuffers"
+      ],
+      "flexbuffers": [
+        "flatbuffers"
+      ],
+      "capnproto": [
+        "capnp"
+      ],
+      "thrift": [
+        "thrift"
+      ],
+      "bitsery": [],
+      "cereal": [],
+      "cista": [],
+      "custom_binary": [],
+      "yas": [],
+      "zpp_bits": [],
+      "boost_serialization": []
+    },
+    "swift": {
+      "Foundation.JSONEncoder": [
+        "json"
+      ],
+      "IkigaJSON": [
+        "json"
+      ],
+      "Yams": [
+        "yaml"
+      ],
+      "SwiftCbor": [
+        "cbor"
+      ],
+      "SwiftMsgpack": [
+        "msgpack"
+      ],
+      "SwiftProtobuf": [
+        "protobuf"
+      ],
+      "protobuf-wire": [
+        "protobuf"
+      ],
+      "FlatBuffers": [
+        "flatbuffers"
+      ],
+      "SwiftAvroCore": [
+        "avro"
+      ],
+      "SwiftBSON": [
+        "bson"
+      ],
+      "CapnProto": [
+        "capnp"
+      ],
+      "TOML": [
+        "toml"
+      ],
+      "Foundation.PropertyListEncoder": [
+        "plist"
+      ],
+      "XMLCoder": [],
+      "BinaryCodable": []
+    },
+    "php": {
+      "json": [
+        "json"
+      ],
+      "symfony-json": [
+        "json"
+      ],
+      "jms-json": [
+        "json"
+      ],
+      "yaml": [
+        "yaml"
+      ],
+      "rybakit-msgpack": [
+        "msgpack"
+      ],
+      "protobuf": [
+        "protobuf"
+      ],
+      "avro": [
+        "avro"
+      ],
+      "cbor": [
+        "cbor"
+      ],
+      "serialize": [],
+      "symfony-xml": []
+    },
+    "zig": {
+      "std.json": [
+        "json"
+      ],
+      "std.json.scanner": [
+        "json"
+      ],
+      "serde.json": [
+        "json"
+      ],
+      "serde.yaml": [
+        "yaml"
+      ],
+      "serde.toml": [
+        "toml"
+      ],
+      "serde.msgpack": [
+        "msgpack"
+      ],
+      "zig-msgpack": [
+        "msgpack"
+      ],
+      "msgpack.zig": [
+        "msgpack"
+      ],
+      "zbor": [
+        "cbor"
+      ],
+      "protobuf": [
+        "protobuf"
+      ],
+      "protobuf-wire": [
+        "protobuf"
+      ],
+      "flatbuffers": [
+        "flatbuffers"
+      ],
+      "capnproto": [
+        "capnp"
+      ],
+      "std.zon": [
+        "zon"
+      ],
+      "serde.zon": [
+        "zon"
+      ],
+      "serde.xml": [],
+      "comptime-bin": [],
+      "s2s": []
+    },
+    "mojo": {
+      "EmberJson": [
+        "json"
+      ],
+      "ehsanmok-json": [
+        "json"
+      ],
+      "mojo-json": [
+        "json"
+      ],
+      "mojo-cbor": [
+        "cbor"
+      ],
+      "mojo-protobuf": [
+        "protobuf"
+      ],
+      "mojo-avro": [
+        "avro"
+      ],
+      "mojo-toml": [
+        "toml"
+      ],
+      "mojo-msgpack": [
+        "msgpack"
+      ],
+      "gld-yaml": [
+        "yaml"
+      ]
+    }
+  }
+}

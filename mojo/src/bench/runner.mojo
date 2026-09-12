@@ -253,6 +253,10 @@ def run() raises:
                 elif nm == gldj.name():
                     _ = gldj.serialize_bytes(fx)
                 elif nm == yaml.name():
+                    # Nested items: YAML for N>1 still trips the indent decoder.
+                    if fx.n != 1:
+                        ri += 1
+                        continue
                     _ = yaml.serialize_bytes(fx)
                 elif nm == msgp.name():
                     _ = msgp.serialize_bytes(fx)

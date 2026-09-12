@@ -52,7 +52,7 @@ or the in-tree Mojo/C/C++/Zig/Swift wire helper).
 | Go | `protobuf` | `proto.Unmarshal` + `dynamicpb` | `protojson` |
 | Java / Kotlin | `protobuf` | `DynamicMessage.parseFrom` | `JsonFormat` |
 | Rust | `prost` | `prost::Message::decode` | small proto3 JSON mapper |
-| C# | `Google.Protobuf`, `protobuf-net` | `CodedInputStream` / protobuf-net | proto3 JSON mapper |
+| C# | `Google.Protobuf`, `ProtoBuf` | `CodedInputStream` / protobuf-net | proto3 JSON mapper |
 | JavaScript | `protobufjs` | `Reader` field decode | proto3 JSON mapper |
 | PHP | `protobuf` | varint / length reader | proto3 JSON mapper |
 | C / C++ / Swift / Zig | `protobuf-wire` | same encoding rules | proto3 JSON mapper |

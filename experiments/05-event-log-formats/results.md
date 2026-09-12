@@ -1,7 +1,7 @@
 # What should we use for an event log?
 
 **Question:** On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
-**Date:** 2026-09-09
+**Date:** 2026-09-12
 **Sample:** `event`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -286,25 +286,25 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| EmberJson | 1.29 | 290 | JSON — EmberJson | fastest |
-| mojo-avro | 1.87 | 138 | Avro | slower |
-| mojo-protobuf | 2.15 | 156 | Protocol Buffers | slower |
-| mojo-json | 3.03 | 290 | JSON — mojo-json | slower |
-| mojo-cbor | 3.10 | 232 | CBOR | slower |
-| ehsanmok-json | 27.6 | 290 | JSON — ehsanmok/json | slower |
-| mojo-toml | 31.0 | 304 | TOML | slower |
+| EmberJson | 1.31 | 290 | JSON — EmberJson | fastest |
+| mojo-json | 1.40 | 290 | JSON — mojo-json | slower |
+| mojo-avro | 1.93 | 138 | Avro | slower |
+| mojo-protobuf | 2.20 | 156 | Protocol Buffers | slower |
+| mojo-cbor | 3.20 | 232 | CBOR | slower |
+| ehsanmok-json | 4.45 | 290 | JSON — ehsanmok/json | slower |
+| mojo-toml | 31.8 | 304 | TOML | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| EmberJson | 120 | 27675 | JSON — EmberJson | fastest |
-| mojo-avro | 183 | 12367 | Avro | slower |
-| mojo-protobuf | 210 | 14449 | Protocol Buffers | slower |
-| mojo-json | 274 | 27675 | JSON — mojo-json | slower |
-| mojo-cbor | 305 | 21773 | CBOR | slower |
-| mojo-toml | 4927 | 29873 | TOML | slower |
-| ehsanmok-json | 10348 | 27675 | JSON — ehsanmok/json | slower |
+| EmberJson | 116 | 27675 | JSON — EmberJson | fastest |
+| mojo-json | 126 | 27675 | JSON — mojo-json | slower |
+| mojo-avro | 181 | 12367 | Avro | slower |
+| mojo-protobuf | 206 | 14449 | Protocol Buffers | slower |
+| mojo-cbor | 301 | 21773 | CBOR | slower |
+| ehsanmok-json | 411 | 27675 | JSON — ehsanmok/json | slower |
+| mojo-toml | 4668 | 29873 | TOML | slower |
 
 ## What we saw
 

@@ -1,4 +1,4 @@
-"""mojo-yaml (gld-yaml) — YamlValue encode / decode on suite types."""
+"""gld-yaml — YamlValue encode / decode on suite types."""
 
 from std.collections import List
 from yaml import DecodeError, EncodeOptions, WireReader, WireWriter
@@ -350,7 +350,7 @@ struct YamlSer:
         self.version = "0.2.0"
 
     def name(self) -> String:
-        return "mojo-yaml"
+        return "gld-yaml"
 
     def serialize_bytes(self, fx: Fixture) raises -> List[Byte]:
         var w = WireWriter(capacity=1024 if fx.n == 1 else 65536)

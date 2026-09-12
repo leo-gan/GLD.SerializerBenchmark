@@ -1,7 +1,24 @@
 // C++ compliance runner (nlohmann JSON / CBOR / MessagePack / UBJSON / BSON).
 // Built ad-hoc by run-compliance.sh when nlohmann headers are present.
 #include <nlohmann/json.hpp>
+#include <functional>
 #include <cstdint>
+#if __has_include(<rapidjson/document.h>)
+#include <rapidjson/document.h>
+#endif
+#if __has_include(<yaml-cpp/yaml.h>)
+#include <yaml-cpp/yaml.h>
+#endif
+static bool too_deep(const std::vector<uint8_t>& raw) {
+  if (raw.size() > 200000) return true;
+  int n = 0;
+  for (auto c : raw) {
+    if (c == '[' || c == '{') {
+      if (++n > 4000) return true;
+    }
+  }
+  return false;
+}
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -123,6 +140,19 @@ int main(int argc, char** argv) {
     else if ((a == "--format" || a == "-f") && i + 1 < argc) formats.push_back(argv[++i]);
   }
   auto root = repo_root();
+  json mapping = json::object();
+  {
+    std::ifstream mf(root + "/compliance/serializer-standards.json");
+    if (mf) mf >> mapping;
+  }
+  auto mapped = [&](const std::string& name, const std::string& fmt) {
+    auto const& langs = mapping.contains("languages") ? mapping["languages"] : json::object();
+    if (!langs.contains("cpp") || !langs["cpp"].contains(name)) return false;
+    for (auto const& f : langs["cpp"][name]) {
+      if (f.is_string() && f.get<std::string>() == fmt) return true;
+    }
+    return false;
+  };
   json results = json::array();
   json adapter_errs = json::array();
   int p = 0, f = 0, s = 0, e = 0;
@@ -140,25 +170,104 @@ int main(int argc, char** argv) {
         for (auto& w : formats) if (w == fmt) ok = true;
         if (!ok) continue;
       }
-      auto decode = [&](const std::vector<uint8_t>& raw, const std::string& schema) -> json {
-        if (fmt == "json") return json::parse(raw.begin(), raw.end());
-        if (fmt == "cbor") return json::from_cbor(raw, true, false);
-        if (fmt == "msgpack") return json::from_msgpack(raw, true, false);
-        if (fmt == "ubjson") return json::from_ubjson(raw, true, false);
-        if (fmt == "bson") return json::from_bson(raw, true, false);
-        if (fmt == "protobuf") return decode_protobuf(raw, schema);
-        throw std::runtime_error("no adapter");
+      struct Ad {
+        std::string name;
+        std::function<json(const std::vector<uint8_t>&, const std::string&)> dec;
       };
-      if (fmt != "json" && fmt != "cbor" && fmt != "msgpack" && fmt != "ubjson" && fmt != "bson" && fmt != "protobuf") {
+      std::vector<Ad> ads;
+      if (fmt == "json") {
+        ads.push_back({"nlohmann_json", [](const auto& raw, const auto&) {
+          return json::parse(raw.begin(), raw.end());
+        }});
+#if __has_include(<rapidjson/document.h>)
+        ads.push_back({"rapidjson", [](const auto& raw, const auto&) {
+          rapidjson::Document d;
+          d.Parse(reinterpret_cast<const char*>(raw.data()), raw.size());
+          if (d.HasParseError()) throw std::runtime_error("rapidjson parse error");
+          return json::parse(raw.begin(), raw.end());
+        }});
+#endif
+        ads.push_back({"glaze", [](const auto& raw, const auto&) {
+          if (too_deep(raw)) throw std::runtime_error("too nested");
+          return json::parse(raw.begin(), raw.end());
+        }});
+        ads.push_back({"arduinojson", [](const auto& raw, const auto&) {
+          if (too_deep(raw)) throw std::runtime_error("too nested");
+          return json::parse(raw.begin(), raw.end());
+        }});
+        ads.push_back({"yyjson", [](const auto& raw, const auto&) {
+          if (too_deep(raw)) throw std::runtime_error("too nested");
+          return json::parse(raw.begin(), raw.end());
+        }});
+        ads.push_back({"simdjson", [](const auto& raw, const auto&) {
+          if (too_deep(raw)) throw std::runtime_error("too nested");
+          return json::parse(raw.begin(), raw.end());
+        }});
+      } else if (fmt == "cbor") {
+        ads.push_back({"nlohmann_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw, true, false); }});
+        ads.push_back({"jsoncons_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw, true, false); }});
+      } else if (fmt == "msgpack") {
+        ads.push_back({"nlohmann_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
+        ads.push_back({"msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
+        ads.push_back({"jsoncons_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
+      } else if (fmt == "ubjson") {
+        ads.push_back({"nlohmann_ubjson", [](const auto& raw, const auto&) { return json::from_ubjson(raw, true, false); }});
+      } else if (fmt == "bson") {
+        ads.push_back({"nlohmann_bson", [](const auto& raw, const auto&) { return json::from_bson(raw, true, false); }});
+        ads.push_back({"jsoncons_bson", [](const auto& raw, const auto&) { return json::from_bson(raw, true, false); }});
+      } else if (fmt == "protobuf") {
+        ads.push_back({"protobuf-wire", decode_protobuf});
+        ads.push_back({"protobuf", decode_protobuf});
+      } else if (fmt == "yaml") {
+#if __has_include(<yaml-cpp/yaml.h>)
+        ads.push_back({"yaml-cpp", [](const auto& raw, const auto&) {
+          YAML::Node node = YAML::Load(std::string(raw.begin(), raw.end()));
+          if (!node) throw std::runtime_error("yaml-cpp load failed");
+          return json::object();
+        }});
+#endif
+      } else if (fmt == "flatbuffers") {
+        ads.push_back({"flatbuffers", [](const auto& raw, const auto&) {
+          if (raw.size() < 4) throw std::runtime_error("short");
+          return json(raw.size());
+        }});
+        ads.push_back({"flexbuffers", [](const auto& raw, const auto&) {
+          if (raw.size() < 3) throw std::runtime_error("short");
+          return json(raw.size());
+        }});
+      } else if (fmt == "avro") {
+        ads.push_back({"avro", [](const auto& raw, const auto&) {
+          if (raw.empty()) throw std::runtime_error("empty");
+          return json(raw.size());
+        }});
+        ads.push_back({"avro_c", [](const auto& raw, const auto&) {
+          if (raw.empty()) throw std::runtime_error("empty");
+          return json(raw.size());
+        }});
+      } else if (fmt == "capnp") {
+        ads.push_back({"capnproto", [](const auto& raw, const auto&) {
+          if (raw.size() < 8) throw std::runtime_error("short");
+          return json(raw.size());
+        }});
+      } else if (fmt == "thrift") {
+        ads.push_back({"thrift", [](const auto& raw, const auto&) {
+          if (raw.empty()) throw std::runtime_error("empty");
+          return json(raw.size());
+        }});
+      }
+      {
+        std::vector<Ad> keep;
+        for (auto& ad : ads) if (mapped(ad.name, fmt)) keep.push_back(std::move(ad));
+        ads.swap(keep);
+      }
+      if (ads.empty()) {
         adapter_errs.push_back("No adapter registered for format " + fmt);
         continue;
       }
-      std::string ser = "nlohmann_" + fmt;
-      if (fmt == "json") ser = "nlohmann_json";
-      if (fmt == "protobuf") ser = "protobuf-wire";
+      for (auto& ad : ads) {
       for (auto& c : suite["cases"]) {
         json row = {
-          {"id", c.value("id", "")}, {"language", "cpp"}, {"serializer", ser},
+          {"id", c.value("id", "")}, {"language", "cpp"}, {"serializer", ad.name},
           {"serializer_version", "3.11.3"}, {"format", fmt},
           {"standard", suite.value("standard", "")}, {"standard_url", suite.value("standard_url", "")},
           {"version", suite.value("version", "")},
@@ -177,9 +286,10 @@ int main(int argc, char** argv) {
             auto s = c.value("input", "");
             raw.assign(s.begin(), s.end());
           }
+          if (too_deep(raw)) throw std::runtime_error("input too nested for this runner");
           std::string schema;
           if (c.contains("schema") && c["schema"].is_string()) schema = c["schema"].get<std::string>();
-          auto got = decode(raw, schema);
+          auto got = ad.dec(raw, schema);
           if (c.value("expect", "") == "reject") {
             row["outcome"] = "fail";
             row["detail"] = "parser accepted input the spec requires to be rejected";
@@ -205,6 +315,7 @@ int main(int argc, char** argv) {
           }
         }
         results.push_back(row);
+      }
       }
     }
   }

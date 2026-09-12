@@ -245,6 +245,30 @@ body.dash-view-compliance #experiments {
   background: var(--bg-surface);
 }
 
+.cmp-filter-nospec select,
+.cmp-opt-nospec {
+  font-style: italic;
+}
+
+.cmp-opt-sep {
+  color: var(--text-muted);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.cmp-heat tr.cmp-row-unscored th {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.cmp-row-formats {
+  display: block;
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: normal;
+}
+
 .cmp-filter-count {
   font-size: 0.8rem;
   color: var(--text-muted);

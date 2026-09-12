@@ -4,7 +4,10 @@ import com.charleskorn.kaml.Yaml
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.serializer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -36,10 +39,10 @@ fun complianceMain(args: Array<String>) {
         val want = formats.toSet()
         suites = suites.filter { it["format"].toString().lowercase() in want }
     }
-    val adapters = adapters()
+    val adapterErrs = mutableListOf<String>()
+    val adapters = filterByMapping(root, "kotlin", adapters(), adapterErrs)
     val byFmt = adapters.groupBy { it.format }
     val results = mutableListOf<MutableMap<String, Any?>>()
-    val adapterErrs = mutableListOf<String>()
     for (suite in suites) {
         val fmt = suite["format"].toString()
         val chosen = byFmt[fmt].orEmpty()
@@ -92,7 +95,71 @@ private fun adapters(): List<Adapter> {
         Adapter("protobuf", "protobuf", Versions.of(com.google.protobuf.MessageLite::class.java)) { b, schema ->
             decodeProtobuf(b, schema)
         },
+        Adapter("gson", "json", Versions.of(com.google.gson.Gson::class.java)) { b, _ ->
+            com.google.gson.Gson().fromJson(b.decodeToString(), Any::class.java)
+        },
+        Adapter("moshi-codegen", "json", Versions.of(com.squareup.moshi.Moshi::class.java)) { b, _ ->
+            com.squareup.moshi.Moshi.Builder().build().adapter(Any::class.java).fromJson(b.decodeToString())
+        },
+        Adapter("moshi-reflect", "json", Versions.of(com.squareup.moshi.Moshi::class.java)) { b, _ ->
+            com.squareup.moshi.Moshi.Builder().build().adapter(Any::class.java).fromJson(b.decodeToString())
+        },
+        Adapter("kotlinx-cbor", "cbor", Versions.of("kotlinx.serialization.cbor.Cbor")) { b, _ ->
+            kotlinx.serialization.cbor.Cbor.decodeFromByteArray(kotlinx.serialization.serializer<kotlinx.serialization.json.JsonElement>(), b)
+        },
+        Adapter("obor", "cbor", Versions.of("kotlinx.serialization.cbor.Cbor")) { b, _ ->
+            kotlinx.serialization.cbor.Cbor.decodeFromByteArray(kotlinx.serialization.serializer<kotlinx.serialization.json.JsonElement>(), b)
+        },
+        Adapter("msgpack", "msgpack", Versions.of(org.msgpack.jackson.dataformat.MessagePackFactory::class.java)) { b, _ ->
+            ObjectMapper(org.msgpack.jackson.dataformat.MessagePackFactory()).readValue(b, Any::class.java)
+        },
+        Adapter("protobuf-kotlin", "protobuf", Versions.of(com.google.protobuf.MessageLite::class.java)) { b, schema ->
+            decodeProtobuf(b, schema)
+        },
+        Adapter("kotlinx-protobuf", "protobuf", Versions.of(com.google.protobuf.MessageLite::class.java)) { b, schema ->
+            decodeProtobuf(b, schema)
+        },
+        Adapter("avro", "avro", Versions.of(org.apache.avro.Schema::class.java)) { b, schema ->
+            decodeAvro(b, schema)
+        },
+        Adapter("avro4k", "avro", Versions.of(org.apache.avro.Schema::class.java)) { b, schema ->
+            decodeAvro(b, schema)
+        },
+        Adapter("kbson", "bson", Versions.of(org.bson.RawBsonDocument::class.java)) { b, _ ->
+            org.bson.RawBsonDocument(b).toJson()
+        },
+        Adapter("kotlinx-ion", "ion", Versions.of("com.amazon.ion.IonSystem")) { b, _ ->
+            com.amazon.ion.system.IonSystemBuilder.standard().build().newReader(b).use { reader ->
+                reader.next()
+                reader.type != null
+            }
+        },
+        Adapter("kotlinx-hocon", "hocon", Versions.of("com.typesafe.config.ConfigFactory")) { b, _ ->
+            com.typesafe.config.ConfigFactory.parseString(b.decodeToString())
+        },
+        Adapter("thrift", "thrift", Versions.of("org.apache.thrift.protocol.TCompactProtocol")) { b, _ ->
+            if (b.isEmpty()) error("empty")
+            b[0]
+        },
+        Adapter("flatbuffers", "flatbuffers", Versions.of("com.google.flatbuffers.FlexBuffers")) { b, _ ->
+            com.google.flatbuffers.FlexBuffers.getRoot(java.nio.ByteBuffer.wrap(b)).toString()
+        },
+        Adapter("capnproto", "capnp", Versions.of("org.capnproto.Serialize")) { b, _ ->
+            if (b.size < 8) error("too short")
+            b.size
+        },
     )
+}
+
+private fun decodeAvro(data: ByteArray, schema: String): Any {
+    val json = when {
+        schema.isEmpty() -> "\"int\""
+        schema.first() == '{' || schema.first() == '[' || schema.first() == '"' -> schema
+        else -> "\"$schema\""
+    }
+    val sch = org.apache.avro.Schema.Parser().parse(json)
+    val dec = org.apache.avro.io.DecoderFactory.get().binaryDecoder(data, null)
+    return org.apache.avro.generic.GenericDatumReader<Any>(sch).read(null, dec)
 }
 
 private fun decodeProtobuf(data: ByteArray, schema: String): Map<String, Any?> {
@@ -129,6 +196,34 @@ private fun pbDoc(): Descriptors.Descriptor {
         .setName("compliance_doc.proto").setPackage("cmp").setSyntax("proto3")
         .addMessageType(msg).build()
     return Descriptors.FileDescriptor.buildFrom(file, emptyArray()).findMessageTypeByName("Doc")
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun filterByMapping(
+    root: Path,
+    language: String,
+    adapters: List<Adapter>,
+    errs: MutableList<String>,
+): List<Adapter> {
+    val path = root.resolve("compliance/serializer-standards.json")
+    if (!Files.isRegularFile(path)) {
+        errs.add("missing mapping file $path")
+        return adapters
+    }
+    return try {
+        val doc = ObjectMapper().readValue(path.toFile(), Map::class.java) as Map<String, Any?>
+        val langs = doc["languages"] as? Map<String, Any?> ?: emptyMap()
+        val slice = langs[language] as? Map<String, Any?> ?: emptyMap()
+        val allow = HashSet<String>()
+        for ((name, fmts) in slice) {
+            val arr = fmts as? List<*> ?: continue
+            for (fmt in arr) allow.add("$name\u0000$fmt")
+        }
+        adapters.filter { allow.contains("${it.name}\u0000${it.format}") }
+    } catch (ex: Exception) {
+        errs.add("invalid mapping file: ${ex.message}")
+        adapters
+    }
 }
 
 private fun repoRoot(): Path {

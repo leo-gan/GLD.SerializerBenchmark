@@ -50,6 +50,15 @@ test('All-languages heatmap keeps one row per language × serializer', () => {
   assert.equal(mojo.byStandard.get(JSON_MAP).passed, 8);
 });
 
+test('All-standards padding keeps language × serializer rows', () => {
+  const matrix = [
+    cell('csharp', 'System.Text.Json', 'RFC 8259', 4),
+    cell('csharp', 'Json.Net', 'RFC 8259', 4),
+  ];
+  const { rows } = heatmapFromMatrix(matrix, { format: '' });
+  assert.equal(rows.length, 2);
+});
+
 test('row identity never drops the language', () => {
   assert.equal(rowIdentity({ language: 'c', serializer: 'protobuf-wire' }).startsWith('c'), true);
   assert.notEqual(

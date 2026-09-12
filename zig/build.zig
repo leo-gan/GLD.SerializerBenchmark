@@ -101,6 +101,28 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the benchmark");
     run_step.dependOn(&run_cmd.step);
 
+    const compliance_imports = [_]std.Build.Module.Import{
+        .{ .name = "serde", .module = serde_dep.module("serde") },
+        .{ .name = "zig_msgpack", .module = zig_msgpack_dep.module("msgpack") },
+        .{ .name = "zbor", .module = zbor_dep.module("zbor") },
+        .{ .name = "msgpack_lalinsky", .module = msgpack_l_dep.module("msgpack") },
+    };
+    const compliance_root = b.createModule(.{
+        .root_source_file = b.path("src/compliance.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &compliance_imports,
+    });
+    const compliance_exe = b.addExecutable(.{
+        .name = "compliance",
+        .root_module = compliance_root,
+    });
+    b.installArtifact(compliance_exe);
+    const compliance_run = b.addRunArtifact(compliance_exe);
+    if (b.args) |args| compliance_run.addArgs(args);
+    const compliance_step = b.step("compliance", "Run the compliance catalog");
+    compliance_step.dependOn(&compliance_run.step);
+
     const test_root = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .target = target,

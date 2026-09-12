@@ -286,6 +286,25 @@ add_executable(serializer_benchmark_c ${BENCH_SOURCES})
 target_include_directories(serializer_benchmark_c PRIVATE ${BENCH_INCLUDES})
 target_link_libraries(serializer_benchmark_c PRIVATE ${BENCH_LIBS})
 
+# Mapping-driven spec runner (same third-party graph as the bench).
+set(COMPLIANCE_SOURCES
+  src/compliance.c
+  src/compliance_tinycbor.c
+  src/compliance_libcbor.c
+  src/compliance_parson.c
+  src/compliance_jsonc.c
+)
+foreach(src ${BENCH_SOURCES})
+  if(src MATCHES "third_party" OR src MATCHES "/cJSON/" OR src MATCHES "/yyjson/"
+     OR src MATCHES "/mpack/" OR src MATCHES "/QCBOR/" OR src MATCHES "/zcbor/"
+     OR src MATCHES "/libyaml/" OR src MATCHES "/flatcc/")
+    list(APPEND COMPLIANCE_SOURCES ${src})
+  endif()
+endforeach()
+add_executable(c_compliance ${COMPLIANCE_SOURCES})
+target_include_directories(c_compliance PRIVATE ${BENCH_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(c_compliance PRIVATE ${BENCH_LIBS})
+
 # Unit / round-trip tests (same library graph as the benchmark harness)
 set(TEST_SOURCES ${BENCH_SOURCES})
 list(REMOVE_ITEM TEST_SOURCES src/main.c)

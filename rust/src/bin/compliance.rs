@@ -3,6 +3,7 @@
 //!   cargo run --quiet --bin compliance -- --json-out ../../logs/compliance/rust.json
 
 use anyhow::{Context, Result};
+use std::str::FromStr;
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::fs;
@@ -46,12 +47,13 @@ fn run() -> Result<()> {
         suites.retain(|s| formats.iter().any(|f| f == s["format"].as_str().unwrap_or("")));
     }
     let adapters = builtin();
+    let mut adapter_errs = Vec::new();
+    let adapters = filter_by_mapping(&root, "rust", adapters, &mut adapter_errs);
     let mut by_fmt: BTreeMap<&str, Vec<&Adapter>> = BTreeMap::new();
     for a in &adapters {
         by_fmt.entry(a.format).or_default().push(a);
     }
     let mut results = Vec::new();
-    let mut adapter_errs = Vec::new();
     for suite in &suites {
         let fmt = suite["format"].as_str().unwrap_or("");
         let chosen = by_fmt.get(fmt).cloned().unwrap_or_default();
@@ -77,6 +79,40 @@ fn run() -> Result<()> {
         println!("\nWrote {}", path.display());
     }
     Ok(())
+}
+
+fn filter_by_mapping(root: &Path, language: &str, adapters: Vec<Adapter>, errs: &mut Vec<String>) -> Vec<Adapter> {
+    let path = root.join("compliance/serializer-standards.json");
+    let raw = match fs::read_to_string(&path) {
+        Ok(s) => s,
+        Err(e) => {
+            errs.push(format!("missing mapping file: {e}"));
+            return adapters;
+        }
+    };
+    let doc: Value = match serde_json::from_str(&raw) {
+        Ok(v) => v,
+        Err(e) => {
+            errs.push(format!("invalid mapping file: {e}"));
+            return adapters;
+        }
+    };
+    let mut allow = std::collections::HashSet::<String>::new();
+    if let Some(slice) = doc.pointer(&format!("/languages/{language}")).and_then(|v| v.as_object()) {
+        for (name, fmts) in slice {
+            if let Some(arr) = fmts.as_array() {
+                for fmt in arr {
+                    if let Some(f) = fmt.as_str() {
+                        allow.insert(format!("{name}\0{f}"));
+                    }
+                }
+            }
+        }
+    }
+    adapters
+        .into_iter()
+        .filter(|a| allow.contains(&format!("{}\0{}", a.name, a.format)))
+        .collect()
 }
 
 fn repo_root() -> Result<PathBuf> {
@@ -225,7 +261,55 @@ fn builtin() -> Vec<Adapter> {
             version: crate_version("prost").to_string(),
             decode: decode_protobuf,
         },
+        Adapter {
+            name: "simd-json",
+            format: "json",
+            version: crate_version("simd-json").to_string(),
+            decode: |b, _| {
+                if too_deep(b) {
+                    anyhow::bail!("input too nested for this runner");
+                }
+                let mut owned = b.to_vec();
+                let v: serde_json::Value = simd_json::serde::from_slice(&mut owned)?;
+                Ok(v)
+            },
+        },
+        Adapter {
+            name: "minicbor",
+            format: "cbor",
+            version: crate_version("minicbor").to_string(),
+            decode: |b, _| {
+                let mut dec = minicbor::Decoder::new(b);
+                dec.skip().map_err(|e| anyhow::anyhow!("{e}"))?;
+                Ok(Value::Null)
+            },
+        },
+        Adapter {
+            name: "serde_avro_fast",
+            format: "avro",
+            version: crate_version("serde_avro_fast").to_string(),
+            decode: decode_avro,
+        },
     ]
+}
+
+fn avro_schema_json(schema: &str) -> String {
+    if schema.is_empty() {
+        return "\"int\"".into();
+    }
+    let c = schema.as_bytes()[0];
+    if c == b'{' || c == b'[' || c == b'"' {
+        schema.to_string()
+    } else {
+        format!("\"{schema}\"")
+    }
+}
+
+fn decode_avro(b: &[u8], schema: &str) -> anyhow::Result<Value> {
+    let json = avro_schema_json(schema);
+    let schema = serde_avro_fast::Schema::from_str(&json)?;
+    let v: serde_json::Value = serde_avro_fast::from_datum_slice(b, &schema)?;
+    Ok(v)
 }
 
 #[derive(Clone, PartialEq, prost::Message)]

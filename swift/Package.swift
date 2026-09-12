@@ -129,6 +129,20 @@ let package = Package(
             dependencies: ["SerializerBenchmarkCore"],
             path: "Sources/SerializerBenchmark"
         ),
+        .executableTarget(
+            name: "Compliance",
+            dependencies: [
+                .product(name: "IkigaJSON", package: "IkigaJSON"),
+                .product(name: "SwiftMsgpack", package: "swift-msgpack"),
+                .product(name: "SwiftCbor", package: "swift-cbor"),
+                .product(name: "Yams", package: "Yams"),
+                .product(name: "SwiftBSON", package: "swift-bson"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "FlatBuffers", package: "flatbuffers"),
+                .product(name: "SwiftAvroCore", package: "SwiftAvroCore"),
+            ],
+            path: "Sources/Compliance"
+        ),
         .testTarget(
             name: "SerializerBenchmarkTests",
             dependencies: ["SerializerBenchmarkCore"],

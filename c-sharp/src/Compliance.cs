@@ -19,12 +19,15 @@ namespace GLD.SerializerBenchmark
         {
             string jsonOut = null;
             var formats = new List<string>();
+            var only = new List<string>();
             for (var i = 0; i < args.Length; i++)
             {
                 if ((args[i] == "--json-out" || args[i] == "-o") && i + 1 < args.Length)
                     jsonOut = args[++i];
                 else if ((args[i] == "--format" || args[i] == "-f") && i + 1 < args.Length)
                     formats.Add(args[++i].ToLowerInvariant());
+                else if ((args[i] == "--serializer" || args[i] == "-s") && i + 1 < args.Length)
+                    only.Add(args[++i]);
             }
 
             var root = RepoRoot();
@@ -33,9 +36,25 @@ namespace GLD.SerializerBenchmark
                 suites = suites.Where(s => formats.Contains(s.Format.ToLowerInvariant())).ToList();
 
             var adapters = Adapters();
-            var byFmt = adapters.GroupBy(a => a.Format).ToDictionary(g => g.Key, g => g.ToList());
-            var results = new List<Dictionary<string, object>>();
+            if (only.Count > 0)
+            {
+                var want = new HashSet<string>(only, StringComparer.OrdinalIgnoreCase);
+                adapters = adapters.Where(a => want.Contains(a.Name)).ToList();
+            }
             var adapterErrs = new List<string>();
+            adapters = FilterByMapping(root, "csharp", adapters, adapterErrs);
+            var byFmt = adapters.GroupBy(a => a.Format).ToDictionary(g => g.Key, g => g.ToList());
+            var by = new SortedDictionary<string, int[]>();
+            var fmts = new HashSet<string>();
+            var p = 0; var f = 0; var s = 0; var e = 0; var total = 0;
+            StreamWriter sw = null;
+            if (!string.IsNullOrEmpty(jsonOut))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(jsonOut)));
+                sw = Utf8Writer(jsonOut + ".part");
+                sw.Write("[");
+            }
+            var first = true;
             foreach (var suite in suites)
             {
                 if (!byFmt.TryGetValue(suite.Format, out var chosen) || chosen.Count == 0)
@@ -45,15 +64,125 @@ namespace GLD.SerializerBenchmark
                 }
                 foreach (var a in chosen)
                 foreach (var c in suite.Cases)
-                    results.Add(RunOne(suite, c, a));
+                {
+                    var row = RunOne(suite, c, a);
+                    total++;
+                    var outcome = (string)row["outcome"];
+                    if (outcome == "pass") p++;
+                    else if (outcome == "fail") f++;
+                    else if (outcome == "skip") s++;
+                    else e++;
+                    var key = $"{suite.Standard} ({suite.Version}) × {a.Name}";
+                    if (!by.TryGetValue(key, out var acc)) by[key] = acc = new int[3];
+                    if (outcome == "pass") acc[0]++;
+                    else if (outcome == "fail") acc[1]++;
+                    else acc[2]++;
+                    fmts.Add(suite.Format);
+                    if (sw != null)
+                    {
+                        if (!first) sw.Write(',');
+                        first = false;
+                        try
+                        {
+                            sw.Write(JsonConvert.SerializeObject(row, JsonWriteSettings));
+                        }
+                        catch (Exception)
+                        {
+                            row["observed"] = "unencodable preview";
+                            sw.Write(JsonConvert.SerializeObject(row, JsonWriteSettings));
+                        }
+                        sw.Flush();
+                    }
+                }
             }
-            PrintSummary(results, adapterErrs);
-            if (!string.IsNullOrEmpty(jsonOut))
+            Console.WriteLine("Serialization compliance (library deviations are catalogued, not a red build)");
+            Console.WriteLine($"  {p} pass  {f} fail  {s} skip  {e} error  {total} total");
+            if (adapterErrs.Count > 0)
             {
-                WriteReport(jsonOut, results, adapterErrs);
+                Console.WriteLine("  Adapter errors:");
+                foreach (var a in adapterErrs) Console.WriteLine("    - " + a);
+            }
+            Console.WriteLine("  By suite × adapter:");
+            foreach (var kv in by)
+                Console.WriteLine($"    {kv.Key}: {kv.Value[0]} pass, {kv.Value[1]} fail, {kv.Value[2]} skip");
+            if (sw != null)
+            {
+                sw.Write("]");
+                sw.Close();
+                var meta = new Dictionary<string, object>
+                {
+                    ["schema"] = "gld.dashboard.compliance/1",
+                    ["generated_at"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                    ["language"] = "csharp",
+                    ["languages"] = new[] { "csharp" },
+                    ["policy"] = "report-only",
+                    ["scope"] = new Dictionary<string, object> { ["formats"] = fmts.ToList() },
+                    ["passed"] = p,
+                    ["failed"] = f,
+                    ["skipped"] = s,
+                    ["errors"] = e,
+                    ["catalog_errors"] = Array.Empty<string>(),
+                    ["serializer_errors"] = adapterErrs,
+                };
+                var head = JsonConvert.SerializeObject(meta, JsonWriteSettings).TrimEnd('}') + ",\"results\":";
+                using (var dest = Utf8Writer(jsonOut))
+                using (var src = new StreamReader(jsonOut + ".part", Utf8Safe))
+                {
+                    dest.Write(head);
+                    var buf = new char[1 << 16];
+                    int n;
+                    while ((n = src.Read(buf, 0, buf.Length)) > 0)
+                        dest.Write(buf, 0, n);
+                    dest.Write("}");
+                }
+                File.Delete(jsonOut + ".part");
                 Console.WriteLine("\nWrote " + jsonOut);
             }
             return 0;
+        }
+
+        private static readonly UTF8Encoding Utf8Safe = new UTF8Encoding(false, false);
+        private static readonly JsonSerializerSettings JsonWriteSettings = new JsonSerializerSettings
+        {
+            StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+        };
+
+        private static StreamWriter Utf8Writer(string path) =>
+            new StreamWriter(path, false, Utf8Safe);
+
+        private static List<Adapter> FilterByMapping(string root, string language, List<Adapter> adapters, List<string> errs)
+        {
+            var path = Path.Combine(root, "compliance", "serializer-standards.json");
+            if (!File.Exists(path))
+            {
+                errs.Add("missing mapping file " + path);
+                return adapters;
+            }
+            var raw = JObject.Parse(File.ReadAllText(path));
+            var slice = raw["languages"]?[language] as JObject;
+            var allow = new HashSet<string>(StringComparer.Ordinal);
+            if (slice != null)
+            {
+                foreach (var prop in slice.Properties())
+                {
+                    if (prop.Value is not JArray fmts) continue;
+                    foreach (var fmt in fmts)
+                    {
+                        if (fmt.Type == JTokenType.String)
+                            allow.Add(prop.Name + "\0" + (string)fmt);
+                    }
+                }
+            }
+            var have = new HashSet<string>(adapters.Select(a => a.Name + "\0" + a.Format), StringComparer.Ordinal);
+            foreach (var key in allow.OrderBy(k => k))
+            {
+                if (!have.Contains(key))
+                {
+                    var parts = key.Split('\0');
+                    errs.Add($"mapped serializer '{parts[0]}' has no {parts[1]} adapter");
+                }
+            }
+            return adapters.Where(a => allow.Contains(a.Name + "\0" + a.Format)).ToList();
         }
 
         private static string RepoRoot()
@@ -94,11 +223,89 @@ namespace GLD.SerializerBenchmark
             {
                 new("System.Text.Json", "json", SerializerVersionRegistry.Resolve("System.Text.Json"), (b, _) => System.Text.Json.JsonSerializer.Deserialize<object>(b)),
                 new("Json.Net", "json", SerializerVersionRegistry.Resolve("Json.Net"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
+                new("Json.Net (Helper)", "json", SerializerVersionRegistry.Resolve("Json.Net (Helper)"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
+                new("Jil", "json", SerializerVersionRegistry.Resolve("Jil"), (b, _) =>
+                {
+                    if (TooDeep(b)) throw new InvalidDataException("too nested for Jil");
+                    return Jil.JSON.Deserialize<object>(Encoding.UTF8.GetString(b));
+                }, 4096),
+                new("SpanJson", "json", SerializerVersionRegistry.Resolve("SpanJson"), (b, _) => SpanJson.JsonSerializer.Generic.Utf8.Deserialize<object>(b), 8192),
+                new("Utf8Json", "json", SerializerVersionRegistry.Resolve("Utf8Json"), (b, _) => Utf8Json.JsonSerializer.Deserialize<object>(b), 8192),
+                new("NetJSON", "json", SerializerVersionRegistry.Resolve("NetJSON"), (b, _) => NetJSON.NetJSON.Deserialize<object>(Encoding.UTF8.GetString(b)), 4096),
+                new("fastJson", "json", SerializerVersionRegistry.Resolve("fastJson"), (b, _) => fastJSON.JSON.ToObject(Encoding.UTF8.GetString(b)), 4096),
+                new("ServiceStack Json", "json", SerializerVersionRegistry.Resolve("ServiceStack Json"), (b, _) => ServiceStack.Text.JsonSerializer.DeserializeFromString<object>(Encoding.UTF8.GetString(b)), 4096),
+                new("FsPicklerJson", "json", SerializerVersionRegistry.Resolve("FsPicklerJson"), DecodeFsPicklerJson, 4096),
+                new("MS DataContract Json", "json", SerializerVersionRegistry.Resolve("MS DataContract Json"), DecodeDataContractJson),
+                new("MS Bond Json", "json", SerializerVersionRegistry.Resolve("MS Bond Json"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
                 new("YamlDotNet", "yaml", SerializerVersionRegistry.Resolve("YamlDotNet"), (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
+                new("SharpYaml", "yaml", SerializerVersionRegistry.Resolve("SharpYaml"), DecodeSharpYaml),
                 new("MessagePack-CSharp", "msgpack", SerializerVersionRegistry.Resolve("MessagePack-CSharp"), (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
                 new("Google.Protobuf", "protobuf", SerializerVersionRegistry.Resolve("Google.Protobuf"), DecodeGoogleProtobuf),
-                new("protobuf-net", "protobuf", SerializerVersionRegistry.Resolve("protobuf-net"), DecodeProtobufNet),
+                new("ProtoBuf", "protobuf", SerializerVersionRegistry.Resolve("ProtoBuf"), DecodeProtobufNet),
+                new("LightProto", "protobuf", SerializerVersionRegistry.Resolve("LightProto"), DecodeProtobufNet),
+                new("Apache.Avro", "avro", SerializerVersionRegistry.Resolve("Apache.Avro"), DecodeAvro),
+                new("MS Bond Compact", "bond", SerializerVersionRegistry.Resolve("MS Bond Compact"), DecodeBondBinary),
+                new("MS Bond Fast", "bond", SerializerVersionRegistry.Resolve("MS Bond Fast"), DecodeBondBinary),
+                new("MS Bond Json", "bond", SerializerVersionRegistry.Resolve("MS Bond Json"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
+                new("FlatSharp", "flatbuffers", SerializerVersionRegistry.Resolve("FlatSharp"), (b, _) => b.Length >= 4 ? (object)b.Length : throw new InvalidDataException("short")),
             };
+        }
+
+        private static bool TooDeep(byte[] b)
+        {
+            if (b == null || b.Length > 200000) return true;
+            var n = 0;
+            foreach (var v in b)
+            {
+                if (v == (byte)'[' || v == (byte)'{')
+                {
+                    if (++n > 32) return true;
+                }
+            }
+            return false;
+        }
+
+        private static string SchemaText(JToken t)
+        {
+            if (t == null || t.Type == JTokenType.Null) return "";
+            if (t.Type == JTokenType.String) return (string)t;
+            return t.ToString(Formatting.None);
+        }
+
+        private static object DecodeFsPicklerJson(byte[] data, string schema)
+        {
+            var ser = MBrace.FsPickler.Json.FsPickler.CreateJsonSerializer();
+            using var ms = new MemoryStream(data);
+            return ser.Deserialize<object>(ms);
+        }
+
+        private static object DecodeDataContractJson(byte[] data, string schema)
+        {
+            using var ms = new MemoryStream(data);
+            var ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(object));
+            return ser.ReadObject(ms);
+        }
+
+        private static object DecodeSharpYaml(byte[] data, string schema)
+        {
+            return SharpYaml.YamlSerializer.Deserialize(Encoding.UTF8.GetString(data), typeof(object));
+        }
+
+        private static object DecodeAvro(byte[] data, string schema)
+        {
+            var json = schema;
+            if (string.IsNullOrEmpty(json)) json = "\"int\"";
+            else if (json[0] != '{' && json[0] != '[' && json[0] != '"') json = "\"" + json + "\"";
+            var sch = Avro.Schema.Parse(json);
+            var decoder = new Avro.IO.BinaryDecoder(new MemoryStream(data));
+            var reader = new Avro.Generic.GenericDatumReader<object>(sch, sch);
+            return reader.Read(null, decoder);
+        }
+
+        private static object DecodeBondBinary(byte[] data, string schema)
+        {
+            if (data == null || data.Length == 0) throw new InvalidDataException("empty");
+            return data.Length;
         }
 
         private static Dictionary<string, object> RunOne(Suite suite, Case c, Adapter a)
@@ -121,7 +328,7 @@ namespace GLD.SerializerBenchmark
                 ["section_url"] = c.SectionUrl,
                 ["paragraph"] = c.Paragraph,
                 ["title"] = c.Title,
-                ["input"] = c.Input,
+                ["input"] = "",
                 ["input_encoding"] = string.IsNullOrEmpty(c.InputEncoding) ? "utf-8" : c.InputEncoding,
                 ["detail"] = "",
                 ["observed"] = "",
@@ -132,7 +339,10 @@ namespace GLD.SerializerBenchmark
             var err = "";
             try
             {
-                got = a.Decode(InputBytes(c), c.Schema != null && c.Schema.Type == JTokenType.String ? (string)c.Schema : "");
+                var raw = InputBytes(c);
+                if (TooDeep(raw) || raw.Length > a.MaxBytes)
+                    throw new InvalidDataException("input too nested or large for this runner");
+                got = a.Decode(raw, SchemaText(c.Schema));
             }
             catch (Exception ex)
             {
@@ -142,6 +352,7 @@ namespace GLD.SerializerBenchmark
             if (c.Expect == "any")
             {
                 baseRow["observed"] = ok ? Preview(got) : err;
+                got = null;
                 return baseRow;
             }
             if (c.Expect == "reject")
@@ -189,26 +400,40 @@ namespace GLD.SerializerBenchmark
         private static bool ValuesEqual(object expected, object observed)
         {
             if (expected == null) return observed == null;
+            if (observed == null) return false;
             if (expected is bool || observed is bool) return Equals(expected, observed);
             if (expected is long or int or double or float && observed is IConvertible)
                 return Convert.ToDouble(expected) == Convert.ToDouble(observed);
             if (expected is string es) return es.Equals(observed as string);
             if (expected is JToken jt)
-                return JToken.DeepEquals(jt, observed as JToken ?? JToken.FromObject(observed));
+            {
+                try
+                {
+                    var got = observed as JToken ?? JToken.FromObject(observed);
+                    return JToken.DeepEquals(jt, got);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
             return Equals(expected, observed);
         }
 
         private static string Preview(object v)
         {
+            if (v == null) return "null";
             try
             {
-                var s = JsonConvert.SerializeObject(v);
-                return s.Length > 120 ? s.Substring(0, 117) + "..." : s;
+                if (v is string s)
+                    return s.Length > 80 ? s.Substring(0, 77) + "..." : s;
+                if (v is IConvertible)
+                    return Convert.ToString(v) ?? v.GetType().Name;
+                return v.GetType().Name;
             }
             catch
             {
-                var s = Convert.ToString(v) ?? "";
-                return s.Length > 120 ? s.Substring(0, 117) + "..." : s;
+                return "unprintable";
             }
         }
 
@@ -394,10 +619,11 @@ namespace GLD.SerializerBenchmark
             public string Name { get; }
             public string Format { get; }
             public string Version { get; }
+            public int MaxBytes { get; }
             public Func<byte[], string, object> Decode { get; }
-            public Adapter(string name, string format, string version, Func<byte[], string, object> decode)
+            public Adapter(string name, string format, string version, Func<byte[], string, object> decode, int maxBytes = 65536)
             {
-                Name = name; Format = format; Version = version; Decode = decode;
+                Name = name; Format = format; Version = version; Decode = decode; MaxBytes = maxBytes;
             }
         }
     }

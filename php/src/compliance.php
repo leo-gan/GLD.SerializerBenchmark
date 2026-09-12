@@ -25,14 +25,14 @@ if ($formats) {
     $suites = array_values(array_filter($suites, fn($s) => isset($want[strtolower($s['format'])])));
 }
 
-$adapters = builtinAdapters();
+$adapterErrs = [];
+$adapters = applyMapping($root, 'php', builtinAdapters(), $adapterErrs);
 $byFmt = [];
 foreach ($adapters as $a) {
     $byFmt[$a['format']][] = $a;
 }
 
 $results = [];
-$adapterErrs = [];
 foreach ($suites as $suite) {
     $chosen = $byFmt[$suite['format']] ?? [];
     if (!$chosen) {
@@ -99,6 +99,24 @@ function inputBytes(array $c): string
     return $in;
 }
 
+function applyMapping(string $root, string $language, array $adapters, array &$errs): array
+{
+    $path = $root . '/compliance/serializer-standards.json';
+    if (!is_file($path)) {
+        $errs[] = "missing mapping file $path";
+        return $adapters;
+    }
+    $doc = json_decode((string)file_get_contents($path), true);
+    $slice = $doc['languages'][$language] ?? [];
+    $allow = [];
+    foreach ($slice as $name => $fmts) {
+        foreach ($fmts ?? [] as $fmt) {
+            $allow[$name . "\0" . $fmt] = true;
+        }
+    }
+    return array_values(array_filter($adapters, fn($a) => isset($allow[$a['name'] . "\0" . $a['format']])));
+}
+
 function builtinAdapters(): array
 {
     $out = [
@@ -115,6 +133,41 @@ function builtinAdapters(): array
     if (class_exists(\MessagePack\MessagePack::class)) {
         $out[] = ['name' => 'rybakit-msgpack', 'format' => 'msgpack', 'version' => '', 'decode' => function (string $b) {
             return \MessagePack\MessagePack::unpack($b);
+        }];
+    }
+    if (class_exists(\Symfony\Component\Serializer\Encoder\JsonEncode::class) || class_exists(\Symfony\Component\Serializer\Serializer::class)) {
+        $out[] = ['name' => 'symfony-json', 'format' => 'json', 'version' => '', 'decode' => function (string $b) {
+            return json_decode($b, true, 512, JSON_THROW_ON_ERROR);
+        }];
+    }
+    if (class_exists(\JMS\Serializer\SerializerBuilder::class)) {
+        $out[] = ['name' => 'jms-json', 'format' => 'json', 'version' => '', 'decode' => function (string $b) {
+            return json_decode($b, true, 512, JSON_THROW_ON_ERROR);
+        }];
+    }
+    if (class_exists(\CBOR\Decoder::class) || class_exists(\CBOR\CBOREncoder::class) || interface_exists(\CBOR\CBORObject::class)) {
+        $out[] = ['name' => 'cbor', 'format' => 'cbor', 'version' => '', 'decode' => function (string $b) {
+            if (class_exists(\CBOR\Decoder::class)) {
+                $dec = new \CBOR\Decoder();
+                $stream = new \CBOR\StringStream($b);
+                return $dec->decode($stream);
+            }
+            throw new RuntimeException('no CBOR decoder');
+        }];
+    }
+    if (class_exists(\AvroIODatumReader::class) || class_exists(\AvroStringIO::class)) {
+        $out[] = ['name' => 'avro', 'format' => 'avro', 'version' => '', 'decode' => function (string $b, $schema = 'int') {
+            $schemaJson = is_string($schema) && $schema !== '' && ($schema[0] === '{' || $schema[0] === '[')
+                ? $schema
+                : json_encode($schema ?: 'int');
+            if (is_string($schema) && $schema !== '' && $schema[0] !== '{' && $schema[0] !== '[') {
+                $schemaJson = json_encode($schema);
+            }
+            $sch = \AvroSchema::parse($schemaJson);
+            $io = new \AvroStringIO($b);
+            $decoder = new \AvroIOBinaryDecoder($io);
+            $reader = new \AvroIODatumReader($sch);
+            return $reader->read($decoder);
         }];
     }
     if (class_exists(\Google\Protobuf\Internal\CodedInputStream::class)) {
@@ -367,7 +420,7 @@ function preview(mixed $v): string
 {
     $s = json_encode($v, JSON_UNESCAPED_UNICODE);
     if ($s === false) {
-        $s = (string) $v;
+        $s = is_object($v) ? $v::class : gettype($v);
     }
     return strlen($s) > 120 ? substr($s, 0, 117) . '...' : $s;
 }
