@@ -1,6 +1,6 @@
 [project]
 name = "serializer-benchmark"
-version = "0.2.0"
+version = "0.3.0"
 description = "Python serializer benchmark suite matching the C# benchmark design"
 readme = "README.md"
 requires-python = ">=3.12"
