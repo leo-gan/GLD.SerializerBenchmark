@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Benchmark\Serializers;
 
-use CBOR\ByteStringObject;
 use CBOR\Decoder;
 use CBOR\Encoder;
 use CBOR\StringStream;
-use CBOR\Tag\UnsignedBigIntegerTag;
 
 final class CborSer extends BytesSer
 {
@@ -42,33 +40,13 @@ final class CborSer extends BytesSer
 
     public function serializeBytes(mixed $value): string
     {
-        return $this->encoder->encode(self::wrapLargeInts($value));
+        return $this->encoder->encode($value);
     }
 
     public function deserializeBytes(string $data): mixed
     {
         $obj = $this->decoder->decode(StringStream::create($data));
         return self::toPhp($obj->normalize());
-    }
-
-    /** Encoder only accepts 32-bit unsigned ints; tag larger values (RFC 8949 bignums). */
-    private static function wrapLargeInts(mixed $v): mixed
-    {
-        if (is_int($v) && $v > 0xFFFFFFFF) {
-            $hex = dechex($v);
-            if ((strlen($hex) % 2) === 1) {
-                $hex = '0' . $hex;
-            }
-            return UnsignedBigIntegerTag::create(ByteStringObject::create((string) hex2bin($hex)));
-        }
-        if (is_array($v)) {
-            $out = [];
-            foreach ($v as $k => $x) {
-                $out[$k] = self::wrapLargeInts($x);
-            }
-            return $out;
-        }
-        return $v;
     }
 
     /** CBOR normalize() often yields numeric strings for integers. */
