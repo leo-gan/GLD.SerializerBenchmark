@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">Annotated Protobuf wire strip</title>
+  <desc id="desc">Nested MiniUser manager field encoded as tag, length, inner tag, and varint value.</desc>
+  <defs>
+    <style type="text/css"><![CDATA[
+      .label { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #37474f; }
+      .title { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+      .caption { font-size: 12px; fill: #607d8b; }
+      .small { font-size: 11px; fill: #607d8b; }
+      .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; fill: #283593; }
+      .mono-lg { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; fill: #283593; }
+      .arrow-label {
+        font-family: "Liberation Sans", "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        fill: #263238;
+        text-anchor: middle;
+      }
+      .panel-title { font-size: 14px; font-weight: 600; }
+    ]]></style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#455a64"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="360" fill="#fafafa"/>
+  <rect x="40" y="40" width="920" height="280" rx="10" fill="#ffffff" stroke="#c5cae9" stroke-width="1.5"/>
+  <text class="label title" x="60" y="72">Annotated wire strip — nested MiniUser</text>
+  <text class="label caption" x="60" y="94">manager (field 3) whose only content is id = 2</text>
+  <rect x="120" y="130" width="90" height="56" rx="6" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="165.0" y="154" text-anchor="middle">1a</text>
+  <text class="label small" x="165.0" y="174" text-anchor="middle" fill="#37474f">tag</text>
+  <text class="label caption" x="165.0" y="208" text-anchor="middle">field 3 · LEN</text>
+  <line x1="214" y1="158.0" x2="230" y2="158.0" stroke="#455a64" stroke-width="1.5"/>
+  <rect x="234" y="130" width="90" height="56" rx="6" fill="#eceff1" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="279.0" y="154" text-anchor="middle">02</text>
+  <text class="label small" x="279.0" y="174" text-anchor="middle" fill="#37474f">len</text>
+  <text class="label caption" x="279.0" y="208" text-anchor="middle">2 bytes</text>
+  <line x1="328" y1="158.0" x2="344" y2="158.0" stroke="#455a64" stroke-width="1.5"/>
+  <rect x="348" y="130" width="90" height="56" rx="6" fill="#e3f2fd" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="393.0" y="154" text-anchor="middle">08</text>
+  <text class="label small" x="393.0" y="174" text-anchor="middle" fill="#37474f">tag</text>
+  <text class="label caption" x="393.0" y="208" text-anchor="middle">field 1 · VARINT</text>
+  <line x1="442" y1="158.0" x2="458" y2="158.0" stroke="#455a64" stroke-width="1.5"/>
+  <rect x="462" y="130" width="90" height="56" rx="6" fill="#f3e5f5" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text class="mono-lg" x="507.0" y="154" text-anchor="middle">02</text>
+  <text class="label small" x="507.0" y="174" text-anchor="middle" fill="#37474f">val</text>
+  <text class="label caption" x="507.0" y="208" text-anchor="middle">id = 2</text>
+  <text class="label small" x="60" y="250" fill="#37474f">outer key = (3&lt;&lt;3)|2 = 0x1a · inner key = (1&lt;&lt;3)|0 = 0x08</text>
+  <text class="label caption" x="60" y="280">Field names never appear on the wire — only field numbers, wire types, and payloads.</text>
+</svg>
