@@ -24,6 +24,7 @@ reports/baseline.json
 *.sln.docstates
 .windsurf/
 .jbeval/
+.swift-version
 
 # -----------------------------------------------------------------------------
 # Python (python/, analysis/, root)
@@ -61,6 +62,8 @@ analysis/**/__pycache__/
 # .NET / C# (c-sharp/)
 # -----------------------------------------------------------------------------
 bin/
+!rust/src/bin/
+!rust/src/bin/**
 obj/
 TestResults/
 *.user
@@ -77,6 +80,7 @@ c-sharp/**/obj/
 # Misc local data dumps
 data/
 !dashboard/public/data/
+!compliance/data/
 
 # -----------------------------------------------------------------------------
 # MkDocs

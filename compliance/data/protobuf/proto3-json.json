@@ -1,0 +1,208 @@
+{
+  "format": "protobuf",
+  "standard": "Protocol Buffers JSON mapping",
+  "version": "proto3-json",
+  "standard_url": "https://protobuf.dev/programming-guides/json/",
+  "provenance": "original-work",
+  "notes": "Official proto3 JSON mapping (protobuf.dev/programming-guides/json/).",
+  "cases": [
+    {
+      "id": "pbj-object",
+      "title": "JSON object maps to the message",
+      "section": "JSON Mapping",
+      "section_title": "message",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "A JSON object’s keys are field names. proto3 JSON uses the same names as the .proto file by default.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "{\"n\":7,\"s\":\"kelp\",\"ok\":true}",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "n": 7,
+        "s": "kelp",
+        "ok": true,
+        "tags": []
+      },
+      "schema": "json"
+    },
+    {
+      "id": "pbj-empty",
+      "title": "Empty JSON object is an empty message",
+      "section": "JSON Mapping",
+      "section_title": "message",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "Missing fields take proto3 defaults.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "{}",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": []
+      },
+      "schema": "json"
+    },
+    {
+      "id": "pbj-null-field",
+      "title": "JSON null means field default",
+      "section": "JSON Mapping",
+      "section_title": "null",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "A JSON null for a proto3 singular field is treated as the default.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "{\"n\":null}",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": []
+      },
+      "schema": "json"
+    },
+    {
+      "id": "pbj-array-tags",
+      "title": "JSON array maps to repeated field",
+      "section": "JSON Mapping",
+      "section_title": "repeated",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "A JSON array becomes the repeated field.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "{\"tags\":[1,2,3]}",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      "schema": "json"
+    },
+    {
+      "id": "pbj-string-number",
+      "title": "JSON string may hold an int32",
+      "section": "JSON Mapping",
+      "section_title": "int32",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "Integer fields accept a JSON number or a decimal string.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "{\"n\":\"7\"}",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "n": 7,
+        "s": "",
+        "ok": false,
+        "tags": []
+      },
+      "schema": "json"
+    },
+    {
+      "id": "pbj-reject-array",
+      "title": "Top-level JSON array is not a message",
+      "section": "JSON Mapping",
+      "section_title": "message",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "A message is a JSON object, not an array.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "[1,2]",
+      "input_encoding": "utf-8",
+      "schema": "json"
+    },
+    {
+      "id": "pbj-reject-scalar",
+      "title": "Top-level JSON number is not a message",
+      "section": "JSON Mapping",
+      "section_title": "message",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "A message is a JSON object.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "7",
+      "input_encoding": "utf-8",
+      "schema": "json"
+    },
+    {
+      "id": "pbj-reject-bad-json",
+      "title": "Invalid JSON is not a proto3 JSON message",
+      "section": "JSON Mapping",
+      "section_title": "message",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "The payload must be well-formed JSON.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "{",
+      "input_encoding": "utf-8",
+      "schema": "json"
+    },
+    {
+      "id": "pbj-number",
+      "title": "proto3 JSON int32 as JSON number",
+      "section": "JSON Mapping",
+      "section_title": "JSON Mapping",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "int32 is a JSON number in the official mapping.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "{\"n\":7}",
+      "decoded": {
+        "n": 7,
+        "s": "",
+        "ok": false,
+        "tags": []
+      },
+      "schema": "json"
+    },
+    {
+      "id": "pbj-unknown-ignore",
+      "title": "Unknown JSON names are ignored",
+      "section": "JSON Mapping",
+      "section_title": "JSON Mapping",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "Unknown fields in proto3 JSON are ignored by default.",
+      "requirement": "SHOULD",
+      "expect": "accept",
+      "input": "{\"s\":\"kelp\",\"harbor\":1}",
+      "decoded": {
+        "n": 0,
+        "s": "kelp",
+        "ok": false,
+        "tags": []
+      },
+      "schema": "json"
+    },
+    {
+      "id": "pbj-not-object",
+      "title": "A JSON array is not a message",
+      "section": "JSON Mapping",
+      "section_title": "JSON Mapping",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "A message maps to a JSON object.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "[1,2]",
+      "schema": "json"
+    },
+    {
+      "id": "pbj-bad-type",
+      "title": "String where int32 is required",
+      "section": "JSON Mapping",
+      "section_title": "JSON Mapping",
+      "section_url": "https://protobuf.dev/programming-guides/json/",
+      "paragraph": "int32 must be a JSON number (or string of digits), not an arbitrary string.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "{\"n\":\"kelp\"}",
+      "schema": "json"
+    }
+  ]
+}

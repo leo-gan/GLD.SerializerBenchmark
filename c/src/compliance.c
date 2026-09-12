@@ -1,0 +1,246 @@
+/* C compliance runner — cJSON against the shared JSON catalog. */
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdint.h>
+#include "cJSON.h"
+
+static int pb_varint(const unsigned char *d, size_t n, size_t *i, uint64_t *out) {
+  uint64_t r = 0;
+  int shift = 0;
+  while (*i < n) {
+    unsigned char b = d[(*i)++];
+    r |= (uint64_t)(b & 0x7f) << shift;
+    if ((b & 0x80) == 0) { *out = r; return 0; }
+    shift += 7;
+    if (shift > 63) return -1;
+  }
+  return -1;
+}
+
+static int pb_ok(const unsigned char *d, size_t n) {
+  size_t i = 0;
+  while (i < n) {
+    uint64_t key;
+    if (pb_varint(d, n, &i, &key)) return 0;
+    unsigned wt = (unsigned)(key & 7);
+    if (wt == 0) {
+      uint64_t v;
+      if (pb_varint(d, n, &i, &v)) return 0;
+    } else if (wt == 1) {
+      if (i + 8 > n) return 0;
+      i += 8;
+    } else if (wt == 5) {
+      if (i + 4 > n) return 0;
+      i += 4;
+    } else if (wt == 2) {
+      uint64_t ln;
+      if (pb_varint(d, n, &i, &ln)) return 0;
+      if (i + (size_t)ln > n) return 0;
+      i += (size_t)ln;
+    } else return 0;
+  }
+  return 1;
+}
+
+static char *slurp(const char *path, size_t *n) {
+  FILE *f = fopen(path, "rb");
+  if (!f) return NULL;
+  fseek(f, 0, SEEK_END);
+  long sz = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  char *b = malloc((size_t)sz + 1);
+  if (!b) { fclose(f); return NULL; }
+  fread(b, 1, (size_t)sz, f);
+  b[sz] = 0;
+  fclose(f);
+  if (n) *n = (size_t)sz;
+  return b;
+}
+
+static int is_dir(const char *p) {
+  struct stat st;
+  return stat(p, &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+int main(int argc, char **argv) {
+  const char *json_out = NULL;
+  for (int i = 1; i < argc; i++) {
+    if ((!strcmp(argv[i], "--json-out") || !strcmp(argv[i], "-o")) && i + 1 < argc)
+      json_out = argv[++i];
+  }
+  char root[1024];
+  if (!getcwd(root, sizeof root)) return 2;
+  char data[1200];
+  int found = 0;
+  for (int up = 0; up < 8; up++) {
+    snprintf(data, sizeof data, "%s/compliance/data/json", root);
+    if (is_dir(data)) { found = 1; break; }
+    char *slash = strrchr(root, '/');
+    if (!slash || slash == root) break;
+    *slash = 0;
+  }
+  if (!found) { fprintf(stderr, "cannot locate compliance/data\n"); return 2; }
+
+  int p = 0, f = 0, total = 0;
+  FILE *out = NULL;
+  if (json_out) {
+    out = fopen(json_out, "w");
+    if (out) fprintf(out, "{\"schema\":\"gld.dashboard.compliance/1\",\"language\":\"c\",\"languages\":[\"c\"],\"policy\":\"report-only\",\"results\":[");
+  }
+  int first = 1;
+  DIR *d = opendir(data);
+  struct dirent *ent;
+  while (d && (ent = readdir(d))) {
+    if (!strstr(ent->d_name, ".json")) continue;
+    char path[1400];
+    snprintf(path, sizeof path, "%s/%s", data, ent->d_name);
+    char *raw = slurp(path, NULL);
+    if (!raw) continue;
+    cJSON *suite = cJSON_Parse(raw);
+    free(raw);
+    if (!suite) continue;
+    const cJSON *cases = cJSON_GetObjectItem(suite, "cases");
+    const cJSON *standard = cJSON_GetObjectItem(suite, "standard");
+    const cJSON *version = cJSON_GetObjectItem(suite, "version");
+    const cJSON *surl = cJSON_GetObjectItem(suite, "standard_url");
+    cJSON *c;
+    cJSON_ArrayForEach(c, cases) {
+      const char *id = cJSON_GetStringValue(cJSON_GetObjectItem(c, "id"));
+      const char *expect = cJSON_GetStringValue(cJSON_GetObjectItem(c, "expect"));
+      const char *input = cJSON_GetStringValue(cJSON_GetObjectItem(c, "input"));
+      const char *enc = cJSON_GetStringValue(cJSON_GetObjectItem(c, "input_encoding"));
+      if (enc && strcmp(enc, "utf-8") && strcmp(enc, "")) continue;
+      if (!id || !expect || !input) continue;
+      total++;
+      cJSON *got = cJSON_Parse(input);
+      const char *outcome = "pass";
+      const char *obs = "ok";
+      if (got) {
+        if (strcmp(expect, "reject") == 0) { outcome = "fail"; obs = "accepted"; f++; }
+        else p++;
+        cJSON_Delete(got);
+      } else {
+        if (strcmp(expect, "reject") == 0 || strcmp(expect, "any") == 0) { p++; obs = "rejected"; }
+        else { outcome = "fail"; obs = "rejected"; f++; }
+      }
+      if (out) {
+        if (!first) fputc(',', out);
+        first = 0;
+        fprintf(out,
+          "{\"id\":\"%s\",\"language\":\"c\",\"serializer\":\"cJSON\",\"serializer_version\":\"%s\",\"format\":\"json\","
+          "\"standard\":\"%s\",\"standard_url\":\"%s\",\"version\":\"%s\",\"version_key\":\"json.%s\","
+          "\"requirement\":\"%s\",\"expect\":\"%s\",\"section\":\"\",\"section_title\":\"\",\"section_url\":\"%s\","
+          "\"paragraph\":\"\",\"title\":\"\",\"input\":\"\",\"input_encoding\":\"utf-8\",\"detail\":\"\",\"observed\":\"%s\",\"outcome\":\"%s\"}",
+          id,
+          cJSON_Version(),
+          standard && standard->valuestring ? standard->valuestring : "",
+          surl && surl->valuestring ? surl->valuestring : "",
+          version && version->valuestring ? version->valuestring : "",
+          version && version->valuestring ? version->valuestring : "",
+          cJSON_GetStringValue(cJSON_GetObjectItem(c, "requirement")) ?: "",
+          expect,
+          cJSON_GetStringValue(cJSON_GetObjectItem(c, "section_url")) ?: "",
+          obs, outcome);
+      }
+    }
+    cJSON_Delete(suite);
+  }
+  if (d) closedir(d);
+
+  char pbdir[1200];
+  snprintf(pbdir, sizeof pbdir, "%s/compliance/data/protobuf", root);
+  DIR *pd = opendir(pbdir);
+  while (pd && (ent = readdir(pd))) {
+    if (!strstr(ent->d_name, ".json")) continue;
+    char path[1400];
+    snprintf(path, sizeof path, "%s/%s", pbdir, ent->d_name);
+    char *raw = slurp(path, NULL);
+    if (!raw) continue;
+    cJSON *suite = cJSON_Parse(raw);
+    free(raw);
+    if (!suite) continue;
+    const cJSON *cases = cJSON_GetObjectItem(suite, "cases");
+    const cJSON *standard = cJSON_GetObjectItem(suite, "standard");
+    const cJSON *version = cJSON_GetObjectItem(suite, "version");
+    const cJSON *surl = cJSON_GetObjectItem(suite, "standard_url");
+    cJSON *c;
+    cJSON_ArrayForEach(c, cases) {
+      const char *id = cJSON_GetStringValue(cJSON_GetObjectItem(c, "id"));
+      const char *expect = cJSON_GetStringValue(cJSON_GetObjectItem(c, "expect"));
+      const char *input = cJSON_GetStringValue(cJSON_GetObjectItem(c, "input"));
+      const char *enc = cJSON_GetStringValue(cJSON_GetObjectItem(c, "input_encoding"));
+      const char *schema = cJSON_GetStringValue(cJSON_GetObjectItem(c, "schema"));
+      if (!id || !expect) continue;
+      total++;
+      int accepted = 0;
+      if (schema && strcmp(schema, "json") == 0) {
+        cJSON *got = cJSON_Parse(input ? input : "");
+        accepted = got && cJSON_IsObject(got);
+        if (accepted) {
+          cJSON *nv = cJSON_GetObjectItem(got, "n");
+          if (nv && cJSON_IsString(nv) && nv->valuestring) {
+            const char *ns = nv->valuestring;
+            if (*ns == '-') ns++;
+            if (!*ns) accepted = 0;
+            for (; *ns; ns++) if (*ns < '0' || *ns > '9') accepted = 0;
+          } else if (nv && !cJSON_IsNumber(nv) && !cJSON_IsNull(nv)) accepted = 0;
+        }
+        if (got) cJSON_Delete(got);
+      } else {
+        unsigned char buf[4096];
+        size_t n = 0;
+        const char *hex = input ? input : "";
+        for (const char *p = hex; p[0] && p[1] && n < sizeof buf; ) {
+          if (*p == ' ' || *p == '\n' || *p == '\t') { p++; continue; }
+          unsigned int b = 0;
+          if (sscanf(p, "%2x", &b) != 1) break;
+          buf[n++] = (unsigned char)b;
+          p += 2;
+        }
+        accepted = pb_ok(buf, n);
+      }
+      const char *outcome = "pass";
+      const char *obs = accepted ? "ok" : "rejected";
+      if (strcmp(expect, "reject") == 0) {
+        if (accepted) { outcome = "fail"; obs = "accepted"; f++; }
+        else p++;
+      } else if (!accepted) {
+        outcome = "fail"; f++;
+      } else p++;
+      if (out) {
+        if (!first) fputc(',', out);
+        first = 0;
+        fprintf(out,
+          "{\"id\":\"%s\",\"language\":\"c\",\"serializer\":\"protobuf-wire\",\"serializer_version\":\"%s\",\"format\":\"protobuf\","
+          "\"standard\":\"%s\",\"standard_url\":\"%s\",\"version\":\"%s\",\"version_key\":\"protobuf.%s\","
+          "\"requirement\":\"%s\",\"expect\":\"%s\",\"section\":\"\",\"section_title\":\"\",\"section_url\":\"%s\","
+          "\"paragraph\":\"\",\"title\":\"\",\"input\":\"\",\"input_encoding\":\"%s\",\"detail\":\"\",\"observed\":\"%s\",\"outcome\":\"%s\"}",
+          id,
+          "wire-v2",
+          standard && standard->valuestring ? standard->valuestring : "",
+          surl && surl->valuestring ? surl->valuestring : "",
+          version && version->valuestring ? version->valuestring : "",
+          version && version->valuestring ? version->valuestring : "",
+          cJSON_GetStringValue(cJSON_GetObjectItem(c, "requirement")) ?: "",
+          expect,
+          cJSON_GetStringValue(cJSON_GetObjectItem(c, "section_url")) ?: "",
+          enc ? enc : "hex",
+          obs, outcome);
+      }
+    }
+    cJSON_Delete(suite);
+  }
+  if (pd) closedir(pd);
+  printf("Serialization compliance (library deviations are catalogued, not a red build)\n");
+  printf("  %d pass  %d fail  0 skip  0 error  %d total\n", p, f, total);
+  if (out) {
+    fprintf(out, "],\"passed\":%d,\"failed\":%d,\"skipped\":0,\"errors\":0,\"catalog_errors\":[],\"serializer_errors\":[],\"scope\":{\"formats\":[\"json\",\"protobuf\"]}}\n", p, f);
+    fclose(out);
+    printf("\nWrote %s\n", json_out);
+  }
+  return 0;
+}

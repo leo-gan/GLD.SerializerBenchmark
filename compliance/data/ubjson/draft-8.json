@@ -1,0 +1,113 @@
+{
+  "format": "ubjson",
+  "standard": "UBJSON Draft 8",
+  "version": "draft-8",
+  "standard_url": "https://ubjson.org/",
+  "provenance": "original-work",
+  "notes": "Literals that survived later drafts, plus Draft 8 markers B / s / a. Recreated; dmitry-ra suite not copied.",
+  "cases": [
+    {
+      "id": "ubj-null",
+      "title": "Null is marker Z",
+      "section": "Null Value",
+      "section_title": "null",
+      "section_url": "https://ubjson.org/type-reference/value-types/#null-value",
+      "paragraph": "The null value is the single byte 0x5A (ASCII Z).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "5a",
+      "input_encoding": "hex",
+      "decoded": null
+    },
+    {
+      "id": "ubj-true",
+      "title": "True is marker T",
+      "section": "Boolean Types",
+      "section_title": "true",
+      "section_url": "https://ubjson.org/type-reference/value-types/#boolean-types",
+      "paragraph": "The true value is the single byte 0x54 (ASCII T).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "54",
+      "input_encoding": "hex",
+      "decoded": true
+    },
+    {
+      "id": "ubj-false",
+      "title": "False is marker F",
+      "section": "Boolean Types",
+      "section_title": "false",
+      "section_url": "https://ubjson.org/type-reference/value-types/#boolean-types",
+      "paragraph": "The false value is the single byte 0x46 (ASCII F).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "46",
+      "input_encoding": "hex",
+      "decoded": false
+    },
+    {
+      "id": "ubj-empty",
+      "title": "Empty buffer is not a value",
+      "section": "Data Format",
+      "section_title": "marker",
+      "section_url": "https://ubjson.org/",
+      "paragraph": "Every value starts with a one-byte type marker.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "ubj-unknown-marker",
+      "title": "0x00 is not a type marker",
+      "section": "Type overview",
+      "section_title": "markers",
+      "section_url": "https://ubjson.org/",
+      "paragraph": "A type marker must be one of the defined ASCII markers.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "ubj8-byte",
+      "title": "Draft 8 byte marker B",
+      "section": "Numeric Types",
+      "section_title": "byte (draft 8)",
+      "section_url": "https://ubjson.org/",
+      "paragraph": "Draft 8 stored a signed byte as marker B plus one payload byte. Draft 12 replaced B with i / U.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "4207",
+      "input_encoding": "hex",
+      "decoded": 7,
+      "notes": "Draft-8 marker. A Draft 12 decoder must reject B."
+    },
+    {
+      "id": "ubj8-string-s",
+      "title": "Draft 8 string marker s",
+      "section": "String Type",
+      "section_title": "string (draft 8)",
+      "section_url": "https://ubjson.org/",
+      "paragraph": "Draft 8 used lowercase s plus a one-byte length. Draft 12 uses S plus an integer numeric length.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "73046b656c70",
+      "input_encoding": "hex",
+      "decoded": "kelp"
+    },
+    {
+      "id": "ubj8-array-a",
+      "title": "Draft 8 length-prefixed array marker a",
+      "section": "Container Types",
+      "section_title": "array (draft 8)",
+      "section_url": "https://ubjson.org/",
+      "paragraph": "Draft 8 used marker a plus a count, not the streaming [ ] pair.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "6100",
+      "input_encoding": "hex",
+      "decoded": []
+    }
+  ]
+}

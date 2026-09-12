@@ -1,39 +1,18 @@
 # json - JSON serialization
 
 from .value import Value
+from .value.raw_ops import escape_json_string
 
 
 def _escape_string(s: String) -> String:
-    """Escape special characters in a string for JSON."""
-    var result = String('"')
-    var s_bytes = s.as_bytes()
-    for i in range(len(s_bytes)):
-        var c = s_bytes[i]
-        if c == UInt8(ord('"')):
-            result += '\\"'
-        elif c == UInt8(ord("\\")):
-            result += "\\\\"
-        elif c == UInt8(ord("\n")):
-            result += "\\n"
-        elif c == UInt8(ord("\r")):
-            result += "\\r"
-        elif c == UInt8(ord("\t")):
-            result += "\\t"
-        elif c < 0x20:
-            # Control characters - escape as \u00XX
-            result += "\\u00"
-            var hi = (c >> 4) & 0x0F
-            var lo = c & 0x0F
-            result += chr(Int(hi) + ord("0")) if hi < 10 else chr(
-                Int(hi) - 10 + ord("a")
-            )
-            result += chr(Int(lo) + ord("0")) if lo < 10 else chr(
-                Int(lo) - 10 + ord("a")
-            )
-        else:
-            result += chr(Int(c))
-    result += '"'
-    return result^
+    """Quote and escape `s` as a JSON string literal.
+
+    Delegates to the one canonical implementation; see
+    `json/value/raw_ops.mojo`. This copy previously lacked the 0x08 and
+    0x0C short forms, emitting them as six-character hex escapes -- legal
+    JSON, but different bytes from the other paths for the same input.
+    """
+    return escape_json_string(s)
 
 
 def to_string(v: Value) -> String:
@@ -182,20 +161,17 @@ def _format_json(raw: String, indent: String, current_indent: String) -> String:
 def _to_string_pretty(
     v: Value, indent: String, current_indent: String
 ) -> String:
-    """Convert a Value to a pretty-printed JSON string."""
-    if v.is_null():
-        return "null"
-    elif v.is_bool():
-        return "true" if v.bool_value() else "false"
-    elif v.is_int():
-        return String(v.int_value())
-    elif v.is_float():
-        return String(v.float_value())
-    elif v.is_string():
-        return _escape_string(v.string_value())
-    elif v.is_array() or v.is_object():
-        return _format_json(v.raw_json(), indent, current_indent)
-    return "null"
+    """Convert a Value to a pretty-printed JSON string.
+
+    Emits directly, in one structural walk. This used to serialize the
+    whole document compactly via `raw_json()` and then re-scan the
+    result byte-at-a-time in `_format_json`, building a `String` per
+    input character; `current_indent` is accepted for signature
+    compatibility and is no longer needed, since the writer tracks
+    depth itself.
+    """
+    _ = current_indent
+    return v.pretty_json(indent)
 
 
 def dumps(v: Value, indent: String = "") -> String:

@@ -19,6 +19,10 @@ import java.util.Locale
  * serializers. Escape hatch: `BENCHMARK_SCHEDULE=none`.
  */
 fun main(args: Array<String>) {
+    if (args.firstOrNull() == "compliance") {
+        complianceMain(args.drop(1).toTypedArray())
+        return
+    }
     var repetitions = 10
     var serFilter = ""
     var dataFilter = ""

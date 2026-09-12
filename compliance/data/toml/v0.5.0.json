@@ -1,0 +1,166 @@
+{
+  "format": "toml",
+  "standard": "TOML 0.5.0",
+  "version": "0.5.0",
+  "standard_url": "https://toml.io/en/v0.5.0",
+  "provenance": "original-work",
+  "notes": "No official 0.5 file list; original cases kept. Use 1.0/1.1 columns for the full toml-test corpus.",
+  "cases": [
+    {
+      "id": "toml05-kv",
+      "title": "Bare key and basic string",
+      "section": "Key/Value Pairs",
+      "section_title": "Key/Value Pairs",
+      "section_url": "https://toml.io/en/v0.5.0#keyvalue-pair",
+      "paragraph": "The equals sign, surrounded by whitespace, separates a key from a value.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "harbor = \"kelp\"\n",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "harbor": "kelp"
+      }
+    },
+    {
+      "id": "toml05-dotted-key",
+      "title": "Dotted keys create nested tables",
+      "section": "Keys",
+      "section_title": "Keys",
+      "section_url": "https://toml.io/en/v0.5.0#keys",
+      "paragraph": "A key may be either bare, quoted, or dotted. Dotted keys define a hierarchy of tables.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "site.harbor = \"kelp\"\n",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "site": {
+          "harbor": "kelp"
+        }
+      }
+    },
+    {
+      "id": "toml05-array",
+      "title": "Array of integers",
+      "section": "Array",
+      "section_title": "Array",
+      "section_url": "https://toml.io/en/v0.5.0#array",
+      "paragraph": "Arrays are square brackets with values separated by commas.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "counts = [1, 2, 3]\n",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "counts": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "id": "toml05-table",
+      "title": "Standard table header",
+      "section": "Table",
+      "section_title": "Table",
+      "section_url": "https://toml.io/en/v0.5.0#table",
+      "paragraph": "Tables are collections of key/value pairs under a [header].",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "[site]\nharbor = \"kelp\"\n",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "site": {
+          "harbor": "kelp"
+        }
+      }
+    },
+    {
+      "id": "toml05-inline-table",
+      "title": "Inline table",
+      "section": "Inline Table",
+      "section_title": "Inline Table",
+      "section_url": "https://toml.io/en/v0.5.0#inline-table",
+      "paragraph": "Inline tables are enclosed in curly braces.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "site = { harbor = \"kelp\", count = 3 }\n",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "site": {
+          "harbor": "kelp",
+          "count": 3
+        }
+      }
+    },
+    {
+      "id": "toml05-bool",
+      "title": "Boolean true/false",
+      "section": "Boolean",
+      "section_title": "Boolean",
+      "section_url": "https://toml.io/en/v0.5.0#boolean",
+      "paragraph": "Booleans are true or false. Always lowercase.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "ok = true\n",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "ok": true
+      }
+    },
+    {
+      "id": "toml05-comment",
+      "title": "Comments start with #",
+      "section": "Comment",
+      "section_title": "Comment",
+      "section_url": "https://toml.io/en/v0.5.0#comment",
+      "paragraph": "A hash symbol marks the rest of the line as a comment.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "harbor = \"kelp\" # berth\n",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "harbor": "kelp"
+      }
+    },
+    {
+      "id": "toml05-trailing-comma-array",
+      "title": "Trailing commas in arrays are not in v0.5",
+      "section": "Array",
+      "section_title": "Array",
+      "section_url": "https://toml.io/en/v0.5.0#array",
+      "paragraph": "v0.5 arrays are comma-separated values; trailing commas became legal later.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "counts = [1, 2,]\n",
+      "input_encoding": "utf-8",
+      "notes": "TOML 1.0 already allows this; a 0.5-only reject is historical."
+    },
+    {
+      "id": "toml05-bare-true-key-ok",
+      "title": "Bare keys may look like other tokens if they are keys",
+      "section": "Keys",
+      "section_title": "Keys",
+      "section_url": "https://toml.io/en/v0.5.0#keys",
+      "paragraph": "Bare keys may only contain ASCII letters, ASCII digits, underscores, and dashes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "harbor-1 = \"kelp\"\n",
+      "input_encoding": "utf-8",
+      "decoded": {
+        "harbor-1": "kelp"
+      }
+    },
+    {
+      "id": "toml05-missing-value",
+      "title": "A key without a value is invalid",
+      "section": "Key/Value Pairs",
+      "section_title": "Key/Value Pairs",
+      "section_url": "https://toml.io/en/v0.5.0#keyvalue-pair",
+      "paragraph": "Key/value pairs are on a single line; the value is required.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "harbor =\n",
+      "input_encoding": "utf-8"
+    }
+  ]
+}

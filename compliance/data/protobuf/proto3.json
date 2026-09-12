@@ -1,0 +1,412 @@
+{
+  "format": "protobuf",
+  "standard": "Protocol Buffers proto3",
+  "version": "proto3",
+  "standard_url": "https://protobuf.dev/programming-guides/encoding/",
+  "provenance": "original-work",
+  "notes": "Full wire grammar from protobuf.dev (empty, varints, strings, packed, unknown, rejects).",
+  "cases": [
+    {
+      "id": "pb-empty",
+      "title": "Empty proto3 message is valid",
+      "section": "1",
+      "section_title": "A Message",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/",
+      "paragraph": "A message is a series of key-value records. Zero records is a valid message.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-varint-0",
+      "title": "Varint field 1 = 0 is omitted in proto3",
+      "section": "2",
+      "section_title": "Base 128 Varints",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#varints",
+      "paragraph": "Default 0 is not written. An explicit 0 is still a valid varint record.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-varint-1",
+      "title": "Varint field 1 = 1",
+      "section": "2",
+      "section_title": "Base 128 Varints",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#varints",
+      "paragraph": "Values below 128 fit in one data byte after the key.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0801",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 1,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-varint-7",
+      "title": "Varint field 1 = 7",
+      "section": "2",
+      "section_title": "Base 128 Varints",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#varints",
+      "paragraph": "Each byte of a varint uses its lower 7 bits for data.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0807",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 7,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-varint-127",
+      "title": "Varint field 1 = 127",
+      "section": "2",
+      "section_title": "Base 128 Varints",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#varints",
+      "paragraph": "127 is the largest one-byte varint payload.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "087f",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 127,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-varint-128",
+      "title": "Varint field 1 = 128",
+      "section": "2",
+      "section_title": "Base 128 Varints",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#varints",
+      "paragraph": "128 needs a continuation byte.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "088001",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 128,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-varint-300",
+      "title": "Varint field 1 = 300",
+      "section": "2",
+      "section_title": "Base 128 Varints",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#varints",
+      "paragraph": "300 is 0x12c and takes two varint bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "08ac02",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 300,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-varint-16384",
+      "title": "Varint field 1 = 16384",
+      "section": "2",
+      "section_title": "Base 128 Varints",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#varints",
+      "paragraph": "16384 takes three varint payload bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "08808001",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 16384,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-string-empty",
+      "title": "Empty string field 2",
+      "section": "4",
+      "section_title": "Length-Delimited",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#length-types",
+      "paragraph": "A length-delimited field may have length 0.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-string-kelp",
+      "title": "Length-delimited field 2 = kelp",
+      "section": "4",
+      "section_title": "Length-Delimited",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#length-types",
+      "paragraph": "Wire type 2 is a varint length followed by that many payload bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "12046b656c70",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "kelp",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-string-harbor",
+      "title": "Length-delimited field 2 = harbor",
+      "section": "4",
+      "section_title": "Length-Delimited",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#length-types",
+      "paragraph": "UTF-8 payload of length 6.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "1206686172626f72",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "harbor",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-bool-true",
+      "title": "Bool field 3 = true",
+      "section": "3",
+      "section_title": "Message Structure",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#structure",
+      "paragraph": "A bool is a varint 0 or 1.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "1801",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": true,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-bool-false",
+      "title": "Bool field 3 = false is default",
+      "section": "3",
+      "section_title": "Message Structure",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#structure",
+      "paragraph": "proto3 omits default false. An explicit 0 is still valid.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-multi",
+      "title": "Several fields in one message",
+      "section": "3",
+      "section_title": "Message Structure",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#structure",
+      "paragraph": "A message is the concatenation of records. Order is not significant.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "080712046b656c701801",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 7,
+        "s": "kelp",
+        "ok": true,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-unknown-field",
+      "title": "Unknown field number is skipped",
+      "section": "3",
+      "section_title": "Message Structure",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#structure",
+      "paragraph": "A decoder must skip a well-formed record whose field number it does not know.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "7807",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb-truncated-varint",
+      "title": "Truncated varint is not well-formed",
+      "section": "2",
+      "section_title": "Base 128 Varints",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#varints",
+      "paragraph": "A continuation bit of 1 requires another byte.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "08ac",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "pb-truncated-string",
+      "title": "Length-delimited payload shorter than declared",
+      "section": "4",
+      "section_title": "Length-Delimited",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#length-types",
+      "paragraph": "The declared length must be present in the remaining bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "12046b65",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "pb-bad-wire-type",
+      "title": "Wire type 7 is reserved / invalid",
+      "section": "3",
+      "section_title": "Message Structure",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#structure",
+      "paragraph": "The three-bit wire type 7 is not a defined encoding.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0f",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "pb-truncated-key",
+      "title": "Lone continuation in the key varint",
+      "section": "3",
+      "section_title": "Message Structure",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#structure",
+      "paragraph": "The field key is itself a varint and must be complete.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "80",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "pb-truncated-fixed64",
+      "title": "Fixed64 record shorter than 8 bytes",
+      "section": "3",
+      "section_title": "Message Structure",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#structure",
+      "paragraph": "Wire type 1 is eight little-endian bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "09aabbcc",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "pb-truncated-fixed32",
+      "title": "Fixed32 record shorter than 4 bytes",
+      "section": "3",
+      "section_title": "Message Structure",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#structure",
+      "paragraph": "Wire type 5 is four little-endian bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0d0011",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "pb3-packed-tags",
+      "title": "proto3 packed repeated int32 field 4",
+      "section": "4.2",
+      "section_title": "Packed Repeated Fields",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#packed",
+      "paragraph": "In proto3, scalar repeated fields use packed encoding: one length-delimited record of concatenated varints.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "2203010203",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "id": "pb3-packed-empty",
+      "title": "Empty packed repeated is omitted",
+      "section": "4.2",
+      "section_title": "Packed Repeated Fields",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#packed",
+      "paragraph": "Zero elements produce no record.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": []
+      }
+    },
+    {
+      "id": "pb3-packed-one",
+      "title": "Packed repeated with one element",
+      "section": "4.2",
+      "section_title": "Packed Repeated Fields",
+      "section_url": "https://protobuf.dev/programming-guides/encoding/#packed",
+      "paragraph": "A single packed element is still length-delimited.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "220107",
+      "input_encoding": "hex",
+      "decoded": {
+        "n": 0,
+        "s": "",
+        "ok": false,
+        "tags": [
+          7
+        ]
+      }
+    }
+  ]
+}

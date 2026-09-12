@@ -1,14 +1,20 @@
-"""ehsanmok/json (v0.3.0) — official loads / dumps + Value DOM.
+"""ehsanmok/json (v0.3.1) — serialize_json encode, loads + Value DOM decode.
 
-Reflection `serialize_json` / `deserialize_json` is the typed path, but
-v0.3.0 cannot reflect `Int32` or `List[struct]`. Those are the suite
-field types, so the timed path is the documented Python-like API:
-build a `Value` tree with `set` / `append`, then `dumps` / `loads`.
+v0.3.1 reflects Int32 and List[struct] on the write path, so encode uses
+the official typed serializer (same JSON shape as EmberJson). Telemetry
+is the exception: serialize_json mis-matches List[Float64] as a float
+(the type name contains SIMD[DType.float64), so that cell builds a
+Value tree with object() / array() instead. List[struct] is still
+unsupported on the read side, so decode walks the Value tree from loads().
 """
 
 from std.collections import List
-from ehsanmok_json import Value, dumps, loads
+from ehsanmok_json import Value, dumps, loads, serialize_json
 from bench.data import (
+    BatchDocument,
+    BatchEvent,
+    BatchMessage,
+    BatchStrings,
     Document,
     DocumentItem,
     DocumentMeta,
@@ -22,27 +28,6 @@ from bench.data import (
 )
 
 
-def _obj() raises -> Value:
-    return loads("{}")
-
-
-def _arr() raises -> Value:
-    return loads("[]")
-
-
-def message_to_value(m: Message) raises -> Value:
-    var o = _obj()
-    o.set("f_bool", Value(m.f_bool))
-    o.set("f_int32", Value(Int(m.f_int32)))
-    o.set("f_int64", Value(m.f_int64))
-    o.set("f_float64", Value(m.f_float64))
-    o.set("f_string", Value(m.f_string))
-    o.set("f_bool_2", Value(m.f_bool_2))
-    o.set("f_int32_2", Value(Int(m.f_int32_2)))
-    o.set("f_string_2", Value(m.f_string_2))
-    return o^
-
-
 def message_from_value(v: Value) raises -> Message:
     return Message(
         v["f_bool"].bool_value(),
@@ -54,27 +39,6 @@ def message_from_value(v: Value) raises -> Message:
         Int32(v["f_int32_2"].int_value()),
         v["f_string_2"].string_value(),
     )
-
-
-def document_to_value(d: Document) raises -> Value:
-    var o = _obj()
-    o.set("id", Value(d.id))
-    o.set("status", Value(Int(d.status)))
-    var meta = _obj()
-    meta.set("region", Value(d.meta.region))
-    meta.set("version", Value(Int(d.meta.version)))
-    o.set("meta", meta)
-    var items = _arr()
-    var i = 0
-    while i < len(d.items):
-        var it = _obj()
-        it.set("sku", Value(d.items[i].sku))
-        it.set("qty", Value(Int(d.items[i].qty)))
-        it.set("price_minor", Value(d.items[i].price_minor))
-        items.append(it)
-        i += 1
-    o.set("items", items)
-    return o^
 
 
 def document_from_value(v: Value) raises -> Document:
@@ -100,22 +64,35 @@ def document_from_value(v: Value) raises -> Document:
 
 
 def telemetry_to_value(t: Telemetry) raises -> Value:
-    var o = _obj()
+    var o = Value.object()
     o.set("source", Value(t.source))
     o.set("ts", Value(t.ts))
-    var tags = _arr()
+    var tags = Value.array()
     var i = 0
     while i < len(t.tags):
         tags.append(Value(t.tags[i]))
         i += 1
-    o.set("tags", tags)
-    var values = _arr()
+    o.set("tags", tags^)
+    var values = Value.array()
     i = 0
     while i < len(t.values):
         values.append(Value(t.values[i]))
         i += 1
-    o.set("values", values)
+    o.set("values", values^)
     return o^
+
+
+def telemetry_fixture_to_value(fx: Fixture) raises -> Value:
+    if fx.n == 1:
+        return telemetry_to_value(fx.telemetries[0])
+    var items = Value.array()
+    var i = 0
+    while i < len(fx.telemetries):
+        items.append(telemetry_to_value(fx.telemetries[i]))
+        i += 1
+    var wrap = Value.object()
+    wrap.set("items", items^)
+    return wrap^
 
 
 def telemetry_from_value(v: Value) raises -> Telemetry:
@@ -134,17 +111,6 @@ def telemetry_from_value(v: Value) raises -> Telemetry:
     return Telemetry(v["source"].string_value(), v["ts"].int_value(), tags^, values^)
 
 
-def strings_to_value(s: Strings) raises -> Value:
-    var o = _obj()
-    var items = _arr()
-    var i = 0
-    while i < len(s.items):
-        items.append(Value(s.items[i]))
-        i += 1
-    o.set("items", items)
-    return o^
-
-
 def strings_from_value(v: Value) raises -> Strings:
     var items = List[String]()
     var arr = v["items"]
@@ -153,24 +119,6 @@ def strings_from_value(v: Value) raises -> Strings:
         items.append(arr[i].string_value())
         i += 1
     return Strings(items^)
-
-
-def event_to_value(e: Event) raises -> Value:
-    var o = _obj()
-    o.set("event_id", Value(e.event_id))
-    o.set("event_type", Value(e.event_type))
-    o.set("occurred_at", Value(e.occurred_at))
-    o.set("producer", Value(e.producer))
-    var attrs = _arr()
-    var i = 0
-    while i < len(e.attrs):
-        var a = _obj()
-        a.set("key", Value(e.attrs[i].key))
-        a.set("value", Value(e.attrs[i].value))
-        attrs.append(a)
-        i += 1
-    o.set("attrs", attrs)
-    return o^
 
 
 def event_from_value(v: Value) raises -> Event:
@@ -188,44 +136,6 @@ def event_from_value(v: Value) raises -> Event:
         v["producer"].string_value(),
         attrs^,
     )
-
-
-def fixture_to_value(fx: Fixture) raises -> Value:
-    if fx.n != 1:
-        var items = _arr()
-        var i = 0
-        if fx.type_id == "message":
-            while i < len(fx.messages):
-                items.append(message_to_value(fx.messages[i]))
-                i += 1
-        elif fx.type_id == "document":
-            while i < len(fx.documents):
-                items.append(document_to_value(fx.documents[i]))
-                i += 1
-        elif fx.type_id == "telemetry":
-            while i < len(fx.telemetries):
-                items.append(telemetry_to_value(fx.telemetries[i]))
-                i += 1
-        elif fx.type_id == "strings":
-            while i < len(fx.strings):
-                items.append(strings_to_value(fx.strings[i]))
-                i += 1
-        else:
-            while i < len(fx.events):
-                items.append(event_to_value(fx.events[i]))
-                i += 1
-        var wrap = _obj()
-        wrap.set("items", items)
-        return wrap^
-    if fx.type_id == "message":
-        return message_to_value(fx.messages[0])
-    if fx.type_id == "document":
-        return document_to_value(fx.documents[0])
-    if fx.type_id == "telemetry":
-        return telemetry_to_value(fx.telemetries[0])
-    if fx.type_id == "strings":
-        return strings_to_value(fx.strings[0])
-    return event_to_value(fx.events[0])
 
 
 def fixture_from_value(fx: Fixture, v: Value) raises -> Fixture:
@@ -273,13 +183,29 @@ struct EhsanJsonSer:
     var version: String
 
     def __init__(out self):
-        self.version = "0.3.0"
+        self.version = "0.3.1"
 
     def name(self) -> String:
         return "ehsanmok-json"
 
     def serialize_bytes(self, fx: Fixture) raises -> String:
-        return dumps(fixture_to_value(fx))
+        if fx.type_id == "message":
+            if fx.n == 1:
+                return serialize_json(fx.messages[0])
+            return serialize_json(BatchMessage(fx.messages.copy()))
+        if fx.type_id == "document":
+            if fx.n == 1:
+                return serialize_json(fx.documents[0])
+            return serialize_json(BatchDocument(fx.documents.copy()))
+        if fx.type_id == "telemetry":
+            return dumps(telemetry_fixture_to_value(fx))
+        if fx.type_id == "strings":
+            if fx.n == 1:
+                return serialize_json(fx.strings[0])
+            return serialize_json(BatchStrings(fx.strings.copy()))
+        if fx.n == 1:
+            return serialize_json(fx.events[0])
+        return serialize_json(BatchEvent(fx.events.copy()))
 
     def deserialize_bytes(self, fx: Fixture, data: String) raises -> Fixture:
         return fixture_from_value(fx, loads(data))

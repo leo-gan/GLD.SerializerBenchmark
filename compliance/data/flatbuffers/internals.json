@@ -1,0 +1,46 @@
+{
+  "format": "flatbuffers",
+  "standard": "FlatBuffers internals",
+  "version": "tables",
+  "standard_url": "https://flatbuffers.dev/internals/",
+  "provenance": "original-work",
+  "notes": "Table buffers need generated code. These cases only ask whether the buffer is long enough to be a table.",
+  "cases": [
+    {
+      "id": "fb-empty",
+      "title": "Empty buffer is not a table",
+      "section": "Tables",
+      "section_title": "vtable",
+      "section_url": "https://flatbuffers.dev/internals/",
+      "paragraph": "A table starts with a uoffset to a vtable.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "fb-short",
+      "title": "Shorter than a uoffset",
+      "section": "Tables",
+      "section_title": "vtable",
+      "section_url": "https://flatbuffers.dev/internals/",
+      "paragraph": "The first four bytes are a little-endian uoffset.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0000",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "fb-three",
+      "title": "Shorter than a uoffset (3 bytes)",
+      "section": "Tables",
+      "section_title": "vtable",
+      "section_url": "https://flatbuffers.dev/internals/",
+      "paragraph": "A uoffset is four bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "000000",
+      "input_encoding": "hex"
+    }
+  ]
+}

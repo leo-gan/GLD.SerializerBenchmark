@@ -5,7 +5,7 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for CBOR, Protocol Buffers, and Avro.
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, Protocol Buffers, Avro, YAML, and MessagePack.
 
 ## Runtime
 
@@ -23,7 +23,7 @@ Mojo compiles to **native machine code**. This suite targets **Mojo 1.0.0** on L
 
 ### What this suite runs
 
-The runner is timed in an optimized `mojo run` / `mojo build` path. EmberJson uses official reflection `serialize` / `deserialize`. ehsanmok/json times official `dumps` / `loads` on a `Value` tree (its reflection API does not cover `Int32` or `List[struct]`). CBOR and Avro time `encode` / `decode` on suite types that implement `CborDatum` / `AvroDatum`. Protobuf converts suite objects to generated messages **outside** the timer, then times `encode` / `decode`.
+The runner is timed in an optimized `mojo run` / `mojo build` path. EmberJson uses official reflection `serialize` / `deserialize`. ehsanmok/json times official `serialize_json` on suite types (v0.3.1 reflects `Int32` and `List[struct]` on the write path) except `telemetry`, which builds a `Value` tree because `serialize_json` mis-matches `List[Float64]`. Decode is `loads` plus a `Value` walk (`List[struct]` deserialize is still unsupported). CBOR and Avro time `encode` / `decode` on suite types that implement `CborDatum` / `AvroDatum`. Protobuf converts suite objects to generated messages **outside** the timer, then times `encode` / `decode`.
 
 ### What changes the numbers
 
@@ -33,7 +33,7 @@ Mojo 1.0 is a young compiler. A nightly compiler or a different pixi lock can mo
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native MessagePack, BSON, YAML, XML, or FlatBuffers library in this first wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures.
+There is no native BSON, XML, or FlatBuffers library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is not published yet, so TOML stays on DataBooth/mojo-toml.
 
 These times cannot be ranked against another language.
 
@@ -53,12 +53,14 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | Serializer | Category | Package | Stream | Notes |
 |------------|----------|---------|--------|-------|
 | EmberJson | JSON | emberjson 0.3.4 | bytes only | Reflection `serialize` / `deserialize` |
-| ehsanmok-json | JSON | ehsanmok/json 0.3.0 | bytes only | `dumps` / `loads` on `Value` (CPU parser) |
-| mojo-json | JSON | leo-gan/gld-json 0.2.0 | bytes only | Typed WireWriter / WireReader (vendored as `gldjson`) |
+| ehsanmok-json | JSON | ehsanmok/json 0.3.1 | bytes only | `serialize_json` encode; `loads` + Value walk decode (CPU parser) |
+| mojo-json | JSON | leo-gan/gld-json 0.3.0 | bytes only | Typed WireWriter / WireReader (vendored as `gldjson`) |
 | mojo-cbor | Binary | leo-gan/gld-cbor 0.6.0 | bytes only | `CborDatum` encode / decode |
 | mojo-protobuf | Schema | leo-gan/gld-protobuf 0.6.0 | bytes only | Generated from suite `.proto` |
 | mojo-avro | Schema | leo-gan/gld-avro 0.4.0 | bytes only | `AvroDatum` encode / decode |
 | mojo-toml | Text | DataBooth/mojo-toml 0.9.1 | bytes only | `to_toml` / `parse` |
+| mojo-yaml | Text | leo-gan/gld-yaml 0.2.0 | bytes only | `YamlValue` encode / decode |
+| mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | bytes only | WireWriter / WireReader |
 
 ### Call-path contract
 
@@ -73,7 +75,7 @@ fidelity                         # untimed, float-tolerant
 
 - Stream mode is not claimed (`stream_policy: bytes_only`).
 - EmberJson 0.3.4 is the modular-community package. The newer `from_json` / `to_json` API on EmberJson main is not what this row times.
-- ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with mojo-avro’s `json` module. GPU/`max` is stubbed; the timed path is the default CPU parser.
+- ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with mojo-avro’s `json` module. GPU/`max` is stubbed; the timed path is the default CPU parser. v0.3.1 added `Value.object()` / `Value.array()` so adapters no longer parse `"{}"` / `"[]"` per node.
 - Apache Arrow (marrow) and Parquet are columnar file/table APIs, not object codecs for these fixtures.
 - `f0cii/mojo-csv` last moved in 2024 (Magic-era nightly) and does not compile on Mojo 1.0.
 - `forfudan/decimojo` is a decimal-math library. Its old tomlmojo parser is not a standalone serializer.

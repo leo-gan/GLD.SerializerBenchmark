@@ -12,6 +12,8 @@ from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.toml_ser import TomlSer
 from bench.gldjson_ser import GldJsonSer
+from bench.yaml_ser import YamlSer
+from bench.msgpack_ser import MsgpackSer
 
 
 def _contains(hay: String, needle: String) -> Bool:
@@ -186,6 +188,8 @@ def run() raises:
     var proto = ProtobufSer()
     var toml = TomlSer()
     var gldj = GldJsonSer()
+    var yaml = YamlSer()
+    var msgp = MsgpackSer()
     var names = List[String]()
     names.append(ember.name())
     names.append(ehsan.name())
@@ -194,6 +198,8 @@ def run() raises:
     names.append(proto.name())
     names.append(toml.name())
     names.append(gldj.name())
+    names.append(yaml.name())
+    names.append(msgp.name())
     if ser_filter.byte_length() > 0:
         var filtered = List[String]()
         var ni = 0
@@ -246,6 +252,10 @@ def run() raises:
                     _ = proto.serialize_bytes(fx)
                 elif nm == gldj.name():
                     _ = gldj.serialize_bytes(fx)
+                elif nm == yaml.name():
+                    _ = yaml.serialize_bytes(fx)
+                elif nm == msgp.name():
+                    _ = msgp.serialize_bytes(fx)
                 else:
                     _ = toml.serialize_bytes(fx)
                 ready.append(nm)
@@ -341,6 +351,30 @@ def run() raises:
                             var buf = gldj.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = gldj.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == yaml.name():
+                            ver = yaml.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = yaml.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = yaml.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == msgp.name():
+                            ver = msgp.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = msgp.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = msgp.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1

@@ -1,0 +1,292 @@
+/* Compliance view — independent of language-latest dashboard chrome. */
+
+#compliance {
+  display: none;
+}
+
+body.dash-view-compliance #compliance {
+  display: block;
+}
+
+body.dash-view-compliance .toolbar,
+body.dash-view-compliance .summary-grid,
+body.dash-view-compliance .charts-grid,
+body.dash-view-compliance #detailed-analytics,
+body.dash-view-compliance #compare,
+body.dash-view-compliance #history-custom,
+body.dash-view-compliance #orientation-banner,
+body.dash-view-compliance #run-meta,
+body.dash-view-compliance #filter-policy-meta,
+body.dash-view-compliance #experiments {
+  display: none !important;
+}
+
+.cmp-header {
+  margin-bottom: 0.75rem;
+}
+
+.cmp-scope {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  background: var(--bg-yellow-light);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.cmp-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+}
+
+.cmp-kicker {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 1.1rem 0 0.45rem;
+}
+
+.cmp-heat-wrap {
+  overflow-x: auto;
+}
+
+.cmp-heat-list {
+  width: auto;
+  max-width: 28rem;
+}
+
+.cmp-heat th,
+.cmp-heat td {
+  text-align: center;
+  font-size: 0.78rem;
+  vertical-align: middle;
+}
+
+.cmp-heat th:first-child,
+.cmp-heat td:first-child,
+.cmp-heat tbody th {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cmp-heat thead th a.cmp-col-spec {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  font-weight: 600;
+}
+
+.cmp-heat thead th a.cmp-col-spec:hover,
+.cmp-heat thead th a.cmp-col-spec:focus-visible {
+  color: var(--color-blue, #1a73e8);
+}
+
+.cmp-ver {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.cmp-heat td small {
+  display: block;
+  color: inherit;
+  opacity: 0.75;
+  font-size: 0.7rem;
+}
+
+.cmp-cell-btn {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.15rem 0.2rem;
+  white-space: nowrap;
+}
+
+.cmp-cell-btn:hover,
+.cmp-cell-btn:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: -2px;
+  border-radius: 0.25rem;
+}
+
+.cmp-fail-panel {
+  margin: 0.85rem 0 0;
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: var(--bg-surface);
+}
+
+.cmp-fail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.cmp-fail-head h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.cmp-fail-card {
+  border-top: 1px solid var(--border-color);
+  padding: 0.75rem 0 0.35rem;
+}
+
+.cmp-fail-card:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.cmp-fail-id {
+  font-size: 0.95rem;
+  margin: 0 0 0.15rem;
+}
+
+.cmp-fail-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0 0 0.55rem;
+}
+
+.cmp-fail-dl {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+}
+
+.cmp-fail-dl dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-top: 0.15rem;
+}
+
+.cmp-fail-dl dd {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.cmp-fail-dl pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.82rem;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.cmp-rule {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.cmp-cell-ok {
+  background: var(--bg-green-light);
+  color: var(--color-green);
+  font-weight: 600;
+}
+
+.cmp-cell-warn {
+  background: var(--bg-yellow-light);
+  color: #b06000;
+  font-weight: 600;
+}
+
+.cmp-cell-bad {
+  background: var(--bg-red-light);
+  color: var(--color-red);
+  font-weight: 600;
+}
+
+.cmp-cell-empty {
+  color: var(--text-muted);
+}
+
+.cmp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  align-items: end;
+  margin: 0 0 0.65rem;
+}
+
+.cmp-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.cmp-filter select {
+  min-width: 8rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.35rem;
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.cmp-filter-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding-bottom: 0.35rem;
+}
+
+.cmp-pill {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cmp-pill-fail {
+  background: var(--bg-red-light);
+  color: var(--color-red);
+}
+
+.cmp-pill-pass {
+  background: var(--bg-green-light);
+  color: var(--color-green);
+}
+
+.cmp-pill-skip {
+  background: var(--bg-blue-light);
+  color: var(--color-blue);
+}
+
+.cmp-obs {
+  max-width: 22rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.cmp-cases td a {
+  color: var(--color-blue);
+}
+
+@media (max-width: 720px) {
+  .cmp-obs {
+    max-width: 12rem;
+  }
+}

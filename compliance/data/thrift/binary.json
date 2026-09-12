@@ -1,0 +1,94 @@
+{
+  "format": "thrift",
+  "standard": "Apache Thrift binary protocol",
+  "version": "binary",
+  "standard_url": "https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md",
+  "provenance": "original-work",
+  "notes": "TBinaryProtocol field headers. Original values.",
+  "cases": [
+    {
+      "id": "thrift-stop",
+      "title": "Empty struct is a STOP byte",
+      "section": "Struct",
+      "section_title": "STOP",
+      "section_url": "https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md",
+      "paragraph": "A struct is a sequence of fields ended by type STOP (0x00).",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "thrift-bool-true",
+      "title": "Bool field 1 = true",
+      "section": "Field",
+      "section_title": "BOOL",
+      "section_url": "https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md",
+      "paragraph": "Type 2 is bool. The field header is type + i16 id, then one byte 0 or 1.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "02000101 00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "thrift-i32",
+      "title": "I32 field 1 = 7",
+      "section": "Field",
+      "section_title": "I32",
+      "section_url": "https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md",
+      "paragraph": "Type 8 is a big-endian int32.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "08000100000007 00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "thrift-string",
+      "title": "STRING field 1 = kelp",
+      "section": "Field",
+      "section_title": "STRING",
+      "section_url": "https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md",
+      "paragraph": "Type 11 is an i32 length plus that many UTF-8 bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "0b0001000000046b656c70 00",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "thrift-empty",
+      "title": "Empty buffer is not a struct",
+      "section": "Struct",
+      "section_title": "STOP",
+      "section_url": "https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md",
+      "paragraph": "A struct must end with STOP.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "thrift-trunc-i32",
+      "title": "I32 field shorter than 4 bytes",
+      "section": "Field",
+      "section_title": "I32",
+      "section_url": "https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md",
+      "paragraph": "An I32 payload is four bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0800010000",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "thrift-bad-type",
+      "title": "Unknown field type",
+      "section": "Field",
+      "section_title": "type",
+      "section_url": "https://github.com/apache/thrift/blob/master/doc/specs/thrift-binary-protocol.md",
+      "paragraph": "The type byte must be a defined Thrift type.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "0f000100",
+      "input_encoding": "hex"
+    }
+  ]
+}

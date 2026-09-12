@@ -1,22 +1,34 @@
-# json - Copy-on-write owned tree representation.
+# json - Conversion between `Value` (tape view) and `OwnedValue` (tree).
 #
-# `OwnedValue` is the structured tree representation of a JSON value
-# used for mutation. `Value.set` / `Value.append` / `Value.set_at`
-# route through this type instead of doing raw-string surgery on
-# `Value._raw`. The rewrite path is:
+# The owned tree itself lives in `node.mojo`; this module owns the
+# translation in both directions plus the JSON-Pointer mutation walk:
 #
-#   raw_json --(_value_to_owned)--> OwnedValue --(mutate)--> OwnedValue
-#                                                                |
-#   raw_json <--(_owned_to_json)----------------------------------+
+#   Document tape --(_view_to_owned)--> OwnedValue
+#   OwnedValue    --(_owned_to_tape)--> Document tape
+#   raw JSON      --(_parse_owned_value)--> OwnedValue
+#   OwnedValue    --(_owned_to_json)--> raw JSON
 #
-# This is O(N) per mutation but eliminates the silent-bug class where
-# surgery on a sibling subtree corrupts adjacent text.
+# Each conversion is O(N) in the subtree, so callers must not run one
+# per mutation. `Value` keeps the owned tree live across mutations and
+# converts at most once, on the first write to a tape-backed value --
+# doing it per mutation is what previously made building a tree O(N^2).
 
 from std.collections import List
-from std.collections.dict import Dict
 from std.memory import ArcPointer
 
+from .node import (
+    OwnedValue,
+    OWNED_NULL,
+    OWNED_BOOL,
+    OWNED_INT,
+    OWNED_FLOAT,
+    OWNED_STRING,
+    OWNED_ARRAY,
+    OWNED_OBJECT,
+)
+from .raw_ops import escape_json_string
 from .value import Value, Null, make_view_value
+from ..writer import JsonWriter
 from ..document import (
     Document,
     pack_tape_entry,
@@ -35,108 +47,6 @@ from ..unicode import unescape_json_string, unescape_json_string_span
 
 
 # ---------------------------------------------------------------------------
-# OwnedValue
-# ---------------------------------------------------------------------------
-
-
-struct OwnedValue(Copyable, Deinitable, Movable):
-    """Structured tree representation of a JSON value.
-
-    Unlike `Value`, an `OwnedValue` for an array stores its children in
-    `array_val: List[OwnedValue]` rather than as a raw JSON substring,
-    so a mutation at any nesting level can be applied in place and a
-    fresh JSON serialization can be produced after the fact.
-    """
-
-    # Type tag: 0=null, 1=bool, 2=int, 3=float, 4=string, 5=array, 6=object.
-    var kind: Int
-    var bool_val: Bool
-    var int_val: Int64
-    var float_val: Float64
-    var str_val: String
-    var array_val: List[OwnedValue]
-    var object_keys: List[String]
-    var object_values: List[OwnedValue]
-
-    def __init__(out self):
-        self.kind = 0
-        self.bool_val = False
-        self.int_val = 0
-        self.float_val = 0.0
-        self.str_val = String()
-        self.array_val = List[OwnedValue]()
-        self.object_keys = List[String]()
-        self.object_values = List[OwnedValue]()
-
-    def __deinit__(deinit self):
-        # Explicit (no-op) deinit breaks the self-referential
-        # `List[OwnedValue]` field's `Deinitable` completeness check;
-        # fields are still destroyed automatically after this runs.
-        pass
-
-    def copy(self) -> Self:
-        var out = Self()
-        out.kind = self.kind
-        out.bool_val = self.bool_val
-        out.int_val = self.int_val
-        out.float_val = self.float_val
-        out.str_val = self.str_val
-        out.array_val = self.array_val.copy()
-        out.object_keys = self.object_keys.copy()
-        out.object_values = self.object_values.copy()
-        return out^
-
-    @staticmethod
-    def make_null() -> Self:
-        return Self()
-
-    @staticmethod
-    def make_bool(b: Bool) -> Self:
-        var v = Self()
-        v.kind = 1
-        v.bool_val = b
-        return v^
-
-    @staticmethod
-    def make_int(i: Int64) -> Self:
-        var v = Self()
-        v.kind = 2
-        v.int_val = i
-        return v^
-
-    @staticmethod
-    def make_float(f: Float64) -> Self:
-        var v = Self()
-        v.kind = 3
-        v.float_val = f
-        return v^
-
-    @staticmethod
-    def make_string(var s: String) -> Self:
-        var v = Self()
-        v.kind = 4
-        v.str_val = s^
-        return v^
-
-    @staticmethod
-    def make_array(var items: List[OwnedValue]) -> Self:
-        var v = Self()
-        v.kind = 5
-        v.array_val = items^
-        return v^
-
-    @staticmethod
-    def make_object(
-        var keys: List[String], var values: List[OwnedValue]
-    ) -> Self:
-        var v = Self()
-        v.kind = 6
-        v.object_keys = keys^
-        v.object_values = values^
-        return v^
-
-
-# ---------------------------------------------------------------------------
 # Value <-> OwnedValue conversion
 # ---------------------------------------------------------------------------
 
@@ -144,10 +54,12 @@ struct OwnedValue(Copyable, Deinitable, Movable):
 def _value_to_owned(v: Value) raises -> OwnedValue:
     """Convert a `Value` to an `OwnedValue` tree.
 
-    `Value` is always a tape-backed view, so containers walk
-    `Document.tape` directly via `_view_to_owned`; no JSON
-    serialization, no parsing.
+    A value already holding an owned tree hands back a copy. A
+    tape-backed view walks `Document.tape` directly via
+    `_view_to_owned` -- no JSON serialization, no parsing.
     """
+    if not v._is_view():
+        return v._owned.copy()
     if v.is_null():
         return OwnedValue.make_null()
     if v.is_bool():
@@ -159,7 +71,7 @@ def _value_to_owned(v: Value) raises -> OwnedValue:
     if v.is_string():
         return OwnedValue.make_string(v.string_value())
     if v.is_array() or v.is_object():
-        return _view_to_owned(v._doc, v._tape_idx)
+        return _view_to_owned(v._doc.value(), v._tape_idx)
     raise Error("Unknown Value kind in _value_to_owned")
 
 
@@ -487,58 +399,89 @@ def _skip_to_object_separator(bytes: Span[UInt8, _], start: Int, n: Int) -> Int:
 
 
 def _owned_to_json(o: OwnedValue) -> String:
-    """Serialize an `OwnedValue` back into a JSON string."""
-    if o.kind == 0:
-        return "null"
-    if o.kind == 1:
-        return "true" if o.bool_val else "false"
-    if o.kind == 2:
-        return String(o.int_val)
-    if o.kind == 3:
-        return String(o.float_val)
-    if o.kind == 4:
-        return _escape_json_string(o.str_val)
-    if o.kind == 5:
-        var out = String("[")
+    """Serialize an `OwnedValue` tree to JSON."""
+    var w = JsonWriter(capacity=_estimate_owned_bytes(o))
+    _write_owned(w, o)
+    return w^.finish_string()
+
+
+def _estimate_owned_bytes(o: OwnedValue) -> Int:
+    """Rough output size, to size the writer once.
+
+    A shallow walk: exact for scalars, and for containers it sums child
+    estimates rather than guessing a constant, since a hand-built tree
+    has no input string to measure against. `ensure` covers any
+    shortfall from escaping.
+    """
+    if o.kind == OWNED_NULL:
+        return 4
+    if o.kind == OWNED_BOOL:
+        return 5
+    if o.kind == OWNED_INT:
+        return 20
+    if o.kind == OWNED_FLOAT:
+        return 24
+    if o.kind == OWNED_STRING:
+        return o.str_val.byte_length() + 2
+    if o.kind == OWNED_ARRAY:
+        var n = 2
         for i in range(len(o.array_val)):
-            if i > 0:
-                out += ","
-            out += _owned_to_json(o.array_val[i])
-        out += "]"
-        return out^
-    if o.kind == 6:
-        var out = String("{")
+            n += _estimate_owned_bytes(o.array_val[i]) + 1
+        return n
+    if o.kind == OWNED_OBJECT:
+        var n = 2
         for i in range(len(o.object_keys)):
-            if i > 0:
-                out += ","
-            out += _escape_json_string(o.object_keys[i])
-            out += ":"
-            out += _owned_to_json(o.object_values[i])
-        out += "}"
-        return out^
-    return "null"
+            n += o.object_keys[i].byte_length() + 4
+            n += _estimate_owned_bytes(o.object_values[i]) + 1
+        return n
+    return 4
+
+
+def _write_owned(mut w: JsonWriter, o: OwnedValue):
+    """Walk an owned tree into `w`, copying each leaf's bytes once."""
+    if o.kind == OWNED_NULL:
+        w.write_null()
+        return
+    if o.kind == OWNED_BOOL:
+        w.write_bool(o.bool_val)
+        return
+    if o.kind == OWNED_INT:
+        w.write_int(o.int_val)
+        return
+    if o.kind == OWNED_FLOAT:
+        w.write_float(o.float_val)
+        return
+    if o.kind == OWNED_STRING:
+        w.write_string(o.str_val)
+        return
+    if o.kind == OWNED_ARRAY:
+        w.open_container(UInt8(0x5B))
+        for i in range(len(o.array_val)):
+            w.next_child(i == 0)
+            _write_owned(w, o.array_val[i])
+        w.close_container(UInt8(0x5D), len(o.array_val) == 0)
+        return
+    if o.kind == OWNED_OBJECT:
+        w.open_container(UInt8(0x7B))
+        for i in range(len(o.object_keys)):
+            w.next_child(i == 0)
+            w.write_string(o.object_keys[i])
+            w.colon()
+            _write_owned(w, o.object_values[i])
+        w.close_container(UInt8(0x7D), len(o.object_keys) == 0)
+        return
+    w.write_null()
 
 
 def _escape_json_string(s: String) -> String:
-    """Render a Mojo string as a JSON string literal."""
-    var out = String('"')
-    var bytes = s.as_bytes()
-    for i in range(len(bytes)):
-        var c = bytes[i]
-        if c == UInt8(ord('"')):
-            out += '\\"'
-        elif c == UInt8(ord("\\")):
-            out += "\\\\"
-        elif c == UInt8(ord("\n")):
-            out += "\\n"
-        elif c == UInt8(ord("\r")):
-            out += "\\r"
-        elif c == UInt8(ord("\t")):
-            out += "\\t"
-        else:
-            out += chr(Int(c))
-    out += '"'
-    return out^
+    """Deprecated shim: use `escape_json_string` from `raw_ops`.
+
+    Kept only so existing callers in this module keep working. This used
+    to be its own implementation that omitted the U+0000..U+001F range,
+    so a control character in a hand-built object serialized to invalid
+    JSON while the same value from a tape did not.
+    """
+    return escape_json_string(s)
 
 
 # ---------------------------------------------------------------------------
@@ -594,22 +537,22 @@ def _emit_owned_to_doc(mut doc: Document, o: OwnedValue) -> UInt64:
     is NOT appended (the caller does that).
     """
     var payload_mask = (UInt64(1) << 60) - 1
-    if o.kind == 0:
+    if o.kind == OWNED_NULL:
         return pack_tape_entry(TAPE_TAG_NULL, 0)
-    if o.kind == 1:
+    if o.kind == OWNED_BOOL:
         var b: UInt64 = 1 if o.bool_val else 0
         return pack_tape_entry(TAPE_TAG_BOOL, b)
-    if o.kind == 2:
+    if o.kind == OWNED_INT:
         return pack_tape_entry(TAPE_TAG_INT, UInt64(o.int_val) & payload_mask)
-    if o.kind == 3:
+    if o.kind == OWNED_FLOAT:
         var pool_idx = len(doc.float_pool)
         doc.float_pool.append(o.float_val)
         return pack_tape_entry(TAPE_TAG_FLOAT, UInt64(pool_idx))
-    if o.kind == 4:
+    if o.kind == OWNED_STRING:
         var pool_idx = len(doc.string_pool)
         doc.string_pool.append(o.str_val.copy())
         return pack_tape_entry(TAPE_TAG_STRING_OWNED, UInt64(pool_idx))
-    if o.kind == 5:
+    if o.kind == OWNED_ARRAY:
         var count = len(o.array_val)
         var headers = List[UInt64](capacity=count)
         for i in range(count):
@@ -621,7 +564,7 @@ def _emit_owned_to_doc(mut doc: Document, o: OwnedValue) -> UInt64:
             TAPE_TAG_ARRAY,
             pack_pair(UInt64(count), UInt64(child_start)),
         )
-    if o.kind == 6:
+    if o.kind == OWNED_OBJECT:
         var pair_count = len(o.object_keys)
         var headers = List[UInt64](capacity=2 * pair_count)
         for i in range(pair_count):
@@ -659,7 +602,7 @@ def _set_at_pointer(
 
     var token = tokens[idx]
 
-    if tree.kind == 6:  # object
+    if tree.kind == OWNED_OBJECT:
         var key_pos = -1
         for i in range(len(tree.object_keys)):
             if tree.object_keys[i] == token:
@@ -679,7 +622,7 @@ def _set_at_pointer(
             )
         return
 
-    if tree.kind == 5:  # array
+    if tree.kind == OWNED_ARRAY:
         var index: Int
         try:
             index = atol(token)

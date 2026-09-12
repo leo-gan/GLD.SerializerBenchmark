@@ -82,6 +82,7 @@ dependencies {
     implementation("io.protostuff:protostuff-runtime:$protostuff")
 
     implementation("com.google.protobuf:protobuf-java:$protobuf")
+    implementation("com.google.protobuf:protobuf-java-util:$protobuf")
     implementation("com.google.protobuf:protobuf-kotlin:$protobuf")
     implementation("org.msgpack:jackson-dataformat-msgpack:$msgpack")
     implementation("com.google.flatbuffers:flatbuffers-java:$flatbuffers")

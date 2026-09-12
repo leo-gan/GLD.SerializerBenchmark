@@ -1,0 +1,76 @@
+{
+  "format": "bebop",
+  "standard": "Bebop",
+  "version": "1",
+  "standard_url": "https://github.com/6over3/bebop/wiki/Wire-format",
+  "provenance": "original-work",
+  "notes": "Original well-formedness cases from the Bebop specification.",
+  "cases": [
+    {
+      "id": "bebop-empty-struct",
+      "title": "Empty struct is zero bytes",
+      "section": "Structs",
+      "section_title": "empty",
+      "section_url": "https://github.com/6over3/bebop/wiki/Wire-format",
+      "paragraph": "A struct with no fields encodes to zero bytes.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "",
+      "input_encoding": "hex"
+    },
+    {
+      "id": "bebop-bool-true",
+      "title": "Bool true is 0x01",
+      "section": "Types",
+      "section_title": "bool",
+      "section_url": "https://github.com/6over3/bebop/wiki/Wire-format",
+      "paragraph": "A bool is one byte, 0 or 1.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "01",
+      "input_encoding": "hex",
+      "decoded": true,
+      "schema": "bool"
+    },
+    {
+      "id": "bebop-bool-false",
+      "title": "Bool false is 0x00",
+      "section": "Types",
+      "section_title": "bool",
+      "section_url": "https://github.com/6over3/bebop/wiki/Wire-format",
+      "paragraph": "A bool is one byte, 0 or 1.",
+      "requirement": "MUST",
+      "expect": "accept",
+      "input": "00",
+      "input_encoding": "hex",
+      "decoded": false,
+      "schema": "bool"
+    },
+    {
+      "id": "bebop-guid-short",
+      "title": "GUID shorter than 16 bytes",
+      "section": "Types",
+      "section_title": "guid",
+      "section_url": "https://github.com/6over3/bebop/wiki/Wire-format",
+      "paragraph": "A guid is exactly 16 bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "00000000",
+      "input_encoding": "hex",
+      "schema": "guid"
+    },
+    {
+      "id": "bebop-string-trunc",
+      "title": "String shorter than declared length",
+      "section": "Types",
+      "section_title": "string",
+      "section_url": "https://github.com/6over3/bebop/wiki/Wire-format",
+      "paragraph": "A string is a uint32 length plus that many UTF-8 bytes.",
+      "requirement": "MUST NOT",
+      "expect": "reject",
+      "input": "040000006b65",
+      "input_encoding": "hex",
+      "schema": "string"
+    }
+  ]
+}
