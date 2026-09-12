@@ -62,7 +62,6 @@ class KryoSer : BenchSerializer {
     override fun serializeBytes(fx: Fixture): ByteArray {
         baos.reset()
         output.setOutputStream(baos)
-        output.reset()
         kryo.writeClassAndObject(output, fx.value)
         output.flush()
         return baos.toByteArray()
@@ -75,7 +74,6 @@ class KryoSer : BenchSerializer {
 
     override fun serializeStream(fx: Fixture, out: OutputStream): Int {
         output.setOutputStream(out)
-        output.reset()
         kryo.writeClassAndObject(output, fx.value)
         output.flush()
         return output.total().toInt()

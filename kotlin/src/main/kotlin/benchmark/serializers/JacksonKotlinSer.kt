@@ -39,6 +39,8 @@ class JacksonKotlinSer : BenchSerializer {
             writer = mapper.writerFor(fx.value.javaClass)
             reader = mapper.readerFor(fx.value.javaClass)
         }
+        // Untimed: build the deserializer graph + kotlin-reflect (otherwise first timed readValue pays it).
+        reader.readValue<Any>(writer.writeValueAsBytes(fx.value))
     }
 
     override fun serializeBytes(fx: Fixture): ByteArray = writer.writeValueAsBytes(fx.value)

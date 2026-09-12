@@ -34,7 +34,7 @@ public final class JacksonSer implements BenchSerializer {
   public JacksonSer() {
     mapper = new ObjectMapper();
     // Field-visible POJOs (public fields); no pretty print.
-    mapper.findAndRegisterModules();
+    // Do not findAndRegisterModules(): that pulls arbitrary classpath modules.
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
   }
