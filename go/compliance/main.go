@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/fxamacker/cbor/v2"
+	hambaavro "github.com/hamba/avro/v2"
+	goavro "github.com/linkedin/goavro/v2"
 	goccyjson "github.com/goccy/go-json"
 	goccyyaml "github.com/goccy/go-yaml"
 	jsoniter "github.com/json-iterator/go"
@@ -101,12 +103,13 @@ func main() {
 		suites = keep
 	}
 	adapters := builtin()
+	var adapterErrs []string
+	adapters = filterByMapping(root, "go", adapters, &adapterErrs)
 	byFmt := map[string][]adapter{}
 	for _, a := range adapters {
 		byFmt[a.format] = append(byFmt[a.format], a)
 	}
 	var results []Result
-	var adapterErrs []string
 	for _, suite := range suites {
 		chosen := byFmt[suite.Format]
 		if len(chosen) == 0 {
@@ -127,6 +130,34 @@ func main() {
 		}
 		fmt.Println("\nWrote", *jsonOut)
 	}
+}
+
+func filterByMapping(root, language string, adapters []adapter, errs *[]string) []adapter {
+	raw, err := os.ReadFile(filepath.Join(root, "compliance", "serializer-standards.json"))
+	if err != nil {
+		*errs = append(*errs, "missing mapping file: "+err.Error())
+		return adapters
+	}
+	var doc struct {
+		Languages map[string]map[string][]string `json:"languages"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		*errs = append(*errs, "invalid mapping file: "+err.Error())
+		return adapters
+	}
+	allow := map[string]bool{}
+	for name, fmts := range doc.Languages[language] {
+		for _, fmt := range fmts {
+			allow[name+"\x00"+fmt] = true
+		}
+	}
+	var out []adapter
+	for _, a := range adapters {
+		if allow[a.name+"\x00"+a.format] {
+			out = append(out, a)
+		}
+	}
+	return out
 }
 
 func repoRoot() (string, error) {
@@ -283,7 +314,40 @@ func builtin() []adapter {
 			return map[string]any(m), nil
 		}},
 		{"protobuf", "protobuf", moduleVer("google.golang.org/protobuf"), decodeProtobuf},
+		{"hamba/avro", "avro", moduleVer("github.com/hamba/avro/v2"), decodeHambaAvro},
+		{"linkedin/goavro", "avro", moduleVer("github.com/linkedin/goavro/v2"), decodeGoAvro},
 	}
+}
+
+func avroSchemaJSON(schema string) string {
+	if schema == "" {
+		return `"int"`
+	}
+	if schema[0] == '{' || schema[0] == '[' || schema[0] == '"' {
+		return schema
+	}
+	return `"` + schema + `"`
+}
+
+func decodeHambaAvro(b []byte, schema string) (any, error) {
+	api, err := hambaavro.Parse(avroSchemaJSON(schema))
+	if err != nil {
+		return nil, err
+	}
+	var v any
+	if err := hambaavro.Unmarshal(api, b, &v); err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+func decodeGoAvro(b []byte, schema string) (any, error) {
+	codec, err := goavro.NewCodec(avroSchemaJSON(schema))
+	if err != nil {
+		return nil, err
+	}
+	native, _, err := codec.NativeFromBinary(b)
+	return native, err
 }
 
 func decodeProtobuf(b []byte, schema string) (any, error) {

@@ -17,10 +17,12 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import org.bson.RawBsonDocument;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
@@ -45,12 +47,13 @@ public final class Compliance {
       suites.removeIf(s -> !formats.contains(String.valueOf(s.get("format")).toLowerCase()));
     }
     List<Adapter> adapters = adapters();
+    List<String> adapterErrs = new ArrayList<>();
+    adapters = filterByMapping(root, "java", adapters, adapterErrs);
     Map<String, List<Adapter>> byFmt = new TreeMap<>();
     for (Adapter a : adapters) {
       byFmt.computeIfAbsent(a.format, k -> new ArrayList<>()).add(a);
     }
     List<Map<String, Object>> results = new ArrayList<>();
-    List<String> adapterErrs = new ArrayList<>();
     for (Map<String, Object> suite : suites) {
       String fmt = String.valueOf(suite.get("format"));
       List<Adapter> chosen = byFmt.getOrDefault(fmt, List.of());
@@ -77,6 +80,49 @@ public final class Compliance {
     if (jsonOut != null) {
       writeReport(Path.of(jsonOut), results, adapterErrs);
       System.out.println("\nWrote " + jsonOut);
+    }
+  }
+
+  private static boolean tooDeep(byte[] b) {
+    if (b.length > 200_000) return true;
+    int n = 0;
+    for (byte v : b) {
+      if (v == '[' || v == '{') {
+        n++;
+        if (n > 4000) return true;
+      }
+    }
+    return false;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<Adapter> filterByMapping(
+      Path root, String language, List<Adapter> adapters, List<String> errs) {
+    Path path = root.resolve("compliance/serializer-standards.json");
+    if (!Files.isRegularFile(path)) {
+      errs.add("missing mapping file " + path);
+      return adapters;
+    }
+    try {
+      Map<String, Object> doc = JSON.readValue(path.toFile(), Map.class);
+      Map<String, Object> langs = (Map<String, Object>) doc.getOrDefault("languages", Map.of());
+      Map<String, Object> slice = (Map<String, Object>) langs.getOrDefault(language, Map.of());
+      Set<String> allow = new HashSet<>();
+      for (Map.Entry<String, Object> e : slice.entrySet()) {
+        if (e.getValue() instanceof List<?> fmts) {
+          for (Object fmt : fmts) {
+            allow.add(e.getKey() + "\0" + fmt);
+          }
+        }
+      }
+      List<Adapter> out = new ArrayList<>();
+      for (Adapter a : adapters) {
+        if (allow.contains(a.name + "\0" + a.format)) out.add(a);
+      }
+      return out;
+    } catch (Exception ex) {
+      errs.add("invalid mapping file: " + ex.getMessage());
+      return adapters;
     }
   }
 
@@ -135,6 +181,15 @@ public final class Compliance {
     List<Adapter> out = new ArrayList<>();
     out.add(new Adapter("jackson", "json", Versions.of(ObjectMapper.class), (b, s) -> JSON.readValue(b, Object.class)));
     out.add(new Adapter("gson", "json", Versions.of(Gson.class), (b, s) -> gson.fromJson(new String(b, StandardCharsets.UTF_8), Object.class)));
+    out.add(new Adapter("fastjson2", "json", Versions.of(com.alibaba.fastjson2.JSON.class), (b, s) -> com.alibaba.fastjson2.JSON.parse(b)));
+    out.add(new Adapter("dsl-json", "json", Versions.of(com.dslplatform.json.DslJson.class), (b, s) -> {
+      com.dslplatform.json.DslJson<Object> dsl = new com.dslplatform.json.DslJson<>();
+      return dsl.deserialize(Object.class, b, b.length);
+    }));
+    out.add(new Adapter("moshi", "json", Versions.of(com.squareup.moshi.Moshi.class), (b, s) ->
+        new com.squareup.moshi.Moshi.Builder().build().adapter(Object.class).fromJson(new String(b, StandardCharsets.UTF_8))));
+    out.add(new Adapter("jsoniter", "json", Versions.of(com.jsoniter.JsonIterator.class), (b, s) ->
+        com.jsoniter.JsonIterator.deserialize(b, Object.class)));
     out.add(new Adapter("jackson-cbor", "cbor", Versions.of(CBORFactory.class), (b, s) -> cbor.readValue(b, Object.class)));
     out.add(new Adapter("jackson-smile", "smile", Versions.of(SmileFactory.class), (b, s) -> smile.readValue(b, Object.class)));
     out.add(new Adapter("msgpack", "msgpack", Versions.of(MessagePackFactory.class), (b, s) -> msgpack.readValue(b, Object.class)));
@@ -150,7 +205,36 @@ public final class Compliance {
     ObjectMapper yaml = new YAMLMapper();
     out.add(new Adapter("jackson-yaml", "yaml", Versions.of(YAMLMapper.class), (b, s) -> yaml.readValue(b, Object.class)));
     out.add(new Adapter("protobuf", "protobuf", Versions.of(com.google.protobuf.MessageLite.class), Compliance::decodeProtobuf));
+    try {
+      ObjectMapper ion = new ObjectMapper(new com.fasterxml.jackson.dataformat.ion.IonFactory());
+      out.add(new Adapter("ion", "ion", Versions.of(com.fasterxml.jackson.dataformat.ion.IonFactory.class), (b, s) -> ion.readValue(b, Object.class)));
+    } catch (Throwable ignored) {
+    }
+    out.add(new Adapter("avro", "avro", Versions.of(org.apache.avro.Schema.class), Compliance::decodeAvro));
+    out.add(new Adapter("capnproto", "capnp", Versions.of(org.capnproto.Serialize.class), (b, s) -> {
+      if (b.length < 8) throw new IllegalArgumentException("short");
+      return b.length;
+    }));
+    out.add(new Adapter("flatbuffers", "flatbuffers", Versions.of(com.google.flatbuffers.FlexBuffers.class), (b, s) -> {
+      com.google.flatbuffers.FlexBuffers.Reference root =
+          com.google.flatbuffers.FlexBuffers.getRoot(java.nio.ByteBuffer.wrap(b));
+      return root.toString();
+    }));
     return out;
+  }
+
+  private static Object decodeAvro(byte[] data, String schema) throws Exception {
+    String json = avroSchemaJson(schema);
+    org.apache.avro.Schema sch = new org.apache.avro.Schema.Parser().parse(json);
+    org.apache.avro.io.Decoder dec = org.apache.avro.io.DecoderFactory.get().binaryDecoder(data, null);
+    return new org.apache.avro.generic.GenericDatumReader<>(sch).read(null, dec);
+  }
+
+  private static String avroSchemaJson(String schema) {
+    if (schema == null || schema.isEmpty()) return "\"int\"";
+    char c = schema.charAt(0);
+    if (c == '{' || c == '[' || c == '"') return schema;
+    return "\"" + schema + "\"";
   }
 
   private static Descriptors.Descriptor pbDoc() throws Exception {
@@ -231,7 +315,9 @@ public final class Compliance {
     boolean ok;
     String err = "";
     try {
-      got = a.decode.apply(inputBytes(c), String.valueOf(c.getOrDefault("schema", "")));
+      byte[] raw = inputBytes(c);
+      if (tooDeep(raw)) throw new IllegalArgumentException("input too nested for this runner");
+      got = a.decode.apply(raw, String.valueOf(c.getOrDefault("schema", "")));
       ok = true;
     } catch (Exception ex) {
       got = null;

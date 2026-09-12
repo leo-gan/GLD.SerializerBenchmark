@@ -1,7 +1,7 @@
 # Is it the format, or the library?
 
 **Question:** If one library can write several formats, how much of the difference is the format, and how much is that library?
-**Date:** 2026-09-09
+**Date:** 2026-09-12
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -22,7 +22,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | csharp | ok | `MS Bond Fast` | — | `MS Bond Fast`, `MS Bond Compact` | [csharp/results.md](csharp/results.md) |
 | javascript | ok | `google-protobuf` | — | `google-protobuf` | [javascript/results.md](javascript/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `mojo-avro` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| mojo | ok | `mojo-avro` | `mojo-json` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## In memory, by language
 
@@ -141,13 +141,13 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 1.61 | 118 | Avro | fastest |
+| mojo-avro | 1.57 | 118 | Avro | fastest |
+| mojo-json | 1.62 | 452 | JSON — mojo-json | close |
 | EmberJson | 2.07 | 452 | JSON — EmberJson | slower |
-| mojo-protobuf | 2.23 | 157 | Protocol Buffers | slower |
-| mojo-cbor | 4.46 | 329 | CBOR | slower |
-| mojo-json | 5.03 | 452 | JSON — mojo-json | slower |
-| ehsanmok-json | 60.3 | 452 | JSON — ehsanmok/json | slower |
-| mojo-toml | 73.8 | 489 | TOML | slower |
+| mojo-protobuf | 2.20 | 157 | Protocol Buffers | slower |
+| mojo-cbor | 4.35 | 329 | CBOR | slower |
+| ehsanmok-json | 6.95 | 452 | JSON — ehsanmok/json | slower |
+| mojo-toml | 72.7 | 489 | TOML | slower |
 
 ## What we saw
 

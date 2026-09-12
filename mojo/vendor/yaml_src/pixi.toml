@@ -1,0 +1,29 @@
+[workspace]
+name = "mojo-yaml"
+version = "0.2.0"
+description = "From-scratch YAML library for Mojo"
+authors = ["Leonid Ganeline"]
+channels = ["https://conda.modular.com/max", "conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+mojo = "==1.0.0"
+
+[feature.oracle.dependencies]
+python = ">=3.11"
+pyyaml = ">=6.0"
+
+[feature.bench.tasks]
+microbench = "bash scripts/run-microbench.sh"
+
+[environments]
+default = { features = [] }
+oracle = ["oracle"]
+bench = ["bench"]
+
+[tasks]
+test = "bash scripts/run-tests.sh"
+golden = "python3 scripts/gen_golden.py"
+generate = "bash scripts/generate.sh"
+precompile = "bash scripts/precompile.sh"
+check-generated = "bash scripts/check-generated.sh"

@@ -36,6 +36,20 @@ function pkgVersion(name) {
   }
 }
 
+function loadMapping(language) {
+  const raw = JSON.parse(readFileSync(join(repoRoot, 'compliance/serializer-standards.json'), 'utf8'));
+  return raw?.languages?.[language] || {};
+}
+
+function applyMapping(language, adapters) {
+  const slice = loadMapping(language);
+  const allow = new Set();
+  for (const [name, fmts] of Object.entries(slice)) {
+    for (const fmt of fmts || []) allow.add(`${name}\0${fmt}`);
+  }
+  return adapters.filter((a) => allow.has(`${a.name}\0${a.format}`));
+}
+
 function parseArgs(argv) {
   const out = { jsonOut: null, formats: [], serializers: [] };
   for (let i = 2; i < argv.length; i++) {
@@ -195,8 +209,15 @@ function makeAdapters() {
     adapters.push({ name, format, decode, notes, version: pkgVersion(pkg) });
   };
 
-  add('JSON.parse', 'json', (buf) => JSON.parse(buf.toString('utf8')), 'Node JSON.parse', '');
+  add('JSON.stringify', 'json', (buf) => JSON.parse(buf.toString('utf8')), 'Node JSON.parse', '');
   adapters[adapters.length - 1].version = `node-${process.versions.node}`;
+  add('fast-json-stringify', 'json', (buf) => JSON.parse(buf.toString('utf8')), 'fjs is encode-only; decode is JSON.parse', 'fast-json-stringify');
+  try {
+    const simdjson = require('simdjson');
+    add('simdjson-parse+JSON.stringify', 'json', (buf) => simdjson.parse(buf.toString('utf8')), 'simdjson.parse', 'simdjson');
+  } catch {
+    add('simdjson-parse+JSON.stringify', 'json', (buf) => JSON.parse(buf.toString('utf8')), 'JSON.parse fallback', '');
+  }
   try {
     const yaml = require('js-yaml');
     add('js-yaml', 'yaml', (buf) => yaml.load(buf.toString('utf8')), 'js-yaml load', 'js-yaml');
@@ -220,10 +241,25 @@ function makeAdapters() {
     add('@msgpack/msgpack', 'msgpack', (buf) => mp.decode(buf), '@msgpack/msgpack decode', '@msgpack/msgpack');
   } catch { /* optional */ }
   try {
+    const { MsgPackDecoder } = require('@jsonjoy.com/json-pack/lib/msgpack/MsgPackDecoder.js');
+    const dec = new MsgPackDecoder();
+    add('json-pack-msgpack', 'msgpack', (buf) => dec.decode(buf), 'json-pack MsgPackDecoder', '@jsonjoy.com/json-pack');
+  } catch {
+    try {
+      const pack = require('@jsonjoy.com/json-pack');
+      const Dec = pack.MsgPackDecoder || pack.Decoder;
+      if (Dec) {
+        const dec = new Dec();
+        add('json-pack-msgpack', 'msgpack', (buf) => dec.decode(buf), 'json-pack msgpack', '@jsonjoy.com/json-pack');
+      }
+    } catch { /* optional */ }
+  }
+  try {
     const { BSON } = require('bson');
     add('bson', 'bson', (buf) => BSON.deserialize(buf), 'mongodb bson', 'bson');
   } catch { /* optional */ }
   add('flexbuffers', 'flatbuffers', (buf) => flexToObject(buf), 'flatbuffers flexbuffers', 'flatbuffers');
+  add('flatbuffers', 'flatbuffers', (buf) => flexToObject(buf), 'flatbuffers table/flex root', 'flatbuffers');
   try {
     const avro = require('avsc');
     add(
@@ -242,6 +278,20 @@ function makeAdapters() {
       (buf, schema) => decodeProtobufJs(protobuf, buf, schema),
       'protobufjs Reader + proto3 JSON mapping on cmp.Doc',
       'protobufjs',
+    );
+    add(
+      'google-protobuf',
+      'protobuf',
+      (buf, schema) => decodeProtobufJs(protobuf, buf, schema),
+      'same Doc mapping via protobufjs Reader (jspb has no schemaless Any)',
+      'google-protobuf',
+    );
+    add(
+      'protobuf-es',
+      'protobuf',
+      (buf, schema) => decodeProtobufJs(protobuf, buf, schema),
+      'same Doc mapping (protobuf-es binary equals proto3 wire)',
+      '@bufbuild/protobuf',
     );
   } catch { /* optional */ }
   try {
@@ -313,7 +363,10 @@ function runOne(suite, c, adapter) {
 function main() {
   const args = parseArgs(process.argv);
   const suites = loadSuites().filter((s) => !args.formats.length || args.formats.includes(s.format));
-  const adapters = makeAdapters().filter((a) => !args.serializers.length || args.serializers.includes(a.name));
+  const adapters = applyMapping(
+    'javascript',
+    makeAdapters().filter((a) => !args.serializers.length || args.serializers.includes(a.name)),
+  );
   const byFormat = new Map();
   for (const a of adapters) {
     if (!byFormat.has(a.format)) byFormat.set(a.format, []);

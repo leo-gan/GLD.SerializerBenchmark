@@ -1,7 +1,7 @@
 # What is a starter kit of serializers for typical jobs?
 
 **Question:** If we do not want to rank every library first, which few serializers cover the usual jobs — public JSON, compact bytes inside the company, and a shared field file — on one shop order?
-**Date:** 2026-09-09
+**Date:** 2026-09-12
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -142,13 +142,13 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 1.64 | 118 | Avro | fastest |
-| EmberJson | 2.14 | 452 | JSON — EmberJson | slower |
-| mojo-protobuf | 2.33 | 157 | Protocol Buffers | slower |
-| mojo-cbor | 4.53 | 329 | CBOR | slower |
-| mojo-json | 5.23 | 452 | JSON — mojo-json | slower |
-| ehsanmok-json | 62.0 | 452 | JSON — ehsanmok/json | slower |
-| mojo-toml | 76.0 | 489 | TOML | slower |
+| mojo-avro | 1.59 | 118 | Avro | fastest |
+| mojo-json | 1.64 | 452 | JSON — mojo-json | slower |
+| EmberJson | 2.05 | 452 | JSON — EmberJson | slower |
+| mojo-protobuf | 2.18 | 157 | Protocol Buffers | slower |
+| mojo-cbor | 4.35 | 329 | CBOR | slower |
+| ehsanmok-json | 6.99 | 452 | JSON — ehsanmok/json | slower |
+| mojo-toml | 72.4 | 489 | TOML | slower |
 
 ## What this page is not
 

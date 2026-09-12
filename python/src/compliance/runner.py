@@ -8,6 +8,7 @@ from .adapters import Adapter, builtin_adapters
 from .catalog import load_all_suites
 from .compare import preview, values_equal
 from .context import current_schema
+from .mapping import allowed_pairs, filter_adapters
 from .models import Case, CaseResult, Report, Suite
 
 LAST_REPORT: Report | None = None
@@ -44,6 +45,9 @@ def run_suites(
         want_ad = {n.lower() for n in adapter_names}
         adapter_list = [a for a in adapter_list if a.name.lower() in want_ad]
 
+    adapter_list = filter_adapters("python", adapter_list)
+    _note_mapping_gaps(report, adapter_list, formats)
+
     by_format: dict[str, list[Adapter]] = {}
     for adapter in adapter_list:
         by_format.setdefault(adapter.format, []).append(adapter)
@@ -61,6 +65,28 @@ def run_suites(
 
     LAST_REPORT = report
     return report
+
+
+def _note_mapping_gaps(
+    report: Report,
+    adapters: list[Adapter],
+    formats: Iterable[str] | None,
+) -> None:
+    """Every mapped Python serializer must have a decode adapter."""
+    try:
+        mapped_pairs = allowed_pairs("python")
+    except OSError as exc:
+        report.adapter_errors.append(f"missing mapping file: {exc}")
+        return
+    have = {(a.name, a.format) for a in adapters}
+    want_fmt = {f.lower() for f in formats} if formats else None
+    for name, fmt in sorted(mapped_pairs):
+        if want_fmt and fmt.lower() not in want_fmt:
+            continue
+        if (name, fmt) not in have:
+            report.adapter_errors.append(
+                f"mapped serializer {name!r} has no {fmt} adapter"
+            )
 
 
 def _adapters_for_suite(suite: Suite, available: list[Adapter]) -> list[Adapter]:

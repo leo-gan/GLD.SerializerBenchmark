@@ -1,7 +1,7 @@
 # Fast to write, or fast to read?
 
 **Question:** If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
-**Date:** 2026-09-09
+**Date:** 2026-09-12
 **Sample:** `['document', 'telemetry']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -275,15 +275,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| mojo-avro | 0.19 | 1.39 | 118 | fastest |
-| mojo-protobuf | 0.51 | 1.64 | 157 | slower |
+| mojo-avro | 0.22 | 1.48 | 118 | fastest |
+| mojo-protobuf | 0.57 | 1.79 | 157 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| mojo-avro | 2.62 | 7.00 | 4135 | fastest |
-| mojo-protobuf | 3.23 | 9.48 | 4137 | slower |
+| mojo-avro | 2.72 | 6.98 | 4135 | fastest |
+| mojo-protobuf | 3.70 | 10.7 | 4137 | slower |
 
 ## What we saw
 

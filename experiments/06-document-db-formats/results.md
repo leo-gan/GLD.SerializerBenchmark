@@ -1,7 +1,7 @@
 # Are database formats better for a normal service call?
 
 **Question:** On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
-**Date:** 2026-09-09
+**Date:** 2026-09-12
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,7 +23,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | c | ok | `mpack` | — | `mpack` | [c/results.md](c/results.md) |
 | swift | ok | `IkigaJSON` | — | `IkigaJSON`, `SwiftMsgpack` | [swift/results.md](swift/results.md) |
 | zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `EmberJson` | — | `EmberJson`, `mojo-cbor` | [mojo/results.md](mojo/results.md) |
+| mojo | ok | `mojo-json` | — | `mojo-json`, `mojo-cbor` | [mojo/results.md](mojo/results.md) |
 
 ## In memory, by language
 
@@ -133,10 +133,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| EmberJson | 2.13 | 452 | JSON | fastest |
-| mojo-cbor | 4.53 | 329 | CBOR | slower |
-| mojo-json | 5.16 | 452 | JSON — mojo-json | slower |
-| ehsanmok-json | 60.6 | 452 | JSON — ehsanmok/json | slower |
+| mojo-json | 1.69 | 452 | JSON — mojo-json | fastest |
+| EmberJson | 2.11 | 452 | JSON | slower |
+| mojo-cbor | 4.43 | 329 | CBOR | slower |
+| ehsanmok-json | 7.08 | 452 | JSON — ehsanmok/json | slower |
 
 ## What we saw
 

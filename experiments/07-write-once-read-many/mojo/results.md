@@ -1,7 +1,7 @@
 # Experiment 7 results — mojo
 
-**Date:** 2026-09-09
-**Raw file:** `experiments/07-write-once-read-many/mojo/logs/mojo/2026-09-09-132131.csv`
+**Date:** 2026-09-12
+**Raw file:** `experiments/07-write-once-read-many/mojo/logs/mojo/2026-09-12-132654.csv`
 **Language:** mojo
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,8 +12,8 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| mojo-avro | 0.4.0 | 0.19 | 1.39 | 1.58 | 118 | 0 | Avro | fastest | yes | 90 |
-| mojo-protobuf | 0.6.0 | 0.51 | 1.64 | 2.15 | 157 | 0 | Protocol Buffers | slower | yes | 89 |
+| mojo-avro | 0.4.0 | 0.22 | 1.48 | 1.70 | 118 | 0 | Avro | fastest | yes | 71 |
+| mojo-protobuf | 0.6.0 | 0.57 | 1.79 | 2.37 | 157 | 0 | Protocol Buffers | slower | yes | 72 |
 
 ## In memory — sample C (sensor), 1 record(s) per write
 
@@ -21,8 +21,8 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| mojo-avro | 0.4.0 | 2.62 | 7.00 | 9.61 | 4135 | 0 | Avro | fastest | yes | 90 |
-| mojo-protobuf | 0.6.0 | 3.23 | 9.48 | 12.7 | 4137 | 0 | Protocol Buffers | slower | yes | 90 |
+| mojo-avro | 0.4.0 | 2.72 | 6.98 | 9.70 | 4135 | 0 | Avro | fastest | yes | 88 |
+| mojo-protobuf | 0.6.0 | 3.70 | 10.7 | 14.5 | 4137 | 0 | Protocol Buffers | slower | yes | 87 |
 
 ## Libraries that belong in the conversation
 

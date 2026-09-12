@@ -131,6 +131,11 @@ def _try_gldjson(text: String) raises:
 
 
 def _try_yaml(text: String) raises:
+    # Alias pairs can expand into a memory bomb in the official suites.
+    if _contains(text, "&") and _contains(text, "*"):
+        raise Error("yaml alias pair skipped")
+    if text.byte_length() > 16384:
+        raise Error("yaml input too large")
     _ = yaml_decode(text.as_bytes())
 
 
@@ -331,6 +336,30 @@ def _run_one(
     )
 
 
+def _mapped_mojo(name: String, fmt: String) -> Bool:
+    var path = "../compliance/serializer-standards.json"
+    var text = ""
+    try:
+        text = open(path, "r").read()
+    except:
+        try:
+            text = open("compliance/serializer-standards.json", "r").read()
+        except:
+            return True
+    try:
+        var doc = parse(text)
+        var arr = doc.object()["languages"].object()["mojo"].object()[name].copy()
+        var i = 0
+        var items = arr.array().copy()
+        while i < len(items):
+            if String(items[i].string()) == fmt:
+                return True
+            i += 1
+        return False
+    except:
+        return True
+
+
 def _want_fmt(formats: List[String], fmt: String) -> Bool:
     if len(formats) == 0:
         return True
@@ -409,7 +438,9 @@ def main() raises:
                 continue
             if not _want_fmt(formats, fmt):
                 continue
-            if (fmt == "toml" or fmt == "yaml") and text.byte_length() > 100000:
+            # Official YAML/TOML catalogs are large JSON files of small cases.
+            # Skip only TOML (parser panics); YAML cases are scored one-by-one.
+            if fmt == "toml" and text.byte_length() > 100000:
                 adapter_errs.append("skipped large official " + fmt + " suite")
                 print("skip large", fmt, path)
                 continue
@@ -438,7 +469,7 @@ def main() raises:
                 sers.append("mojo-json")
                 vers.append("0.3.0")
             elif fmt == "yaml":
-                sers.append("mojo-yaml")
+                sers.append("gld-yaml")
                 vers.append("0.2.0")
             elif fmt == "toml":
                 sers.append("mojo-toml")
@@ -456,6 +487,28 @@ def main() raises:
                 sers.append("mojo-avro")
                 vers.append("0.4.0")
             else:
+                var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
+                var already = False
+                var si = 0
+                while si < len(seen_skip):
+                    if seen_skip[si] == msg:
+                        already = True
+                    si += 1
+                if not already:
+                    seen_skip.append(msg)
+                    adapter_errs.append(msg)
+                continue
+            var keep_s = List[String]()
+            var keep_v = List[String]()
+            var mi = 0
+            while mi < len(sers):
+                if _mapped_mojo(sers[mi], fmt):
+                    keep_s.append(sers[mi])
+                    keep_v.append(vers[mi])
+                mi += 1
+            sers = keep_s^
+            vers = keep_v^
+            if len(sers) == 0:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
                 var already = False
                 var si = 0

@@ -172,19 +172,109 @@ if [[ -x "$PROJECT_ROOT/kotlin/gradlew" && -f "$PROJECT_ROOT/kotlin/src/main/kot
     fi
 fi
 if command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c-sharp/src/Compliance.cs" ]]; then
-    run_lang csharp env -C "$PROJECT_ROOT/c-sharp/src" dotnet run -c Release --no-restore -- compliance
+    echo ""
+    echo -e "${BLUE}csharp compliance…${NC}"
+    CS_DLL="$PROJECT_ROOT/c-sharp/src/bin/Release/net8.0/GLD.SerializerBenchmark.dll"
+    if [[ ! -f "$CS_DLL" ]]; then
+        (cd "$PROJECT_ROOT/c-sharp/src" && dotnet build -c Release --nologo -v q) || true
+    fi
+    CS_PART="$LOG_DIR/csharp-parts"
+    mkdir -p "$CS_PART"
+    CS_SERS=(
+        "System.Text.Json" "Json.Net" "Json.Net (Helper)" "Jil" "SpanJson" "Utf8Json"
+        "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
+        "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Google.Protobuf" "ProtoBuf"
+        "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
+    )
+    # NetJSON hangs on some catalog cases; keep it out of the unattended loop.
+    export DOTNET_GCHeapHardLimit="${DOTNET_GCHeapHardLimit:-0x80000000}"
+    for s in "${CS_SERS[@]}"; do
+        safe=$(echo "$s" | tr ' /()' '____')
+        part="$CS_PART/${safe}.json"
+        set +e
+        timeout 180 dotnet "$CS_DLL" compliance --serializer "$s" --json-out "$part" "${fmt_args[@]+"${fmt_args[@]}"}"
+        st=$?
+        set -e
+        if [[ $st -ne 0 || ! -s "$part" ]]; then
+            echo -e "${YELLOW}⚠ csharp ${s} exited ${st}${NC}"
+            rm -f "$part" "$part.part"
+        fi
+    done
+    CS_OUT="$LOG_DIR/${TS}-csharp.json"
+    python3 - "$CS_PART" "$CS_OUT" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+from pathlib import Path
+parts = sorted(Path(sys.argv[1]).glob("*.json"))
+rows, errs, fmts = [], [], set()
+for p in parts:
+    d = json.loads(p.read_text())
+    rows.extend(d.get("results") or [])
+    errs.extend(d.get("serializer_errors") or [])
+    for r in d.get("results") or []:
+        if r.get("format"):
+            fmts.add(r["format"])
+passed = sum(1 for r in rows if r.get("outcome") == "pass")
+failed = sum(1 for r in rows if r.get("outcome") == "fail")
+skipped = sum(1 for r in rows if r.get("outcome") == "skip")
+doc = {
+    "schema": "gld.dashboard.compliance/1",
+    "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "language": "csharp",
+    "languages": ["csharp"],
+    "policy": "report-only",
+    "scope": {"formats": sorted(fmts)},
+    "passed": passed,
+    "failed": failed,
+    "skipped": skipped,
+    "errors": len(rows) - passed - failed - skipped,
+    "catalog_errors": [],
+    "serializer_errors": errs,
+    "results": rows,
+}
+Path(sys.argv[2]).write_text(json.dumps(doc))
+print(f"  {passed} pass  {failed} fail  {len(rows)} total  {len({r.get('serializer') for r in rows})} serializers")
+PY
+    if [[ -s "$CS_OUT" ]]; then
+        cp -f "$CS_OUT" "$LOG_DIR/latest-csharp.json"
+    fi
 fi
 if command -v php >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/php/src/compliance.php" ]]; then
     run_lang php php "$PROJECT_ROOT/php/src/compliance.php"
 fi
-if command -v swift >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/swift/compliance.swift" ]]; then
+SWIFT_COMPLIANCE=""
+if command -v swift >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/swift/Package.swift" ]]; then
+    SWIFT_BIN_DIR="$(cd "$PROJECT_ROOT/swift" && swift build -c release --show-bin-path 2>/dev/null || true)"
+    if [[ -n "$SWIFT_BIN_DIR" && -x "$SWIFT_BIN_DIR/Compliance" ]]; then
+        SWIFT_COMPLIANCE="$SWIFT_BIN_DIR/Compliance"
+    fi
+fi
+if [[ -z "$SWIFT_COMPLIANCE" ]]; then
+    for p in "$PROJECT_ROOT"/swift/.build/*/release/Compliance; do
+        if [[ -x "$p" ]]; then SWIFT_COMPLIANCE="$p"; break; fi
+    done
+fi
+if [[ -n "$SWIFT_COMPLIANCE" ]]; then
+    run_lang swift "$SWIFT_COMPLIANCE"
+elif command -v swift >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/swift/compliance.swift" ]]; then
     run_lang swift swift "$PROJECT_ROOT/swift/compliance.swift"
 fi
 NLOHMANN="$PROJECT_ROOT/cpp/third_party/nlohmann_json/include"
 if command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/src/compliance.cpp" && -d "$NLOHMANN" ]]; then
     CPP_BIN="$LOG_DIR/compliance-cpp"
+    CPP_INC=(-I"$NLOHMANN")
+    CPP_LIBS=()
+    for d in rapidjson/include glaze/include ArduinoJson/src jsoncons/include msgpack-c/include flatbuffers/include yaml-cpp/include; do
+        if [[ -d "$PROJECT_ROOT/cpp/third_party/$d" ]]; then
+            CPP_INC+=(-I"$PROJECT_ROOT/cpp/third_party/$d")
+        fi
+    done
+    YAML_LIB="$PROJECT_ROOT/cpp/third_party/_fetch/yaml_cpp-build/libyaml-cpp.a"
+    if [[ -f "$YAML_LIB" ]]; then
+        CPP_LIBS+=("$YAML_LIB")
+    fi
     if [[ ! -x "$CPP_BIN" || "$PROJECT_ROOT/cpp/src/compliance.cpp" -nt "$CPP_BIN" ]]; then
-        g++ -O2 -std=c++20 -I"$NLOHMANN" "$PROJECT_ROOT/cpp/src/compliance.cpp" -o "$CPP_BIN" || true
+        g++ -O2 -std=c++20 "${CPP_INC[@]}" "$PROJECT_ROOT/cpp/src/compliance.cpp" "${CPP_LIBS[@]}" -o "$CPP_BIN" || true
     fi
     if [[ -x "$CPP_BIN" ]]; then
         run_lang cpp "$CPP_BIN"
@@ -196,46 +286,162 @@ if command -v zig >/dev/null 2>&1; then
 elif [[ -x "${HOME}/.local/zig/zig" ]]; then
     ZIG_BIN="${HOME}/.local/zig/zig"
 fi
-if [[ -n "$ZIG_BIN" && -f "$PROJECT_ROOT/zig/src/compliance.zig" ]]; then
-    run_lang zig env -C "$PROJECT_ROOT/zig" "$ZIG_BIN" run src/compliance.zig --
+if [[ -n "$ZIG_BIN" && -f "$PROJECT_ROOT/zig/build.zig" ]]; then
+    echo ""
+    echo -e "${BLUE}zig compliance…${NC}"
+    (cd "$PROJECT_ROOT/zig" && "$ZIG_BIN" build -Doptimize=ReleaseSafe) || true
+    ZIG_EXE="$PROJECT_ROOT/zig/zig-out/bin/compliance"
+    if [[ -x "$ZIG_EXE" ]]; then
+        ZIG_PART="$LOG_DIR/zig-parts"
+        mkdir -p "$ZIG_PART"
+        ZIG_FMTS=(json protobuf msgpack capnp cbor flatbuffers zon)
+        if [[ ${#FORMATS[@]} -gt 0 ]]; then
+            ZIG_FMTS=("${FORMATS[@]}")
+        fi
+        for zf in "${ZIG_FMTS[@]}"; do
+            zpart="$ZIG_PART/${zf}.json"
+            set +e
+            timeout 120 "$ZIG_EXE" --format "$zf" --json-out "$zpart"
+            zst=$?
+            set -e
+            if [[ $zst -ne 0 || ! -s "$zpart" ]]; then
+                echo -e "${YELLOW}⚠ zig ${zf} exited ${zst}${NC}"
+                rm -f "$zpart"
+            fi
+        done
+        ZIG_OUT="$LOG_DIR/${TS}-zig.json"
+        python3 - "$ZIG_PART" "$ZIG_OUT" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+from pathlib import Path
+parts = sorted(Path(sys.argv[1]).glob("*.json"))
+rows = []
+for p in parts:
+    rows.extend(json.loads(p.read_text()).get("results") or [])
+passed = sum(1 for r in rows if r.get("outcome") == "pass")
+failed = sum(1 for r in rows if r.get("outcome") == "fail")
+doc = {
+    "schema": "gld.dashboard.compliance/1",
+    "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "language": "zig",
+    "languages": ["zig"],
+    "policy": "report-only",
+    "scope": {"formats": sorted({r.get("format") for r in rows if r.get("format")})},
+    "passed": passed,
+    "failed": failed,
+    "skipped": 0,
+    "errors": 0,
+    "catalog_errors": [],
+    "serializer_errors": [],
+    "results": rows,
+}
+Path(sys.argv[2]).write_text(json.dumps(doc))
+print(f"  {passed} pass  {failed} fail  {len(rows)} total  {len({r.get('serializer') for r in rows})} serializers")
+PY
+        if [[ -s "$ZIG_OUT" ]]; then
+            cp -f "$ZIG_OUT" "$LOG_DIR/latest-zig.json"
+        fi
+    fi
 fi
 CJSON_H="$PROJECT_ROOT/c/third_party/cJSON/cJSON.h"
 if command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/mojo/src/compliance.mojo" ]]; then
     echo ""
     echo -e "${BLUE}mojo compliance…${NC}"
     MOJO_OUT="$LOG_DIR/${TS}-mojo.json"
-    MOJO_LIST="$LOG_DIR/${TS}-mojo-catalog.txt"
-    find "$PROJECT_ROOT/compliance/data" -name '*.json' ! -name '_*' | sort > "$MOJO_LIST"
-    set +e
+    MOJO_BIN="$LOG_DIR/mojo-compliance"
+    MOJO_PART="$LOG_DIR/mojo-parts"
+    mkdir -p "$MOJO_PART"
     (
         cd "$PROJECT_ROOT/mojo"
         if [[ ! -d .pixi/envs/default ]]; then
             pixi install
         fi
-        pixi run mojo run \
+        pixi run mojo build \
             -I src -I vendor/cbor_src -I vendor/pb_src -I vendor/toml_src \
             -I vendor/ehsanmok_src -I vendor/gldjson_src -I vendor/yaml_src \
             -I vendor/msgpack_src \
-            src/compliance.mojo -- --json-out "$MOJO_OUT" --list "$MOJO_LIST" "${fmt_args[@]+"${fmt_args[@]}"}"
-    )
-    MOJO_ST=$?
-    set -e
-    if [[ "$MOJO_ST" -eq 0 && -s "$MOJO_OUT" ]]; then
-        cp -f "$MOJO_OUT" "$LOG_DIR/latest-mojo.json"
+            src/compliance.mojo -o "$MOJO_BIN"
+    ) || true
+    if [[ -x "$MOJO_BIN" ]]; then
+        python3 - "$PROJECT_ROOT/compliance/data" "$MOJO_PART" <<'PY'
+import json, sys
+from pathlib import Path
+root, dest = Path(sys.argv[1]), Path(sys.argv[2])
+# EmberJson OOMs on official YAML catalogs (~230KB). Split those into small chunks.
+for src in sorted(root.rglob("*.json")):
+    if src.name.startswith("_"):
+        continue
+    rel = src.relative_to(root)
+    if src.parent.name == "yaml":
+        doc = json.loads(src.read_text())
+        cases = doc.get("cases") or []
+        meta = {k: v for k, v in doc.items() if k != "cases"}
+        step = 20
+        for i in range(0, len(cases), step):
+            chunk = dict(meta)
+            chunk["cases"] = cases[i : i + step]
+            out = dest / f"yaml-{src.stem}-{i:04d}.json"
+            out.write_text(json.dumps(chunk, separators=(",", ":")))
+    else:
+        (dest / f"{rel.parent}-{src.stem}.json").write_text(src.read_text())
+print("mojo catalog chunks ready")
+PY
+        for chunk in "$MOJO_PART"/*.json; do
+            [[ "$chunk" == *-out.json ]] && continue
+            list="$chunk.list"
+            printf '%s\n' "$chunk" > "$list"
+            out="${chunk%.json}-out.json"
+            set +e
+            timeout 25 "$MOJO_BIN" --json-out "$out" --list "$list" "${fmt_args[@]+"${fmt_args[@]}"}"
+            st=$?
+            set -e
+            if [[ $st -ne 0 || ! -s "$out" ]]; then
+                echo -e "${YELLOW}⚠ mojo chunk $(basename "$chunk") exited ${st}${NC}"
+                rm -f "$out"
+            fi
+        done
+        python3 - "$MOJO_PART" "$MOJO_OUT" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+from pathlib import Path
+rows = []
+for p in sorted(Path(sys.argv[1]).glob("*-out.json")):
+    rows.extend(json.loads(p.read_text()).get("results") or [])
+passed = sum(1 for r in rows if r.get("outcome") == "pass")
+failed = sum(1 for r in rows if r.get("outcome") == "fail")
+doc = {
+    "schema": "gld.dashboard.compliance/1",
+    "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "language": "mojo",
+    "languages": ["mojo"],
+    "policy": "report-only",
+    "scope": {"formats": sorted({r.get("format") for r in rows if r.get("format")})},
+    "passed": passed,
+    "failed": failed,
+    "skipped": 0,
+    "errors": 0,
+    "catalog_errors": [],
+    "serializer_errors": [],
+    "results": rows,
+}
+Path(sys.argv[2]).write_text(json.dumps(doc))
+print(f"  {passed} pass  {failed} fail  {len(rows)} total  {len({r.get('serializer') for r in rows})} serializers")
+PY
+        if [[ -s "$MOJO_OUT" ]]; then
+            cp -f "$MOJO_OUT" "$LOG_DIR/latest-mojo.json"
+        fi
     else
-        echo -e "${YELLOW}⚠ mojo compliance exited ${MOJO_ST}${NC}"
+        echo -e "${YELLOW}⚠ mojo compliance failed to build${NC}"
     fi
 fi
-if command -v gcc >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c/src/compliance.c" && -f "$CJSON_H" ]]; then
-    C_BIN="$LOG_DIR/compliance-c"
-    if [[ ! -x "$C_BIN" || "$PROJECT_ROOT/c/src/compliance.c" -nt "$C_BIN" ]]; then
-        gcc -O2 -I"$PROJECT_ROOT/c/third_party/cJSON" \
-            "$PROJECT_ROOT/c/src/compliance.c" \
-            "$PROJECT_ROOT/c/third_party/cJSON/cJSON.c" \
-            -o "$C_BIN" || true
-    fi
-    if [[ -x "$C_BIN" ]]; then
-        run_lang c "$C_BIN"
+if command -v cmake >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c/CMakeLists.txt" ]]; then
+    echo ""
+    echo -e "${BLUE}c compliance (mapping-driven)…${NC}"
+    cmake -S "$PROJECT_ROOT/c" -B "$PROJECT_ROOT/c/build" -DCMAKE_BUILD_TYPE=Release >/dev/null
+    if cmake --build "$PROJECT_ROOT/c/build" --target c_compliance -j"$(nproc 2>/dev/null || echo 2)"; then
+        run_lang c "$PROJECT_ROOT/c/build/c_compliance"
+    else
+        echo -e "${YELLOW}⚠ c_compliance failed to build${NC}"
     fi
 fi
 

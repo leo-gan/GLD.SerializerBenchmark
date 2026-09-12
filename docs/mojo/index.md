@@ -59,7 +59,7 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | mojo-protobuf | Schema | leo-gan/gld-protobuf 0.6.0 | bytes only | Generated from suite `.proto` |
 | mojo-avro | Schema | leo-gan/gld-avro 0.4.0 | bytes only | `AvroDatum` encode / decode |
 | mojo-toml | Text | DataBooth/mojo-toml 0.9.1 | bytes only | `to_toml` / `parse` |
-| mojo-yaml | Text | leo-gan/gld-yaml 0.2.0 | bytes only | `YamlValue` encode / decode |
+| gld-yaml | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.2.0 | bytes only | `yaml.encode` / `yaml.decode` on suite types |
 | mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | bytes only | WireWriter / WireReader |
 
 ### Call-path contract

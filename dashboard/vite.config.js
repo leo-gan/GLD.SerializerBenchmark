@@ -26,6 +26,9 @@ function cleanDashboardAssets() {
 export default defineConfig({
   base: './',
   plugins: [cleanDashboardAssets()],
+  server: {
+    fs: { allow: [resolve(__dirname, '..')] },
+  },
   build: {
     outDir: '../docs/dashboard',
     emptyOutDir: false,

@@ -13,7 +13,7 @@ Native Mojo 1.0 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | mojo-protobuf | Schema | leo-gan/gld-protobuf | Generated suite messages (vendored sources) |
 | mojo-avro | Schema | leo-gan/gld-avro | `AvroDatum` encode / decode (conda) |
 | mojo-toml | Text | DataBooth/mojo-toml | `to_toml` / `parse` (vendored source) |
-| mojo-yaml | Text | leo-gan/gld-yaml 0.2.0 | `YamlValue` encode / decode (vendored sources) |
+| gld-yaml | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.2.0 | `yaml.encode` / `yaml.decode` on suite types (vendored sources) |
 | mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | WireWriter / WireReader (vendored sources) |
 
 mojo-avro’s conda package owns the `runtime` / `wire` / `json` module names. JSON, CBOR, Protobuf, YAML, and MessagePack are compiled from `vendor/` with those internals renamed so they can live in one process. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub.

@@ -37,7 +37,7 @@ def _roundtrip_all(type_id: String) raises:
     if not gldj.check(fx, gldj.serialize_bytes(fx)):
         raise Error("mojo-json fidelity " + type_id)
     if not yaml.check(fx, yaml.serialize_bytes(fx)):
-        raise Error("mojo-yaml fidelity " + type_id)
+        raise Error("gld-yaml fidelity " + type_id)
     if not msgp.check(fx, msgp.serialize_bytes(fx)):
         raise Error("mojo-msgpack fidelity " + type_id)
 

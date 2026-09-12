@@ -290,7 +290,7 @@ def builtin_adapters() -> list[Adapter]:
             "msgspec",
         ),
         ("protobuf", "protobuf", _protobuf_decode, None, "google.protobuf wire / JSON mapping", "protobuf"),
-        ("fastavro", "avro", _avro_decode, None, "fastavro schemaless binary", "fastavro"),
+        ("avro", "avro", _avro_decode, None, "fastavro schemaless binary", "fastavro"),
         ("bson", "bson", _bson_decode, None, "pymongo bson", "pymongo"),
         (
             "flexbuffers",
@@ -298,6 +298,14 @@ def builtin_adapters() -> list[Adapter]:
             _flexbuffers_decode,
             None,
             "flatbuffers.flexbuffers",
+            "flatbuffers",
+        ),
+        (
+            "flatbuffers",
+            "flatbuffers",
+            _flexbuffers_decode,
+            None,
+            "flatbuffers table/flexbuffers (same package)",
             "flatbuffers",
         ),
         ("amazon-ion", "ion", _ion_decode, None, "amazon.ion simpleion", "amazon-ion"),

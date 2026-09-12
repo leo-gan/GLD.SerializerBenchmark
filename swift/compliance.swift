@@ -124,11 +124,21 @@ for fmtName in fmts.sorted() {
               let cases = suite["cases"] as? [[String: Any]],
               let format = suite["format"] as? String else { continue }
         if !formats.isEmpty && !formats.contains(format.lowercased()) { continue }
-        if format != "json" && format != "plist" && format != "protobuf" {
-            adapterErrs.append("No adapter registered for format \(format) (\(suite["standard"] ?? "") (\(suite["version"] ?? "")))")
+        var sers: [String]
+        if format == "json" { sers = ["Foundation.JSONEncoder", "IkigaJSON"] }
+        else if format == "plist" { sers = ["Foundation.PropertyListEncoder"] }
+        else if format == "protobuf" { sers = ["protobuf-wire", "SwiftProtobuf"] }
+        else {
+            adapterErrs.append("No adapter registered for format \(format)")
             continue
         }
-        let ser = format == "plist" ? "Foundation.PropertyListSerialization" : (format == "protobuf" ? "protobuf-wire" : "Foundation.JSONSerialization")
+        if let data = try? Data(contentsOf: root.appendingPathComponent("compliance/serializer-standards.json")),
+           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let langs = obj["languages"] as? [String: Any],
+           let slice = langs["swift"] as? [String: Any] {
+            sers = sers.filter { (slice[$0] as? [String] ?? []).contains(format) }
+        }
+        for ser in sers {
         for c in cases {
             var row: [String: Any] = [
                 "id": c["id"] ?? "",
@@ -200,6 +210,7 @@ for fmtName in fmts.sorted() {
                 row["observed"] = ok ? "ok" : err
             }
             results.append(row)
+        }
         }
     }
 }
