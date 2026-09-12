@@ -78,7 +78,6 @@ public final class KryoSer implements BenchSerializer {
   public byte[] serializeBytes(Fixture fx) {
     baos.reset();
     output.setOutputStream(baos);
-    output.reset();
     kryo.writeClassAndObject(output, fx.value);
     output.flush();
     return baos.toByteArray();
@@ -93,7 +92,6 @@ public final class KryoSer implements BenchSerializer {
   @Override
   public int serializeStream(Fixture fx, OutputStream out) {
     output.setOutputStream(out);
-    output.reset();
     kryo.writeClassAndObject(output, fx.value);
     output.flush();
     return (int) output.total();

@@ -11,91 +11,44 @@ static int prep(test_data_kind_t k, const test_fixture_t *fx) { (void)k;(void)fx
 
 typedef struct {
     QCBOREncodeContext *ctx;
-    char pending_key[64];
-    int has_key;
-    int in_array_depth; /* when >0 and no key, add bare value */
 } qcw;
 
 static int w_begin_map(void *ctx, int n) {
     (void)n;
-    qcw *c = ctx;
-    if (c->has_key) {
-        QCBOREncode_OpenMapInMapSZ(c->ctx, c->pending_key);
-        c->has_key = 0;
-    } else if (c->in_array_depth > 0) {
-        QCBOREncode_OpenMap(c->ctx);
-    } else {
-        QCBOREncode_OpenMap(c->ctx);
-    }
+    QCBOREncode_OpenMap(((qcw *)ctx)->ctx);
     return 0;
 }
 static int w_end_map(void *ctx) {
-    qcw *c = ctx;
-    QCBOREncode_CloseMap(c->ctx);
+    QCBOREncode_CloseMap(((qcw *)ctx)->ctx);
     return 0;
 }
 static int w_begin_array(void *ctx, int n) {
     (void)n;
-    qcw *c = ctx;
-    if (c->has_key) {
-        QCBOREncode_OpenArrayInMapSZ(c->ctx, c->pending_key);
-        c->has_key = 0;
-    } else {
-        QCBOREncode_OpenArray(c->ctx);
-    }
-    c->in_array_depth++;
+    QCBOREncode_OpenArray(((qcw *)ctx)->ctx);
     return 0;
 }
 static int w_end_array(void *ctx) {
-    qcw *c = ctx;
-    QCBOREncode_CloseArray(c->ctx);
-    if (c->in_array_depth > 0) c->in_array_depth--;
+    QCBOREncode_CloseArray(((qcw *)ctx)->ctx);
     return 0;
 }
 static int w_key(void *ctx, const char *k) {
-    qcw *c = ctx;
-    snprintf(c->pending_key, sizeof c->pending_key, "%s", k);
-    c->has_key = 1;
+    QCBOREncode_AddSZString(((qcw *)ctx)->ctx, k);
     return 0;
 }
 static int w_bool(void *ctx, int v) {
-    qcw *c = ctx;
-    if (c->has_key) {
-        QCBOREncode_AddBoolToMapSZ(c->ctx, c->pending_key, v);
-        c->has_key = 0;
-    } else {
-        QCBOREncode_AddBool(c->ctx, v);
-    }
+    QCBOREncode_AddBool(((qcw *)ctx)->ctx, v);
     return 0;
 }
 static int w_i64(void *ctx, int64_t v) {
-    qcw *c = ctx;
-    if (c->has_key) {
-        QCBOREncode_AddInt64ToMapSZ(c->ctx, c->pending_key, v);
-        c->has_key = 0;
-    } else {
-        QCBOREncode_AddInt64(c->ctx, v);
-    }
+    QCBOREncode_AddInt64(((qcw *)ctx)->ctx, v);
     return 0;
 }
 static int w_f64(void *ctx, double v) {
-    qcw *c = ctx;
-    if (c->has_key) {
-        QCBOREncode_AddDoubleToMapSZ(c->ctx, c->pending_key, v);
-        c->has_key = 0;
-    } else {
-        QCBOREncode_AddDouble(c->ctx, v);
-    }
+    QCBOREncode_AddDouble(((qcw *)ctx)->ctx, v);
     return 0;
 }
 static int w_str(void *ctx, const char *s) {
-    qcw *c = ctx;
-    if (c->has_key) {
-        QCBOREncode_AddSZStringToMapSZ(c->ctx, c->pending_key, s ? s : "");
-        c->has_key = 0;
-    } else {
-        QCBOREncode_AddSZString(c->ctx, s ? s : "");
-    }
+    QCBOREncode_AddSZString(((qcw *)ctx)->ctx, s ? s : "");
     return 0;
 }
 

@@ -27,7 +27,7 @@ public final class JacksonYamlSer implements BenchSerializer {
     YAMLFactory factory =
         new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER);
     mapper = new ObjectMapper(factory);
-    mapper.findAndRegisterModules();
+    // YAMLFactory is explicit; do not findAndRegisterModules().
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
   }

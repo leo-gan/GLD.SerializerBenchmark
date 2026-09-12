@@ -134,7 +134,7 @@ if(EXISTS ${TP}/QCBOR/src/qcbor_encode.c)
     ${TP}/QCBOR/src/ieee754.c
     src/serializers/ser_qcbor.c)
   list(APPEND BENCH_INCLUDES ${TP}/QCBOR/inc)
-  add_compile_definitions(HAS_QCBOR=1)
+  add_compile_definitions(HAS_QCBOR=1 QCBOR_DISABLE_ENCODE_USAGE_GUARDS=1)
   message(STATUS "serializer: qcbor REAL")
 endif()
 

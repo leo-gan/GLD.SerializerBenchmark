@@ -27,7 +27,7 @@ namespace GLD.SerializerBenchmark.Serializers
     internal class ExtendedXmlSerializerSer : SerDeser
     {
         private readonly IExtendedXmlSerializer _serializer =
-            new ConfigurationContainer().UseAutoFormatting().Create();
+            new ConfigurationContainer().Create();
         private XmlEnvelope _native;
 
         public override string Name => "ExtendedXmlSerializer";
