@@ -9,8 +9,8 @@
             .hash = "serde-1.0.1-1DszT3MjEADZkgXH6IsH3gs1Pm12UGyhagpV22EEch7x",
         },
         .zig_msgpack = .{
-            .url = "https://github.com/zigcc/zig-msgpack/archive/refs/heads/main.tar.gz",
-            .hash = "zig_msgpack-0.0.14-evvueL5SBQACmim6j6klQ9wWIIG_UxGlPvVYdiNy0KT8",
+            .url = "https://github.com/zigcc/zig-msgpack/archive/refs/tags/0.0.18.tar.gz",
+            .hash = "zig_msgpack-0.0.14-evvueElTBQDfvM9t6ggAEf5p0ovMi1cTiTkgsE_dj8PZ",
         },
         .zbor = .{
             .url = "https://codeberg.org/r4gus/zbor/archive/0.21.0.tar.gz",
