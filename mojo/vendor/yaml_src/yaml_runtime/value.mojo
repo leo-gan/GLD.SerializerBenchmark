@@ -325,8 +325,11 @@ def decode_one[
     r.skip_document_start()
     r.skip_separation()
     # A `%YAML` / `%TAG` line must introduce a document. Bare directives
-    # (yaml-test-suite 9MMA / B63P) are not a complete stream.
-    if r.saw_directive and (r.remaining() == 0 or r.at_document_end()):
+    # (yaml-test-suite 9MMA / B63P) are not a complete stream. `---\n` after
+    # a directive is an empty document (null) and is valid.
+    if r.saw_directive and not r.saw_doc_start and (
+        r.remaining() == 0 or r.at_document_end()
+    ):
         raise DecodeError(DecodeError.KIND_EOF, r.position())
     var v = YamlValue()
     v.root = _decode_node(r, v)
@@ -346,13 +349,147 @@ def encode_value(
 
 def _decode_node[
     origin: ImmOrigin
-](mut r: WireReader[origin], mut v: YamlValue) raises DecodeError -> Int:
+](mut r: WireReader[origin], mut v: YamlValue, as_key: Bool = False) raises DecodeError -> Int:
     r.skip_separation()
-    var al = r.take_alias()
-    if al:
-        r.end_alias(al.value())
-        return v.root
-    if r.looks_seq():
+    if r.at_document_end():
+        return v.add(YamlNode(YK_NULL))
+    if r.starts_alias() and not r.alias_then_colon():
+        return r.resolve_alias()
+    var mid = not r.at_line_start
+    var col = r.line_indent()
+    r.consume_props()
+    var anc = r.last_anchor
+    r.skip_separation()
+    if r._cur() == 38 or r._cur() == 33:
+        if (
+            anc.byte_length() > 0
+            and r._cur() == 38
+            and not r.looks_map()
+            and not r.looks_seq()
+            and not r.starts_explicit_key()
+        ):
+            raise DecodeError(DecodeError.KIND_ALIAS, r.position())
+        if not (
+            anc.byte_length() > 0 and r._cur() == 38 and (r.looks_map() or r.looks_seq())
+        ):
+            r.consume_props()
+            if r.last_anchor.byte_length() > 0:
+                anc = r.last_anchor
+            r.skip_separation()
+    if r.at_line_start:
+        var nxt_col = r.line_indent()
+        var tagged_col = r.last_tag == TAG_SEQ or r.last_tag == TAG_MAP
+        if r.looks_seq() or r.last_tag == TAG_SEQ:
+            pass
+        elif tagged_col and (r.looks_map() or r.starts_explicit_key()):
+            pass
+        elif mid and nxt_col <= col:
+            return _bind_anchor(r, anc, v.add(YamlNode(YK_NULL)))
+        elif (
+            (not mid)
+            and nxt_col < col
+            and not r.looks_map()
+            and not r.starts_explicit_key()
+            and r._cur() != 124
+            and r._cur() != 62
+        ):
+            return _bind_anchor(r, anc, v.add(YamlNode(YK_NULL)))
+    if r.flow_depth > 0 and r.at_flow_sep():
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_NULL)))
+    var as_map = (not as_key) and (r.last_tag == TAG_MAP or r.looks_map())
+    if as_map:
+        if (
+            r.flow_depth == 0
+            and not r.at_line_start
+            and not r.is_flow_map_brace()
+            and not r.starts_explicit_key()
+            and not r.line_allows_compact_map()
+        ):
+            raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
+        if (
+            r.collection_then_colon()
+            or (
+                r.flow_depth > 0
+                and not r.is_flow_map_brace()
+                and not r.starts_explicit_key()
+            )
+        ):
+            var ki = _decode_node(r, v, True)
+            r.expect_colon()
+            var val = _decode_node(r, v)
+            var base = len(v.kids)
+            v.kids.append(ki)
+            v.kids.append(val)
+            return _bind_anchor(r, anc, v.add(YamlNode(YK_MAP, Int64(base), UInt64(1))))
+        var st = r.begin_map()
+        var ks = List[Int]()
+        var vs = List[Int]()
+        while r.next_key(st):
+            var key_line = r.line_start
+            var ki: Int
+            if st.explicit != 0:
+                if r.at_flow_sep() or r._cur() == 58 or r._at_end():
+                    var eti = len(v.texts)
+                    v.texts.append(String())
+                    ki = v.add(YamlNode(YK_STRING, Int64(eti)))
+                else:
+                    ki = _decode_node(r, v)
+            else:
+                ki = _decode_node(r, v, True)
+                if r.line_start != key_line and st.ctx == 0:
+                    raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
+            if v.nodes[ki].kind == YK_STRING:
+                var key = v.texts[Int(v.nodes[ki].a)]
+                if key.byte_length() > 0:
+                    var di = 0
+                    while di < len(ks):
+                        var kn = v.nodes[ks[di]]
+                        if kn.kind == YK_STRING and v.texts[Int(kn.a)] == key:
+                            raise DecodeError(DecodeError.KIND_DUP_KEY, r.position())
+                        di += 1
+            ks.append(ki)
+            if r.peek_colon():
+                r.expect_colon()
+                vs.append(_decode_node(r, v))
+            elif st.explicit != 0 or st.ctx == 1:
+                vs.append(v.add(YamlNode(YK_NULL)))
+            else:
+                r.expect_colon()
+                vs.append(_decode_node(r, v))
+        r.end_map(st)
+        var base = len(v.kids)
+        var j = 0
+        while j < len(ks):
+            v.kids.append(ks[j])
+            v.kids.append(vs[j])
+            j += 1
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_MAP, Int64(base), UInt64(len(ks)))))
+    if r.last_tag == TAG_SEQ or r.looks_seq() or (as_key and r.is_flow_map_brace()):
+        if as_key and r.is_flow_map_brace() and r.last_tag != TAG_SEQ and not r.looks_seq():
+            var st_m = r.begin_map()
+            var ksm = List[Int]()
+            var vsm = List[Int]()
+            while r.next_key(st_m):
+                var kmi = _decode_node(r, v, True)
+                ksm.append(kmi)
+                r.expect_colon()
+                vsm.append(_decode_node(r, v))
+            r.end_map(st_m)
+            var bm = len(v.kids)
+            var jm = 0
+            while jm < len(ksm):
+                v.kids.append(ksm[jm])
+                v.kids.append(vsm[jm])
+                jm += 1
+            return _bind_anchor(
+                r, anc, v.add(YamlNode(YK_MAP, Int64(bm), UInt64(len(ksm))))
+            )
+        if not r.at_line_start and r.flow_depth == 0 and r.starts_block_seq():
+            var prev = r.prev_non_ws()
+            if prev == 58 and r.line_first_content() == 58:
+                pass
+            elif prev != 45 and prev != 63:
+                raise DecodeError(DecodeError.KIND_SYNTAX, r.position())
         var st = r.begin_seq()
         var items = List[Int]()
         while r.next_item(st):
@@ -363,43 +500,7 @@ def _decode_node[
         while i < len(items):
             v.kids.append(items[i])
             i += 1
-        return v.add(YamlNode(YK_SEQ, Int64(base), UInt64(len(items))))
-    if r.looks_map():
-        if r.flow_depth > 0 and not r.is_flow_map_brace() and not r.starts_explicit_key():
-            var key = r.read_string()
-            r.expect_colon()
-            var val = _decode_node(r, v)
-            var ti = len(v.texts)
-            v.texts.append(key^)
-            var ki = v.add(YamlNode(YK_STRING, Int64(ti)))
-            var base = len(v.kids)
-            v.kids.append(ki)
-            v.kids.append(val)
-            return v.add(YamlNode(YK_MAP, Int64(base), UInt64(1)))
-        var st = r.begin_map()
-        var ks = List[Int]()
-        var vs = List[Int]()
-        while r.next_key(st):
-            var key = r.read_string()
-            var di = 0
-            while di < len(ks):
-                var kn = v.nodes[ks[di]]
-                if kn.kind == YK_STRING and v.texts[Int(kn.a)] == key:
-                    raise DecodeError(DecodeError.KIND_DUP_KEY, r.position())
-                di += 1
-            var ti = len(v.texts)
-            v.texts.append(key^)
-            ks.append(v.add(YamlNode(YK_STRING, Int64(ti))))
-            r.expect_colon()
-            vs.append(_decode_node(r, v))
-        r.end_map(st)
-        var base = len(v.kids)
-        var j = 0
-        while j < len(ks):
-            v.kids.append(ks[j])
-            v.kids.append(vs[j])
-            j += 1
-        return v.add(YamlNode(YK_MAP, Int64(base), UInt64(len(ks))))
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_SEQ, Int64(base), UInt64(len(items)))))
     var s = r.read_string()
     var tag = r.last_tag
     if tag == TAG_BINARY:
@@ -411,25 +512,34 @@ def _decode_node[
             i += 1
         var bi = len(v.bytes)
         v.bytes.append(raw^)
-        return v.add(YamlNode(YK_BINARY, Int64(bi)))
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_BINARY, Int64(bi))))
     if tag == TAG_STR or tag == TAG_NONSPEC:
         var ti = len(v.texts)
         v.texts.append(s^)
-        return v.add(YamlNode(YK_STRING, Int64(ti)))
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_STRING, Int64(ti))))
     if tag == TAG_NULL or (tag == TAG_NONE and _plain_null(s)):
-        return v.add(YamlNode(YK_NULL))
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_NULL)))
     if tag == TAG_BOOL or (tag == TAG_NONE and _plain_bool(s)):
         if s == "true" or s == "True" or s == "TRUE":
-            return v.add(YamlNode(YK_TRUE))
-        return v.add(YamlNode(YK_FALSE))
+            return _bind_anchor(r, anc, v.add(YamlNode(YK_TRUE)))
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_FALSE)))
     if tag == TAG_INT or (tag == TAG_NONE and _plain_int(s)):
-        return v.add(YamlNode(YK_INT, _as_int(s)))
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_INT, _as_int(s))))
     if tag == TAG_FLOAT or (tag == TAG_NONE and _plain_float(s)):
         var f = _as_float(s)
-        return v.add(YamlNode(YK_FLOAT, 0, UInt64(f.to_bits())))
+        return _bind_anchor(r, anc, v.add(YamlNode(YK_FLOAT, 0, UInt64(f.to_bits()))))
     var ti = len(v.texts)
     v.texts.append(s^)
-    return v.add(YamlNode(YK_STRING, Int64(ti)))
+    return _bind_anchor(r, anc, v.add(YamlNode(YK_STRING, Int64(ti))))
+
+
+def _bind_anchor[
+    origin: ImmOrigin
+](mut r: WireReader[origin], anc: String, idx: Int) -> Int:
+    if anc.byte_length() > 0:
+        r.last_anchor = anc
+        r.bind_last_anchor(idx)
+    return idx
 
 
 def _plain_null(s: String) -> Bool:

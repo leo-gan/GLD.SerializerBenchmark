@@ -158,9 +158,23 @@ def hex_digit_ascii(v: Int) -> Int:
     return 97 + (v - 10)
 
 
+def is_doc_mark_at[origin: ImmOrigin](data: Span[Byte, origin], pos: Int) -> Bool:
+    if pos + 3 > len(data):
+        return False
+    var a = Int(data[pos])
+    var b = Int(data[pos + 1])
+    var c = Int(data[pos + 2])
+    if not ((a == 45 and b == 45 and c == 45) or (a == 46 and b == 46 and c == 46)):
+        return False
+    if pos + 3 == len(data):
+        return True
+    var d = Int(data[pos + 3])
+    return d == 10 or d == 13 or d == 32 or d == 9 or d == 35
+
+
 def parse_double_quoted[
     origin: ImmOrigin
-](data: Span[Byte, origin], mut pos: Int) raises DecodeError -> String:
+](data: Span[Byte, origin], mut pos: Int, min_col: Int = 0) raises DecodeError -> String:
     if pos >= len(data) or Int(data[pos]) != 34:
         raise DecodeError(DecodeError.KIND_SYNTAX, pos)
     pos += 1
@@ -183,11 +197,52 @@ def parse_double_quoted[
             _append_escape(data, pos, out)
             continue
         if c == 10 or c == 13:
+            if _next_line_is_doc_mark(data, pos):
+                raise DecodeError(DecodeError.KIND_SYNTAX, pos)
+            if _next_line_under_indented(data, pos, min_col):
+                raise DecodeError(DecodeError.KIND_INDENT, pos)
             _fold_break(data, pos, out)
             continue
         out.append(data[pos])
         pos += 1
     raise DecodeError(DecodeError.KIND_EOF, pos)
+
+
+def _next_line_under_indented[
+    origin: ImmOrigin
+](data: Span[Byte, origin], pos: Int, min_col: Int) -> Bool:
+    if min_col <= 0:
+        return False
+    var nxt = pos
+    if nxt < len(data) and Int(data[nxt]) == 13:
+        nxt += 1
+        if nxt < len(data) and Int(data[nxt]) == 10:
+            nxt += 1
+    elif nxt < len(data) and Int(data[nxt]) == 10:
+        nxt += 1
+    var col = 0
+    while nxt < len(data) and Int(data[nxt]) == 32:
+        col += 1
+        nxt += 1
+    if nxt >= len(data):
+        return False
+    var n = Int(data[nxt])
+    if n == 10 or n == 13:
+        return False
+    return min_col > 0 and col == 0
+
+
+def _next_line_is_doc_mark[
+    origin: ImmOrigin
+](data: Span[Byte, origin], pos: Int) -> Bool:
+    var nxt = pos
+    if nxt < len(data) and Int(data[nxt]) == 13:
+        nxt += 1
+        if nxt < len(data) and Int(data[nxt]) == 10:
+            nxt += 1
+    elif nxt < len(data) and Int(data[nxt]) == 10:
+        nxt += 1
+    return is_doc_mark_at(data, nxt)
 
 
 def _append_escape[
@@ -288,7 +343,7 @@ def _utf8_append(mut out: List[Byte], cp: Int) raises DecodeError:
 
 def parse_single_quoted[
     origin: ImmOrigin
-](data: Span[Byte, origin], mut pos: Int) raises DecodeError -> String:
+](data: Span[Byte, origin], mut pos: Int, min_col: Int = 0) raises DecodeError -> String:
     if pos >= len(data) or Int(data[pos]) != 39:
         raise DecodeError(DecodeError.KIND_SYNTAX, pos)
     pos += 1
@@ -304,6 +359,10 @@ def parse_single_quoted[
             pos += 1
             return string_from_utf8(Span(out), start)
         if c == 10 or c == 13:
+            if _next_line_is_doc_mark(data, pos):
+                raise DecodeError(DecodeError.KIND_SYNTAX, pos)
+            if _next_line_under_indented(data, pos, min_col):
+                raise DecodeError(DecodeError.KIND_INDENT, pos)
             _fold_break(data, pos, out)
             continue
         out.append(data[pos])
