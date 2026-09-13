@@ -323,6 +323,11 @@ def decode_one[
     origin: ImmOrigin
 ](mut r: WireReader[origin]) raises DecodeError -> YamlValue:
     r.skip_document_start()
+    r.skip_separation()
+    # A `%YAML` / `%TAG` line must introduce a document. Bare directives
+    # (yaml-test-suite 9MMA / B63P) are not a complete stream.
+    if r.saw_directive and (r.remaining() == 0 or r.at_document_end()):
+        raise DecodeError(DecodeError.KIND_EOF, r.position())
     var v = YamlValue()
     v.root = _decode_node(r, v)
     r.skip_document_end()
@@ -365,6 +370,12 @@ def _decode_node[
         var vs = List[Int]()
         while r.next_key(st):
             var key = r.read_string()
+            var di = 0
+            while di < len(ks):
+                var kn = v.nodes[ks[di]]
+                if kn.kind == YK_STRING and v.texts[Int(kn.a)] == key:
+                    raise DecodeError(DecodeError.KIND_DUP_KEY, r.position())
+                di += 1
             var ti = len(v.texts)
             v.texts.append(key^)
             ks.append(v.add(YamlNode(YK_STRING, Int64(ti))))

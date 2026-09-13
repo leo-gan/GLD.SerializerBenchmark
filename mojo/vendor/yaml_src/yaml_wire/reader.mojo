@@ -58,6 +58,8 @@ struct WireReader[origin: ImmOrigin](Movable):
     var anchor_starts: List[Int]
     var anchor_nodes: List[Int]
     var expand_stack: List[Int]
+    var flow_depth: Int
+    var saw_directive: Bool
 
     def __init__(
         out self,
@@ -79,6 +81,8 @@ struct WireReader[origin: ImmOrigin](Movable):
         self.anchor_starts = List[Int]()
         self.anchor_nodes = List[Int]()
         self.expand_stack = List[Int]()
+        self.flow_depth = 0
+        self.saw_directive = False
         if len(data) >= 3:
             if Int(data[0]) == 0xEF and Int(data[1]) == 0xBB and Int(data[2]) == 0xBF:
                 self.pos = 3
@@ -335,6 +339,7 @@ struct WireReader[origin: ImmOrigin](Movable):
         if self._cur() == 123:
             self.pos += 1
             self.at_line_start = False
+            self.flow_depth += 1
             return MapState(CTX_FLOW, 0)
         if self.at_line_start:
             self.pos = self.line_start + self.line_indent()
@@ -453,6 +458,8 @@ struct WireReader[origin: ImmOrigin](Movable):
             if self._cur() == 125:
                 self.pos += 1
                 self.at_line_start = False
+            if self.flow_depth > 0:
+                self.flow_depth -= 1
         self._leave()
 
     def begin_seq(mut self) raises DecodeError -> SeqState:
@@ -465,6 +472,7 @@ struct WireReader[origin: ImmOrigin](Movable):
         if self._cur() == 91:
             self.pos += 1
             self.at_line_start = False
+            self.flow_depth += 1
             return SeqState(CTX_FLOW, 0)
         if self.at_line_start:
             self.pos = self.line_start + self.line_indent()
@@ -516,6 +524,8 @@ struct WireReader[origin: ImmOrigin](Movable):
             if self._cur() == 93:
                 self.pos += 1
                 self.at_line_start = False
+            if self.flow_depth > 0:
+                self.flow_depth -= 1
         self._leave()
 
     def after_colon(mut self) raises DecodeError -> Int:
@@ -781,16 +791,23 @@ struct WireReader[origin: ImmOrigin](Movable):
     def _directive(mut self) raises DecodeError:
         var start = self.pos
         self.pos += 1
+        self.saw_directive = True
         if self._match("YAML"):
             self._skip_inline_ws()
-            if not self._match("1.2"):
+            # YAML 1.2.2: a 1.x version is accepted (unknown minor → warning).
+            if not self._match("1."):
                 raise DecodeError(DecodeError.KIND_SYNTAX, start)
+            if not is_digit(self._cur()):
+                raise DecodeError(DecodeError.KIND_SYNTAX, start)
+            self.pos += 1
+            while is_digit(self._cur()):
+                self.pos += 1
             self._skip_to_break()
             self._eat_break()
             return
-        if self._match("TAG"):
-            raise DecodeError(DecodeError.KIND_TAG, start)
-        raise DecodeError(DecodeError.KIND_SYNTAX, start)
+        # %TAG and reserved directives are ignored; handle resolution is later.
+        self._skip_to_break()
+        self._eat_break()
 
     def _match(mut self, lit: String) -> Bool:
         var b = lit.as_bytes()
@@ -934,6 +951,14 @@ struct WireReader[origin: ImmOrigin](Movable):
                         b += 1
                 blanks = 0
             var line_end = scan_plain_stop(self.data, self.pos)
+            if self.flow_depth > 0:
+                var t = self.pos
+                while t < line_end:
+                    var fc = Int(self.data[t])
+                    if fc == 44 or fc == 93 or fc == 125:
+                        line_end = t
+                        break
+                    t += 1
             if line_end < len(self.data) and Int(self.data[line_end]) == 35:
                 var j = line_end
                 if j > self.pos and Int(self.data[j - 1]) == 32:

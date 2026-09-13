@@ -6,7 +6,8 @@ from cbor_runtime.error import DecodeError
 comptime AI_INDEF = 31
 comptime MAX_ITEM_BYTES = 64_194_304
 comptime MAX_COUNT = 1_048_576
-comptime MAX_DEPTH = 100
+# Official RFC 8949 vectors nest ~508 arrays/maps. 100 rejected those MUST-accept cases.
+comptime MAX_DEPTH = 1024
 
 
 def head_byte(major: Int, ai: Int) -> Byte:

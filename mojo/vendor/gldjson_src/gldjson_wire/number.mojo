@@ -745,6 +745,111 @@ def _try_int64[
     return True
 
 
+def _finite_or_range(v: Float64, err_off: Int) raises DecodeError -> Float64:
+    if v != v:
+        raise DecodeError(DecodeError.KIND_RANGE, err_off)
+    var bits = UInt64(v.to_bits())
+    var exp = Int((bits >> UInt64(52)) & UInt64(0x7FF))
+    if exp == 0x7FF:
+        raise DecodeError(DecodeError.KIND_RANGE, err_off)
+    return v
+
+
+def _parse_float_scaled[
+    origin: ImmOrigin
+](data: Span[Byte, origin], start: Int, end: Int, err_off: Int) raises DecodeError -> Float64:
+    """RFC 8259: a valid number token may underflow to 0 or overflow (reject Inf).
+
+    Long fraction strings such as `-0.000…0001` make host `atof` fail; rewrite
+    as a short scientific token first.
+    """
+    var i = start
+    var neg = False
+    if i < end and Int(data[i]) == 45:
+        neg = True
+        i += 1
+    var sig = List[Byte]()
+    var lead = 0
+    var frac = 0
+    var exp = 0
+    var saw_dot = False
+    var started = False
+    while i < end:
+        var c = Int(data[i])
+        if c == 46:
+            saw_dot = True
+            i += 1
+            continue
+        if c == 101 or c == 69:
+            i += 1
+            var eneg = False
+            if i < end and (Int(data[i]) == 43 or Int(data[i]) == 45):
+                eneg = Int(data[i]) == 45
+                i += 1
+            var ev = 0
+            while i < end:
+                var d = Int(data[i]) - 48
+                if d < 0 or d > 9:
+                    break
+                if ev < 1000000:
+                    ev = ev * 10 + d
+                i += 1
+            if eneg:
+                exp -= ev
+            else:
+                exp += ev
+            break
+        if c < 48 or c > 57:
+            raise DecodeError(DecodeError.KIND_NUMBER, err_off)
+        if not started:
+            if c == 48:
+                if saw_dot:
+                    lead -= 1
+                i += 1
+                continue
+            started = True
+        if len(sig) < 17:
+            sig.append(data[i])
+            if saw_dot:
+                frac += 1
+        elif not saw_dot:
+            lead += 1
+        i += 1
+    if len(sig) == 0:
+        if neg:
+            return -0.0
+        return 0.0
+    var scale = len(sig) - 1 + lead - frac + exp
+    if scale > 308:
+        raise DecodeError(DecodeError.KIND_RANGE, err_off)
+    if scale < -324:
+        if neg:
+            return -0.0
+        return 0.0
+    var text = String()
+    if neg:
+        text += "-"
+    text += String(chr(Int(sig[0])))
+    if len(sig) > 1:
+        text += "."
+        var k = 1
+        while k < len(sig):
+            text += String(chr(Int(sig[k])))
+            k += 1
+    text += "e"
+    text += String(scale)
+    var v: Float64
+    try:
+        v = atof(text)
+    except _:
+        if scale < 0:
+            if neg:
+                return -0.0
+            return 0.0
+        raise DecodeError(DecodeError.KIND_RANGE, err_off)
+    return _finite_or_range(v, err_off)
+
+
 def _parse_float[
     origin: ImmOrigin
 ](data: Span[Byte, origin], start: Int, end: Int, err_off: Int) raises DecodeError -> Float64:
@@ -753,15 +858,13 @@ def _parse_float[
         s = String(from_utf8=data[start:end])
     except _:
         raise DecodeError(DecodeError.KIND_UTF8, err_off)
-    var v: Float64
     try:
-        v = atof(s)
+        var v = atof(s)
+        if v == v:
+            var bits = UInt64(v.to_bits())
+            var exp = Int((bits >> UInt64(52)) & UInt64(0x7FF))
+            if exp != 0x7FF:
+                return v
     except _:
-        raise DecodeError(DecodeError.KIND_RANGE, err_off)
-    if v != v:
-        raise DecodeError(DecodeError.KIND_RANGE, err_off)
-    var bits = UInt64(v.to_bits())
-    var exp = Int((bits >> UInt64(52)) & UInt64(0x7FF))
-    if exp == 0x7FF:
-        raise DecodeError(DecodeError.KIND_RANGE, err_off)
-    return v
+        pass
+    return _parse_float_scaled(data, start, end, err_off)

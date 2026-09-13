@@ -202,6 +202,21 @@ def decode_item[
         idx = v.add(CborNode(CK_MAP, a=Int64(mstart), b=UInt64(pairs), flags=mflags))
     elif major == 6:
         var child3 = decode_item(r, v)
+        var cn = v.nodes[child3]
+        # RFC 8949 §3.4.1: tag 0 is a date-time text string; tag 1 is a numeric
+        # epoch offset. The official vectors reject a map in either position.
+        if arg == UInt64(0):
+            if cn.kind != CK_TEXT:
+                raise DecodeError(DecodeError.KIND_TAG, at)
+        elif arg == UInt64(1):
+            if (
+                cn.kind != CK_INT
+                and cn.kind != CK_UINT
+                and cn.kind != CK_FLOAT16
+                and cn.kind != CK_FLOAT32
+                and cn.kind != CK_FLOAT64
+            ):
+                raise DecodeError(DecodeError.KIND_TAG, at)
         idx = v.add(CborNode(CK_TAG, b=arg, c=child3))
     elif major == 7:
         if ai == AI_INDEF:
