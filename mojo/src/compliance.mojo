@@ -475,7 +475,7 @@ def main() raises:
                 vers.append("0.4.0")
             elif fmt == "yaml":
                 sers.append("gld-yaml")
-                vers.append("0.3.0")
+                vers.append("0.4.0")
             elif fmt == "toml":
                 sers.append("mojo-toml")
                 vers.append("0.9.1")

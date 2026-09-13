@@ -153,6 +153,7 @@ struct WireReader[origin: ImmOrigin](Movable):
                     self.pos = i
                     self._eat_break()
                     continue
+                self.pos = i
                 return
             var c = self._cur()
             if c == 32 or c == 9:
@@ -285,9 +286,44 @@ struct WireReader[origin: ImmOrigin](Movable):
                 raise DecodeError(DecodeError.KIND_TAG, start)
             return
         if self._cur() == 60:
-            raise DecodeError(DecodeError.KIND_TAG, self.pos)
-        if self.pos < len(self.data) and _is_tag_char(self._cur()):
-            raise DecodeError(DecodeError.KIND_TAG, self.pos)
+            self.pos += 1
+            var vs = self.pos
+            while self.pos < len(self.data) and self._cur() != 62:
+                self.pos += 1
+            if self._cur() != 62:
+                raise DecodeError(DecodeError.KIND_TAG, vs)
+            var raw = string_from_utf8(self.data[vs : self.pos], vs)
+            self.pos += 1
+            if raw == "tag:yaml.org,2002:str":
+                self.last_tag = TAG_STR
+            elif raw == "tag:yaml.org,2002:int":
+                self.last_tag = TAG_INT
+            elif raw == "tag:yaml.org,2002:bool":
+                self.last_tag = TAG_BOOL
+            elif raw == "tag:yaml.org,2002:null":
+                self.last_tag = TAG_NULL
+            elif raw == "tag:yaml.org,2002:float":
+                self.last_tag = TAG_FLOAT
+            elif raw == "tag:yaml.org,2002:seq":
+                self.last_tag = TAG_SEQ
+            elif raw == "tag:yaml.org,2002:map":
+                self.last_tag = TAG_MAP
+            elif raw == "tag:yaml.org,2002:binary":
+                self.last_tag = TAG_BINARY
+            else:
+                self.last_tag = TAG_NONSPEC
+            return
+        if self.pos < len(self.data) and (
+            _is_tag_char(self._cur()) or self._cur() == 47 or self._cur() == 58
+        ):
+            while self.pos < len(self.data):
+                var tc = self._cur()
+                if _is_tag_char(tc) or tc == 47 or tc == 58 or tc == 46 or tc == 44:
+                    self.pos += 1
+                    continue
+                break
+            self.last_tag = TAG_NONSPEC
+            return
         self.last_tag = TAG_NONSPEC
 
     def take_alias(mut self) raises DecodeError -> Optional[Int]:
@@ -345,7 +381,7 @@ struct WireReader[origin: ImmOrigin](Movable):
             self.pos = self.line_start + self.line_indent()
         return MapState(CTX_BLOCK, self.pos - self.line_start)
 
-    def next_key(mut self, state: MapState) raises DecodeError -> Bool:
+    def next_key(mut self, mut state: MapState) raises DecodeError -> Bool:
         if state.ctx == CTX_BLOCK and not self.at_line_start and not self._at_end():
             var c = self._cur()
             if c != 10 and c != 13 and c != 35:
@@ -354,20 +390,23 @@ struct WireReader[origin: ImmOrigin](Movable):
         if state.ctx == CTX_FLOW:
             self._skip_inline_ws()
             if self._cur() == 125:
-                self.pos += 1
-                self.at_line_start = False
                 return False
-            if self._cur() == 44:
+            if state.indent > 0:
+                if self._cur() != 44:
+                    if self._at_end():
+                        raise DecodeError(DecodeError.KIND_EOF, self.pos)
+                    raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
                 self.pos += 1
                 self.at_line_start = False
                 self.skip_separation()
                 self._skip_inline_ws()
-            if self._cur() == 125:
-                self.pos += 1
-                self.at_line_start = False
-                return False
+                if self._cur() == 125 or self._cur() == 44:
+                    raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
+            elif self._cur() == 44:
+                raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
             if self._at_end():
                 raise DecodeError(DecodeError.KIND_EOF, self.pos)
+            state.indent += 1
             return True
         if self._at_end() or self._is_doc_mark():
             return False
@@ -478,40 +517,52 @@ struct WireReader[origin: ImmOrigin](Movable):
             self.pos = self.line_start + self.line_indent()
         return SeqState(CTX_BLOCK, self.pos - self.line_start)
 
-    def next_item(mut self, state: SeqState) raises DecodeError -> Bool:
+    def next_item(mut self, mut state: SeqState) raises DecodeError -> Bool:
         self.skip_separation()
         if state.ctx == CTX_FLOW:
             self._skip_inline_ws()
             if self._cur() == 93:
-                self.pos += 1
-                self.at_line_start = False
                 return False
-            if self._cur() == 44:
+            if state.indent > 0:
+                if self._cur() != 44:
+                    if self._at_end():
+                        raise DecodeError(DecodeError.KIND_EOF, self.pos)
+                    raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
                 self.pos += 1
                 self.at_line_start = False
                 self.skip_separation()
                 self._skip_inline_ws()
-            if self._cur() == 93:
-                self.pos += 1
-                self.at_line_start = False
-                return False
+                if self._cur() == 93 or self._cur() == 44:
+                    raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
+            elif self._cur() == 44:
+                raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
             if self._at_end():
                 raise DecodeError(DecodeError.KIND_EOF, self.pos)
+            state.indent += 1
             return True
         if self._at_end() or self._is_doc_mark():
+            return False
+        # Compact nested sequence: "- - item" stays on the same line.
+        if not self.at_line_start:
+            if self._dash_is_seq():
+                self.pos += 1
+                self.at_line_start = False
+                if self._cur() == 32 or self._cur() == 9:
+                    self.pos += 1
+                return True
             return False
         var col = self.line_indent()
         if col < state.indent:
             return False
-        if self.pos < len(self.data) and Int(self.data[self.pos]) != 45 and col == state.indent:
-            if self._cur() != 45:
-                if col == state.indent and self._cur() != 45:
-                    return False
         self.pos = self.line_start + state.indent
         if self._cur() != 45:
             if col > state.indent:
                 raise DecodeError(DecodeError.KIND_SYNTAX, self.pos)
             return False
+        if not self._dash_is_seq() and self.pos + 1 < len(self.data):
+            var n = Int(self.data[self.pos + 1])
+            if n != 32 and n != 9 and n != 10 and n != 13:
+                return False
         self.pos += 1
         self.at_line_start = False
         if self._cur() == 32 or self._cur() == 9:
@@ -774,6 +825,12 @@ struct WireReader[origin: ImmOrigin](Movable):
     def expect_colon(mut self) raises DecodeError:
         self._expect_colon()
 
+    def is_flow_map_brace(self) -> Bool:
+        return self._cur() == 123
+
+    def starts_explicit_key(self) -> Bool:
+        return self._cur() == 63
+
     def looks_map(self) -> Bool:
         if self._dash_is_seq():
             return False
@@ -862,6 +919,9 @@ struct WireReader[origin: ImmOrigin](Movable):
         var in_q = 0
         while i < len(self.data):
             var c = Int(self.data[i])
+            if self.flow_depth > 0 and in_q == 0:
+                if c == 44 or c == 93 or c == 125:
+                    return False
             if in_q == 34:
                 if c == 92:
                     i += 2
@@ -887,6 +947,22 @@ struct WireReader[origin: ImmOrigin](Movable):
                 var n = Int(self.data[i + 1])
                 if n == 32 or n == 9 or n == 10 or n == 13 or n == 35:
                     return True
+                if self.flow_depth > 0:
+                    if (
+                        n == 34
+                        or n == 39
+                        or n == 91
+                        or n == 123
+                        or n == 44
+                        or n == 93
+                        or n == 125
+                        or (n >= 48 and n <= 57)
+                        or n == 45
+                        or n == 116
+                        or n == 102
+                        or n == 110
+                    ):
+                        return True
             i += 1
         return False
 
@@ -929,6 +1005,10 @@ struct WireReader[origin: ImmOrigin](Movable):
         if self._at_end():
             return String()
         var min_indent = self.line_indent()
+        if self.at_line_start:
+            # Root / own-line plains may continue at the same column
+            # (yaml-test-suite 9YRD). Mid-line values stay parent-indented.
+            min_indent -= 1
         var out = List[Byte]()
         var first = True
         var blanks = 0
@@ -985,6 +1065,11 @@ struct WireReader[origin: ImmOrigin](Movable):
                             raise DecodeError(DecodeError.KIND_SYNTAX, k)
                         stop_colon = True
                         break
+                    if self.flow_depth > 0 and (
+                        nxt == 44 or nxt == 93 or nxt == 125 or nxt == 34 or nxt == 39
+                    ):
+                        stop_colon = True
+                        break
                 out.append(self.data[k])
                 k += 1
             if stop_colon:
@@ -1022,12 +1107,12 @@ struct WireReader[origin: ImmOrigin](Movable):
                 self.pos += 1
             else:
                 break
+        var parent = self.line_indent()
         self._skip_to_break()
         if self.pos < len(self.data) and (
             Int(self.data[self.pos]) == 10 or Int(self.data[self.pos]) == 13
         ):
             self._eat_break()
-        var parent = self.line_indent()
         var content_indent = indent_ind
         if content_indent < 0:
             content_indent = -1

@@ -365,6 +365,17 @@ def _decode_node[
             i += 1
         return v.add(YamlNode(YK_SEQ, Int64(base), UInt64(len(items))))
     if r.looks_map():
+        if r.flow_depth > 0 and not r.is_flow_map_brace() and not r.starts_explicit_key():
+            var key = r.read_string()
+            r.expect_colon()
+            var val = _decode_node(r, v)
+            var ti = len(v.texts)
+            v.texts.append(key^)
+            var ki = v.add(YamlNode(YK_STRING, Int64(ti)))
+            var base = len(v.kids)
+            v.kids.append(ki)
+            v.kids.append(val)
+            return v.add(YamlNode(YK_MAP, Int64(base), UInt64(1)))
         var st = r.begin_map()
         var ks = List[Int]()
         var vs = List[Int]()

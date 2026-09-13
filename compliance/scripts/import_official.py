@@ -156,6 +156,24 @@ def import_json() -> None:
     )
 
 
+def unescape_yaml_test_suite(text: str) -> str:
+    """Decode yaml-test-suite visualization glyphs into real bytes.
+
+    See yaml/yaml-test-suite ReadMe.md “Special Characters”.
+    """
+    for glyph in ("————»", "———»", "——»", "—»", "»"):
+        text = text.replace(glyph, "\t")
+    text = text.replace("␣", " ")
+    text = text.replace("↵", "")
+    text = text.replace("←", "\r")
+    text = text.replace("⇔", "\ufeff")
+    if "∎" in text:
+        text = text.replace("∎", "")
+        if text.endswith("\n"):
+            text = text[:-1]
+    return text
+
+
 def import_yaml() -> None:
     src = SRC / "yaml-test-suite" / "src"
     if not src.is_dir():
@@ -192,6 +210,7 @@ def import_yaml() -> None:
                 yml = item["yaml"]
                 if not isinstance(yml, str):
                     continue
+                yml = unescape_yaml_test_suite(yml)
                 official.append(
                     {
                         "id": f"yts-{path.stem}-{idx}",
