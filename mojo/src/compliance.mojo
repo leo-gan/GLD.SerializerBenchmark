@@ -2,7 +2,7 @@
 
 from std.collections import List
 from std.sys import argv
-from emberjson import parse
+from emberjson import parse, to_string
 from ehsanmok_json import loads as ehsan_loads
 from gldjson import decode_value as json_decode
 from yaml import decode_value as yaml_decode
@@ -131,7 +131,7 @@ def _try_gldjson(text: String) raises:
 
 
 def _try_yaml(text: String) raises:
-    # Alias pairs can expand into a memory bomb in the official suites.
+    # Alias pairs can expand into a memory bomb and hang the official suite.
     if _contains(text, "&") and _contains(text, "*"):
         raise Error("yaml alias pair skipped")
     if text.byte_length() > 16384:
@@ -162,11 +162,16 @@ def _try_avro(buf: List[Byte], schema_json: String) raises:
 
 def _try_protobuf(buf: List[Byte], schema: String, text: String) raises:
     if schema == "json":
-        var v = parse(text)
-        try:
-            _ = v.object()
-        except:
+        var b = text.as_bytes()
+        var i = 0
+        while i < len(b):
+            var c = Int(b[i])
+            if c != 32 and c != 9 and c != 10 and c != 13:
+                break
+            i += 1
+        if i >= len(b) or Int(b[i]) != 123:
             raise Error("proto3 JSON message must be an object")
+        _ = parse(text)
         return
     var i = 0
     while i < len(buf):
@@ -467,16 +472,16 @@ def main() raises:
                 sers.append("ehsanmok-json")
                 vers.append("0.3.1")
                 sers.append("mojo-json")
-                vers.append("0.3.0")
+                vers.append("0.4.0")
             elif fmt == "yaml":
                 sers.append("gld-yaml")
-                vers.append("0.2.0")
+                vers.append("0.3.0")
             elif fmt == "toml":
                 sers.append("mojo-toml")
                 vers.append("0.9.1")
             elif fmt == "cbor":
                 sers.append("mojo-cbor")
-                vers.append("0.6.0")
+                vers.append("0.7.0")
             elif fmt == "msgpack":
                 sers.append("mojo-msgpack")
                 vers.append("0.3.0")
@@ -557,12 +562,12 @@ def main() raises:
                     section_url = ""
                 var schema = ""
                 try:
-                    schema = String(c["schema"])
+                    schema = to_string(c["schema"])
                 except:
-                    try:
-                        schema = String(c["schema"].string())
-                    except:
-                        schema = ""
+                    schema = ""
+                # proto3 JSON mapping is flagged with the string "json".
+                if schema == "\"json\"":
+                    schema = "json"
                 if _too_deep(input_text):
                     skipped += 1
                     ci += 1
