@@ -5,7 +5,7 @@ from std.sys import argv
 from emberjson import parse, to_string
 from ehsanmok_json import loads as ehsan_loads
 from gldjson import decode_value as json_decode
-from yaml import decode_value as yaml_decode
+from yaml import decode_all_values as yaml_decode_all
 from cbor import decode_value as cbor_decode
 from msgpack import decode_value as msgpack_decode
 from toml import parse as toml_parse
@@ -131,12 +131,9 @@ def _try_gldjson(text: String) raises:
 
 
 def _try_yaml(text: String) raises:
-    # Alias pairs can expand into a memory bomb and hang the official suite.
-    if _contains(text, "&") and _contains(text, "*"):
-        raise Error("yaml alias pair skipped")
     if text.byte_length() > 16384:
         raise Error("yaml input too large")
-    _ = yaml_decode(text.as_bytes())
+    _ = yaml_decode_all(text.as_bytes())
 
 
 def _try_toml(text: String) raises:
@@ -475,7 +472,7 @@ def main() raises:
                 vers.append("0.4.0")
             elif fmt == "yaml":
                 sers.append("gld-yaml")
-                vers.append("0.3.0")
+                vers.append("0.5.0")
             elif fmt == "toml":
                 sers.append("mojo-toml")
                 vers.append("0.9.1")
