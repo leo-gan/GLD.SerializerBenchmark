@@ -1,6 +1,6 @@
-"""ehsanmok/json (v0.3.1) — serialize_json encode, loads + Value DOM decode.
+"""ehsanmok/json (v0.4.0) — serialize_json encode, loads + Value DOM decode.
 
-v0.3.1 reflects Int32 and List[struct] on the write path, so encode uses
+v0.3.1+ reflects Int32 and List[struct] on the write path, so encode uses
 the official typed serializer (same JSON shape as EmberJson). Telemetry
 is the exception: serialize_json mis-matches List[Float64] as a float
 (the type name contains SIMD[DType.float64), so that cell builds a
@@ -183,7 +183,7 @@ struct EhsanJsonSer:
     var version: String
 
     def __init__(out self):
-        self.version = "0.3.1"
+        self.version = "0.4.0"
 
     def name(self) -> String:
         return "ehsanmok-json"

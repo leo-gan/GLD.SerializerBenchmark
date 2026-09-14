@@ -15,7 +15,7 @@ After this page you should be able to:
 1. Wire a library into one language’s benchmark runner so it appears in the CSV.
 2. Land a **performance-complete** client (documented hot path, not only a correct round-trip).
 3. Fill `SerializerVersion`, inventory docs, and counts correctly.
-4. Run a smoke/full bench, regenerate published results, and open a PR that reviewers can merge.
+4. Run a smoke/full bench, re-run that language’s compliance suite, regenerate published results, and open a PR that reviewers can merge.
 
 ---
 
@@ -219,11 +219,12 @@ Example lesson from LightProto: the package builds on .NET 8 targeting packs, bu
 Update human-facing inventory so the site matches the runner:
 
 1. Language overview table — for example `docs/c-sharp/index.md` (log name, category, one-line notes).
-2. Language README serializer count (if it states a number).
-3. Root `README.md` language bullet count (if present).
-4. Comment in `config/benchmark_config.yaml` for that language (if it mentions a count).
-5. Stream/string honesty notes if the path is adapted or Base64-on-string (binary codecs on C# string mode usually Base64).
-6. Optional one-line **call-path** note when the library has a known slow public API (e.g. Reflect vs codegen, two-step Avro deser).
+2. **Source URL + Specifics:** add the log name to `dashboard/scripts/write-serializer-sources.py` (`URL_OVERRIDE` if the compliance catalog docs URL is not the repo, `SPEC_KEY` / `SPECIFICS` for the origin paragraph). Run `python3 dashboard/scripts/write-serializer-sources.py` then `python3 scripts/apply-serializer-sources-to-docs.py` **after** a bench so `version` is the measured `SerializerVersion`. Serializer names in the language table, Specifics headings, and the Dashboard must link to that source.
+3. Language README serializer count (if it states a number).
+4. Root `README.md` language bullet count (if present).
+5. Comment in `config/benchmark_config.yaml` for that language (if it mentions a count).
+6. Stream/string honesty notes if the path is adapted or Base64-on-string (binary codecs on C# string mode usually Base64).
+7. Optional one-line **call-path** note when the library has a known slow public API (e.g. Reflect vs codegen, two-step Avro deser).
 
 ### 8. Build, peer-smoke, then full results
 
@@ -238,6 +239,9 @@ cd c-sharp && ./scripts/run-benchmarks.sh custom 30 YourSerializerName message
 # Full matrix for the language (preferred before merge)
 cd ..
 ./scripts/run-all-benchmarks.sh --mode full --lang csharp --analyze
+
+# Spec suite for that language (required after a new library or version bump)
+./scripts/run-compliance.sh --lang csharp
 ```
 
 Confirm:
@@ -248,6 +252,7 @@ Confirm:
 - **Ops/s (or total time) is not an unexplained multi-× outlier** vs same-family peers after the hot-path audit.
 - `size(n=100)/size(n=1)` roughly scales with N for binary codecs.
 - Dashboard Details / Compare: `python3 dashboard/scripts/sync-data.py` (commit `dashboard/public/data/<lang>_latest.json.gz` if you publish dashboard data).
+- Compliance: `logs/compliance/latest-<lang>.json` exists for this language; `sync-compliance.py` refreshed `dashboard/public/data/compliance.json.gz`. Library misses are report-only (not a red build).
 - Unpublished report: `analyze-benchmarks` writes `reports/<docs_dir>/results.md` (do not commit to the site).
 
 ### 9. Pull request
@@ -258,7 +263,7 @@ Confirm:
 | Hot-path client (reuse / typed API / prepare) | Publishing full numbers on a known multi-×-slow snippet path |
 | Version map / version getter | Blank `SerializerVersion` |
 | Docs inventory + count bumps | Regenerating unrelated languages’ results |
-| Full (or at least all-single) run for **that** language | Force-adding gitignored raw `logs/**` CSVs unless the project asks for them |
+| Full (or at least all-single) run **and** `run-compliance.sh --lang` for **that** language | Force-adding gitignored raw `logs/**` CSVs unless the project asks for them |
 | Short PR notes: library link, call-path notes, honesty caveats, SDK needs | Scope creep into analysis core |
 
 Fork PRs may need a maintainer to **Approve and run workflows** before CI jobs start.

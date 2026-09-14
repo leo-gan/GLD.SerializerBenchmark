@@ -65,6 +65,8 @@ add("c", "protobuf-wire", ["protobuf"], "https://protobuf.dev/programming-guides
     "In-tree proto3 tag reader implementing the published Protocol Buffers encoding guide.")
 add("c", "custom-binary", [], "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/c/index.md",
     "Suite length-prefixed V2 baseline; no public interchange spec.")
+add("c", "libyaml", ["yaml"], "https://github.com/yaml/libyaml",
+    "libyaml: official C library for YAML 1.1 (the parser under PyYAML / Yams).")
 
 # --- Python ---
 add("python", "json", ["json"], "https://docs.python.org/3/library/json.html",
@@ -183,6 +185,8 @@ add("go", "vmihailenco/msgpack", ["msgpack"], "https://github.com/vmihailenco/ms
     "vmihailenco/msgpack: MessagePack for Go.")
 add("go", "shamaton/msgpack", ["msgpack"], "https://github.com/shamaton/msgpack",
     "shamaton/msgpack: MessagePack for Go.")
+add("go", "shamaton/msgpack (array)", ["msgpack"], "https://github.com/shamaton/msgpack",
+    "shamaton/msgpack struct-as-array path (no field-name keys).")
 add("go", "ugorji/msgpack", ["msgpack"], "https://github.com/ugorji/go",
     "ugorji/go codec MsgpackHandle: MessagePack.")
 add("go", "protobuf", ["protobuf"], "https://pkg.go.dev/google.golang.org/protobuf",
@@ -483,7 +487,7 @@ add("swift", "IkigaJSON", ["json"], "https://github.com/orlandos-nl/IkigaJSON",
     "IkigaJSON: Swift JSON encoder/decoder.")
 add("swift", "Yams", ["yaml"], "https://github.com/jpsim/Yams",
     "Yams: libyaml wrapper for Swift (YAML).")
-add("swift", "SwiftCbor", ["cbor"], "https://github.com/valpackett/swift-cbor",
+add("swift", "SwiftCbor", ["cbor"], "https://github.com/nnabeyang/swift-cbor",
     "swift-cbor: Codable CBOR.")
 add("swift", "SwiftMsgpack", ["msgpack"], "https://github.com/nnabeyang/swift-msgpack",
     "swift-msgpack: Codable MessagePack.")
@@ -569,7 +573,7 @@ add("zig", "s2s", [], "https://github.com/ziglibs/s2s",
     "s2s: Zig struct-to-stream, Zig-only.")
 
 # --- Mojo ---
-add("mojo", "EmberJson", ["json"], "https://github.com/MojoSerial/EmberJson",
+add("mojo", "EmberJson", ["json"], "https://github.com/bgreni/EmberJson",
     "EmberJson: Mojo JSON serialize/deserialize.")
 add("mojo", "ehsanmok-json", ["json"], "https://github.com/ehsanmok/json",
     "ehsanmok/json: Mojo JSON parser.")

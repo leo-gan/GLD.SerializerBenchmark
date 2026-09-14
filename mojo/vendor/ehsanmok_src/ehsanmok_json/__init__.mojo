@@ -7,10 +7,10 @@
   tape. The simdjson FFI shim is opt-in via `target='cpu-simdjson'`.
 - **One representation across CPU and GPU.** Every backend writes
   into the same tape-backed `Document`. `Value` is a stable index
-  into that tape, so iteration is a tape walk rather than a re-parse,
-  and nested mutation propagates through the parent
-  (`doc["a"]["b"].set(...)` is observed by `doc`).
-- **GPU acceleration.** `target='gpu'` runs natively on NVIDIA, AMD,
+  into that tape, so iteration is a tape walk rather than a re-parse.
+  `doc["a"]` hands back an independent value, so a nested mutation is
+  written through `doc.set_at("/a/b", v)` rather than by chaining.
+- **GPU acceleration.** `json.gpu.loads[target="gpu"]` runs natively on NVIDIA, AMD,
   and Apple Metal under one lean pipeline (fused structural-bitmap
   kernel plus positions-only stream compaction). Only worth it for
   files >100 MB on discrete cards.
@@ -47,7 +47,11 @@ scores.append(Value(95))
 doc.set("scores", scores)
 
 var fast = loads[target="cpu-simdjson"]('{"x": 1}')   # simdjson FFI
-var big  = load[target="gpu"]("huge.json")            # GPU (>100 MB)
+
+# GPU parsing is opt-in: it needs `max-core`, which is under the
+# Modular Community License. See `json/gpu/LICENSE-GPU.md`.
+from json.gpu import load
+var big = load[target="gpu"]("huge.json")             # GPU (>100 MB)
 
 print(dumps(data, indent="  "))         # pretty print
 ```
@@ -62,7 +66,7 @@ Notes:
   containers allocate nothing.
 - The default CPU parser is the two-pass stage 1 + stage 2 walker
   (`json.cpu.parse_cpu_native_tape`).
-- `loads[target='gpu']` emits a raw structural bitmap on the GPU
+- `json.gpu.loads[target="gpu"]` emits a raw structural bitmap on the GPU
   and applies the in-string filter on the CPU side in
   `gpu/tape_adapter.mojo`, so NVIDIA / AMD / Apple Metal share one
   pipeline.
@@ -75,9 +79,21 @@ Notes:
 from .parser import loads, load
 from .serialize import dumps, dump
 from .config import ParserConfig, SerializerConfig
+from .ijson import (
+    check_ijson,
+    check_no_unpaired_surrogates,
+    check_unique_member_names,
+)
 
 # Value type.
-from .value import Value, Null
+from .value import (
+    Null,
+    Value,
+    ValueArrayIter,
+    ValueItemsIter,
+    ValueKeysIter,
+    ValueValuesIter,
+)
 
 # Manual ser/de traits.
 from .serialize import to_json_value, to_json_string, Serializable, serialize
@@ -103,12 +119,26 @@ from .reflection import (
 
 # RFCs and queries.
 from .patch import apply_patch, merge_patch, create_merge_patch
-from .jsonpath import jsonpath_query, jsonpath_one
-from .schema import validate, is_valid, ValidationResult, ValidationError
+from .pointer import (
+    array_index,
+    build_pointer,
+    escape_token,
+    parse_pointer,
+)
+from .jsonpath import JSONPath, jsonpath_query, jsonpath_one
+from .schema import (
+    FormatAnnotation,
+    Schema,
+    ValidationError,
+    ValidationResult,
+    is_valid,
+    validate,
+)
 
 # Streaming/lazy parsing (CPU only).
 from .lazy import LazyValue
 from .streaming import StreamingParser, ArrayStreamingParser
 
 # Byte-level serialization sink.
+from .reader import JsonReader
 from .writer import JsonWriter

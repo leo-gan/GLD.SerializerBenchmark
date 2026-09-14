@@ -2,7 +2,7 @@
 # Unified CPU/GPU parser with compile-time target and backend selection
 
 from std.collections import List
-from std.memory import memcpy, ArcPointer
+from std.memory import unsafe_memcpy, ArcPointer
 
 from .value import Value, Null, make_view_value
 from .serialize import dumps
@@ -11,6 +11,7 @@ from .cpu import SIMDJSON_TYPE_INT64, SIMDJSON_TYPE_UINT64
 from .cpu import SIMDJSON_TYPE_DOUBLE, SIMDJSON_TYPE_STRING
 from .cpu import SIMDJSON_TYPE_ARRAY, SIMDJSON_TYPE_OBJECT
 from .cpu import parse_cpu_native_tape
+from .cpu.validate import is_valid_utf8
 from .document import (
     Document,
     pack_tape_entry,
@@ -25,7 +26,6 @@ from .document import (
     TAPE_TAG_OBJECT,
 )
 from .types import JSONInput, JSONResult
-from .gpu import parse_json_gpu, parse_gpu_to_value
 
 
 # =============================================================================
@@ -147,7 +147,7 @@ def _parse_cpu_simdjson(s: String) raises -> Value:
     return make_view_value(arc, root_idx)
 
 
-def _parse_cpu_mojo(s: String) raises -> Value:
+def _parse_cpu_mojo(var s: String) raises -> Value:
     """Parse JSON using the two-pass CPU parser (stage 1 + stage 2)
     into a tape-backed `Document`. The returned `Value` is a view over
     that document.
@@ -156,7 +156,7 @@ def _parse_cpu_mojo(s: String) raises -> Value:
     walker on the benchmark corpora). Differential testing routes
     through `cpu.parse_cpu_native_tape[force_scalar=True]`.
     """
-    return parse_cpu_native_tape(s)
+    return parse_cpu_native_tape(s^)
 
 
 def _parse_cpu[backend: StaticString = "simdjson"](s: String) raises -> Value:
@@ -181,64 +181,7 @@ def _parse_cpu[backend: StaticString = "simdjson"](s: String) raises -> Value:
         comptime assert False, "Unknown backend: use 'simdjson' or 'mojo'"
 
 
-# =============================================================================
-# GPU Parser
-# =============================================================================
-
-
-def _parse_gpu(s: String) raises -> Value:
-    """Parse JSON using the GPU pipeline.
-
-    GPU computes structural positions in parallel; the tape adapter
-    (`gpu/tape_adapter.mojo`) applies the in-string filter on the
-    CPU side and feeds the result to stage 2, so Value construction
-    goes through the same code path as the CPU backends.
-    """
-    var data = s.as_bytes()
-    var start = 0
-
-    # Skip leading whitespace
-    while start < len(data) and (
-        data[start] == 0x20
-        or data[start] == 0x09
-        or data[start] == 0x0A
-        or data[start] == 0x0D
-    ):
-        start += 1
-
-    if start >= len(data):
-        raise Error(json_parse_error("Empty or whitespace-only input", s, 0))
-
-    var first_char = data[start]
-
-    # Top-level primitives short-circuit GPU launch overhead.
-    if first_char == UInt8(ord("n")):
-        return Value(Null())
-    if first_char == UInt8(ord("t")):
-        return Value(True)
-    if first_char == UInt8(ord("f")):
-        return Value(False)
-    if first_char == 0x22:  # '"'
-        return _parse_string_value(s, start)
-    if first_char == UInt8(ord("-")) or (
-        first_char >= UInt8(ord("0")) and first_char <= UInt8(ord("9"))
-    ):
-        return _parse_number_value(s, start)
-
-    # Objects and arrays: GPU produces structural positions, tape adapter
-    # converts them into a Value via stage 2.
-    var n = len(data)
-    var bytes = List[UInt8](capacity=n)
-    bytes.resize(n, 0)
-    memcpy(dest=bytes.unsafe_ptr(), src=data.unsafe_ptr(), count=n)
-
-    var input_obj = JSONInput(bytes^)
-    var result = parse_json_gpu(input_obj^)
-
-    return parse_gpu_to_value(s, result^)
-
-
-def _parse_string_value(s: String, start: Int) raises -> Value:
+def parse_string_scalar(s: String, start: Int) raises -> Value:
     """Parse a string value."""
     var data = s.as_bytes()
     var n = len(data)
@@ -267,7 +210,7 @@ def _parse_string_value(s: String, start: Int) raises -> Value:
     return Value(String(unsafe_from_utf8=unescaped^))
 
 
-def _parse_number_value(s: String, start: Int) raises -> Value:
+def parse_number_scalar(s: String, start: Int) raises -> Value:
     """Parse a number value."""
     var data = s.as_bytes()
     var num_str = String()
@@ -302,8 +245,12 @@ def _parse_number_value(s: String, start: Int) raises -> Value:
 # =============================================================================
 
 
-def loads[target: StaticString = "cpu"](s: String) raises -> Value:
+def loads[target: StaticString = "cpu"](var s: String) raises -> Value:
     """Deserialize JSON string to a Value (like Python's json.loads).
+
+    The parsed document owns its input, so `s` is taken by value. Pass
+    a string you no longer need with `^` and it is moved rather than
+    copied.
 
     Parameters:
         target: Parsing target/backend. Options: "cpu" (default, pure Mojo),
@@ -321,23 +268,72 @@ def loads[target: StaticString = "cpu"](s: String) raises -> Value:
         var data = loads[target="cpu-simdjson"](s)  # Use simdjson FFI.
     """
 
+    return _loads_value[target](s^)
+
+
+def _loads_value[target: StaticString](var s: String) raises -> Value:
+    """The body of `loads`, callable without overload ambiguity.
+
+    `loads` is overloaded on its parameters as well as its arguments,
+    so a call with one explicit parameter inside this module can match
+    the NDJSON form. Calls that mean "one value" come here instead.
+    """
     comptime if target == "cpu":
-        return _parse_cpu["mojo"](s)
+        return _parse_cpu_mojo(s^)
     elif target == "cpu-simdjson":
         return _parse_cpu["simdjson"](s)
     elif target == "gpu":
-        # The GPU pipeline runs natively on NVIDIA, AMD, and Apple
-        # Metal: `gpu/kernels.mojo` emits the raw structural bitmap
-        # and `gpu/tape_adapter.mojo` applies the in-string filter
-        # CPU-side. See `_parse_gpu` for the entry point.
-        return _parse_gpu(s)
+        # The GPU pipeline cannot be reached from here. Mojo resolves
+        # every import statement it can see, whether or not the branch
+        # holding it survives `comptime if`, so a `from .gpu import ...`
+        # anywhere in this module would make `max-core` a hard
+        # requirement of `import json`. Keeping the GPU entry point in
+        # `json/gpu/backend.mojo`, which nothing on the CPU path imports,
+        # is what lets the default install need only Mojo and simdjson.
+        comptime assert (
+            False
+        ), "target='gpu' moved in 0.4.0: install max-core and call json_gpu"
     else:
-        return _parse_cpu["mojo"](s)
+        return _parse_cpu_mojo(s^)
+
+
+def loads[target: StaticString = "cpu"](bytes: Span[UInt8, _]) raises -> Value:
+    """Deserialize JSON bytes to a Value.
+
+    The same parse as the string form, for callers that already hold
+    bytes: a file buffer, a `List[UInt8]`, or a slice of a larger
+    document. The bytes are copied once into the document that backs
+    the returned `Value`, instead of being turned into a `String` by
+    the caller and copied again on the way in.
+
+    The bytes are checked for well-formed UTF-8 before anything else.
+    They have to be: `String` carries that as an invariant, so handing
+    it ill-formed bytes is undefined behaviour and trips an assertion
+    under `-D ASSERT=all`. An ill-formed input raises here instead,
+    which is the same outcome the parser would have reached for a
+    string, reported earlier and by position.
+
+    Parameters:
+        target: Parsing target/backend. Options: "cpu" (default, pure Mojo),
+            "cpu-simdjson" (FFI), or "gpu" (for large files).
+
+    Args:
+        bytes: JSON text to parse.
+
+    Returns:
+        Parsed Value.
+
+    Example:
+        var data = loads(buffer.as_bytes()).
+    """
+    if not is_valid_utf8(bytes):
+        raise Error("invalid UTF-8 in input")
+    return _loads_value[target](String(unsafe_from_utf8=bytes))
 
 
 def loads[
     target: StaticString = "cpu"
-](s: String, config: ParserConfig) raises -> Value:
+](var s: String, config: ParserConfig) raises -> Value:
     """Deserialize JSON with custom configuration.
 
     Parameters:
@@ -354,14 +350,23 @@ def loads[
         var data = loads('{"a": 1} // comment', ParserConfig(allow_comments=True)).
     """
 
+    # The surrogate rule reads the source, because parsing turns an
+    # unpaired escape into U+FFFD and that is indistinguishable from a
+    # literal one. The uniqueness rule reads the parse, because it is
+    # about structure. Both run only when asked for.
+    if config.ijson:
+        check_no_unpaired_surrogates(s)
     var preprocessed = preprocess_json(s, config)
-    return loads[target](preprocessed)
+    var value = _loads_value[target](preprocessed^)
+    if config.ijson:
+        check_unique_member_names(value)
+    return value^
 
 
 def loads[
     target: StaticString = "cpu",
     format: StaticString = "json",
-](s: String) raises -> List[Value]:
+](var s: String) raises -> List[Value]:
     """Deserialize NDJSON string to a list of Values.
 
     Parameters:
@@ -388,7 +393,7 @@ def loads[
         var line = lines[i]
         if _is_whitespace_only(line):
             continue
-        var value = loads[target](line)
+        var value = _loads_value[target](line)
         result.append(value^)
 
     return result^
@@ -576,6 +581,7 @@ def load[streaming: Bool](path: String) raises -> StreamingParser:
 
 
 from .config import ParserConfig
+from .ijson import check_no_unpaired_surrogates, check_unique_member_names
 from .lazy import LazyValue
 from .streaming import StreamingParser
 from .errors import json_parse_error

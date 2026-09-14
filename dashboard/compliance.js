@@ -7,6 +7,10 @@
 import './compliance.css';
 import { serializerDisplayName } from './format.js';
 import {
+  loadSerializerSources,
+  serializerNameHtml,
+} from './serializer-sources.js';
+import {
   heatmapFromMatrix,
   languageOf as languageOfCell,
   matchesRow as matrixMatchesRow,
@@ -322,7 +326,7 @@ function renderFailCard(row) {
   return `
     <article class="cmp-fail-card">
       <h4 class="cmp-fail-id">${escapeHtml(row.title || row.id)}</h4>
-      <p class="cmp-fail-meta">${escapeHtml(row.id)} · ${escapeHtml(serializerLabel(row))} · ${escapeHtml(row.standard || '')}</p>
+      <p class="cmp-fail-meta">${escapeHtml(row.id)} · ${serializerNameHtml(row.language, serializerOf(row), serializerLabel(row))} · ${escapeHtml(row.standard || '')}</p>
       <dl class="cmp-fail-dl">
         <dt>Source</dt>
         <dd><pre>${escapeHtml(quoteSource(row))}</pre></dd>
@@ -400,14 +404,16 @@ function renderHeatmap(matrix) {
           </td>`;
         })
         .join('');
-      let label = serializerLabel(row.sample);
-      if (multiLang) label = `${langLabel(row.language)} · ${label}`;
+      const serName = serializerOf(row.sample) || row.serializer || '';
+      const serLang = row.language || languageOfCell(row.sample) || ui.lang;
+      const linked = serializerNameHtml(serLang, serName, serializerLabel(row.sample));
+      const label = multiLang ? `${escapeHtml(langLabel(row.language))} · ${linked}` : linked;
       const families = !ui.format && Array.isArray(row.formats) ? row.formats : [];
       const familyHtml = families.length
         ? ` <span class="cmp-row-formats">${escapeHtml(families.map(formatLabel).join(' · '))}</span>`
         : '';
       const rowClass = rowIsUnscored(row) ? ' class="cmp-row-unscored"' : '';
-      return `<tr${rowClass}><th scope="row">${escapeHtml(label)}${familyHtml}</th>${tds}</tr>`;
+      return `<tr${rowClass}><th scope="row">${label}${familyHtml}</th>${tds}</tr>`;
     })
     .join('');
   return `
@@ -610,6 +616,7 @@ async function render() {
   const on = parseHash();
   setComplianceView(on);
   if (!on) return;
+  await loadSerializerSources();
   await loadPayload();
   if (loadError) {
     renderEmpty(

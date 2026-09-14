@@ -4,11 +4,11 @@ Fetched by CMake `FetchContent` into `cpp/third_party/` (gitignored except this 
 
 | Library | Tag / version | Role |
 |---------|---------------|------|
-| nlohmann/json | v3.11.3 | JSON + MessagePack/CBOR/UBJSON/BSON binary |
+| nlohmann/json | v3.12.0 | JSON + MessagePack/CBOR/UBJSON/BSON binary |
 | glaze | v2.9.5 | Fast struct JSON (last C++20 release; v3+ needs C++23) |
 | RapidJSON | v1.1.0 | JSON DOM/SAX |
 | simdjson | v3.10.1 | SIMD JSON parse |
-| ArduinoJson | v7.2.1 | Embedded/IoT JSON |
+| ArduinoJson | v7.4.3 | Embedded/IoT JSON |
 | yyjson | 0.10.0 | C JSON (dual C/C++) |
 | msgpack-c (cpp) | cpp-6.1.1 | MessagePack C++ API |
 | cereal | v1.3.2 | C++ binary archives |

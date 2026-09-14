@@ -53,21 +53,85 @@ PECL rows register only when the extension is loaded. This host’s static PHP C
 
 | Name | Category | Package | Stream | Notes |
 |------|----------|---------|--------|-------|
-| json | JSON | php-json | text_on_stream | `json_encode` / `json_decode` |
-| simdjson | JSON | ext-simdjson | text_on_stream | **Decode only** is SIMDJSON; encode is `json_encode` |
-| serialize | Binary | php-serialize | adapted | PHP-only |
-| igbinary | Binary | ext-igbinary | adapted | PECL; skip if missing |
-| msgpack-pecl | Binary | ext-msgpack | adapted | PECL; skip if missing |
-| rybakit-msgpack | Binary | rybakit/msgpack | adapted | Pure PHP MessagePack |
-| protobuf | Schema | google/protobuf | adapted | Official generated messages; `+ext` vs `+php` in version |
-| symfony-json | JSON | symfony/serializer | text_on_stream | Serializer JSON encoder |
-| symfony-xml | Text | symfony/serializer | text_on_stream | Serializer XML encoder |
-| jms-json | JSON | jms/serializer | text_on_stream | JMS JSON |
-| bson | Binary | ext-mongodb | adapted | Official BSON; skip if missing |
-| avro | Schema | flix-tech/avro-php | adapted | Binary Avro (no object container) |
-| cbor | Binary | spomky-labs/cbor-php | adapted | RFC 8949 |
-| yaml | Text | symfony/yaml | text_on_stream | Pure PHP YAML |
-| yaml-pecl | Text | ext-yaml | text_on_stream | LibYAML; skip if missing |
+| [json](https://github.com/php/php-src/tree/master/ext/json) | JSON | php-json | text_on_stream | `json_encode` / `json_decode` |
+| [simdjson](https://github.com/crazyxman/simdjson_php) | JSON | ext-simdjson | text_on_stream | **Decode only** is SIMDJSON; encode is `json_encode` |
+| [serialize](https://github.com/php/php-src) | Binary | php-serialize | adapted | PHP-only |
+| [igbinary](https://github.com/igbinary/igbinary) | Binary | ext-igbinary | adapted | PECL; skip if missing |
+| [msgpack-pecl](https://github.com/msgpack/msgpack-php) | Binary | ext-msgpack | adapted | PECL; skip if missing |
+| [rybakit-msgpack](https://github.com/rybakit/msgpack.php) | Binary | rybakit/msgpack | adapted | Pure PHP MessagePack |
+| [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | google/protobuf | adapted | Official generated messages; `+ext` vs `+php` in version |
+| [symfony-json](https://github.com/symfony/serializer) | JSON | symfony/serializer | text_on_stream | Serializer JSON encoder |
+| [symfony-xml](https://github.com/symfony/serializer) | Text | symfony/serializer | text_on_stream | Serializer XML encoder |
+| [jms-json](https://github.com/schmittjoh/serializer) | JSON | jms/serializer | text_on_stream | JMS JSON |
+| [bson](https://github.com/mongodb/mongo-php-driver) | Binary | ext-mongodb | adapted | Official BSON; skip if missing |
+| [avro](https://github.com/flix-tech/avro-php) | Schema | flix-tech/avro-php | adapted | Binary Avro (no object container) |
+| [cbor](https://github.com/Spomky-Labs/cbor-php) | Binary | spomky-labs/cbor-php | adapted | RFC 8949 |
+| [yaml](https://github.com/symfony/yaml) | Text | symfony/yaml | text_on_stream | Pure PHP YAML |
+| [yaml-pecl](https://github.com/php/pecl-file_formats-yaml) | Text | ext-yaml | text_on_stream | LibYAML; skip if missing |
+
+### Specifics
+
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [json](https://github.com/php/php-src/tree/master/ext/json) · `8.3.19`
+
+PHP's `json_encode` / `json_decode` are the language's standard JSON APIs. They exist so PHP can speak the web's data format without a package. This row times the bundled ext-json.
+
+#### [simdjson](https://github.com/crazyxman/simdjson_php)
+
+ext-simdjson binds the simdjson parser to PHP. simdjson was created to parse JSON at memory-bandwidth speeds. This row uses SIMD only for decode; encode is `json_encode`.
+
+#### [serialize](https://github.com/php/php-src) · `8.3.19`
+
+PHP `serialize` / `unserialize` is the language's native object format. It exists so PHP can persist values across requests. It is PHP-only and unsafe for untrusted input.
+
+#### [igbinary](https://github.com/igbinary/igbinary)
+
+igbinary is a PECL replacement for PHP `serialize` with a more compact binary. The problem was PHP's verbose native serializer in caches and sessions. igbinary drops duplicate strings and uses a denser layout.
+
+#### [msgpack-pecl](https://github.com/msgpack/msgpack-php)
+
+ext-msgpack is the official PECL MessagePack extension for PHP. MessagePack exists as compact binary JSON. The C extension is the fast path versus userland MessagePack.
+
+#### [rybakit-msgpack](https://github.com/rybakit/msgpack.php) · `v0.9.2`
+
+rybakit/msgpack is a pure-PHP MessagePack implementation. MessagePack exists as compact binary JSON. This package is the userland baseline versus the PECL extension.
+
+#### [protobuf](https://github.com/protocolbuffers/protobuf) · `v4.33.6+php`
+
+Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
+
+#### [symfony-json](https://github.com/symfony/serializer) · `v7.4.18`
+
+The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
+
+#### [symfony-xml](https://github.com/symfony/serializer) · `v7.4.18`
+
+The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders.
+
+#### [jms-json](https://github.com/schmittjoh/serializer) · `3.32.9`
+
+JMS Serializer was created for PHP applications that needed annotation-driven object serialization (especially APIs). The problem was mapping rich object graphs to JSON. This row times the JSON encoder.
+
+#### [bson](https://github.com/mongodb/mongo-php-driver)
+
+BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
+
+#### [avro](https://github.com/flix-tech/avro-php) · `5.2.0`
+
+flix-tech/avro-php is a PHP implementation of Apache Avro. Avro exists for compact, schema-driven records. This row times binary Avro (not the object container file format).
+
+#### [cbor](https://github.com/Spomky-Labs/cbor-php) · `3.4.1`
+
+spomky-labs/cbor-php implements RFC 8949 CBOR in PHP. CBOR is the IETF binary JSON-like format. The library is a PHP encoder/decoder of that RFC.
+
+#### [yaml](https://github.com/symfony/yaml) · `v7.4.18`
+
+The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a human-friendly config language. Symfony YAML is the common userland implementation in PHP apps.
+
+#### [yaml-pecl](https://github.com/php/pecl-file_formats-yaml)
+
+ext-yaml is the PECL binding to LibYAML. YAML exists as a human-friendly config language. The extension is the C-speed path versus Symfony's pure-PHP YAML.
 
 ## Not in this suite (and why)
 

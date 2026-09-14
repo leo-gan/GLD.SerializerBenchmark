@@ -28,6 +28,11 @@ import {
   chooseOpsUnit,
   serializerLabelFromGroup,
 } from './format.js';
+import {
+  loadSerializerSources,
+  serializerNameHtml,
+  serializerSourceUrl,
+} from './serializer-sources.js';
 
 const SETTINGS_KEY = 'serializer-dashboard-settings-v2';
 /** localStorage: hide first-visit orientation banner when set to "1". */
@@ -290,6 +295,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupOrientationBanner();
   initCharts();
   applyUiFromState();
+  await loadSerializerSources();
   await loadHistoryList();
   await probeLogsAvailability();
   await loadLanguageData(state.currentLanguage);
@@ -1277,7 +1283,9 @@ function buildSerializerNameList(items) {
     if (name == null || name === '') continue;
     const li = document.createElement('li');
     const ver = it.version || '';
-    li.textContent = ver ? `${name} @ ${ver}` : String(name);
+    const display = ver ? `${name} @ ${ver}` : String(name);
+    const lang = state.currentLanguage || '';
+    li.innerHTML = serializerNameHtml(lang, name, display);
     ul.appendChild(li);
   }
   if (list.length > 40) {
@@ -2713,7 +2721,7 @@ function refreshCrossLangAddSerializerOptions() {
 /**
  * Build a chip element: neutral pill, optional baseline highlight, truncated label.
  */
-function makeChip({ fullLabel, shortLabel, title, isBaseline, onRemove }) {
+function makeChip({ fullLabel, shortLabel, title, isBaseline, onRemove, language, serializer }) {
   const chip = document.createElement('span');
   chip.className = 'xl-chip' + (isBaseline ? ' chip-baseline' : '');
   chip.title = title || fullLabel;
@@ -2731,7 +2739,18 @@ function makeChip({ fullLabel, shortLabel, title, isBaseline, onRemove }) {
       label.textContent = fullLabel + (isBaseline ? ' · base' : '');
     }
   }
-  chip.appendChild(label);
+  const src = serializer && language ? serializerSourceUrl(language, serializer) : '';
+  if (src) {
+    const a = document.createElement('a');
+    a.className = 'serializer-link';
+    a.href = src;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.appendChild(label);
+    chip.appendChild(a);
+  } else {
+    chip.appendChild(label);
+  }
 
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -2797,6 +2816,8 @@ function renderCrossLangSelection() {
         fullLabel: serLabel,
         shortLabel: `${langShort}: ${serLabel.split(':')[0]}`,
         title: `${langShort} / ${serLabel}`,
+        language: x.lang,
+        serializer: x.serializer,
         isBaseline: key === state.xlBaselineKey,
         onRemove: () => {
           state.xlSelectionMode = 'custom';
@@ -2882,6 +2903,8 @@ function renderSameSelectionChips() {
       fullLabel: full,
       shortLabel: full.split(':')[0],
       title: full,
+      language: state.currentLanguage,
+      serializer: name,
       isBaseline: name === state.compareBaseline,
       onRemove: () => {
         state.detailSerializers = state.detailSerializers.filter((s) => s !== name);
@@ -3019,6 +3042,8 @@ function populateBaselineSelect() {
       const g = groupForSerializer(name);
       const label = g ? serializerLabelFromGroup(g) : name;
       opt.textContent = label + (state.paretoSerializerNames.includes(name) ? ' ★' : '');
+      const href = serializerSourceUrl(state.currentLanguage, name);
+      if (href) opt.title = href;
       sel.appendChild(opt);
     });
     if (state.compareBaseline && state.serializerNames.includes(state.compareBaseline)) {
@@ -3280,7 +3305,7 @@ function renderTable() {
         scopeNote +
         speedNote +
         ratioNote +
-        ` Baseline: <strong>${escapeHtml(serializerLabelFromGroup(baselineGroup))}</strong>.` +
+        ` Baseline: ${serializerNameHtml(baselineGroup.language || state.currentLanguage, baselineGroup.serializer, serializerLabelFromGroup(baselineGroup), { strong: true })}.` +
         paretoNote;
     } else {
       help.innerHTML = scopeNote + speedNote + ratioNote + paretoNote;
@@ -3306,7 +3331,8 @@ function renderTable() {
     const tdName = document.createElement('td');
     tdName.className = 'str';
     const displayName = serializerLabelFromGroup(r);
-    let nameHtml = `<strong>${escapeHtml(displayName)}</strong>`;
+    const lang = r.language || state.currentLanguage || '';
+    let nameHtml = serializerNameHtml(lang, r.serializer, displayName, { strong: true });
     if (isBaseline) {
       nameHtml += ' <span class="badge badge-cyan">Baseline</span>';
     }
@@ -3430,7 +3456,20 @@ function renderCompareMatrix() {
     const nameEl = document.createElement('span');
     nameEl.className = 'cmp-th-name';
     nameEl.textContent = name;
-    th.appendChild(nameEl);
+    const serName = col.group?.serializer || (col.key.includes('|') ? col.key.split('|').slice(1).join('|') : col.key);
+    const serLang = col.group?.language || (col.key.includes('|') ? col.key.split('|')[0] : state.currentLanguage);
+    const src = serializerSourceUrl(serLang, serName);
+    if (src) {
+      const a = document.createElement('a');
+      a.className = 'serializer-link';
+      a.href = src;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.appendChild(nameEl);
+      th.appendChild(a);
+    } else {
+      th.appendChild(nameEl);
+    }
     if (ver) {
       const verEl = document.createElement('span');
       verEl.className = 'cmp-th-ver';

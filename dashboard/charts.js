@@ -5,6 +5,12 @@ import {
   formatSig,
   chooseLatencyUnit,
 } from './format.js';
+import { serializerSourceUrl } from './serializer-sources.js';
+
+function openSerializerSource(language, name) {
+  const url = serializerSourceUrl(language, name);
+  if (url) window.open(url, '_blank', 'noopener,noreferrer');
+}
 
 let scatterChartInstance = null;
 let barChartInstance = null;
@@ -96,6 +102,7 @@ function updateScatterChart(groups, paretoNames, metric) {
       x: xVal,
       y: yVal,
       label: g.serializer,
+      language: g.language,
       ops: g.avg_ops_per_sec,
       time: g.avg_time_total_ns,
       onFrontier: paretoNames.includes(g.serializer),
@@ -172,6 +179,12 @@ function updateScatterChart(groups, paretoNames, metric) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      onClick: (_evt, elements) => {
+        const el = elements && elements[0];
+        if (!el) return;
+        const p = scatterChartInstance?.data?.datasets?.[el.datasetIndex]?.data?.[el.index];
+        if (p?.label) openSerializerSource(p.language, p.label);
+      },
       plugins: {
         legend: {
           labels: {
@@ -193,13 +206,15 @@ function updateScatterChart(groups, paretoNames, metric) {
             label: (context) => {
               const p = context.raw;
               if (!p?.label) return '';
+              const src = serializerSourceUrl(p.language, p.label);
               return [
                 `Serializer: ${p.label}`,
                 `Throughput: ${formatOpsCompact(p.ops)}`,
                 `Latency: ${formatTimeCompact(p.time)}`,
                 `Size: ${formatIntGrouped(p.y)} bytes`,
                 p.onFrontier ? 'On Pareto frontier' : 'Dominated on speed/size',
-              ];
+                src ? `Source: ${src}` : '',
+              ].filter(Boolean);
             },
           },
         },
@@ -356,6 +371,12 @@ function updateBarChart(groups, paretoNames, metric) {
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+      onClick: (_evt, elements) => {
+        const el = elements && elements[0];
+        if (!el) return;
+        const g = sortedGroups[el.index];
+        if (g) openSerializerSource(g.language, g.serializer);
+      },
       plugins: {
         legend: {
           display: true,

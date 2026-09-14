@@ -57,24 +57,100 @@ The steps to install the toolchain and run the benchmark are in [`java/README.md
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
-| avro | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
-| bson | Document | org.mongodb:bson | DocumentCodec | adapted | Domain→Document in prepare |
-| dsl-json | JSON | dsl-json | runtime DslJson | native | Reused JsonWriter buffer |
-| fastjson2 | JSON | fastjson2 | FieldBased API | adapted | `toJSONBytes` / `parseObject` |
-| fory | Binary | fory-core | serialize/deserialize | adapted | Apache Fory; register types before freeze |
-| gson | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
-| hessian | Binary | hessian | Hessian2 write/readObject | native | Dubbo-era RPC binary |
-| ion | Document | jackson-dataformat-ion | IonObjectMapper | native | Amazon Ion binary |
-| jackson | JSON | jackson-databind | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
-| jackson-cbor | CBOR | jackson-dataformat-cbor | CBORMapper | native | IETF CBOR |
-| jackson-smile | Binary JSON | jackson-dataformat-smile | SmileMapper | native | Elasticsearch ecosystem |
-| java-serialization | Native | JDK | ObjectOutputStream | native | Language baseline |
-| jsoniter | JSON | jsoniter | DYNAMIC + javassist | adapted | `JsonStream` / `JsonIterator` |
-| kryo | Binary | kryo | writeClassAndObject | native | Reused Kryo + Output/Input |
-| moshi | JSON | moshi | JsonAdapter | native | Okio Buffer; Square stack |
-| msgpack | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java binding |
-| protobuf | Schema | protobuf-java | MessageLite wire | native | Domain convert untimed |
-| protostuff | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
+| [avro](https://github.com/apache/avro) | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
+| [bson](https://github.com/mongodb/mongo-java-driver) | Document | org.mongodb:bson | DocumentCodec | adapted | Domain→Document in prepare |
+| [dsl-json](https://github.com/ngs-doo/dsl-json) | JSON | dsl-json | runtime DslJson | native | Reused JsonWriter buffer |
+| [fastjson2](https://github.com/alibaba/fastjson2) | JSON | fastjson2 | FieldBased API | adapted | `toJSONBytes` / `parseObject` |
+| [fory](https://github.com/apache/fory) | Binary | fory-core | serialize/deserialize | adapted | Apache Fory; register types before freeze |
+| [gson](https://github.com/google/gson) | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
+| [hessian](https://github.com/ebourg/hessian) | Binary | hessian | Hessian2 write/readObject | native | Dubbo-era RPC binary |
+| [ion](https://github.com/amazon-ion/ion-java) | Document | jackson-dataformat-ion | IonObjectMapper | native | Amazon Ion binary |
+| [jackson](https://github.com/FasterXML/jackson-databind) | JSON | jackson-databind | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
+| [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) | CBOR | jackson-dataformat-cbor | CBORMapper | native | IETF CBOR |
+| [jackson-smile](https://github.com/FasterXML/jackson-dataformats-binary) | Binary JSON | jackson-dataformat-smile | SmileMapper | native | Elasticsearch ecosystem |
+| [java-serialization](https://github.com/openjdk/jdk) | Native | JDK | ObjectOutputStream | native | Language baseline |
+| [jsoniter](https://github.com/json-iterator/java) | JSON | jsoniter | DYNAMIC + javassist | adapted | `JsonStream` / `JsonIterator` |
+| [kryo](https://github.com/EsotericSoftware/kryo) | Binary | kryo | writeClassAndObject | native | Reused Kryo + Output/Input |
+| [moshi](https://github.com/square/moshi) | JSON | moshi | JsonAdapter | native | Okio Buffer; Square stack |
+| [msgpack](https://github.com/msgpack/msgpack-java) | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java binding |
+| [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-java | MessageLite wire | native | Domain convert untimed |
+| [protostuff](https://github.com/protostuff/protostuff) | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
+
+### Specifics
+
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [avro](https://github.com/apache/avro) · `1.12.1`
+
+Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
+
+#### [bson](https://github.com/mongodb/mongo-java-driver) · `5.5.1`
+
+BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path.
+
+#### [dsl-json](https://github.com/ngs-doo/dsl-json) · `2.0.2`
+
+dsl-json was written for very high-performance JSON on the JVM with compile-time binding. The problem was reflection mappers allocating too much. It reuses a JsonWriter buffer on the hot path.
+
+#### [fastjson2](https://github.com/alibaba/fastjson2) · `2.0.57`
+
+fastjson2 is Alibaba's rewrite of fastjson for high-performance JSON on the JVM. The problem was JSON cost in large Java services (and security issues in fastjson 1.x). fastjson2 solves it with a new FieldBased API.
+
+#### [fory](https://github.com/apache/fory) · `1.3.0`
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol.
+
+#### [gson](https://github.com/google/gson) · `2.14.0`
+
+Gson was created at Google to convert Java objects to JSON and back with a simple API. The problem was boilerplate-heavy Java JSON. Gson solves it with reflection over POJOs and a JsonWriter/Reader stream API.
+
+#### [hessian](https://github.com/ebourg/hessian) · `4.0.66`
+
+Hessian is Caucho's compact binary web-service protocol from the Dubbo/Caucho era. The problem was SOAP/XML RPC overhead. Hessian2 write/readObject is the binary that this row times.
+
+#### [ion](https://github.com/amazon-ion/ion-java) · `2.19.0`
+
+Amazon Ion was created as a rich, self-describing superset of JSON (text and binary) for Amazon services. Official Ion libraries and Jackson Ion modules implement that model.
+
+#### [jackson](https://github.com/FasterXML/jackson-databind) · `2.19.0`
+
+Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
+
+#### [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) · `2.19.0`
+
+Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's CBOR mapper.
+
+#### [jackson-smile](https://github.com/FasterXML/jackson-dataformats-binary) · `2.19.0`
+
+Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's Smile (binary JSON) mapper.
+
+#### [java-serialization](https://github.com/openjdk/jdk) · `21.0.11`
+
+Java Object Serialization (`ObjectOutputStream`) is the language's built-in graph serializer. It exists so the JVM can persist and RMI Java objects. It is not a portable wire format.
+
+#### [jsoniter](https://github.com/json-iterator/java) · `0.9.23`
+
+jsoniter for Java was created as a high-performance JSON library with an optional codegen path. The problem was Jackson/Gson overhead. This suite uses DYNAMIC mode plus javassist.
+
+#### [kryo](https://github.com/EsotericSoftware/kryo) · `5.6.2`
+
+Kryo was written as a fast binary serializer for JVM object graphs (games, caches, RPC). The problem was Java serialization being slow and verbose. Kryo solves it with a compact binary and reusable Output/Input.
+
+#### [moshi](https://github.com/square/moshi) · `1.15.2`
+
+Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio.
+
+#### [msgpack](https://github.com/msgpack/msgpack-java) · `0.9.8`
+
+msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack.
+
+#### [protobuf](https://github.com/protocolbuffers/protobuf) · `4.35.0`
+
+Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
+
+#### [protostuff](https://github.com/protostuff/protostuff) · `1.8.0`
+
+protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times.
 
 ### Call-path contract (same idea as Go/Python/Rust)
 

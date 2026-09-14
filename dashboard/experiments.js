@@ -7,6 +7,7 @@
  */
 import './experiments.css';
 import { formatSig, formatRelativeCell, formatIntGrouped } from './format.js';
+import { loadSerializerSources, serializerNameHtml } from './serializer-sources.js';
 import {
   ALL_LANG,
   compareLabel,
@@ -499,7 +500,7 @@ function renderTable(rows) {
       return `
         <tr class="${compareClass(row, sorted)}">
           ${showLang ? `<td class="str">${escapeHtml(langLabel(row.language))}</td>` : ''}
-          <td class="str">${escapeHtml(row.library)}${row.version ? `<span class="exp-ver">${escapeHtml(row.version)}</span>` : ''}</td>
+          <td class="str">${serializerNameHtml(row.language, row.library, row.library)}${row.version ? `<span class="exp-ver">${escapeHtml(row.version)}</span>` : ''}</td>
           ${showKind ? `<td class="str">${escapeHtml(kindLabel(row.kind))}</td>` : ''}
           ${showN ? `<td class="num">${escapeHtml(row.n ?? '')}</td>` : ''}
           ${showIo ? `<td class="str">${escapeHtml(row.io === 'memory' ? 'in memory' : row.io ?? '')}</td>` : ''}
@@ -783,6 +784,7 @@ async function render() {
   const loc = parseHash();
   setExperimentsView(loc.view !== 'suite');
   if (loc.view === 'suite') return;
+  await loadSerializerSources();
   await loadCatalog();
   if (catalogError) {
     replaceExperimentsHtml(

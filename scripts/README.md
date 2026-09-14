@@ -93,6 +93,7 @@ RFC/spec-linked misses. **Not** a CI or pytest job.
 | Flag | Description |
 |------|-------------|
 | `-f, --format NAME` | Limit to `json`, `yaml`, `toml`, `cbor`, or `msgpack` (repeatable) |
+| `-l, --lang NAME` | Limit to one language id (repeatable): `python`, `mojo`, `zig`, `swift`, … |
 | `-a, --adapter NAME` | Limit to one library adapter (repeatable) |
 | `-d, --detailed` | Print every case |
 | `-o, --json-out PATH` | Report path (default `logs/compliance/<timestamp>.json`) |

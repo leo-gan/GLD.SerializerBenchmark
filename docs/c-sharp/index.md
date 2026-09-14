@@ -60,45 +60,205 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 
 | Log name | Category | Library / notes |
 |----------|----------|-----------------|
-| Apache.Avro | Schema | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize |
-| BinaryPack | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
-| Ceras | Binary | Ceras |
-| CsvHelper | CSV | Row-list projection (message/event/strings only); real CsvHelper write/read |
-| ExtendedXmlSerializer | XML (**envelope**) | **Not domain XML** — ExtendedXml of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
-| fastJson | JSON | FastJson |
-| FlatSharp | Schema / FlatBuffers | FlatSharp tables via domain map (untimed `PrepareData`) |
-| FsPickler | Binary | FsPickler binary |
-| FsPicklerJson | JSON | FsPickler JSON |
-| Google.Protobuf | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
-| GroBuf | Binary | GroBuf |
-| Hyperion | Binary | Hyperion (Akka.NET lineage) |
-| Jil | JSON | Jil (Sigil) |
-| Json.Net | JSON | Newtonsoft.Json |
-| Json.Net (Helper) | JSON | Newtonsoft.Json helper path |
-| LightProto | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
-| MemoryPack | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
-| MessagePack-CSharp | Binary | Official MessagePack-CSharp (`ContractlessStandardResolver` on domain POCOs) |
-| Migrant | Binary (**envelope**) | **Not domain Migrant graphs** — Migrant of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
-| MS Binary | Binary (native) | Legacy `BinaryFormatter` path |
-| MS Bond Compact | Schema / Bond | Bond Compact Binary; V2 domain marked `[Schema]` |
-| MS Bond Fast | Schema / Bond | Bond Fast Binary |
-| MS Bond Json | JSON / Bond | Bond JSON protocol |
-| MS DataContract | XML | `DataContractSerializer` |
-| MS DataContract Json | JSON | `DataContractJsonSerializer` |
-| MS XmlSerializer | XML | Classic `XmlSerializer` (real domain XML when attributes allow) |
-| NetJSON | JSON | NetJSON |
-| NetSerializer | Binary | NetSerializer |
-| ProtoBuf | Schema | protobuf-net |
-| ServiceStack | Binary | ServiceStack type serializer (non-JSON) |
-| ServiceStack Json | JSON | ServiceStack.Text JSON |
-| SharpSerializer | Binary / XML | SharpSerializer |
-| SharpYaml | YAML | SharpYaml |
-| SpanJson | JSON | SpanJson |
-| System.Text.Json | JSON | System.Text.Json (net8 built-in) |
-| Utf8Json | JSON | Utf8Json |
-| YamlDotNet | YAML | YamlDotNet |
-| YAXLib | XML | YAXLib |
-| ZeroFormatter | Binary | ZeroFormatter; **all data types** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
+| [Apache.Avro](https://github.com/apache/avro) | Schema | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize |
+| [BinaryPack](https://github.com/Sergio0694/BinaryPack) | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
+| [Ceras](https://github.com/rikimaru0345/Ceras) | Binary | Ceras |
+| [CsvHelper](https://github.com/JoshClose/CsvHelper) | CSV | Row-list projection (message/event/strings only); real CsvHelper write/read |
+| [ExtendedXmlSerializer](https://github.com/wojtpl2/ExtendedXmlSerializer) | XML (**envelope**) | **Not domain XML** — ExtendedXml of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
+| [fastJson](https://github.com/mgholam/fastJSON) | JSON | FastJson |
+| [FlatSharp](https://github.com/jamescourtney/FlatSharp) | Schema / FlatBuffers | FlatSharp tables via domain map (untimed `PrepareData`) |
+| [FsPickler](https://github.com/mbraceproject/FsPickler) | Binary | FsPickler binary |
+| [FsPicklerJson](https://github.com/mbraceproject/FsPickler) | JSON | FsPickler JSON |
+| [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
+| [GroBuf](https://github.com/skbkontur/GroBuf) | Binary | GroBuf |
+| [Hyperion](https://github.com/akkadotnet/Hyperion) | Binary | Hyperion (Akka.NET lineage) |
+| [Jil](https://github.com/kevin-montrose/Jil) | JSON | Jil (Sigil) |
+| [Json.Net](https://github.com/JamesNK/Newtonsoft.Json) | JSON | Newtonsoft.Json |
+| [Json.Net (Helper)](https://github.com/JamesNK/Newtonsoft.Json) | JSON | Newtonsoft.Json helper path |
+| [LightProto](https://github.com/dameng324/LightProto) | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
+| [MemoryPack](https://github.com/Cysharp/MemoryPack) | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
+| [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) | Binary | Official MessagePack-CSharp (`ContractlessStandardResolver` on domain POCOs) |
+| [Migrant](https://github.com/antmicro/Migrant) | Binary (**envelope**) | **Not domain Migrant graphs** — Migrant of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
+| [MS Binary](https://github.com/dotnet/runtime) | Binary (native) | Legacy `BinaryFormatter` path |
+| [MS Bond Compact](https://github.com/microsoft/bond) | Schema / Bond | Bond Compact Binary; V2 domain marked `[Schema]` |
+| [MS Bond Fast](https://github.com/microsoft/bond) | Schema / Bond | Bond Fast Binary |
+| [MS Bond Json](https://github.com/microsoft/bond) | JSON / Bond | Bond JSON protocol |
+| [MS DataContract](https://github.com/dotnet/runtime) | XML | `DataContractSerializer` |
+| [MS DataContract Json](https://github.com/dotnet/runtime) | JSON | `DataContractJsonSerializer` |
+| [MS XmlSerializer](https://github.com/dotnet/runtime) | XML | Classic `XmlSerializer` (real domain XML when attributes allow) |
+| [NetJSON](https://github.com/rpgmaker/NetJSON) | JSON | NetJSON |
+| [NetSerializer](https://github.com/tomba/netserializer) | Binary | NetSerializer |
+| [ProtoBuf](https://github.com/protobuf-net/protobuf-net) | Schema | protobuf-net |
+| [ServiceStack](https://github.com/ServiceStack/ServiceStack.Text) | Binary | ServiceStack type serializer (non-JSON) |
+| [ServiceStack Json](https://github.com/ServiceStack/ServiceStack.Text) | JSON | ServiceStack.Text JSON |
+| [SharpSerializer](https://github.com/polenter/SharpSerializer) | Binary / XML | SharpSerializer |
+| [SharpYaml](https://github.com/xoofx/SharpYaml) | YAML | SharpYaml |
+| [SpanJson](https://github.com/Tornhoof/SpanJson) | JSON | SpanJson |
+| [System.Text.Json](https://github.com/dotnet/runtime) | JSON | System.Text.Json (net8 built-in) |
+| [Utf8Json](https://github.com/neuecc/Utf8Json) | JSON | Utf8Json |
+| [YamlDotNet](https://github.com/aaubry/YamlDotNet) | YAML | YamlDotNet |
+| [YAXLib](https://github.com/sinairv/YAXLib) | XML | YAXLib |
+| [ZeroFormatter](https://github.com/neuecc/ZeroFormatter) | Binary | ZeroFormatter; **all data types** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
+
+### Specifics
+
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [Apache.Avro](https://github.com/apache/avro) · `1.12.2`
+
+Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
+
+#### [BinaryPack](https://github.com/Sergio0694/BinaryPack) · `1.0.3`
+
+BinaryPack is a compact binary serializer for .NET POCOs. It was written for fast, allocation-conscious binary packing of types that have a public parameterless constructor.
+
+#### [Ceras](https://github.com/rikimaru0345/Ceras) · `4.1.7`
+
+Ceras is a binary serializer for .NET object graphs. It was created as a modern, feature-rich alternative to BinaryFormatter-style packing without that formatter's security model.
+
+#### [CsvHelper](https://github.com/JoshClose/CsvHelper) · `33.1.0`
+
+CsvHelper was written so .NET could read and write CSV with a robust, mapping-based API. CSV exists as the simplest tabular exchange format. This row projects supported types to rows.
+
+#### [ExtendedXmlSerializer](https://github.com/wojtpl2/ExtendedXmlSerializer) · `3.10.0.0`
+
+ExtendedXmlSerializer is an XML serializer for .NET. In this suite the timed path is an envelope: ExtendedXml of `{TypeName, Json}`, not native domain XML. See the language inventory.
+
+#### [fastJson](https://github.com/mgholam/fastJSON) · `2.4.0.4`
+
+fastJSON (mgholam) is a small .NET JSON serializer. It was written to keep JSON simple and dependency-light. This row times that compact implementation.
+
+#### [FlatSharp](https://github.com/jamescourtney/FlatSharp) · `7.5.1`
+
+FlatSharp is a FlatBuffers implementation for .NET. FlatBuffers exists so readers can use serialized data without unpacking. FlatSharp generates C# from `.fbs` and times builder/parse on those tables.
+
+#### [FsPickler](https://github.com/mbraceproject/FsPickler) · `5.3.2`
+
+FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently.
+
+#### [FsPicklerJson](https://github.com/mbraceproject/FsPickler) · `5.3.2`
+
+FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently.
+
+#### [Google.Protobuf](https://github.com/protocolbuffers/protobuf) · `3.36.1`
+
+Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
+
+#### [GroBuf](https://github.com/skbkontur/GroBuf) · `1.9.2`
+
+GroBuf is a binary serializer from SKB Kontur for high-throughput .NET services. The problem was slow built-in serializers. GroBuf generates a compact binary for .NET types.
+
+#### [Hyperion](https://github.com/akkadotnet/Hyperion) · `0.12.2`
+
+Hyperion is the binary serializer from the Akka.NET lineage (formerly Wire). It exists so an actor system can ship .NET messages efficiently. This row times that graph codec.
+
+#### [Jil](https://github.com/kevin-montrose/Jil) · `2.17.0`
+
+Jil was written by Kevin Montrose for very fast JSON on .NET using Sigil-generated IL. The problem was JSON cost in Stack Overflow-scale services. Jil solves it with a compiled serialize/deserialize path.
+
+#### [Json.Net](https://github.com/JamesNK/Newtonsoft.Json) · `13.0.4`
+
+Json.NET (Newtonsoft.Json) became the de-facto JSON library for .NET long before System.Text.Json. The problem was limited framework JSON. James Newton-King built a flexible, attribute-driven serializer that still defines much of the ecosystem.
+
+#### [Json.Net (Helper)](https://github.com/JamesNK/Newtonsoft.Json) · `13.0.4`
+
+Json.NET (Newtonsoft.Json) became the de-facto JSON library for .NET long before System.Text.Json. The problem was limited framework JSON. James Newton-King built a flexible, attribute-driven serializer that still defines much of the ecosystem. This row times a helper call path of the same Newtonsoft library.
+
+#### [LightProto](https://github.com/dameng324/LightProto) · `1.4.0`
+
+LightProto is a source-generated, protobuf-net-style serializer for modern .NET. The problem was reflection-based protobuf-net on AOT and hot paths. LightProto generates parsers at compile time from `[LightProto.ProtoContract]`.
+
+#### [MemoryPack](https://github.com/Cysharp/MemoryPack)
+
+MemoryPack was created by Yoshifumi Kawai for extremely fast, source-generated binary serialization on modern .NET. The problem was existing binary libraries allocating and reflecting too much. `[MemoryPackable]` types get generated encode/decode.
+
+#### [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) · `2.5.302`
+
+MessagePack-CSharp is the official MessagePack implementation for .NET (neuecc / MessagePack-CSharp). MessagePack exists as compact binary JSON. This library is the standard .NET codec, including a contractless resolver.
+
+#### [Migrant](https://github.com/antmicro/Migrant) · `0.13.0.0`
+
+Migrant is Antmicro's .NET binary serializer for object graphs. In this suite the timed path is a JSON envelope, not native Migrant domain graphs. See the language inventory.
+
+#### [MS Binary](https://github.com/dotnet/runtime) · `.NET 8.0.28`
+
+BinaryFormatter is legacy .NET binary serialization. It exists so the early framework could persist object graphs. It is obsolete and unsafe for untrusted input; the suite keeps the row as a historical baseline.
+
+#### [MS Bond Compact](https://github.com/microsoft/bond) · `.NET 8.0.28`
+
+Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary.
+
+#### [MS Bond Fast](https://github.com/microsoft/bond) · `.NET 8.0.28`
+
+Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary.
+
+#### [MS Bond Json](https://github.com/microsoft/bond) · `.NET 8.0.28`
+
+Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol.
+
+#### [MS DataContract](https://github.com/dotnet/runtime) · `.NET 8.0.28`
+
+DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules.
+
+#### [MS DataContract Json](https://github.com/dotnet/runtime) · `.NET 8.0.28`
+
+DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules.
+
+#### [MS XmlSerializer](https://github.com/dotnet/runtime) · `.NET 8.0.28`
+
+XmlSerializer is classic .NET XML serialization. It exists so the framework could map objects to XML documents. This row is real domain XML when the attributes allow it.
+
+#### [NetJSON](https://github.com/rpgmaker/NetJSON) · `1.0.0`
+
+NetJSON is a small, fast JSON serializer for .NET. It was created as a lighter alternative to the large JSON frameworks. This row times its default encode/decode path.
+
+#### [NetSerializer](https://github.com/tomba/netserializer) · `4.1.2`
+
+NetSerializer is a compact, fast binary serializer for .NET. It was written to pack predefined types with very little overhead compared to BinaryFormatter.
+
+#### [ProtoBuf](https://github.com/protobuf-net/protobuf-net) · `2.4.9.1`
+
+protobuf-net was created so .NET could speak Protocol Buffers without Google's generated C# being the only path. The problem was protobuf's IDL-first workflow for POCO-heavy .NET code. It attributes existing types (`[ProtoContract]`) and generates or interprets a protobuf-compatible encoding.
+
+#### [ServiceStack](https://github.com/ServiceStack/ServiceStack.Text) · `6.11.0`
+
+ServiceStack.Text is the serializer stack behind ServiceStack. It was created so that framework had a fast, built-in JSON (and JSV) codec. This suite times the JSON path and the non-JSON type serializer as separate rows. This row times the non-JSON ServiceStack type serializer.
+
+#### [ServiceStack Json](https://github.com/ServiceStack/ServiceStack.Text) · `6.11.0`
+
+ServiceStack.Text is the serializer stack behind ServiceStack. It was created so that framework had a fast, built-in JSON (and JSV) codec. This suite times the JSON path and the non-JSON type serializer as separate rows. This row times ServiceStack.Text JSON.
+
+#### [SharpSerializer](https://github.com/polenter/SharpSerializer)
+
+SharpSerializer is a .NET serializer that can write binary or XML. It was created as a simple, portable alternative to framework serializers for app persistence.
+
+#### [SharpYaml](https://github.com/xoofx/SharpYaml) · `3.13.1`
+
+SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet lineage ideas). It exists as another maintained YAML stack for C#.
+
+#### [SpanJson](https://github.com/Tornhoof/SpanJson) · `4.2.1`
+
+SpanJson was created to serialize JSON on .NET using `Span<T>` and modern memory primitives. The problem was older JSON libraries allocating too many strings. It writes UTF-8 directly from spans.
+
+#### [System.Text.Json](https://github.com/dotnet/runtime) · `8.0.0.0`
+
+System.Text.Json is the built-in JSON serializer for modern .NET. It was created so the platform had a fast, AOT-friendly JSON stack without Newtonsoft. It solves that with a serializer in the runtime and source-generation options.
+
+#### [Utf8Json](https://github.com/neuecc/Utf8Json) · `1.3.7`
+
+Utf8Json was written by Yoshifumi Kawai (neuecc) as a fast UTF-8 JSON serializer for C#. The problem was string-heavy JSON APIs. It encodes directly to UTF-8 bytes.
+
+#### [YamlDotNet](https://github.com/aaubry/YamlDotNet) · `17.1.0`
+
+YamlDotNet is the usual YAML library for .NET. YAML exists as a human-friendly config language. YamlDotNet implements YAML 1.1/1.2 serialize/deserialize.
+
+#### [YAXLib](https://github.com/sinairv/YAXLib) · `4.5.0`
+
+YAXLib is a flexible XML serializer for .NET. The problem was XmlSerializer and DataContract being rigid about XML shape. YAXLib lets you control the XML more directly on domain types.
+
+#### [ZeroFormatter](https://github.com/neuecc/ZeroFormatter) · `1.6.4`
+
+ZeroFormatter was created (neuecc) as a fast, zero-encoding-style binary serializer for .NET, inspired by FlatBuffers/Cap'n Proto ideas. Dynamic IL is broken on .NET 8; this suite uses KeyTuple shapes.
 
 ### Envelope codecs (not native domain wire)
 

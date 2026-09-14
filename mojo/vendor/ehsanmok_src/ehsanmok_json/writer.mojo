@@ -29,20 +29,57 @@
 
 from std.bit import count_trailing_zeros
 from std.collections import List
-from std.memory import memcpy
+from std.memory import bitcast, unsafe_memcpy
 from std.memory.unsafe import pack_bits
 from std.sys.info import simd_width_of
+from std.utils.numerics import isfinite
+
+from .dtoa import shortest_digits
 
 
 comptime _SCAN_W = simd_width_of[DType.uint8]()
 
-# Two ASCII digits per entry, so one 2-byte vector load yields both.
-comptime _DIGIT_PAIRS = _make_digit_pairs()
+# The hundred two-digit decimal strings, in two forms.
+#
+# `_DIGIT_PAIRS` is text, so reading an entry is a load from the
+# binary's constant data. `_DIGIT_PAIRS_ARRAY` is a `comptime` array,
+# and `materialize` copies all two hundred bytes into the caller's
+# frame before indexing it.
+#
+# The integer writer wants the text: dropping the copy took
+# `document@100 serialize` from 37.3 to 31.1 us. The exponent writer
+# measured 4 ns per float *slower* on the text, and slower again on
+# plain division, so it keeps the array. Both were measured with
+# `pixi run -e dev bench-serde`; the pairing is deliberate, and
+# `test_writer` checks the two forms hold the same digits.
+comptime _DIGIT_PAIRS: StaticString = (
+    "00010203040506070809"  # 00 - 09
+    "10111213141516171819"  # 10 - 19
+    "20212223242526272829"  # 20 - 29
+    "30313233343536373839"  # 30 - 39
+    "40414243444546474849"  # 40 - 49
+    "50515253545556575859"  # 50 - 59
+    "60616263646566676869"  # 60 - 69
+    "70717273747576777879"  # 70 - 79
+    "80818283848586878889"  # 80 - 89
+    "90919293949596979899"  # 90 - 99
+)
+
+comptime _DIGIT_PAIRS_ARRAY = _make_digit_pairs()
 comptime _HEX = "0123456789abcdef".as_bytes()
 
 comptime _QUOTE = UInt8(0x22)
+comptime _SOLIDUS = UInt8(0x2F)
 comptime _BACKSLASH = UInt8(0x5C)
 comptime _SPACE = UInt8(0x20)
+
+
+@always_inline
+def _digit_pair(value: Int) -> SIMD[DType.uint8, 2]:
+    """The two ASCII digits of `value`, for `value` in `[0, 100)`."""
+    return _DIGIT_PAIRS.unsafe_ptr().unsafe_load[width=2, alignment=1](
+        value * 2
+    )
 
 
 def _make_digit_pairs(out s: InlineArray[SIMD[DType.uint8, 2], 100]):
@@ -132,6 +169,9 @@ struct JsonWriter(Movable):
     # Non-empty enables pretty output: containers break lines and nest
     # by `indent` per level. Empty (the default) is compact.
     var indent: String
+    var pretty: Bool
+    """Whether `indent` is non-empty, hoisted so the compact path is one
+    predictable branch per child rather than a string length check."""
     var depth: Int
     # True once the current container has at least one member, so the
     # next `key`/value knows whether to emit a leading comma. Stacked in
@@ -146,6 +186,7 @@ struct JsonWriter(Movable):
             self.buf = List[UInt8]()
         self.pos = 0
         self.indent = String()
+        self.pretty = False
         self.depth = 0
         self._has_member = False
         self._depth_flags = List[Bool]()
@@ -157,6 +198,7 @@ struct JsonWriter(Movable):
         else:
             self.buf = List[UInt8]()
         self.pos = 0
+        self.pretty = indent.byte_length() > 0
         self.indent = indent
         self.depth = 0
         self._has_member = False
@@ -167,6 +209,7 @@ struct JsonWriter(Movable):
         self.buf = buf^
         self.pos = 0
         self.indent = String()
+        self.pretty = False
         self.depth = 0
         self._has_member = False
         self._depth_flags = List[Bool]()
@@ -194,7 +237,7 @@ struct JsonWriter(Movable):
         if n == 0:
             return
         self.ensure(n)
-        memcpy(
+        unsafe_memcpy(
             dest=self.buf.unsafe_ptr().unsafe_offset(self.pos),
             src=data.unsafe_ptr(),
             count=n,
@@ -204,6 +247,14 @@ struct JsonWriter(Movable):
     @always_inline
     def write_literal(mut self, s: StaticString):
         self.write_bytes(s.as_bytes())
+
+    def reset(mut self):
+        """Rewind to empty, keeping the buffer.
+
+        For a caller serializing many values in a row: the allocation
+        is the expensive part and it is already the right size.
+        """
+        self.pos = 0
 
     # --- scalars -----------------------------------------------------
 
@@ -217,35 +268,51 @@ struct JsonWriter(Movable):
             self.write_literal("false")
 
     def write_int(mut self, v: Int64):
-        """Decimal integer, written backwards two digits at a time."""
+        """Decimal integer, written backwards two digits at a time.
+
+        The magnitude is taken in unsigned arithmetic, so
+        `Int64.MIN` -- which has no positive counterpart -- needs no
+        special case: negating it as `UInt64` gives exactly 2**63.
+        """
         if v == 0:
             self.write_byte(UInt8(0x30))
             return
-        # Int64.MIN has no positive counterpart; format via String.
-        if v == Int64.MIN:
-            self.write_literal("-9223372036854775808")
-            return
         var neg = v < 0
-        var mag = UInt64(-v) if neg else UInt64(v)
+        var mag = (UInt64(0) - UInt64(v)) if neg else UInt64(v)
+        self._write_digits(mag, neg)
+
+    def write_uint(mut self, v: UInt64):
+        """Decimal integer above the signed range.
+
+        JSON puts no upper bound on an integer, so a document may hold
+        a value that only fits unsigned. Writing it through the signed
+        path would wrap it into a negative number, silently.
+        """
+        if v == 0:
+            self.write_byte(UInt8(0x30))
+            return
+        self._write_digits(v, False)
+
+    @always_inline
+    def _write_digits(mut self, mag: UInt64, negative: Bool):
         var digits = _int_digits(mag)
         self.ensure(digits + 1)
-        if neg:
+        if negative:
             self._put(UInt8(0x2D))
         var start = self.pos
         var write = start + digits
         var x = mag
         var base = self.buf.unsafe_ptr()
-        var pairs = materialize[_DIGIT_PAIRS]()
         while x >= 100:
             var r = Int(x % 100)
             x //= 100
             write -= 2
-            var pair = pairs[r]
+            var pair = _digit_pair(r)
             base.unsafe_offset(write)[] = pair[0]
             base.unsafe_offset(write + 1)[] = pair[1]
         if x >= 10:
             write -= 2
-            var pair = pairs[Int(x)]
+            var pair = _digit_pair(Int(x))
             base.unsafe_offset(write)[] = pair[0]
             base.unsafe_offset(write + 1)[] = pair[1]
         else:
@@ -254,38 +321,163 @@ struct JsonWriter(Movable):
         self.pos = start + digits
 
     def write_float(mut self, v: Float64):
-        """Float, via the stdlib formatter.
+        """A float as the shortest decimal that reads back as itself.
 
-        Deliberately not a hand-rolled dtoa. The reference fast path in
-        gld-json is a 9-decimal fixed-point approximation that is not
-        round-trip exact and never emits exponents; correctness matters
-        more here than the last few nanoseconds. A real shortest-form
-        dtoa (Teju Jagua / Ryu) is a worthwhile follow-up.
+        Digits come from `json.dtoa`, not from `String(Float64)`: the
+        stdlib formatter does not always produce a representation that
+        round-trips, and a serializer that writes a number nothing can
+        read back as the value given to it has lost the one property
+        it exists to keep.
+
+        Layout follows the convention this library already emitted --
+        fixed notation while the leading digit sits between 1e-5 and
+        1e15, scientific outside that, exponent always signed and at
+        least two digits. Integer-valued floats keep a trailing `.0`
+        so that a value written as a float reads back as one.
+
+        A non-finite value writes `null`. JSON has no spelling for
+        infinity or NaN, so the alternatives are an invalid document
+        or a refusal; refusing needs a policy the caller sets, which
+        `SerializerConfig` grows separately.
         """
-        self.write_bytes(String(v).as_bytes())
-
-    def write_string(mut self, s: String):
-        """A quoted, escaped JSON string literal."""
-        self.write_string_span(s.as_bytes())
-
-    def write_string_span(mut self, b: Span[UInt8, _]):
-        var n = len(b)
-        if not needs_escape(b):
-            # Fast path: quote + one memcpy + quote.
-            self.ensure(n + 2)
-            self._put(_QUOTE)
-            if n > 0:
-                memcpy(
-                    dest=self.buf.unsafe_ptr().unsafe_offset(self.pos),
-                    src=b.unsafe_ptr(),
-                    count=n,
-                )
-                self.pos += n
-            self._put(_QUOTE)
+        if not isfinite(v):
+            self.write_null()
             return
-        self._write_string_escaped(b)
 
-    def _write_string_escaped(mut self, b: Span[UInt8, _]):
+        self.ensure(32)
+        var bits = bitcast[DType.uint64](v)
+        if (bits >> 63) != 0:
+            self._put(UInt8(0x2D))
+        var magnitude = bitcast[DType.float64](bits & (UInt64.MAX >> 1))
+
+        if magnitude == 0.0:
+            self._put(UInt8(0x30))
+            self._put(UInt8(0x2E))
+            self._put(UInt8(0x30))
+            return
+
+        var digits = InlineArray[UInt8, 24](uninitialized=True)
+        var generated = shortest_digits(magnitude, digits)
+        var count = generated[0]
+        var exponent = generated[1]
+        # Decimal exponent of the leading digit.
+        var leading = exponent + count - 1
+
+        if leading < -4 or leading > 15:
+            self._write_scientific(digits, count, leading)
+        elif exponent >= 0:
+            # An integer: digits, then the zeros the exponent implies.
+            for i in range(count):
+                self._put(digits[i])
+            for _ in range(exponent):
+                self._put(UInt8(0x30))
+            self._put(UInt8(0x2E))
+            self._put(UInt8(0x30))
+        else:
+            var integer_digits = count + exponent
+            if integer_digits <= 0:
+                self._put(UInt8(0x30))
+                self._put(UInt8(0x2E))
+                for _ in range(-integer_digits):
+                    self._put(UInt8(0x30))
+                for i in range(count):
+                    self._put(digits[i])
+            else:
+                for i in range(integer_digits):
+                    self._put(digits[i])
+                self._put(UInt8(0x2E))
+                for i in range(integer_digits, count):
+                    self._put(digits[i])
+
+    def _write_scientific(
+        mut self, digits: InlineArray[UInt8, 24], count: Int, leading: Int
+    ):
+        """`d.ddde±NN`, with at least two exponent digits."""
+        self._put(digits[0])
+        if count > 1:
+            self._put(UInt8(0x2E))
+            for i in range(1, count):
+                self._put(digits[i])
+        self._put(UInt8(0x65))
+        var exponent = leading
+        if exponent < 0:
+            self._put(UInt8(0x2D))
+            exponent = -exponent
+        else:
+            self._put(UInt8(0x2B))
+        if exponent < 10:
+            self._put(UInt8(0x30))
+            self._put(UInt8(0x30 + exponent))
+        elif exponent < 100:
+            var pairs = materialize[_DIGIT_PAIRS_ARRAY]()
+            var pair = pairs[exponent]
+            self._put(pair[0])
+            self._put(pair[1])
+        else:
+            var hundreds = exponent // 100
+            self._put(UInt8(0x30 + hundreds))
+            var pairs = materialize[_DIGIT_PAIRS_ARRAY]()
+            var pair = pairs[exponent % 100]
+            self._put(pair[0])
+            self._put(pair[1])
+
+    def write_string[
+        ascii_only: Bool = False, solidus: Bool = False
+    ](mut self, s: String):
+        """A quoted, escaped JSON string literal.
+
+        Parameters:
+            ascii_only: Escape every code point above U+007F as
+                `\\uXXXX`. A character outside the basic plane becomes
+                the surrogate pair JSON spells it with.
+            solidus: Escape `/` as `\\/`. JSON does not require it, but
+                embedding output in a `<script>` element does.
+
+        Both default off and are parameters rather than fields so the
+        ordinary path compiles to exactly what it did before they
+        existed. Carrying them as `Bool` fields instead measured about
+        eight percent on `document@100 serialize` even with every read
+        of them removed.
+        """
+        self.write_string_span[ascii_only, solidus](s.as_bytes())
+
+    def write_string_span[
+        ascii_only: Bool = False, solidus: Bool = False
+    ](mut self, b: Span[UInt8, _]):
+        """A quoted, escaped JSON string literal.
+
+        One pass, not two. The scan that decides whether anything
+        needs escaping used to be separate from the copy, so every
+        string was read twice even though the scan already knows
+        where the clean run ends. Here the first chunk with something
+        to escape hands straight over to the escape path, which
+        restarts from the beginning; a string with no escapes -- the
+        usual case -- is a quote, one memcpy and a quote.
+        """
+        comptime if ascii_only:
+            self._write_string_ascii[solidus](b)
+            return
+        var n = len(b)
+        comptime if solidus:
+            self._write_string_escaped[True](b)
+            return
+        if needs_escape(b):
+            self._write_string_escaped[False](b)
+            return
+        self.ensure(n + 2)
+        self._put(_QUOTE)
+        if n > 0:
+            unsafe_memcpy(
+                dest=self.buf.unsafe_ptr().unsafe_offset(self.pos),
+                src=b.unsafe_ptr(),
+                count=n,
+            )
+            self.pos += n
+        self._put(_QUOTE)
+
+    def _write_string_escaped[
+        solidus: Bool = False
+    ](mut self, b: Span[UInt8, _]):
         """Escape path: bulk-copy the clean runs between escapes.
 
         Worst case is 6 bytes out per byte in, plus the two quotes.
@@ -302,7 +494,10 @@ struct JsonWriter(Movable):
 
         while i + _SCAN_W <= n:
             var chunk = ptr.unsafe_load[width=_SCAN_W](i)
-            var bits = pack_bits(chunk.eq(q) | chunk.eq(bs) | chunk.lt(sp))
+            var hit = chunk.eq(q) | chunk.eq(bs) | chunk.lt(sp)
+            comptime if solidus:
+                hit |= chunk.eq(SIMD[DType.uint8, _SCAN_W](_SOLIDUS))
+            var bits = pack_bits(hit)
             if Int(bits) == 0:
                 i += _SCAN_W
                 continue
@@ -319,7 +514,10 @@ struct JsonWriter(Movable):
 
         while i < n:
             var c = b[i]
-            if c == _QUOTE or c == _BACKSLASH or c < _SPACE:
+            var escape = c == _QUOTE or c == _BACKSLASH or c < _SPACE
+            comptime if solidus:
+                escape = escape or c == _SOLIDUS
+            if escape:
                 if i > start:
                     self.write_bytes(b[start:i])
                 self._escape_one(c)
@@ -330,12 +528,90 @@ struct JsonWriter(Movable):
             self.write_bytes(b[start:n])
         self.write_byte(_QUOTE)
 
+    def _write_string_ascii[solidus: Bool = False](mut self, b: Span[UInt8, _]):
+        """Escape path that leaves nothing above U+007F in the output.
+
+        Decoding happens here rather than reusing the byte masks the
+        other paths use, because a `\\uXXXX` escape names a code point,
+        not a byte. Escaping each UTF-8 byte separately is what the
+        previous post-pass did, and it turned `e` with an acute accent
+        into two Latin-1 escapes that read back as mojibake. A
+        character outside the basic plane needs the surrogate pair.
+        """
+        var n = len(b)
+        # Six bytes out per byte in covers `\\uXXXX` for an ASCII byte,
+        # and a multi-byte sequence only ever shrinks against that.
+        self.ensure(n * 6 + 2)
+        self._put(_QUOTE)
+        var i = 0
+        while i < n:
+            var c = b[i]
+            if c < 0x80:
+                var escape = c == _QUOTE or c == _BACKSLASH or c < _SPACE
+                comptime if solidus:
+                    escape = escape or c == _SOLIDUS
+                if escape:
+                    self._escape_one(c)
+                else:
+                    self._put(c)
+                i += 1
+                continue
+
+            var code: Int
+            var width: Int
+            if c >= 0xF0 and i + 3 < n:
+                code = (
+                    ((Int(c) & 0x07) << 18)
+                    | ((Int(b[i + 1]) & 0x3F) << 12)
+                    | ((Int(b[i + 2]) & 0x3F) << 6)
+                    | (Int(b[i + 3]) & 0x3F)
+                )
+                width = 4
+            elif c >= 0xE0 and i + 2 < n:
+                code = (
+                    ((Int(c) & 0x0F) << 12)
+                    | ((Int(b[i + 1]) & 0x3F) << 6)
+                    | (Int(b[i + 2]) & 0x3F)
+                )
+                width = 3
+            elif c >= 0xC0 and i + 1 < n:
+                code = ((Int(c) & 0x1F) << 6) | (Int(b[i + 1]) & 0x3F)
+                width = 2
+            else:
+                # A byte that cannot begin a sequence, or one the span
+                # ends in the middle of. The replacement character is
+                # the only output that stays valid JSON.
+                code = 0xFFFD
+                width = 1
+
+            if code >= 0x10000:
+                var rest = code - 0x10000
+                self._put_unicode_escape(0xD800 + (rest >> 10))
+                self._put_unicode_escape(0xDC00 + (rest & 0x3FF))
+            else:
+                self._put_unicode_escape(code)
+            i += width
+        self._put(_QUOTE)
+
+    def _put_unicode_escape(mut self, code: Int):
+        """One `\\uXXXX` escape for a code point below U+10000."""
+        self.ensure(6)
+        self._put(_BACKSLASH)
+        self._put(UInt8(0x75))  # u
+        self._put(_HEX[(code >> 12) & 0xF])
+        self._put(_HEX[(code >> 8) & 0xF])
+        self._put(_HEX[(code >> 4) & 0xF])
+        self._put(_HEX[code & 0xF])
+
     def _escape_one(mut self, c: UInt8):
         """Emit the escape sequence for one byte that needs it."""
         self.ensure(6)
         if c == _QUOTE:
             self._put(_BACKSLASH)
             self._put(_QUOTE)
+        elif c == _SOLIDUS:
+            self._put(_BACKSLASH)
+            self._put(_SOLIDUS)
         elif c == _BACKSLASH:
             self._put(_BACKSLASH)
             self._put(_BACKSLASH)
@@ -456,28 +732,44 @@ struct JsonWriter(Movable):
         self._put(UInt8(0x0A))
         var dest = self.buf.unsafe_ptr()
         for _ in range(self.depth):
-            memcpy(dest=dest.unsafe_offset(self.pos), src=src, count=unit)
+            unsafe_memcpy(
+                dest=dest.unsafe_offset(self.pos), src=src, count=unit
+            )
             self.pos += unit
 
+    @always_inline
     def open_container(mut self, brace: UInt8):
         self.write_byte(brace)
-        self.depth += 1
+        if self.pretty:
+            self.depth += 1
 
+    @always_inline
     def close_container(mut self, brace: UInt8, empty: Bool):
-        self.depth -= 1
-        if not empty:
-            self._newline()
+        if self.pretty:
+            self.depth -= 1
+            if not empty:
+                self._newline()
         self.write_byte(brace)
 
+    @always_inline
     def next_child(mut self, first: Bool):
-        """Separator before a container child."""
+        """Separator before a container child.
+
+        The compact case -- every child of every container, in the
+        overwhelmingly common configuration -- is one comma and one
+        correctly predicted branch. It used to call into the newline
+        helper regardless, which read the indent string's length per
+        child before deciding to do nothing.
+        """
         if not first:
             self.write_byte(UInt8(0x2C))
-        self._newline()
+        if self.pretty:
+            self._newline()
 
+    @always_inline
     def colon(mut self):
         self.write_byte(UInt8(0x3A))
-        if self.indent.byte_length() > 0:
+        if self.pretty:
             self.write_byte(UInt8(0x20))
 
     # --- finishing ---------------------------------------------------

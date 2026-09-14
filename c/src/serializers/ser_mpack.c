@@ -149,5 +149,5 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
 }
 
 void bench_register_mpack(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "mpack", "1.1", "binary", prep, ser, de, fidelity_fx);
+    BENCH_ADD(o, c, "mpack", "1.1.1", "binary", prep, ser, de, fidelity_fx);
 }

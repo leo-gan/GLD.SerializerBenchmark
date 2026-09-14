@@ -19,6 +19,7 @@ DETAILED=false
 JSON_OUT=""
 FORMATS=()
 ADAPTERS=()
+LANGS=()
 
 print_usage() {
     cat << USAGE
@@ -32,6 +33,7 @@ cited RFC/spec sections, no timings.
 OPTIONS:
     -f, --format NAME     Limit to a format (repeatable): json yaml toml cbor msgpack protobuf avro bson flatbuffers ion ubjson smile
     -s, --serializer NAME Limit to a serializer (repeatable): json orjson msgspec yaml …
+    -l, --lang NAME       Limit to a language id (repeatable): python javascript go rust java kotlin csharp php swift zig mojo cpp c
     -d, --detailed        Print every case, not only the summary and failures
     -o, --json-out PATH   Write the machine-readable report (default: logs/compliance/<ts>.json)
     -h, --help            Show this help message
@@ -39,14 +41,28 @@ OPTIONS:
 Examples:
     ./scripts/run-compliance.sh
     ./scripts/run-compliance.sh --format json --serializer orjson
+    ./scripts/run-compliance.sh --lang mojo --lang zig --lang swift
     ./scripts/run-compliance.sh --detailed
 USAGE
+}
+
+want_lang() {
+    local id="$1"
+    if [[ ${#LANGS[@]} -eq 0 ]]; then
+        return 0
+    fi
+    local x
+    for x in "${LANGS[@]}"; do
+        [[ "$x" == "$id" ]] && return 0
+    done
+    return 1
 }
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         -f|--format) FORMATS+=("$2"); shift 2 ;;
         -s|--serializer|-a|--adapter) ADAPTERS+=("$2"); shift 2 ;;
+        -l|--lang) LANGS+=("$2"); shift 2 ;;
         -d|--detailed) DETAILED=true; shift ;;
         -o|--json-out) JSON_OUT="$2"; shift 2 ;;
         -h|--help) print_usage; exit 0 ;;
@@ -86,30 +102,36 @@ fi
 if [[ ${#ADAPTERS[@]} -gt 0 ]]; then
     echo -e "Serializers: ${YELLOW}${ADAPTERS[*]}${NC}"
 fi
+if [[ ${#LANGS[@]} -gt 0 ]]; then
+    echo -e "Languages: ${YELLOW}${LANGS[*]}${NC}"
+fi
 echo ""
 
-PY_DIR="$PROJECT_ROOT/python"
-cd "$PY_DIR"
-uv sync --quiet
+STATUS=0
+if want_lang python; then
+    PY_DIR="$PROJECT_ROOT/python"
+    cd "$PY_DIR"
+    uv sync --quiet
 
-ARGS=(--json-out "$JSON_OUT")
-if [[ "$DETAILED" == true ]]; then
-    ARGS+=(--detailed)
-fi
-for f in "${FORMATS[@]+"${FORMATS[@]}"}"; do
-    ARGS+=(--format "$f")
-done
-for a in "${ADAPTERS[@]+"${ADAPTERS[@]}"}"; do
-    ARGS+=(--serializer "$a")
-done
+    ARGS=(--json-out "$JSON_OUT")
+    if [[ "$DETAILED" == true ]]; then
+        ARGS+=(--detailed)
+    fi
+    for f in "${FORMATS[@]+"${FORMATS[@]}"}"; do
+        ARGS+=(--format "$f")
+    done
+    for a in "${ADAPTERS[@]+"${ADAPTERS[@]}"}"; do
+        ARGS+=(--serializer "$a")
+    done
 
-export PYTHONPATH="$PY_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
-set +e
-uv run python -m compliance "${ARGS[@]}"
-STATUS=$?
-set -e
-if [[ "$STATUS" -eq 0 ]]; then
-    cp -f "$JSON_OUT" "$LOG_DIR/latest-python.json"
+    export PYTHONPATH="$PY_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+    set +e
+    uv run python -m compliance "${ARGS[@]}"
+    STATUS=$?
+    set -e
+    if [[ "$STATUS" -eq 0 ]]; then
+        cp -f "$JSON_OUT" "$LOG_DIR/latest-python.json"
+    fi
 fi
 
 fmt_args=()
@@ -134,16 +156,16 @@ run_lang() {
     fi
 }
 
-if command -v node >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/javascript/src/compliance.mjs" ]]; then
+if want_lang javascript && command -v node >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/javascript/src/compliance.mjs" ]]; then
     run_lang javascript env -C "$PROJECT_ROOT/javascript" node src/compliance.mjs
 fi
-if command -v go >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/go/compliance/main.go" ]]; then
+if want_lang go && command -v go >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/go/compliance/main.go" ]]; then
     run_lang go env -C "$PROJECT_ROOT/go" go run ./compliance
 fi
-if command -v cargo >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/rust/src/bin/compliance.rs" ]]; then
+if want_lang rust && command -v cargo >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/rust/src/bin/compliance.rs" ]]; then
     run_lang rust env -C "$PROJECT_ROOT/rust" cargo run --quiet --bin compliance --
 fi
-if command -v mvn >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/java/src/main/java/benchmark/Compliance.java" ]]; then
+if want_lang java && command -v mvn >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/java/src/main/java/benchmark/Compliance.java" ]]; then
     echo ""
     echo -e "${BLUE}java compliance…${NC}"
     JAVA_OUT="$LOG_DIR/${TS}-java.json"
@@ -157,7 +179,7 @@ if command -v mvn >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/java/src/main/java/ben
         echo -e "${YELLOW}⚠ java compliance exited ${JAVA_ST}${NC}"
     fi
 fi
-if [[ -x "$PROJECT_ROOT/kotlin/gradlew" && -f "$PROJECT_ROOT/kotlin/src/main/kotlin/benchmark/Compliance.kt" ]]; then
+if want_lang kotlin && [[ -x "$PROJECT_ROOT/kotlin/gradlew" && -f "$PROJECT_ROOT/kotlin/src/main/kotlin/benchmark/Compliance.kt" ]]; then
     echo ""
     echo -e "${BLUE}kotlin compliance…${NC}"
     KT_OUT="$LOG_DIR/${TS}-kotlin.json"
@@ -171,7 +193,7 @@ if [[ -x "$PROJECT_ROOT/kotlin/gradlew" && -f "$PROJECT_ROOT/kotlin/src/main/kot
         echo -e "${YELLOW}⚠ kotlin compliance exited ${KT_ST}${NC}"
     fi
 fi
-if command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c-sharp/src/Compliance.cs" ]]; then
+if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c-sharp/src/Compliance.cs" ]]; then
     echo ""
     echo -e "${BLUE}csharp compliance…${NC}"
     CS_DLL="$PROJECT_ROOT/c-sharp/src/bin/Release/net8.0/GLD.SerializerBenchmark.dll"
@@ -239,28 +261,28 @@ PY
         cp -f "$CS_OUT" "$LOG_DIR/latest-csharp.json"
     fi
 fi
-if command -v php >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/php/src/compliance.php" ]]; then
+if want_lang php && command -v php >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/php/src/compliance.php" ]]; then
     run_lang php php "$PROJECT_ROOT/php/src/compliance.php"
 fi
 SWIFT_COMPLIANCE=""
-if command -v swift >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/swift/Package.swift" ]]; then
+if want_lang swift && command -v swift >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/swift/Package.swift" ]]; then
     SWIFT_BIN_DIR="$(cd "$PROJECT_ROOT/swift" && swift build -c release --show-bin-path 2>/dev/null || true)"
     if [[ -n "$SWIFT_BIN_DIR" && -x "$SWIFT_BIN_DIR/Compliance" ]]; then
         SWIFT_COMPLIANCE="$SWIFT_BIN_DIR/Compliance"
     fi
 fi
-if [[ -z "$SWIFT_COMPLIANCE" ]]; then
+if want_lang swift && [[ -z "$SWIFT_COMPLIANCE" ]]; then
     for p in "$PROJECT_ROOT"/swift/.build/*/release/Compliance; do
         if [[ -x "$p" ]]; then SWIFT_COMPLIANCE="$p"; break; fi
     done
 fi
-if [[ -n "$SWIFT_COMPLIANCE" ]]; then
+if want_lang swift && [[ -n "$SWIFT_COMPLIANCE" ]]; then
     run_lang swift "$SWIFT_COMPLIANCE"
-elif command -v swift >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/swift/compliance.swift" ]]; then
+elif want_lang swift && command -v swift >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/swift/compliance.swift" ]]; then
     run_lang swift swift "$PROJECT_ROOT/swift/compliance.swift"
 fi
 NLOHMANN="$PROJECT_ROOT/cpp/third_party/nlohmann_json/include"
-if command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/src/compliance.cpp" && -d "$NLOHMANN" ]]; then
+if want_lang cpp && command -v g++ >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/cpp/src/compliance.cpp" && -d "$NLOHMANN" ]]; then
     CPP_BIN="$LOG_DIR/compliance-cpp"
     CPP_INC=(-I"$NLOHMANN")
     CPP_LIBS=()
@@ -286,7 +308,7 @@ if command -v zig >/dev/null 2>&1; then
 elif [[ -x "${HOME}/.local/zig/zig" ]]; then
     ZIG_BIN="${HOME}/.local/zig/zig"
 fi
-if [[ -n "$ZIG_BIN" && -f "$PROJECT_ROOT/zig/build.zig" ]]; then
+if want_lang zig && [[ -n "$ZIG_BIN" && -f "$PROJECT_ROOT/zig/build.zig" ]]; then
     echo ""
     echo -e "${BLUE}zig compliance…${NC}"
     (cd "$PROJECT_ROOT/zig" && "$ZIG_BIN" build -Doptimize=ReleaseSafe) || true
@@ -344,7 +366,7 @@ PY
     fi
 fi
 CJSON_H="$PROJECT_ROOT/c/third_party/cJSON/cJSON.h"
-if command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/mojo/src/compliance.mojo" ]]; then
+if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/mojo/src/compliance.mojo" ]]; then
     echo ""
     echo -e "${BLUE}mojo compliance…${NC}"
     MOJO_OUT="$LOG_DIR/${TS}-mojo.json"
@@ -434,7 +456,7 @@ PY
         echo -e "${YELLOW}⚠ mojo compliance failed to build${NC}"
     fi
 fi
-if command -v cmake >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c/CMakeLists.txt" ]]; then
+if want_lang c && command -v cmake >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c/CMakeLists.txt" ]]; then
     echo ""
     echo -e "${BLUE}c compliance (mapping-driven)…${NC}"
     cmake -S "$PROJECT_ROOT/c" -B "$PROJECT_ROOT/c/build" -DCMAKE_BUILD_TYPE=Release >/dev/null
@@ -448,8 +470,10 @@ fi
 echo ""
 if [[ "$STATUS" -eq 0 ]]; then
     echo -e "${GREEN}✓ Compliance catalog finished${NC} (library misses are listed above; they are not a runner failure)"
-    if [[ ${#FORMATS[@]} -eq 0 && ${#ADAPTERS[@]} -eq 0 ]]; then
+    if [[ ${#FORMATS[@]} -eq 0 && ${#ADAPTERS[@]} -eq 0 && ${#LANGS[@]} -eq 0 ]]; then
         cp -f "$JSON_OUT" "$LOG_DIR/latest.json"
+    fi
+    if [[ ${#FORMATS[@]} -eq 0 && ${#ADAPTERS[@]} -eq 0 ]]; then
         echo -e "${BLUE}Syncing Dashboard payload…${NC}"
         if python3 "$PROJECT_ROOT/dashboard/scripts/sync-compliance.py"; then
             echo -e "${GREEN}✓ Dashboard data/compliance.json updated${NC}"
@@ -457,7 +481,7 @@ if [[ "$STATUS" -eq 0 ]]; then
             echo -e "${YELLOW}⚠ Dashboard sync skipped or failed${NC}"
         fi
     else
-        echo -e "${YELLOW}Filtered run — Dashboard payload left unchanged (latest.json is the last full run)${NC}"
+        echo -e "${YELLOW}Filtered format/serializer run — Dashboard payload left unchanged${NC}"
     fi
 elif [[ "$STATUS" -eq 2 ]]; then
     echo -e "${RED}✗ Catalog could not be loaded${NC}"

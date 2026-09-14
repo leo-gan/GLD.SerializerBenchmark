@@ -65,7 +65,10 @@
       "protobuf-wire": [
         "protobuf"
       ],
-      "custom-binary": []
+      "custom-binary": [],
+      "libyaml": [
+        "yaml"
+      ]
     },
     "python": {
       "json": [
@@ -224,6 +227,9 @@
         "msgpack"
       ],
       "shamaton/msgpack": [
+        "msgpack"
+      ],
+      "shamaton/msgpack (array)": [
         "msgpack"
       ],
       "ugorji/msgpack": [
