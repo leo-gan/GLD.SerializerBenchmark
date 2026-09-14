@@ -6,6 +6,9 @@ title: Experiments
 
 [Dashboard → Experiments](../dashboard/#experiments){ .md-button .md-button--primary }
 
+A single experiment and language: `#experiments/{id}/{lang}` (example:
+[JSON bakeoff · Python](../dashboard/#experiments/01-json-library-bakeoff/python)).
+
 Each experiment answers **one everyday question**, such as “which JSON library is fastest?” or “is YAML too slow for a live request?”
 
 Each experiment opens on a language tab. The **All** tab (last on the right) puts every language on one microsecond axis so you can compare runtimes. Color is still vs that language’s fastest. Size (how many bytes) is also fair across languages.

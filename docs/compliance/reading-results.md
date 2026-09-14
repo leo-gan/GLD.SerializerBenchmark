@@ -62,7 +62,7 @@ top-level-scalar cases. That is the catalog working, not a bug in
 
 Library FAILs are printed, written to
 `logs/compliance/<timestamp>.json`, and shown on
-[Dashboard · Compliance](../dashboard/#compliance).
+[Dashboard · Compliance](../dashboard/#compliance) (add `/{lang}/{serializer}` to land on one row).
 The command stays exit 0 unless the **catalog or runner** is broken.
 
 That is deliberate. Treating every historical MUST as a hard error

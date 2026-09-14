@@ -9,7 +9,9 @@ Serializer quality has two public questions:
 
 This tab explains the catalog. **Live pass/fail numbers live only on the
 [Dashboard → Compliance](../dashboard/#compliance)** view — the same rule
-as timings (Dashboard, not these pages).
+as timings (Dashboard, not these pages). A language and serializer deep-link
+as `#compliance/{lang}/{serializer}` (example:
+[Python orjson](../dashboard/#compliance/python/orjson)).
 
 | You want… | Go here |
 |-----------|---------|

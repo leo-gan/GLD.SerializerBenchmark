@@ -79,7 +79,8 @@ cd python && ./scripts/run-benchmarks.sh smoke
 ```
 
 Then open the [Python Dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/?lang=python)
-for timings, or [Dashboard · Compliance](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/#compliance)
+for timings, or [Dashboard · Compliance](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/#compliance/python)
+(add `/{serializer}` to open one library, e.g. `#compliance/python/orjson`)
 for spec misses. Catalog notes (not live numbers) live under
 [Compliance](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/).
 
