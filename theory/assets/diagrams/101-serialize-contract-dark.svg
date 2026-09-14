@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">Serialization as a contract</title>
+  <desc id="desc">In-memory structure becomes a linear byte sequence; deserialization rebuilds a local structure under an agreed format contract. Dark-mode palette.</desc>
+
+  <!--
+    Dark palette (Material slate + indigo). Same geometry as 101-serialize-contract.svg.
+    No gradients, no shadows. Keep in sync with the light twin when editing layout.
+  -->
+  <defs>
+    <style type="text/css"><![CDATA[
+      .bg { fill: #1a1a1a; }
+      .panel { fill: #242424; stroke: #5c6bc0; stroke-width: 1.5; stroke-opacity: 0.55; }
+      .label { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #e0e0e0; }
+      .title { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+      .caption { font-size: 12px; fill: #90a4ae; }
+      .node { fill: #2c2c2c; stroke: #9fa8da; stroke-width: 1.75; }
+      .node-fill { fill: #303f9f; stroke: #9fa8da; stroke-width: 1.75; fill-opacity: 0.45; }
+      .edge { stroke: #9fa8da; stroke-width: 1.5; fill: none; }
+      .byte { fill: #303f9f; stroke: #9fa8da; stroke-width: 1.25; fill-opacity: 0.4; }
+      .byte-text { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; fill: #c5cae9; text-anchor: middle; }
+      .arrow { stroke: #b0bec5; stroke-width: 1.75; fill: none; marker-end: url(#arrowhead); }
+      /*
+       * Action verbs (diagram display labels).
+       * Same type treatment as light twin; light fill for dark surface.
+       */
+      .arrow-label {
+        font-family: "Liberation Sans", "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 0.05em;
+        fill: #eceff1;
+        text-anchor: middle;
+      }
+      .contract { font-size: 11px; fill: #78909c; text-anchor: middle; letter-spacing: 0.04em; }
+    ]]></style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#b0bec5"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1000" height="360"/>
+
+  <!-- Panel 1: in memory -->
+  <rect class="panel" x="28" y="48" width="250" height="260" rx="10"/>
+  <text class="label title" x="48" y="78">In memory</text>
+  <text class="label caption" x="48" y="98">pointers · types · padding</text>
+
+  <!-- simple object graph: root + two children -->
+  <rect class="node-fill" x="113" y="120" width="80" height="36" rx="6"/>
+  <text class="label" x="153" y="143" text-anchor="middle" font-size="13">Record</text>
+
+  <line class="edge" x1="135" y1="156" x2="90" y2="190"/>
+  <line class="edge" x1="171" y1="156" x2="215" y2="190"/>
+
+  <rect class="node" x="50" y="190" width="80" height="36" rx="6"/>
+  <text class="label" x="90" y="213" text-anchor="middle" font-size="13">Field A</text>
+
+  <rect class="node" x="175" y="190" width="80" height="36" rx="6"/>
+  <text class="label" x="215" y="213" text-anchor="middle" font-size="13">Field B</text>
+
+  <text class="label caption" x="153" y="270" text-anchor="middle">one process image</text>
+
+  <!-- Arrow serialize (~80px, matches shorter label) -->
+  <line class="arrow" x1="292" y1="178" x2="372" y2="178"/>
+  <text class="arrow-label" x="332" y="164">serialize</text>
+
+  <!-- Panel 2: on the wire -->
+  <rect class="panel" x="386" y="48" width="250" height="260" rx="10"/>
+  <text class="label title" x="406" y="78">On the wire</text>
+  <text class="label caption" x="406" y="98">linear bytes · agreed order</text>
+
+  <!-- byte strip -->
+  <g transform="translate(413, 168)">
+    <rect class="byte" x="0" y="0" width="36" height="36" rx="4"/>
+    <rect class="byte" x="40" y="0" width="36" height="36" rx="4"/>
+    <rect class="byte" x="80" y="0" width="36" height="36" rx="4"/>
+    <rect class="byte" x="120" y="0" width="36" height="36" rx="4"/>
+    <rect class="byte" x="160" y="0" width="36" height="36" rx="4"/>
+    <text class="byte-text" x="18" y="23">a1</text>
+    <text class="byte-text" x="58" y="23">b2</text>
+    <text class="byte-text" x="98" y="23">c3</text>
+    <text class="byte-text" x="138" y="23">d4</text>
+    <text class="byte-text" x="178" y="23">…</text>
+  </g>
+
+  <text class="label caption" x="511" y="240" text-anchor="middle">network · disk · cache</text>
+  <text class="contract" x="511" y="275">FORMAT CONTRACT</text>
+
+  <!-- Arrow deserialize (~112px, matches longer label) -->
+  <line class="arrow" x1="650" y1="178" x2="762" y2="178"/>
+  <text class="arrow-label" x="706" y="164">deserialize</text>
+
+  <!-- Panel 3: rebuilt -->
+  <rect class="panel" x="776" y="48" width="200" height="260" rx="10"/>
+  <text class="label title" x="792" y="78">Rebuilt</text>
+  <text class="label caption" x="792" y="98">local objects or views</text>
+
+  <rect class="node-fill" x="836" y="120" width="80" height="36" rx="6"/>
+  <text class="label" x="876" y="143" text-anchor="middle" font-size="13">Record</text>
+
+  <line class="edge" x1="856" y1="156" x2="822" y2="190"/>
+  <line class="edge" x1="896" y1="156" x2="930" y2="190"/>
+
+  <rect class="node" x="782" y="190" width="80" height="36" rx="6"/>
+  <text class="label" x="822" y="213" text-anchor="middle" font-size="13">Field A</text>
+
+  <rect class="node" x="890" y="190" width="80" height="36" rx="6"/>
+  <text class="label" x="930" y="213" text-anchor="middle" font-size="13">Field B</text>
+
+  <text class="label caption" x="876" y="270" text-anchor="middle">maybe another language</text>
+</svg>
