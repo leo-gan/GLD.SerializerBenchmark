@@ -1,6 +1,6 @@
 {
   "name": "serializer-benchmark-dashboard",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Interactive analytics dashboard for serializer benchmarks",
   "scripts": {
     "dev": "vite --port 5173 --open",
