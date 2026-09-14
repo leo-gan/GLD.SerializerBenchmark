@@ -25,6 +25,7 @@ import {
   rowsToDelimited,
   totalStdUs,
 } from './exp-export.js';
+import { formatExperimentsHash, parseExperimentsHash } from './dash-hash.js';
 import {
   destroyExperimentFigures,
   figuresToPng,
@@ -118,17 +119,11 @@ async function fetchGzipJson(url) {
 }
 
 function parseHash() {
-  const raw = (window.location.hash || '').replace(/^#/, '');
-  if (raw === 'experiments') return { view: 'list', id: null };
-  if (raw.startsWith('experiments/')) {
-    const id = decodeURIComponent(raw.slice('experiments/'.length)).replace(/\/+$/, '');
-    return { view: id ? 'detail' : 'list', id: id || null };
-  }
-  return { view: 'suite', id: null };
+  return parseExperimentsHash(window.location.hash);
 }
 
-function setHash(id) {
-  const next = id ? `#experiments/${id}` : '#experiments';
+function setHash(id, lang = '') {
+  const next = formatExperimentsHash({ id: id || '', lang: lang || '' });
   if (window.location.hash !== next) window.location.hash = next;
   else render();
 }
@@ -626,7 +621,7 @@ function renderList(root) {
   });
 }
 
-async function renderDetail(root, id) {
+async function renderDetail(root, id, locLang = '') {
   destroyExperimentFigures();
   const meta = (catalog?.experiments || []).find((e) => e.id === id);
   if (!meta) {
@@ -669,7 +664,16 @@ async function renderDetail(root, id) {
   }
   const langIds = Object.keys(data.languages || {}).filter((k) => data.languages[k]?.status === 'ok');
   const tabIds = langIds.length ? [...langIds, ALL_LANG] : [];
+  if (locLang && tabIds.includes(locLang)) ui.lang = locLang;
   if (!ui.lang || !tabIds.includes(ui.lang)) ui.lang = langIds[0] || '';
+  const wantHash = formatExperimentsHash({ id, lang: ui.lang });
+  if (ui.lang && window.location.hash !== wantHash) {
+    try {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${wantHash}`);
+    } catch {
+      /* ignore */
+    }
+  }
   const crossLang = isAllLang(ui.lang);
   const langBlock = crossLang
     ? {
@@ -760,7 +764,7 @@ async function renderDetail(root, id) {
       ui.kind = '';
       ui.n = '';
       ui.io = '';
-      render();
+      setHash(id, ui.lang);
     });
   });
   root.querySelector('#exp-kind')?.addEventListener('change', (e) => {
@@ -806,7 +810,7 @@ async function render() {
     renderList(root);
     return;
   }
-  await renderDetail(root, loc.id);
+  await renderDetail(root, loc.id, loc.lang);
 }
 
 function bindNav() {

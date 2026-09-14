@@ -32,6 +32,7 @@ import {
   rowIsUnscored,
   standardMenuOptions,
 } from './compliance-groups.js';
+import { formatComplianceHash, parseComplianceHash } from './dash-hash.js';
 
 const DATA_URL = 'data/compliance.json.gz';
 const DATA_URL_PLAIN = 'data/compliance.json';
@@ -115,9 +116,59 @@ function groupingArgs(lang = ui.lang) {
   };
 }
 
+function resolveSerializerKey(lang, name) {
+  if (!name) return '';
+  const parsed = parseRowIdentity(name);
+  const ser = parsed.serializer || name;
+  const serLang = parsed.language || (lang && lang !== ALL_LANG ? lang : '');
+  if (serLang && ser) return rowIdentity({ language: serLang, serializer: ser });
+  return ser;
+}
+
+function serializerNameFromUi() {
+  return parseRowIdentity(ui.serializer).serializer || '';
+}
+
+function applyHashToUi(loc) {
+  if (loc.lang) ui.lang = loc.lang;
+  if (loc.serializer) {
+    ui.serializer = resolveSerializerKey(loc.lang, loc.serializer);
+    ui.format = loc.format === undefined ? '' : loc.format;
+    return;
+  }
+  ui.serializer = '';
+  if (!loc.lang) ui.format = 'json';
+  else if (loc.format !== undefined) ui.format = loc.format;
+}
+
+function complianceHref() {
+  const ser = serializerNameFromUi();
+  return formatComplianceHash({
+    lang: ui.lang,
+    serializer: ser,
+    format: ser ? ui.format : '',
+  });
+}
+
+function setHashFromUi() {
+  const next = complianceHref();
+  if (window.location.hash !== next) window.location.hash = next;
+  else render();
+}
+
+function syncHashQuiet() {
+  const next = complianceHref();
+  if (window.location.hash === next) return;
+  const url = `${window.location.pathname}${window.location.search}${next}`;
+  try {
+    window.history.replaceState(null, '', url);
+  } catch {
+    window.location.hash = next;
+  }
+}
+
 function parseHash() {
-  const raw = (window.location.hash || '').replace(/^#/, '');
-  return raw === 'compliance' || raw.startsWith('compliance/');
+  return parseComplianceHash(window.location.hash);
 }
 
 function setComplianceView(on) {
@@ -450,6 +501,7 @@ function openCellPanel(serializer, standard) {
       <p class="section-help">No failures in this cell (${rows.length} case${rows.length === 1 ? '' : 's'} passed or skipped).</p>`;
     document.getElementById('cmp-fail-close')?.addEventListener('click', closeCellPanel);
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    syncHashQuiet();
     return;
   }
   panel.hidden = false;
@@ -461,6 +513,7 @@ function openCellPanel(serializer, standard) {
     ${fails.map(renderFailCard).join('')}`;
   document.getElementById('cmp-fail-close')?.addEventListener('click', closeCellPanel);
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  syncHashQuiet();
 }
 
 function closeCellPanel() {
@@ -588,7 +641,7 @@ function renderMain(root) {
       ui.lang = btn.getAttribute('data-cmp-lang') || '';
       ui.serializer = '';
       ui.panel = null;
-      render();
+      setHashFromUi();
     });
   });
   document.getElementById('cmp-filter-standard')?.addEventListener('change', (e) => {
@@ -597,25 +650,28 @@ function renderMain(root) {
     ui.format = next;
     ui.serializer = '';
     ui.panel = null;
-    render();
+    setHashFromUi();
   });
   document.getElementById('cmp-filter-serializer')?.addEventListener('change', (e) => {
     ui.serializer = e.target.value;
-    render();
+    setHashFromUi();
   });
   root.querySelectorAll('.cmp-cell-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       openCellPanel(btn.getAttribute('data-cmp-ser') || '', btn.getAttribute('data-cmp-std') || '');
     });
   });
+  if (ui.serializer) {
+    root.querySelector('.cmp-heat-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 async function render() {
   const root = document.getElementById('compliance');
   if (!root) return;
-  const on = parseHash();
-  setComplianceView(on);
-  if (!on) return;
+  const loc = parseHash();
+  setComplianceView(loc.active);
+  if (!loc.active) return;
   await loadSerializerSources();
   await loadPayload();
   if (loadError) {
@@ -631,7 +687,12 @@ async function render() {
     return;
   }
   await loadBenchVersions();
+  applyHashToUi(loc);
+  const langIds = languageIds();
+  const tabIds = langIds.length ? [...langIds, ALL_LANG] : [ALL_LANG];
+  if (ui.lang && !tabIds.includes(ui.lang)) ui.lang = langIds[0] || ALL_LANG;
   renderMain(root);
+  if (loc.lang) syncHashQuiet();
 }
 
 function bindNav() {
