@@ -16,14 +16,14 @@ version = "1.0.0-SNAPSHOT"
 
 val kotlinVersion = "2.1.20"
 val kotlinxSerialization = "1.8.1"
-val jackson = "2.18.3"
-val protobuf = "4.28.3"
-val avro = "1.12.0"
+val jackson = "2.19.0"
+val protobuf = "4.35.0"
+val avro = "1.12.1"
 val moshi = "1.15.2"
 val kryo = "5.6.2"
 val fory = "1.3.0"
 val protostuff = "1.8.0"
-val gson = "2.12.1"
+val gson = "2.14.0"
 val avro4k = "2.9.0"
 val kbson = "0.5.0"
 val obor = "2.1.3"
@@ -94,7 +94,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
         exclude(group = "org.jetbrains.kotlin")
     }
-    implementation("org.mongodb:bson:5.3.1")
+    implementation("org.mongodb:bson:5.5.1")
     implementation("net.orandja.obor:obor:$obor")
     implementation("net.peanuuutz.tomlkt:tomlkt:$tomlkt")
     implementation("com.amazon.ion:ion-java:$ionJava")

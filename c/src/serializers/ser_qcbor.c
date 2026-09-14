@@ -72,5 +72,5 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
     return bench_tinycbor_de(buf, len, out, kind);
 }
 void bench_register_qcbor(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "qcbor", "1.5.1", "binary", prep, ser, de, fidelity_fx);
+    BENCH_ADD(o, c, "qcbor", "1.6.1", "binary", prep, ser, de, fidelity_fx);
 }

@@ -11,5 +11,5 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
     return pb_v2_decode(buf, len, out, kind);
 }
 void bench_register_nanopb(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "nanopb", "0.4.9", "schema", prep, ser, de, fidelity_fx);
+    BENCH_ADD(o, c, "nanopb", "0.4.9.2", "schema", prep, ser, de, fidelity_fx);
 }

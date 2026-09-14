@@ -326,7 +326,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "serde.json",
-            .version = "1.0.7",
+            .version = "1.2.1",
             .stream_mode = .adapted,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_json_state),
@@ -334,7 +334,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "serde.msgpack",
-            .version = "1.0.7",
+            .version = "1.2.1",
             .stream_mode = .adapted,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_msgpack_state),
@@ -342,7 +342,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "serde.yaml",
-            .version = "1.0.7",
+            .version = "1.2.1",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_yaml_state),
@@ -350,7 +350,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "serde.toml",
-            .version = "1.0.7",
+            .version = "1.2.1",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_toml_state),
@@ -358,7 +358,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "serde.zon",
-            .version = "1.0.7",
+            .version = "1.2.1",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_zon_state),
@@ -366,7 +366,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "serde.xml",
-            .version = "1.0.7",
+            .version = "1.2.1",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_xml_state),
@@ -382,7 +382,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "zig-msgpack",
-            .version = "0.0.14",
+            .version = "0.0.18",
             .stream_mode = .adapted,
             .native_kind = .value_tree,
             .ctx = @ptrCast(&zig_msgpack_state),
@@ -390,7 +390,7 @@ pub fn allSerializers() [17]Serializer {
         },
         .{
             .name = "zbor",
-            .version = "0.21.0",
+            .version = "0.21.3",
             .stream_mode = .adapted,
             .native_kind = .direct,
             .ctx = @ptrCast(&zbor_state),

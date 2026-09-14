@@ -25,7 +25,7 @@ Do **not** copy the prepare-pr steps into this file. That skill is the source of
 
 ## 1. Prepare the PR
 
-Read and execute **[prepare-pr](../prepare-pr/SKILL.md)** in full (branch guard, tests, changed-lang benches, error CSVs, analysis, dashboard sync, commit, push, open/update PR).
+Read and execute **[prepare-pr](../prepare-pr/SKILL.md)** in full (branch guard, tests, changed-lang benches, error CSVs, analysis, experiments, compliance, dashboard sync, commit, push, open/update PR).
 
 Stop if prepare-pr stops. Do not merge a failed gate.
 

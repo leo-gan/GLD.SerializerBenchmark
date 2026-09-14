@@ -99,8 +99,8 @@ test('Standard menu is populated families, No public spec, separator, then empty
   assert.ok(populated.includes('avro'));
   assert.ok(populated.includes('bson'));
   assert.ok(populated.includes('flatbuffers'));
-  assert.ok(!populated.includes('yaml'));
-  assert.ok(empty.includes('yaml'));
+  assert.ok(populated.includes('yaml'));
+  assert.ok(!empty.includes('yaml'));
   assert.ok(empty.includes('toml'));
   const labels = populated.map(formatLabel);
   assert.deepEqual(labels, [...labels].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));

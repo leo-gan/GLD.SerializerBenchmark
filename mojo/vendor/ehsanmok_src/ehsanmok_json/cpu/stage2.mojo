@@ -36,7 +36,7 @@
 
 from std.bit import count_trailing_zeros
 from std.collections import List
-from std.memory import memcpy
+from std.memory import bitcast, unsafe_memcpy
 from std.memory.unsafe import pack_bits
 from std.sys import simd_byte_width
 
@@ -54,7 +54,22 @@ from std.sys import simd_byte_width
 # 32 was a 2x penalty on NEON. simd_byte_width() defers to the
 # Mojo compiler's per-target answer.
 comptime _BLOCK: Int = simd_byte_width()
+comptime _INLINE_PAYLOAD_MASK: UInt64 = (UInt64(1) << 60) - 1
 
+from ..errors import parse_error
+from .validate import (
+    ESC_BAD_CHAR,
+    ESC_OK,
+    ESC_TRAILING_BACKSLASH,
+    STR_CONTROL,
+    STR_ESCAPE,
+    STR_NON_ASCII,
+    find_control_char,
+    first_invalid_utf8,
+    is_valid_utf8,
+    scan_string_body,
+    validate_escapes,
+)
 from ..unicode import unescape_json_string_span
 from ..document import (
     Document,
@@ -63,6 +78,9 @@ from ..document import (
     TAPE_TAG_NULL,
     TAPE_TAG_BOOL,
     TAPE_TAG_INT,
+    TAPE_TAG_INT_POOL,
+    TAPE_TAG_UINT,
+    _INLINE_INT_LIMIT,
     TAPE_TAG_FLOAT,
     TAPE_TAG_STRING,
     TAPE_TAG_STRING_OWNED,
@@ -72,12 +90,47 @@ from ..document import (
     TAPE_TAG_KEY_INLINE,
 )
 from .stage1_scalar import StructuralIndex
-from .number_parse import parse_int_swar
+from .number_parse import (
+    NUM_ERR_LEADING_ZERO,
+    NUM_FLOAT,
+    NUM_INVALID,
+    NUM_UINT,
+    scan_number,
+)
 
 
 # ---------------------------------------------------------------------------
 # Whitespace + primitive end helpers
 # ---------------------------------------------------------------------------
+
+
+def _hex2(c: UInt8) -> String:
+    """Two lowercase hexadecimal digits."""
+    comptime digits = "0123456789abcdef"
+    var out = String()
+    out += digits[byte = Int(c >> 4) : Int(c >> 4) + 1]
+    out += digits[byte = Int(c & 0xF) : Int(c & 0xF) + 1]
+    return out^
+
+
+def _byte_label(c: UInt8) -> String:
+    """A byte as it should appear in an error message.
+
+    Printable ASCII shows as itself in quotes; anything else shows as
+    its hexadecimal value. Passing a raw byte to `chr` would re-encode
+    everything at or above 0x80 as its own code point, so the message
+    would name a character the document does not contain.
+    """
+    if c >= UInt8(0x20) and c < UInt8(0x7F):
+        return "'" + chr(Int(c)) + "'"
+    return "byte 0x" + _hex2(c)
+
+
+def _escape_label(c: UInt8) -> String:
+    """The escape sequence `\\<c>`, for an invalid-escape message."""
+    if c >= UInt8(0x20) and c < UInt8(0x7F):
+        return "'\\" + chr(Int(c)) + "'"
+    return "'\\x" + _hex2(c) + "'"
 
 
 @always_inline
@@ -98,12 +151,12 @@ def _string_has_escape(bytes: Span[UInt8, _], start: Int, end: Int) -> Bool:
     var i = start
     var stop = end - _BLOCK
     while i <= stop:
-        var chunk = ptr.load[width=_BLOCK](i)
+        var chunk = ptr.unsafe_load[width=_BLOCK](i)
         if chunk.eq(UInt8(ord("\\"))).reduce_or():
             return True
         i += _BLOCK
     while i < end:
-        if ptr[i] == UInt8(ord("\\")):
+        if ptr[unsafe_offset=i] == UInt8(ord("\\")):
             return True
         i += 1
     return False
@@ -145,7 +198,7 @@ def _skip_ws(bytes: Span[UInt8, _], start: Int, end: Int) -> Int:
     # Scalar prelude (up to 4 bytes). Common case for compact / dense
     # JSON: returns after the first byte test.
     var scalar_stop = min(end, start + 4)
-    while i < scalar_stop and _is_ws(ptr[i]):
+    while i < scalar_stop and _is_ws(ptr[unsafe_offset=i]):
         i += 1
     if i < scalar_stop:
         return i
@@ -153,7 +206,7 @@ def _skip_ws(bytes: Span[UInt8, _], start: Int, end: Int) -> Int:
     # SIMD body for long whitespace runs.
     var stop = end - _BLOCK
     while i <= stop:
-        var chunk = ptr.load[width=_BLOCK](i)
+        var chunk = ptr.unsafe_load[width=_BLOCK](i)
         var is_ws_mask = (
             chunk.eq(UInt8(ord(" ")))
             | chunk.eq(UInt8(ord("\t")))
@@ -182,7 +235,7 @@ def _skip_ws(bytes: Span[UInt8, _], start: Int, end: Int) -> Int:
             comptime assert False, "unsupported simd_byte_width()"
         i += _BLOCK
 
-    while i < end and _is_ws(ptr[i]):
+    while i < end and _is_ws(ptr[unsafe_offset=i]):
         i += 1
     return i
 
@@ -212,7 +265,7 @@ def _validate_escapes(bytes: Span[UInt8, _], start: Int, end: Int) raises:
             j += 1
             continue
         if j + 1 >= end:
-            raise Error("Stage 2: trailing backslash in string")
+            raise parse_error("trailing backslash in string", bytes, j)
         var esc = bytes[j + 1]
         if (
             esc != UInt8(ord('"'))
@@ -225,12 +278,7 @@ def _validate_escapes(bytes: Span[UInt8, _], start: Int, end: Int) raises:
             and esc != UInt8(ord("t"))
             and esc != UInt8(ord("u"))
         ):
-            raise Error(
-                "Stage 2: invalid escape sequence '\\"
-                + chr(Int(esc))
-                + "' at offset "
-                + String(j)
-            )
+            raise parse_error("invalid escape " + _escape_label(esc), bytes, j)
         if esc == UInt8(ord("u")):
             j += 6
         else:
@@ -354,7 +402,19 @@ def parse_into_document(
     stack.reserve(32)
 
     var pos_idx = 0
-    var doc_start = _skip_ws(doc.input.as_bytes(), 0, n)
+    # RFC 8259 section 8.1 lets a reader ignore a byte order mark, and
+    # enough producers emit one that refusing is not useful behaviour.
+    # The typed reader skips it too; the two paths have to agree about
+    # which documents exist.
+    var bom = 0
+    if (
+        n >= 3
+        and doc.input.as_bytes()[0] == UInt8(0xEF)
+        and doc.input.as_bytes()[1] == UInt8(0xBB)
+        and doc.input.as_bytes()[2] == UInt8(0xBF)
+    ):
+        bom = 3
+    var doc_start = _skip_ws(doc.input.as_bytes(), bom, n)
     var cursor = doc_start
 
     var root_header: UInt64 = 0
@@ -367,7 +427,7 @@ def parse_into_document(
         var bytes = doc.input.as_bytes()
         var i = _skip_ws(bytes, cursor, n)
         if i >= n:
-            raise Error("Stage 2: empty value")
+            raise parse_error("empty input", doc.input.as_bytes(), 0)
 
         var c = bytes[i]
         var value_header: UInt64
@@ -375,7 +435,11 @@ def parse_into_document(
 
         if c == UInt8(ord("{")):
             if pos_idx >= len(positions) or Int(positions[pos_idx]) != i:
-                raise Error("Stage 2: cursor desync at object open")
+                raise parse_error(
+                    "internal: structural index desync at an object",
+                    doc.input.as_bytes(),
+                    i,
+                )
             pos_idx += 1
 
             var headers_lo = len(headers_scratch)
@@ -399,11 +463,14 @@ def parse_into_document(
                 # Fall through to ATTACH phase below.
             else:
                 if after_open >= n:
-                    raise Error("Stage 2: unterminated object")
+                    raise parse_error(
+                        "unterminated object", doc.input.as_bytes(), after_open
+                    )
                 if bytes_ref[after_open] == UInt8(ord(",")):
-                    raise Error(
-                        "Stage 2: leading comma in object at offset "
-                        + String(after_open)
+                    raise parse_error(
+                        "leading comma in object",
+                        doc.input.as_bytes(),
+                        after_open,
                     )
 
                 stack.append(_Frame(_FRAME_OBJECT, headers_lo))
@@ -414,7 +481,11 @@ def parse_into_document(
 
         elif c == UInt8(ord("[")):
             if pos_idx >= len(positions) or Int(positions[pos_idx]) != i:
-                raise Error("Stage 2: cursor desync at array open")
+                raise parse_error(
+                    "internal: structural index desync at an array",
+                    doc.input.as_bytes(),
+                    i,
+                )
             pos_idx += 1
 
             var headers_lo = len(headers_scratch)
@@ -438,11 +509,14 @@ def parse_into_document(
                 # Fall through to ATTACH phase below.
             else:
                 if after_open >= n:
-                    raise Error("Stage 2: unterminated array")
+                    raise parse_error(
+                        "unterminated array", doc.input.as_bytes(), after_open
+                    )
                 if bytes_ref[after_open] == UInt8(ord(",")):
-                    raise Error(
-                        "Stage 2: leading comma in array at offset "
-                        + String(after_open)
+                    raise parse_error(
+                        "leading comma in array",
+                        doc.input.as_bytes(),
+                        after_open,
                     )
 
                 stack.append(_Frame(_FRAME_ARRAY, headers_lo))
@@ -461,8 +535,8 @@ def parse_into_document(
                 or bytes[i + 2] != UInt8(ord("l"))
                 or bytes[i + 3] != UInt8(ord("l"))
             ):
-                raise Error(
-                    "Stage 2: expected 'null' literal at offset " + String(i)
+                raise parse_error(
+                    "expected 'null' literal", doc.input.as_bytes(), i
                 )
             value_header = pack_tape_entry(TAPE_TAG_NULL, 0)
             value_end = i + 4
@@ -474,8 +548,8 @@ def parse_into_document(
                 or bytes[i + 2] != UInt8(ord("u"))
                 or bytes[i + 3] != UInt8(ord("e"))
             ):
-                raise Error(
-                    "Stage 2: expected 'true' literal at offset " + String(i)
+                raise parse_error(
+                    "expected 'true' literal", doc.input.as_bytes(), i
                 )
             value_header = pack_tape_entry(TAPE_TAG_BOOL, 1)
             value_end = i + 4
@@ -488,8 +562,8 @@ def parse_into_document(
                 or bytes[i + 3] != UInt8(ord("s"))
                 or bytes[i + 4] != UInt8(ord("e"))
             ):
-                raise Error(
-                    "Stage 2: expected 'false' literal at offset " + String(i)
+                raise parse_error(
+                    "expected 'false' literal", doc.input.as_bytes(), i
                 )
             value_header = pack_tape_entry(TAPE_TAG_BOOL, 0)
             value_end = i + 5
@@ -502,7 +576,11 @@ def parse_into_document(
             value_end = v_end
 
         else:
-            raise Error("Stage 2: unexpected character at offset " + String(i))
+            raise parse_error(
+                "unexpected character " + _byte_label(bytes[i]),
+                doc.input.as_bytes(),
+                i,
+            )
 
         # --- ATTACH phase ---------------------------------------------
         # Attach `value_header` to its parent (or set as root). After
@@ -525,9 +603,13 @@ def parse_into_document(
 
             if j >= n:
                 if is_array:
-                    raise Error("Stage 2: unterminated array")
+                    raise parse_error(
+                        "unterminated array", doc.input.as_bytes(), j
+                    )
                 else:
-                    raise Error("Stage 2: unterminated object")
+                    raise parse_error(
+                        "unterminated object", doc.input.as_bytes(), j
+                    )
 
             var b = bytes2[j]
             var matching_close = UInt8(ord("]")) if is_array else UInt8(
@@ -537,9 +619,23 @@ def parse_into_document(
             if b == matching_close:
                 if pos_idx >= len(positions) or Int(positions[pos_idx]) != j:
                     if is_array:
-                        raise Error("Stage 2: cursor desync at array close")
+                        raise parse_error(
+                            (
+                                "internal: structural index desync closing an"
+                                " array"
+                            ),
+                            doc.input.as_bytes(),
+                            j,
+                        )
                     else:
-                        raise Error("Stage 2: cursor desync at object close")
+                        raise parse_error(
+                            (
+                                "internal: structural index desync closing an"
+                                " object"
+                            ),
+                            doc.input.as_bytes(),
+                            j,
+                        )
                 pos_idx += 1
 
                 # Flush this frame's children (scratch[headers_lo:])
@@ -549,9 +645,11 @@ def parse_into_document(
                 var child_start = len(doc.tape)
                 if count > 0:
                     doc.tape.resize(child_start + count, 0)
-                    memcpy(
-                        dest=doc.tape.unsafe_ptr() + child_start,
-                        src=headers_scratch.unsafe_ptr() + top.headers_lo,
+                    unsafe_memcpy(
+                        dest=doc.tape.unsafe_ptr().unsafe_offset(child_start),
+                        src=headers_scratch.unsafe_ptr().unsafe_offset(
+                            top.headers_lo
+                        ),
                         count=count,
                     )
                 headers_scratch.shrink(top.headers_lo)
@@ -576,51 +674,60 @@ def parse_into_document(
 
             if b != UInt8(ord(",")):
                 if is_array:
-                    raise Error(
-                        "Stage 2: expected ',' or ']' in array at offset "
-                        + String(j)
+                    raise parse_error(
+                        "expected ',' or ']' in array", doc.input.as_bytes(), j
                     )
                 else:
-                    raise Error(
-                        "Stage 2: expected ',' or '}' in object at offset "
-                        + String(j)
+                    raise parse_error(
+                        "expected ',' or '}' in object", doc.input.as_bytes(), j
                     )
 
             if pos_idx >= len(positions) or Int(positions[pos_idx]) != j:
                 if is_array:
-                    raise Error("Stage 2: cursor desync at array comma")
+                    raise parse_error(
+                        (
+                            "internal: structural index desync after an array"
+                            " comma"
+                        ),
+                        doc.input.as_bytes(),
+                        j,
+                    )
                 else:
-                    raise Error("Stage 2: cursor desync at object comma")
+                    raise parse_error(
+                        (
+                            "internal: structural index desync after an object"
+                            " comma"
+                        ),
+                        doc.input.as_bytes(),
+                        j,
+                    )
             pos_idx += 1
 
             var next_cursor = _skip_ws(bytes2, j + 1, n)
             if next_cursor >= n:
                 if is_array:
-                    raise Error(
-                        "Stage 2: trailing comma in array at offset "
-                        + String(j)
+                    raise parse_error(
+                        "trailing comma in array", doc.input.as_bytes(), j
                     )
                 else:
-                    raise Error(
-                        "Stage 2: trailing comma in object at offset "
-                        + String(j)
+                    raise parse_error(
+                        "trailing comma in object", doc.input.as_bytes(), j
                     )
             var nb = bytes2[next_cursor]
             if nb == matching_close:
                 if is_array:
-                    raise Error(
-                        "Stage 2: trailing comma in array at offset "
-                        + String(j)
+                    raise parse_error(
+                        "trailing comma in array", doc.input.as_bytes(), j
                     )
                 else:
-                    raise Error(
-                        "Stage 2: trailing comma in object at offset "
-                        + String(j)
+                    raise parse_error(
+                        "trailing comma in object", doc.input.as_bytes(), j
                     )
             if is_array and nb == UInt8(ord(",")):
-                raise Error(
-                    "Stage 2: empty element between commas in array at offset "
-                    + String(next_cursor)
+                raise parse_error(
+                    "empty element between commas in array",
+                    doc.input.as_bytes(),
+                    next_cursor,
                 )
 
             if is_array:
@@ -637,10 +744,10 @@ def parse_into_document(
     var t = root_value_end
     while t < n:
         if not _is_ws(bytes_final[t]):
-            raise Error(
-                "Stage 2: trailing content after top-level JSON value at"
-                " offset "
-                + String(t)
+            raise parse_error(
+                "trailing content after top-level value",
+                doc.input.as_bytes(),
+                t,
             )
         t += 1
 
@@ -678,22 +785,25 @@ def _parse_object_key(
     `tests/test_stage2_tape.mojo` stays green."""
     var bytes = doc.input.as_bytes()
     if bytes[cursor] != UInt8(ord('"')):
-        raise Error("Stage 2: expected string key at offset " + String(cursor))
+        raise parse_error("expected string key", doc.input.as_bytes(), cursor)
 
     if pos_idx + 1 >= len(positions) or Int(positions[pos_idx]) != cursor:
-        raise Error("Stage 2: cursor desync at object key")
+        raise parse_error(
+            "internal: structural index desync at an object key",
+            doc.input.as_bytes(),
+            cursor,
+        )
     var key_close = Int(positions[pos_idx + 1])
     pos_idx += 2
 
     var key_start = cursor + 1
     var key_len = key_close - key_start
-    var has_escape = _string_has_escape(bytes, key_start, key_close)
+    var flags = _check_string_body(doc, key_start, key_close)
 
     var key_header: UInt64
-    if has_escape:
+    if flags & STR_ESCAPE != 0:
         # Slow path: keys with escapes still need allocation +
         # interning. They are rare on real JSON corpora.
-        _validate_escapes(bytes, key_start, key_close)
         var unesc = unescape_json_string_span(bytes, key_start, key_close)
         var key = String(unsafe_from_utf8=unesc^)
         var key_pool_idx = len(doc.key_pool)
@@ -709,23 +819,79 @@ def _parse_object_key(
 
     var after_key = _skip_ws(bytes, key_close + 1, n)
     if after_key >= n or bytes[after_key] != UInt8(ord(":")):
-        raise Error(
-            "Stage 2: missing ':' between key and value at offset "
-            + String(after_key)
+        raise parse_error(
+            "expected ':' after object key", doc.input.as_bytes(), after_key
         )
     var value_start = _skip_ws(bytes, after_key + 1, n)
     if value_start >= n:
-        raise Error(
-            "Stage 2: missing value after ':' at offset " + String(after_key)
+        raise parse_error(
+            "missing value after ':'", doc.input.as_bytes(), after_key
         )
 
     headers_scratch.append(key_header)
 
     if pos_idx >= len(positions) or Int(positions[pos_idx]) != after_key:
-        raise Error("Stage 2: cursor desync at object colon")
+        raise parse_error(
+            "internal: structural index desync at an object colon",
+            doc.input.as_bytes(),
+            after_key,
+        )
     pos_idx += 1
 
     return value_start
+
+
+def _check_string_body(doc: Document, start: Int, end: Int) raises -> UInt8:
+    """Validate one string body and report what it contains.
+
+    Three rules that stage 2 did not enforce, all of which let a
+    malformed document through as a well-formed one:
+
+      * RFC 8259 section 7 forbids an unescaped character below
+        U+0020; raw tabs and newlines passed straight into the value.
+      * The four hexadecimal digits after a `\\u` escape were never
+        checked, and a malformed escape survived as literal text, so
+        a string containing one parsed into its own source spelling.
+      * RFC 3629 requires the bytes to be UTF-8; nothing validated
+        them, so overlong forms, encoded surrogates and truncated
+        sequences all reached `String`. The simdjson backend rejected
+        exactly these, so the two backends disagreed on which
+        documents exist.
+
+    Returns the scan flags, so the caller can take the zero-copy path
+    when there is nothing to expand.
+    """
+    var bytes = doc.input.as_bytes()
+    var flags = scan_string_body(bytes, start, end)
+
+    if flags & STR_CONTROL != 0:
+        var at = find_control_char(bytes, start, end)
+        raise parse_error(
+            "control character " + _byte_label(bytes[at]) + " in string",
+            bytes,
+            at,
+        )
+
+    if flags & STR_NON_ASCII != 0:
+        if not is_valid_utf8(bytes[start:end]):
+            var at = first_invalid_utf8(bytes, start, end)
+            raise parse_error("invalid UTF-8 in string", bytes, at)
+
+    if flags & STR_ESCAPE != 0:
+        var err_pos = start
+        var code = validate_escapes(bytes, start, end, False, err_pos)
+        if code == ESC_TRAILING_BACKSLASH:
+            raise parse_error("trailing backslash in string", bytes, err_pos)
+        if code == ESC_BAD_CHAR:
+            raise parse_error(
+                "invalid escape " + _escape_label(bytes[err_pos + 1]),
+                bytes,
+                err_pos,
+            )
+        if code != ESC_OK:
+            raise parse_error("invalid \\u escape", bytes, err_pos)
+
+    return flags
 
 
 def _emit_string(
@@ -740,13 +906,15 @@ def _emit_string(
     Reads `positions` in place; advances `pos_idx` past the open and
     close quotes."""
     if pos_idx >= len(positions) or Int(positions[pos_idx]) != open_quote:
-        raise Error(
-            "Stage 2: cursor desync at string open offset " + String(open_quote)
+        raise parse_error(
+            "internal: structural index desync at a string",
+            doc.input.as_bytes(),
+            open_quote,
         )
     pos_idx += 1
     if pos_idx >= len(positions):
-        raise Error(
-            "Stage 2: unterminated string at offset " + String(open_quote)
+        raise parse_error(
+            "unterminated string", doc.input.as_bytes(), open_quote
         )
     var close_quote = Int(positions[pos_idx])
     pos_idx += 1
@@ -756,15 +924,13 @@ def _emit_string(
     var end_idx = close_quote
 
     var bytes = doc.input.as_bytes()
-    var has_escape = _string_has_escape(bytes, start_idx, end_idx)
+    var flags = _check_string_body(doc, start_idx, end_idx)
 
-    if not has_escape:
+    if flags & STR_ESCAPE == 0:
         return pack_tape_entry(
             TAPE_TAG_STRING,
             pack_pair(UInt64(start_idx), UInt64(end_idx - start_idx)),
         )
-
-    _validate_escapes(bytes, start_idx, end_idx)
 
     var unescaped = unescape_json_string_span(bytes, start_idx, end_idx)
     var s = String(unsafe_from_utf8=unescaped^)
@@ -779,49 +945,44 @@ def _emit_number(
     start: Int,
     n: Int,
 ) raises -> UInt64:
-    """Parse a JSON number starting at `start`. Inlines small ints in
-    the 60-bit tape payload; large ints and floats spill to side
-    pools."""
+    """Parse one JSON number, enforcing the grammar of section 6.
+
+    The scan used to consume any run of `[0-9.eE+-]` and evaluate
+    whatever that run happened to be, so `-` parsed as 0, `1+2` as 52,
+    and `2.e3`, `0.e1`, `0.1.2` and `1eE2` were all accepted. It also
+    truncated integers into the 60-bit inline payload and wrapped
+    anything past 2**63, both silently.
+
+    `scan_number` decides all of that in one place, shared with the
+    typed reader, and reports which rule an invalid token broke so the
+    message can say.
+    """
     var bytes = doc.input.as_bytes()
-    var i = start
-    var is_float = False
-    if bytes[i] == UInt8(ord("-")):
-        i += 1
+    var token = scan_number(bytes, start, n)
+
+    if token.kind == NUM_INVALID:
+        if token.err == NUM_ERR_LEADING_ZERO:
+            raise parse_error("leading zeros in number", bytes, token.end)
+        raise parse_error("invalid number", bytes, token.end)
+
+    value_end = token.end
+
+    if token.kind == NUM_FLOAT:
+        var pool_idx = len(doc.float_pool)
+        doc.float_pool.append(token.float_value)
+        return pack_tape_entry(TAPE_TAG_FLOAT, UInt64(pool_idx))
+
+    if token.kind == NUM_UINT:
+        var pool_idx = len(doc.int_pool)
+        doc.int_pool.append(bitcast[DType.int64](token.uint_value))
+        return pack_tape_entry(TAPE_TAG_UINT, UInt64(pool_idx))
 
     if (
-        i < n
-        and bytes[i] == UInt8(ord("0"))
-        and i + 1 < n
-        and bytes[i + 1] >= UInt8(ord("0"))
-        and bytes[i + 1] <= UInt8(ord("9"))
+        token.int_value >= -_INLINE_INT_LIMIT
+        and token.int_value < _INLINE_INT_LIMIT
     ):
-        raise Error(
-            "Stage 2: leading zeros are not allowed in JSON numbers (offset "
-            + String(start)
-            + ")"
-        )
-
-    while i < n:
-        var c = bytes[i]
-        if c >= UInt8(ord("0")) and c <= UInt8(ord("9")):
-            i += 1
-            continue
-        if c == UInt8(ord(".")) or c == UInt8(ord("e")) or c == UInt8(ord("E")):
-            is_float = True
-            i += 1
-            continue
-        if c == UInt8(ord("+")) or c == UInt8(ord("-")):
-            i += 1
-            continue
-        break
-
-    value_end = i
-
-    if is_float:
-        var num_str = String(unsafe_from_utf8=bytes[start:i])
-        var pool_idx = len(doc.float_pool)
-        doc.float_pool.append(atof(num_str))
-        return pack_tape_entry(TAPE_TAG_FLOAT, UInt64(pool_idx))
-    var v = parse_int_swar(bytes, start, i)
-    var payload = UInt64(v) & ((UInt64(1) << 60) - 1)
-    return pack_tape_entry(TAPE_TAG_INT, payload)
+        var payload = UInt64(token.int_value) & _INLINE_PAYLOAD_MASK
+        return pack_tape_entry(TAPE_TAG_INT, payload)
+    var int_idx = len(doc.int_pool)
+    doc.int_pool.append(token.int_value)
+    return pack_tape_entry(TAPE_TAG_INT_POOL, UInt64(int_idx))

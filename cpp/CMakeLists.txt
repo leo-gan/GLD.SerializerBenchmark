@@ -32,7 +32,7 @@ set(FETCHCONTENT_BASE_DIR "${CPP_TP}/_fetch")
 # nlohmann/json
 FetchContent_Declare(nlohmann_json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.11.3
+  GIT_TAG v3.12.0
   GIT_SHALLOW TRUE
   SOURCE_DIR ${CPP_TP}/nlohmann_json
 )
@@ -64,7 +64,7 @@ set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 # ArduinoJson
 FetchContent_Declare(ArduinoJson
   GIT_REPOSITORY https://github.com/bblanchon/ArduinoJson.git
-  GIT_TAG v7.2.1
+  GIT_TAG v7.4.3
   GIT_SHALLOW TRUE
   SOURCE_DIR ${CPP_TP}/ArduinoJson
 )

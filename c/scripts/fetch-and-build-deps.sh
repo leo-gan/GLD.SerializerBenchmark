@@ -25,21 +25,21 @@ download() {
   rm -rf "$TP/_extract_$name" "$tmp"
 }
 
-download cJSON "https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.18.tar.gz"
+download cJSON "https://github.com/DaveGamble/cJSON/archive/refs/tags/v1.7.19.tar.gz"
 download yyjson "https://github.com/ibireme/yyjson/archive/refs/tags/0.10.0.tar.gz"
 download parson "https://github.com/kgabis/parson/archive/refs/heads/master.tar.gz"
-download jansson "https://github.com/akheron/jansson/archive/refs/tags/v2.14.tar.gz"
-download mpack "https://github.com/ludocode/mpack/archive/refs/tags/v1.1.tar.gz"
+download jansson "https://github.com/akheron/jansson/archive/refs/tags/v2.15.1.tar.gz"
+download mpack "https://github.com/ludocode/mpack/archive/refs/tags/v1.1.1.tar.gz"
 download msgpack-c "https://github.com/msgpack/msgpack-c/archive/refs/tags/c-6.0.1.tar.gz"
 download tinycbor "https://github.com/intel/tinycbor/archive/refs/tags/v0.6.0.tar.gz"
-download QCBOR "https://github.com/laurencelundblade/QCBOR/archive/refs/tags/v1.5.1.tar.gz" || \
+download QCBOR "https://github.com/laurencelundblade/QCBOR/archive/refs/tags/v1.6.1.tar.gz" || \
   download QCBOR "https://github.com/laurencelundblade/QCBOR/archive/refs/heads/master.tar.gz"
 download libcbor "https://github.com/PJK/libcbor/archive/refs/tags/v0.11.0.tar.gz"
-download nanopb "https://github.com/nanopb/nanopb/archive/refs/tags/0.4.9.tar.gz"
+download nanopb "https://github.com/nanopb/nanopb/archive/refs/tags/0.4.9.2.tar.gz"
 download zcbor "https://github.com/NordicSemiconductor/zcbor/archive/refs/heads/main.tar.gz"
-download flatcc "https://github.com/dvidelabs/flatcc/archive/refs/tags/v0.6.1.tar.gz"
+download flatcc "https://github.com/dvidelabs/flatcc/archive/refs/tags/v0.6.3.tar.gz"
 download libyaml "https://github.com/yaml/libyaml/archive/refs/tags/0.2.5.tar.gz"
-download protobuf-c "https://github.com/protobuf-c/protobuf-c/archive/refs/tags/v1.5.0.tar.gz"
+download protobuf-c "https://github.com/protobuf-c/protobuf-c/archive/refs/tags/v1.5.2.tar.gz"
 download avro "https://github.com/apache/avro/archive/refs/tags/release-1.11.3.tar.gz"
 download mongo-c-driver "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/1.27.5.tar.gz"
 

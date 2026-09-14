@@ -467,7 +467,7 @@ def main() raises:
                 sers.append("EmberJson")
                 vers.append("0.3.4")
                 sers.append("ehsanmok-json")
-                vers.append("0.3.1")
+                vers.append("0.4.0")
                 sers.append("mojo-json")
                 vers.append("0.4.0")
             elif fmt == "yaml":

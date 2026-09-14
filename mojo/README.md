@@ -7,7 +7,7 @@ Native Mojo 1.0 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
 | EmberJson | JSON | emberjson 0.3.4 | Reflection `serialize` / `deserialize` |
-| ehsanmok-json | JSON | ehsanmok/json 0.3.1 | `serialize_json` encode; `loads` + Value walk decode |
+| ehsanmok-json | JSON | ehsanmok/json 0.4.0 | `serialize_json` encode; `loads` + Value walk decode |
 | mojo-json | JSON | leo-gan/gld-json 0.4.0 | Typed WireWriter / WireReader encode / decode (vendored sources) |
 | mojo-cbor | Binary | leo-gan/gld-cbor 0.7.0 | `CborDatum` encode / decode (vendored sources) |
 | mojo-protobuf | Schema | leo-gan/gld-protobuf | Generated suite messages (vendored sources) |

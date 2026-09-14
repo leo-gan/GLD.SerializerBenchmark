@@ -5,12 +5,13 @@ description: >
   run full test suites, full benchmarks only for languages changed on the branch
   (detect-changed-langs.sh; override with PREPARE_PR_LANGS / PREPARE_PR_BENCH_ALL),
   fail on error-CSV regressions for those languages, regenerate analysis for them,
-  time every experiment that lists those languages, update dashboard data
-  (sync-data.py), commit, push, and draft a short PR description. Use when the
+  time every experiment that lists those languages, re-run compliance for those
+  languages (run-compliance.sh --lang … + sync-compliance.py), update dashboard
+  data (sync-data.py), commit, push, and draft a short PR description. Use when the
   user runs /prepare-pr, says "prepare a PR", "ready for review", "pre-PR gate",
   or "full PR validation".
 metadata:
-  short-description: "Test, changed-lang full bench, experiments, analyze, dashboard, PR"
+  short-description: "Test, changed-lang full bench, experiments, compliance, analyze, dashboard, PR"
 ---
 
 # /prepare-pr — Pre-PR validation gate
@@ -143,7 +144,7 @@ export PREPARE_PR_LANGS="${PREPARE_PR_LANGS:-$CHANGED_LANGS}"
 
 Also considers unstaged/staged working-tree paths so uncommitted benchmark-runner source edits still trigger a re-bench.
 
-**Empty `CHANGED_LANGS`:** skip step 4 full benchmarks and step 7 experiments (e.g. skill-only or docs-only PR). Still run analysis only if you intentionally regenerated logs; otherwise continue to dashboard sync (no churn expected) and commit.
+**Empty `CHANGED_LANGS`:** skip step 4 full benchmarks, step 7 experiments, and step 8 compliance (e.g. skill-only or docs-only PR). Still run analysis only if you intentionally regenerated logs; otherwise continue to dashboard sync (no churn expected) and commit.
 
 **Override examples:**
 
@@ -252,7 +253,33 @@ Do **not** time experiments for unchanged languages unless `PREPARE_PR_BENCH_ALL
 
 ---
 
-## 8. Update dashboard data (**required**)
+## 8. Compliance (**changed languages**)
+
+A serializer version bump, wrapper change, or new library is incomplete until that language’s spec suite is re-run. Dashboard `npm test` is not a substitute.
+
+```bash
+if [[ -z "${CHANGED_LANGS// }" ]]; then
+  echo "[prepare-pr] No changed languages — skipping compliance"
+else
+  args=()
+  for lang in $CHANGED_LANGS; do
+    args+=(--lang "$lang")
+  done
+  ./scripts/run-compliance.sh "${args[@]}"
+fi
+```
+
+- Language ids match `run-compliance.sh --lang` (`c`, `csharp`, `python`, `rust`, `javascript`, `go`, `java`, `kotlin`, `php`, `cpp`, `swift`, `zig`, `mojo`).
+- Writes `logs/compliance/latest-<lang>.json`. A `--lang` run still calls `dashboard/scripts/sync-compliance.py` and rebuilds `dashboard/public/data/compliance.json.gz` from **all** latest reports (unchanged langs keep their previous files).
+- Library misses are **report-only** (RFC/spec URLs, not a red build). Exit `2` only if the catalog cannot be loaded.
+- Hard fail if the runner exits non-zero **or** a selected language that has a compliance binary is missing `logs/compliance/latest-<lang>.json` after the run.
+- Long-running: high timeout / background + monitor.
+
+Do **not** skip this because benches already passed, or because only a lockfile / `VERSIONS.md` / vendor pin changed.
+
+---
+
+## 9. Update dashboard data (**required**)
 
 After benchmarks + analysis (or a no-bench skill-only path), **always** refresh the analytics web dashboard payloads from the latest logs. This is a **first-class gate step**, not optional.
 
@@ -286,13 +313,13 @@ PY
 
 Hard fail if `sync-data.py` exits non-zero or any enabled language is missing a `*_latest.json.gz` after sync.
 
-**Do not** force-add raw `logs/**` CSVs (gitignored). **Do** stage updated `dashboard/public/data/*` in step 9.
+**Do not** force-add raw `logs/**` CSVs (gitignored). **Do** stage updated `dashboard/public/data/*` in step 10.
 
 Avoid re-running sync solely to “touch” files when content is already current (gzip recompression can churn binaries with identical JSON).
 
 ---
 
-## 9. Commit
+## 10. Commit
 
 ```bash
 git status
@@ -309,7 +336,7 @@ git log -5 --oneline
 
 ---
 
-## 10. Push
+## 11. Push
 
 User invoked prepare-pr (explicit intent to publish the branch):
 
@@ -321,7 +348,7 @@ On rejection: report output and **stop**.
 
 ---
 
-## 11. Short PR description
+## 12. Short PR description
 
 Build a short body from `git log origin/master..HEAD` (or `main`) and validation results:
 
@@ -333,9 +360,10 @@ Build a short body from `git log origin/master..HEAD` (or `main`) and validation
 - Tests: analysis / python / js (pass)
 - Benchmarks: <mode>, langs `<CHANGED_LANGS or all/none>`, stem(s) `<STEM>`
 - Experiments: timed for `<CHANGED_LANGS>` (or skipped)
+- Compliance: `run-compliance.sh --lang …` for `<CHANGED_LANGS>` (or skipped); pass/fail counts per lang
 - Error CSVs: clean for re-benched languages (or list failures — should not ship)
 - Analysis: results + violin plots for re-benched languages
-- Dashboard: `sync-data.py` → `*_latest.json.gz` + `available_runs.json` + experiment catalog
+- Dashboard: `sync-data.py` + `sync-compliance.py` → `*_latest.json.gz` + `compliance.json.gz` + `available_runs.json`
 
 ## Notes
 - …
@@ -364,6 +392,8 @@ If no `gh`: print title + body for the user to paste on GitHub.
 | `.grok/skills/prepare-pr/scripts/check-error-csvs.sh [STEM] [LANGS]` | Exit 1 on **new** error keys (regression) or any rows (strict); optional lang filter |
 | `.grok/skills/prepare-pr/scripts/run-experiments-for-langs.sh [LANGS]` | Time every experiment that enables the given languages (see step 7) |
 | `dashboard/scripts/sync-data.py` | Build compressed dashboard payloads + `available_runs.json` from latest logs |
+| `./scripts/run-compliance.sh --lang …` | Spec suite for changed langs; writes `logs/compliance/latest-<lang>.json` |
+| `dashboard/scripts/sync-compliance.py` | Merge latest compliance reports → `dashboard/public/data/compliance.json.gz` |
 
 ---
 
@@ -377,6 +407,7 @@ If no `gh`: print title + body for the user to paste on GitHub.
 | Error CSV regression on a re-benched language | Stop |
 | Analysis fails for a re-benched language | Stop |
 | An experiment run fails for a changed language | Stop |
+| Compliance runner fails or `latest-<lang>.json` missing for a changed lang | Stop |
 | Dashboard `sync-data.py` fails or missing `*_latest.json.gz` | Stop |
 | Push rejected | Stop; report |
 

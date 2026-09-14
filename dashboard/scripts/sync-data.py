@@ -49,6 +49,13 @@ def main():
     # Ensure target directory exists
     os.makedirs(target_data_dir, exist_ok=True)
 
+    sources_src = os.path.join(repo_root, "config", "serializer-sources.json")
+    sources_dst = os.path.join(target_data_dir, "serializer-sources.json")
+    if os.path.isfile(sources_src):
+        import shutil
+        shutil.copy2(sources_src, sources_dst)
+        print(f"Copied serializer-sources.json → {sources_dst}")
+
     languages = ["csharp", "rust", "go", "python", "javascript", "c", "java", "kotlin", "php", "cpp", "swift", "zig", "mojo"]
     available_runs = {}
 

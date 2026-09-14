@@ -60,7 +60,7 @@ if [[ -d "$SIBLING_ROOT/ehsanmok-json/json" ]]; then
   mkdir -p "$tmp/ehsanmok-json"
   cp -a "$SIBLING_ROOT/ehsanmok-json/json" "$tmp/ehsanmok-json/json"
 else
-  git clone --depth 1 --branch v0.3.1 https://github.com/ehsanmok/json.git "$tmp/ehsanmok-json"
+  git clone --depth 1 --branch v0.4.0 https://github.com/ehsanmok/json.git "$tmp/ehsanmok-json"
 fi
 
 python3 - "$tmp" "$MOJO_DIR" <<'PY'

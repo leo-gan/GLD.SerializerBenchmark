@@ -55,32 +55,140 @@ The steps to install the toolchain and run the benchmark are in [`kotlin/README.
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
-| avro | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
-| avro4k | Schema | avro4k-core | encodeToByteArray | adapted | kotlinx Avro |
-| capnproto | Schema | org.capnproto:runtime | Serialize.write/read | adapted | Generated suite schema |
-| flatbuffers | Schema | flatbuffers-java | FlatBufferBuilder | adapted | Generated tables; builder reuse |
-| fory | Binary | fory-core | serialize/deserialize | adapted | Apache Fory; register types before freeze |
-| gson | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
-| jackson | JSON | jackson-module-kotlin | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
-| jackson-cbor | CBOR | jackson-dataformat-cbor | CBORMapper | native | IETF CBOR + Kotlin module |
-| kaml | YAML | kaml | encodeToString | adapted | Same `@Serializable` core |
-| kbson | BSON | kbson | dump/load | adapted | kotlinx BSON |
-| kotlinx-cbor | CBOR | kotlinx-serialization-cbor | encodeToByteArray | adapted | Official Kotlin CBOR |
-| kotlinx-hocon | HOCON | kotlinx-serialization-hocon | encodeToConfig | adapted | List wrap `{ items = [...] }` for N>1 |
-| kotlinx-ion | Ion | ion-java | IonWriter/Reader | adapted | Amazon Ion binary via kotlinx encoder |
-| kotlinx-json | JSON | kotlinx-serialization-json | encodeToStream | native | Compiler-generated serializers |
-| kotlinx-properties | Properties | kotlinx-serialization-properties | encodeToStringMap | adapted | Then `java.util.Properties` store/load |
-| kotlinx-protobuf | Schema | kotlinx-serialization-protobuf | encodeToByteArray | adapted | `@ProtoNumber` on domain types |
-| kryo | Binary | kryo | writeClassAndObject | native | Reused Kryo + Output/Input |
-| moshi-codegen | JSON | moshi-kotlin-codegen | generated JsonAdapter | native | KSP `@JsonClass` |
-| moshi-reflect | JSON | moshi-kotlin | KotlinJsonAdapterFactory | native | Reflection; factory added first |
-| msgpack | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java + Kotlin module |
-| obor | CBOR | obor | encodeToByteArray | adapted | kotlinx CBOR alternative |
-| protobuf | Schema | protobuf-java | MessageLite wire | native | Java `newBuilder()` |
-| protobuf-kotlin | Schema | protobuf-kotlin | Kotlin DSL + wire | native | `message { }` builders |
-| protostuff | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
-| thrift | Schema | libthrift | TCompactProtocol | adapted | Field ids match suite proto |
-| tomlkt | TOML | tomlkt | encodeToString | adapted | List wrap `{ items = [...] }` for N>1 |
+| [avro](https://github.com/apache/avro) | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
+| [avro4k](https://github.com/avro-kotlin/avro4k) | Schema | avro4k-core | encodeToByteArray | adapted | kotlinx Avro |
+| [capnproto](https://github.com/capnproto/capnproto-java) | Schema | org.capnproto:runtime | Serialize.write/read | adapted | Generated suite schema |
+| [flatbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers-java | FlatBufferBuilder | adapted | Generated tables; builder reuse |
+| [fory](https://github.com/apache/fory) | Binary | fory-core | serialize/deserialize | adapted | Apache Fory; register types before freeze |
+| [gson](https://github.com/google/gson) | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
+| [jackson](https://github.com/FasterXML/jackson-module-kotlin) | JSON | jackson-module-kotlin | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
+| [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) | CBOR | jackson-dataformat-cbor | CBORMapper | native | IETF CBOR + Kotlin module |
+| [kaml](https://github.com/charleskorn/kaml) | YAML | kaml | encodeToString | adapted | Same `@Serializable` core |
+| [kbson](https://github.com/jershell/kbson) | BSON | kbson | dump/load | adapted | kotlinx BSON |
+| [kotlinx-cbor](https://github.com/Kotlin/kotlinx.serialization) | CBOR | kotlinx-serialization-cbor | encodeToByteArray | adapted | Official Kotlin CBOR |
+| [kotlinx-hocon](https://github.com/lightbend/config) | HOCON | kotlinx-serialization-hocon | encodeToConfig | adapted | List wrap `{ items = [...] }` for N>1 |
+| [kotlinx-ion](https://github.com/amazon-ion/ion-java) | Ion | ion-java | IonWriter/Reader | adapted | Amazon Ion binary via kotlinx encoder |
+| [kotlinx-json](https://github.com/Kotlin/kotlinx.serialization) | JSON | kotlinx-serialization-json | encodeToStream | native | Compiler-generated serializers |
+| [kotlinx-properties](https://github.com/Kotlin/kotlinx.serialization) | Properties | kotlinx-serialization-properties | encodeToStringMap | adapted | Then `java.util.Properties` store/load |
+| [kotlinx-protobuf](https://github.com/Kotlin/kotlinx.serialization) | Schema | kotlinx-serialization-protobuf | encodeToByteArray | adapted | `@ProtoNumber` on domain types |
+| [kryo](https://github.com/EsotericSoftware/kryo) | Binary | kryo | writeClassAndObject | native | Reused Kryo + Output/Input |
+| [moshi-codegen](https://github.com/square/moshi) | JSON | moshi-kotlin-codegen | generated JsonAdapter | native | KSP `@JsonClass` |
+| [moshi-reflect](https://github.com/square/moshi) | JSON | moshi-kotlin | KotlinJsonAdapterFactory | native | Reflection; factory added first |
+| [msgpack](https://github.com/msgpack/msgpack-java) | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java + Kotlin module |
+| [obor](https://github.com/orandja/obor) | CBOR | obor | encodeToByteArray | adapted | kotlinx CBOR alternative |
+| [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-java | MessageLite wire | native | Java `newBuilder()` |
+| [protobuf-kotlin](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-kotlin | Kotlin DSL + wire | native | `message { }` builders |
+| [protostuff](https://github.com/protostuff/protostuff) | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
+| [thrift](https://github.com/apache/thrift) | Schema | libthrift | TCompactProtocol | adapted | Field ids match suite proto |
+| [tomlkt](https://github.com/Peanuuutz/tomlkt) | TOML | tomlkt | encodeToString | adapted | List wrap `{ items = [...] }` for N>1 |
+
+### Specifics
+
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [avro](https://github.com/apache/avro) · `1.12.1`
+
+Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
+
+#### [avro4k](https://github.com/avro-kotlin/avro4k) · `2.9.0`
+
+avro4k brings Apache Avro to kotlinx.serialization. Avro exists for compact, schema-driven records. avro4k generates the Avro path from `@Serializable` types instead of Java reflect.
+
+#### [capnproto](https://github.com/capnproto/capnproto-java) · `0.1.16`
+
+Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
+
+#### [flatbuffers](https://github.com/google/flatbuffers) · `24.3.25`
+
+FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
+
+#### [fory](https://github.com/apache/fory) · `1.3.0`
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol.
+
+#### [gson](https://github.com/google/gson) · `2.14.0`
+
+Gson was created at Google to convert Java objects to JSON and back with a simple API. The problem was boilerplate-heavy Java JSON. Gson solves it with reflection over POJOs and a JsonWriter/Reader stream API.
+
+#### [jackson](https://github.com/FasterXML/jackson-module-kotlin) · `2.19.0`
+
+Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
+
+#### [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) · `2.19.0`
+
+Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack).
+
+#### [kaml](https://github.com/charleskorn/kaml) · `0.72.0`
+
+kaml is YAML for kotlinx.serialization. YAML exists as a human-friendly config language. kaml solves Kotlin YAML by implementing a format on the same `@Serializable` types.
+
+#### [kbson](https://github.com/jershell/kbson) · `0.5.0`
+
+kbson is BSON for kotlinx.serialization. BSON exists for MongoDB documents. kbson lets Kotlin `@Serializable` types dump/load BSON without a separate mapper.
+
+#### [kotlinx-cbor](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
+
+kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
+
+#### [kotlinx-hocon](https://github.com/lightbend/config) · `1.8.1`
+
+HOCON (Human-Optimized Config Object Notation) was created at Typesafe/Lightbend for Play/Akka configuration. The problem was JSON/YAML config that was awkward for humans. kotlinx-serialization-hocon speaks that format.
+
+#### [kotlinx-ion](https://github.com/amazon-ion/ion-java) · `1.11.11`
+
+Amazon Ion was created as a rich, self-describing superset of JSON (text and binary) for Amazon services. Official Ion libraries and Jackson Ion modules implement that model.
+
+#### [kotlinx-json](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
+
+kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
+
+#### [kotlinx-properties](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
+
+kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
+
+#### [kotlinx-protobuf](https://github.com/Kotlin/kotlinx.serialization) · `1.8.1`
+
+kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in.
+
+#### [kryo](https://github.com/EsotericSoftware/kryo) · `5.6.2`
+
+Kryo was written as a fast binary serializer for JVM object graphs (games, caches, RPC). The problem was Java serialization being slow and verbose. Kryo solves it with a compact binary and reusable Output/Input.
+
+#### [moshi-codegen](https://github.com/square/moshi) · `1.15.2`
+
+Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio. This row times KSP-generated JsonAdapters on the same domain types as moshi-reflect.
+
+#### [moshi-reflect](https://github.com/square/moshi) · `1.15.2`
+
+Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio. This row times reflection adapters (`KotlinJsonAdapterFactory`) on the same types as moshi-codegen.
+
+#### [msgpack](https://github.com/msgpack/msgpack-java) · `0.9.8`
+
+msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack.
+
+#### [obor](https://github.com/orandja/obor) · `2.1.3`
+
+obor is an alternative CBOR implementation for kotlinx.serialization. CBOR is the IETF binary JSON-like format. obor exists as a different kotlinx CBOR stack from the official one.
+
+#### [protobuf](https://github.com/protocolbuffers/protobuf) · `4.35.0`
+
+Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
+
+#### [protobuf-kotlin](https://github.com/protocolbuffers/protobuf) · `4.35.0`
+
+Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format. This row uses the generated Kotlin DSL builders on the same protobuf wire types as the Java API row.
+
+#### [protostuff](https://github.com/protostuff/protostuff) · `1.8.0`
+
+protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times.
+
+#### [thrift](https://github.com/apache/thrift) · `0.21.0`
+
+Apache Thrift was created at Facebook so many languages could share RPC and serialization from one IDL. The problem was hand-written cross-language services. Thrift solves it with a schema compiler and protocols such as TCompactProtocol.
+
+#### [tomlkt](https://github.com/Peanuuutz/tomlkt) · `0.5.0`
+
+tomlkt is TOML for kotlinx.serialization. TOML exists as an obvious config language. tomlkt encodes `@Serializable` types to TOML text.
 
 ### Call-path contract (same idea as Java/Go/Python/Rust)
 

@@ -1,5 +1,15 @@
 /* Compliance view — independent of language-latest dashboard chrome. */
 
+a.serializer-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+a.serializer-link:hover {
+  color: #1a73e8;
+}
+
 #compliance {
   display: none;
 }

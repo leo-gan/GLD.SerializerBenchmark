@@ -1,6 +1,6 @@
 # JSON Iterator - Navigate parsed JSON results
 from std.collections import List
-from std.memory import memcpy
+from std.memory import unsafe_memcpy
 
 from .types import (
     JSONResult,
@@ -369,9 +369,9 @@ struct JSONIterator:
                 return ""
             var bytes = List[UInt8](capacity=length)
             bytes.resize(length, 0)
-            memcpy(
+            unsafe_memcpy(
                 dest=bytes.unsafe_ptr(),
-                src=self.input_data.unsafe_ptr() + i,
+                src=self.input_data.unsafe_ptr().unsafe_offset(i),
                 count=length,
             )
             return String(unsafe_from_utf8=bytes^)
@@ -390,9 +390,9 @@ struct JSONIterator:
         var bytes = List[UInt8](capacity=length)
         bytes.resize(length, 0)
         # Use memcpy instead of byte-by-byte loop
-        memcpy(
+        unsafe_memcpy(
             dest=bytes.unsafe_ptr(),
-            src=self.input_data.unsafe_ptr() + start,
+            src=self.input_data.unsafe_ptr().unsafe_offset(start),
             count=length,
         )
         return String(unsafe_from_utf8=bytes^)

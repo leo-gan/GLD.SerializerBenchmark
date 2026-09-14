@@ -1406,6 +1406,16 @@ footer {
   text-decoration: underline;
 }
 
+a.serializer-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+a.serializer-link:hover {
+  color: var(--color-blue);
+}
+
 .run-meta-sep {
   color: var(--text-muted);
 }

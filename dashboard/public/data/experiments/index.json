@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-09-12T20:25:51Z",
+  "generated_at": "2026-09-14T21:20:20Z",
   "count": 14,
   "with_results": 14,
   "experiments": [
@@ -47,7 +47,7 @@
       ],
       "has_results": true,
       "payload": "experiments/01-json-library-bakeoff.json.gz",
-      "generated_at": "2026-09-12T19:44:09Z",
+      "generated_at": "2026-09-12T20:26:11Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -119,7 +119,7 @@
           "rows": 3
         }
       ],
-      "source_bytes": 123124
+      "source_bytes": 123127
     },
     {
       "id": "02-flat-record-formats",
@@ -165,7 +165,7 @@
       ],
       "has_results": true,
       "payload": "experiments/02-flat-record-formats.json.gz",
-      "generated_at": "2026-09-12T19:44:18Z",
+      "generated_at": "2026-09-12T20:26:20Z",
       "sample": {
         "kind": "message",
         "n": [
@@ -240,7 +240,7 @@
           "rows": 14
         }
       ],
-      "source_bytes": 122568
+      "source_bytes": 122631
     },
     {
       "id": "03-one-language-store",
@@ -272,7 +272,7 @@
       ],
       "has_results": true,
       "payload": "experiments/03-one-language-store.json.gz",
-      "generated_at": "2026-09-12T19:44:27Z",
+      "generated_at": "2026-09-12T20:26:28Z",
       "sample": {
         "kind": "message",
         "n": 1
@@ -314,7 +314,7 @@
           "rows": 7
         }
       ],
-      "source_bytes": 71481
+      "source_bytes": 71489
     },
     {
       "id": "04-sensor-list-size",
@@ -1068,7 +1068,7 @@
       ],
       "has_results": true,
       "payload": "experiments/04-sensor-list-size.json.gz",
-      "generated_at": "2026-09-12T19:44:35Z",
+      "generated_at": "2026-09-12T20:26:37Z",
       "sample": {
         "kind": "telemetry",
         "n": 1
@@ -1105,7 +1105,7 @@
           "rows": 28
         }
       ],
-      "source_bytes": 302786
+      "source_bytes": 302803
     },
     {
       "id": "05-event-log-formats",
@@ -1179,7 +1179,7 @@
       ],
       "has_results": true,
       "payload": "experiments/05-event-log-formats.json.gz",
-      "generated_at": "2026-09-12T19:44:44Z",
+      "generated_at": "2026-09-12T20:26:46Z",
       "sample": {
         "kind": "event",
         "n": [
@@ -1250,11 +1250,11 @@
         },
         {
           "id": "mojo",
-          "status": "empty",
-          "rows": 0
+          "status": "ok",
+          "rows": 14
         }
       ],
-      "source_bytes": 180220
+      "source_bytes": 194909
     },
     {
       "id": "06-document-db-formats",
@@ -1299,7 +1299,7 @@
       ],
       "has_results": true,
       "payload": "experiments/06-document-db-formats.json.gz",
-      "generated_at": "2026-09-12T19:44:53Z",
+      "generated_at": "2026-09-12T20:26:54Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -1356,7 +1356,7 @@
           "rows": 4
         }
       ],
-      "source_bytes": 51466
+      "source_bytes": 51463
     },
     {
       "id": "07-write-once-read-many",
@@ -1927,7 +1927,7 @@
       ],
       "has_results": true,
       "payload": "experiments/07-write-once-read-many.json.gz",
-      "generated_at": "2026-09-12T19:45:01Z",
+      "generated_at": "2026-09-12T20:27:03Z",
       "sample": {
         "kind": [
           "document",
@@ -1997,7 +1997,7 @@
           "rows": 4
         }
       ],
-      "source_bytes": 99223
+      "source_bytes": 99224
     },
     {
       "id": "08-human-files",
@@ -2055,7 +2055,7 @@
       ],
       "has_results": true,
       "payload": "experiments/08-human-files.json.gz",
-      "generated_at": "2026-09-12T19:45:09Z",
+      "generated_at": "2026-09-12T20:27:12Z",
       "sample": {
         "kind": [
           "document",
@@ -2130,7 +2130,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 99088
+      "source_bytes": 99089
     },
     {
       "id": "09-compression-size",
@@ -2317,7 +2317,7 @@
       ],
       "has_results": true,
       "payload": "experiments/09-compression-size.json.gz",
-      "generated_at": "2026-09-12T19:45:18Z",
+      "generated_at": "2026-09-12T20:27:20Z",
       "sample": {
         "kind": [
           "strings",
@@ -2393,7 +2393,7 @@
           "rows": 21
         }
       ],
-      "source_bytes": 216362
+      "source_bytes": 216434
     },
     {
       "id": "10-one-vs-hundred",
@@ -2495,7 +2495,7 @@
       ],
       "has_results": true,
       "payload": "experiments/10-one-vs-hundred.json.gz",
-      "generated_at": "2026-09-12T19:45:28Z",
+      "generated_at": "2026-09-12T20:27:28Z",
       "sample": {
         "kind": [
           "message",
@@ -2569,11 +2569,11 @@
         },
         {
           "id": "mojo",
-          "status": "empty",
-          "rows": 0
+          "status": "ok",
+          "rows": 28
         }
       ],
-      "source_bytes": 298392
+      "source_bytes": 328322
     },
     {
       "id": "11-memory-vs-stream",
@@ -2618,7 +2618,7 @@
       ],
       "has_results": true,
       "payload": "experiments/11-memory-vs-stream.json.gz",
-      "generated_at": "2026-09-12T19:45:37Z",
+      "generated_at": "2026-09-12T20:27:36Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2660,7 +2660,7 @@
           "rows": 7
         }
       ],
-      "source_bytes": 62934
+      "source_bytes": 62933
     },
     {
       "id": "12-format-vs-library",
@@ -2705,7 +2705,7 @@
       ],
       "has_results": true,
       "payload": "experiments/12-format-vs-library.json.gz",
-      "generated_at": "2026-09-12T19:45:46Z",
+      "generated_at": "2026-09-12T20:27:44Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2757,7 +2757,7 @@
           "rows": 7
         }
       ],
-      "source_bytes": 114058
+      "source_bytes": 114121
     },
     {
       "id": "13-ranking-accident",
@@ -2857,7 +2857,7 @@
       ],
       "has_results": true,
       "payload": "experiments/13-ranking-accident.json.gz",
-      "generated_at": "2026-09-12T19:46:00Z",
+      "generated_at": "2026-09-12T20:27:56Z",
       "sample": {
         "kind": [
           "document",
@@ -2934,11 +2934,11 @@
         },
         {
           "id": "mojo",
-          "status": "empty",
-          "rows": 0
+          "status": "ok",
+          "rows": 30
         }
       ],
-      "source_bytes": 843900
+      "source_bytes": 878228
     },
     {
       "id": "14-starter-kit",
@@ -2983,7 +2983,7 @@
       ],
       "has_results": true,
       "payload": "experiments/14-starter-kit.json.gz",
-      "generated_at": "2026-09-12T19:46:09Z",
+      "generated_at": "2026-09-12T20:28:04Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -3055,7 +3055,7 @@
           "rows": 7
         }
       ],
-      "source_bytes": 100651
+      "source_bytes": 100653
     }
   ]
 }

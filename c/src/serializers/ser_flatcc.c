@@ -77,5 +77,5 @@ static int de(const uint8_t *buf, size_t len, test_fixture_t *out, test_data_kin
 }
 
 void bench_register_flatcc(serializer_t *o, int *c) {
-    BENCH_ADD(o, c, "flatcc", "0.6.1", "schema", prep, ser, de, fidelity_fx);
+    BENCH_ADD(o, c, "flatcc", "0.6.3", "schema", prep, ser, de, fidelity_fx);
 }

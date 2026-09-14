@@ -55,35 +55,155 @@ The steps to install the toolchain and run the benchmark are in [`cpp/README.md`
 
 | Serializer | Category | Library | Optimal call path | Notes |
 |------------|----------|---------|-------------------|-------|
-| arduinojson | JSON | ArduinoJson | `serializeJson` / `deserializeJson` (bytes + stream) | Embedded/IoT; **native stream** |
-| avro | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
-| avro_c | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++; stream adapted |
-| bitsery | Binary | bitsery | serializer `object`/`container` | Explicit schema |
-| boost_serialization | Binary | Boost.Serialization | binary_o/iarchive (bytes + stream) | Optional (system lib); **native stream** |
-| capnproto | Schema | Cap'n Proto | `messageToFlatArray` / `writeMessage` of a prepared `MallocMessageBuilder`; decode is `FlatArrayMessageReader` / `InputStreamMessageReader` | Domain fill is `prepare`; field walk is `to_domain`. **native stream** |
-| cereal | Binary | cereal | `BinaryOutput/InputArchive` on ostream/istream | C++-native archives; **native stream** |
-| cista | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
-| custom_binary | Binary | harness | length-prefixed fields | Baseline; stream adapted |
-| flatbuffers | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
-| glaze | JSON | stephenberry/glaze | `glz::write_json` / `glz::read_json` on domain structs | Direct-to-memory JSON; **C++20 pin v2.9.5** (v3+ needs C++23); stream adapted |
-| flexbuffers | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
-| jsoncons_bson | Binary | jsoncons | `bson::encode/decode` on domain structs | BSON document; **native stream** |
-| jsoncons_cbor | Binary | jsoncons | `cbor::encode/decode` on domain structs | CBOR; **native stream** |
-| jsoncons_msgpack | Binary | jsoncons | `msgpack::encode/decode` on domain structs | MessagePack; **native stream** |
-| msgpack | Binary | msgpack-c (C++ API) | `packer` + `sbuffer` / `unpack`; stream packer + unpacker | Official C++ API; **native stream** |
-| nlohmann_bson | Binary | nlohmann/json | `to_bson` / `from_bson` (+ ostream/istream) | BSON (object root); **native stream** |
-| nlohmann_cbor | Binary | nlohmann/json | `to_cbor` / `from_cbor` (+ ostream/istream) | IETF CBOR; **native stream** |
-| nlohmann_json | JSON | nlohmann/json | `dump` / `parse`; stream `<<` / `parse(istream)` | De-facto C++ JSON; **native stream** |
-| nlohmann_msgpack | Binary | nlohmann/json | `to_msgpack` / `from_msgpack` (+ ostream/istream) | Multi-format nlohmann; **native stream** |
-| nlohmann_ubjson | Binary | nlohmann/json | `to_ubjson` / `from_ubjson` (+ ostream/istream) | UBJSON; **native stream** |
-| protobuf | Schema | **libprotobuf** (Google) | `SerializeToArray` / `ParseFromArray` on prepared messages | Official C++ runtime; sysroot via setup script |
-| protobuf-wire | Schema | suite wire | proto3 field tags | In-tree codec; same field numbers as shared `.proto` |
-| rapidjson | JSON | Tencent/rapidjson | `Writer` + `Document::Parse`; stream O/IStreamWrapper | SAX/DOM hot path; **native stream** |
-| simdjson | JSON | simdjson | `dom::parser::parse` | Ser = prepared minified JSON; stream adapted |
-| thrift | Schema | suite TBinaryProtocol | field type+id + STOP | Apache Thrift binary; stream adapted |
-| yas | Binary | niXman/yas | `yas::save/load` `mem\|binary` | Top-tier microbench staple |
-| yyjson | JSON | yyjson | `yyjson_mut_write` / `yyjson_read` | **Also in C suite**; stream adapted |
-| zpp_bits | Binary | zpp_bits | `zpp::bits::out` / `in` | Compile-time binary |
+| [arduinojson](https://github.com/bblanchon/ArduinoJson) | JSON | ArduinoJson | `serializeJson` / `deserializeJson` (bytes + stream) | Embedded/IoT; **native stream** |
+| [avro](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) | Schema | suite avro-binary | zigzag/varint + array blocks | **Avro binary encoding** |
+| [avro_c](https://github.com/apache/avro) | Schema | avro-c | cached iface + value_write/read | **Real** Avro C lib from C++; stream adapted |
+| [bitsery](https://github.com/fraillt/bitsery) | Binary | bitsery | serializer `object`/`container` | Explicit schema |
+| [boost_serialization](https://github.com/boostorg/serialization) | Binary | Boost.Serialization | binary_o/iarchive (bytes + stream) | Optional (system lib); **native stream** |
+| [capnproto](https://github.com/capnproto/capnproto) | Schema | Cap'n Proto | `messageToFlatArray` / `writeMessage` of a prepared `MallocMessageBuilder`; decode is `FlatArrayMessageReader` / `InputStreamMessageReader` | Domain fill is `prepare`; field walk is `to_domain`. **native stream** |
+| [cereal](https://github.com/USCiLab/cereal) | Binary | cereal | `BinaryOutput/InputArchive` on ostream/istream | C++-native archives; **native stream** |
+| [cista](https://github.com/felixguendling/cista) | Binary | Cista++ | `cista::serialize` / `deserialize` | Offset graphs; convert in prepare |
+| [custom_binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) | Binary | harness | length-prefixed fields | Baseline; stream adapted |
+| [flatbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers | `FlatBufferBuilder` | C++ primary; C uses **flatcc** |
+| [glaze](https://github.com/stephenberry/glaze) | JSON | stephenberry/glaze | `glz::write_json` / `glz::read_json` on domain structs | Direct-to-memory JSON; **C++20 pin v2.9.5** (v3+ needs C++23); stream adapted |
+| [flexbuffers](https://github.com/google/flatbuffers) | Schema | flatbuffers | `flexbuffers::Builder` / `GetRoot` | Schemaless FB family |
+| [jsoncons_bson](https://github.com/danielaparker/jsoncons) | Binary | jsoncons | `bson::encode/decode` on domain structs | BSON document; **native stream** |
+| [jsoncons_cbor](https://github.com/danielaparker/jsoncons) | Binary | jsoncons | `cbor::encode/decode` on domain structs | CBOR; **native stream** |
+| [jsoncons_msgpack](https://github.com/danielaparker/jsoncons) | Binary | jsoncons | `msgpack::encode/decode` on domain structs | MessagePack; **native stream** |
+| [msgpack](https://github.com/msgpack/msgpack-c) | Binary | msgpack-c (C++ API) | `packer` + `sbuffer` / `unpack`; stream packer + unpacker | Official C++ API; **native stream** |
+| [nlohmann_bson](https://github.com/nlohmann/json) | Binary | nlohmann/json | `to_bson` / `from_bson` (+ ostream/istream) | BSON (object root); **native stream** |
+| [nlohmann_cbor](https://github.com/nlohmann/json) | Binary | nlohmann/json | `to_cbor` / `from_cbor` (+ ostream/istream) | IETF CBOR; **native stream** |
+| [nlohmann_json](https://github.com/nlohmann/json) | JSON | nlohmann/json | `dump` / `parse`; stream `<<` / `parse(istream)` | De-facto C++ JSON; **native stream** |
+| [nlohmann_msgpack](https://github.com/nlohmann/json) | Binary | nlohmann/json | `to_msgpack` / `from_msgpack` (+ ostream/istream) | Multi-format nlohmann; **native stream** |
+| [nlohmann_ubjson](https://github.com/nlohmann/json) | Binary | nlohmann/json | `to_ubjson` / `from_ubjson` (+ ostream/istream) | UBJSON; **native stream** |
+| [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | **libprotobuf** (Google) | `SerializeToArray` / `ParseFromArray` on prepared messages | Official C++ runtime; sysroot via setup script |
+| [protobuf-wire](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/ser_protobuf_wire.cpp) | Schema | suite wire | proto3 field tags | In-tree codec; same field numbers as shared `.proto` |
+| [rapidjson](https://github.com/Tencent/rapidjson) | JSON | Tencent/rapidjson | `Writer` + `Document::Parse`; stream O/IStreamWrapper | SAX/DOM hot path; **native stream** |
+| [simdjson](https://github.com/simdjson/simdjson) | JSON | simdjson | `dom::parser::parse` | Ser = prepared minified JSON; stream adapted |
+| [thrift](https://github.com/apache/thrift) | Schema | suite TBinaryProtocol | field type+id + STOP | Apache Thrift binary; stream adapted |
+| [yas](https://github.com/niXman/yas) | Binary | niXman/yas | `yas::save/load` `mem\|binary` | Top-tier microbench staple |
+| [yyjson](https://github.com/ibireme/yyjson) | JSON | yyjson | `yyjson_mut_write` / `yyjson_read` | **Also in C suite**; stream adapted |
+| [zpp_bits](https://github.com/eyalz800/zpp_bits) | Binary | zpp_bits | `zpp::bits::out` / `in` | Compile-time binary |
+
+### Specifics
+
+Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [arduinojson](https://github.com/bblanchon/ArduinoJson) · `7.4.3`
+
+ArduinoJson was written so microcontrollers and Arduino-class devices could speak JSON in a tiny RAM budget. The problem was desktop JSON libraries being far too large. It uses a fixed-capacity document model.
+
+#### [avro](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) · `binary-1.11`
+
+Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library.
+
+#### [avro_c](https://github.com/apache/avro) · `avro-c`
+
+Apache Avro was created for Hadoop-era data: a compact binary encoding with the schema stored out of band so field names are not repeated. avro-c is the official C implementation of that encoding.
+
+#### [bitsery](https://github.com/fraillt/bitsery) · `5.2.4`
+
+bitsery is an explicit-schema binary serializer for C++. The problem was that many C++ binaries were either reflection-slow or ad-hoc. bitsery makes the schema the API (`object` / `container`).
+
+#### [boost_serialization](https://github.com/boostorg/serialization)
+
+Boost.Serialization is the classic C++ archive framework. It was created so C++ programs could persist object graphs portably across Boost archives. This row times the binary archive.
+
+#### [capnproto](https://github.com/capnproto/capnproto) · `1.0.x`
+
+Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
+
+#### [cereal](https://github.com/USCiLab/cereal) · `1.3.2`
+
+cereal was created as a C++11 header-only archive library (binary, JSON, XML) in the Boost.Serialization design space, but simpler. The problem was Boost.Serialization's weight. cereal uses output/input archives on existing types.
+
+#### [cista](https://github.com/felixguendling/cista) · `0.15`
+
+Cista++ serializes C++ object graphs as offset-based, pointer-free images. The problem was that pointer graphs are not portable or mmap-friendly. Cista writes a relocatable layout.
+
+#### [custom_binary](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md) · `harness`
+
+This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler.
+
+#### [flatbuffers](https://github.com/google/flatbuffers) · `flatbuffers`
+
+FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
+
+#### [glaze](https://github.com/stephenberry/glaze) · `2.9.5`
+
+glaze was created for extremely fast, reflection-based JSON (and other formats) on modern C++. The problem was that C++ JSON usually meant a DOM or hand-written macros. glaze maps structs directly with compile-time reflection.
+
+#### [flexbuffers](https://github.com/google/flatbuffers) · `flatbuffers-flex`
+
+FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
+
+#### [jsoncons_bson](https://github.com/danielaparker/jsoncons) · `0.177.0`
+
+jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `bson::encode` / `decode`.
+
+#### [jsoncons_cbor](https://github.com/danielaparker/jsoncons) · `0.177.0`
+
+jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `cbor::encode` / `decode`.
+
+#### [jsoncons_msgpack](https://github.com/danielaparker/jsoncons) · `0.177.0`
+
+jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `msgpack::encode` / `decode`.
+
+#### [msgpack](https://github.com/msgpack/msgpack-c) · `msgpack-cxx`
+
+msgpack-c is the official C/C++ implementation of MessagePack. MessagePack was created to be as small and fast as a binary format while staying as simple as JSON. The C library solves that with pack/unpack APIs (and a separate C++ API in the same repository).
+
+#### [nlohmann_bson](https://github.com/nlohmann/json) · `3.12.0`
+
+nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_bson` / `from_bson`.
+
+#### [nlohmann_cbor](https://github.com/nlohmann/json) · `3.12.0`
+
+nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_cbor` / `from_cbor`.
+
+#### [nlohmann_json](https://github.com/nlohmann/json) · `3.12.0`
+
+nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON.
+
+#### [nlohmann_msgpack](https://github.com/nlohmann/json) · `3.12.0`
+
+nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_msgpack` / `from_msgpack`.
+
+#### [nlohmann_ubjson](https://github.com/nlohmann/json) · `3.12.0`
+
+nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_ubjson` / `from_ubjson`.
+
+#### [protobuf](https://github.com/protocolbuffers/protobuf) · `3.12.4`
+
+Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
+
+#### [protobuf-wire](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/ser_protobuf_wire.cpp) · `wire-v2`
+
+This row is the suite's in-tree proto3 tag reader/writer. It exists to measure the published Protocol Buffers encoding itself, without a particular vendor runtime. Field numbers match `schemas/v2/protobuf/benchmark_v2.proto`.
+
+#### [rapidjson](https://github.com/Tencent/rapidjson) · `1.1.0`
+
+RapidJSON was written at Tencent for high-performance JSON in C++ with SAX and DOM APIs. The problem was slow or awkward C++ JSON stacks. It became a standard hot-path parser/generator.
+
+#### [simdjson](https://github.com/simdjson/simdjson) · `3.10.1`
+
+simdjson was created to parse JSON at near memory bandwidth using SIMD. The problem was that conventional parsers left most of the CPU unused. This suite times parse; serialize is prepared minified JSON.
+
+#### [thrift](https://github.com/apache/thrift) · `TBinaryProtocol`
+
+Apache Thrift was created at Facebook so many languages could share RPC and serialization from one IDL. The problem was hand-written cross-language services. Thrift solves it with a schema compiler and protocols such as TCompactProtocol.
+
+#### [yas](https://github.com/niXman/yas) · `7.x`
+
+YAS (Yet Another Serializer) is a high-performance C++ binary archive library. It was written as a microbenchmark staple: serialize structs with very little abstraction cost.
+
+#### [yyjson](https://github.com/ibireme/yyjson) · `0.10.0`
+
+yyjson was written for high-performance JSON in ANSI C: fast parse and print without giving up a usable DOM. The problem was that lightweight C parsers were slow, and fast parsers were often C++ or SAX-only. yyjson solves that with a compact C implementation and mutable/immutable document APIs.
+
+#### [zpp_bits](https://github.com/eyalz800/zpp_bits) · `4.4.25`
+
+zpp_bits is a compile-time binary serializer for modern C++. The problem was runtime reflection and verbose archive APIs. It uses template `out` / `in` over tuples and structs.
 
 ### Call-path contract
 
