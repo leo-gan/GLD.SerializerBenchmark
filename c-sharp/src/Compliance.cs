@@ -240,6 +240,7 @@ namespace GLD.SerializerBenchmark
                 new("YamlDotNet", "yaml", SerializerVersionRegistry.Resolve("YamlDotNet"), (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
                 new("SharpYaml", "yaml", SerializerVersionRegistry.Resolve("SharpYaml"), DecodeSharpYaml),
                 new("MessagePack-CSharp", "msgpack", SerializerVersionRegistry.Resolve("MessagePack-CSharp"), (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
+                new("Nerdbank.MessagePack", "msgpack", SerializerVersionRegistry.Resolve("Nerdbank.MessagePack"), DecodeNerdbankMessagePack),
                 new("Google.Protobuf", "protobuf", SerializerVersionRegistry.Resolve("Google.Protobuf"), DecodeGoogleProtobuf),
                 new("ProtoBuf", "protobuf", SerializerVersionRegistry.Resolve("ProtoBuf"), DecodeProtobufNet),
                 new("LightProto", "protobuf", SerializerVersionRegistry.Resolve("LightProto"), DecodeProtobufNet),
@@ -289,6 +290,12 @@ namespace GLD.SerializerBenchmark
         private static object DecodeSharpYaml(byte[] data, string schema)
         {
             return SharpYaml.YamlSerializer.Deserialize(Encoding.UTF8.GetString(data), typeof(object));
+        }
+
+        private static object DecodeNerdbankMessagePack(byte[] data, string schema)
+        {
+            var reader = new Nerdbank.MessagePack.MessagePackReader(data);
+            return new Nerdbank.MessagePack.MessagePackSerializer().DeserializePrimitives(ref reader);
         }
 
         private static object DecodeAvro(byte[] data, string schema)

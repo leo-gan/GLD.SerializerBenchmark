@@ -205,7 +205,7 @@ if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT
     CS_SERS=(
         "System.Text.Json" "Json.Net" "Json.Net (Helper)" "Jil" "SpanJson" "Utf8Json"
         "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
-        "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Google.Protobuf" "ProtoBuf"
+        "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
         "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
     )
     # NetJSON hangs on some catalog cases; keep it out of the unattended loop.

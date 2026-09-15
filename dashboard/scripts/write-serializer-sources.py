@@ -147,6 +147,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("csharp", "Google.Protobuf"): "https://github.com/protocolbuffers/protobuf",
     ("csharp", "Apache.Avro"): "https://github.com/apache/avro",
     ("csharp", "CsvHelper"): "https://github.com/JoshClose/CsvHelper",
+    ("csharp", "Nerdbank.MessagePack"): "https://github.com/AArnott/Nerdbank.MessagePack",
     # Rust
     ("rust", "serde_json"): "https://github.com/serde-rs/json",
     ("rust", "simd-json"): "https://github.com/simd-lite/simd-json",
@@ -971,6 +972,11 @@ SPECIFICS: dict[str, str] = {
         "problem was existing binary libraries allocating and reflecting "
         "too much. `[MemoryPackable]` types get generated encode/decode."
     ),
+    "nerdbank-messagepack": (
+        "Nerdbank.MessagePack is a modern .NET MessagePack serializer built "
+        "on type shapes. This row uses reflection-based POCO shapes with "
+        "stable numeric keys and the library's default value retention."
+    ),
     "migrant": (
         "Migrant is Antmicro's .NET binary serializer for object graphs. "
         "In this suite the timed path is a JSON envelope, not native "
@@ -1542,6 +1548,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("csharp", "GroBuf"): "grobuf",
     ("csharp", "Hyperion"): "hyperion",
     ("csharp", "MemoryPack"): "memorypack",
+    ("csharp", "Nerdbank.MessagePack"): "nerdbank-messagepack",
     ("csharp", "Migrant"): "migrant",
     ("csharp", "NetSerializer"): "netserializer",
     ("csharp", "SharpSerializer"): "sharpserializer",
