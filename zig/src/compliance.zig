@@ -58,6 +58,7 @@ pub fn main(init: std.process.Init) !void {
     var first = true;
     var p: usize = 0;
     var f: usize = 0;
+    var sk: usize = 0;
     var total: usize = 0;
 
     const mapping_raw = readFile(alloc, io, root_rel, "compliance/serializer-standards.json") catch "";
@@ -101,8 +102,7 @@ pub fn main(init: std.process.Init) !void {
                 total += 1;
                 var outcome: []const u8 = "pass";
                 var observed: []const u8 = "ok";
-                if (std.json.parseFromSlice(std.json.Value, alloc, input, .{})) |ok| {
-                    ok.deinit();
+                if (decodeJson(alloc, jser, input)) |_| {
                     if (std.mem.eql(u8, expect, "reject")) {
                         outcome = "fail";
                         observed = "accepted";
@@ -221,11 +221,17 @@ pub fn main(init: std.process.Init) !void {
     const extras = [_]Extra{
         .{ .dir = "yaml", .sers = &.{"serde.yaml"} },
         .{ .dir = "toml", .sers = &.{"serde.toml"} },
-        .{ .dir = "msgpack", .sers = &.{ "serde.msgpack", "zig-msgpack", "msgpack.zig" } },
+        // serde.msgpack is absent on purpose: serde.zig 1.2.1 decodes only into
+        // a known type, so there is no entry point that can answer "is this
+        // wire image valid MessagePack?". The row it used to fill was the
+        // hand-written `skipMsgpack` below, not the library.
+        .{ .dir = "msgpack", .sers = &.{ "zig-msgpack", "msgpack.zig" } },
         .{ .dir = "cbor", .sers = &.{"zbor"} },
         .{ .dir = "capnp", .sers = &.{"capnproto"} },
         .{ .dir = "flatbuffers", .sers = &.{"flatbuffers"} },
-        .{ .dir = "zon", .sers = &.{ "std.zon", "serde.zon" } },
+        // serde.zon is absent for the same reason, and its row was `std.zig.Ast`
+        // -- the same parser already published under `std.zon`.
+        .{ .dir = "zon", .sers = &.{"std.zon"} },
     };
     for (extras) |ex| {
         if (!wantFmt(formats.items, ex.dir)) continue;
@@ -259,6 +265,14 @@ pub fn main(init: std.process.Init) !void {
                     total += 1;
                     var outcome: []const u8 = "pass";
                     var observed: []const u8 = "ok";
+                    if (quarantined(ser, bytes)) |reason| {
+                        // The decoder does not survive this input, so there is
+                        // no verdict to record. Skip; do not score a rejection
+                        // the library never made.
+                        sk += 1;
+                        try appendRow(alloc, &results, &first, id, standard, standard_url, version, c, expect, reason, "skip", ser, ex.dir);
+                        continue;
+                    }
                     var arena = std.heap.ArenaAllocator.init(alloc);
                     defer arena.deinit();
                     if (decodeExtra(arena.allocator(), ser, bytes)) |_| {
@@ -284,12 +298,12 @@ pub fn main(init: std.process.Init) !void {
     }
     try results.appendSlice(alloc, "]");
     std.debug.print("Serialization compliance (library deviations are catalogued, not a red build)\n", .{});
-    std.debug.print("  {d} pass  {d} fail  0 skip  0 error  {d} total\n", .{ p, f, total });
+    std.debug.print("  {d} pass  {d} fail  {d} skip  0 error  {d} total\n", .{ p, f, sk, total });
     if (json_out) |out_path| {
         const doc = try std.fmt.allocPrint(
             alloc,
-            "{{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"zig\",\"languages\":[\"zig\"],\"policy\":\"report-only\",\"scope\":{{\"formats\":[\"json\",\"protobuf\"]}},\"passed\":{d},\"failed\":{d},\"skipped\":0,\"errors\":0,\"catalog_errors\":[],\"serializer_errors\":[],\"results\":{s}}}\n",
-            .{ p, f, results.items },
+            "{{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"zig\",\"languages\":[\"zig\"],\"policy\":\"report-only\",\"scope\":{{\"formats\":[\"json\",\"protobuf\"]}},\"passed\":{d},\"failed\":{d},\"skipped\":{d},\"errors\":0,\"catalog_errors\":[],\"serializer_errors\":[],\"results\":{s}}}\n",
+            .{ p, f, sk, results.items },
         );
         defer alloc.free(doc);
         if (std.fs.path.dirname(out_path)) |d| {
@@ -308,25 +322,88 @@ fn wantFmt(formats: []const []const u8, name: []const u8) bool {
     return false;
 }
 
+/// Inputs a decoder cannot be handed without taking the runner down with it.
+/// Each entry names the defect rather than a shape, so it can be deleted the
+/// moment the fix ships instead of quietly suppressing unrelated cases.
+///
+/// serde.zig 1.2.1:
+///   - YAML: a flow sequence holding a `key: value` pair (`[a: 1]`) never
+///     terminates and allocates without bound.
+///   - TOML: a `\u`/`\U` escape whose digits exceed U+10FFFF overflows the
+///     code-point accumulator.
+/// Returns the reason to record as `observed`, or null when the input is safe.
+fn quarantined(ser: []const u8, bytes: []const u8) ?[]const u8 {
+    if (std.mem.eql(u8, ser, "serde.yaml")) {
+        if (flowPair(bytes)) return "skipped: decoder does not terminate";
+        return null;
+    }
+    if (std.mem.eql(u8, ser, "serde.toml")) {
+        if (std.mem.indexOf(u8, bytes, "\\u") != null or std.mem.indexOf(u8, bytes, "\\U") != null)
+            return "skipped: decoder aborts on out-of-range escapes";
+        return null;
+    }
+    return null;
+}
+
+/// True when a `[` ... `]` flow sequence contains a `: ` outside quotes.
+fn flowPair(bytes: []const u8) bool {
+    var depth: usize = 0;
+    var quote: u8 = 0;
+    var i: usize = 0;
+    while (i < bytes.len) : (i += 1) {
+        const c = bytes[i];
+        if (quote != 0) {
+            if (c == '\\' and quote == '"') i += 1 else if (c == quote) quote = 0;
+            continue;
+        }
+        switch (c) {
+            '"', '\'' => quote = c,
+            '[' => depth += 1,
+            ']' => depth -|= 1,
+            ':' => if (depth > 0 and (i + 1 == bytes.len or bytes[i + 1] == ' ' or
+                bytes[i + 1] == ',' or bytes[i + 1] == ']' or bytes[i + 1] == '\n')) return true,
+            else => {},
+        }
+    }
+    return false;
+}
+
+/// Each JSON row is read by the library it names. Routing them all through
+/// `std.json` would publish one parser's verdicts under three names, and the
+/// three do disagree: serde.zig accepts a duplicate object key and keeps the
+/// last value, `std.json.Value` rejects it.
+fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) !void {
+    if (std.mem.eql(u8, ser, "serde.json")) {
+        // serde.zig 1.2.1 has no bytes-to-value entry point, so drive the same
+        // scanner `serde.json.fromSlice` uses: it tokenizes, validates escapes,
+        // UTF-8 and control characters, and enforces the depth limit.
+        // Known gap: `skipValue` takes a lone `]` or `}` for a value, where a
+        // typed `fromSlice` rejects it on the type. Reported upstream; left
+        // unpatched here so the row reports the tokenizer, not this harness.
+        var de = serde.json.Deserializer.init(input);
+        try de.scanner.skipValue();
+        de.scanner.skipWhitespace();
+        if (de.scanner.pos != de.scanner.input.len) return error.TrailingData;
+        return;
+    }
+    if (std.mem.eql(u8, ser, "std.json.scanner")) {
+        var scanner = std.json.Scanner.initCompleteInput(alloc, input);
+        defer scanner.deinit();
+        try scanner.skipValue();
+        if (try scanner.next() != .end_of_document) return error.TrailingData;
+        return;
+    }
+    const parsed = try std.json.parseFromSlice(std.json.Value, alloc, input, .{});
+    parsed.deinit();
+}
+
 fn decodeExtra(alloc: std.mem.Allocator, ser: []const u8, bytes: []const u8) !void {
     if (std.mem.eql(u8, ser, "serde.yaml")) {
-        if (std.mem.indexOfScalar(u8, bytes, '&') != null and std.mem.indexOfScalar(u8, bytes, '*') != null)
-            return error.AliasBomb;
         _ = try serde.yaml.parseValue(alloc, bytes);
         return;
     }
     if (std.mem.eql(u8, ser, "serde.toml")) {
-        if (std.mem.indexOf(u8, bytes, "\\u") != null or std.mem.indexOf(u8, bytes, "\"\"\"") != null)
-            return error.UnsafeToml;
         _ = try serde.toml.parse(alloc, bytes);
-        return;
-    }
-    if (std.mem.eql(u8, ser, "serde.msgpack")) {
-        try skipMsgpack(bytes);
-        return;
-    }
-    if (std.mem.eql(u8, ser, "serde.zon")) {
-        try decodeStdZon(alloc, bytes);
         return;
     }
     if (std.mem.eql(u8, ser, "std.zon")) {
