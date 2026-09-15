@@ -105,7 +105,7 @@ test "every format round-trips the fixtures it claims to support" {
                 defer out.deinit();
                 try encode(fmt, fx, &out);
                 const decoded = decode(fmt, arena.allocator(), kind, out.items());
-                // Shapes serde 1.2.1 cannot round-trip stay visible as errors.
+                // Shapes serde 1.2.2 cannot round-trip stay visible as errors.
                 // Never substitute a default or drop a field to get a timing.
                 const nested = fx == .document or fx == .event;
                 if (fmt == .yaml and (nested or (size == 0 and fx != .message))) {
