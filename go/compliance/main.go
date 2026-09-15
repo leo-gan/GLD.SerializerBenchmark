@@ -543,6 +543,13 @@ func valuesEqual(expected, observed any) bool {
 		}
 		return true
 	case map[string]any:
+		if m, ok := observed.(map[any]any); ok {
+			sm, canConvert := convertToStringKeyMap(m)
+			if !canConvert {
+				return false
+			}
+			observed = sm
+		}
 		o, ok := observed.(map[string]any)
 		if !ok || len(e) != len(o) {
 			return false
@@ -555,6 +562,18 @@ func valuesEqual(expected, observed any) bool {
 		return true
 	}
 	return fmt.Sprint(expected) == fmt.Sprint(observed)
+}
+
+func convertToStringKeyMap(m map[any]any) (map[string]any, bool) {
+	sm := make(map[string]any, len(m))
+	for k, v := range m {
+		s, ok := k.(string)
+		if !ok {
+			return nil, false
+		}
+		sm[s] = v
+	}
+	return sm, true
 }
 
 func asBytes(v any) ([]byte, bool) {
