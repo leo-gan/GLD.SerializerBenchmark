@@ -59,6 +59,22 @@ To add a Python library, append an `Adapter` in
 `python/src/compliance/adapters.py` (`name`, `format`, `decode`,
 optional `encode`).
 
+## One row, one library
+
+A row is a claim about the library it names, so its decode must go through
+that library's own API. Two rows that share a decoder are one measurement
+published twice, and a reader comparing them sees agreement the catalog
+never tested. If a library exposes no entry point that can answer "is this
+input valid?", leave it out of `compliance/serializer-standards.json` for
+that format rather than filling the column with another implementation's
+verdict.
+
+When a decoder cannot be handed an input without taking the runner down —
+it does not terminate, or it aborts — record the case as `skip` with a
+reason. A `reject` the library never made would score as a deviation it
+does not have. Name the defect in the guard so the guard can be deleted
+when the fix ships.
+
 ## Sketch for another language
 
 1. Parse every `compliance/data/*/*.json`.
