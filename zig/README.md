@@ -6,7 +6,7 @@ Zig is in the suite because **comptime reflection** (`@typeInfo`) is a different
 
 ## Serializers
 
-See [docs/zig/index.md](../docs/zig/index.md) for the serializer inventory.
+See [docs/zig/index.md](../docs/zig/index.md) for the serializer inventory and ownership contracts. `serde.json` and `std.json` decode owned strings; their separate `.borrowed` rows measure input views on the suite's unescaped fixtures.
 
 ## Host tools
 

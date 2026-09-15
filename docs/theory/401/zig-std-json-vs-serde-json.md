@@ -24,19 +24,19 @@ const parsed = try std.json.parseFromSlice(Document, allocator, bytes, .{
 **serde.json** (`zig/src/serde_ser.zig`) uses the same suite `Document` struct and serde.zig’s comptime API:
 
 ```zig
-const bytes = try serde.json.toSlice(allocator, payload);
+try serde.json.toWriter(&aw.writer, payload);
 const value = try serde.json.fromSlice(Document, allocator, bytes);
 ```
 
-Both rows write named JSON fields. Stream mode for `std.json` is `text_on_stream` (text written through a writer). `serde.json` is `adapted` in this first wave (slice in, slice out).
+Both rows write named JSON fields through a writer the harness owns and reuses, so both are `text_on_stream`. serde.zig's `toSlice` is `toWriter` into an `Allocating` writer, so calling `toWriter` on the harness buffer is the same field walk with one fewer allocation, copy and free per call — the shape of the call site, not a different encoder.
 
-A third row, `std.json.scanner`, keeps the same stringify path and decodes with `std.json.Scanner` + `parseFromTokenSource`.
+Two further rows keep the same stringify path and change only the decode. `std.json.scanner` decodes with `std.json.Scanner` + `parseFromTokenSource`. The `.borrowed` rows decode strings as views into the input instead of copying them: `serde.json.fromSliceBorrowed` and `std.json.parseFromSliceLeaky` with `alloc_if_needed`. The two libraries do not draw that line in the same place — serde.zig's borrowed decode is strictly a view and rejects any escaped string, while `alloc_if_needed` allocates to unescape one — so the rows are comparable on this suite because its fixtures are unescaped, and not in general.
 
 ## What to look at on the Dashboard
 
 1. **Size.** If both write the same field names and values, sizes should be close. A large gap means a different JSON shape (pretty print, extra wrapper, different float formatting).
-2. **Encode time.** `Stringify.value` versus `serde.json.toSlice`.
-3. **Decode time.** Typed `parseFromSlice` versus serde’s `fromSlice`.
+2. **Encode time.** `Stringify.value` versus `serde.json.toWriter`, both into the same reused buffer.
+3. **Decode time.** Typed `parseFromSlice` versus serde’s `fromSlice`, and each against its own `.borrowed` row: that gap is what copying the strings costs, measured twice with the same bytes.
 4. **`std.json.scanner`.** Same bytes as `std.json`, different decode API. A gap here is the scanner versus the slice parser, not a different format.
 
 ## What this does not claim
