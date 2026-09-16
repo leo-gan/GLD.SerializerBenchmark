@@ -1325,6 +1325,10 @@
         "version": "0.2.1",
         "specifics": "nDimensional/zig-flatbuffers generates Zig from FlatBuffers schemas. FlatBuffers exists so readers can use data without unpacking. This is the Zig codegen this suite times."
       },
+      "json.zig": {
+        "source_url": "https://github.com/lalinsky/json.zig",
+        "specifics": "lalinsky/json.zig is a typed JSON library for Zig: the encoder and decoder are comptime-specialized into the Zig type, so there is no DOM and no runtime schema. It exists to make JSON cheap for APIs with a fixed schema, and it reads and writes std.Io readers and writers, so a value larger than the buffer still decodes."
+      },
       "msgpack.zig": {
         "source_url": "https://github.com/lalinsky/msgpack.zig",
         "version": "0.9.0",

@@ -4,6 +4,7 @@ const serde = @import("serde");
 const zbor = @import("zbor");
 const zig_msgpack = @import("zig_msgpack");
 const msgpack_l = @import("msgpack_lalinsky");
+const json_l = @import("json_lalinsky");
 
 pub fn main(init: std.process.Init) !void {
     const alloc = init.gpa;
@@ -68,7 +69,7 @@ pub fn main(init: std.process.Init) !void {
         null;
     defer if (mapping_parsed) |*parsed_map| parsed_map.deinit();
 
-    const json_sers_all = [_][]const u8{ "std.json", "std.json.scanner", "serde.json" };
+    const json_sers_all = [_][]const u8{ "std.json", "std.json.scanner", "serde.json", "json.zig" };
     var json_sers: std.ArrayList([]const u8) = .empty;
     defer json_sers.deinit(alloc);
     for (json_sers_all) |name| {
@@ -101,14 +102,13 @@ pub fn main(init: std.process.Init) !void {
                 total += 1;
                 var outcome: []const u8 = "pass";
                 var observed: []const u8 = "ok";
-                if (std.json.parseFromSlice(std.json.Value, alloc, input, .{})) |ok| {
-                    ok.deinit();
+                if (decodeJson(alloc, jser, input)) {
                     if (std.mem.eql(u8, expect, "reject")) {
                         outcome = "fail";
                         observed = "accepted";
                         f += 1;
                     } else p += 1;
-                } else |_| {
+                } else {
                     if (std.mem.eql(u8, expect, "reject") or std.mem.eql(u8, expect, "any")) {
                         p += 1;
                         observed = "rejected";
@@ -306,6 +306,18 @@ fn wantFmt(formats: []const []const u8, name: []const u8) bool {
         if (std.ascii.eqlIgnoreCase(f, name)) return true;
     }
     return false;
+}
+
+fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) bool {
+    // json.zig validates JSON syntax independently of a destination type.
+    // The other rows retain the existing std.json fallback.
+    if (std.mem.eql(u8, ser, "json.zig")) {
+        json_l.validateFromSlice(input) catch return false;
+        return true;
+    }
+    const parsed = std.json.parseFromSlice(std.json.Value, alloc, input, .{}) catch return false;
+    parsed.deinit();
+    return true;
 }
 
 fn decodeExtra(alloc: std.mem.Allocator, ser: []const u8, bytes: []const u8) !void {

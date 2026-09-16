@@ -2,7 +2,7 @@
 
 Native Zig benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
 
-Zig is in the suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin reflection, C# source generation, or Rust derives. The runner measures official `std.json` / `std.zon`, an in-tree comptime byte-packed baseline, serde.zig (JSON / MessagePack / YAML / TOML / ZON / XML), zig-msgpack, msgpack.zig, zbor, s2s, and schema codecs (protobuf, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
+Zig is in the suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin reflection, C# source generation, or Rust derives. The runner measures official `std.json` / `std.zon`, an in-tree comptime byte-packed baseline, serde.zig (JSON / MessagePack / YAML / TOML / ZON / XML), zig-msgpack, msgpack.zig, json.zig, zbor, s2s, and schema codecs (protobuf, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
 
 ## Serializers
 
