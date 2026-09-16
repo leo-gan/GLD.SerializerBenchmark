@@ -460,6 +460,9 @@
       "GroBuf": [],
       "Hyperion": [],
       "MemoryPack": [],
+      "Nerdbank.MessagePack": [
+        "msgpack"
+      ],
       "Migrant": [],
       "NetSerializer": [],
       "ServiceStack": [],

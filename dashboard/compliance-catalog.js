@@ -183,6 +183,7 @@ export const CATALOG = [
   { language: "csharp", name: "GroBuf", formats: [], docs: "https://github.com/skbkontur/GroBuf", evidence: "GroBuf: .NET binary serializer." },
   { language: "csharp", name: "Hyperion", formats: [], docs: "https://github.com/akkadotnet/Hyperion", evidence: "Hyperion: Akka.NET binary serializer." },
   { language: "csharp", name: "MemoryPack", formats: [], docs: "https://github.com/Cysharp/MemoryPack", evidence: "MemoryPack: .NET binary; no public RFC/IDL in this catalog." },
+  { language: "csharp", name: "Nerdbank.MessagePack", formats: ["msgpack"], docs: "https://github.com/AArnott/Nerdbank.MessagePack", evidence: "Nerdbank.MessagePack: MessagePack serializer using reflection-based POCO shapes with stable numeric keys in this suite." },
   { language: "csharp", name: "Migrant", formats: [], docs: "https://github.com/antmicro/Migrant", evidence: "Migrant: .NET binary (suite row is a JSON envelope)." },
   { language: "csharp", name: "NetSerializer", formats: [], docs: "https://github.com/tomba/netserializer", evidence: "NetSerializer: .NET binary." },
   { language: "csharp", name: "ServiceStack", formats: [], docs: "https://docs.servicestack.net/text-serializers", evidence: "ServiceStack JSV/type serializer, not a catalogued public spec." },
