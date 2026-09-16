@@ -295,7 +295,19 @@ namespace GLD.SerializerBenchmark
         private static object DecodeNerdbankMessagePack(byte[] data, string schema)
         {
             var reader = new Nerdbank.MessagePack.MessagePackReader(data);
-            return new Nerdbank.MessagePack.MessagePackSerializer().DeserializePrimitives(ref reader);
+            var serializer = new Nerdbank.MessagePack.MessagePackSerializer
+            {
+                LibraryExtensionTypeCodes = new Nerdbank.MessagePack.LibraryReservedMessagePackExtensionTypeCode
+                {
+                    ObjectReference = 120,
+                    Guid = 121,
+                    BigInteger = 122,
+                    Decimal = 123,
+                    Int128 = 124,
+                    UInt128 = 125,
+                },
+            };
+            return serializer.DeserializePrimitives(ref reader);
         }
 
         private static object DecodeAvro(byte[] data, string schema)
