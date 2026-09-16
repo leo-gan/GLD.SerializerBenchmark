@@ -405,6 +405,14 @@ namespace GLD.SerializerBenchmark
             if (expected is long or int or double or float && observed is IConvertible)
                 return Convert.ToDouble(expected) == Convert.ToDouble(observed);
             if (expected is string es) return es.Equals(observed as string);
+            if (expected is JObject expectedObject &&
+                observed is byte[] observedBytes &&
+                expectedObject.Count == 1 &&
+                expectedObject.TryGetValue("$hex", out JToken expectedHex) &&
+                expectedHex.Type == JTokenType.String)
+            {
+                return Convert.FromHexString((string)expectedHex).AsSpan().SequenceEqual(observedBytes);
+            }
             if (expected is JToken jt)
             {
                 try
