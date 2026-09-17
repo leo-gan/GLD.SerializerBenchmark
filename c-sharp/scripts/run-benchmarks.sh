@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Native .NET 8 runner (same pattern as go/rust/javascript/c — no Docker).
+# Native .NET 10 runner (same pattern as go/rust/javascript/c — no Docker).
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -20,7 +20,7 @@ case " $VALID_MODES custom " in
   *)
     echo "Usage: $0 [smoke|all-single|full|research|custom] [serializerFilter] [dataFilter]"
     echo "  dataFilter type_ids: message|document|telemetry|strings|event"
-    echo "  Requires: .NET SDK 8.0+ (https://dotnet.microsoft.com/download)"
+    echo "  Requires: .NET SDK 10.0+ (https://dotnet.microsoft.com/download)"
     exit 1
     ;;
 esac
@@ -47,7 +47,7 @@ export LOG_DIR
 
 if ! command -v dotnet >/dev/null 2>&1; then
   echo "[ERROR] dotnet not found. Run: ./scripts/install-host-requirements.sh csharp" >&2
-  echo "        Or install .NET SDK 8.0+: https://dotnet.microsoft.com/download" >&2
+  echo "        Or install .NET SDK 10.0+: https://dotnet.microsoft.com/download" >&2
   exit 1
 fi
 

@@ -38,22 +38,17 @@ check_analysis() {
 
 check_csharp() {
   echo "csharp"
-  # SDK 9+ required so LightProto's generator (Roslyn 4.14+) runs; net8 TFM still needs 8.x runtime/packs.
+  # SDK 10+ is required for the net10.0 target and also satisfies LightProto's generator requirement.
   if command -v dotnet >/dev/null 2>&1; then
     local sdks
     sdks="$(dotnet --list-sdks 2>/dev/null | tr '\n' ' ')"
-    if echo "$sdks" | grep -qE '(^|[[:space:]])9\.'; then
-      ok "dotnet SDK 9.x present ($sdks)"
-      if ! echo "$sdks" | grep -qE '(^|[[:space:]])8\.'; then
-        warn "dotnet SDK 8.x missing — net8.0 TFM targeting pack may be pulled on first build"
-      fi
-    elif echo "$sdks" | grep -qE '(^|[[:space:]])8\.'; then
-      miss "dotnet SDK 9.x required for LightProto source generator (found only: $sdks)"
+    if echo "$sdks" | grep -qE '(^|[[:space:]])10\.'; then
+      ok "dotnet SDK 10.x present ($sdks)"
     else
-      miss "dotnet SDK 9.x (found: $sdks)"
+      miss "dotnet SDK 10.x (found: $sdks)"
     fi
   else
-    miss "dotnet — install .NET SDK 9: ./scripts/install-host-requirements.sh csharp"
+    miss "dotnet — install .NET SDK 10: ./scripts/install-host-requirements.sh csharp"
   fi
 }
 

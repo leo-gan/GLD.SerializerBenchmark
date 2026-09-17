@@ -27,26 +27,20 @@ install_uv() {
 }
 
 install_dotnet() {
-  # SDK 9+ required for LightProto source generator (Roslyn 4.14+). Project still targets net8.0.
-  # Keep net8 runtime/targeting pack available for the TFM when possible.
+  # SDK 10+ is required for the net10.0 target and also satisfies LightProto's generator requirement.
   bench_extend_host_path
-  local need_sdk9=1 need_sdk8=1
+  local need_sdk10=1
   if command -v dotnet >/dev/null 2>&1; then
-    if dotnet --list-sdks 2>/dev/null | grep -qE '^9\.'; then need_sdk9=0; fi
-    if dotnet --list-sdks 2>/dev/null | grep -qE '^8\.'; then need_sdk8=0; fi
+    if dotnet --list-sdks 2>/dev/null | grep -qE '^10\.'; then need_sdk10=0; fi
   fi
-  if [[ "$need_sdk9" -eq 0 && "$need_sdk8" -eq 0 ]]; then
-    echo "[OK] .NET SDK 8+9 present ($(dotnet --list-sdks 2>/dev/null | tr '\n' ' '))"
+  if [[ "$need_sdk10" -eq 0 ]]; then
+    echo "[OK] .NET SDK 10+ present ($(dotnet --list-sdks 2>/dev/null | tr '\n' ' '))"
     return
   fi
   curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
-  if [[ "$need_sdk8" -eq 1 ]]; then
-    echo "[INFO] Installing .NET SDK 8.0 to ~/.dotnet (net8.0 TFM)..."
-    bash /tmp/dotnet-install.sh --channel 8.0 --install-dir "${HOME}/.dotnet"
-  fi
-  if [[ "$need_sdk9" -eq 1 ]]; then
-    echo "[INFO] Installing .NET SDK 9.0 to ~/.dotnet (LightProto source generator)..."
-    bash /tmp/dotnet-install.sh --channel 9.0 --install-dir "${HOME}/.dotnet"
+  if [[ "$need_sdk10" -eq 1 ]]; then
+    echo "[INFO] Installing .NET SDK 10.0 to ~/.dotnet (net10.0 TFM)..."
+    bash /tmp/dotnet-install.sh --channel 10.0 --install-dir "${HOME}/.dotnet"
   fi
   export DOTNET_ROOT="${HOME}/.dotnet"
   export PATH="${HOME}/.dotnet:${PATH}"
