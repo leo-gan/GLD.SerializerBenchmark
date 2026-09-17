@@ -54,6 +54,13 @@ namespace GLD.SerializerBenchmark
                 ["MessagePack-CSharp"] = "MessagePack",
                 ["Nerdbank.MessagePack"] = "Nerdbank.MessagePack",
                 ["Migrant"] = "Migrant",
+                ["ShapeShift.Cbor"] = "ShapeShift.Cbor",
+                ["ShapeShift.Json"] = "ShapeShift.Json",
+                ["ShapeShift.MsgPack"] = "ShapeShift.MsgPack",
+                ["ShapeShift.Protobuf"] = "ShapeShift.Protobuf",
+                ["ShapeShift.Taml"] = "ShapeShift.Taml",
+                ["ShapeShift.Toml"] = "ShapeShift.Toml",
+                ["ShapeShift.Yaml"] = "ShapeShift.Yaml",
             };
 
         public static string Resolve(string serializerName)

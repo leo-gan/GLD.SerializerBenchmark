@@ -17,15 +17,15 @@ The label “.NET 8” names the **target framework**: the set of runtime APIs t
 
 | | This suite |
 |---|---|
-| Target | `net8.0` (.NET 8 APIs) |
-| Host SDK | .NET SDK **9+** (SDK 8 targeting pack also installed) |
+| Target | `net10.0` (.NET 10 APIs) |
+| Host SDK | .NET SDK **10+** |
 | Prepare | `./scripts/install-host-requirements.sh csharp` installs into `~/.dotnet` |
 | Run | `dotnet build` and `dotnet run -c Release` through `c-sharp/scripts/run-benchmarks.sh` |
 | Memory | Tracing garbage collector. No Docker. |
 
 ### What this suite runs
 
-The project file targets `net8.0`, so the finished program uses the .NET 8 API surface. The machine that builds it still needs .NET SDK 9 or newer, because LightProto’s source generator requires Roslyn 4.14. A **source generator** is a compiler plugin that writes extra C# while the project builds. If only SDK 8 is installed, the project compiles, but LightProto never generates its parsers and every LightProto cell fails.
+The project file targets `net10.0`, because the ShapeShift packages require the .NET 10 API surface. The .NET 10 SDK also satisfies LightProto's Roslyn 4.14 source-generator requirement. A **source generator** is a compiler plugin that writes extra C# while the project builds.
 
 We build and run in the **Release** configuration, which turns on optimizations. The **Debug** configuration is slower, and the Dashboard numbers do not come from it. The `dotnet` tools live under the user’s home directory. There is no Docker container.
 
@@ -94,6 +94,13 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [ServiceStack Json](https://github.com/ServiceStack/ServiceStack.Text) | JSON | ServiceStack.Text JSON |
 | [SharpSerializer](https://github.com/polenter/SharpSerializer) | Binary / XML | SharpSerializer |
 | [SharpYaml](https://github.com/xoofx/SharpYaml) | YAML | SharpYaml |
+| [ShapeShift.Cbor](https://github.com/AArnott/ShapeShift) | Binary / CBOR | ShapeShift's source-generated CBOR serializer; string mode = Base64 of bytes |
+| [ShapeShift.Json](https://github.com/AArnott/ShapeShift) | JSON | ShapeShift's source-generated JSON serializer |
+| [ShapeShift.MsgPack](https://github.com/AArnott/ShapeShift) | Binary / MessagePack | ShapeShift's source-generated MessagePack serializer; string mode = Base64 of bytes |
+| [ShapeShift.Protobuf](https://github.com/AArnott/ShapeShift) | Schema / Protobuf | ShapeShift's source-generated protobuf-style serializer; string mode = Base64 of bytes |
+| [ShapeShift.Taml](https://github.com/AArnott/ShapeShift) | TAML | ShapeShift's source-generated TAML serializer (all suite data except `strings`) |
+| [ShapeShift.Toml](https://github.com/AArnott/ShapeShift) | TOML | ShapeShift's source-generated TOML serializer |
+| [ShapeShift.Yaml](https://github.com/AArnott/ShapeShift) | YAML | ShapeShift's source-generated YAML serializer |
 | [SpanJson](https://github.com/Tornhoof/SpanJson) | JSON | SpanJson |
 | [System.Text.Json](https://github.com/dotnet/runtime) | JSON | System.Text.Json (net8 built-in) |
 | [Utf8Json](https://github.com/neuecc/Utf8Json) | JSON | Utf8Json |
@@ -241,6 +248,10 @@ SharpSerializer is a .NET serializer that can write binary or XML. It was create
 
 SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet lineage ideas). It exists as another maintained YAML stack for C#.
 
+#### [ShapeShift](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
+
+ShapeShift is a source-generated serialization framework built on PolyType. The C# suite benchmarks its CBOR, JSON, MessagePack, protobuf-style, TAML, TOML, and YAML packages using generated contracts on the suite domain types. ShapeShift TAML does not support the `strings` family because its `N=100` batch has a nested list shape it cannot currently deserialize. ShapeShift exposes string or in-memory-buffer APIs, so its stream rows are marked **Adapted**.
+
 #### [SpanJson](https://github.com/Tornhoof/SpanJson) · `4.2.1`
 
 SpanJson was created to serialize JSON on .NET using `Span<T>` and modern memory primitives. The problem was older JSON libraries allocating too many strings. It writes UTF-8 directly from spans.
@@ -291,7 +302,7 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (canonical mode labe
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
-| **Adapted stream** | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader` | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
+| **Adapted stream** | Stream path writes/reads a complete string, Base64 value, or in-memory buffer rather than using a native streaming API | **ShapeShift**, **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
 | **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
 
@@ -299,7 +310,7 @@ When stream ≈ string within a few percent on the Dashboard, check which kind a
 
 ### Caveats
 
-- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …). Domain models live in [`c-sharp/src/TestData/V2/Models.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/TestData/V2/Models.cs).
+- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, `[GenerateShape]`, …). Domain models live in [`c-sharp/src/TestData/V2/Models.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/TestData/V2/Models.cs).
 - **Library-native prepare (still real domain or codegen forms):** Google.Protobuf (`IMessage`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (tables via map), CsvHelper (row lists). These are **not** JSON envelopes.
 - **Envelope exceptions:** ExtendedXmlSerializer and Migrant only — see above.
 - **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.
