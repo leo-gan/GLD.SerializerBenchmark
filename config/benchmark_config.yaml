@@ -1207,6 +1207,11 @@ languages:
         package: lalinsky/msgpack.zig
         rationale: "Typed MessagePack encode/decodeFromSlice"
         optimal_api: "msgpack.encode / decodeFromSlice"
+      - name: json.zig
+        category: json
+        package: lalinsky/json.zig
+        rationale: "Typed JSON comptime-specialized into the struct; no DOM"
+        optimal_api: "json.encode / decodeFromSliceLeaky"
       - name: zbor
         category: binary
         package: r4gus/zbor

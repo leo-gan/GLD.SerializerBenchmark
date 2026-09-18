@@ -541,6 +541,8 @@ add("zig", "std.json.scanner", ["json"], "https://ziglang.org/documentation/mast
     "Zig std.json.Scanner: JSON tokenizer path.")
 add("zig", "serde.json", ["json"], "https://github.com/getty-zig/getty",
     "serde.zig JSON path.")
+add("zig", "json.zig", ["json"], "https://github.com/lalinsky/json.zig",
+    "lalinsky/json.zig: typed JSON, validated with its own validate().")
 add("zig", "serde.yaml", ["yaml"], "https://github.com/getty-zig/getty",
     "serde.zig YAML path.")
 add("zig", "serde.toml", ["toml"], "https://github.com/getty-zig/getty",

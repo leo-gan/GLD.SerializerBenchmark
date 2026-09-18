@@ -263,6 +263,7 @@ export const CATALOG = [
   { language: "zig", name: "std.json", formats: ["json"], docs: "https://ziglang.org/documentation/master/std/#std.json", evidence: "Zig std.json: JSON stringify/parse." },
   { language: "zig", name: "std.json.scanner", formats: ["json"], docs: "https://ziglang.org/documentation/master/std/#std.json.Scanner", evidence: "Zig std.json.Scanner: JSON tokenizer path." },
   { language: "zig", name: "serde.json", formats: ["json"], docs: "https://github.com/getty-zig/getty", evidence: "serde.zig JSON path." },
+  { language: "zig", name: "json.zig", formats: ["json"], docs: "https://github.com/lalinsky/json.zig", evidence: "lalinsky/json.zig: typed JSON, validated with its own validate()." },
   { language: "zig", name: "serde.yaml", formats: ["yaml"], docs: "https://github.com/getty-zig/getty", evidence: "serde.zig YAML path." },
   { language: "zig", name: "serde.toml", formats: ["toml"], docs: "https://github.com/getty-zig/getty", evidence: "serde.zig TOML path." },
   { language: "zig", name: "serde.msgpack", formats: ["msgpack"], docs: "https://github.com/getty-zig/getty", evidence: "serde.zig MessagePack path." },

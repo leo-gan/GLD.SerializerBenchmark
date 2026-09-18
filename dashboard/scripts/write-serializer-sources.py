@@ -1291,6 +1291,13 @@ SPECIFICS: dict[str, str] = {
         "MessagePack exists as compact binary JSON. This package exposes "
         "a Payload encode/decode API."
     ),
+    "json-zig": (
+        "lalinsky/json.zig is a typed JSON library for Zig: the encoder and "
+        "decoder are comptime-specialized into the Zig type, so there is no "
+        "DOM and no runtime schema. It exists to make JSON cheap for APIs "
+        "with a fixed schema, and it reads and writes std.Io readers and "
+        "writers, so a value larger than the buffer still decodes."
+    ),
     "msgpack-zig": (
         "lalinsky/msgpack.zig is another MessagePack library for Zig "
         "with a typed encode/decode API. It exists as a native Zig "
@@ -1634,6 +1641,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("zig", "serde.xml"): "serde-zig",
     ("zig", "zig-msgpack"): "zig-msgpack",
     ("zig", "msgpack.zig"): "msgpack-zig",
+    ("zig", "json.zig"): "json-zig",
     ("zig", "zbor"): "zbor",
     ("zig", "s2s"): "s2s",
     ("zig", "protobuf"): "zig-protobuf",

@@ -151,6 +151,7 @@ var std_zon_state: u8 = 0;
 var zig_msgpack_state: u8 = 0;
 var zbor_state: u8 = 0;
 var msgpack_l_state: u8 = 0;
+var json_l_state: u8 = 0;
 var s2s_state: u8 = 0;
 
 const serde_json_vtable = Serializer.VTable{
@@ -243,6 +244,11 @@ const msgpack_l_vtable = Serializer.VTable{
     .serialize = extraLalinskySer,
     .deserialize = extraLalinskyDe,
 };
+const json_l_vtable = Serializer.VTable{
+    .prepare = Dummy.prepare,
+    .serialize = extraJsonLalinskySer,
+    .deserialize = extraJsonLalinskyDe,
+};
 const s2s_vtable = Serializer.VTable{
     .prepare = Dummy.prepare,
     .serialize = extraS2sSer,
@@ -272,6 +278,12 @@ fn extraLalinskySer(_: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
 fn extraLalinskyDe(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
     return extra.decodeLalinsky(allocator, type_id, bytes);
 }
+fn extraJsonLalinskySer(_: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
+    try extra.encodeJsonLalinsky(fx, out);
+}
+fn extraJsonLalinskyDe(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
+    return extra.decodeJsonLalinsky(allocator, type_id, bytes);
+}
 fn extraS2sSer(_: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
     try extra.encodeS2s(fx, out);
 }
@@ -298,7 +310,7 @@ const capnproto_vtable = Serializer.VTable{
     .deserialize = capnp_ser.deserialize,
 };
 
-pub fn allSerializers() [17]Serializer {
+pub fn allSerializers() [18]Serializer {
     return .{
         .{
             .name = "std.json",
@@ -403,6 +415,14 @@ pub fn allSerializers() [17]Serializer {
             .native_kind = .direct,
             .ctx = @ptrCast(&msgpack_l_state),
             .vtable = &msgpack_l_vtable,
+        },
+        .{
+            .name = "json.zig",
+            .version = "0.1.0",
+            .stream_mode = .native,
+            .native_kind = .direct,
+            .ctx = @ptrCast(&json_l_state),
+            .vtable = &json_l_vtable,
         },
         .{
             .name = "s2s",
@@ -614,7 +634,7 @@ test "protobuf all v2 types" {
 test "registry includes std.json" {
     var tmp: [24]Serializer = undefined;
     const n = select("", &tmp);
-    try std.testing.expect(n >= 17);
+    try std.testing.expect(n >= 18);
     var found_pb = false;
     var found_fb = false;
     var found_capnp = false;

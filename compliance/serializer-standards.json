@@ -666,6 +666,9 @@
       "serde.json": [
         "json"
       ],
+      "json.zig": [
+        "json"
+      ],
       "serde.yaml": [
         "yaml"
       ],
