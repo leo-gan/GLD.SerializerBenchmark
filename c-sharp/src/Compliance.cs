@@ -401,6 +401,7 @@ namespace GLD.SerializerBenchmark
         {
             if (expected == null) return observed == null;
             if (observed == null) return false;
+<<<<<<< HEAD
             if (expected is bool || observed is bool) return Equals(expected, observed);
             if (expected is long or int or double or float && observed is IConvertible)
                 return Convert.ToDouble(expected) == Convert.ToDouble(observed);
@@ -413,6 +414,8 @@ namespace GLD.SerializerBenchmark
             {
                 return Convert.FromHexString((string)expectedHex).AsSpan().SequenceEqual(observedBytes);
             }
+=======
+>>>>>>> AArnott/fix-boolean-compliance-comparison
             if (expected is JToken jt)
             {
                 try
@@ -425,6 +428,10 @@ namespace GLD.SerializerBenchmark
                     return false;
                 }
             }
+            if (expected is bool || observed is bool) return Equals(expected, observed);
+            if (expected is long or int or double or float && observed is IConvertible)
+                return Convert.ToDouble(expected) == Convert.ToDouble(observed);
+            if (expected is string es) return es.Equals(observed as string);
             return Equals(expected, observed);
         }
 
