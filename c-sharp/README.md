@@ -103,9 +103,12 @@ C# short path:
 
 ```bash
 ./scripts/run-benchmarks.sh custom 5 YourName message
-# from repo root:
-../scripts/run-all-benchmarks.sh --mode full --lang csharp --analyze
+cd ..
+./scripts/run-all-benchmarks.sh --mode full --lang csharp --analyze
+python3 dashboard/scripts/sync-data.py
 ```
+
+Review and commit `dashboard/public/data/csharp_latest.json.gz` with the PR when publishing refreshed C# dashboard results. Do not normally commit the timestamped raw files under `logs/`.
 
 If the library uses a **source generator**, ensure the host **.NET SDK** is new enough for that generator (see Requirements above). CI must install the same SDK.
 
