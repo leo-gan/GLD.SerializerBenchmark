@@ -1,0 +1,1412 @@
+{
+  "version": 1,
+  "description": "Source repository (or stdlib / in-tree path), last measured SerializerVersion from the latest bench, and origin text for every registered serializer. Dashboard name links and docs/<lang>/index.md Specifics are generated from this file.",
+  "languages": {
+    "c": {
+      "avro-c": {
+        "source_url": "https://github.com/apache/avro",
+        "version": "1.11.3",
+        "specifics": "Apache Avro was created for Hadoop-era data: a compact binary encoding with the schema stored out of band so field names are not repeated. avro-c is the official C implementation of that encoding."
+      },
+      "cJSON": {
+        "source_url": "https://github.com/DaveGamble/cJSON",
+        "version": "1.7.19",
+        "specifics": "cJSON was written as an ultralightweight JSON parser in ANSI C for embedded and application code that could not afford a heavy toolkit. The problem was that existing C JSON stacks pulled large dependencies or a C++ runtime. cJSON solves that with a single-file DOM: parse to a tree of `cJSON` nodes, mutate, and print."
+      },
+      "cbor-encode": {
+        "source_url": "https://github.com/intel/tinycbor",
+        "specifics": "Intel TinyCBOR was written so constrained and systems software could speak IETF CBOR (RFC 7049 / 8949). The problem was that CBOR needed a small, well-specified C encoder/decoder. TinyCBOR solves it with a buffer-oriented C API. Older log name for the TinyCBOR encode path; same Intel TinyCBOR library."
+      },
+      "custom-binary": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_custom_binary.c",
+        "version": "v2-1.0",
+        "specifics": "This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler."
+      },
+      "flatcc": {
+        "source_url": "https://github.com/dvidelabs/flatcc",
+        "version": "0.6.3",
+        "specifics": "flatcc is the maintained C implementation of FlatBuffers. FlatBuffers was created at Google so games and other clients could read serialized data without a parsing/unpacking step. flatcc solves the C side with a schema compiler and a C builder/reader."
+      },
+      "jansson": {
+        "source_url": "https://github.com/akheron/jansson",
+        "version": "2.15.1",
+        "specifics": "Jansson was created to give C a complete, documented JSON library with a stable API — encode, decode, and manipulate values — not just a minimal parser. The problem was that many C JSON snippets were incomplete or awkward to embed. Jansson solves it with a reference-counted value type and an API aimed at RFC 8259."
+      },
+      "json-c": {
+        "source_url": "https://github.com/json-c/json-c",
+        "version": "0.15",
+        "specifics": "json-c is a long-running C implementation of JSON intended to be the practical library for Unix/C programs. The problem was the lack of a maintained, RFC-oriented JSON C library for system software. It solves that with a C API that aims at RFC 8259."
+      },
+      "libbson": {
+        "source_url": "https://github.com/mongodb/mongo-c-driver",
+        "version": "1.27.5",
+        "specifics": "libbson is MongoDB's C library for building and iterating BSON documents. BSON exists so MongoDB can store JSON-like documents with a binary, traversable layout. libbson solves that with `bson_append_*` / `bson_iter_*`."
+      },
+      "libcbor": {
+        "source_url": "https://github.com/PJK/libcbor",
+        "version": "0.11.0",
+        "specifics": "libcbor is a CBOR protocol implementation for C targeting RFC 7049 and RFC 8949. The problem was the need for a full-featured C CBOR DOM and streaming encoder. It solves that with `cbor_load` for documents and `cbor_encode_*` for streaming."
+      },
+      "libcbor-stream": {
+        "source_url": "https://github.com/PJK/libcbor",
+        "version": "0.11.0",
+        "specifics": "libcbor is a CBOR protocol implementation for C targeting RFC 7049 and RFC 8949. The problem was the need for a full-featured C CBOR DOM and streaming encoder. It solves that with `cbor_load` for documents and `cbor_encode_*` for streaming. This row times libcbor's streaming `cbor_encode_*` API, not the DOM `cbor_load` decoder."
+      },
+      "libyaml": {
+        "source_url": "https://github.com/yaml/libyaml",
+        "version": "0.2.5",
+        "specifics": "libyaml is the official C library for YAML 1.1, written so other languages (PyYAML, Yams, ext-yaml) can share one parser/emitter. YAML exists as a human-friendly config language. This row times the C library directly."
+      },
+      "mpack": {
+        "source_url": "https://github.com/ludocode/mpack",
+        "version": "1.1.1",
+        "specifics": "MPack is a C encoder/decoder for MessagePack, aimed at correctness and a clean buffer/stream API. The problem was that C MessagePack options were either incomplete or awkward to embed. MPack solves it with a documented pack/unpack implementation of the MessagePack spec."
+      },
+      "msgpack-c": {
+        "source_url": "https://github.com/msgpack/msgpack-c",
+        "version": "6.0.1",
+        "specifics": "msgpack-c is the official C/C++ implementation of MessagePack. MessagePack was created to be as small and fast as a binary format while staying as simple as JSON. The C library solves that with pack/unpack APIs (and a separate C++ API in the same repository)."
+      },
+      "nanopb": {
+        "source_url": "https://github.com/nanopb/nanopb",
+        "version": "0.4.9.2",
+        "specifics": "nanopb was written so Protocol Buffers could run on microcontrollers. The problem was that Google's C++ protobuf runtime is far too large for tiny devices. nanopb solves it with a small C implementation and a generator aimed at static allocation."
+      },
+      "parson": {
+        "source_url": "https://github.com/kgabis/parson",
+        "version": "1.5.3",
+        "specifics": "Parson was written as a small, single-file JSON library in C that is easy to drop into a project. The problem was boilerplate-heavy C JSON stacks. Parson solves it with a compact DOM around json.org JSON."
+      },
+      "protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf",
+        "version": "3.12.4",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "protobuf-c": {
+        "source_url": "https://github.com/protobuf-c/protobuf-c",
+        "version": "1.5.2",
+        "specifics": "protobuf-c provides C bindings for Google Protocol Buffers. The problem was that official protobuf was C++-first. protobuf-c solves it with `protoc-gen-c` and a C runtime for the same wire format."
+      },
+      "protobuf-wire": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_upb.c",
+        "version": "wire-v2",
+        "specifics": "This row is the suite's in-tree proto3 tag reader/writer. It exists to measure the published Protocol Buffers encoding itself, without a particular vendor runtime. Field numbers match `schemas/v2/protobuf/benchmark_v2.proto`."
+      },
+      "qcbor": {
+        "source_url": "https://github.com/laurencelundblade/QCBOR",
+        "version": "1.6.1",
+        "specifics": "QCBOR was written as a comprehensive, safety-oriented CBOR implementation for professional and embedded use (RFC 8949). The problem was that CBOR stacks were either incomplete or hard to audit. QCBOR solves it with a carefully bounded C encoder/decoder."
+      },
+      "tinycbor": {
+        "source_url": "https://github.com/intel/tinycbor",
+        "version": "0.6.0",
+        "specifics": "Intel TinyCBOR was written so constrained and systems software could speak IETF CBOR (RFC 7049 / 8949). The problem was that CBOR needed a small, well-specified C encoder/decoder. TinyCBOR solves it with a buffer-oriented C API."
+      },
+      "ubj": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_ubj.c",
+        "version": "1.0-min",
+        "specifics": "This row is the suite's in-tree UBJSON marker codec around the V2 binary payload. UBJSON was created as a binary cousin of JSON with explicit types. The harness implements the markers so C has a UBJSON size/speed point without a third-party dependency."
+      },
+      "yyjson": {
+        "source_url": "https://github.com/ibireme/yyjson",
+        "version": "0.10.0",
+        "specifics": "yyjson was written for high-performance JSON in ANSI C: fast parse and print without giving up a usable DOM. The problem was that lightweight C parsers were slow, and fast parsers were often C++ or SAX-only. yyjson solves that with a compact C implementation and mutable/immutable document APIs."
+      },
+      "zcbor": {
+        "source_url": "https://github.com/NordicSemiconductor/zcbor",
+        "version": "0.9",
+        "specifics": "Nordic zcbor was created to generate C from CDDL and to encode/decode CBOR on constrained devices. The problem was writing CBOR by hand against a schema. zcbor solves it with a CBOR codec plus a CDDL code generator."
+      }
+    },
+    "cpp": {
+      "arduinojson": {
+        "source_url": "https://github.com/bblanchon/ArduinoJson",
+        "version": "7.4.3",
+        "specifics": "ArduinoJson was written so microcontrollers and Arduino-class devices could speak JSON in a tiny RAM budget. The problem was desktop JSON libraries being far too large. It uses a fixed-capacity document model."
+      },
+      "avro": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md",
+        "version": "binary-1.11",
+        "specifics": "Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library."
+      },
+      "avro_c": {
+        "source_url": "https://github.com/apache/avro",
+        "version": "avro-c",
+        "specifics": "Apache Avro was created for Hadoop-era data: a compact binary encoding with the schema stored out of band so field names are not repeated. avro-c is the official C implementation of that encoding."
+      },
+      "bitsery": {
+        "source_url": "https://github.com/fraillt/bitsery",
+        "version": "5.2.4",
+        "specifics": "bitsery is an explicit-schema binary serializer for C++. The problem was that many C++ binaries were either reflection-slow or ad-hoc. bitsery makes the schema the API (`object` / `container`)."
+      },
+      "boost_serialization": {
+        "source_url": "https://github.com/boostorg/serialization",
+        "specifics": "Boost.Serialization is the classic C++ archive framework. It was created so C++ programs could persist object graphs portably across Boost archives. This row times the binary archive."
+      },
+      "capnproto": {
+        "source_url": "https://github.com/capnproto/capnproto",
+        "version": "1.0.x",
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+      },
+      "cereal": {
+        "source_url": "https://github.com/USCiLab/cereal",
+        "version": "1.3.2",
+        "specifics": "cereal was created as a C++11 header-only archive library (binary, JSON, XML) in the Boost.Serialization design space, but simpler. The problem was Boost.Serialization's weight. cereal uses output/input archives on existing types."
+      },
+      "cista": {
+        "source_url": "https://github.com/felixguendling/cista",
+        "version": "0.15",
+        "specifics": "Cista++ serializes C++ object graphs as offset-based, pointer-free images. The problem was that pointer graphs are not portable or mmap-friendly. Cista writes a relocatable layout."
+      },
+      "custom_binary": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/cpp/index.md",
+        "version": "harness",
+        "specifics": "This is the suite's length-prefixed V2 baseline, not a published format. It exists so every language has a simple binary control point: write fields with explicit lengths, read them back, no schema compiler."
+      },
+      "flatbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "flatbuffers",
+        "specifics": "FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place."
+      },
+      "flexbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "flatbuffers-flex",
+        "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "glaze": {
+        "source_url": "https://github.com/stephenberry/glaze",
+        "version": "2.9.5",
+        "specifics": "glaze was created for extremely fast, reflection-based JSON (and other formats) on modern C++. The problem was that C++ JSON usually meant a DOM or hand-written macros. glaze maps structs directly with compile-time reflection."
+      },
+      "jsoncons_bson": {
+        "source_url": "https://github.com/danielaparker/jsoncons",
+        "version": "0.177.0",
+        "specifics": "jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `bson::encode` / `decode`."
+      },
+      "jsoncons_cbor": {
+        "source_url": "https://github.com/danielaparker/jsoncons",
+        "version": "0.177.0",
+        "specifics": "jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `cbor::encode` / `decode`."
+      },
+      "jsoncons_msgpack": {
+        "source_url": "https://github.com/danielaparker/jsoncons",
+        "version": "0.177.0",
+        "specifics": "jsoncons is a C++ library for JSON and binary JSON-family formats (CBOR, BSON, MessagePack). It was written as a consistent, typed encode/decode toolkit rather than a single DOM. This row times jsoncons `msgpack::encode` / `decode`."
+      },
+      "msgpack": {
+        "source_url": "https://github.com/msgpack/msgpack-c",
+        "version": "msgpack-cxx",
+        "specifics": "msgpack-c is the official C/C++ implementation of MessagePack. MessagePack was created to be as small and fast as a binary format while staying as simple as JSON. The C library solves that with pack/unpack APIs (and a separate C++ API in the same repository)."
+      },
+      "nlohmann_bson": {
+        "source_url": "https://github.com/nlohmann/json",
+        "version": "3.12.0",
+        "specifics": "nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_bson` / `from_bson`."
+      },
+      "nlohmann_cbor": {
+        "source_url": "https://github.com/nlohmann/json",
+        "version": "3.12.0",
+        "specifics": "nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_cbor` / `from_cbor`."
+      },
+      "nlohmann_json": {
+        "source_url": "https://github.com/nlohmann/json",
+        "version": "3.12.0",
+        "specifics": "nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON."
+      },
+      "nlohmann_msgpack": {
+        "source_url": "https://github.com/nlohmann/json",
+        "version": "3.12.0",
+        "specifics": "nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_msgpack` / `from_msgpack`."
+      },
+      "nlohmann_ubjson": {
+        "source_url": "https://github.com/nlohmann/json",
+        "version": "3.12.0",
+        "specifics": "nlohmann/json is the de-facto modern C++ JSON library. It was created so C++ could use a JSON value type with an intuitive, STL-like API. The same library also maps that DOM to CBOR, MessagePack, BSON, and UBJSON. This row times `to_ubjson` / `from_ubjson`."
+      },
+      "protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf",
+        "version": "3.12.4",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "protobuf-wire": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/cpp/src/ser_protobuf_wire.cpp",
+        "version": "wire-v2",
+        "specifics": "This row is the suite's in-tree proto3 tag reader/writer. It exists to measure the published Protocol Buffers encoding itself, without a particular vendor runtime. Field numbers match `schemas/v2/protobuf/benchmark_v2.proto`."
+      },
+      "rapidjson": {
+        "source_url": "https://github.com/Tencent/rapidjson",
+        "version": "1.1.0",
+        "specifics": "RapidJSON was written at Tencent for high-performance JSON in C++ with SAX and DOM APIs. The problem was slow or awkward C++ JSON stacks. It became a standard hot-path parser/generator."
+      },
+      "simdjson": {
+        "source_url": "https://github.com/simdjson/simdjson",
+        "version": "3.10.1",
+        "specifics": "simdjson was created to parse JSON at near memory bandwidth using SIMD. The problem was that conventional parsers left most of the CPU unused. This suite times parse; serialize is prepared minified JSON."
+      },
+      "thrift": {
+        "source_url": "https://github.com/apache/thrift",
+        "version": "TBinaryProtocol",
+        "specifics": "Apache Thrift was created at Facebook so many languages could share RPC and serialization from one IDL. The problem was hand-written cross-language services. Thrift solves it with a schema compiler and protocols such as TCompactProtocol."
+      },
+      "yaml-cpp": {
+        "source_url": "https://github.com/jbeder/yaml-cpp",
+        "version": "0.8.0",
+        "specifics": "yaml-cpp is a YAML parser/emitter for C++. YAML exists as a human-friendly config language. yaml-cpp is the usual C++ implementation of that model."
+      },
+      "yas": {
+        "source_url": "https://github.com/niXman/yas",
+        "version": "7.x",
+        "specifics": "YAS (Yet Another Serializer) is a high-performance C++ binary archive library. It was written as a microbenchmark staple: serialize structs with very little abstraction cost."
+      },
+      "yyjson": {
+        "source_url": "https://github.com/ibireme/yyjson",
+        "version": "0.10.0",
+        "specifics": "yyjson was written for high-performance JSON in ANSI C: fast parse and print without giving up a usable DOM. The problem was that lightweight C parsers were slow, and fast parsers were often C++ or SAX-only. yyjson solves that with a compact C implementation and mutable/immutable document APIs."
+      },
+      "zpp_bits": {
+        "source_url": "https://github.com/eyalz800/zpp_bits",
+        "version": "4.4.25",
+        "specifics": "zpp_bits is a compile-time binary serializer for modern C++. The problem was runtime reflection and verbose archive APIs. It uses template `out` / `in` over tuples and structs."
+      }
+    },
+    "csharp": {
+      "Apache.Avro": {
+        "source_url": "https://github.com/apache/avro",
+        "version": "1.12.2",
+        "specifics": "Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library."
+      },
+      "BinaryPack": {
+        "source_url": "https://github.com/Sergio0694/BinaryPack",
+        "version": "1.0.3",
+        "specifics": "BinaryPack is a compact binary serializer for .NET POCOs. It was written for fast, allocation-conscious binary packing of types that have a public parameterless constructor."
+      },
+      "Ceras": {
+        "source_url": "https://github.com/rikimaru0345/Ceras",
+        "version": "4.1.7",
+        "specifics": "Ceras is a binary serializer for .NET object graphs. It was created as a modern, feature-rich alternative to BinaryFormatter-style packing without that formatter's security model."
+      },
+      "CsvHelper": {
+        "source_url": "https://github.com/JoshClose/CsvHelper",
+        "version": "33.1.0",
+        "specifics": "CsvHelper was written so .NET could read and write CSV with a robust, mapping-based API. CSV exists as the simplest tabular exchange format. This row projects supported types to rows."
+      },
+      "ExtendedXmlSerializer": {
+        "source_url": "https://github.com/wojtpl2/ExtendedXmlSerializer",
+        "version": "3.10.0.0",
+        "specifics": "ExtendedXmlSerializer is an XML serializer for .NET. In this suite the timed path is an envelope: ExtendedXml of `{TypeName, Json}`, not native domain XML. See the language inventory."
+      },
+      "FlatSharp": {
+        "source_url": "https://github.com/jamescourtney/FlatSharp",
+        "version": "7.5.1",
+        "specifics": "FlatSharp is a FlatBuffers implementation for .NET. FlatBuffers exists so readers can use serialized data without unpacking. FlatSharp generates C# from `.fbs` and times builder/parse on those tables."
+      },
+      "FsPickler": {
+        "source_url": "https://github.com/mbraceproject/FsPickler",
+        "version": "5.3.2",
+        "specifics": "FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently."
+      },
+      "FsPicklerJson": {
+        "source_url": "https://github.com/mbraceproject/FsPickler",
+        "version": "5.3.2",
+        "specifics": "FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently."
+      },
+      "Google.Protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf",
+        "version": "3.36.1",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "GroBuf": {
+        "source_url": "https://github.com/skbkontur/GroBuf",
+        "version": "1.9.2",
+        "specifics": "GroBuf is a binary serializer from SKB Kontur for high-throughput .NET services. The problem was slow built-in serializers. GroBuf generates a compact binary for .NET types."
+      },
+      "Hyperion": {
+        "source_url": "https://github.com/akkadotnet/Hyperion",
+        "version": "0.12.2",
+        "specifics": "Hyperion is the binary serializer from the Akka.NET lineage (formerly Wire). It exists so an actor system can ship .NET messages efficiently. This row times that graph codec."
+      },
+      "Jil": {
+        "source_url": "https://github.com/kevin-montrose/Jil",
+        "version": "2.17.0",
+        "specifics": "Jil was written by Kevin Montrose for very fast JSON on .NET using Sigil-generated IL. The problem was JSON cost in Stack Overflow-scale services. Jil solves it with a compiled serialize/deserialize path."
+      },
+      "Json.Net": {
+        "source_url": "https://github.com/JamesNK/Newtonsoft.Json",
+        "version": "13.0.4",
+        "specifics": "Json.NET (Newtonsoft.Json) became the de-facto JSON library for .NET long before System.Text.Json. The problem was limited framework JSON. James Newton-King built a flexible, attribute-driven serializer that still defines much of the ecosystem."
+      },
+      "Json.Net (Helper)": {
+        "source_url": "https://github.com/JamesNK/Newtonsoft.Json",
+        "version": "13.0.4",
+        "specifics": "Json.NET (Newtonsoft.Json) became the de-facto JSON library for .NET long before System.Text.Json. The problem was limited framework JSON. James Newton-King built a flexible, attribute-driven serializer that still defines much of the ecosystem. This row times a helper call path of the same Newtonsoft library."
+      },
+      "LightProto": {
+        "source_url": "https://github.com/dameng324/LightProto",
+        "version": "1.4.0",
+        "specifics": "LightProto is a source-generated, protobuf-net-style serializer for modern .NET. The problem was reflection-based protobuf-net on AOT and hot paths. LightProto generates parsers at compile time from `[LightProto.ProtoContract]`."
+      },
+      "MS Binary": {
+        "source_url": "https://github.com/dotnet/runtime",
+        "version": ".NET 8.0.28",
+        "specifics": "BinaryFormatter is legacy .NET binary serialization. It exists so the early framework could persist object graphs. It is obsolete and unsafe for untrusted input; the suite keeps the row as a historical baseline."
+      },
+      "MS Bond Compact": {
+        "source_url": "https://github.com/microsoft/bond",
+        "version": ".NET 8.0.28",
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary."
+      },
+      "MS Bond Fast": {
+        "source_url": "https://github.com/microsoft/bond",
+        "version": ".NET 8.0.28",
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary."
+      },
+      "MS Bond Json": {
+        "source_url": "https://github.com/microsoft/bond",
+        "version": ".NET 8.0.28",
+        "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol."
+      },
+      "MS DataContract": {
+        "source_url": "https://github.com/dotnet/runtime",
+        "version": ".NET 8.0.28",
+        "specifics": "DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules."
+      },
+      "MS DataContract Json": {
+        "source_url": "https://github.com/dotnet/runtime",
+        "version": ".NET 8.0.28",
+        "specifics": "DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules."
+      },
+      "MS XmlSerializer": {
+        "source_url": "https://github.com/dotnet/runtime",
+        "version": ".NET 8.0.28",
+        "specifics": "XmlSerializer is classic .NET XML serialization. It exists so the framework could map objects to XML documents. This row is real domain XML when the attributes allow it."
+      },
+      "MemoryPack": {
+        "source_url": "https://github.com/Cysharp/MemoryPack",
+        "specifics": "MemoryPack was created by Yoshifumi Kawai for extremely fast, source-generated binary serialization on modern .NET. The problem was existing binary libraries allocating and reflecting too much. `[MemoryPackable]` types get generated encode/decode."
+      },
+      "MessagePack-CSharp": {
+        "source_url": "https://github.com/MessagePack-CSharp/MessagePack-CSharp",
+        "version": "2.5.302",
+        "specifics": "MessagePack-CSharp is the official MessagePack implementation for .NET (neuecc / MessagePack-CSharp). MessagePack exists as compact binary JSON. This library is the standard .NET codec, including a contractless resolver."
+      },
+      "Migrant": {
+        "source_url": "https://github.com/antmicro/Migrant",
+        "version": "0.13.0.0",
+        "specifics": "Migrant is Antmicro's .NET binary serializer for object graphs. In this suite the timed path is a JSON envelope, not native Migrant domain graphs. See the language inventory."
+      },
+      "Nerdbank.MessagePack": {
+        "source_url": "https://github.com/AArnott/Nerdbank.MessagePack",
+        "specifics": "Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses reflection-based POCO shapes with stable numeric keys and the library's default value retention."
+      },
+      "NetJSON": {
+        "source_url": "https://github.com/rpgmaker/NetJSON",
+        "version": "1.0.0",
+        "specifics": "NetJSON is a small, fast JSON serializer for .NET. It was created as a lighter alternative to the large JSON frameworks. This row times its default encode/decode path."
+      },
+      "NetSerializer": {
+        "source_url": "https://github.com/tomba/netserializer",
+        "version": "4.1.2",
+        "specifics": "NetSerializer is a compact, fast binary serializer for .NET. It was written to pack predefined types with very little overhead compared to BinaryFormatter."
+      },
+      "ProtoBuf": {
+        "source_url": "https://github.com/protobuf-net/protobuf-net",
+        "version": "2.4.9.1",
+        "specifics": "protobuf-net was created so .NET could speak Protocol Buffers without Google's generated C# being the only path. The problem was protobuf's IDL-first workflow for POCO-heavy .NET code. It attributes existing types (`[ProtoContract]`) and generates or interprets a protobuf-compatible encoding."
+      },
+      "ServiceStack": {
+        "source_url": "https://github.com/ServiceStack/ServiceStack.Text",
+        "version": "6.11.0",
+        "specifics": "ServiceStack.Text is the serializer stack behind ServiceStack. It was created so that framework had a fast, built-in JSON (and JSV) codec. This suite times the JSON path and the non-JSON type serializer as separate rows. This row times the non-JSON ServiceStack type serializer."
+      },
+      "ServiceStack Json": {
+        "source_url": "https://github.com/ServiceStack/ServiceStack.Text",
+        "version": "6.11.0",
+        "specifics": "ServiceStack.Text is the serializer stack behind ServiceStack. It was created so that framework had a fast, built-in JSON (and JSV) codec. This suite times the JSON path and the non-JSON type serializer as separate rows. This row times ServiceStack.Text JSON."
+      },
+      "SharpSerializer": {
+        "source_url": "https://github.com/polenter/SharpSerializer",
+        "specifics": "SharpSerializer is a .NET serializer that can write binary or XML. It was created as a simple, portable alternative to framework serializers for app persistence."
+      },
+      "SharpYaml": {
+        "source_url": "https://github.com/xoofx/SharpYaml",
+        "version": "3.13.1",
+        "specifics": "SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet lineage ideas). It exists as another maintained YAML stack for C#."
+      },
+      "SpanJson": {
+        "source_url": "https://github.com/Tornhoof/SpanJson",
+        "version": "4.2.1",
+        "specifics": "SpanJson was created to serialize JSON on .NET using `Span<T>` and modern memory primitives. The problem was older JSON libraries allocating too many strings. It writes UTF-8 directly from spans."
+      },
+      "System.Text.Json": {
+        "source_url": "https://github.com/dotnet/runtime",
+        "version": "8.0.0.0",
+        "specifics": "System.Text.Json is the built-in JSON serializer for modern .NET. It was created so the platform had a fast, AOT-friendly JSON stack without Newtonsoft. It solves that with a serializer in the runtime and source-generation options."
+      },
+      "Utf8Json": {
+        "source_url": "https://github.com/neuecc/Utf8Json",
+        "version": "1.3.7",
+        "specifics": "Utf8Json was written by Yoshifumi Kawai (neuecc) as a fast UTF-8 JSON serializer for C#. The problem was string-heavy JSON APIs. It encodes directly to UTF-8 bytes."
+      },
+      "YAXLib": {
+        "source_url": "https://github.com/sinairv/YAXLib",
+        "version": "4.5.0",
+        "specifics": "YAXLib is a flexible XML serializer for .NET. The problem was XmlSerializer and DataContract being rigid about XML shape. YAXLib lets you control the XML more directly on domain types."
+      },
+      "YamlDotNet": {
+        "source_url": "https://github.com/aaubry/YamlDotNet",
+        "version": "17.1.0",
+        "specifics": "YamlDotNet is the usual YAML library for .NET. YAML exists as a human-friendly config language. YamlDotNet implements YAML 1.1/1.2 serialize/deserialize."
+      },
+      "ZeroFormatter": {
+        "source_url": "https://github.com/neuecc/ZeroFormatter",
+        "version": "1.6.4",
+        "specifics": "ZeroFormatter was created (neuecc) as a fast, zero-encoding-style binary serializer for .NET, inspired by FlatBuffers/Cap'n Proto ideas. Dynamic IL is broken on .NET 8; this suite uses KeyTuple shapes."
+      },
+      "fastJson": {
+        "source_url": "https://github.com/mgholam/fastJSON",
+        "version": "2.4.0.4",
+        "specifics": "fastJSON (mgholam) is a small .NET JSON serializer. It was written to keep JSON simple and dependency-light. This row times that compact implementation."
+      }
+    },
+    "go": {
+      "encoding/gob": {
+        "source_url": "https://github.com/golang/go/tree/master/src/encoding/gob",
+        "version": "go1.24.13",
+        "specifics": "encoding/gob is Go's native binary stream for Go types. It was created so Go programs can RPC and persist values without an IDL. It is not a cross-language wire format."
+      },
+      "encoding/json": {
+        "source_url": "https://github.com/golang/go/tree/master/src/encoding/json",
+        "version": "go1.24.13",
+        "specifics": "Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat."
+      },
+      "fxamacker/cbor": {
+        "source_url": "https://github.com/fxamacker/cbor",
+        "version": "2.9.4",
+        "specifics": "fxamacker/cbor is a widely used Go CBOR codec for RFC 8949. CBOR is the IETF binary JSON-like format. This library focuses on correctness options (including deterministic modes) and reusable Enc/DecMode values."
+      },
+      "goccy/go-json": {
+        "source_url": "https://github.com/goccy/go-json",
+        "version": "0.10.6",
+        "specifics": "goccy/go-json was written as a faster drop-in for `encoding/json`. The problem was stdlib JSON cost in high-QPS Go services. It keeps the same API and implements a faster encode/decode path."
+      },
+      "goccy/go-yaml": {
+        "source_url": "https://github.com/goccy/go-yaml",
+        "version": "1.19.2",
+        "specifics": "goccy/go-yaml is a high-performance YAML 1.2 library for Go. The problem was that go-yaml v2/v3 was often the slow path in config-heavy services. It aims at a faster Marshal/Unmarshal."
+      },
+      "hamba/avro": {
+        "source_url": "https://github.com/hamba/avro",
+        "version": "2.31.0",
+        "specifics": "hamba/avro is a high-performance Avro library for Go. Avro was created for compact, schema-driven records. hamba focuses on a frozen API and schema cache so the timed path is encode/decode, not schema parse."
+      },
+      "jsoniter": {
+        "source_url": "https://github.com/json-iterator/go",
+        "version": "1.1.12",
+        "specifics": "json-iterator/go was created as a high-performance, stdlib-compatible JSON library for Go. The problem was the same stdlib bottleneck. It solves it with a compatible config and a faster implementation."
+      },
+      "kelindar/binary": {
+        "source_url": "https://github.com/kelindar/binary",
+        "version": "1.0.19",
+        "specifics": "kelindar/binary is a compact, Go-only packer. It was written for high-throughput in-process and Go-to-Go payloads where a public schema is not required. Encoder.Reset is the reuse path."
+      },
+      "linkedin/goavro": {
+        "source_url": "https://github.com/linkedin/goavro",
+        "version": "2.15.0",
+        "specifics": "LinkedIn goavro is an Avro binary codec for Go, used in Kafka/Avro pipelines. Avro exists so producers and consumers share a schema. goavro speaks BinaryFromNative maps (OCF is a different format)."
+      },
+      "mongo-bson": {
+        "source_url": "https://github.com/mongodb/mongo-go-driver",
+        "version": "1.17.9",
+        "specifics": "BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path."
+      },
+      "pelletier/go-toml": {
+        "source_url": "https://github.com/pelletier/go-toml",
+        "version": "2.4.3",
+        "specifics": "pelletier/go-toml is a TOML 1.0 parser/encoder for Go. TOML was created as an obvious config language. This library is a common Go implementation of that spec."
+      },
+      "protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf-go",
+        "version": "1.36.12",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "segmentio/encoding/json": {
+        "source_url": "https://github.com/segmentio/encoding",
+        "version": "0.5.4",
+        "specifics": "segmentio/encoding/json is a production fork of a faster Go JSON stack, kept as a drop-in for `encoding/json`. The problem was stdlib JSON in large Go services. This row times that API."
+      },
+      "shamaton/msgpack": {
+        "source_url": "https://github.com/shamaton/msgpack",
+        "version": "3.2.3",
+        "specifics": "shamaton/msgpack is another Go MessagePack implementation, including a struct-as-array mode that omits field-name keys. The problem was MessagePack map overhead for known structs. Array mode solves that with positional fields."
+      },
+      "shamaton/msgpack (array)": {
+        "source_url": "https://github.com/shamaton/msgpack",
+        "version": "3.2.3",
+        "specifics": "shamaton/msgpack is another Go MessagePack implementation, including a struct-as-array mode that omits field-name keys. The problem was MessagePack map overhead for known structs. Array mode solves that with positional fields. This row uses struct-as-array (no field-name keys) and the matching stream helpers."
+      },
+      "sonic": {
+        "source_url": "https://github.com/bytedance/sonic",
+        "version": "1.15.4",
+        "specifics": "Bytedance sonic was written to push Go JSON through JIT and SIMD on the hot path. The problem was that even fast reflection JSON was not enough at ByteDance scale. sonic solves it with `ConfigDefault` plus optional Pretouch."
+      },
+      "ugorji/cbor": {
+        "source_url": "https://github.com/ugorji/go",
+        "version": "1.3.2",
+        "specifics": "ugorji/go (go-codec) was created as one Go library that speaks several formats (JSON, MessagePack, CBOR, Binc) through a shared handle/encoder model. The problem was maintaining a separate stack per format. This row times one handle of that multi-format codec. This row times the CborHandle."
+      },
+      "ugorji/json": {
+        "source_url": "https://github.com/ugorji/go",
+        "version": "1.3.2",
+        "specifics": "ugorji/go (go-codec) was created as one Go library that speaks several formats (JSON, MessagePack, CBOR, Binc) through a shared handle/encoder model. The problem was maintaining a separate stack per format. This row times one handle of that multi-format codec. This row times the JsonHandle."
+      },
+      "ugorji/msgpack": {
+        "source_url": "https://github.com/ugorji/go",
+        "version": "1.3.2",
+        "specifics": "ugorji/go (go-codec) was created as one Go library that speaks several formats (JSON, MessagePack, CBOR, Binc) through a shared handle/encoder model. The problem was maintaining a separate stack per format. This row times one handle of that multi-format codec. This row times the MsgpackHandle."
+      },
+      "vmihailenco/msgpack": {
+        "source_url": "https://github.com/vmihailenco/msgpack",
+        "version": "5.4.1",
+        "specifics": "vmihailenco/msgpack is a popular MessagePack library for Go. MessagePack exists as compact binary JSON. This implementation emphasizes a familiar Encoder/Decoder API with buffer reuse."
+      }
+    },
+    "java": {
+      "avro": {
+        "source_url": "https://github.com/apache/avro",
+        "version": "1.12.1",
+        "specifics": "Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library."
+      },
+      "bson": {
+        "source_url": "https://github.com/mongodb/mongo-java-driver",
+        "version": "5.5.1",
+        "specifics": "BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path."
+      },
+      "capnproto": {
+        "source_url": "https://github.com/capnproto/capnproto-java",
+        "version": "unknown",
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+      },
+      "dsl-json": {
+        "source_url": "https://github.com/ngs-doo/dsl-json",
+        "version": "2.0.2",
+        "specifics": "dsl-json was written for very high-performance JSON on the JVM with compile-time binding. The problem was reflection mappers allocating too much. It reuses a JsonWriter buffer on the hot path."
+      },
+      "fastjson2": {
+        "source_url": "https://github.com/alibaba/fastjson2",
+        "version": "2.0.57",
+        "specifics": "fastjson2 is Alibaba's rewrite of fastjson for high-performance JSON on the JVM. The problem was JSON cost in large Java services (and security issues in fastjson 1.x). fastjson2 solves it with a new FieldBased API."
+      },
+      "flatbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "unknown",
+        "specifics": "FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "version": "1.3.0",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol."
+      },
+      "gson": {
+        "source_url": "https://github.com/google/gson",
+        "version": "2.14.0",
+        "specifics": "Gson was created at Google to convert Java objects to JSON and back with a simple API. The problem was boilerplate-heavy Java JSON. Gson solves it with reflection over POJOs and a JsonWriter/Reader stream API."
+      },
+      "hessian": {
+        "source_url": "https://github.com/ebourg/hessian",
+        "version": "4.0.66",
+        "specifics": "Hessian is Caucho's compact binary web-service protocol from the Dubbo/Caucho era. The problem was SOAP/XML RPC overhead. Hessian2 write/readObject is the binary that this row times."
+      },
+      "ion": {
+        "source_url": "https://github.com/amazon-ion/ion-java",
+        "version": "2.19.0",
+        "specifics": "Amazon Ion was created as a rich, self-describing superset of JSON (text and binary) for Amazon services. Official Ion libraries and Jackson Ion modules implement that model."
+      },
+      "jackson": {
+        "source_url": "https://github.com/FasterXML/jackson-databind",
+        "version": "2.19.0",
+        "specifics": "Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack)."
+      },
+      "jackson-cbor": {
+        "source_url": "https://github.com/FasterXML/jackson-dataformats-binary",
+        "version": "2.19.0",
+        "specifics": "Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's CBOR mapper."
+      },
+      "jackson-smile": {
+        "source_url": "https://github.com/FasterXML/jackson-dataformats-binary",
+        "version": "2.19.0",
+        "specifics": "Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's Smile (binary JSON) mapper."
+      },
+      "jackson-yaml": {
+        "source_url": "https://github.com/FasterXML/jackson-dataformats-text",
+        "version": "unknown",
+        "specifics": "Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack). This row times Jackson's YAML mapper."
+      },
+      "java-serialization": {
+        "source_url": "https://github.com/openjdk/jdk",
+        "version": "21.0.11",
+        "specifics": "Java Object Serialization (`ObjectOutputStream`) is the language's built-in graph serializer. It exists so the JVM can persist and RMI Java objects. It is not a portable wire format."
+      },
+      "jsoniter": {
+        "source_url": "https://github.com/json-iterator/java",
+        "version": "0.9.23",
+        "specifics": "jsoniter for Java was created as a high-performance JSON library with an optional codegen path. The problem was Jackson/Gson overhead. This suite uses DYNAMIC mode plus javassist."
+      },
+      "kryo": {
+        "source_url": "https://github.com/EsotericSoftware/kryo",
+        "version": "5.6.2",
+        "specifics": "Kryo was written as a fast binary serializer for JVM object graphs (games, caches, RPC). The problem was Java serialization being slow and verbose. Kryo solves it with a compact binary and reusable Output/Input."
+      },
+      "moshi": {
+        "source_url": "https://github.com/square/moshi",
+        "version": "1.15.2",
+        "specifics": "Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio."
+      },
+      "msgpack": {
+        "source_url": "https://github.com/msgpack/msgpack-java",
+        "version": "0.9.8",
+        "specifics": "msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack."
+      },
+      "protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf",
+        "version": "4.35.0",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "protostuff": {
+        "source_url": "https://github.com/protostuff/protostuff",
+        "version": "1.8.0",
+        "specifics": "protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times."
+      }
+    },
+    "javascript": {
+      "@msgpack/msgpack": {
+        "source_url": "https://github.com/msgpack/msgpack-javascript",
+        "version": "3.1.3",
+        "specifics": "The official MessagePack JavaScript implementation (`@msgpack/msgpack`). MessagePack was created as compact binary JSON. This package is the reference encode/decode API for JS."
+      },
+      "JSON.stringify": {
+        "source_url": "https://github.com/nodejs/node",
+        "version": "node-24.15.0",
+        "specifics": "`JSON.stringify` / `JSON.parse` are the ECMAScript standard JSON APIs. They exist so every JavaScript host can speak RFC 8259 without a library. This row times Node's V8 implementation."
+      },
+      "avsc": {
+        "source_url": "https://github.com/mtth/avsc",
+        "version": "5.7.9",
+        "specifics": "avsc brings Apache Avro to JavaScript. Avro was created for compact, schema-driven records in data pipelines. avsc solves the JS side with `Type.forSchema` and buffer encode/decode."
+      },
+      "bebop": {
+        "source_url": "https://github.com/6over3/bebop",
+        "version": "3.2.3",
+        "specifics": "Bebop is a schema-driven binary format created as a simpler, faster alternative to protobuf-like IDL stacks for games and services. The problem was heavy generated code and slow encoders. Bebop solves it with a compact schema and generated writers."
+      },
+      "bser": {
+        "source_url": "https://github.com/facebook/watchman",
+        "version": "2.1.1",
+        "specifics": "BSER is Facebook Watchman's binary protocol: a compact encoding for the watchman's client/server messages. The problem was JSON overhead in a local file-watching daemon. This row times the Node `bser` dump/load path."
+      },
+      "bson": {
+        "source_url": "https://github.com/mongodb/js-bson",
+        "version": "6.10.4",
+        "specifics": "BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path."
+      },
+      "cbor": {
+        "source_url": "https://github.com/hildjj/node-cbor",
+        "version": "9.0.2",
+        "specifics": "node-cbor implements IETF CBOR (RFC 8949) for Node. CBOR exists as the IETF's binary JSON-like format. The library is a full encode/decode implementation of that RFC."
+      },
+      "cbor-x": {
+        "source_url": "https://github.com/kriszyp/cbor-x",
+        "version": "1.6.6",
+        "specifics": "cbor-x is a high-performance CBOR encoder/decoder for JS, from the same author as msgpackr. The problem was slow or allocating CBOR stacks in Node. It solves that with reusable Encoder/Decoder instances."
+      },
+      "devalue": {
+        "source_url": "https://github.com/Rich-Harris/devalue",
+        "version": "5.9.2",
+        "specifics": "devalue was written (SvelteKit and friends) to stringify richer JavaScript values than JSON allows — dates, maps, cyclical graphs — without `eval`. The problem was JSON's limited types and `eval`-based hydrators. devalue solves it with a custom text format."
+      },
+      "fast-json-stringify": {
+        "source_url": "https://github.com/fastify/fast-json-stringify",
+        "version": "6.4.0",
+        "specifics": "fast-json-stringify was created in the Fastify ecosystem to serialize JSON from a JSON Schema much faster than `JSON.stringify`. The problem was that schema-known objects still paid for a fully dynamic walk. It compiles a serializer once and reuses it; this suite decodes with `JSON.parse`."
+      },
+      "flatbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "24.12.23",
+        "specifics": "FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place."
+      },
+      "flexbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "24.12.23",
+        "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "google-protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf-javascript",
+        "version": "3.21.4",
+        "specifics": "This is Google's official JavaScript protobuf runtime (`google-protobuf` / jspb). It exists so the same `.proto` contracts can run in JS. The suite times `serializeBinary` / `deserializeBinary`."
+      },
+      "js-yaml": {
+        "source_url": "https://github.com/nodeca/js-yaml",
+        "version": "4.3.2",
+        "specifics": "js-yaml is the usual Node YAML 1.2 parser/dumper. YAML exists as a human-friendly config language. js-yaml solves the JavaScript side with a widely deployed implementation."
+      },
+      "json-pack-msgpack": {
+        "source_url": "https://github.com/jsonjoy-com/json-pack",
+        "version": "18.30.0",
+        "specifics": "json-pack (jsonjoy) is a family of binary codecs including MessagePack. It was written to give JavaScript a fast, modular binary JSON toolkit. This row times the MsgPack encoder/decoder."
+      },
+      "msgpackr": {
+        "source_url": "https://github.com/kriszyp/msgpackr",
+        "version": "1.12.1",
+        "specifics": "msgpackr was written for high-throughput MessagePack in Node, with reusable Packr/Unpackr instances. The problem was that generic MessagePack libraries allocated too much per call. msgpackr solves that with a performance-oriented encoder/decoder."
+      },
+      "protobuf-es": {
+        "source_url": "https://github.com/bufbuild/protobuf-es",
+        "version": "2.15.0",
+        "specifics": "protobuf-es is Buf's Protocol Buffers implementation for ECMAScript. The problem was that existing JS protobuf stacks did not match modern TypeScript and the official proto3 feature set. It generates TypeScript and times `toBinary` / `fromBinary`."
+      },
+      "protobufjs": {
+        "source_url": "https://github.com/protobufjs/protobuf.js",
+        "version": "7.6.6",
+        "specifics": "protobuf.js is a popular JavaScript Protocol Buffers implementation that can work from a `.proto` or a JSON descriptor. The problem was that Google's JS protobuf was awkward in Node. protobuf.js solves it with a JS-native API."
+      },
+      "sia": {
+        "source_url": "https://github.com/TimeleapLabs/sia",
+        "version": "2.3.0",
+        "specifics": "Sia is Timeleap's compact binary tag format for JS values. It was created as a project-specific, typed binary encoding rather than a public interchange standard. This row times those primitive writers."
+      },
+      "simdjson-parse+JSON.stringify": {
+        "source_url": "https://github.com/simdjson/simdjson",
+        "version": "0.9.2",
+        "specifics": "simdjson was created to parse JSON at memory-bandwidth speeds using SIMD. The problem was that conventional parsers were far from hardware limits. This row uses simdjson only for parse; serialize is still `JSON.stringify`. Only deserialize uses SIMD; serialize is stdlib `JSON.stringify`."
+      },
+      "v8-serializer": {
+        "source_url": "https://github.com/nodejs/node",
+        "version": "v8-13.6.233.17-node.48",
+        "specifics": "Node's `v8.serialize` / `v8.deserialize` snapshot V8 values. They exist so the engine can persist structured clones, not as a portable wire format. This row times that Node-only API."
+      }
+    },
+    "kotlin": {
+      "avro": {
+        "source_url": "https://github.com/apache/avro",
+        "version": "1.12.1",
+        "specifics": "Apache Avro was created for Hadoop-era pipelines: compact binary records with the schema stored out of band. Official language runtimes implement that encoding. This row times the platform's Avro library."
+      },
+      "avro4k": {
+        "source_url": "https://github.com/avro-kotlin/avro4k",
+        "version": "2.9.0",
+        "specifics": "avro4k brings Apache Avro to kotlinx.serialization. Avro exists for compact, schema-driven records. avro4k generates the Avro path from `@Serializable` types instead of Java reflect."
+      },
+      "capnproto": {
+        "source_url": "https://github.com/capnproto/capnproto-java",
+        "version": "0.1.16",
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+      },
+      "flatbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "24.3.25",
+        "specifics": "FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "version": "1.3.0",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol."
+      },
+      "gson": {
+        "source_url": "https://github.com/google/gson",
+        "version": "2.14.0",
+        "specifics": "Gson was created at Google to convert Java objects to JSON and back with a simple API. The problem was boilerplate-heavy Java JSON. Gson solves it with reflection over POJOs and a JsonWriter/Reader stream API."
+      },
+      "jackson": {
+        "source_url": "https://github.com/FasterXML/jackson-module-kotlin",
+        "version": "2.19.0",
+        "specifics": "Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack)."
+      },
+      "jackson-cbor": {
+        "source_url": "https://github.com/FasterXML/jackson-dataformats-binary",
+        "version": "2.19.0",
+        "specifics": "Jackson was created as the standard data-binding toolkit for Java JSON (and later many binary/text formats). The problem was that Java needed a fast, annotation-driven mapper for REST and services. Jackson solves it with ObjectMapper / ObjectWriter and format modules (CBOR, Smile, YAML, Ion, MessagePack)."
+      },
+      "kaml": {
+        "source_url": "https://github.com/charleskorn/kaml",
+        "version": "0.72.0",
+        "specifics": "kaml is YAML for kotlinx.serialization. YAML exists as a human-friendly config language. kaml solves Kotlin YAML by implementing a format on the same `@Serializable` types."
+      },
+      "kbson": {
+        "source_url": "https://github.com/jershell/kbson",
+        "version": "0.5.0",
+        "specifics": "kbson is BSON for kotlinx.serialization. BSON exists for MongoDB documents. kbson lets Kotlin `@Serializable` types dump/load BSON without a separate mapper."
+      },
+      "kotlinx-cbor": {
+        "source_url": "https://github.com/Kotlin/kotlinx.serialization",
+        "version": "1.8.1",
+        "specifics": "kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in."
+      },
+      "kotlinx-hocon": {
+        "source_url": "https://github.com/lightbend/config",
+        "version": "1.8.1",
+        "specifics": "HOCON (Human-Optimized Config Object Notation) was created at Typesafe/Lightbend for Play/Akka configuration. The problem was JSON/YAML config that was awkward for humans. kotlinx-serialization-hocon speaks that format."
+      },
+      "kotlinx-ion": {
+        "source_url": "https://github.com/amazon-ion/ion-java",
+        "version": "1.11.11",
+        "specifics": "Amazon Ion was created as a rich, self-describing superset of JSON (text and binary) for Amazon services. Official Ion libraries and Jackson Ion modules implement that model."
+      },
+      "kotlinx-json": {
+        "source_url": "https://github.com/Kotlin/kotlinx.serialization",
+        "version": "1.8.1",
+        "specifics": "kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in."
+      },
+      "kotlinx-properties": {
+        "source_url": "https://github.com/Kotlin/kotlinx.serialization",
+        "version": "1.8.1",
+        "specifics": "kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in."
+      },
+      "kotlinx-protobuf": {
+        "source_url": "https://github.com/Kotlin/kotlinx.serialization",
+        "version": "1.8.1",
+        "specifics": "kotlinx.serialization is JetBrains' official serialization framework for Kotlin. The problem was that Kotlin needed compile-time serializers, not Java reflection, across JSON and other formats. The compiler plugin generates serializers; format libraries plug in."
+      },
+      "kryo": {
+        "source_url": "https://github.com/EsotericSoftware/kryo",
+        "version": "5.6.2",
+        "specifics": "Kryo was written as a fast binary serializer for JVM object graphs (games, caches, RPC). The problem was Java serialization being slow and verbose. Kryo solves it with a compact binary and reusable Output/Input."
+      },
+      "moshi-codegen": {
+        "source_url": "https://github.com/square/moshi",
+        "version": "1.15.2",
+        "specifics": "Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio. This row times KSP-generated JsonAdapters on the same domain types as moshi-reflect."
+      },
+      "moshi-reflect": {
+        "source_url": "https://github.com/square/moshi",
+        "version": "1.15.2",
+        "specifics": "Moshi was created at Square as a modern JSON library for Java and Android, successor-minded to Gson. The problem was Gson's older model on Android. Moshi solves it with JsonAdapter, codegen or reflection, and Okio. This row times reflection adapters (`KotlinJsonAdapterFactory`) on the same types as moshi-codegen."
+      },
+      "msgpack": {
+        "source_url": "https://github.com/msgpack/msgpack-java",
+        "version": "0.9.8",
+        "specifics": "msgpack-java is the official MessagePack library for the JVM. MessagePack exists as compact binary JSON. This suite times the Jackson MessagePack mapper on that stack."
+      },
+      "obor": {
+        "source_url": "https://github.com/orandja/obor",
+        "version": "2.1.3",
+        "specifics": "obor is an alternative CBOR implementation for kotlinx.serialization. CBOR is the IETF binary JSON-like format. obor exists as a different kotlinx CBOR stack from the official one."
+      },
+      "protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf",
+        "version": "4.35.0",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "protobuf-kotlin": {
+        "source_url": "https://github.com/protocolbuffers/protobuf",
+        "version": "4.35.0",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format. This row uses the generated Kotlin DSL builders on the same protobuf wire types as the Java API row."
+      },
+      "protostuff": {
+        "source_url": "https://github.com/protostuff/protostuff",
+        "version": "1.8.0",
+        "specifics": "protostuff was created to serialize Java objects with protobuf-like efficiency without writing `.proto` files. The problem was protobuf's IDL tax for internal graphs. Runtime schemas and LinkedBuffer reuse are the solution this row times."
+      },
+      "thrift": {
+        "source_url": "https://github.com/apache/thrift",
+        "version": "0.21.0",
+        "specifics": "Apache Thrift was created at Facebook so many languages could share RPC and serialization from one IDL. The problem was hand-written cross-language services. Thrift solves it with a schema compiler and protocols such as TCompactProtocol."
+      },
+      "tomlkt": {
+        "source_url": "https://github.com/Peanuuutz/tomlkt",
+        "version": "0.5.0",
+        "specifics": "tomlkt is TOML for kotlinx.serialization. TOML exists as an obvious config language. tomlkt encodes `@Serializable` types to TOML text."
+      }
+    },
+    "mojo": {
+      "EmberJson": {
+        "source_url": "https://github.com/bgreni/EmberJson",
+        "version": "0.3.4",
+        "specifics": "EmberJson is a Mojo JSON library using language reflection. Mojo is a young language; EmberJson exists to give it a community JSON serialize/deserialize path. This row times that reflection API."
+      },
+      "ehsanmok-json": {
+        "source_url": "https://github.com/ehsanmok/json",
+        "version": "0.4.0",
+        "specifics": "ehsanmok/json is a Mojo JSON parser/serializer. It was written to give Mojo a JSON stack with a Value tree and a `serialize_json` path. Decode in this suite is `loads` plus a Value walk."
+      },
+      "gld-yaml": {
+        "source_url": "https://github.com/leo-gan/gld-yaml",
+        "version": "0.2.0",
+        "specifics": "gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a human-friendly config language. The library was written so Mojo can speak YAML on suite types."
+      },
+      "mojo-avro": {
+        "source_url": "https://github.com/leo-gan/gld-avro",
+        "version": "0.4.0",
+        "specifics": "gld-avro (leo-gan) implements Apache Avro for Mojo via `AvroDatum`. Avro exists for compact, schema-driven records. The library gives Mojo that encoding."
+      },
+      "mojo-cbor": {
+        "source_url": "https://github.com/leo-gan/gld-cbor",
+        "version": "0.6.0",
+        "specifics": "gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the IETF binary JSON-like format. The library exists to give Mojo a first-class CBOR encode/decode."
+      },
+      "mojo-json": {
+        "source_url": "https://github.com/leo-gan/gld-json",
+        "version": "0.3.0",
+        "specifics": "gld-json (leo-gan) is a typed JSON WireWriter/Reader for Mojo. It was created because Mojo lacked a suite-ready, typed JSON codec aligned with this benchmark's domain types."
+      },
+      "mojo-msgpack": {
+        "source_url": "https://github.com/leo-gan/gld-messagepack",
+        "version": "0.3.0",
+        "specifics": "gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format."
+      },
+      "mojo-protobuf": {
+        "source_url": "https://github.com/leo-gan/gld-protobuf",
+        "version": "0.6.0",
+        "specifics": "gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf exists as a language-neutral IDL. This library generates Mojo from the suite `.proto` and times encode/decode."
+      },
+      "mojo-toml": {
+        "source_url": "https://github.com/DataBooth/mojo-toml",
+        "version": "0.9.1",
+        "specifics": "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This is the published Mojo TOML implementation (`gld-toml` is not out yet)."
+      }
+    },
+    "php": {
+      "avro": {
+        "source_url": "https://github.com/flix-tech/avro-php",
+        "version": "5.2.0",
+        "specifics": "flix-tech/avro-php is a PHP implementation of Apache Avro. Avro exists for compact, schema-driven records. This row times binary Avro (not the object container file format)."
+      },
+      "bson": {
+        "source_url": "https://github.com/mongodb/mongo-php-driver",
+        "specifics": "BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path."
+      },
+      "cbor": {
+        "source_url": "https://github.com/Spomky-Labs/cbor-php",
+        "version": "3.4.1",
+        "specifics": "spomky-labs/cbor-php implements RFC 8949 CBOR in PHP. CBOR is the IETF binary JSON-like format. The library is a PHP encoder/decoder of that RFC."
+      },
+      "igbinary": {
+        "source_url": "https://github.com/igbinary/igbinary",
+        "specifics": "igbinary is a PECL replacement for PHP `serialize` with a more compact binary. The problem was PHP's verbose native serializer in caches and sessions. igbinary drops duplicate strings and uses a denser layout."
+      },
+      "jms-json": {
+        "source_url": "https://github.com/schmittjoh/serializer",
+        "version": "3.32.9",
+        "specifics": "JMS Serializer was created for PHP applications that needed annotation-driven object serialization (especially APIs). The problem was mapping rich object graphs to JSON. This row times the JSON encoder."
+      },
+      "json": {
+        "source_url": "https://github.com/php/php-src/tree/master/ext/json",
+        "version": "8.3.19",
+        "specifics": "PHP's `json_encode` / `json_decode` are the language's standard JSON APIs. They exist so PHP can speak the web's data format without a package. This row times the bundled ext-json."
+      },
+      "msgpack-pecl": {
+        "source_url": "https://github.com/msgpack/msgpack-php",
+        "specifics": "ext-msgpack is the official PECL MessagePack extension for PHP. MessagePack exists as compact binary JSON. The C extension is the fast path versus userland MessagePack."
+      },
+      "protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf",
+        "version": "v4.33.6+php",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "rybakit-msgpack": {
+        "source_url": "https://github.com/rybakit/msgpack.php",
+        "version": "v0.9.2",
+        "specifics": "rybakit/msgpack is a pure-PHP MessagePack implementation. MessagePack exists as compact binary JSON. This package is the userland baseline versus the PECL extension."
+      },
+      "serialize": {
+        "source_url": "https://github.com/php/php-src",
+        "version": "8.3.19",
+        "specifics": "PHP `serialize` / `unserialize` is the language's native object format. It exists so PHP can persist values across requests. It is PHP-only and unsafe for untrusted input."
+      },
+      "simdjson": {
+        "source_url": "https://github.com/crazyxman/simdjson_php",
+        "specifics": "ext-simdjson binds the simdjson parser to PHP. simdjson was created to parse JSON at memory-bandwidth speeds. This row uses SIMD only for decode; encode is `json_encode`."
+      },
+      "symfony-json": {
+        "source_url": "https://github.com/symfony/serializer",
+        "version": "v7.4.18",
+        "specifics": "The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders."
+      },
+      "symfony-xml": {
+        "source_url": "https://github.com/symfony/serializer",
+        "version": "v7.4.18",
+        "specifics": "The Symfony Serializer component was created so Symfony apps had a normalizer/encoder pipeline for JSON, XML, and more. The problem was ad-hoc `json_encode` of domain objects. This suite times the JSON and XML encoders."
+      },
+      "yaml": {
+        "source_url": "https://github.com/symfony/yaml",
+        "version": "v7.4.18",
+        "specifics": "The Symfony YAML component is a pure-PHP YAML parser/dumper. YAML exists as a human-friendly config language. Symfony YAML is the common userland implementation in PHP apps."
+      },
+      "yaml-pecl": {
+        "source_url": "https://github.com/php/pecl-file_formats-yaml",
+        "specifics": "ext-yaml is the PECL binding to LibYAML. YAML exists as a human-friendly config language. The extension is the C-speed path versus Symfony's pure-PHP YAML."
+      }
+    },
+    "python": {
+      "amazon-ion": {
+        "source_url": "https://github.com/amazon-ion/ion-python",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation."
+      },
+      "avro": {
+        "source_url": "https://github.com/fastavro/fastavro",
+        "version": "1.12.2",
+        "specifics": "fastavro is a Cython Avro reader/writer for Python. Avro was created so data systems could store compact records with the schema out of band. fastavro solves the CPython performance problem of the older pure-Python Avro stack."
+      },
+      "bson": {
+        "source_url": "https://github.com/mongodb/mongo-python-driver",
+        "specifics": "BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path."
+      },
+      "cbor2": {
+        "source_url": "https://github.com/agronholm/cbor2",
+        "version": "6.1.4",
+        "specifics": "cbor2 is a Python implementation of IETF CBOR (RFC 8949). CBOR was created as a binary JSON-like format for constrained devices and IETF protocols. cbor2 solves the Python side with a widely used encoder/decoder."
+      },
+      "cloudpickle": {
+        "source_url": "https://github.com/cloudpipe/cloudpickle",
+        "version": "3.1.2",
+        "specifics": "cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model — with the same security caveats."
+      },
+      "dill": {
+        "source_url": "https://github.com/uqfoundation/dill",
+        "version": "0.4.1",
+        "specifics": "dill extends pickle further for scientific Python: graphs, lambdas, and interpreter state. The problem was that pickle and even cloudpickle still failed on objects researchers actually use. dill solves that with a broader, mostly pure-Python save path."
+      },
+      "flatbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "25.12.19",
+        "specifics": "FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place."
+      },
+      "flexbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "json": {
+        "source_url": "https://github.com/python/cpython/tree/main/Lib/json",
+        "version": "python-3.14.0",
+        "specifics": "The CPython `json` module is the language's standard JSON encoder/decoder (RFC 8259). It was added so Python programs had a stdlib way to speak the web's data format. The implementation is a C-accelerated codec over Python objects; this suite times that path as the baseline."
+      },
+      "mashumaro": {
+        "source_url": "https://github.com/Fatal1ty/mashumaro",
+        "version": "3.22",
+        "specifics": "mashumaro was written to serialize Python dataclasses to JSON and other formats with code generation, not runtime reflection on every call. The problem was slow dataclass codecs. This row times the ORJSON encoder/decoder path."
+      },
+      "msgpack": {
+        "source_url": "https://github.com/msgpack/msgpack-python",
+        "version": "1.2.2",
+        "specifics": "msgpack-python is the official MessagePack implementation for Python. MessagePack was created to be as compact as a binary format and as simple as JSON. The package exposes pack/unpack (and stream APIs) on Python objects."
+      },
+      "msgspec": {
+        "source_url": "https://github.com/jcrist/msgspec",
+        "version": "0.21.1",
+        "specifics": "msgspec was created as a high-performance serialization library for Python with typed structures, not just dicts. The problem was that fast JSON libraries still paid for untyped Python objects, and validation libraries were slow. msgspec solves it with array-like Structs and a compiled encode/decode path (JSON and MessagePack)."
+      },
+      "msgspec-msgpack": {
+        "source_url": "https://github.com/jcrist/msgspec",
+        "version": "0.21.1",
+        "specifics": "msgspec was created as a high-performance serialization library for Python with typed structures, not just dicts. The problem was that fast JSON libraries still paid for untyped Python objects, and validation libraries were slow. msgspec solves it with array-like Structs and a compiled encode/decode path (JSON and MessagePack). This row times the MessagePack encoder/decoder on the same Struct types."
+      },
+      "newsmile": {
+        "source_url": "https://github.com/FasterXML/smile-format-specification",
+        "specifics": "Smile is FasterXML's binary JSON: Jackson-compatible data with a smaller, faster binary encoding. The problem was JSON text cost in JVM services that already used Jackson. Smile solves it with a documented binary JSON token stream."
+      },
+      "orjson": {
+        "source_url": "https://github.com/ijl/orjson",
+        "version": "3.12.0",
+        "specifics": "orjson was written to give CPython a JSON codec that is both fast and correct. The problem was that stdlib `json` is slow on large payloads, while many speed-focused alternatives cut corners on Unicode, strictness, or types. orjson solves that with a Rust extension that implements RFC 8259 on dataclasses and common types."
+      },
+      "pickle": {
+        "source_url": "https://github.com/python/cpython/tree/main/Lib/pickle.py",
+        "version": "python-3.14.0",
+        "specifics": "pickle is CPython's native object serializer. It exists so Python processes can snapshot almost any object graph. That power is also the problem: loading untrusted pickle can run arbitrary code. This row times the stdlib C implementation."
+      },
+      "plistlib": {
+        "source_url": "https://github.com/python/cpython/tree/main/Lib/plistlib.py",
+        "specifics": "plistlib is CPython's reader/writer for Apple property lists. plists exist so Apple platforms can store typed configuration. The stdlib module speaks that format from Python."
+      },
+      "protobuf": {
+        "source_url": "https://github.com/protocolbuffers/protobuf",
+        "version": "7.36.1",
+        "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
+      },
+      "py-ubjson": {
+        "source_url": "https://github.com/Iotic-Labs/py-ubjson",
+        "specifics": "py-ubjson implements Universal Binary JSON in Python. UBJSON was created as a binary form of JSON with explicit type markers. The library is a straightforward encoder/decoder of that spec."
+      },
+      "pydantic": {
+        "source_url": "https://github.com/pydantic/pydantic",
+        "version": "2.13.5",
+        "specifics": "Pydantic was created to validate and serialize Python data for APIs (later FastAPI). The problem was that ad-hoc dicts and hand-written validators were error-prone. Pydantic solves it with typed models and JSON dump/load (`model_dump_json` / TypeAdapter)."
+      },
+      "rapidjson": {
+        "source_url": "https://github.com/python-rapidjson/python-rapidjson",
+        "version": "1.25",
+        "specifics": "python-rapidjson wraps Tencent RapidJSON so CPython can use that C++ parser/generator. RapidJSON was written for speed with a SAX and DOM API. The Python binding exposes `dumps`/`loads` on dicts."
+      },
+      "serpyco-rs": {
+        "source_url": "https://github.com/opengovsg/serpyco-rs",
+        "version": "1.22.0",
+        "specifics": "serpyco-rs is a fast dataclass JSON serializer (Rust core) for Python. The problem was that dataclass-to-JSON in pure Python is slow. It solves that by compiling the dump/load path and using orjson on the wire."
+      },
+      "tomllib": {
+        "source_url": "https://github.com/python/cpython/tree/main/Lib/tomllib",
+        "specifics": "tomllib is CPython's stdlib TOML 1.0 parser (3.11+). TOML was created as an obvious, minimal config language. The stdlib module solves 'every project vendors a TOML parser' by shipping one."
+      },
+      "yaml": {
+        "source_url": "https://github.com/yaml/pyyaml",
+        "version": "6.0.3",
+        "specifics": "PyYAML is the long-standing YAML 1.1 processor for Python. YAML was created as a human-friendly superset of JSON for config and documents. PyYAML implements that model with dump/load."
+      }
+    },
+    "rust": {
+      "bincode": {
+        "source_url": "https://github.com/bincode-org/bincode",
+        "version": "2.0.1",
+        "specifics": "bincode is a compact binary format for serde. It was created so Rust programs could pack serde types without a public schema. It is a Rust-centric encoding, not a cross-language standard."
+      },
+      "bitcode": {
+        "source_url": "https://github.com/SoftbearStudios/bitcode",
+        "version": "0.6.9",
+        "specifics": "bitcode is a bit-packed binary format for serde. It was written to squeeze serialized Rust values smaller than typical byte-aligned packers."
+      },
+      "bson": {
+        "source_url": "https://github.com/mongodb/bson-rust",
+        "version": "2.15.0",
+        "specifics": "BSON (Binary JSON) was created for MongoDB so documents could be stored and traversed without a text parse. Official language drivers implement that spec. This row times that library's serialize/deserialize path."
+      },
+      "ciborium": {
+        "source_url": "https://github.com/enarx/ciborium",
+        "version": "0.2.2",
+        "specifics": "ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSON-like format. The crate exists to give Rust a serde CBOR backend."
+      },
+      "flexbuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "2.0.0",
+        "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "minicbor": {
+        "source_url": "https://github.com/twittner/minicbor",
+        "version": "0.25.1",
+        "specifics": "minicbor is a compact, often no_std CBOR codec with its own Encode/Decode traits. The problem was serde overhead and no_std needs. It implements RFC 8949 directly on structs."
+      },
+      "nanoserde": {
+        "source_url": "https://github.com/not-fl3/nanoserde",
+        "version": "0.1.37",
+        "specifics": "nanoserde is a tiny, dependency-light serializer for Rust (SerBin/DeBin). The problem was serde's compile-time and dependency weight in constrained crates. nanoserde generates a minimal binary path."
+      },
+      "postcard": {
+        "source_url": "https://github.com/jamesmunns/postcard",
+        "version": "1.1.3",
+        "specifics": "postcard is a compact, no_std-friendly binary format for serde (James Munns). It was created for embedded Rust where alloc and self-describing formats are too heavy."
+      },
+      "prost": {
+        "source_url": "https://github.com/tokio-rs/prost",
+        "version": "0.13.5",
+        "specifics": "prost is the de-facto Protocol Buffers implementation for Rust (tokio-rs). The problem was that Google does not ship an official Rust runtime. prost-build generates Rust from `.proto` and times encode/decode on those messages."
+      },
+      "rkyv": {
+        "source_url": "https://github.com/rkyv/rkyv",
+        "version": "0.8.18",
+        "specifics": "rkyv is a zero-copy deserialization framework for Rust. The problem was that even fast binary codecs still allocate an owned value on decode. rkyv archives data so it can be accessed in place; this suite still materializes owned `T` for fidelity."
+      },
+      "rmp-serde": {
+        "source_url": "https://github.com/3Hren/msgpack-rust",
+        "version": "1.3.1",
+        "specifics": "rmp-serde is MessagePack for serde (msgpack-rust). MessagePack exists as compact binary JSON. This crate maps serde types to named MessagePack maps."
+      },
+      "serde_avro_fast": {
+        "source_url": "https://github.com/Ten0/serde_avro_fast",
+        "version": "2.1.1",
+        "specifics": "serde_avro_fast is a high-performance Avro datum codec for serde. Avro exists for compact, schema-driven records. This crate avoids the official apache-avro Value intermediate, which is multi-× slower on small records."
+      },
+      "serde_json": {
+        "source_url": "https://github.com/serde-rs/json",
+        "version": "1.0.151",
+        "specifics": "serde_json is the standard JSON backend for Rust's serde. Serde was created so Rust types could implement Serialize/Deserialize once and plug in many formats. serde_json is the JSON instance of that idea."
+      },
+      "serde_yaml": {
+        "source_url": "https://github.com/dtolnay/serde-yaml",
+        "version": "0.9.34+deprecated",
+        "specifics": "serde_yaml is YAML via serde. YAML exists as a human-friendly config language. This crate is the usual Rust YAML backend (unmaintained upstream; still the historical serde path)."
+      },
+      "simd-json": {
+        "source_url": "https://github.com/simd-lite/simd-json",
+        "version": "0.14.3",
+        "specifics": "simd-json is a SIMD JSON parser for Rust (the simdjson port). The problem was parse speed vs serde_json. This row uses SIMD for parse; serialize still goes through serde_json."
+      },
+      "sonic-rs": {
+        "source_url": "https://github.com/cloudwego/sonic-rs",
+        "version": "0.3.17",
+        "specifics": "sonic-rs is a SIMD-oriented JSON library for Rust, in the same family as ByteDance sonic. The problem was JSON cost on the hot path. It offers a serde-compatible encode/decode."
+      },
+      "speedy": {
+        "source_url": "https://github.com/koute/speedy",
+        "version": "0.8.7",
+        "specifics": "speedy is a fast binary framework for Rust with its own Writable/Readable traits. It was written to beat generic serde binaries on the encode/decode hot path."
+      }
+    },
+    "swift": {
+      "BinaryCodable": {
+        "source_url": "https://github.com/christophhagen/BinaryCodable",
+        "version": "4.0.0",
+        "specifics": "BinaryCodable is a pure-Swift binary Codable implementation. It was written so Swift types could have a simple binary encoding without an IDL — Swift-only, not a public standard."
+      },
+      "CapnProto": {
+        "source_url": "https://github.com/capnproto/capnproto",
+        "version": "capnproto-1.0.2",
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+      },
+      "FlatBuffers": {
+        "source_url": "https://github.com/google/flatbuffers",
+        "version": "24.3.25",
+        "specifics": "FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place."
+      },
+      "Foundation.JSONEncoder": {
+        "source_url": "https://github.com/apple/swift-foundation",
+        "version": "Foundation",
+        "specifics": "Foundation's JSONEncoder/JSONDecoder are Apple's standard Codable JSON codecs. They exist so Swift can speak JSON with the language's Codable model. On Linux this is swift-corelibs-foundation, not the Apple OS binary."
+      },
+      "Foundation.PropertyListEncoder": {
+        "source_url": "https://github.com/apple/swift-foundation",
+        "version": "Foundation",
+        "specifics": "Foundation PropertyListEncoder writes Apple property lists. plists exist so Apple platforms can store typed configuration. This row times the binary plist path."
+      },
+      "IkigaJSON": {
+        "source_url": "https://github.com/orlandos-nl/IkigaJSON",
+        "version": "2.5.4",
+        "specifics": "IkigaJSON is a server-oriented JSON encoder/decoder for Swift. The problem was Foundation JSON performance on Linux servers. IkigaJSON implements Codable with a faster core."
+      },
+      "SwiftAvroCore": {
+        "source_url": "https://github.com/lynixliu/SwiftAvroCore",
+        "version": "2.3.0",
+        "specifics": "SwiftAvroCore implements Apache Avro for Swift. Avro exists for compact, schema-driven records. The library encodes binary Avro with a schema."
+      },
+      "SwiftBSON": {
+        "source_url": "https://github.com/mongodb/swift-bson",
+        "version": "3.1.0",
+        "specifics": "swift-bson is MongoDB's official BSON library for Swift. BSON exists so MongoDB can store typed documents. This package implements that spec for Codable-style use."
+      },
+      "SwiftCbor": {
+        "source_url": "https://github.com/nnabeyang/swift-cbor",
+        "version": "0.0.4",
+        "specifics": "swift-cbor is a Codable CBOR implementation for Swift. CBOR is the IETF binary JSON-like format. The library maps Codable types to RFC 8949."
+      },
+      "SwiftMsgpack": {
+        "source_url": "https://github.com/nnabeyang/swift-msgpack",
+        "version": "1.2.1",
+        "specifics": "swift-msgpack is a Codable MessagePack implementation for Swift. MessagePack exists as compact binary JSON. This library is a straightforward Codable backend."
+      },
+      "SwiftProtobuf": {
+        "source_url": "https://github.com/apple/swift-protobuf",
+        "version": "1.38.1",
+        "specifics": "swift-protobuf is Apple's official Protocol Buffers runtime for Swift. Protobuf exists as a language-neutral IDL and wire format. This package generates Swift from `.proto`."
+      },
+      "TOML": {
+        "source_url": "https://github.com/mattt/swift-toml",
+        "version": "2.0.0",
+        "specifics": "mattt/swift-toml (toml++) is a TOML library for Swift. TOML exists as an obvious config language. This row times that implementation (map-root wrap for N>1)."
+      },
+      "XMLCoder": {
+        "source_url": "https://github.com/CoreOffice/XMLCoder",
+        "version": "0.18.2",
+        "specifics": "XMLCoder is a Codable XML encoder/decoder for Swift. The problem was that Swift had JSON Codable but not a first-class XML Codable. XMLCoder maps Codable types to XML elements."
+      },
+      "Yams": {
+        "source_url": "https://github.com/jpsim/Yams",
+        "version": "5.4.0",
+        "specifics": "Yams is a Swift wrapper around libyaml. YAML exists as a human-friendly config language. Yams is the usual Swift YAML library."
+      },
+      "protobuf-wire": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/swift/index.md",
+        "specifics": "This row is the suite's in-tree proto3 tag reader/writer. It exists to measure the published Protocol Buffers encoding itself, without a particular vendor runtime. Field numbers match `schemas/v2/protobuf/benchmark_v2.proto`."
+      }
+    },
+    "zig": {
+      "capnproto": {
+        "source_url": "https://github.com/capnproto/capnproto",
+        "version": "1.0.2",
+        "specifics": "Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments."
+      },
+      "comptime-bin": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md",
+        "version": "in-tree",
+        "specifics": "comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk that writes little-endian, length-prefixed fields. It exists because `@bitCast` of a live fixture is not a valid encoding (slices are pointers)."
+      },
+      "flatbuffers": {
+        "source_url": "https://github.com/nDimensional/zig-flatbuffers",
+        "version": "0.2.1",
+        "specifics": "nDimensional/zig-flatbuffers generates Zig from FlatBuffers schemas. FlatBuffers exists so readers can use data without unpacking. This is the Zig codegen this suite times."
+      },
+      "json.zig": {
+        "source_url": "https://github.com/lalinsky/json.zig",
+        "specifics": "lalinsky/json.zig is a typed JSON library for Zig: the encoder and decoder are comptime-specialized into the Zig type, so there is no DOM and no runtime schema. It exists to make JSON cheap for APIs with a fixed schema, and it reads and writes std.Io readers and writers, so a value larger than the buffer still decodes."
+      },
+      "msgpack.zig": {
+        "source_url": "https://github.com/lalinsky/msgpack.zig",
+        "version": "0.9.0",
+        "specifics": "lalinsky/msgpack.zig is another MessagePack library for Zig with a typed encode/decode API. It exists as a native Zig implementation of the same MessagePack spec."
+      },
+      "protobuf": {
+        "source_url": "https://github.com/Arwalk/zig-protobuf",
+        "version": "5.0.0",
+        "specifics": "Arwalk/zig-protobuf generates Zig from `.proto` files. Protocol Buffers exist as a language-neutral IDL. This package is the Zig implementation this suite uses."
+      },
+      "protobuf-wire": {
+        "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md",
+        "specifics": "This row is the suite's in-tree proto3 tag reader/writer. It exists to measure the published Protocol Buffers encoding itself, without a particular vendor runtime. Field numbers match `schemas/v2/protobuf/benchmark_v2.proto`."
+      },
+      "s2s": {
+        "source_url": "https://github.com/ziglibs/s2s",
+        "version": "0.0.1",
+        "specifics": "s2s (struct to stream) is a Zig-only binary encoder that writes structs to a stream. It was created as a simple native binary path, not a public interchange standard."
+      },
+      "serde.json": {
+        "source_url": "https://github.com/OrlovEvgeny/serde.zig",
+        "version": "1.2.1",
+        "specifics": "serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the JSON backend of serde.zig."
+      },
+      "serde.msgpack": {
+        "source_url": "https://github.com/OrlovEvgeny/serde.zig",
+        "version": "1.2.1",
+        "specifics": "serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the MessagePack backend of serde.zig."
+      },
+      "serde.toml": {
+        "source_url": "https://github.com/OrlovEvgeny/serde.zig",
+        "version": "1.2.1",
+        "specifics": "serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the TOML backend of serde.zig."
+      },
+      "serde.xml": {
+        "source_url": "https://github.com/OrlovEvgeny/serde.zig",
+        "version": "1.2.1",
+        "specifics": "serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the XML backend of serde.zig (message / strings only)."
+      },
+      "serde.yaml": {
+        "source_url": "https://github.com/OrlovEvgeny/serde.zig",
+        "version": "1.2.1",
+        "specifics": "serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the YAML backend of serde.zig (message / strings only)."
+      },
+      "serde.zon": {
+        "source_url": "https://github.com/OrlovEvgeny/serde.zig",
+        "version": "1.2.1",
+        "specifics": "serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the ZON backend of serde.zig."
+      },
+      "std.json": {
+        "source_url": "https://github.com/ziglang/zig",
+        "version": "0.16.0",
+        "specifics": "Zig's `std.json` is the standard-library JSON codec. It exists so Zig programs can speak JSON without a package. This suite times typed `parseFromSlice` and, separately, the Scanner path."
+      },
+      "std.json.scanner": {
+        "source_url": "https://github.com/ziglang/zig",
+        "version": "0.16.0",
+        "specifics": "Zig's `std.json` is the standard-library JSON codec. It exists so Zig programs can speak JSON without a package. This suite times typed `parseFromSlice` and, separately, the Scanner path. Decode is `Scanner` + `parseFromTokenSource`; stringify is the same as `std.json`."
+      },
+      "std.zon": {
+        "source_url": "https://github.com/ziglang/zig",
+        "version": "0.16.0",
+        "specifics": "ZON (Zig Object Notation) is Zig's own data notation, in the standard library. It exists as a Zig-native text format for config and data. This row times official stringify/parse."
+      },
+      "zbor": {
+        "source_url": "https://codeberg.org/r4gus/zbor",
+        "version": "0.21.3",
+        "specifics": "zbor is a native Zig CBOR library. CBOR is the IETF binary JSON-like format. zbor implements stringify/parse for Zig types."
+      },
+      "zig-msgpack": {
+        "source_url": "https://github.com/zigcc/zig-msgpack",
+        "version": "0.0.18",
+        "specifics": "zigcc/zig-msgpack is a MessagePack implementation for Zig. MessagePack exists as compact binary JSON. This package exposes a Payload encode/decode API."
+      }
+    }
+  }
+}
