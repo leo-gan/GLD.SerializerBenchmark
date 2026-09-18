@@ -78,6 +78,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [LightProto](https://github.com/dameng324/LightProto) | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
 | [MemoryPack](https://github.com/Cysharp/MemoryPack) | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
 | [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) | Binary | Official MessagePack-CSharp (`ContractlessStandardResolver` on domain POCOs) |
+| [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack) | Binary | Nerdbank.MessagePack with reflection-based POCO shapes and stable numeric keys; its default-value retention is retained |
 | [Migrant](https://github.com/antmicro/Migrant) | Binary (**envelope**) | **Not domain Migrant graphs** — Migrant of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
 | [MS Binary](https://github.com/dotnet/runtime) | Binary (native) | Legacy `BinaryFormatter` path |
 | [MS Bond Compact](https://github.com/microsoft/bond) | Schema / Bond | Bond Compact Binary; V2 domain marked `[Schema]` |
@@ -175,6 +176,10 @@ MemoryPack was created by Yoshifumi Kawai for extremely fast, source-generated b
 #### [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) · `2.5.302`
 
 MessagePack-CSharp is the official MessagePack implementation for .NET (neuecc / MessagePack-CSharp). MessagePack exists as compact binary JSON. This library is the standard .NET codec, including a contractless resolver.
+
+#### [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack)
+
+Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses stable numeric keys and the library's default value retention. The type shape is derived from reflection instead of source generation due to the lack of a generic context provided by the adapter.
 
 #### [Migrant](https://github.com/antmicro/Migrant) · `0.13.0.0`
 

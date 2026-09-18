@@ -394,6 +394,10 @@
         "version": "0.13.0.0",
         "specifics": "Migrant is Antmicro's .NET binary serializer for object graphs. In this suite the timed path is a JSON envelope, not native Migrant domain graphs. See the language inventory."
       },
+      "Nerdbank.MessagePack": {
+        "source_url": "https://github.com/AArnott/Nerdbank.MessagePack",
+        "specifics": "Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses reflection-based POCO shapes with stable numeric keys and the library's default value retention."
+      },
       "NetJSON": {
         "source_url": "https://github.com/rpgmaker/NetJSON",
         "version": "1.0.0",

@@ -371,6 +371,8 @@ add("csharp", "Hyperion", [], "https://github.com/akkadotnet/Hyperion",
     "Hyperion: Akka.NET binary serializer.")
 add("csharp", "MemoryPack", [], "https://github.com/Cysharp/MemoryPack",
     "MemoryPack: .NET binary; no public RFC/IDL in this catalog.")
+add("csharp", "Nerdbank.MessagePack", ["msgpack"], "https://github.com/AArnott/Nerdbank.MessagePack",
+    "Nerdbank.MessagePack: MessagePack serializer using reflection-based POCO shapes with stable numeric keys in this suite.")
 add("csharp", "Migrant", [], "https://github.com/antmicro/Migrant",
     "Migrant: .NET binary (suite row is a JSON envelope).")
 add("csharp", "NetSerializer", [], "https://github.com/tomba/netserializer",
