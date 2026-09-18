@@ -90,9 +90,13 @@ fn supportAll(_: []const u8) bool {
 }
 
 fn yamlSupports(type_id: []const u8) bool {
-    // serde.zig 1.0.7 YAML list-of-struct indentation fails to round-trip
-    // nested suite types (document items, event attrs).
-    return std.mem.eql(u8, type_id, "message") or std.mem.eql(u8, type_id, "strings");
+    // serde.zig 1.2.2 YAML still loses the fields of a struct nested in a list
+    // (document items, event attrs). `telemetry` round-trips at the suite's
+    // configured sizes and is measured; see zig/src/serde_ser.zig for the
+    // round-trip test that pins which shapes fail and how.
+    return std.mem.eql(u8, type_id, "message") or
+        std.mem.eql(u8, type_id, "strings") or
+        std.mem.eql(u8, type_id, "telemetry");
 }
 
 fn xmlSupports(type_id: []const u8) bool {
@@ -136,6 +140,26 @@ fn packedSerialize(_: *anyopaque, fx: data.Fixture, out: *buf_mod.Buf) !void {
 
 fn packedDeserialize(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
     return packed_bin.decodeFixture(allocator, type_id, bytes);
+}
+
+const json_borrowed_vtable = Serializer.VTable{
+    .prepare = Dummy.prepare,
+    .serialize = jsonSerialize,
+    .deserialize = jsonBorrowedDeserialize,
+};
+
+fn jsonBorrowedDeserialize(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
+    return json_util.parseFixtureBorrowed(allocator, type_id, bytes);
+}
+
+const serde_json_borrowed_vtable = Serializer.VTable{
+    .prepare = Dummy.prepare,
+    .serialize = serdeJsonSer,
+    .deserialize = serdeJsonBorrowedDe,
+};
+
+fn serdeJsonBorrowedDe(_: *anyopaque, allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
+    return serde_ser.decode(.json_borrowed, allocator, type_id, bytes);
 }
 
 var json_state: u8 = 0;
@@ -310,7 +334,7 @@ const capnproto_vtable = Serializer.VTable{
     .deserialize = capnp_ser.deserialize,
 };
 
-pub fn allSerializers() [18]Serializer {
+pub fn allSerializers() [20]Serializer {
     return .{
         .{
             .name = "std.json",
@@ -338,15 +362,15 @@ pub fn allSerializers() [18]Serializer {
         },
         .{
             .name = "serde.json",
-            .version = "1.2.1",
-            .stream_mode = .adapted,
+            .version = "1.2.2",
+            .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_json_state),
             .vtable = &serde_json_vtable,
         },
         .{
             .name = "serde.msgpack",
-            .version = "1.2.1",
+            .version = "1.2.2",
             .stream_mode = .adapted,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_msgpack_state),
@@ -354,7 +378,7 @@ pub fn allSerializers() [18]Serializer {
         },
         .{
             .name = "serde.yaml",
-            .version = "1.2.1",
+            .version = "1.2.2",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_yaml_state),
@@ -362,7 +386,7 @@ pub fn allSerializers() [18]Serializer {
         },
         .{
             .name = "serde.toml",
-            .version = "1.2.1",
+            .version = "1.2.2",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_toml_state),
@@ -370,7 +394,7 @@ pub fn allSerializers() [18]Serializer {
         },
         .{
             .name = "serde.zon",
-            .version = "1.2.1",
+            .version = "1.2.2",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_zon_state),
@@ -378,7 +402,7 @@ pub fn allSerializers() [18]Serializer {
         },
         .{
             .name = "serde.xml",
-            .version = "1.2.1",
+            .version = "1.2.2",
             .stream_mode = .text_on_stream,
             .native_kind = .comptime_map,
             .ctx = @ptrCast(&serde_xml_state),
@@ -455,6 +479,22 @@ pub fn allSerializers() [18]Serializer {
             .native_kind = .message,
             .ctx = @ptrCast(&capnp_ser.state),
             .vtable = &capnproto_vtable,
+        },
+        .{
+            .name = "std.json.borrowed",
+            .version = builtinZigVersion(),
+            .stream_mode = .text_on_stream,
+            .native_kind = .comptime_map,
+            .ctx = @ptrCast(&json_state),
+            .vtable = &json_borrowed_vtable,
+        },
+        .{
+            .name = "serde.json.borrowed",
+            .version = "1.2.2",
+            .stream_mode = .text_on_stream,
+            .native_kind = .comptime_map,
+            .ctx = @ptrCast(&serde_json_state),
+            .vtable = &serde_json_borrowed_vtable,
         },
     };
 }
@@ -634,7 +674,7 @@ test "protobuf all v2 types" {
 test "registry includes std.json" {
     var tmp: [24]Serializer = undefined;
     const n = select("", &tmp);
-    try std.testing.expect(n >= 18);
+    try std.testing.expect(n >= 20);
     var found_pb = false;
     var found_fb = false;
     var found_capnp = false;

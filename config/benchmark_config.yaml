@@ -1166,32 +1166,42 @@ languages:
         category: json
         package: serde.zig
         rationale: "Comptime @typeInfo framework — JSON path"
-        optimal_api: "serde.json.toSlice / fromSlice"
+        optimal_api: "serde.json.toWriter into a reused buffer / fromSlice"
+      - name: serde.json.borrowed
+        category: json
+        package: serde.zig
+        rationale: "serde.zig zero-copy JSON decode; strings view the input"
+        optimal_api: "serde.json.toWriter into a reused buffer / fromSliceBorrowed"
+      - name: std.json.borrowed
+        category: json
+        package: std.json
+        rationale: "Official stdlib counterpart to the borrowed serde.zig row"
+        optimal_api: "Stringify.value into a reused buffer / parseFromSliceLeaky with alloc_if_needed"
       - name: serde.msgpack
         category: binary
         package: serde.zig
         rationale: "Same comptime API as serde.json — MessagePack"
-        optimal_api: "serde.msgpack.toSlice / fromSlice"
+        optimal_api: "serde.msgpack.toWriter into a reused buffer / fromSlice"
       - name: serde.yaml
         category: text
         package: serde.zig
         rationale: "Same comptime API — YAML"
-        optimal_api: "serde.yaml.toSlice / fromSlice"
+        optimal_api: "serde.yaml.toWriter into a reused buffer / fromSlice"
       - name: serde.toml
         category: text
         package: serde.zig
         rationale: "Same comptime API — TOML"
-        optimal_api: "serde.toml.toSlice / fromSlice"
+        optimal_api: "serde.toml.toWriter into a reused buffer / fromSlice"
       - name: serde.zon
         category: text
         package: serde.zig
         rationale: "Same comptime API — Zig Object Notation"
-        optimal_api: "serde.zon.toSlice / fromSlice"
+        optimal_api: "serde.zon.toWriter into a reused buffer / fromSlice"
       - name: serde.xml
         category: text
         package: serde.zig
-        rationale: "Same comptime API — XML (flat fixtures)"
-        optimal_api: "serde.xml.toSlice / fromSlice"
+        rationale: "Same comptime API — XML"
+        optimal_api: "serde.xml.toWriter into a reused buffer / fromSlice"
       - name: std.zon
         category: text
         package: std.zon

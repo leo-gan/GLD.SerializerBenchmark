@@ -78,6 +78,17 @@ pub fn build(b: *std.Build) void {
         .{ .name = "flatbuffers", .module = flatbuffers_dep.module("flatbuffers") },
     };
 
+    const serde_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/serde_ser.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "serde", .module = serde_dep.module("serde") }},
+        }),
+    });
+    const test_serde_step = b.step("test-serde", "Test the serde.zig adapters without the Cap'n Proto runtime");
+    test_serde_step.dependOn(&b.addRunArtifact(serde_tests).step);
+
     const capnp_so = buildCapnpShared(b, capnp_prefix);
     b.getInstallStep().dependOn(&b.addInstallLibFile(capnp_so, "libzigcapnp.so").step);
 

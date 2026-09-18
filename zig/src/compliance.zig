@@ -102,7 +102,11 @@ pub fn main(init: std.process.Init) !void {
                 total += 1;
                 var outcome: []const u8 = "pass";
                 var observed: []const u8 = "ok";
+<<<<<<< HEAD
                 if (decodeJson(alloc, jser, input)) {
+=======
+                if (decodeJson(alloc, jser, input)) |_| {
+>>>>>>> OrlovEvgeny/fix/zig-serde-call-path-and-compliance
                     if (std.mem.eql(u8, expect, "reject")) {
                         outcome = "fail";
                         observed = "accepted";
@@ -221,11 +225,17 @@ pub fn main(init: std.process.Init) !void {
     const extras = [_]Extra{
         .{ .dir = "yaml", .sers = &.{"serde.yaml"} },
         .{ .dir = "toml", .sers = &.{"serde.toml"} },
-        .{ .dir = "msgpack", .sers = &.{ "serde.msgpack", "zig-msgpack", "msgpack.zig" } },
+        // serde.msgpack is absent on purpose: serde.zig 1.2.2 decodes only into
+        // a known type, so there is no entry point that can answer "is this
+        // wire image valid MessagePack?". The row it used to fill was the
+        // hand-written `skipMsgpack` below, not the library.
+        .{ .dir = "msgpack", .sers = &.{ "zig-msgpack", "msgpack.zig" } },
         .{ .dir = "cbor", .sers = &.{"zbor"} },
         .{ .dir = "capnp", .sers = &.{"capnproto"} },
         .{ .dir = "flatbuffers", .sers = &.{"flatbuffers"} },
-        .{ .dir = "zon", .sers = &.{ "std.zon", "serde.zon" } },
+        // serde.zon is absent for the same reason, and its row was `std.zig.Ast`
+        // -- the same parser already published under `std.zon`.
+        .{ .dir = "zon", .sers = &.{"std.zon"} },
     };
     for (extras) |ex| {
         if (!wantFmt(formats.items, ex.dir)) continue;
@@ -308,37 +318,44 @@ fn wantFmt(formats: []const []const u8, name: []const u8) bool {
     return false;
 }
 
-fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) bool {
-    // json.zig validates JSON syntax independently of a destination type.
-    // The other rows retain the existing std.json fallback.
+/// Each JSON row is read by the library it names. Routing them all through
+/// `std.json` would publish one parser's verdicts under three names, and the
+/// three do disagree: serde.zig accepts a duplicate object key and keeps the
+/// last value, `std.json.Value` rejects it.
+fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) !void {
     if (std.mem.eql(u8, ser, "json.zig")) {
-        json_l.validateFromSlice(input) catch return false;
-        return true;
+        // json.zig validates JSON syntax independently of a destination type.
+        json_l.validateFromSlice(input) catch return error.InvalidJson;
+        return;
     }
-    const parsed = std.json.parseFromSlice(std.json.Value, alloc, input, .{}) catch return false;
+    if (std.mem.eql(u8, ser, "serde.json")) {
+        // serde.zig 1.2.2 has no bytes-to-value entry point, so drive the same
+        // scanner `serde.json.fromSlice` uses: it tokenizes, validates escapes,
+        // UTF-8 and control characters, and enforces the depth limit.
+        var de = serde.json.Deserializer.init(input);
+        try de.scanner.skipValue();
+        de.scanner.skipWhitespace();
+        if (de.scanner.pos != de.scanner.input.len) return error.TrailingData;
+        return;
+    }
+    if (std.mem.eql(u8, ser, "std.json.scanner")) {
+        var scanner = std.json.Scanner.initCompleteInput(alloc, input);
+        defer scanner.deinit();
+        try scanner.skipValue();
+        if (try scanner.next() != .end_of_document) return error.TrailingData;
+        return;
+    }
+    const parsed = try std.json.parseFromSlice(std.json.Value, alloc, input, .{});
     parsed.deinit();
-    return true;
 }
 
 fn decodeExtra(alloc: std.mem.Allocator, ser: []const u8, bytes: []const u8) !void {
     if (std.mem.eql(u8, ser, "serde.yaml")) {
-        if (std.mem.indexOfScalar(u8, bytes, '&') != null and std.mem.indexOfScalar(u8, bytes, '*') != null)
-            return error.AliasBomb;
         _ = try serde.yaml.parseValue(alloc, bytes);
         return;
     }
     if (std.mem.eql(u8, ser, "serde.toml")) {
-        if (std.mem.indexOf(u8, bytes, "\\u") != null or std.mem.indexOf(u8, bytes, "\"\"\"") != null)
-            return error.UnsafeToml;
         _ = try serde.toml.parse(alloc, bytes);
-        return;
-    }
-    if (std.mem.eql(u8, ser, "serde.msgpack")) {
-        try skipMsgpack(bytes);
-        return;
-    }
-    if (std.mem.eql(u8, ser, "serde.zon")) {
-        try decodeStdZon(alloc, bytes);
         return;
     }
     if (std.mem.eql(u8, ser, "std.zon")) {
