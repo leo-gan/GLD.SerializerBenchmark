@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-Extensible suite evaluating **39 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
+Extensible suite evaluating **40 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
 
 Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
@@ -8,7 +8,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **39 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more). **Not** included: Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
+- **40 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Nerdbank.MessagePack, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more). **Not** included: Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
 - **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs`.
 - **Dual mode**: **string** vs **Stream**. Text codecs use real text on the string path; **binary** codecs usually use **Base64** of bytes on the string path. Stream is **native** when the library writes the stream, or **adapted** when the benchmark runner wraps the string path — see [inventory honesty](../docs/c-sharp/index.md#string-mode-vs-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
@@ -103,9 +103,12 @@ C# short path:
 
 ```bash
 ./scripts/run-benchmarks.sh custom 5 YourName message
-# from repo root:
-../scripts/run-all-benchmarks.sh --mode full --lang csharp --analyze
+cd ..
+./scripts/run-all-benchmarks.sh --mode full --lang csharp --analyze
+python3 dashboard/scripts/sync-data.py
 ```
+
+Review and commit `dashboard/public/data/csharp_latest.json.gz` with the PR when publishing refreshed C# dashboard results. Do not normally commit the timestamped raw files under `logs/`.
 
 If the library uses a **source generator**, ensure the host **.NET SDK** is new enough for that generator (see Requirements above). CI must install the same SDK.
 

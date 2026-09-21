@@ -98,6 +98,7 @@ namespace GLD.SerializerBenchmark
                 new BinaryPackSerializerSer(),
                 new MemoryPackSerializerSer(),
                 new MessagePackCSharpSerializerSer(),
+                new NerdbankMessagePackSerializerSer(),
                 new SharpYamlSerializerSer(),
                 new GroBufSerializerSer(),
                 new ExtendedXmlSerializerSer(),

@@ -182,7 +182,7 @@ FetchContent_MakeAvailable(glaze)
 
 FetchContent_Declare(yaml_cpp
   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-  GIT_TAG 0.8.0
+  GIT_TAG yaml-cpp-0.9.0
   GIT_SHALLOW TRUE
   SOURCE_DIR ${CPP_TP}/yaml-cpp
 )
@@ -300,7 +300,7 @@ target_link_libraries(serializer_benchmark_cpp PRIVATE
   cista_hdr
   pthread
   ZLIB::ZLIB
-  yaml-cpp
+  yaml-cpp::yaml-cpp
 )
 
 if(BENCH_HAS_LIBPROTOBUF)
@@ -394,7 +394,7 @@ target_link_libraries(cpp_serializer_tests PRIVATE
   cista_hdr
   pthread
   ZLIB::ZLIB
-  yaml-cpp
+  yaml-cpp::yaml-cpp
 )
 if(TARGET msgpack-cxx)
   target_link_libraries(cpp_serializer_tests PRIVATE msgpack-cxx)

@@ -5,7 +5,7 @@ title: "Zig"
 Zig
 ===
 
-Zig is in this suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin runtime reflection, C# source generation, or Rust derive macros. The runner times official `std.json` (typed `parseFromSlice` versus streaming `Scanner` / `parseFromTokenSource`) against an in-tree comptime byte-packed baseline, against **serde.zig**, a format-agnostic framework that uses the same `@typeInfo` walk for JSON, MessagePack, YAML, TOML, and ZON, and against **schema codecs** (Protocol Buffers, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
+Zig is in this suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin runtime reflection, C# source generation, or Rust derive macros. The runner times official `std.json` (typed `parseFromSlice` versus streaming `Scanner` / `parseFromTokenSource`) against an in-tree comptime byte-packed baseline, against **serde.zig**, a format-agnostic framework that uses the same `@typeInfo` walk for JSON, MessagePack, YAML, TOML, and ZON, against typed third-party codecs that specialize the whole encoder into the destination type (**json.zig**, **msgpack.zig**), and against **schema codecs** (Protocol Buffers, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
 
 ## Runtime
 
@@ -34,7 +34,7 @@ A `@bitCast` of a live suite value is not a valid encoding. Slices inside that v
 
 The `capnproto` row needs `libcapnp` and `libkj` under `~/.local`.
 
-Some serde.zig rows support only the **message** and **strings** data types.
+`serde.yaml` skips **document** and **event**: serde.zig 1.2.2 loses the fields of a struct nested in a list, so those cells would be a timing for a decode that did not restore the value. `zig/src/serde_ser.zig` has the round-trip test that pins exactly which shapes fail and with which error.
 
 These times cannot be ranked against another language.
 
@@ -49,24 +49,27 @@ The steps to install the toolchain and run the benchmark are in [`zig/README.md`
 - Runner: `zig/scripts/run-benchmarks.sh {smoke|all-single|full|research}`
 - Registration: `zig/src/serializers.zig`
 
-The shell script resolves the run config to JSON. The Zig binary does not spawn Python. Prepare is untimed. The harness owns a reusable output buffer per serializer. Timed I/O is serialize plus deserialize only. Schedule is SHA-256 + SplitMix64 Fisher–Yates (golden vector `C, B, A`).
+The shell script resolves the run config to JSON. The Zig binary does not spawn Python. Prepare is untimed. The harness owns a reusable output buffer per serializer, and every text codec writes into it through `std.Io.Writer`, so no row pays for a throwaway slice the runner then copies and frees. Timed I/O is serialize plus deserialize only. Schedule is SHA-256 + SplitMix64 Fisher–Yates (golden vector `C, B, A`).
 
 ## Serializers (wired)
 
 | Name | Category | Package | Stream | Notes |
 |------|----------|---------|--------|-------|
 | [std.json](https://github.com/ziglang/zig) | JSON | std | text_on_stream | `Stringify.value` + `parseFromSlice` into the suite struct |
+| [std.json.borrowed](https://github.com/ziglang/zig) | JSON | std | text_on_stream | Same stringify; decode is `parseFromSliceLeaky` with `alloc_if_needed` |
 | [std.json.scanner](https://github.com/ziglang/zig) | JSON | std | text_on_stream | Same stringify; decode is `Scanner` + `parseFromTokenSource` |
 | [std.zon](https://github.com/ziglang/zig) | ZON | std | text_on_stream | Official `std.zon.stringify` + `std.zon.parse.fromSliceAlloc` |
 | [comptime-bin](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/zig/index.md) | Binary | in-tree | adapted | Comptime field walk; LE ints; `u32` length + bytes for strings |
-| [serde.json](https://github.com/OrlovEvgeny/serde.zig) | JSON | serde.zig 1.2.1 | adapted | One comptime API, JSON path |
-| [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) | Binary | serde.zig 1.2.1 | adapted | Same API, MessagePack |
-| [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.1 | text_on_stream | Same API, YAML. **message / strings only** |
-| [serde.toml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.1 | text_on_stream | Same API, TOML |
-| [serde.zon](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.1 | text_on_stream | Same API, Zig Object Notation |
-| [serde.xml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.1 | text_on_stream | Same API, XML. **message / strings only** |
+| [serde.json](https://github.com/OrlovEvgeny/serde.zig) | JSON | serde.zig 1.2.2 | text_on_stream | One comptime API, JSON path |
+| [serde.json.borrowed](https://github.com/OrlovEvgeny/serde.zig) | JSON | serde.zig 1.2.2 | text_on_stream | Same encode; decode is `fromSliceBorrowed` |
+| [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) | Binary | serde.zig 1.2.2 | text_on_stream | Same API, MessagePack |
+| [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, YAML. **no document / event** |
+| [serde.toml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, TOML |
+| [serde.zon](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, Zig Object Notation |
+| [serde.xml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, XML |
 | [zig-msgpack](https://github.com/zigcc/zig-msgpack) | Binary | zigcc/zig-msgpack 0.0.18 | adapted | Official MessagePack Payload API |
 | [msgpack.zig](https://github.com/lalinsky/msgpack.zig) | Binary | lalinsky/msgpack.zig 0.9.0 | native | Typed `encode` / `decodeFromSlice` |
+| [json.zig](https://github.com/lalinsky/json.zig) | JSON | lalinsky/json.zig 0.1.0 | native | Typed `encode` / `decodeFromSliceLeaky` into the cell arena |
 | [zbor](https://codeberg.org/r4gus/zbor) | Binary | r4gus/zbor 0.21.3 | adapted | Native Zig CBOR (`stringify` / `parse`) |
 | [s2s](https://github.com/ziglibs/s2s) | Binary | ziglibs/s2s | native | Native binary “struct to stream” |
 | [protobuf](https://github.com/Arwalk/zig-protobuf) | Schema | Arwalk/zig-protobuf 5.0.0 | adapted | Generated from `schemas/v2/protobuf/benchmark_v2.proto`. Prepare copies suite → generated message; timed path is `encode` / `decode` |
@@ -93,29 +96,33 @@ ZON (Zig Object Notation) is Zig's own data notation, in the standard library. I
 
 comptime-bin is the suite's in-tree Zig baseline: a comptime `@typeInfo` walk that writes little-endian, length-prefixed fields. It exists because `@bitCast` of a live fixture is not a valid encoding (slices are pointers).
 
-#### [serde.json](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.json](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the JSON backend of serde.zig.
 
-#### [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.json.borrowed](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
+
+The same encode as `serde.json`; the decode is `fromSliceBorrowed`, which returns strings that point into the input instead of copying them. serde.zig's borrowed API is strictly a view: it rejects a string carrying any escape rather than allocating to unescape it, so this row is only comparable on inputs whose strings are literal. `std.json.borrowed` is the stdlib counterpart (`alloc_if_needed`), which does allocate for an escaped string; the fixtures in this suite are unescaped, so both rows decode the same bytes.
+
+#### [serde.msgpack](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the MessagePack backend of serde.zig.
 
-#### [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.yaml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
 
-serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the YAML backend of serde.zig (message / strings only).
+serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the YAML backend of serde.zig (no document / event).
 
-#### [serde.toml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.toml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the TOML backend of serde.zig.
 
-#### [serde.zon](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.zon](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
 
 serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the ZON backend of serde.zig.
 
-#### [serde.xml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.1`
+#### [serde.xml](https://github.com/OrlovEvgeny/serde.zig) · `1.2.2`
 
-serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the XML backend of serde.zig (message / strings only).
+serde.zig is a format-agnostic serialization framework for Zig that walks types with `@typeInfo` at comptime. The problem was writing a new field walk per format. One API covers JSON, MessagePack, YAML, TOML, ZON, and XML. This row is the XML backend of serde.zig.
 
 #### [zig-msgpack](https://github.com/zigcc/zig-msgpack) · `0.0.18`
 
@@ -124,6 +131,10 @@ zigcc/zig-msgpack is a MessagePack implementation for Zig. MessagePack exists as
 #### [msgpack.zig](https://github.com/lalinsky/msgpack.zig) · `0.9.0`
 
 lalinsky/msgpack.zig is another MessagePack library for Zig with a typed encode/decode API. It exists as a native Zig implementation of the same MessagePack spec.
+
+#### [json.zig](https://github.com/lalinsky/json.zig)
+
+lalinsky/json.zig is a typed JSON library for Zig: the encoder and decoder are comptime-specialized into the Zig type, so there is no DOM and no runtime schema. It exists to make JSON cheap for APIs with a fixed schema, and it reads and writes std.Io readers and writers, so a value larger than the buffer still decodes.
 
 #### [zbor](https://codeberg.org/r4gus/zbor) · `0.21.3`
 

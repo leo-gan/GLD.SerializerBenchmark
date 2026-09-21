@@ -6,6 +6,7 @@ const buf_mod = @import("buf.zig");
 const zig_msgpack = @import("zig_msgpack");
 const zbor = @import("zbor");
 const msgpack_l = @import("msgpack_lalinsky");
+const json_l = @import("json_lalinsky");
 const s2s = @import("s2s");
 
 fn withZ(allocator: std.mem.Allocator, bytes: []const u8) ![:0]u8 {
@@ -102,6 +103,34 @@ pub fn decodeLalinsky(allocator: std.mem.Allocator, type_id: []const u8, bytes: 
     }
     if (std.mem.eql(u8, type_id, "event")) {
         return .{ .event = try msgpack_l.decodeFromSliceLeaky(data.Event, allocator, bytes) };
+    }
+    return error.UnknownTypeId;
+}
+
+pub fn encodeJsonLalinsky(fx: data.Fixture, out: *buf_mod.Buf) !void {
+    var aw: std.Io.Writer.Allocating = .init(out.allocator);
+    defer aw.deinit();
+    switch (fx) {
+        inline else => |payload| try json_l.encode(payload, &aw.writer),
+    }
+    try out.appendSlice(aw.written());
+}
+
+pub fn decodeJsonLalinsky(allocator: std.mem.Allocator, type_id: []const u8, bytes: []const u8) !data.Fixture {
+    if (std.mem.eql(u8, type_id, "message")) {
+        return .{ .message = try json_l.decodeFromSliceLeaky(data.Message, allocator, bytes, .{}) };
+    }
+    if (std.mem.eql(u8, type_id, "document")) {
+        return .{ .document = try json_l.decodeFromSliceLeaky(data.Document, allocator, bytes, .{}) };
+    }
+    if (std.mem.eql(u8, type_id, "telemetry")) {
+        return .{ .telemetry = try json_l.decodeFromSliceLeaky(data.Telemetry, allocator, bytes, .{}) };
+    }
+    if (std.mem.eql(u8, type_id, "strings")) {
+        return .{ .strings = try json_l.decodeFromSliceLeaky(data.Strings, allocator, bytes, .{}) };
+    }
+    if (std.mem.eql(u8, type_id, "event")) {
+        return .{ .event = try json_l.decodeFromSliceLeaky(data.Event, allocator, bytes, .{}) };
     }
     return error.UnknownTypeId;
 }

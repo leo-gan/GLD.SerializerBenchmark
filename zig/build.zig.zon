@@ -5,8 +5,8 @@
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .serde = .{
-            .url = "https://github.com/OrlovEvgeny/serde.zig/archive/refs/tags/v1.2.1.tar.gz",
-            .hash = "serde-1.2.1-1DszTwdZGQAXuzY5uedNpuJd8NBQCPqy6jRfGtcrMv0_",
+            .url = "https://github.com/OrlovEvgeny/serde.zig/archive/refs/tags/v1.2.2.tar.gz",
+            .hash = "serde-1.2.2-1DszTxNsGQB0pwXk4nyJcSPq0_Z2XLXrZY0ISwq5nARW",
         },
         .zig_msgpack = .{
             .url = "https://github.com/zigcc/zig-msgpack/archive/refs/tags/0.0.18.tar.gz",
@@ -19,6 +19,10 @@
         .msgpack_lalinsky = .{
             .url = "https://github.com/lalinsky/msgpack.zig/archive/refs/tags/v0.9.0.tar.gz",
             .hash = "msgpack-0.9.0-ZOu9PEGgAgDvbGsCCi8OPV-n25bHqJniaZYM45BMJT4a",
+        },
+        .json_lalinsky = .{
+            .url = "https://github.com/lalinsky/json.zig/archive/refs/tags/v0.1.0.tar.gz",
+            .hash = "json-0.1.0-XOh3KkIQAgBBtfQYnKpI3WTEnrMh6x5spl2V7zj__o7N",
         },
         .s2s = .{
             .url = "https://github.com/ziglibs/s2s/archive/refs/heads/master.tar.gz",

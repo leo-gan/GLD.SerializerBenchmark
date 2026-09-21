@@ -52,6 +52,7 @@ namespace GLD.SerializerBenchmark
                 ["BinaryPack"] = "BinaryPack",
                 ["MemoryPack"] = "MemoryPack",
                 ["MessagePack-CSharp"] = "MessagePack",
+                ["Nerdbank.MessagePack"] = "Nerdbank.MessagePack",
                 ["Migrant"] = "Migrant",
             };
 
