@@ -102,17 +102,13 @@ pub fn main(init: std.process.Init) !void {
                 total += 1;
                 var outcome: []const u8 = "pass";
                 var observed: []const u8 = "ok";
-<<<<<<< HEAD
-                if (decodeJson(alloc, jser, input)) {
-=======
                 if (decodeJson(alloc, jser, input)) |_| {
->>>>>>> OrlovEvgeny/fix/zig-serde-call-path-and-compliance
                     if (std.mem.eql(u8, expect, "reject")) {
                         outcome = "fail";
                         observed = "accepted";
                         f += 1;
                     } else p += 1;
-                } else {
+                } else |_| {
                     if (std.mem.eql(u8, expect, "reject") or std.mem.eql(u8, expect, "any")) {
                         p += 1;
                         observed = "rejected";
