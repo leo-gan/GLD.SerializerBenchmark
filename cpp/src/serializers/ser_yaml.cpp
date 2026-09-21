@@ -137,7 +137,7 @@ YAML::Node node_of_list(const std::vector<T>& xs) {
 class YamlCppSer final : public ISerializer {
  public:
   const char* name() const override { return "yaml-cpp"; }
-  const char* version() const override { return "0.8.0"; }
+  const char* version() const override { return "0.9.0"; }
   const char* stream_mode() const override { return "native"; }
   const char* native_kind() const override { return "struct"; }
 
