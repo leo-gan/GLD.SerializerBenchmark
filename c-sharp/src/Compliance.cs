@@ -420,11 +420,8 @@ namespace GLD.SerializerBenchmark
         {
             if (expected == null) return observed == null;
             if (observed == null) return false;
-<<<<<<< HEAD
-            if (expected is bool || observed is bool) return Equals(expected, observed);
-            if (expected is long or int or double or float && observed is IConvertible)
-                return Convert.ToDouble(expected) == Convert.ToDouble(observed);
-            if (expected is string es) return es.Equals(observed as string);
+            // {$hex: "..."} is a JSON object. Match it before JToken comparison,
+            // which would treat the decoded bytes as a JSON value and fail.
             if (expected is JObject expectedObject &&
                 observed is byte[] observedBytes &&
                 expectedObject.Count == 1 &&
@@ -433,8 +430,6 @@ namespace GLD.SerializerBenchmark
             {
                 return Convert.FromHexString((string)expectedHex).AsSpan().SequenceEqual(observedBytes);
             }
-=======
->>>>>>> AArnott/fix-boolean-compliance-comparison
             if (expected is JToken jt)
             {
                 try
