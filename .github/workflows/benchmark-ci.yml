@@ -173,13 +173,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # SDK 9 for LightProto source generator (Roslyn 4.14+); SDK 8 for net8.0 TFM.
-      - name: Setup .NET SDK 8 and 9
+      # SDK 10 for the net10.0 target; it also supports LightProto's source generator.
+      - name: Setup .NET SDK 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
+          dotnet-version: 10.0.x
 
       # resolve_run_config.py (v2 cells) needs PyYAML; analysis package optional for sidecars
       - name: Setup Python for run-config resolution

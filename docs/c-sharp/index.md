@@ -17,15 +17,15 @@ The label “.NET 8” names the **target framework**: the set of runtime APIs t
 
 | | This suite |
 |---|---|
-| Target | `net8.0` (.NET 8 APIs) |
-| Host SDK | .NET SDK **9+** (SDK 8 targeting pack also installed) |
+| Target | `net10.0` (.NET 10 APIs) |
+| Host SDK | .NET SDK **10+** |
 | Prepare | `./scripts/install-host-requirements.sh csharp` installs into `~/.dotnet` |
 | Run | `dotnet build` and `dotnet run -c Release` through `c-sharp/scripts/run-benchmarks.sh` |
 | Memory | Tracing garbage collector. No Docker. |
 
 ### What this suite runs
 
-The project file targets `net8.0`, so the finished program uses the .NET 8 API surface. The machine that builds it still needs .NET SDK 9 or newer, because LightProto’s source generator requires Roslyn 4.14. A **source generator** is a compiler plugin that writes extra C# while the project builds. If only SDK 8 is installed, the project compiles, but LightProto never generates its parsers and every LightProto cell fails.
+The project file targets `net10.0`, because the ShapeShift packages require the .NET 10 API surface. The .NET 10 SDK also satisfies LightProto's Roslyn 4.14 source-generator requirement. A **source generator** is a compiler plugin that writes extra C# while the project builds.
 
 We build and run in the **Release** configuration, which turns on optimizations. The **Debug** configuration is slower, and the Dashboard numbers do not come from it. The `dotnet` tools live under the user’s home directory. There is no Docker container.
 
@@ -72,7 +72,6 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
 | [GroBuf](https://github.com/skbkontur/GroBuf) | Binary | GroBuf |
 | [Hyperion](https://github.com/akkadotnet/Hyperion) | Binary | Hyperion (Akka.NET lineage) |
-| [Jil](https://github.com/kevin-montrose/Jil) | JSON | Jil (Sigil) |
 | [Json.Net](https://github.com/JamesNK/Newtonsoft.Json) | JSON | Newtonsoft.Json |
 | [Json.Net (Helper)](https://github.com/JamesNK/Newtonsoft.Json) | JSON | Newtonsoft.Json helper path |
 | [LightProto](https://github.com/dameng324/LightProto) | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
@@ -94,6 +93,13 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 | [ServiceStack Json](https://github.com/ServiceStack/ServiceStack.Text) | JSON | ServiceStack.Text JSON |
 | [SharpSerializer](https://github.com/polenter/SharpSerializer) | Binary / XML | SharpSerializer |
 | [SharpYaml](https://github.com/xoofx/SharpYaml) | YAML | SharpYaml |
+| [ShapeShift.Cbor](https://github.com/AArnott/ShapeShift) | Binary / CBOR | ShapeShift's source-generated CBOR serializer; string mode = Base64 of bytes |
+| [ShapeShift.Json](https://github.com/AArnott/ShapeShift) | JSON | ShapeShift's source-generated JSON serializer |
+| [ShapeShift.MsgPack](https://github.com/AArnott/ShapeShift) | Binary / MessagePack | ShapeShift's source-generated MessagePack serializer; string mode = Base64 of bytes |
+| [ShapeShift.Protobuf](https://github.com/AArnott/ShapeShift) | Schema / Protobuf | ShapeShift's source-generated protobuf-style serializer; string mode = Base64 of bytes |
+| [ShapeShift.Taml](https://github.com/AArnott/ShapeShift) | TAML | ShapeShift's source-generated TAML serializer (all suite data except `strings`) |
+| [ShapeShift.Toml](https://github.com/AArnott/ShapeShift) | TOML | ShapeShift's source-generated TOML serializer |
+| [ShapeShift.Yaml](https://github.com/AArnott/ShapeShift) | YAML | ShapeShift's source-generated YAML serializer |
 | [SpanJson](https://github.com/Tornhoof/SpanJson) | JSON | SpanJson |
 | [System.Text.Json](https://github.com/dotnet/runtime) | JSON | System.Text.Json (net8 built-in) |
 | [Utf8Json](https://github.com/neuecc/Utf8Json) | JSON | Utf8Json |
@@ -141,7 +147,7 @@ FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET
 
 FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently.
 
-#### [Google.Protobuf](https://github.com/protocolbuffers/protobuf) · `3.36.1`
+#### [Google.Protobuf](https://github.com/protocolbuffers/protobuf) · `3.36.2`
 
 Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format.
 
@@ -152,10 +158,6 @@ GroBuf is a binary serializer from SKB Kontur for high-throughput .NET services.
 #### [Hyperion](https://github.com/akkadotnet/Hyperion) · `0.12.2`
 
 Hyperion is the binary serializer from the Akka.NET lineage (formerly Wire). It exists so an actor system can ship .NET messages efficiently. This row times that graph codec.
-
-#### [Jil](https://github.com/kevin-montrose/Jil) · `2.17.0`
-
-Jil was written by Kevin Montrose for very fast JSON on .NET using Sigil-generated IL. The problem was JSON cost in Stack Overflow-scale services. Jil solves it with a compiled serialize/deserialize path.
 
 #### [Json.Net](https://github.com/JamesNK/Newtonsoft.Json) · `13.0.4`
 
@@ -173,43 +175,43 @@ LightProto is a source-generated, protobuf-net-style serializer for modern .NET.
 
 MemoryPack was created by Yoshifumi Kawai for extremely fast, source-generated binary serialization on modern .NET. The problem was existing binary libraries allocating and reflecting too much. `[MemoryPackable]` types get generated encode/decode.
 
-#### [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) · `2.5.302`
+#### [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) · `2.5.303`
 
 MessagePack-CSharp is the official MessagePack implementation for .NET (neuecc / MessagePack-CSharp). MessagePack exists as compact binary JSON. This library is the standard .NET codec, including a contractless resolver.
 
-#### [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack)
+#### [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack) · `1.3.86`
 
-Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses stable numeric keys and the library's default value retention. The type shape is derived from reflection instead of source generation due to the lack of a generic context provided by the adapter.
+Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses reflection-based POCO shapes with stable numeric keys and the library's default value retention.
 
 #### [Migrant](https://github.com/antmicro/Migrant) · `0.13.0.0`
 
 Migrant is Antmicro's .NET binary serializer for object graphs. In this suite the timed path is a JSON envelope, not native Migrant domain graphs. See the language inventory.
 
-#### [MS Binary](https://github.com/dotnet/runtime) · `.NET 8.0.28`
+#### [MS Binary](https://github.com/dotnet/runtime) · `.NET 10.0.12`
 
 BinaryFormatter is legacy .NET binary serialization. It exists so the early framework could persist object graphs. It is obsolete and unsafe for untrusted input; the suite keeps the row as a historical baseline.
 
-#### [MS Bond Compact](https://github.com/microsoft/bond) · `.NET 8.0.28`
+#### [MS Bond Compact](https://github.com/microsoft/bond) · `.NET 10.0.12`
 
 Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary.
 
-#### [MS Bond Fast](https://github.com/microsoft/bond) · `.NET 8.0.28`
+#### [MS Bond Fast](https://github.com/microsoft/bond) · `.NET 10.0.12`
 
 Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary.
 
-#### [MS Bond Json](https://github.com/microsoft/bond) · `.NET 8.0.28`
+#### [MS Bond Json](https://github.com/microsoft/bond) · `.NET 10.0.12`
 
 Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol.
 
-#### [MS DataContract](https://github.com/dotnet/runtime) · `.NET 8.0.28`
+#### [MS DataContract](https://github.com/dotnet/runtime) · `.NET 10.0.12`
 
 DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules.
 
-#### [MS DataContract Json](https://github.com/dotnet/runtime) · `.NET 8.0.28`
+#### [MS DataContract Json](https://github.com/dotnet/runtime) · `.NET 10.0.12`
 
 DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules.
 
-#### [MS XmlSerializer](https://github.com/dotnet/runtime) · `.NET 8.0.28`
+#### [MS XmlSerializer](https://github.com/dotnet/runtime) · `.NET 10.0.12`
 
 XmlSerializer is classic .NET XML serialization. It exists so the framework could map objects to XML documents. This row is real domain XML when the attributes allow it.
 
@@ -237,15 +239,43 @@ ServiceStack.Text is the serializer stack behind ServiceStack. It was created so
 
 SharpSerializer is a .NET serializer that can write binary or XML. It was created as a simple, portable alternative to framework serializers for app persistence.
 
-#### [SharpYaml](https://github.com/xoofx/SharpYaml) · `3.13.1`
+#### [SharpYaml](https://github.com/xoofx/SharpYaml) · `3.14.0`
 
 SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet lineage ideas). It exists as another maintained YAML stack for C#.
+
+#### [ShapeShift.Cbor](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
+
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes the CBOR bytes. The package has no stream API, so the stream row adapts its byte-array API.
+
+#### [ShapeShift.Json](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
+
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode uses the serializer's string API. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
+
+#### [ShapeShift.MsgPack](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
+
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes MessagePack bytes. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`.
+
+#### [ShapeShift.Protobuf](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
+
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes bytes. The package has no stream API, so the stream row adapts its byte-array API.
+
+#### [ShapeShift.Taml](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
+
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized.
+
+#### [ShapeShift.Toml](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
+
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`.
+
+#### [ShapeShift.Yaml](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
+
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`.
 
 #### [SpanJson](https://github.com/Tornhoof/SpanJson) · `4.2.1`
 
 SpanJson was created to serialize JSON on .NET using `Span<T>` and modern memory primitives. The problem was older JSON libraries allocating too many strings. It writes UTF-8 directly from spans.
 
-#### [System.Text.Json](https://github.com/dotnet/runtime) · `8.0.0.0`
+#### [System.Text.Json](https://github.com/dotnet/runtime) · `10.0.0.0`
 
 System.Text.Json is the built-in JSON serializer for modern .NET. It was created so the platform had a fast, AOT-friendly JSON stack without Newtonsoft. It solves that with a serializer in the runtime and source-generation options.
 
@@ -291,20 +321,19 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (canonical mode labe
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
-| **Adapted stream** | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader` | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
-| **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
-| **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
+| **Adapted stream** | Stream path writes/reads a complete string, Base64 value, or in-memory buffer rather than using a native streaming API | ShapeShift.Cbor / ShapeShift.Protobuf, **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
+| **Native binary stream** | Library writes/reads `Stream` with its binary API | ShapeShift.Json / ShapeShift.MsgPack, ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
+| **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
 
 When stream ≈ string within a few percent on the Dashboard, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.
 
 ### Caveats
 
-- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, …). Domain models live in [`c-sharp/src/TestData/V2/Models.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/TestData/V2/Models.cs).
+- Most codecs serialize domain types **directly** (attributes on V2 models: `[DataContract]`, `[ProtoContract]`, `[Schema]`, `[MemoryPackable]`, `[GenerateShape]`, …). Domain models live in [`c-sharp/src/TestData/V2/Models.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/TestData/V2/Models.cs).
 - **Library-native prepare (still real domain or codegen forms):** Google.Protobuf (`IMessage`), ZeroFormatter (`KeyTuple` on net8), FlatSharp (tables via map), CsvHelper (row lists). These are **not** JSON envelopes.
 - **Envelope exceptions:** ExtendedXmlSerializer and Migrant only — see above.
 - **Apex.Serialization** removed (crashes on .NET 8 `FieldInfoModifier`); **FluentSerializer** removed (cannot encode nested graphs / long strings reliably). **System.Text.Json** included.
 - SpanJson / Utf8Json cache closed generic delegates in `Initialize` (no per-call reflection).
-- Jil reuses a single static `Options` instance.
 - Benchmark runner no longer prints per-repetition DEBUG lines (measurement noise).
 - Failures: `logs/csharp/<ts>.errors.csv` (per run).
 - Rankings: use generated reports (`analyze-benchmarks`), not this list. Prefer [same category](../analysis/serialization_categories.md) and same I/O mode.

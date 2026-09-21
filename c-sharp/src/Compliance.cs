@@ -224,11 +224,6 @@ namespace GLD.SerializerBenchmark
                 new("System.Text.Json", "json", SerializerVersionRegistry.Resolve("System.Text.Json"), (b, _) => System.Text.Json.JsonSerializer.Deserialize<object>(b)),
                 new("Json.Net", "json", SerializerVersionRegistry.Resolve("Json.Net"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
                 new("Json.Net (Helper)", "json", SerializerVersionRegistry.Resolve("Json.Net (Helper)"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
-                new("Jil", "json", SerializerVersionRegistry.Resolve("Jil"), (b, _) =>
-                {
-                    if (TooDeep(b)) throw new InvalidDataException("too nested for Jil");
-                    return Jil.JSON.Deserialize<object>(Encoding.UTF8.GetString(b));
-                }, 4096),
                 new("SpanJson", "json", SerializerVersionRegistry.Resolve("SpanJson"), (b, _) => SpanJson.JsonSerializer.Generic.Utf8.Deserialize<object>(b), 8192),
                 new("Utf8Json", "json", SerializerVersionRegistry.Resolve("Utf8Json"), (b, _) => Utf8Json.JsonSerializer.Deserialize<object>(b), 8192),
                 new("NetJSON", "json", SerializerVersionRegistry.Resolve("NetJSON"), (b, _) => NetJSON.NetJSON.Deserialize<object>(Encoding.UTF8.GetString(b)), 4096),

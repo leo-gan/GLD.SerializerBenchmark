@@ -309,8 +309,6 @@ add("csharp", "Json.Net", ["json"], "https://www.newtonsoft.com/json/help/html/I
     "Newtonsoft Json.NET: JSON framework.")
 add("csharp", "Json.Net (Helper)", ["json"], "https://www.newtonsoft.com/json/help/html/Introduction.htm",
     "Same Json.NET library, helper call path.")
-add("csharp", "Jil", ["json"], "https://github.com/kevin-montrose/Jil",
-    "Jil: fast JSON serializer for .NET.")
 add("csharp", "SpanJson", ["json"], "https://github.com/Tornhoof/SpanJson",
     "SpanJson: .NET JSON serializer.")
 add("csharp", "Utf8Json", ["json"], "https://github.com/neuecc/Utf8Json",
@@ -373,6 +371,20 @@ add("csharp", "MemoryPack", [], "https://github.com/Cysharp/MemoryPack",
     "MemoryPack: .NET binary; no public RFC/IDL in this catalog.")
 add("csharp", "Nerdbank.MessagePack", ["msgpack"], "https://github.com/AArnott/Nerdbank.MessagePack",
     "Nerdbank.MessagePack: MessagePack serializer using reflection-based POCO shapes with stable numeric keys in this suite.")
+add("csharp", "ShapeShift.Cbor", ["cbor"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift CBOR serializer using source-generated PolyType contracts.")
+add("csharp", "ShapeShift.Json", ["json"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift JSON serializer using source-generated PolyType contracts.")
+add("csharp", "ShapeShift.MsgPack", ["msgpack"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift MessagePack serializer using source-generated PolyType contracts.")
+add("csharp", "ShapeShift.Protobuf", [], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift protobuf-style serializer; its encoding is not registered as standard Protocol Buffers wire format.")
+add("csharp", "ShapeShift.Taml", [], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift TAML serializer; TAML is not a public interchange specification in this catalog.")
+add("csharp", "ShapeShift.Toml", ["toml"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift TOML serializer using source-generated PolyType contracts.")
+add("csharp", "ShapeShift.Yaml", ["yaml"], "https://github.com/AArnott/ShapeShift",
+    "ShapeShift YAML serializer using source-generated PolyType contracts.")
 add("csharp", "Migrant", [], "https://github.com/antmicro/Migrant",
     "Migrant: .NET binary (suite row is a JSON envelope).")
 add("csharp", "NetSerializer", [], "https://github.com/tomba/netserializer",

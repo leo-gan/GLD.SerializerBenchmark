@@ -390,9 +390,6 @@
       "Json.Net (Helper)": [
         "json"
       ],
-      "Jil": [
-        "json"
-      ],
       "SpanJson": [
         "json"
       ],
@@ -462,6 +459,23 @@
       "MemoryPack": [],
       "Nerdbank.MessagePack": [
         "msgpack"
+      ],
+      "ShapeShift.Cbor": [
+        "cbor"
+      ],
+      "ShapeShift.Json": [
+        "json"
+      ],
+      "ShapeShift.MsgPack": [
+        "msgpack"
+      ],
+      "ShapeShift.Protobuf": [],
+      "ShapeShift.Taml": [],
+      "ShapeShift.Toml": [
+        "toml"
+      ],
+      "ShapeShift.Yaml": [
+        "yaml"
       ],
       "Migrant": [],
       "NetSerializer": [],
@@ -678,7 +692,9 @@
       "serde.toml": [
         "toml"
       ],
-      "serde.msgpack": [],
+      "serde.msgpack": [
+        "msgpack"
+      ],
       "zig-msgpack": [
         "msgpack"
       ],
@@ -703,7 +719,9 @@
       "std.zon": [
         "zon"
       ],
-      "serde.zon": [],
+      "serde.zon": [
+        "zon"
+      ],
       "serde.xml": [],
       "comptime-bin": [],
       "s2s": []

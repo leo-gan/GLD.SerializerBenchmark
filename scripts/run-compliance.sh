@@ -196,14 +196,14 @@ fi
 if want_lang csharp && command -v dotnet >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/c-sharp/src/Compliance.cs" ]]; then
     echo ""
     echo -e "${BLUE}csharp compliance…${NC}"
-    CS_DLL="$PROJECT_ROOT/c-sharp/src/bin/Release/net8.0/GLD.SerializerBenchmark.dll"
+    CS_DLL="$PROJECT_ROOT/c-sharp/src/bin/Release/net10.0/GLD.SerializerBenchmark.dll"
     if [[ ! -f "$CS_DLL" ]]; then
         (cd "$PROJECT_ROOT/c-sharp/src" && dotnet build -c Release --nologo -v q) || true
     fi
     CS_PART="$LOG_DIR/csharp-parts"
     mkdir -p "$CS_PART"
     CS_SERS=(
-        "System.Text.Json" "Json.Net" "Json.Net (Helper)" "Jil" "SpanJson" "Utf8Json"
+        "System.Text.Json" "Json.Net" "Json.Net (Helper)" "SpanJson" "Utf8Json"
         "fastJson" "ServiceStack Json" "FsPicklerJson" "MS DataContract Json" "MS Bond Json"
         "YamlDotNet" "SharpYaml" "MessagePack-CSharp" "Nerdbank.MessagePack" "Google.Protobuf" "ProtoBuf"
         "LightProto" "Apache.Avro" "MS Bond Compact" "MS Bond Fast" "FlatSharp"
