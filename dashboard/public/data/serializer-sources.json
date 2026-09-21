@@ -250,7 +250,7 @@
       },
       "yaml-cpp": {
         "source_url": "https://github.com/jbeder/yaml-cpp",
-        "version": "0.8.0",
+        "version": "0.9.0",
         "specifics": "yaml-cpp is a YAML parser/emitter for C++. YAML exists as a human-friendly config language. yaml-cpp is the usual C++ implementation of that model."
       },
       "yas": {
@@ -396,6 +396,7 @@
       },
       "Nerdbank.MessagePack": {
         "source_url": "https://github.com/AArnott/Nerdbank.MessagePack",
+        "version": "1.3.86",
         "specifics": "Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses reflection-based POCO shapes with stable numeric keys and the library's default value retention."
       },
       "NetJSON": {
