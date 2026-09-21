@@ -460,6 +460,9 @@
       "GroBuf": [],
       "Hyperion": [],
       "MemoryPack": [],
+      "Nerdbank.MessagePack": [
+        "msgpack"
+      ],
       "Migrant": [],
       "NetSerializer": [],
       "ServiceStack": [],
@@ -664,6 +667,9 @@
         "json"
       ],
       "serde.json": [
+        "json"
+      ],
+      "json.zig": [
         "json"
       ],
       "serde.yaml": [

@@ -150,7 +150,19 @@ function builtinAdapters(): array
             if (class_exists(\CBOR\Decoder::class)) {
                 $dec = new \CBOR\Decoder();
                 $stream = new \CBOR\StringStream($b);
-                return $dec->decode($stream);
+                $obj = $dec->decode($stream);
+                // decode() returns the CBOR object model; normalize() gives the PHP value the catalog
+                // describes (integers come back as numeric strings, which valuesEqual() accepts).
+                if (!$obj instanceof \CBOR\Normalizable) {
+                    return $obj;
+                }
+                try {
+                    return $obj->normalize();
+                } catch (InvalidArgumentException) {
+                    // Decoded, but with no PHP counterpart: a map keyed by a float, a list, a map...
+                    // The item was accepted; a case that carries a `decoded` value still compares unequal.
+                    return $obj;
+                }
             }
             throw new RuntimeException('no CBOR decoder');
         }];
@@ -422,7 +434,9 @@ function preview(mixed $v): string
     if ($s === false) {
         $s = is_object($v) ? $v::class : gettype($v);
     }
-    return strlen($s) > 120 ? substr($s, 0, 117) . '...' : $s;
+    // Cut on a character boundary: a byte-level substr() can split a multibyte sequence and leave an
+    // observed value that json_encode() refuses, which drops the whole --json-out report.
+    return (string) preg_replace('/^(.{117}).+$/us', '$1...', $s);
 }
 
 function printSummary(array $results, array $adapterErrs): void

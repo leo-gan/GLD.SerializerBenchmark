@@ -5,7 +5,7 @@ title: "Zig"
 Zig
 ===
 
-Zig is in this suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin runtime reflection, C# source generation, or Rust derive macros. The runner times official `std.json` (typed `parseFromSlice` versus streaming `Scanner` / `parseFromTokenSource`) against an in-tree comptime byte-packed baseline, against **serde.zig**, a format-agnostic framework that uses the same `@typeInfo` walk for JSON, MessagePack, YAML, TOML, and ZON, and against **schema codecs** (Protocol Buffers, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
+Zig is in this suite because **comptime reflection** (`@typeInfo`) is a different implementation model from Java/Kotlin runtime reflection, C# source generation, or Rust derive macros. The runner times official `std.json` (typed `parseFromSlice` versus streaming `Scanner` / `parseFromTokenSource`) against an in-tree comptime byte-packed baseline, against **serde.zig**, a format-agnostic framework that uses the same `@typeInfo` walk for JSON, MessagePack, YAML, TOML, and ZON, against typed third-party codecs that specialize the whole encoder into the destination type (**json.zig**, **msgpack.zig**), and against **schema codecs** (Protocol Buffers, FlatBuffers, Cap’n Proto) generated from the shared suite IDLs.
 
 ## Runtime
 
@@ -69,6 +69,7 @@ The shell script resolves the run config to JSON. The Zig binary does not spawn 
 | [serde.xml](https://github.com/OrlovEvgeny/serde.zig) | Text | serde.zig 1.2.2 | text_on_stream | Same API, XML |
 | [zig-msgpack](https://github.com/zigcc/zig-msgpack) | Binary | zigcc/zig-msgpack 0.0.18 | adapted | Official MessagePack Payload API |
 | [msgpack.zig](https://github.com/lalinsky/msgpack.zig) | Binary | lalinsky/msgpack.zig 0.9.0 | native | Typed `encode` / `decodeFromSlice` |
+| [json.zig](https://github.com/lalinsky/json.zig) | JSON | lalinsky/json.zig 0.1.0 | native | Typed `encode` / `decodeFromSliceLeaky` into the cell arena |
 | [zbor](https://codeberg.org/r4gus/zbor) | Binary | r4gus/zbor 0.21.3 | adapted | Native Zig CBOR (`stringify` / `parse`) |
 | [s2s](https://github.com/ziglibs/s2s) | Binary | ziglibs/s2s | native | Native binary “struct to stream” |
 | [protobuf](https://github.com/Arwalk/zig-protobuf) | Schema | Arwalk/zig-protobuf 5.0.0 | adapted | Generated from `schemas/v2/protobuf/benchmark_v2.proto`. Prepare copies suite → generated message; timed path is `encode` / `decode` |
@@ -130,6 +131,10 @@ zigcc/zig-msgpack is a MessagePack implementation for Zig. MessagePack exists as
 #### [msgpack.zig](https://github.com/lalinsky/msgpack.zig) · `0.9.0`
 
 lalinsky/msgpack.zig is another MessagePack library for Zig with a typed encode/decode API. It exists as a native Zig implementation of the same MessagePack spec.
+
+#### [json.zig](https://github.com/lalinsky/json.zig)
+
+lalinsky/json.zig is a typed JSON library for Zig: the encoder and decoder are comptime-specialized into the Zig type, so there is no DOM and no runtime schema. It exists to make JSON cheap for APIs with a fixed schema, and it reads and writes std.Io readers and writers, so a value larger than the buffer still decodes.
 
 #### [zbor](https://codeberg.org/r4gus/zbor) · `0.21.3`
 

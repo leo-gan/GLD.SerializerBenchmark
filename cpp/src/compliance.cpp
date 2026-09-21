@@ -9,6 +9,9 @@
 #if __has_include(<yaml-cpp/yaml.h>)
 #include <yaml-cpp/yaml.h>
 #endif
+#if __has_include(<msgpack.hpp>)
+#include <msgpack.hpp>
+#endif
 static bool too_deep(const std::vector<uint8_t>& raw) {
   if (raw.size() > 200000) return true;
   int n = 0;
@@ -28,6 +31,29 @@ static bool too_deep(const std::vector<uint8_t>& raw) {
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
+
+#if __has_include(<msgpack.hpp>)
+// Name of a decoded msgpack::object's top-level type. Used only as the
+// "observed" marker for accepted inputs. Intentionally does NOT build an
+// intermediate JSON DOM from the value: compliance only needs accept vs
+// reject, and the project keeps the msgpack path DOM-free (cf. PR #58).
+static const char* mp_type_name(msgpack::type::object_type t) {
+  switch (t) {
+    case msgpack::type::NIL: return "nil";
+    case msgpack::type::BOOLEAN: return "boolean";
+    case msgpack::type::POSITIVE_INTEGER: return "positive_integer";
+    case msgpack::type::NEGATIVE_INTEGER: return "negative_integer";
+    case msgpack::type::FLOAT32: return "float32";
+    case msgpack::type::FLOAT64: return "float64";
+    case msgpack::type::STR: return "str";
+    case msgpack::type::BIN: return "bin";
+    case msgpack::type::ARRAY: return "array";
+    case msgpack::type::MAP: return "map";
+    case msgpack::type::EXT: return "ext";
+    default: return "unknown";
+  }
+}
+#endif // __has_include(<msgpack.hpp>)
 
 static std::string repo_root() {
   auto dir = fs::current_path();
@@ -208,7 +234,25 @@ int main(int argc, char** argv) {
         ads.push_back({"jsoncons_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw, true, false); }});
       } else if (fmt == "msgpack") {
         ads.push_back({"nlohmann_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
-        ads.push_back({"msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
+#if __has_include(<msgpack.hpp>)
+        // Real msgpack-c / msgpack-cxx. It throws on invalid input
+        // (msgpack::parse_error for reserved bytes such as 0xc1, and
+        // msgpack::insufficient_bytes for truncated headers/payloads), so those
+        // cases are correctly classified as rejected by the catch block below.
+        ads.push_back({"msgpack", [](const auto& raw, const auto&) -> json {
+          std::size_t off = 0;
+          msgpack::object_handle oh = msgpack::unpack(
+              reinterpret_cast<const char*>(raw.data()), raw.size(), off);
+          // A single well-formed value must consume the whole buffer; leftover
+          // bytes mean the input is not one valid MessagePack value.
+          if (off != raw.size())
+            throw std::runtime_error("trailing bytes after msgpack value");
+          // Compliance needs only accept/reject. Decoding into a JSON DOM would
+          // reintroduce the intermediate conversion PR #58 removed, so we just
+          // report the decoded top-level type as the observed marker.
+          return json(mp_type_name(oh.get().type));
+        }});
+#endif
         ads.push_back({"jsoncons_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
       } else if (fmt == "ubjson") {
         ads.push_back({"nlohmann_ubjson", [](const auto& raw, const auto&) { return json::from_ubjson(raw, true, false); }});

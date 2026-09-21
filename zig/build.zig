@@ -54,6 +54,7 @@ pub fn build(b: *std.Build) void {
     const zig_msgpack_dep = b.dependency("zig_msgpack", .{ .target = target, .optimize = optimize });
     const zbor_dep = b.dependency("zbor", .{ .target = target, .optimize = optimize });
     const msgpack_l_dep = b.dependency("msgpack_lalinsky", .{ .target = target, .optimize = optimize });
+    const json_l_dep = b.dependency("json_lalinsky", .{ .target = target, .optimize = optimize });
     const s2s_dep = b.dependency("s2s", .{ .target = target, .optimize = optimize });
     const protobuf_dep = b.dependency("protobuf", .{ .target = target, .optimize = optimize });
     const flatbuffers_dep = b.dependency("flatbuffers", .{ .target = target, .optimize = optimize });
@@ -71,6 +72,7 @@ pub fn build(b: *std.Build) void {
         .{ .name = "zig_msgpack", .module = zig_msgpack_dep.module("msgpack") },
         .{ .name = "zbor", .module = zbor_dep.module("zbor") },
         .{ .name = "msgpack_lalinsky", .module = msgpack_l_dep.module("msgpack") },
+        .{ .name = "json_lalinsky", .module = json_l_dep.module("json") },
         .{ .name = "s2s", .module = s2s_dep.module("s2s") },
         .{ .name = "protobuf", .module = protobuf_dep.module("protobuf") },
         .{ .name = "flatbuffers", .module = flatbuffers_dep.module("flatbuffers") },
@@ -117,6 +119,7 @@ pub fn build(b: *std.Build) void {
         .{ .name = "zig_msgpack", .module = zig_msgpack_dep.module("msgpack") },
         .{ .name = "zbor", .module = zbor_dep.module("zbor") },
         .{ .name = "msgpack_lalinsky", .module = msgpack_l_dep.module("msgpack") },
+        .{ .name = "json_lalinsky", .module = json_l_dep.module("json") },
     };
     const compliance_root = b.createModule(.{
         .root_source_file = b.path("src/compliance.zig"),

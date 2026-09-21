@@ -394,6 +394,10 @@
         "version": "0.13.0.0",
         "specifics": "Migrant is Antmicro's .NET binary serializer for object graphs. In this suite the timed path is a JSON envelope, not native Migrant domain graphs. See the language inventory."
       },
+      "Nerdbank.MessagePack": {
+        "source_url": "https://github.com/AArnott/Nerdbank.MessagePack",
+        "specifics": "Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses reflection-based POCO shapes with stable numeric keys and the library's default value retention."
+      },
       "NetJSON": {
         "source_url": "https://github.com/rpgmaker/NetJSON",
         "version": "1.0.0",
@@ -1324,6 +1328,10 @@
         "source_url": "https://github.com/nDimensional/zig-flatbuffers",
         "version": "0.2.1",
         "specifics": "nDimensional/zig-flatbuffers generates Zig from FlatBuffers schemas. FlatBuffers exists so readers can use data without unpacking. This is the Zig codegen this suite times."
+      },
+      "json.zig": {
+        "source_url": "https://github.com/lalinsky/json.zig",
+        "specifics": "lalinsky/json.zig is a typed JSON library for Zig: the encoder and decoder are comptime-specialized into the Zig type, so there is no DOM and no runtime schema. It exists to make JSON cheap for APIs with a fixed schema, and it reads and writes std.Io readers and writers, so a value larger than the buffer still decodes."
       },
       "msgpack.zig": {
         "source_url": "https://github.com/lalinsky/msgpack.zig",

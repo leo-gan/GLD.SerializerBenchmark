@@ -240,6 +240,7 @@ namespace GLD.SerializerBenchmark
                 new("YamlDotNet", "yaml", SerializerVersionRegistry.Resolve("YamlDotNet"), (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
                 new("SharpYaml", "yaml", SerializerVersionRegistry.Resolve("SharpYaml"), DecodeSharpYaml),
                 new("MessagePack-CSharp", "msgpack", SerializerVersionRegistry.Resolve("MessagePack-CSharp"), (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
+                new("Nerdbank.MessagePack", "msgpack", SerializerVersionRegistry.Resolve("Nerdbank.MessagePack"), DecodeNerdbankMessagePack),
                 new("Google.Protobuf", "protobuf", SerializerVersionRegistry.Resolve("Google.Protobuf"), DecodeGoogleProtobuf),
                 new("ProtoBuf", "protobuf", SerializerVersionRegistry.Resolve("ProtoBuf"), DecodeProtobufNet),
                 new("LightProto", "protobuf", SerializerVersionRegistry.Resolve("LightProto"), DecodeProtobufNet),
@@ -289,6 +290,24 @@ namespace GLD.SerializerBenchmark
         private static object DecodeSharpYaml(byte[] data, string schema)
         {
             return SharpYaml.YamlSerializer.Deserialize(Encoding.UTF8.GetString(data), typeof(object));
+        }
+
+        private static object DecodeNerdbankMessagePack(byte[] data, string schema)
+        {
+            var reader = new Nerdbank.MessagePack.MessagePackReader(data);
+            var serializer = new Nerdbank.MessagePack.MessagePackSerializer
+            {
+                LibraryExtensionTypeCodes = new Nerdbank.MessagePack.LibraryReservedMessagePackExtensionTypeCode
+                {
+                    ObjectReference = 120,
+                    Guid = 121,
+                    BigInteger = 122,
+                    Decimal = 123,
+                    Int128 = 124,
+                    UInt128 = 125,
+                },
+            };
+            return serializer.DeserializePrimitives(ref reader);
         }
 
         private static object DecodeAvro(byte[] data, string schema)
@@ -401,10 +420,21 @@ namespace GLD.SerializerBenchmark
         {
             if (expected == null) return observed == null;
             if (observed == null) return false;
+<<<<<<< HEAD
             if (expected is bool || observed is bool) return Equals(expected, observed);
             if (expected is long or int or double or float && observed is IConvertible)
                 return Convert.ToDouble(expected) == Convert.ToDouble(observed);
             if (expected is string es) return es.Equals(observed as string);
+            if (expected is JObject expectedObject &&
+                observed is byte[] observedBytes &&
+                expectedObject.Count == 1 &&
+                expectedObject.TryGetValue("$hex", out JToken expectedHex) &&
+                expectedHex.Type == JTokenType.String)
+            {
+                return Convert.FromHexString((string)expectedHex).AsSpan().SequenceEqual(observedBytes);
+            }
+=======
+>>>>>>> AArnott/fix-boolean-compliance-comparison
             if (expected is JToken jt)
             {
                 try
@@ -417,6 +447,10 @@ namespace GLD.SerializerBenchmark
                     return false;
                 }
             }
+            if (expected is bool || observed is bool) return Equals(expected, observed);
+            if (expected is long or int or double or float && observed is IConvertible)
+                return Convert.ToDouble(expected) == Convert.ToDouble(observed);
+            if (expected is string es) return es.Equals(observed as string);
             return Equals(expected, observed);
         }
 

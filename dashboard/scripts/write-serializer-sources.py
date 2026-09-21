@@ -147,6 +147,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("csharp", "Google.Protobuf"): "https://github.com/protocolbuffers/protobuf",
     ("csharp", "Apache.Avro"): "https://github.com/apache/avro",
     ("csharp", "CsvHelper"): "https://github.com/JoshClose/CsvHelper",
+    ("csharp", "Nerdbank.MessagePack"): "https://github.com/AArnott/Nerdbank.MessagePack",
     # Rust
     ("rust", "serde_json"): "https://github.com/serde-rs/json",
     ("rust", "simd-json"): "https://github.com/simd-lite/simd-json",
@@ -971,6 +972,11 @@ SPECIFICS: dict[str, str] = {
         "problem was existing binary libraries allocating and reflecting "
         "too much. `[MemoryPackable]` types get generated encode/decode."
     ),
+    "nerdbank-messagepack": (
+        "Nerdbank.MessagePack is a modern .NET MessagePack serializer built "
+        "on type shapes. This row uses reflection-based POCO shapes with "
+        "stable numeric keys and the library's default value retention."
+    ),
     "migrant": (
         "Migrant is Antmicro's .NET binary serializer for object graphs. "
         "In this suite the timed path is a JSON envelope, not native "
@@ -1291,6 +1297,13 @@ SPECIFICS: dict[str, str] = {
         "MessagePack exists as compact binary JSON. This package exposes "
         "a Payload encode/decode API."
     ),
+    "json-zig": (
+        "lalinsky/json.zig is a typed JSON library for Zig: the encoder and "
+        "decoder are comptime-specialized into the Zig type, so there is no "
+        "DOM and no runtime schema. It exists to make JSON cheap for APIs "
+        "with a fixed schema, and it reads and writes std.Io readers and "
+        "writers, so a value larger than the buffer still decodes."
+    ),
     "msgpack-zig": (
         "lalinsky/msgpack.zig is another MessagePack library for Zig "
         "with a typed encode/decode API. It exists as a native Zig "
@@ -1542,6 +1555,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("csharp", "GroBuf"): "grobuf",
     ("csharp", "Hyperion"): "hyperion",
     ("csharp", "MemoryPack"): "memorypack",
+    ("csharp", "Nerdbank.MessagePack"): "nerdbank-messagepack",
     ("csharp", "Migrant"): "migrant",
     ("csharp", "NetSerializer"): "netserializer",
     ("csharp", "SharpSerializer"): "sharpserializer",
@@ -1634,6 +1648,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("zig", "serde.xml"): "serde-zig",
     ("zig", "zig-msgpack"): "zig-msgpack",
     ("zig", "msgpack.zig"): "msgpack-zig",
+    ("zig", "json.zig"): "json-zig",
     ("zig", "zbor"): "zbor",
     ("zig", "s2s"): "s2s",
     ("zig", "protobuf"): "zig-protobuf",

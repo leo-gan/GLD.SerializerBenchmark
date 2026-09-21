@@ -4,6 +4,7 @@ const serde = @import("serde");
 const zbor = @import("zbor");
 const zig_msgpack = @import("zig_msgpack");
 const msgpack_l = @import("msgpack_lalinsky");
+const json_l = @import("json_lalinsky");
 
 pub fn main(init: std.process.Init) !void {
     const alloc = init.gpa;
@@ -68,7 +69,7 @@ pub fn main(init: std.process.Init) !void {
         null;
     defer if (mapping_parsed) |*parsed_map| parsed_map.deinit();
 
-    const json_sers_all = [_][]const u8{ "std.json", "std.json.scanner", "serde.json" };
+    const json_sers_all = [_][]const u8{ "std.json", "std.json.scanner", "serde.json", "json.zig" };
     var json_sers: std.ArrayList([]const u8) = .empty;
     defer json_sers.deinit(alloc);
     for (json_sers_all) |name| {
@@ -318,6 +319,11 @@ fn wantFmt(formats: []const []const u8, name: []const u8) bool {
 /// three do disagree: serde.zig accepts a duplicate object key and keeps the
 /// last value, `std.json.Value` rejects it.
 fn decodeJson(alloc: std.mem.Allocator, ser: []const u8, input: []const u8) !void {
+    if (std.mem.eql(u8, ser, "json.zig")) {
+        // json.zig validates JSON syntax independently of a destination type.
+        json_l.validateFromSlice(input) catch return error.InvalidJson;
+        return;
+    }
     if (std.mem.eql(u8, ser, "serde.json")) {
         // serde.zig 1.2.2 has no bytes-to-value entry point, so drive the same
         // scanner `serde.json.fromSlice` uses: it tokenizes, validates escapes,
