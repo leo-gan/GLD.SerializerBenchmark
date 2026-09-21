@@ -21,7 +21,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />
     <PackageReference Include="protobuf-net" Version="2.*" />
     <PackageReference Include="LightProto" Version="1.*" />
-    <PackageReference Include="Jil" Version="2.*" />
     <PackageReference Include="ServiceStack.Text" Version="6.*" />
     <PackageReference Include="Bond.Core.CSharp" Version="9.*" />
     <PackageReference Include="Bond.Runtime.CSharp" Version="9.*" />
@@ -63,6 +62,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Migrant" Version="0.13.*" />
+    <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.*" />
     <PackageReference Include="ShapeShift.Cbor" Version="0.1.1068-alpha" />
     <PackageReference Include="ShapeShift.Json" Version="0.1.1068-alpha" />
     <PackageReference Include="ShapeShift.MsgPack" Version="0.1.1068-alpha" />

@@ -312,7 +312,7 @@
       },
       "Google.Protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf",
-        "version": "3.36.1",
+        "version": "3.36.2",
         "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
       },
       "GroBuf": {
@@ -324,11 +324,6 @@
         "source_url": "https://github.com/akkadotnet/Hyperion",
         "version": "0.12.2",
         "specifics": "Hyperion is the binary serializer from the Akka.NET lineage (formerly Wire). It exists so an actor system can ship .NET messages efficiently. This row times that graph codec."
-      },
-      "Jil": {
-        "source_url": "https://github.com/kevin-montrose/Jil",
-        "version": "2.17.0",
-        "specifics": "Jil was written by Kevin Montrose for very fast JSON on .NET using Sigil-generated IL. The problem was JSON cost in Stack Overflow-scale services. Jil solves it with a compiled serialize/deserialize path."
       },
       "Json.Net": {
         "source_url": "https://github.com/JamesNK/Newtonsoft.Json",
@@ -347,37 +342,37 @@
       },
       "MS Binary": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.12",
         "specifics": "BinaryFormatter is legacy .NET binary serialization. It exists so the early framework could persist object graphs. It is obsolete and unsafe for untrusted input; the suite keeps the row as a historical baseline."
       },
       "MS Bond Compact": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.12",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary."
       },
       "MS Bond Fast": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.12",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary."
       },
       "MS Bond Json": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.12",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol."
       },
       "MS DataContract": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.12",
         "specifics": "DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules."
       },
       "MS DataContract Json": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.12",
         "specifics": "DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules."
       },
       "MS XmlSerializer": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 8.0.28",
+        "version": ".NET 10.0.12",
         "specifics": "XmlSerializer is classic .NET XML serialization. It exists so the framework could map objects to XML documents. This row is real domain XML when the attributes allow it."
       },
       "MemoryPack": {
@@ -386,7 +381,7 @@
       },
       "MessagePack-CSharp": {
         "source_url": "https://github.com/MessagePack-CSharp/MessagePack-CSharp",
-        "version": "2.5.302",
+        "version": "2.5.303",
         "specifics": "MessagePack-CSharp is the official MessagePack implementation for .NET (neuecc / MessagePack-CSharp). MessagePack exists as compact binary JSON. This library is the standard .NET codec, including a contractless resolver."
       },
       "Migrant": {
@@ -424,13 +419,48 @@
         "version": "6.11.0",
         "specifics": "ServiceStack.Text is the serializer stack behind ServiceStack. It was created so that framework had a fast, built-in JSON (and JSV) codec. This suite times the JSON path and the non-JSON type serializer as separate rows. This row times ServiceStack.Text JSON."
       },
+      "ShapeShift.Cbor": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes the CBOR bytes. The package has no stream API, so the stream row adapts its byte-array API."
+      },
+      "ShapeShift.Json": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode uses the serializer's string API. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`."
+      },
+      "ShapeShift.MsgPack": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes MessagePack bytes. The stream row uses `SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`."
+      },
+      "ShapeShift.Protobuf": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. String mode Base64-encodes bytes. The package has no stream API, so the stream row adapts its byte-array API."
+      },
+      "ShapeShift.Taml": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized."
+      },
+      "ShapeShift.Toml": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`."
+      },
+      "ShapeShift.Yaml": {
+        "source_url": "https://github.com/AArnott/ShapeShift",
+        "version": "0.1.1068-alpha",
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`."
+      },
       "SharpSerializer": {
         "source_url": "https://github.com/polenter/SharpSerializer",
         "specifics": "SharpSerializer is a .NET serializer that can write binary or XML. It was created as a simple, portable alternative to framework serializers for app persistence."
       },
       "SharpYaml": {
         "source_url": "https://github.com/xoofx/SharpYaml",
-        "version": "3.13.1",
+        "version": "3.14.0",
         "specifics": "SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet lineage ideas). It exists as another maintained YAML stack for C#."
       },
       "SpanJson": {
@@ -440,7 +470,7 @@
       },
       "System.Text.Json": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": "8.0.0.0",
+        "version": "10.0.0.0",
         "specifics": "System.Text.Json is the built-in JSON serializer for modern .NET. It was created so the platform had a fast, AOT-friendly JSON stack without Newtonsoft. It solves that with a serializer in the runtime and source-generation options."
       },
       "Utf8Json": {

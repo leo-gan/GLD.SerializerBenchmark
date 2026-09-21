@@ -75,8 +75,8 @@ namespace GLD.SerializerBenchmark
                 }
             }
 
-            // SpanJson/Utf8Json/Jil on a simple v2 message fixture
-            foreach (ISerDeser ser in new ISerDeser[] { new SpanJsonSerializerSer(), new Utf8JsonSerializerSer(), new JilSerializer() })
+            // SpanJson/Utf8Json on a simple v2 message fixture
+            foreach (ISerDeser ser in new ISerDeser[] { new SpanJsonSerializerSer(), new Utf8JsonSerializerSer() })
             {
                 var fx = fixtures.First(f => f.Name == "message");
                 try

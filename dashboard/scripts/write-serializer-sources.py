@@ -148,6 +148,13 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("csharp", "Apache.Avro"): "https://github.com/apache/avro",
     ("csharp", "CsvHelper"): "https://github.com/JoshClose/CsvHelper",
     ("csharp", "Nerdbank.MessagePack"): "https://github.com/AArnott/Nerdbank.MessagePack",
+    ("csharp", "ShapeShift.Cbor"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Json"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.MsgPack"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Protobuf"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Taml"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Toml"): "https://github.com/AArnott/ShapeShift",
+    ("csharp", "ShapeShift.Yaml"): "https://github.com/AArnott/ShapeShift",
     # Rust
     ("rust", "serde_json"): "https://github.com/serde-rs/json",
     ("rust", "simd-json"): "https://github.com/simd-lite/simd-json",
@@ -834,12 +841,6 @@ SPECIFICS: dict[str, str] = {
         "attribute-driven serializer that still defines much of the "
         "ecosystem."
     ),
-    "jil": (
-        "Jil was written by Kevin Montrose for very fast JSON on .NET "
-        "using Sigil-generated IL. The problem was JSON cost in Stack "
-        "Overflow-scale services. Jil solves it with a compiled "
-        "serialize/deserialize path."
-    ),
     "spanjson": (
         "SpanJson was created to serialize JSON on .NET using `Span<T>` "
         "and modern memory primitives. The problem was older JSON "
@@ -976,6 +977,12 @@ SPECIFICS: dict[str, str] = {
         "Nerdbank.MessagePack is a modern .NET MessagePack serializer built "
         "on type shapes. This row uses reflection-based POCO shapes with "
         "stable numeric keys and the library's default value retention."
+    ),
+    "shapeshift": (
+        "ShapeShift is a source-generated serialization framework built on "
+        "PolyType contracts. It solves the reflection and trimming limitations "
+        "of conventional serializers by generating strongly typed conversion "
+        "logic for each model at compile time."
     ),
     "migrant": (
         "Migrant is Antmicro's .NET binary serializer for object graphs. "
@@ -1523,7 +1530,6 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("csharp", "System.Text.Json"): "stj",
     ("csharp", "Json.Net"): "newtonsoft",
     ("csharp", "Json.Net (Helper)"): "newtonsoft",
-    ("csharp", "Jil"): "jil",
     ("csharp", "SpanJson"): "spanjson",
     ("csharp", "Utf8Json"): "utf8json",
     ("csharp", "NetJSON"): "netjson",
@@ -1556,6 +1562,13 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("csharp", "Hyperion"): "hyperion",
     ("csharp", "MemoryPack"): "memorypack",
     ("csharp", "Nerdbank.MessagePack"): "nerdbank-messagepack",
+    ("csharp", "ShapeShift.Cbor"): "shapeshift",
+    ("csharp", "ShapeShift.Json"): "shapeshift",
+    ("csharp", "ShapeShift.MsgPack"): "shapeshift",
+    ("csharp", "ShapeShift.Protobuf"): "shapeshift",
+    ("csharp", "ShapeShift.Taml"): "shapeshift",
+    ("csharp", "ShapeShift.Toml"): "shapeshift",
+    ("csharp", "ShapeShift.Yaml"): "shapeshift",
     ("csharp", "Migrant"): "migrant",
     ("csharp", "NetSerializer"): "netserializer",
     ("csharp", "SharpSerializer"): "sharpserializer",
@@ -1705,6 +1718,33 @@ EXTRA: dict[tuple[str, str], str] = {
     ("csharp", "MS Bond Json"): "This row times the Bond JSON protocol.",
     ("csharp", "ServiceStack"): "This row times the non-JSON ServiceStack type serializer.",
     ("csharp", "ServiceStack Json"): "This row times ServiceStack.Text JSON.",
+    ("csharp", "ShapeShift.Cbor"): (
+        "String mode Base64-encodes the CBOR bytes. The package has no stream API, "
+        "so the stream row adapts its byte-array API."
+    ),
+    ("csharp", "ShapeShift.Json"): (
+        "String mode uses the serializer's string API. The stream row uses "
+        "`SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`."
+    ),
+    ("csharp", "ShapeShift.MsgPack"): (
+        "String mode Base64-encodes MessagePack bytes. The stream row uses "
+        "`SerializeAsync(Stream, ...)` and `DeserializeAsync(Stream)`."
+    ),
+    ("csharp", "ShapeShift.Protobuf"): (
+        "String mode Base64-encodes bytes. The package has no stream API, so "
+        "the stream row adapts its byte-array API."
+    ),
+    ("csharp", "ShapeShift.Taml"): (
+        "The stream row writes and reads text through `TextWriter`/`TextReader`. "
+        "The `strings` fixture is unsupported because its N=100 batch cannot "
+        "be deserialized."
+    ),
+    ("csharp", "ShapeShift.Toml"): (
+        "The stream row writes and reads text through `TextWriter`/`TextReader`."
+    ),
+    ("csharp", "ShapeShift.Yaml"): (
+        "The stream row writes and reads text through `TextWriter`/`TextReader`."
+    ),
     ("cpp", "nlohmann_cbor"): "This row times `to_cbor` / `from_cbor`.",
     ("cpp", "nlohmann_msgpack"): "This row times `to_msgpack` / `from_msgpack`.",
     ("cpp", "nlohmann_bson"): "This row times `to_bson` / `from_bson`.",
