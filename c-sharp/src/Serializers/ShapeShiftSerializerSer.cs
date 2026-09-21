@@ -36,14 +36,16 @@ namespace GLD.SerializerBenchmark.Serializers
     }
 
     /// <summary>
-    /// Bridges a ShapeShift text serializer to the suite's string and adapted stream paths.
+    /// Bridges a ShapeShift text serializer to the suite's string and stream paths.
     /// </summary>
     internal abstract class ShapeShiftTextSerializerSer : ShapeShiftSerializerSer
     {
         private Func<object, string> serialize;
         private Func<string, object> deserialize;
+        private Action<object, Stream> serializeToStream;
+        private Func<Stream, object> deserializeFromStream;
 
-        public override string StreamMode => "adapted";
+        public override string StreamMode => this.serializeToStream is null ? "text_on_stream" : "native";
 
         public override string Serialize(object serializable) => serialize(serializable);
 
@@ -51,12 +53,24 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
+            if (this.serializeToStream is not null)
+            {
+                this.serializeToStream(serializable, outputStream);
+                return;
+            }
+
             using var writer = new StreamWriter(outputStream, new UTF8Encoding(false), 1024, true);
             writer.Write(serialize(serializable));
         }
 
         public override object Deserialize(Stream inputStream)
         {
+            if (this.deserializeFromStream is not null)
+            {
+                inputStream.Seek(0, SeekOrigin.Begin);
+                return this.deserializeFromStream(inputStream);
+            }
+
             inputStream.Seek(0, SeekOrigin.Begin);
             using var reader = new StreamReader(inputStream, Encoding.UTF8, true, 1024, true);
             return deserialize(reader.ReadToEnd());
@@ -68,6 +82,15 @@ namespace GLD.SerializerBenchmark.Serializers
             deserialize = value => this.DeserializeTyped<T>(value);
         }
 
+        protected void ConfigureNativeStream<T>(
+            Action<T, Stream> serialize,
+            Func<Stream, T> deserialize)
+            where T : IShapeable<T>
+        {
+            this.serializeToStream = (value, stream) => serialize((T)value, stream);
+            this.deserializeFromStream = stream => deserialize(stream);
+        }
+
         protected abstract string SerializeTyped<T>(T value)
             where T : IShapeable<T>;
 
@@ -76,14 +99,16 @@ namespace GLD.SerializerBenchmark.Serializers
     }
 
     /// <summary>
-    /// Bridges a ShapeShift binary serializer to the suite's Base64 string and adapted stream paths.
+    /// Bridges a ShapeShift binary serializer to the suite's Base64 string and stream paths.
     /// </summary>
     internal abstract class ShapeShiftBinarySerializerSer : ShapeShiftSerializerSer
     {
         private Func<object, byte[]> serialize;
         private Func<byte[], object> deserialize;
+        private Action<object, Stream> serializeToStream;
+        private Func<Stream, object> deserializeFromStream;
 
-        public override string StreamMode => "adapted";
+        public override string StreamMode => this.serializeToStream is null ? "adapted" : "native";
 
         public override string Serialize(object serializable) => Convert.ToBase64String(serialize(serializable));
 
@@ -91,12 +116,24 @@ namespace GLD.SerializerBenchmark.Serializers
 
         public override void Serialize(object serializable, Stream outputStream)
         {
+            if (this.serializeToStream is not null)
+            {
+                this.serializeToStream(serializable, outputStream);
+                return;
+            }
+
             byte[] bytes = serialize(serializable);
             outputStream.Write(bytes, 0, bytes.Length);
         }
 
         public override object Deserialize(Stream inputStream)
         {
+            if (this.deserializeFromStream is not null)
+            {
+                inputStream.Seek(0, SeekOrigin.Begin);
+                return this.deserializeFromStream(inputStream);
+            }
+
             inputStream.Seek(0, SeekOrigin.Begin);
             using var output = new MemoryStream();
             inputStream.CopyTo(output);
@@ -107,6 +144,15 @@ namespace GLD.SerializerBenchmark.Serializers
         {
             serialize = value => this.SerializeTyped((T)value);
             deserialize = value => this.DeserializeTyped<T>(value);
+        }
+
+        protected void ConfigureNativeStream<T>(
+            Action<T, Stream> serialize,
+            Func<Stream, T> deserialize)
+            where T : IShapeable<T>
+        {
+            this.serializeToStream = (value, stream) => serialize((T)value, stream);
+            this.deserializeFromStream = stream => deserialize(stream);
         }
 
         protected abstract byte[] SerializeTyped<T>(T value)
@@ -128,6 +174,14 @@ namespace GLD.SerializerBenchmark.Serializers
         protected override string SerializeTyped<T>(T value) => serializer.Serialize(value);
 
         protected override T DeserializeTyped<T>(string value) => serializer.Deserialize<T>(value);
+
+        protected override void ConfigureTyped<T>()
+        {
+            base.ConfigureTyped<T>();
+            this.ConfigureNativeStream<T>(
+                (value, stream) => serializer.SerializeAsync(stream, value).GetAwaiter().GetResult(),
+                stream => serializer.DeserializeAsync<T>(stream).GetAwaiter().GetResult());
+        }
     }
 
     /// <summary>
@@ -200,6 +254,14 @@ namespace GLD.SerializerBenchmark.Serializers
         protected override byte[] SerializeTyped<T>(T value) => serializer.Serialize(value);
 
         protected override T DeserializeTyped<T>(byte[] value) => serializer.Deserialize<T>(value);
+
+        protected override void ConfigureTyped<T>()
+        {
+            base.ConfigureTyped<T>();
+            this.ConfigureNativeStream<T>(
+                (value, stream) => serializer.SerializeAsync(stream, value).GetAwaiter().GetResult(),
+                stream => serializer.DeserializeAsync<T>(stream).GetAwaiter().GetResult());
+        }
     }
 
     /// <summary>

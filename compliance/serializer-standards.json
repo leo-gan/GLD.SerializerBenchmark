@@ -399,9 +399,6 @@
       "Json.Net (Helper)": [
         "json"
       ],
-      "Jil": [
-        "json"
-      ],
       "SpanJson": [
         "json"
       ],
@@ -474,6 +471,23 @@
       "MemoryPack": [],
       "Nerdbank.MessagePack": [
         "msgpack"
+      ],
+      "ShapeShift.Cbor": [
+        "cbor"
+      ],
+      "ShapeShift.Json": [
+        "json"
+      ],
+      "ShapeShift.MsgPack": [
+        "msgpack"
+      ],
+      "ShapeShift.Protobuf": [],
+      "ShapeShift.Taml": [],
+      "ShapeShift.Toml": [
+        "toml"
+      ],
+      "ShapeShift.Yaml": [
+        "yaml"
       ],
       "Migrant": [],
       "NetSerializer": [],

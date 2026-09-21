@@ -72,7 +72,6 @@ namespace GLD.SerializerBenchmark
                 new DataContractJsonSer(),
                 new XmlSerializerSer(),
                 new FastJsonSerializer(),
-                new JilSerializer(),
                 new JsonNetHelperSerializer(),
                 new JsonNetSerializer(),
                 new FsPicklerBinarySerializer(),
