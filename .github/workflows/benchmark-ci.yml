@@ -198,9 +198,6 @@ jobs:
           cd c-sharp
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke csharp
-
   python-benchmark:
     needs: changes
     if: >-
@@ -227,9 +224,6 @@ jobs:
           cd python
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke python
-
   rust-benchmark:
     needs: changes
     if: >-
@@ -249,9 +243,6 @@ jobs:
         run: |
           cd rust
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
-
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke rust
 
   c-benchmark:
     needs: changes
@@ -302,9 +293,6 @@ jobs:
           cd javascript
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke javascript
-
   go-benchmark:
     needs: changes
     if: >-
@@ -336,9 +324,6 @@ jobs:
         run: |
           cd go
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
-
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke go
 
   java-benchmark:
     needs: changes
@@ -379,9 +364,6 @@ jobs:
           cd java
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke java
-
   kotlin-benchmark:
     needs: changes
     if: >-
@@ -414,9 +396,6 @@ jobs:
         run: |
           cd kotlin
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
-
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke kotlin
 
   php-benchmark:
     needs: changes
@@ -481,9 +460,6 @@ jobs:
           cd cpp
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
 
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke cpp
-
 
   swift-benchmark:
     needs: changes
@@ -517,9 +493,6 @@ jobs:
         run: |
           cd swift
           ./scripts/run-benchmarks.sh ${{ github.event.inputs.mode || 'smoke' }}
-
-      - name: Validate Fory benchmark
-        run: ./scripts/run-fory-benchmarks.sh smoke swift
 
   zig-benchmark:
     needs: changes

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Run only Fory across the integrated runtimes, using each language's normal runner.
+# This is a manual convenience command; CI stays with the existing per-language runners.
 set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/config.sh"
