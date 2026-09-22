@@ -14,8 +14,8 @@ Go compiles to **native machine code** before the process starts. There is no Ja
 
 |                   | This suite                                                              |
 | ----------------- | ----------------------------------------------------------------------- |
-| Language / module | Go **1.24** (`go.mod` toolchain `go1.24.13`)                            |
-| Host bootstrap    | Go **1.22 or newer**. `GOTOOLCHAIN=auto` may download 1.24.             |
+| Language / module | Go **1.25** (`go.mod`)                                                  |
+| Host bootstrap    | Go **1.22 or newer**. `GOTOOLCHAIN=auto` may download 1.25.             |
 | Prepare           | `./scripts/install-host-requirements.sh go` installs into `~/.local/go` |
 | Run               | `go/scripts/run-benchmarks.sh` runs `go build` and then the binary      |
 | Memory            | Concurrent garbage collector inside the Go runtime                      |
@@ -47,14 +47,11 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 
 ## Serializers
 
-Apache Fory **1.7.4** is included as `fory`. Run
-`./scripts/run-fory-benchmarks.sh all-single go` from the repository root.
-See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
-
 | Serializer                                                                  | Category    | Package            | Native path                     | Stream      | Notes                                                                                     |
 | --------------------------------------------------------------------------- | ----------- | ------------------ | ------------------------------- | ----------- | ----------------------------------------------------------------------------------------- |
 | [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob)   | Native      | stdlib             | registered types                | native      | Buffer Reset between encodes                                                              |
 | [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) | JSON        | stdlib             | struct tags                     | native      | Stream `SetEscapeHTML(false)`                                                             |
+| [fory](https://github.com/apache/fory)                                      | Native      | fory/go/fory       | registered structs              | adapted     | Native mode; registration outside timing                                                  |
 | [fxamacker/cbor](https://github.com/fxamacker/cbor)                         | CBOR        | cbor/v2            | reused Enc/DecMode              | native      | Default EncOptions (not CoreDet)                                                          |
 | [goccy/go-json](https://github.com/goccy/go-json)                           | JSON        | goccy/go-json      | drop-in API                     | native      | Fast stdlib substitute                                                                    |
 | [goccy/go-yaml](https://github.com/goccy/go-yaml)                           | YAML        | goccy/go-yaml      | Marshal/Unmarshal               | native      | High-perf YAML                                                                            |

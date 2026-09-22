@@ -57,10 +57,6 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 
 ## Serializers
 
-Apache Fory **1.7.4** is included as `fory`. Run
-`./scripts/run-fory-benchmarks.sh all-single csharp` from the repository root.
-See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
-
 | Log name                                                                       | Category              | Library / notes                                                                                                                                                                                  |
 | ------------------------------------------------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [Apache.Avro](https://github.com/apache/avro)                                  | Schema                | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize                                                                                                                          |
@@ -70,6 +66,7 @@ See [Fory benchmark coverage](../analysis/fory.md) for the input types and timin
 | [ExtendedXmlSerializer](https://github.com/wojtpl2/ExtendedXmlSerializer)      | XML (**envelope**)    | **Not domain XML** — ExtendedXml of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire)                                                                           |
 | [fastJson](https://github.com/mgholam/fastJSON)                                | JSON                  | FastJson                                                                                                                                                                                         |
 | [FlatSharp](https://github.com/jamescourtney/FlatSharp)                        | Schema / FlatBuffers  | FlatSharp tables via domain map (untimed `PrepareData`)                                                                                                                                          |
+| [fory](https://github.com/apache/fory)                                         | Binary                | Apache.Fory generated serializers; string mode = Base64, adapted stream                                                                                                                          |
 | [FsPickler](https://github.com/mbraceproject/FsPickler)                        | Binary                | FsPickler binary                                                                                                                                                                                 |
 | [FsPicklerJson](https://github.com/mbraceproject/FsPickler)                    | JSON                  | FsPickler JSON                                                                                                                                                                                   |
 | [Google.Protobuf](https://github.com/protocolbuffers/protobuf)                 | Schema                | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`)                                                                                                                                     |

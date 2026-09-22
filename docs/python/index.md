@@ -54,10 +54,6 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 
 ## Serializers
 
-Apache Fory **1.7.4** is included as `fory`. Run
-`./scripts/run-fory-benchmarks.sh all-single python` from the repository root.
-See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
-
 | Log name                                                            | Category | Package                 | Native input (`prepare_data`) | Stream mode            | Notes                                                                        |
 | ------------------------------------------------------------------- | -------- | ----------------------- | ----------------------------- | ---------------------- | ---------------------------------------------------------------------------- |
 | [avro](https://github.com/fastavro/fastavro)                        | Schema   | `fastavro`              | record dict                   | adapted                | Compact schemaless size; dict/union path slower than protobuf C++            |
@@ -65,6 +61,7 @@ See [Fory benchmark coverage](../analysis/fory.md) for the input types and timin
 | [cloudpickle](https://github.com/cloudpipe/cloudpickle)             | Native   | `cloudpickle`           | dataclass                     | native                 | Extended pickle; same security caveats                                       |
 | [dill](https://github.com/uqfoundation/dill)                        | Native   | `dill`                  | dataclass                     | native                 | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch)      |
 | [flatbuffers](https://github.com/google/flatbuffers)                | Schema   | `flatbuffers`           | dataclass → Builder           | adapted                | Python Builder ser is slow; deser is zero-copy `GetRootAs` view              |
+| [fory](https://github.com/apache/fory)                              | Native   | `pyfory`                | dataclass                     | adapted                | Native mode; registered dataclasses                                          |
 | [json](https://github.com/python/cpython/tree/main/Lib/json)        | JSON     | stdlib                  | dict                          | adapted                | Baseline text JSON                                                           |
 | [mashumaro](https://github.com/Fatal1ty/mashumaro)                  | JSON     | `mashumaro`             | dataclass                     | adapted                | ORJSONEncoder/Decoder                                                        |
 | [msgpack](https://github.com/msgpack/msgpack-python)                | Binary   | `msgpack`               | dict                          | native                 | Reference MessagePack                                                        |

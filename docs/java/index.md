@@ -2,7 +2,8 @@
 title: "Java"
 ---
 
-# Java
+Java
+====
 
 Java’s serialization landscape spans **JSON** (Jackson, Gson, Fastjson2, DSL-JSON, Moshi, jsoniter), **high-performance native binary** (Kryo, Apache Fory, Protostuff, Hessian2, `java.io`), **portable binary** (MessagePack, CBOR, Smile, Ion, BSON), and **schema/IDL** stacks (Protocol Buffers, Avro).
 
@@ -14,14 +15,14 @@ Java compiles to **bytecode**, which is an intermediate instruction set. A **Jav
 
 The **JDK** (Java Development Kit) includes both the compiler (`javac`) and the JVM. A **JRE** (Java Runtime Environment) is the virtual machine without the compiler. This suite needs a JDK because it compiles the runner before it times anything.
 
-|          | This suite                                                                                         |
-| -------- | -------------------------------------------------------------------------------------------------- |
-| Target   | Java **21** (`maven.compiler.release`)                                                             |
-| Host JDK | JDK **17 or newer** is accepted. The install script places **Temurin 21**.                         |
-| Build    | Maven **3.9 or newer**                                                                             |
-| Prepare  | `./scripts/install-host-requirements.sh java` installs into `~/.local/jdk-21` and `~/.local/maven` |
-| Run      | `java/scripts/run-benchmarks.sh` (`mvn package`)                                                   |
-| Memory   | JVM garbage collector (HotSpot)                                                                    |
+| | This suite |
+|---|---|
+| Target | Java **21** (`maven.compiler.release`) |
+| Host JDK | JDK **17 or newer** is accepted. The install script places **Temurin 21**. |
+| Build | Maven **3.9 or newer** |
+| Prepare | `./scripts/install-host-requirements.sh java` installs into `~/.local/jdk-21` and `~/.local/maven` |
+| Run | `java/scripts/run-benchmarks.sh` (`mvn package`) |
+| Memory | JVM garbage collector (HotSpot) |
 
 ### What this suite runs
 
@@ -54,26 +55,26 @@ The steps to install the toolchain and run the benchmark are in [`java/README.md
 
 ## Serializers
 
-| Serializer                                                               | Category    | Package                    | Native path               | Stream  | Notes                                     |
-| ------------------------------------------------------------------------ | ----------- | -------------------------- | ------------------------- | ------- | ----------------------------------------- |
-| [avro](https://github.com/apache/avro)                                   | Schema      | avro                       | ReflectDatum\*            | native  | Schema once; encoder reuse                |
-| [bson](https://github.com/mongodb/mongo-java-driver)                     | Document    | org.mongodb:bson           | DocumentCodec             | adapted | Domain→Document in prepare                |
-| [dsl-json](https://github.com/ngs-doo/dsl-json)                          | JSON        | dsl-json                   | runtime DslJson           | native  | Reused JsonWriter buffer                  |
-| [fastjson2](https://github.com/alibaba/fastjson2)                        | JSON        | fastjson2                  | FieldBased API            | adapted | `toJSONBytes` / `parseObject`             |
-| [fory](https://github.com/apache/fory)                                   | Binary      | fory-core                  | serialize/deserialize     | adapted | Apache Fory; register types before freeze |
-| [gson](https://github.com/google/gson)                                   | JSON        | gson                       | Gson + Type               | native  | `disableHtmlEscaping`; JsonWriter/Reader  |
-| [hessian](https://github.com/ebourg/hessian)                             | Binary      | hessian                    | Hessian2 write/readObject | native  | Dubbo-era RPC binary                      |
-| [ion](https://github.com/amazon-ion/ion-java)                            | Document    | jackson-dataformat-ion     | IonObjectMapper           | native  | Amazon Ion binary                         |
-| [jackson](https://github.com/FasterXML/jackson-databind)                 | JSON        | jackson-databind           | ObjectWriter/Reader       | native  | Reused ObjectMapper; no pretty-print      |
-| [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary)  | CBOR        | jackson-dataformat-cbor    | CBORMapper                | native  | IETF CBOR                                 |
-| [jackson-smile](https://github.com/FasterXML/jackson-dataformats-binary) | Binary JSON | jackson-dataformat-smile   | SmileMapper               | native  | Elasticsearch ecosystem                   |
-| [java-serialization](https://github.com/openjdk/jdk)                     | Native      | JDK                        | ObjectOutputStream        | native  | Language baseline                         |
-| [jsoniter](https://github.com/json-iterator/java)                        | JSON        | jsoniter                   | DYNAMIC + javassist       | adapted | `JsonStream` / `JsonIterator`             |
-| [kryo](https://github.com/EsotericSoftware/kryo)                         | Binary      | kryo                       | writeClassAndObject       | native  | Reused Kryo + Output/Input                |
-| [moshi](https://github.com/square/moshi)                                 | JSON        | moshi                      | JsonAdapter               | native  | Okio Buffer; Square stack                 |
-| [msgpack](https://github.com/msgpack/msgpack-java)                       | MessagePack | jackson-dataformat-msgpack | MessagePackMapper         | native  | Official msgpack-java binding             |
-| [protobuf](https://github.com/protocolbuffers/protobuf)                  | Schema      | protobuf-java              | MessageLite wire          | native  | Domain convert untimed                    |
-| [protostuff](https://github.com/protostuff/protostuff)                   | Binary      | protostuff-runtime         | RuntimeSchema             | native  | LinkedBuffer reuse; list APIs             |
+| Serializer | Category | Package | Native path | Stream | Notes |
+|------------|----------|---------|-------------|--------|-------|
+| [avro](https://github.com/apache/avro) | Schema | avro | ReflectDatum* | native | Schema once; encoder reuse |
+| [bson](https://github.com/mongodb/mongo-java-driver) | Document | org.mongodb:bson | DocumentCodec | adapted | Domain→Document in prepare |
+| [dsl-json](https://github.com/ngs-doo/dsl-json) | JSON | dsl-json | runtime DslJson | native | Reused JsonWriter buffer |
+| [fastjson2](https://github.com/alibaba/fastjson2) | JSON | fastjson2 | FieldBased API | adapted | `toJSONBytes` / `parseObject` |
+| [fory](https://github.com/apache/fory) | Binary | fory-core | serialize/deserialize | adapted | Apache Fory; register types before freeze |
+| [gson](https://github.com/google/gson) | JSON | gson | Gson + Type | native | `disableHtmlEscaping`; JsonWriter/Reader |
+| [hessian](https://github.com/ebourg/hessian) | Binary | hessian | Hessian2 write/readObject | native | Dubbo-era RPC binary |
+| [ion](https://github.com/amazon-ion/ion-java) | Document | jackson-dataformat-ion | IonObjectMapper | native | Amazon Ion binary |
+| [jackson](https://github.com/FasterXML/jackson-databind) | JSON | jackson-databind | ObjectWriter/Reader | native | Reused ObjectMapper; no pretty-print |
+| [jackson-cbor](https://github.com/FasterXML/jackson-dataformats-binary) | CBOR | jackson-dataformat-cbor | CBORMapper | native | IETF CBOR |
+| [jackson-smile](https://github.com/FasterXML/jackson-dataformats-binary) | Binary JSON | jackson-dataformat-smile | SmileMapper | native | Elasticsearch ecosystem |
+| [java-serialization](https://github.com/openjdk/jdk) | Native | JDK | ObjectOutputStream | native | Language baseline |
+| [jsoniter](https://github.com/json-iterator/java) | JSON | jsoniter | DYNAMIC + javassist | adapted | `JsonStream` / `JsonIterator` |
+| [kryo](https://github.com/EsotericSoftware/kryo) | Binary | kryo | writeClassAndObject | native | Reused Kryo + Output/Input |
+| [moshi](https://github.com/square/moshi) | JSON | moshi | JsonAdapter | native | Okio Buffer; Square stack |
+| [msgpack](https://github.com/msgpack/msgpack-java) | MessagePack | jackson-dataformat-msgpack | MessagePackMapper | native | Official msgpack-java binding |
+| [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | protobuf-java | MessageLite wire | native | Domain convert untimed |
+| [protostuff](https://github.com/protostuff/protostuff) | Binary | protostuff-runtime | RuntimeSchema | native | LinkedBuffer reuse; list APIs |
 
 ### Specifics
 

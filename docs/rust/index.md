@@ -49,10 +49,6 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 
 ## Serializers
 
-Apache Fory **1.7.4** is included as `fory`. Run
-`./scripts/run-fory-benchmarks.sh all-single rust` from the repository root.
-See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
-
 | Serializer                                                 | Category    | Crate             | Native path                                     | Stream  | Notes                                                                                                |
 | ---------------------------------------------------------- | ----------- | ----------------- | ----------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
 | [bincode](https://github.com/bincode-org/bincode)          | Binary      | `bincode` 2       | Serde; config in `prepare`                      | adapted | Config not rebuilt per call                                                                          |
@@ -60,6 +56,7 @@ See [Fory benchmark coverage](../analysis/fory.md) for the input types and timin
 | [bson](https://github.com/mongodb/bson-rust)               | Document    | `bson`            | Serde                                           | adapted | Document DB interop                                                                                  |
 | [ciborium](https://github.com/enarx/ciborium)              | CBOR        | `ciborium`        | Serde                                           | native  | Reused write buffer                                                                                  |
 | [flexbuffers](https://github.com/google/flatbuffers)       | FlexBuffers | `flexbuffers`     | Serde                                           | adapted | Schemaless FB family                                                                                 |
+| [fory](https://github.com/apache/fory)                     | Binary      | `fory`            | `ForyStruct` derive; native mode                | adapted | Reused output buffer                                                                                 |
 | [minicbor](https://github.com/twittner/minicbor)           | CBOR        | `minicbor`        | **Direct** `Encode`/`Decode` on structs         | adapted | No MessagePack envelope                                                                              |
 | [nanoserde](https://github.com/not-fl3/nanoserde)          | Binary      | `nanoserde`       | `SerBin`/`DeBin`                                | adapted | Zero-dep style binary                                                                                |
 | [postcard](https://github.com/jamesmunns/postcard)         | Binary      | `postcard`        | Serde                                           | adapted | no_std-friendly format                                                                               |

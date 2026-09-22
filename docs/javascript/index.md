@@ -52,10 +52,6 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 
 ## Serializers
 
-Apache Fory **1.7.4** is included as `fory`. Run
-`./scripts/run-fory-benchmarks.sh all-single javascript` from the repository root.
-See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
-
 | Name                                                                      | Category | Package                     | Optimal API                                           |
 | ------------------------------------------------------------------------- | -------- | --------------------------- | ----------------------------------------------------- |
 | [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript)         | Binary   | `@msgpack/msgpack`          | `encode` / `decode`                                   |
@@ -69,6 +65,7 @@ See [Fory benchmark coverage](../analysis/fory.md) for the input types and timin
 | [fast-json-stringify](https://github.com/fastify/fast-json-stringify)     | JSON     | `fast-json-stringify`       | compile once + `JSON.parse`                           |
 | [flatbuffers](https://github.com/google/flatbuffers)                      | Schema   | `flatbuffers`               | `Builder` / `ByteBuffer`                              |
 | [flexbuffers](https://github.com/google/flatbuffers)                      | Schema   | `flatbuffers` (FlexBuffers) | `encode` / `toObject`                                 |
+| [fory](https://github.com/apache/fory)                                    | Binary   | `@apache-fory/core`         | Registered struct/list codecs; bytes only             |
 | [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) | Schema   | `google-protobuf`           | official jspb `serializeBinary` / `deserializeBinary` |
 | [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack)             | Binary   | `@jsonjoy.com/json-pack`    | `MsgPackEncoder` / `MsgPackDecoder`                   |
 | [JSON.stringify](https://github.com/nodejs/node)                          | JSON     | builtin                     | `JSON.stringify` / `JSON.parse`                       |
