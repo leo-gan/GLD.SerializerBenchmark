@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.0
 import PackageDescription
 import Foundation
 
@@ -47,13 +47,14 @@ let gccLibDir: String = {
 let package = Package(
     name: "SerializerBenchmark",
     platforms: [
-        .macOS(.v13),
+        .macOS(.v15),
     ],
     products: [
         .executable(name: "serializer-benchmark-swift", targets: ["SerializerBenchmark"]),
         .library(name: "SerializerBenchmarkCore", targets: ["SerializerBenchmarkCore"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/apache/fory.git", exact: "1.7.4"),
         .package(url: "https://github.com/orlandos-nl/IkigaJSON.git", from: "2.0.0"),
         .package(url: "https://github.com/nnabeyang/swift-msgpack.git", from: "1.2.0"),
         .package(url: "https://github.com/nnabeyang/swift-cbor.git", from: "0.0.4"),
@@ -107,6 +108,7 @@ let package = Package(
         .target(
             name: "SerializerBenchmarkCore",
             dependencies: [
+                .product(name: "Fory", package: "fory"),
                 "GzipC",
                 "CapnpBridge",
                 .product(name: "IkigaJSON", package: "IkigaJSON"),
@@ -149,5 +151,6 @@ let package = Package(
             path: "Tests/SerializerBenchmarkTests"
         ),
     ],
+    swiftLanguageModes: [.v5],
     cxxLanguageStandard: .cxx17
 )

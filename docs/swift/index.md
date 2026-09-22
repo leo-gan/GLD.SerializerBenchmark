@@ -2,8 +2,7 @@
 title: "Swift"
 ---
 
-Swift
-=====
+# Swift
 
 Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto).
 
@@ -13,13 +12,13 @@ Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, I
 
 Swift compiles to **native machine code**. Memory is managed with **ARC** (Automatic Reference Counting). An object is freed when the last reference to it goes away. That is not the same as the tracing garbage collector used by .NET or the JVM. Swift is not treated here as an Apple-only language. This runner is built and timed on **Linux** as well.
 
-| | This suite |
-|---|---|
-| Tools | Swift **5.10 or newer** (`Package.swift`). The install script places Swift **6.x** under `~/.local/swift`. |
-| Build | Swift Package Manager (`swift build -c release`) |
-| Prepare | `./scripts/install-host-requirements.sh swift` |
-| Run | `swift/scripts/run-benchmarks.sh` |
-| Memory | Automatic reference counting, not a tracing garbage collector |
+|         | This suite                                                                                                 |
+| ------- | ---------------------------------------------------------------------------------------------------------- |
+| Tools   | Swift **5.10 or newer** (`Package.swift`). The install script places Swift **6.x** under `~/.local/swift`. |
+| Build   | Swift Package Manager (`swift build -c release`)                                                           |
+| Prepare | `./scripts/install-host-requirements.sh swift`                                                             |
+| Run     | `swift/scripts/run-benchmarks.sh`                                                                          |
+| Memory  | Automatic reference counting, not a tracing garbage collector                                              |
 
 ### What this suite runs
 
@@ -50,22 +49,26 @@ The steps to install the toolchain and run the benchmark are in [`swift/README.m
 
 ## Serializers
 
-| Serializer | Category | Package | Stream | Notes |
-|------------|----------|---------|--------|-------|
-| [BinaryCodable](https://github.com/christophhagen/BinaryCodable) | Binary | BinaryCodable | adapted | Pure-Swift binary Codable |
-| [CapnProto](https://github.com/capnproto/capnproto) | Schema | Cap’n Proto C++ | adapted | C ABI over official C++ runtime |
-| [FlatBuffers](https://github.com/google/flatbuffers) | Schema | google/flatbuffers | adapted | Generated from suite `.fbs` |
-| [Foundation.JSONEncoder](https://github.com/apple/swift-foundation) | JSON | Foundation | adapted | Compact |
-| [Foundation.PropertyListEncoder](https://github.com/apple/swift-foundation) | Native | Foundation | adapted | Binary plist |
-| [IkigaJSON](https://github.com/orlandos-nl/IkigaJSON) | JSON | IkigaJSON | adapted | Server JSON |
-| [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore) | Schema | SwiftAvroCore | adapted | Binary Avro + schema |
-| [SwiftBSON](https://github.com/mongodb/swift-bson) | Binary | swift-bson | adapted | Map-root wrap for N>1 |
-| [SwiftCbor](https://github.com/nnabeyang/swift-cbor) | Binary | swift-cbor | adapted | Codable CBOR |
-| [SwiftMsgpack](https://github.com/nnabeyang/swift-msgpack) | Binary | swift-msgpack | adapted | Codable MessagePack |
-| [SwiftProtobuf](https://github.com/apple/swift-protobuf) | Schema | apple/swift-protobuf | adapted | Generated from suite `.proto` |
-| [TOML](https://github.com/mattt/swift-toml) | Text | mattt/swift-toml | adapted | Map-root wrap for N>1 |
-| [XMLCoder](https://github.com/CoreOffice/XMLCoder) | Text | XMLCoder | adapted | Root `payload` |
-| [Yams](https://github.com/jpsim/Yams) | Text | Yams | adapted | YAML |
+Apache Fory **1.7.4** is included as `fory`. Run
+`./scripts/run-fory-benchmarks.sh all-single swift` from the repository root.
+See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
+
+| Serializer                                                                  | Category | Package              | Stream  | Notes                           |
+| --------------------------------------------------------------------------- | -------- | -------------------- | ------- | ------------------------------- |
+| [BinaryCodable](https://github.com/christophhagen/BinaryCodable)            | Binary   | BinaryCodable        | adapted | Pure-Swift binary Codable       |
+| [CapnProto](https://github.com/capnproto/capnproto)                         | Schema   | Cap’n Proto C++      | adapted | C ABI over official C++ runtime |
+| [FlatBuffers](https://github.com/google/flatbuffers)                        | Schema   | google/flatbuffers   | adapted | Generated from suite `.fbs`     |
+| [Foundation.JSONEncoder](https://github.com/apple/swift-foundation)         | JSON     | Foundation           | adapted | Compact                         |
+| [Foundation.PropertyListEncoder](https://github.com/apple/swift-foundation) | Native   | Foundation           | adapted | Binary plist                    |
+| [IkigaJSON](https://github.com/orlandos-nl/IkigaJSON)                       | JSON     | IkigaJSON            | adapted | Server JSON                     |
+| [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore)                  | Schema   | SwiftAvroCore        | adapted | Binary Avro + schema            |
+| [SwiftBSON](https://github.com/mongodb/swift-bson)                          | Binary   | swift-bson           | adapted | Map-root wrap for N>1           |
+| [SwiftCbor](https://github.com/nnabeyang/swift-cbor)                        | Binary   | swift-cbor           | adapted | Codable CBOR                    |
+| [SwiftMsgpack](https://github.com/nnabeyang/swift-msgpack)                  | Binary   | swift-msgpack        | adapted | Codable MessagePack             |
+| [SwiftProtobuf](https://github.com/apple/swift-protobuf)                    | Schema   | apple/swift-protobuf | adapted | Generated from suite `.proto`   |
+| [TOML](https://github.com/mattt/swift-toml)                                 | Text     | mattt/swift-toml     | adapted | Map-root wrap for N>1           |
+| [XMLCoder](https://github.com/CoreOffice/XMLCoder)                          | Text     | XMLCoder             | adapted | Root `payload`                  |
+| [Yams](https://github.com/jpsim/Yams)                                       | Text     | Yams                 | adapted | YAML                            |
 
 ### Specifics
 

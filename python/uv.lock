@@ -1025,6 +1025,25 @@ wheels = [
 ]
 
 [[package]]
+name = "pyfory"
+version = "1.7.4"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cd/0c/485a066f07a9776b04dd0e1b515f3fbd895928d7836aeb7394d2440805ed/pyfory-1.7.4-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:79aa7b85a1396df90ffd429f65f2e34dc78696373ccd74c1ba44e526a568bfc7", size = 2447517, upload-time = "2026-09-20T14:39:16.706Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/74/6b65defc600bb3d9deafeb6c8bd27d43612278186caec8422b2a86293555/pyfory-1.7.4-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:c500b6b8a730fbd5fd4ed11fe56df22621d4b954233b6c3cc4a82777d5201dab", size = 1484065, upload-time = "2026-09-20T14:34:28.626Z" },
+    { url = "https://files.pythonhosted.org/packages/12/7f/2a1bdd8c76adbbbe7952bc363cc915c58f9288c3f7f16320fe940c86bc29/pyfory-1.7.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:b3604a163117f6b75657d540fa7599fd76931c5ed345d3c682663145bf8a747e", size = 1553581, upload-time = "2026-09-20T14:34:30.388Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/88/712c3b2faf0d0081128312a8487c08fd00c5ffb900f826c59945692234c1/pyfory-1.7.4-cp312-cp312-win_amd64.whl", hash = "sha256:44fb92d768e6bd2ceee4d87f20c2639bf4cb9ce4357d5ed99495dd61e54a392c", size = 1129161, upload-time = "2026-09-20T14:39:18.065Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/83/b38c9bd098a4492f36c42819385d1e2b5e0f4b048173c7e7db2c94ec646c/pyfory-1.7.4-cp313-cp313-macosx_11_0_universal2.whl", hash = "sha256:0c9d14812c78c792a1d32de18d83df53cc1168bb7c330a1f28415619a796b8a4", size = 2441130, upload-time = "2026-09-20T14:39:19.782Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/aa/6ef79df7b171e9eb8e74950f9da7e0d0339d12a7a30d79ca9c48c22e20e6/pyfory-1.7.4-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3f03eda80c05790c34f6392244ccdb9e81471599c8752485b3a174ba77eef9a5", size = 1464920, upload-time = "2026-09-20T14:34:32.115Z" },
+    { url = "https://files.pythonhosted.org/packages/be/6a/41d1ad858bb7fcb28b8b7b6a573374a90fa1102035c3142f5e17e6b70315/pyfory-1.7.4-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0544df3d5893da4773e1d834f586210b6d510c778785fec236f448f112e5a651", size = 1575670, upload-time = "2026-09-20T14:34:34.29Z" },
+    { url = "https://files.pythonhosted.org/packages/65/aa/8c4b435edd7445e566efb5a11453e3ff7b937aeabe0d45343a1fe760edb3/pyfory-1.7.4-cp313-cp313-win_amd64.whl", hash = "sha256:830cf4bfb9966582cdc60ba24c483490abf168d44d711b94b63075b0c10f99e8", size = 1128325, upload-time = "2026-09-20T14:39:21.424Z" },
+    { url = "https://files.pythonhosted.org/packages/57/60/50f68c5592d87e290d299ce9ce76667f7d00a48c89d0bd65cd69b109cb74/pyfory-1.7.4-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:2575dc42908554f31e05ebbb2b6d2b74fe30657c7265399893a9591ef45d95cb", size = 2443248, upload-time = "2026-09-20T14:39:22.885Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/46/84aba5ce9d7b533874b7fc551ad49ae3380c2ab78ba66357a64d941f97ae/pyfory-1.7.4-cp314-cp314-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:79b9d52f97f7c084332cd962b0ce121790ca0912133a8abf6ad06032c8d9df21", size = 1476969, upload-time = "2026-09-20T14:34:35.959Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/0a/0d427b20eeed71cd15fb27a6a8f630fbf1882173fe27befe054f0cc2b1b0/pyfory-1.7.4-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:725af6c7bb6d16d285f267008e7dc467fdb8b42feafc8b0ec280623703da08d8", size = 1577668, upload-time = "2026-09-20T14:34:37.455Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/5e/04a9c93dec42daf46502ae1f131deca6eacaace36655e2f9eaeba608d108/pyfory-1.7.4-cp314-cp314-win_amd64.whl", hash = "sha256:9ef70d85173deadac91c6edf944ccf992bb84f744b1db1b89a33e0bedf142e0a", size = 1148228, upload-time = "2026-09-20T14:39:24.242Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1268,6 +1287,7 @@ dependencies = [
     { name = "protobuf" },
     { name = "py-ubjson" },
     { name = "pydantic" },
+    { name = "pyfory" },
     { name = "pymongo" },
     { name = "python-rapidjson" },
     { name = "pyyaml" },
@@ -1308,6 +1328,7 @@ requires-dist = [
     { name = "protobuf", specifier = ">=7.34.1,<8" },
     { name = "py-ubjson", specifier = ">=0.16,<1" },
     { name = "pydantic", specifier = ">=2.10,<3" },
+    { name = "pyfory", specifier = "==1.7.4" },
     { name = "pymongo", specifier = ">=4.10,<5" },
     { name = "python-rapidjson", specifier = ">=1.20,<2" },
     { name = "pyyaml", specifier = ">=6.0,<7" },

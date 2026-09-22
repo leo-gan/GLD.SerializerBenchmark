@@ -2,8 +2,7 @@
 title: "JavaScript"
 ---
 
-JavaScript
-==========
+# JavaScript
 
 Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
@@ -13,13 +12,13 @@ Node benchmarks run on V8 with `performance.now()` converted to nanoseconds.
 
 This suite measures **Node.js**, not JavaScript running in a web browser. Node.js is a command-line host that embeds the **V8** JavaScript engine, which is the same engine Chrome uses. V8 **JIT**-compiles (just-in-time compiles) hot functions into native code and reclaims unused objects with a garbage collector. Node also provides `Buffer`, `require`/`import`, and native addons written in C++.
 
-| | This suite |
-|---|---|
-| Host | **Node.js 18 or newer** and npm |
-| Engine | V8 inside Node.js, not a browser |
+|         | This suite                                                                      |
+| ------- | ------------------------------------------------------------------------------- |
+| Host    | **Node.js 18 or newer** and npm                                                 |
+| Engine  | V8 inside Node.js, not a browser                                                |
 | Prepare | Install Node with your package manager, then run `npm install` in `javascript/` |
-| Run | `javascript/scripts/run-benchmarks.sh` |
-| Memory | V8 garbage collector |
+| Run     | `javascript/scripts/run-benchmarks.sh`                                          |
+| Memory  | V8 garbage collector                                                            |
 
 ### What this suite runs
 
@@ -53,28 +52,32 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 
 ## Serializers
 
-| Name | Category | Package | Optimal API |
-|------|----------|---------|-------------|
-| [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript) | Binary | `@msgpack/msgpack` | `encode` / `decode` |
-| [avsc](https://github.com/mtth/avsc) | Schema | `avsc` | `Type.forSchema` + `toBuffer` / `fromBuffer` |
-| [bebop](https://github.com/6over3/bebop) | Schema | `bebop` | `BebopView` JSON-model primitives |
-| [bser](https://github.com/facebook/watchman) | Binary | `bser` | `dumpToBuffer` / `loadFromBuffer` |
-| [bson](https://github.com/mongodb/js-bson) | Binary | `bson` | `BSON.serialize` / `deserialize` |
-| [cbor](https://github.com/hildjj/node-cbor) | Binary | `cbor` | `encode` / `decodeFirstSync` |
-| [cbor-x](https://github.com/kriszyp/cbor-x) | Binary | `cbor-x` | reused `Encoder` / `Decoder` |
-| [devalue](https://github.com/Rich-Harris/devalue) | Native | `devalue` | `stringify` / `parse` |
-| [fast-json-stringify](https://github.com/fastify/fast-json-stringify) | JSON | `fast-json-stringify` | compile once + `JSON.parse` |
-| [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | `Builder` / `ByteBuffer` |
-| [flexbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` (FlexBuffers) | `encode` / `toObject` |
-| [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) | Schema | `google-protobuf` | official jspb `serializeBinary` / `deserializeBinary` |
-| [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack) | Binary | `@jsonjoy.com/json-pack` | `MsgPackEncoder` / `MsgPackDecoder` |
-| [JSON.stringify](https://github.com/nodejs/node) | JSON | builtin | `JSON.stringify` / `JSON.parse` |
-| [msgpackr](https://github.com/kriszyp/msgpackr) | Binary | `msgpackr` | reused `Packr` / `Unpackr` |
-| [protobuf-es](https://github.com/bufbuild/protobuf-es) | Schema | `@bufbuild/protobuf` | `create` + `toBinary` / `fromBinary` |
-| [protobufjs](https://github.com/protobufjs/protobuf.js) | Schema | `protobufjs` | real fixture `Type.encode` / `decode` |
-| [sia](https://github.com/TimeleapLabs/sia) | Binary | `@timeleap/sia` | typed-tag JSON-model over Sia primitives |
-| [simdjson-parse+JSON.stringify](https://github.com/simdjson/simdjson) | JSON | `simdjson` (optional) | ser: `JSON.stringify`; deser: `simdjson.parse` |
-| [v8-serializer](https://github.com/nodejs/node) | Native | `node:v8` | `v8.serialize` / `v8.deserialize` |
+Apache Fory **1.7.4** is included as `fory`. Run
+`./scripts/run-fory-benchmarks.sh all-single javascript` from the repository root.
+See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
+
+| Name                                                                      | Category | Package                     | Optimal API                                           |
+| ------------------------------------------------------------------------- | -------- | --------------------------- | ----------------------------------------------------- |
+| [@msgpack/msgpack](https://github.com/msgpack/msgpack-javascript)         | Binary   | `@msgpack/msgpack`          | `encode` / `decode`                                   |
+| [avsc](https://github.com/mtth/avsc)                                      | Schema   | `avsc`                      | `Type.forSchema` + `toBuffer` / `fromBuffer`          |
+| [bebop](https://github.com/6over3/bebop)                                  | Schema   | `bebop`                     | `BebopView` JSON-model primitives                     |
+| [bser](https://github.com/facebook/watchman)                              | Binary   | `bser`                      | `dumpToBuffer` / `loadFromBuffer`                     |
+| [bson](https://github.com/mongodb/js-bson)                                | Binary   | `bson`                      | `BSON.serialize` / `deserialize`                      |
+| [cbor](https://github.com/hildjj/node-cbor)                               | Binary   | `cbor`                      | `encode` / `decodeFirstSync`                          |
+| [cbor-x](https://github.com/kriszyp/cbor-x)                               | Binary   | `cbor-x`                    | reused `Encoder` / `Decoder`                          |
+| [devalue](https://github.com/Rich-Harris/devalue)                         | Native   | `devalue`                   | `stringify` / `parse`                                 |
+| [fast-json-stringify](https://github.com/fastify/fast-json-stringify)     | JSON     | `fast-json-stringify`       | compile once + `JSON.parse`                           |
+| [flatbuffers](https://github.com/google/flatbuffers)                      | Schema   | `flatbuffers`               | `Builder` / `ByteBuffer`                              |
+| [flexbuffers](https://github.com/google/flatbuffers)                      | Schema   | `flatbuffers` (FlexBuffers) | `encode` / `toObject`                                 |
+| [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) | Schema   | `google-protobuf`           | official jspb `serializeBinary` / `deserializeBinary` |
+| [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack)             | Binary   | `@jsonjoy.com/json-pack`    | `MsgPackEncoder` / `MsgPackDecoder`                   |
+| [JSON.stringify](https://github.com/nodejs/node)                          | JSON     | builtin                     | `JSON.stringify` / `JSON.parse`                       |
+| [msgpackr](https://github.com/kriszyp/msgpackr)                           | Binary   | `msgpackr`                  | reused `Packr` / `Unpackr`                            |
+| [protobuf-es](https://github.com/bufbuild/protobuf-es)                    | Schema   | `@bufbuild/protobuf`        | `create` + `toBinary` / `fromBinary`                  |
+| [protobufjs](https://github.com/protobufjs/protobuf.js)                   | Schema   | `protobufjs`                | real fixture `Type.encode` / `decode`                 |
+| [sia](https://github.com/TimeleapLabs/sia)                                | Binary   | `@timeleap/sia`             | typed-tag JSON-model over Sia primitives              |
+| [simdjson-parse+JSON.stringify](https://github.com/simdjson/simdjson)     | JSON     | `simdjson` (optional)       | ser: `JSON.stringify`; deser: `simdjson.parse`        |
+| [v8-serializer](https://github.com/nodejs/node)                           | Native   | `node:v8`                   | `v8.serialize` / `v8.deserialize`                     |
 
 ### Specifics
 

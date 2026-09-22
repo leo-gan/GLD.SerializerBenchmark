@@ -2,8 +2,7 @@
 title: "Rust"
 ---
 
-Rust
-====
+# Rust
 
 Rust serialization is dominated by the **serde** data model: libraries implement `Serialize`/`Deserialize` once, then plug in format backends. A second tier (**rkyv**, FlatBuffers, Cap’n Proto) targets zero-copy access.
 
@@ -13,13 +12,13 @@ Rust serialization is dominated by the **serde** data model: libraries implement
 
 Rust compiles to **native machine code**. There is no virtual machine and no garbage collector. Memory is released when values go out of scope. That rule is called **ownership**. Because of it, a Rust microsecond is a different kind of number from a C#, Java, or Python microsecond.
 
-| | This suite |
-|---|---|
-| Edition | Rust **2021** |
-| Host toolchain | `rustc` and `cargo`, usually installed with rustup |
-| Prepare | `./scripts/install-host-requirements.sh rust` |
-| Run | `cargo build --release` through `rust/scripts/run-benchmarks.sh` |
-| Memory | Ownership. No garbage collector. |
+|                | This suite                                                       |
+| -------------- | ---------------------------------------------------------------- |
+| Edition        | Rust **2021**                                                    |
+| Host toolchain | `rustc` and `cargo`, usually installed with rustup               |
+| Prepare        | `./scripts/install-host-requirements.sh rust`                    |
+| Run            | `cargo build --release` through `rust/scripts/run-benchmarks.sh` |
+| Memory         | Ownership. No garbage collector.                                 |
 
 ### What this suite runs
 
@@ -50,24 +49,28 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 
 ## Serializers
 
-| Serializer | Category | Crate | Native path | Stream | Notes |
-|------------|----------|-------|-------------|--------|-------|
-| [bincode](https://github.com/bincode-org/bincode) | Binary | `bincode` 2 | Serde; config in `prepare` | adapted | Config not rebuilt per call |
-| [bitcode](https://github.com/SoftbearStudios/bitcode) | Binary | `bitcode` | Serde | adapted | Bit-packed |
-| [bson](https://github.com/mongodb/bson-rust) | Document | `bson` | Serde | adapted | Document DB interop |
-| [ciborium](https://github.com/enarx/ciborium) | CBOR | `ciborium` | Serde | native | Reused write buffer |
-| [flexbuffers](https://github.com/google/flatbuffers) | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
-| [minicbor](https://github.com/twittner/minicbor) | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
-| [nanoserde](https://github.com/not-fl3/nanoserde) | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
-| [postcard](https://github.com/jamesmunns/postcard) | Binary | `postcard` | Serde | adapted | no_std-friendly format |
-| [prost](https://github.com/tokio-rs/prost) | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
-| [rkyv](https://github.com/rkyv/rkyv) | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
-| [rmp-serde](https://github.com/3Hren/msgpack-rust) | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
-| [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records) |
-| [serde_json](https://github.com/serde-rs/json) | JSON | `serde_json` | Serde `Fixture` | native | Baseline |
-| [simd-json](https://github.com/simd-lite/simd-json) | JSON | `simd-json` | SIMD **parse**; ser via serde_json | adapted | Honest split responsibilities |
-| [sonic-rs](https://github.com/cloudwego/sonic-rs) | JSON | `sonic-rs` | Serde-compatible SIMD JSON | adapted | Hot-path JSON |
-| [speedy](https://github.com/koute/speedy) | Binary | `speedy` | `Writable`/`Readable` | adapted | Fast binary framework |
+Apache Fory **1.7.4** is included as `fory`. Run
+`./scripts/run-fory-benchmarks.sh all-single rust` from the repository root.
+See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
+
+| Serializer                                                 | Category    | Crate             | Native path                                     | Stream  | Notes                                                                                                |
+| ---------------------------------------------------------- | ----------- | ----------------- | ----------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
+| [bincode](https://github.com/bincode-org/bincode)          | Binary      | `bincode` 2       | Serde; config in `prepare`                      | adapted | Config not rebuilt per call                                                                          |
+| [bitcode](https://github.com/SoftbearStudios/bitcode)      | Binary      | `bitcode`         | Serde                                           | adapted | Bit-packed                                                                                           |
+| [bson](https://github.com/mongodb/bson-rust)               | Document    | `bson`            | Serde                                           | adapted | Document DB interop                                                                                  |
+| [ciborium](https://github.com/enarx/ciborium)              | CBOR        | `ciborium`        | Serde                                           | native  | Reused write buffer                                                                                  |
+| [flexbuffers](https://github.com/google/flatbuffers)       | FlexBuffers | `flexbuffers`     | Serde                                           | adapted | Schemaless FB family                                                                                 |
+| [minicbor](https://github.com/twittner/minicbor)           | CBOR        | `minicbor`        | **Direct** `Encode`/`Decode` on structs         | adapted | No MessagePack envelope                                                                              |
+| [nanoserde](https://github.com/not-fl3/nanoserde)          | Binary      | `nanoserde`       | `SerBin`/`DeBin`                                | adapted | Zero-dep style binary                                                                                |
+| [postcard](https://github.com/jamesmunns/postcard)         | Binary      | `postcard`        | Serde                                           | adapted | no_std-friendly format                                                                               |
+| [prost](https://github.com/tokio-rs/prost)                 | Schema      | `prost` + build   | Protobuf messages in `prepare`                  | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos)       |
+| [rkyv](https://github.com/rkyv/rkyv)                       | Zero-copy   | `rkyv` 0.8        | **Full** `Archive` on structs                   | adapted | Timed deser **materializes** owned `T` for fidelity                                                  |
+| [rmp-serde](https://github.com/3Hren/msgpack-rust)         | MessagePack | `rmp-serde`       | `to_vec_named`                                  | adapted | Named maps                                                                                           |
+| [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) | Schema      | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native  | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records) |
+| [serde_json](https://github.com/serde-rs/json)             | JSON        | `serde_json`      | Serde `Fixture`                                 | native  | Baseline                                                                                             |
+| [simd-json](https://github.com/simd-lite/simd-json)        | JSON        | `simd-json`       | SIMD **parse**; ser via serde_json              | adapted | Honest split responsibilities                                                                        |
+| [sonic-rs](https://github.com/cloudwego/sonic-rs)          | JSON        | `sonic-rs`        | Serde-compatible SIMD JSON                      | adapted | Hot-path JSON                                                                                        |
+| [speedy](https://github.com/koute/speedy)                  | Binary      | `speedy`          | `Writable`/`Readable`                           | adapted | Fast binary framework                                                                                |
 
 ### Specifics
 
@@ -163,12 +166,12 @@ Also: [`rust/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob
 
 Compare serializers **inside the same family** only (JSON with JSON, not JSON with a zero-copy schema codec). Rank in **bytes mode** only (the in-memory buffer API — not “payload size in bytes”). Stream mode is left out of this ranking.
 
-| Family | Members |
-|--------|---------|
-| JSON | `serde_json`, `simd-json`, `sonic-rs` |
-| Rust-centric binary | `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy` |
-| Schema / zero-copy | `flexbuffers`, `rkyv`, `prost` |
-| Schemaless binary (interop) | `bson`, `ciborium`, `minicbor`, `rmp-serde` |
+| Family                      | Members                                                 |
+| --------------------------- | ------------------------------------------------------- |
+| JSON                        | `serde_json`, `simd-json`, `sonic-rs`                   |
+| Rust-centric binary         | `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy` |
+| Schema / zero-copy          | `flexbuffers`, `rkyv`, `prost`                          |
+| Schemaless binary (interop) | `bson`, `ciborium`, `minicbor`, `rmp-serde`             |
 
 ## Numbers
 

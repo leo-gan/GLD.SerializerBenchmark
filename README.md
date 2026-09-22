@@ -8,14 +8,19 @@
 
 Compare 200+ serialization libraries across **13 languages**.
 
-| Start here | |
-|------------|--|
-| **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
-| **Numbers** | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) |
-| **Experiments** | [One-question tests](https://leo-gan.github.io/GLD.SerializerBenchmark/experiments/) |
-| **Compliance** | [RFC / spec catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/) |
-| **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) |
-| **Benchmarks** | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
+Apache Fory **1.7.4** is available in nine language entries,
+including JavaScript/TypeScript. Run `./scripts/run-fory-benchmarks.sh all-single`
+to select Fory across them, or add a language ID such as `rust` to run one.
+See [Fory benchmark coverage and requirements](docs/analysis/fory.md).
+
+| Start here      |                                                                                                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Home**        | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/)                                                                                                                 |
+| **Numbers**     | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)                                                                                                      |
+| **Experiments** | [One-question tests](https://leo-gan.github.io/GLD.SerializerBenchmark/experiments/)                                                                                                |
+| **Compliance**  | [RFC / spec catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/)                                                                                                 |
+| **Learn**       | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/)                                                                                              |
+| **Benchmarks**  | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
 
 <p align="center">
   <a href="https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/">
@@ -29,12 +34,12 @@ Compare 200+ serialization libraries across **13 languages**.
 
 ## Who it is for
 
-| Audience | Use case | Course |
-|----------|----------|--------|
-| **Computer science students** | Theory, history, worked examples | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/), [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/) |
-| **System integrators** | Pick formats that fit payloads and runtimes | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Researchers** | Reproducible measurement and experiments | [Methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Serializer authors** | Add a codec, version A/B, regression checks | [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/) · [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
+| Audience                      | Use case                                    | Course                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Computer science students** | Theory, history, worked examples            | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/), [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/)                                    |
+| **System integrators**        | Pick formats that fit payloads and runtimes | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/)                                                                                                          |
+| **Researchers**               | Reproducible measurement and experiments    | [Methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/)        |
+| **Serializer authors**        | Add a codec, version A/B, regression checks | [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/) · [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
 
 ---
 

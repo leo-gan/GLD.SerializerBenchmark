@@ -2,8 +2,7 @@
 title: "C#"
 ---
 
-C#
-===
+# C#
 
 In the .NET ecosystem, serialization has evolved dramatically over the past decade. With modern .NET memory primitives (`Span<T>`, `Memory<T>`) and source generators, the landscape shifted from heavy reflection-based engines to lower-allocation, code-generated libraries.
 
@@ -15,13 +14,13 @@ C# is a programming language. It runs on **.NET**, a platform made of a virtual 
 
 The label “.NET 8” names the **target framework**: the set of runtime APIs the compiled program is allowed to call. The **SDK** is the compiler and the rest of the build tools. In this suite those two version numbers are not the same.
 
-| | This suite |
-|---|---|
-| Target | `net8.0` (.NET 8 APIs) |
-| Host SDK | .NET SDK **9+** (SDK 8 targeting pack also installed) |
-| Prepare | `./scripts/install-host-requirements.sh csharp` installs into `~/.dotnet` |
-| Run | `dotnet build` and `dotnet run -c Release` through `c-sharp/scripts/run-benchmarks.sh` |
-| Memory | Tracing garbage collector. No Docker. |
+|          | This suite                                                                             |
+| -------- | -------------------------------------------------------------------------------------- |
+| Target   | `net8.0` (.NET 8 APIs)                                                                 |
+| Host SDK | .NET SDK **9+** (SDK 8 targeting pack also installed)                                  |
+| Prepare  | `./scripts/install-host-requirements.sh csharp` installs into `~/.dotnet`              |
+| Run      | `dotnet build` and `dotnet run -c Release` through `c-sharp/scripts/run-benchmarks.sh` |
+| Memory   | Tracing garbage collector. No Docker.                                                  |
 
 ### What this suite runs
 
@@ -58,48 +57,52 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 
 ## Serializers
 
-| Log name | Category | Library / notes |
-|----------|----------|-----------------|
-| [Apache.Avro](https://github.com/apache/avro) | Schema | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize |
-| [BinaryPack](https://github.com/Sergio0694/BinaryPack) | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
-| [Ceras](https://github.com/rikimaru0345/Ceras) | Binary | Ceras |
-| [CsvHelper](https://github.com/JoshClose/CsvHelper) | CSV | Row-list projection (message/event/strings only); real CsvHelper write/read |
-| [ExtendedXmlSerializer](https://github.com/wojtpl2/ExtendedXmlSerializer) | XML (**envelope**) | **Not domain XML** — ExtendedXml of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
-| [fastJson](https://github.com/mgholam/fastJSON) | JSON | FastJson |
-| [FlatSharp](https://github.com/jamescourtney/FlatSharp) | Schema / FlatBuffers | FlatSharp tables via domain map (untimed `PrepareData`) |
-| [FsPickler](https://github.com/mbraceproject/FsPickler) | Binary | FsPickler binary |
-| [FsPicklerJson](https://github.com/mbraceproject/FsPickler) | JSON | FsPickler JSON |
-| [Google.Protobuf](https://github.com/protocolbuffers/protobuf) | Schema | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`) |
-| [GroBuf](https://github.com/skbkontur/GroBuf) | Binary | GroBuf |
-| [Hyperion](https://github.com/akkadotnet/Hyperion) | Binary | Hyperion (Akka.NET lineage) |
-| [Jil](https://github.com/kevin-montrose/Jil) | JSON | Jil (Sigil) |
-| [Json.Net](https://github.com/JamesNK/Newtonsoft.Json) | JSON | Newtonsoft.Json |
-| [Json.Net (Helper)](https://github.com/JamesNK/Newtonsoft.Json) | JSON | Newtonsoft.Json helper path |
-| [LightProto](https://github.com/dameng324/LightProto) | Schema | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
-| [MemoryPack](https://github.com/Cysharp/MemoryPack) | Binary | MemoryPack (domain types are `[MemoryPackable]`) |
-| [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) | Binary | Official MessagePack-CSharp (`ContractlessStandardResolver` on domain POCOs) |
-| [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack) | Binary | Nerdbank.MessagePack with reflection-based POCO shapes and stable numeric keys; its default-value retention is retained |
-| [Migrant](https://github.com/antmicro/Migrant) | Binary (**envelope**) | **Not domain Migrant graphs** — Migrant of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire) |
-| [MS Binary](https://github.com/dotnet/runtime) | Binary (native) | Legacy `BinaryFormatter` path |
-| [MS Bond Compact](https://github.com/microsoft/bond) | Schema / Bond | Bond Compact Binary; V2 domain marked `[Schema]` |
-| [MS Bond Fast](https://github.com/microsoft/bond) | Schema / Bond | Bond Fast Binary |
-| [MS Bond Json](https://github.com/microsoft/bond) | JSON / Bond | Bond JSON protocol |
-| [MS DataContract](https://github.com/dotnet/runtime) | XML | `DataContractSerializer` |
-| [MS DataContract Json](https://github.com/dotnet/runtime) | JSON | `DataContractJsonSerializer` |
-| [MS XmlSerializer](https://github.com/dotnet/runtime) | XML | Classic `XmlSerializer` (real domain XML when attributes allow) |
-| [NetJSON](https://github.com/rpgmaker/NetJSON) | JSON | NetJSON |
-| [NetSerializer](https://github.com/tomba/netserializer) | Binary | NetSerializer |
-| [ProtoBuf](https://github.com/protobuf-net/protobuf-net) | Schema | protobuf-net |
-| [ServiceStack](https://github.com/ServiceStack/ServiceStack.Text) | Binary | ServiceStack type serializer (non-JSON) |
-| [ServiceStack Json](https://github.com/ServiceStack/ServiceStack.Text) | JSON | ServiceStack.Text JSON |
-| [SharpSerializer](https://github.com/polenter/SharpSerializer) | Binary / XML | SharpSerializer |
-| [SharpYaml](https://github.com/xoofx/SharpYaml) | YAML | SharpYaml |
-| [SpanJson](https://github.com/Tornhoof/SpanJson) | JSON | SpanJson |
-| [System.Text.Json](https://github.com/dotnet/runtime) | JSON | System.Text.Json (net8 built-in) |
-| [Utf8Json](https://github.com/neuecc/Utf8Json) | JSON | Utf8Json |
-| [YamlDotNet](https://github.com/aaubry/YamlDotNet) | YAML | YamlDotNet |
-| [YAXLib](https://github.com/sinairv/YAXLib) | XML | YAXLib |
-| [ZeroFormatter](https://github.com/neuecc/ZeroFormatter) | Binary | ZeroFormatter; **all data types** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8 |
+Apache Fory **1.7.4** is included as `fory`. Run
+`./scripts/run-fory-benchmarks.sh all-single csharp` from the repository root.
+See [Fory benchmark coverage](../analysis/fory.md) for the input types and timing contract.
+
+| Log name                                                                       | Category              | Library / notes                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Apache.Avro](https://github.com/apache/avro)                                  | Schema                | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize                                                                                                                          |
+| [BinaryPack](https://github.com/Sergio0694/BinaryPack)                         | Binary                | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes                                                                                                                          |
+| [Ceras](https://github.com/rikimaru0345/Ceras)                                 | Binary                | Ceras                                                                                                                                                                                            |
+| [CsvHelper](https://github.com/JoshClose/CsvHelper)                            | CSV                   | Row-list projection (message/event/strings only); real CsvHelper write/read                                                                                                                      |
+| [ExtendedXmlSerializer](https://github.com/wojtpl2/ExtendedXmlSerializer)      | XML (**envelope**)    | **Not domain XML** — ExtendedXml of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire)                                                                           |
+| [fastJson](https://github.com/mgholam/fastJSON)                                | JSON                  | FastJson                                                                                                                                                                                         |
+| [FlatSharp](https://github.com/jamescourtney/FlatSharp)                        | Schema / FlatBuffers  | FlatSharp tables via domain map (untimed `PrepareData`)                                                                                                                                          |
+| [FsPickler](https://github.com/mbraceproject/FsPickler)                        | Binary                | FsPickler binary                                                                                                                                                                                 |
+| [FsPicklerJson](https://github.com/mbraceproject/FsPickler)                    | JSON                  | FsPickler JSON                                                                                                                                                                                   |
+| [Google.Protobuf](https://github.com/protocolbuffers/protobuf)                 | Schema                | Official Google.Protobuf (`IMessage` / `benchmark_v2.proto`)                                                                                                                                     |
+| [GroBuf](https://github.com/skbkontur/GroBuf)                                  | Binary                | GroBuf                                                                                                                                                                                           |
+| [Hyperion](https://github.com/akkadotnet/Hyperion)                             | Binary                | Hyperion (Akka.NET lineage)                                                                                                                                                                      |
+| [Jil](https://github.com/kevin-montrose/Jil)                                   | JSON                  | Jil (Sigil)                                                                                                                                                                                      |
+| [Json.Net](https://github.com/JamesNK/Newtonsoft.Json)                         | JSON                  | Newtonsoft.Json                                                                                                                                                                                  |
+| [Json.Net (Helper)](https://github.com/JamesNK/Newtonsoft.Json)                | JSON                  | Newtonsoft.Json helper path                                                                                                                                                                      |
+| [LightProto](https://github.com/dameng324/LightProto)                          | Schema                | [LightProto](https://github.com/dameng324/LightProto) source-generated protobuf-net–style API on domain types (`[LightProto.ProtoContract]`); needs **.NET SDK 9+** at build time (Roslyn 4.14+) |
+| [MemoryPack](https://github.com/Cysharp/MemoryPack)                            | Binary                | MemoryPack (domain types are `[MemoryPackable]`)                                                                                                                                                 |
+| [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) | Binary                | Official MessagePack-CSharp (`ContractlessStandardResolver` on domain POCOs)                                                                                                                     |
+| [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack)        | Binary                | Nerdbank.MessagePack with reflection-based POCO shapes and stable numeric keys; its default-value retention is retained                                                                          |
+| [Migrant](https://github.com/antmicro/Migrant)                                 | Binary (**envelope**) | **Not domain Migrant graphs** — Migrant of `{TypeName, Json}`; see [Envelope codecs](#envelope-codecs-not-native-domain-wire)                                                                    |
+| [MS Binary](https://github.com/dotnet/runtime)                                 | Binary (native)       | Legacy `BinaryFormatter` path                                                                                                                                                                    |
+| [MS Bond Compact](https://github.com/microsoft/bond)                           | Schema / Bond         | Bond Compact Binary; V2 domain marked `[Schema]`                                                                                                                                                 |
+| [MS Bond Fast](https://github.com/microsoft/bond)                              | Schema / Bond         | Bond Fast Binary                                                                                                                                                                                 |
+| [MS Bond Json](https://github.com/microsoft/bond)                              | JSON / Bond           | Bond JSON protocol                                                                                                                                                                               |
+| [MS DataContract](https://github.com/dotnet/runtime)                           | XML                   | `DataContractSerializer`                                                                                                                                                                         |
+| [MS DataContract Json](https://github.com/dotnet/runtime)                      | JSON                  | `DataContractJsonSerializer`                                                                                                                                                                     |
+| [MS XmlSerializer](https://github.com/dotnet/runtime)                          | XML                   | Classic `XmlSerializer` (real domain XML when attributes allow)                                                                                                                                  |
+| [NetJSON](https://github.com/rpgmaker/NetJSON)                                 | JSON                  | NetJSON                                                                                                                                                                                          |
+| [NetSerializer](https://github.com/tomba/netserializer)                        | Binary                | NetSerializer                                                                                                                                                                                    |
+| [ProtoBuf](https://github.com/protobuf-net/protobuf-net)                       | Schema                | protobuf-net                                                                                                                                                                                     |
+| [ServiceStack](https://github.com/ServiceStack/ServiceStack.Text)              | Binary                | ServiceStack type serializer (non-JSON)                                                                                                                                                          |
+| [ServiceStack Json](https://github.com/ServiceStack/ServiceStack.Text)         | JSON                  | ServiceStack.Text JSON                                                                                                                                                                           |
+| [SharpSerializer](https://github.com/polenter/SharpSerializer)                 | Binary / XML          | SharpSerializer                                                                                                                                                                                  |
+| [SharpYaml](https://github.com/xoofx/SharpYaml)                                | YAML                  | SharpYaml                                                                                                                                                                                        |
+| [SpanJson](https://github.com/Tornhoof/SpanJson)                               | JSON                  | SpanJson                                                                                                                                                                                         |
+| [System.Text.Json](https://github.com/dotnet/runtime)                          | JSON                  | System.Text.Json (net8 built-in)                                                                                                                                                                 |
+| [Utf8Json](https://github.com/neuecc/Utf8Json)                                 | JSON                  | Utf8Json                                                                                                                                                                                         |
+| [YamlDotNet](https://github.com/aaubry/YamlDotNet)                             | YAML                  | YamlDotNet                                                                                                                                                                                       |
+| [YAXLib](https://github.com/sinairv/YAXLib)                                    | XML                   | YAXLib                                                                                                                                                                                           |
+| [ZeroFormatter](https://github.com/neuecc/ZeroFormatter)                       | Binary                | ZeroFormatter; **all data types** via `KeyTuple` / list shapes (`PrepareData` untimed) — dynamic `[ZeroFormattable]` IL is broken on .NET 8                                                      |
 
 ### Specifics
 
@@ -269,10 +272,10 @@ ZeroFormatter was created (neuecc) as a fast, zero-encoding-style binary seriali
 
 These rows stay in the matrix for history and size noise, but **Dashboard numbers must not be read as “library X serializes suite POCOs directly.”**
 
-| Log name | Timed wire | Untimed fidelity | Stream mode |
-|----------|------------|------------------|-------------|
-| **ExtendedXmlSerializer** | ExtendedXml of `{ TypeName, Json }` where `Json` is Newtonsoft of the domain object | `ToDomain` deserializes JSON | **Adapted** — UTF-8 `StreamWriter` of the XML string |
-| **Migrant** | Migrant of the same JSON envelope POCO | `ToDomain` deserializes JSON | **Native Migrant stream** of the envelope only; **string mode** is Base64 of those bytes |
+| Log name                  | Timed wire                                                                          | Untimed fidelity             | Stream mode                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| **ExtendedXmlSerializer** | ExtendedXml of `{ TypeName, Json }` where `Json` is Newtonsoft of the domain object | `ToDomain` deserializes JSON | **Adapted** — UTF-8 `StreamWriter` of the XML string                                     |
+| **Migrant**               | Migrant of the same JSON envelope POCO                                              | `ToDomain` deserializes JSON | **Native Migrant stream** of the envelope only; **string mode** is Base64 of those bytes |
 
 Source: [`ExtendedXmlSerializerSer.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Serializers/ExtendedXmlSerializerSer.cs), [`MigrantSerializerSer.cs`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c-sharp/src/Serializers/MigrantSerializerSer.cs).
 
@@ -282,18 +285,18 @@ Source: [`ExtendedXmlSerializerSer.cs`](https://github.com/leo-gan/GLD.Serialize
 
 CSV column `StringOrStream` is **`string`** or **`Stream`** (canonical mode labels: **bytes mode** often means the non-stream column; for C# that column is the **string** path).
 
-| Path | Meaning on C# |
-|------|----------------|
-| **Stream** | `Serialize`/`Deserialize` with `Stream`. |
+| Path       | Meaning on C#                                                                                                                                                                       |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Stream** | `Serialize`/`Deserialize` with `Stream`.                                                                                                                                            |
 | **string** | `Serialize`/`Deserialize` with `string`. **Text** codecs return real text. **Binary** codecs usually return **Base64** of the byte payload (extra encode/decode on the timed path). |
 
 **Stream honesty**
 
-| Kind | What is timed | Examples |
-|------|----------------|----------|
-| **Adapted stream** | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader` | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
-| **Native binary stream** | Library writes/reads `Stream` with its binary API | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
-| **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
+| Kind                      | What is timed                                                                                                                             | Examples                                                                                                                                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Adapted stream**        | Stream path is “take the full string (or Base64) path and write/read it” via `StreamWriter`/`StreamReader`                                | **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths                              |
+| **Native binary stream**  | Library writes/reads `Stream` with its binary API                                                                                         | ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)\*, … |
+| **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, Jil, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), …                                                                                                          |
 
 When stream ≈ string within a few percent on the Dashboard, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.
 
