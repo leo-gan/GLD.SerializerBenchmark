@@ -5,7 +5,7 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, Protocol Buffers, FlatBuffers, Avro, YAML, and MessagePack.
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, and MessagePack.
 
 ## Runtime
 
@@ -33,7 +33,7 @@ Mojo 1.1 is a young compiler. A nightly compiler or a different pixi lock can mo
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native BSON or XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is not published yet, so TOML stays on DataBooth/mojo-toml.
+There is no native XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is not published yet, so TOML stays on DataBooth/mojo-toml. BSON is `mojo-bson` (gld-bson 0.1.0), the latest release that builds on Mojo 1.1.
 
 These times cannot be ranked against another language.
 
@@ -62,6 +62,7 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [mojo-toml](https://github.com/DataBooth/mojo-toml) | Text | DataBooth/mojo-toml 0.9.1 | bytes only | `to_toml` / `parse` |
 | [gld-yaml](https://github.com/leo-gan/gld-yaml) | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.5.0 | bytes only | `yaml.encode` / `yaml.decode` on suite types |
 | [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) | Binary | leo-gan/gld-messagepack 0.3.0 | bytes only | WireWriter / WireReader |
+| [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
 
 ### Specifics
 
@@ -106,6 +107,10 @@ gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a huma
 #### [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) · `0.3.0`
 
 gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format.
+
+#### [mojo-bson](https://github.com/leo-gan/gld-bson) · `0.1.0`
+
+gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types. Package 0.1.0 is the latest release that builds on Mojo 1.1.
 
 ### Call-path contract
 

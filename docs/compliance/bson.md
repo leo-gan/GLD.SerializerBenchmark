@@ -33,6 +33,14 @@ match the buffer, the document is not well-formed.
 
 Catalog: `compliance/data/bson/`.
 
+## Mojo serializer
+
+`decode_document` from **gld-bson 0.1.0** (`mojo-bson`). That package
+version is the latest release, and its current source is pinned to
+Mojo 1.1. The 1.0, 1.1, and decimal128 catalogs are 51 cases, all
+passing: the parser accepts well-formed documents and rejects a bad
+length, a missing trailing NUL, and an unknown element type.
+
 ## Python serializer
 
 `bson.decode` from **pymongo**. The Python speed bench does not always

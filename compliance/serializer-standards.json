@@ -678,7 +678,9 @@
       "serde.toml": [
         "toml"
       ],
-      "serde.msgpack": [],
+      "serde.msgpack": [
+        "msgpack"
+      ],
       "zig-msgpack": [
         "msgpack"
       ],
@@ -703,7 +705,9 @@
       "std.zon": [
         "zon"
       ],
-      "serde.zon": [],
+      "serde.zon": [
+        "zon"
+      ],
       "serde.xml": [],
       "comptime-bin": [],
       "s2s": []
@@ -735,6 +739,9 @@
       ],
       "mojo-msgpack": [
         "msgpack"
+      ],
+      "mojo-bson": [
+        "bson"
       ],
       "gld-yaml": [
         "yaml"

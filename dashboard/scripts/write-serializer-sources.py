@@ -1366,6 +1366,12 @@ SPECIFICS: dict[str, str] = {
         "`AvroDatum`. Avro exists for compact, schema-driven records. "
         "The library gives Mojo that encoding."
     ),
+    "gld-flatbuffers": (
+        "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for "
+        "Mojo. FlatBuffers exists so a reader can use fields without "
+        "unpacking the buffer. This row times a reused Builder and "
+        "generated pack/unpack on the suite tables."
+    ),
     "mojo-toml": (
         "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as "
         "an obvious config language. This is the published Mojo TOML "
@@ -1380,6 +1386,13 @@ SPECIFICS: dict[str, str] = {
         "gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader "
         "for Mojo. MessagePack exists as compact binary JSON. The "
         "library gives Mojo that format."
+    ),
+    "gld-bson": (
+        "gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON "
+        "exists so MongoDB can store JSON-like documents in a binary, "
+        "traversable layout. This row times WireWriter / WireReader on "
+        "suite types. Package 0.1.0 is the latest release that builds "
+        "on Mojo 1.1."
     ),
 }
 
@@ -1666,6 +1679,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-toml"): "mojo-toml",
     ("mojo", "gld-yaml"): "gld-yaml",
     ("mojo", "mojo-msgpack"): "gld-msgpack",
+    ("mojo", "mojo-bson"): "gld-bson",
 }
 
 # Extra sentence for a specific row (path / format variant).

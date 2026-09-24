@@ -289,6 +289,7 @@ export const CATALOG = [
   { language: "mojo", name: "mojo-avro", formats: ["avro"], docs: "https://github.com/leo-gan/gld-avro", evidence: "gld-avro: Avro datum encode/decode." },
   { language: "mojo", name: "mojo-toml", formats: ["toml"], docs: "https://github.com/DataBooth/mojo-toml", evidence: "DataBooth/mojo-toml: TOML." },
   { language: "mojo", name: "mojo-msgpack", formats: ["msgpack"], docs: "https://github.com/leo-gan/gld-messagepack", evidence: "gld-messagepack: MessagePack wire." },
+  { language: "mojo", name: "mojo-bson", formats: ["bson"], docs: "https://github.com/leo-gan/gld-bson", evidence: "gld-bson 0.1.0: BSON documents via decode_document (Mojo 1.1)." },
   { language: "mojo", name: "gld-yaml", formats: ["yaml"], docs: "https://github.com/leo-gan/gld-yaml", evidence: "gld-yaml: YAML value encode/decode." },
 ];
 
