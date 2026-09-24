@@ -1,0 +1,531 @@
+from .object import Object
+from .array import Array
+from .utils import (
+    will_overflow,
+    constrain_json_type,
+    write_escaped_string,
+    ByteView,
+    PaddedBuffer,
+    PAD_INPUT_THRESHOLD,
+)
+from std.utils.variant import Variant
+from .traits import JsonValue, PrettyPrintable, JsonSerializable
+from std.collections import Array as FixedArray
+from std.sys.intrinsics import unlikely, likely
+from ._deserialize import Parser, ParseOptions
+from ._serialize import Serializer
+from ._utf8 import is_valid_utf8
+from std.sys.info import bit_width_of
+from .teju import write_float
+from std.os import abort
+from std.python import PythonObject
+from ._pointer import resolve_pointer, PointerIndex
+
+
+@fieldwise_init
+struct Null(JsonValue, TrivialRegisterPassable):
+    """Represents "null" json value.
+    Can be implicitly converted from `None`.
+    """
+
+    @always_inline
+    def __eq__(self, n: Null) -> Bool:
+        return True
+
+    @always_inline
+    def __ne__(self, n: Null) -> Bool:
+        return False
+
+    @always_inline
+    def __bool__(self) -> Bool:
+        return False
+
+    @always_inline
+    def write_to(self, mut writer: Some[Writer]):
+        writer.write("null")
+
+    @always_inline
+    def write_repr_to(self, mut writer: Some[Writer]):
+        writer.write("Null()")
+
+    @always_inline
+    def pretty_to(
+        self, mut writer: Some[Writer], indent: String, *, curr_depth: UInt = 0
+    ):
+        writer.write(self)
+
+    def to_python_object(self) raises -> PythonObject:
+        return {}
+
+    @always_inline
+    def write_json(self, mut writer: Some[Serializer]):
+        writer.write(self)
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = p.parse_null()
+
+
+struct Value(JsonValue, Sized):
+    """Top level JSON object, representing any valid JSON value."""
+
+    comptime Type = Variant[
+        Int64, UInt64, Float64, String, Bool, Object, Array, Null
+    ]
+    var _data: Self.Type
+
+    # `Value` is mutually recursive with `Object`/`Array` (which hold
+    # `List[Value]`), so the compiler can no longer prove it is *implicitly*
+    # deletable and refuses to synthesize the destructor/move. An explicit
+    # (empty) `__del__` breaks the cycle: fields are still destroyed
+    # automatically after it runs, and copy/move synthesis is re-enabled.
+    def __deinit__(deinit self):
+        pass
+
+    @always_inline
+    def __init__(out self):
+        self._data = Null()
+
+    @implicit
+    @always_inline
+    def __init__(out self, n: NoneType._mlir_type):
+        self._data = Null()
+
+    @implicit
+    @always_inline
+    def __init__(out self, var v: Self.Type):
+        self._data = v^
+
+    @implicit
+    @always_inline
+    def __init__(out self, v: Int64):
+        self._data = v
+
+    @implicit
+    @always_inline
+    def __init__(out self, v: UInt64):
+        self._data = v
+
+    @implicit
+    @always_inline
+    def __init__(out self, v: IntLiteral):
+        if UInt64(v) > Int64.MAX.cast[DType.uint64]():
+            self._data = UInt64(v)
+        else:
+            self._data = Int64(v)
+
+    @implicit
+    @always_inline
+    def __init__(out self, v: Int):
+        comptime assert (
+            bit_width_of[DType.int]() <= bit_width_of[DType.int64]()
+        ), "Cannot fit index width into 64 bits for signed integer"
+        self._data = Int64(v)
+
+    @implicit
+    @always_inline
+    def __init__(out self, v: UInt):
+        comptime assert (
+            bit_width_of[DType.int]() <= bit_width_of[DType.uint64]()
+        ), "Cannot fit index width into 64 bits for unsigned integer"
+        self._data = UInt64(v)
+
+    @implicit
+    @always_inline
+    def __init__(out self, v: Float64):
+        self._data = v
+
+    @implicit
+    @always_inline
+    def __init__(out self, var v: Object):
+        self._data = v^
+
+    @implicit
+    @always_inline
+    def __init__(out self, var v: Array):
+        self._data = v^
+
+    @implicit
+    @always_inline
+    def __init__(out self, var v: String):
+        self._data = v^
+
+    @always_inline
+    def __init__(out self, *, parse_string: String) raises:
+        """Parse JSON document from a string.
+
+        Args:
+            parse_string: The string to parse.
+
+        Raises:
+            If the string represents an invalid JSON document.
+        """
+        self = Self(parse_bytes=StringSlice(parse_string).as_bytes())
+
+    @always_inline
+    def __init__(out self, *, parse_bytes: ByteView[mut=False, ...]) raises:
+        """Parse JSON document from bytes.
+
+        Args:
+            parse_bytes: The bytes to parse.
+
+        Raises:
+            If the bytes represent an invalid JSON document.
+        """
+        # Default options: UTF-8 validation is on (see ParseOptions).
+        if not is_valid_utf8(parse_bytes):
+            raise Error("Invalid UTF-8 in input")
+        # See `emberjson.parse`: pad-and-copy enables unchecked hot loops;
+        # tiny inputs skip the copy since it would cost more than the parse.
+        if len(parse_bytes) < PAD_INPUT_THRESHOLD:
+            var parser = Parser(parse_bytes)
+            self = parser.parse()
+        else:
+            var buf = PaddedBuffer(parse_bytes)
+            var parser = Parser[options=ParseOptions()._padded()](padded=buf)
+            self = parser.parse()
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = p.parse_value()
+
+    @implicit
+    @always_inline
+    def __init__(out self, var v: StringLiteral):
+        self._data = String(v)
+
+    @implicit
+    @always_inline
+    def __init__(out self, v: Null):
+        self._data = v
+
+    @implicit
+    @always_inline
+    def __init__(out self, v: Bool):
+        self._data = v
+
+    def __init__(
+        out self,
+        var keys: List[String],
+        var values: List[Value],
+        __dict_literal__: NoneType,
+    ):
+        assert len(keys) == len(
+            values
+        ), "Keys and values must have the same length"
+        var obj = Object()
+        for i in range(len(keys)):
+            obj[keys[i]] = values[i].copy()
+        self._data = obj^
+
+    def __init__(out self, var *values: Value, __list_literal__: NoneType):
+        var arr = Array()
+        for val in values:
+            arr.append(val.copy())
+        self._data = arr^
+
+    def __eq__(self, other: Self) -> Bool:
+        if (self.is_int() or self.is_uint()) and (
+            other.is_int() or other.is_uint()
+        ):
+            if self.is_int():
+                if other.is_int() or not will_overflow(other.uint()):
+                    return self.int() == other.int()
+                return False
+            elif self.is_uint():
+                if other.is_uint() or other.int() > 0:
+                    return self.uint() == other.uint()
+                return False
+
+        if (
+            self._data._storage.get_discriminant()
+            != other._data._storage.get_discriminant()
+        ):
+            return False
+        elif self.isa[Float64]():
+            return self.float() == other.float()
+        elif self.isa[String]():
+            return self.string() == other.string()
+        elif self.isa[Bool]():
+            return self.bool() == other.bool()
+        elif self.isa[Object]():
+            return self.object() == other.object()
+        elif self.isa[Array]():
+            return self.array() == other.array()
+        elif self.isa[Null]():
+            return True
+        abort("unreachable: Value.__eq__")
+
+    def __len__(self) -> Int:
+        if self.is_array():
+            return len(self.array())
+        if self.is_object():
+            return len(self.object())
+        if self.is_string():
+            return self.string().byte_length()
+        return -1
+
+    def __contains__(self, v: Value) raises -> Bool:
+        if self.is_array():
+            return v in self.array().copy()
+        if not v.isa[String]():
+            raise Error("expected string key")
+        return v.string() in self.object().copy()
+
+    def __getitem__(ref self, ind: Some[Indexer]) raises -> ref[self] Value:
+        if not self.is_array():
+            raise Error("Expected numerical index for array")
+        return Pointer(to=self.array()[ind]).unsafe_origin_cast[
+            origin_of(self)
+        ]()[]
+
+    def __getitem__(ref self, key: String) raises -> ref[self] Value:
+        if not self.is_object():
+            raise Error("Expected string key for object")
+        return Pointer(to=self.object()[key]).unsafe_origin_cast[
+            origin_of(self)
+        ]()[]
+
+    @always_inline
+    def __ne__(self, other: Self) -> Bool:
+        return not self == other
+
+    def __bool__(self) -> Bool:
+        if self.isa[Int64]():
+            return Bool(self.int())
+        elif self.isa[UInt64]():
+            return Bool(self.uint())
+        elif self.isa[Float64]():
+            return Bool(self.float())
+        elif self.isa[String]():
+            return Bool(self.string())
+        elif self.isa[Bool]():
+            return self.bool()
+        elif self.isa[Null]():
+            return False
+        elif self.isa[Object]():
+            return Bool(self.object())
+        elif self.isa[Array]():
+            return Bool(self.array())
+        abort("Unreachable: __bool__")
+
+    @always_inline
+    def isa[T: Copyable](self) -> Bool:
+        constrain_json_type[T]()
+        return self._data.isa[T]()
+
+    @always_inline
+    def is_int(self) -> Bool:
+        return self.isa[Int64]()
+
+    @always_inline
+    def is_uint(self) -> Bool:
+        return self.isa[UInt64]()
+
+    @always_inline
+    def is_string(self) -> Bool:
+        return self.isa[String]()
+
+    @always_inline
+    def is_bool(self) -> Bool:
+        return self.isa[Bool]()
+
+    @always_inline
+    def is_float(self) -> Bool:
+        return self.isa[Float64]()
+
+    @always_inline
+    def is_object(self) -> Bool:
+        return self.isa[Object]()
+
+    @always_inline
+    def is_array(self) -> Bool:
+        return self.isa[Array]()
+
+    @always_inline
+    def is_null(self) -> Bool:
+        return self.isa[Null]()
+
+    @always_inline
+    def get[T: Copyable](ref self) -> ref[self._data] T:
+        constrain_json_type[T]()
+        return self._data.unsafe_get[T]()
+
+    @always_inline
+    def int(self) -> Int64:
+        if self.is_int():
+            return self.get[Int64]()
+        else:
+            return Int64(self.get[UInt64]())
+
+    @always_inline
+    def uint(self) -> UInt64:
+        if self.is_uint():
+            return self.get[UInt64]()
+        else:
+            return UInt64(self.get[Int64]())
+
+    @always_inline
+    def null(self) -> Null:
+        return Null()
+
+    @always_inline
+    def string(ref self) -> ref[self._data] String:
+        return self.get[String]()
+
+    @always_inline
+    def float(self) -> Float64:
+        return self.get[Float64]()
+
+    @always_inline
+    def bool(self) -> Bool:
+        return self.get[Bool]()
+
+    @always_inline
+    def object(ref self) -> ref[self._data] Object:
+        return self.get[Object]()
+
+    @always_inline
+    def array(ref self) -> ref[self._data] Array:
+        return self.get[Array]()
+
+    def write_to(self, mut writer: Some[Writer]):
+        if self.is_int():
+            writer.write(self.int())
+        elif self.is_uint():
+            writer.write(self.uint())
+        elif self.is_float():
+            write_float(self.float(), writer)
+        elif self.is_string():
+            write_escaped_string(self.string(), writer)
+        elif self.is_bool():
+            writer.write("true") if self.bool() else writer.write("false")
+        elif self.is_null():
+            writer.write("null")
+        elif self.is_object():
+            writer.write(self.object())
+        elif self.is_array():
+            writer.write(self.array())
+        else:
+            abort("Unreachable: write_to")
+
+    def write_repr_to(self, mut writer: Some[Writer]):
+        if self.is_int():
+            self.int().write_repr_to(writer)
+        elif self.is_uint():
+            self.uint().write_repr_to(writer)
+        elif self.is_float():
+            self.float().write_repr_to(writer)
+        elif self.is_string():
+            self.string().write_repr_to(writer)
+        elif self.is_bool():
+            self.bool().write_repr_to(writer)
+        elif self.is_null():
+            self.null().write_repr_to(writer)
+        elif self.is_object():
+            self.object().write_repr_to(writer)
+        elif self.is_array():
+            self.array().write_repr_to(writer)
+        else:
+            abort("Unreachable: write_repr_to")
+
+    def _pretty_to_as_element(
+        self, mut writer: Some[Writer], indent: String, curr_depth: UInt
+    ):
+        if self.is_object():
+            writer.write("{\n")
+            self.object()._pretty_write_items(writer, indent, curr_depth + 1)
+            for _ in range(curr_depth):
+                writer.write(indent)
+            writer.write("}")
+        elif self.is_array():
+            writer.write("[\n")
+            self.array()._pretty_write_items(writer, indent, curr_depth + 1)
+            for _ in range(curr_depth):
+                writer.write(indent)
+            writer.write("]")
+        else:
+            self.write_to(writer)
+
+    def pretty_to(
+        self, mut writer: Some[Writer], indent: String, *, curr_depth: UInt = 0
+    ):
+        if self.is_object():
+            self.object().pretty_to(writer, indent, curr_depth=curr_depth)
+        elif self.is_array():
+            self.array().pretty_to(writer, indent, curr_depth=curr_depth)
+        else:
+            self.write_to(writer)
+
+    @always_inline
+    def write_json(self, mut writer: Some[Serializer]):
+        writer.write(self)
+
+    def to_python_object(self) raises -> PythonObject:
+        if self.is_int():
+            return PythonObject(self.int())
+        elif self.is_uint():
+            return PythonObject(self.uint())
+        elif self.is_float():
+            return PythonObject(self.float())
+        elif self.is_string():
+            return PythonObject(self.string())
+        elif self.is_bool():
+            return PythonObject(self.bool())
+        elif self.is_null():
+            return PythonObject()
+        elif self.is_object():
+            return self.object().to_python_object()
+        elif self.is_array():
+            return self.array().to_python_object()
+        else:
+            abort("Unreachable: to_python_object")
+
+    def get(ref self, path: PointerIndex) raises -> ref[self] Value:
+        return resolve_pointer(self, path)
+
+    def __getattr__(ref self, nameLit: StringLiteral) raises -> ref[self] Value:
+        comptime name = type_of(nameLit)()
+        comptime if name.startswith("/"):
+            comptime index = PointerIndex.try_from_string(name)
+            comptime assert Bool(index), "Failed to parse path: " + name
+            return self.get(materialize[index.value()]())
+        else:
+            if self.is_object():
+                return Pointer(to=self.object()[name]).unsafe_origin_cast[
+                    origin_of(self)
+                ]()[]
+            else:
+                raise Error("Cannot use getattr on JSON Array")
+
+    def __setattr__(
+        mut self, var nameLit: StringLiteral, var value: Value
+    ) raises:
+        comptime name = type_of(nameLit)()
+        comptime if name.startswith("/"):
+            comptime index = PointerIndex.try_from_string(name)
+            comptime assert Bool(index), "Failed to parse path: " + name
+            self.get(materialize[index.value()]()) = value^
+        else:
+            if self.is_object():
+                self.object()[name] = value^
+            else:
+                raise Error("Cannot use setattr on JSON Array")
+
+    @always_inline
+    def __setitem__(mut self, var key: String, var value: Value) raises:
+        if self.is_object():
+            self.object()[key] = value^
+        else:
+            raise Error("Value is not an object")
+
+    @always_inline
+    def __setitem__(mut self, idx: Int, var value: Value) raises:
+        if self.is_array():
+            self.array()[idx] = value^
+        else:
+            raise Error("Value is not an Array")

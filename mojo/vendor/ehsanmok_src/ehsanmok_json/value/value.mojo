@@ -763,7 +763,7 @@ struct Value(
         Args:
             hasher: The hasher to update.
         """
-        hasher.update(self.hash_u64())
+        hasher._update_with_simd(self.hash_u64())
 
     def hash_u64(self) -> UInt64:
         """A hash that agrees with `__eq__`, so a `Value` can key a `Dict`.

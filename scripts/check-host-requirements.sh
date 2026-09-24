@@ -266,7 +266,7 @@ check_mojo() {
     if (cd "$PROJECT_ROOT/mojo" && pixi run mojo --version >/dev/null 2>&1); then
       ok "mojo ($(cd "$PROJECT_ROOT/mojo" && pixi run mojo --version 2>/dev/null | head -1))"
     else
-      miss "mojo 1.0 in mojo/ pixi env — ./scripts/install-host-requirements.sh mojo"
+      miss "mojo 1.1 in mojo/ pixi env — ./scripts/install-host-requirements.sh mojo"
     fi
   else
     miss "mojo/ runner tree"

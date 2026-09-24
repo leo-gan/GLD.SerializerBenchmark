@@ -123,7 +123,7 @@ def _strtod(bytes: Span[UInt8, _], start: Int, end: Int) -> Float64:
     """
     var n = end - start
     if n < _STRTOD_BUFFER:
-        var buffer = InlineArray[UInt8, _STRTOD_BUFFER](uninitialized=True)
+        var buffer = Array[UInt8, _STRTOD_BUFFER](uninitialized=True)
         unsafe_memcpy(
             dest=buffer.unsafe_ptr(),
             src=bytes.unsafe_ptr().unsafe_offset(start),

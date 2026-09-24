@@ -1,0 +1,853 @@
+from emberjson import (
+    JsonDeserializable,
+    JsonSerializable,
+    Parser,
+    ParseOptions,
+    Serializer,
+    serialize,
+    deserialize,
+    Value,
+)
+from emberjson._deserialize.reflection import _Base
+from std.builtin.rebind import downcast
+from std.reflection import reflect
+
+##########################################################
+# Value Validation
+##########################################################
+
+
+struct AllOf[T: _Base, *validators: Validator](
+    JsonDeserializable, JsonSerializable, Validator
+):
+    """A validator that requires a value to pass all of the given validators.
+
+    Parameters:
+        T: The type of the value to validate.
+        validators: The validators to apply.
+    """
+
+    comptime Type = Self.T
+    var value: Self.T
+
+    def __init__(out self, var value: Self.T) raises:
+        self.value = value^
+        Self.validate(self.value)
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.T](p)}
+
+        s.validate(s.value)
+
+    @staticmethod
+    def validate(value: Self.Type) raises:
+        comptime for i in range(len(Self.validators)):
+            comptime VType = Self.validators[i]
+            comptime assert VType.Type == Self.T
+            VType.validate(rebind[VType.Type](value))
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+trait Validator:
+    comptime Type: _Base
+
+    @staticmethod
+    def validate(value: Self.Type) raises:
+        ...
+
+
+struct Validated[
+    T: _Base,
+    validator: def(T) thin -> Bool,
+    err_msg: String = "Value is not valid",
+](JsonDeserializable, JsonSerializable, Validator):
+    """Validates a value by applying the given function.
+
+    Parameters:
+        T: The type of the value to validate.
+        validator: The validator to apply.
+        err_msg: The error message to raise if the validator fails.
+    """
+
+    comptime Type = Self.T
+    var value: Self.T
+
+    def __init__(out self, var value: Self.T) raises:
+        self.value = value^
+        Self.validate(self.value)
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.T](p)}
+
+        s.validate(s.value)
+
+    @staticmethod
+    def validate(value: Self.Type) raises:
+        if not Self.validator(value):
+            raise Error(Self.err_msg)
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+@always_inline
+def __is_in_range[
+    T: Comparable & _Base, min: T, max: T, exclusive: Bool
+](value: T,) -> Bool:
+    comptime if exclusive:
+        return value > materialize[min]() and value < materialize[max]()
+    else:
+        return value >= materialize[min]() and value <= materialize[max]()
+
+
+comptime Range[T: Comparable & _Base, min: T, max: T] = Validated[
+    T, __is_in_range[T, min, max, False], "Value out of range"
+]
+"""Validates a value to be within a given value range.
+
+Parameters:
+    T: The type of the value to validate.
+    min: The minimum value.
+    max: The maximum value.
+"""
+
+comptime ExclusiveRange[T: Comparable & _Base, min: T, max: T] = Validated[
+    T, __is_in_range[T, min, max, True], "Value out of range (exclusive)"
+]
+"""Validates a value to be strictly within a given range (exclusive bounds).
+
+Parameters:
+    T: The type of the value to validate.
+    min: The exclusive lower bound.
+    max: The exclusive upper bound.
+"""
+
+
+@always_inline
+def _sized_len[T: _Base](value: T) -> Int:
+    comptime assert T == String or conforms_to(T, Sized)
+
+    comptime if T == String:
+        return rebind[String](value).byte_length()
+    else:
+        return rebind[downcast[T, Sized]](value).__len__()
+
+
+@always_inline
+def __is_in_size_range[
+    T: _Base, min: Int, max: Int
+](value: T,) -> Bool:
+    var n = _sized_len(value)
+    return n >= min and n <= max
+
+
+comptime Size[T: _Base, min: Int, max: Int] = Validated[
+    T, __is_in_size_range[T, min, max], "Value out of size range"
+]
+"""Validates a value to be within a given size range.
+
+Parameters:
+    T: The type of the value to validate.
+    min: The minimum size.
+    max: The maximum size.
+"""
+
+
+@always_inline
+def __is_non_empty[T: _Base](value: T) -> Bool:
+    return _sized_len(value) > 0
+
+
+comptime NonEmpty[T: _Base] = Validated[
+    T, __is_non_empty[T], "Value must not be empty"
+]
+"""Validates that a sized value is non-empty.
+
+Parameters:
+    T: The type of the value to validate.
+"""
+
+
+@always_inline
+def __starts_with[prefix: String](s: String) -> Bool:
+    return s.startswith(prefix)
+
+
+comptime StartsWith[prefix: String] = Validated[
+    String,
+    __starts_with[prefix],
+    "Value does not start with expected prefix",
+]
+"""Validates that a string starts with a given prefix.
+
+Parameters:
+    prefix: The required prefix.
+"""
+
+
+@always_inline
+def __ends_with[suffix: String](s: String) -> Bool:
+    return s.endswith(suffix)
+
+
+comptime EndsWith[suffix: String] = Validated[
+    String, __ends_with[suffix], "Value does not end with expected suffix"
+]
+"""Validates that a string ends with a given suffix.
+
+Parameters:
+    suffix: The required suffix.
+"""
+
+
+@always_inline
+def __has_unique_elements[T: _Base & Iterable](value: T) -> Bool:
+    # Driven off the raw iterators rather than `for ... in enumerate(value)`:
+    # a generic `Iterator.Element` is only `Movable`, so both the loop binding
+    # and `enumerate`'s `Tuple` would be values the compiler cannot drop.
+    # Taking each element by hand lets us consume it through a `downcast` that
+    # carries `Deinitable`.
+    comptime Elem = downcast[
+        T.IteratorType[origin_of(value)].Element,
+        Equatable & Movable & Deinitable,
+    ]
+    var i = 0
+    var outer = value.__iter__()
+    while True:
+        try:
+            var a = rebind_var[Elem](outer.__next__())
+            var j = 0
+            var inner = value.__iter__()
+            while True:
+                try:
+                    var b = rebind_var[Elem](inner.__next__())
+                    var dup = i != j and a == b
+                    _ = b^
+                    if dup:
+                        _ = a^
+                        return False
+                    j += 1
+                except StopIteration:
+                    break
+            _ = a^
+            i += 1
+        except StopIteration:
+            break
+    return True
+
+
+comptime Unique[T: _Base & Iterable] = Validated[
+    T, __has_unique_elements[T], "Values are not unique"
+]
+"""Enforces a value to have unique elements.
+
+Parameters:
+    T: The type of the value to validate.
+"""
+
+
+@always_inline
+def __is_eq[T: Equatable & Deinitable, //, value: T](a: T) -> Bool:
+    return a == materialize[value]()
+
+
+comptime Eq[T: _Base & Equatable, //, value: T] = Validated[
+    T, __is_eq[value], "Value is not equal"
+]
+"""
+Validates a value to be equal to a given value.
+
+Parameters:
+    T: The type of the value to validate.
+    value: The value to compare to.
+"""
+
+
+def __expect_raises[T: _Base, validator: Validator](value: T) -> Bool:
+    comptime VType = validator.Type
+    comptime assert VType == T
+    try:
+        validator.validate(rebind[VType](value))
+        return False
+    except:
+        return True
+
+
+comptime Not[T: _Base, validator: Validator] = Validated[
+    T, __expect_raises[T, validator], "Expected validator to fail"
+]
+"""
+Validates a value to not pass a given validator.
+
+Parameters:
+    T: The type of the value to validate.
+    validator: The validator to apply.
+"""
+
+comptime Ne[T: _Base & Equatable, //, value: T] = Not[T, Eq[value]]
+"""
+Validates a value to not be equal to a given value.
+
+Parameters:
+    T: The type of the value to validate.
+    value: The value to compare to.
+"""
+
+
+struct OneOf[T: _Base & Equatable, *accepted: Validator](
+    JsonDeserializable, JsonSerializable, Validator
+):
+    """
+    Validates a value to pass one and only one of the given validators.
+
+    Parameters:
+        T: The type of the value to validate.
+        accepted: The validators to apply.
+    """
+
+    var value: Self.T
+    comptime Type = Self.T
+
+    def __init__(out self, var value: Self.T) raises:
+        self.value = value^
+        Self.validate(self.value)
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.T](p)}
+
+        s.validate(s.value)
+
+    @staticmethod
+    def validate(value: Self.Type) raises:
+        var matched = False
+        comptime for i in range(len(Self.accepted)):
+            var current_match = False
+            try:
+                comptime VType = Self.accepted[i]
+                comptime assert VType.Type == Self.T
+                VType.validate(rebind[VType.Type](value))
+                current_match = True
+            except:
+                pass
+
+            if current_match:
+                if matched:
+                    raise Error("Multiple validators matched")
+                matched = True
+
+        if not matched:
+            raise Error("Value didn't match any validators")
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+struct AnyOf[T: _Base & Equatable, *accepted: Validator](
+    JsonDeserializable, JsonSerializable, Validator
+):
+    """
+    Validates a value to pass at least one of the given validators.
+
+    Parameters:
+        T: The type of the value to validate.
+        accepted: The validators to apply.
+    """
+
+    var value: Self.T
+    comptime Type = Self.T
+
+    def __init__(out self, var value: Self.T) raises:
+        self.value = value^
+        Self.validate(self.value)
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.T](p)}
+
+        s.validate(s.value)
+
+    @staticmethod
+    def validate(value: Self.Type) raises:
+        var matched = False
+        comptime for i in range(len(Self.accepted)):
+            try:
+                comptime VType = Self.accepted[i]
+                comptime assert VType.Type == Self.T
+                VType.validate(rebind[VType.Type](value))
+                matched = True
+                break
+            except:
+                pass
+        if not matched:
+            raise Error("Value not in options")
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+struct NoneOf[T: _Base & Equatable, *rejected: Validator](
+    JsonDeserializable, JsonSerializable, Validator
+):
+    """
+    Validates a value to not pass any of the given validators.
+
+    Parameters:
+        T: The type of the value to validate.
+        rejected: The validators to apply.
+    """
+
+    var value: Self.T
+    comptime Type = Self.T
+
+    def __init__(out self, var value: Self.T) raises:
+        self.value = value^
+        Self.validate(self.value)
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.T](p)}
+
+        s.validate(s.value)
+
+    @staticmethod
+    def validate(value: Self.Type) raises:
+        comptime for i in range(len(Self.rejected)):
+            var matched = False
+            try:
+                comptime VType = Self.rejected[i]
+                comptime assert VType.Type == Self.T
+                VType.validate(rebind[VType.Type](value))
+                matched = True
+            except:
+                pass
+
+            if matched:
+                raise Error("Value matched a rejected validator")
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+@always_inline
+def __is_multiple_of[base: SIMD](v: type_of(base)) -> Bool:
+    comptime zeroes = type_of(base)(0)
+    return v % base == zeroes
+
+
+# TODO: Use some trait for this
+comptime MultipleOf[base: SIMD] = Validated[
+    type_of(base),
+    __is_multiple_of[base],
+    "Value is not a multiple of " + String(base),
+]
+"""
+Validates a value to be a multiple of a given value.
+
+Parameters:
+    base: The value to validate against.
+"""
+
+
+struct Enum[T: _Base & Equatable, //, *accepted: T](
+    JsonDeserializable, JsonSerializable, Validator
+):
+    """Validates a value against an enumerated set of allowed values.
+    A semantic alias for OneOf — use with Eq validators for enum-style validation.
+
+    Example:
+        comptime Color = Enum[String, "red", "green", "blue"]
+
+    Parameters:
+        T: The type of the value to validate.
+        accepted: The validators representing allowed values.
+    """
+
+    var value: Self.T
+    comptime Type = Self.T
+
+    def __init__(out self, var value: Self.T) raises:
+        self.value = value^
+        Self.validate(self.value)
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.T](p)}
+
+        s.validate(s.value)
+
+    @staticmethod
+    def validate(value: Self.Type) raises:
+        comptime for i in range(len(Self.accepted)):
+            if value == materialize[Self.accepted[i]]():
+                return
+        raise Error("Value not in options")
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+##########################################################
+# Secret
+##########################################################
+
+
+@fieldwise_init
+struct Secret[T: _Base](JsonDeserializable, JsonSerializable):
+    var value: Self.T
+    """
+    A secret value that will be hidden as an opaque string if serialized back to JSON.
+
+    Parameters:
+        T: The type of the value to hide.
+    """
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.T](p)}
+
+    def write_json(self, mut writer: Some[Serializer]):
+        writer.write('"********"')
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+##########################################################
+# Clamp
+##########################################################
+
+
+@fieldwise_init
+struct Clamp[T: _Base & Comparable, minimum: T, maximum: T](
+    JsonDeserializable, JsonSerializable
+):
+    """
+    A value that will be clamped to a given range.
+
+    Parameters:
+        T: The type of the value to clamp.
+        minimum: The minimum value.
+        maximum: The maximum value.
+    """
+
+    var value: Self.T
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.T](p)}
+
+        var min_val = materialize[Self.minimum]()
+        var max_val = materialize[Self.maximum]()
+
+        if s.value < min_val:
+            s.value = min_val^
+        elif s.value > max_val:
+            s.value = max_val^
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+##########################################################
+# Coerce
+##########################################################
+
+
+@fieldwise_init
+struct Coerce[Target: _Base, func: def(Value) thin raises -> Target](
+    JsonDeserializable, JsonSerializable
+):
+    """
+    A value that will be coerced to a different type.
+
+    Parameters:
+        Target: The type of the value to coerce to.
+        func: The function to coerce the value to the target type.
+    """
+
+    var value: Self.Target
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {Self.func(deserialize[Value](p))}
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.Target:
+        return self.value
+
+
+def __try_coerce_int(v: Value) raises -> Int64:
+    if v.is_int() or v.is_uint():
+        return v.int()
+    elif v.is_float():
+        return Int64(v.float())
+    elif v.is_string():
+        return deserialize[Int64](v.string())
+    else:
+        raise Error("Value cannot be converted to an integer")
+
+
+def __try_coerce_uint(v: Value) raises -> UInt64:
+    if v.is_int() or v.is_uint():
+        return v.uint()
+    elif v.is_float():
+        return UInt64(v.float())
+    elif v.is_string():
+        return deserialize[UInt64](v.string())
+    else:
+        raise Error("Value cannot be converted to an unsigned integer")
+
+
+def __try_coerce_float(v: Value) raises -> Float64:
+    if v.is_int() or v.is_uint():
+        return Float64(v.int())
+    elif v.is_float():
+        return v.float()
+    elif v.is_string():
+        return deserialize[Float64](v.string())
+    else:
+        raise Error("Value cannot be converted to a float")
+
+
+def __try_coerce_string(v: Value) raises -> String:
+    if v.is_string():
+        return v.string()
+    elif v.is_int():
+        return String(v.int())
+    elif v.is_uint():
+        return String(v.uint())
+    elif v.is_float():
+        return String(v.float())
+    elif v.is_bool():
+        return String(v.bool())
+    elif v.is_null():
+        return "null"
+    else:
+        raise Error("Value cannot be converted to a string")
+
+
+comptime CoerceInt = Coerce[Int64, __try_coerce_int]
+""" 
+Coerces a value to an integer.
+
+Parameters:
+    T: The type of the value to coerce.
+    func: The function to coerce the value to the target type.
+"""
+
+comptime CoerceUInt = Coerce[UInt64, __try_coerce_uint]
+"""
+Coerces a value to an unsigned integer.
+
+Parameters:
+    T: The type of the value to coerce.
+    func: The function to coerce the value to the target type.
+"""
+
+comptime CoerceFloat = Coerce[Float64, __try_coerce_float]
+"""
+Coerces a value to a float.
+
+Parameters:
+    T: The type of the value to coerce.
+    func: The function to coerce the value to the target type.
+"""
+
+comptime CoerceString = Coerce[String, __try_coerce_string]
+"""
+Coerces a value to a string.
+
+Parameters:
+    T: The type of the value to coerce.
+    func: The function to coerce the value to the target type.
+"""
+
+
+##########################################################
+# Default
+##########################################################
+
+
+@fieldwise_init
+struct Default[T: _Base, default: T](
+    Defaultable, JsonDeserializable, JsonSerializable
+):
+    """
+    Defaults the value to a given value if not present.
+
+    Parameters:
+        T: The type of the value to default.
+        default: The value to default to.
+    """
+
+    var value: Self.T
+
+    def __init__(out self):
+        self.value = materialize[Self.default]()
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        var op = deserialize[Optional[Self.T]](p)
+        if op:
+            s = {op.take()}
+        else:
+            s = {materialize[Self.default]()}
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.T:
+        return self.value
+
+
+##########################################################
+# Transform
+##########################################################
+
+
+@fieldwise_init
+struct Transform[InT: _Base, OutT: _Base, func: def(InT) thin -> OutT](
+    JsonDeserializable, JsonSerializable
+):
+    """
+    Transforms the value to a different type.
+
+    Parameters:
+        InT: The type of the value to transform.
+        OutT: The type of the value to transform to.
+        func: The function to transform the value to the target type.
+    """
+
+    var value: Self.OutT
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {Self.func(deserialize[Self.InT](p))}
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.OutT:
+        return self.value
+
+
+##########################################################
+# Cross-field validation
+##########################################################
+@always_inline("builtin")
+def __field_in_parent[Parent: _Base, F: StringLiteral]() -> Bool:
+    # Bit a hack until I have a better way to do this
+    return (
+        Int(
+            mlir_value=__mlir_attr[
+                `#kgen.struct_field_index_by_name<`,
+                Parent,
+                `, `,
+                F.value,
+                `> : index`,
+            ]
+        )
+        >= 0
+    )
+
+
+struct CrossFieldValidator[
+    Parent: _Base,
+    F1: StringLiteral,
+    F2: StringLiteral,
+    V: def(
+        reflect[Parent].field[F1].T,
+        reflect[Parent].field[F2].T,
+    ) thin raises,
+](JsonDeserializable, JsonSerializable, Validator):
+    """
+    Validates a value to depend on another field.
+
+    Parameters:
+        Parent: Parent type of the fields we want to validate.
+        F1: The name of the first field.
+        F2: The name of the second field.
+        V: The validator function to apply to the dependent field.
+    """
+
+    var value: Self.Parent
+    comptime Type = Self.Parent
+
+    def __init__(out self, var value: Self.Parent) raises:
+        comptime assert __field_in_parent[Self.Parent, Self.F1]()
+        comptime assert __field_in_parent[Self.Parent, Self.F2]()
+        self.value = value^
+        Self.validate(self.value)
+
+    @staticmethod
+    def from_json[
+        origin: ImmOrigin, options: ParseOptions, //
+    ](mut p: Parser[origin, options], out s: Self) raises:
+        s = {deserialize[Self.Type](p)}
+        s.validate(s.value)
+
+    @staticmethod
+    def validate(value: Self.Type) raises:
+        comptime r = reflect[Self.Type]
+        comptime f1 = r.field_index[Self.F1]()
+        comptime f2 = r.field_index[Self.F2]()
+        Self.V(
+            rebind[r.field[Self.F1].T](r.field_ref[f1](value)),
+            rebind[r.field[Self.F2].T](r.field_ref[f2](value)),
+        )
+
+    def write_json(self, mut writer: Some[Serializer]):
+        serialize(self.value, writer)
+
+    def __getitem__(self) -> ref[self.value] Self.Type:
+        return self.value

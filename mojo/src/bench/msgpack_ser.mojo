@@ -360,7 +360,7 @@ struct MsgpackSer:
             while i < n:
                 var key = r.read_str()
                 if key == "items":
-                    items_n = r.read_array_header()
+                    var items_n = r.read_array_header()
                     var j = 0
                     while j < items_n:
                         if fx.type_id == "message":
