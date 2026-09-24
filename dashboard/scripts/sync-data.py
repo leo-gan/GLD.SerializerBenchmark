@@ -6,15 +6,16 @@ import gzip
 import glob
 import re
 
+# Timestamped benchmark logs: YYYY-MM-DD-HHMMSS.csv
+_RUN_CSV = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
+
 def find_latest_run(lang_logs_dir):
     """Find the most recent run based on timestamped CSV files."""
     if not os.path.isdir(lang_logs_dir):
         return None
-    # Match YYYY-MM-DD-HHMMSS.csv
-    pattern = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
     runs = []
     for f in os.listdir(lang_logs_dir):
-        match = pattern.match(f)
+        match = _RUN_CSV.match(f)
         if match:
             runs.append(match.group(1))
     if not runs:
@@ -26,10 +27,9 @@ def list_all_runs(lang_logs_dir):
     """List all timestamped runs for a language."""
     if not os.path.isdir(lang_logs_dir):
         return []
-    pattern = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{6})\.csv$")
     runs = set()
     for f in os.listdir(lang_logs_dir):
-        match = pattern.match(f)
+        match = _RUN_CSV.match(f)
         if match:
             runs.add(match.group(1))
     return sorted(list(runs), reverse=True)
