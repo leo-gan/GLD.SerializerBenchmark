@@ -1,7 +1,7 @@
 # What should we use for an event log?
 
 **Question:** On one “something happened” record, how do Avro, Protocol Buffers, and JSON compare on size and write time?
-**Date:** 2026-09-12
+**Date:** 2026-09-24
 **Sample:** `event`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -26,7 +26,7 @@ We do not name a single winner. This sample is one event. **Similar** means we c
 | cpp | ok | `avro` | — | `avro` | [cpp/results.md](cpp/results.md) |
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf`, `SwiftAvroCore` | [swift/results.md](swift/results.md) |
 | zig | ok | `protobuf` | — | `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `EmberJson` | — | `EmberJson`, `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| mojo | ok | `EmberJson` | `mojo-json` | `EmberJson`, `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## At a glance (100 records per write)
 
@@ -286,25 +286,27 @@ Every listed library (JSON, Avro, Protocol Buffers). Times are middle values in 
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| EmberJson | 1.31 | 290 | JSON — EmberJson | fastest |
-| mojo-json | 1.40 | 290 | JSON — mojo-json | slower |
-| mojo-avro | 1.93 | 138 | Avro | slower |
-| mojo-protobuf | 2.20 | 156 | Protocol Buffers | slower |
-| mojo-cbor | 3.20 | 232 | CBOR | slower |
-| ehsanmok-json | 4.45 | 290 | JSON — ehsanmok/json | slower |
-| mojo-toml | 31.8 | 304 | TOML | slower |
+| EmberJson | 1.48 | 290 | JSON — EmberJson | fastest |
+| mojo-json | 1.53 | 290 | JSON — mojo-json | close |
+| mojo-avro | 2.09 | 138 | Avro | slower |
+| mojo-protobuf | 2.41 | 156 | Protocol Buffers | slower |
+| mojo-cbor | 3.46 | 232 | CBOR | slower |
+| mojo-flatbuffers | 3.63 | 320 | FlatBuffers | slower |
+| ehsanmok-json | 5.06 | 290 | JSON — ehsanmok/json | slower |
+| mojo-toml | 34.5 | 304 | TOML | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| EmberJson | 116 | 27675 | JSON — EmberJson | fastest |
-| mojo-json | 126 | 27675 | JSON — mojo-json | slower |
-| mojo-avro | 181 | 12367 | Avro | slower |
-| mojo-protobuf | 206 | 14449 | Protocol Buffers | slower |
-| mojo-cbor | 301 | 21773 | CBOR | slower |
-| ehsanmok-json | 411 | 27675 | JSON — ehsanmok/json | slower |
-| mojo-toml | 4668 | 29873 | TOML | slower |
+| EmberJson | 120 | 27675 | JSON — EmberJson | fastest |
+| mojo-json | 133 | 27675 | JSON — mojo-json | slower |
+| mojo-avro | 187 | 12367 | Avro | slower |
+| mojo-protobuf | 214 | 14449 | Protocol Buffers | slower |
+| mojo-cbor | 313 | 21773 | CBOR | slower |
+| mojo-flatbuffers | 324 | 27896 | FlatBuffers | slower |
+| ehsanmok-json | 419 | 27675 | JSON — ehsanmok/json | slower |
+| mojo-toml | 4850 | 29873 | TOML | slower |
 
 ## What we saw
 

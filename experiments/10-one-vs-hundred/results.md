@@ -1,7 +1,7 @@
 # Does one record rank the same as one hundred?
 
 **Question:** Does the library that is fastest for one record stay fastest when we write one hundred records at once?
-**Date:** 2026-09-12
+**Date:** 2026-09-24
 **Sample:** `['message', 'event']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -24,7 +24,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | csharp | — | SpanJson | — | SpanJson | — | no | [csharp/results.md](csharp/results.md) |
 | swift | — | SwiftProtobuf | — | SwiftProtobuf | — | no | [swift/results.md](swift/results.md) |
 | zig | — | comptime-bin | — | comptime-bin | — | no | [zig/results.md](zig/results.md) |
-| mojo | — | mojo-avro | — | EmberJson | — | no | [mojo/results.md](mojo/results.md) |
+| mojo | — | mojo-protobuf | — | EmberJson | — | no | [mojo/results.md](mojo/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -54,7 +54,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | swift | D (event) | SwiftProtobuf | SwiftProtobuf | yes |
 | zig | B (flat) | comptime-bin | comptime-bin | yes |
 | zig | D (event) | comptime-bin | comptime-bin | yes |
-| mojo | B (flat) | mojo-avro | mojo-avro | yes |
+| mojo | B (flat) | mojo-protobuf | mojo-avro | no |
 | mojo | D (event) | EmberJson | EmberJson | yes |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
@@ -567,49 +567,53 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.29 | 290 | fastest |
-| mojo-json | 1.36 | 290 | slower |
-| mojo-avro | 1.86 | 138 | slower |
-| mojo-protobuf | 2.12 | 156 | slower |
-| mojo-cbor | 3.06 | 232 | slower |
-| ehsanmok-json | 4.25 | 290 | slower |
-| mojo-toml | 30.4 | 304 | slower |
+| EmberJson | 1.63 | 290 | fastest |
+| mojo-json | 1.72 | 290 | close |
+| mojo-avro | 2.34 | 138 | slower |
+| mojo-protobuf | 2.70 | 156 | slower |
+| mojo-cbor | 3.94 | 232 | slower |
+| mojo-flatbuffers | 4.12 | 320 | slower |
+| ehsanmok-json | 5.73 | 290 | slower |
+| mojo-toml | 39.7 | 304 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 108 | 27675 | fastest |
-| mojo-json | 120 | 27675 | slower |
-| mojo-avro | 171 | 12367 | slower |
-| mojo-protobuf | 194 | 14449 | slower |
-| mojo-cbor | 284 | 21773 | slower |
-| ehsanmok-json | 386 | 27675 | slower |
-| mojo-toml | 4394 | 29873 | slower |
+| EmberJson | 117 | 27675 | fastest |
+| mojo-json | 130 | 27675 | slower |
+| mojo-avro | 182 | 12367 | slower |
+| mojo-protobuf | 203 | 14449 | slower |
+| mojo-cbor | 302 | 21773 | slower |
+| mojo-flatbuffers | 312 | 27896 | slower |
+| ehsanmok-json | 404 | 27675 | slower |
+| mojo-toml | 4697 | 29873 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 0.52 | 44 | fastest |
-| mojo-protobuf | 0.53 | 50 | close |
-| mojo-json | 0.58 | 164 | slower |
-| EmberJson | 0.80 | 168 | slower |
-| mojo-cbor | 1.46 | 124 | slower |
-| ehsanmok-json | 3.86 | 168 | slower |
-| mojo-toml | 12.1 | 167 | slower |
+| mojo-protobuf | 0.55 | 50 | fastest |
+| mojo-avro | 0.55 | 44 | similar |
+| mojo-json | 0.60 | 164 | slower |
+| EmberJson | 0.81 | 168 | slower |
+| mojo-flatbuffers | 0.99 | 104 | slower |
+| mojo-cbor | 1.47 | 124 | slower |
+| ehsanmok-json | 3.56 | 168 | slower |
+| mojo-toml | 12.4 | 167 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-avro | 35.1 | 4051 | fastest |
-| mojo-json | 38.4 | 16114 | slower |
-| mojo-protobuf | 40.0 | 4841 | slower |
-| EmberJson | 48.5 | 16556 | slower |
-| mojo-cbor | 122 | 12037 | slower |
-| ehsanmok-json | 322 | 16556 | slower |
-| mojo-toml | 1461 | 17554 | slower |
+| mojo-avro | 39.2 | 4051 | fastest |
+| mojo-json | 43.2 | 16114 | slower |
+| mojo-protobuf | 45.7 | 4841 | slower |
+| EmberJson | 55.9 | 16556 | slower |
+| mojo-flatbuffers | 82.1 | 8032 | slower |
+| mojo-cbor | 135 | 12037 | slower |
+| ehsanmok-json | 312 | 16556 | slower |
+| mojo-toml | 1634 | 17554 | slower |
 
 ## What we saw
 

@@ -1,7 +1,7 @@
 # Does writing to a file change the ranking?
 
 **Question:** When we write as if to a file, which libraries really write as they go, and does the ranking change?
-**Date:** 2026-09-12
+**Date:** 2026-09-24
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -20,7 +20,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
 | zig | ok | `flatbuffers` | `protobuf` | `flatbuffers`, `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `mojo-avro` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| mojo | ok | `mojo-avro`, `mojo-json` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## In memory, by language
 
@@ -99,13 +99,14 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 1.61 | 118 | Avro | fastest |
-| mojo-json | 1.70 | 452 | JSON — mojo-json | slower |
-| EmberJson | 2.11 | 452 | JSON — EmberJson | slower |
-| mojo-protobuf | 2.23 | 157 | Protocol Buffers | slower |
-| mojo-cbor | 4.43 | 329 | CBOR | slower |
-| ehsanmok-json | 7.14 | 452 | JSON — ehsanmok/json | slower |
-| mojo-toml | 73.5 | 489 | TOML | slower |
+| mojo-avro | 1.70 | 118 | Avro | fastest |
+| mojo-json | 1.72 | 452 | JSON — mojo-json | similar |
+| EmberJson | 2.17 | 452 | JSON — EmberJson | slower |
+| mojo-protobuf | 2.34 | 157 | Protocol Buffers | slower |
+| mojo-flatbuffers | 4.49 | 416 | FlatBuffers | slower |
+| mojo-cbor | 4.62 | 329 | CBOR | slower |
+| ehsanmok-json | 7.77 | 452 | JSON — ehsanmok/json | slower |
+| mojo-toml | 78.1 | 489 | TOML | slower |
 
 ## What we saw
 

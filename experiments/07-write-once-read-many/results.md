@@ -1,7 +1,7 @@
 # Fast to write, or fast to read?
 
 **Question:** If we build a record once and read it many times, how do FlatBuffers and Cap’n Proto split write time and read time?
-**Date:** 2026-09-12
+**Date:** 2026-09-24
 **Sample:** `['document', 'telemetry']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -23,7 +23,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | c | flatcc | — | protobuf-wire | — | — | no | [c/results.md](c/results.md) |
 | swift | FlatBuffers | — | SwiftProtobuf | — | — | no | [swift/results.md](swift/results.md) |
 | zig | comptime-bin | — | comptime-bin | — | — | no | [zig/results.md](zig/results.md) |
-| mojo | mojo-avro | — | mojo-avro | — | — | no | [mojo/results.md](mojo/results.md) |
+| mojo | mojo-avro | — | mojo-flatbuffers | — | — | no | [mojo/results.md](mojo/results.md) |
 
 ## Does the fastest stay the same at 100 records?
 
@@ -52,7 +52,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | zig | A (order) | comptime-bin | — | no |
 | zig | C (sensor) | comptime-bin | — | no |
 | mojo | A (order) | mojo-avro | — | no |
-| mojo | C (sensor) | mojo-avro | — | no |
+| mojo | C (sensor) | mojo-flatbuffers | — | no |
 
 ## Experiment 1 sample (A, N = 1) — not clearly slower
 
@@ -275,15 +275,17 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| mojo-avro | 0.22 | 1.48 | 118 | fastest |
-| mojo-protobuf | 0.57 | 1.79 | 157 | slower |
+| mojo-avro | 0.22 | 1.53 | 118 | fastest |
+| mojo-protobuf | 0.59 | 1.85 | 157 | slower |
+| mojo-flatbuffers | 3.59 | 1.10 | 416 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write (µs) | Read (µs) | Size (bytes) | Group |
 |---------|------------|-----------|--------------|-------|
-| mojo-avro | 2.72 | 6.98 | 4135 | fastest |
-| mojo-protobuf | 3.70 | 10.7 | 4137 | slower |
+| mojo-flatbuffers | 3.21 | 2.55 | 4200 | fastest |
+| mojo-avro | 2.71 | 7.65 | 4135 | slower |
+| mojo-protobuf | 3.26 | 10.3 | 4137 | slower |
 
 ## What we saw
 

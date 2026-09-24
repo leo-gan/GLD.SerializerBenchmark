@@ -103,5 +103,6 @@ languages:
       - {name: ehsanmok-json, writes_named_fields: true, role: JSON — ehsanmok/json}
       - {name: mojo-cbor, writes_named_fields: true, role: CBOR}
       - {name: mojo-protobuf, writes_named_fields: true, role: Protocol Buffers}
+      - {name: mojo-flatbuffers, writes_named_fields: true, role: FlatBuffers}
       - {name: mojo-avro, writes_named_fields: true, role: Avro}
       - {name: mojo-toml, writes_named_fields: true, role: TOML}

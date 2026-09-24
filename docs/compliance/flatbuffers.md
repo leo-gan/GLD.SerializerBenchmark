@@ -53,4 +53,12 @@ generated tables. It will:
   FlexBuffers root either)
 - **fail** the file-id reject if it accepts a four-byte stub as a root
 
-That last FAIL is report-only.
+That last FAIL is report-only. The saved Python log also fails `fb-three`: a three-byte buffer is accepted as a FlexBuffers root.
+
+## Mojo serializer
+
+`mojo-flatbuffers` 0.2.0 uses three entry points. FlexBuffers cases call `flex_loads`. When the case carries a `decoded` field, the runner compares that value with the tree (integers, strings, the harbor map, the blob, the vector). Table cases call `verify_root`. File-identifier cases call `verify_file_identifier`, which requires eight bytes.
+
+The 24 catalog cases all passed. That includes the official gold buffer and the two rejects the Python package accepts: `fb-three` and `fb-id-truncated`.
+
+Zig's adapter only checks that four bytes can hold a root offset. The FlexBuffers accept cases fail there because a FlexBuffers root is not a table. Those failures belong to that adapter.

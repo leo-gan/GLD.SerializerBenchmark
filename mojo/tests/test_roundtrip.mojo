@@ -4,6 +4,7 @@ from bench.ehsanmok_ser import EhsanJsonSer
 from bench.cbor_ser import CborSer
 from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
+from bench.flatbuffers_ser import FlatBuffersSer
 from bench.toml_ser import TomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
@@ -18,6 +19,7 @@ def _roundtrip_all(type_id: String) raises:
     var cbor = CborSer()
     var avro = AvroSer()
     var proto = ProtobufSer()
+    var fb = FlatBuffersSer()
     var toml = TomlSer()
     var gldj = GldJsonSer()
     var yaml = YamlSer()
@@ -32,6 +34,8 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("avro fidelity " + type_id)
     if not proto.check(fx, proto.serialize_bytes(fx)):
         raise Error("protobuf fidelity " + type_id)
+    if not fb.check(fx, fb.serialize_bytes(fx)):
+        raise Error("flatbuffers fidelity " + type_id)
     if not toml.check(fx, toml.serialize_bytes(fx)):
         raise Error("toml fidelity " + type_id)
     if not gldj.check(fx, gldj.serialize_bytes(fx)):
@@ -50,6 +54,14 @@ def _ehsan_batch(type_id: String) raises:
         raise Error("ehsanmok-json fidelity n=100 " + type_id)
 
 
+def _flatbuffers_batch(type_id: String) raises:
+    var cfg = TypeConfig()
+    var fx = make_cell(type_id, cfg, UInt64(42), 100, "")
+    var fb = FlatBuffersSer()
+    if not fb.check(fx, fb.serialize_bytes(fx)):
+        raise Error("flatbuffers fidelity n=100 " + type_id)
+
+
 def main() raises:
     _roundtrip_all("message")
     _roundtrip_all("document")
@@ -58,4 +70,9 @@ def main() raises:
     _roundtrip_all("event")
     _ehsan_batch("document")
     _ehsan_batch("telemetry")
+    _flatbuffers_batch("document")
+    _flatbuffers_batch("telemetry")
+    _flatbuffers_batch("strings")
+    _flatbuffers_batch("event")
+    _flatbuffers_batch("message")
     print("ok")

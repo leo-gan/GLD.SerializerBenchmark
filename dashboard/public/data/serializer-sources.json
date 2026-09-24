@@ -958,6 +958,11 @@
         "version": "0.6.0",
         "specifics": "gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf exists as a language-neutral IDL. This library generates Mojo from the suite `.proto` and times encode/decode."
       },
+      "mojo-flatbuffers": {
+        "source_url": "https://github.com/leo-gan/gld-flatbuffers",
+        "version": "0.2.0",
+        "specifics": "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can use fields without unpacking the buffer. This row times a reused Builder and generated pack/unpack on the suite tables."
+      },
       "mojo-toml": {
         "source_url": "https://github.com/DataBooth/mojo-toml",
         "version": "0.9.1",

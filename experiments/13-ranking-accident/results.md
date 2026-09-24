@@ -1,7 +1,7 @@
 # Does the ranking stay the same if we change the data?
 
 **Question:** Do the ranks stay the same if we change the record, how many we write at once, or how we set aside odd trials?
-**Date:** 2026-09-12
+**Date:** 2026-09-24
 **Sample:** `['document', 'message', 'telemetry', 'event', 'strings']`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -1336,81 +1336,81 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 1.58 | 452 | fastest |
-| EmberJson | 2.02 | 452 | slower |
-| ehsanmok-json | 6.83 | 452 | slower |
+| mojo-json | 1.70 | 452 | fastest |
+| EmberJson | 2.14 | 452 | slower |
+| ehsanmok-json | 7.65 | 452 | slower |
 
 **A (order), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 153 | 47144 | fastest |
-| EmberJson | 172 | 47144 | slower |
-| ehsanmok-json | 613 | 47144 | slower |
+| mojo-json | 170 | 47144 | fastest |
+| EmberJson | 196 | 47144 | slower |
+| ehsanmok-json | 714 | 47144 | slower |
 
 **D (event), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.31 | 290 | fastest |
-| mojo-json | 1.39 | 290 | slower |
-| ehsanmok-json | 4.40 | 290 | slower |
+| EmberJson | 1.55 | 290 | fastest |
+| mojo-json | 1.59 | 290 | close |
+| ehsanmok-json | 5.24 | 290 | slower |
 
 **D (event), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 109 | 27675 | fastest |
-| mojo-json | 121 | 27675 | slower |
-| ehsanmok-json | 393 | 27675 | slower |
+| EmberJson | 131 | 27675 | fastest |
+| mojo-json | 140 | 27675 | slower |
+| ehsanmok-json | 437 | 27675 | slower |
 
 **B (flat), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 0.59 | 164 | fastest |
-| EmberJson | 0.79 | 168 | slower |
-| ehsanmok-json | 4.00 | 168 | slower |
+| mojo-json | 0.66 | 164 | fastest |
+| EmberJson | 0.87 | 168 | slower |
+| ehsanmok-json | 4.03 | 168 | slower |
 
 **B (flat), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 39.3 | 16114 | fastest |
-| EmberJson | 48.1 | 16556 | slower |
-| ehsanmok-json | 327 | 16556 | slower |
+| mojo-json | 48.7 | 16114 | fastest |
+| EmberJson | 63.0 | 16556 | slower |
+| ehsanmok-json | 347 | 16556 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 1.72 | 411 | fastest |
-| mojo-json | 2.73 | 411 | slower |
-| ehsanmok-json | 5.17 | 411 | slower |
+| EmberJson | 1.97 | 411 | fastest |
+| mojo-json | 3.10 | 411 | slower |
+| ehsanmok-json | 6.20 | 411 | slower |
 
 **E (words), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| EmberJson | 188 | 41441 | fastest |
-| mojo-json | 285 | 41441 | slower |
-| ehsanmok-json | 512 | 41441 | slower |
+| EmberJson | 212 | 41441 | fastest |
+| mojo-json | 314 | 41441 | slower |
+| ehsanmok-json | 577 | 41441 | slower |
 
 **C (sensor), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 2.36 | 491 | fastest |
-| EmberJson | 3.06 | 668 | slower |
-| ehsanmok-json | 25.0 | 668 | slower |
+| mojo-json | 2.73 | 491 | fastest |
+| EmberJson | 3.66 | 668 | slower |
+| ehsanmok-json | 12.6 | 668 | slower |
 
 **C (sensor), 100 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| mojo-json | 215 | 49656 | fastest |
-| EmberJson | 326 | 66898 | slower |
-| ehsanmok-json | 2559 | 66898 | slower |
+| mojo-json | 274 | 49656 | fastest |
+| EmberJson | 403 | 66898 | slower |
+| ehsanmok-json | 1289 | 66902 | slower |
 
 ## What we saw
 

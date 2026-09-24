@@ -285,6 +285,7 @@ export const CATALOG = [
   { language: "mojo", name: "mojo-json", formats: ["json"], docs: "https://github.com/leo-gan/gld-json", evidence: "gld-json: JSON WireWriter/Reader." },
   { language: "mojo", name: "mojo-cbor", formats: ["cbor"], docs: "https://github.com/leo-gan/gld-cbor", evidence: "gld-cbor: CBOR datum encode/decode." },
   { language: "mojo", name: "mojo-protobuf", formats: ["protobuf"], docs: "https://github.com/leo-gan/gld-protobuf", evidence: "gld-protobuf from the suite .proto." },
+  { language: "mojo", name: "mojo-flatbuffers", formats: ["flatbuffers"], docs: "https://github.com/leo-gan/gld-flatbuffers", evidence: "gld-flatbuffers: reused Builder and generated tables from the suite .fbs." },
   { language: "mojo", name: "mojo-avro", formats: ["avro"], docs: "https://github.com/leo-gan/gld-avro", evidence: "gld-avro: Avro datum encode/decode." },
   { language: "mojo", name: "mojo-toml", formats: ["toml"], docs: "https://github.com/DataBooth/mojo-toml", evidence: "DataBooth/mojo-toml: TOML." },
   { language: "mojo", name: "mojo-msgpack", formats: ["msgpack"], docs: "https://github.com/leo-gan/gld-messagepack", evidence: "gld-messagepack: MessagePack wire." },
