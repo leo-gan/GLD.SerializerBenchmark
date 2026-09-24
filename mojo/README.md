@@ -2,7 +2,7 @@
 
 Native Mojo 1.0 benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
 
-## Serializers (9)
+## Serializers (10)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -11,12 +11,13 @@ Native Mojo 1.0 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | mojo-json | JSON | leo-gan/gld-json 0.4.0 | Typed WireWriter / WireReader encode / decode (vendored sources) |
 | mojo-cbor | Binary | leo-gan/gld-cbor 0.7.0 | `CborDatum` encode / decode (vendored sources) |
 | mojo-protobuf | Schema | leo-gan/gld-protobuf | Generated suite messages (vendored sources) |
+| mojo-flatbuffers | Schema | leo-gan/gld-flatbuffers 0.2.0 | Reused Builder and generated tables from `cpp/schemas/benchmark.fbs` (vendored sources) |
 | mojo-avro | Schema | leo-gan/gld-avro | `AvroDatum` encode / decode (conda) |
 | mojo-toml | Text | DataBooth/mojo-toml | `to_toml` / `parse` (vendored source) |
 | gld-yaml | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.4.0 | `yaml.encode` / `yaml.decode` on suite types (vendored sources) |
 | mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | WireWriter / WireReader (vendored sources) |
 
-mojo-avro’s conda package owns the `runtime` / `wire` / `json` module names. JSON, CBOR, Protobuf, YAML, and MessagePack are compiled from `vendor/` with those internals renamed so they can live in one process. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub.
+mojo-avro’s conda package owns the `runtime` / `wire` / `json` module names. JSON, CBOR, Protobuf, YAML, MessagePack, and FlatBuffers are compiled from `vendor/` with those internals renamed so they can live in one process. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub.
 
 ## Host tools
 

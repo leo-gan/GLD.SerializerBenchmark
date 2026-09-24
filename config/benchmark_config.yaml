@@ -1284,6 +1284,11 @@ languages:
         package: leo-gan/gld-protobuf
         rationale: "Pure-Mojo Protocol Buffers generated from the suite .proto"
         optimal_api: "Message.encode / Message.decode (domain convert untimed)"
+      - name: mojo-flatbuffers
+        category: schema
+        package: leo-gan/gld-flatbuffers
+        rationale: "Pure-Mojo FlatBuffers generated from cpp/schemas/benchmark.fbs"
+        optimal_api: "Reused Builder.clear + generated pack/finish; unpack back to the suite value"
       - name: mojo-avro
         category: schema
         package: leo-gan/gld-avro

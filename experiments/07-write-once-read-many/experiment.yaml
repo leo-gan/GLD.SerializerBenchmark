@@ -122,4 +122,5 @@ languages:
     enabled: true
     libraries:
       - {name: mojo-protobuf, writes_named_fields: true, role: Protocol Buffers}
+      - {name: mojo-flatbuffers, writes_named_fields: true, role: FlatBuffers}
       - {name: mojo-avro, writes_named_fields: true, role: Avro}

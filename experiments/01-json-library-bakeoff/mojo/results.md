@@ -1,7 +1,7 @@
 # Experiment 1 results — mojo
 
-**Date:** 2026-09-12
-**Raw file:** `experiments/01-json-library-bakeoff/mojo/logs/mojo/2026-09-12-132603.csv`
+**Date:** 2026-09-24
+**Raw file:** `experiments/01-json-library-bakeoff/mojo/logs/mojo/2026-09-23-181427.csv`
 **Language:** mojo
 **Sample:** one nested document (`document`, one record)
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,9 +12,9 @@ Times are middle values in microseconds (µs). Lower time is better.
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Named fields? | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|---------------|-------|-------------------|-------------|
-| mojo-json | 0.3.0 | 0.57 | 1.15 | 1.73 | 452 | 0 | yes | fastest | yes | 78 |
-| EmberJson | 0.3.4 | 0.52 | 1.65 | 2.17 | 452 | 0 | yes | slower | yes | 84 |
-| ehsanmok-json | 0.3.1 | 0.74 | 6.61 | 7.37 | 452 | 0 | yes | slower | yes | 76 |
+| mojo-json | 0.3.0 | 0.65 | 1.29 | 1.93 | 452 | 0 | yes | fastest | yes | 93 |
+| EmberJson | 0.3.4 | 0.56 | 1.74 | 2.32 | 452 | 0 | yes | slower | yes | 82 |
+| ehsanmok-json | 0.4.0 | 0.79 | 7.55 | 8.40 | 452 | 0 | yes | slower | yes | 88 |
 
 ## Libraries that belong in the conversation
 

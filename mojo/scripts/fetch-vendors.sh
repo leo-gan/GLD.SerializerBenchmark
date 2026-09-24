@@ -2,7 +2,7 @@
 # Refresh vendored Mojo libraries and rewrite colliding package names.
 # Prefers sibling checkouts next to this repo (…/GLD/gld-json, …) and
 # falls back to a shallow git clone. Run from repo root or mojo/.
-# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,yaml_src,msgpack_src,ehsanmok_src}.
+# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src}.
 set -euo pipefail
 MOJO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$MOJO_DIR"
@@ -40,6 +40,7 @@ acquire gld-cbor "$tmp/gld-cbor" https://github.com/leo-gan/gld-cbor.git
 acquire gld-protobuf "$tmp/gld-protobuf" https://github.com/leo-gan/gld-protobuf.git
 acquire gld-yaml "$tmp/gld-yaml" https://github.com/leo-gan/gld-yaml.git
 acquire gld-messagepack "$tmp/gld-messagepack" https://github.com/leo-gan/gld-messagepack.git
+acquire gld-flatbuffers "$tmp/gld-flatbuffers" https://github.com/leo-gan/gld-flatbuffers.git
 # DataBooth TOML is not a leo-gan sibling; clone (or reuse a sibling if present).
 if [[ -d "$SIBLING_ROOT/mojo-toml/src/toml" ]]; then
   echo "[INFO] using sibling $SIBLING_ROOT/mojo-toml"
@@ -150,6 +151,17 @@ rewrite_tree(
         "schema": "msgpack_schema",
         "codegen": "msgpack_codegen",
         "msgpack": "msgpack",
+    },
+)
+rewrite_tree(
+    src_root / "gld-flatbuffers" / "src",
+    mojo / "vendor" / "fb_src",
+    {
+        "wire": "fb_wire",
+        "flex": "fb_flex",
+        "schema": "fb_schema",
+        "codegen": "fb_codegen",
+        "flatbuffers": "flatbuffers",
     },
 )
 toml_dest = mojo / "vendor" / "toml_src" / "toml"

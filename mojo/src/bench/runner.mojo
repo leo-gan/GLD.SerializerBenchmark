@@ -10,6 +10,7 @@ from bench.ehsanmok_ser import EhsanJsonSer
 from bench.cbor_ser import CborSer
 from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
+from bench.flatbuffers_ser import FlatBuffersSer
 from bench.toml_ser import TomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
@@ -186,6 +187,7 @@ def run() raises:
     var cbor = CborSer()
     var avro = AvroSer()
     var proto = ProtobufSer()
+    var fb = FlatBuffersSer()
     var toml = TomlSer()
     var gldj = GldJsonSer()
     var yaml = YamlSer()
@@ -196,6 +198,7 @@ def run() raises:
     names.append(cbor.name())
     names.append(avro.name())
     names.append(proto.name())
+    names.append(fb.name())
     names.append(toml.name())
     names.append(gldj.name())
     names.append(yaml.name())
@@ -250,6 +253,8 @@ def run() raises:
                     _ = avro.serialize_bytes(fx)
                 elif nm == proto.name():
                     _ = proto.serialize_bytes(fx)
+                elif nm == fb.name():
+                    _ = fb.serialize_bytes(fx)
                 elif nm == gldj.name():
                     _ = gldj.serialize_bytes(fx)
                 elif nm == yaml.name():
@@ -343,6 +348,18 @@ def run() raises:
                             var buf = proto.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = proto.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == fb.name():
+                            ver = fb.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = fb.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = fb.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1

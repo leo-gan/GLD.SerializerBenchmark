@@ -1,7 +1,7 @@
 # Are database formats better for a normal service call?
 
 **Question:** On one order, do BSON, Smile, and Ion beat JSON and MessagePack when we write the whole record and read it all back?
-**Date:** 2026-09-12
+**Date:** 2026-09-24
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -133,10 +133,10 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-json | 1.69 | 452 | JSON — mojo-json | fastest |
-| EmberJson | 2.11 | 452 | JSON | slower |
-| mojo-cbor | 4.43 | 329 | CBOR | slower |
-| ehsanmok-json | 7.08 | 452 | JSON — ehsanmok/json | slower |
+| mojo-json | 1.74 | 452 | JSON — mojo-json | fastest |
+| EmberJson | 2.16 | 452 | JSON | slower |
+| mojo-cbor | 4.62 | 329 | CBOR | slower |
+| ehsanmok-json | 7.78 | 452 | JSON — ehsanmok/json | slower |
 
 ## What we saw
 

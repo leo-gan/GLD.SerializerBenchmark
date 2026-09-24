@@ -1,7 +1,7 @@
 # Is a one-language format worth the lock-in?
 
 **Question:** On one small record, is a format only one language can read faster than a format other languages can read?
-**Date:** 2026-09-12
+**Date:** 2026-09-24
 **Sample:** `message`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -20,7 +20,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 | php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
 | go | ok | `protobuf` | — | `protobuf` | [go/results.md](go/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
-| mojo | ok | `mojo-avro` | `mojo-protobuf` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
+| mojo | ok | `mojo-avro`, `mojo-protobuf` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
 ## In memory, by language
 
@@ -103,13 +103,14 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 0.52 | 44 | Avro | fastest |
-| mojo-protobuf | 0.53 | 50 | Protocol Buffers | close |
-| mojo-json | 0.58 | 164 | JSON — mojo-json | slower |
-| EmberJson | 0.78 | 168 | JSON — EmberJson | slower |
-| mojo-cbor | 1.44 | 124 | CBOR | slower |
-| ehsanmok-json | 3.98 | 168 | JSON — ehsanmok/json | slower |
-| mojo-toml | 12.4 | 167 | TOML | slower |
+| mojo-avro | 0.56 | 44 | Avro | fastest |
+| mojo-protobuf | 0.59 | 50 | Protocol Buffers | similar |
+| mojo-json | 0.63 | 164 | JSON — mojo-json | slower |
+| EmberJson | 0.85 | 168 | JSON — EmberJson | slower |
+| mojo-flatbuffers | 1.06 | 104 | FlatBuffers | slower |
+| mojo-cbor | 1.54 | 124 | CBOR | slower |
+| ehsanmok-json | 3.72 | 168 | JSON — ehsanmok/json | slower |
+| mojo-toml | 13.3 | 167 | TOML | slower |
 
 ## What we saw
 

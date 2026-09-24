@@ -724,6 +724,9 @@
       "mojo-protobuf": [
         "protobuf"
       ],
+      "mojo-flatbuffers": [
+        "flatbuffers"
+      ],
       "mojo-avro": [
         "avro"
       ],

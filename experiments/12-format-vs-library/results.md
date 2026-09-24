@@ -1,7 +1,7 @@
 # Is it the format, or the library?
 
 **Question:** If one library can write several formats, how much of the difference is the format, and how much is that library?
-**Date:** 2026-09-12
+**Date:** 2026-09-24
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -141,13 +141,14 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| mojo-avro | 1.57 | 118 | Avro | fastest |
-| mojo-json | 1.62 | 452 | JSON — mojo-json | close |
-| EmberJson | 2.07 | 452 | JSON — EmberJson | slower |
-| mojo-protobuf | 2.20 | 157 | Protocol Buffers | slower |
-| mojo-cbor | 4.35 | 329 | CBOR | slower |
-| ehsanmok-json | 6.95 | 452 | JSON — ehsanmok/json | slower |
-| mojo-toml | 72.7 | 489 | TOML | slower |
+| mojo-avro | 1.75 | 118 | Avro | fastest |
+| mojo-json | 1.78 | 452 | JSON — mojo-json | close |
+| EmberJson | 2.25 | 452 | JSON — EmberJson | slower |
+| mojo-protobuf | 2.43 | 157 | Protocol Buffers | slower |
+| mojo-flatbuffers | 4.65 | 416 | FlatBuffers | slower |
+| mojo-cbor | 4.85 | 329 | CBOR | slower |
+| ehsanmok-json | 8.05 | 452 | JSON — ehsanmok/json | slower |
+| mojo-toml | 80.6 | 489 | TOML | slower |
 
 ## What we saw
 

@@ -10,6 +10,23 @@ from cbor import decode_value as cbor_decode
 from msgpack import decode_value as msgpack_decode
 from toml import parse as toml_parse
 from avro import GenericDatum, parse_avsc
+from emberjson import Value
+from fb_flex.kind import (
+    F_BLOB,
+    F_BOOL,
+    F_FLOAT,
+    F_INDIRECT_FLOAT,
+    F_INDIRECT_INT,
+    F_INDIRECT_UINT,
+    F_INT,
+    F_MAP,
+    F_NULL,
+    F_STRING,
+    F_UINT,
+    F_VECTOR,
+)
+from fb_flex.reader import FlexTree, flex_loads
+from fb_wire.verify import verify_file_identifier, verify_root
 
 
 
@@ -157,6 +174,107 @@ def _try_avro(buf: List[Byte], schema_json: String) raises:
     g.decode(buf)
 
 
+def _is_flex_vector(kind: Int) -> Bool:
+    return kind >= F_VECTOR and kind != F_BLOB and kind != F_BOOL
+
+
+def _flex_int(tree: FlexTree, node: Int) -> Int64:
+    var kind = tree.nodes[node].kind
+    if kind == F_INT or kind == F_INDIRECT_INT:
+        return tree.nodes[node].i
+    if kind == F_UINT or kind == F_INDIRECT_UINT:
+        return Int64(tree.nodes[node].u)
+    return Int64(0)
+
+
+def _hex_eq(blob: List[Byte], hextext: String) -> Bool:
+    var want = _hex_bytes(hextext)
+    if len(want) != len(blob):
+        return False
+    var i = 0
+    while i < len(blob):
+        if blob[i] != want[i]:
+            return False
+        i += 1
+    return True
+
+
+def _flex_matches(tree: FlexTree, node: Int, expected: Value) raises -> Bool:
+    var kind = tree.nodes[node].kind
+    if expected.is_null():
+        return kind == F_NULL
+    if expected.is_bool():
+        if kind != F_BOOL:
+            return False
+        var on = tree.nodes[node].u != 0
+        return on == expected.bool()
+    if expected.is_string():
+        return kind == F_STRING and tree.nodes[node].s == expected.string()
+    if expected.is_int() or expected.is_uint():
+        var want = expected.int()
+        if kind == F_FLOAT or kind == F_INDIRECT_FLOAT:
+            return tree.nodes[node].f == Float64(want)
+        if kind == F_INT or kind == F_INDIRECT_INT or kind == F_UINT or kind == F_INDIRECT_UINT:
+            return _flex_int(tree, node) == want
+        return False
+    if expected.is_float():
+        var want = expected.float()
+        if kind == F_FLOAT or kind == F_INDIRECT_FLOAT:
+            return tree.nodes[node].f == want
+        if kind == F_INT or kind == F_INDIRECT_INT or kind == F_UINT or kind == F_INDIRECT_UINT:
+            return Float64(_flex_int(tree, node)) == want
+        return False
+    if expected.is_array():
+        if not _is_flex_vector(kind):
+            return False
+        if len(tree.nodes[node].kids) != len(expected.array()):
+            return False
+        var i = 0
+        while i < len(expected.array()):
+            if not _flex_matches(tree, tree.nodes[node].kids[i], expected.array()[i]):
+                return False
+            i += 1
+        return True
+    if expected.is_object():
+        if len(expected.object()) == 1:
+            var hex_only = False
+            var hextext = String("")
+            try:
+                hextext = String(expected.object()["$hex"].string())
+                hex_only = True
+            except:
+                hex_only = False
+            if hex_only:
+                return kind == F_BLOB and _hex_eq(tree.nodes[node].blob, hextext)
+        if kind != F_MAP:
+            return False
+        if len(tree.nodes[node].keys) != len(expected.object()):
+            return False
+        for key in expected.object().keys():
+            var name = String(key)
+            var child = tree.find(node, name)
+            if child < 0:
+                return False
+            if not _flex_matches(tree, child, expected.object()[name]):
+                return False
+        return True
+    return False
+
+
+def _try_flatbuffers(buf: List[Byte], version: String, has_decoded: Bool, decoded_json: String) raises:
+    if version == "flexbuffers":
+        var tree = flex_loads(buf)
+        if has_decoded:
+            var expected = parse(decoded_json)
+            if not _flex_matches(tree, tree.root, expected):
+                raise Error("decoded value does not match")
+        return
+    if version == "file-id":
+        verify_file_identifier(buf)
+        return
+    verify_root(buf, False)
+
+
 def _try_protobuf(buf: List[Byte], schema: String, text: String) raises:
     if schema == "json":
         var b = text.as_bytes()
@@ -276,6 +394,8 @@ def _run_one(
     input_text: String,
     enc: String,
     schema: String,
+    has_decoded: Bool,
+    decoded_json: String,
 ) -> String:
     var ok = False
     var err = ""
@@ -305,6 +425,13 @@ def _run_one(
             _try_avro(
                 _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
                 schema,
+            )
+        elif fmt == "flatbuffers":
+            _try_flatbuffers(
+                _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
+                version,
+                has_decoded,
+                decoded_json,
             )
         else:
             raise Error("no adapter")
@@ -488,6 +615,9 @@ def main() raises:
             elif fmt == "avro":
                 sers.append("mojo-avro")
                 vers.append("0.4.0")
+            elif fmt == "flatbuffers":
+                sers.append("mojo-flatbuffers")
+                vers.append("0.2.0")
             else:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"
                 var already = False
@@ -565,6 +695,14 @@ def main() raises:
                 # proto3 JSON mapping is flagged with the string "json".
                 if schema == "\"json\"":
                     schema = "json"
+                var has_decoded = False
+                var decoded_json = String("")
+                try:
+                    decoded_json = to_string(c["decoded"])
+                    has_decoded = True
+                except:
+                    has_decoded = False
+                    decoded_json = String("")
                 if _too_deep(input_text):
                     skipped += 1
                     ci += 1
@@ -585,6 +723,8 @@ def main() raises:
                         input_text,
                         enc,
                         schema,
+                        has_decoded,
+                        decoded_json,
                     )
                     if _contains(row, "\"outcome\":\"fail\""):
                         failed += 1
@@ -610,7 +750,7 @@ def main() raises:
         errs += "]"
         var rows = open(rows_path, "r").read()
         var head = (
-            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\"]},\"passed\":"
+            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\",\"avro\",\"flatbuffers\"]},\"passed\":"
             + String(passed)
             + ",\"failed\":"
             + String(failed)

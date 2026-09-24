@@ -1661,6 +1661,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-json"): "gld-json",
     ("mojo", "mojo-cbor"): "gld-cbor",
     ("mojo", "mojo-protobuf"): "gld-protobuf",
+    ("mojo", "mojo-flatbuffers"): "gld-flatbuffers",
     ("mojo", "mojo-avro"): "gld-avro",
     ("mojo", "mojo-toml"): "mojo-toml",
     ("mojo", "gld-yaml"): "gld-yaml",

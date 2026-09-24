@@ -587,6 +587,8 @@ add("mojo", "mojo-cbor", ["cbor"], "https://github.com/leo-gan/gld-cbor",
     "gld-cbor: CBOR datum encode/decode.")
 add("mojo", "mojo-protobuf", ["protobuf"], "https://github.com/leo-gan/gld-protobuf",
     "gld-protobuf from the suite .proto.")
+add("mojo", "mojo-flatbuffers", ["flatbuffers"], "https://github.com/leo-gan/gld-flatbuffers",
+    "gld-flatbuffers: reused Builder and generated tables from the suite .fbs.")
 add("mojo", "mojo-avro", ["avro"], "https://github.com/leo-gan/gld-avro",
     "gld-avro: Avro datum encode/decode.")
 add("mojo", "mojo-toml", ["toml"], "https://github.com/DataBooth/mojo-toml",
