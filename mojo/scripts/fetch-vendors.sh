@@ -42,6 +42,7 @@ acquire gld-yaml "$tmp/gld-yaml" https://github.com/leo-gan/gld-yaml.git
 acquire gld-messagepack "$tmp/gld-messagepack" https://github.com/leo-gan/gld-messagepack.git
 acquire gld-flatbuffers "$tmp/gld-flatbuffers" https://github.com/leo-gan/gld-flatbuffers.git
 acquire gld-avro "$tmp/gld-avro" https://github.com/leo-gan/gld-avro.git
+acquire gld-bson "$tmp/gld-bson" https://github.com/leo-gan/gld-bson.git
 # DataBooth TOML is not a leo-gan sibling; clone (or reuse a sibling if present).
 if [[ -d "$SIBLING_ROOT/mojo-toml/src/toml" ]]; then
   echo "[INFO] using sibling $SIBLING_ROOT/mojo-toml"
@@ -152,6 +153,17 @@ rewrite_tree(
         "schema": "msgpack_schema",
         "codegen": "msgpack_codegen",
         "msgpack": "msgpack",
+    },
+)
+rewrite_tree(
+    src_root / "gld-bson" / "src",
+    mojo / "vendor" / "bson_src",
+    {
+        "runtime": "bson_runtime",
+        "wire": "bson_wire",
+        "schema": "bson_schema",
+        "codegen": "bson_codegen",
+        "bson": "bson_lib",
     },
 )
 rewrite_tree(
