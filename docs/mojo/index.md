@@ -11,11 +11,11 @@ Mojo’s serialization stack is still young. This runner times **pure-Mojo** lib
 
 ### What it is
 
-Mojo compiles to **native machine code**. This suite targets **Mojo 1.0.0** on Linux x86_64 through a `pixi` environment (`mojo/pixi.toml`).
+Mojo compiles to **native machine code**. This suite targets **Mojo 1.1.0** on Linux x86_64 through a `pixi` environment (`mojo/pixi.toml`).
 
 | | This suite |
 |---|---|
-| Tools | Mojo **1.0.0** via `pixi` (`https://conda.modular.com/max`) |
+| Tools | Mojo **1.1.0** via `pixi` (`https://conda.modular.com/max`) |
 | Build | `pixi run mojo run -I src -I vendor/... src/main.mojo` |
 | Prepare | `./scripts/install-host-requirements.sh mojo` |
 | Run | `mojo/scripts/run-benchmarks.sh` |
@@ -27,7 +27,7 @@ The runner is timed in an optimized `mojo run` / `mojo build` path. EmberJson us
 
 ### What changes the numbers
 
-Mojo 1.0 is a young compiler. A nightly compiler or a different pixi lock can move these numbers a lot. CBOR and Protobuf are compiled from vendored sources with renamed internal packages (`cbor_runtime`, `pb_runtime`, …) so they can share one process with mojo-avro, which owns the conda `runtime` / `wire` / `json` module names.
+Mojo 1.1 is a young compiler. A nightly compiler or a different pixi lock can move these numbers a lot. The gld libraries, including Avro, are compiled from vendored sources with renamed internal packages (`cbor_runtime`, `pb_runtime`, `avro_runtime`, …) so they can share one process.
 
 ### Suite-specific gotchas
 
@@ -120,9 +120,9 @@ fidelity                         # untimed, float-tolerant
 
 - Stream mode is not claimed (`stream_policy: bytes_only`).
 - EmberJson 0.3.4 is the modular-community package. The newer `from_json` / `to_json` API on EmberJson main is not what this row times.
-- ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with mojo-avro’s `json` module. GPU/`max` is stubbed; the timed path is the default CPU parser. v0.3.1 added `Value.object()` / `Value.array()` so adapters no longer parse `"{}"` / `"[]"` per node. This suite times **v0.4.0**.
+- ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with the other JSON packages. GPU/`max` is stubbed; the timed path is the default CPU parser. v0.3.1 added `Value.object()` / `Value.array()` so adapters no longer parse `"{}"` / `"[]"` per node. This suite times **v0.4.0**.
 - Apache Arrow (marrow) and Parquet are columnar file/table APIs, not object codecs for these fixtures.
-- `f0cii/mojo-csv` last moved in 2024 (Magic-era nightly) and does not compile on Mojo 1.0.
+- `f0cii/mojo-csv` last moved in 2024 (Magic-era nightly) and does not compile on Mojo 1.1.
 - `forfudan/decimojo` is a decimal-math library. Its old tomlmojo parser is not a standalone serializer.
 
 Also: [`mojo/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/mojo/README.md).

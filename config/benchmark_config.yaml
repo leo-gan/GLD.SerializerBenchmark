@@ -1256,7 +1256,7 @@ languages:
     log_dir: logs/mojo
     time_unit: nanoseconds
     docs_dir: docs/mojo
-    min_mojo_version: "1.0.0"
+    min_mojo_version: "1.1.0"
     stream_policy: bytes_only
     serializers:
       - name: EmberJson
