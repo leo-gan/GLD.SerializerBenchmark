@@ -1309,6 +1309,11 @@ languages:
         package: leo-gan/gld-messagepack
         rationale: "Pure-Mojo MessagePack via WireWriter / WireReader"
         optimal_api: "msgpack WireWriter / WireReader on suite types (vendored as msgpack_*)"
+      - name: mojo-bson
+        category: binary
+        package: leo-gan/gld-bson
+        rationale: "Pure-Mojo BSON 1.0/1.1 via WireWriter / WireReader (last release that builds on Mojo 1.1)"
+        optimal_api: "bson WireWriter / WireReader on suite types (vendored as bson_*)"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

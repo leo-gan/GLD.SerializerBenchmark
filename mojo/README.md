@@ -2,7 +2,7 @@
 
 Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
 
-## Serializers (10)
+## Serializers (11)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -16,6 +16,7 @@ Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | mojo-toml | Text | DataBooth/mojo-toml | `to_toml` / `parse` (vendored source) |
 | gld-yaml | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.4.0 | `yaml.encode` / `yaml.decode` on suite types (vendored sources) |
 | mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | WireWriter / WireReader (vendored sources) |
+| mojo-bson | Binary | leo-gan/gld-bson 0.1.0 | WireWriter / WireReader (vendored sources; latest release that builds on Mojo 1.1) |
 
 JSON, CBOR, Protobuf, YAML, MessagePack, FlatBuffers, and Avro are compiled from `vendor/` with colliding internals renamed (`runtime`, `wire`, `json`, and the rest) so they can live in one process. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub. The vendored ehsanmok/json tree spells `Array` where v0.4.0 still says `InlineArray`, which Mojo 1.1 removed.
 

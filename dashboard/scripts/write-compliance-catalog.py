@@ -595,6 +595,8 @@ add("mojo", "mojo-toml", ["toml"], "https://github.com/DataBooth/mojo-toml",
     "DataBooth/mojo-toml: TOML.")
 add("mojo", "mojo-msgpack", ["msgpack"], "https://github.com/leo-gan/gld-messagepack",
     "gld-messagepack: MessagePack wire.")
+add("mojo", "mojo-bson", ["bson"], "https://github.com/leo-gan/gld-bson",
+    "gld-bson 0.1.0: BSON documents via decode_document (Mojo 1.1).")
 add("mojo", "gld-yaml", ["yaml"], "https://github.com/leo-gan/gld-yaml",
     "gld-yaml: YAML value encode/decode.")
 

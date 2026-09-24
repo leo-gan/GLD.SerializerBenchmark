@@ -8,6 +8,7 @@ from gldjson import decode_value as json_decode
 from yaml import decode_all_values as yaml_decode_all
 from cbor import decode_value as cbor_decode
 from msgpack import decode_value as msgpack_decode
+from bson_runtime.value import decode_document
 from toml import parse as toml_parse
 from avro import GenericDatum, parse_avsc
 from emberjson import Value
@@ -163,6 +164,10 @@ def _try_cbor(buf: List[Byte]) raises:
 
 def _try_msgpack(buf: List[Byte]) raises:
     _ = msgpack_decode(buf)
+
+
+def _try_bson(buf: List[Byte]) raises:
+    _ = decode_document(Span(buf))
 
 
 def _try_avro(buf: List[Byte], schema_json: String) raises:
@@ -415,6 +420,8 @@ def _run_one(
             _try_cbor(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "msgpack":
             _try_msgpack(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "bson":
+            _try_bson(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "protobuf":
             _try_protobuf(
                 _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
@@ -609,6 +616,9 @@ def main() raises:
             elif fmt == "msgpack":
                 sers.append("mojo-msgpack")
                 vers.append("0.3.0")
+            elif fmt == "bson":
+                sers.append("mojo-bson")
+                vers.append("0.1.0")
             elif fmt == "protobuf":
                 sers.append("mojo-protobuf")
                 vers.append("0.6.0")
@@ -750,7 +760,7 @@ def main() raises:
         errs += "]"
         var rows = open(rows_path, "r").read()
         var head = (
-            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\",\"avro\",\"flatbuffers\"]},\"passed\":"
+            "{\"schema\":\"gld.dashboard.compliance/1\",\"generated_at\":\"\",\"language\":\"mojo\",\"languages\":[\"mojo\"],\"policy\":\"report-only\",\"scope\":{\"formats\":[\"json\",\"yaml\",\"toml\",\"cbor\",\"msgpack\",\"protobuf\",\"avro\",\"flatbuffers\",\"bson\"]},\"passed\":"
             + String(passed)
             + ",\"failed\":"
             + String(failed)
