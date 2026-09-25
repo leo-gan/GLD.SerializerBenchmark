@@ -59,6 +59,9 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 |----------|----------|---------|---------------------------------|-------------|-------|
 | [avro](https://github.com/fastavro/fastavro) | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
 | [dagr](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Pure-Python reflective runtime (eager `to_bytes` / `restore`); ~35–390× slower than protobuf (upb), size ≈ protobuf. See [caveat](#why-dagr-opss-look-low) |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Same runtime and call path as `dagr`; regular (vtable) nodes — evolvable, larger than `packed`. See [layouts](#dagr-node-layouts) |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen` (positional) nodes — no schema evolution. See [layouts](#dagr-node-layouts) |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | `frozen`+`packed` (positional, self-sizing) — smallest Dagr row, no schema evolution. See [layouts](#dagr-node-layouts) |
 | [cbor2](https://github.com/agronholm/cbor2) | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | [cloudpickle](https://github.com/cloudpipe/cloudpickle) | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
 | [dill](https://github.com/uqfoundation/dill) | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
@@ -85,7 +88,20 @@ fastavro is a Cython Avro reader/writer for Python. Avro was created so data sys
 
 #### [dagr](https://codeberg.org/mzaks/dagr)
 
-Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode.
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The `dagr` row uses the `packed` layout. The timed path is `<graph>.to_bytes(node)` on encode and the eager `<graph>.restore(bytes)` on decode. The Python target has no lazy reader and no direct builder.
+
+##### Dagr node layouts
+
+The schema emits every suite type in four node layouts (spec/16 of the Dagr repo). Each gets its own generated module (`message_graph`, `message_regular_graph`, `message_frozen_graph`, `message_frozen_packed_graph`, …), and one `DagrSerializer(flavour)` serves all four rows:
+
+| Row | Layout | Evolution | Size, n=1 (message / document / telemetry / strings / event, bytes) |
+|-----|--------|-----------|------------------------------------------------------------------|
+| `dagr` | `packed` (tagged) | add / deprecate fields | 54 / 161 / 304 / 328 / 158 |
+| `dagr-regular` | regular (vtable) | add / deprecate fields | 64 / 240 / 307 / 392 / 171 |
+| `dagr-frozen` | `frozen` (positional) | none | 55 / 223 / 302 / 390 / 161 |
+| `dagr-frozen-packed` | `frozen`+`packed` | none | 48 / 150 / 302 / 328 / 151 |
+
+Sizes are for seed 42 and vary a few bytes with the run's seed. The frozen rows give up all schema evolution, so compare them with fixed-schema codecs, not with protobuf.
 
 #### [cbor2](https://github.com/agronholm/cbor2) · `6.1.4`
 
@@ -175,7 +191,8 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 
 - **Pure-Python runtime:** the Dagr Python target is a reflective runtime (typed `@dataclass` layer over a generic node model); there is no C extension. `serialize` is `<graph>.to_bytes(node)` on nodes built in `prepare_data`, `deserialize` is `<graph>.restore(bytes)` back to the generated dataclasses (eager — Python has no lazy reader). Peer-smoke medians: ~20–75× slower than `protobuf` (upb C core) on single messages and ~40–125× on n=100 cells (protobuf's packed `repeated double` is close to a memcpy in C). Size is within a few % of protobuf, and smaller on `strings`.
 - **Hot-path audit:** cProfile shows no per-call imports or schema loading. The generated module caches the schema's per-node facts once (lookup, field plans, elidability). Its dataclasses feed the serializer directly and are built directly by `restore`, with no intermediate node graph, so what remains is the per-field Python work.
-- **Framing:** N>1 cells encode N independent Dagr buffers in a `u32 count` + `u32 len` frame (same frame as the Rust `dagr` row), so n=100 carries 404 bytes of framing that protobuf's `Batch*` wrapper does not.
+- **Layouts:** all four `dagr*` rows run the same reflective runtime, so their ops/s differ only by the per-layout work in the runtime, not by a different code path.
+- **Framing:** N>1 cells encode N independent Dagr buffers in a `u32 count` + `u32 len` frame (same frame as the Rust `dagr` row, used by all four `dagr*` rows), so n=100 carries 404 bytes of framing that protobuf's `Batch*` wrapper does not.
 
 ### Other caveats
 

@@ -17,19 +17,51 @@ from benchmark.data_v2.generator import instances_for_cell
 from benchmark.serializers.schema_dagr import DagrSerializer
 
 V2_TYPES = ("message", "document", "telemetry", "strings", "event")
+FLAVOURS = ("dagr", "dagr-regular", "dagr-frozen", "dagr-frozen-packed")
 
 
-def test_dagr_registered_with_generator_version():
+@pytest.mark.parametrize("flavour", FLAVOURS)
+def test_dagr_registered_with_generator_version(flavour: str):
     from benchmark.runner import ALL_SERIALIZERS
 
-    ser = next(s for s in ALL_SERIALIZERS if s.name == "dagr")
+    names = [s.name for s in ALL_SERIALIZERS]
+    assert names.count(flavour) == 1, names
+    ser = next(s for s in ALL_SERIALIZERS if s.name == flavour)
     assert re.fullmatch(r"\d{4}\.\d+\.\d+", ser.version), ser.version
 
 
+def test_dagr_flavours_registered_after_dagr_in_order():
+    from benchmark.runner import ALL_SERIALIZERS
+
+    names = [s.name for s in ALL_SERIALIZERS]
+    i = names.index("dagr")
+    assert tuple(names[i:i + len(FLAVOURS)]) == FLAVOURS
+
+
+def test_dagr_unknown_flavour_rejected():
+    with pytest.raises(ValueError):
+        DagrSerializer("dagr-bogus")
+
+
+@pytest.mark.parametrize("type_id", V2_TYPES)
+def test_dagr_flavours_use_distinct_graphs(type_id: str):
+    """Each row imports its own layout's module, so the four encodings differ."""
+    instances = instances_for_cell(type_id, {}, 42, 1)
+    encodings = {}
+    for flavour in FLAVOURS:
+        ser = DagrSerializer(flavour)
+        ser.prepare(type_id, type(instances[0]))
+        native = ser.prepare_data(instances[0], type_id, type(instances[0]))
+        assert type(native).__module__.startswith(type_id + "_")
+        encodings[flavour] = (type(native).__module__, ser.serialize_bytes(native))
+    assert len({mod for mod, _ in encodings.values()}) == len(FLAVOURS)
+
+
+@pytest.mark.parametrize("flavour", FLAVOURS)
 @pytest.mark.parametrize("type_id", V2_TYPES)
 @pytest.mark.parametrize("n", (1, 3))
-def test_dagr_roundtrip(type_id: str, n: int):
-    ser = DagrSerializer()
+def test_dagr_roundtrip(flavour: str, type_id: str, n: int):
+    ser = DagrSerializer(flavour)
     assert ser.supports(type_id)
     instances = instances_for_cell(type_id, {}, 42, n)
     payload = instances[0] if n == 1 else instances

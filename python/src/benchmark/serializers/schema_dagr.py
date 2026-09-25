@@ -1,10 +1,20 @@
 """Dagr — suite Data Model v2 over the generated pure-Python typed API.
 
-Schema: ``schemas/v2/dagr/schema.py`` (one DataGraph per suite type, all nodes
-``packed``, Telemetry ``values`` marked ``raw``). ``dagr build`` emits the Python
-target into ``python/generated/dagr/``: one typed module per graph
-(``message_graph.py`` …) plus a self-contained copy of the ``dagr`` runtime
-package and ``dagr_schema.py``.
+Schema: ``schemas/v2/dagr/schema.py`` emits every suite type in four node
+layouts (Telemetry ``values`` marked ``raw``, all graphs ``deletable=False``).
+``dagr build`` emits the Python target into ``python/generated/dagr/``: one
+typed module per graph plus a self-contained copy of the ``dagr`` runtime
+package and ``dagr_schema.py``. One implementation serves all four rows; only
+the module-name suffix differs:
+
+=====================  ===============================  ==========================
+row                    module                           layout
+=====================  ===============================  ==========================
+``dagr``               ``message_graph``                ``packed``
+``dagr-regular``       ``message_regular_graph``        regular (vtable)
+``dagr-frozen``        ``message_frozen_graph``         ``frozen``
+``dagr-frozen-packed`` ``message_frozen_packed_graph``  ``frozen`` + ``packed``
+=====================  ===============================  ==========================
 
 Call path (mirrors ``schema_protobuf``):
 
@@ -39,19 +49,21 @@ _PY_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "
 _GEN_DIR = os.path.join(_PY_ROOT, "generated", "dagr")
 _LOCK = os.path.join(_PY_ROOT, "..", "schemas", "v2", "dagr", "dagr.lock.json")
 
-_MODULES = {
-    "message": "message_graph",
-    "document": "document_graph",
-    "telemetry": "telemetry_graph",
-    "strings": "strings_graph",
-    "event": "event_graph",
+_TYPES = ("message", "document", "telemetry", "strings", "event")
+
+# Row name -> generated module suffix (``<type>_<suffix>graph``).
+_FLAVOURS = {
+    "dagr": "",
+    "dagr-regular": "regular_",
+    "dagr-frozen": "frozen_",
+    "dagr-frozen-packed": "frozen_packed_",
 }
 
 _U32 = struct.Struct("<I")
 
 
 @lru_cache(maxsize=None)
-def _module(type_id: str) -> Any:
+def _module(type_id: str, suffix: str = "") -> Any:
     """Import one generated graph module (and the shipped ``dagr`` runtime)."""
     if _GEN_DIR not in sys.path:
         sys.path.insert(0, _GEN_DIR)
@@ -65,7 +77,9 @@ def _module(type_id: str) -> Any:
         raise ImportError(
             f"'dagr' resolved to {origin or dagr!r}, not the generated runtime under {_GEN_DIR}"
         )
-    return importlib.import_module(_MODULES[type_id])
+    if type_id not in _TYPES:
+        raise ImportError(f"no Dagr graph for type {type_id!r}")
+    return importlib.import_module(f"{type_id}_{suffix}graph")
 
 
 @lru_cache(maxsize=1)
@@ -124,11 +138,17 @@ _CONVERT = {
 
 
 class DagrSerializer(Serializer):
+    """One Dagr row; ``flavour`` picks the node layout (see module docstring)."""
+
     native_kind = "message"
     stream_mode = "adapted"
 
-    def __init__(self) -> None:
+    def __init__(self, flavour: str = "dagr") -> None:
         super().__init__()
+        if flavour not in _FLAVOURS:
+            raise ValueError(f"unknown Dagr flavour {flavour!r}; expected one of {sorted(_FLAVOURS)}")
+        self._name = flavour
+        self._suffix = _FLAVOURS[flavour]
         self._type_id = "message"
         self._to_bytes = None
         self._restore = None
@@ -136,24 +156,24 @@ class DagrSerializer(Serializer):
 
     @property
     def name(self) -> str:
-        return "dagr"
+        return self._name
 
     @property
     def version(self) -> str:
         return _generator_version()
 
     def supports(self, test_data_name: str) -> bool:
-        if test_data_name not in _MODULES:
+        if test_data_name not in _TYPES:
             return False
         try:
-            _module(test_data_name)
+            _module(test_data_name, self._suffix)
         except ImportError:
             return False
         return True
 
     def prepare(self, test_data_name: str, test_data_type: type) -> None:
         super().prepare(test_data_name, test_data_type)
-        g = _module(test_data_name)
+        g = _module(test_data_name, self._suffix)
         self._type_id = test_data_name
         # Bind the per-graph codec once; the timed path does no lookups.
         self._to_bytes = g.to_bytes
@@ -162,7 +182,7 @@ class DagrSerializer(Serializer):
     def prepare_data(self, obj: Any, test_data_name: str, test_data_type: type) -> Any:
         if self._to_bytes is None or self._type_id != test_data_name:
             self.prepare(test_data_name, test_data_type)
-        g = _module(test_data_name)
+        g = _module(test_data_name, self._suffix)
         conv = _CONVERT[test_data_name]
         self._batch = isinstance(obj, list)
         if self._batch:
