@@ -346,6 +346,18 @@ impl<const ID: u64> MessageGraphArena<ID> {
         Ok(b.finalize())
     }
 
+    /// Build the finished buffer (body, alignment, framing) into a caller-owned builder, so an
+    /// encode loop reuses one buffer and its dedup maps. Start from a fresh or `reset()` builder;
+    /// returns the buffer length, the bytes are `b.record_bytes()`. Same contract as the direct
+    /// builder's `write_into`.
+    pub fn write_into(&self, b: &mut DagrBuilder) -> Result<usize, DagrError> {
+        let root = self.get_root().ok_or(DagrError::StaleReference)?;
+        let root_ref = root.store(b)?;
+        let root_off = root_ref.to_offset().unwrap_or(0);
+        b.store_leb(((b.cursor() - root_off) as u64) << 2);
+        Ok(b.cursor())
+    }
+
     /// Like `to_bytes`, but with an explicit `max_size` bound that sets the back-reference
     /// placeholder width (2 MiB -> 4 B, 1024 -> 2 B). Must match across producers for byte-identity.
     pub fn to_bytes_with_max_size(&self, max_size: usize) -> Result<Vec<u8>, DagrError> {

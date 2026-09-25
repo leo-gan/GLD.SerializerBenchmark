@@ -1902,7 +1902,8 @@ function restoreWithMap(bytes) {
 // src/generated/dagr/MessageRegularGraph_serde.ts
 var MessageRegularGraph_serde_exports = {};
 __export(MessageRegularGraph_serde_exports, {
-  toBytes: () => toBytes2
+  toBytes: () => toBytes2,
+  writeInto: () => writeInto2
 });
 function _storeMessage2(n, b) {
   const _r = b.beginStoring(n._values);
@@ -1921,10 +1922,13 @@ function _storeMessage2(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto2(root, b) {
+  const off = nodeOffset(_storeMessage2(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes2(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeMessage2(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto2(root, b);
   return b.makeData();
 }
 
@@ -2271,7 +2275,8 @@ function restoreWithMap2(bytes) {
 // src/generated/dagr/MessageFrozenGraph_serde.ts
 var MessageFrozenGraph_serde_exports = {};
 __export(MessageFrozenGraph_serde_exports, {
-  toBytes: () => toBytes3
+  toBytes: () => toBytes3,
+  writeInto: () => writeInto3
 });
 function _storeMessage3(n, b) {
   const _r = b.beginStoring(n._values);
@@ -2300,10 +2305,13 @@ function _storeMessage3(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto3(root, b) {
+  const off = nodeOffset(_storeMessage3(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes3(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeMessage3(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto3(root, b);
   return b.makeData();
 }
 
@@ -2448,7 +2456,7 @@ var MessageAccessor4 = class _MessageAccessor {
 var MessageFrozenPackedGraph_direct_exports = {};
 __export(MessageFrozenPackedGraph_direct_exports, {
   toBytes: () => toBytes4,
-  writeInto: () => writeInto2
+  writeInto: () => writeInto4
 });
 function _storeMessage4(n, b) {
   const _before = b.cursor;
@@ -2516,13 +2524,13 @@ function _storeMessage4(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto2(root, b) {
+function writeInto4(root, b) {
   const off = nodeOffset(_storeMessage4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes4(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto2(root, b);
+  writeInto4(root, b);
   return b.makeData();
 }
 
@@ -2767,7 +2775,7 @@ var DocumentAccessor = class _DocumentAccessor {
 var DocumentGraph_direct_exports = {};
 __export(DocumentGraph_direct_exports, {
   toBytes: () => toBytes5,
-  writeInto: () => writeInto3
+  writeInto: () => writeInto5
 });
 function _storeDocumentMeta(n, b) {
   const _before = b.cursor;
@@ -2855,13 +2863,13 @@ function _storeDocument(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto3(root, b) {
+function writeInto5(root, b) {
   const off = nodeOffset(_storeDocument(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes5(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto3(root, b);
+  writeInto5(root, b);
   return b.makeData();
 }
 
@@ -3336,7 +3344,8 @@ function restoreWithMap3(bytes) {
 // src/generated/dagr/DocumentRegularGraph_serde.ts
 var DocumentRegularGraph_serde_exports = {};
 __export(DocumentRegularGraph_serde_exports, {
-  toBytes: () => toBytes6
+  toBytes: () => toBytes6,
+  writeInto: () => writeInto6
 });
 function _storeDocumentMeta2(n, b) {
   const _r = b.beginStoring(n._values);
@@ -3373,10 +3382,13 @@ function _storeDocument2(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto6(root, b) {
+  const off = nodeOffset(_storeDocument2(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes6(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeDocument2(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto6(root, b);
   return b.makeData();
 }
 
@@ -3896,7 +3908,8 @@ function restoreWithMap4(bytes) {
 // src/generated/dagr/DocumentFrozenGraph_serde.ts
 var DocumentFrozenGraph_serde_exports = {};
 __export(DocumentFrozenGraph_serde_exports, {
-  toBytes: () => toBytes7
+  toBytes: () => toBytes7,
+  writeInto: () => writeInto7
 });
 function _storeDocumentMeta3(n, b) {
   const _r = b.beginStoring(n._values);
@@ -3948,10 +3961,13 @@ function _storeDocument3(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto7(root, b) {
+  const off = nodeOffset(_storeDocument3(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes7(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeDocument3(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto7(root, b);
   return b.makeData();
 }
 
@@ -4169,7 +4185,7 @@ var DocumentAccessor4 = class _DocumentAccessor {
 var DocumentFrozenPackedGraph_direct_exports = {};
 __export(DocumentFrozenPackedGraph_direct_exports, {
   toBytes: () => toBytes8,
-  writeInto: () => writeInto4
+  writeInto: () => writeInto8
 });
 function _storeDocumentMeta4(n, b) {
   const _before = b.cursor;
@@ -4281,13 +4297,13 @@ function _storeDocument4(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto4(root, b) {
+function writeInto8(root, b) {
   const off = nodeOffset(_storeDocument4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes8(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto4(root, b);
+  writeInto8(root, b);
   return b.makeData();
 }
 
@@ -4402,7 +4418,7 @@ var TelemetryAccessor = class _TelemetryAccessor {
 var TelemetryGraph_direct_exports = {};
 __export(TelemetryGraph_direct_exports, {
   toBytes: () => toBytes9,
-  writeInto: () => writeInto5
+  writeInto: () => writeInto9
 });
 function _storeTelemetry(n, b) {
   const _before = b.cursor;
@@ -4434,13 +4450,13 @@ function _storeTelemetry(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto5(root, b) {
+function writeInto9(root, b) {
   const off = nodeOffset(_storeTelemetry(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes9(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto5(root, b);
+  writeInto9(root, b);
   return b.makeData();
 }
 
@@ -4683,7 +4699,8 @@ function restoreWithMap5(bytes) {
 // src/generated/dagr/TelemetryRegularGraph_serde.ts
 var TelemetryRegularGraph_serde_exports = {};
 __export(TelemetryRegularGraph_serde_exports, {
-  toBytes: () => toBytes10
+  toBytes: () => toBytes10,
+  writeInto: () => writeInto10
 });
 function _storeTelemetry2(n, b) {
   const _r = b.beginStoring(n._values);
@@ -4699,10 +4716,13 @@ function _storeTelemetry2(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto10(root, b) {
+  const off = nodeOffset(_storeTelemetry2(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes10(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeTelemetry2(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto10(root, b);
   return b.makeData();
 }
 
@@ -4965,7 +4985,8 @@ function restoreWithMap6(bytes) {
 // src/generated/dagr/TelemetryFrozenGraph_serde.ts
 var TelemetryFrozenGraph_serde_exports = {};
 __export(TelemetryFrozenGraph_serde_exports, {
-  toBytes: () => toBytes11
+  toBytes: () => toBytes11,
+  writeInto: () => writeInto11
 });
 function _storeTelemetry3(n, b) {
   const _r = b.beginStoring(n._values);
@@ -4987,10 +5008,13 @@ function _storeTelemetry3(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto11(root, b) {
+  const off = nodeOffset(_storeTelemetry3(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes11(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeTelemetry3(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto11(root, b);
   return b.makeData();
 }
 
@@ -5092,7 +5116,7 @@ var TelemetryAccessor4 = class _TelemetryAccessor {
 var TelemetryFrozenPackedGraph_direct_exports = {};
 __export(TelemetryFrozenPackedGraph_direct_exports, {
   toBytes: () => toBytes12,
-  writeInto: () => writeInto6
+  writeInto: () => writeInto12
 });
 function _storeTelemetry4(n, b) {
   const _before = b.cursor;
@@ -5133,13 +5157,13 @@ function _storeTelemetry4(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto6(root, b) {
+function writeInto12(root, b) {
   const off = nodeOffset(_storeTelemetry4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes12(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto6(root, b);
+  writeInto12(root, b);
   return b.makeData();
 }
 
@@ -5190,7 +5214,7 @@ var StringsAccessor = class _StringsAccessor {
 var StringsGraph_direct_exports = {};
 __export(StringsGraph_direct_exports, {
   toBytes: () => toBytes13,
-  writeInto: () => writeInto7
+  writeInto: () => writeInto13
 });
 function _storeStrings(n, b) {
   const _before = b.cursor;
@@ -5202,13 +5226,13 @@ function _storeStrings(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto7(root, b) {
+function writeInto13(root, b) {
   const off = nodeOffset(_storeStrings(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes13(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto7(root, b);
+  writeInto13(root, b);
   return b.makeData();
 }
 
@@ -5400,7 +5424,8 @@ function restoreWithMap7(bytes) {
 // src/generated/dagr/StringsRegularGraph_serde.ts
 var StringsRegularGraph_serde_exports = {};
 __export(StringsRegularGraph_serde_exports, {
-  toBytes: () => toBytes14
+  toBytes: () => toBytes14,
+  writeInto: () => writeInto14
 });
 function _storeStrings2(n, b) {
   const _r = b.beginStoring(n._values);
@@ -5411,10 +5436,13 @@ function _storeStrings2(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto14(root, b) {
+  const off = nodeOffset(_storeStrings2(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes14(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeStrings2(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto14(root, b);
   return b.makeData();
 }
 
@@ -5611,7 +5639,8 @@ function restoreWithMap8(bytes) {
 // src/generated/dagr/StringsFrozenGraph_serde.ts
 var StringsFrozenGraph_serde_exports = {};
 __export(StringsFrozenGraph_serde_exports, {
-  toBytes: () => toBytes15
+  toBytes: () => toBytes15,
+  writeInto: () => writeInto15
 });
 function _storeStrings3(n, b) {
   const _r = b.beginStoring(n._values);
@@ -5625,10 +5654,13 @@ function _storeStrings3(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto15(root, b) {
+  const off = nodeOffset(_storeStrings3(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes15(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeStrings3(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto15(root, b);
   return b.makeData();
 }
 
@@ -5676,7 +5708,7 @@ var StringsAccessor4 = class _StringsAccessor {
 var StringsFrozenPackedGraph_direct_exports = {};
 __export(StringsFrozenPackedGraph_direct_exports, {
   toBytes: () => toBytes16,
-  writeInto: () => writeInto8
+  writeInto: () => writeInto16
 });
 function _storeStrings4(n, b) {
   const _before = b.cursor;
@@ -5690,13 +5722,13 @@ function _storeStrings4(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto8(root, b) {
+function writeInto16(root, b) {
   const off = nodeOffset(_storeStrings4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes16(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto8(root, b);
+  writeInto16(root, b);
   return b.makeData();
 }
 
@@ -5891,7 +5923,7 @@ var EventAccessor = class _EventAccessor {
 var EventGraph_direct_exports = {};
 __export(EventGraph_direct_exports, {
   toBytes: () => toBytes17,
-  writeInto: () => writeInto9
+  writeInto: () => writeInto17
 });
 function _storeEventAttr(n, b) {
   const _before = b.cursor;
@@ -5941,13 +5973,13 @@ function _storeEvent(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto9(root, b) {
+function writeInto17(root, b) {
   const off = nodeOffset(_storeEvent(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes17(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto9(root, b);
+  writeInto17(root, b);
   return b.makeData();
 }
 
@@ -6318,7 +6350,8 @@ function restoreWithMap9(bytes) {
 // src/generated/dagr/EventRegularGraph_serde.ts
 var EventRegularGraph_serde_exports = {};
 __export(EventRegularGraph_serde_exports, {
-  toBytes: () => toBytes18
+  toBytes: () => toBytes18,
+  writeInto: () => writeInto18
 });
 function _storeEventAttr2(n, b) {
   const _r = b.beginStoring(n._values);
@@ -6347,10 +6380,13 @@ function _storeEvent2(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto18(root, b) {
+  const off = nodeOffset(_storeEvent2(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes18(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeEvent2(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto18(root, b);
   return b.makeData();
 }
 
@@ -6756,7 +6792,8 @@ function restoreWithMap10(bytes) {
 // src/generated/dagr/EventFrozenGraph_serde.ts
 var EventFrozenGraph_serde_exports = {};
 __export(EventFrozenGraph_serde_exports, {
-  toBytes: () => toBytes19
+  toBytes: () => toBytes19,
+  writeInto: () => writeInto19
 });
 function _storeEventAttr3(n, b) {
   const _r = b.beginStoring(n._values);
@@ -6796,10 +6833,13 @@ function _storeEvent3(n, b) {
   b.finishStoring(n._values, _o);
   return { off: _o };
 }
+function writeInto19(root, b) {
+  const off = nodeOffset(_storeEvent3(root, b));
+  return b.storeLEB(BigInt(b.cursor - off) << 2n);
+}
 function toBytes19(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeEvent3(root, b));
-  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  writeInto19(root, b);
   return b.makeData();
 }
 
@@ -6970,7 +7010,7 @@ var EventAccessor4 = class _EventAccessor {
 var EventFrozenPackedGraph_direct_exports = {};
 __export(EventFrozenPackedGraph_direct_exports, {
   toBytes: () => toBytes20,
-  writeInto: () => writeInto10
+  writeInto: () => writeInto20
 });
 function _storeEventAttr4(n, b) {
   const _before = b.cursor;
@@ -7031,13 +7071,13 @@ function _storeEvent4(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto10(root, b) {
+function writeInto20(root, b) {
   const off = nodeOffset(_storeEvent4(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
 function toBytes20(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto10(root, b);
+  writeInto20(root, b);
   return b.makeData();
 }
 export {

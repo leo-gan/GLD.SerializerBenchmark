@@ -102,3 +102,13 @@ func ToBytesDocumentRegularGraph(root Document, maxSize int) []byte {
 	b.StoreLEB(uint64(b.Cursor()-off) << 2)
 	return b.MakeData()
 }
+
+// AppendToDocumentRegularGraph serializes the graph reachable from root into b (reset first) and
+// appends the record to dst: ToBytes without a Builder per call. Bytes are
+// identical to ToBytes with the maxSize b was created with.
+func AppendToDocumentRegularGraph(b *dagr.Builder, dst []byte, root Document) []byte {
+	b.Reset()
+	off := dagr.NodeOffset(storeDocument(root, b))
+	b.StoreLEB(uint64(b.Cursor()-off) << 2)
+	return b.AppendTo(dst)
+}

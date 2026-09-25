@@ -323,6 +323,11 @@ public final class DataArenaBuilder: ArenaBuilder {
         Data(bytes: _data.advanced(by: Int(leftCursor)), count: Int(_cursor))
     }
 
+    /// The stored record as a VIEW (no copy) — valid until the next store / `reset()`.
+    public var recordBytes: UnsafeRawBufferPointer {
+        UnsafeRawBufferPointer(start: _data.advanced(by: Int(leftCursor)), count: Int(_cursor))
+    }
+
     public func storeFinishAlignmentPadding(rootOffset: BufferOffset, maxN: Int, headerSpan: Int = 0) throws {
         guard maxN > 1 else { return }
         // The leading framing word encodes (storedOffset << 2 | discriminator bits); its

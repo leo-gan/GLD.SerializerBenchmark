@@ -33,11 +33,15 @@ function _storeDocument(n: Document<unknown>, b: Builder): NodeStoreRef {
   const _o = b.storeVTable([_off0, _off1, _off2, _off3]); b.finishStoring(n._values, _o); return { off: _o };
 }
 
+export function writeInto(root: Document, b: Builder): number {
+  const off = nodeOffset(_storeDocument(root, b));
+  return b.storeLEB((BigInt(b.cursor - off) << 2n));  // framing: rootDist<<2 | headerFlags(0)
+}
+
 export function toBytes(root: Document, maxSize: number = 2 * 1024 * 1024): Uint8Array {
   // maxSize sets the back-reference placeholder width (2 MiB -> 4 B, 1024 -> 2 B); it must
   // match across producers for byte-identity.
   const b = new Builder(maxSize);
-  const off = nodeOffset(_storeDocument(root, b));
-  b.storeLEB((BigInt(b.cursor - off) << 2n));  // framing: rootDist<<2 | headerFlags(0)
+  writeInto(root, b);
   return b.makeData();
 }
