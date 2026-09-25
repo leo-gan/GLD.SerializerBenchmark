@@ -17,13 +17,13 @@ import BenchmarkV2
 // length; decode reads each item in place (no per-item copy).
 //
 // The same class serves the four node layouts (`DagrLayout`, spec/16-choosing-a-node-layout):
-// `dagr` (packed), `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`. The schema emits each
+// `dagr-packed`, `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`. The schema emits each
 // suite type once per layout (`<T>Graph`, `<T>RegularGraph`, `<T>FrozenGraph`,
 // `<T>FrozenPackedGraph`); the per-layout bridges are in `DagrLayouts.swift`.
 
 /// Node layout of a Dagr row. Raw value = row name.
 public enum DagrLayout: String, CaseIterable, Sendable {
-    case packed = "dagr"
+    case packed = "dagr-packed"
     case regular = "dagr-regular"
     case frozen = "dagr-frozen"
     case frozenPacked = "dagr-frozen-packed"

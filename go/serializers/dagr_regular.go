@@ -2,8 +2,8 @@
 // (random access, schema evolution, cycles), at the cost of size. Graphs
 // `<Type>RegularGraph` → go/gen/dagrv2/<type>regulargraph (lazy + arena + serde; no
 // direct builder for a non-packed root). Encode: the generated arena is the native model,
-// built in Prepare (untimed); the timed call is `ToBytes<Graph>(root, 0)`. Decode: lazy
-// accessors → owned suite value, arrays via `<F>Iter()`. Framing/recover as `dagr`.
+// built in Prepare (untimed); the timed call is `AppendTo<Graph>` into a reused Builder. Decode: lazy
+// accessors → owned suite value, arrays via `<F>Iter()`. Framing/recover as `dagr-packed`.
 //
 // Mirrors dagr.go field for field; keep dagr_regular.go / dagr_frozen.go /
 // dagr_frozen_packed.go in step with it (the per-package types rule out one generic
@@ -26,21 +26,21 @@ import (
 
 func newDagrRegular() *dagrSer { return &dagrSer{name: "dagr-regular", bind: bindDagrRegular} }
 
-// ── dagr-regular: regular (vtable) nodes; arena → ToBytes (encode), lazy accessors (decode) ──
+// ── dagr-regular: regular (vtable) nodes; arena → AppendTo (encode), lazy accessors (decode) ──
 
-// bindDagrRegular binds the `dagr-regular` row: arena built in Prepare, `ToBytes{Graph}` timed.
+// bindDagrRegular binds the `dagr-regular` row: arena built in Prepare, `AppendTo{Graph}` timed (one reused Builder).
 func bindDagrRegular(v any) (dagrCodec, error) {
 	switch v.(type) {
 	case modelv2.Message, []modelv2.Message:
-		return bindDagrArena(v, arenaMessageRegular, messageregulargraph.ToBytesMessageRegularGraph, getMessageRegular), nil
+		return bindDagrArena(v, arenaMessageRegular, messageregulargraph.AppendToMessageRegularGraph, getMessageRegular), nil
 	case modelv2.Document, []modelv2.Document:
-		return bindDagrArena(v, arenaDocumentRegular, documentregulargraph.ToBytesDocumentRegularGraph, getDocumentRegular), nil
+		return bindDagrArena(v, arenaDocumentRegular, documentregulargraph.AppendToDocumentRegularGraph, getDocumentRegular), nil
 	case modelv2.Telemetry, []modelv2.Telemetry:
-		return bindDagrArena(v, arenaTelemetryRegular, telemetryregulargraph.ToBytesTelemetryRegularGraph, getTelemetryRegular), nil
+		return bindDagrArena(v, arenaTelemetryRegular, telemetryregulargraph.AppendToTelemetryRegularGraph, getTelemetryRegular), nil
 	case modelv2.Strings, []modelv2.Strings:
-		return bindDagrArena(v, arenaStringsRegular, stringsregulargraph.ToBytesStringsRegularGraph, getStringsRegular), nil
+		return bindDagrArena(v, arenaStringsRegular, stringsregulargraph.AppendToStringsRegularGraph, getStringsRegular), nil
 	case modelv2.Event, []modelv2.Event:
-		return bindDagrArena(v, arenaEventRegular, eventregulargraph.ToBytesEventRegularGraph, getEventRegular), nil
+		return bindDagrArena(v, arenaEventRegular, eventregulargraph.AppendToEventRegularGraph, getEventRegular), nil
 	}
 	return dagrCodec{}, fmt.Errorf("unsupported type %T", v)
 }

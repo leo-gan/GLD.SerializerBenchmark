@@ -34,10 +34,10 @@ rust/src/serializers/
 | rkyv | Zero-copy | timed path materializes owned `T` for fidelity |
 | prost | Protobuf | convert in `prepare`; timed codec only |
 | serde_avro_fast | Schema | schema + `SerializerConfig` once; `to_datum` / `from_datum_slice` |
-| dagr | Schema | generated crate `dagr_gen/`; direct builder `write_into` a reused `DagrBuilder` / lazy `read_root` → domain |
+| dagr-packed | Schema | generated crate `dagr_gen/`; direct builder `write_into` a reused `DagrBuilder` / lazy `read_root` → domain |
 | dagr-regular | Schema | same crate, `regular` (vtable) graphs; generated arena built in `prepare`, timed arena `store` into a reused `DagrBuilder` / lazy `read_root` → domain |
 | dagr-frozen | Schema | same crate, `frozen` graphs; arena path as `dagr-regular` |
-| dagr-frozen-packed | Schema | same crate, `frozen`+`packed` graphs; direct builder path as `dagr` |
+| dagr-frozen-packed | Schema | same crate, `frozen`+`packed` graphs; direct builder path as `dagr-packed` |
 | nanoserde | Binary | `SerBin` / `DeBin` |
 | speedy | Binary | `Writable` / `Readable` |
 

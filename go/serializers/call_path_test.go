@@ -201,7 +201,7 @@ func TestStreamModeLabels(t *testing.T) {
 		// Byte-slice-only libraries (OCF would change wire format vs bytes):
 		"protobuf":           StreamAdapted,
 		"linkedin/goavro":    StreamAdapted,
-		"dagr":               StreamAdapted,
+		"dagr-packed":        StreamAdapted,
 		"dagr-regular":       StreamAdapted,
 		"dagr-frozen":        StreamAdapted,
 		"dagr-frozen-packed": StreamAdapted,

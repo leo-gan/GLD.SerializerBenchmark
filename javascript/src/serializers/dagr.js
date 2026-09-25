@@ -4,7 +4,7 @@
  * generated TS uses extension-less imports and CI runs Node 20, so no native type stripping).
  *
  * The schema emits every suite type in four node layouts (spec/16-choosing-a-node-layout.md),
- * one row each: `dagr` (packed), `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`.
+ * one row each: `dagr-packed`, `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`.
  *
  * packed / frozen+packed: serialize uses the generated **direct
  * builder** (`writeInto`: plain value objects → bytes, no arena) into one `Builder` reused
@@ -15,8 +15,8 @@
  *
  * regular / frozen: the generator emits no direct builder for a non-packed root, so the
  * native model is the generated **arena** (`<Graph>_arena`, one arena per record, built in
- * `prepare()`); the timed path is only the arena serializer `<Graph>_serde.toBytes` (it
- * allocates its own `Builder` per call — the generated API offers no reuse). Deserialize is
+ * `prepare()`); the timed path is only the arena serializer `<Graph>_serde.writeInto` into
+ * the same reused `Builder`. Deserialize is
  * the same lazy-reader → domain code for all four layouts (the accessor API is identical).
  *
  * Batch N>1: [u32 count][u32 len][record]… (same framing as the Rust harness).
@@ -127,12 +127,12 @@ function arenaBuilders(flavour) {
   };
 }
 
-// Timed: the generated arena serializer (returns a fresh record).
+// Timed: the generated arena serializer's writeInto (into the shared `B`).
 const serdeWriters = (flavour) =>
   Object.fromEntries(
     Object.entries(TYPES).map(([id, T]) => {
       const Serde = G[`${T}${flavour}Serde`];
-      return [id, (root) => Serde.toBytes(root)];
+      return [id, (root) => Serde.writeInto(root, B)];
     }),
   );
 
@@ -197,18 +197,18 @@ const makeDecoders = (flavour) => {
 
 let scratch = new Uint8Array(1 << 16);
 
-// Direct builder: stores into `B`; the record is a view valid until the next encode.
+// Direct builder / arena writeInto: stores into `B`; the record is a view valid until the next encode.
 function encodeDirect(encode, value) {
   B.reset();
   encode(value);
   return B.recordBytes();
 }
 
-function encodeBatch(record, encode, values) {
+function encodeBatch(encode, values) {
   const n = values.length;
   let o = 4;
   for (let i = 0; i < n; i++) {
-    const rec = record(encode, values[i]);
+    const rec = encodeDirect(encode, values[i]);
     const need = o + 4 + rec.length;
     if (need > scratch.length) {
       let cap = scratch.length * 2;
@@ -245,9 +245,6 @@ function decodeBatch(decode, u8) {
   return out;
 }
 
-// Arena serializer: already returns a fresh, owned record.
-const encodeSerde = (encode, root) => encode(root);
-
 /**
  * One row per node layout. `flavour` is the graph-name infix of the bundle exports
  * ('' = packed, 'Regular', 'Frozen', 'FrozenPacked'); `direct` picks the direct builder
@@ -256,7 +253,6 @@ const encodeSerde = (encode, root) => encode(root);
 function makeDagrSer(name, flavour, direct) {
   const convs = direct ? converters : arenaBuilders(flavour);
   const writers = direct ? directWriters(flavour) : serdeWriters(flavour);
-  const record = direct ? encodeDirect : encodeSerde;
   const decoders = makeDecoders(flavour);
   let encodeOne = null;
   let decodeOne = null;
@@ -276,9 +272,9 @@ function makeDagrSer(name, flavour, direct) {
       prepared = isBatch ? value.map(conv) : conv(value);
     },
     serialize() {
-      if (isBatch) return encodeBatch(record, encodeOne, prepared);
-      // Direct: copy the record out of the reused builder; serde already owns its bytes.
-      return direct ? encodeDirect(encodeOne, prepared).slice() : encodeOne(prepared);
+      if (isBatch) return encodeBatch(encodeOne, prepared);
+      // Copy the record out of the reused builder (the view dies on the next encode).
+      return encodeDirect(encodeOne, prepared).slice();
     },
     deserialize(buf) {
       return isBatch ? decodeBatch(decodeOne, buf) : decodeOne(buf);
@@ -286,7 +282,7 @@ function makeDagrSer(name, flavour, direct) {
   };
 }
 
-export const dagrSer = makeDagrSer('dagr', '', true);
+export const dagrSer = makeDagrSer('dagr-packed', '', true);
 export const dagrRegularSer = makeDagrSer('dagr-regular', 'Regular', false);
 export const dagrFrozenSer = makeDagrSer('dagr-frozen', 'Frozen', false);
 export const dagrFrozenPackedSer = makeDagrSer('dagr-frozen-packed', 'FrozenPacked', true);

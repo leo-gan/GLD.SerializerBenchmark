@@ -17,7 +17,7 @@ from benchmark.data_v2.generator import instances_for_cell
 from benchmark.serializers.schema_dagr import DagrSerializer
 
 V2_TYPES = ("message", "document", "telemetry", "strings", "event")
-FLAVOURS = ("dagr", "dagr-regular", "dagr-frozen", "dagr-frozen-packed")
+FLAVOURS = ("dagr-packed", "dagr-regular", "dagr-frozen", "dagr-frozen-packed")
 
 
 @pytest.mark.parametrize("flavour", FLAVOURS)
@@ -34,7 +34,7 @@ def test_dagr_flavours_registered_after_dagr_in_order():
     from benchmark.runner import ALL_SERIALIZERS
 
     names = [s.name for s in ALL_SERIALIZERS]
-    i = names.index("dagr")
+    i = names.index("dagr-packed")
     assert tuple(names[i:i + len(FLAVOURS)]) == FLAVOURS
 
 

@@ -2,7 +2,7 @@ import Foundation
 import BenchmarkV2
 
 // MARK: - Dagr non-default layouts (dagr-regular, dagr-frozen, dagr-frozen-packed)
-// Same harness as `dagr` (Dagr.swift: framing, builder reuse, timing policy); only the
+// Same harness as `dagr-packed` (Dagr.swift: framing, builder reuse, timing policy); only the
 // per-type bridges differ. schemas/v2/dagr/schema.py emits every suite type in each layout
 // (`deletable=False`): `<T>RegularGraph`, `<T>FrozenGraph`, `<T>FrozenPackedGraph`.
 //
@@ -257,7 +257,7 @@ enum DagrLayoutBridge {
         )
     }
 
-    // ── FrozenPacked: direct builder → reused builder (as `dagr`) ───────────
+    // ── FrozenPacked: direct builder → reused builder (as `dagr-packed`) ───────────
 
     static func encodeMessageFrozenPacked(_ b: DataArenaBuilder, _ m: Message) throws {
         try DagrBridge.storeRoot(b, MessageFrozenPackedGraph.Direct.Message(

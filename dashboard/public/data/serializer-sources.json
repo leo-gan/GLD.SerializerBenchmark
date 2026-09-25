@@ -470,9 +470,21 @@
       }
     },
     "go": {
-      "dagr": {
+      "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
-        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution)."
+      },
+      "dagr-frozen-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution)."
+      },
+      "dagr-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable)."
+      },
+      "dagr-regular": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable)."
       },
       "encoding/gob": {
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/gob",
@@ -723,9 +735,21 @@
         "version": "1.6.6",
         "specifics": "cbor-x is a high-performance CBOR encoder/decoder for JS, from the same author as msgpackr. The problem was slow or allocating CBOR stacks in Node. It solves that with reusable Encoder/Decoder instances."
       },
-      "dagr": {
+      "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
-        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution)."
+      },
+      "dagr-frozen-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution)."
+      },
+      "dagr-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable)."
+      },
+      "dagr-regular": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable)."
       },
       "devalue": {
         "source_url": "https://github.com/Rich-Harris/devalue",
@@ -931,9 +955,21 @@
         "version": "0.3.4",
         "specifics": "EmberJson is a Mojo JSON library using language reflection. Mojo is a young language; EmberJson exists to give it a community JSON serialize/deserialize path. This row times that reflection API."
       },
-      "dagr": {
+      "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
-        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution)."
+      },
+      "dagr-frozen-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution)."
+      },
+      "dagr-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable)."
+      },
+      "dagr-regular": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable)."
       },
       "ehsanmok-json": {
         "source_url": "https://github.com/ehsanmok/json",
@@ -1077,9 +1113,21 @@
         "version": "3.1.2",
         "specifics": "cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model — with the same security caveats."
       },
-      "dagr": {
+      "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
-        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution)."
+      },
+      "dagr-frozen-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution)."
+      },
+      "dagr-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable)."
+      },
+      "dagr-regular": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable)."
       },
       "dill": {
         "source_url": "https://github.com/uqfoundation/dill",
@@ -1193,9 +1241,21 @@
         "version": "0.2.2",
         "specifics": "ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSON-like format. The crate exists to give Rust a serde CBOR backend."
       },
-      "dagr": {
+      "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
-        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution)."
+      },
+      "dagr-frozen-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution)."
+      },
+      "dagr-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable)."
+      },
+      "dagr-regular": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable)."
       },
       "flexbuffers": {
         "source_url": "https://github.com/google/flatbuffers",
@@ -1334,9 +1394,21 @@
         "version": "5.4.0",
         "specifics": "Yams is a Swift wrapper around libyaml. YAML exists as a human-friendly config language. Yams is the usual Swift YAML library."
       },
-      "dagr": {
+      "dagr-frozen": {
         "source_url": "https://codeberg.org/mzaks/dagr",
-        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen` node layout (positional, no evolution)."
+      },
+      "dagr-frozen-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `frozen`+`packed` node layout (positional and inline, no evolution)."
+      },
+      "dagr-packed": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `packed` node layout (tagged, evolvable)."
+      },
+      "dagr-regular": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts, one row each. This row uses the `regular` node layout (vtable, evolvable)."
       },
       "protobuf-wire": {
         "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/swift/index.md",

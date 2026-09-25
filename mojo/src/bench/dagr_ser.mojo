@@ -242,7 +242,7 @@ struct DagrSer(Movable):
         self._hint = 0
 
     def name(self) -> String:
-        return "dagr"
+        return "dagr-packed"
 
     def supports(self, type_id: String) -> Bool:
         return (
@@ -269,7 +269,7 @@ struct DagrSer(Movable):
         elif fx.type_id == "event":
             _enc_events(self._b, fx.events, out, framed)
         else:
-            raise Error("dagr: unsupported type " + fx.type_id)
+            raise Error("dagr-packed: unsupported type " + fx.type_id)
         self._hint = len(out)
         return out^
 
@@ -302,13 +302,13 @@ struct DagrSer(Movable):
             return out^
         var n = _get_u32(buf, 0)
         if n != fx.n:
-            raise Error("dagr: batch count " + String(n) + " != " + String(fx.n))
+            raise Error("dagr-packed: batch count " + String(n) + " != " + String(fx.n))
         var o = 4
         for _ in range(n):
             var ln = _get_u32(buf, o)
             o += 4
             if o + ln > len(buf):
-                raise Error("dagr: truncated batch payload")
+                raise Error("dagr-packed: truncated batch payload")
             self._decode_one(fx, buf[o : o + ln], out)
             o += ln
         return out^

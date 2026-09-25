@@ -10,7 +10,7 @@ the module-name suffix differs:
 =====================  ===============================  ==========================
 row                    module                           layout
 =====================  ===============================  ==========================
-``dagr``               ``message_graph``                ``packed``
+``dagr-packed``        ``message_graph``                ``packed``
 ``dagr-regular``       ``message_regular_graph``        regular (vtable)
 ``dagr-frozen``        ``message_frozen_graph``         ``frozen``
 ``dagr-frozen-packed`` ``message_frozen_packed_graph``  ``frozen`` + ``packed``
@@ -27,7 +27,7 @@ Call path (mirrors ``schema_protobuf``):
 
 The Python target is the reflective runtime (spec 29, Fork A): eager only, no
 lazy reader, no reusable writer. N>1 cells use the same frame as the Rust
-``dagr`` row: ``u32 count`` then ``u32 len + payload`` per instance.
+``dagr-packed`` row: ``u32 count`` then ``u32 len + payload`` per instance.
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ _TYPES = ("message", "document", "telemetry", "strings", "event")
 
 # Row name -> generated module suffix (``<type>_<suffix>graph``).
 _FLAVOURS = {
-    "dagr": "",
+    "dagr-packed": "",
     "dagr-regular": "regular_",
     "dagr-frozen": "frozen_",
     "dagr-frozen-packed": "frozen_packed_",
@@ -143,7 +143,7 @@ class DagrSerializer(Serializer):
     native_kind = "message"
     stream_mode = "adapted"
 
-    def __init__(self, flavour: str = "dagr") -> None:
+    def __init__(self, flavour: str = "dagr-packed") -> None:
         super().__init__()
         if flavour not in _FLAVOURS:
             raise ValueError(f"unknown Dagr flavour {flavour!r}; expected one of {sorted(_FLAVOURS)}")

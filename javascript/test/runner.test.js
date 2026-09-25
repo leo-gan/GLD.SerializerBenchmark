@@ -130,7 +130,7 @@ test('protobuf-es and google-protobuf roundtrip all V2 types', () => {
 });
 
 test('dagr (all four node layouts) roundtrips all V2 types (single and batch) with a version', () => {
-  for (const name of ['dagr', 'dagr-regular', 'dagr-frozen', 'dagr-frozen-packed']) {
+  for (const name of ['dagr-packed', 'dagr-regular', 'dagr-frozen', 'dagr-frozen-packed']) {
     const ser = ALL_SERIALIZERS.find((s) => s.name === name);
     assert.ok(ser, `${name} registered`);
     assert.match(ser.version, /^\d+\.\d+\.\d+/);

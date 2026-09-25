@@ -25,10 +25,10 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 | **FlatBuffers** | Schema | google/flatbuffers | Generated from `swift/schemas/benchmark.fbs` |
 | **SwiftAvroCore** | Schema | lynixliu/SwiftAvroCore | Schemaless binary + JSON schema |
 | **CapnProto** | Schema | Cap’n Proto C++ | C ABI bridge (`CapnpBridge`) |
-| **dagr** | Schema | local package `DagrGen/` (`dagr build`) | Generated from `schemas/v2/dagr/`; direct builder + lazy reader |
+| **dagr-packed** | Schema | local package `DagrGen/` (`dagr build`) | Generated from `schemas/v2/dagr/`; direct builder + lazy reader |
 | **dagr-regular** | Schema | local package `DagrGen/` | `<T>RegularGraph` (vtable nodes): generated arena → reused builder; lazy reader |
 | **dagr-frozen** | Schema | local package `DagrGen/` | `<T>FrozenGraph`: generated arena → reused builder; lazy reader |
-| **dagr-frozen-packed** | Schema | local package `DagrGen/` | `<T>FrozenPackedGraph`: direct builder + lazy reader (as `dagr`) |
+| **dagr-frozen-packed** | Schema | local package `DagrGen/` | `<T>FrozenPackedGraph`: direct builder + lazy reader (as `dagr-packed`) |
 
 ## Host tools (schema)
 

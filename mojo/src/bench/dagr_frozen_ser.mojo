@@ -9,13 +9,13 @@ Serialize (timed): a `frozen` graph has no generated direct builder (the direct 
 is emitted for packed-rooted graphs only), so each instance is copied into a fresh
 generated **arena** and written with `write_<root>_graph(b, arena)` into one builder
 per graph that is kept for the process and `reset()` per instance. The arena build stays
-inside the timer, matching the `dagr` row (conversion inside the timer, like the
+inside the timer, matching the `dagr-packed` row (conversion inside the timer, like the
 mojo-protobuf peer). Every field is set.
 
 Deserialize (timed): the generated **lazy reader** (`read_<root>_root(bytes)`),
 materialised into the owned suite value for the fidelity check.
 
-N > 1 framing (same as `dagr`): `u32 LE count`, then per instance `u32 LE length` + one
+N > 1 framing (same as `dagr-packed`): `u32 LE count`, then per instance `u32 LE length` + one
 Dagr buffer.
 """
 

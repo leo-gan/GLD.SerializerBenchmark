@@ -50,7 +50,7 @@ def _roundtrip_all(type_id: String) raises:
     if not msgp.check(fx, msgp.serialize_bytes(fx)):
         raise Error("mojo-msgpack fidelity " + type_id)
     if not dagr.check(fx, dagr.serialize_bytes(fx)):
-        raise Error("dagr fidelity " + type_id)
+        raise Error("dagr-packed fidelity " + type_id)
     var dagr_regular = DagrRegularSer()
     if not dagr_regular.check(fx, dagr_regular.serialize_bytes(fx)):
         raise Error("dagr-regular fidelity " + type_id)
@@ -84,9 +84,9 @@ def _dagr_batch(type_id: String) raises:
     var dagr = DagrSer()
     # Twice: the second call reuses the builder and the size hint.
     if not dagr.check(fx, dagr.serialize_bytes(fx)):
-        raise Error("dagr fidelity n=100 " + type_id)
+        raise Error("dagr-packed fidelity n=100 " + type_id)
     if not dagr.check(fx, dagr.serialize_bytes(fx)):
-        raise Error("dagr fidelity n=100 (reuse) " + type_id)
+        raise Error("dagr-packed fidelity n=100 (reuse) " + type_id)
     var dagr_regular = DagrRegularSer()
     var dagr_frozen = DagrFrozenSer()
     var dagr_fp = DagrFrozenPackedSer()

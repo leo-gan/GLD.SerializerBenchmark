@@ -5,7 +5,7 @@ Schema: `schemas/v2/dagr/schema.py` -> `dagr build` -> `src/gen/dagr/` (the
 positional inline fields, no schema evolution, `deletable=False`). Node/struct names repeat
 across the four layouts; this module imports only the frozen+packed ones.
 
-Serialize (timed): exactly like `dagr` — one `Builder` kept for the process and `reset()`
+Serialize (timed): exactly like `dagr-packed` — one `Builder` kept for the process and `reset()`
 per instance; the generated **direct builder** (`Direct{Node}` value structs ->
 `write_{root}_graph_direct`, no arena) stores the record, appended straight into the output
 buffer. Every field is set.
@@ -13,7 +13,7 @@ buffer. Every field is set.
 Deserialize (timed): the generated **lazy reader** (`read_{root}_root(bytes)`),
 materialised into the owned suite value for the fidelity check.
 
-N > 1 framing (same as `dagr`): `u32 LE count`, then per instance `u32 LE length` + one
+N > 1 framing (same as `dagr-packed`): `u32 LE count`, then per instance `u32 LE length` + one
 Dagr buffer.
 """
 

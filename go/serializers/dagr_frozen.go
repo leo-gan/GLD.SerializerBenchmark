@@ -2,8 +2,8 @@
 // (no schema evolution, `mmap`-able when all fields are required-inline). Graphs
 // `<Type>FrozenGraph` → go/gen/dagrv2/<type>frozengraph (lazy + arena + serde; no direct
 // builder for a non-packed root). Encode: the generated arena, built in Prepare
-// (untimed); the timed call is `ToBytes<Graph>(root, 0)`. Decode: lazy accessors → owned
-// suite value, arrays via `<F>Iter()`. Framing/recover as `dagr`.
+// (untimed); the timed call is `AppendTo<Graph>` into a reused Builder. Decode: lazy accessors → owned
+// suite value, arrays via `<F>Iter()`. Framing/recover as `dagr-packed`.
 //
 // Mirrors dagr.go field for field; keep dagr_regular.go / dagr_frozen.go /
 // dagr_frozen_packed.go in step with it (the per-package types rule out one generic
@@ -26,21 +26,21 @@ import (
 
 func newDagrFrozen() *dagrSer { return &dagrSer{name: "dagr-frozen", bind: bindDagrFrozen} }
 
-// ── dagr-frozen: frozen (fixed-struct) nodes; arena → ToBytes (encode), lazy accessors (decode) ──
+// ── dagr-frozen: frozen (fixed-struct) nodes; arena → AppendTo (encode), lazy accessors (decode) ──
 
-// bindDagrFrozen binds the `dagr-frozen` row: arena built in Prepare, `ToBytes{Graph}` timed.
+// bindDagrFrozen binds the `dagr-frozen` row: arena built in Prepare, `AppendTo{Graph}` timed (one reused Builder).
 func bindDagrFrozen(v any) (dagrCodec, error) {
 	switch v.(type) {
 	case modelv2.Message, []modelv2.Message:
-		return bindDagrArena(v, arenaMessageFrozen, messagefrozengraph.ToBytesMessageFrozenGraph, getMessageFrozen), nil
+		return bindDagrArena(v, arenaMessageFrozen, messagefrozengraph.AppendToMessageFrozenGraph, getMessageFrozen), nil
 	case modelv2.Document, []modelv2.Document:
-		return bindDagrArena(v, arenaDocumentFrozen, documentfrozengraph.ToBytesDocumentFrozenGraph, getDocumentFrozen), nil
+		return bindDagrArena(v, arenaDocumentFrozen, documentfrozengraph.AppendToDocumentFrozenGraph, getDocumentFrozen), nil
 	case modelv2.Telemetry, []modelv2.Telemetry:
-		return bindDagrArena(v, arenaTelemetryFrozen, telemetryfrozengraph.ToBytesTelemetryFrozenGraph, getTelemetryFrozen), nil
+		return bindDagrArena(v, arenaTelemetryFrozen, telemetryfrozengraph.AppendToTelemetryFrozenGraph, getTelemetryFrozen), nil
 	case modelv2.Strings, []modelv2.Strings:
-		return bindDagrArena(v, arenaStringsFrozen, stringsfrozengraph.ToBytesStringsFrozenGraph, getStringsFrozen), nil
+		return bindDagrArena(v, arenaStringsFrozen, stringsfrozengraph.AppendToStringsFrozenGraph, getStringsFrozen), nil
 	case modelv2.Event, []modelv2.Event:
-		return bindDagrArena(v, arenaEventFrozen, eventfrozengraph.ToBytesEventFrozenGraph, getEventFrozen), nil
+		return bindDagrArena(v, arenaEventFrozen, eventfrozengraph.AppendToEventFrozenGraph, getEventFrozen), nil
 	}
 	return dagrCodec{}, fmt.Errorf("unsupported type %T", v)
 }

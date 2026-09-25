@@ -5,7 +5,7 @@
 //!
 //! | row                  | graphs                       | native model (built in `prepare_many`) |
 //! |----------------------|------------------------------|----------------------------------------|
-//! | `dagr`               | `MessageGraph`, …            | direct-builder value structs (packed)  |
+//! | `dagr-packed`        | `MessageGraph`, …            | direct-builder value structs (packed)  |
 //! | `dagr-regular`       | `MessageRegularGraph`, …     | generated arena (vtable nodes)         |
 //! | `dagr-frozen`        | `MessageFrozenGraph`, …      | generated arena (frozen nodes)         |
 //! | `dagr-frozen-packed` | `MessageFrozenPackedGraph`, …| direct-builder value structs           |
@@ -592,7 +592,7 @@ macro_rules! layout {
     };
 }
 
-layout!(Packed, "dagr", Direct, packed_cell, packed_dec);
+layout!(Packed, "dagr-packed", Direct, packed_cell, packed_dec);
 layout!(Regular, "dagr-regular", Message, regular_cell, regular_dec);
 layout!(Frozen, "dagr-frozen", Message, frozen_cell, frozen_dec);
 layout!(FrozenPacked, "dagr-frozen-packed", Direct, frozen_packed_cell, frozen_packed_dec);

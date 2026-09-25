@@ -60,14 +60,13 @@ type dagrSer struct {
 	out   []byte // reused encode buffer; SerializeBytes returns a copy (as protobuf does)
 }
 
-// dagrCodec is one prepared cell: exactly one of enc / own is set.
+// dagrCodec is one prepared cell.
 type dagrCodec struct {
 	enc func(dst []byte) []byte // timed: append the encoded value(s) to dst
-	own func() []byte           // timed: encode into a fresh, caller-owned slice (arena ToBytes)
 	dec func(buf []byte) (any, error)
 }
 
-func newDagr() *dagrSer { return &dagrSer{name: "dagr", bind: newDagrPackedBinder()} }
+func newDagr() *dagrSer { return &dagrSer{name: "dagr-packed", bind: newDagrPackedBinder()} }
 
 func (s *dagrSer) Name() string           { return s.name }
 func (s *dagrSer) Version() string        { return dagrToolVersion() }
@@ -124,7 +123,7 @@ func (s *dagrSer) Prepare(fx model.Fixture) error {
 	return nil
 }
 
-// newDagrPackedBinder binds the `dagr` row: packed graphs, direct builder. One
+// newDagrPackedBinder binds the `dagr-packed` row: packed graphs, direct builder. One
 // `<Graph>Builder` per type, created on first use and reset by every Build.
 func newDagrPackedBinder() func(any) (dagrCodec, error) {
 	var (
@@ -167,9 +166,6 @@ func newDagrPackedBinder() func(any) (dagrCodec, error) {
 }
 
 func (s *dagrSer) SerializeBytes(_ model.Fixture) ([]byte, error) {
-	if s.codec.own != nil {
-		return s.codec.own(), nil
-	}
 	if s.codec.enc == nil {
 		return nil, fmt.Errorf("%s: prepare() required before serialize", s.name)
 	}
@@ -225,19 +221,22 @@ func bindDagr[T, V any](
 	return dagrCodec{enc: dagrFrameEnc(vs, put), dec: dagrFrameDec(get)}
 }
 
-// bindDagrArena is bindDagr for a generated serializer that returns a fresh slice
-// (`ToBytes<Graph>(root, maxSize)` over an arena): N=1 hands that slice out as is (no
-// extra copy), N>1 appends each record into the suite frame.
+// bindDagrArena is bindDagr for the arena serializers (regular / frozen roots): the
+// arenas are built once in Prepare (untimed), and the timed encode stores each root into
+// ONE reused Builder through the generated `AppendTo<Graph>` (reset, store, framing,
+// append) — no Builder, dedup maps or result slice per record.
 func bindDagrArena[T, R any](
 	sample any,
 	build func(T) R,
-	toBytes func(root R, maxSize int) []byte,
+	appendTo func(b *dagr.Builder, dst []byte, root R) []byte,
 	get func(buf []byte) (T, error),
 ) dagrCodec {
+	b := dagr.NewBuilder(0)
+	put := func(dst []byte, r R) []byte { return appendTo(b, dst, r) }
 	if x, single := sample.(T); single {
 		root := build(x)
 		return dagrCodec{
-			own: func() []byte { return toBytes(root, 0) },
+			enc: func(dst []byte) []byte { return put(dst, root) },
 			dec: func(buf []byte) (any, error) { return get(buf) },
 		}
 	}
@@ -246,7 +245,6 @@ func bindDagrArena[T, R any](
 	for i := range xs {
 		roots[i] = build(xs[i])
 	}
-	put := func(dst []byte, r R) []byte { return append(dst, toBytes(r, 0)...) }
 	return dagrCodec{enc: dagrFrameEnc(roots, put), dec: dagrFrameDec(get)}
 }
 

@@ -1039,9 +1039,8 @@ SPECIFICS: dict[str, str] = {
         "graphs — shared and cyclic nodes included — built on an arena model. "
         "One Python DSL schema generates the code for every target language "
         "(`dagr build`), so there is no runtime library: the suite commits the "
-        "generated code from `schemas/v2/dagr/schema.py`. Nodes here use the "
-        "`packed` layout; the timed path is the generated direct builder on "
-        "encode and the lazy reader materializing the domain value on decode."
+        "generated code from `schemas/v2/dagr/schema.py`. The schema emits "
+        "every suite type in all four node layouts, one row each."
     ),
     "prost": (
         "prost is the de-facto Protocol Buffers implementation for Rust "
@@ -1577,12 +1576,30 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("rust", "minicbor"): "minicbor",
     ("rust", "rmp-serde"): "rmp-serde",
     ("rust", "prost"): "prost",
-    ("rust", "dagr"): "dagr",
-    ("go", "dagr"): "dagr",
-    ("swift", "dagr"): "dagr",
-    ("javascript", "dagr"): "dagr",
-    ("python", "dagr"): "dagr",
-    ("mojo", "dagr"): "dagr",
+    ("rust", "dagr-packed"): "dagr",
+    ("rust", "dagr-regular"): "dagr",
+    ("rust", "dagr-frozen"): "dagr",
+    ("rust", "dagr-frozen-packed"): "dagr",
+    ("go", "dagr-packed"): "dagr",
+    ("go", "dagr-regular"): "dagr",
+    ("go", "dagr-frozen"): "dagr",
+    ("go", "dagr-frozen-packed"): "dagr",
+    ("swift", "dagr-packed"): "dagr",
+    ("swift", "dagr-regular"): "dagr",
+    ("swift", "dagr-frozen"): "dagr",
+    ("swift", "dagr-frozen-packed"): "dagr",
+    ("javascript", "dagr-packed"): "dagr",
+    ("javascript", "dagr-regular"): "dagr",
+    ("javascript", "dagr-frozen"): "dagr",
+    ("javascript", "dagr-frozen-packed"): "dagr",
+    ("python", "dagr-packed"): "dagr",
+    ("python", "dagr-regular"): "dagr",
+    ("python", "dagr-frozen"): "dagr",
+    ("python", "dagr-frozen-packed"): "dagr",
+    ("mojo", "dagr-packed"): "dagr",
+    ("mojo", "dagr-regular"): "dagr",
+    ("mojo", "dagr-frozen"): "dagr",
+    ("mojo", "dagr-frozen-packed"): "dagr",
     ("rust", "serde_avro_fast"): "serde-avro-fast",
     ("rust", "bson"): "bson",
     ("rust", "flexbuffers"): "flexbuffers",
@@ -1739,6 +1756,19 @@ EXTRA: dict[tuple[str, str], str] = {
     ("zig", "serde.xml"): "This row is the XML backend of serde.zig (message / strings only).",
 }
 
+
+# One row per Dagr node layout (all share the "dagr" SPECIFICS text above).
+_DAGR_ROW_TEXT = {
+    "dagr-packed": "This row uses the `packed` node layout (tagged, evolvable).",
+    "dagr-regular": "This row uses the `regular` node layout (vtable, evolvable).",
+    "dagr-frozen": "This row uses the `frozen` node layout (positional, no evolution).",
+    "dagr-frozen-packed": (
+        "This row uses the `frozen`+`packed` node layout (positional and inline, no evolution)."
+    ),
+}
+for _lang in ("rust", "go", "swift", "javascript", "python", "mojo"):
+    for _row, _text in _DAGR_ROW_TEXT.items():
+        EXTRA[(_lang, _row)] = _text
 
 def load_measured_versions() -> dict[tuple[str, str], str]:
     """Map (language, SerializerName) → SerializerVersion from latest benches."""

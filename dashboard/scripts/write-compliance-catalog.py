@@ -598,19 +598,11 @@ add("mojo", "mojo-msgpack", ["msgpack"], "https://github.com/leo-gan/gld-message
 add("mojo", "gld-yaml", ["yaml"], "https://github.com/leo-gan/gld-yaml",
     "gld-yaml: YAML value encode/decode.")
 
-# --- Dagr (one generated codec per language, schemas/v2/dagr) ---
-add("rust", "dagr", [], "https://codeberg.org/mzaks/dagr",
-    "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
-add("go", "dagr", [], "https://codeberg.org/mzaks/dagr",
-    "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
-add("swift", "dagr", [], "https://codeberg.org/mzaks/dagr",
-    "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
-add("javascript", "dagr", [], "https://codeberg.org/mzaks/dagr",
-    "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
-add("python", "dagr", [], "https://codeberg.org/mzaks/dagr",
-    "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
-add("mojo", "dagr", [], "https://codeberg.org/mzaks/dagr",
-    "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
+# --- Dagr (one generated codec per language and node layout, schemas/v2/dagr) ---
+for _lang in ("rust", "go", "swift", "javascript", "python", "mojo"):
+    for _row in ("dagr-packed", "dagr-regular", "dagr-frozen", "dagr-frozen-packed"):
+        add(_lang, _row, [], "https://codeberg.org/mzaks/dagr",
+            "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
 
 
 def main() -> int:

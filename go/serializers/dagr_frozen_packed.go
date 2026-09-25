@@ -1,7 +1,7 @@
 // dagr-frozen-packed — the Dagr row (dagr.go) over FROZEN+PACKED nodes: positional and
 // fixed (densest record, no schema evolution). Graphs `<Type>FrozenPackedGraph` →
 // go/gen/dagrv2/<type>frozenpackedgraphdirect (direct builder + lazy accessors). Same
-// timed path as `dagr`: direct value structs built in Prepare, `BuildAppend` timed; lazy
+// timed path as `dagr-packed`: direct value structs built in Prepare, `BuildAppend` timed; lazy
 // accessors → owned suite value, arrays via `<F>Iter()`.
 //
 // Mirrors dagr.go field for field; keep dagr_regular.go / dagr_frozen.go /
@@ -30,7 +30,7 @@ func newDagrFrozenPacked() *dagrSer {
 // ── dagr-frozen-packed: frozen+packed nodes; direct builder (encode), lazy accessors (decode) ──
 
 // newDagrFrozenPackedBinder binds the `dagr-frozen-packed` row: direct builder, exactly
-// like the packed `dagr` row (one builder per type, reset by every Build).
+// like the `dagr-packed` row (one builder per type, reset by every Build).
 func newDagrFrozenPackedBinder() func(any) (dagrCodec, error) {
 	var (
 		mB *messagefrozenpackedgraphdirect.MessageFrozenPackedGraphBuilder

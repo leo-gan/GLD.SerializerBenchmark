@@ -51,7 +51,7 @@ final class RoundtripTests: XCTestCase {
     }
 
     /// Dagr frames N>1 itself (u32 count + (u32 len + buffer)×N) — cover every type.
-    /// Covers all four layouts (dagr, dagr-regular, dagr-frozen, dagr-frozen-packed), N=1 and N>1.
+    /// Covers all four layouts (dagr-packed, dagr-regular, dagr-frozen, dagr-frozen-packed), N=1 and N>1.
     func testDagrBatchRoundtripAllTypes() throws {
         for layout in DagrLayout.allCases {
             let ser = DagrSerializer(layout: layout)
