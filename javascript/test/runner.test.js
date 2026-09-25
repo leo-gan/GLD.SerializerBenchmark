@@ -128,3 +128,16 @@ test('protobuf-es and google-protobuf roundtrip all V2 types', () => {
     }
   }
 });
+
+test('dagr roundtrips all V2 types (single and batch) with a version', () => {
+  const ser = ALL_SERIALIZERS.find((s) => s.name === 'dagr');
+  assert.ok(ser, 'dagr registered');
+  assert.match(ser.version, /^\d+\.\d+\.\d+/);
+  for (const fx of allFixturesV2(42)) {
+    for (const value of [fx.value, [fx.value, makeOne(fx.name, {}, 7, 1), fx.value]]) {
+      ser.prepare(fx.name, value);
+      const out = asDomain(ser, ser.deserialize(ser.serialize(value)));
+      assert.ok(deepEqual(value, out), `dagr/${fx.name} fidelity mismatch: ${JSON.stringify(out)}`);
+    }
+  }
+});
