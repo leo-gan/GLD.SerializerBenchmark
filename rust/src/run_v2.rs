@@ -242,6 +242,8 @@ fn measure_trial(
         // B-6: for native stream codecs, timed ser AND deser must use stream APIs.
         // Batch N>1 still uses length-prefixed frames (bytes API) → always adapted path.
         if cell.fixtures.len() == 1 {
+            // Rewind prepared-model codecs (prost, dagr) to instance 0, as serialize_cell_into does.
+            ser.begin_cell_encode();
             let n = ser.serialize_stream(
                 black_box(&cell.fixtures[0]),
                 black_box(&mut *ser_buf),
