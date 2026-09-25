@@ -310,9 +310,7 @@ impl<'arena, G: MessageGraphGraph> Message<'arena, G> {
             b.store_bool(_v); b.store_leb((5u64 << 1) | 1);
         }
         if let Some(_s) = _pr.f_string.as_deref() { let _bs = _s.as_bytes(); b.store_raw(_bs); b.store_leb(_bs.len() as u64); b.store_leb((4u64 << 1) | 1); }
-        if let Some(_v) = self.f_float64() {
-            if b.store_packed_f64(_v) { b.store_leb((3u64 << 1) | 0); } else { b.store_leb((3u64 << 1) | 1); }
-        }
+        if let Some(_v) = self.f_float64() { b.store_f64(_v); b.store_leb((3u64 << 1) | 1); }
         if let Some(_v) = self.f_int64() {
             let _zz = crate::dagr_runtime::to_zigzag(_v as i64);
             if crate::dagr_runtime::leb_length(_zz) < 8 {

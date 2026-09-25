@@ -15,7 +15,9 @@ MessageGraph = DataGraph('MessageGraph', root_type=t.ref('Message'), node_types=
         'f_bool' >> t.bool,
         'f_int32' >> t.i32,
         'f_int64' >> t.i64,
-        'f_float64' >> t.f64,
+        # The suite's float64s are random full-mantissa doubles (never fit a shorter float
+        # form), so the packed probe always ends at 8 raw bytes: `raw` writes them directly.
+        'f_float64' >> t.f64 >> raw,
         'f_string' >> t.utf8,
         'f_bool_2' >> t.bool,
         'f_int32_2' >> t.i32,

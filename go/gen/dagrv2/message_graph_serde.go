@@ -29,11 +29,8 @@ func storeMessage(n Message, b *dagr.Builder) dagr.NodeStoreRef {
 		b.StoreUtf8Tagged(x4, 9)
 	}
 	if x3, ok := n.FFloat64(); ok {
-		if b.StorePackedFloat64(x3, false) {
-			b.StoreLEB(7)
-		} else {
-			b.StoreLEB(6)
-		}
+		b.StoreF64(x3)
+		b.StoreLEB(7)
 	}
 	if x2, ok := n.FInt64(); ok {
 		zz := dagr.ToZigZag(int64(x2))

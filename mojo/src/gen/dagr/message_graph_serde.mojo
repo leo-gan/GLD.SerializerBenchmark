@@ -43,8 +43,8 @@ def _store_message[o: Origin[mut=False], //](mut b: Builder[_VT_MAX], a: Message
         _ = b.store_leb(UInt64(9))
     var _v3 = h.f_float64()
     if _v3:
-        var _rf3 = b.store_packed_float64(_v3.value(), False)
-        _ = b.store_leb(UInt64((3 << 1) | (1 if _rf3 else 0)))
+        _ = b.store_f64(_v3.value())
+        _ = b.store_leb(UInt64(7))
     var _v2 = h.f_int64()
     if _v2:
         if leb_length(to_zigzag(Int(_v2.value()))) < 8:

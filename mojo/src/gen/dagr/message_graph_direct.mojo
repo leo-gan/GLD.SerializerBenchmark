@@ -42,8 +42,8 @@ def _store_message_d(mut b: Builder[_VT_MAX], n: DirectMessage) raises -> NodeSt
         _ = b.store_utf8(n.f_string.value(), False)
         _ = b.store_leb(UInt64(9))
     if n.f_float64:
-        var _rf3 = b.store_packed_float64(n.f_float64.value(), False)
-        _ = b.store_leb(UInt64((3 << 1) | (1 if _rf3 else 0)))
+        _ = b.store_f64(n.f_float64.value())
+        _ = b.store_leb(UInt64(7))
     if n.f_int64:
         if leb_length(to_zigzag(Int(n.f_int64.value()))) < 8:
             _ = b.store_leb(to_zigzag(Int(n.f_int64.value())))

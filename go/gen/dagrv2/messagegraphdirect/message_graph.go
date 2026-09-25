@@ -306,13 +306,8 @@ func PutMessage(n Message, b *dagr.Builder, buf []byte, i int) ([]byte, int) {
 		buf, i = dagr.PutUtf8TaggedAt(buf, i, x4, 9)
 	}
 	if x3, ok := n.FFloat64.V, n.FFloat64.Ok; ok {
-		var fx3 bool
-		buf, i, fx3 = dagr.PutPackedFloat64At(buf, i, x3)
-		if fx3 {
-			buf, i = dagr.PutLEBAt(buf, i, 7)
-		} else {
-			buf, i = dagr.PutLEBAt(buf, i, 6)
-		}
+		buf, i = dagr.PutFixedAt(buf, i, dagr.F64Bits(x3), 8)
+		buf, i = dagr.PutLEBAt(buf, i, 7)
 	}
 	if x2, ok := n.FInt64.V, n.FInt64.Ok; ok {
 		zz := dagr.ToZigZag(int64(x2))

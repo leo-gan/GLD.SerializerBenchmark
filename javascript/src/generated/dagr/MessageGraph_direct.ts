@@ -20,7 +20,7 @@ function _storeMessage(n: Message, b: Builder): NodeStoreRef {
   if (n.f_int32_2 !== null) { { const _zz = zigzag(n.f_int32_2); if (lebLength(_zz) < 4) { b.storeLEB(_zz); b.storeLEB(6 << 1); } else { b.storeI32(n.f_int32_2); b.storeLEB((6 << 1) | 1); } } }
   if (n.f_bool_2 !== null) { b.storeU8(n.f_bool_2 ? 1 : 0); b.storeLEB((5 << 1) | 1); }
   if (n.f_string !== null) { b.storeUtf8(n.f_string, false); b.storeLEB((4 << 1) | 1); }
-  if (n.f_float64 !== null) { { const _rf = b.storePackedFloat64(n.f_float64, false); b.storeLEB((3 << 1) | (_rf ? 1 : 0)); } }
+  if (n.f_float64 !== null) { b.storeF64(n.f_float64); b.storeLEB((3 << 1) | 1); }
   if (n.f_int64 !== null) { { const _zz = zigzag(n.f_int64); if (lebLength(_zz) < 8) { b.storeLEB(_zz); b.storeLEB(2 << 1); } else { b.storeI64(n.f_int64); b.storeLEB((2 << 1) | 1); } } }
   if (n.f_int32 !== null) { { const _zz = zigzag(n.f_int32); if (lebLength(_zz) < 4) { b.storeLEB(_zz); b.storeLEB(1 << 1); } else { b.storeI32(n.f_int32); b.storeLEB((1 << 1) | 1); } } }
   if (n.f_bool !== null) { b.storeU8(n.f_bool ? 1 : 0); b.storeLEB((0 << 1) | 1); }

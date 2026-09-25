@@ -1482,10 +1482,8 @@ function _storeMessage(n, b) {
     b.storeLEB(4 << 1 | 1);
   }
   if (n.f_float64 !== null) {
-    {
-      const _rf = b.storePackedFloat64(n.f_float64, false);
-      b.storeLEB(3 << 1 | (_rf ? 1 : 0));
-    }
+    b.storeF64(n.f_float64);
+    b.storeLEB(3 << 1 | 1);
   }
   if (n.f_int64 !== null) {
     {

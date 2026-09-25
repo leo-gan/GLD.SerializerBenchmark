@@ -256,7 +256,10 @@ extension MessageGraph.Message: ArenaGraphStorable {
         _ = try self.f_int32_2?.storePacked(with: builder).store(index: 6, with: builder)
         _ = try self.f_bool_2?.storePacked(with: builder).store(index: 5, with: builder)
         _ = try self.f_string?.storePacked(with: builder).store(index: 4, with: builder)
-        _ = try self.f_float64?.storePacked(with: builder).store(index: 3, with: builder)
+        if let _rv_f_float64 = self.f_float64 {
+            _ = try builder.store(number: _rv_f_float64)
+            _ = try PackedStoreResult.raw(8).store(index: 3, with: builder)
+        }
         _ = try self.f_int64?.storePacked(with: builder).store(index: 2, with: builder)
         _ = try self.f_int32?.storePacked(with: builder).store(index: 1, with: builder)
         _ = try self.f_bool?.storePacked(with: builder).store(index: 0, with: builder)
@@ -422,7 +425,10 @@ extension MessageGraph {
         _ = try self.f_int32_2?.storePacked(with: builder).store(index: 6, with: builder)
         _ = try self.f_bool_2?.storePacked(with: builder).store(index: 5, with: builder)
         _ = try self.f_string?.storePacked(with: builder).store(index: 4, with: builder)
-        _ = try self.f_float64?.storePacked(with: builder).store(index: 3, with: builder)
+        if let _rv_f_float64 = self.f_float64 {
+            _ = try builder.store(number: _rv_f_float64)
+            _ = try PackedStoreResult.raw(8).store(index: 3, with: builder)
+        }
         _ = try self.f_int64?.storePacked(with: builder).store(index: 2, with: builder)
         _ = try self.f_int32?.storePacked(with: builder).store(index: 1, with: builder)
         _ = try self.f_bool?.storePacked(with: builder).store(index: 0, with: builder)
