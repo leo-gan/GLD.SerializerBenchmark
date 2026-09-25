@@ -110,6 +110,16 @@ fn encode_event(b: &mut DagrBuilder, e: &Event) -> Result<(), DagrError> {
 
 // ── decode (lazy reader → owned domain value) ───────────────────────────────
 
+/// `collect::<Result<Vec<_>, _>>()` can't see the array's length (the `Result` adapter
+/// hides the size hint), so the Vec grows 4 → 8 → …; pre-size it from the accessor's `len()`.
+fn collect_exact<T, E>(len: usize, it: impl Iterator<Item = Result<T, E>>) -> Result<Vec<T>, E> {
+    let mut v = Vec::with_capacity(len);
+    for x in it {
+        v.push(x?);
+    }
+    Ok(v)
+}
+
 fn decode_message(data: &[u8]) -> Result<Fixture, DagrError> {
     let m = msg_lazy::read_root(data)?;
     Ok(Fixture::Message(Message {
@@ -134,17 +144,19 @@ fn decode_document(data: &[u8]) -> Result<Fixture, DagrError> {
             region: s(meta.as_ref().and_then(|m| m.region())),
             version: meta.as_ref().and_then(|m| m.version()).unwrap_or_default(),
         },
-        items: d
-            .items()?
-            .iter()
-            .map(|it| {
-                it.map(|it| DocumentItem {
-                    sku: s(it.sku()),
-                    qty: it.qty().unwrap_or_default(),
-                    price_minor: it.price_minor().unwrap_or_default(),
-                })
-            })
-            .collect::<Result<_, _>>()?,
+        items: {
+            let arr = d.items()?;
+            collect_exact(
+                arr.len(),
+                arr.iter().map(|it| {
+                    it.map(|it| DocumentItem {
+                        sku: s(it.sku()),
+                        qty: it.qty().unwrap_or_default(),
+                        price_minor: it.price_minor().unwrap_or_default(),
+                    })
+                }),
+            )?
+        },
     }))
 }
 
@@ -153,23 +165,24 @@ fn decode_telemetry(data: &[u8]) -> Result<Fixture, DagrError> {
     Ok(Fixture::Telemetry(Telemetry {
         source: s(t.source()),
         ts: t.ts().unwrap_or_default(),
-        tags: t
-            .tags()?
-            .iter()
-            .map(|r| r.map(str::to_owned))
-            .collect::<Result<_, _>>()?,
-        values: t.values()?.iter().collect::<Result<_, _>>()?,
+        tags: {
+            let arr = t.tags()?;
+            collect_exact(arr.len(), arr.iter().map(|r| r.map(str::to_owned)))?
+        },
+        values: {
+            let arr = t.values()?;
+            collect_exact(arr.len(), arr.iter())?
+        },
     }))
 }
 
 fn decode_strings(data: &[u8]) -> Result<Fixture, DagrError> {
     let st = str_lazy::read_root(data)?;
     Ok(Fixture::Strings(Strings {
-        items: st
-            .items()?
-            .iter()
-            .map(|r| r.map(str::to_owned))
-            .collect::<Result<_, _>>()?,
+        items: {
+            let arr = st.items()?;
+            collect_exact(arr.len(), arr.iter().map(|r| r.map(str::to_owned)))?
+        },
     }))
 }
 
@@ -180,16 +193,18 @@ fn decode_event(data: &[u8]) -> Result<Fixture, DagrError> {
         event_type: s(e.event_type()),
         occurred_at: e.occurred_at().unwrap_or_default(),
         producer: s(e.producer()),
-        attrs: e
-            .attrs()?
-            .iter()
-            .map(|a| {
-                a.map(|a| EventAttr {
-                    key: s(a.key()),
-                    value: s(a.value()),
-                })
-            })
-            .collect::<Result<_, _>>()?,
+        attrs: {
+            let arr = e.attrs()?;
+            collect_exact(
+                arr.len(),
+                arr.iter().map(|a| {
+                    a.map(|a| EventAttr {
+                        key: s(a.key()),
+                        value: s(a.value()),
+                    })
+                }),
+            )?
+        },
     }))
 }
 
