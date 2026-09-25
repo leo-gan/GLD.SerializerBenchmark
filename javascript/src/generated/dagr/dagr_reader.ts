@@ -41,6 +41,8 @@ export class Buf {
  */
 export function readLEB(buf: Buf, at: number): [number, number] {
   if (at < 0) throw new DagrError("outsideOfBuffer");
+  const u8 = buf.u8;
+  if (at < u8.length && u8[at]! < 0x80) return [u8[at]!, 1];   // one-byte fast path (tags, lengths)
   let pos = at;
   let result = 0;
   let shift = 0;
@@ -71,9 +73,20 @@ export function zigzagDecode(n: number): number {
  */
 export function readLEBBig(buf: Buf, at: number): [bigint, number] {
   if (at < 0) throw new DagrError("outsideOfBuffer");
+  // Accumulate in a number while it stays exact (7 groups = 49 bits), so a typical i64
+  // (a timestamp, a price) costs one BigInt conversion instead of BigInt ops per byte.
+  const u8 = buf.u8;
   let pos = at;
-  let result = 0n;
-  let shift = 0n;
+  let small = 0;
+  for (let k = 0; k < 7; k++) {
+    if (pos >= u8.length) throw new DagrError("outsideOfBuffer");
+    const b = u8[pos]!;
+    small += (b & 0x7f) * 2 ** (7 * k);
+    pos += 1;
+    if (b >> 7 === 0) return [BigInt(small), pos - at];
+  }
+  let result = BigInt(small);
+  let shift = 49n;
   for (;;) {
     if (pos >= buf.u8.length) throw new DagrError("outsideOfBuffer");
     const b = buf.u8[pos]!;
@@ -784,8 +797,22 @@ const _utf8Decoder = new TextDecoder();
 export function readUtf8At(buf: Buf, at: number): [string, number] {
   const [len, lenB] = readLEB(buf, at);
   const start = at + lenB;
-  if (start + len > buf.u8.length) throw new DagrError("outsideOfBuffer");
-  return [_utf8Decoder.decode(buf.u8.subarray(start, start + len)), lenB + len];
+  const u8 = buf.u8;
+  if (start + len > u8.length) throw new DagrError("outsideOfBuffer");
+  // Short ASCII strings: build directly — TextDecoder's per-call overhead dominates a
+  // small string. Anything else (or on the first non-ASCII byte) goes to TextDecoder.
+  if (len <= 32) {
+    let s = "";
+    let i = start;
+    const end = start + len;
+    for (; i < end; i++) {
+      const c = u8[i]!;
+      if (c >= 0x80) break;
+      s += String.fromCharCode(c);
+    }
+    if (i === end) return [s, lenB + len];
+  }
+  return [_utf8Decoder.decode(u8.subarray(start, start + len)), lenB + len];
 }
 
 export function readDataAt(buf: Buf, at: number): [Uint8Array, number] {

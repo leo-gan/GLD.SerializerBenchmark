@@ -6,6 +6,7 @@ export class StringsAccessor {
   private readonly buf: Buf;
   readonly _start: number;  // node position, for eager-restore dedup
   private _v0: string[] | null = null;  // items
+  private _p0 = -1; private _dc0 = false;  // items (deferred: buffer position + decoded flag)
   constructor(buf: Buf, start: number) {
     this.buf = buf;
     this._start = start;
@@ -16,13 +17,11 @@ export class StringsAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [, _ablB0] = readLEB(buf, cursor);
-        const _cp0 = cursor + _ablB0;
-        this._v0 = readPackedComplexArrayAt(buf, _cp0, readUtf8At)[0];
+        this._p0 = cursor;
       }
     }
   }
-  get items(): string[] | null { return this._v0; }
+  get items(): string[] | null { if (this._p0 < 0) return null; if (!this._dc0) { this._dc0 = true; const [, _ablBg0] = readLEB(this.buf, this._p0); this._v0 = readPackedComplexArrayAt(this.buf, (this._p0 + _ablBg0), readUtf8At)[0]; } return this._v0!; }
   static lazyRoot(bytes: Uint8Array): StringsAccessor {
     const buf = new Buf(bytes);
     return new StringsAccessor(buf, rootOffset(buf));

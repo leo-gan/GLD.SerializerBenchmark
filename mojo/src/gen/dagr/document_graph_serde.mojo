@@ -96,8 +96,11 @@ def _store_document[o: Origin[mut=False], //](mut b: Builder[_VT_MAX], a: Docume
     return resolved_ref(b.cursor)
 
 
+def write_document_graph(mut b: Builder[_VT_MAX], a: DocumentGraphArena) raises -> Int:
+    var _off = node_offset(_store_document(b, a, a.root().value()))
+    return b.store_leb(UInt64((b.cursor - _off) << 2))    # framing (no header)
+
 def serialize_document_graph(a: DocumentGraphArena, max_size: Int = 2 * 1024 * 1024) raises -> List[UInt8]:
     var b = Builder[_VT_MAX](hint=len(a._arr_document_meta) + len(a._arr_document_item) + len(a._arr_document), max_size=max_size)
-    var _off = node_offset(_store_document(b, a, a.root().value()))
-    _ = b.store_leb(UInt64((b.cursor - _off) << 2))    # framing (no header)
+    _ = write_document_graph(b, a)
     return b.make_data()

@@ -6,9 +6,12 @@ export class TelemetryAccessor {
   private readonly buf: Buf;
   readonly _start: number;  // node position, for eager-restore dedup
   private _v0: string | null = null;  // source
+  private _p0 = -1; private _dc0 = false;  // source (deferred: buffer position + decoded flag)
   private _v1: bigint | null = null;  // ts
   private _v2: string[] | null = null;  // tags
+  private _p2 = -1; private _dc2 = false;  // tags (deferred: buffer position + decoded flag)
   private _v3: number[] | null = null;  // values
+  private _p3 = -1; private _dc3 = false;  // values (deferred: buffer position + decoded flag)
   constructor(buf: Buf, start: number) {
     this.buf = buf;
     this._start = start;
@@ -19,7 +22,8 @@ export class TelemetryAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v0 = _s; cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor); cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
@@ -39,26 +43,22 @@ export class TelemetryAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 2) {
         cursor += tagB;
-        const [_abl2, _ablB2] = readLEB(buf, cursor);
-        const _cp2 = cursor + _ablB2;
-        this._v2 = readPackedComplexArrayAt(buf, _cp2, readUtf8At)[0];
-        cursor += _ablB2 + _abl2;
+        this._p2 = cursor;
+        const [_abl2, _ablB2] = readLEB(buf, cursor); cursor += _ablB2 + _abl2;
       }
     }
     if (cursor < end) {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 3) {
         cursor += tagB;
-        const [, _ablB3] = readLEB(buf, cursor);
-        const _cp3 = cursor + _ablB3;
-        this._v3 = readPackedFloatArrayAt(buf, _cp3, decodePackedFloat64, 8)[0];
+        this._p3 = cursor;
       }
     }
   }
-  get source(): string | null { return this._v0; }
+  get source(): string | null { if (this._p0 < 0) return null; if (!this._dc0) { this._dc0 = true; this._v0 = readUtf8At(this.buf, this._p0)[0]; } return this._v0!; }
   get ts(): bigint | null { return this._v1; }
-  get tags(): string[] | null { return this._v2; }
-  get values(): number[] | null { return this._v3; }
+  get tags(): string[] | null { if (this._p2 < 0) return null; if (!this._dc2) { this._dc2 = true; const [, _ablBg2] = readLEB(this.buf, this._p2); this._v2 = readPackedComplexArrayAt(this.buf, (this._p2 + _ablBg2), readUtf8At)[0]; } return this._v2!; }
+  get values(): number[] | null { if (this._p3 < 0) return null; if (!this._dc3) { this._dc3 = true; const [, _ablBg3] = readLEB(this.buf, this._p3); this._v3 = readPackedFloatArrayAt(this.buf, (this._p3 + _ablBg3), decodePackedFloat64, 8)[0]; } return this._v3!; }
   static lazyRoot(bytes: Uint8Array): TelemetryAccessor {
     const buf = new Buf(bytes);
     return new TelemetryAccessor(buf, rootOffset(buf));

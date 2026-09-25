@@ -6,6 +6,7 @@ export class DocumentMetaAccessor {
   private readonly buf: Buf;
   readonly _start: number;  // node position, for eager-restore dedup
   private _v0: string | null = null;  // region
+  private _p0 = -1; private _dc0 = false;  // region (deferred: buffer position + decoded flag)
   private _v1: number | null = null;  // version
   constructor(buf: Buf, start: number) {
     this.buf = buf;
@@ -17,7 +18,8 @@ export class DocumentMetaAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v0 = _s; cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor); cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
@@ -33,7 +35,7 @@ export class DocumentMetaAccessor {
       }
     }
   }
-  get region(): string | null { return this._v0; }
+  get region(): string | null { if (this._p0 < 0) return null; if (!this._dc0) { this._dc0 = true; this._v0 = readUtf8At(this.buf, this._p0)[0]; } return this._v0!; }
   get version(): number | null { return this._v1; }
   static lazyRoot(bytes: Uint8Array): DocumentMetaAccessor {
     const buf = new Buf(bytes);
@@ -45,6 +47,7 @@ export class DocumentItemAccessor {
   private readonly buf: Buf;
   readonly _start: number;  // node position, for eager-restore dedup
   private _v0: string | null = null;  // sku
+  private _p0 = -1; private _dc0 = false;  // sku (deferred: buffer position + decoded flag)
   private _v1: number | null = null;  // qty
   private _v2: bigint | null = null;  // price_minor
   constructor(buf: Buf, start: number) {
@@ -57,7 +60,8 @@ export class DocumentItemAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v0 = _s; cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor); cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
@@ -86,7 +90,7 @@ export class DocumentItemAccessor {
       }
     }
   }
-  get sku(): string | null { return this._v0; }
+  get sku(): string | null { if (this._p0 < 0) return null; if (!this._dc0) { this._dc0 = true; this._v0 = readUtf8At(this.buf, this._p0)[0]; } return this._v0!; }
   get qty(): number | null { return this._v1; }
   get price_minor(): bigint | null { return this._v2; }
   static lazyRoot(bytes: Uint8Array): DocumentItemAccessor {
@@ -99,9 +103,12 @@ export class DocumentAccessor {
   private readonly buf: Buf;
   readonly _start: number;  // node position, for eager-restore dedup
   private _v0: string | null = null;  // id
+  private _p0 = -1; private _dc0 = false;  // id (deferred: buffer position + decoded flag)
   private _v1: number | null = null;  // status
   private _v2: DocumentMetaAccessor | null = null;  // meta
+  private _p2 = -1; private _dc2 = false;  // meta (deferred: buffer position + decoded flag)
   private _v3: DocumentItemAccessor[] | null = null;  // items
+  private _p3 = -1; private _dc3 = false;  // items (deferred: buffer position + decoded flag)
   constructor(buf: Buf, start: number) {
     this.buf = buf;
     this._start = start;
@@ -112,7 +119,8 @@ export class DocumentAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v0 = _s; cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor); cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
@@ -132,7 +140,7 @@ export class DocumentAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 2) {
         cursor += tagB;
-        this._v2 = new DocumentMetaAccessor(buf, cursor);
+        this._p2 = cursor;
         const [_nl2, _nlB2] = readLEB(buf, cursor); cursor += _nlB2 + _nl2;
       }
     }
@@ -140,16 +148,14 @@ export class DocumentAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 3) {
         cursor += tagB;
-        const [, _ablB3] = readLEB(buf, cursor);
-        const _cp3 = cursor + _ablB3;
-        this._v3 = (readPackedNodeArrayAt(buf, _cp3, (b, p) => new DocumentItemAccessor(b, p), false) as DocumentItemAccessor[]);
+        this._p3 = cursor;
       }
     }
   }
-  get id(): string | null { return this._v0; }
+  get id(): string | null { if (this._p0 < 0) return null; if (!this._dc0) { this._dc0 = true; this._v0 = readUtf8At(this.buf, this._p0)[0]; } return this._v0!; }
   get status(): number | null { return this._v1; }
-  get meta(): DocumentMetaAccessor | null { return this._v2; }
-  get items(): DocumentItemAccessor[] | null { return this._v3; }
+  get meta(): DocumentMetaAccessor | null { if (this._p2 < 0) return null; if (!this._dc2) { this._dc2 = true; this._v2 = new DocumentMetaAccessor(this.buf, this._p2); } return this._v2!; }
+  get items(): DocumentItemAccessor[] | null { if (this._p3 < 0) return null; if (!this._dc3) { this._dc3 = true; const [, _ablBg3] = readLEB(this.buf, this._p3); this._v3 = (readPackedNodeArrayAt(this.buf, (this._p3 + _ablBg3), (b, p) => new DocumentItemAccessor(b, p), false) as DocumentItemAccessor[]); } return this._v3!; }
   static lazyRoot(bytes: Uint8Array): DocumentAccessor {
     const buf = new Buf(bytes);
     return new DocumentAccessor(buf, rootOffset(buf));

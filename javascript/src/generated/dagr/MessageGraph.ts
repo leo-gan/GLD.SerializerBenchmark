@@ -10,9 +10,11 @@ export class MessageAccessor {
   private _v2: bigint | null = null;  // f_int64
   private _v3: number | null = null;  // f_float64
   private _v4: string | null = null;  // f_string
+  private _p4 = -1; private _dc4 = false;  // f_string (deferred: buffer position + decoded flag)
   private _v5: boolean | null = null;  // f_bool_2
   private _v6: number | null = null;  // f_int32_2
   private _v7: string | null = null;  // f_string_2
+  private _p7 = -1; private _dc7 = false;  // f_string_2 (deferred: buffer position + decoded flag)
   constructor(buf: Buf, start: number) {
     this.buf = buf;
     this._start = start;
@@ -75,7 +77,8 @@ export class MessageAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 4) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v4 = _s; cursor += _sb;
+        this._p4 = cursor;
+        const [_sl4, _slB4] = readLEB(buf, cursor); cursor += _slB4 + _sl4;
       }
     }
     if (cursor < end) {
@@ -108,7 +111,7 @@ export class MessageAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 7) {
         cursor += tagB;
-        const [_s] = readUtf8At(buf, cursor); this._v7 = _s;
+        this._p7 = cursor;
       }
     }
   }
@@ -116,10 +119,10 @@ export class MessageAccessor {
   get f_int32(): number | null { return this._v1; }
   get f_int64(): bigint | null { return this._v2; }
   get f_float64(): number | null { return this._v3; }
-  get f_string(): string | null { return this._v4; }
+  get f_string(): string | null { if (this._p4 < 0) return null; if (!this._dc4) { this._dc4 = true; this._v4 = readUtf8At(this.buf, this._p4)[0]; } return this._v4!; }
   get f_bool_2(): boolean | null { return this._v5; }
   get f_int32_2(): number | null { return this._v6; }
-  get f_string_2(): string | null { return this._v7; }
+  get f_string_2(): string | null { if (this._p7 < 0) return null; if (!this._dc7) { this._dc7 = true; this._v7 = readUtf8At(this.buf, this._p7)[0]; } return this._v7!; }
   static lazyRoot(bytes: Uint8Array): MessageAccessor {
     const buf = new Buf(bytes);
     return new MessageAccessor(buf, rootOffset(buf));

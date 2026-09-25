@@ -50,8 +50,11 @@ def _store_telemetry[o: Origin[mut=False], //](mut b: Builder[_VT_MAX], a: Telem
     return resolved_ref(b.cursor)
 
 
+def write_telemetry_graph(mut b: Builder[_VT_MAX], a: TelemetryGraphArena) raises -> Int:
+    var _off = node_offset(_store_telemetry(b, a, a.root().value()))
+    return b.store_leb(UInt64((b.cursor - _off) << 2))    # framing (no header)
+
 def serialize_telemetry_graph(a: TelemetryGraphArena, max_size: Int = 2 * 1024 * 1024) raises -> List[UInt8]:
     var b = Builder[_VT_MAX](hint=len(a._arr_telemetry), max_size=max_size)
-    var _off = node_offset(_store_telemetry(b, a, a.root().value()))
-    _ = b.store_leb(UInt64((b.cursor - _off) << 2))    # framing (no header)
+    _ = write_telemetry_graph(b, a)
     return b.make_data()

@@ -28,6 +28,8 @@ var Buf = class {
 };
 function readLEB(buf, at) {
   if (at < 0) throw new DagrError("outsideOfBuffer");
+  const u8 = buf.u8;
+  if (at < u8.length && u8[at] < 128) return [u8[at], 1];
   let pos = at;
   let result = 0;
   let shift = 0;
@@ -46,9 +48,18 @@ function zigzagDecode(n) {
 }
 function readLEBBig(buf, at) {
   if (at < 0) throw new DagrError("outsideOfBuffer");
+  const u8 = buf.u8;
   let pos = at;
-  let result = 0n;
-  let shift = 0n;
+  let small = 0;
+  for (let k = 0; k < 7; k++) {
+    if (pos >= u8.length) throw new DagrError("outsideOfBuffer");
+    const b = u8[pos];
+    small += (b & 127) * 2 ** (7 * k);
+    pos += 1;
+    if (b >> 7 === 0) return [BigInt(small), pos - at];
+  }
+  let result = BigInt(small);
+  let shift = 49n;
   for (; ; ) {
     if (pos >= buf.u8.length) throw new DagrError("outsideOfBuffer");
     const b = buf.u8[pos];
@@ -200,8 +211,20 @@ var _utf8Decoder = new TextDecoder();
 function readUtf8At(buf, at) {
   const [len, lenB] = readLEB(buf, at);
   const start = at + lenB;
-  if (start + len > buf.u8.length) throw new DagrError("outsideOfBuffer");
-  return [_utf8Decoder.decode(buf.u8.subarray(start, start + len)), lenB + len];
+  const u8 = buf.u8;
+  if (start + len > u8.length) throw new DagrError("outsideOfBuffer");
+  if (len <= 32) {
+    let s = "";
+    let i = start;
+    const end = start + len;
+    for (; i < end; i++) {
+      const c = u8[i];
+      if (c >= 128) break;
+      s += String.fromCharCode(c);
+    }
+    if (i === end) return [s, lenB + len];
+  }
+  return [_utf8Decoder.decode(u8.subarray(start, start + len)), lenB + len];
 }
 function rootOffset(buf) {
   const [framing, hdrBytes] = readLEB(buf, 0);
@@ -224,12 +247,18 @@ var MessageAccessor = class _MessageAccessor {
   // f_float64
   _v4 = null;
   // f_string
+  _p4 = -1;
+  _dc4 = false;
+  // f_string (deferred: buffer position + decoded flag)
   _v5 = null;
   // f_bool_2
   _v6 = null;
   // f_int32_2
   _v7 = null;
   // f_string_2
+  _p7 = -1;
+  _dc7 = false;
+  // f_string_2 (deferred: buffer position + decoded flag)
   constructor(buf, start) {
     this.buf = buf;
     this._start = start;
@@ -296,9 +325,9 @@ var MessageAccessor = class _MessageAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 4) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v4 = _s;
-        cursor += _sb;
+        this._p4 = cursor;
+        const [_sl4, _slB4] = readLEB(buf, cursor);
+        cursor += _slB4 + _sl4;
       }
     }
     if (cursor < end) {
@@ -333,8 +362,7 @@ var MessageAccessor = class _MessageAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 7) {
         cursor += tagB;
-        const [_s] = readUtf8At(buf, cursor);
-        this._v7 = _s;
+        this._p7 = cursor;
       }
     }
   }
@@ -351,6 +379,11 @@ var MessageAccessor = class _MessageAccessor {
     return this._v3;
   }
   get f_string() {
+    if (this._p4 < 0) return null;
+    if (!this._dc4) {
+      this._dc4 = true;
+      this._v4 = readUtf8At(this.buf, this._p4)[0];
+    }
     return this._v4;
   }
   get f_bool_2() {
@@ -360,6 +393,11 @@ var MessageAccessor = class _MessageAccessor {
     return this._v6;
   }
   get f_string_2() {
+    if (this._p7 < 0) return null;
+    if (!this._dc7) {
+      this._dc7 = true;
+      this._v7 = readUtf8At(this.buf, this._p7)[0];
+    }
     return this._v7;
   }
   static lazyRoot(bytes) {
@@ -1504,6 +1542,9 @@ var DocumentMetaAccessor = class _DocumentMetaAccessor {
   // node position, for eager-restore dedup
   _v0 = null;
   // region
+  _p0 = -1;
+  _dc0 = false;
+  // region (deferred: buffer position + decoded flag)
   _v1 = null;
   // version
   constructor(buf, start) {
@@ -1516,9 +1557,9 @@ var DocumentMetaAccessor = class _DocumentMetaAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v0 = _s;
-        cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor);
+        cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
@@ -1535,6 +1576,11 @@ var DocumentMetaAccessor = class _DocumentMetaAccessor {
     }
   }
   get region() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
     return this._v0;
   }
   get version() {
@@ -1551,6 +1597,9 @@ var DocumentItemAccessor = class _DocumentItemAccessor {
   // node position, for eager-restore dedup
   _v0 = null;
   // sku
+  _p0 = -1;
+  _dc0 = false;
+  // sku (deferred: buffer position + decoded flag)
   _v1 = null;
   // qty
   _v2 = null;
@@ -1565,9 +1614,9 @@ var DocumentItemAccessor = class _DocumentItemAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v0 = _s;
-        cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor);
+        cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
@@ -1598,6 +1647,11 @@ var DocumentItemAccessor = class _DocumentItemAccessor {
     }
   }
   get sku() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
     return this._v0;
   }
   get qty() {
@@ -1617,12 +1671,21 @@ var DocumentAccessor = class _DocumentAccessor {
   // node position, for eager-restore dedup
   _v0 = null;
   // id
+  _p0 = -1;
+  _dc0 = false;
+  // id (deferred: buffer position + decoded flag)
   _v1 = null;
   // status
   _v2 = null;
   // meta
+  _p2 = -1;
+  _dc2 = false;
+  // meta (deferred: buffer position + decoded flag)
   _v3 = null;
   // items
+  _p3 = -1;
+  _dc3 = false;
+  // items (deferred: buffer position + decoded flag)
   constructor(buf, start) {
     this.buf = buf;
     this._start = start;
@@ -1633,9 +1696,9 @@ var DocumentAccessor = class _DocumentAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v0 = _s;
-        cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor);
+        cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
@@ -1656,7 +1719,7 @@ var DocumentAccessor = class _DocumentAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 2) {
         cursor += tagB;
-        this._v2 = new DocumentMetaAccessor(buf, cursor);
+        this._p2 = cursor;
         const [_nl2, _nlB2] = readLEB(buf, cursor);
         cursor += _nlB2 + _nl2;
       }
@@ -1665,22 +1728,36 @@ var DocumentAccessor = class _DocumentAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 3) {
         cursor += tagB;
-        const [, _ablB3] = readLEB(buf, cursor);
-        const _cp3 = cursor + _ablB3;
-        this._v3 = readPackedNodeArrayAt(buf, _cp3, (b, p) => new DocumentItemAccessor(b, p), false);
+        this._p3 = cursor;
       }
     }
   }
   get id() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
     return this._v0;
   }
   get status() {
     return this._v1;
   }
   get meta() {
+    if (this._p2 < 0) return null;
+    if (!this._dc2) {
+      this._dc2 = true;
+      this._v2 = new DocumentMetaAccessor(this.buf, this._p2);
+    }
     return this._v2;
   }
   get items() {
+    if (this._p3 < 0) return null;
+    if (!this._dc3) {
+      this._dc3 = true;
+      const [, _ablBg3] = readLEB(this.buf, this._p3);
+      this._v3 = readPackedNodeArrayAt(this.buf, this._p3 + _ablBg3, (b, p) => new DocumentItemAccessor(b, p), false);
+    }
     return this._v3;
   }
   static lazyRoot(bytes) {
@@ -1802,12 +1879,21 @@ var TelemetryAccessor = class _TelemetryAccessor {
   // node position, for eager-restore dedup
   _v0 = null;
   // source
+  _p0 = -1;
+  _dc0 = false;
+  // source (deferred: buffer position + decoded flag)
   _v1 = null;
   // ts
   _v2 = null;
   // tags
+  _p2 = -1;
+  _dc2 = false;
+  // tags (deferred: buffer position + decoded flag)
   _v3 = null;
   // values
+  _p3 = -1;
+  _dc3 = false;
+  // values (deferred: buffer position + decoded flag)
   constructor(buf, start) {
     this.buf = buf;
     this._start = start;
@@ -1818,9 +1904,9 @@ var TelemetryAccessor = class _TelemetryAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v0 = _s;
-        cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor);
+        cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
@@ -1841,9 +1927,8 @@ var TelemetryAccessor = class _TelemetryAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 2) {
         cursor += tagB;
+        this._p2 = cursor;
         const [_abl2, _ablB2] = readLEB(buf, cursor);
-        const _cp2 = cursor + _ablB2;
-        this._v2 = readPackedComplexArrayAt(buf, _cp2, readUtf8At)[0];
         cursor += _ablB2 + _abl2;
       }
     }
@@ -1851,22 +1936,37 @@ var TelemetryAccessor = class _TelemetryAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 3) {
         cursor += tagB;
-        const [, _ablB3] = readLEB(buf, cursor);
-        const _cp3 = cursor + _ablB3;
-        this._v3 = readPackedFloatArrayAt(buf, _cp3, decodePackedFloat64, 8)[0];
+        this._p3 = cursor;
       }
     }
   }
   get source() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
     return this._v0;
   }
   get ts() {
     return this._v1;
   }
   get tags() {
+    if (this._p2 < 0) return null;
+    if (!this._dc2) {
+      this._dc2 = true;
+      const [, _ablBg2] = readLEB(this.buf, this._p2);
+      this._v2 = readPackedComplexArrayAt(this.buf, this._p2 + _ablBg2, readUtf8At)[0];
+    }
     return this._v2;
   }
   get values() {
+    if (this._p3 < 0) return null;
+    if (!this._dc3) {
+      this._dc3 = true;
+      const [, _ablBg3] = readLEB(this.buf, this._p3);
+      this._v3 = readPackedFloatArrayAt(this.buf, this._p3 + _ablBg3, decodePackedFloat64, 8)[0];
+    }
     return this._v3;
   }
   static lazyRoot(bytes) {
@@ -1932,6 +2032,9 @@ var StringsAccessor = class _StringsAccessor {
   // node position, for eager-restore dedup
   _v0 = null;
   // items
+  _p0 = -1;
+  _dc0 = false;
+  // items (deferred: buffer position + decoded flag)
   constructor(buf, start) {
     this.buf = buf;
     this._start = start;
@@ -1942,13 +2045,17 @@ var StringsAccessor = class _StringsAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [, _ablB0] = readLEB(buf, cursor);
-        const _cp0 = cursor + _ablB0;
-        this._v0 = readPackedComplexArrayAt(buf, _cp0, readUtf8At)[0];
+        this._p0 = cursor;
       }
     }
   }
   get items() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      const [, _ablBg0] = readLEB(this.buf, this._p0);
+      this._v0 = readPackedComplexArrayAt(this.buf, this._p0 + _ablBg0, readUtf8At)[0];
+    }
     return this._v0;
   }
   static lazyRoot(bytes) {
@@ -1995,8 +2102,14 @@ var EventAttrAccessor = class _EventAttrAccessor {
   // node position, for eager-restore dedup
   _v0 = null;
   // key
+  _p0 = -1;
+  _dc0 = false;
+  // key (deferred: buffer position + decoded flag)
   _v1 = null;
   // value
+  _p1 = -1;
+  _dc1 = false;
+  // value (deferred: buffer position + decoded flag)
   constructor(buf, start) {
     this.buf = buf;
     this._start = start;
@@ -2007,24 +2120,33 @@ var EventAttrAccessor = class _EventAttrAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v0 = _s;
-        cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor);
+        cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 1) {
         cursor += tagB;
-        const [_s] = readUtf8At(buf, cursor);
-        this._v1 = _s;
+        this._p1 = cursor;
       }
     }
   }
   get key() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
     return this._v0;
   }
   get value() {
+    if (this._p1 < 0) return null;
+    if (!this._dc1) {
+      this._dc1 = true;
+      this._v1 = readUtf8At(this.buf, this._p1)[0];
+    }
     return this._v1;
   }
   static lazyRoot(bytes) {
@@ -2038,14 +2160,26 @@ var EventAccessor = class _EventAccessor {
   // node position, for eager-restore dedup
   _v0 = null;
   // event_id
+  _p0 = -1;
+  _dc0 = false;
+  // event_id (deferred: buffer position + decoded flag)
   _v1 = null;
   // event_type
+  _p1 = -1;
+  _dc1 = false;
+  // event_type (deferred: buffer position + decoded flag)
   _v2 = null;
   // occurred_at
   _v3 = null;
   // producer
+  _p3 = -1;
+  _dc3 = false;
+  // producer (deferred: buffer position + decoded flag)
   _v4 = null;
   // attrs
+  _p4 = -1;
+  _dc4 = false;
+  // attrs (deferred: buffer position + decoded flag)
   constructor(buf, start) {
     this.buf = buf;
     this._start = start;
@@ -2056,18 +2190,18 @@ var EventAccessor = class _EventAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v0 = _s;
-        cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor);
+        cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 1) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v1 = _s;
-        cursor += _sb;
+        this._p1 = cursor;
+        const [_sl1, _slB1] = readLEB(buf, cursor);
+        cursor += _slB1 + _sl1;
       }
     }
     if (cursor < end) {
@@ -2088,34 +2222,53 @@ var EventAccessor = class _EventAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 3) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor);
-        this._v3 = _s;
-        cursor += _sb;
+        this._p3 = cursor;
+        const [_sl3, _slB3] = readLEB(buf, cursor);
+        cursor += _slB3 + _sl3;
       }
     }
     if (cursor < end) {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 4) {
         cursor += tagB;
-        const [, _ablB4] = readLEB(buf, cursor);
-        const _cp4 = cursor + _ablB4;
-        this._v4 = readPackedNodeArrayAt(buf, _cp4, (b, p) => new EventAttrAccessor(b, p), false);
+        this._p4 = cursor;
       }
     }
   }
   get event_id() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
     return this._v0;
   }
   get event_type() {
+    if (this._p1 < 0) return null;
+    if (!this._dc1) {
+      this._dc1 = true;
+      this._v1 = readUtf8At(this.buf, this._p1)[0];
+    }
     return this._v1;
   }
   get occurred_at() {
     return this._v2;
   }
   get producer() {
+    if (this._p3 < 0) return null;
+    if (!this._dc3) {
+      this._dc3 = true;
+      this._v3 = readUtf8At(this.buf, this._p3)[0];
+    }
     return this._v3;
   }
   get attrs() {
+    if (this._p4 < 0) return null;
+    if (!this._dc4) {
+      this._dc4 = true;
+      const [, _ablBg4] = readLEB(this.buf, this._p4);
+      this._v4 = readPackedNodeArrayAt(this.buf, this._p4 + _ablBg4, (b, p) => new EventAttrAccessor(b, p), false);
+    }
     return this._v4;
   }
   static lazyRoot(bytes) {

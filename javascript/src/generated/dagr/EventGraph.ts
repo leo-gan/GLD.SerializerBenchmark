@@ -6,7 +6,9 @@ export class EventAttrAccessor {
   private readonly buf: Buf;
   readonly _start: number;  // node position, for eager-restore dedup
   private _v0: string | null = null;  // key
+  private _p0 = -1; private _dc0 = false;  // key (deferred: buffer position + decoded flag)
   private _v1: string | null = null;  // value
+  private _p1 = -1; private _dc1 = false;  // value (deferred: buffer position + decoded flag)
   constructor(buf: Buf, start: number) {
     this.buf = buf;
     this._start = start;
@@ -17,19 +19,20 @@ export class EventAttrAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v0 = _s; cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor); cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 1) {
         cursor += tagB;
-        const [_s] = readUtf8At(buf, cursor); this._v1 = _s;
+        this._p1 = cursor;
       }
     }
   }
-  get key(): string | null { return this._v0; }
-  get value(): string | null { return this._v1; }
+  get key(): string | null { if (this._p0 < 0) return null; if (!this._dc0) { this._dc0 = true; this._v0 = readUtf8At(this.buf, this._p0)[0]; } return this._v0!; }
+  get value(): string | null { if (this._p1 < 0) return null; if (!this._dc1) { this._dc1 = true; this._v1 = readUtf8At(this.buf, this._p1)[0]; } return this._v1!; }
   static lazyRoot(bytes: Uint8Array): EventAttrAccessor {
     const buf = new Buf(bytes);
     return new EventAttrAccessor(buf, rootOffset(buf));
@@ -40,10 +43,14 @@ export class EventAccessor {
   private readonly buf: Buf;
   readonly _start: number;  // node position, for eager-restore dedup
   private _v0: string | null = null;  // event_id
+  private _p0 = -1; private _dc0 = false;  // event_id (deferred: buffer position + decoded flag)
   private _v1: string | null = null;  // event_type
+  private _p1 = -1; private _dc1 = false;  // event_type (deferred: buffer position + decoded flag)
   private _v2: bigint | null = null;  // occurred_at
   private _v3: string | null = null;  // producer
+  private _p3 = -1; private _dc3 = false;  // producer (deferred: buffer position + decoded flag)
   private _v4: EventAttrAccessor[] | null = null;  // attrs
+  private _p4 = -1; private _dc4 = false;  // attrs (deferred: buffer position + decoded flag)
   constructor(buf: Buf, start: number) {
     this.buf = buf;
     this._start = start;
@@ -54,14 +61,16 @@ export class EventAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 0) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v0 = _s; cursor += _sb;
+        this._p0 = cursor;
+        const [_sl0, _slB0] = readLEB(buf, cursor); cursor += _slB0 + _sl0;
       }
     }
     if (cursor < end) {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 1) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v1 = _s; cursor += _sb;
+        this._p1 = cursor;
+        const [_sl1, _slB1] = readLEB(buf, cursor); cursor += _slB1 + _sl1;
       }
     }
     if (cursor < end) {
@@ -81,24 +90,23 @@ export class EventAccessor {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 3) {
         cursor += tagB;
-        const [_s, _sb] = readUtf8At(buf, cursor); this._v3 = _s; cursor += _sb;
+        this._p3 = cursor;
+        const [_sl3, _slB3] = readLEB(buf, cursor); cursor += _slB3 + _sl3;
       }
     }
     if (cursor < end) {
       const [tag, tagB] = readLEB(buf, cursor);
       if (tag >> 1 === 4) {
         cursor += tagB;
-        const [, _ablB4] = readLEB(buf, cursor);
-        const _cp4 = cursor + _ablB4;
-        this._v4 = (readPackedNodeArrayAt(buf, _cp4, (b, p) => new EventAttrAccessor(b, p), false) as EventAttrAccessor[]);
+        this._p4 = cursor;
       }
     }
   }
-  get event_id(): string | null { return this._v0; }
-  get event_type(): string | null { return this._v1; }
+  get event_id(): string | null { if (this._p0 < 0) return null; if (!this._dc0) { this._dc0 = true; this._v0 = readUtf8At(this.buf, this._p0)[0]; } return this._v0!; }
+  get event_type(): string | null { if (this._p1 < 0) return null; if (!this._dc1) { this._dc1 = true; this._v1 = readUtf8At(this.buf, this._p1)[0]; } return this._v1!; }
   get occurred_at(): bigint | null { return this._v2; }
-  get producer(): string | null { return this._v3; }
-  get attrs(): EventAttrAccessor[] | null { return this._v4; }
+  get producer(): string | null { if (this._p3 < 0) return null; if (!this._dc3) { this._dc3 = true; this._v3 = readUtf8At(this.buf, this._p3)[0]; } return this._v3!; }
+  get attrs(): EventAttrAccessor[] | null { if (this._p4 < 0) return null; if (!this._dc4) { this._dc4 = true; const [, _ablBg4] = readLEB(this.buf, this._p4); this._v4 = (readPackedNodeArrayAt(this.buf, (this._p4 + _ablBg4), (b, p) => new EventAttrAccessor(b, p), false) as EventAttrAccessor[]); } return this._v4!; }
   static lazyRoot(bytes: Uint8Array): EventAccessor {
     const buf = new Buf(bytes);
     return new EventAccessor(buf, rootOffset(buf));
