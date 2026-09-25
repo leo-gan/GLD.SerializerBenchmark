@@ -23,5 +23,8 @@ public func allSerializers() -> [any BenchSerializer] {
         SwiftAvroSerializer(),
         CapnProtoSerializer(),
         DagrSerializer(),
+        DagrSerializer(layout: .regular),
+        DagrSerializer(layout: .frozen),
+        DagrSerializer(layout: .frozenPacked),
     ]
 }

@@ -15,19 +15,39 @@ import BenchmarkV2
 // runners: u32 LE count + (u32 LE len + one Dagr buffer)×N. Dagr writes back-to-front, so
 // the batch is built in ONE builder by storing items in reverse and prepending each item's
 // length; decode reads each item in place (no per-item copy).
+//
+// The same class serves the four node layouts (`DagrLayout`, spec/16-choosing-a-node-layout):
+// `dagr` (packed), `dagr-regular`, `dagr-frozen`, `dagr-frozen-packed`. The schema emits each
+// suite type once per layout (`<T>Graph`, `<T>RegularGraph`, `<T>FrozenGraph`,
+// `<T>FrozenPackedGraph`); the per-layout bridges are in `DagrLayouts.swift`.
+
+/// Node layout of a Dagr row. Raw value = row name.
+public enum DagrLayout: String, CaseIterable, Sendable {
+    case packed = "dagr"
+    case regular = "dagr-regular"
+    case frozen = "dagr-frozen"
+    case frozenPacked = "dagr-frozen-packed"
+
+    /// regular / frozen nodes go through the builder's dedup tables (strings, vtables, node
+    /// ids), which only `reset()` clears — so a batch encodes each item on its own (see bind).
+    var dedups: Bool { self == .regular || self == .frozen }
+}
 
 public final class DagrSerializer: BenchSerializer {
-    public let name = "dagr"
+    public let name: String
+    public let layout: DagrLayout
     public let version: String
     public let streamMode: StreamMode = .adapted
     public let nativeKind: NativeKind = .schema
 
-    /// Reused across calls. Packed trees never touch the builder's dedup tables.
+    /// Reused across calls (`reset()` per record). Packed trees never touch its dedup tables.
     private let builder = DataArenaBuilder(maxSize: UInt64(1) << 32)
     private var encodeFn: ((DataArenaBuilder, Fixture) throws -> Data)?
     private var decodeFn: ((Data) throws -> Any)?
 
-    public init() {
+    public init(layout: DagrLayout = .packed) {
+        self.layout = layout
+        self.name = layout.rawValue
         self.version = DagrSerializer.receiptVersion()
     }
 
@@ -36,6 +56,15 @@ public final class DagrSerializer: BenchSerializer {
     }
 
     public func prepare(_ fixture: Fixture) throws {
+        switch layout {
+        case .packed: try preparePacked(fixture)
+        case .regular: try prepareRegular(fixture)
+        case .frozen: try prepareFrozen(fixture)
+        case .frozenPacked: try prepareFrozenPacked(fixture)
+        }
+    }
+
+    func preparePacked(_ fixture: Fixture) throws {
         switch fixture.name {
         case "message":
             bind(fixture, DagrBridge.encodeMessage, DagrBridge.decodeMessage)
@@ -64,12 +93,31 @@ public final class DagrSerializer: BenchSerializer {
     }
 
     /// Binds monomorphic encode/decode for one suite type (no fixture switch on the timed path).
-    private func bind<T>(
+    /// `encode` stores ONE record (root + framing LEB) into the builder; `decode` reads one
+    /// record starting at the given offset.
+    func bind<T>(
         _ fixture: Fixture,
         _ encode: @escaping (DataArenaBuilder, T) throws -> Void,
         _ decode: @escaping (Data, Int) throws -> T
     ) {
-        if fixture.instanceCount > 1 {
+        if fixture.instanceCount > 1 && layout.dedups {
+            // regular / frozen: string/vtable/node-id dedup would reach across items (and the
+            // arenas' node ids collide — every item's root is index 0), so each item is its own
+            // self-contained record: reset, store, append. Same frame layout as below.
+            encodeFn = { b, fx in
+                let items = fx.value as! [T]
+                var out = Data()
+                DagrBridge.appendU32(&out, UInt32(items.count))
+                for item in items {
+                    b.reset()
+                    try encode(b, item)
+                    DagrBridge.appendU32(&out, UInt32(b.cursor.value))
+                    out.append(b.makeData)
+                }
+                return out
+            }
+            decodeFn = DagrSerializer.batchDecode(decode)
+        } else if fixture.instanceCount > 1 {
             encodeFn = { b, fx in
                 let items = fx.value as! [T]
                 b.reset()
@@ -81,19 +129,7 @@ public final class DagrSerializer: BenchSerializer {
                 _ = try b.store(number: UInt32(items.count).littleEndian)
                 return b.makeData
             }
-            decodeFn = { data in
-                var o = 0
-                let n = Int(try DagrBridge.u32(data, &o))
-                var out: [T] = []
-                out.reserveCapacity(n)
-                for _ in 0..<n {
-                    let len = Int(try DagrBridge.u32(data, &o))
-                    guard o + len <= data.count else { throw BenchError.unsupported("dagr: truncated batch") }
-                    out.append(try decode(data, o))
-                    o += len
-                }
-                return out
-            }
+            decodeFn = DagrSerializer.batchDecode(decode)
         } else {
             encodeFn = { b, fx in
                 b.reset()
@@ -103,6 +139,22 @@ public final class DagrSerializer: BenchSerializer {
             decodeFn = { data in
                 try decode(data, 0)
             }
+        }
+    }
+
+    private static func batchDecode<T>(_ decode: @escaping (Data, Int) throws -> T) -> (Data) throws -> Any {
+        return { data in
+            var o = 0
+            let n = Int(try DagrBridge.u32(data, &o))
+            var out: [T] = []
+            out.reserveCapacity(n)
+            for _ in 0..<n {
+                let len = Int(try DagrBridge.u32(data, &o))
+                guard o + len <= data.count else { throw BenchError.unsupported("dagr: truncated batch") }
+                out.append(try decode(data, o))
+                o += len
+            }
+            return out
         }
     }
 
@@ -142,9 +194,14 @@ enum DagrBridge {
         return v
     }
 
-    /// Mirrors the generated `Direct.toData`, into a caller-owned builder.
+    static func appendU32(_ out: inout Data, _ v: UInt32) {
+        withUnsafeBytes(of: v.littleEndian) { out.append(contentsOf: $0) }
+    }
+
+    /// Mirrors the generated `Direct.toData` / `Arena.toData`, into a caller-owned builder.
+    /// Works for direct value structs and arena node handles alike.
     @inline(__always)
-    private static func storeRoot<R: ArenaGraphStorable>(_ b: DataArenaBuilder, _ root: R) throws {
+    static func storeRoot<R: ArenaGraphStorable>(_ b: DataArenaBuilder, _ root: R) throws {
         let rootOffset = try root.store(with: b)
         _ = try b.storeAsLEB(value: (b.cursor.value - rootOffset.value) << 2)
     }
