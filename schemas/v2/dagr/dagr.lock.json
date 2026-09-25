@@ -2301,7 +2301,7 @@
     "../../../mojo/src/gen/dagr/telemetry_regular_graph_reader.mojo": "sha256:6bcd13a868537e85ae1b74ead68c1c4bdc5d3990236a01c78dcb6e0bafe849b5",
     "../../../mojo/src/gen/dagr/telemetry_regular_graph_restore.mojo": "sha256:57950987e8bc5ea6268dc9fa5d503e01c577378a8db0fa67001263941c2c202a",
     "../../../mojo/src/gen/dagr/telemetry_regular_graph_serde.mojo": "sha256:d3ae378c87b07ab50b5fb826a219c57ec12e41a5359572635950dce28ab4b797",
-    "../../../python/generated/dagr/dagr/__init__.py": "sha256:7d14886a5207b2536b089d5114fe419a7ab854f027122893abb040f37c4fec72",
+    "../../../python/generated/dagr/dagr/__init__.py": "sha256:c4a0ced01df81da27c6d18a27e6b9990c8f978b480e7e7d5ed75010d16448d25",
     "../../../python/generated/dagr/dagr/codegen/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "../../../python/generated/dagr/dagr/codegen/shared.py": "sha256:f6a0f9442d3d65ffd25ab80274c059a2bbfa03fd8eba520e3dcb8b01dff7aa97",
     "../../../python/generated/dagr/dagr/config.py": "sha256:56664649f1e67e7e7fe10ce9d59e302e017b4ee30658d9b04c9ba5cf8a39d585",
@@ -2315,7 +2315,7 @@
     "../../../python/generated/dagr/dagr/runtime/dagr_serialize.py": "sha256:b91db7619677b1c84c425a61010c9103e38c6444c010acef0ebe93f9c508b37d",
     "../../../python/generated/dagr/dagr/runtime/dagr_typed.py": "sha256:911c336680f995768632e45c8a54fa9d5d92d7afb784251b58bd11d9a309b5a7",
     "../../../python/generated/dagr/dagr/runtime/dagr_writer.py": "sha256:c24074c1dc3753603354feda03b73ac5b8bcaa8d3d4edb6c237ebd2cbc3e09d5",
-    "../../../python/generated/dagr/dagr_schema.py": "sha256:c27f95582c77db589beb35bf6a5e44aa9a32e53da1b62f5907fa7e60487769be",
+    "../../../python/generated/dagr/dagr_schema.py": "sha256:e0e5ef66af1d15214c8ffeb26d176cab90fb7d17b4b9585dbc8c1da20102cba9",
     "../../../python/generated/dagr/document_frozen_graph.py": "sha256:4ea0199d1c55927fda9e47f9effe5f624620087066cbac54c767b264bc00a830",
     "../../../python/generated/dagr/document_frozen_packed_graph.py": "sha256:299ce86133045fadbd5b69b6859b7d6e9311e51ae8fba7369a9938d54ade18c7",
     "../../../python/generated/dagr/document_graph.py": "sha256:5be9497251d07218e9e9a8e31289df2fbef0fb14e6312fb7fb84477de7c5f7ec",
@@ -2435,9 +2435,9 @@
   },
   "provenance": {
     "command": "dagr build",
-    "generated_at": "2026-09-25T14:57:41.849446+00:00",
+    "generated_at": "2026-09-25T16:56:18.245965+00:00",
     "host": null,
-    "tool_version": "dagr 2026.9.0"
+    "tool_version": "dagr 2026.9.1"
   },
   "receipt_version": 1,
   "targets": [

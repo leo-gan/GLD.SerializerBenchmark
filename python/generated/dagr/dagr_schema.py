@@ -3,7 +3,7 @@ Dagr schema for GLD.SerializerBenchmark Data Model v2.
 
 Mirrors schemas/v2/protobuf/benchmark_v2.proto: one DataGraph per suite type, rooted at
 that type (the harness frames N instances itself, so no Batch_* wrappers), in each of the
-four node layouts. The packed graphs (`MessageGraph`, …) back the `dagr` rows — the layout
+four node layouts. The packed graphs (`MessageGraph`, …) back the `dagr-packed` rows — the layout
 Dagr recommends for evolving, schema-driven payloads; `dagr-regular`, `dagr-frozen` and
 `dagr-frozen-packed` use the other three.
 Regenerate with `dagr build` (emits the per-language code + dagr.lock.json).
@@ -12,7 +12,7 @@ Regenerate with `dagr build` (emits the per-language code + dagr.lock.json).
 from dagr.dsl import DataGraph, Node, raw, t
 from dagr.config import Library, Rust, Swift, Go, TypeScript, Python, Mojo
 
-# The four node layouts (spec/16): packed (tagged, evolvable — the `dagr` row), regular
+# The four node layouts (spec/16): packed (tagged, evolvable — the `dagr-packed` row), regular
 # (vtable), frozen (positional) and frozen+packed (positional, self-sizing). Frozen layouts
 # trade all schema evolution for speed/size, so they compare with speedy / bincode /
 # FlatBuffers-style codecs rather than with protobuf.
@@ -83,7 +83,7 @@ def graphs(suffix: str, **layout):
 
 
 ALL_GRAPHS = [gr for suffix, layout in FLAVOURS.items() for gr in graphs(suffix, **layout)]
-# The packed graphs keep their original names (MessageGraph, …) for the `dagr` row.
+# The packed graphs keep their original names (MessageGraph, …) for the `dagr-packed` row.
 MessageGraph, DocumentGraph, TelemetryGraph, StringsGraph, EventGraph = ALL_GRAPHS[:5]
 
 library = Library(
