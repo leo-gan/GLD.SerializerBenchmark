@@ -1,6 +1,308 @@
 {
   "library": {
     "graphs": {
+      "DocumentFrozenGraph": {
+        "header": null,
+        "imports": [],
+        "name": "DocumentFrozenGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "region",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "version",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "DocumentMeta",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "sku",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "qty",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "price_minor",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "DocumentItem",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "id",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "status",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "meta",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "DocumentMeta"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "items",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "DocumentItem"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Document",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Document"
+        }
+      },
+      "DocumentFrozenPackedGraph": {
+        "header": null,
+        "imports": [],
+        "name": "DocumentFrozenPackedGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "region",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "version",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "DocumentMeta",
+            "packed": true,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "sku",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "qty",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "price_minor",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "DocumentItem",
+            "packed": true,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "id",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "status",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "meta",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "DocumentMeta"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "items",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "DocumentItem"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Document",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Document"
+        }
+      },
       "DocumentGraph": {
         "header": null,
         "imports": [],
@@ -152,6 +454,391 @@
           "ref": "Document"
         }
       },
+      "DocumentRegularGraph": {
+        "header": null,
+        "imports": [],
+        "name": "DocumentRegularGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "region",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "version",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "DocumentMeta",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "sku",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "qty",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "price_minor",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "DocumentItem",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "id",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "status",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "meta",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "DocumentMeta"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "items",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "DocumentItem"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Document",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Document"
+        }
+      },
+      "EventFrozenGraph": {
+        "header": null,
+        "imports": [],
+        "name": "EventFrozenGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "key",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "value",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "EventAttr",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "event_id",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "event_type",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "occurred_at",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "producer",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "attrs",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "EventAttr"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Event",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Event"
+        }
+      },
+      "EventFrozenPackedGraph": {
+        "header": null,
+        "imports": [],
+        "name": "EventFrozenPackedGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "key",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "value",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "EventAttr",
+            "packed": true,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "event_id",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "event_type",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "occurred_at",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "producer",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "attrs",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "EventAttr"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Event",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Event"
+        }
+      },
       "EventGraph": {
         "header": null,
         "imports": [],
@@ -267,6 +954,355 @@
         "root_type": {
           "kind": "ref",
           "ref": "Event"
+        }
+      },
+      "EventRegularGraph": {
+        "header": null,
+        "imports": [],
+        "name": "EventRegularGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "key",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "value",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "EventAttr",
+            "packed": false,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "event_id",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "event_type",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "occurred_at",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "producer",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "attrs",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "EventAttr"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Event",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Event"
+        }
+      },
+      "MessageFrozenGraph": {
+        "header": null,
+        "imports": [],
+        "name": "MessageFrozenGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_bool",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int32",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int64",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_float64",
+                "options": 8,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_string",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_bool_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int32_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_string_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Message",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Message"
+        }
+      },
+      "MessageFrozenPackedGraph": {
+        "header": null,
+        "imports": [],
+        "name": "MessageFrozenPackedGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_bool",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int32",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int64",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_float64",
+                "options": 8,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_string",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_bool_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int32_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_string_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Message",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Message"
         }
       },
       "MessageGraph": {
@@ -385,6 +1421,192 @@
           "ref": "Message"
         }
       },
+      "MessageRegularGraph": {
+        "header": null,
+        "imports": [],
+        "name": "MessageRegularGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_bool",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int32",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int64",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_float64",
+                "options": 8,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_string",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_bool_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int32_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_string_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Message",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Message"
+        }
+      },
+      "StringsFrozenGraph": {
+        "header": null,
+        "imports": [],
+        "name": "StringsFrozenGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "items",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Strings",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Strings"
+        }
+      },
+      "StringsFrozenPackedGraph": {
+        "header": null,
+        "imports": [],
+        "name": "StringsFrozenPackedGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "items",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Strings",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Strings"
+        }
+      },
       "StringsGraph": {
         "header": null,
         "imports": [],
@@ -418,6 +1640,189 @@
         "root_type": {
           "kind": "ref",
           "ref": "Strings"
+        }
+      },
+      "StringsRegularGraph": {
+        "header": null,
+        "imports": [],
+        "name": "StringsRegularGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "items",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Strings",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Strings"
+        }
+      },
+      "TelemetryFrozenGraph": {
+        "header": null,
+        "imports": [],
+        "name": "TelemetryFrozenGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "source",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "ts",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "tags",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "values",
+                "options": 8,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "f64"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Telemetry",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Telemetry"
+        }
+      },
+      "TelemetryFrozenPackedGraph": {
+        "header": null,
+        "imports": [],
+        "name": "TelemetryFrozenPackedGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "source",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "ts",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "tags",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "values",
+                "options": 8,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "f64"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": true,
+            "kind": "node",
+            "name": "Telemetry",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Telemetry"
         }
       },
       "TelemetryGraph": {
@@ -493,6 +1898,80 @@
           "kind": "ref",
           "ref": "Telemetry"
         }
+      },
+      "TelemetryRegularGraph": {
+        "header": null,
+        "imports": [],
+        "name": "TelemetryRegularGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "source",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "ts",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "tags",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "values",
+                "options": 8,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "f64"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Telemetry",
+            "packed": false,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Telemetry"
+        }
       }
     },
     "ir_version": 1,
@@ -517,86 +1996,311 @@
       {
         "kind": "graph",
         "name": "EventGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "MessageRegularGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "DocumentRegularGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "TelemetryRegularGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "StringsRegularGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "EventRegularGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "MessageFrozenGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "DocumentFrozenGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "TelemetryFrozenGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "StringsFrozenGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "EventFrozenGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "MessageFrozenPackedGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "DocumentFrozenPackedGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "TelemetryFrozenPackedGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "StringsFrozenPackedGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "EventFrozenPackedGraph"
       }
     ],
     "shared_buffers": {},
     "sinks": {},
     "wire_format_version": 1
   },
-  "library_hash": "sha256:4b0b6b12fc5dc890a0b08e25f541b0881f982636b854722e88b470ed01dca759",
+  "library_hash": "sha256:139752644e9191bb1ebc0fec34add862b3ac33fec2a5013112b9dade9986c8e7",
   "outputs": {
     "../../../go/gen/dagrv2/dagr/reader.go": "sha256:52241688c1535ab8ea98b014aebebe26e8a3baab174840afe07ea0d4e0231363",
     "../../../go/gen/dagrv2/dagr/writer.go": "sha256:7eee25743b708004edf672cc9bff8cf14ed057a98d357f45badee2c122d94216",
-    "../../../go/gen/dagrv2/document_graph.go": "sha256:1b6c476a86d144bdfff6529e45e62c57be341d7c9108e01ad0a769f8a7bdb913",
-    "../../../go/gen/dagrv2/document_graph_arena.go": "sha256:6b361ace70bdf6e6f1d402c24756c1d380c5fa9f53f78ff4bcc4e8b4ecdf2c38",
-    "../../../go/gen/dagrv2/document_graph_serde.go": "sha256:05e80af5be396ebe1dab73ca9e07c38d40e9bc20974729be5730b8601cd913af",
+    "../../../go/gen/dagrv2/documentfrozengraph/document_frozen_graph.go": "sha256:1a41bf11ca1e5af7bb402c451cd7d2b528f2689e437cb14e148b1f11ba6f511e",
+    "../../../go/gen/dagrv2/documentfrozengraph/document_frozen_graph_arena.go": "sha256:9094a0ab7132ea6c5c5955a7a9dcd91aa00d0f1c37ed439167d23aed541966cb",
+    "../../../go/gen/dagrv2/documentfrozengraph/document_frozen_graph_serde.go": "sha256:c177729d052a8052ad276dd49e22901cb6e38014ebc500850ec98766e55e45e2",
+    "../../../go/gen/dagrv2/documentfrozenpackedgraph/document_frozen_packed_graph.go": "sha256:1744b7104784ca972e0dd733e00a6167dd758332cf59fa703eea97d5e40e4d4b",
+    "../../../go/gen/dagrv2/documentfrozenpackedgraph/document_frozen_packed_graph_arena.go": "sha256:e2a131f030331b849333ae41a3f3d851ed8f9ddbe2212b930f1bd23d3ad4d690",
+    "../../../go/gen/dagrv2/documentfrozenpackedgraph/document_frozen_packed_graph_serde.go": "sha256:f17b420b3ac33bfba2077b26a8971b7f419a475332d20c2e03c28ec0f433529c",
+    "../../../go/gen/dagrv2/documentfrozenpackedgraphdirect/document_frozen_packed_graph.go": "sha256:4903d53add84078a7a5e237f0f52f1513dabc04da078ab4b8d39bbc70cab360c",
+    "../../../go/gen/dagrv2/documentgraph/document_graph.go": "sha256:1cdd38cb3772d153177f14871bd9e21f1343ac24a0b07bd3e9487a3322103216",
+    "../../../go/gen/dagrv2/documentgraph/document_graph_arena.go": "sha256:6b54cbad4336b2dd810b025b93183786e01f0afc07f5bca2565c0a52ae6f5bfe",
+    "../../../go/gen/dagrv2/documentgraph/document_graph_serde.go": "sha256:e661872734c45c8b94eb9dc3964b1a0d0ee74bbb7f172e2477581e581a4cbce3",
     "../../../go/gen/dagrv2/documentgraphdirect/document_graph.go": "sha256:053d227dd25b6e6fb4988a2998c00360776fbfd5d8f361fb590d810b42f0c4a5",
-    "../../../go/gen/dagrv2/event_graph.go": "sha256:ffce7960cd88c6c9ce9f3fd85973fac969714febb38a1785b89c09199c301735",
-    "../../../go/gen/dagrv2/event_graph_arena.go": "sha256:48a96d4911eac5b8a68ff363be8dba0092ebdb9a8e770371dc8a31453dbdd3d0",
-    "../../../go/gen/dagrv2/event_graph_serde.go": "sha256:025bcc4bca7bad2b0f4b810860e6fcdb5f3f92000a0300ee8b45bbfeaa8b4a6b",
+    "../../../go/gen/dagrv2/documentregulargraph/document_regular_graph.go": "sha256:ed3c1662c977acf4d63200ff4a4196b6b42919efbbea9d30d604272dd860b99c",
+    "../../../go/gen/dagrv2/documentregulargraph/document_regular_graph_arena.go": "sha256:b1a5e9b53a431d6aac290a7d08e079d0b6751986446544101a70fac9e1a25fe4",
+    "../../../go/gen/dagrv2/documentregulargraph/document_regular_graph_serde.go": "sha256:388e831468ad9c8b0aaaf94d1cac2d7cf463d0e00aaa4dbd711faac64171ae12",
+    "../../../go/gen/dagrv2/eventfrozengraph/event_frozen_graph.go": "sha256:bdd692eb531061f1f15343a3a98d1df6e4b133e2b42d459345b22eca2d2d4be0",
+    "../../../go/gen/dagrv2/eventfrozengraph/event_frozen_graph_arena.go": "sha256:9cd1b1a06ffc49c75743d60cfaebbaa1d28f1b5af2dd2ce127d3872a083523de",
+    "../../../go/gen/dagrv2/eventfrozengraph/event_frozen_graph_serde.go": "sha256:10998211d6965f59d81c0f3912760765f84bf614ca90b73f82282f9f15fc0bad",
+    "../../../go/gen/dagrv2/eventfrozenpackedgraph/event_frozen_packed_graph.go": "sha256:e225a0e9069372b783b837de17c835bc4e7662fd1b5735cbc291088771ede67e",
+    "../../../go/gen/dagrv2/eventfrozenpackedgraph/event_frozen_packed_graph_arena.go": "sha256:90e5ebb6fdb85f9199a52031a3676ad34d1e46f5bd28aee425220db28ba708b0",
+    "../../../go/gen/dagrv2/eventfrozenpackedgraph/event_frozen_packed_graph_serde.go": "sha256:caad0e5f3e43d597cc23d8f7eeb854911b8d0b9c07e36f6601ff0976ef07285e",
+    "../../../go/gen/dagrv2/eventfrozenpackedgraphdirect/event_frozen_packed_graph.go": "sha256:3e6839591ba8fb288255d82abbde18a5be80c8033bd5efdb2e1c17b621246eb6",
+    "../../../go/gen/dagrv2/eventgraph/event_graph.go": "sha256:5cc5322104f40bd18a3314384a57a146197a698f7224a3063ea01b0cc41abc0e",
+    "../../../go/gen/dagrv2/eventgraph/event_graph_arena.go": "sha256:6bbea2ece999d3d54f2738a4e4facd78e1efc0e3d84de6a9c28aa657d3732296",
+    "../../../go/gen/dagrv2/eventgraph/event_graph_serde.go": "sha256:496259903a68e1f3fd16ff6f539f0e3311590fe485b2e1d583ee61c3be3c2cb6",
     "../../../go/gen/dagrv2/eventgraphdirect/event_graph.go": "sha256:3d020dec13517056e24211616d0b1bf1236c248c497e4a8b64862a59fafa34e5",
+    "../../../go/gen/dagrv2/eventregulargraph/event_regular_graph.go": "sha256:0804570591754eee22d1c427aff5952f612c0b82f103dfa2bf95e317f4eb054f",
+    "../../../go/gen/dagrv2/eventregulargraph/event_regular_graph_arena.go": "sha256:e0c1bb3a51b0274bf5af70cc188aa8512aa09e192a1bba0933c2277a51241245",
+    "../../../go/gen/dagrv2/eventregulargraph/event_regular_graph_serde.go": "sha256:a7d8a559b60c00086087d14036acd5db1b46a8cf359cf9b4b2675cb998d4c67f",
     "../../../go/gen/dagrv2/go.mod": "sha256:983eb08a969488bafc3d839ea81c0eb3e79b561fbcb3618f0feec38eca606f6c",
-    "../../../go/gen/dagrv2/message_graph.go": "sha256:79d3f489b4a54b72ca7b0d24d79be5b9ff4d8a84cc0987e891411233a62e6fbf",
-    "../../../go/gen/dagrv2/message_graph_arena.go": "sha256:a370d972188769c83a4ce93478593a1f7b961fe7e054c0c42efbf0c5b0994b20",
-    "../../../go/gen/dagrv2/message_graph_serde.go": "sha256:40cf1602aedee87bca8b2b1e5086ef92f0e9627b2e7eb8e13b892b09daae01b5",
+    "../../../go/gen/dagrv2/messagefrozengraph/message_frozen_graph.go": "sha256:c068373960c9dc45512f85b54ce23a89cf7c4787e8dc14573d0bc624f8f5573f",
+    "../../../go/gen/dagrv2/messagefrozengraph/message_frozen_graph_arena.go": "sha256:415df10dd280fb75212d4991732a989dd39953587e0af60d96695d168f76cdd9",
+    "../../../go/gen/dagrv2/messagefrozengraph/message_frozen_graph_serde.go": "sha256:1b1df9645424bb03370fceef6f14440570ae83e30a6ea067ba319a074531b45a",
+    "../../../go/gen/dagrv2/messagefrozenpackedgraph/message_frozen_packed_graph.go": "sha256:38345d979082406121d00d680911c9860c30406cf615358a97720231bfacc723",
+    "../../../go/gen/dagrv2/messagefrozenpackedgraph/message_frozen_packed_graph_arena.go": "sha256:4f42d4849977d25f3e5a2ae5be6b52db1aae9ac6a77663eb226d1410dc5f01b1",
+    "../../../go/gen/dagrv2/messagefrozenpackedgraph/message_frozen_packed_graph_serde.go": "sha256:69c9905b46a28462d5f4d8f27ca93a5ed352e7519cc5c4b634fdcac1acc23251",
+    "../../../go/gen/dagrv2/messagefrozenpackedgraphdirect/message_frozen_packed_graph.go": "sha256:490d1c15f34b4389501b64831b096d697592d14afcf320adda60ba663ac130bc",
+    "../../../go/gen/dagrv2/messagegraph/message_graph.go": "sha256:4d31ec5a2e8b10595ac7d4fcea1a185c9d26bb2a2395d9dce56db0cf7d15e307",
+    "../../../go/gen/dagrv2/messagegraph/message_graph_arena.go": "sha256:783360a411a6d6a69cdb01d18f9d210bd8801c195c8ae7290b9f4719707fad6b",
+    "../../../go/gen/dagrv2/messagegraph/message_graph_serde.go": "sha256:6e693a7a80cbbfe83582b76ec76d8dda64692bbcb2580f9899f72f726b84b31e",
     "../../../go/gen/dagrv2/messagegraphdirect/message_graph.go": "sha256:efb46063a09d1baadc418629046d9778b9987de7db5d4100a1bdca8f67b1c004",
-    "../../../go/gen/dagrv2/strings_graph.go": "sha256:2448a21f2dff6f7910e02a4476ae060c6327637ae8536598f7c391d0dc764442",
-    "../../../go/gen/dagrv2/strings_graph_arena.go": "sha256:1a2069dc3be9b7f8c7509f280074c4fa2f6b14d046d2c70ba7dd55bc77f7afc8",
-    "../../../go/gen/dagrv2/strings_graph_serde.go": "sha256:20dad10576fc2cc314fe38eb1791c57f64e1ba07d64d38322015826fd8282586",
+    "../../../go/gen/dagrv2/messageregulargraph/message_regular_graph.go": "sha256:7fb20c840c13d4bf75575d0fdc8643e052205779181f7a922550e661d54e434d",
+    "../../../go/gen/dagrv2/messageregulargraph/message_regular_graph_arena.go": "sha256:2244c951416087899db0e3a56c53f2901f1ee89e7bd77874bab6b7af0b18a19d",
+    "../../../go/gen/dagrv2/messageregulargraph/message_regular_graph_serde.go": "sha256:eee3e8b10df2d27b3ed3a79872571509f7ac6e92f9160cebccc2ba9827174e8e",
+    "../../../go/gen/dagrv2/stringsfrozengraph/strings_frozen_graph.go": "sha256:66f93b61fe1028190fe7c06ef9b4c0e7b642541733286812cc2923aaabb6b1e5",
+    "../../../go/gen/dagrv2/stringsfrozengraph/strings_frozen_graph_arena.go": "sha256:a1c7472693da3f15c4c3a5d84a82f509475b02a528fb7ecfb68c0a8df3723ac1",
+    "../../../go/gen/dagrv2/stringsfrozengraph/strings_frozen_graph_serde.go": "sha256:4984fe359556506a6d76fa204ba878d765887681af53f6fc0e248cc8e197d853",
+    "../../../go/gen/dagrv2/stringsfrozenpackedgraph/strings_frozen_packed_graph.go": "sha256:cc85062a35718e0137325fbb4f67c475fc1cef38bd2ad737c679abda98f3c412",
+    "../../../go/gen/dagrv2/stringsfrozenpackedgraph/strings_frozen_packed_graph_arena.go": "sha256:2defea30775d95d127fcaa70e3ff15258dba296f1fd0edf489a116e7920036fa",
+    "../../../go/gen/dagrv2/stringsfrozenpackedgraph/strings_frozen_packed_graph_serde.go": "sha256:d941af9a9251ddd0e9efe161ff675e05902264032fd7320b2982b55dca0a1e5c",
+    "../../../go/gen/dagrv2/stringsfrozenpackedgraphdirect/strings_frozen_packed_graph.go": "sha256:1301292d50f0f44e8c584167db6700ed61f212610ee1353f42c6bb69bbc4c746",
+    "../../../go/gen/dagrv2/stringsgraph/strings_graph.go": "sha256:34d775891680952903a27ce09d08aab4c2e4f8cbc2d3aab434e612187dde417b",
+    "../../../go/gen/dagrv2/stringsgraph/strings_graph_arena.go": "sha256:35d49f9e3661a3478db74e548b17da4ea0019b85387a7855afbd0adc51ad78fa",
+    "../../../go/gen/dagrv2/stringsgraph/strings_graph_serde.go": "sha256:4b95fd0d7c3179f8bd36dc0a2d8567b8448867246ece0c9f880e3673d12803a0",
     "../../../go/gen/dagrv2/stringsgraphdirect/strings_graph.go": "sha256:4008aeeac1cccf8758cd8cc727ea63ffbe28c161e932c0ae711fdb1a4003f009",
-    "../../../go/gen/dagrv2/telemetry_graph.go": "sha256:f33bb09c2f3c3c877b3a3711eceec910a30c271cd6d88f99a356cd5f8cb598aa",
-    "../../../go/gen/dagrv2/telemetry_graph_arena.go": "sha256:9d6be88e03076e460128def493175fab2f70575ed7f220835afba7832cb89a6d",
-    "../../../go/gen/dagrv2/telemetry_graph_serde.go": "sha256:4b52dad17aa437be8590240af456d944e65afef7c90b502f31d8eb907bf787d5",
+    "../../../go/gen/dagrv2/stringsregulargraph/strings_regular_graph.go": "sha256:824beb9dd1294e455fdf21bec7b3a2613648c2edb9dfaea69b395a108530ed67",
+    "../../../go/gen/dagrv2/stringsregulargraph/strings_regular_graph_arena.go": "sha256:3ea578e899df22d6db96a72901f6002864ef334976a473ea73b16d76f272532d",
+    "../../../go/gen/dagrv2/stringsregulargraph/strings_regular_graph_serde.go": "sha256:3f082e857152d993dc0507599a247871f8f32f89ff0d136cea03512c37a80089",
+    "../../../go/gen/dagrv2/telemetryfrozengraph/telemetry_frozen_graph.go": "sha256:090626ef2321cc85322c86db1ecbc3a56e04ea2d2fc08ae75e926d965bf282ee",
+    "../../../go/gen/dagrv2/telemetryfrozengraph/telemetry_frozen_graph_arena.go": "sha256:a802efeb5f11bf41555f15a2578ad0a3d02262a35923ed758598e4fd2e152c12",
+    "../../../go/gen/dagrv2/telemetryfrozengraph/telemetry_frozen_graph_serde.go": "sha256:1c3ea663e1d5747926f40ae64462ae7fdcd624cb32d215da095c076d340be248",
+    "../../../go/gen/dagrv2/telemetryfrozenpackedgraph/telemetry_frozen_packed_graph.go": "sha256:9324a851550eeecff9bfe17e8ecf18e5c27034ca8e560a82715300b8170990bf",
+    "../../../go/gen/dagrv2/telemetryfrozenpackedgraph/telemetry_frozen_packed_graph_arena.go": "sha256:679584ddef7b42062ccd758da26e0f40a57cc0cdae182241b3b020ab442ab1b8",
+    "../../../go/gen/dagrv2/telemetryfrozenpackedgraph/telemetry_frozen_packed_graph_serde.go": "sha256:c89e5bc08c4fa07a0e70ff5360fd1e086b958b8b964c27b3121d46297c8336e9",
+    "../../../go/gen/dagrv2/telemetryfrozenpackedgraphdirect/telemetry_frozen_packed_graph.go": "sha256:ed7d141f1b68c334a5805bca52c2ff70ade077e43dd73f83ef740333a60aad24",
+    "../../../go/gen/dagrv2/telemetrygraph/telemetry_graph.go": "sha256:dc691719b64134fb3e0668a95c7289b14670ebfe68753bd22069709e19d4a77c",
+    "../../../go/gen/dagrv2/telemetrygraph/telemetry_graph_arena.go": "sha256:894c3ae488b8f49e2e413a48c946b2190310697e41d684808c547625db45d110",
+    "../../../go/gen/dagrv2/telemetrygraph/telemetry_graph_serde.go": "sha256:84e106a493c08685b21c942314ca411073c3d3a7b28000cb9aaeeb1125876e18",
     "../../../go/gen/dagrv2/telemetrygraphdirect/telemetry_graph.go": "sha256:0d8edae75ff22354053cba19bbf079fa8f55de7c06070a1d6c48a0407c41f1b6",
+    "../../../go/gen/dagrv2/telemetryregulargraph/telemetry_regular_graph.go": "sha256:b886995586d25b08f39ab2f03231358299ad9352032076caa323a71b7e118a6f",
+    "../../../go/gen/dagrv2/telemetryregulargraph/telemetry_regular_graph_arena.go": "sha256:9c0701d0cc6f8a4d294d85064abc4282d0e3b3a4ae5749b09a7f337a11ec61e8",
+    "../../../go/gen/dagrv2/telemetryregulargraph/telemetry_regular_graph_serde.go": "sha256:38eb07214a7a42ce5dc0dc95f8c04a9e2662914d75099ac4311cc6face704b1f",
+    "../../../javascript/src/generated/dagr/DocumentFrozenGraph.ts": "sha256:1cb14f80a1837311b6d47aaa3dd4bca668d206aff929720a08dcffc3e013a2a6",
+    "../../../javascript/src/generated/dagr/DocumentFrozenGraph_arena.ts": "sha256:c78872cd5df013f2aea37d93221fa7aa5958e46e19e56f0d280096eb5cbf2223",
+    "../../../javascript/src/generated/dagr/DocumentFrozenGraph_serde.ts": "sha256:9945135ab65f0033096204a220effecf475ec3143a3d1208a946f50cd1e4f0b7",
+    "../../../javascript/src/generated/dagr/DocumentFrozenPackedGraph.ts": "sha256:0af723e76bc379714f29bf99677ed337fadd56ce508178a2ec3a8b06b813cf19",
+    "../../../javascript/src/generated/dagr/DocumentFrozenPackedGraph_arena.ts": "sha256:d80057057e626f7a6ae5d43df742eb843ec905dd6020a53da77ca4379c9c7f1f",
+    "../../../javascript/src/generated/dagr/DocumentFrozenPackedGraph_direct.ts": "sha256:528c10880f20a58ab5ff7d280574ede1ad4dae9d2b79789e0d30a32bca9ae564",
+    "../../../javascript/src/generated/dagr/DocumentFrozenPackedGraph_serde.ts": "sha256:91979bd7f7f4a831e727a2a9ccd9fe16ceb2f80e6351c75b8ca5cd98363cbd1a",
     "../../../javascript/src/generated/dagr/DocumentGraph.ts": "sha256:b53599b87966a8516dce6850f4044b43dcdf23f5e46ef785ab1ae0572008afd6",
-    "../../../javascript/src/generated/dagr/DocumentGraph_arena.ts": "sha256:9188c25642103a86da9c905912709cbf3ac6225cef61067d7142b98d9321b0e2",
+    "../../../javascript/src/generated/dagr/DocumentGraph_arena.ts": "sha256:83c6b9aee3acac337f372ad1439b7729994bc7b1dafb6ddd2ec7d5747e705d1c",
     "../../../javascript/src/generated/dagr/DocumentGraph_direct.ts": "sha256:387b23e4c449fb4ef4c3641eae978a0d24ce5d5236b720a9aaec77504c863969",
     "../../../javascript/src/generated/dagr/DocumentGraph_serde.ts": "sha256:7a2bfc33c52bc2a1ecd85362fbcecba2110ffe1bf39aab92ac1b96c5f3988d67",
+    "../../../javascript/src/generated/dagr/DocumentRegularGraph.ts": "sha256:0353f1a77940e51430117996fd946cda1d534e9f2a8096a178649c28488e0f0c",
+    "../../../javascript/src/generated/dagr/DocumentRegularGraph_arena.ts": "sha256:2d49ff58c8a1cd53fa0383fa89f1420f15fc19c6cd32d2a7cbe2053219d533de",
+    "../../../javascript/src/generated/dagr/DocumentRegularGraph_serde.ts": "sha256:3b205577fc2e973dbf7fcd925ac5f8b206859922738cd7267390ffd04c5aeb37",
+    "../../../javascript/src/generated/dagr/EventFrozenGraph.ts": "sha256:c69cc46abeb926b250e1f45d79fc41418edbead6dcf94774f845e43e485bdf7b",
+    "../../../javascript/src/generated/dagr/EventFrozenGraph_arena.ts": "sha256:62d10c032d031066ad3a3a523e26bb8e2829ce4dd8414697a7e9cb72a44dcae1",
+    "../../../javascript/src/generated/dagr/EventFrozenGraph_serde.ts": "sha256:cc751655dda020774b1d295da69760d997187ca9f7acafadbab709a21c83f0f3",
+    "../../../javascript/src/generated/dagr/EventFrozenPackedGraph.ts": "sha256:64632218ecfebb24743e6fb3d4777e2af211b86d6f398f4a1857c9838675e3ce",
+    "../../../javascript/src/generated/dagr/EventFrozenPackedGraph_arena.ts": "sha256:4a10af7a4ecbfa6ee2364a5341c4102f678bb0a69a41529538e70dfef73b797f",
+    "../../../javascript/src/generated/dagr/EventFrozenPackedGraph_direct.ts": "sha256:672a211a5ab036c6000f483c6f5614e7462d27ee548c3fe8f7317040cbe92b9c",
+    "../../../javascript/src/generated/dagr/EventFrozenPackedGraph_serde.ts": "sha256:a39bbaa3c86856469675a98bde1f34a599b14464052d79cf1a6bf377a5a1edc6",
     "../../../javascript/src/generated/dagr/EventGraph.ts": "sha256:962e359d5f8c20ec57d1f20a885e9905a6145a5820078f479e39386b9fd6f800",
-    "../../../javascript/src/generated/dagr/EventGraph_arena.ts": "sha256:a529b488c0afd0aaca9eb8afcecb818453fb8195f039b31cf47a7be6cefd4a47",
+    "../../../javascript/src/generated/dagr/EventGraph_arena.ts": "sha256:c8bd775167c5d6799a2ad880911256d91311e57a53abd8b0b0e9f1c9a11f63c6",
     "../../../javascript/src/generated/dagr/EventGraph_direct.ts": "sha256:801dd2e74f9353eee03d85b803ca3fede0700cbbf44e5db43aeeef8a0337b869",
     "../../../javascript/src/generated/dagr/EventGraph_serde.ts": "sha256:09962fa594cbdfad131c067aad2f7d843ff76aadb0208dea0a488e0840f0f660",
+    "../../../javascript/src/generated/dagr/EventRegularGraph.ts": "sha256:f6cf0811bb64918a16c28f4b55c49c8f9e2899252bf650b70179949ce85578c7",
+    "../../../javascript/src/generated/dagr/EventRegularGraph_arena.ts": "sha256:95a2e779d4ca4c55434905687ed1ff629991c2bd72309909735865dd9bc14535",
+    "../../../javascript/src/generated/dagr/EventRegularGraph_serde.ts": "sha256:c43e946fabca0de8f0a7bbf73fe3b6d102fb4f507deb5c8d2a0fe17f37602787",
+    "../../../javascript/src/generated/dagr/MessageFrozenGraph.ts": "sha256:930aa6d844f8c03c05d13fdaaf56dc061c1f1a02829b67df46fd97649db8ebf4",
+    "../../../javascript/src/generated/dagr/MessageFrozenGraph_arena.ts": "sha256:8793cf185b0c88443368d42add38a4c9c5d4e23e424ae727944c6f4e020a3b3f",
+    "../../../javascript/src/generated/dagr/MessageFrozenGraph_serde.ts": "sha256:52b3a6b71c78b6de5bf12aad4df28286a11fe6e2b2a6bde4df066147fb4daa60",
+    "../../../javascript/src/generated/dagr/MessageFrozenPackedGraph.ts": "sha256:e407b4eb723dea830b6f8a3793811df8a4da142d5f5510445f3b4f00f59deb1f",
+    "../../../javascript/src/generated/dagr/MessageFrozenPackedGraph_arena.ts": "sha256:70826929b35b2fdf19b1ca81739c95b1296cd9f2f6659067feec89ebb3aaaa42",
+    "../../../javascript/src/generated/dagr/MessageFrozenPackedGraph_direct.ts": "sha256:2ab0ce6a34f5f029bb1152005ef1978c6c01bd56c490296c68095cb355a7ec8b",
+    "../../../javascript/src/generated/dagr/MessageFrozenPackedGraph_serde.ts": "sha256:00d93de558a54f893bf069c110c46d2797350b48c1edcfc0a0e715f5b6bb1f6b",
     "../../../javascript/src/generated/dagr/MessageGraph.ts": "sha256:70f685750d60813b046a3213f056672698ba7f96df4833b664ed1704fcba03b6",
-    "../../../javascript/src/generated/dagr/MessageGraph_arena.ts": "sha256:41081131ce69e67aba25c1fb76dc1830fc9e1aa4a5dbebc2f7bd5b084e60acd2",
+    "../../../javascript/src/generated/dagr/MessageGraph_arena.ts": "sha256:a744e311e7fcf872cae07d543d18fca8263da4f56f2d142ad9e6a4b7ec9eddcb",
     "../../../javascript/src/generated/dagr/MessageGraph_direct.ts": "sha256:7a3fb6671acf0db640620af6839bc6e9d1a3705e036e3d3371e05dc97c1adbc7",
     "../../../javascript/src/generated/dagr/MessageGraph_serde.ts": "sha256:ffbdaff8a1549a4cb49d6f43b312cad5bc3ece16f442228b730c84aae578567b",
+    "../../../javascript/src/generated/dagr/MessageRegularGraph.ts": "sha256:f4f65d3914371726866525f42fad7fc2167775cbef2cddf847e08c7cc49e4245",
+    "../../../javascript/src/generated/dagr/MessageRegularGraph_arena.ts": "sha256:e68e6fd52750805b80f5391ff913b16bbcc3dc17011ca083268a9dcc59b73444",
+    "../../../javascript/src/generated/dagr/MessageRegularGraph_serde.ts": "sha256:4a7a674c8ff443c2bc05738bb3137250ce49c6ae6ac9fec8f80139f6c50b5c3a",
+    "../../../javascript/src/generated/dagr/StringsFrozenGraph.ts": "sha256:deefd90a49fa0755955eb48037592b8595e99a904a17a44ac83314d7b8e72f9b",
+    "../../../javascript/src/generated/dagr/StringsFrozenGraph_arena.ts": "sha256:95879728ce84fbca2e269037199275c9fa7d055820d14025e4b41ce120f57773",
+    "../../../javascript/src/generated/dagr/StringsFrozenGraph_serde.ts": "sha256:11d3a7521b66b84f59b372c241553b97e019c33e27ab6ab9baadd6031558b252",
+    "../../../javascript/src/generated/dagr/StringsFrozenPackedGraph.ts": "sha256:8a5f269851d75a2b02a034c9381685ade0e2cd13f3c1d4745c05e6edf67198ad",
+    "../../../javascript/src/generated/dagr/StringsFrozenPackedGraph_arena.ts": "sha256:a2a8f8e14b27f9ac6b7a301d7b9e21fc82e920c3f6a6a179ca41b57a5a1136ec",
+    "../../../javascript/src/generated/dagr/StringsFrozenPackedGraph_direct.ts": "sha256:b4aa3b05df78220d766e6f62ea5105309d11dc70f5e2b43c7728a8b0990292f9",
+    "../../../javascript/src/generated/dagr/StringsFrozenPackedGraph_serde.ts": "sha256:03c0cb24f3ade38faa42ce55dc69b9d2851e293cf76ad25d10ab366977415bd9",
     "../../../javascript/src/generated/dagr/StringsGraph.ts": "sha256:5b8e42aeff78e2030bacae02cfc708667bfea4aa92c0d1694ecf7dcc5dd25a07",
-    "../../../javascript/src/generated/dagr/StringsGraph_arena.ts": "sha256:d62ccec80efd418da81a4f9b5e511cf30f18f67d1a971b8c265dd4de1f04fec4",
+    "../../../javascript/src/generated/dagr/StringsGraph_arena.ts": "sha256:41abaf5de9ff9cd2155d6d3b4fcb588819ee47035b0ca81d4fbfa8bb3153ff11",
     "../../../javascript/src/generated/dagr/StringsGraph_direct.ts": "sha256:cf1b001143270ebeff94f7e653c326c3560085efb871f35dec65e7504ed5be77",
     "../../../javascript/src/generated/dagr/StringsGraph_serde.ts": "sha256:a55c1eb54bdd206dce3fa463b081734bcf6239c379595547603c8f4349a87d7a",
+    "../../../javascript/src/generated/dagr/StringsRegularGraph.ts": "sha256:bde4605e555f5979faac2b773d0eaaca8cf1f0e0a08ee6eb95bb8d7c11d0b6e3",
+    "../../../javascript/src/generated/dagr/StringsRegularGraph_arena.ts": "sha256:3d9510a3b1f5974d5907faf040503889eb167a436edd13a6f6e95d044f5f0bbb",
+    "../../../javascript/src/generated/dagr/StringsRegularGraph_serde.ts": "sha256:00c76a884b98ea42e3c4e7a2120519c3cc6180b1e2ebe6db52d6bedb067b7ac1",
+    "../../../javascript/src/generated/dagr/TelemetryFrozenGraph.ts": "sha256:a5a4969d5ccb7f1fbe6401ffed8b3b123ca0599d734f62658e38e743b3e7d553",
+    "../../../javascript/src/generated/dagr/TelemetryFrozenGraph_arena.ts": "sha256:eec2b0b987521f7127d4f55c4d4e0bf3d2e4acd324cd4c3eca0e061e266f3a85",
+    "../../../javascript/src/generated/dagr/TelemetryFrozenGraph_serde.ts": "sha256:2c75fb98e0aea9ab7645d4da617b41b0f4ccb5bbbf65b5da3cd1385f0f9cbaf9",
+    "../../../javascript/src/generated/dagr/TelemetryFrozenPackedGraph.ts": "sha256:cb04700cc9a4c97ca76c83b4b17445654152d4c9919bc9d463f530d93ef7e0f2",
+    "../../../javascript/src/generated/dagr/TelemetryFrozenPackedGraph_arena.ts": "sha256:fd7cd5a61c206d46905feaf25ceab28ad293a7abed7a024dcc1f72b63e41d3a2",
+    "../../../javascript/src/generated/dagr/TelemetryFrozenPackedGraph_direct.ts": "sha256:4d34d356024a2f563387ab83a4152e003f10a9c62f27fe388d43f206427b0c7f",
+    "../../../javascript/src/generated/dagr/TelemetryFrozenPackedGraph_serde.ts": "sha256:aa54fa73a207811f6da4bcd49e44259ae49509ba1cc16aabd383e29abaa37ead",
     "../../../javascript/src/generated/dagr/TelemetryGraph.ts": "sha256:c785c671c8ab9a133bc3385687b359c57708d2f93e3cd0d7966d824cc4b50798",
-    "../../../javascript/src/generated/dagr/TelemetryGraph_arena.ts": "sha256:03701175fc3353d39228c82851c89bc8fdaa9dea3f816da452d9c8c487cc6cc8",
+    "../../../javascript/src/generated/dagr/TelemetryGraph_arena.ts": "sha256:7f72394168e4bbdc7b0d3581c935346948eae0e97bfc7a1a8569a8151139ce87",
     "../../../javascript/src/generated/dagr/TelemetryGraph_direct.ts": "sha256:57e268fcedfda485307c7f3c35081e9ab22c7881a2ab83703c04b0f5fb22f029",
     "../../../javascript/src/generated/dagr/TelemetryGraph_serde.ts": "sha256:31f87a8f09c47ec770f87567b2c97af5ab004211e87f1b10c3c57320ca7d8664",
+    "../../../javascript/src/generated/dagr/TelemetryRegularGraph.ts": "sha256:333e5af34483ea1b341d6dd955fc4ccee4db5cf0211af6a98be224ce99c5c4a3",
+    "../../../javascript/src/generated/dagr/TelemetryRegularGraph_arena.ts": "sha256:c7d5c203ac28ea79b7eb93fbfce24777b45b775ba5d47dc834fe3ed15e80baed",
+    "../../../javascript/src/generated/dagr/TelemetryRegularGraph_serde.ts": "sha256:92ee90a3942a371617b977cca2b4b36277dfab590b19b103322c2e7c67da3403",
     "../../../javascript/src/generated/dagr/dagr_reader.ts": "sha256:5f6b61d2757c659ff6a9db87ddb982715ba5555260d70e90aac94cccdbcc54d0",
     "../../../javascript/src/generated/dagr/dagr_writer.ts": "sha256:2a6c73d1e6ba0479ef4e5d334076ec8695b1fb9009c43550a8209431730de0fa",
     "../../../mojo/src/gen/dagr/dagr_reader.mojo": "sha256:69ac7b424cf84794350a08aae0dfba3590170158f3a591fbcc806065c06dda0b",
     "../../../mojo/src/gen/dagr/dagr_writer.mojo": "sha256:6d5195f2ef77968bf02a44616da4626326d9e395289c158d049b9d0238cf5b36",
-    "../../../mojo/src/gen/dagr/document_graph_arena.mojo": "sha256:4a306118b6e520fd587f85c1f2ef12e8547b24f79f94a1a20d3e6d13a634fbe2",
+    "../../../mojo/src/gen/dagr/document_frozen_graph_arena.mojo": "sha256:b63a31c2f858dc65a171bb978df23c6ca550ded3acde6874038d370cb3131598",
+    "../../../mojo/src/gen/dagr/document_frozen_graph_reader.mojo": "sha256:7c935369420b638b54b824ace2fd325a0e170b9881bbf63a22e02b56c06e64e0",
+    "../../../mojo/src/gen/dagr/document_frozen_graph_restore.mojo": "sha256:6ef0d6a7d5afde2dae2f3a069a2bbe4a0420f67b811bd12227e9185bfd9ab010",
+    "../../../mojo/src/gen/dagr/document_frozen_graph_serde.mojo": "sha256:e6bbbbe97cdb74bef94ac833a2504a1445007612e3fb9f6bc6309f7d93c7dbf1",
+    "../../../mojo/src/gen/dagr/document_frozen_packed_graph_arena.mojo": "sha256:e34b94d7e7680d73637f5cd42892508119c1c137863a2788d49503668b78c739",
+    "../../../mojo/src/gen/dagr/document_frozen_packed_graph_direct.mojo": "sha256:0860563ff7d0c06cb384b5c5a0faa50f4f82c072b2cb62e73cac756220374aa2",
+    "../../../mojo/src/gen/dagr/document_frozen_packed_graph_reader.mojo": "sha256:f025d090e76c06c73273bcc7bdda755d661730e85a160ec0cde376eeb92ba44c",
+    "../../../mojo/src/gen/dagr/document_frozen_packed_graph_restore.mojo": "sha256:a844d16ee0a7c3069c3fd9aed37953d1ba87e535fcc4af14ed85e23efa7d6d5a",
+    "../../../mojo/src/gen/dagr/document_frozen_packed_graph_serde.mojo": "sha256:2d387fea6a44ed452636ad75718a7fdb4f68b0100704a94a98d448eb9f8c3bd9",
+    "../../../mojo/src/gen/dagr/document_graph_arena.mojo": "sha256:224b229c2c7076dc6eff0a3b755623822a01a40bf4f51113879d31413a00bda8",
     "../../../mojo/src/gen/dagr/document_graph_direct.mojo": "sha256:b89102394c9aa19525cd0184f95aedd645e028a5452b4d97f3eb5fc4fee325dd",
     "../../../mojo/src/gen/dagr/document_graph_reader.mojo": "sha256:0b244b0241038f3eb1c1aed0d95df8e25e30ac18adb2115ffb55686cf7c9ef61",
     "../../../mojo/src/gen/dagr/document_graph_restore.mojo": "sha256:ea3884c0242d36d91ef174e8a5521720010881acfca6e99fe5eb721b0ae04669",
-    "../../../mojo/src/gen/dagr/document_graph_serde.mojo": "sha256:99355d2ed5c779e27ef4a14a87e88f652a2522e84b4c73902ec75c219f3a3697",
-    "../../../mojo/src/gen/dagr/event_graph_arena.mojo": "sha256:3162bfa09c69983cd79e26480c80be10375484d94736c83f0e195df947b22d12",
+    "../../../mojo/src/gen/dagr/document_graph_serde.mojo": "sha256:9b8ac6f8cb5a7c002a4cfc02d22362a94915612a49e62af84b35b3bdecf7d716",
+    "../../../mojo/src/gen/dagr/document_regular_graph_arena.mojo": "sha256:742a20eaf4afdbe72f441e596b2a84ea7914a9e0411d316c748981239bf56501",
+    "../../../mojo/src/gen/dagr/document_regular_graph_reader.mojo": "sha256:9c72930f6e9d2a009c53180ff8f8afdd8ff8ebdaa1d98b982ef1f64b7650c999",
+    "../../../mojo/src/gen/dagr/document_regular_graph_restore.mojo": "sha256:1e00de34e501e0bc771d4aeb6ff61ee36f90ae81c0cdfcc116046513da6a57b9",
+    "../../../mojo/src/gen/dagr/document_regular_graph_serde.mojo": "sha256:06cd519926f8040d8703046dfcfc7145bab5ae8bd0dafeca715b517fdb66a42c",
+    "../../../mojo/src/gen/dagr/event_frozen_graph_arena.mojo": "sha256:480e6b969fd6452d28d4bcb9c73c9683ba42bd447fd79968fef1c3041a7e55f9",
+    "../../../mojo/src/gen/dagr/event_frozen_graph_reader.mojo": "sha256:622bc0bc0b9f548584cfad73940992f0723cd64bd8636fabf193efd5b17df29d",
+    "../../../mojo/src/gen/dagr/event_frozen_graph_restore.mojo": "sha256:76a521a99ae10ee303c82b10290835323737d1a62c6fbad06db3d6040afe622a",
+    "../../../mojo/src/gen/dagr/event_frozen_graph_serde.mojo": "sha256:a48b3f9f0ccd4d933a943c6981e83d28cf477b5fb1f46717816b7c3581c970e7",
+    "../../../mojo/src/gen/dagr/event_frozen_packed_graph_arena.mojo": "sha256:6a7294ea7afeec60d96242692a6aa3a7daef5756db6ad268125dd504540f22b1",
+    "../../../mojo/src/gen/dagr/event_frozen_packed_graph_direct.mojo": "sha256:dd3ea4955c925b8dd10f37bfac84815d80443890cbf7d941e31de16fdd3a094f",
+    "../../../mojo/src/gen/dagr/event_frozen_packed_graph_reader.mojo": "sha256:3d420209c288e72d8b23ae953b818dce70e43cbbd70dfca269ffe62ade7426b9",
+    "../../../mojo/src/gen/dagr/event_frozen_packed_graph_restore.mojo": "sha256:3ee6788f6163728dfdea8ee53fe1546eaa60cb85396318658b5327ac4300610c",
+    "../../../mojo/src/gen/dagr/event_frozen_packed_graph_serde.mojo": "sha256:89abe5b270a795d6b0df2a8606aeffffd906023d7020b74967e6743712dd1605",
+    "../../../mojo/src/gen/dagr/event_graph_arena.mojo": "sha256:b41fb956f3334961b070114ff4c23f8810eeb772d2aa50fc47159e04302d53a2",
     "../../../mojo/src/gen/dagr/event_graph_direct.mojo": "sha256:a8ec0b02a8ff19528b6c90c1e758c0a93e47193d3ad7ec6f6ab0e993be5e0b5a",
     "../../../mojo/src/gen/dagr/event_graph_reader.mojo": "sha256:ba99734da57dba1352fd1d7b69bc00fd7922c138332c9b62b2ef0e0463d2a817",
     "../../../mojo/src/gen/dagr/event_graph_restore.mojo": "sha256:339bb54c590d813d9f02835723c9a09b4b31923d6a78600e51af6e2decb2ca9e",
-    "../../../mojo/src/gen/dagr/event_graph_serde.mojo": "sha256:0a22248a104866907c46f01a12f8ebd5ad137ef834ea9a5a55bb7295ca173d90",
-    "../../../mojo/src/gen/dagr/message_graph_arena.mojo": "sha256:fc0a8b99e6e4af6665eb662b1651917030a10b0c36d35e5ae1b13ed14e9c58c7",
+    "../../../mojo/src/gen/dagr/event_graph_serde.mojo": "sha256:e081a9055b054f2293af9eb52804a4d3bd4afafbd38e66c4ca7a80c21a61c03f",
+    "../../../mojo/src/gen/dagr/event_regular_graph_arena.mojo": "sha256:64e57b0c2b99294db5812d73aea88e93b4959844768defbfb20968bd639f136c",
+    "../../../mojo/src/gen/dagr/event_regular_graph_reader.mojo": "sha256:84692e69a0641ae3c01d6d348367c7ebb65691346841f1756e2b42d4977f7d1e",
+    "../../../mojo/src/gen/dagr/event_regular_graph_restore.mojo": "sha256:6522d02bed941e4a96904a453ac8ec92b2c40f93333bb30e8a09ef152c3a9a8a",
+    "../../../mojo/src/gen/dagr/event_regular_graph_serde.mojo": "sha256:83a1ab7681b53babf1becc5aed52031fb56dc3b3623778ba8bd17f2e425ade18",
+    "../../../mojo/src/gen/dagr/message_frozen_graph_arena.mojo": "sha256:add897375efd065464d04ea439b07fd3518e9ae13f5908ca920710f3e90db21e",
+    "../../../mojo/src/gen/dagr/message_frozen_graph_reader.mojo": "sha256:a661d8b89d343f7f03b9b9bcac44045196d976c705cf15307b67cb2a7b5ddcbe",
+    "../../../mojo/src/gen/dagr/message_frozen_graph_restore.mojo": "sha256:eaecf4ad08ab70e6b0c2f4d9c88ca182108d8b92498526da5f3ff5041c016f70",
+    "../../../mojo/src/gen/dagr/message_frozen_graph_serde.mojo": "sha256:2b18c0c4e5a396b71c50076a86787187cf82f42ef738896a0254b8c37181a8bd",
+    "../../../mojo/src/gen/dagr/message_frozen_packed_graph_arena.mojo": "sha256:c6bb9ecb8f465c23b0a7325a662abd8218c5599c2acf584d27b37243e764e598",
+    "../../../mojo/src/gen/dagr/message_frozen_packed_graph_direct.mojo": "sha256:a6dcf85c7c6fb6da5860ca9b5944f33ed3e1e21de4b8a4ff3e56d34b400c5cfc",
+    "../../../mojo/src/gen/dagr/message_frozen_packed_graph_reader.mojo": "sha256:979511de76dc3564219062bd56ee731943798efa11d28a12464a1d697077157b",
+    "../../../mojo/src/gen/dagr/message_frozen_packed_graph_restore.mojo": "sha256:456f4d544f0edbcb124c1b64f0ce6e634558471d7a76725fb79650236773f1fc",
+    "../../../mojo/src/gen/dagr/message_frozen_packed_graph_serde.mojo": "sha256:4ae5dacbe70d3866bd8ce773f00f469e95a8264cfd580c125d2f942a5adf9089",
+    "../../../mojo/src/gen/dagr/message_graph_arena.mojo": "sha256:eb5a697d61041da94b18746656acc9d6bf01e122ae7725c0719c7df5580e0742",
     "../../../mojo/src/gen/dagr/message_graph_direct.mojo": "sha256:b82eb7701dafdb3b6d72cbecc161b4dbd80787448984d9926c96d2bcf9483dc7",
     "../../../mojo/src/gen/dagr/message_graph_reader.mojo": "sha256:df85d54fb5b6c5f4c981dfef1a54c4b89ec532a44617cdd5d93c1253f2b3b44f",
     "../../../mojo/src/gen/dagr/message_graph_restore.mojo": "sha256:9a255ccc598ceb0526163690b6efb1cc6d7d573a8ac70a87e34e6aba9d49060c",
     "../../../mojo/src/gen/dagr/message_graph_serde.mojo": "sha256:74c111e43563bc513a1bcdc40fef19f1cc4f5ea8c17b41bc944432a993f04579",
-    "../../../mojo/src/gen/dagr/strings_graph_arena.mojo": "sha256:c4d9a836aa141b3af8422fc29393e9875564dded6c936ae01cc60d869b266d39",
+    "../../../mojo/src/gen/dagr/message_regular_graph_arena.mojo": "sha256:332d0ccd369554e1e11b8ceb9878c1b10e64e409b33d81d144d48cacc0619565",
+    "../../../mojo/src/gen/dagr/message_regular_graph_reader.mojo": "sha256:66053259dc0bee6f8556243044670ba18ed6280c40ea2ba1764b29e0c8968610",
+    "../../../mojo/src/gen/dagr/message_regular_graph_restore.mojo": "sha256:ca37878ce4b641a48d85ae50f3fb1cf394558bbdd6730b21c1793b927cda1041",
+    "../../../mojo/src/gen/dagr/message_regular_graph_serde.mojo": "sha256:b260f07fd3524657568828a720418ab018f9ef35f886d5c06c7a68c0d49a1efb",
+    "../../../mojo/src/gen/dagr/strings_frozen_graph_arena.mojo": "sha256:bb1662a78e87b3e26e19bfd7fca39763acec8d8b313dd0efa7e811463c4bf0ff",
+    "../../../mojo/src/gen/dagr/strings_frozen_graph_reader.mojo": "sha256:3d1e42e46398ebc8f2c932de429f93d5efb3ac9df46f112a86fdcd648aade915",
+    "../../../mojo/src/gen/dagr/strings_frozen_graph_restore.mojo": "sha256:5fb4243fad6a25b1abfa886f0d530e25c756802dda06704b771ddda20b2acb9f",
+    "../../../mojo/src/gen/dagr/strings_frozen_graph_serde.mojo": "sha256:6f640a426d36c73b8cbd45c5a6ba2730b5381f8ef7a5b24805a57a0c29901636",
+    "../../../mojo/src/gen/dagr/strings_frozen_packed_graph_arena.mojo": "sha256:9a39825e980cc416feb789564ac187dfa250f44fa61e93c7c2a7b2d8fe7ab076",
+    "../../../mojo/src/gen/dagr/strings_frozen_packed_graph_direct.mojo": "sha256:a87f695c1d7912b2ca0975fe759a72fec3ad12491e03112f9a4b1eb88905a642",
+    "../../../mojo/src/gen/dagr/strings_frozen_packed_graph_reader.mojo": "sha256:dade0bc3dc20fc75c080d03f0bc43b24fad54ead1086f73eacb7b422bb22bb5c",
+    "../../../mojo/src/gen/dagr/strings_frozen_packed_graph_restore.mojo": "sha256:e2cd258e46de81393e37383cafaba4c67eecb633f62ff00220ddd7f7f30ed708",
+    "../../../mojo/src/gen/dagr/strings_frozen_packed_graph_serde.mojo": "sha256:89b2615c957e59f3843c686d5d8726a7cd29b180fdc2ef286431371723507e34",
+    "../../../mojo/src/gen/dagr/strings_graph_arena.mojo": "sha256:57a75ffb70f5847cc9fd1addda825cf0f7f7e07a20774bc871e69f62bf6fb6f5",
     "../../../mojo/src/gen/dagr/strings_graph_direct.mojo": "sha256:569fafc3e5e58bea980170aa5b6c5969e08d4017444fe5b2018eb332ca667945",
     "../../../mojo/src/gen/dagr/strings_graph_reader.mojo": "sha256:be11238fd66adfe19939c2a30fad7d26d6cde978278b1034ae5fad75d42712f9",
     "../../../mojo/src/gen/dagr/strings_graph_restore.mojo": "sha256:8da534aaa8fbc900fc35107259aa6cf2a8a965e55f745a9f77025224e31279ec",
     "../../../mojo/src/gen/dagr/strings_graph_serde.mojo": "sha256:f9ae7b91f64afcc6d5d97f18701769846bb263c399db8a493d495f3aad1e486b",
-    "../../../mojo/src/gen/dagr/telemetry_graph_arena.mojo": "sha256:28064dd5a37b9c293e76210394ef90ba1c94a74f83c221398a74624f030a9e50",
+    "../../../mojo/src/gen/dagr/strings_regular_graph_arena.mojo": "sha256:8d1ab1f72b909c01098bdf241261621ee9b0348f14e03899ce7509ad34e64042",
+    "../../../mojo/src/gen/dagr/strings_regular_graph_reader.mojo": "sha256:4266b47588cf600903c216df4a5d35fdf6ead5cab9cd25749478b9b68cba542c",
+    "../../../mojo/src/gen/dagr/strings_regular_graph_restore.mojo": "sha256:3c33cbb5b6e641fd34c2c041b399ee67ec1f24f4ac8553b7fa5c04479c6e5cd4",
+    "../../../mojo/src/gen/dagr/strings_regular_graph_serde.mojo": "sha256:3c78609fc7546bd394e87731cd95cfa6e10afb7b5900d7a399303f34a0614015",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_graph_arena.mojo": "sha256:96b80819c43c0de6b56742b483dcdff8e0fb0e8d1b12d81102a76190db95e483",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_graph_reader.mojo": "sha256:cc69646dc614762ba0951d1f4f69d2f5b6cac5060b119629ece3b579e57a55c6",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_graph_restore.mojo": "sha256:b868ce3071c9d71bf43c1b94abe5e022bd1e07c9ec026253255e3cf964e182bc",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_graph_serde.mojo": "sha256:9df9dfe4548754749f469a3645978d2b78a91080ac2d73293547219bb60b55c3",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_packed_graph_arena.mojo": "sha256:e04036c572e4d82166a6553691e4544cb3f92864801c0853b92a42b7c8bf2bd2",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_packed_graph_direct.mojo": "sha256:0e45f48598b3c06c12fb666936d26e35c12a8b39a4c19b3ddfd855ad2bdd872c",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_packed_graph_reader.mojo": "sha256:3d8066ad0c96e2a7874d18a5d524686d6f748f42ccffcb8291f20d2838a22a69",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_packed_graph_restore.mojo": "sha256:16acf4e7dbf6b96a6a2d7139565d8fe94dc360fa54dcee4ec1be3775cd8532ff",
+    "../../../mojo/src/gen/dagr/telemetry_frozen_packed_graph_serde.mojo": "sha256:3d0e310cd452028d5475150d19449c389069a1ab7a31e15044562916ab0b0619",
+    "../../../mojo/src/gen/dagr/telemetry_graph_arena.mojo": "sha256:0c51a7049c91673ce83feee2f9c4775c1303ecc7b587f4aaf50022b7c57d8dad",
     "../../../mojo/src/gen/dagr/telemetry_graph_direct.mojo": "sha256:7debb2c84fb756b36532020a746fb23a07d174e68347e9a32287bc04d7411a49",
     "../../../mojo/src/gen/dagr/telemetry_graph_reader.mojo": "sha256:16cd9979e2508f8194481dd0c368dfe733a8c036cce0c2aa82930fa82be5ec9b",
     "../../../mojo/src/gen/dagr/telemetry_graph_restore.mojo": "sha256:bd89a8a89929dc6861bcf4f42a25352ed2da1fe9ef8b96a2fb1cb69f7b4db925",
     "../../../mojo/src/gen/dagr/telemetry_graph_serde.mojo": "sha256:121168b7ea17cee5fd796b05a133dcb6567727d1ba5f10d643b515a0275fd256",
+    "../../../mojo/src/gen/dagr/telemetry_regular_graph_arena.mojo": "sha256:86b9d9aef7e6944f5e089f072a96e59cfa67a73cfe461d6266af231189fd2500",
+    "../../../mojo/src/gen/dagr/telemetry_regular_graph_reader.mojo": "sha256:6bcd13a868537e85ae1b74ead68c1c4bdc5d3990236a01c78dcb6e0bafe849b5",
+    "../../../mojo/src/gen/dagr/telemetry_regular_graph_restore.mojo": "sha256:57950987e8bc5ea6268dc9fa5d503e01c577378a8db0fa67001263941c2c202a",
+    "../../../mojo/src/gen/dagr/telemetry_regular_graph_serde.mojo": "sha256:d3ae378c87b07ab50b5fb826a219c57ec12e41a5359572635950dce28ab4b797",
     "../../../python/generated/dagr/dagr/__init__.py": "sha256:7d14886a5207b2536b089d5114fe419a7ab854f027122893abb040f37c4fec72",
     "../../../python/generated/dagr/dagr/codegen/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "../../../python/generated/dagr/dagr/codegen/shared.py": "sha256:f6a0f9442d3d65ffd25ab80274c059a2bbfa03fd8eba520e3dcb8b01dff7aa97",
@@ -611,47 +2315,127 @@
     "../../../python/generated/dagr/dagr/runtime/dagr_serialize.py": "sha256:b91db7619677b1c84c425a61010c9103e38c6444c010acef0ebe93f9c508b37d",
     "../../../python/generated/dagr/dagr/runtime/dagr_typed.py": "sha256:911c336680f995768632e45c8a54fa9d5d92d7afb784251b58bd11d9a309b5a7",
     "../../../python/generated/dagr/dagr/runtime/dagr_writer.py": "sha256:c24074c1dc3753603354feda03b73ac5b8bcaa8d3d4edb6c237ebd2cbc3e09d5",
-    "../../../python/generated/dagr/dagr_schema.py": "sha256:afa9054c2a284776d061f577cd2ac7e70b191ae16d2390b8af38e94d55c9bcc9",
-    "../../../python/generated/dagr/document_graph.py": "sha256:dadc726d658d78b6d56d0f49ba36507278608bd0acee7ad9b14ce2bfc9cda826",
-    "../../../python/generated/dagr/event_graph.py": "sha256:9589589820214dd8b4a7f2784db53e19c102484b916cc9f70fd63080b812afc5",
-    "../../../python/generated/dagr/message_graph.py": "sha256:77c9897f109c781d6ca14f8cb9769026836979c1bac8fc61cb5fb42b8abb352a",
-    "../../../python/generated/dagr/strings_graph.py": "sha256:873e5391dad2b8d73bc229b909ece40573944d6c7e601d29f4bdd6a559415dd4",
-    "../../../python/generated/dagr/telemetry_graph.py": "sha256:0bd16a68f0d3ff761d61d50bf931116550d6546fde17e1e04c2fb7b605b4c640",
+    "../../../python/generated/dagr/dagr_schema.py": "sha256:c27f95582c77db589beb35bf6a5e44aa9a32e53da1b62f5907fa7e60487769be",
+    "../../../python/generated/dagr/document_frozen_graph.py": "sha256:4ea0199d1c55927fda9e47f9effe5f624620087066cbac54c767b264bc00a830",
+    "../../../python/generated/dagr/document_frozen_packed_graph.py": "sha256:299ce86133045fadbd5b69b6859b7d6e9311e51ae8fba7369a9938d54ade18c7",
+    "../../../python/generated/dagr/document_graph.py": "sha256:5be9497251d07218e9e9a8e31289df2fbef0fb14e6312fb7fb84477de7c5f7ec",
+    "../../../python/generated/dagr/document_regular_graph.py": "sha256:1b138484faed5d1dd6ecec79db79468301b71a57d1d58c0a3112d2c9fb0610a2",
+    "../../../python/generated/dagr/event_frozen_graph.py": "sha256:3cc079097dfc204aaa4480b8fe15b5342a0e3a30eac77fd82f5cb92d2a31f8b3",
+    "../../../python/generated/dagr/event_frozen_packed_graph.py": "sha256:2e09719be375729b825bb6db7f22f299647b21c2619482b06740d3dcef169178",
+    "../../../python/generated/dagr/event_graph.py": "sha256:72524ccaeb8efce7a16917e2f51afd3c70c40be59de4a5a05763edabb7940288",
+    "../../../python/generated/dagr/event_regular_graph.py": "sha256:5719b12d0ac3b90e11bfc7205a325a990a0d938373c3a0c163e4cb896c71d259",
+    "../../../python/generated/dagr/message_frozen_graph.py": "sha256:df7825dc9e3abc7d2038ac268bff7792e29f4be0b424bed783be7b719dc223cf",
+    "../../../python/generated/dagr/message_frozen_packed_graph.py": "sha256:a795d099c0ae79ca8aa835d56dff1a389781bd31e2238095bb382e26ac04c537",
+    "../../../python/generated/dagr/message_graph.py": "sha256:c4185d2f46725a2ff704c3d776bfdb518eac9abef6ea986e9f1fc62f21874f75",
+    "../../../python/generated/dagr/message_regular_graph.py": "sha256:1c15c2d77d6c335a7a64bcca69be3e21aa2f4a71e1ae07d874cf53064be28ac1",
+    "../../../python/generated/dagr/strings_frozen_graph.py": "sha256:ad83d37d20878129a736d3441a0576c3abffc2b78950e1fa7cbe6b383ef79a55",
+    "../../../python/generated/dagr/strings_frozen_packed_graph.py": "sha256:db5a7855da3ca1cecf56c71f98cb530bc7cb81c49801235c38e44a95e57287d7",
+    "../../../python/generated/dagr/strings_graph.py": "sha256:dffc75741b9c48433b2a60845f47a9b4eb70fc130bd7d6bf970db0065da5e06e",
+    "../../../python/generated/dagr/strings_regular_graph.py": "sha256:30b54f53431241f7746dd8a941adeb14ca8c9ac9af5a6a7ce369c75f350b53ed",
+    "../../../python/generated/dagr/telemetry_frozen_graph.py": "sha256:ea6b48605c6195df80e48ebd54cd8b5f33fd7be984971006060550a0f460b4d9",
+    "../../../python/generated/dagr/telemetry_frozen_packed_graph.py": "sha256:beeab95aca334025e4d35bb65c01f0a1479798c9be1d2f8a4d76902440f94fec",
+    "../../../python/generated/dagr/telemetry_graph.py": "sha256:c91d4abf9c57608e63a2fecd0bf6965c664ceb6af8e8b13d55be11b8690cbd25",
+    "../../../python/generated/dagr/telemetry_regular_graph.py": "sha256:38306ec622fc0eb2b20cf5b128f89df83405c90f032ba5c1bc42d62fa0a0fcb0",
     "../../../rust/dagr_gen/Cargo.toml": "sha256:b276828fa78d567a6506c86854d8ef08521130ab97a837277c4b23aff1bdbdc8",
     "../../../rust/dagr_gen/build.rs": "sha256:ef0170542199cbb707b78fb06eac8978eceb6bf64e710aabd54943134da4a62c",
     "../../../rust/dagr_gen/src/dagr_runtime.rs": "sha256:b17624a505d75ab4d8a4f5db96ec76d0d2c3ae0120e1a7a9b500b188f3a25b54",
-    "../../../rust/dagr_gen/src/document_graph.rs": "sha256:0de7e958af08a0bcf23ce225b6d9a26bd85b3bed3f01d5cae387ea0da11c9c6a",
+    "../../../rust/dagr_gen/src/document_frozen_graph.rs": "sha256:78f969fc01714f5315d33ddc3010e87cb45237b7290ebd03d065ac53d231af8e",
+    "../../../rust/dagr_gen/src/document_frozen_graph_lazy.rs": "sha256:9963a3b621537e6665e13e1c752681133e2b5d7553d15757aa04ec37f93cc0c8",
+    "../../../rust/dagr_gen/src/document_frozen_packed_graph.rs": "sha256:9b89e1017a6c6ae1cf854ea37d28dc58dd42419963b81aec5a84d3fd17a1c746",
+    "../../../rust/dagr_gen/src/document_frozen_packed_graph_core.rs": "sha256:e49c5bd3ead72841c8732cbd2659d0b2cfe46973481be74944874b87fd46ac2d",
+    "../../../rust/dagr_gen/src/document_frozen_packed_graph_lazy.rs": "sha256:244f7252101cf31470268b6d3ba28532ac29d692cddccc11bf061851dbf4e2dc",
+    "../../../rust/dagr_gen/src/document_graph.rs": "sha256:303bfa2e3776d59b2bf9b02997002d7397463221282212c55627d3e824f0cb98",
     "../../../rust/dagr_gen/src/document_graph_core.rs": "sha256:9339d3de93ac54dc4efa5f93e33e58353f631e87791d013f3a32950fd89e0a12",
     "../../../rust/dagr_gen/src/document_graph_lazy.rs": "sha256:0714b25ebaf1231e6cac897ab0523205d15fdf861293df5c674df3d2c53a0271",
-    "../../../rust/dagr_gen/src/event_graph.rs": "sha256:8ac47d59637bcee034b5be80ea89063232e80ad6725051e6860e4e41e372b0c7",
+    "../../../rust/dagr_gen/src/document_regular_graph.rs": "sha256:1df7f805345deb5fe679c7bace3eeebe2d892879dd5c20a930a3340f9031fa80",
+    "../../../rust/dagr_gen/src/document_regular_graph_lazy.rs": "sha256:34d2948be28874e52074830e941bafabc6f6c2ee271f7985253a6e5dde758906",
+    "../../../rust/dagr_gen/src/event_frozen_graph.rs": "sha256:916bcb1d641d3e67c57afb75e07cc1c6671639576e101eae03f1645b37b69368",
+    "../../../rust/dagr_gen/src/event_frozen_graph_lazy.rs": "sha256:2cb641ab124b7e53ab6ffbcc3a29ce0db86b5193ccbd6665b0a17be032462e8e",
+    "../../../rust/dagr_gen/src/event_frozen_packed_graph.rs": "sha256:4e49a80b7e8d742c40dfffb2dd0af6bbdcfdf8dedb302d39319b002a26139e82",
+    "../../../rust/dagr_gen/src/event_frozen_packed_graph_core.rs": "sha256:a3ae719c604f2564a325f667bdc65bffdcf0a7d44f7f2839eb17052b0a330224",
+    "../../../rust/dagr_gen/src/event_frozen_packed_graph_lazy.rs": "sha256:2743bf0eb93b12fd22b8e5fcef28c51128987b4275de79ae2dbc4fdc728b8ae9",
+    "../../../rust/dagr_gen/src/event_graph.rs": "sha256:7957b47352ca91489598931e5a726523ae851df22cef23dd165daf0651886d9d",
     "../../../rust/dagr_gen/src/event_graph_core.rs": "sha256:5cd233241437c0004f89534f248e96d5bfd119b7eb46e8bc7d925da274ef553b",
     "../../../rust/dagr_gen/src/event_graph_lazy.rs": "sha256:4c66b25126ca51f942b1605f82ef0607453323fd3848d0d19bdd3dbe75ec5cd3",
-    "../../../rust/dagr_gen/src/lib.rs": "sha256:f3a4f799db7ed4595b860c46a480cdd0574877dcf83cfb5a39d95387f0dbbea2",
-    "../../../rust/dagr_gen/src/message_graph.rs": "sha256:6214f347a8bdcdfe0be2646595a176dc0524a6d4dde04fcd0bae25f6775be89c",
+    "../../../rust/dagr_gen/src/event_regular_graph.rs": "sha256:3c3d1e1704cc855c913eeb059da105ab2012f8b2a80c5d9346cf867834d11c41",
+    "../../../rust/dagr_gen/src/event_regular_graph_lazy.rs": "sha256:e519d8c840c4165e097ba983d0b57efd5240e2b98f2d3ba161be7478881a6b1a",
+    "../../../rust/dagr_gen/src/lib.rs": "sha256:db4415e750f59242b901738c0ac13b0aaadffacff5e0fa0e513f4ea52ea6226b",
+    "../../../rust/dagr_gen/src/message_frozen_graph.rs": "sha256:37778a2a456c48d6cf67ff96b4a8446a0e746dad098cd8c8b48ceff4e470d6c1",
+    "../../../rust/dagr_gen/src/message_frozen_graph_lazy.rs": "sha256:01ec6fa578c0a31d312806b4ef864145decdcc7c7ce5b49ce23177264b364ad1",
+    "../../../rust/dagr_gen/src/message_frozen_packed_graph.rs": "sha256:e08fca086ca558f86f03aad1ff263bc9776c3e26d397a6c1c46b544d5942d1e8",
+    "../../../rust/dagr_gen/src/message_frozen_packed_graph_core.rs": "sha256:a44d1f0c4c42ef938fc7aae5b013102e8819ca756c791498ed9b89205807781d",
+    "../../../rust/dagr_gen/src/message_frozen_packed_graph_lazy.rs": "sha256:e0f30904f6ae3663bad55e09efe3793657192d4391b1d50734ade534d131d6a9",
+    "../../../rust/dagr_gen/src/message_graph.rs": "sha256:878decec6736d5bd0ac40738d0b2bdaf18f928b096fbf2a1e288af9b16dc52c6",
     "../../../rust/dagr_gen/src/message_graph_core.rs": "sha256:ead21fc5ef2ba4bf34be013b5a7167b391ddb5dc2c54eabc70fd59ba0239ed87",
     "../../../rust/dagr_gen/src/message_graph_lazy.rs": "sha256:77e4c3db0feb796e874bbe520c6abc22eb7e125076b026a67aa6609be7a2baae",
-    "../../../rust/dagr_gen/src/strings_graph.rs": "sha256:ba33e9f2af823075aa0be5a79ad5e9df5afec619dfef925e8c5b7d5c256b1a4b",
+    "../../../rust/dagr_gen/src/message_regular_graph.rs": "sha256:7f765bad373aa29fdac149837e4fc9c2328aa6bdc071bffc079262d6f797e436",
+    "../../../rust/dagr_gen/src/message_regular_graph_lazy.rs": "sha256:491cc21f14f7ce034dfe9a10a3ffbe1ab881c500512840af69abd7831e87bb75",
+    "../../../rust/dagr_gen/src/strings_frozen_graph.rs": "sha256:f0df248328a06587ce27cb77dbec99f01b2b06ef7834c95c33c81a31e32b7f0d",
+    "../../../rust/dagr_gen/src/strings_frozen_graph_lazy.rs": "sha256:2329b3da455567c5f0156bd5f421038be85a6c87a9eb3e05c657e11c7f508530",
+    "../../../rust/dagr_gen/src/strings_frozen_packed_graph.rs": "sha256:a145b8f54ecbf5ea74e47e1f037eb8b5beb7176338584253d4657477f4f81eb5",
+    "../../../rust/dagr_gen/src/strings_frozen_packed_graph_core.rs": "sha256:f5d33fc71b11cb1f6381bff14ff35d145b84628b6a500eb548f4b065a744318c",
+    "../../../rust/dagr_gen/src/strings_frozen_packed_graph_lazy.rs": "sha256:78ac2373e62bb57e03a8ac1b55091182b1401a1ff89f76cc2aa565a67bcad4dd",
+    "../../../rust/dagr_gen/src/strings_graph.rs": "sha256:312927f3375e2d55f5167d25ca0b6a4ef5e303630b9ed8cd2671b3553d0a5ffd",
     "../../../rust/dagr_gen/src/strings_graph_core.rs": "sha256:cd1e6e4642d8ddf5eff83ac7f67bcef02c169dc4adfa5b7fd52edd74a2ddaa09",
     "../../../rust/dagr_gen/src/strings_graph_lazy.rs": "sha256:4ef134ac0e6cec9997862c90ecde948c9dc2eef75e41ed19631df005e1122bca",
-    "../../../rust/dagr_gen/src/telemetry_graph.rs": "sha256:19e37fa4312a78549da3a5b8d382160877f857ab74026331ca5e64c667ebf516",
+    "../../../rust/dagr_gen/src/strings_regular_graph.rs": "sha256:afe7975f617a6f7a5b2b308eebfa542f0f5cff9239e6588a417185b339fa3509",
+    "../../../rust/dagr_gen/src/strings_regular_graph_lazy.rs": "sha256:7cb91009c74e86061880ba72918b0c63386fb32d57e4cd45a2617edff4fc97e3",
+    "../../../rust/dagr_gen/src/telemetry_frozen_graph.rs": "sha256:860f76a75047adedbb054ae77d70641dafcd8e171cf5a16bd2602f1adf505e05",
+    "../../../rust/dagr_gen/src/telemetry_frozen_graph_lazy.rs": "sha256:fb6504be7560e3ba15cd9218e80ea19925b18ac44a5c0dab73fcf731c271bbce",
+    "../../../rust/dagr_gen/src/telemetry_frozen_packed_graph.rs": "sha256:de0076c05962c9ecf35f2369d6098b1188ca5eabb1ba0d7c320309860f0522d1",
+    "../../../rust/dagr_gen/src/telemetry_frozen_packed_graph_core.rs": "sha256:af11624f8d35a8b2b8c9ec68a0df64758bd1d5835f676d3905857607cdef3190",
+    "../../../rust/dagr_gen/src/telemetry_frozen_packed_graph_lazy.rs": "sha256:086dd1f53d0e6693de346c70bc5ab4439ea19945b025271672575010ecd30f56",
+    "../../../rust/dagr_gen/src/telemetry_graph.rs": "sha256:4d55d5a88ce9a94877aec340d3226c6e86316bae55e9f1ffb885e860bb673ba5",
     "../../../rust/dagr_gen/src/telemetry_graph_core.rs": "sha256:7960c966e82542085c718887194638053eb417e3b91f6169b0b46eca1f8371a9",
     "../../../rust/dagr_gen/src/telemetry_graph_lazy.rs": "sha256:3ba09e9f6417deeeb873f037a209633dafe1e121169f6315052d155f29a12696",
+    "../../../rust/dagr_gen/src/telemetry_regular_graph.rs": "sha256:3e64873b7aad7babb59f4a484633b7d214ff9c59fd4354d03981aa9354875579",
+    "../../../rust/dagr_gen/src/telemetry_regular_graph_lazy.rs": "sha256:26636c9c8b9aad82971f768f2f9ab65763dc9eced6df4fe9b435108d6e5e5bc9",
     "../../../swift/DagrGen/Package.swift": "sha256:4631bde82adda7ce9c1e8c17ba76772380799ae7ab56c68ab01bf012b338e0d3",
     "../../../swift/DagrGen/Sources/BenchmarkV2/DagrRuntime.swift": "sha256:ec806e84dca8ee584f64c71360c57a6bccfa2283edc3b699f804b7946a9ef04b",
-    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentGraph.swift": "sha256:b3ff7c110653e59d3c33531e602b895e6e8bb16eec89cb2e43fdd65eccfb731f",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentFrozenGraph.swift": "sha256:40d7bc1f347d013a27466d1ecd4bff6b229faceddd1a3c1ac4d1c726ff465a4e",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentFrozenGraphLazy.swift": "sha256:8f3ef0c27807035370e30bdcb289ce5190cb55f3be6374ae58c81b90a7b98d30",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentFrozenPackedGraph.swift": "sha256:c65edce5032a0a07b9ed376fa316e4c557b6c3ee2c01c7faf764a33c23b96dd1",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentFrozenPackedGraphLazy.swift": "sha256:cac50e2b812206dc2ffdd5b81e42246055be2e9d2a931ef90cd92485aed1c7d3",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentGraph.swift": "sha256:e4e044fd608ae58dd866ef416f4c20049e855b2cf3475d6d34630f7c6c45ee47",
     "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentGraphLazy.swift": "sha256:f9fe8c72e04929a8e1b76b15203836189a689786bdbcb37ef9e6c4faaaf90b42",
-    "../../../swift/DagrGen/Sources/BenchmarkV2/EventGraph.swift": "sha256:949c0d2964afc6901920a2dfbcdd122b8b8343a0ba31f974be303dd6162ee837",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentRegularGraph.swift": "sha256:0d50eff102b24eb3da98cf1bbd83463b5352c53736997e08c40100bbce1b0a33",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentRegularGraphLazy.swift": "sha256:be3709827e95313c9df1f6a28e10f6d393d73a0b1a7bb42a196ebdcc5078ec61",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventFrozenGraph.swift": "sha256:5fc8948a2e6d7ba59f9802d46eab9b06ffe6170e9d6a5e74825c60d304d0fbd7",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventFrozenGraphLazy.swift": "sha256:63df65347e823b0390b22703f200deb7fb614bb85d9d1b93acd4cc6baad8d91f",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventFrozenPackedGraph.swift": "sha256:42298319b5736d86e596f86fd1d26fddafbc068b8dd9ae8ab9f7eebff5f8238b",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventFrozenPackedGraphLazy.swift": "sha256:badff28c37ed111d710aa179916a5e92122a6f79bffe72ffde7c317475d5b2f9",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventGraph.swift": "sha256:9447ab5b570f4430cda335eefc8e2bb5b6665571eb3da73693a1ddc53632bdad",
     "../../../swift/DagrGen/Sources/BenchmarkV2/EventGraphLazy.swift": "sha256:3d7ed6cf50b9961f87ca112de0640040efdbccf5ec38936b4770ac747c12a494",
-    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageGraph.swift": "sha256:f88be9116533d61444fc8762506f5da30a2d1ee37a105650e2f6b0f3cae2f31e",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventRegularGraph.swift": "sha256:e9620acb6ce9226c9f0f63b7c3e8cab56c814f93aeb52ccf5d58b47120bb7d7a",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventRegularGraphLazy.swift": "sha256:7cdc474e090a061177317429f93a4a7991d71f7b8b3785b881089d00e0d732d3",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageFrozenGraph.swift": "sha256:ba90b0441c738b8b79c4d1fa85e7f3eee193d9fd0ca4f48872d65d26f58f6a55",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageFrozenGraphLazy.swift": "sha256:985e777971a5f5aec4f4cdbf9d5bcef7f418efa8fc3bf23a6fd24ed3e178938a",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageFrozenPackedGraph.swift": "sha256:59c5fbb7fdcda6494bae4fb5e0c5305a896f8742c7485eed534892cf4876e3da",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageFrozenPackedGraphLazy.swift": "sha256:640f5661ec7de4c50642b12801602d5d06ee435303c0b13478f3a2f37f8ee68e",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageGraph.swift": "sha256:97def7a26653163df3985c1cd5a4483e37060b2d1c3fdf67755e0b3c03c3ff49",
     "../../../swift/DagrGen/Sources/BenchmarkV2/MessageGraphLazy.swift": "sha256:89b891f1b4d286e2f2b00d1a75f47116469d6f8ee5158dacf7fb6809bb97e2dc",
-    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsGraph.swift": "sha256:ecc79c6369c7936af0077c618fbb2da8fa8210d19699ae091f0d455677df1764",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageRegularGraph.swift": "sha256:935634066fc798eb570b007d2d72f924b8f404d1364f0fcbea352c9191fe9183",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageRegularGraphLazy.swift": "sha256:8105b08217780a54856a7f68dbd1ad5869c6e6dd234293db938e7d8c6453236c",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsFrozenGraph.swift": "sha256:338c4cd8fc7abd6de6c6eca6eacf4bec7563430e16afa1ee79c5d466def89411",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsFrozenGraphLazy.swift": "sha256:f25cdb7a12cd754c2a3ded9bda8e20f475b57e4efea81f948264b26b1278b359",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsFrozenPackedGraph.swift": "sha256:d1907b584879a3ec8de73114f3b7255f20e77fc28007b9b4ad8ac863ebae26a4",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsFrozenPackedGraphLazy.swift": "sha256:b9cbfabe5ac58ea2b0855152a18d2217f8ad5b7fe8f74c9e525deef7c3c8e8e3",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsGraph.swift": "sha256:fff1167558127916290fb4a3e335c1c8ecf33d6a8859e14ac71aa9d0263c1222",
     "../../../swift/DagrGen/Sources/BenchmarkV2/StringsGraphLazy.swift": "sha256:0305ba34129541dfacde281e03ffa784f6737621c920783e7426a8f0800b7ff7",
-    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryGraph.swift": "sha256:a958e537489e532d59f12fad639c3b8fb16ee36350f39a296edb316573ee82e8",
-    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryGraphLazy.swift": "sha256:4d4416b9fbef1393b6b8429f76c17ffdf50696b903248d5e30ec17ebe6c89954"
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsRegularGraph.swift": "sha256:780e170e04773a214bd5b00359ca54cc50a5223a58db4197a6bc4fbdcf8ffde9",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsRegularGraphLazy.swift": "sha256:6b72dea9b78eebbfcfb518ad2399d0601c204805f526af86c589e81a9d330ec8",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryFrozenGraph.swift": "sha256:646b515f9ee1184fdba0d988cf00b52a280ec074a861f50a6a0a64087ee8d3de",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryFrozenGraphLazy.swift": "sha256:aa965216d3dcd4bc1d333939e6747eb29fdb33ed4c41b9b4ec4412c10dccb3b2",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryFrozenPackedGraph.swift": "sha256:0cefbf221658043f3159c4c9ffb34699406a75d27b1b42b5f904c835ca30c708",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryFrozenPackedGraphLazy.swift": "sha256:c853101c214d46618f343eb8a3b9c16c01eecbaa1fa0d1bc187a7cbebfad98e4",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryGraph.swift": "sha256:f5a2657cbadd6538e8bdb986f8735a5636feeceaaa4e86f00e6ba72b11f75d3b",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryGraphLazy.swift": "sha256:4d4416b9fbef1393b6b8429f76c17ffdf50696b903248d5e30ec17ebe6c89954",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryRegularGraph.swift": "sha256:13d63e4ed6237444f363109a74a61d10dac5f8b3a2912fbc0e778718678bcbcc",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryRegularGraphLazy.swift": "sha256:1e4ac84f65c25f8d282e67d9bb0b87c25e8caaa96ee00d55808e43b65c9f3ff3"
   },
   "provenance": {
     "command": "dagr build",
-    "generated_at": "2026-09-25T13:10:50.693378+00:00",
+    "generated_at": "2026-09-25T13:45:02.139938+00:00",
     "host": null,
     "tool_version": "dagr 2026.9.0"
   },
@@ -681,7 +2465,7 @@
       "exclude": [],
       "features": [],
       "lang": "go",
-      "layout": null,
+      "layout": "package-per-graph",
       "out": "../../../go/gen/dagrv2",
       "package": "dagrv2"
     },

@@ -8,7 +8,8 @@ and `dagr.lock.json` is the committed build receipt. The receipt records the gen
 | Choice | Why |
 |--------|-----|
 | One `DataGraph` per suite type, rooted at that type | The harnesses frame N instances themselves, so there are no `Batch_*` wrappers |
-| Every node `packed` | Dagr's layout for schema-evolving payloads (the protobuf-comparable one) |
+| Every type in all four node layouts | `packed` (the `dagr` row: tagged, evolvable, the protobuf-comparable one), `regular` (`dagr-regular`: vtable, random field access), `frozen` (`dagr-frozen`: positional, no evolution) and `frozen`+`packed` (`dagr-frozen-packed`: positional and self-sizing, no evolution). The frozen layouts compare with schemaless codecs such as speedy or bincode |
+| `deletable=False` on every graph | Nothing in the suite deletes nodes, so the arena skips generation bookkeeping |
 | `values` on `Telemetry` is `raw` | Random doubles don't compress. `raw` stores them native little-endian, the way protobuf's packed `repeated double` does |
 | `f_float64` on `Message` is `raw` | The suite's float64s are random full-mantissa doubles, so the packed probe always ends at 8 raw bytes. `raw` writes them directly: same bytes, no probe (message encode −31% in Rust) |
 

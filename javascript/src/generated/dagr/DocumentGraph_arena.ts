@@ -70,22 +70,12 @@ interface DocumentValues {
   status: number;
   meta: bigint | null;
   items: (bigint | null)[];
-  _swept_items: number;
 }
 
 export class DocumentMeta<B = unknown> {
   constructor(readonly _packed: bigint, readonly _arena: Arena<B>) {}
-  get _index(): number { return Number(this._packed & 0xffffffffffn); }
-  get generation(): number { return Number(this._packed >> 40n); }
+  get _index(): number { return Number(this._packed); }
   get _values(): DocumentMetaValues { return this._arena._arrDocumentMeta[this._index]!; }
-  isValid(): boolean { return this._arena._genDocumentMeta[this._index] === this.generation; }
-  delete(): void {
-    const _i = this._index;
-    if (this._arena._genDocumentMeta[_i] !== this.generation) return;
-    this._arena._genDocumentMeta[_i] = (this._arena._genDocumentMeta[_i] + 1) & 0xffffff;
-    this._arena._arrDocumentMeta[_i] = { region: "", version: 0 };
-    this._arena._freeDocumentMeta.push(_i);
-  }
   get region(): string {
     return this._arena._arrDocumentMeta[this._index]!.region;
   }
@@ -129,18 +119,8 @@ export class DocumentMeta<B = unknown> {
 
 export class DocumentItem<B = unknown> {
   constructor(readonly _packed: bigint, readonly _arena: Arena<B>) {}
-  get _index(): number { return Number(this._packed & 0xffffffffffn); }
-  get generation(): number { return Number(this._packed >> 40n); }
+  get _index(): number { return Number(this._packed); }
   get _values(): DocumentItemValues { return this._arena._arrDocumentItem[this._index]!; }
-  isValid(): boolean { return this._arena._genDocumentItem[this._index] === this.generation; }
-  delete(): void {
-    const _i = this._index;
-    if (this._arena._genDocumentItem[_i] !== this.generation) return;
-    this._arena._genDocumentItem[_i] = (this._arena._genDocumentItem[_i] + 1) & 0xffffff;
-    this._arena._arrDocumentItem[_i] = { sku: "", qty: 0, price_minor: 0n };
-    this._arena._freeDocumentItem.push(_i);
-    this._arena._delEpochOfDocumentItem++;
-  }
   get sku(): string {
     return this._arena._arrDocumentItem[this._index]!.sku;
   }
@@ -192,17 +172,8 @@ export class DocumentItem<B = unknown> {
 
 export class Document<B = unknown> {
   constructor(readonly _packed: bigint, readonly _arena: Arena<B>) {}
-  get _index(): number { return Number(this._packed & 0xffffffffffn); }
-  get generation(): number { return Number(this._packed >> 40n); }
+  get _index(): number { return Number(this._packed); }
   get _values(): DocumentValues { return this._arena._arrDocument[this._index]!; }
-  isValid(): boolean { return this._arena._genDocument[this._index] === this.generation; }
-  delete(): void {
-    const _i = this._index;
-    if (this._arena._genDocument[_i] !== this.generation) return;
-    this._arena._genDocument[_i] = (this._arena._genDocument[_i] + 1) & 0xffffff;
-    this._arena._arrDocument[_i] = { id: "", status: 0, meta: null, items: [], _swept_items: 0 };
-    this._arena._freeDocument.push(_i);
-  }
   get id(): string {
     return this._arena._arrDocument[this._index]!.id;
   }
@@ -217,21 +188,17 @@ export class Document<B = unknown> {
   }
   get meta(): DocumentMeta<B> | null {
     const _v = this._arena._arrDocument[this._index]!.meta;
-    if (_v === null || !(this._arena._genDocumentMeta[Number(_v & 0xffffffffffn)] === Number(_v >> 40n))) return null;
+    if (_v === null) return null;
     return new DocumentMeta<B>(_v, this._arena);
   }
   set meta(value: DocumentMeta<B> | null) {
     this._arena._arrDocument[this._index]!.meta = value === null ? null : value._packed;
   }
   get items(): (DocumentItem<B> | null)[] {
-    const _ep = this._arena._delEpochOfDocumentItem;
-    if (this._arena._arrDocument[this._index]!._swept_items === _ep) return this._arena._arrDocument[this._index]!.items.filter((_p): _p is bigint => _p !== null).map((_p) => new DocumentItem<B>(_p, this._arena));
-    const _live = this._arena._arrDocument[this._index]!.items.filter((_p): _p is bigint => _p !== null && this._arena._genDocumentItem[Number(_p & 0xffffffffffn)] === Number(_p >> 40n));
-    this._arena._arrDocument[this._index]!.items = _live; this._arena._arrDocument[this._index]!._swept_items = _ep;
-    return _live.map((_p) => new DocumentItem<B>(_p, this._arena));
+    return this._arena._arrDocument[this._index]!.items.filter((_p): _p is bigint => _p !== null).map((_p) => new DocumentItem<B>(_p, this._arena));
   }
   set items(value: (DocumentItem<B> | null)[]) {
-    this._arena._arrDocument[this._index]!.items = value.map((_h) => _h === null ? null : _h._packed); this._arena._arrDocument[this._index]!._swept_items = this._arena._delEpochOfDocumentItem - 1;
+    this._arena._arrDocument[this._index]!.items = value.map((_h) => _h === null ? null : _h._packed);
   }
   _key(): string { return `Document#${this._index}`; }
   toString(): string { return this._describe(new Set<string>()); }
@@ -269,60 +236,26 @@ export class Document<B = unknown> {
 export class Arena<B = unknown> {
   declare private readonly __brand: B;
   _arrDocumentMeta: DocumentMetaValues[] = [];
-  _genDocumentMeta: number[] = [];
-  _freeDocumentMeta: number[] = [];
   _arrDocumentItem: DocumentItemValues[] = [];
-  _genDocumentItem: number[] = [];
-  _freeDocumentItem: number[] = [];
   _arrDocument: DocumentValues[] = [];
-  _genDocument: number[] = [];
-  _freeDocument: number[] = [];
-  _delEpochOfDocumentItem: number = 0;
   #root: bigint | null = null;
   newDocumentMeta(region: string = "", version: number = 0): DocumentMeta<B> {
-    let _i: number, _g: number;
-    if (this._freeDocumentMeta.length > 0) {
-      _i = this._freeDocumentMeta.pop()!;
-      _g = this._genDocumentMeta[_i]!;
-      this._arrDocumentMeta[_i] = { region, version };
-    } else {
-      _i = this._arrDocumentMeta.length;
-      _g = 0;
+    const _i = this._arrDocumentMeta.length;
       this._arrDocumentMeta.push({ region, version });
-      this._genDocumentMeta.push(0);
-    }
-    return new DocumentMeta<B>(_pack(_g, _i), this);
+    return new DocumentMeta<B>(_pack(0, _i), this);
   }
   newDocumentItem(sku: string = "", qty: number = 0, price_minor: bigint = 0n): DocumentItem<B> {
-    let _i: number, _g: number;
-    if (this._freeDocumentItem.length > 0) {
-      _i = this._freeDocumentItem.pop()!;
-      _g = this._genDocumentItem[_i]!;
-      this._arrDocumentItem[_i] = { sku, qty, price_minor };
-    } else {
-      _i = this._arrDocumentItem.length;
-      _g = 0;
+    const _i = this._arrDocumentItem.length;
       this._arrDocumentItem.push({ sku, qty, price_minor });
-      this._genDocumentItem.push(0);
-    }
-    return new DocumentItem<B>(_pack(_g, _i), this);
+    return new DocumentItem<B>(_pack(0, _i), this);
   }
   newDocument(id: string = "", status: number = 0, meta: DocumentMeta<B> | null = null, items: (DocumentItem<B> | null)[] = []): Document<B> {
-    let _i: number, _g: number;
-    if (this._freeDocument.length > 0) {
-      _i = this._freeDocument.pop()!;
-      _g = this._genDocument[_i]!;
-      this._arrDocument[_i] = { id, status, meta: meta === null ? null : meta._packed, items: items.map((_h) => _h === null ? null : _h._packed), _swept_items: 0 };
-    } else {
-      _i = this._arrDocument.length;
-      _g = 0;
-      this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items.map((_h) => _h === null ? null : _h._packed), _swept_items: 0 });
-      this._genDocument.push(0);
-    }
-    return new Document<B>(_pack(_g, _i), this);
+    const _i = this._arrDocument.length;
+      this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items.map((_h) => _h === null ? null : _h._packed) });
+    return new Document<B>(_pack(0, _i), this);
   }
   get root(): Document<B> | null {
-    if (this.#root === null || !(this._genDocument[Number(this.#root & 0xffffffffffn)] === Number(this.#root >> 40n))) return null;
+    if (this.#root === null) return null;
     return new Document<B>(this.#root, this);
   }
   set root(h: Document<B> | null) { this.#root = h === null ? null : h._packed; }

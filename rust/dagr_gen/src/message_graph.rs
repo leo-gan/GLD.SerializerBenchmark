@@ -5,13 +5,12 @@ use std::fmt;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct NodeRef { pub index: u32, pub generation: u32 }
+pub struct NodeRef { pub index: u32 }
 
 pub use crate::message_graph_core::*;
 
 // ── MessageValues ──────────────────────────────────────────────────────────
 pub struct MessageValues {
-    pub(crate) _gen: u32,
     pub f_bool: Option<bool>,
     pub f_int32: Option<i32>,
     pub f_int64: Option<i64>,
@@ -25,17 +24,12 @@ pub struct MessageValues {
 pub trait MessageArena {
     const MESSAGE_TYPE_ID: u64;
     fn arena_of_message(&self) -> &RefCell<Vec<MessageValues>>;
-    fn free_slots_of_message(&self) -> &RefCell<Vec<u32>>;
-    fn _message_next_gen(&self) -> &Cell<u32>;
 }
 
 // ── MessageGraphGraph ─────────────────────────────────────────────────────────────────────
 pub trait MessageGraphGraph: MessageArena {
     fn new_message(&self, f_bool: Option<bool>, f_int32: Option<i32>, f_int64: Option<i64>, f_float64: Option<f64>, f_string: Option<&str>, f_bool_2: Option<bool>, f_int32_2: Option<i32>, f_string_2: Option<&str>) -> Message<'_, Self> where Self: Sized {
-        let generation = self._message_next_gen().get();
-        self._message_next_gen().set(generation.wrapping_add(1));
         let _values = MessageValues {
-            _gen: generation,
                 f_bool: f_bool,
                 f_int32: f_int32,
                 f_int64: f_int64,
@@ -45,16 +39,13 @@ pub trait MessageGraphGraph: MessageArena {
                 f_int32_2: f_int32_2,
                 f_string_2: f_string_2.map(str::to_owned),
         };
-        let index = if let Some(idx) = self.free_slots_of_message().borrow_mut().pop() {
-            self.arena_of_message().borrow_mut()[idx as usize] = _values;
-            idx
-        } else {
+        let index = {
             let mut _arena = self.arena_of_message().borrow_mut();
             let idx = _arena.len() as u32;
             _arena.push(_values);
             idx
         };
-        Message { index: index, generation: generation, graph: self }
+        Message { index: index, graph: self }
     }
     fn new_message_defaulted(&self) -> Message<'_, Self> where Self: Sized {
         self.new_message(None, None, None, None, None, None, None, None)
@@ -65,12 +56,11 @@ impl<T: MessageArena> MessageGraphGraph for T {}
 // ── Message handle ────────────────────────────────────────────────────────
 pub struct Message<'arena, G: MessageGraphGraph> {
     pub(crate) index: u32,
-    pub(crate) generation: u32,
     pub(crate) graph: &'arena G,
 }
 
 impl<'arena, G: MessageGraphGraph> Clone for Message<'arena, G> {
-    fn clone(&self) -> Self { Message { index: self.index, generation: self.generation, graph: self.graph } }
+    fn clone(&self) -> Self { Message { index: self.index, graph: self.graph } }
 }
 impl<'arena, G: MessageGraphGraph> Copy for Message<'arena, G> {}
 
@@ -122,24 +112,6 @@ impl<'arena, G: MessageGraphGraph> Message<'arena, G> {
     }
     pub fn set_f_string_2(&self, v: Option<&str>) {
         self.graph.arena_of_message().borrow_mut()[self.index as usize].f_string_2 = v.map(str::to_owned);
-    }
-
-    pub fn is_valid(&self) -> bool {
-        self.graph.arena_of_message().borrow()
-            .get(self.index as usize)
-            .map_or(false, |v| v._gen == self.generation)
-    }
-
-    pub fn delete(&self) {
-        let freed = {
-            let mut a = self.graph.arena_of_message().borrow_mut();
-            if let Some(v) = a.get_mut(self.index as usize) {
-                if v._gen == self.generation { v._gen = u32::MAX; true } else { false }
-            } else { false }
-        };
-        if freed {
-            self.graph.free_slots_of_message().borrow_mut().push(self.index);
-        }
     }
 
     fn _id(&self) -> (u64, usize, usize) {
@@ -213,8 +185,6 @@ impl<'arena, G: MessageGraphGraph> fmt::Display for Message<'arena, G> {
 // ── MessageGraphArena<const ID: u64> ─────────────────────────────────────────────────────
 pub struct MessageGraphArena<const ID: u64> {
     arena_of_message: RefCell<Vec<MessageValues>>,
-    free_slots_of_message: RefCell<Vec<u32>>,
-    _message_next_gen: Cell<u32>,
     root: Cell<Option<NodeRef>>,
 }
 
@@ -223,20 +193,12 @@ impl<const ID: u64> MessageArena for MessageGraphArena<ID> {
     fn arena_of_message(&self) -> &RefCell<Vec<MessageValues>> {
         &self.arena_of_message
     }
-    fn free_slots_of_message(&self) -> &RefCell<Vec<u32>> {
-        &self.free_slots_of_message
-    }
-    fn _message_next_gen(&self) -> &Cell<u32> {
-        &self._message_next_gen
-    }
 }
 
 impl<const ID: u64> MessageGraphArena<ID> {
     pub fn new() -> Self {
         MessageGraphArena {
             arena_of_message: RefCell::new(Vec::new()),
-            free_slots_of_message: RefCell::new(Vec::new()),
-            _message_next_gen: Cell::new(0),
             root: Cell::new(None),
         }
     }
@@ -245,13 +207,12 @@ impl<const ID: u64> MessageGraphArena<ID> {
         self.root.get().and_then(|nr| {
             let a = self.arena_of_message().borrow();
             a.get(nr.index as usize)
-                .filter(|v| v._gen == nr.generation)
-                .map(|_| Message { index: nr.index, generation: nr.generation, graph: self })
+                .map(|_| Message { index: nr.index, graph: self })
         })
     }
 
     pub fn set_root(&self, node: Option<Message<'_, Self>>) {
-        self.root.set(node.map(|h| NodeRef { index: h.index, generation: h.generation }));
+        self.root.set(node.map(|h| NodeRef { index: h.index }));
     }
 }
 
@@ -261,7 +222,7 @@ impl<const ID: u64> Default for MessageGraphArena<ID> {
 
 
 // ── Serde: use dagr_runtime ─────────────────────────────────────────────────
-use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, UnionApplied, CycleId, DagrError};
+use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, CycleId, DagrError};
 use crate::dagr_runtime;
 
 fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut DagrBuilder) -> usize {
@@ -286,7 +247,6 @@ fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut D
 // ── Message serde ──────────────────────────────────────────────────────────
 impl<'arena, G: MessageGraphGraph> Message<'arena, G> {
     pub fn store(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::MESSAGE_TYPE_ID, index: self.index as usize };
         if let Some(r) = b.begin_storing_acyclic(_id) { return Ok(r); }
         let _ = self.store_packed(b)?;
@@ -294,7 +254,6 @@ impl<'arena, G: MessageGraphGraph> Message<'arena, G> {
     }
 
     pub fn store_packed(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::MESSAGE_TYPE_ID, index: self.index as usize };
         let _before = b.cursor();
         let _pr_row = self.graph.arena_of_message().borrow();
@@ -339,8 +298,8 @@ fn _restore_message<'arena, G: MessageGraphGraph>(
     let _cache_key = (G::MESSAGE_TYPE_ID, at);
     if let Some(&idx) = cache.get(&_cache_key) {
         let a = arena.arena_of_message().borrow();
-        let _node_gen = a[idx as usize]._gen;
-        return Ok(Message { index: idx, generation: _node_gen, graph: arena });
+        let _ = &a;
+        return Ok(Message { index: idx, graph: arena });
     }
     let (_total_size, _ts_len) = crate::dagr_runtime::read_leb(data, at)?;
     let _payload_end = at + _ts_len + _total_size as usize;

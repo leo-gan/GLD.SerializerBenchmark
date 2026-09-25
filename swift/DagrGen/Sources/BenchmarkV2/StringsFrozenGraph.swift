@@ -1,0 +1,241 @@
+import Foundation
+
+public enum StringsFrozenGraph {
+    public struct StringsValues {
+        public var items: [String] = []
+    }
+
+    public protocol StringsArena: AnyObject {
+        static var stringsTypeId: Int { get }
+        var arenaOfStrings: [StringsValues] { get set }
+    }
+
+    public typealias StringsFrozenGraphGraph = StringsArena
+    public typealias StringsGraph = StringsArena
+
+    public struct Strings<Arena: StringsGraph> {
+        let __packed: UInt64
+        unowned let __graph: Arena
+
+        var __index: Int { Int(__packed & 0x0000_00FF_FFFF_FFFF) }
+        var _generation: UInt32 { UInt32(__packed >> 40) }
+        var _index: Int { __index }
+        var _arenaId: ObjectIdentifier { ObjectIdentifier(__graph) }
+
+        public var items: [String] {
+            get { __graph.arenaOfStrings[__index].items }
+            nonmutating set { __graph.arenaOfStrings[__index].items = newValue }
+        }
+    }
+
+    // ── Arena<Brand> ─────────────────────────────────────────────────────────────────
+    //
+    // Brand is a phantom type — declare an empty enum per arena scope:
+    //
+    //   enum MyBrand {}
+    //   let arena = StringsFrozenGraph.Arena<MyBrand>()
+    //
+    public class Arena<Brand>: StringsArena {
+        public static var stringsTypeId: Int { 0 }
+        public var arenaOfStrings: [StringsValues] = []
+        public init() {}
+
+        private var _root: UInt64? = nil
+        public var root: Strings<Arena<Brand>>? {
+            get { _root.map { Strings(__packed: $0, __graph: self) } }
+            set { _root = newValue?.__packed }
+        }
+    }
+
+
+}
+
+extension StringsFrozenGraph.Arena {
+    public func newStrings(items: [String] = []) -> StringsFrozenGraph.Strings<StringsFrozenGraph.Arena<Brand>> {
+        let _idx: Int
+        _idx = arenaOfStrings.count
+        arenaOfStrings.append(StringsFrozenGraph.StringsValues(items: items))
+        let _packed = UInt64(_idx)
+        return StringsFrozenGraph.Strings(__packed: _packed, __graph: self)
+    }
+}
+
+extension StringsFrozenGraph.Arena {
+    public func adopt<S: StringsFrozenGraph.StringsGraph>(_ src: StringsFrozenGraph.Strings<S>) throws -> StringsFrozenGraph.Strings<StringsFrozenGraph.Arena<Brand>> {
+        var _seen = Set<UInt64>()
+        return try _adopt(src, &_seen)
+    }
+    func _adopt<S: StringsFrozenGraph.StringsGraph>(_ src: StringsFrozenGraph.Strings<S>, _ _seen: inout Set<UInt64>) throws -> StringsFrozenGraph.Strings<StringsFrozenGraph.Arena<Brand>> {
+        guard _seen.insert((UInt64(0) << 48) | UInt64(src._index)).inserted else { throw DagrError.cyclicAdopt }
+        defer { _seen.remove((UInt64(0) << 48) | UInt64(src._index)) }
+        return newStrings(items: src.items)
+    }
+}
+
+extension StringsFrozenGraph.Strings: CustomStringConvertible {
+    public var description: String {
+        var visited = Set<NodeKey>()
+        return buildDescription(visited: &visited)
+    }
+
+    func buildDescription(visited: inout Set<NodeKey>) -> String {
+        let __nodeKey = NodeKey(arena: _arenaId, typeId: Arena.stringsTypeId, index: __index)
+        guard !visited.contains(__nodeKey) else { return "Strings@\(__index)" }
+        visited.insert(__nodeKey)
+        let itemsStr = String(describing: items)
+        return "Strings@\(__index) { items: \(itemsStr) }"
+    }
+}
+
+extension StringsFrozenGraph.Strings: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        var visited = Set<NodeKey>()
+        hashInto(hasher: &hasher, visited: &visited)
+    }
+
+    func hashInto(hasher: inout Hasher, visited: inout Set<NodeKey>) {
+        let __nodeKey = NodeKey(arena: _arenaId, typeId: Arena.stringsTypeId, index: __index)
+        guard !visited.contains(__nodeKey) else { return }
+        visited.insert(__nodeKey)
+        hasher.combine(items)
+    }
+}
+
+extension StringsFrozenGraph.Strings: Equatable {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        var visited = Set<ArenaPair>()
+        return lhs.cycleAwareEquals(other: rhs, visited: &visited)
+    }
+
+    func cycleAwareEquals(other: Self, visited: inout Set<ArenaPair>) -> Bool {
+        let pair = ArenaPair(
+            leftArena: _arenaId, leftTypeId: Arena.stringsTypeId, leftIndex: __index,
+            rightArena: other._arenaId, rightTypeId: Arena.stringsTypeId, rightIndex: other.__index
+        )
+        guard !visited.contains(pair) else { return true }
+        visited.insert(pair)
+        guard self.items == other.items else { return false }
+        return true
+    }
+}
+
+extension StringsFrozenGraph.Strings {
+    public static func == <OtherArena: StringsFrozenGraph.StringsGraph>(lhs: Self, rhs: StringsFrozenGraph.Strings<OtherArena>) -> Bool {
+        var visited = Set<ArenaPair>()
+        return lhs.cycleAwareEqualsAny(other: rhs, visited: &visited)
+    }
+
+    public static func != <OtherArena: StringsFrozenGraph.StringsGraph>(lhs: Self, rhs: StringsFrozenGraph.Strings<OtherArena>) -> Bool {
+        return !(lhs == rhs)
+    }
+
+    func cycleAwareEqualsAny<OtherArena: StringsFrozenGraph.StringsGraph>(
+        other: StringsFrozenGraph.Strings<OtherArena>,
+        visited: inout Set<ArenaPair>
+    ) -> Bool {
+        let pair = ArenaPair(
+            leftArena: _arenaId, leftTypeId: Arena.stringsTypeId, leftIndex: __index,
+            rightArena: other._arenaId, rightTypeId: OtherArena.stringsTypeId, rightIndex: other.__index
+        )
+        guard !visited.contains(pair) else { return true }
+        visited.insert(pair)
+        guard self.items == other.items else { return false }
+        return true
+    }
+}
+
+extension StringsFrozenGraph.Strings: ArenaNodeHandle {}
+extension StringsFrozenGraph.Strings: ArenaGraphStorable {
+    var cycleIdentifier: ArenaCycleIdntifier {
+        .init(nodeTypeId: Arena.stringsTypeId, nodeIndex: __index)
+    }
+
+    public func store(with builder: any ArenaBuilder) throws -> BufferOffset {
+        if let offset = try builder.beginStoring(nodeId: cycleIdentifier) {
+            return offset
+        }
+        let _itemsValueOffset = try self.items.store(with: builder)
+        _ = try _itemsValueOffset.storeForwardPointer(with: builder)
+        var _nilByte: UInt8 = 0
+        if !self.items.isEmpty { _nilByte |= 1 }
+        _ = try builder.store(number: _nilByte)
+        let offset = builder.cursor
+        try builder.finishStoring(nodeId: cycleIdentifier, offset: offset)
+        return offset
+    }
+
+    public func storePacked(with builder: any ArenaBuilder) throws -> PackedStoreResult {
+        let before = try builder.beginPackedStoring(nodeId: cycleIdentifier)
+        _ = try self.items.storePacked(with: builder)
+        var _nilByte: UInt8 = 0
+        if !self.items.isEmpty { _nilByte |= 1 }
+        _ = try builder.store(number: _nilByte)
+        _ = try builder.storeAsLEB(value: builder.cursor.value - before.value)
+        return builder.finishPackedStoring(nodeId: cycleIdentifier)
+    }
+}
+
+extension StringsFrozenGraph.Arena {
+    public func toData() throws -> Foundation.Data {
+        guard let root = root else { return Foundation.Data() }
+        let builder = DataArenaBuilder()
+        let rootOffset = try root.store(with: builder)
+        _ = try builder.storeAsLEB(value: (builder.cursor.value - rootOffset.value) << 2)
+        return builder.makeData
+    }
+
+    /// Like `toData()`, but with an explicit `maxSize` that sets the back-reference
+    /// placeholder width (2 MiB -> 4 B, 1024 -> 2 B). Must match across producers.
+    public func toData(maxSize: UInt64) throws -> Foundation.Data {
+        guard let root = root else { return Foundation.Data() }
+        let builder = DataArenaBuilder(maxSize: maxSize)
+        let rootOffset = try root.store(with: builder)
+        _ = try builder.storeAsLEB(value: (builder.cursor.value - rootOffset.value) << 2)
+        return builder.makeData
+    }
+
+    public static func restore(from data: Foundation.Data) throws -> StringsFrozenGraph.Arena<Brand> {
+        guard !data.isEmpty else { return StringsFrozenGraph.Arena<Brand>() }
+        let arena = StringsFrozenGraph.Arena<Brand>()
+        let (framing, lebLen) = try restoreLEB(from: data, at: 0)
+        guard (framing & 1) == 0 else { throw ArenaRestoreError.missingHeader }
+        guard ((framing >> 1) & 1) == 0 else { throw ArenaRestoreError.invalidFraming }
+        let rootStart = lebLen + Int(framing >> 2)
+        var cache = [Int: Int]()
+        arena.root = try arena._restoreStrings(from: data, at: rootStart, cache: &cache)
+        return arena
+    }
+
+    private func _restoreStrings(from data: Foundation.Data, at start: Int, cache: inout [Int: Int]) throws -> StringsFrozenGraph.Strings<StringsFrozenGraph.Arena<Brand>> {
+        if let idx = cache[start] { return StringsFrozenGraph.Strings(__packed: UInt64(idx), __graph: self) }
+        let idx = arenaOfStrings.count
+        cache[start] = idx
+        arenaOfStrings.append(StringsFrozenGraph.StringsValues())
+        var values = StringsFrozenGraph.StringsValues()
+        var _cur = start + 1
+        let (_fwd_items, _fwdB_items) = try readV62(from: data, at: _cur)
+        _cur += _fwdB_items
+        values.items = try _restorePrimArray(type: String.self, from: data, at: _cur + Int(_fwd_items))
+        arenaOfStrings[idx] = values
+        return StringsFrozenGraph.Strings(__packed: UInt64(idx), __graph: self)
+    }
+
+    private func _restoreStringsFrozenPacked(from data: Foundation.Data, at start: Int, cache: inout [Int: Int]) throws -> StringsFrozenGraph.Strings<StringsFrozenGraph.Arena<Brand>> {
+        if let idx = cache[start] { return StringsFrozenGraph.Strings(__packed: UInt64(idx), __graph: self) }
+        let idx = arenaOfStrings.count
+        cache[start] = idx
+        arenaOfStrings.append(StringsFrozenGraph.StringsValues())
+        var values = StringsFrozenGraph.StringsValues()
+        let (_, _blB) = try restoreLEB(from: data, at: start)
+        var _cur = start + _blB
+        _cur += 1
+        let (_bbl_items, _bblB_items) = try restoreLEB(from: data, at: _cur)
+        let _bend_items = _cur + _bblB_items + Int(_bbl_items)
+        _cur += _bblB_items
+        values.items = try _restorePackedComplexArray(from: data, at: _cur, { String(decoding: $0, as: UTF8.self) })
+        _cur = _bend_items
+        arenaOfStrings[idx] = values
+        return StringsFrozenGraph.Strings(__packed: UInt64(idx), __graph: self)
+    }
+
+}

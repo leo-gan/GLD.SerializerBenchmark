@@ -28,3 +28,68 @@ pub mod event_graph_core;
 pub mod event_graph;
 #[cfg(not(dagr_no_std))]
 pub mod event_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod message_regular_graph;
+#[cfg(not(dagr_no_std))]
+pub mod message_regular_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod document_regular_graph;
+#[cfg(not(dagr_no_std))]
+pub mod document_regular_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod telemetry_regular_graph;
+#[cfg(not(dagr_no_std))]
+pub mod telemetry_regular_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod strings_regular_graph;
+#[cfg(not(dagr_no_std))]
+pub mod strings_regular_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod event_regular_graph;
+#[cfg(not(dagr_no_std))]
+pub mod event_regular_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod message_frozen_graph;
+#[cfg(not(dagr_no_std))]
+pub mod message_frozen_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod document_frozen_graph;
+#[cfg(not(dagr_no_std))]
+pub mod document_frozen_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod telemetry_frozen_graph;
+#[cfg(not(dagr_no_std))]
+pub mod telemetry_frozen_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod strings_frozen_graph;
+#[cfg(not(dagr_no_std))]
+pub mod strings_frozen_graph_lazy;
+#[cfg(not(dagr_no_std))]
+pub mod event_frozen_graph;
+#[cfg(not(dagr_no_std))]
+pub mod event_frozen_graph_lazy;
+pub mod message_frozen_packed_graph_core;
+#[cfg(not(dagr_no_std))]
+pub mod message_frozen_packed_graph;
+#[cfg(not(dagr_no_std))]
+pub mod message_frozen_packed_graph_lazy;
+pub mod document_frozen_packed_graph_core;
+#[cfg(not(dagr_no_std))]
+pub mod document_frozen_packed_graph;
+#[cfg(not(dagr_no_std))]
+pub mod document_frozen_packed_graph_lazy;
+pub mod telemetry_frozen_packed_graph_core;
+#[cfg(not(dagr_no_std))]
+pub mod telemetry_frozen_packed_graph;
+#[cfg(not(dagr_no_std))]
+pub mod telemetry_frozen_packed_graph_lazy;
+pub mod strings_frozen_packed_graph_core;
+#[cfg(not(dagr_no_std))]
+pub mod strings_frozen_packed_graph;
+#[cfg(not(dagr_no_std))]
+pub mod strings_frozen_packed_graph_lazy;
+pub mod event_frozen_packed_graph_core;
+#[cfg(not(dagr_no_std))]
+pub mod event_frozen_packed_graph;
+#[cfg(not(dagr_no_std))]
+pub mod event_frozen_packed_graph_lazy;

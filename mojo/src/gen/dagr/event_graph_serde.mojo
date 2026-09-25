@@ -2,7 +2,7 @@
 # Serializer (arena -> bytes) for graph 'EventGraph' — plan 28 Phase 4.
 
 from dagr_writer import Builder, NodeStoreRef, node_offset, resolved_ref, nil_ref, to_zigzag, leb_length
-from event_graph_arena import EventGraphArena, EventAttr, Event, _uidx, _ugen
+from event_graph_arena import EventGraphArena, EventAttr, Event
 
 comptime _VT_MAX = 1   # widest regular-node vtable (§1.19)
 
@@ -40,8 +40,6 @@ def _store_event[o: Origin[mut=False], //](mut b: Builder[_VT_MAX], a: EventGrap
     var _n4 = 0
     for _k4 in range(len(_row4) - 1, -1, -1):
         var _p4 = _row4[_k4]
-        if a._gen_event_attr[_uidx(_p4)] != _ugen(_p4):
-            continue
         _ = _store_event_attr(b, a, EventAttr[o](h._a, _p4))
         _n4 += 1
     _ = b.store_leb(UInt64(_n4))

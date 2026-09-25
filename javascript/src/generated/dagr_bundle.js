@@ -73,6 +73,40 @@ function readLEBBig(buf, at) {
 function zigzagDecodeBig(n) {
   return n >> 1n ^ -(n & 1n);
 }
+function readV62(buf, at) {
+  if (at < 0 || at >= buf.u8.length) throw new DagrError("outsideOfBuffer");
+  const code = buf.u8[at] & 3;
+  switch (code) {
+    case 0:
+      return [buf.u8[at] >>> 2, 1];
+    case 1:
+      return [buf.dv.getUint16(at, true) >>> 2, 2];
+    case 2:
+      return [Math.floor(buf.dv.getUint32(at, true) / 4), 4];
+    default:
+      return [Number(buf.dv.getBigUint64(at, true) >> 2n), 8];
+  }
+}
+function readZigZagV62(buf, at) {
+  const [raw, len] = readV62(buf, at);
+  return [zigzagDecode(raw), len];
+}
+function restoreRTypeVTable(buf, start) {
+  const [offsetValue, b1] = readLEB(buf, start);
+  const adj = (offsetValue & 1) === 0 ? b1 : 0;
+  const vtStart = start + zigzagDecode(offsetValue) + adj;
+  const [vtSize, b2] = readLEB(buf, vtStart);
+  const count = vtSize >> 1;
+  const wide = (vtSize & 1) !== 0;
+  let cursor = vtStart + b2;
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    const v = wide ? buf.dv.getUint16(cursor, true) : buf.u8[cursor];
+    result.push(v === 0 ? null : v - 1 + b1);
+    cursor += wide ? 2 : 1;
+  }
+  return result;
+}
 function bounds(buf, at, width) {
   if (at < 0 || at + width > buf.u8.length) throw new DagrError("outsideOfBuffer");
 }
@@ -128,6 +162,11 @@ function f16BitsToF32(b) {
 function zigzagDecodeNum(n) {
   return n % 2 === 0 ? n / 2 : -(n + 1) / 2;
 }
+function readBitset(buf, at, nbytes) {
+  let b = 0;
+  for (let k = 0; k < nbytes; k++) b += buf.u8[at + k] * 2 ** (8 * k);
+  return b;
+}
 function decodePackedFloat64(buf, at) {
   if (at < 0 || at >= buf.u8.length) throw new DagrError("outsideOfBuffer");
   const tag = buf.u8[at];
@@ -156,6 +195,13 @@ function decodePackedFloat64(buf, at) {
     default:
       return [0, 1];
   }
+}
+function readFixedArrayAt(buf, at, read, width) {
+  const [count, cB] = readLEB(buf, at);
+  const base = at + cB;
+  const out = [];
+  for (let i = 0; i < count; i++) out.push(read(buf, base + i * width));
+  return [out, cB + count * width];
 }
 function readPackedNodeArrayAt(buf, countPos, makeChild, opt) {
   const [count, cB] = readLEB(buf, countPos);
@@ -206,6 +252,32 @@ function readPackedFloatArrayAt(buf, countPos, dec, rawWidth) {
     }
   }
   return [out, p - countPos];
+}
+function _relOffsetU(buf, at, es) {
+  if (es === 1) return buf.u8[at];
+  if (es === 2) return buf.dv.getUint16(at, true);
+  if (es === 4) return buf.dv.getUint32(at, true);
+  return Number(buf.dv.getBigUint64(at, true));
+}
+function _relOffsetS(buf, at, es) {
+  if (es === 1) return buf.dv.getInt8(at);
+  if (es === 2) return buf.dv.getInt16(at, true);
+  if (es === 4) return buf.dv.getInt32(at, true);
+  return Number(buf.dv.getBigInt64(at, true));
+}
+function readPtrTableArrayAt(buf, at, readElem, signed = false) {
+  const [hdr, hB] = readLEB(buf, at);
+  const count = Math.floor(hdr / 4);
+  const es = [1, 2, 4, 8][hdr % 4];
+  const tableBase = at + hB;
+  const base = tableBase + count * es;
+  const rel = signed ? _relOffsetS : _relOffsetU;
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const ro = rel(buf, tableBase + i * es, es);
+    out.push(ro === 0 ? null : readElem(buf, base + ro - 1));
+  }
+  return out;
 }
 var _utf8Decoder = new TextDecoder();
 function readUtf8At(buf, at) {
@@ -1527,6 +1599,933 @@ function toBytes(root, maxSize = 2 * 1024 * 1024) {
   return b.makeData();
 }
 
+// src/generated/dagr/MessageRegularGraph.ts
+var MessageRegularGraph_exports = {};
+__export(MessageRegularGraph_exports, {
+  MessageAccessor: () => MessageAccessor2
+});
+var MessageAccessor2 = class _MessageAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // f_bool
+  _p1;
+  // f_int32
+  _p2;
+  // f_int64
+  _p3;
+  // f_float64
+  _p4;
+  // f_string
+  _p5;
+  // f_bool_2
+  _p6;
+  // f_int32_2
+  _p7;
+  // f_string_2
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+    this._p2 = vt.length > 2 && vt[2] !== null ? start + vt[2] : null;
+    this._p3 = vt.length > 3 && vt[3] !== null ? start + vt[3] : null;
+    this._p4 = vt.length > 4 && vt[4] !== null ? start + vt[4] : null;
+    this._p5 = vt.length > 5 && vt[5] !== null ? start + vt[5] : null;
+    this._p6 = vt.length > 6 && vt[6] !== null ? start + vt[6] : null;
+    this._p7 = vt.length > 7 && vt[7] !== null ? start + vt[7] : null;
+  }
+  get f_bool() {
+    if (this._p0 === null) return null;
+    return readU8(this.buf, this._p0) !== 0;
+  }
+  get f_int32() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  get f_int64() {
+    if (this._p2 === null) return null;
+    return readI64(this.buf, this._p2);
+  }
+  get f_float64() {
+    if (this._p3 === null) return null;
+    return readF64(this.buf, this._p3);
+  }
+  get f_string() {
+    if (this._p4 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p4);
+    const [v] = readUtf8At(this.buf, this._p4 + fwdB + fwd);
+    return v;
+  }
+  get f_bool_2() {
+    if (this._p5 === null) return null;
+    return readU8(this.buf, this._p5) !== 0;
+  }
+  get f_int32_2() {
+    if (this._p6 === null) return null;
+    return readI32(this.buf, this._p6);
+  }
+  get f_string_2() {
+    if (this._p7 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p7);
+    const [v] = readUtf8At(this.buf, this._p7 + fwdB + fwd);
+    return v;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _MessageAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/MessageRegularGraph_arena.ts
+var MessageRegularGraph_arena_exports = {};
+__export(MessageRegularGraph_arena_exports, {
+  Arena: () => Arena,
+  Message: () => Message,
+  restore: () => restore,
+  restoreWithMap: () => restoreWithMap
+});
+function _pack(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged(v)) return String(v.type) + "(" + _dagrDescribe(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged(v)) return Math.imul(_strHash(String(v.type)), 31) + _dagrHash(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod(a, "_eq")) return _hasMethod(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged(a)) return _isTagged(b) && a.type === b.type && _dagrEquals(a.value, b.value, seen);
+  return a === b;
+}
+var Message = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrMessage[this._index];
+  }
+  get f_bool() {
+    return this._arena._arrMessage[this._index].f_bool;
+  }
+  set f_bool(value) {
+    this._arena._arrMessage[this._index].f_bool = value;
+  }
+  get f_int32() {
+    return this._arena._arrMessage[this._index].f_int32;
+  }
+  set f_int32(value) {
+    this._arena._arrMessage[this._index].f_int32 = value;
+  }
+  get f_int64() {
+    return this._arena._arrMessage[this._index].f_int64;
+  }
+  set f_int64(value) {
+    this._arena._arrMessage[this._index].f_int64 = value;
+  }
+  get f_float64() {
+    return this._arena._arrMessage[this._index].f_float64;
+  }
+  set f_float64(value) {
+    this._arena._arrMessage[this._index].f_float64 = value;
+  }
+  get f_string() {
+    return this._arena._arrMessage[this._index].f_string;
+  }
+  set f_string(value) {
+    this._arena._arrMessage[this._index].f_string = value;
+  }
+  get f_bool_2() {
+    return this._arena._arrMessage[this._index].f_bool_2;
+  }
+  set f_bool_2(value) {
+    this._arena._arrMessage[this._index].f_bool_2 = value;
+  }
+  get f_int32_2() {
+    return this._arena._arrMessage[this._index].f_int32_2;
+  }
+  set f_int32_2(value) {
+    this._arena._arrMessage[this._index].f_int32_2 = value;
+  }
+  get f_string_2() {
+    return this._arena._arrMessage[this._index].f_string_2;
+  }
+  set f_string_2(value) {
+    this._arena._arrMessage[this._index].f_string_2 = value;
+  }
+  _key() {
+    return `Message#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Message@${this._index}`;
+    _s.add(_k);
+    return `Message@${this._index} { f_bool: ${_dagrDescribe(this.f_bool, _s)}, f_int32: ${_dagrDescribe(this.f_int32, _s)}, f_int64: ${_dagrDescribe(this.f_int64, _s)}, f_float64: ${_dagrDescribe(this.f_float64, _s)}, f_string: ${_dagrDescribe(this.f_string, _s)}, f_bool_2: ${_dagrDescribe(this.f_bool_2, _s)}, f_int32_2: ${_dagrDescribe(this.f_int32_2, _s)}, f_string_2: ${_dagrDescribe(this.f_string_2, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash("Message");
+    _h = Math.imul(_h, 31) + _dagrHash(this.f_bool, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash(this.f_int32, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash(this.f_int64, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash(this.f_float64, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash(this.f_string, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash(this.f_bool_2, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash(this.f_int32_2, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash(this.f_string_2, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals(this.f_bool, other.f_bool, _s)) return false;
+    if (!_dagrEquals(this.f_int32, other.f_int32, _s)) return false;
+    if (!_dagrEquals(this.f_int64, other.f_int64, _s)) return false;
+    if (!_dagrEquals(this.f_float64, other.f_float64, _s)) return false;
+    if (!_dagrEquals(this.f_string, other.f_string, _s)) return false;
+    if (!_dagrEquals(this.f_bool_2, other.f_bool_2, _s)) return false;
+    if (!_dagrEquals(this.f_int32_2, other.f_int32_2, _s)) return false;
+    if (!_dagrEquals(this.f_string_2, other.f_string_2, _s)) return false;
+    return true;
+  }
+};
+var Arena = class {
+  _arrMessage = [];
+  #root = null;
+  newMessage(f_bool = false, f_int32 = 0, f_int64 = 0n, f_float64 = 0, f_string = "", f_bool_2 = false, f_int32_2 = 0, f_string_2 = "") {
+    const _i = this._arrMessage.length;
+    this._arrMessage.push({ f_bool, f_int32, f_int64, f_float64, f_string, f_bool_2, f_int32_2, f_string_2 });
+    return new Message(_pack(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Message(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromMessage(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newMessage();
+  seen.set(acc._start, _n);
+  _n.f_bool = acc.f_bool;
+  _n.f_int32 = acc.f_int32;
+  _n.f_int64 = acc.f_int64;
+  _n.f_float64 = acc.f_float64;
+  _n.f_string = acc.f_string;
+  _n.f_bool_2 = acc.f_bool_2;
+  _n.f_int32_2 = acc.f_int32_2;
+  _n.f_string_2 = acc.f_string_2;
+  return _n;
+}
+function restore(bytes) {
+  const a = new Arena();
+  a.root = _fromMessage(MessageAccessor2.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap(bytes) {
+  const a = new Arena();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromMessage(MessageAccessor2.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/MessageRegularGraph_serde.ts
+var MessageRegularGraph_serde_exports = {};
+__export(MessageRegularGraph_serde_exports, {
+  toBytes: () => toBytes2
+});
+function _storeMessage2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c7 = n.f_string_2 === null ? null : b.storeUtf8(n.f_string_2, true);
+  const _c4 = n.f_string === null ? null : b.storeUtf8(n.f_string, true);
+  const _off7 = _c7 === null ? null : b.storeForwardPointer(_c7);
+  const _off6 = n.f_int32_2 === null ? null : b.storeI32(n.f_int32_2);
+  const _off5 = n.f_bool_2 === null ? null : b.storeU8(n.f_bool_2 ? 1 : 0);
+  const _off4 = _c4 === null ? null : b.storeForwardPointer(_c4);
+  const _off3 = n.f_float64 === null ? null : b.storeF64(n.f_float64);
+  const _off2 = n.f_int64 === null ? null : b.storeI64(n.f_int64);
+  const _off1 = n.f_int32 === null ? null : b.storeI32(n.f_int32);
+  const _off0 = n.f_bool === null ? null : b.storeU8(n.f_bool ? 1 : 0);
+  const _o = b.storeVTable([_off0, _off1, _off2, _off3, _off4, _off5, _off6, _off7]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes2(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeMessage2(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/MessageFrozenGraph.ts
+var MessageFrozenGraph_exports = {};
+__export(MessageFrozenGraph_exports, {
+  MessageAccessor: () => MessageAccessor3
+});
+var MessageAccessor3 = class _MessageAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // f_bool
+  _p1;
+  // f_int32
+  _p2;
+  // f_int64
+  _p3;
+  // f_float64
+  _p4;
+  // f_string
+  _p5;
+  // f_bool_2
+  _p6;
+  // f_int32_2
+  _p7;
+  // f_string_2
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += 1;
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+      cur += 4;
+    } else {
+      this._p1 = null;
+    }
+    if (bs >> 2 & 1) {
+      this._p2 = cur;
+      cur += 8;
+    } else {
+      this._p2 = null;
+    }
+    if (bs >> 3 & 1) {
+      this._p3 = cur;
+      cur += 8;
+    } else {
+      this._p3 = null;
+    }
+    if (bs >> 4 & 1) {
+      this._p4 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p4 = null;
+    }
+    if (bs >> 5 & 1) {
+      this._p5 = cur;
+      cur += 1;
+    } else {
+      this._p5 = null;
+    }
+    if (bs >> 6 & 1) {
+      this._p6 = cur;
+      cur += 4;
+    } else {
+      this._p6 = null;
+    }
+    if (bs >> 7 & 1) {
+      this._p7 = cur;
+    } else {
+      this._p7 = null;
+    }
+  }
+  get f_bool() {
+    if (this._p0 === null) return null;
+    return readU8(this.buf, this._p0) !== 0;
+  }
+  get f_int32() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  get f_int64() {
+    if (this._p2 === null) return null;
+    return readI64(this.buf, this._p2);
+  }
+  get f_float64() {
+    if (this._p3 === null) return null;
+    return readF64(this.buf, this._p3);
+  }
+  get f_string() {
+    if (this._p4 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p4);
+    const [v] = readUtf8At(this.buf, this._p4 + fwdB + fwd);
+    return v;
+  }
+  get f_bool_2() {
+    if (this._p5 === null) return null;
+    return readU8(this.buf, this._p5) !== 0;
+  }
+  get f_int32_2() {
+    if (this._p6 === null) return null;
+    return readI32(this.buf, this._p6);
+  }
+  get f_string_2() {
+    if (this._p7 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p7);
+    const [v] = readUtf8At(this.buf, this._p7 + fwdB + fwd);
+    return v;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _MessageAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/MessageFrozenGraph_arena.ts
+var MessageFrozenGraph_arena_exports = {};
+__export(MessageFrozenGraph_arena_exports, {
+  Arena: () => Arena2,
+  Message: () => Message2,
+  restore: () => restore2,
+  restoreWithMap: () => restoreWithMap2
+});
+function _pack2(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash2(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod2(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged2(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe2(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod2(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe2(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged2(v)) return String(v.type) + "(" + _dagrDescribe2(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash2(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod2(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash2(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged2(v)) return Math.imul(_strHash2(String(v.type)), 31) + _dagrHash2(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash2(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals2(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod2(a, "_eq")) return _hasMethod2(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals2(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged2(a)) return _isTagged2(b) && a.type === b.type && _dagrEquals2(a.value, b.value, seen);
+  return a === b;
+}
+var Message2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrMessage[this._index];
+  }
+  get f_bool() {
+    return this._arena._arrMessage[this._index].f_bool;
+  }
+  set f_bool(value) {
+    this._arena._arrMessage[this._index].f_bool = value;
+  }
+  get f_int32() {
+    return this._arena._arrMessage[this._index].f_int32;
+  }
+  set f_int32(value) {
+    this._arena._arrMessage[this._index].f_int32 = value;
+  }
+  get f_int64() {
+    return this._arena._arrMessage[this._index].f_int64;
+  }
+  set f_int64(value) {
+    this._arena._arrMessage[this._index].f_int64 = value;
+  }
+  get f_float64() {
+    return this._arena._arrMessage[this._index].f_float64;
+  }
+  set f_float64(value) {
+    this._arena._arrMessage[this._index].f_float64 = value;
+  }
+  get f_string() {
+    return this._arena._arrMessage[this._index].f_string;
+  }
+  set f_string(value) {
+    this._arena._arrMessage[this._index].f_string = value;
+  }
+  get f_bool_2() {
+    return this._arena._arrMessage[this._index].f_bool_2;
+  }
+  set f_bool_2(value) {
+    this._arena._arrMessage[this._index].f_bool_2 = value;
+  }
+  get f_int32_2() {
+    return this._arena._arrMessage[this._index].f_int32_2;
+  }
+  set f_int32_2(value) {
+    this._arena._arrMessage[this._index].f_int32_2 = value;
+  }
+  get f_string_2() {
+    return this._arena._arrMessage[this._index].f_string_2;
+  }
+  set f_string_2(value) {
+    this._arena._arrMessage[this._index].f_string_2 = value;
+  }
+  _key() {
+    return `Message#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Message@${this._index}`;
+    _s.add(_k);
+    return `Message@${this._index} { f_bool: ${_dagrDescribe2(this.f_bool, _s)}, f_int32: ${_dagrDescribe2(this.f_int32, _s)}, f_int64: ${_dagrDescribe2(this.f_int64, _s)}, f_float64: ${_dagrDescribe2(this.f_float64, _s)}, f_string: ${_dagrDescribe2(this.f_string, _s)}, f_bool_2: ${_dagrDescribe2(this.f_bool_2, _s)}, f_int32_2: ${_dagrDescribe2(this.f_int32_2, _s)}, f_string_2: ${_dagrDescribe2(this.f_string_2, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash2("Message");
+    _h = Math.imul(_h, 31) + _dagrHash2(this.f_bool, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash2(this.f_int32, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash2(this.f_int64, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash2(this.f_float64, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash2(this.f_string, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash2(this.f_bool_2, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash2(this.f_int32_2, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash2(this.f_string_2, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals2(this.f_bool, other.f_bool, _s)) return false;
+    if (!_dagrEquals2(this.f_int32, other.f_int32, _s)) return false;
+    if (!_dagrEquals2(this.f_int64, other.f_int64, _s)) return false;
+    if (!_dagrEquals2(this.f_float64, other.f_float64, _s)) return false;
+    if (!_dagrEquals2(this.f_string, other.f_string, _s)) return false;
+    if (!_dagrEquals2(this.f_bool_2, other.f_bool_2, _s)) return false;
+    if (!_dagrEquals2(this.f_int32_2, other.f_int32_2, _s)) return false;
+    if (!_dagrEquals2(this.f_string_2, other.f_string_2, _s)) return false;
+    return true;
+  }
+};
+var Arena2 = class {
+  _arrMessage = [];
+  #root = null;
+  newMessage(f_bool = false, f_int32 = 0, f_int64 = 0n, f_float64 = 0, f_string = "", f_bool_2 = false, f_int32_2 = 0, f_string_2 = "") {
+    const _i = this._arrMessage.length;
+    this._arrMessage.push({ f_bool, f_int32, f_int64, f_float64, f_string, f_bool_2, f_int32_2, f_string_2 });
+    return new Message2(_pack2(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Message2(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromMessage2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newMessage();
+  seen.set(acc._start, _n);
+  _n.f_bool = acc.f_bool;
+  _n.f_int32 = acc.f_int32;
+  _n.f_int64 = acc.f_int64;
+  _n.f_float64 = acc.f_float64;
+  _n.f_string = acc.f_string;
+  _n.f_bool_2 = acc.f_bool_2;
+  _n.f_int32_2 = acc.f_int32_2;
+  _n.f_string_2 = acc.f_string_2;
+  return _n;
+}
+function restore2(bytes) {
+  const a = new Arena2();
+  a.root = _fromMessage2(MessageAccessor3.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap2(bytes) {
+  const a = new Arena2();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromMessage2(MessageAccessor3.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/MessageFrozenGraph_serde.ts
+var MessageFrozenGraph_serde_exports = {};
+__export(MessageFrozenGraph_serde_exports, {
+  toBytes: () => toBytes3
+});
+function _storeMessage3(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c7 = n.f_string_2 === null ? null : b.storeUtf8(n.f_string_2, true);
+  const _c4 = n.f_string === null ? null : b.storeUtf8(n.f_string, true);
+  if (_c7 !== null) b.storeForwardPointer(_c7);
+  if (n.f_int32_2 !== null) b.storeI32(n.f_int32_2);
+  if (n.f_bool_2 !== null) b.storeU8(n.f_bool_2 ? 1 : 0);
+  if (_c4 !== null) b.storeForwardPointer(_c4);
+  if (n.f_float64 !== null) b.storeF64(n.f_float64);
+  if (n.f_int64 !== null) b.storeI64(n.f_int64);
+  if (n.f_int32 !== null) b.storeI32(n.f_int32);
+  if (n.f_bool !== null) b.storeU8(n.f_bool ? 1 : 0);
+  let _bs = 0;
+  if (n.f_bool !== null) _bs |= 1 << 0;
+  if (n.f_int32 !== null) _bs |= 1 << 1;
+  if (n.f_int64 !== null) _bs |= 1 << 2;
+  if (n.f_float64 !== null) _bs |= 1 << 3;
+  if (n.f_string !== null) _bs |= 1 << 4;
+  if (n.f_bool_2 !== null) _bs |= 1 << 5;
+  if (n.f_int32_2 !== null) _bs |= 1 << 6;
+  if (n.f_string_2 !== null) _bs |= 1 << 7;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes3(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeMessage3(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/MessageFrozenPackedGraph.ts
+var MessageFrozenPackedGraph_exports = {};
+__export(MessageFrozenPackedGraph_exports, {
+  MessageAccessor: () => MessageAccessor4
+});
+var MessageAccessor4 = class _MessageAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _v0 = null;
+  // f_bool
+  _v1 = null;
+  // f_int32
+  _v2 = null;
+  // f_int64
+  _v3 = null;
+  // f_float64
+  _v4 = null;
+  // f_string
+  _p4 = -1;
+  _dc4 = false;
+  // f_string (deferred: buffer position + decoded flag)
+  _v5 = null;
+  // f_bool_2
+  _v6 = null;
+  // f_int32_2
+  _v7 = null;
+  // f_string_2
+  _p7 = -1;
+  _dc7 = false;
+  // f_string_2 (deferred: buffer position + decoded flag)
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const [, blB] = readLEB(buf, start);
+    let cursor = start + blB;
+    const nilbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    const encbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    if (nilbs >> 0 & 1) {
+      this._v0 = readU8(buf, cursor) !== 0;
+      cursor += 1;
+    }
+    if (nilbs >> 1 & 1) {
+      if ((encbs >> 0 & 1) === 1) {
+        this._v1 = readI32(buf, cursor);
+        cursor += 4;
+      } else {
+        const [_lv, _lb] = readLEB(buf, cursor);
+        this._v1 = zigzagDecode(_lv);
+        cursor += _lb;
+      }
+    }
+    if (nilbs >> 2 & 1) {
+      if ((encbs >> 1 & 1) === 1) {
+        this._v2 = readI64(buf, cursor);
+        cursor += 8;
+      } else {
+        const [_lv, _lb] = readLEBBig(buf, cursor);
+        this._v2 = zigzagDecodeBig(_lv);
+        cursor += _lb;
+      }
+    }
+    if (nilbs >> 3 & 1) {
+      if ((encbs >> 2 & 1) === 1) {
+        this._v3 = readF64(buf, cursor);
+        cursor += 8;
+      } else {
+        const [_fv, _fb] = decodePackedFloat64(buf, cursor);
+        this._v3 = _fv;
+        cursor += _fb;
+      }
+    }
+    if (nilbs >> 4 & 1) {
+      this._p4 = cursor;
+      const [_sl4, _slB4] = readLEB(buf, cursor);
+      cursor += _slB4 + _sl4;
+    }
+    if (nilbs >> 5 & 1) {
+      this._v5 = readU8(buf, cursor) !== 0;
+      cursor += 1;
+    }
+    if (nilbs >> 6 & 1) {
+      if ((encbs >> 3 & 1) === 1) {
+        this._v6 = readI32(buf, cursor);
+        cursor += 4;
+      } else {
+        const [_lv, _lb] = readLEB(buf, cursor);
+        this._v6 = zigzagDecode(_lv);
+        cursor += _lb;
+      }
+    }
+    if (nilbs >> 7 & 1) {
+      this._p7 = cursor;
+    }
+  }
+  get f_bool() {
+    return this._v0;
+  }
+  get f_int32() {
+    return this._v1;
+  }
+  get f_int64() {
+    return this._v2;
+  }
+  get f_float64() {
+    return this._v3;
+  }
+  get f_string() {
+    if (this._p4 < 0) return null;
+    if (!this._dc4) {
+      this._dc4 = true;
+      this._v4 = readUtf8At(this.buf, this._p4)[0];
+    }
+    return this._v4;
+  }
+  get f_bool_2() {
+    return this._v5;
+  }
+  get f_int32_2() {
+    return this._v6;
+  }
+  get f_string_2() {
+    if (this._p7 < 0) return null;
+    if (!this._dc7) {
+      this._dc7 = true;
+      this._v7 = readUtf8At(this.buf, this._p7)[0];
+    }
+    return this._v7;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _MessageAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/MessageFrozenPackedGraph_direct.ts
+var MessageFrozenPackedGraph_direct_exports = {};
+__export(MessageFrozenPackedGraph_direct_exports, {
+  toBytes: () => toBytes4,
+  writeInto: () => writeInto2
+});
+function _storeMessage4(n, b) {
+  const _before = b.cursor;
+  const _raw = new Array(4).fill(false);
+  if (n.f_string_2 !== null) {
+    b.storeUtf8(n.f_string_2, false);
+  }
+  if (n.f_int32_2 !== null) {
+    if (lebLength(zigzag(n.f_int32_2)) < 4) {
+      b.storeLEB(zigzag(n.f_int32_2));
+    } else {
+      b.storeI32(n.f_int32_2);
+      _raw[3] = true;
+    }
+  }
+  if (n.f_bool_2 !== null) {
+    b.storeU8(n.f_bool_2 ? 1 : 0);
+  }
+  if (n.f_string !== null) {
+    b.storeUtf8(n.f_string, false);
+  }
+  if (n.f_float64 !== null) {
+    b.storeF64(n.f_float64);
+    _raw[2] = true;
+  }
+  if (n.f_int64 !== null) {
+    if (lebLength(zigzag(n.f_int64)) < 8) {
+      b.storeLEB(zigzag(n.f_int64));
+    } else {
+      b.storeI64(n.f_int64);
+      _raw[1] = true;
+    }
+  }
+  if (n.f_int32 !== null) {
+    if (lebLength(zigzag(n.f_int32)) < 4) {
+      b.storeLEB(zigzag(n.f_int32));
+    } else {
+      b.storeI32(n.f_int32);
+      _raw[0] = true;
+    }
+  }
+  if (n.f_bool !== null) {
+    b.storeU8(n.f_bool ? 1 : 0);
+  }
+  {
+    const _e = [];
+    for (let _k = 0; _k < 1; _k++) {
+      let _x = 0;
+      for (let _bi = 0; _bi < 8 && _k * 8 + _bi < 4; _bi++) if (_raw[_k * 8 + _bi]) _x |= 1 << _bi;
+      _e.push(_x);
+    }
+    b.storeBytes(_e);
+  }
+  let _nb = 0;
+  if (n.f_bool !== null) _nb |= 1 << 0;
+  if (n.f_int32 !== null) _nb |= 1 << 1;
+  if (n.f_int64 !== null) _nb |= 1 << 2;
+  if (n.f_float64 !== null) _nb |= 1 << 3;
+  if (n.f_string !== null) _nb |= 1 << 4;
+  if (n.f_bool_2 !== null) _nb |= 1 << 5;
+  if (n.f_int32_2 !== null) _nb |= 1 << 6;
+  if (n.f_string_2 !== null) _nb |= 1 << 7;
+  b.storeBytes([_nb >>> 0 & 255]);
+  b.storeLEB(b.cursor - _before);
+  const _o = b.cursor;
+  return { off: _o };
+}
+function writeInto2(root, b) {
+  const off = nodeOffset(_storeMessage4(root, b));
+  return b.storeLEB((b.cursor - off) * 4);
+}
+function toBytes4(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize, 1024);
+  writeInto2(root, b);
+  return b.makeData();
+}
+
 // src/generated/dagr/DocumentGraph.ts
 var DocumentGraph_exports = {};
 __export(DocumentGraph_exports, {
@@ -1767,8 +2766,8 @@ var DocumentAccessor = class _DocumentAccessor {
 // src/generated/dagr/DocumentGraph_direct.ts
 var DocumentGraph_direct_exports = {};
 __export(DocumentGraph_direct_exports, {
-  toBytes: () => toBytes2,
-  writeInto: () => writeInto2
+  toBytes: () => toBytes5,
+  writeInto: () => writeInto3
 });
 function _storeDocumentMeta(n, b) {
   const _before = b.cursor;
@@ -1856,13 +2855,1439 @@ function _storeDocument(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto2(root, b) {
+function writeInto3(root, b) {
   const off = nodeOffset(_storeDocument(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes2(root, maxSize = 2 * 1024 * 1024) {
+function toBytes5(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto2(root, b);
+  writeInto3(root, b);
+  return b.makeData();
+}
+
+// src/generated/dagr/DocumentRegularGraph.ts
+var DocumentRegularGraph_exports = {};
+__export(DocumentRegularGraph_exports, {
+  DocumentAccessor: () => DocumentAccessor2,
+  DocumentItemAccessor: () => DocumentItemAccessor2,
+  DocumentMetaAccessor: () => DocumentMetaAccessor2
+});
+var DocumentMetaAccessor2 = class _DocumentMetaAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // region
+  _p1;
+  // version
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+  }
+  get region() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get version() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentMetaAccessor(buf, rootOffset(buf));
+  }
+};
+var DocumentItemAccessor2 = class _DocumentItemAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // sku
+  _p1;
+  // qty
+  _p2;
+  // price_minor
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+    this._p2 = vt.length > 2 && vt[2] !== null ? start + vt[2] : null;
+  }
+  get sku() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get qty() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  get price_minor() {
+    if (this._p2 === null) return null;
+    return readI64(this.buf, this._p2);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentItemAccessor(buf, rootOffset(buf));
+  }
+};
+var DocumentAccessor2 = class _DocumentAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // id
+  _p1;
+  // status
+  _p2;
+  // meta
+  _p3;
+  // items
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+    this._p2 = vt.length > 2 && vt[2] !== null ? start + vt[2] : null;
+    this._p3 = vt.length > 3 && vt[3] !== null ? start + vt[3] : null;
+  }
+  get id() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get status() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  get meta() {
+    if (this._p2 === null) return null;
+    const [bd, bdB] = readZigZagV62(this.buf, this._p2);
+    return new DocumentMetaAccessor2(this.buf, this._p2 + bdB + bd);
+  }
+  get items() {
+    if (this._p3 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p3);
+    return readPtrTableArrayAt(this.buf, this._p3 + fwdB + fwd, (b, p) => new DocumentItemAccessor2(b, p), true);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/DocumentRegularGraph_arena.ts
+var DocumentRegularGraph_arena_exports = {};
+__export(DocumentRegularGraph_arena_exports, {
+  Arena: () => Arena3,
+  Document: () => Document,
+  DocumentItem: () => DocumentItem,
+  DocumentMeta: () => DocumentMeta,
+  restore: () => restore3,
+  restoreWithMap: () => restoreWithMap3
+});
+function _pack3(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash3(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod3(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged3(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe3(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod3(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe3(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged3(v)) return String(v.type) + "(" + _dagrDescribe3(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash3(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod3(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash3(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged3(v)) return Math.imul(_strHash3(String(v.type)), 31) + _dagrHash3(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash3(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals3(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod3(a, "_eq")) return _hasMethod3(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals3(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged3(a)) return _isTagged3(b) && a.type === b.type && _dagrEquals3(a.value, b.value, seen);
+  return a === b;
+}
+var DocumentMeta = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrDocumentMeta[this._index];
+  }
+  get region() {
+    return this._arena._arrDocumentMeta[this._index].region;
+  }
+  set region(value) {
+    this._arena._arrDocumentMeta[this._index].region = value;
+  }
+  get version() {
+    return this._arena._arrDocumentMeta[this._index].version;
+  }
+  set version(value) {
+    this._arena._arrDocumentMeta[this._index].version = value;
+  }
+  _key() {
+    return `DocumentMeta#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `DocumentMeta@${this._index}`;
+    _s.add(_k);
+    return `DocumentMeta@${this._index} { region: ${_dagrDescribe3(this.region, _s)}, version: ${_dagrDescribe3(this.version, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash3("DocumentMeta");
+    _h = Math.imul(_h, 31) + _dagrHash3(this.region, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash3(this.version, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals3(this.region, other.region, _s)) return false;
+    if (!_dagrEquals3(this.version, other.version, _s)) return false;
+    return true;
+  }
+};
+var DocumentItem = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrDocumentItem[this._index];
+  }
+  get sku() {
+    return this._arena._arrDocumentItem[this._index].sku;
+  }
+  set sku(value) {
+    this._arena._arrDocumentItem[this._index].sku = value;
+  }
+  get qty() {
+    return this._arena._arrDocumentItem[this._index].qty;
+  }
+  set qty(value) {
+    this._arena._arrDocumentItem[this._index].qty = value;
+  }
+  get price_minor() {
+    return this._arena._arrDocumentItem[this._index].price_minor;
+  }
+  set price_minor(value) {
+    this._arena._arrDocumentItem[this._index].price_minor = value;
+  }
+  _key() {
+    return `DocumentItem#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `DocumentItem@${this._index}`;
+    _s.add(_k);
+    return `DocumentItem@${this._index} { sku: ${_dagrDescribe3(this.sku, _s)}, qty: ${_dagrDescribe3(this.qty, _s)}, price_minor: ${_dagrDescribe3(this.price_minor, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash3("DocumentItem");
+    _h = Math.imul(_h, 31) + _dagrHash3(this.sku, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash3(this.qty, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash3(this.price_minor, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals3(this.sku, other.sku, _s)) return false;
+    if (!_dagrEquals3(this.qty, other.qty, _s)) return false;
+    if (!_dagrEquals3(this.price_minor, other.price_minor, _s)) return false;
+    return true;
+  }
+};
+var Document = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrDocument[this._index];
+  }
+  get id() {
+    return this._arena._arrDocument[this._index].id;
+  }
+  set id(value) {
+    this._arena._arrDocument[this._index].id = value;
+  }
+  get status() {
+    return this._arena._arrDocument[this._index].status;
+  }
+  set status(value) {
+    this._arena._arrDocument[this._index].status = value;
+  }
+  get meta() {
+    const _v = this._arena._arrDocument[this._index].meta;
+    if (_v === null) return null;
+    return new DocumentMeta(_v, this._arena);
+  }
+  set meta(value) {
+    this._arena._arrDocument[this._index].meta = value === null ? null : value._packed;
+  }
+  get items() {
+    return this._arena._arrDocument[this._index].items.filter((_p) => _p !== null).map((_p) => new DocumentItem(_p, this._arena));
+  }
+  set items(value) {
+    this._arena._arrDocument[this._index].items = value.map((_h) => _h === null ? null : _h._packed);
+  }
+  _key() {
+    return `Document#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Document@${this._index}`;
+    _s.add(_k);
+    return `Document@${this._index} { id: ${_dagrDescribe3(this.id, _s)}, status: ${_dagrDescribe3(this.status, _s)}, meta: ${_dagrDescribe3(this.meta, _s)}, items: ${_dagrDescribe3(this.items, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash3("Document");
+    _h = Math.imul(_h, 31) + _dagrHash3(this.id, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash3(this.status, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash3(this.meta, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash3(this.items, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals3(this.id, other.id, _s)) return false;
+    if (!_dagrEquals3(this.status, other.status, _s)) return false;
+    if (!_dagrEquals3(this.meta, other.meta, _s)) return false;
+    if (!_dagrEquals3(this.items, other.items, _s)) return false;
+    return true;
+  }
+};
+var Arena3 = class {
+  _arrDocumentMeta = [];
+  _arrDocumentItem = [];
+  _arrDocument = [];
+  #root = null;
+  newDocumentMeta(region = "", version = 0) {
+    const _i = this._arrDocumentMeta.length;
+    this._arrDocumentMeta.push({ region, version });
+    return new DocumentMeta(_pack3(0, _i), this);
+  }
+  newDocumentItem(sku = "", qty = 0, price_minor = 0n) {
+    const _i = this._arrDocumentItem.length;
+    this._arrDocumentItem.push({ sku, qty, price_minor });
+    return new DocumentItem(_pack3(0, _i), this);
+  }
+  newDocument(id = "", status = 0, meta = null, items = []) {
+    const _i = this._arrDocument.length;
+    this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items.map((_h) => _h === null ? null : _h._packed) });
+    return new Document(_pack3(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Document(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromDocumentMeta(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newDocumentMeta();
+  seen.set(acc._start, _n);
+  _n.region = acc.region;
+  _n.version = acc.version;
+  return _n;
+}
+function _fromDocumentItem(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newDocumentItem();
+  seen.set(acc._start, _n);
+  _n.sku = acc.sku;
+  _n.qty = acc.qty;
+  _n.price_minor = acc.price_minor;
+  return _n;
+}
+function _fromDocument(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newDocument();
+  seen.set(acc._start, _n);
+  _n.id = acc.id;
+  _n.status = acc.status;
+  _n.meta = acc.meta === null ? null : _fromDocumentMeta(acc.meta, a, seen);
+  _n.items = ((_s) => acc.items.map((_e) => _e === null ? null : _fromDocumentItem(_e, a, _s)))(seen);
+  return _n;
+}
+function restore3(bytes) {
+  const a = new Arena3();
+  a.root = _fromDocument(DocumentAccessor2.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap3(bytes) {
+  const a = new Arena3();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromDocument(DocumentAccessor2.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/DocumentRegularGraph_serde.ts
+var DocumentRegularGraph_serde_exports = {};
+__export(DocumentRegularGraph_serde_exports, {
+  toBytes: () => toBytes6
+});
+function _storeDocumentMeta2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c0 = n.region === null ? null : b.storeUtf8(n.region, true);
+  const _off1 = n.version === null ? null : b.storeI32(n.version);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeDocumentItem2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c0 = n.sku === null ? null : b.storeUtf8(n.sku, true);
+  const _off2 = n.price_minor === null ? null : b.storeI64(n.price_minor);
+  const _off1 = n.qty === null ? null : b.storeI32(n.qty);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1, _off2]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeDocument2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c3 = n.items === null ? null : b.storeNodeRefArray(n.items, (b2, v) => _storeDocumentItem2(v, b2));
+  const _c2 = n.meta === null ? null : _storeDocumentMeta2(n.meta, b);
+  const _c0 = n.id === null ? null : b.storeUtf8(n.id, true);
+  const _off3 = _c3 === null ? null : b.storeForwardPointer(_c3);
+  const _off2 = _c2 === null ? null : b.storeBidirectionalPointer(_c2);
+  const _off1 = n.status === null ? null : b.storeI32(n.status);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1, _off2, _off3]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes6(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeDocument2(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/DocumentFrozenGraph.ts
+var DocumentFrozenGraph_exports = {};
+__export(DocumentFrozenGraph_exports, {
+  DocumentAccessor: () => DocumentAccessor3,
+  DocumentItemAccessor: () => DocumentItemAccessor3,
+  DocumentMetaAccessor: () => DocumentMetaAccessor3
+});
+var DocumentMetaAccessor3 = class _DocumentMetaAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // region
+  _p1;
+  // version
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+    } else {
+      this._p1 = null;
+    }
+  }
+  get region() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get version() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentMetaAccessor(buf, rootOffset(buf));
+  }
+};
+var DocumentItemAccessor3 = class _DocumentItemAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // sku
+  _p1;
+  // qty
+  _p2;
+  // price_minor
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+      cur += 4;
+    } else {
+      this._p1 = null;
+    }
+    if (bs >> 2 & 1) {
+      this._p2 = cur;
+    } else {
+      this._p2 = null;
+    }
+  }
+  get sku() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get qty() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  get price_minor() {
+    if (this._p2 === null) return null;
+    return readI64(this.buf, this._p2);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentItemAccessor(buf, rootOffset(buf));
+  }
+};
+var DocumentAccessor3 = class _DocumentAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // id
+  _p1;
+  // status
+  _p2;
+  // meta
+  _p3;
+  // items
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+      cur += 4;
+    } else {
+      this._p1 = null;
+    }
+    if (bs >> 2 & 1) {
+      this._p2 = cur;
+      cur += readZigZagV62(buf, cur)[1];
+    } else {
+      this._p2 = null;
+    }
+    if (bs >> 3 & 1) {
+      this._p3 = cur;
+    } else {
+      this._p3 = null;
+    }
+  }
+  get id() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get status() {
+    if (this._p1 === null) return null;
+    return readI32(this.buf, this._p1);
+  }
+  get meta() {
+    if (this._p2 === null) return null;
+    const [bd, bdB] = readZigZagV62(this.buf, this._p2);
+    return new DocumentMetaAccessor3(this.buf, this._p2 + bdB + bd);
+  }
+  get items() {
+    if (this._p3 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p3);
+    return readPtrTableArrayAt(this.buf, this._p3 + fwdB + fwd, (b, p) => new DocumentItemAccessor3(b, p), true);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/DocumentFrozenGraph_arena.ts
+var DocumentFrozenGraph_arena_exports = {};
+__export(DocumentFrozenGraph_arena_exports, {
+  Arena: () => Arena4,
+  Document: () => Document2,
+  DocumentItem: () => DocumentItem2,
+  DocumentMeta: () => DocumentMeta2,
+  restore: () => restore4,
+  restoreWithMap: () => restoreWithMap4
+});
+function _pack4(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash4(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod4(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged4(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe4(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod4(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe4(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged4(v)) return String(v.type) + "(" + _dagrDescribe4(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash4(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod4(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash4(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged4(v)) return Math.imul(_strHash4(String(v.type)), 31) + _dagrHash4(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash4(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals4(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod4(a, "_eq")) return _hasMethod4(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals4(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged4(a)) return _isTagged4(b) && a.type === b.type && _dagrEquals4(a.value, b.value, seen);
+  return a === b;
+}
+var DocumentMeta2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrDocumentMeta[this._index];
+  }
+  get region() {
+    return this._arena._arrDocumentMeta[this._index].region;
+  }
+  set region(value) {
+    this._arena._arrDocumentMeta[this._index].region = value;
+  }
+  get version() {
+    return this._arena._arrDocumentMeta[this._index].version;
+  }
+  set version(value) {
+    this._arena._arrDocumentMeta[this._index].version = value;
+  }
+  _key() {
+    return `DocumentMeta#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `DocumentMeta@${this._index}`;
+    _s.add(_k);
+    return `DocumentMeta@${this._index} { region: ${_dagrDescribe4(this.region, _s)}, version: ${_dagrDescribe4(this.version, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash4("DocumentMeta");
+    _h = Math.imul(_h, 31) + _dagrHash4(this.region, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash4(this.version, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals4(this.region, other.region, _s)) return false;
+    if (!_dagrEquals4(this.version, other.version, _s)) return false;
+    return true;
+  }
+};
+var DocumentItem2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrDocumentItem[this._index];
+  }
+  get sku() {
+    return this._arena._arrDocumentItem[this._index].sku;
+  }
+  set sku(value) {
+    this._arena._arrDocumentItem[this._index].sku = value;
+  }
+  get qty() {
+    return this._arena._arrDocumentItem[this._index].qty;
+  }
+  set qty(value) {
+    this._arena._arrDocumentItem[this._index].qty = value;
+  }
+  get price_minor() {
+    return this._arena._arrDocumentItem[this._index].price_minor;
+  }
+  set price_minor(value) {
+    this._arena._arrDocumentItem[this._index].price_minor = value;
+  }
+  _key() {
+    return `DocumentItem#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `DocumentItem@${this._index}`;
+    _s.add(_k);
+    return `DocumentItem@${this._index} { sku: ${_dagrDescribe4(this.sku, _s)}, qty: ${_dagrDescribe4(this.qty, _s)}, price_minor: ${_dagrDescribe4(this.price_minor, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash4("DocumentItem");
+    _h = Math.imul(_h, 31) + _dagrHash4(this.sku, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash4(this.qty, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash4(this.price_minor, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals4(this.sku, other.sku, _s)) return false;
+    if (!_dagrEquals4(this.qty, other.qty, _s)) return false;
+    if (!_dagrEquals4(this.price_minor, other.price_minor, _s)) return false;
+    return true;
+  }
+};
+var Document2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrDocument[this._index];
+  }
+  get id() {
+    return this._arena._arrDocument[this._index].id;
+  }
+  set id(value) {
+    this._arena._arrDocument[this._index].id = value;
+  }
+  get status() {
+    return this._arena._arrDocument[this._index].status;
+  }
+  set status(value) {
+    this._arena._arrDocument[this._index].status = value;
+  }
+  get meta() {
+    const _v = this._arena._arrDocument[this._index].meta;
+    if (_v === null) return null;
+    return new DocumentMeta2(_v, this._arena);
+  }
+  set meta(value) {
+    this._arena._arrDocument[this._index].meta = value === null ? null : value._packed;
+  }
+  get items() {
+    return this._arena._arrDocument[this._index].items.filter((_p) => _p !== null).map((_p) => new DocumentItem2(_p, this._arena));
+  }
+  set items(value) {
+    this._arena._arrDocument[this._index].items = value.map((_h) => _h === null ? null : _h._packed);
+  }
+  _key() {
+    return `Document#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Document@${this._index}`;
+    _s.add(_k);
+    return `Document@${this._index} { id: ${_dagrDescribe4(this.id, _s)}, status: ${_dagrDescribe4(this.status, _s)}, meta: ${_dagrDescribe4(this.meta, _s)}, items: ${_dagrDescribe4(this.items, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash4("Document");
+    _h = Math.imul(_h, 31) + _dagrHash4(this.id, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash4(this.status, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash4(this.meta, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash4(this.items, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals4(this.id, other.id, _s)) return false;
+    if (!_dagrEquals4(this.status, other.status, _s)) return false;
+    if (!_dagrEquals4(this.meta, other.meta, _s)) return false;
+    if (!_dagrEquals4(this.items, other.items, _s)) return false;
+    return true;
+  }
+};
+var Arena4 = class {
+  _arrDocumentMeta = [];
+  _arrDocumentItem = [];
+  _arrDocument = [];
+  #root = null;
+  newDocumentMeta(region = "", version = 0) {
+    const _i = this._arrDocumentMeta.length;
+    this._arrDocumentMeta.push({ region, version });
+    return new DocumentMeta2(_pack4(0, _i), this);
+  }
+  newDocumentItem(sku = "", qty = 0, price_minor = 0n) {
+    const _i = this._arrDocumentItem.length;
+    this._arrDocumentItem.push({ sku, qty, price_minor });
+    return new DocumentItem2(_pack4(0, _i), this);
+  }
+  newDocument(id = "", status = 0, meta = null, items = []) {
+    const _i = this._arrDocument.length;
+    this._arrDocument.push({ id, status, meta: meta === null ? null : meta._packed, items: items.map((_h) => _h === null ? null : _h._packed) });
+    return new Document2(_pack4(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Document2(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromDocumentMeta2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newDocumentMeta();
+  seen.set(acc._start, _n);
+  _n.region = acc.region;
+  _n.version = acc.version;
+  return _n;
+}
+function _fromDocumentItem2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newDocumentItem();
+  seen.set(acc._start, _n);
+  _n.sku = acc.sku;
+  _n.qty = acc.qty;
+  _n.price_minor = acc.price_minor;
+  return _n;
+}
+function _fromDocument2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newDocument();
+  seen.set(acc._start, _n);
+  _n.id = acc.id;
+  _n.status = acc.status;
+  _n.meta = acc.meta === null ? null : _fromDocumentMeta2(acc.meta, a, seen);
+  _n.items = ((_s) => acc.items.map((_e) => _e === null ? null : _fromDocumentItem2(_e, a, _s)))(seen);
+  return _n;
+}
+function restore4(bytes) {
+  const a = new Arena4();
+  a.root = _fromDocument2(DocumentAccessor3.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap4(bytes) {
+  const a = new Arena4();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromDocument2(DocumentAccessor3.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/DocumentFrozenGraph_serde.ts
+var DocumentFrozenGraph_serde_exports = {};
+__export(DocumentFrozenGraph_serde_exports, {
+  toBytes: () => toBytes7
+});
+function _storeDocumentMeta3(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c0 = n.region === null ? null : b.storeUtf8(n.region, true);
+  if (n.version !== null) b.storeI32(n.version);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.region !== null) _bs |= 1 << 0;
+  if (n.version !== null) _bs |= 1 << 1;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeDocumentItem3(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c0 = n.sku === null ? null : b.storeUtf8(n.sku, true);
+  if (n.price_minor !== null) b.storeI64(n.price_minor);
+  if (n.qty !== null) b.storeI32(n.qty);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.sku !== null) _bs |= 1 << 0;
+  if (n.qty !== null) _bs |= 1 << 1;
+  if (n.price_minor !== null) _bs |= 1 << 2;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeDocument3(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c3 = n.items === null ? null : b.storeNodeRefArray(n.items, (b2, v) => _storeDocumentItem3(v, b2));
+  const _c2 = n.meta === null ? null : _storeDocumentMeta3(n.meta, b);
+  const _c0 = n.id === null ? null : b.storeUtf8(n.id, true);
+  if (_c3 !== null) b.storeForwardPointer(_c3);
+  if (_c2 !== null) b.storeBidirectionalPointer(_c2);
+  if (n.status !== null) b.storeI32(n.status);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.id !== null) _bs |= 1 << 0;
+  if (n.status !== null) _bs |= 1 << 1;
+  if (n.meta !== null) _bs |= 1 << 2;
+  if (n.items !== null) _bs |= 1 << 3;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes7(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeDocument3(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/DocumentFrozenPackedGraph.ts
+var DocumentFrozenPackedGraph_exports = {};
+__export(DocumentFrozenPackedGraph_exports, {
+  DocumentAccessor: () => DocumentAccessor4,
+  DocumentItemAccessor: () => DocumentItemAccessor4,
+  DocumentMetaAccessor: () => DocumentMetaAccessor4
+});
+var DocumentMetaAccessor4 = class _DocumentMetaAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _v0 = null;
+  // region
+  _p0 = -1;
+  _dc0 = false;
+  // region (deferred: buffer position + decoded flag)
+  _v1 = null;
+  // version
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const [, blB] = readLEB(buf, start);
+    let cursor = start + blB;
+    const nilbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    const encbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    if (nilbs >> 0 & 1) {
+      this._p0 = cursor;
+      const [_sl0, _slB0] = readLEB(buf, cursor);
+      cursor += _slB0 + _sl0;
+    }
+    if (nilbs >> 1 & 1) {
+      if ((encbs >> 0 & 1) === 1) {
+        this._v1 = readI32(buf, cursor);
+      } else {
+        const [_lv] = readLEB(buf, cursor);
+        this._v1 = zigzagDecode(_lv);
+      }
+    }
+  }
+  get region() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
+    return this._v0;
+  }
+  get version() {
+    return this._v1;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentMetaAccessor(buf, rootOffset(buf));
+  }
+};
+var DocumentItemAccessor4 = class _DocumentItemAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _v0 = null;
+  // sku
+  _p0 = -1;
+  _dc0 = false;
+  // sku (deferred: buffer position + decoded flag)
+  _v1 = null;
+  // qty
+  _v2 = null;
+  // price_minor
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const [, blB] = readLEB(buf, start);
+    let cursor = start + blB;
+    const nilbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    const encbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    if (nilbs >> 0 & 1) {
+      this._p0 = cursor;
+      const [_sl0, _slB0] = readLEB(buf, cursor);
+      cursor += _slB0 + _sl0;
+    }
+    if (nilbs >> 1 & 1) {
+      if ((encbs >> 0 & 1) === 1) {
+        this._v1 = readI32(buf, cursor);
+        cursor += 4;
+      } else {
+        const [_lv, _lb] = readLEB(buf, cursor);
+        this._v1 = zigzagDecode(_lv);
+        cursor += _lb;
+      }
+    }
+    if (nilbs >> 2 & 1) {
+      if ((encbs >> 1 & 1) === 1) {
+        this._v2 = readI64(buf, cursor);
+      } else {
+        const [_lv] = readLEBBig(buf, cursor);
+        this._v2 = zigzagDecodeBig(_lv);
+      }
+    }
+  }
+  get sku() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
+    return this._v0;
+  }
+  get qty() {
+    return this._v1;
+  }
+  get price_minor() {
+    return this._v2;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentItemAccessor(buf, rootOffset(buf));
+  }
+};
+var DocumentAccessor4 = class _DocumentAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _v0 = null;
+  // id
+  _p0 = -1;
+  _dc0 = false;
+  // id (deferred: buffer position + decoded flag)
+  _v1 = null;
+  // status
+  _v2 = null;
+  // meta
+  _p2 = -1;
+  _dc2 = false;
+  // meta (deferred: buffer position + decoded flag)
+  _v3 = null;
+  // items
+  _p3 = -1;
+  _dc3 = false;
+  // items (deferred: buffer position + decoded flag)
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const [, blB] = readLEB(buf, start);
+    let cursor = start + blB;
+    const nilbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    const encbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    if (nilbs >> 0 & 1) {
+      this._p0 = cursor;
+      const [_sl0, _slB0] = readLEB(buf, cursor);
+      cursor += _slB0 + _sl0;
+    }
+    if (nilbs >> 1 & 1) {
+      if ((encbs >> 0 & 1) === 1) {
+        this._v1 = readI32(buf, cursor);
+        cursor += 4;
+      } else {
+        const [_lv, _lb] = readLEB(buf, cursor);
+        this._v1 = zigzagDecode(_lv);
+        cursor += _lb;
+      }
+    }
+    if (nilbs >> 2 & 1) {
+      this._p2 = cursor;
+      const [_nl2, _nlB2] = readLEB(buf, cursor);
+      cursor += _nlB2 + _nl2;
+    }
+    if (nilbs >> 3 & 1) {
+      this._p3 = cursor;
+    }
+  }
+  get id() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
+    return this._v0;
+  }
+  get status() {
+    return this._v1;
+  }
+  get meta() {
+    if (this._p2 < 0) return null;
+    if (!this._dc2) {
+      this._dc2 = true;
+      this._v2 = new DocumentMetaAccessor4(this.buf, this._p2);
+    }
+    return this._v2;
+  }
+  get items() {
+    if (this._p3 < 0) return null;
+    if (!this._dc3) {
+      this._dc3 = true;
+      const [, _ablBg3] = readLEB(this.buf, this._p3);
+      this._v3 = readPackedNodeArrayAt(this.buf, this._p3 + _ablBg3, (b, p) => new DocumentItemAccessor4(b, p), false);
+    }
+    return this._v3;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _DocumentAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/DocumentFrozenPackedGraph_direct.ts
+var DocumentFrozenPackedGraph_direct_exports = {};
+__export(DocumentFrozenPackedGraph_direct_exports, {
+  toBytes: () => toBytes8,
+  writeInto: () => writeInto4
+});
+function _storeDocumentMeta4(n, b) {
+  const _before = b.cursor;
+  const _raw = new Array(1).fill(false);
+  if (n.version !== null) {
+    if (lebLength(zigzag(n.version)) < 4) {
+      b.storeLEB(zigzag(n.version));
+    } else {
+      b.storeI32(n.version);
+      _raw[0] = true;
+    }
+  }
+  if (n.region !== null) {
+    b.storeUtf8(n.region, false);
+  }
+  {
+    const _e = [];
+    for (let _k = 0; _k < 1; _k++) {
+      let _x = 0;
+      for (let _bi = 0; _bi < 8 && _k * 8 + _bi < 1; _bi++) if (_raw[_k * 8 + _bi]) _x |= 1 << _bi;
+      _e.push(_x);
+    }
+    b.storeBytes(_e);
+  }
+  let _nb = 0;
+  if (n.region !== null) _nb |= 1 << 0;
+  if (n.version !== null) _nb |= 1 << 1;
+  b.storeBytes([_nb >>> 0 & 255]);
+  b.storeLEB(b.cursor - _before);
+  const _o = b.cursor;
+  return { off: _o };
+}
+function _storeDocumentItem4(n, b) {
+  const _before = b.cursor;
+  const _raw = new Array(2).fill(false);
+  if (n.price_minor !== null) {
+    if (lebLength(zigzag(n.price_minor)) < 8) {
+      b.storeLEB(zigzag(n.price_minor));
+    } else {
+      b.storeI64(n.price_minor);
+      _raw[1] = true;
+    }
+  }
+  if (n.qty !== null) {
+    if (lebLength(zigzag(n.qty)) < 4) {
+      b.storeLEB(zigzag(n.qty));
+    } else {
+      b.storeI32(n.qty);
+      _raw[0] = true;
+    }
+  }
+  if (n.sku !== null) {
+    b.storeUtf8(n.sku, false);
+  }
+  {
+    const _e = [];
+    for (let _k = 0; _k < 1; _k++) {
+      let _x = 0;
+      for (let _bi = 0; _bi < 8 && _k * 8 + _bi < 2; _bi++) if (_raw[_k * 8 + _bi]) _x |= 1 << _bi;
+      _e.push(_x);
+    }
+    b.storeBytes(_e);
+  }
+  let _nb = 0;
+  if (n.sku !== null) _nb |= 1 << 0;
+  if (n.qty !== null) _nb |= 1 << 1;
+  if (n.price_minor !== null) _nb |= 1 << 2;
+  b.storeBytes([_nb >>> 0 & 255]);
+  b.storeLEB(b.cursor - _before);
+  const _o = b.cursor;
+  return { off: _o };
+}
+function _storeDocument4(n, b) {
+  const _before = b.cursor;
+  const _raw = new Array(1).fill(false);
+  if (n.items !== null) {
+    b.storePackedNodeArray(n.items, (b2, v) => _storeDocumentItem4(v, b2), false);
+  }
+  if (n.meta !== null) {
+    _storeDocumentMeta4(n.meta, b);
+  }
+  if (n.status !== null) {
+    if (lebLength(zigzag(n.status)) < 4) {
+      b.storeLEB(zigzag(n.status));
+    } else {
+      b.storeI32(n.status);
+      _raw[0] = true;
+    }
+  }
+  if (n.id !== null) {
+    b.storeUtf8(n.id, false);
+  }
+  {
+    const _e = [];
+    for (let _k = 0; _k < 1; _k++) {
+      let _x = 0;
+      for (let _bi = 0; _bi < 8 && _k * 8 + _bi < 1; _bi++) if (_raw[_k * 8 + _bi]) _x |= 1 << _bi;
+      _e.push(_x);
+    }
+    b.storeBytes(_e);
+  }
+  let _nb = 0;
+  if (n.id !== null) _nb |= 1 << 0;
+  if (n.status !== null) _nb |= 1 << 1;
+  if (n.meta !== null) _nb |= 1 << 2;
+  if (n.items !== null) _nb |= 1 << 3;
+  b.storeBytes([_nb >>> 0 & 255]);
+  b.storeLEB(b.cursor - _before);
+  const _o = b.cursor;
+  return { off: _o };
+}
+function writeInto4(root, b) {
+  const off = nodeOffset(_storeDocument4(root, b));
+  return b.storeLEB((b.cursor - off) * 4);
+}
+function toBytes8(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize, 1024);
+  writeInto4(root, b);
   return b.makeData();
 }
 
@@ -1976,8 +4401,8 @@ var TelemetryAccessor = class _TelemetryAccessor {
 // src/generated/dagr/TelemetryGraph_direct.ts
 var TelemetryGraph_direct_exports = {};
 __export(TelemetryGraph_direct_exports, {
-  toBytes: () => toBytes3,
-  writeInto: () => writeInto3
+  toBytes: () => toBytes9,
+  writeInto: () => writeInto5
 });
 function _storeTelemetry(n, b) {
   const _before = b.cursor;
@@ -2009,13 +4434,712 @@ function _storeTelemetry(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto3(root, b) {
+function writeInto5(root, b) {
   const off = nodeOffset(_storeTelemetry(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes3(root, maxSize = 2 * 1024 * 1024) {
+function toBytes9(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto3(root, b);
+  writeInto5(root, b);
+  return b.makeData();
+}
+
+// src/generated/dagr/TelemetryRegularGraph.ts
+var TelemetryRegularGraph_exports = {};
+__export(TelemetryRegularGraph_exports, {
+  TelemetryAccessor: () => TelemetryAccessor2
+});
+var TelemetryAccessor2 = class _TelemetryAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // source
+  _p1;
+  // ts
+  _p2;
+  // tags
+  _p3;
+  // values
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+    this._p2 = vt.length > 2 && vt[2] !== null ? start + vt[2] : null;
+    this._p3 = vt.length > 3 && vt[3] !== null ? start + vt[3] : null;
+  }
+  get source() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get ts() {
+    if (this._p1 === null) return null;
+    return readI64(this.buf, this._p1);
+  }
+  get tags() {
+    if (this._p2 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p2);
+    return readPtrTableArrayAt(this.buf, this._p2 + fwdB + fwd, (b, p) => readUtf8At(b, p)[0]);
+  }
+  get values() {
+    if (this._p3 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p3);
+    return readFixedArrayAt(this.buf, this._p3 + fwdB + fwd, readF64, 8)[0];
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _TelemetryAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/TelemetryRegularGraph_arena.ts
+var TelemetryRegularGraph_arena_exports = {};
+__export(TelemetryRegularGraph_arena_exports, {
+  Arena: () => Arena5,
+  Telemetry: () => Telemetry,
+  restore: () => restore5,
+  restoreWithMap: () => restoreWithMap5
+});
+function _pack5(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash5(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod5(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged5(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe5(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod5(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe5(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged5(v)) return String(v.type) + "(" + _dagrDescribe5(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash5(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod5(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash5(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged5(v)) return Math.imul(_strHash5(String(v.type)), 31) + _dagrHash5(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash5(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals5(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod5(a, "_eq")) return _hasMethod5(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals5(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged5(a)) return _isTagged5(b) && a.type === b.type && _dagrEquals5(a.value, b.value, seen);
+  return a === b;
+}
+var Telemetry = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrTelemetry[this._index];
+  }
+  get source() {
+    return this._arena._arrTelemetry[this._index].source;
+  }
+  set source(value) {
+    this._arena._arrTelemetry[this._index].source = value;
+  }
+  get ts() {
+    return this._arena._arrTelemetry[this._index].ts;
+  }
+  set ts(value) {
+    this._arena._arrTelemetry[this._index].ts = value;
+  }
+  get tags() {
+    return this._arena._arrTelemetry[this._index].tags;
+  }
+  set tags(value) {
+    this._arena._arrTelemetry[this._index].tags = value;
+  }
+  get values() {
+    return this._arena._arrTelemetry[this._index].values;
+  }
+  set values(value) {
+    this._arena._arrTelemetry[this._index].values = value;
+  }
+  _key() {
+    return `Telemetry#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Telemetry@${this._index}`;
+    _s.add(_k);
+    return `Telemetry@${this._index} { source: ${_dagrDescribe5(this.source, _s)}, ts: ${_dagrDescribe5(this.ts, _s)}, tags: ${_dagrDescribe5(this.tags, _s)}, values: ${_dagrDescribe5(this.values, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash5("Telemetry");
+    _h = Math.imul(_h, 31) + _dagrHash5(this.source, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash5(this.ts, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash5(this.tags, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash5(this.values, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals5(this.source, other.source, _s)) return false;
+    if (!_dagrEquals5(this.ts, other.ts, _s)) return false;
+    if (!_dagrEquals5(this.tags, other.tags, _s)) return false;
+    if (!_dagrEquals5(this.values, other.values, _s)) return false;
+    return true;
+  }
+};
+var Arena5 = class {
+  _arrTelemetry = [];
+  #root = null;
+  newTelemetry(source = "", ts = 0n, tags = [], values = []) {
+    const _i = this._arrTelemetry.length;
+    this._arrTelemetry.push({ source, ts, tags, values });
+    return new Telemetry(_pack5(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Telemetry(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromTelemetry(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newTelemetry();
+  seen.set(acc._start, _n);
+  _n.source = acc.source;
+  _n.ts = acc.ts;
+  _n.tags = acc.tags;
+  _n.values = acc.values;
+  return _n;
+}
+function restore5(bytes) {
+  const a = new Arena5();
+  a.root = _fromTelemetry(TelemetryAccessor2.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap5(bytes) {
+  const a = new Arena5();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromTelemetry(TelemetryAccessor2.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/TelemetryRegularGraph_serde.ts
+var TelemetryRegularGraph_serde_exports = {};
+__export(TelemetryRegularGraph_serde_exports, {
+  toBytes: () => toBytes10
+});
+function _storeTelemetry2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c3 = n.values === null ? null : b.storeFixedArray(n.values, (b2, v) => b2.storeF64(v));
+  const _c2 = n.tags === null ? null : b.storePtrTableArray(n.tags, (b2, v) => b2.storeUtf8(v, true), false);
+  const _c0 = n.source === null ? null : b.storeUtf8(n.source, true);
+  const _off3 = _c3 === null ? null : b.storeForwardPointer(_c3);
+  const _off2 = _c2 === null ? null : b.storeForwardPointer(_c2);
+  const _off1 = n.ts === null ? null : b.storeI64(n.ts);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1, _off2, _off3]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes10(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeTelemetry2(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/TelemetryFrozenGraph.ts
+var TelemetryFrozenGraph_exports = {};
+__export(TelemetryFrozenGraph_exports, {
+  TelemetryAccessor: () => TelemetryAccessor3
+});
+var TelemetryAccessor3 = class _TelemetryAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // source
+  _p1;
+  // ts
+  _p2;
+  // tags
+  _p3;
+  // values
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+      cur += 8;
+    } else {
+      this._p1 = null;
+    }
+    if (bs >> 2 & 1) {
+      this._p2 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p2 = null;
+    }
+    if (bs >> 3 & 1) {
+      this._p3 = cur;
+    } else {
+      this._p3 = null;
+    }
+  }
+  get source() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get ts() {
+    if (this._p1 === null) return null;
+    return readI64(this.buf, this._p1);
+  }
+  get tags() {
+    if (this._p2 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p2);
+    return readPtrTableArrayAt(this.buf, this._p2 + fwdB + fwd, (b, p) => readUtf8At(b, p)[0]);
+  }
+  get values() {
+    if (this._p3 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p3);
+    return readFixedArrayAt(this.buf, this._p3 + fwdB + fwd, readF64, 8)[0];
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _TelemetryAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/TelemetryFrozenGraph_arena.ts
+var TelemetryFrozenGraph_arena_exports = {};
+__export(TelemetryFrozenGraph_arena_exports, {
+  Arena: () => Arena6,
+  Telemetry: () => Telemetry2,
+  restore: () => restore6,
+  restoreWithMap: () => restoreWithMap6
+});
+function _pack6(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash6(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod6(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged6(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe6(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod6(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe6(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged6(v)) return String(v.type) + "(" + _dagrDescribe6(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash6(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod6(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash6(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged6(v)) return Math.imul(_strHash6(String(v.type)), 31) + _dagrHash6(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash6(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals6(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod6(a, "_eq")) return _hasMethod6(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals6(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged6(a)) return _isTagged6(b) && a.type === b.type && _dagrEquals6(a.value, b.value, seen);
+  return a === b;
+}
+var Telemetry2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrTelemetry[this._index];
+  }
+  get source() {
+    return this._arena._arrTelemetry[this._index].source;
+  }
+  set source(value) {
+    this._arena._arrTelemetry[this._index].source = value;
+  }
+  get ts() {
+    return this._arena._arrTelemetry[this._index].ts;
+  }
+  set ts(value) {
+    this._arena._arrTelemetry[this._index].ts = value;
+  }
+  get tags() {
+    return this._arena._arrTelemetry[this._index].tags;
+  }
+  set tags(value) {
+    this._arena._arrTelemetry[this._index].tags = value;
+  }
+  get values() {
+    return this._arena._arrTelemetry[this._index].values;
+  }
+  set values(value) {
+    this._arena._arrTelemetry[this._index].values = value;
+  }
+  _key() {
+    return `Telemetry#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Telemetry@${this._index}`;
+    _s.add(_k);
+    return `Telemetry@${this._index} { source: ${_dagrDescribe6(this.source, _s)}, ts: ${_dagrDescribe6(this.ts, _s)}, tags: ${_dagrDescribe6(this.tags, _s)}, values: ${_dagrDescribe6(this.values, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash6("Telemetry");
+    _h = Math.imul(_h, 31) + _dagrHash6(this.source, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash6(this.ts, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash6(this.tags, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash6(this.values, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals6(this.source, other.source, _s)) return false;
+    if (!_dagrEquals6(this.ts, other.ts, _s)) return false;
+    if (!_dagrEquals6(this.tags, other.tags, _s)) return false;
+    if (!_dagrEquals6(this.values, other.values, _s)) return false;
+    return true;
+  }
+};
+var Arena6 = class {
+  _arrTelemetry = [];
+  #root = null;
+  newTelemetry(source = "", ts = 0n, tags = [], values = []) {
+    const _i = this._arrTelemetry.length;
+    this._arrTelemetry.push({ source, ts, tags, values });
+    return new Telemetry2(_pack6(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Telemetry2(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromTelemetry2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newTelemetry();
+  seen.set(acc._start, _n);
+  _n.source = acc.source;
+  _n.ts = acc.ts;
+  _n.tags = acc.tags;
+  _n.values = acc.values;
+  return _n;
+}
+function restore6(bytes) {
+  const a = new Arena6();
+  a.root = _fromTelemetry2(TelemetryAccessor3.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap6(bytes) {
+  const a = new Arena6();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromTelemetry2(TelemetryAccessor3.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/TelemetryFrozenGraph_serde.ts
+var TelemetryFrozenGraph_serde_exports = {};
+__export(TelemetryFrozenGraph_serde_exports, {
+  toBytes: () => toBytes11
+});
+function _storeTelemetry3(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c3 = n.values === null ? null : b.storeFixedArray(n.values, (b2, v) => b2.storeF64(v));
+  const _c2 = n.tags === null ? null : b.storePtrTableArray(n.tags, (b2, v) => b2.storeUtf8(v, true), false);
+  const _c0 = n.source === null ? null : b.storeUtf8(n.source, true);
+  if (_c3 !== null) b.storeForwardPointer(_c3);
+  if (_c2 !== null) b.storeForwardPointer(_c2);
+  if (n.ts !== null) b.storeI64(n.ts);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.source !== null) _bs |= 1 << 0;
+  if (n.ts !== null) _bs |= 1 << 1;
+  if (n.tags !== null) _bs |= 1 << 2;
+  if (n.values !== null) _bs |= 1 << 3;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes11(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeTelemetry3(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/TelemetryFrozenPackedGraph.ts
+var TelemetryFrozenPackedGraph_exports = {};
+__export(TelemetryFrozenPackedGraph_exports, {
+  TelemetryAccessor: () => TelemetryAccessor4
+});
+var TelemetryAccessor4 = class _TelemetryAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _v0 = null;
+  // source
+  _p0 = -1;
+  _dc0 = false;
+  // source (deferred: buffer position + decoded flag)
+  _v1 = null;
+  // ts
+  _v2 = null;
+  // tags
+  _p2 = -1;
+  _dc2 = false;
+  // tags (deferred: buffer position + decoded flag)
+  _v3 = null;
+  // values
+  _p3 = -1;
+  _dc3 = false;
+  // values (deferred: buffer position + decoded flag)
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const [, blB] = readLEB(buf, start);
+    let cursor = start + blB;
+    const nilbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    const encbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    if (nilbs >> 0 & 1) {
+      this._p0 = cursor;
+      const [_sl0, _slB0] = readLEB(buf, cursor);
+      cursor += _slB0 + _sl0;
+    }
+    if (nilbs >> 1 & 1) {
+      if ((encbs >> 0 & 1) === 1) {
+        this._v1 = readI64(buf, cursor);
+        cursor += 8;
+      } else {
+        const [_lv, _lb] = readLEBBig(buf, cursor);
+        this._v1 = zigzagDecodeBig(_lv);
+        cursor += _lb;
+      }
+    }
+    if (nilbs >> 2 & 1) {
+      this._p2 = cursor;
+      const [_abl2, _ablB2] = readLEB(buf, cursor);
+      cursor += _ablB2 + _abl2;
+    }
+    if (nilbs >> 3 & 1) {
+      this._p3 = cursor;
+    }
+  }
+  get source() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
+    return this._v0;
+  }
+  get ts() {
+    return this._v1;
+  }
+  get tags() {
+    if (this._p2 < 0) return null;
+    if (!this._dc2) {
+      this._dc2 = true;
+      const [, _ablBg2] = readLEB(this.buf, this._p2);
+      this._v2 = readPackedComplexArrayAt(this.buf, this._p2 + _ablBg2, readUtf8At)[0];
+    }
+    return this._v2;
+  }
+  get values() {
+    if (this._p3 < 0) return null;
+    if (!this._dc3) {
+      this._dc3 = true;
+      const [, _ablBg3] = readLEB(this.buf, this._p3);
+      this._v3 = readPackedFloatArrayAt(this.buf, this._p3 + _ablBg3, decodePackedFloat64, 8)[0];
+    }
+    return this._v3;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _TelemetryAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/TelemetryFrozenPackedGraph_direct.ts
+var TelemetryFrozenPackedGraph_direct_exports = {};
+__export(TelemetryFrozenPackedGraph_direct_exports, {
+  toBytes: () => toBytes12,
+  writeInto: () => writeInto6
+});
+function _storeTelemetry4(n, b) {
+  const _before = b.cursor;
+  const _raw = new Array(1).fill(false);
+  if (n.values !== null) {
+    b.storePackedFloatArray(n.values, true, true);
+  }
+  if (n.tags !== null) {
+    b.storePackedComplexArray(n.tags, (b2, v) => b2.storeUtf8(v, false), false);
+  }
+  if (n.ts !== null) {
+    if (lebLength(zigzag(n.ts)) < 8) {
+      b.storeLEB(zigzag(n.ts));
+    } else {
+      b.storeI64(n.ts);
+      _raw[0] = true;
+    }
+  }
+  if (n.source !== null) {
+    b.storeUtf8(n.source, false);
+  }
+  {
+    const _e = [];
+    for (let _k = 0; _k < 1; _k++) {
+      let _x = 0;
+      for (let _bi = 0; _bi < 8 && _k * 8 + _bi < 1; _bi++) if (_raw[_k * 8 + _bi]) _x |= 1 << _bi;
+      _e.push(_x);
+    }
+    b.storeBytes(_e);
+  }
+  let _nb = 0;
+  if (n.source !== null) _nb |= 1 << 0;
+  if (n.ts !== null) _nb |= 1 << 1;
+  if (n.tags !== null) _nb |= 1 << 2;
+  if (n.values !== null) _nb |= 1 << 3;
+  b.storeBytes([_nb >>> 0 & 255]);
+  b.storeLEB(b.cursor - _before);
+  const _o = b.cursor;
+  return { off: _o };
+}
+function writeInto6(root, b) {
+  const off = nodeOffset(_storeTelemetry4(root, b));
+  return b.storeLEB((b.cursor - off) * 4);
+}
+function toBytes12(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize, 1024);
+  writeInto6(root, b);
   return b.makeData();
 }
 
@@ -2065,8 +5189,8 @@ var StringsAccessor = class _StringsAccessor {
 // src/generated/dagr/StringsGraph_direct.ts
 var StringsGraph_direct_exports = {};
 __export(StringsGraph_direct_exports, {
-  toBytes: () => toBytes4,
-  writeInto: () => writeInto4
+  toBytes: () => toBytes13,
+  writeInto: () => writeInto7
 });
 function _storeStrings(n, b) {
   const _before = b.cursor;
@@ -2078,13 +5202,501 @@ function _storeStrings(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto4(root, b) {
+function writeInto7(root, b) {
   const off = nodeOffset(_storeStrings(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes4(root, maxSize = 2 * 1024 * 1024) {
+function toBytes13(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto4(root, b);
+  writeInto7(root, b);
+  return b.makeData();
+}
+
+// src/generated/dagr/StringsRegularGraph.ts
+var StringsRegularGraph_exports = {};
+__export(StringsRegularGraph_exports, {
+  StringsAccessor: () => StringsAccessor2
+});
+var StringsAccessor2 = class _StringsAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // items
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+  }
+  get items() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    return readPtrTableArrayAt(this.buf, this._p0 + fwdB + fwd, (b, p) => readUtf8At(b, p)[0]);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _StringsAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/StringsRegularGraph_arena.ts
+var StringsRegularGraph_arena_exports = {};
+__export(StringsRegularGraph_arena_exports, {
+  Arena: () => Arena7,
+  Strings: () => Strings,
+  restore: () => restore7,
+  restoreWithMap: () => restoreWithMap7
+});
+function _pack7(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash7(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod7(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged7(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe7(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod7(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe7(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged7(v)) return String(v.type) + "(" + _dagrDescribe7(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash7(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod7(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash7(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged7(v)) return Math.imul(_strHash7(String(v.type)), 31) + _dagrHash7(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash7(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals7(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod7(a, "_eq")) return _hasMethod7(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals7(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged7(a)) return _isTagged7(b) && a.type === b.type && _dagrEquals7(a.value, b.value, seen);
+  return a === b;
+}
+var Strings = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrStrings[this._index];
+  }
+  get items() {
+    return this._arena._arrStrings[this._index].items;
+  }
+  set items(value) {
+    this._arena._arrStrings[this._index].items = value;
+  }
+  _key() {
+    return `Strings#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Strings@${this._index}`;
+    _s.add(_k);
+    return `Strings@${this._index} { items: ${_dagrDescribe7(this.items, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash7("Strings");
+    _h = Math.imul(_h, 31) + _dagrHash7(this.items, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals7(this.items, other.items, _s)) return false;
+    return true;
+  }
+};
+var Arena7 = class {
+  _arrStrings = [];
+  #root = null;
+  newStrings(items = []) {
+    const _i = this._arrStrings.length;
+    this._arrStrings.push({ items });
+    return new Strings(_pack7(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Strings(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromStrings(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newStrings();
+  seen.set(acc._start, _n);
+  _n.items = acc.items;
+  return _n;
+}
+function restore7(bytes) {
+  const a = new Arena7();
+  a.root = _fromStrings(StringsAccessor2.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap7(bytes) {
+  const a = new Arena7();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromStrings(StringsAccessor2.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/StringsRegularGraph_serde.ts
+var StringsRegularGraph_serde_exports = {};
+__export(StringsRegularGraph_serde_exports, {
+  toBytes: () => toBytes14
+});
+function _storeStrings2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c0 = n.items === null ? null : b.storePtrTableArray(n.items, (b2, v) => b2.storeUtf8(v, true), false);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes14(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeStrings2(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/StringsFrozenGraph.ts
+var StringsFrozenGraph_exports = {};
+__export(StringsFrozenGraph_exports, {
+  StringsAccessor: () => StringsAccessor3
+});
+var StringsAccessor3 = class _StringsAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // items
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    const cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+    } else {
+      this._p0 = null;
+    }
+  }
+  get items() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    return readPtrTableArrayAt(this.buf, this._p0 + fwdB + fwd, (b, p) => readUtf8At(b, p)[0]);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _StringsAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/StringsFrozenGraph_arena.ts
+var StringsFrozenGraph_arena_exports = {};
+__export(StringsFrozenGraph_arena_exports, {
+  Arena: () => Arena8,
+  Strings: () => Strings2,
+  restore: () => restore8,
+  restoreWithMap: () => restoreWithMap8
+});
+function _pack8(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash8(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod8(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged8(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe8(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod8(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe8(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged8(v)) return String(v.type) + "(" + _dagrDescribe8(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash8(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod8(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash8(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged8(v)) return Math.imul(_strHash8(String(v.type)), 31) + _dagrHash8(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash8(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals8(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod8(a, "_eq")) return _hasMethod8(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals8(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged8(a)) return _isTagged8(b) && a.type === b.type && _dagrEquals8(a.value, b.value, seen);
+  return a === b;
+}
+var Strings2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrStrings[this._index];
+  }
+  get items() {
+    return this._arena._arrStrings[this._index].items;
+  }
+  set items(value) {
+    this._arena._arrStrings[this._index].items = value;
+  }
+  _key() {
+    return `Strings#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Strings@${this._index}`;
+    _s.add(_k);
+    return `Strings@${this._index} { items: ${_dagrDescribe8(this.items, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash8("Strings");
+    _h = Math.imul(_h, 31) + _dagrHash8(this.items, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals8(this.items, other.items, _s)) return false;
+    return true;
+  }
+};
+var Arena8 = class {
+  _arrStrings = [];
+  #root = null;
+  newStrings(items = []) {
+    const _i = this._arrStrings.length;
+    this._arrStrings.push({ items });
+    return new Strings2(_pack8(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Strings2(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromStrings2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newStrings();
+  seen.set(acc._start, _n);
+  _n.items = acc.items;
+  return _n;
+}
+function restore8(bytes) {
+  const a = new Arena8();
+  a.root = _fromStrings2(StringsAccessor3.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap8(bytes) {
+  const a = new Arena8();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromStrings2(StringsAccessor3.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/StringsFrozenGraph_serde.ts
+var StringsFrozenGraph_serde_exports = {};
+__export(StringsFrozenGraph_serde_exports, {
+  toBytes: () => toBytes15
+});
+function _storeStrings3(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c0 = n.items === null ? null : b.storePtrTableArray(n.items, (b2, v) => b2.storeUtf8(v, true), false);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.items !== null) _bs |= 1 << 0;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes15(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeStrings3(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/StringsFrozenPackedGraph.ts
+var StringsFrozenPackedGraph_exports = {};
+__export(StringsFrozenPackedGraph_exports, {
+  StringsAccessor: () => StringsAccessor4
+});
+var StringsAccessor4 = class _StringsAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _v0 = null;
+  // items
+  _p0 = -1;
+  _dc0 = false;
+  // items (deferred: buffer position + decoded flag)
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const [, blB] = readLEB(buf, start);
+    let cursor = start + blB;
+    const nilbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    if (nilbs >> 0 & 1) {
+      this._p0 = cursor;
+    }
+  }
+  get items() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      const [, _ablBg0] = readLEB(this.buf, this._p0);
+      this._v0 = readPackedComplexArrayAt(this.buf, this._p0 + _ablBg0, readUtf8At)[0];
+    }
+    return this._v0;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _StringsAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/StringsFrozenPackedGraph_direct.ts
+var StringsFrozenPackedGraph_direct_exports = {};
+__export(StringsFrozenPackedGraph_direct_exports, {
+  toBytes: () => toBytes16,
+  writeInto: () => writeInto8
+});
+function _storeStrings4(n, b) {
+  const _before = b.cursor;
+  if (n.items !== null) {
+    b.storePackedComplexArray(n.items, (b2, v) => b2.storeUtf8(v, false), false);
+  }
+  let _nb = 0;
+  if (n.items !== null) _nb |= 1 << 0;
+  b.storeBytes([_nb >>> 0 & 255]);
+  b.storeLEB(b.cursor - _before);
+  const _o = b.cursor;
+  return { off: _o };
+}
+function writeInto8(root, b) {
+  const off = nodeOffset(_storeStrings4(root, b));
+  return b.storeLEB((b.cursor - off) * 4);
+}
+function toBytes16(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize, 1024);
+  writeInto8(root, b);
   return b.makeData();
 }
 
@@ -2278,8 +5890,8 @@ var EventAccessor = class _EventAccessor {
 // src/generated/dagr/EventGraph_direct.ts
 var EventGraph_direct_exports = {};
 __export(EventGraph_direct_exports, {
-  toBytes: () => toBytes5,
-  writeInto: () => writeInto5
+  toBytes: () => toBytes17,
+  writeInto: () => writeInto9
 });
 function _storeEventAttr(n, b) {
   const _before = b.cursor;
@@ -2329,25 +5941,1155 @@ function _storeEvent(n, b) {
   const _o = b.cursor;
   return { off: _o };
 }
-function writeInto5(root, b) {
+function writeInto9(root, b) {
   const off = nodeOffset(_storeEvent(root, b));
   return b.storeLEB((b.cursor - off) * 4);
 }
-function toBytes5(root, maxSize = 2 * 1024 * 1024) {
+function toBytes17(root, maxSize = 2 * 1024 * 1024) {
   const b = new Builder(maxSize, 1024);
-  writeInto5(root, b);
+  writeInto9(root, b);
+  return b.makeData();
+}
+
+// src/generated/dagr/EventRegularGraph.ts
+var EventRegularGraph_exports = {};
+__export(EventRegularGraph_exports, {
+  EventAccessor: () => EventAccessor2,
+  EventAttrAccessor: () => EventAttrAccessor2
+});
+var EventAttrAccessor2 = class _EventAttrAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // key
+  _p1;
+  // value
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+  }
+  get key() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get value() {
+    if (this._p1 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p1);
+    const [v] = readUtf8At(this.buf, this._p1 + fwdB + fwd);
+    return v;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _EventAttrAccessor(buf, rootOffset(buf));
+  }
+};
+var EventAccessor2 = class _EventAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // event_id
+  _p1;
+  // event_type
+  _p2;
+  // occurred_at
+  _p3;
+  // producer
+  _p4;
+  // attrs
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const vt = restoreRTypeVTable(buf, start);
+    this._p0 = vt.length > 0 && vt[0] !== null ? start + vt[0] : null;
+    this._p1 = vt.length > 1 && vt[1] !== null ? start + vt[1] : null;
+    this._p2 = vt.length > 2 && vt[2] !== null ? start + vt[2] : null;
+    this._p3 = vt.length > 3 && vt[3] !== null ? start + vt[3] : null;
+    this._p4 = vt.length > 4 && vt[4] !== null ? start + vt[4] : null;
+  }
+  get event_id() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get event_type() {
+    if (this._p1 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p1);
+    const [v] = readUtf8At(this.buf, this._p1 + fwdB + fwd);
+    return v;
+  }
+  get occurred_at() {
+    if (this._p2 === null) return null;
+    return readI64(this.buf, this._p2);
+  }
+  get producer() {
+    if (this._p3 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p3);
+    const [v] = readUtf8At(this.buf, this._p3 + fwdB + fwd);
+    return v;
+  }
+  get attrs() {
+    if (this._p4 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p4);
+    return readPtrTableArrayAt(this.buf, this._p4 + fwdB + fwd, (b, p) => new EventAttrAccessor2(b, p), true);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _EventAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/EventRegularGraph_arena.ts
+var EventRegularGraph_arena_exports = {};
+__export(EventRegularGraph_arena_exports, {
+  Arena: () => Arena9,
+  Event: () => Event,
+  EventAttr: () => EventAttr,
+  restore: () => restore9,
+  restoreWithMap: () => restoreWithMap9
+});
+function _pack9(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash9(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod9(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged9(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe9(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod9(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe9(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged9(v)) return String(v.type) + "(" + _dagrDescribe9(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash9(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod9(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash9(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged9(v)) return Math.imul(_strHash9(String(v.type)), 31) + _dagrHash9(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash9(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals9(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod9(a, "_eq")) return _hasMethod9(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals9(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged9(a)) return _isTagged9(b) && a.type === b.type && _dagrEquals9(a.value, b.value, seen);
+  return a === b;
+}
+var EventAttr = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrEventAttr[this._index];
+  }
+  get key() {
+    return this._arena._arrEventAttr[this._index].key;
+  }
+  set key(value) {
+    this._arena._arrEventAttr[this._index].key = value;
+  }
+  get value() {
+    return this._arena._arrEventAttr[this._index].value;
+  }
+  set value(value) {
+    this._arena._arrEventAttr[this._index].value = value;
+  }
+  _key() {
+    return `EventAttr#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `EventAttr@${this._index}`;
+    _s.add(_k);
+    return `EventAttr@${this._index} { key: ${_dagrDescribe9(this.key, _s)}, value: ${_dagrDescribe9(this.value, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash9("EventAttr");
+    _h = Math.imul(_h, 31) + _dagrHash9(this.key, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash9(this.value, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals9(this.key, other.key, _s)) return false;
+    if (!_dagrEquals9(this.value, other.value, _s)) return false;
+    return true;
+  }
+};
+var Event = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrEvent[this._index];
+  }
+  get event_id() {
+    return this._arena._arrEvent[this._index].event_id;
+  }
+  set event_id(value) {
+    this._arena._arrEvent[this._index].event_id = value;
+  }
+  get event_type() {
+    return this._arena._arrEvent[this._index].event_type;
+  }
+  set event_type(value) {
+    this._arena._arrEvent[this._index].event_type = value;
+  }
+  get occurred_at() {
+    return this._arena._arrEvent[this._index].occurred_at;
+  }
+  set occurred_at(value) {
+    this._arena._arrEvent[this._index].occurred_at = value;
+  }
+  get producer() {
+    return this._arena._arrEvent[this._index].producer;
+  }
+  set producer(value) {
+    this._arena._arrEvent[this._index].producer = value;
+  }
+  get attrs() {
+    return this._arena._arrEvent[this._index].attrs.filter((_p) => _p !== null).map((_p) => new EventAttr(_p, this._arena));
+  }
+  set attrs(value) {
+    this._arena._arrEvent[this._index].attrs = value.map((_h) => _h === null ? null : _h._packed);
+  }
+  _key() {
+    return `Event#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Event@${this._index}`;
+    _s.add(_k);
+    return `Event@${this._index} { event_id: ${_dagrDescribe9(this.event_id, _s)}, event_type: ${_dagrDescribe9(this.event_type, _s)}, occurred_at: ${_dagrDescribe9(this.occurred_at, _s)}, producer: ${_dagrDescribe9(this.producer, _s)}, attrs: ${_dagrDescribe9(this.attrs, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash9("Event");
+    _h = Math.imul(_h, 31) + _dagrHash9(this.event_id, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash9(this.event_type, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash9(this.occurred_at, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash9(this.producer, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash9(this.attrs, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals9(this.event_id, other.event_id, _s)) return false;
+    if (!_dagrEquals9(this.event_type, other.event_type, _s)) return false;
+    if (!_dagrEquals9(this.occurred_at, other.occurred_at, _s)) return false;
+    if (!_dagrEquals9(this.producer, other.producer, _s)) return false;
+    if (!_dagrEquals9(this.attrs, other.attrs, _s)) return false;
+    return true;
+  }
+};
+var Arena9 = class {
+  _arrEventAttr = [];
+  _arrEvent = [];
+  #root = null;
+  newEventAttr(key = "", value = "") {
+    const _i = this._arrEventAttr.length;
+    this._arrEventAttr.push({ key, value });
+    return new EventAttr(_pack9(0, _i), this);
+  }
+  newEvent(event_id = "", event_type = "", occurred_at = 0n, producer = "", attrs = []) {
+    const _i = this._arrEvent.length;
+    this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs.map((_h) => _h === null ? null : _h._packed) });
+    return new Event(_pack9(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Event(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromEventAttr(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newEventAttr();
+  seen.set(acc._start, _n);
+  _n.key = acc.key;
+  _n.value = acc.value;
+  return _n;
+}
+function _fromEvent(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newEvent();
+  seen.set(acc._start, _n);
+  _n.event_id = acc.event_id;
+  _n.event_type = acc.event_type;
+  _n.occurred_at = acc.occurred_at;
+  _n.producer = acc.producer;
+  _n.attrs = ((_s) => acc.attrs.map((_e) => _e === null ? null : _fromEventAttr(_e, a, _s)))(seen);
+  return _n;
+}
+function restore9(bytes) {
+  const a = new Arena9();
+  a.root = _fromEvent(EventAccessor2.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap9(bytes) {
+  const a = new Arena9();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromEvent(EventAccessor2.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/EventRegularGraph_serde.ts
+var EventRegularGraph_serde_exports = {};
+__export(EventRegularGraph_serde_exports, {
+  toBytes: () => toBytes18
+});
+function _storeEventAttr2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c1 = n.value === null ? null : b.storeUtf8(n.value, true);
+  const _c0 = n.key === null ? null : b.storeUtf8(n.key, true);
+  const _off1 = _c1 === null ? null : b.storeForwardPointer(_c1);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeEvent2(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c4 = n.attrs === null ? null : b.storeNodeRefArray(n.attrs, (b2, v) => _storeEventAttr2(v, b2));
+  const _c3 = n.producer === null ? null : b.storeUtf8(n.producer, true);
+  const _c1 = n.event_type === null ? null : b.storeUtf8(n.event_type, true);
+  const _c0 = n.event_id === null ? null : b.storeUtf8(n.event_id, true);
+  const _off4 = _c4 === null ? null : b.storeForwardPointer(_c4);
+  const _off3 = _c3 === null ? null : b.storeForwardPointer(_c3);
+  const _off2 = n.occurred_at === null ? null : b.storeI64(n.occurred_at);
+  const _off1 = _c1 === null ? null : b.storeForwardPointer(_c1);
+  const _off0 = _c0 === null ? null : b.storeForwardPointer(_c0);
+  const _o = b.storeVTable([_off0, _off1, _off2, _off3, _off4]);
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes18(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeEvent2(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/EventFrozenGraph.ts
+var EventFrozenGraph_exports = {};
+__export(EventFrozenGraph_exports, {
+  EventAccessor: () => EventAccessor3,
+  EventAttrAccessor: () => EventAttrAccessor3
+});
+var EventAttrAccessor3 = class _EventAttrAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // key
+  _p1;
+  // value
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+    } else {
+      this._p1 = null;
+    }
+  }
+  get key() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get value() {
+    if (this._p1 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p1);
+    const [v] = readUtf8At(this.buf, this._p1 + fwdB + fwd);
+    return v;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _EventAttrAccessor(buf, rootOffset(buf));
+  }
+};
+var EventAccessor3 = class _EventAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _p0;
+  // event_id
+  _p1;
+  // event_type
+  _p2;
+  // occurred_at
+  _p3;
+  // producer
+  _p4;
+  // attrs
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const bs = readBitset(buf, start, 1);
+    let cur = start + 1;
+    if (bs >> 0 & 1) {
+      this._p0 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p0 = null;
+    }
+    if (bs >> 1 & 1) {
+      this._p1 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p1 = null;
+    }
+    if (bs >> 2 & 1) {
+      this._p2 = cur;
+      cur += 8;
+    } else {
+      this._p2 = null;
+    }
+    if (bs >> 3 & 1) {
+      this._p3 = cur;
+      cur += readV62(buf, cur)[1];
+    } else {
+      this._p3 = null;
+    }
+    if (bs >> 4 & 1) {
+      this._p4 = cur;
+    } else {
+      this._p4 = null;
+    }
+  }
+  get event_id() {
+    if (this._p0 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p0);
+    const [v] = readUtf8At(this.buf, this._p0 + fwdB + fwd);
+    return v;
+  }
+  get event_type() {
+    if (this._p1 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p1);
+    const [v] = readUtf8At(this.buf, this._p1 + fwdB + fwd);
+    return v;
+  }
+  get occurred_at() {
+    if (this._p2 === null) return null;
+    return readI64(this.buf, this._p2);
+  }
+  get producer() {
+    if (this._p3 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p3);
+    const [v] = readUtf8At(this.buf, this._p3 + fwdB + fwd);
+    return v;
+  }
+  get attrs() {
+    if (this._p4 === null) return null;
+    const [fwd, fwdB] = readV62(this.buf, this._p4);
+    return readPtrTableArrayAt(this.buf, this._p4 + fwdB + fwd, (b, p) => new EventAttrAccessor3(b, p), true);
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _EventAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/EventFrozenGraph_arena.ts
+var EventFrozenGraph_arena_exports = {};
+__export(EventFrozenGraph_arena_exports, {
+  Arena: () => Arena10,
+  Event: () => Event2,
+  EventAttr: () => EventAttr2,
+  restore: () => restore10,
+  restoreWithMap: () => restoreWithMap10
+});
+function _pack10(gen, idx) {
+  return BigInt(gen) << 40n | BigInt(idx);
+}
+function _strHash10(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h, 33) + s.charCodeAt(i) | 0;
+  return h;
+}
+function _hasMethod10(v, k) {
+  return typeof v === "object" && v !== null && typeof v[k] === "function";
+}
+function _isTagged10(v) {
+  return typeof v === "object" && v !== null && "type" in v && "value" in v;
+}
+function _dagrDescribe10(v, seen) {
+  if (v === null || v === void 0) return "null";
+  if (_hasMethod10(v, "_describe")) return v._describe(seen);
+  if (Array.isArray(v)) return "[" + v.map((e) => _dagrDescribe10(e, seen)).join(", ") + "]";
+  if (v instanceof Uint8Array) return "[" + Array.from(v).join(", ") + "]";
+  if (_isTagged10(v)) return String(v.type) + "(" + _dagrDescribe10(v.value, seen) + ")";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (typeof v === "bigint") return v.toString();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+function _dagrHash10(v, seen) {
+  if (v === null || v === void 0) return 0;
+  if (_hasMethod10(v, "_hash")) return v._hash(seen);
+  if (Array.isArray(v)) {
+    let h = 7;
+    for (const e of v) h = Math.imul(h, 31) + _dagrHash10(e, seen) | 0;
+    return h;
+  }
+  if (v instanceof Uint8Array) {
+    let h = 7;
+    for (const b of v) h = Math.imul(h, 31) + b | 0;
+    return h;
+  }
+  if (_isTagged10(v)) return Math.imul(_strHash10(String(v.type)), 31) + _dagrHash10(v.value, seen) | 0;
+  if (typeof v === "string") return _strHash10(v);
+  if (typeof v === "bigint") return Number(BigInt.asUintN(32, v)) | 0;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  return typeof v === "number" ? v | 0 : 0;
+}
+function _dagrEquals10(a, b, seen) {
+  if (a === null || a === void 0) return b === null || b === void 0;
+  if (b === null || b === void 0) return false;
+  if (_hasMethod10(a, "_eq")) return _hasMethod10(b, "_eq") && a._eq(b, seen);
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!_dagrEquals10(a[i], b[i], seen)) return false;
+    return true;
+  }
+  if (a instanceof Uint8Array) {
+    if (!(b instanceof Uint8Array) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  if (_isTagged10(a)) return _isTagged10(b) && a.type === b.type && _dagrEquals10(a.value, b.value, seen);
+  return a === b;
+}
+var EventAttr2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrEventAttr[this._index];
+  }
+  get key() {
+    return this._arena._arrEventAttr[this._index].key;
+  }
+  set key(value) {
+    this._arena._arrEventAttr[this._index].key = value;
+  }
+  get value() {
+    return this._arena._arrEventAttr[this._index].value;
+  }
+  set value(value) {
+    this._arena._arrEventAttr[this._index].value = value;
+  }
+  _key() {
+    return `EventAttr#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `EventAttr@${this._index}`;
+    _s.add(_k);
+    return `EventAttr@${this._index} { key: ${_dagrDescribe10(this.key, _s)}, value: ${_dagrDescribe10(this.value, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash10("EventAttr");
+    _h = Math.imul(_h, 31) + _dagrHash10(this.key, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash10(this.value, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals10(this.key, other.key, _s)) return false;
+    if (!_dagrEquals10(this.value, other.value, _s)) return false;
+    return true;
+  }
+};
+var Event2 = class {
+  constructor(_packed, _arena) {
+    this._packed = _packed;
+    this._arena = _arena;
+  }
+  get _index() {
+    return Number(this._packed);
+  }
+  get _values() {
+    return this._arena._arrEvent[this._index];
+  }
+  get event_id() {
+    return this._arena._arrEvent[this._index].event_id;
+  }
+  set event_id(value) {
+    this._arena._arrEvent[this._index].event_id = value;
+  }
+  get event_type() {
+    return this._arena._arrEvent[this._index].event_type;
+  }
+  set event_type(value) {
+    this._arena._arrEvent[this._index].event_type = value;
+  }
+  get occurred_at() {
+    return this._arena._arrEvent[this._index].occurred_at;
+  }
+  set occurred_at(value) {
+    this._arena._arrEvent[this._index].occurred_at = value;
+  }
+  get producer() {
+    return this._arena._arrEvent[this._index].producer;
+  }
+  set producer(value) {
+    this._arena._arrEvent[this._index].producer = value;
+  }
+  get attrs() {
+    return this._arena._arrEvent[this._index].attrs.filter((_p) => _p !== null).map((_p) => new EventAttr2(_p, this._arena));
+  }
+  set attrs(value) {
+    this._arena._arrEvent[this._index].attrs = value.map((_h) => _h === null ? null : _h._packed);
+  }
+  _key() {
+    return `Event#${this._index}`;
+  }
+  toString() {
+    return this._describe(/* @__PURE__ */ new Set());
+  }
+  _describe(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return `Event@${this._index}`;
+    _s.add(_k);
+    return `Event@${this._index} { event_id: ${_dagrDescribe10(this.event_id, _s)}, event_type: ${_dagrDescribe10(this.event_type, _s)}, occurred_at: ${_dagrDescribe10(this.occurred_at, _s)}, producer: ${_dagrDescribe10(this.producer, _s)}, attrs: ${_dagrDescribe10(this.attrs, _s)} }`;
+  }
+  hash() {
+    return this._hash(/* @__PURE__ */ new Set());
+  }
+  _hash(_s) {
+    const _k = this._key();
+    if (_s.has(_k)) return 0;
+    _s.add(_k);
+    let _h = _strHash10("Event");
+    _h = Math.imul(_h, 31) + _dagrHash10(this.event_id, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash10(this.event_type, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash10(this.occurred_at, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash10(this.producer, _s) | 0;
+    _h = Math.imul(_h, 31) + _dagrHash10(this.attrs, _s) | 0;
+    return _h;
+  }
+  equals(other) {
+    return this._eq(other, /* @__PURE__ */ new Set());
+  }
+  _eq(other, _s) {
+    const _pk = this._key() + "|" + other._key();
+    if (_s.has(_pk)) return true;
+    _s.add(_pk);
+    if (!_dagrEquals10(this.event_id, other.event_id, _s)) return false;
+    if (!_dagrEquals10(this.event_type, other.event_type, _s)) return false;
+    if (!_dagrEquals10(this.occurred_at, other.occurred_at, _s)) return false;
+    if (!_dagrEquals10(this.producer, other.producer, _s)) return false;
+    if (!_dagrEquals10(this.attrs, other.attrs, _s)) return false;
+    return true;
+  }
+};
+var Arena10 = class {
+  _arrEventAttr = [];
+  _arrEvent = [];
+  #root = null;
+  newEventAttr(key = "", value = "") {
+    const _i = this._arrEventAttr.length;
+    this._arrEventAttr.push({ key, value });
+    return new EventAttr2(_pack10(0, _i), this);
+  }
+  newEvent(event_id = "", event_type = "", occurred_at = 0n, producer = "", attrs = []) {
+    const _i = this._arrEvent.length;
+    this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs.map((_h) => _h === null ? null : _h._packed) });
+    return new Event2(_pack10(0, _i), this);
+  }
+  get root() {
+    if (this.#root === null) return null;
+    return new Event2(this.#root, this);
+  }
+  set root(h) {
+    this.#root = h === null ? null : h._packed;
+  }
+};
+function _fromEventAttr2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newEventAttr();
+  seen.set(acc._start, _n);
+  _n.key = acc.key;
+  _n.value = acc.value;
+  return _n;
+}
+function _fromEvent2(accU, a, seen) {
+  const acc = accU;
+  const _hit = seen.get(acc._start);
+  if (_hit) return _hit;
+  const _n = a.newEvent();
+  seen.set(acc._start, _n);
+  _n.event_id = acc.event_id;
+  _n.event_type = acc.event_type;
+  _n.occurred_at = acc.occurred_at;
+  _n.producer = acc.producer;
+  _n.attrs = ((_s) => acc.attrs.map((_e) => _e === null ? null : _fromEventAttr2(_e, a, _s)))(seen);
+  return _n;
+}
+function restore10(bytes) {
+  const a = new Arena10();
+  a.root = _fromEvent2(EventAccessor3.lazyRoot(bytes), a, /* @__PURE__ */ new Map());
+  return a;
+}
+function restoreWithMap10(bytes) {
+  const a = new Arena10();
+  const byOffset = /* @__PURE__ */ new Map();
+  a.root = _fromEvent2(EventAccessor3.lazyRoot(bytes), a, byOffset);
+  return { arena: a, byOffset };
+}
+
+// src/generated/dagr/EventFrozenGraph_serde.ts
+var EventFrozenGraph_serde_exports = {};
+__export(EventFrozenGraph_serde_exports, {
+  toBytes: () => toBytes19
+});
+function _storeEventAttr3(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c1 = n.value === null ? null : b.storeUtf8(n.value, true);
+  const _c0 = n.key === null ? null : b.storeUtf8(n.key, true);
+  if (_c1 !== null) b.storeForwardPointer(_c1);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.key !== null) _bs |= 1 << 0;
+  if (n.value !== null) _bs |= 1 << 1;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function _storeEvent3(n, b) {
+  const _r = b.beginStoring(n._values);
+  if (_r) return _r;
+  const _c4 = n.attrs === null ? null : b.storeNodeRefArray(n.attrs, (b2, v) => _storeEventAttr3(v, b2));
+  const _c3 = n.producer === null ? null : b.storeUtf8(n.producer, true);
+  const _c1 = n.event_type === null ? null : b.storeUtf8(n.event_type, true);
+  const _c0 = n.event_id === null ? null : b.storeUtf8(n.event_id, true);
+  if (_c4 !== null) b.storeForwardPointer(_c4);
+  if (_c3 !== null) b.storeForwardPointer(_c3);
+  if (n.occurred_at !== null) b.storeI64(n.occurred_at);
+  if (_c1 !== null) b.storeForwardPointer(_c1);
+  if (_c0 !== null) b.storeForwardPointer(_c0);
+  let _bs = 0;
+  if (n.event_id !== null) _bs |= 1 << 0;
+  if (n.event_type !== null) _bs |= 1 << 1;
+  if (n.occurred_at !== null) _bs |= 1 << 2;
+  if (n.producer !== null) _bs |= 1 << 3;
+  if (n.attrs !== null) _bs |= 1 << 4;
+  b.storeBytes([_bs >>> 0 & 255]);
+  const _o = b.cursor;
+  b.finishStoring(n._values, _o);
+  return { off: _o };
+}
+function toBytes19(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize);
+  const off = nodeOffset(_storeEvent3(root, b));
+  b.storeLEB(BigInt(b.cursor - off) << 2n);
+  return b.makeData();
+}
+
+// src/generated/dagr/EventFrozenPackedGraph.ts
+var EventFrozenPackedGraph_exports = {};
+__export(EventFrozenPackedGraph_exports, {
+  EventAccessor: () => EventAccessor4,
+  EventAttrAccessor: () => EventAttrAccessor4
+});
+var EventAttrAccessor4 = class _EventAttrAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _v0 = null;
+  // key
+  _p0 = -1;
+  _dc0 = false;
+  // key (deferred: buffer position + decoded flag)
+  _v1 = null;
+  // value
+  _p1 = -1;
+  _dc1 = false;
+  // value (deferred: buffer position + decoded flag)
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const [, blB] = readLEB(buf, start);
+    let cursor = start + blB;
+    const nilbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    if (nilbs >> 0 & 1) {
+      this._p0 = cursor;
+      const [_sl0, _slB0] = readLEB(buf, cursor);
+      cursor += _slB0 + _sl0;
+    }
+    if (nilbs >> 1 & 1) {
+      this._p1 = cursor;
+    }
+  }
+  get key() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
+    return this._v0;
+  }
+  get value() {
+    if (this._p1 < 0) return null;
+    if (!this._dc1) {
+      this._dc1 = true;
+      this._v1 = readUtf8At(this.buf, this._p1)[0];
+    }
+    return this._v1;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _EventAttrAccessor(buf, rootOffset(buf));
+  }
+};
+var EventAccessor4 = class _EventAccessor {
+  buf;
+  _start;
+  // node position, for eager-restore dedup
+  _v0 = null;
+  // event_id
+  _p0 = -1;
+  _dc0 = false;
+  // event_id (deferred: buffer position + decoded flag)
+  _v1 = null;
+  // event_type
+  _p1 = -1;
+  _dc1 = false;
+  // event_type (deferred: buffer position + decoded flag)
+  _v2 = null;
+  // occurred_at
+  _v3 = null;
+  // producer
+  _p3 = -1;
+  _dc3 = false;
+  // producer (deferred: buffer position + decoded flag)
+  _v4 = null;
+  // attrs
+  _p4 = -1;
+  _dc4 = false;
+  // attrs (deferred: buffer position + decoded flag)
+  constructor(buf, start) {
+    this.buf = buf;
+    this._start = start;
+    const [, blB] = readLEB(buf, start);
+    let cursor = start + blB;
+    const nilbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    const encbs = readBitset(buf, cursor, 1);
+    cursor += 1;
+    if (nilbs >> 0 & 1) {
+      this._p0 = cursor;
+      const [_sl0, _slB0] = readLEB(buf, cursor);
+      cursor += _slB0 + _sl0;
+    }
+    if (nilbs >> 1 & 1) {
+      this._p1 = cursor;
+      const [_sl1, _slB1] = readLEB(buf, cursor);
+      cursor += _slB1 + _sl1;
+    }
+    if (nilbs >> 2 & 1) {
+      if ((encbs >> 0 & 1) === 1) {
+        this._v2 = readI64(buf, cursor);
+        cursor += 8;
+      } else {
+        const [_lv, _lb] = readLEBBig(buf, cursor);
+        this._v2 = zigzagDecodeBig(_lv);
+        cursor += _lb;
+      }
+    }
+    if (nilbs >> 3 & 1) {
+      this._p3 = cursor;
+      const [_sl3, _slB3] = readLEB(buf, cursor);
+      cursor += _slB3 + _sl3;
+    }
+    if (nilbs >> 4 & 1) {
+      this._p4 = cursor;
+    }
+  }
+  get event_id() {
+    if (this._p0 < 0) return null;
+    if (!this._dc0) {
+      this._dc0 = true;
+      this._v0 = readUtf8At(this.buf, this._p0)[0];
+    }
+    return this._v0;
+  }
+  get event_type() {
+    if (this._p1 < 0) return null;
+    if (!this._dc1) {
+      this._dc1 = true;
+      this._v1 = readUtf8At(this.buf, this._p1)[0];
+    }
+    return this._v1;
+  }
+  get occurred_at() {
+    return this._v2;
+  }
+  get producer() {
+    if (this._p3 < 0) return null;
+    if (!this._dc3) {
+      this._dc3 = true;
+      this._v3 = readUtf8At(this.buf, this._p3)[0];
+    }
+    return this._v3;
+  }
+  get attrs() {
+    if (this._p4 < 0) return null;
+    if (!this._dc4) {
+      this._dc4 = true;
+      const [, _ablBg4] = readLEB(this.buf, this._p4);
+      this._v4 = readPackedNodeArrayAt(this.buf, this._p4 + _ablBg4, (b, p) => new EventAttrAccessor4(b, p), false);
+    }
+    return this._v4;
+  }
+  static lazyRoot(bytes) {
+    const buf = new Buf(bytes);
+    return new _EventAccessor(buf, rootOffset(buf));
+  }
+};
+
+// src/generated/dagr/EventFrozenPackedGraph_direct.ts
+var EventFrozenPackedGraph_direct_exports = {};
+__export(EventFrozenPackedGraph_direct_exports, {
+  toBytes: () => toBytes20,
+  writeInto: () => writeInto10
+});
+function _storeEventAttr4(n, b) {
+  const _before = b.cursor;
+  if (n.value !== null) {
+    b.storeUtf8(n.value, false);
+  }
+  if (n.key !== null) {
+    b.storeUtf8(n.key, false);
+  }
+  let _nb = 0;
+  if (n.key !== null) _nb |= 1 << 0;
+  if (n.value !== null) _nb |= 1 << 1;
+  b.storeBytes([_nb >>> 0 & 255]);
+  b.storeLEB(b.cursor - _before);
+  const _o = b.cursor;
+  return { off: _o };
+}
+function _storeEvent4(n, b) {
+  const _before = b.cursor;
+  const _raw = new Array(1).fill(false);
+  if (n.attrs !== null) {
+    b.storePackedNodeArray(n.attrs, (b2, v) => _storeEventAttr4(v, b2), false);
+  }
+  if (n.producer !== null) {
+    b.storeUtf8(n.producer, false);
+  }
+  if (n.occurred_at !== null) {
+    if (lebLength(zigzag(n.occurred_at)) < 8) {
+      b.storeLEB(zigzag(n.occurred_at));
+    } else {
+      b.storeI64(n.occurred_at);
+      _raw[0] = true;
+    }
+  }
+  if (n.event_type !== null) {
+    b.storeUtf8(n.event_type, false);
+  }
+  if (n.event_id !== null) {
+    b.storeUtf8(n.event_id, false);
+  }
+  {
+    const _e = [];
+    for (let _k = 0; _k < 1; _k++) {
+      let _x = 0;
+      for (let _bi = 0; _bi < 8 && _k * 8 + _bi < 1; _bi++) if (_raw[_k * 8 + _bi]) _x |= 1 << _bi;
+      _e.push(_x);
+    }
+    b.storeBytes(_e);
+  }
+  let _nb = 0;
+  if (n.event_id !== null) _nb |= 1 << 0;
+  if (n.event_type !== null) _nb |= 1 << 1;
+  if (n.occurred_at !== null) _nb |= 1 << 2;
+  if (n.producer !== null) _nb |= 1 << 3;
+  if (n.attrs !== null) _nb |= 1 << 4;
+  b.storeBytes([_nb >>> 0 & 255]);
+  b.storeLEB(b.cursor - _before);
+  const _o = b.cursor;
+  return { off: _o };
+}
+function writeInto10(root, b) {
+  const off = nodeOffset(_storeEvent4(root, b));
+  return b.storeLEB((b.cursor - off) * 4);
+}
+function toBytes20(root, maxSize = 2 * 1024 * 1024) {
+  const b = new Builder(maxSize, 1024);
+  writeInto10(root, b);
   return b.makeData();
 }
 export {
   Builder,
   DocumentGraph_direct_exports as DocumentDirect,
+  DocumentFrozenGraph_arena_exports as DocumentFrozenArena,
+  DocumentFrozenGraph_exports as DocumentFrozenLazy,
+  DocumentFrozenPackedGraph_direct_exports as DocumentFrozenPackedDirect,
+  DocumentFrozenPackedGraph_exports as DocumentFrozenPackedLazy,
+  DocumentFrozenGraph_serde_exports as DocumentFrozenSerde,
   DocumentGraph_exports as DocumentLazy,
+  DocumentRegularGraph_arena_exports as DocumentRegularArena,
+  DocumentRegularGraph_exports as DocumentRegularLazy,
+  DocumentRegularGraph_serde_exports as DocumentRegularSerde,
   EventGraph_direct_exports as EventDirect,
+  EventFrozenGraph_arena_exports as EventFrozenArena,
+  EventFrozenGraph_exports as EventFrozenLazy,
+  EventFrozenPackedGraph_direct_exports as EventFrozenPackedDirect,
+  EventFrozenPackedGraph_exports as EventFrozenPackedLazy,
+  EventFrozenGraph_serde_exports as EventFrozenSerde,
   EventGraph_exports as EventLazy,
+  EventRegularGraph_arena_exports as EventRegularArena,
+  EventRegularGraph_exports as EventRegularLazy,
+  EventRegularGraph_serde_exports as EventRegularSerde,
   MessageGraph_direct_exports as MessageDirect,
+  MessageFrozenGraph_arena_exports as MessageFrozenArena,
+  MessageFrozenGraph_exports as MessageFrozenLazy,
+  MessageFrozenPackedGraph_direct_exports as MessageFrozenPackedDirect,
+  MessageFrozenPackedGraph_exports as MessageFrozenPackedLazy,
+  MessageFrozenGraph_serde_exports as MessageFrozenSerde,
   MessageGraph_exports as MessageLazy,
+  MessageRegularGraph_arena_exports as MessageRegularArena,
+  MessageRegularGraph_exports as MessageRegularLazy,
+  MessageRegularGraph_serde_exports as MessageRegularSerde,
   StringsGraph_direct_exports as StringsDirect,
+  StringsFrozenGraph_arena_exports as StringsFrozenArena,
+  StringsFrozenGraph_exports as StringsFrozenLazy,
+  StringsFrozenPackedGraph_direct_exports as StringsFrozenPackedDirect,
+  StringsFrozenPackedGraph_exports as StringsFrozenPackedLazy,
+  StringsFrozenGraph_serde_exports as StringsFrozenSerde,
   StringsGraph_exports as StringsLazy,
+  StringsRegularGraph_arena_exports as StringsRegularArena,
+  StringsRegularGraph_exports as StringsRegularLazy,
+  StringsRegularGraph_serde_exports as StringsRegularSerde,
   TelemetryGraph_direct_exports as TelemetryDirect,
-  TelemetryGraph_exports as TelemetryLazy
+  TelemetryFrozenGraph_arena_exports as TelemetryFrozenArena,
+  TelemetryFrozenGraph_exports as TelemetryFrozenLazy,
+  TelemetryFrozenPackedGraph_direct_exports as TelemetryFrozenPackedDirect,
+  TelemetryFrozenPackedGraph_exports as TelemetryFrozenPackedLazy,
+  TelemetryFrozenGraph_serde_exports as TelemetryFrozenSerde,
+  TelemetryGraph_exports as TelemetryLazy,
+  TelemetryRegularGraph_arena_exports as TelemetryRegularArena,
+  TelemetryRegularGraph_exports as TelemetryRegularLazy,
+  TelemetryRegularGraph_serde_exports as TelemetryRegularSerde
 };

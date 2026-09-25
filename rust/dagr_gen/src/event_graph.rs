@@ -5,89 +5,68 @@ use std::fmt;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct NodeRef { pub index: u32, pub generation: u32 }
+pub struct NodeRef { pub index: u32 }
 
 pub use crate::event_graph_core::*;
 
 // ── EventAttrValues ──────────────────────────────────────────────────────────
 pub struct EventAttrValues {
-    pub(crate) _gen: u32,
     pub key: Option<String>,
     pub value: Option<String>,
 }
 
 // ── EventValues ──────────────────────────────────────────────────────────
 pub struct EventValues {
-    pub(crate) _gen: u32,
     pub event_id: Option<String>,
     pub event_type: Option<String>,
     pub occurred_at: Option<i64>,
     pub producer: Option<String>,
     pub attrs: Vec<NodeRef>,
-    pub(crate) _swept_attrs: u16,
 }
 
 pub trait EventAttrArena {
     const EVENTATTR_TYPE_ID: u64;
     fn arena_of_event_attr(&self) -> &RefCell<Vec<EventAttrValues>>;
-    fn free_slots_of_event_attr(&self) -> &RefCell<Vec<u32>>;
-    fn _event_attr_next_gen(&self) -> &Cell<u32>;
-    fn _del_epoch_of_event_attr(&self) -> &Cell<u16>;
 }
 
 pub trait EventArena {
     const EVENT_TYPE_ID: u64;
     fn arena_of_event(&self) -> &RefCell<Vec<EventValues>>;
-    fn free_slots_of_event(&self) -> &RefCell<Vec<u32>>;
-    fn _event_next_gen(&self) -> &Cell<u32>;
 }
 
 // ── EventGraphGraph ─────────────────────────────────────────────────────────────────────
 pub trait EventGraphGraph: EventAttrArena + EventArena {
     fn new_event_attr(&self, key: Option<&str>, value: Option<&str>) -> EventAttr<'_, Self> where Self: Sized {
-        let generation = self._event_attr_next_gen().get();
-        self._event_attr_next_gen().set(generation.wrapping_add(1));
         let _values = EventAttrValues {
-            _gen: generation,
                 key: key.map(str::to_owned),
                 value: value.map(str::to_owned),
         };
-        let index = if let Some(idx) = self.free_slots_of_event_attr().borrow_mut().pop() {
-            self.arena_of_event_attr().borrow_mut()[idx as usize] = _values;
-            idx
-        } else {
+        let index = {
             let mut _arena = self.arena_of_event_attr().borrow_mut();
             let idx = _arena.len() as u32;
             _arena.push(_values);
             idx
         };
-        EventAttr { index: index, generation: generation, graph: self }
+        EventAttr { index: index, graph: self }
     }
     fn new_event_attr_defaulted(&self) -> EventAttr<'_, Self> where Self: Sized {
         self.new_event_attr(None, None)
     }
     fn new_event(&self, event_id: Option<&str>, event_type: Option<&str>, occurred_at: Option<i64>, producer: Option<&str>, attrs: &[EventAttr<'_, Self>]) -> Event<'_, Self> where Self: Sized {
-        let generation = self._event_next_gen().get();
-        self._event_next_gen().set(generation.wrapping_add(1));
         let _values = EventValues {
-            _gen: generation,
                 event_id: event_id.map(str::to_owned),
                 event_type: event_type.map(str::to_owned),
                 occurred_at: occurred_at,
                 producer: producer.map(str::to_owned),
-                attrs: attrs.iter().filter(|h| std::ptr::eq(h.graph as *const Self, self as *const Self)).map(|h| NodeRef { index: h.index, generation: h.generation }).collect(),
-            _swept_attrs: 0,
+                attrs: attrs.iter().filter(|h| std::ptr::eq(h.graph as *const Self, self as *const Self)).map(|h| NodeRef { index: h.index }).collect(),
         };
-        let index = if let Some(idx) = self.free_slots_of_event().borrow_mut().pop() {
-            self.arena_of_event().borrow_mut()[idx as usize] = _values;
-            idx
-        } else {
+        let index = {
             let mut _arena = self.arena_of_event().borrow_mut();
             let idx = _arena.len() as u32;
             _arena.push(_values);
             idx
         };
-        Event { index: index, generation: generation, graph: self }
+        Event { index: index, graph: self }
     }
     fn new_event_defaulted(&self) -> Event<'_, Self> where Self: Sized {
         self.new_event(None, None, None, None, &[])
@@ -98,12 +77,11 @@ impl<T: EventAttrArena + EventArena> EventGraphGraph for T {}
 // ── EventAttr handle ────────────────────────────────────────────────────────
 pub struct EventAttr<'arena, G: EventGraphGraph> {
     pub(crate) index: u32,
-    pub(crate) generation: u32,
     pub(crate) graph: &'arena G,
 }
 
 impl<'arena, G: EventGraphGraph> Clone for EventAttr<'arena, G> {
-    fn clone(&self) -> Self { EventAttr { index: self.index, generation: self.generation, graph: self.graph } }
+    fn clone(&self) -> Self { EventAttr { index: self.index, graph: self.graph } }
 }
 impl<'arena, G: EventGraphGraph> Copy for EventAttr<'arena, G> {}
 
@@ -119,25 +97,6 @@ impl<'arena, G: EventGraphGraph> EventAttr<'arena, G> {
     }
     pub fn set_value(&self, v: Option<&str>) {
         self.graph.arena_of_event_attr().borrow_mut()[self.index as usize].value = v.map(str::to_owned);
-    }
-
-    pub fn is_valid(&self) -> bool {
-        self.graph.arena_of_event_attr().borrow()
-            .get(self.index as usize)
-            .map_or(false, |v| v._gen == self.generation)
-    }
-
-    pub fn delete(&self) {
-        let freed = {
-            let mut a = self.graph.arena_of_event_attr().borrow_mut();
-            if let Some(v) = a.get_mut(self.index as usize) {
-                if v._gen == self.generation { v._gen = u32::MAX; true } else { false }
-            } else { false }
-        };
-        if freed {
-            self.graph.free_slots_of_event_attr().borrow_mut().push(self.index);
-            let _c = self.graph._del_epoch_of_event_attr(); _c.set(_c.get().wrapping_add(1));
-        }
     }
 
     fn _id(&self) -> (u64, usize, usize) {
@@ -193,12 +152,11 @@ impl<'arena, G: EventGraphGraph> fmt::Display for EventAttr<'arena, G> {
 // ── Event handle ────────────────────────────────────────────────────────
 pub struct Event<'arena, G: EventGraphGraph> {
     pub(crate) index: u32,
-    pub(crate) generation: u32,
     pub(crate) graph: &'arena G,
 }
 
 impl<'arena, G: EventGraphGraph> Clone for Event<'arena, G> {
-    fn clone(&self) -> Self { Event { index: self.index, generation: self.generation, graph: self.graph } }
+    fn clone(&self) -> Self { Event { index: self.index, graph: self.graph } }
 }
 impl<'arena, G: EventGraphGraph> Copy for Event<'arena, G> {}
 
@@ -228,53 +186,25 @@ impl<'arena, G: EventGraphGraph> Event<'arena, G> {
         self.graph.arena_of_event().borrow_mut()[self.index as usize].producer = v.map(str::to_owned);
     }
     pub fn attrs(&self) -> Vec<EventAttr<'arena, G>> {
-        let ep = self.graph._del_epoch_of_event_attr().get();
-        let (nrs, swept) = {
+        let nrs: Vec<_> = {
             let arena = self.graph.arena_of_event().borrow();
             match arena.get(self.index as usize) {
-                Some(v) if v._gen == self.generation => (v.attrs.clone(), v._swept_attrs),
+                Some(v) => v.attrs.clone(),
                 _ => return vec![],
             }
         };
-        if swept == ep { return nrs.into_iter().map(|nr| EventAttr { index: nr.index, generation: nr.generation, graph: self.graph }).collect(); }
-        let compacted: Vec<NodeRef> = {
-            let ref_arena = self.graph.arena_of_event_attr().borrow();
-            nrs.into_iter().filter(|&nr| ref_arena.get(nr.index as usize).map_or(false, |rv| rv._gen == nr.generation)).collect()
-        };
-        {
-            let mut arena = self.graph.arena_of_event().borrow_mut();
-            if let Some(v) = arena.get_mut(self.index as usize) { v.attrs = compacted.clone(); v._swept_attrs = ep; }
-        }
-        compacted.into_iter().map(|nr| EventAttr { index: nr.index, generation: nr.generation, graph: self.graph }).collect()
+        nrs.into_iter().map(|nr| EventAttr { index: nr.index, graph: self.graph }).collect()
     }
     pub fn set_attrs(&self, vs: &[EventAttr<'_, G>]) {
         let nrs = vs.iter()
             .filter(|h| std::ptr::eq(h.graph as *const G, self.graph as *const G))
-            .map(|h| NodeRef { index: h.index, generation: h.generation }).collect();
+            .map(|h| NodeRef { index: h.index }).collect();
         self.graph.arena_of_event().borrow_mut()[self.index as usize].attrs = nrs;
     }
     pub fn push_attrs(&self, v: EventAttr<'_, G>) {
         if std::ptr::eq(v.graph as *const G, self.graph as *const G) {
-            let nr = NodeRef { index: v.index, generation: v.generation };
+            let nr = NodeRef { index: v.index };
             self.graph.arena_of_event().borrow_mut()[self.index as usize].attrs.push(nr);
-        }
-    }
-
-    pub fn is_valid(&self) -> bool {
-        self.graph.arena_of_event().borrow()
-            .get(self.index as usize)
-            .map_or(false, |v| v._gen == self.generation)
-    }
-
-    pub fn delete(&self) {
-        let freed = {
-            let mut a = self.graph.arena_of_event().borrow_mut();
-            if let Some(v) = a.get_mut(self.index as usize) {
-                if v._gen == self.generation { v._gen = u32::MAX; true } else { false }
-            } else { false }
-        };
-        if freed {
-            self.graph.free_slots_of_event().borrow_mut().push(self.index);
         }
     }
 
@@ -346,12 +276,7 @@ impl<'arena, G: EventGraphGraph> fmt::Display for Event<'arena, G> {
 // ── EventGraphArena<const ID: u64> ─────────────────────────────────────────────────────
 pub struct EventGraphArena<const ID: u64> {
     arena_of_event_attr: RefCell<Vec<EventAttrValues>>,
-    free_slots_of_event_attr: RefCell<Vec<u32>>,
-    _event_attr_next_gen: Cell<u32>,
-    _del_epoch_of_event_attr: Cell<u16>,
     arena_of_event: RefCell<Vec<EventValues>>,
-    free_slots_of_event: RefCell<Vec<u32>>,
-    _event_next_gen: Cell<u32>,
     root: Cell<Option<NodeRef>>,
 }
 
@@ -360,15 +285,6 @@ impl<const ID: u64> EventAttrArena for EventGraphArena<ID> {
     fn arena_of_event_attr(&self) -> &RefCell<Vec<EventAttrValues>> {
         &self.arena_of_event_attr
     }
-    fn free_slots_of_event_attr(&self) -> &RefCell<Vec<u32>> {
-        &self.free_slots_of_event_attr
-    }
-    fn _event_attr_next_gen(&self) -> &Cell<u32> {
-        &self._event_attr_next_gen
-    }
-    fn _del_epoch_of_event_attr(&self) -> &Cell<u16> {
-        &self._del_epoch_of_event_attr
-    }
 }
 
 impl<const ID: u64> EventArena for EventGraphArena<ID> {
@@ -376,24 +292,13 @@ impl<const ID: u64> EventArena for EventGraphArena<ID> {
     fn arena_of_event(&self) -> &RefCell<Vec<EventValues>> {
         &self.arena_of_event
     }
-    fn free_slots_of_event(&self) -> &RefCell<Vec<u32>> {
-        &self.free_slots_of_event
-    }
-    fn _event_next_gen(&self) -> &Cell<u32> {
-        &self._event_next_gen
-    }
 }
 
 impl<const ID: u64> EventGraphArena<ID> {
     pub fn new() -> Self {
         EventGraphArena {
             arena_of_event_attr: RefCell::new(Vec::new()),
-            free_slots_of_event_attr: RefCell::new(Vec::new()),
-            _event_attr_next_gen: Cell::new(0),
-            _del_epoch_of_event_attr: Cell::new(0),
             arena_of_event: RefCell::new(Vec::new()),
-            free_slots_of_event: RefCell::new(Vec::new()),
-            _event_next_gen: Cell::new(0),
             root: Cell::new(None),
         }
     }
@@ -402,13 +307,12 @@ impl<const ID: u64> EventGraphArena<ID> {
         self.root.get().and_then(|nr| {
             let a = self.arena_of_event().borrow();
             a.get(nr.index as usize)
-                .filter(|v| v._gen == nr.generation)
-                .map(|_| Event { index: nr.index, generation: nr.generation, graph: self })
+                .map(|_| Event { index: nr.index, graph: self })
         })
     }
 
     pub fn set_root(&self, node: Option<Event<'_, Self>>) {
-        self.root.set(node.map(|h| NodeRef { index: h.index, generation: h.generation }));
+        self.root.set(node.map(|h| NodeRef { index: h.index }));
     }
 }
 
@@ -418,7 +322,7 @@ impl<const ID: u64> Default for EventGraphArena<ID> {
 
 
 // ── Serde: use dagr_runtime ─────────────────────────────────────────────────
-use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, UnionApplied, CycleId, DagrError};
+use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, CycleId, DagrError};
 use crate::dagr_runtime;
 
 fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut DagrBuilder) -> usize {
@@ -443,7 +347,6 @@ fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut D
 // ── EventAttr serde ──────────────────────────────────────────────────────────
 impl<'arena, G: EventGraphGraph> EventAttr<'arena, G> {
     pub fn store(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::EVENTATTR_TYPE_ID, index: self.index as usize };
         if let Some(r) = b.begin_storing_acyclic(_id) { return Ok(r); }
         let _ = self.store_packed(b)?;
@@ -451,7 +354,6 @@ impl<'arena, G: EventGraphGraph> EventAttr<'arena, G> {
     }
 
     pub fn store_packed(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::EVENTATTR_TYPE_ID, index: self.index as usize };
         let _before = b.cursor();
         let _pr_row = self.graph.arena_of_event_attr().borrow();
@@ -466,7 +368,6 @@ impl<'arena, G: EventGraphGraph> EventAttr<'arena, G> {
 // ── Event serde ──────────────────────────────────────────────────────────
 impl<'arena, G: EventGraphGraph> Event<'arena, G> {
     pub fn store(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::EVENT_TYPE_ID, index: self.index as usize };
         if let Some(r) = b.begin_storing_acyclic(_id) { return Ok(r); }
         let _ = self.store_packed(b)?;
@@ -474,7 +375,6 @@ impl<'arena, G: EventGraphGraph> Event<'arena, G> {
     }
 
     pub fn store_packed(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::EVENT_TYPE_ID, index: self.index as usize };
         let _before = b.cursor();
         let _pr_row = self.graph.arena_of_event().borrow();
@@ -483,12 +383,12 @@ impl<'arena, G: EventGraphGraph> Event<'arena, G> {
             let _row_attrs = self.graph.arena_of_event().borrow();
             let _refs_attrs = &_row_attrs[self.index as usize].attrs;
             let _cb_attrs = self.graph.arena_of_event_attr().borrow();
-            let _valid_attrs = _refs_attrs.iter().filter(|_nr| _cb_attrs.get(_nr.index as usize).filter(|_rv| _rv._gen == _nr.generation).is_some()).count();
+            let _valid_attrs = _refs_attrs.iter().filter(|_nr| _cb_attrs.get(_nr.index as usize).is_some()).count();
             if _valid_attrs > 0 {
                 let _bef = b.cursor();
                 for _nr in _refs_attrs.iter().rev() {
-                    if _cb_attrs.get(_nr.index as usize).filter(|_rv| _rv._gen == _nr.generation).is_some() {
-                        EventAttr { index: _nr.index, generation: _nr.generation, graph: self.graph }.store_packed(b)?;
+                    if _cb_attrs.get(_nr.index as usize).is_some() {
+                        EventAttr { index: _nr.index, graph: self.graph }.store_packed(b)?;
                     }
                 }
                 b.store_leb(_valid_attrs as u64);
@@ -518,8 +418,8 @@ fn _restore_event_attr<'arena, G: EventGraphGraph>(
     let _cache_key = (G::EVENTATTR_TYPE_ID, at);
     if let Some(&idx) = cache.get(&_cache_key) {
         let a = arena.arena_of_event_attr().borrow();
-        let _node_gen = a[idx as usize]._gen;
-        return Ok(EventAttr { index: idx, generation: _node_gen, graph: arena });
+        let _ = &a;
+        return Ok(EventAttr { index: idx, graph: arena });
     }
     let (_total_size, _ts_len) = crate::dagr_runtime::read_leb(data, at)?;
     let _payload_end = at + _ts_len + _total_size as usize;
@@ -550,8 +450,8 @@ fn _restore_event<'arena, G: EventGraphGraph>(
     let _cache_key = (G::EVENT_TYPE_ID, at);
     if let Some(&idx) = cache.get(&_cache_key) {
         let a = arena.arena_of_event().borrow();
-        let _node_gen = a[idx as usize]._gen;
-        return Ok(Event { index: idx, generation: _node_gen, graph: arena });
+        let _ = &a;
+        return Ok(Event { index: idx, graph: arena });
     }
     let (_total_size, _ts_len) = crate::dagr_runtime::read_leb(data, at)?;
     let _payload_end = at + _ts_len + _total_size as usize;

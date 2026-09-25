@@ -105,16 +105,6 @@ struct Strings[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writ
         return self._a[]._arr_strings[self._i()].items.copy()
     def set_items(self, var v: List[String]):
         self._mut()[]._arr_strings[self._i()].items = v^
-    def is_valid(self) -> Bool:
-        return self._a[]._gen_strings[self._i()] == self.generation()
-    def delete(self):
-        var i = self._i()
-        if self._a[]._gen_strings[i] != self.generation():
-            return
-        var up = self._mut()
-        up[]._gen_strings[i] = (up[]._gen_strings[i] + 1) & 0xffffff
-        up[]._arr_strings[i] = StringsValues(items=List[String]())
-        up[]._free_strings.append(i)
     def write_to[W: Writer](self, mut writer: W):
         var seen = Set[NodeKey]()
         self._repr_cyc(writer, seen)
@@ -166,34 +156,19 @@ struct Strings[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writ
 
 struct StringsGraphArena(Movable):
     var _arr_strings: List[StringsValues]
-    var _gen_strings: List[UInt32]
-    var _free_strings: List[Int]
     var _root: Optional[UInt64]
     def __init__(out self):
         self._arr_strings = List[StringsValues]()
-        self._gen_strings = List[UInt32]()
-        self._free_strings = List[Int]()
         self._root = None
     def new_strings[o: Origin[mut=False], //](ref [o] self) -> Strings[o]:
         var up = Pointer[StringsGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))
-        var idx: Int
-        var gen: UInt32
-        if len(self._free_strings) > 0:
-            idx = up[]._free_strings.pop()
-            gen = up[]._gen_strings[idx]
-            up[]._arr_strings[idx] = StringsValues(items=List[String]())
-        else:
-            idx = len(self._arr_strings)
-            gen = 0
-            up[]._arr_strings.append(StringsValues(items=List[String]()))
-            up[]._gen_strings.append(0)
-        return Strings[o](Pointer(to=self), _pack(gen, idx))
+        var idx = len(self._arr_strings)
+        up[]._arr_strings.append(StringsValues(items=List[String]()))
+        return Strings[o](Pointer(to=self), _pack(0, idx))
     def root[o: Origin[mut=False], //](ref [o] self) -> Optional[Strings[o]]:
         if not self._root:
             return None
         var p = self._root.value()
-        if self._gen_strings[_uidx(p)] != _ugen(p):
-            return None
         return Strings[o](Pointer(to=self), p)
     def set_root[o: Origin[mut=False], //](ref [o] self, h: Strings[o]):
         var up = Pointer[StringsGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))

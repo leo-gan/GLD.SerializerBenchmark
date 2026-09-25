@@ -65,23 +65,12 @@ interface EventValues {
   occurred_at: bigint;
   producer: string;
   attrs: (bigint | null)[];
-  _swept_attrs: number;
 }
 
 export class EventAttr<B = unknown> {
   constructor(readonly _packed: bigint, readonly _arena: Arena<B>) {}
-  get _index(): number { return Number(this._packed & 0xffffffffffn); }
-  get generation(): number { return Number(this._packed >> 40n); }
+  get _index(): number { return Number(this._packed); }
   get _values(): EventAttrValues { return this._arena._arrEventAttr[this._index]!; }
-  isValid(): boolean { return this._arena._genEventAttr[this._index] === this.generation; }
-  delete(): void {
-    const _i = this._index;
-    if (this._arena._genEventAttr[_i] !== this.generation) return;
-    this._arena._genEventAttr[_i] = (this._arena._genEventAttr[_i] + 1) & 0xffffff;
-    this._arena._arrEventAttr[_i] = { key: "", value: "" };
-    this._arena._freeEventAttr.push(_i);
-    this._arena._delEpochOfEventAttr++;
-  }
   get key(): string {
     return this._arena._arrEventAttr[this._index]!.key;
   }
@@ -125,17 +114,8 @@ export class EventAttr<B = unknown> {
 
 export class Event<B = unknown> {
   constructor(readonly _packed: bigint, readonly _arena: Arena<B>) {}
-  get _index(): number { return Number(this._packed & 0xffffffffffn); }
-  get generation(): number { return Number(this._packed >> 40n); }
+  get _index(): number { return Number(this._packed); }
   get _values(): EventValues { return this._arena._arrEvent[this._index]!; }
-  isValid(): boolean { return this._arena._genEvent[this._index] === this.generation; }
-  delete(): void {
-    const _i = this._index;
-    if (this._arena._genEvent[_i] !== this.generation) return;
-    this._arena._genEvent[_i] = (this._arena._genEvent[_i] + 1) & 0xffffff;
-    this._arena._arrEvent[_i] = { event_id: "", event_type: "", occurred_at: 0n, producer: "", attrs: [], _swept_attrs: 0 };
-    this._arena._freeEvent.push(_i);
-  }
   get event_id(): string {
     return this._arena._arrEvent[this._index]!.event_id;
   }
@@ -161,14 +141,10 @@ export class Event<B = unknown> {
     this._arena._arrEvent[this._index]!.producer = value;
   }
   get attrs(): (EventAttr<B> | null)[] {
-    const _ep = this._arena._delEpochOfEventAttr;
-    if (this._arena._arrEvent[this._index]!._swept_attrs === _ep) return this._arena._arrEvent[this._index]!.attrs.filter((_p): _p is bigint => _p !== null).map((_p) => new EventAttr<B>(_p, this._arena));
-    const _live = this._arena._arrEvent[this._index]!.attrs.filter((_p): _p is bigint => _p !== null && this._arena._genEventAttr[Number(_p & 0xffffffffffn)] === Number(_p >> 40n));
-    this._arena._arrEvent[this._index]!.attrs = _live; this._arena._arrEvent[this._index]!._swept_attrs = _ep;
-    return _live.map((_p) => new EventAttr<B>(_p, this._arena));
+    return this._arena._arrEvent[this._index]!.attrs.filter((_p): _p is bigint => _p !== null).map((_p) => new EventAttr<B>(_p, this._arena));
   }
   set attrs(value: (EventAttr<B> | null)[]) {
-    this._arena._arrEvent[this._index]!.attrs = value.map((_h) => _h === null ? null : _h._packed); this._arena._arrEvent[this._index]!._swept_attrs = this._arena._delEpochOfEventAttr - 1;
+    this._arena._arrEvent[this._index]!.attrs = value.map((_h) => _h === null ? null : _h._packed);
   }
   _key(): string { return `Event#${this._index}`; }
   toString(): string { return this._describe(new Set<string>()); }
@@ -208,43 +184,20 @@ export class Event<B = unknown> {
 export class Arena<B = unknown> {
   declare private readonly __brand: B;
   _arrEventAttr: EventAttrValues[] = [];
-  _genEventAttr: number[] = [];
-  _freeEventAttr: number[] = [];
   _arrEvent: EventValues[] = [];
-  _genEvent: number[] = [];
-  _freeEvent: number[] = [];
-  _delEpochOfEventAttr: number = 0;
   #root: bigint | null = null;
   newEventAttr(key: string = "", value: string = ""): EventAttr<B> {
-    let _i: number, _g: number;
-    if (this._freeEventAttr.length > 0) {
-      _i = this._freeEventAttr.pop()!;
-      _g = this._genEventAttr[_i]!;
-      this._arrEventAttr[_i] = { key, value };
-    } else {
-      _i = this._arrEventAttr.length;
-      _g = 0;
+    const _i = this._arrEventAttr.length;
       this._arrEventAttr.push({ key, value });
-      this._genEventAttr.push(0);
-    }
-    return new EventAttr<B>(_pack(_g, _i), this);
+    return new EventAttr<B>(_pack(0, _i), this);
   }
   newEvent(event_id: string = "", event_type: string = "", occurred_at: bigint = 0n, producer: string = "", attrs: (EventAttr<B> | null)[] = []): Event<B> {
-    let _i: number, _g: number;
-    if (this._freeEvent.length > 0) {
-      _i = this._freeEvent.pop()!;
-      _g = this._genEvent[_i]!;
-      this._arrEvent[_i] = { event_id, event_type, occurred_at, producer, attrs: attrs.map((_h) => _h === null ? null : _h._packed), _swept_attrs: 0 };
-    } else {
-      _i = this._arrEvent.length;
-      _g = 0;
-      this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs.map((_h) => _h === null ? null : _h._packed), _swept_attrs: 0 });
-      this._genEvent.push(0);
-    }
-    return new Event<B>(_pack(_g, _i), this);
+    const _i = this._arrEvent.length;
+      this._arrEvent.push({ event_id, event_type, occurred_at, producer, attrs: attrs.map((_h) => _h === null ? null : _h._packed) });
+    return new Event<B>(_pack(0, _i), this);
   }
   get root(): Event<B> | null {
-    if (this.#root === null || !(this._genEvent[Number(this.#root & 0xffffffffffn)] === Number(this.#root >> 40n))) return null;
+    if (this.#root === null) return null;
     return new Event<B>(this.#root, this);
   }
   set root(h: Event<B> | null) { this.#root = h === null ? null : h._packed; }

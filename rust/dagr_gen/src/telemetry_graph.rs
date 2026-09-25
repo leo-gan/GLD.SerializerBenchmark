@@ -5,13 +5,12 @@ use std::fmt;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct NodeRef { pub index: u32, pub generation: u32 }
+pub struct NodeRef { pub index: u32 }
 
 pub use crate::telemetry_graph_core::*;
 
 // ── TelemetryValues ──────────────────────────────────────────────────────────
 pub struct TelemetryValues {
-    pub(crate) _gen: u32,
     pub source: Option<String>,
     pub ts: Option<i64>,
     pub tags: Vec<String>,
@@ -21,32 +20,24 @@ pub struct TelemetryValues {
 pub trait TelemetryArena {
     const TELEMETRY_TYPE_ID: u64;
     fn arena_of_telemetry(&self) -> &RefCell<Vec<TelemetryValues>>;
-    fn free_slots_of_telemetry(&self) -> &RefCell<Vec<u32>>;
-    fn _telemetry_next_gen(&self) -> &Cell<u32>;
 }
 
 // ── TelemetryGraphGraph ─────────────────────────────────────────────────────────────────────
 pub trait TelemetryGraphGraph: TelemetryArena {
     fn new_telemetry(&self, source: Option<&str>, ts: Option<i64>, tags: Vec<String>, values: Vec<f64>) -> Telemetry<'_, Self> where Self: Sized {
-        let generation = self._telemetry_next_gen().get();
-        self._telemetry_next_gen().set(generation.wrapping_add(1));
         let _values = TelemetryValues {
-            _gen: generation,
                 source: source.map(str::to_owned),
                 ts: ts,
                 tags: tags,
                 values: values,
         };
-        let index = if let Some(idx) = self.free_slots_of_telemetry().borrow_mut().pop() {
-            self.arena_of_telemetry().borrow_mut()[idx as usize] = _values;
-            idx
-        } else {
+        let index = {
             let mut _arena = self.arena_of_telemetry().borrow_mut();
             let idx = _arena.len() as u32;
             _arena.push(_values);
             idx
         };
-        Telemetry { index: index, generation: generation, graph: self }
+        Telemetry { index: index, graph: self }
     }
     fn new_telemetry_defaulted(&self) -> Telemetry<'_, Self> where Self: Sized {
         self.new_telemetry(None, None, Vec::new(), Vec::new())
@@ -57,12 +48,11 @@ impl<T: TelemetryArena> TelemetryGraphGraph for T {}
 // ── Telemetry handle ────────────────────────────────────────────────────────
 pub struct Telemetry<'arena, G: TelemetryGraphGraph> {
     pub(crate) index: u32,
-    pub(crate) generation: u32,
     pub(crate) graph: &'arena G,
 }
 
 impl<'arena, G: TelemetryGraphGraph> Clone for Telemetry<'arena, G> {
-    fn clone(&self) -> Self { Telemetry { index: self.index, generation: self.generation, graph: self.graph } }
+    fn clone(&self) -> Self { Telemetry { index: self.index, graph: self.graph } }
 }
 impl<'arena, G: TelemetryGraphGraph> Copy for Telemetry<'arena, G> {}
 
@@ -96,24 +86,6 @@ impl<'arena, G: TelemetryGraphGraph> Telemetry<'arena, G> {
     }
     pub fn push_values(&self, v: f64) {
         self.graph.arena_of_telemetry().borrow_mut()[self.index as usize].values.push(v);
-    }
-
-    pub fn is_valid(&self) -> bool {
-        self.graph.arena_of_telemetry().borrow()
-            .get(self.index as usize)
-            .map_or(false, |v| v._gen == self.generation)
-    }
-
-    pub fn delete(&self) {
-        let freed = {
-            let mut a = self.graph.arena_of_telemetry().borrow_mut();
-            if let Some(v) = a.get_mut(self.index as usize) {
-                if v._gen == self.generation { v._gen = u32::MAX; true } else { false }
-            } else { false }
-        };
-        if freed {
-            self.graph.free_slots_of_telemetry().borrow_mut().push(self.index);
-        }
     }
 
     fn _id(&self) -> (u64, usize, usize) {
@@ -175,8 +147,6 @@ impl<'arena, G: TelemetryGraphGraph> fmt::Display for Telemetry<'arena, G> {
 // ── TelemetryGraphArena<const ID: u64> ─────────────────────────────────────────────────────
 pub struct TelemetryGraphArena<const ID: u64> {
     arena_of_telemetry: RefCell<Vec<TelemetryValues>>,
-    free_slots_of_telemetry: RefCell<Vec<u32>>,
-    _telemetry_next_gen: Cell<u32>,
     root: Cell<Option<NodeRef>>,
 }
 
@@ -185,20 +155,12 @@ impl<const ID: u64> TelemetryArena for TelemetryGraphArena<ID> {
     fn arena_of_telemetry(&self) -> &RefCell<Vec<TelemetryValues>> {
         &self.arena_of_telemetry
     }
-    fn free_slots_of_telemetry(&self) -> &RefCell<Vec<u32>> {
-        &self.free_slots_of_telemetry
-    }
-    fn _telemetry_next_gen(&self) -> &Cell<u32> {
-        &self._telemetry_next_gen
-    }
 }
 
 impl<const ID: u64> TelemetryGraphArena<ID> {
     pub fn new() -> Self {
         TelemetryGraphArena {
             arena_of_telemetry: RefCell::new(Vec::new()),
-            free_slots_of_telemetry: RefCell::new(Vec::new()),
-            _telemetry_next_gen: Cell::new(0),
             root: Cell::new(None),
         }
     }
@@ -207,13 +169,12 @@ impl<const ID: u64> TelemetryGraphArena<ID> {
         self.root.get().and_then(|nr| {
             let a = self.arena_of_telemetry().borrow();
             a.get(nr.index as usize)
-                .filter(|v| v._gen == nr.generation)
-                .map(|_| Telemetry { index: nr.index, generation: nr.generation, graph: self })
+                .map(|_| Telemetry { index: nr.index, graph: self })
         })
     }
 
     pub fn set_root(&self, node: Option<Telemetry<'_, Self>>) {
-        self.root.set(node.map(|h| NodeRef { index: h.index, generation: h.generation }));
+        self.root.set(node.map(|h| NodeRef { index: h.index }));
     }
 }
 
@@ -223,7 +184,7 @@ impl<const ID: u64> Default for TelemetryGraphArena<ID> {
 
 
 // ── Serde: use dagr_runtime ─────────────────────────────────────────────────
-use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, UnionApplied, CycleId, DagrError};
+use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, CycleId, DagrError};
 use crate::dagr_runtime;
 
 fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut DagrBuilder) -> usize {
@@ -248,7 +209,6 @@ fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut D
 // ── Telemetry serde ──────────────────────────────────────────────────────────
 impl<'arena, G: TelemetryGraphGraph> Telemetry<'arena, G> {
     pub fn store(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::TELEMETRY_TYPE_ID, index: self.index as usize };
         if let Some(r) = b.begin_storing_acyclic(_id) { return Ok(r); }
         let _ = self.store_packed(b)?;
@@ -256,7 +216,6 @@ impl<'arena, G: TelemetryGraphGraph> Telemetry<'arena, G> {
     }
 
     pub fn store_packed(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::TELEMETRY_TYPE_ID, index: self.index as usize };
         let _before = b.cursor();
         let _pr_row = self.graph.arena_of_telemetry().borrow();
@@ -305,8 +264,8 @@ fn _restore_telemetry<'arena, G: TelemetryGraphGraph>(
     let _cache_key = (G::TELEMETRY_TYPE_ID, at);
     if let Some(&idx) = cache.get(&_cache_key) {
         let a = arena.arena_of_telemetry().borrow();
-        let _node_gen = a[idx as usize]._gen;
-        return Ok(Telemetry { index: idx, generation: _node_gen, graph: arena });
+        let _ = &a;
+        return Ok(Telemetry { index: idx, graph: arena });
     }
     let (_total_size, _ts_len) = crate::dagr_runtime::read_leb(data, at)?;
     let _payload_end = at + _ts_len + _total_size as usize;

@@ -8,8 +8,6 @@ public enum StringsGraph {
     public protocol StringsArena: AnyObject {
         static var stringsTypeId: Int { get }
         var arenaOfStrings: [StringsValues] { get set }
-        var generationOfStrings: [UInt32] { get set }
-        var freeSlotsOfStrings: [Int] { get set }
     }
 
     public typealias StringsGraphGraph = StringsArena
@@ -28,13 +26,6 @@ public enum StringsGraph {
             get { __graph.arenaOfStrings[__index].items }
             nonmutating set { __graph.arenaOfStrings[__index].items = newValue }
         }
-        public func delete() {
-            let _idx = __index
-            guard _generation == __graph.generationOfStrings[_idx] else { return }
-            __graph.arenaOfStrings[_idx] = StringsValues()
-            __graph.generationOfStrings[_idx] &+= 1
-            __graph.freeSlotsOfStrings.append(_idx)
-        }
     }
 
     // ── Arena<Brand> ─────────────────────────────────────────────────────────────────
@@ -47,8 +38,6 @@ public enum StringsGraph {
     public class Arena<Brand>: StringsArena {
         public static var stringsTypeId: Int { 0 }
         public var arenaOfStrings: [StringsValues] = []
-        public var generationOfStrings: [UInt32] = []
-        public var freeSlotsOfStrings: [Int] = []
         public init() {}
 
         private var _root: UInt64? = nil
@@ -64,15 +53,9 @@ public enum StringsGraph {
 extension StringsGraph.Arena {
     public func newStrings(items: [String] = []) -> StringsGraph.Strings<StringsGraph.Arena<Brand>> {
         let _idx: Int
-        if let _free = freeSlotsOfStrings.popLast() {
-            _idx = _free
-            arenaOfStrings[_idx] = StringsGraph.StringsValues(items: items)
-        } else {
-            _idx = arenaOfStrings.count
-            arenaOfStrings.append(StringsGraph.StringsValues(items: items))
-            generationOfStrings.append(0)
-        }
-        let _packed = UInt64(generationOfStrings[_idx]) << 40 | UInt64(_idx)
+        _idx = arenaOfStrings.count
+        arenaOfStrings.append(StringsGraph.StringsValues(items: items))
+        let _packed = UInt64(_idx)
         return StringsGraph.Strings(__packed: _packed, __graph: self)
     }
 }
@@ -86,16 +69,6 @@ extension StringsGraph.Arena {
         guard _seen.insert((UInt64(0) << 48) | UInt64(src._index)).inserted else { throw DagrError.cyclicAdopt }
         defer { _seen.remove((UInt64(0) << 48) | UInt64(src._index)) }
         return newStrings(items: src.items)
-    }
-}
-
-extension StringsGraph.Arena {
-    public func deleteStrings(_ node: StringsGraph.Strings<StringsGraph.Arena<Brand>>) {
-        let _idx = node._index
-        guard node._generation == generationOfStrings[_idx] else { return }
-        arenaOfStrings[_idx] = StringsGraph.StringsValues()
-        generationOfStrings[_idx] &+= 1
-        freeSlotsOfStrings.append(_idx)
     }
 }
 
@@ -231,7 +204,6 @@ extension StringsGraph.Arena {
         let idx = arenaOfStrings.count
         cache[start] = idx
         arenaOfStrings.append(StringsGraph.StringsValues())
-        generationOfStrings.append(0)
         var values = StringsGraph.StringsValues()
         let (_bl, _blB) = try restoreLEB(from: data, at: start)
         var _cursor = start + _blB

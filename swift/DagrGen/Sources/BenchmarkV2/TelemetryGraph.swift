@@ -11,8 +11,6 @@ public enum TelemetryGraph {
     public protocol TelemetryArena: AnyObject {
         static var telemetryTypeId: Int { get }
         var arenaOfTelemetry: [TelemetryValues] { get set }
-        var generationOfTelemetry: [UInt32] { get set }
-        var freeSlotsOfTelemetry: [Int] { get set }
     }
 
     public typealias TelemetryGraphGraph = TelemetryArena
@@ -43,13 +41,6 @@ public enum TelemetryGraph {
             get { __graph.arenaOfTelemetry[__index].values }
             nonmutating set { __graph.arenaOfTelemetry[__index].values = newValue }
         }
-        public func delete() {
-            let _idx = __index
-            guard _generation == __graph.generationOfTelemetry[_idx] else { return }
-            __graph.arenaOfTelemetry[_idx] = TelemetryValues()
-            __graph.generationOfTelemetry[_idx] &+= 1
-            __graph.freeSlotsOfTelemetry.append(_idx)
-        }
     }
 
     // ── Arena<Brand> ─────────────────────────────────────────────────────────────────
@@ -62,8 +53,6 @@ public enum TelemetryGraph {
     public class Arena<Brand>: TelemetryArena {
         public static var telemetryTypeId: Int { 0 }
         public var arenaOfTelemetry: [TelemetryValues] = []
-        public var generationOfTelemetry: [UInt32] = []
-        public var freeSlotsOfTelemetry: [Int] = []
         public init() {}
 
         private var _root: UInt64? = nil
@@ -79,15 +68,9 @@ public enum TelemetryGraph {
 extension TelemetryGraph.Arena {
     public func newTelemetry(source: String? = nil, ts: Int64? = nil, tags: [String] = [], values: [Double] = []) -> TelemetryGraph.Telemetry<TelemetryGraph.Arena<Brand>> {
         let _idx: Int
-        if let _free = freeSlotsOfTelemetry.popLast() {
-            _idx = _free
-            arenaOfTelemetry[_idx] = TelemetryGraph.TelemetryValues(source: source, ts: ts, tags: tags, values: values)
-        } else {
-            _idx = arenaOfTelemetry.count
-            arenaOfTelemetry.append(TelemetryGraph.TelemetryValues(source: source, ts: ts, tags: tags, values: values))
-            generationOfTelemetry.append(0)
-        }
-        let _packed = UInt64(generationOfTelemetry[_idx]) << 40 | UInt64(_idx)
+        _idx = arenaOfTelemetry.count
+        arenaOfTelemetry.append(TelemetryGraph.TelemetryValues(source: source, ts: ts, tags: tags, values: values))
+        let _packed = UInt64(_idx)
         return TelemetryGraph.Telemetry(__packed: _packed, __graph: self)
     }
 }
@@ -101,16 +84,6 @@ extension TelemetryGraph.Arena {
         guard _seen.insert((UInt64(0) << 48) | UInt64(src._index)).inserted else { throw DagrError.cyclicAdopt }
         defer { _seen.remove((UInt64(0) << 48) | UInt64(src._index)) }
         return newTelemetry(source: src.source, ts: src.ts, tags: src.tags, values: src.values)
-    }
-}
-
-extension TelemetryGraph.Arena {
-    public func deleteTelemetry(_ node: TelemetryGraph.Telemetry<TelemetryGraph.Arena<Brand>>) {
-        let _idx = node._index
-        guard node._generation == generationOfTelemetry[_idx] else { return }
-        arenaOfTelemetry[_idx] = TelemetryGraph.TelemetryValues()
-        generationOfTelemetry[_idx] &+= 1
-        freeSlotsOfTelemetry.append(_idx)
     }
 }
 
@@ -267,7 +240,6 @@ extension TelemetryGraph.Arena {
         let idx = arenaOfTelemetry.count
         cache[start] = idx
         arenaOfTelemetry.append(TelemetryGraph.TelemetryValues())
-        generationOfTelemetry.append(0)
         var values = TelemetryGraph.TelemetryValues()
         let (_bl, _blB) = try restoreLEB(from: data, at: start)
         var _cursor = start + _blB

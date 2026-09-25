@@ -148,16 +148,6 @@ struct Message[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writ
         return None
     def set_f_string_2(self, var v: String):
         self._mut()[]._arr_message[self._i()].f_string_2 = Optional(v^)
-    def is_valid(self) -> Bool:
-        return self._a[]._gen_message[self._i()] == self.generation()
-    def delete(self):
-        var i = self._i()
-        if self._a[]._gen_message[i] != self.generation():
-            return
-        var up = self._mut()
-        up[]._gen_message[i] = (up[]._gen_message[i] + 1) & 0xffffff
-        up[]._arr_message[i] = MessageValues(f_bool=None, f_int32=None, f_int64=None, f_float64=None, f_string=None, f_bool_2=None, f_int32_2=None, f_string_2=None)
-        up[]._free_message.append(i)
     def write_to[W: Writer](self, mut writer: W):
         var seen = Set[NodeKey]()
         self._repr_cyc(writer, seen)
@@ -286,34 +276,19 @@ struct Message[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writ
 
 struct MessageGraphArena(Movable):
     var _arr_message: List[MessageValues]
-    var _gen_message: List[UInt32]
-    var _free_message: List[Int]
     var _root: Optional[UInt64]
     def __init__(out self):
         self._arr_message = List[MessageValues]()
-        self._gen_message = List[UInt32]()
-        self._free_message = List[Int]()
         self._root = None
     def new_message[o: Origin[mut=False], //](ref [o] self, var f_bool: Bool = False, var f_int32: Int32 = Int32(0), var f_int64: Int64 = Int64(0), var f_float64: Float64 = Float64(0), var f_string: String = String(""), var f_bool_2: Bool = False, var f_int32_2: Int32 = Int32(0), var f_string_2: String = String("")) -> Message[o]:
         var up = Pointer[MessageGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))
-        var idx: Int
-        var gen: UInt32
-        if len(self._free_message) > 0:
-            idx = up[]._free_message.pop()
-            gen = up[]._gen_message[idx]
-            up[]._arr_message[idx] = MessageValues(f_bool=Optional(f_bool), f_int32=Optional(f_int32), f_int64=Optional(f_int64), f_float64=Optional(f_float64), f_string=Optional(f_string^), f_bool_2=Optional(f_bool_2), f_int32_2=Optional(f_int32_2), f_string_2=Optional(f_string_2^))
-        else:
-            idx = len(self._arr_message)
-            gen = 0
-            up[]._arr_message.append(MessageValues(f_bool=Optional(f_bool), f_int32=Optional(f_int32), f_int64=Optional(f_int64), f_float64=Optional(f_float64), f_string=Optional(f_string^), f_bool_2=Optional(f_bool_2), f_int32_2=Optional(f_int32_2), f_string_2=Optional(f_string_2^)))
-            up[]._gen_message.append(0)
-        return Message[o](Pointer(to=self), _pack(gen, idx))
+        var idx = len(self._arr_message)
+        up[]._arr_message.append(MessageValues(f_bool=Optional(f_bool), f_int32=Optional(f_int32), f_int64=Optional(f_int64), f_float64=Optional(f_float64), f_string=Optional(f_string^), f_bool_2=Optional(f_bool_2), f_int32_2=Optional(f_int32_2), f_string_2=Optional(f_string_2^)))
+        return Message[o](Pointer(to=self), _pack(0, idx))
     def root[o: Origin[mut=False], //](ref [o] self) -> Optional[Message[o]]:
         if not self._root:
             return None
         var p = self._root.value()
-        if self._gen_message[_uidx(p)] != _ugen(p):
-            return None
         return Message[o](Pointer(to=self), p)
     def set_root[o: Origin[mut=False], //](ref [o] self, h: Message[o]):
         var up = Pointer[MessageGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))

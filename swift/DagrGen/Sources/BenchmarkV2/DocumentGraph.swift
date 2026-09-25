@@ -17,29 +17,21 @@ public enum DocumentGraph {
         public var status: Int32? = nil
         public var meta: UInt64? = nil
         public var items: [UInt64] = []
-        public var _swept_items: UInt16 = 0
     }
 
     public protocol DocumentMetaArena: AnyObject {
         static var documentMetaTypeId: Int { get }
         var arenaOfDocumentMeta: [DocumentMetaValues] { get set }
-        var generationOfDocumentMeta: [UInt32] { get set }
-        var freeSlotsOfDocumentMeta: [Int] { get set }
     }
 
     public protocol DocumentItemArena: AnyObject {
         static var documentItemTypeId: Int { get }
         var arenaOfDocumentItem: [DocumentItemValues] { get set }
-        var generationOfDocumentItem: [UInt32] { get set }
-        var freeSlotsOfDocumentItem: [Int] { get set }
-        var _delEpochOfDocumentItem: UInt16 { get set }
     }
 
     public protocol DocumentArena: AnyObject {
         static var documentTypeId: Int { get }
         var arenaOfDocument: [DocumentValues] { get set }
-        var generationOfDocument: [UInt32] { get set }
-        var freeSlotsOfDocument: [Int] { get set }
     }
 
     public typealias DocumentGraphGraph = DocumentArena & DocumentItemArena & DocumentMetaArena
@@ -64,13 +56,6 @@ public enum DocumentGraph {
             get { __graph.arenaOfDocumentMeta[__index].version }
             nonmutating set { __graph.arenaOfDocumentMeta[__index].version = newValue }
         }
-        public func delete() {
-            let _idx = __index
-            guard _generation == __graph.generationOfDocumentMeta[_idx] else { return }
-            __graph.arenaOfDocumentMeta[_idx] = DocumentMetaValues()
-            __graph.generationOfDocumentMeta[_idx] &+= 1
-            __graph.freeSlotsOfDocumentMeta.append(_idx)
-        }
     }
 
     public struct DocumentItem<Arena: DocumentItemGraph> {
@@ -94,14 +79,6 @@ public enum DocumentGraph {
             get { __graph.arenaOfDocumentItem[__index].price_minor }
             nonmutating set { __graph.arenaOfDocumentItem[__index].price_minor = newValue }
         }
-        public func delete() {
-            let _idx = __index
-            guard _generation == __graph.generationOfDocumentItem[_idx] else { return }
-            __graph.arenaOfDocumentItem[_idx] = DocumentItemValues()
-            __graph.generationOfDocumentItem[_idx] &+= 1
-            __graph.freeSlotsOfDocumentItem.append(_idx)
-            __graph._delEpochOfDocumentItem &+= 1
-        }
     }
 
     public struct Document<Arena: DocumentGraph> {
@@ -124,31 +101,15 @@ public enum DocumentGraph {
         public var meta: DocumentMeta<Arena>? {
             get {
                 guard let _stored = __graph.arenaOfDocument[__index].meta else { return nil }
-                let _idx = Int(_stored & 0x0000_00FF_FFFF_FFFF)
-                guard __graph.generationOfDocumentMeta[_idx] == UInt32(_stored >> 40) else { return nil }
                 return DocumentMeta(__packed: _stored, __graph: __graph)
             }
             nonmutating set { __graph.arenaOfDocument[__index].meta = newValue?.__packed }
         }
         public var items: [DocumentItem<Arena>] {
             get {
-                let _ep = __graph._delEpochOfDocumentItem
-                if __graph.arenaOfDocument[__index]._swept_items == _ep {
-                    return __graph.arenaOfDocument[__index].items.map { DocumentItem(__packed: $0, __graph: __graph) }
-                }
-                let _live = __graph.arenaOfDocument[__index].items.filter { _stored in __graph.generationOfDocumentItem[Int(_stored & 0x0000_00FF_FFFF_FFFF)] == UInt32(_stored >> 40) }
-                __graph.arenaOfDocument[__index].items = _live
-                __graph.arenaOfDocument[__index]._swept_items = _ep
-                return _live.map { DocumentItem(__packed: $0, __graph: __graph) }
+                return __graph.arenaOfDocument[__index].items.map { DocumentItem(__packed: $0, __graph: __graph) }
             }
-            nonmutating set { __graph.arenaOfDocument[__index].items = newValue.map { $0.__packed }; __graph.arenaOfDocument[__index]._swept_items = __graph._delEpochOfDocumentItem &- 1 }
-        }
-        public func delete() {
-            let _idx = __index
-            guard _generation == __graph.generationOfDocument[_idx] else { return }
-            __graph.arenaOfDocument[_idx] = DocumentValues()
-            __graph.generationOfDocument[_idx] &+= 1
-            __graph.freeSlotsOfDocument.append(_idx)
+            nonmutating set { __graph.arenaOfDocument[__index].items = newValue.map { $0.__packed } }
         }
     }
 
@@ -162,17 +123,10 @@ public enum DocumentGraph {
     public class Arena<Brand>: DocumentMetaArena, DocumentItemArena, DocumentArena {
         public static var documentMetaTypeId: Int { 0 }
         public var arenaOfDocumentMeta: [DocumentMetaValues] = []
-        public var generationOfDocumentMeta: [UInt32] = []
-        public var freeSlotsOfDocumentMeta: [Int] = []
         public static var documentItemTypeId: Int { 1 }
         public var arenaOfDocumentItem: [DocumentItemValues] = []
-        public var generationOfDocumentItem: [UInt32] = []
-        public var freeSlotsOfDocumentItem: [Int] = []
-        public var _delEpochOfDocumentItem: UInt16 = 0
         public static var documentTypeId: Int { 2 }
         public var arenaOfDocument: [DocumentValues] = []
-        public var generationOfDocument: [UInt32] = []
-        public var freeSlotsOfDocument: [Int] = []
         public init() {}
 
         private var _root: UInt64? = nil
@@ -188,15 +142,9 @@ public enum DocumentGraph {
 extension DocumentGraph.Arena {
     public func newDocumentMeta(region: String? = nil, version: Int32? = nil) -> DocumentGraph.DocumentMeta<DocumentGraph.Arena<Brand>> {
         let _idx: Int
-        if let _free = freeSlotsOfDocumentMeta.popLast() {
-            _idx = _free
-            arenaOfDocumentMeta[_idx] = DocumentGraph.DocumentMetaValues(region: region, version: version)
-        } else {
-            _idx = arenaOfDocumentMeta.count
-            arenaOfDocumentMeta.append(DocumentGraph.DocumentMetaValues(region: region, version: version))
-            generationOfDocumentMeta.append(0)
-        }
-        let _packed = UInt64(generationOfDocumentMeta[_idx]) << 40 | UInt64(_idx)
+        _idx = arenaOfDocumentMeta.count
+        arenaOfDocumentMeta.append(DocumentGraph.DocumentMetaValues(region: region, version: version))
+        let _packed = UInt64(_idx)
         return DocumentGraph.DocumentMeta(__packed: _packed, __graph: self)
     }
 }
@@ -204,15 +152,9 @@ extension DocumentGraph.Arena {
 extension DocumentGraph.Arena {
     public func newDocumentItem(sku: String? = nil, qty: Int32? = nil, price_minor: Int64? = nil) -> DocumentGraph.DocumentItem<DocumentGraph.Arena<Brand>> {
         let _idx: Int
-        if let _free = freeSlotsOfDocumentItem.popLast() {
-            _idx = _free
-            arenaOfDocumentItem[_idx] = DocumentGraph.DocumentItemValues(sku: sku, qty: qty, price_minor: price_minor)
-        } else {
-            _idx = arenaOfDocumentItem.count
-            arenaOfDocumentItem.append(DocumentGraph.DocumentItemValues(sku: sku, qty: qty, price_minor: price_minor))
-            generationOfDocumentItem.append(0)
-        }
-        let _packed = UInt64(generationOfDocumentItem[_idx]) << 40 | UInt64(_idx)
+        _idx = arenaOfDocumentItem.count
+        arenaOfDocumentItem.append(DocumentGraph.DocumentItemValues(sku: sku, qty: qty, price_minor: price_minor))
+        let _packed = UInt64(_idx)
         return DocumentGraph.DocumentItem(__packed: _packed, __graph: self)
     }
 }
@@ -220,15 +162,9 @@ extension DocumentGraph.Arena {
 extension DocumentGraph.Arena {
     public func newDocument(id: String? = nil, status: Int32? = nil, meta: DocumentGraph.DocumentMeta<DocumentGraph.Arena<Brand>>? = nil, items: [DocumentGraph.DocumentItem<DocumentGraph.Arena<Brand>>] = []) -> DocumentGraph.Document<DocumentGraph.Arena<Brand>> {
         let _idx: Int
-        if let _free = freeSlotsOfDocument.popLast() {
-            _idx = _free
-            arenaOfDocument[_idx] = DocumentGraph.DocumentValues(id: id, status: status, meta: meta?.__packed, items: items.map { $0.__packed })
-        } else {
-            _idx = arenaOfDocument.count
-            arenaOfDocument.append(DocumentGraph.DocumentValues(id: id, status: status, meta: meta?.__packed, items: items.map { $0.__packed }))
-            generationOfDocument.append(0)
-        }
-        let _packed = UInt64(generationOfDocument[_idx]) << 40 | UInt64(_idx)
+        _idx = arenaOfDocument.count
+        arenaOfDocument.append(DocumentGraph.DocumentValues(id: id, status: status, meta: meta?.__packed, items: items.map { $0.__packed }))
+        let _packed = UInt64(_idx)
         return DocumentGraph.Document(__packed: _packed, __graph: self)
     }
 }
@@ -266,37 +202,6 @@ extension DocumentGraph.Arena {
         guard _seen.insert((UInt64(2) << 48) | UInt64(src._index)).inserted else { throw DagrError.cyclicAdopt }
         defer { _seen.remove((UInt64(2) << 48) | UInt64(src._index)) }
         return newDocument(id: src.id, status: src.status, meta: try src.meta.map { try _adopt($0, &_seen) }, items: try src.items.map { try _adopt($0, &_seen) })
-    }
-}
-
-extension DocumentGraph.Arena {
-    public func deleteDocumentMeta(_ node: DocumentGraph.DocumentMeta<DocumentGraph.Arena<Brand>>) {
-        let _idx = node._index
-        guard node._generation == generationOfDocumentMeta[_idx] else { return }
-        arenaOfDocumentMeta[_idx] = DocumentGraph.DocumentMetaValues()
-        generationOfDocumentMeta[_idx] &+= 1
-        freeSlotsOfDocumentMeta.append(_idx)
-    }
-}
-
-extension DocumentGraph.Arena {
-    public func deleteDocumentItem(_ node: DocumentGraph.DocumentItem<DocumentGraph.Arena<Brand>>) {
-        let _idx = node._index
-        guard node._generation == generationOfDocumentItem[_idx] else { return }
-        arenaOfDocumentItem[_idx] = DocumentGraph.DocumentItemValues()
-        generationOfDocumentItem[_idx] &+= 1
-        freeSlotsOfDocumentItem.append(_idx)
-        _delEpochOfDocumentItem &+= 1
-    }
-}
-
-extension DocumentGraph.Arena {
-    public func deleteDocument(_ node: DocumentGraph.Document<DocumentGraph.Arena<Brand>>) {
-        let _idx = node._index
-        guard node._generation == generationOfDocument[_idx] else { return }
-        arenaOfDocument[_idx] = DocumentGraph.DocumentValues()
-        generationOfDocument[_idx] &+= 1
-        freeSlotsOfDocument.append(_idx)
     }
 }
 
@@ -668,7 +573,6 @@ extension DocumentGraph.Arena {
         let idx = arenaOfDocumentMeta.count
         cache[start] = idx
         arenaOfDocumentMeta.append(DocumentGraph.DocumentMetaValues())
-        generationOfDocumentMeta.append(0)
         var values = DocumentGraph.DocumentMetaValues()
         let (_bl, _blB) = try restoreLEB(from: data, at: start)
         var _cursor = start + _blB
@@ -701,7 +605,6 @@ extension DocumentGraph.Arena {
         let idx = arenaOfDocumentItem.count
         cache[start] = idx
         arenaOfDocumentItem.append(DocumentGraph.DocumentItemValues())
-        generationOfDocumentItem.append(0)
         var values = DocumentGraph.DocumentItemValues()
         let (_bl, _blB) = try restoreLEB(from: data, at: start)
         var _cursor = start + _blB
@@ -745,7 +648,6 @@ extension DocumentGraph.Arena {
         let idx = arenaOfDocument.count
         cache[start] = idx
         arenaOfDocument.append(DocumentGraph.DocumentValues())
-        generationOfDocument.append(0)
         var values = DocumentGraph.DocumentValues()
         let (_bl, _blB) = try restoreLEB(from: data, at: start)
         var _cursor = start + _blB

@@ -66,17 +66,8 @@ interface MessageValues {
 
 export class Message<B = unknown> {
   constructor(readonly _packed: bigint, readonly _arena: Arena<B>) {}
-  get _index(): number { return Number(this._packed & 0xffffffffffn); }
-  get generation(): number { return Number(this._packed >> 40n); }
+  get _index(): number { return Number(this._packed); }
   get _values(): MessageValues { return this._arena._arrMessage[this._index]!; }
-  isValid(): boolean { return this._arena._genMessage[this._index] === this.generation; }
-  delete(): void {
-    const _i = this._index;
-    if (this._arena._genMessage[_i] !== this.generation) return;
-    this._arena._genMessage[_i] = (this._arena._genMessage[_i] + 1) & 0xffffff;
-    this._arena._arrMessage[_i] = { f_bool: false, f_int32: 0, f_int64: 0n, f_float64: 0, f_string: "", f_bool_2: false, f_int32_2: 0, f_string_2: "" };
-    this._arena._freeMessage.push(_i);
-  }
   get f_bool(): boolean {
     return this._arena._arrMessage[this._index]!.f_bool;
   }
@@ -169,25 +160,14 @@ export class Message<B = unknown> {
 export class Arena<B = unknown> {
   declare private readonly __brand: B;
   _arrMessage: MessageValues[] = [];
-  _genMessage: number[] = [];
-  _freeMessage: number[] = [];
   #root: bigint | null = null;
   newMessage(f_bool: boolean = false, f_int32: number = 0, f_int64: bigint = 0n, f_float64: number = 0, f_string: string = "", f_bool_2: boolean = false, f_int32_2: number = 0, f_string_2: string = ""): Message<B> {
-    let _i: number, _g: number;
-    if (this._freeMessage.length > 0) {
-      _i = this._freeMessage.pop()!;
-      _g = this._genMessage[_i]!;
-      this._arrMessage[_i] = { f_bool, f_int32, f_int64, f_float64, f_string, f_bool_2, f_int32_2, f_string_2 };
-    } else {
-      _i = this._arrMessage.length;
-      _g = 0;
+    const _i = this._arrMessage.length;
       this._arrMessage.push({ f_bool, f_int32, f_int64, f_float64, f_string, f_bool_2, f_int32_2, f_string_2 });
-      this._genMessage.push(0);
-    }
-    return new Message<B>(_pack(_g, _i), this);
+    return new Message<B>(_pack(0, _i), this);
   }
   get root(): Message<B> | null {
-    if (this.#root === null || !(this._genMessage[Number(this.#root & 0xffffffffffn)] === Number(this.#root >> 40n))) return null;
+    if (this.#root === null) return null;
     return new Message<B>(this.#root, this);
   }
   set root(h: Message<B> | null) { this.#root = h === null ? null : h._packed; }

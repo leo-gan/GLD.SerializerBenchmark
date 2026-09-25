@@ -5,20 +5,18 @@ use std::fmt;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct NodeRef { pub index: u32, pub generation: u32 }
+pub struct NodeRef { pub index: u32 }
 
 pub use crate::document_graph_core::*;
 
 // ── DocumentMetaValues ──────────────────────────────────────────────────────────
 pub struct DocumentMetaValues {
-    pub(crate) _gen: u32,
     pub region: Option<String>,
     pub version: Option<i32>,
 }
 
 // ── DocumentItemValues ──────────────────────────────────────────────────────────
 pub struct DocumentItemValues {
-    pub(crate) _gen: u32,
     pub sku: Option<String>,
     pub qty: Option<i32>,
     pub price_minor: Option<i64>,
@@ -26,104 +24,76 @@ pub struct DocumentItemValues {
 
 // ── DocumentValues ──────────────────────────────────────────────────────────
 pub struct DocumentValues {
-    pub(crate) _gen: u32,
     pub id: Option<String>,
     pub status: Option<i32>,
     pub meta: Option<NodeRef>,
     pub items: Vec<NodeRef>,
-    pub(crate) _swept_items: u16,
 }
 
 pub trait DocumentMetaArena {
     const DOCUMENTMETA_TYPE_ID: u64;
     fn arena_of_document_meta(&self) -> &RefCell<Vec<DocumentMetaValues>>;
-    fn free_slots_of_document_meta(&self) -> &RefCell<Vec<u32>>;
-    fn _document_meta_next_gen(&self) -> &Cell<u32>;
 }
 
 pub trait DocumentItemArena {
     const DOCUMENTITEM_TYPE_ID: u64;
     fn arena_of_document_item(&self) -> &RefCell<Vec<DocumentItemValues>>;
-    fn free_slots_of_document_item(&self) -> &RefCell<Vec<u32>>;
-    fn _document_item_next_gen(&self) -> &Cell<u32>;
-    fn _del_epoch_of_document_item(&self) -> &Cell<u16>;
 }
 
 pub trait DocumentArena {
     const DOCUMENT_TYPE_ID: u64;
     fn arena_of_document(&self) -> &RefCell<Vec<DocumentValues>>;
-    fn free_slots_of_document(&self) -> &RefCell<Vec<u32>>;
-    fn _document_next_gen(&self) -> &Cell<u32>;
 }
 
 // ── DocumentGraphGraph ─────────────────────────────────────────────────────────────────────
 pub trait DocumentGraphGraph: DocumentMetaArena + DocumentItemArena + DocumentArena {
     fn new_document_meta(&self, region: Option<&str>, version: Option<i32>) -> DocumentMeta<'_, Self> where Self: Sized {
-        let generation = self._document_meta_next_gen().get();
-        self._document_meta_next_gen().set(generation.wrapping_add(1));
         let _values = DocumentMetaValues {
-            _gen: generation,
                 region: region.map(str::to_owned),
                 version: version,
         };
-        let index = if let Some(idx) = self.free_slots_of_document_meta().borrow_mut().pop() {
-            self.arena_of_document_meta().borrow_mut()[idx as usize] = _values;
-            idx
-        } else {
+        let index = {
             let mut _arena = self.arena_of_document_meta().borrow_mut();
             let idx = _arena.len() as u32;
             _arena.push(_values);
             idx
         };
-        DocumentMeta { index: index, generation: generation, graph: self }
+        DocumentMeta { index: index, graph: self }
     }
     fn new_document_meta_defaulted(&self) -> DocumentMeta<'_, Self> where Self: Sized {
         self.new_document_meta(None, None)
     }
     fn new_document_item(&self, sku: Option<&str>, qty: Option<i32>, price_minor: Option<i64>) -> DocumentItem<'_, Self> where Self: Sized {
-        let generation = self._document_item_next_gen().get();
-        self._document_item_next_gen().set(generation.wrapping_add(1));
         let _values = DocumentItemValues {
-            _gen: generation,
                 sku: sku.map(str::to_owned),
                 qty: qty,
                 price_minor: price_minor,
         };
-        let index = if let Some(idx) = self.free_slots_of_document_item().borrow_mut().pop() {
-            self.arena_of_document_item().borrow_mut()[idx as usize] = _values;
-            idx
-        } else {
+        let index = {
             let mut _arena = self.arena_of_document_item().borrow_mut();
             let idx = _arena.len() as u32;
             _arena.push(_values);
             idx
         };
-        DocumentItem { index: index, generation: generation, graph: self }
+        DocumentItem { index: index, graph: self }
     }
     fn new_document_item_defaulted(&self) -> DocumentItem<'_, Self> where Self: Sized {
         self.new_document_item(None, None, None)
     }
     fn new_document(&self, id: Option<&str>, status: Option<i32>, meta: Option<DocumentMeta<'_, Self>>, items: &[DocumentItem<'_, Self>]) -> Document<'_, Self> where Self: Sized {
-        let generation = self._document_next_gen().get();
-        self._document_next_gen().set(generation.wrapping_add(1));
         let _values = DocumentValues {
-            _gen: generation,
                 id: id.map(str::to_owned),
                 status: status,
-                meta: meta.filter(|h| std::ptr::eq(h.graph as *const Self, self as *const Self)).map(|h| NodeRef { index: h.index, generation: h.generation }),
-                items: items.iter().filter(|h| std::ptr::eq(h.graph as *const Self, self as *const Self)).map(|h| NodeRef { index: h.index, generation: h.generation }).collect(),
-            _swept_items: 0,
+                meta: meta.filter(|h| std::ptr::eq(h.graph as *const Self, self as *const Self)).map(|h| NodeRef { index: h.index }),
+                items: items.iter().filter(|h| std::ptr::eq(h.graph as *const Self, self as *const Self)).map(|h| NodeRef { index: h.index }).collect(),
         };
-        let index = if let Some(idx) = self.free_slots_of_document().borrow_mut().pop() {
-            self.arena_of_document().borrow_mut()[idx as usize] = _values;
-            idx
-        } else {
+        let index = {
             let mut _arena = self.arena_of_document().borrow_mut();
             let idx = _arena.len() as u32;
             _arena.push(_values);
             idx
         };
-        Document { index: index, generation: generation, graph: self }
+        Document { index: index, graph: self }
     }
     fn new_document_defaulted(&self) -> Document<'_, Self> where Self: Sized {
         self.new_document(None, None, None, &[])
@@ -134,12 +104,11 @@ impl<T: DocumentMetaArena + DocumentItemArena + DocumentArena> DocumentGraphGrap
 // ── DocumentMeta handle ────────────────────────────────────────────────────────
 pub struct DocumentMeta<'arena, G: DocumentGraphGraph> {
     pub(crate) index: u32,
-    pub(crate) generation: u32,
     pub(crate) graph: &'arena G,
 }
 
 impl<'arena, G: DocumentGraphGraph> Clone for DocumentMeta<'arena, G> {
-    fn clone(&self) -> Self { DocumentMeta { index: self.index, generation: self.generation, graph: self.graph } }
+    fn clone(&self) -> Self { DocumentMeta { index: self.index, graph: self.graph } }
 }
 impl<'arena, G: DocumentGraphGraph> Copy for DocumentMeta<'arena, G> {}
 
@@ -155,24 +124,6 @@ impl<'arena, G: DocumentGraphGraph> DocumentMeta<'arena, G> {
     }
     pub fn set_version(&self, v: Option<i32>) {
         self.graph.arena_of_document_meta().borrow_mut()[self.index as usize].version = v;
-    }
-
-    pub fn is_valid(&self) -> bool {
-        self.graph.arena_of_document_meta().borrow()
-            .get(self.index as usize)
-            .map_or(false, |v| v._gen == self.generation)
-    }
-
-    pub fn delete(&self) {
-        let freed = {
-            let mut a = self.graph.arena_of_document_meta().borrow_mut();
-            if let Some(v) = a.get_mut(self.index as usize) {
-                if v._gen == self.generation { v._gen = u32::MAX; true } else { false }
-            } else { false }
-        };
-        if freed {
-            self.graph.free_slots_of_document_meta().borrow_mut().push(self.index);
-        }
     }
 
     fn _id(&self) -> (u64, usize, usize) {
@@ -228,12 +179,11 @@ impl<'arena, G: DocumentGraphGraph> fmt::Display for DocumentMeta<'arena, G> {
 // ── DocumentItem handle ────────────────────────────────────────────────────────
 pub struct DocumentItem<'arena, G: DocumentGraphGraph> {
     pub(crate) index: u32,
-    pub(crate) generation: u32,
     pub(crate) graph: &'arena G,
 }
 
 impl<'arena, G: DocumentGraphGraph> Clone for DocumentItem<'arena, G> {
-    fn clone(&self) -> Self { DocumentItem { index: self.index, generation: self.generation, graph: self.graph } }
+    fn clone(&self) -> Self { DocumentItem { index: self.index, graph: self.graph } }
 }
 impl<'arena, G: DocumentGraphGraph> Copy for DocumentItem<'arena, G> {}
 
@@ -255,25 +205,6 @@ impl<'arena, G: DocumentGraphGraph> DocumentItem<'arena, G> {
     }
     pub fn set_price_minor(&self, v: Option<i64>) {
         self.graph.arena_of_document_item().borrow_mut()[self.index as usize].price_minor = v;
-    }
-
-    pub fn is_valid(&self) -> bool {
-        self.graph.arena_of_document_item().borrow()
-            .get(self.index as usize)
-            .map_or(false, |v| v._gen == self.generation)
-    }
-
-    pub fn delete(&self) {
-        let freed = {
-            let mut a = self.graph.arena_of_document_item().borrow_mut();
-            if let Some(v) = a.get_mut(self.index as usize) {
-                if v._gen == self.generation { v._gen = u32::MAX; true } else { false }
-            } else { false }
-        };
-        if freed {
-            self.graph.free_slots_of_document_item().borrow_mut().push(self.index);
-            let _c = self.graph._del_epoch_of_document_item(); _c.set(_c.get().wrapping_add(1));
-        }
     }
 
     fn _id(&self) -> (u64, usize, usize) {
@@ -332,12 +263,11 @@ impl<'arena, G: DocumentGraphGraph> fmt::Display for DocumentItem<'arena, G> {
 // ── Document handle ────────────────────────────────────────────────────────
 pub struct Document<'arena, G: DocumentGraphGraph> {
     pub(crate) index: u32,
-    pub(crate) generation: u32,
     pub(crate) graph: &'arena G,
 }
 
 impl<'arena, G: DocumentGraphGraph> Clone for Document<'arena, G> {
-    fn clone(&self) -> Self { Document { index: self.index, generation: self.generation, graph: self.graph } }
+    fn clone(&self) -> Self { Document { index: self.index, graph: self.graph } }
 }
 impl<'arena, G: DocumentGraphGraph> Copy for Document<'arena, G> {}
 
@@ -358,69 +288,39 @@ impl<'arena, G: DocumentGraphGraph> Document<'arena, G> {
         let nr = {
             let arena = self.graph.arena_of_document().borrow();
             arena.get(self.index as usize)
-                .filter(|v| v._gen == self.generation)
                 .and_then(|v| v.meta)
         };
         nr.and_then(|nr| {
             let a = self.graph.arena_of_document_meta().borrow();
             a.get(nr.index as usize)
-                .filter(|rv| rv._gen == nr.generation)
-                .map(|_| DocumentMeta { index: nr.index, generation: nr.generation, graph: self.graph })
+                .map(|_| DocumentMeta { index: nr.index, graph: self.graph })
         })
     }
     pub fn set_meta(&self, v: Option<DocumentMeta<'_, G>>) {
         let nr = v.filter(|h| std::ptr::eq(h.graph as *const G, self.graph as *const G))
-                  .map(|h| NodeRef { index: h.index, generation: h.generation });
+                  .map(|h| NodeRef { index: h.index });
         self.graph.arena_of_document().borrow_mut()[self.index as usize].meta = nr;
     }
     pub fn items(&self) -> Vec<DocumentItem<'arena, G>> {
-        let ep = self.graph._del_epoch_of_document_item().get();
-        let (nrs, swept) = {
+        let nrs: Vec<_> = {
             let arena = self.graph.arena_of_document().borrow();
             match arena.get(self.index as usize) {
-                Some(v) if v._gen == self.generation => (v.items.clone(), v._swept_items),
+                Some(v) => v.items.clone(),
                 _ => return vec![],
             }
         };
-        if swept == ep { return nrs.into_iter().map(|nr| DocumentItem { index: nr.index, generation: nr.generation, graph: self.graph }).collect(); }
-        let compacted: Vec<NodeRef> = {
-            let ref_arena = self.graph.arena_of_document_item().borrow();
-            nrs.into_iter().filter(|&nr| ref_arena.get(nr.index as usize).map_or(false, |rv| rv._gen == nr.generation)).collect()
-        };
-        {
-            let mut arena = self.graph.arena_of_document().borrow_mut();
-            if let Some(v) = arena.get_mut(self.index as usize) { v.items = compacted.clone(); v._swept_items = ep; }
-        }
-        compacted.into_iter().map(|nr| DocumentItem { index: nr.index, generation: nr.generation, graph: self.graph }).collect()
+        nrs.into_iter().map(|nr| DocumentItem { index: nr.index, graph: self.graph }).collect()
     }
     pub fn set_items(&self, vs: &[DocumentItem<'_, G>]) {
         let nrs = vs.iter()
             .filter(|h| std::ptr::eq(h.graph as *const G, self.graph as *const G))
-            .map(|h| NodeRef { index: h.index, generation: h.generation }).collect();
+            .map(|h| NodeRef { index: h.index }).collect();
         self.graph.arena_of_document().borrow_mut()[self.index as usize].items = nrs;
     }
     pub fn push_items(&self, v: DocumentItem<'_, G>) {
         if std::ptr::eq(v.graph as *const G, self.graph as *const G) {
-            let nr = NodeRef { index: v.index, generation: v.generation };
+            let nr = NodeRef { index: v.index };
             self.graph.arena_of_document().borrow_mut()[self.index as usize].items.push(nr);
-        }
-    }
-
-    pub fn is_valid(&self) -> bool {
-        self.graph.arena_of_document().borrow()
-            .get(self.index as usize)
-            .map_or(false, |v| v._gen == self.generation)
-    }
-
-    pub fn delete(&self) {
-        let freed = {
-            let mut a = self.graph.arena_of_document().borrow_mut();
-            if let Some(v) = a.get_mut(self.index as usize) {
-                if v._gen == self.generation { v._gen = u32::MAX; true } else { false }
-            } else { false }
-        };
-        if freed {
-            self.graph.free_slots_of_document().borrow_mut().push(self.index);
         }
     }
 
@@ -495,15 +395,8 @@ impl<'arena, G: DocumentGraphGraph> fmt::Display for Document<'arena, G> {
 // ── DocumentGraphArena<const ID: u64> ─────────────────────────────────────────────────────
 pub struct DocumentGraphArena<const ID: u64> {
     arena_of_document_meta: RefCell<Vec<DocumentMetaValues>>,
-    free_slots_of_document_meta: RefCell<Vec<u32>>,
-    _document_meta_next_gen: Cell<u32>,
     arena_of_document_item: RefCell<Vec<DocumentItemValues>>,
-    free_slots_of_document_item: RefCell<Vec<u32>>,
-    _document_item_next_gen: Cell<u32>,
-    _del_epoch_of_document_item: Cell<u16>,
     arena_of_document: RefCell<Vec<DocumentValues>>,
-    free_slots_of_document: RefCell<Vec<u32>>,
-    _document_next_gen: Cell<u32>,
     root: Cell<Option<NodeRef>>,
 }
 
@@ -512,27 +405,12 @@ impl<const ID: u64> DocumentMetaArena for DocumentGraphArena<ID> {
     fn arena_of_document_meta(&self) -> &RefCell<Vec<DocumentMetaValues>> {
         &self.arena_of_document_meta
     }
-    fn free_slots_of_document_meta(&self) -> &RefCell<Vec<u32>> {
-        &self.free_slots_of_document_meta
-    }
-    fn _document_meta_next_gen(&self) -> &Cell<u32> {
-        &self._document_meta_next_gen
-    }
 }
 
 impl<const ID: u64> DocumentItemArena for DocumentGraphArena<ID> {
     const DOCUMENTITEM_TYPE_ID: u64 = ID * 100 + 1;
     fn arena_of_document_item(&self) -> &RefCell<Vec<DocumentItemValues>> {
         &self.arena_of_document_item
-    }
-    fn free_slots_of_document_item(&self) -> &RefCell<Vec<u32>> {
-        &self.free_slots_of_document_item
-    }
-    fn _document_item_next_gen(&self) -> &Cell<u32> {
-        &self._document_item_next_gen
-    }
-    fn _del_epoch_of_document_item(&self) -> &Cell<u16> {
-        &self._del_epoch_of_document_item
     }
 }
 
@@ -541,27 +419,14 @@ impl<const ID: u64> DocumentArena for DocumentGraphArena<ID> {
     fn arena_of_document(&self) -> &RefCell<Vec<DocumentValues>> {
         &self.arena_of_document
     }
-    fn free_slots_of_document(&self) -> &RefCell<Vec<u32>> {
-        &self.free_slots_of_document
-    }
-    fn _document_next_gen(&self) -> &Cell<u32> {
-        &self._document_next_gen
-    }
 }
 
 impl<const ID: u64> DocumentGraphArena<ID> {
     pub fn new() -> Self {
         DocumentGraphArena {
             arena_of_document_meta: RefCell::new(Vec::new()),
-            free_slots_of_document_meta: RefCell::new(Vec::new()),
-            _document_meta_next_gen: Cell::new(0),
             arena_of_document_item: RefCell::new(Vec::new()),
-            free_slots_of_document_item: RefCell::new(Vec::new()),
-            _document_item_next_gen: Cell::new(0),
-            _del_epoch_of_document_item: Cell::new(0),
             arena_of_document: RefCell::new(Vec::new()),
-            free_slots_of_document: RefCell::new(Vec::new()),
-            _document_next_gen: Cell::new(0),
             root: Cell::new(None),
         }
     }
@@ -570,13 +435,12 @@ impl<const ID: u64> DocumentGraphArena<ID> {
         self.root.get().and_then(|nr| {
             let a = self.arena_of_document().borrow();
             a.get(nr.index as usize)
-                .filter(|v| v._gen == nr.generation)
-                .map(|_| Document { index: nr.index, generation: nr.generation, graph: self })
+                .map(|_| Document { index: nr.index, graph: self })
         })
     }
 
     pub fn set_root(&self, node: Option<Document<'_, Self>>) {
-        self.root.set(node.map(|h| NodeRef { index: h.index, generation: h.generation }));
+        self.root.set(node.map(|h| NodeRef { index: h.index }));
     }
 }
 
@@ -586,7 +450,7 @@ impl<const ID: u64> Default for DocumentGraphArena<ID> {
 
 
 // ── Serde: use dagr_runtime ─────────────────────────────────────────────────
-use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, UnionApplied, CycleId, DagrError};
+use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, CycleId, DagrError};
 use crate::dagr_runtime;
 
 fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut DagrBuilder) -> usize {
@@ -611,7 +475,6 @@ fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut D
 // ── DocumentMeta serde ──────────────────────────────────────────────────────────
 impl<'arena, G: DocumentGraphGraph> DocumentMeta<'arena, G> {
     pub fn store(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::DOCUMENTMETA_TYPE_ID, index: self.index as usize };
         if let Some(r) = b.begin_storing_acyclic(_id) { return Ok(r); }
         let _ = self.store_packed(b)?;
@@ -619,7 +482,6 @@ impl<'arena, G: DocumentGraphGraph> DocumentMeta<'arena, G> {
     }
 
     pub fn store_packed(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::DOCUMENTMETA_TYPE_ID, index: self.index as usize };
         let _before = b.cursor();
         let _pr_row = self.graph.arena_of_document_meta().borrow();
@@ -639,7 +501,6 @@ impl<'arena, G: DocumentGraphGraph> DocumentMeta<'arena, G> {
 // ── DocumentItem serde ──────────────────────────────────────────────────────────
 impl<'arena, G: DocumentGraphGraph> DocumentItem<'arena, G> {
     pub fn store(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::DOCUMENTITEM_TYPE_ID, index: self.index as usize };
         if let Some(r) = b.begin_storing_acyclic(_id) { return Ok(r); }
         let _ = self.store_packed(b)?;
@@ -647,7 +508,6 @@ impl<'arena, G: DocumentGraphGraph> DocumentItem<'arena, G> {
     }
 
     pub fn store_packed(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::DOCUMENTITEM_TYPE_ID, index: self.index as usize };
         let _before = b.cursor();
         let _pr_row = self.graph.arena_of_document_item().borrow();
@@ -673,7 +533,6 @@ impl<'arena, G: DocumentGraphGraph> DocumentItem<'arena, G> {
 // ── Document serde ──────────────────────────────────────────────────────────
 impl<'arena, G: DocumentGraphGraph> Document<'arena, G> {
     pub fn store(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::DOCUMENT_TYPE_ID, index: self.index as usize };
         if let Some(r) = b.begin_storing_acyclic(_id) { return Ok(r); }
         let _ = self.store_packed(b)?;
@@ -681,7 +540,6 @@ impl<'arena, G: DocumentGraphGraph> Document<'arena, G> {
     }
 
     pub fn store_packed(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::DOCUMENT_TYPE_ID, index: self.index as usize };
         let _before = b.cursor();
         let _pr_row = self.graph.arena_of_document().borrow();
@@ -690,12 +548,12 @@ impl<'arena, G: DocumentGraphGraph> Document<'arena, G> {
             let _row_items = self.graph.arena_of_document().borrow();
             let _refs_items = &_row_items[self.index as usize].items;
             let _cb_items = self.graph.arena_of_document_item().borrow();
-            let _valid_items = _refs_items.iter().filter(|_nr| _cb_items.get(_nr.index as usize).filter(|_rv| _rv._gen == _nr.generation).is_some()).count();
+            let _valid_items = _refs_items.iter().filter(|_nr| _cb_items.get(_nr.index as usize).is_some()).count();
             if _valid_items > 0 {
                 let _bef = b.cursor();
                 for _nr in _refs_items.iter().rev() {
-                    if _cb_items.get(_nr.index as usize).filter(|_rv| _rv._gen == _nr.generation).is_some() {
-                        DocumentItem { index: _nr.index, generation: _nr.generation, graph: self.graph }.store_packed(b)?;
+                    if _cb_items.get(_nr.index as usize).is_some() {
+                        DocumentItem { index: _nr.index, graph: self.graph }.store_packed(b)?;
                     }
                 }
                 b.store_leb(_valid_items as u64);
@@ -727,8 +585,8 @@ fn _restore_document_meta<'arena, G: DocumentGraphGraph>(
     let _cache_key = (G::DOCUMENTMETA_TYPE_ID, at);
     if let Some(&idx) = cache.get(&_cache_key) {
         let a = arena.arena_of_document_meta().borrow();
-        let _node_gen = a[idx as usize]._gen;
-        return Ok(DocumentMeta { index: idx, generation: _node_gen, graph: arena });
+        let _ = &a;
+        return Ok(DocumentMeta { index: idx, graph: arena });
     }
     let (_total_size, _ts_len) = crate::dagr_runtime::read_leb(data, at)?;
     let _payload_end = at + _ts_len + _total_size as usize;
@@ -759,8 +617,8 @@ fn _restore_document_item<'arena, G: DocumentGraphGraph>(
     let _cache_key = (G::DOCUMENTITEM_TYPE_ID, at);
     if let Some(&idx) = cache.get(&_cache_key) {
         let a = arena.arena_of_document_item().borrow();
-        let _node_gen = a[idx as usize]._gen;
-        return Ok(DocumentItem { index: idx, generation: _node_gen, graph: arena });
+        let _ = &a;
+        return Ok(DocumentItem { index: idx, graph: arena });
     }
     let (_total_size, _ts_len) = crate::dagr_runtime::read_leb(data, at)?;
     let _payload_end = at + _ts_len + _total_size as usize;
@@ -793,8 +651,8 @@ fn _restore_document<'arena, G: DocumentGraphGraph>(
     let _cache_key = (G::DOCUMENT_TYPE_ID, at);
     if let Some(&idx) = cache.get(&_cache_key) {
         let a = arena.arena_of_document().borrow();
-        let _node_gen = a[idx as usize]._gen;
-        return Ok(Document { index: idx, generation: _node_gen, graph: arena });
+        let _ = &a;
+        return Ok(Document { index: idx, graph: arena });
     }
     let (_total_size, _ts_len) = crate::dagr_runtime::read_leb(data, at)?;
     let _payload_end = at + _ts_len + _total_size as usize;

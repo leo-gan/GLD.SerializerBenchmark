@@ -5,42 +5,33 @@ use std::fmt;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct NodeRef { pub index: u32, pub generation: u32 }
+pub struct NodeRef { pub index: u32 }
 
 pub use crate::strings_graph_core::*;
 
 // ── StringsValues ──────────────────────────────────────────────────────────
 pub struct StringsValues {
-    pub(crate) _gen: u32,
     pub items: Vec<String>,
 }
 
 pub trait StringsArena {
     const STRINGS_TYPE_ID: u64;
     fn arena_of_strings(&self) -> &RefCell<Vec<StringsValues>>;
-    fn free_slots_of_strings(&self) -> &RefCell<Vec<u32>>;
-    fn _strings_next_gen(&self) -> &Cell<u32>;
 }
 
 // ── StringsGraphGraph ─────────────────────────────────────────────────────────────────────
 pub trait StringsGraphGraph: StringsArena {
     fn new_strings(&self, items: Vec<String>) -> Strings<'_, Self> where Self: Sized {
-        let generation = self._strings_next_gen().get();
-        self._strings_next_gen().set(generation.wrapping_add(1));
         let _values = StringsValues {
-            _gen: generation,
                 items: items,
         };
-        let index = if let Some(idx) = self.free_slots_of_strings().borrow_mut().pop() {
-            self.arena_of_strings().borrow_mut()[idx as usize] = _values;
-            idx
-        } else {
+        let index = {
             let mut _arena = self.arena_of_strings().borrow_mut();
             let idx = _arena.len() as u32;
             _arena.push(_values);
             idx
         };
-        Strings { index: index, generation: generation, graph: self }
+        Strings { index: index, graph: self }
     }
     fn new_strings_defaulted(&self) -> Strings<'_, Self> where Self: Sized {
         self.new_strings(Vec::new())
@@ -51,12 +42,11 @@ impl<T: StringsArena> StringsGraphGraph for T {}
 // ── Strings handle ────────────────────────────────────────────────────────
 pub struct Strings<'arena, G: StringsGraphGraph> {
     pub(crate) index: u32,
-    pub(crate) generation: u32,
     pub(crate) graph: &'arena G,
 }
 
 impl<'arena, G: StringsGraphGraph> Clone for Strings<'arena, G> {
-    fn clone(&self) -> Self { Strings { index: self.index, generation: self.generation, graph: self.graph } }
+    fn clone(&self) -> Self { Strings { index: self.index, graph: self.graph } }
 }
 impl<'arena, G: StringsGraphGraph> Copy for Strings<'arena, G> {}
 
@@ -69,24 +59,6 @@ impl<'arena, G: StringsGraphGraph> Strings<'arena, G> {
     }
     pub fn push_items(&self, v: String) {
         self.graph.arena_of_strings().borrow_mut()[self.index as usize].items.push(v);
-    }
-
-    pub fn is_valid(&self) -> bool {
-        self.graph.arena_of_strings().borrow()
-            .get(self.index as usize)
-            .map_or(false, |v| v._gen == self.generation)
-    }
-
-    pub fn delete(&self) {
-        let freed = {
-            let mut a = self.graph.arena_of_strings().borrow_mut();
-            if let Some(v) = a.get_mut(self.index as usize) {
-                if v._gen == self.generation { v._gen = u32::MAX; true } else { false }
-            } else { false }
-        };
-        if freed {
-            self.graph.free_slots_of_strings().borrow_mut().push(self.index);
-        }
     }
 
     fn _id(&self) -> (u64, usize, usize) {
@@ -139,8 +111,6 @@ impl<'arena, G: StringsGraphGraph> fmt::Display for Strings<'arena, G> {
 // ── StringsGraphArena<const ID: u64> ─────────────────────────────────────────────────────
 pub struct StringsGraphArena<const ID: u64> {
     arena_of_strings: RefCell<Vec<StringsValues>>,
-    free_slots_of_strings: RefCell<Vec<u32>>,
-    _strings_next_gen: Cell<u32>,
     root: Cell<Option<NodeRef>>,
 }
 
@@ -149,20 +119,12 @@ impl<const ID: u64> StringsArena for StringsGraphArena<ID> {
     fn arena_of_strings(&self) -> &RefCell<Vec<StringsValues>> {
         &self.arena_of_strings
     }
-    fn free_slots_of_strings(&self) -> &RefCell<Vec<u32>> {
-        &self.free_slots_of_strings
-    }
-    fn _strings_next_gen(&self) -> &Cell<u32> {
-        &self._strings_next_gen
-    }
 }
 
 impl<const ID: u64> StringsGraphArena<ID> {
     pub fn new() -> Self {
         StringsGraphArena {
             arena_of_strings: RefCell::new(Vec::new()),
-            free_slots_of_strings: RefCell::new(Vec::new()),
-            _strings_next_gen: Cell::new(0),
             root: Cell::new(None),
         }
     }
@@ -171,13 +133,12 @@ impl<const ID: u64> StringsGraphArena<ID> {
         self.root.get().and_then(|nr| {
             let a = self.arena_of_strings().borrow();
             a.get(nr.index as usize)
-                .filter(|v| v._gen == nr.generation)
-                .map(|_| Strings { index: nr.index, generation: nr.generation, graph: self })
+                .map(|_| Strings { index: nr.index, graph: self })
         })
     }
 
     pub fn set_root(&self, node: Option<Strings<'_, Self>>) {
-        self.root.set(node.map(|h| NodeRef { index: h.index, generation: h.generation }));
+        self.root.set(node.map(|h| NodeRef { index: h.index }));
     }
 }
 
@@ -187,7 +148,7 @@ impl<const ID: u64> Default for StringsGraphArena<ID> {
 
 
 // ── Serde: use dagr_runtime ─────────────────────────────────────────────────
-use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, UnionApplied, CycleId, DagrError};
+use crate::dagr_runtime::{DagrBuilder, NodeStoreRef, CycleId, DagrError};
 use crate::dagr_runtime;
 
 fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut DagrBuilder) -> usize {
@@ -212,7 +173,6 @@ fn _store_prim_array(offsets: &[Option<usize>], content_cursor: usize, b: &mut D
 // ── Strings serde ──────────────────────────────────────────────────────────
 impl<'arena, G: StringsGraphGraph> Strings<'arena, G> {
     pub fn store(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::STRINGS_TYPE_ID, index: self.index as usize };
         if let Some(r) = b.begin_storing_acyclic(_id) { return Ok(r); }
         let _ = self.store_packed(b)?;
@@ -220,7 +180,6 @@ impl<'arena, G: StringsGraphGraph> Strings<'arena, G> {
     }
 
     pub fn store_packed(&self, b: &mut DagrBuilder) -> Result<NodeStoreRef, DagrError> {
-        if !self.is_valid() { return Err(DagrError::StaleReference); }
         let _id = CycleId { type_id: G::STRINGS_TYPE_ID, index: self.index as usize };
         let _before = b.cursor();
         let _pr_row = self.graph.arena_of_strings().borrow();
@@ -248,8 +207,8 @@ fn _restore_strings<'arena, G: StringsGraphGraph>(
     let _cache_key = (G::STRINGS_TYPE_ID, at);
     if let Some(&idx) = cache.get(&_cache_key) {
         let a = arena.arena_of_strings().borrow();
-        let _node_gen = a[idx as usize]._gen;
-        return Ok(Strings { index: idx, generation: _node_gen, graph: arena });
+        let _ = &a;
+        return Ok(Strings { index: idx, graph: arena });
     }
     let (_total_size, _ts_len) = crate::dagr_runtime::read_leb(data, at)?;
     let _payload_end = at + _ts_len + _total_size as usize;

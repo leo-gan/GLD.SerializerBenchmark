@@ -2,7 +2,7 @@
 # Serializer (arena -> bytes) for graph 'DocumentGraph' — plan 28 Phase 4.
 
 from dagr_writer import Builder, NodeStoreRef, node_offset, resolved_ref, nil_ref, to_zigzag, leb_length
-from document_graph_arena import DocumentGraphArena, DocumentMeta, DocumentItem, Document, _uidx, _ugen
+from document_graph_arena import DocumentGraphArena, DocumentMeta, DocumentItem, Document
 
 comptime _VT_MAX = 1   # widest regular-node vtable (§1.19)
 
@@ -70,8 +70,6 @@ def _store_document[o: Origin[mut=False], //](mut b: Builder[_VT_MAX], a: Docume
     var _n3 = 0
     for _k3 in range(len(_row3) - 1, -1, -1):
         var _p3 = _row3[_k3]
-        if a._gen_document_item[_uidx(_p3)] != _ugen(_p3):
-            continue
         _ = _store_document_item(b, a, DocumentItem[o](h._a, _p3))
         _n3 += 1
     _ = b.store_leb(UInt64(_n3))

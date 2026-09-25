@@ -14,8 +14,10 @@ def _load_schema():
     import dagr_schema as _m
     from dagr.dsl import DataGraph
     for _v in vars(_m).values():
-        if isinstance(_v, DataGraph) and _v.name == 'TelemetryGraph':
-            return _v
+        _cands = getattr(_v, 'schemas', None) if not isinstance(_v, (list, tuple)) else _v
+        for _g in ([_v] if _cands is None or isinstance(_v, str) else list(_cands)):
+            if isinstance(_g, DataGraph) and _g.name == 'TelemetryGraph':
+                return _g
     raise ImportError("DataGraph 'TelemetryGraph' not found in dagr_schema")
 SCHEMA = _load_schema()
 

@@ -59,17 +59,8 @@ interface StringsValues {
 
 export class Strings<B = unknown> {
   constructor(readonly _packed: bigint, readonly _arena: Arena<B>) {}
-  get _index(): number { return Number(this._packed & 0xffffffffffn); }
-  get generation(): number { return Number(this._packed >> 40n); }
+  get _index(): number { return Number(this._packed); }
   get _values(): StringsValues { return this._arena._arrStrings[this._index]!; }
-  isValid(): boolean { return this._arena._genStrings[this._index] === this.generation; }
-  delete(): void {
-    const _i = this._index;
-    if (this._arena._genStrings[_i] !== this.generation) return;
-    this._arena._genStrings[_i] = (this._arena._genStrings[_i] + 1) & 0xffffff;
-    this._arena._arrStrings[_i] = { items: [] };
-    this._arena._freeStrings.push(_i);
-  }
   get items(): string[] {
     return this._arena._arrStrings[this._index]!.items;
   }
@@ -106,25 +97,14 @@ export class Strings<B = unknown> {
 export class Arena<B = unknown> {
   declare private readonly __brand: B;
   _arrStrings: StringsValues[] = [];
-  _genStrings: number[] = [];
-  _freeStrings: number[] = [];
   #root: bigint | null = null;
   newStrings(items: string[] = []): Strings<B> {
-    let _i: number, _g: number;
-    if (this._freeStrings.length > 0) {
-      _i = this._freeStrings.pop()!;
-      _g = this._genStrings[_i]!;
-      this._arrStrings[_i] = { items };
-    } else {
-      _i = this._arrStrings.length;
-      _g = 0;
+    const _i = this._arrStrings.length;
       this._arrStrings.push({ items });
-      this._genStrings.push(0);
-    }
-    return new Strings<B>(_pack(_g, _i), this);
+    return new Strings<B>(_pack(0, _i), this);
   }
   get root(): Strings<B> | null {
-    if (this.#root === null || !(this._genStrings[Number(this.#root & 0xffffffffffn)] === Number(this.#root >> 40n))) return null;
+    if (this.#root === null) return null;
     return new Strings<B>(this.#root, this);
   }
   set root(h: Strings<B> | null) { this.#root = h === null ? null : h._packed; }

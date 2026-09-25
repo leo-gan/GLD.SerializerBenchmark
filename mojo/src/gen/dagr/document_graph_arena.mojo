@@ -100,7 +100,6 @@ struct DocumentValues(Copyable, Movable):
     var status: Optional[Int32]
     var meta: Optional[UInt64]
     var items: List[UInt64]
-    var _swept_items: UInt16
 
 @fieldwise_init
 struct DocumentMeta[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writable, Hashable, Equatable):
@@ -128,16 +127,6 @@ struct DocumentMeta[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable,
         return self._a[]._arr_document_meta[self._i()].version
     def set_version(self, var v: Int32):
         self._mut()[]._arr_document_meta[self._i()].version = Optional(v)
-    def is_valid(self) -> Bool:
-        return self._a[]._gen_document_meta[self._i()] == self.generation()
-    def delete(self):
-        var i = self._i()
-        if self._a[]._gen_document_meta[i] != self.generation():
-            return
-        var up = self._mut()
-        up[]._gen_document_meta[i] = (up[]._gen_document_meta[i] + 1) & 0xffffff
-        up[]._arr_document_meta[i] = DocumentMetaValues(region=None, version=None)
-        up[]._free_document_meta.append(i)
     def write_to[W: Writer](self, mut writer: W):
         var seen = Set[NodeKey]()
         self._repr_cyc(writer, seen)
@@ -228,17 +217,6 @@ struct DocumentItem[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable,
         return self._a[]._arr_document_item[self._i()].price_minor
     def set_price_minor(self, var v: Int64):
         self._mut()[]._arr_document_item[self._i()].price_minor = Optional(v)
-    def is_valid(self) -> Bool:
-        return self._a[]._gen_document_item[self._i()] == self.generation()
-    def delete(self):
-        var i = self._i()
-        if self._a[]._gen_document_item[i] != self.generation():
-            return
-        var up = self._mut()
-        up[]._gen_document_item[i] = (up[]._gen_document_item[i] + 1) & 0xffffff
-        up[]._arr_document_item[i] = DocumentItemValues(sku=None, qty=None, price_minor=None)
-        up[]._free_document_item.append(i)
-        up[]._epoch_document_item = up[]._epoch_document_item + 1
     def write_to[W: Writer](self, mut writer: W):
         var seen = Set[NodeKey]()
         self._repr_cyc(writer, seen)
@@ -341,46 +319,16 @@ struct Document[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Wri
         if not v:
             return None
         var p = v.value()
-        if self._a[]._gen_document_meta[_uidx(p)] != _ugen(p):
-            return None
         return DocumentMeta[Self.o](self._a, p)
     def set_meta(self, v: DocumentMeta[Self.o]):
         self._mut()[]._arr_document[self._i()].meta = Optional(v._packed)
-    def items(self) -> List[DocumentItem[Self.o]]:
-        var _ep = self._a[]._epoch_document_item
-        var stored = self._a[]._arr_document[self._i()].items.copy()
-        var out = List[DocumentItem[Self.o]]()
-        if self._a[]._arr_document[self._i()]._swept_items == _ep:
-            for k in range(len(stored)):
-                out.append(DocumentItem[Self.o](self._a, stored[k]))
-            return out^
-        var live = List[UInt64]()
-        for k in range(len(stored)):
-            var p = stored[k]
-            if self._a[]._gen_document_item[_uidx(p)] == _ugen(p):
-                live.append(p)
-        var _up = self._mut()
-        _up[]._arr_document[self._i()].items = live.copy()
-        _up[]._arr_document[self._i()]._swept_items = _ep
-        for k in range(len(live)):
-            out.append(DocumentItem[Self.o](self._a, live[k]))
-        return out^
+    def items(self) -> DocumentItemListView[Self.o, origin_of(self._a[]._arr_document[self._i()].items)]:
+        return DocumentItemListView[Self.o, origin_of(self._a[]._arr_document[self._i()].items)](self._a, Pointer(to=self._a[]._arr_document[self._i()].items))
     def set_items(self, v: List[DocumentItem[Self.o]]):
         var packed = List[UInt64]()
         for k in range(len(v)):
             packed.append(v[k]._packed)
         self._mut()[]._arr_document[self._i()].items = packed^
-        self._mut()[]._arr_document[self._i()]._swept_items = self._a[]._epoch_document_item - 1
-    def is_valid(self) -> Bool:
-        return self._a[]._gen_document[self._i()] == self.generation()
-    def delete(self):
-        var i = self._i()
-        if self._a[]._gen_document[i] != self.generation():
-            return
-        var up = self._mut()
-        up[]._gen_document[i] = (up[]._gen_document[i] + 1) & 0xffffff
-        up[]._arr_document[i] = DocumentValues(id=None, status=None, meta=None, items=List[UInt64](), _swept_items=0)
-        up[]._free_document.append(i)
     def write_to[W: Writer](self, mut writer: W):
         var seen = Set[NodeKey]()
         self._repr_cyc(writer, seen)
@@ -435,8 +383,7 @@ struct Document[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Wri
             _r2.value()._hash_cyc(hasher, seen)
         for _e in self._a[]._arr_document[i].items:
             var _p = _e
-            if self._a[]._gen_document_item[_uidx(_p)] == _ugen(_p):
-                DocumentItem[Self.o](self._a, _p)._hash_cyc(hasher, seen)
+            DocumentItem[Self.o](self._a, _p)._hash_cyc(hasher, seen)
     def __eq__(self, other: Self) -> Bool:
         return self.equals(other)
     def __ne__(self, other: Self) -> Bool:
@@ -469,87 +416,62 @@ struct Document[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Wri
         for _k in range(len(_sl3)):
             var _sp = _sl3[_k]
             var _op = _ol3[_k]
-            var _sv = self._a[]._gen_document_item[_uidx(_sp)] == _ugen(_sp)
-            var _ov = other._a[]._gen_document_item[_uidx(_op)] == _ugen(_op)
-            if _sv != _ov:
+            if not DocumentItem[Self.o](self._a, _sp)._eq_cyc(DocumentItem[o2](other._a, _op), seen):
                 return False
-            if _sv and _ov:
-                if not DocumentItem[Self.o](self._a, _sp)._eq_cyc(DocumentItem[o2](other._a, _op), seen):
-                    return False
         return True
+
+@fieldwise_init
+struct DocumentItemListIter[o: Origin[mut=False], lo: Origin[mut=False]](Copyable, Movable):
+    var _a: Pointer[DocumentGraphArena, origin=Self.o]
+    var _ids: Pointer[List[UInt64], origin=Self.lo]
+    var _i: Int
+    def __next__(mut self) raises StopIteration -> DocumentItem[Self.o]:
+        if self._i >= len(self._ids[]):
+            raise StopIteration()
+        var _h = DocumentItem[Self.o](self._a, self._ids[][self._i])
+        self._i += 1
+        return _h
+
+@fieldwise_init
+struct DocumentItemListView[o: Origin[mut=False], lo: Origin[mut=False]](Copyable, Movable, Sized):
+    var _a: Pointer[DocumentGraphArena, origin=Self.o]
+    var _ids: Pointer[List[UInt64], origin=Self.lo]
+    def __len__(self) -> Int:
+        return len(self._ids[])
+    def __getitem__(self, i: Int) -> DocumentItem[Self.o]:
+        return DocumentItem[Self.o](self._a, self._ids[][i])
+    def __iter__(self) -> DocumentItemListIter[Self.o, Self.lo]:
+        return DocumentItemListIter[Self.o, Self.lo](self._a, self._ids, 0)
 
 struct DocumentGraphArena(Movable):
     var _arr_document_meta: List[DocumentMetaValues]
-    var _gen_document_meta: List[UInt32]
-    var _free_document_meta: List[Int]
     var _arr_document_item: List[DocumentItemValues]
-    var _gen_document_item: List[UInt32]
-    var _free_document_item: List[Int]
     var _arr_document: List[DocumentValues]
-    var _gen_document: List[UInt32]
-    var _free_document: List[Int]
-    var _epoch_document_item: UInt16
     var _root: Optional[UInt64]
     def __init__(out self):
         self._arr_document_meta = List[DocumentMetaValues]()
-        self._gen_document_meta = List[UInt32]()
-        self._free_document_meta = List[Int]()
         self._arr_document_item = List[DocumentItemValues]()
-        self._gen_document_item = List[UInt32]()
-        self._free_document_item = List[Int]()
         self._arr_document = List[DocumentValues]()
-        self._gen_document = List[UInt32]()
-        self._free_document = List[Int]()
-        self._epoch_document_item = 0
         self._root = None
     def new_document_meta[o: Origin[mut=False], //](ref [o] self, var region: String = String(""), var version: Int32 = Int32(0)) -> DocumentMeta[o]:
         var up = Pointer[DocumentGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))
-        var idx: Int
-        var gen: UInt32
-        if len(self._free_document_meta) > 0:
-            idx = up[]._free_document_meta.pop()
-            gen = up[]._gen_document_meta[idx]
-            up[]._arr_document_meta[idx] = DocumentMetaValues(region=Optional(region^), version=Optional(version))
-        else:
-            idx = len(self._arr_document_meta)
-            gen = 0
-            up[]._arr_document_meta.append(DocumentMetaValues(region=Optional(region^), version=Optional(version)))
-            up[]._gen_document_meta.append(0)
-        return DocumentMeta[o](Pointer(to=self), _pack(gen, idx))
+        var idx = len(self._arr_document_meta)
+        up[]._arr_document_meta.append(DocumentMetaValues(region=Optional(region^), version=Optional(version)))
+        return DocumentMeta[o](Pointer(to=self), _pack(0, idx))
     def new_document_item[o: Origin[mut=False], //](ref [o] self, var sku: String = String(""), var qty: Int32 = Int32(0), var price_minor: Int64 = Int64(0)) -> DocumentItem[o]:
         var up = Pointer[DocumentGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))
-        var idx: Int
-        var gen: UInt32
-        if len(self._free_document_item) > 0:
-            idx = up[]._free_document_item.pop()
-            gen = up[]._gen_document_item[idx]
-            up[]._arr_document_item[idx] = DocumentItemValues(sku=Optional(sku^), qty=Optional(qty), price_minor=Optional(price_minor))
-        else:
-            idx = len(self._arr_document_item)
-            gen = 0
-            up[]._arr_document_item.append(DocumentItemValues(sku=Optional(sku^), qty=Optional(qty), price_minor=Optional(price_minor)))
-            up[]._gen_document_item.append(0)
-        return DocumentItem[o](Pointer(to=self), _pack(gen, idx))
+        var idx = len(self._arr_document_item)
+        up[]._arr_document_item.append(DocumentItemValues(sku=Optional(sku^), qty=Optional(qty), price_minor=Optional(price_minor)))
+        return DocumentItem[o](Pointer(to=self), _pack(0, idx))
     def new_document[o: Origin[mut=False], //](ref [o] self, var id: String = String(""), var status: Int32 = Int32(0)) -> Document[o]:
         var up = Pointer[DocumentGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))
-        var idx: Int
-        var gen: UInt32
-        if len(self._free_document) > 0:
-            idx = up[]._free_document.pop()
-            gen = up[]._gen_document[idx]
-            up[]._arr_document[idx] = DocumentValues(id=Optional(id^), status=Optional(status), meta=None, items=List[UInt64](), _swept_items=0)
-        else:
-            idx = len(self._arr_document)
-            gen = 0
-            up[]._arr_document.append(DocumentValues(id=Optional(id^), status=Optional(status), meta=None, items=List[UInt64](), _swept_items=0))
-            up[]._gen_document.append(0)
-        return Document[o](Pointer(to=self), _pack(gen, idx))
+        var idx = len(self._arr_document)
+        up[]._arr_document.append(DocumentValues(id=Optional(id^), status=Optional(status), meta=None, items=List[UInt64]()))
+        return Document[o](Pointer(to=self), _pack(0, idx))
     def root[o: Origin[mut=False], //](ref [o] self) -> Optional[Document[o]]:
         if not self._root:
             return None
         var p = self._root.value()
-        if self._gen_document[_uidx(p)] != _ugen(p):
-            return None
         return Document[o](Pointer(to=self), p)
     def set_root[o: Origin[mut=False], //](ref [o] self, h: Document[o]):
         var up = Pointer[DocumentGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))

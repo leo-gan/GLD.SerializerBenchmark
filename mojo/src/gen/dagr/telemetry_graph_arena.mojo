@@ -124,16 +124,6 @@ struct Telemetry[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Wr
         return self._a[]._arr_telemetry[self._i()].values.copy()
     def set_values(self, var v: List[Float64]):
         self._mut()[]._arr_telemetry[self._i()].values = v^
-    def is_valid(self) -> Bool:
-        return self._a[]._gen_telemetry[self._i()] == self.generation()
-    def delete(self):
-        var i = self._i()
-        if self._a[]._gen_telemetry[i] != self.generation():
-            return
-        var up = self._mut()
-        up[]._gen_telemetry[i] = (up[]._gen_telemetry[i] + 1) & 0xffffff
-        up[]._arr_telemetry[i] = TelemetryValues(source=None, ts=None, tags=List[String](), values=List[Float64]())
-        up[]._free_telemetry.append(i)
     def write_to[W: Writer](self, mut writer: W):
         var seen = Set[NodeKey]()
         self._repr_cyc(writer, seen)
@@ -218,34 +208,19 @@ struct Telemetry[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Wr
 
 struct TelemetryGraphArena(Movable):
     var _arr_telemetry: List[TelemetryValues]
-    var _gen_telemetry: List[UInt32]
-    var _free_telemetry: List[Int]
     var _root: Optional[UInt64]
     def __init__(out self):
         self._arr_telemetry = List[TelemetryValues]()
-        self._gen_telemetry = List[UInt32]()
-        self._free_telemetry = List[Int]()
         self._root = None
     def new_telemetry[o: Origin[mut=False], //](ref [o] self, var source: String = String(""), var ts: Int64 = Int64(0)) -> Telemetry[o]:
         var up = Pointer[TelemetryGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))
-        var idx: Int
-        var gen: UInt32
-        if len(self._free_telemetry) > 0:
-            idx = up[]._free_telemetry.pop()
-            gen = up[]._gen_telemetry[idx]
-            up[]._arr_telemetry[idx] = TelemetryValues(source=Optional(source^), ts=Optional(ts), tags=List[String](), values=List[Float64]())
-        else:
-            idx = len(self._arr_telemetry)
-            gen = 0
-            up[]._arr_telemetry.append(TelemetryValues(source=Optional(source^), ts=Optional(ts), tags=List[String](), values=List[Float64]()))
-            up[]._gen_telemetry.append(0)
-        return Telemetry[o](Pointer(to=self), _pack(gen, idx))
+        var idx = len(self._arr_telemetry)
+        up[]._arr_telemetry.append(TelemetryValues(source=Optional(source^), ts=Optional(ts), tags=List[String](), values=List[Float64]()))
+        return Telemetry[o](Pointer(to=self), _pack(0, idx))
     def root[o: Origin[mut=False], //](ref [o] self) -> Optional[Telemetry[o]]:
         if not self._root:
             return None
         var p = self._root.value()
-        if self._gen_telemetry[_uidx(p)] != _ugen(p):
-            return None
         return Telemetry[o](Pointer(to=self), p)
     def set_root[o: Origin[mut=False], //](ref [o] self, h: Telemetry[o]):
         var up = Pointer[TelemetryGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))

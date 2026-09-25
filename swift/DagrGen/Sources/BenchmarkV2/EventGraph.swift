@@ -12,22 +12,16 @@ public enum EventGraph {
         public var occurred_at: Int64? = nil
         public var producer: String? = nil
         public var attrs: [UInt64] = []
-        public var _swept_attrs: UInt16 = 0
     }
 
     public protocol EventAttrArena: AnyObject {
         static var eventAttrTypeId: Int { get }
         var arenaOfEventAttr: [EventAttrValues] { get set }
-        var generationOfEventAttr: [UInt32] { get set }
-        var freeSlotsOfEventAttr: [Int] { get set }
-        var _delEpochOfEventAttr: UInt16 { get set }
     }
 
     public protocol EventArena: AnyObject {
         static var eventTypeId: Int { get }
         var arenaOfEvent: [EventValues] { get set }
-        var generationOfEvent: [UInt32] { get set }
-        var freeSlotsOfEvent: [Int] { get set }
     }
 
     public typealias EventGraphGraph = EventArena & EventAttrArena
@@ -50,14 +44,6 @@ public enum EventGraph {
         public var value: String? {
             get { __graph.arenaOfEventAttr[__index].value }
             nonmutating set { __graph.arenaOfEventAttr[__index].value = newValue }
-        }
-        public func delete() {
-            let _idx = __index
-            guard _generation == __graph.generationOfEventAttr[_idx] else { return }
-            __graph.arenaOfEventAttr[_idx] = EventAttrValues()
-            __graph.generationOfEventAttr[_idx] &+= 1
-            __graph.freeSlotsOfEventAttr.append(_idx)
-            __graph._delEpochOfEventAttr &+= 1
         }
     }
 
@@ -88,23 +74,9 @@ public enum EventGraph {
         }
         public var attrs: [EventAttr<Arena>] {
             get {
-                let _ep = __graph._delEpochOfEventAttr
-                if __graph.arenaOfEvent[__index]._swept_attrs == _ep {
-                    return __graph.arenaOfEvent[__index].attrs.map { EventAttr(__packed: $0, __graph: __graph) }
-                }
-                let _live = __graph.arenaOfEvent[__index].attrs.filter { _stored in __graph.generationOfEventAttr[Int(_stored & 0x0000_00FF_FFFF_FFFF)] == UInt32(_stored >> 40) }
-                __graph.arenaOfEvent[__index].attrs = _live
-                __graph.arenaOfEvent[__index]._swept_attrs = _ep
-                return _live.map { EventAttr(__packed: $0, __graph: __graph) }
+                return __graph.arenaOfEvent[__index].attrs.map { EventAttr(__packed: $0, __graph: __graph) }
             }
-            nonmutating set { __graph.arenaOfEvent[__index].attrs = newValue.map { $0.__packed }; __graph.arenaOfEvent[__index]._swept_attrs = __graph._delEpochOfEventAttr &- 1 }
-        }
-        public func delete() {
-            let _idx = __index
-            guard _generation == __graph.generationOfEvent[_idx] else { return }
-            __graph.arenaOfEvent[_idx] = EventValues()
-            __graph.generationOfEvent[_idx] &+= 1
-            __graph.freeSlotsOfEvent.append(_idx)
+            nonmutating set { __graph.arenaOfEvent[__index].attrs = newValue.map { $0.__packed } }
         }
     }
 
@@ -118,13 +90,8 @@ public enum EventGraph {
     public class Arena<Brand>: EventAttrArena, EventArena {
         public static var eventAttrTypeId: Int { 0 }
         public var arenaOfEventAttr: [EventAttrValues] = []
-        public var generationOfEventAttr: [UInt32] = []
-        public var freeSlotsOfEventAttr: [Int] = []
-        public var _delEpochOfEventAttr: UInt16 = 0
         public static var eventTypeId: Int { 1 }
         public var arenaOfEvent: [EventValues] = []
-        public var generationOfEvent: [UInt32] = []
-        public var freeSlotsOfEvent: [Int] = []
         public init() {}
 
         private var _root: UInt64? = nil
@@ -140,15 +107,9 @@ public enum EventGraph {
 extension EventGraph.Arena {
     public func newEventAttr(key: String? = nil, value: String? = nil) -> EventGraph.EventAttr<EventGraph.Arena<Brand>> {
         let _idx: Int
-        if let _free = freeSlotsOfEventAttr.popLast() {
-            _idx = _free
-            arenaOfEventAttr[_idx] = EventGraph.EventAttrValues(key: key, value: value)
-        } else {
-            _idx = arenaOfEventAttr.count
-            arenaOfEventAttr.append(EventGraph.EventAttrValues(key: key, value: value))
-            generationOfEventAttr.append(0)
-        }
-        let _packed = UInt64(generationOfEventAttr[_idx]) << 40 | UInt64(_idx)
+        _idx = arenaOfEventAttr.count
+        arenaOfEventAttr.append(EventGraph.EventAttrValues(key: key, value: value))
+        let _packed = UInt64(_idx)
         return EventGraph.EventAttr(__packed: _packed, __graph: self)
     }
 }
@@ -156,15 +117,9 @@ extension EventGraph.Arena {
 extension EventGraph.Arena {
     public func newEvent(event_id: String? = nil, event_type: String? = nil, occurred_at: Int64? = nil, producer: String? = nil, attrs: [EventGraph.EventAttr<EventGraph.Arena<Brand>>] = []) -> EventGraph.Event<EventGraph.Arena<Brand>> {
         let _idx: Int
-        if let _free = freeSlotsOfEvent.popLast() {
-            _idx = _free
-            arenaOfEvent[_idx] = EventGraph.EventValues(event_id: event_id, event_type: event_type, occurred_at: occurred_at, producer: producer, attrs: attrs.map { $0.__packed })
-        } else {
-            _idx = arenaOfEvent.count
-            arenaOfEvent.append(EventGraph.EventValues(event_id: event_id, event_type: event_type, occurred_at: occurred_at, producer: producer, attrs: attrs.map { $0.__packed }))
-            generationOfEvent.append(0)
-        }
-        let _packed = UInt64(generationOfEvent[_idx]) << 40 | UInt64(_idx)
+        _idx = arenaOfEvent.count
+        arenaOfEvent.append(EventGraph.EventValues(event_id: event_id, event_type: event_type, occurred_at: occurred_at, producer: producer, attrs: attrs.map { $0.__packed }))
+        let _packed = UInt64(_idx)
         return EventGraph.Event(__packed: _packed, __graph: self)
     }
 }
@@ -190,27 +145,6 @@ extension EventGraph.Arena {
         guard _seen.insert((UInt64(1) << 48) | UInt64(src._index)).inserted else { throw DagrError.cyclicAdopt }
         defer { _seen.remove((UInt64(1) << 48) | UInt64(src._index)) }
         return newEvent(event_id: src.event_id, event_type: src.event_type, occurred_at: src.occurred_at, producer: src.producer, attrs: try src.attrs.map { try _adopt($0, &_seen) })
-    }
-}
-
-extension EventGraph.Arena {
-    public func deleteEventAttr(_ node: EventGraph.EventAttr<EventGraph.Arena<Brand>>) {
-        let _idx = node._index
-        guard node._generation == generationOfEventAttr[_idx] else { return }
-        arenaOfEventAttr[_idx] = EventGraph.EventAttrValues()
-        generationOfEventAttr[_idx] &+= 1
-        freeSlotsOfEventAttr.append(_idx)
-        _delEpochOfEventAttr &+= 1
-    }
-}
-
-extension EventGraph.Arena {
-    public func deleteEvent(_ node: EventGraph.Event<EventGraph.Arena<Brand>>) {
-        let _idx = node._index
-        guard node._generation == generationOfEvent[_idx] else { return }
-        arenaOfEvent[_idx] = EventGraph.EventValues()
-        generationOfEvent[_idx] &+= 1
-        freeSlotsOfEvent.append(_idx)
     }
 }
 
@@ -471,7 +405,6 @@ extension EventGraph.Arena {
         let idx = arenaOfEventAttr.count
         cache[start] = idx
         arenaOfEventAttr.append(EventGraph.EventAttrValues())
-        generationOfEventAttr.append(0)
         var values = EventGraph.EventAttrValues()
         let (_bl, _blB) = try restoreLEB(from: data, at: start)
         var _cursor = start + _blB
@@ -501,7 +434,6 @@ extension EventGraph.Arena {
         let idx = arenaOfEvent.count
         cache[start] = idx
         arenaOfEvent.append(EventGraph.EventValues())
-        generationOfEvent.append(0)
         var values = EventGraph.EventValues()
         let (_bl, _blB) = try restoreLEB(from: data, at: start)
         var _cursor = start + _blB

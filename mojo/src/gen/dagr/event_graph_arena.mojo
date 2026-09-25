@@ -95,7 +95,6 @@ struct EventValues(Copyable, Movable):
     var occurred_at: Optional[Int64]
     var producer: Optional[String]
     var attrs: List[UInt64]
-    var _swept_attrs: UInt16
 
 @fieldwise_init
 struct EventAttr[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writable, Hashable, Equatable):
@@ -127,17 +126,6 @@ struct EventAttr[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Wr
         return None
     def set_value(self, var v: String):
         self._mut()[]._arr_event_attr[self._i()].value = Optional(v^)
-    def is_valid(self) -> Bool:
-        return self._a[]._gen_event_attr[self._i()] == self.generation()
-    def delete(self):
-        var i = self._i()
-        if self._a[]._gen_event_attr[i] != self.generation():
-            return
-        var up = self._mut()
-        up[]._gen_event_attr[i] = (up[]._gen_event_attr[i] + 1) & 0xffffff
-        up[]._arr_event_attr[i] = EventAttrValues(key=None, value=None)
-        up[]._free_event_attr.append(i)
-        up[]._epoch_event_attr = up[]._epoch_event_attr + 1
     def write_to[W: Writer](self, mut writer: W):
         var seen = Set[NodeKey]()
         self._repr_cyc(writer, seen)
@@ -240,41 +228,13 @@ struct Event[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writab
         return None
     def set_producer(self, var v: String):
         self._mut()[]._arr_event[self._i()].producer = Optional(v^)
-    def attrs(self) -> List[EventAttr[Self.o]]:
-        var _ep = self._a[]._epoch_event_attr
-        var stored = self._a[]._arr_event[self._i()].attrs.copy()
-        var out = List[EventAttr[Self.o]]()
-        if self._a[]._arr_event[self._i()]._swept_attrs == _ep:
-            for k in range(len(stored)):
-                out.append(EventAttr[Self.o](self._a, stored[k]))
-            return out^
-        var live = List[UInt64]()
-        for k in range(len(stored)):
-            var p = stored[k]
-            if self._a[]._gen_event_attr[_uidx(p)] == _ugen(p):
-                live.append(p)
-        var _up = self._mut()
-        _up[]._arr_event[self._i()].attrs = live.copy()
-        _up[]._arr_event[self._i()]._swept_attrs = _ep
-        for k in range(len(live)):
-            out.append(EventAttr[Self.o](self._a, live[k]))
-        return out^
+    def attrs(self) -> EventAttrListView[Self.o, origin_of(self._a[]._arr_event[self._i()].attrs)]:
+        return EventAttrListView[Self.o, origin_of(self._a[]._arr_event[self._i()].attrs)](self._a, Pointer(to=self._a[]._arr_event[self._i()].attrs))
     def set_attrs(self, v: List[EventAttr[Self.o]]):
         var packed = List[UInt64]()
         for k in range(len(v)):
             packed.append(v[k]._packed)
         self._mut()[]._arr_event[self._i()].attrs = packed^
-        self._mut()[]._arr_event[self._i()]._swept_attrs = self._a[]._epoch_event_attr - 1
-    def is_valid(self) -> Bool:
-        return self._a[]._gen_event[self._i()] == self.generation()
-    def delete(self):
-        var i = self._i()
-        if self._a[]._gen_event[i] != self.generation():
-            return
-        var up = self._mut()
-        up[]._gen_event[i] = (up[]._gen_event[i] + 1) & 0xffffff
-        up[]._arr_event[i] = EventValues(event_id=None, event_type=None, occurred_at=None, producer=None, attrs=List[UInt64](), _swept_attrs=0)
-        up[]._free_event.append(i)
     def write_to[W: Writer](self, mut writer: W):
         var seen = Set[NodeKey]()
         self._repr_cyc(writer, seen)
@@ -337,8 +297,7 @@ struct Event[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writab
             hasher.update(_o3.value())
         for _e in self._a[]._arr_event[i].attrs:
             var _p = _e
-            if self._a[]._gen_event_attr[_uidx(_p)] == _ugen(_p):
-                EventAttr[Self.o](self._a, _p)._hash_cyc(hasher, seen)
+            EventAttr[Self.o](self._a, _p)._hash_cyc(hasher, seen)
     def __eq__(self, other: Self) -> Bool:
         return self.equals(other)
     def __ne__(self, other: Self) -> Bool:
@@ -368,67 +327,55 @@ struct Event[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writab
         for _k in range(len(_sl4)):
             var _sp = _sl4[_k]
             var _op = _ol4[_k]
-            var _sv = self._a[]._gen_event_attr[_uidx(_sp)] == _ugen(_sp)
-            var _ov = other._a[]._gen_event_attr[_uidx(_op)] == _ugen(_op)
-            if _sv != _ov:
+            if not EventAttr[Self.o](self._a, _sp)._eq_cyc(EventAttr[o2](other._a, _op), seen):
                 return False
-            if _sv and _ov:
-                if not EventAttr[Self.o](self._a, _sp)._eq_cyc(EventAttr[o2](other._a, _op), seen):
-                    return False
         return True
+
+@fieldwise_init
+struct EventAttrListIter[o: Origin[mut=False], lo: Origin[mut=False]](Copyable, Movable):
+    var _a: Pointer[EventGraphArena, origin=Self.o]
+    var _ids: Pointer[List[UInt64], origin=Self.lo]
+    var _i: Int
+    def __next__(mut self) raises StopIteration -> EventAttr[Self.o]:
+        if self._i >= len(self._ids[]):
+            raise StopIteration()
+        var _h = EventAttr[Self.o](self._a, self._ids[][self._i])
+        self._i += 1
+        return _h
+
+@fieldwise_init
+struct EventAttrListView[o: Origin[mut=False], lo: Origin[mut=False]](Copyable, Movable, Sized):
+    var _a: Pointer[EventGraphArena, origin=Self.o]
+    var _ids: Pointer[List[UInt64], origin=Self.lo]
+    def __len__(self) -> Int:
+        return len(self._ids[])
+    def __getitem__(self, i: Int) -> EventAttr[Self.o]:
+        return EventAttr[Self.o](self._a, self._ids[][i])
+    def __iter__(self) -> EventAttrListIter[Self.o, Self.lo]:
+        return EventAttrListIter[Self.o, Self.lo](self._a, self._ids, 0)
 
 struct EventGraphArena(Movable):
     var _arr_event_attr: List[EventAttrValues]
-    var _gen_event_attr: List[UInt32]
-    var _free_event_attr: List[Int]
     var _arr_event: List[EventValues]
-    var _gen_event: List[UInt32]
-    var _free_event: List[Int]
-    var _epoch_event_attr: UInt16
     var _root: Optional[UInt64]
     def __init__(out self):
         self._arr_event_attr = List[EventAttrValues]()
-        self._gen_event_attr = List[UInt32]()
-        self._free_event_attr = List[Int]()
         self._arr_event = List[EventValues]()
-        self._gen_event = List[UInt32]()
-        self._free_event = List[Int]()
-        self._epoch_event_attr = 0
         self._root = None
     def new_event_attr[o: Origin[mut=False], //](ref [o] self, var key: String = String(""), var value: String = String("")) -> EventAttr[o]:
         var up = Pointer[EventGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))
-        var idx: Int
-        var gen: UInt32
-        if len(self._free_event_attr) > 0:
-            idx = up[]._free_event_attr.pop()
-            gen = up[]._gen_event_attr[idx]
-            up[]._arr_event_attr[idx] = EventAttrValues(key=Optional(key^), value=Optional(value^))
-        else:
-            idx = len(self._arr_event_attr)
-            gen = 0
-            up[]._arr_event_attr.append(EventAttrValues(key=Optional(key^), value=Optional(value^)))
-            up[]._gen_event_attr.append(0)
-        return EventAttr[o](Pointer(to=self), _pack(gen, idx))
+        var idx = len(self._arr_event_attr)
+        up[]._arr_event_attr.append(EventAttrValues(key=Optional(key^), value=Optional(value^)))
+        return EventAttr[o](Pointer(to=self), _pack(0, idx))
     def new_event[o: Origin[mut=False], //](ref [o] self, var event_id: String = String(""), var event_type: String = String(""), var occurred_at: Int64 = Int64(0), var producer: String = String("")) -> Event[o]:
         var up = Pointer[EventGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))
-        var idx: Int
-        var gen: UInt32
-        if len(self._free_event) > 0:
-            idx = up[]._free_event.pop()
-            gen = up[]._gen_event[idx]
-            up[]._arr_event[idx] = EventValues(event_id=Optional(event_id^), event_type=Optional(event_type^), occurred_at=Optional(occurred_at), producer=Optional(producer^), attrs=List[UInt64](), _swept_attrs=0)
-        else:
-            idx = len(self._arr_event)
-            gen = 0
-            up[]._arr_event.append(EventValues(event_id=Optional(event_id^), event_type=Optional(event_type^), occurred_at=Optional(occurred_at), producer=Optional(producer^), attrs=List[UInt64](), _swept_attrs=0))
-            up[]._gen_event.append(0)
-        return Event[o](Pointer(to=self), _pack(gen, idx))
+        var idx = len(self._arr_event)
+        up[]._arr_event.append(EventValues(event_id=Optional(event_id^), event_type=Optional(event_type^), occurred_at=Optional(occurred_at), producer=Optional(producer^), attrs=List[UInt64]()))
+        return Event[o](Pointer(to=self), _pack(0, idx))
     def root[o: Origin[mut=False], //](ref [o] self) -> Optional[Event[o]]:
         if not self._root:
             return None
         var p = self._root.value()
-        if self._gen_event[_uidx(p)] != _ugen(p):
-            return None
         return Event[o](Pointer(to=self), p)
     def set_root[o: Origin[mut=False], //](ref [o] self, h: Event[o]):
         var up = Pointer[EventGraphArena, MutAnyOrigin](unsafe_from_address=Int(Pointer(to=self)))

@@ -15,8 +15,6 @@ public enum MessageGraph {
     public protocol MessageArena: AnyObject {
         static var messageTypeId: Int { get }
         var arenaOfMessage: [MessageValues] { get set }
-        var generationOfMessage: [UInt32] { get set }
-        var freeSlotsOfMessage: [Int] { get set }
     }
 
     public typealias MessageGraphGraph = MessageArena
@@ -63,13 +61,6 @@ public enum MessageGraph {
             get { __graph.arenaOfMessage[__index].f_string_2 }
             nonmutating set { __graph.arenaOfMessage[__index].f_string_2 = newValue }
         }
-        public func delete() {
-            let _idx = __index
-            guard _generation == __graph.generationOfMessage[_idx] else { return }
-            __graph.arenaOfMessage[_idx] = MessageValues()
-            __graph.generationOfMessage[_idx] &+= 1
-            __graph.freeSlotsOfMessage.append(_idx)
-        }
     }
 
     // ── Arena<Brand> ─────────────────────────────────────────────────────────────────
@@ -82,8 +73,6 @@ public enum MessageGraph {
     public class Arena<Brand>: MessageArena {
         public static var messageTypeId: Int { 0 }
         public var arenaOfMessage: [MessageValues] = []
-        public var generationOfMessage: [UInt32] = []
-        public var freeSlotsOfMessage: [Int] = []
         public init() {}
 
         private var _root: UInt64? = nil
@@ -99,15 +88,9 @@ public enum MessageGraph {
 extension MessageGraph.Arena {
     public func newMessage(f_bool: Bool? = nil, f_int32: Int32? = nil, f_int64: Int64? = nil, f_float64: Double? = nil, f_string: String? = nil, f_bool_2: Bool? = nil, f_int32_2: Int32? = nil, f_string_2: String? = nil) -> MessageGraph.Message<MessageGraph.Arena<Brand>> {
         let _idx: Int
-        if let _free = freeSlotsOfMessage.popLast() {
-            _idx = _free
-            arenaOfMessage[_idx] = MessageGraph.MessageValues(f_bool: f_bool, f_int32: f_int32, f_int64: f_int64, f_float64: f_float64, f_string: f_string, f_bool_2: f_bool_2, f_int32_2: f_int32_2, f_string_2: f_string_2)
-        } else {
-            _idx = arenaOfMessage.count
-            arenaOfMessage.append(MessageGraph.MessageValues(f_bool: f_bool, f_int32: f_int32, f_int64: f_int64, f_float64: f_float64, f_string: f_string, f_bool_2: f_bool_2, f_int32_2: f_int32_2, f_string_2: f_string_2))
-            generationOfMessage.append(0)
-        }
-        let _packed = UInt64(generationOfMessage[_idx]) << 40 | UInt64(_idx)
+        _idx = arenaOfMessage.count
+        arenaOfMessage.append(MessageGraph.MessageValues(f_bool: f_bool, f_int32: f_int32, f_int64: f_int64, f_float64: f_float64, f_string: f_string, f_bool_2: f_bool_2, f_int32_2: f_int32_2, f_string_2: f_string_2))
+        let _packed = UInt64(_idx)
         return MessageGraph.Message(__packed: _packed, __graph: self)
     }
 }
@@ -121,16 +104,6 @@ extension MessageGraph.Arena {
         guard _seen.insert((UInt64(0) << 48) | UInt64(src._index)).inserted else { throw DagrError.cyclicAdopt }
         defer { _seen.remove((UInt64(0) << 48) | UInt64(src._index)) }
         return newMessage(f_bool: src.f_bool, f_int32: src.f_int32, f_int64: src.f_int64, f_float64: src.f_float64, f_string: src.f_string, f_bool_2: src.f_bool_2, f_int32_2: src.f_int32_2, f_string_2: src.f_string_2)
-    }
-}
-
-extension MessageGraph.Arena {
-    public func deleteMessage(_ node: MessageGraph.Message<MessageGraph.Arena<Brand>>) {
-        let _idx = node._index
-        guard node._generation == generationOfMessage[_idx] else { return }
-        arenaOfMessage[_idx] = MessageGraph.MessageValues()
-        generationOfMessage[_idx] &+= 1
-        freeSlotsOfMessage.append(_idx)
     }
 }
 
@@ -304,7 +277,6 @@ extension MessageGraph.Arena {
         let idx = arenaOfMessage.count
         cache[start] = idx
         arenaOfMessage.append(MessageGraph.MessageValues())
-        generationOfMessage.append(0)
         var values = MessageGraph.MessageValues()
         let (_bl, _blB) = try restoreLEB(from: data, at: start)
         var _cursor = start + _blB

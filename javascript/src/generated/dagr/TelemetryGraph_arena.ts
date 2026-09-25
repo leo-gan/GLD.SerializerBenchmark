@@ -62,17 +62,8 @@ interface TelemetryValues {
 
 export class Telemetry<B = unknown> {
   constructor(readonly _packed: bigint, readonly _arena: Arena<B>) {}
-  get _index(): number { return Number(this._packed & 0xffffffffffn); }
-  get generation(): number { return Number(this._packed >> 40n); }
+  get _index(): number { return Number(this._packed); }
   get _values(): TelemetryValues { return this._arena._arrTelemetry[this._index]!; }
-  isValid(): boolean { return this._arena._genTelemetry[this._index] === this.generation; }
-  delete(): void {
-    const _i = this._index;
-    if (this._arena._genTelemetry[_i] !== this.generation) return;
-    this._arena._genTelemetry[_i] = (this._arena._genTelemetry[_i] + 1) & 0xffffff;
-    this._arena._arrTelemetry[_i] = { source: "", ts: 0n, tags: [], values: [] };
-    this._arena._freeTelemetry.push(_i);
-  }
   get source(): string {
     return this._arena._arrTelemetry[this._index]!.source;
   }
@@ -133,25 +124,14 @@ export class Telemetry<B = unknown> {
 export class Arena<B = unknown> {
   declare private readonly __brand: B;
   _arrTelemetry: TelemetryValues[] = [];
-  _genTelemetry: number[] = [];
-  _freeTelemetry: number[] = [];
   #root: bigint | null = null;
   newTelemetry(source: string = "", ts: bigint = 0n, tags: string[] = [], values: number[] = []): Telemetry<B> {
-    let _i: number, _g: number;
-    if (this._freeTelemetry.length > 0) {
-      _i = this._freeTelemetry.pop()!;
-      _g = this._genTelemetry[_i]!;
-      this._arrTelemetry[_i] = { source, ts, tags, values };
-    } else {
-      _i = this._arrTelemetry.length;
-      _g = 0;
+    const _i = this._arrTelemetry.length;
       this._arrTelemetry.push({ source, ts, tags, values });
-      this._genTelemetry.push(0);
-    }
-    return new Telemetry<B>(_pack(_g, _i), this);
+    return new Telemetry<B>(_pack(0, _i), this);
   }
   get root(): Telemetry<B> | null {
-    if (this.#root === null || !(this._genTelemetry[Number(this.#root & 0xffffffffffn)] === Number(this.#root >> 40n))) return null;
+    if (this.#root === null) return null;
     return new Telemetry<B>(this.#root, this);
   }
   set root(h: Telemetry<B> | null) { this.#root = h === null ? null : h._packed; }
