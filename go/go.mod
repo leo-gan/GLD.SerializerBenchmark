@@ -28,6 +28,11 @@ require (
 	google.golang.org/protobuf v1.36.12
 )
 
+// Dagr: generated code (schemas/v2/dagr → `dagr build`) is its own module under gen/.
+require dagrv2 v0.0.0
+
+replace dagrv2 => ./gen/dagrv2
+
 require (
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/bytedance/sonic/loader v0.5.2 // indirect

@@ -25,6 +25,7 @@ func All() []BenchSerializer {
 		newPelletierTOML(),
 		// Schema / IDL
 		newGoogleProtobuf(),
+		newDagr(),
 		newHambaAvro(),
 		newLinkedInGoavro(),
 	}
