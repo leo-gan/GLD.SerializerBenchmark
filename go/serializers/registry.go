@@ -26,6 +26,9 @@ func All() []BenchSerializer {
 		// Schema / IDL
 		newGoogleProtobuf(),
 		newDagr(),
+		newDagrRegular(),
+		newDagrFrozen(),
+		newDagrFrozenPacked(),
 		newHambaAvro(),
 		newLinkedInGoavro(),
 	}

@@ -199,9 +199,12 @@ func TestStreamModeLabels(t *testing.T) {
 		"pelletier/go-toml":        StreamNative,
 		"hamba/avro":               StreamNative,
 		// Byte-slice-only libraries (OCF would change wire format vs bytes):
-		"protobuf":        StreamAdapted,
-		"linkedin/goavro": StreamAdapted,
-		"dagr":            StreamAdapted,
+		"protobuf":           StreamAdapted,
+		"linkedin/goavro":    StreamAdapted,
+		"dagr":               StreamAdapted,
+		"dagr-regular":       StreamAdapted,
+		"dagr-frozen":        StreamAdapted,
+		"dagr-frozen-packed": StreamAdapted,
 	}
 	seen := map[string]bool{}
 	for _, ser := range All() {
@@ -270,10 +273,15 @@ func TestAllSerializersMessageStreamRoundtrip(t *testing.T) {
 	}
 }
 
-// TestDagrBatchFramingAndVersion: N>1 cells use the suite frame (u32 count + (u32 len +
+// TestDagrBatchFramingAndVersion (every Dagr layout row): N>1 cells use the suite frame (u32 count + (u32 len +
 // record)×N) and round-trip; the version comes from schemas/v2/dagr/dagr.lock.json.
 func TestDagrBatchFramingAndVersion(t *testing.T) {
-	s := newDagr()
+	for _, s := range []*dagrSer{newDagr(), newDagrRegular(), newDagrFrozen(), newDagrFrozenPacked()} {
+		t.Run(s.Name(), func(t *testing.T) { testDagrBatchFramingAndVersion(t, s) })
+	}
+}
+
+func testDagrBatchFramingAndVersion(t *testing.T, s *dagrSer) {
 	if v := s.Version(); v == "" || strings.HasPrefix(v, "dagr") {
 		t.Fatalf("dagr version %q", v)
 	}

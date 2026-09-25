@@ -24,9 +24,10 @@ import (
 // dagrSer — Dagr ("Data Graph") via generated Go code.
 //
 // Schema: schemas/v2/dagr/schema.py → `dagr build` → go/gen/dagrv2 (its own module,
-// wired with a `replace` in go.mod). Only the per-graph `<graph>direct` packages are
-// imported: each is self-contained (direct builder + lazy accessors); the root `dagrv2`
-// package (arenas + eager restore) is not needed here. One DataGraph per suite type, all nodes packed,
+// wired with a `replace` in go.mod; layout "package-per-graph"). This row imports only the
+// per-graph `<graph>direct` packages: each is self-contained (direct builder + lazy
+// accessors); the `<graph>` packages (arenas + eager restore) serve the dagr-regular /
+// dagr-frozen rows (dagr_regular.go, dagr_frozen.go). One DataGraph per suite type, all nodes packed,
 // Telemetry.values marked `raw` (native-LE doubles, like protobuf's packed double).
 //
 // Serialize (timed): the generated **direct builder** (plain value structs → bytes, no
@@ -48,22 +49,27 @@ import (
 //
 // Per-type encode/decode functions are bound in Prepare (no type switch on the clock).
 // Stream mode is adapted (Dagr's graph API is []byte-in / []byte-out).
+//
+// The same row type also serves the other three node layouts (dagr_layouts.go): only the
+// Prepare-time binder differs, the timed path, framing and recover are shared.
 type dagrSer struct {
-	enc func(dst []byte) []byte // timed: encode the prepared value(s)
-	dec func(buf []byte) (any, error)
-	out []byte // reused encode buffer; SerializeBytes returns a copy (as protobuf does)
+	name string
+	bind func(v any) (dagrCodec, error) // Prepare-time binder (owns any reusable builders)
 
-	// Created lazily in Prepare, reused across cells and reps.
-	msgB *messagegraphdirect.MessageGraphBuilder
-	docB *documentgraphdirect.DocumentGraphBuilder
-	telB *telemetrygraphdirect.TelemetryGraphBuilder
-	strB *stringsgraphdirect.StringsGraphBuilder
-	evB  *eventgraphdirect.EventGraphBuilder
+	codec dagrCodec
+	out   []byte // reused encode buffer; SerializeBytes returns a copy (as protobuf does)
 }
 
-func newDagr() *dagrSer { return &dagrSer{} }
+// dagrCodec is one prepared cell: exactly one of enc / own is set.
+type dagrCodec struct {
+	enc func(dst []byte) []byte // timed: append the encoded value(s) to dst
+	own func() []byte           // timed: encode into a fresh, caller-owned slice (arena ToBytes)
+	dec func(buf []byte) (any, error)
+}
 
-func (s *dagrSer) Name() string           { return "dagr" }
+func newDagr() *dagrSer { return &dagrSer{name: "dagr", bind: newDagrPackedBinder()} }
+
+func (s *dagrSer) Name() string           { return s.name }
 func (s *dagrSer) Version() string        { return dagrToolVersion() }
 func (s *dagrSer) StreamMode() StreamMode { return StreamAdapted }
 func (s *dagrSer) NativeKind() NativeKind { return NativeSchema }
@@ -109,52 +115,73 @@ func dagrToolVersion() string {
 // ── prepare / timed path ───────────────────────────────────────────────────
 
 func (s *dagrSer) Prepare(fx model.Fixture) error {
-	switch fx.Value.(type) {
-	case modelv2.Message, []modelv2.Message:
-		if s.msgB == nil {
-			s.msgB = messagegraphdirect.NewMessageGraphBuilder()
-		}
-		s.enc, s.dec = bindDagr(fx.Value, directMessage, s.msgB.BuildAppend, getMessage)
-	case modelv2.Document, []modelv2.Document:
-		if s.docB == nil {
-			s.docB = documentgraphdirect.NewDocumentGraphBuilder()
-		}
-		s.enc, s.dec = bindDagr(fx.Value, directDocument, s.docB.BuildAppend, getDocument)
-	case modelv2.Telemetry, []modelv2.Telemetry:
-		if s.telB == nil {
-			s.telB = telemetrygraphdirect.NewTelemetryGraphBuilder()
-		}
-		s.enc, s.dec = bindDagr(fx.Value, directTelemetry, s.telB.BuildAppend, getTelemetry)
-	case modelv2.Strings, []modelv2.Strings:
-		if s.strB == nil {
-			s.strB = stringsgraphdirect.NewStringsGraphBuilder()
-		}
-		s.enc, s.dec = bindDagr(fx.Value, directStrings, s.strB.BuildAppend, getStrings)
-	case modelv2.Event, []modelv2.Event:
-		if s.evB == nil {
-			s.evB = eventgraphdirect.NewEventGraphBuilder()
-		}
-		s.enc, s.dec = bindDagr(fx.Value, directEvent, s.evB.BuildAppend, getEvent)
-	default:
-		return fmt.Errorf("dagr: unsupported type %T", fx.Value)
+	c, err := s.bind(fx.Value)
+	if err != nil {
+		return fmt.Errorf("%s: %w", s.name, err)
 	}
+	s.codec = c
 	s.out = s.out[:0]
 	return nil
 }
 
-func (s *dagrSer) SerializeBytes(_ model.Fixture) ([]byte, error) {
-	if s.enc == nil {
-		return nil, fmt.Errorf("dagr: prepare() required before serialize")
+// newDagrPackedBinder binds the `dagr` row: packed graphs, direct builder. One
+// `<Graph>Builder` per type, created on first use and reset by every Build.
+func newDagrPackedBinder() func(any) (dagrCodec, error) {
+	var (
+		msgB *messagegraphdirect.MessageGraphBuilder
+		docB *documentgraphdirect.DocumentGraphBuilder
+		telB *telemetrygraphdirect.TelemetryGraphBuilder
+		strB *stringsgraphdirect.StringsGraphBuilder
+		evB  *eventgraphdirect.EventGraphBuilder
+	)
+	return func(v any) (dagrCodec, error) {
+		switch v.(type) {
+		case modelv2.Message, []modelv2.Message:
+			if msgB == nil {
+				msgB = messagegraphdirect.NewMessageGraphBuilder()
+			}
+			return bindDagr(v, directMessage, msgB.BuildAppend, getMessage), nil
+		case modelv2.Document, []modelv2.Document:
+			if docB == nil {
+				docB = documentgraphdirect.NewDocumentGraphBuilder()
+			}
+			return bindDagr(v, directDocument, docB.BuildAppend, getDocument), nil
+		case modelv2.Telemetry, []modelv2.Telemetry:
+			if telB == nil {
+				telB = telemetrygraphdirect.NewTelemetryGraphBuilder()
+			}
+			return bindDagr(v, directTelemetry, telB.BuildAppend, getTelemetry), nil
+		case modelv2.Strings, []modelv2.Strings:
+			if strB == nil {
+				strB = stringsgraphdirect.NewStringsGraphBuilder()
+			}
+			return bindDagr(v, directStrings, strB.BuildAppend, getStrings), nil
+		case modelv2.Event, []modelv2.Event:
+			if evB == nil {
+				evB = eventgraphdirect.NewEventGraphBuilder()
+			}
+			return bindDagr(v, directEvent, evB.BuildAppend, getEvent), nil
+		}
+		return dagrCodec{}, fmt.Errorf("unsupported type %T", v)
 	}
-	s.out = s.enc(s.out[:0])
+}
+
+func (s *dagrSer) SerializeBytes(_ model.Fixture) ([]byte, error) {
+	if s.codec.own != nil {
+		return s.codec.own(), nil
+	}
+	if s.codec.enc == nil {
+		return nil, fmt.Errorf("%s: prepare() required before serialize", s.name)
+	}
+	s.out = s.codec.enc(s.out[:0])
 	out := make([]byte, len(s.out))
 	copy(out, s.out)
 	return out, nil
 }
 
 func (s *dagrSer) DeserializeBytes(buf []byte) (v any, err error) {
-	if s.dec == nil {
-		return nil, fmt.Errorf("dagr: prepare() required before deserialize")
+	if s.codec.dec == nil {
+		return nil, fmt.Errorf("%s: prepare() required before deserialize", s.name)
 	}
 	// The unchecked open trusts the bytes; a malformed buffer panics inside an
 	// accessor — turn that into an error (one defer per call, not per field).
@@ -163,7 +190,7 @@ func (s *dagrSer) DeserializeBytes(buf []byte) (v any, err error) {
 			v, err = nil, dagr.ErrMalformed
 		}
 	}()
-	return s.dec(buf)
+	return s.codec.dec(buf)
 }
 
 func (s *dagrSer) SerializeStream(fx model.Fixture, w io.Writer) (int, error) {
@@ -182,19 +209,50 @@ func bindDagr[T, V any](
 	conv func(T) V,
 	put func(dst []byte, v V) []byte,
 	get func(buf []byte) (T, error),
-) (func([]byte) []byte, func([]byte) (any, error)) {
+) dagrCodec {
 	if x, single := sample.(T); single {
 		v := conv(x)
-		enc := func(dst []byte) []byte { return put(dst, v) }
-		dec := func(buf []byte) (any, error) { return get(buf) }
-		return enc, dec
+		return dagrCodec{
+			enc: func(dst []byte) []byte { return put(dst, v) },
+			dec: func(buf []byte) (any, error) { return get(buf) },
+		}
 	}
 	xs := sample.([]T)
 	vs := make([]V, len(xs))
 	for i := range xs {
 		vs[i] = conv(xs[i])
 	}
-	enc := func(dst []byte) []byte {
+	return dagrCodec{enc: dagrFrameEnc(vs, put), dec: dagrFrameDec(get)}
+}
+
+// bindDagrArena is bindDagr for a generated serializer that returns a fresh slice
+// (`ToBytes<Graph>(root, maxSize)` over an arena): N=1 hands that slice out as is (no
+// extra copy), N>1 appends each record into the suite frame.
+func bindDagrArena[T, R any](
+	sample any,
+	build func(T) R,
+	toBytes func(root R, maxSize int) []byte,
+	get func(buf []byte) (T, error),
+) dagrCodec {
+	if x, single := sample.(T); single {
+		root := build(x)
+		return dagrCodec{
+			own: func() []byte { return toBytes(root, 0) },
+			dec: func(buf []byte) (any, error) { return get(buf) },
+		}
+	}
+	xs := sample.([]T)
+	roots := make([]R, len(xs))
+	for i := range xs {
+		roots[i] = build(xs[i])
+	}
+	put := func(dst []byte, r R) []byte { return append(dst, toBytes(r, 0)...) }
+	return dagrCodec{enc: dagrFrameEnc(roots, put), dec: dagrFrameDec(get)}
+}
+
+// dagrFrameEnc writes the suite's N>1 frame: u32 LE count + (u32 LE len + record)×N.
+func dagrFrameEnc[V any](vs []V, put func(dst []byte, v V) []byte) func([]byte) []byte {
+	return func(dst []byte) []byte {
 		dst = binary.LittleEndian.AppendUint32(dst, uint32(len(vs)))
 		for i := range vs {
 			at := len(dst)
@@ -204,7 +262,11 @@ func bindDagr[T, V any](
 		}
 		return dst
 	}
-	dec := func(buf []byte) (any, error) {
+}
+
+// dagrFrameDec reads the frame dagrFrameEnc writes, decoding each record with get.
+func dagrFrameDec[T any](get func(buf []byte) (T, error)) func([]byte) (any, error) {
+	return func(buf []byte) (any, error) {
 		if len(buf) < 4 {
 			return nil, fmt.Errorf("dagr: batch frame too short")
 		}
@@ -228,7 +290,6 @@ func bindDagr[T, V any](
 		}
 		return out, nil
 	}
-	return enc, dec
 }
 
 // ── suite value → direct value struct (Prepare, untimed; every field set) ───
