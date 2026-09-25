@@ -2,7 +2,7 @@
 
 Native Mojo 1.0 benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
 
-## Serializers (11)
+## Serializers (14)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -17,6 +17,9 @@ Native Mojo 1.0 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | gld-yaml | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.4.0 | `yaml.encode` / `yaml.decode` on suite types (vendored sources) |
 | mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | WireWriter / WireReader (vendored sources) |
 | dagr | Schema | dagr 2026.9.0 (generator) | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`: generated direct builder into one reused `Builder` (`write_{root}_graph_direct`), lazy reader decode (`read_{root}_root`) |
+| dagr-regular | Schema | dagr 2026.9.0 (generator) | Same schema, `<Type>RegularGraph` (all nodes `regular`, vtables): no direct builder for this layout, so the suite value is copied into the generated arena and written with `write_{root}_graph(b, arena)` into a reused per-graph `Builder` (both timed); lazy reader decode |
+| dagr-frozen | Schema | dagr 2026.9.0 (generator) | Same schema, `<Type>FrozenGraph` (all nodes `frozen`, fixed layout, no evolution): generated arena + `write_{root}_graph` into a reused `Builder` (both timed); lazy reader decode |
+| dagr-frozen-packed | Schema | dagr 2026.9.0 (generator) | Same schema, `<Type>FrozenPackedGraph` (all nodes `frozen` + `packed`): generated direct builder into one reused `Builder`, like `dagr`; lazy reader decode |
 
 mojo-avro’s conda package owns the `runtime` / `wire` / `json` module names. JSON, CBOR, Protobuf, YAML, MessagePack, and FlatBuffers are compiled from `vendor/` with those internals renamed so they can live in one process. Dagr's generated code (`src/gen/dagr/`, from `dagr build`) imports its modules by bare name, so builds add `-I src/gen/dagr`. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub.
 

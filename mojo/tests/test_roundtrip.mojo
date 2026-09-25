@@ -10,6 +10,9 @@ from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
 from bench.dagr_ser import DagrSer
+from bench.dagr_regular_ser import DagrRegularSer
+from bench.dagr_frozen_ser import DagrFrozenSer
+from bench.dagr_frozen_packed_ser import DagrFrozenPackedSer
 
 
 def _roundtrip_all(type_id: String) raises:
@@ -48,6 +51,15 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("mojo-msgpack fidelity " + type_id)
     if not dagr.check(fx, dagr.serialize_bytes(fx)):
         raise Error("dagr fidelity " + type_id)
+    var dagr_regular = DagrRegularSer()
+    if not dagr_regular.check(fx, dagr_regular.serialize_bytes(fx)):
+        raise Error("dagr-regular fidelity " + type_id)
+    var dagr_frozen = DagrFrozenSer()
+    if not dagr_frozen.check(fx, dagr_frozen.serialize_bytes(fx)):
+        raise Error("dagr-frozen fidelity " + type_id)
+    var dagr_fp = DagrFrozenPackedSer()
+    if not dagr_fp.check(fx, dagr_fp.serialize_bytes(fx)):
+        raise Error("dagr-frozen-packed fidelity " + type_id)
 
 
 def _ehsan_batch(type_id: String) raises:
@@ -75,6 +87,16 @@ def _dagr_batch(type_id: String) raises:
         raise Error("dagr fidelity n=100 " + type_id)
     if not dagr.check(fx, dagr.serialize_bytes(fx)):
         raise Error("dagr fidelity n=100 (reuse) " + type_id)
+    var dagr_regular = DagrRegularSer()
+    var dagr_frozen = DagrFrozenSer()
+    var dagr_fp = DagrFrozenPackedSer()
+    for _ in range(2):
+        if not dagr_regular.check(fx, dagr_regular.serialize_bytes(fx)):
+            raise Error("dagr-regular fidelity n=100 " + type_id)
+        if not dagr_frozen.check(fx, dagr_frozen.serialize_bytes(fx)):
+            raise Error("dagr-frozen fidelity n=100 " + type_id)
+        if not dagr_fp.check(fx, dagr_fp.serialize_bytes(fx)):
+            raise Error("dagr-frozen-packed fidelity n=100 " + type_id)
 
 
 def main() raises:
