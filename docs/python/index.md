@@ -58,6 +58,7 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 | Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
 |----------|----------|---------|---------------------------------|-------------|-------|
 | [avro](https://github.com/fastavro/fastavro) | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
+| [dagr](https://codeberg.org/mzaks/dagr) | Schema | generated (`dagr build`, runtime shipped in-tree) | dataclass → generated `@dataclass` node | adapted | Pure-Python reflective runtime (eager `to_bytes` / `restore`); ~35–390× slower than protobuf (upb), size ≈ protobuf. See [caveat](#why-dagr-opss-look-low) |
 | [cbor2](https://github.com/agronholm/cbor2) | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | [cloudpickle](https://github.com/cloudpipe/cloudpickle) | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
 | [dill](https://github.com/uqfoundation/dill) | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
@@ -81,6 +82,10 @@ Why each library exists, what problem it was written to solve, and how. Names li
 #### [avro](https://github.com/fastavro/fastavro) · `1.12.2`
 
 fastavro is a Cython Avro reader/writer for Python. Avro was created so data systems could store compact records with the schema out of band. fastavro solves the CPython performance problem of the older pure-Python Avro stack.
+
+#### [dagr](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode.
 
 #### [cbor2](https://github.com/agronholm/cbor2) · `6.1.4`
 
@@ -165,6 +170,12 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 - **flatbuffers (serialize):** the official Python package builds with a pure-Python `Builder`. Expect ~100×+ slower ser than `protobuf` on the same POCO. C++/Rust FlatBuffers are a different performance class; this suite measures the Python binding.
 - **flatbuffers (deserialize):** timed path is zero-copy `GetRootAs` + a thin view. Full field materialization is *not* forced inside the timer (FlatBuffers' model: pay on field access).
 - **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these data types. Prefer pickle when you do not need dill's dynamic-object features.
+
+#### Why dagr ops/s look low
+
+- **Pure-Python runtime:** the Dagr Python target is a reflective runtime (typed `@dataclass` layer over a generic node model); there is no C extension. `serialize` is `<graph>.to_bytes(node)` on nodes built in `prepare_data`, `deserialize` is `<graph>.restore(bytes)` back to the generated dataclasses (eager — Python has no lazy reader). Peer-smoke medians: ~20–75× slower than `protobuf` (upb C core) on single messages and ~40–125× on n=100 cells (protobuf's packed `repeated double` is close to a memcpy in C). Size is within a few % of protobuf, and smaller on `strings`.
+- **Hot-path audit:** cProfile shows no per-call imports or schema loading. The generated module caches the schema's per-node facts once (lookup, field plans, elidability). Its dataclasses feed the serializer directly and are built directly by `restore`, with no intermediate node graph, so what remains is the per-field Python work.
+- **Framing:** N>1 cells encode N independent Dagr buffers in a `u32 count` + `u32 len` frame (same frame as the Rust `dagr` row), so n=100 carries 404 bytes of framing that protobuf's `Batch*` wrapper does not.
 
 ### Other caveats
 
