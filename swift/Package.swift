@@ -47,7 +47,8 @@ let gccLibDir: String = {
 let package = Package(
     name: "SerializerBenchmark",
     platforms: [
-        .macOS(.v13),
+        // SwiftAvroCore 2.3 declares macOS 15; with .v13 SwiftPM refuses to resolve on macOS hosts.
+        .macOS("15.0"),
     ],
     products: [
         .executable(name: "serializer-benchmark-swift", targets: ["SerializerBenchmark"]),
