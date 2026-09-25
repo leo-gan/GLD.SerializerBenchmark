@@ -1,0 +1,713 @@
+{
+  "library": {
+    "graphs": {
+      "DocumentGraph": {
+        "header": null,
+        "imports": [],
+        "name": "DocumentGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "region",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "version",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "DocumentMeta",
+            "packed": true,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "sku",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "qty",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "price_minor",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "DocumentItem",
+            "packed": true,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "id",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "status",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "meta",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "ref",
+                  "ref": "DocumentMeta"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "items",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "DocumentItem"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Document",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Document"
+        }
+      },
+      "EventGraph": {
+        "header": null,
+        "imports": [],
+        "name": "EventGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "key",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "value",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "EventAttr",
+            "packed": true,
+            "prefabs": {}
+          },
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "event_id",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "event_type",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "occurred_at",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "producer",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "attrs",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "ref",
+                    "ref": "EventAttr"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Event",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Event"
+        }
+      },
+      "MessageGraph": {
+        "header": null,
+        "imports": [],
+        "name": "MessageGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_bool",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int32",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int64",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_float64",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "f64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_string",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_bool_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "bool"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_int32_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i32"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "f_string_2",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Message",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Message"
+        }
+      },
+      "StringsGraph": {
+        "header": null,
+        "imports": [],
+        "name": "StringsGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "items",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Strings",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Strings"
+        }
+      },
+      "TelemetryGraph": {
+        "header": null,
+        "imports": [],
+        "name": "TelemetryGraph",
+        "node_types": [
+          {
+            "fields": [
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "source",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "utf8"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "ts",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "kind": "i64"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "tags",
+                "options": 0,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "utf8"
+                  },
+                  "kind": "array"
+                }
+              },
+              {
+                "alignment": null,
+                "capacity": null,
+                "default": null,
+                "index": null,
+                "name": "values",
+                "options": 8,
+                "timestamp": null,
+                "type": {
+                  "inner": {
+                    "kind": "f64"
+                  },
+                  "kind": "array"
+                }
+              }
+            ],
+            "frozen": false,
+            "kind": "node",
+            "name": "Telemetry",
+            "packed": true,
+            "prefabs": {}
+          }
+        ],
+        "root_type": {
+          "kind": "ref",
+          "ref": "Telemetry"
+        }
+      }
+    },
+    "ir_version": 1,
+    "name": "BenchmarkV2",
+    "schemas": [
+      {
+        "kind": "graph",
+        "name": "MessageGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "DocumentGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "TelemetryGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "StringsGraph"
+      },
+      {
+        "kind": "graph",
+        "name": "EventGraph"
+      }
+    ],
+    "shared_buffers": {},
+    "sinks": {},
+    "wire_format_version": 1
+  },
+  "library_hash": "sha256:31dcc2b285835428215e357378c72c1b0454b889cdf187097c32d730cbf8c6f9",
+  "outputs": {
+    "../../../go/gen/dagrv2/dagr/reader.go": "sha256:52241688c1535ab8ea98b014aebebe26e8a3baab174840afe07ea0d4e0231363",
+    "../../../go/gen/dagrv2/dagr/writer.go": "sha256:7eee25743b708004edf672cc9bff8cf14ed057a98d357f45badee2c122d94216",
+    "../../../go/gen/dagrv2/document_graph.go": "sha256:1b6c476a86d144bdfff6529e45e62c57be341d7c9108e01ad0a769f8a7bdb913",
+    "../../../go/gen/dagrv2/document_graph_arena.go": "sha256:6b361ace70bdf6e6f1d402c24756c1d380c5fa9f53f78ff4bcc4e8b4ecdf2c38",
+    "../../../go/gen/dagrv2/document_graph_serde.go": "sha256:05e80af5be396ebe1dab73ca9e07c38d40e9bc20974729be5730b8601cd913af",
+    "../../../go/gen/dagrv2/documentgraphdirect/document_graph.go": "sha256:053d227dd25b6e6fb4988a2998c00360776fbfd5d8f361fb590d810b42f0c4a5",
+    "../../../go/gen/dagrv2/event_graph.go": "sha256:ffce7960cd88c6c9ce9f3fd85973fac969714febb38a1785b89c09199c301735",
+    "../../../go/gen/dagrv2/event_graph_arena.go": "sha256:48a96d4911eac5b8a68ff363be8dba0092ebdb9a8e770371dc8a31453dbdd3d0",
+    "../../../go/gen/dagrv2/event_graph_serde.go": "sha256:025bcc4bca7bad2b0f4b810860e6fcdb5f3f92000a0300ee8b45bbfeaa8b4a6b",
+    "../../../go/gen/dagrv2/eventgraphdirect/event_graph.go": "sha256:3d020dec13517056e24211616d0b1bf1236c248c497e4a8b64862a59fafa34e5",
+    "../../../go/gen/dagrv2/go.mod": "sha256:983eb08a969488bafc3d839ea81c0eb3e79b561fbcb3618f0feec38eca606f6c",
+    "../../../go/gen/dagrv2/message_graph.go": "sha256:79d3f489b4a54b72ca7b0d24d79be5b9ff4d8a84cc0987e891411233a62e6fbf",
+    "../../../go/gen/dagrv2/message_graph_arena.go": "sha256:a370d972188769c83a4ce93478593a1f7b961fe7e054c0c42efbf0c5b0994b20",
+    "../../../go/gen/dagrv2/message_graph_serde.go": "sha256:03fb641e81ea8f21e431b0601a3e405ede04b982aa96ae776005fef13d44de13",
+    "../../../go/gen/dagrv2/messagegraphdirect/message_graph.go": "sha256:84d04213030fdb70c23aa9609b1ac81d70ac968b6924f216312d1f3be4069795",
+    "../../../go/gen/dagrv2/strings_graph.go": "sha256:2448a21f2dff6f7910e02a4476ae060c6327637ae8536598f7c391d0dc764442",
+    "../../../go/gen/dagrv2/strings_graph_arena.go": "sha256:1a2069dc3be9b7f8c7509f280074c4fa2f6b14d046d2c70ba7dd55bc77f7afc8",
+    "../../../go/gen/dagrv2/strings_graph_serde.go": "sha256:20dad10576fc2cc314fe38eb1791c57f64e1ba07d64d38322015826fd8282586",
+    "../../../go/gen/dagrv2/stringsgraphdirect/strings_graph.go": "sha256:4008aeeac1cccf8758cd8cc727ea63ffbe28c161e932c0ae711fdb1a4003f009",
+    "../../../go/gen/dagrv2/telemetry_graph.go": "sha256:f33bb09c2f3c3c877b3a3711eceec910a30c271cd6d88f99a356cd5f8cb598aa",
+    "../../../go/gen/dagrv2/telemetry_graph_arena.go": "sha256:9d6be88e03076e460128def493175fab2f70575ed7f220835afba7832cb89a6d",
+    "../../../go/gen/dagrv2/telemetry_graph_serde.go": "sha256:4b52dad17aa437be8590240af456d944e65afef7c90b502f31d8eb907bf787d5",
+    "../../../go/gen/dagrv2/telemetrygraphdirect/telemetry_graph.go": "sha256:0d8edae75ff22354053cba19bbf079fa8f55de7c06070a1d6c48a0407c41f1b6",
+    "../../../javascript/src/generated/dagr/DocumentGraph.ts": "sha256:ace69631bebea740a3dff2ddfe24ff3ef8c8f59c9f2d86a01cd8e2e4e69bb187",
+    "../../../javascript/src/generated/dagr/DocumentGraph_arena.ts": "sha256:9188c25642103a86da9c905912709cbf3ac6225cef61067d7142b98d9321b0e2",
+    "../../../javascript/src/generated/dagr/DocumentGraph_direct.ts": "sha256:387b23e4c449fb4ef4c3641eae978a0d24ce5d5236b720a9aaec77504c863969",
+    "../../../javascript/src/generated/dagr/DocumentGraph_serde.ts": "sha256:7a2bfc33c52bc2a1ecd85362fbcecba2110ffe1bf39aab92ac1b96c5f3988d67",
+    "../../../javascript/src/generated/dagr/EventGraph.ts": "sha256:61d4aeedac27ad236f8bd34c4113560ad2606b5f71c5c1bf6fae0cd7d17ed808",
+    "../../../javascript/src/generated/dagr/EventGraph_arena.ts": "sha256:a529b488c0afd0aaca9eb8afcecb818453fb8195f039b31cf47a7be6cefd4a47",
+    "../../../javascript/src/generated/dagr/EventGraph_direct.ts": "sha256:801dd2e74f9353eee03d85b803ca3fede0700cbbf44e5db43aeeef8a0337b869",
+    "../../../javascript/src/generated/dagr/EventGraph_serde.ts": "sha256:09962fa594cbdfad131c067aad2f7d843ff76aadb0208dea0a488e0840f0f660",
+    "../../../javascript/src/generated/dagr/MessageGraph.ts": "sha256:47d6d04813106aeff02673a6f9eab0cf0135c909b816fbe24589c2678b7ecae3",
+    "../../../javascript/src/generated/dagr/MessageGraph_arena.ts": "sha256:41081131ce69e67aba25c1fb76dc1830fc9e1aa4a5dbebc2f7bd5b084e60acd2",
+    "../../../javascript/src/generated/dagr/MessageGraph_direct.ts": "sha256:7f127ad6893db520beb5e1e2fc8140e2ff2714c5594b35938243a52bcf3f1429",
+    "../../../javascript/src/generated/dagr/MessageGraph_serde.ts": "sha256:79c36e40ac868effe57460087926c1bffac45dce8a055d4dc4dba2be2b64ee4b",
+    "../../../javascript/src/generated/dagr/StringsGraph.ts": "sha256:df11d6cba4f3d5aec923abf95b82340c7d934422f6041c78e7abe1784d5b457d",
+    "../../../javascript/src/generated/dagr/StringsGraph_arena.ts": "sha256:d62ccec80efd418da81a4f9b5e511cf30f18f67d1a971b8c265dd4de1f04fec4",
+    "../../../javascript/src/generated/dagr/StringsGraph_direct.ts": "sha256:cf1b001143270ebeff94f7e653c326c3560085efb871f35dec65e7504ed5be77",
+    "../../../javascript/src/generated/dagr/StringsGraph_serde.ts": "sha256:a55c1eb54bdd206dce3fa463b081734bcf6239c379595547603c8f4349a87d7a",
+    "../../../javascript/src/generated/dagr/TelemetryGraph.ts": "sha256:019a3239b46f738caf5b9a4a0b0c79dc54735a137b039350d1c9cfb9d1cf8ecc",
+    "../../../javascript/src/generated/dagr/TelemetryGraph_arena.ts": "sha256:03701175fc3353d39228c82851c89bc8fdaa9dea3f816da452d9c8c487cc6cc8",
+    "../../../javascript/src/generated/dagr/TelemetryGraph_direct.ts": "sha256:57e268fcedfda485307c7f3c35081e9ab22c7881a2ab83703c04b0f5fb22f029",
+    "../../../javascript/src/generated/dagr/TelemetryGraph_serde.ts": "sha256:31f87a8f09c47ec770f87567b2c97af5ab004211e87f1b10c3c57320ca7d8664",
+    "../../../javascript/src/generated/dagr/dagr_reader.ts": "sha256:9526794bc4a00f3c9b8c5eb23f34caa7aa1bc2a2817be13abcd03eb70df1a360",
+    "../../../javascript/src/generated/dagr/dagr_writer.ts": "sha256:2a6c73d1e6ba0479ef4e5d334076ec8695b1fb9009c43550a8209431730de0fa",
+    "../../../mojo/src/gen/dagr/dagr_reader.mojo": "sha256:69ac7b424cf84794350a08aae0dfba3590170158f3a591fbcc806065c06dda0b",
+    "../../../mojo/src/gen/dagr/dagr_writer.mojo": "sha256:6d5195f2ef77968bf02a44616da4626326d9e395289c158d049b9d0238cf5b36",
+    "../../../mojo/src/gen/dagr/document_graph_arena.mojo": "sha256:4a306118b6e520fd587f85c1f2ef12e8547b24f79f94a1a20d3e6d13a634fbe2",
+    "../../../mojo/src/gen/dagr/document_graph_direct.mojo": "sha256:b89102394c9aa19525cd0184f95aedd645e028a5452b4d97f3eb5fc4fee325dd",
+    "../../../mojo/src/gen/dagr/document_graph_reader.mojo": "sha256:0b244b0241038f3eb1c1aed0d95df8e25e30ac18adb2115ffb55686cf7c9ef61",
+    "../../../mojo/src/gen/dagr/document_graph_restore.mojo": "sha256:ea3884c0242d36d91ef174e8a5521720010881acfca6e99fe5eb721b0ae04669",
+    "../../../mojo/src/gen/dagr/document_graph_serde.mojo": "sha256:927ad4247b3972bd418eb051b99b9b888b6f68bd82cdaaf6bbc619be4f8b1593",
+    "../../../mojo/src/gen/dagr/event_graph_arena.mojo": "sha256:3162bfa09c69983cd79e26480c80be10375484d94736c83f0e195df947b22d12",
+    "../../../mojo/src/gen/dagr/event_graph_direct.mojo": "sha256:a8ec0b02a8ff19528b6c90c1e758c0a93e47193d3ad7ec6f6ab0e993be5e0b5a",
+    "../../../mojo/src/gen/dagr/event_graph_reader.mojo": "sha256:ba99734da57dba1352fd1d7b69bc00fd7922c138332c9b62b2ef0e0463d2a817",
+    "../../../mojo/src/gen/dagr/event_graph_restore.mojo": "sha256:339bb54c590d813d9f02835723c9a09b4b31923d6a78600e51af6e2decb2ca9e",
+    "../../../mojo/src/gen/dagr/event_graph_serde.mojo": "sha256:40b117c6d77f6f42e02963f39734e22237ee1360f1bb023718aa0581fea8655f",
+    "../../../mojo/src/gen/dagr/message_graph_arena.mojo": "sha256:fc0a8b99e6e4af6665eb662b1651917030a10b0c36d35e5ae1b13ed14e9c58c7",
+    "../../../mojo/src/gen/dagr/message_graph_direct.mojo": "sha256:88bce8e3d5e596e4abbb3e1b475f27aeafca96c8f87815986c14c0b2a357a9fe",
+    "../../../mojo/src/gen/dagr/message_graph_reader.mojo": "sha256:df85d54fb5b6c5f4c981dfef1a54c4b89ec532a44617cdd5d93c1253f2b3b44f",
+    "../../../mojo/src/gen/dagr/message_graph_restore.mojo": "sha256:9a255ccc598ceb0526163690b6efb1cc6d7d573a8ac70a87e34e6aba9d49060c",
+    "../../../mojo/src/gen/dagr/message_graph_serde.mojo": "sha256:6feb35efce5dd20030ffcc48be692a151b576b982ec64a68cb001e1f0094196e",
+    "../../../mojo/src/gen/dagr/strings_graph_arena.mojo": "sha256:c4d9a836aa141b3af8422fc29393e9875564dded6c936ae01cc60d869b266d39",
+    "../../../mojo/src/gen/dagr/strings_graph_direct.mojo": "sha256:569fafc3e5e58bea980170aa5b6c5969e08d4017444fe5b2018eb332ca667945",
+    "../../../mojo/src/gen/dagr/strings_graph_reader.mojo": "sha256:be11238fd66adfe19939c2a30fad7d26d6cde978278b1034ae5fad75d42712f9",
+    "../../../mojo/src/gen/dagr/strings_graph_restore.mojo": "sha256:8da534aaa8fbc900fc35107259aa6cf2a8a965e55f745a9f77025224e31279ec",
+    "../../../mojo/src/gen/dagr/strings_graph_serde.mojo": "sha256:ac773d1f47f3b78845303527de77a2f2441f4bd3d0a2511f9ec072fbce60abc9",
+    "../../../mojo/src/gen/dagr/telemetry_graph_arena.mojo": "sha256:28064dd5a37b9c293e76210394ef90ba1c94a74f83c221398a74624f030a9e50",
+    "../../../mojo/src/gen/dagr/telemetry_graph_direct.mojo": "sha256:7debb2c84fb756b36532020a746fb23a07d174e68347e9a32287bc04d7411a49",
+    "../../../mojo/src/gen/dagr/telemetry_graph_reader.mojo": "sha256:16cd9979e2508f8194481dd0c368dfe733a8c036cce0c2aa82930fa82be5ec9b",
+    "../../../mojo/src/gen/dagr/telemetry_graph_restore.mojo": "sha256:bd89a8a89929dc6861bcf4f42a25352ed2da1fe9ef8b96a2fb1cb69f7b4db925",
+    "../../../mojo/src/gen/dagr/telemetry_graph_serde.mojo": "sha256:a9682b5f9c812cf005251b1b695918f869ac79a2eaccda14d8e10aecb705352b",
+    "../../../python/generated/dagr/dagr/__init__.py": "sha256:7d14886a5207b2536b089d5114fe419a7ab854f027122893abb040f37c4fec72",
+    "../../../python/generated/dagr/dagr/codegen/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "../../../python/generated/dagr/dagr/codegen/shared.py": "sha256:f6a0f9442d3d65ffd25ab80274c059a2bbfa03fd8eba520e3dcb8b01dff7aa97",
+    "../../../python/generated/dagr/dagr/config.py": "sha256:56664649f1e67e7e7fe10ce9d59e302e017b4ee30658d9b04c9ba5cf8a39d585",
+    "../../../python/generated/dagr/dagr/dsl.py": "sha256:ab41e4fbbcc84b547f09dcc6e7f930f3086ab8a208c6420b7e4101609a4c1913",
+    "../../../python/generated/dagr/dagr/reserved_names.py": "sha256:6c6d71434573505c235be1c0c1bdf7e2d14951f965e723687ace29d34d2b90ac",
+    "../../../python/generated/dagr/dagr/runtime/__init__.py": "sha256:c7a991e879ffd31feee4ed63f20adcbd263ec75313ed54302d6211447f59a5f9",
+    "../../../python/generated/dagr/dagr/runtime/dagr_defaults.py": "sha256:9834e560dcca459def4a47f25d4fd35cd725b14d7975e27e6b99c666ac26b0ba",
+    "../../../python/generated/dagr/dagr/runtime/dagr_model.py": "sha256:f4801c73a6490f51dc4feea683866adec13e464a4418675e1e51fcb27b89809a",
+    "../../../python/generated/dagr/dagr/runtime/dagr_reader.py": "sha256:7e54cd5036430475086a17cbecb7ab10eab939cd54e79016dc43bf88168c9e7e",
+    "../../../python/generated/dagr/dagr/runtime/dagr_restore.py": "sha256:c3195c1d68939f7b884b1749dd988a9df81a529ad1c591aca90e1ee29a2f0f77",
+    "../../../python/generated/dagr/dagr/runtime/dagr_serialize.py": "sha256:b91db7619677b1c84c425a61010c9103e38c6444c010acef0ebe93f9c508b37d",
+    "../../../python/generated/dagr/dagr/runtime/dagr_typed.py": "sha256:911c336680f995768632e45c8a54fa9d5d92d7afb784251b58bd11d9a309b5a7",
+    "../../../python/generated/dagr/dagr/runtime/dagr_writer.py": "sha256:c24074c1dc3753603354feda03b73ac5b8bcaa8d3d4edb6c237ebd2cbc3e09d5",
+    "../../../python/generated/dagr/dagr_schema.py": "sha256:144d41a33a485b21524c638b9ad6000286f57aba5412de6f255b5c78e5dc0d5c",
+    "../../../python/generated/dagr/document_graph.py": "sha256:dadc726d658d78b6d56d0f49ba36507278608bd0acee7ad9b14ce2bfc9cda826",
+    "../../../python/generated/dagr/event_graph.py": "sha256:9589589820214dd8b4a7f2784db53e19c102484b916cc9f70fd63080b812afc5",
+    "../../../python/generated/dagr/message_graph.py": "sha256:77c9897f109c781d6ca14f8cb9769026836979c1bac8fc61cb5fb42b8abb352a",
+    "../../../python/generated/dagr/strings_graph.py": "sha256:873e5391dad2b8d73bc229b909ece40573944d6c7e601d29f4bdd6a559415dd4",
+    "../../../python/generated/dagr/telemetry_graph.py": "sha256:0bd16a68f0d3ff761d61d50bf931116550d6546fde17e1e04c2fb7b605b4c640",
+    "../../../rust/dagr_gen/Cargo.toml": "sha256:b276828fa78d567a6506c86854d8ef08521130ab97a837277c4b23aff1bdbdc8",
+    "../../../rust/dagr_gen/build.rs": "sha256:ef0170542199cbb707b78fb06eac8978eceb6bf64e710aabd54943134da4a62c",
+    "../../../rust/dagr_gen/src/dagr_runtime.rs": "sha256:b17624a505d75ab4d8a4f5db96ec76d0d2c3ae0120e1a7a9b500b188f3a25b54",
+    "../../../rust/dagr_gen/src/document_graph.rs": "sha256:0de7e958af08a0bcf23ce225b6d9a26bd85b3bed3f01d5cae387ea0da11c9c6a",
+    "../../../rust/dagr_gen/src/document_graph_core.rs": "sha256:9339d3de93ac54dc4efa5f93e33e58353f631e87791d013f3a32950fd89e0a12",
+    "../../../rust/dagr_gen/src/document_graph_lazy.rs": "sha256:0714b25ebaf1231e6cac897ab0523205d15fdf861293df5c674df3d2c53a0271",
+    "../../../rust/dagr_gen/src/event_graph.rs": "sha256:8ac47d59637bcee034b5be80ea89063232e80ad6725051e6860e4e41e372b0c7",
+    "../../../rust/dagr_gen/src/event_graph_core.rs": "sha256:5cd233241437c0004f89534f248e96d5bfd119b7eb46e8bc7d925da274ef553b",
+    "../../../rust/dagr_gen/src/event_graph_lazy.rs": "sha256:4c66b25126ca51f942b1605f82ef0607453323fd3848d0d19bdd3dbe75ec5cd3",
+    "../../../rust/dagr_gen/src/lib.rs": "sha256:f3a4f799db7ed4595b860c46a480cdd0574877dcf83cfb5a39d95387f0dbbea2",
+    "../../../rust/dagr_gen/src/message_graph.rs": "sha256:e41a53d5d381493995558f6f46d2f94d0b6fe582dc977f7b6bd32f4b3baacdec",
+    "../../../rust/dagr_gen/src/message_graph_core.rs": "sha256:fa2a779db3b030fd44a79db8bf21331d67e51dc273f26418517fd24fc659b82d",
+    "../../../rust/dagr_gen/src/message_graph_lazy.rs": "sha256:77e4c3db0feb796e874bbe520c6abc22eb7e125076b026a67aa6609be7a2baae",
+    "../../../rust/dagr_gen/src/strings_graph.rs": "sha256:ba33e9f2af823075aa0be5a79ad5e9df5afec619dfef925e8c5b7d5c256b1a4b",
+    "../../../rust/dagr_gen/src/strings_graph_core.rs": "sha256:cd1e6e4642d8ddf5eff83ac7f67bcef02c169dc4adfa5b7fd52edd74a2ddaa09",
+    "../../../rust/dagr_gen/src/strings_graph_lazy.rs": "sha256:4ef134ac0e6cec9997862c90ecde948c9dc2eef75e41ed19631df005e1122bca",
+    "../../../rust/dagr_gen/src/telemetry_graph.rs": "sha256:19e37fa4312a78549da3a5b8d382160877f857ab74026331ca5e64c667ebf516",
+    "../../../rust/dagr_gen/src/telemetry_graph_core.rs": "sha256:7960c966e82542085c718887194638053eb417e3b91f6169b0b46eca1f8371a9",
+    "../../../rust/dagr_gen/src/telemetry_graph_lazy.rs": "sha256:3ba09e9f6417deeeb873f037a209633dafe1e121169f6315052d155f29a12696",
+    "../../../swift/DagrGen/Package.swift": "sha256:4631bde82adda7ce9c1e8c17ba76772380799ae7ab56c68ab01bf012b338e0d3",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DagrRuntime.swift": "sha256:ec806e84dca8ee584f64c71360c57a6bccfa2283edc3b699f804b7946a9ef04b",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentGraph.swift": "sha256:b3ff7c110653e59d3c33531e602b895e6e8bb16eec89cb2e43fdd65eccfb731f",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/DocumentGraphLazy.swift": "sha256:f9fe8c72e04929a8e1b76b15203836189a689786bdbcb37ef9e6c4faaaf90b42",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventGraph.swift": "sha256:949c0d2964afc6901920a2dfbcdd122b8b8343a0ba31f974be303dd6162ee837",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/EventGraphLazy.swift": "sha256:3d7ed6cf50b9961f87ca112de0640040efdbccf5ec38936b4770ac747c12a494",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageGraph.swift": "sha256:668f0e6491de8868bc26a8910f4e6d61037caaa46b790f346baf16e62546cf2f",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/MessageGraphLazy.swift": "sha256:89b891f1b4d286e2f2b00d1a75f47116469d6f8ee5158dacf7fb6809bb97e2dc",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsGraph.swift": "sha256:ecc79c6369c7936af0077c618fbb2da8fa8210d19699ae091f0d455677df1764",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/StringsGraphLazy.swift": "sha256:0305ba34129541dfacde281e03ffa784f6737621c920783e7426a8f0800b7ff7",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryGraph.swift": "sha256:a958e537489e532d59f12fad639c3b8fb16ee36350f39a296edb316573ee82e8",
+    "../../../swift/DagrGen/Sources/BenchmarkV2/TelemetryGraphLazy.swift": "sha256:4d4416b9fbef1393b6b8429f76c17ffdf50696b903248d5e30ec17ebe6c89954"
+  },
+  "provenance": {
+    "command": "dagr build",
+    "generated_at": "2026-09-25T06:22:57.716015+00:00",
+    "host": null,
+    "tool_version": "dagr 2026.9.0"
+  },
+  "receipt_version": 1,
+  "targets": [
+    {
+      "exclude": [],
+      "features": [
+        "lazy"
+      ],
+      "lang": "rust",
+      "layout": "crate",
+      "out": "../../../rust/dagr_gen",
+      "package": null
+    },
+    {
+      "exclude": [],
+      "features": [
+        "lazy"
+      ],
+      "lang": "swift",
+      "layout": "package",
+      "out": "../../../swift/DagrGen",
+      "package": null
+    },
+    {
+      "exclude": [],
+      "features": [],
+      "lang": "go",
+      "layout": null,
+      "out": "../../../go/gen/dagrv2",
+      "package": "dagrv2"
+    },
+    {
+      "exclude": [],
+      "features": [],
+      "lang": "typescript",
+      "layout": null,
+      "out": "../../../javascript/src/generated/dagr",
+      "package": null
+    },
+    {
+      "exclude": [],
+      "features": [],
+      "lang": "python",
+      "layout": null,
+      "out": "../../../python/generated/dagr",
+      "package": null
+    },
+    {
+      "exclude": [],
+      "features": [],
+      "lang": "mojo",
+      "layout": null,
+      "out": "../../../mojo/src/gen/dagr",
+      "package": null
+    }
+  ]
+}
