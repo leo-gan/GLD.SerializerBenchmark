@@ -11,8 +11,10 @@ import { schemaSerializers } from './schema.js';
 import { nativeSerializers } from './native.js';
 import { modernSerializers } from './modern.js';
 import { yamlSerializers } from './yaml.js';
+import { forySer } from './fory.js';
 
 export const ALL_SERIALIZERS = [
+  forySer,
   ...jsonSerializers(),
   ...binarySerializers(),
   ...schemaSerializers(),

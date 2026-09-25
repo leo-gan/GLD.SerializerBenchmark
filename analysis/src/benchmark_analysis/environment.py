@@ -122,6 +122,9 @@ def _runtime_versions() -> Dict[str, str]:
     go = _safe_run(["go", "version"])
     if go:
         versions["go"] = go
+    swift = _safe_run(["swift", "--version"])
+    if swift:
+        versions["swift"] = swift.split("\n")[0]
     return versions
 
 
@@ -492,7 +495,7 @@ def important_config_summary(doc: Optional[Dict[str, Any]]) -> List[str]:
             "cpp": "g++",
             "java": "java",
             "kotlin": "java",
-            "swift": "swift",  # may be absent until runtime capture adds it
+            "swift": "swift",
         }
         k = key_map.get(lang_l)
         if k and runtimes.get(k):

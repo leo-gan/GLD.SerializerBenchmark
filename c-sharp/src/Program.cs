@@ -97,6 +97,7 @@ namespace GLD.SerializerBenchmark
                 new ZeroFormatterSerializerSer(new ZeroFormatterDomainMap()),
                 new BinaryPackSerializerSer(),
                 new MemoryPackSerializerSer(),
+                new ForySerializerSer(),
                 new MessagePackCSharpSerializerSer(),
                 new NerdbankMessagePackSerializerSer(),
                 new SharpYamlSerializerSer(),

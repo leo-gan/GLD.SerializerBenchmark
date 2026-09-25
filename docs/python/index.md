@@ -2,8 +2,7 @@
 title: "Python"
 ---
 
-Python
-======
+# Python
 
 Python's dynamic nature makes serialization uniquely challenging. While it excels at developer productivity, the runtime overhead of object instantiation and the Global Interpreter Lock (GIL) can severely bottleneck high-throughput data processing pipelines.
 
@@ -15,13 +14,13 @@ This suite measures **CPython**, the usual C implementation of the Python interp
 
 The **Global Interpreter Lock (GIL)** is a lock that lets only one thread run Python bytecode at a time inside a process. If a decode takes 10 ms of Python bytecode, the whole process is blocked for those 10 ms, unless the library releases the GIL while it works in C, C++, or Rust.
 
-| | This suite |
-|---|---|
-| Interpreter | CPython **3.12 or newer**. Not PyPy or Jython. |
-| Host toolchain | [uv](https://docs.astral.sh/uv/) (`uv sync`) |
-| Prepare | `./scripts/install-host-requirements.sh python` |
-| Run | `python/scripts/run-benchmarks.sh` |
-| Memory | Reference counting plus a cyclic garbage collector. The GIL is present. |
+|                | This suite                                                              |
+| -------------- | ----------------------------------------------------------------------- |
+| Interpreter    | CPython **3.12 or newer**. Not PyPy or Jython.                          |
+| Host toolchain | [uv](https://docs.astral.sh/uv/) (`uv sync`)                            |
+| Prepare        | `./scripts/install-host-requirements.sh python`                         |
+| Run            | `python/scripts/run-benchmarks.sh`                                      |
+| Memory         | Reference counting plus a cyclic garbage collector. The GIL is present. |
 
 ### What this suite runs
 
@@ -55,24 +54,25 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 
 ## Serializers
 
-| Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
-|----------|----------|---------|---------------------------------|-------------|-------|
-| [avro](https://github.com/fastavro/fastavro) | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
-| [cbor2](https://github.com/agronholm/cbor2) | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
-| [cloudpickle](https://github.com/cloudpipe/cloudpickle) | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
-| [dill](https://github.com/uqfoundation/dill) | Native | `dill` | dataclass | native | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch) |
-| [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | dataclass → Builder | adapted | Python Builder ser is slow; deser is zero-copy `GetRootAs` view |
-| [json](https://github.com/python/cpython/tree/main/Lib/json) | JSON | stdlib | dict | adapted | Baseline text JSON |
-| [mashumaro](https://github.com/Fatal1ty/mashumaro) | JSON | `mashumaro` | dataclass | adapted | ORJSONEncoder/Decoder |
-| [msgpack](https://github.com/msgpack/msgpack-python) | Binary | `msgpack` | dict | native | Reference MessagePack |
-| [msgspec](https://github.com/jcrist/msgspec) | JSON | `msgspec` | Struct | native (`encode_into`) | Typed array-like Structs |
-| [msgspec-msgpack](https://github.com/jcrist/msgspec) | Binary | `msgspec` | Struct | native | Same Struct path, MessagePack |
-| [orjson](https://github.com/ijl/orjson) | JSON | `orjson` | dict | adapted | Rust core; conversion untimed |
-| [pickle](https://github.com/python/cpython/tree/main/Lib/pickle.py) | Native | stdlib | dataclass | native | Cycles supported; **unsafe** untrusted |
-| [protobuf](https://github.com/protocolbuffers/protobuf) | Schema | `protobuf` | Message | adapted | From suite protobuf schemas under `schemas/v2/` / language generated modules |
-| [pydantic](https://github.com/pydantic/pydantic) | JSON | `pydantic` | BaseModel | adapted | Validation-oriented API models |
-| [rapidjson](https://github.com/python-rapidjson/python-rapidjson) | JSON | `python-rapidjson` | dict | adapted | C++ RapidJSON bindings |
-| [serpyco-rs](https://github.com/opengovsg/serpyco-rs) | JSON | `serpyco-rs` + `orjson` | dataclass | adapted | dump/load + orjson wire |
+| Log name                                                            | Category | Package                 | Native input (`prepare_data`) | Stream mode            | Notes                                                                        |
+| ------------------------------------------------------------------- | -------- | ----------------------- | ----------------------------- | ---------------------- | ---------------------------------------------------------------------------- |
+| [avro](https://github.com/fastavro/fastavro)                        | Schema   | `fastavro`              | record dict                   | adapted                | Compact schemaless size; dict/union path slower than protobuf C++            |
+| [cbor2](https://github.com/agronholm/cbor2)                         | Binary   | `cbor2`                 | dict                          | native                 | IETF CBOR (RFC 8949)                                                         |
+| [cloudpickle](https://github.com/cloudpipe/cloudpickle)             | Native   | `cloudpickle`           | dataclass                     | native                 | Extended pickle; same security caveats                                       |
+| [dill](https://github.com/uqfoundation/dill)                        | Native   | `dill`                  | dataclass                     | native                 | Graphs/dynamics; **ser** much slower than pickle (pure-Python dispatch)      |
+| [flatbuffers](https://github.com/google/flatbuffers)                | Schema   | `flatbuffers`           | dataclass → Builder           | adapted                | Python Builder ser is slow; deser is zero-copy `GetRootAs` view              |
+| [fory](https://github.com/apache/fory)                              | Native   | `pyfory`                | dataclass                     | adapted                | Native mode; registered dataclasses                                          |
+| [json](https://github.com/python/cpython/tree/main/Lib/json)        | JSON     | stdlib                  | dict                          | adapted                | Baseline text JSON                                                           |
+| [mashumaro](https://github.com/Fatal1ty/mashumaro)                  | JSON     | `mashumaro`             | dataclass                     | adapted                | ORJSONEncoder/Decoder                                                        |
+| [msgpack](https://github.com/msgpack/msgpack-python)                | Binary   | `msgpack`               | dict                          | native                 | Reference MessagePack                                                        |
+| [msgspec](https://github.com/jcrist/msgspec)                        | JSON     | `msgspec`               | Struct                        | native (`encode_into`) | Typed array-like Structs                                                     |
+| [msgspec-msgpack](https://github.com/jcrist/msgspec)                | Binary   | `msgspec`               | Struct                        | native                 | Same Struct path, MessagePack                                                |
+| [orjson](https://github.com/ijl/orjson)                             | JSON     | `orjson`                | dict                          | adapted                | Rust core; conversion untimed                                                |
+| [pickle](https://github.com/python/cpython/tree/main/Lib/pickle.py) | Native   | stdlib                  | dataclass                     | native                 | Cycles supported; **unsafe** untrusted                                       |
+| [protobuf](https://github.com/protocolbuffers/protobuf)             | Schema   | `protobuf`              | Message                       | adapted                | From suite protobuf schemas under `schemas/v2/` / language generated modules |
+| [pydantic](https://github.com/pydantic/pydantic)                    | JSON     | `pydantic`              | BaseModel                     | adapted                | Validation-oriented API models                                               |
+| [rapidjson](https://github.com/python-rapidjson/python-rapidjson)   | JSON     | `python-rapidjson`      | dict                          | adapted                | C++ RapidJSON bindings                                                       |
+| [serpyco-rs](https://github.com/opengovsg/serpyco-rs)               | JSON     | `serpyco-rs` + `orjson` | dataclass                     | adapted                | dump/load + orjson wire                                                      |
 
 ### Specifics
 
@@ -97,6 +97,10 @@ dill extends pickle further for scientific Python: graphs, lambdas, and interpre
 #### [flatbuffers](https://github.com/google/flatbuffers) · `25.12.19`
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
+
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses pyfory in native mode on registered dataclasses.
 
 #### [json](https://github.com/python/cpython/tree/main/Lib/json) · `python-3.14.0`
 
@@ -150,7 +154,7 @@ Timed methods measure **codec only** on library-native values:
 2. `prepare_data(obj, …)` — dataclass → dict / Struct / Message / Model (untimed)
 3. `serialize_*` / `deserialize_*` — encode/decode only (timed)
 
-FlatBuffers is the exception where Builder construction *is* the serialize API (no separate Message type). Stream mode is **native** when the library has a real file/stream API; otherwise **adapted** (bytes then write / read then bytes).
+FlatBuffers is the exception where Builder construction _is_ the serialize API (no separate Message type). Stream mode is **native** when the library has a real file/stream API; otherwise **adapted** (bytes then write / read then bytes).
 
 ### Caveats
 
@@ -163,7 +167,7 @@ FlatBuffers is the exception where Builder construction *is* the serialize API (
 #### Why flatbuffers and dill ops/s look low
 
 - **flatbuffers (serialize):** the official Python package builds with a pure-Python `Builder`. Expect ~100×+ slower ser than `protobuf` on the same POCO. C++/Rust FlatBuffers are a different performance class; this suite measures the Python binding.
-- **flatbuffers (deserialize):** timed path is zero-copy `GetRootAs` + a thin view. Full field materialization is *not* forced inside the timer (FlatBuffers' model: pay on field access).
+- **flatbuffers (deserialize):** timed path is zero-copy `GetRootAs` + a thin view. Full field materialization is _not_ forced inside the timer (FlatBuffers' model: pay on field access).
 - **dill (serialize):** for ordinary importable dataclasses the wire size matches pickle, but dill's pure-Python `save` path (module/type discovery) is ~15–20× slower than C `pickle`. That is inherent; `byref`/`recurse` do not close the gap on these data types. Prefer pickle when you do not need dill's dynamic-object features.
 
 ### Other caveats

@@ -13,6 +13,7 @@ from .schema_avro import AvroSerializer
 from .schema_flatbuffers import FlatBuffersSerializer
 from .human_yaml import PyYamlSerializer
 from .native_pickle import PickleSerializer
+from .native_fory import ForySerializer
 from .native_cloudpickle import CloudpickleSerializer
 from .native_dill import DillSerializer
 
@@ -33,6 +34,7 @@ __all__ = [
     "FlatBuffersSerializer",
     "PyYamlSerializer",
     "PickleSerializer",
+    "ForySerializer",
     "CloudpickleSerializer",
     "DillSerializer",
 ]

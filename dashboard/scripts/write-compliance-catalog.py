@@ -118,6 +118,9 @@ add("python", "plistlib", ["plist"], "https://docs.python.org/3/library/plistlib
 add("python", "py-ubjson", ["ubjson"], "https://github.com/Iotic-Labs/py-ubjson",
     "py-ubjson: Universal Binary JSON.")
 
+add("python", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
+
 # --- JavaScript ---
 add("javascript", "JSON.stringify", ["json"], "https://tc39.es/ecma262/#sec-json.stringify",
     "ECMA-262 JSON.stringify / JSON.parse.")
@@ -162,6 +165,9 @@ add("javascript", "sia", [], "https://github.com/TimeleapLabs/sia",
 add("javascript", "bser", [], "https://facebook.github.io/watchman/docs/bser.html",
     "Watchman BSER: Facebook Watchman binary protocol, not a general interchange spec.")
 
+add("javascript", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
+
 # --- Go ---
 add("go", "encoding/json", ["json"], "https://pkg.go.dev/encoding/json",
     "Go stdlib encoding/json: RFC 7159 JSON.")
@@ -203,6 +209,9 @@ add("go", "encoding/gob", [], "https://pkg.go.dev/encoding/gob",
     "Go gob: Go-only binary stream, not a public interchange spec.")
 add("go", "kelindar/binary", [], "https://github.com/kelindar/binary",
     "kelindar/binary: Go-only compact packer.")
+
+add("go", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
 
 # --- Java ---
 add("java", "jackson", ["json"], "https://github.com/FasterXML/jackson-databind",
@@ -384,6 +393,9 @@ add("csharp", "SharpSerializer", [], "https://github.com/polenter/SharpSerialize
 add("csharp", "ZeroFormatter", [], "https://github.com/neuecc/ZeroFormatter",
     "ZeroFormatter: .NET binary.")
 
+add("csharp", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
+
 # --- Rust ---
 add("rust", "serde_json", ["json"], "https://docs.rs/serde_json",
     "serde_json: JSON for Serde.")
@@ -419,6 +431,9 @@ add("rust", "speedy", [], "https://docs.rs/speedy",
     "speedy: Rust binary framework.")
 add("rust", "rkyv", [], "https://rkyv.org/",
     "rkyv: Rust zero-copy archive, not a public RFC/IDL here.")
+
+add("rust", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
 
 # --- C++ ---
 add("cpp", "nlohmann_json", ["json"], "https://json.nlohmann.me/",
@@ -482,6 +497,9 @@ add("cpp", "zpp_bits", [], "https://github.com/eyalz800/zpp_bits",
 add("cpp", "boost_serialization", [], "https://www.boost.org/doc/libs/release/libs/serialization/",
     "Boost.Serialization: C++-native archives.")
 
+add("cpp", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
+
 # --- Swift ---
 add("swift", "Foundation.JSONEncoder", ["json"], "https://developer.apple.com/documentation/foundation/jsonencoder",
     "Foundation JSONEncoder/JSONDecoder: JSON.")
@@ -513,6 +531,9 @@ add("swift", "XMLCoder", [], "https://github.com/CoreOffice/XMLCoder",
     "XMLCoder: XML; XML is out of catalog scope.")
 add("swift", "BinaryCodable", [], "https://github.com/jverkoey/BinaryCodable",
     "BinaryCodable: Swift-only binary Codable.")
+
+add("swift", "fory", [], "https://fory.apache.org/",
+    "Apache Fory: not a cited RFC/IDL in this catalog.")
 
 # --- PHP ---
 add("php", "json", ["json"], "https://www.php.net/manual/en/book.json.php",

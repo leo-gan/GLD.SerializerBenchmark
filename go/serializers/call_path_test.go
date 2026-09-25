@@ -201,6 +201,7 @@ func TestStreamModeLabels(t *testing.T) {
 		// Byte-slice-only libraries (OCF would change wire format vs bytes):
 		"protobuf":        StreamAdapted,
 		"linkedin/goavro": StreamAdapted,
+		"fory":            StreamAdapted,
 	}
 	seen := map[string]bool{}
 	for _, ser := range All() {

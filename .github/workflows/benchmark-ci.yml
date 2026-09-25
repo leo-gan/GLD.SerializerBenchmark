@@ -305,8 +305,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          # Match go/go.mod (go 1.24.0 / toolchain go1.24.13)
-          go-version: '1.24.x'
+          go-version-file: go/go.mod
           cache-dependency-path: go/go.sum
 
       - name: Install protoc (optional regen of committed gen/pb)

@@ -10,6 +10,41 @@
 // Optimal: yas::mem | yas::binary with YAS_OBJECT_NVP field packs; reuse flags.
 
 namespace bench {
+// YAS discovers these overloads while instantiating vector serializers below.
+// Define them before that point so two-phase lookup also works with Clang.
+template <typename Ar>
+void serialize(Ar& ar, DocumentItem& it) {
+  ar& YAS_OBJECT_NVP("item", ("sku", it.sku), ("qty", it.qty), ("price_minor", it.price_minor));
+}
+template <typename Ar>
+void serialize(Ar& ar, EventAttr& a) {
+  ar& YAS_OBJECT_NVP("attr", ("key", a.key), ("value", a.value));
+}
+template <typename Ar>
+void serialize(Ar& ar, Message& m) {
+  ar& YAS_OBJECT_NVP("message", ("f_bool", m.f_bool), ("f_int32", m.f_int32), ("f_int64", m.f_int64),
+                     ("f_float64", m.f_float64), ("f_string", m.f_string), ("f_bool_2", m.f_bool_2),
+                     ("f_int32_2", m.f_int32_2), ("f_string_2", m.f_string_2));
+}
+template <typename Ar>
+void serialize(Ar& ar, Document& d) {
+  ar& YAS_OBJECT_NVP("document", ("id", d.id), ("status", d.status), ("region", d.meta.region),
+                     ("version", d.meta.version), ("items", d.items));
+}
+template <typename Ar>
+void serialize(Ar& ar, Telemetry& t) {
+  ar& YAS_OBJECT_NVP("telemetry", ("source", t.source), ("ts", t.ts), ("tags", t.tags),
+                     ("values", t.values));
+}
+template <typename Ar>
+void serialize(Ar& ar, Strings& s) {
+  ar& YAS_OBJECT_NVP("strings", ("items", s.items));
+}
+template <typename Ar>
+void serialize(Ar& ar, Event& e) {
+  ar& YAS_OBJECT_NVP("event", ("event_id", e.event_id), ("event_type", e.event_type),
+                     ("occurred_at", e.occurred_at), ("producer", e.producer), ("attrs", e.attrs));
+}
 namespace {
 
 constexpr auto kFlags = yas::mem | yas::binary;
@@ -146,41 +181,4 @@ class YasSer final : public ISerializer {
 
 SerializerPtr make_yas() { return std::make_unique<YasSer>(); }
 
-}  // namespace bench
-
-// YAS needs serialize free functions for nested DocumentItem / EventAttr when using vector save
-namespace bench {
-template <typename Ar>
-void serialize(Ar& ar, DocumentItem& it) {
-  ar& YAS_OBJECT_NVP("item", ("sku", it.sku), ("qty", it.qty), ("price_minor", it.price_minor));
-}
-template <typename Ar>
-void serialize(Ar& ar, EventAttr& a) {
-  ar& YAS_OBJECT_NVP("attr", ("key", a.key), ("value", a.value));
-}
-template <typename Ar>
-void serialize(Ar& ar, Message& m) {
-  ar& YAS_OBJECT_NVP("message", ("f_bool", m.f_bool), ("f_int32", m.f_int32), ("f_int64", m.f_int64),
-                     ("f_float64", m.f_float64), ("f_string", m.f_string), ("f_bool_2", m.f_bool_2),
-                     ("f_int32_2", m.f_int32_2), ("f_string_2", m.f_string_2));
-}
-template <typename Ar>
-void serialize(Ar& ar, Document& d) {
-  ar& YAS_OBJECT_NVP("document", ("id", d.id), ("status", d.status), ("region", d.meta.region),
-                     ("version", d.meta.version), ("items", d.items));
-}
-template <typename Ar>
-void serialize(Ar& ar, Telemetry& t) {
-  ar& YAS_OBJECT_NVP("telemetry", ("source", t.source), ("ts", t.ts), ("tags", t.tags),
-                     ("values", t.values));
-}
-template <typename Ar>
-void serialize(Ar& ar, Strings& s) {
-  ar& YAS_OBJECT_NVP("strings", ("items", s.items));
-}
-template <typename Ar>
-void serialize(Ar& ar, Event& e) {
-  ar& YAS_OBJECT_NVP("event", ("event_id", e.event_id), ("event_type", e.event_type),
-                     ("occurred_at", e.occurred_at), ("producer", e.producer), ("attrs", e.attrs));
-}
 }  // namespace bench

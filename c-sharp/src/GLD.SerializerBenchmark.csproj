@@ -18,6 +18,7 @@
     Keep co-versioned pairs aligned (Bond, FlatSharp, FluentSerializer, MemoryPack, FsPickler).
   -->
   <ItemGroup>
+    <PackageReference Include="Apache.Fory" Version="1.7.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.*" />
     <PackageReference Include="protobuf-net" Version="2.*" />
     <PackageReference Include="LightProto" Version="1.*" />

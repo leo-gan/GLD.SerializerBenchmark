@@ -1,3 +1,5 @@
+github.com/apache/fory/go/fory v1.7.4 h1:PnIoUKr4w0JpPOysOeLuum35e0vXIaN+pjJf9cZC2xw=
+github.com/apache/fory/go/fory v1.7.4/go.mod h1:dfJ6PR6x0XY+kJmU1xyoPhd77zhQiRk4CsQ2W3VIp9E=
 github.com/bytedance/gopkg v0.1.4 h1:oZnQwnX82KAIWb7033bEwtxvTqXcYMxDBaQxo5JJHWM=
 github.com/bytedance/gopkg v0.1.4/go.mod h1:v1zWfPm21Fb+OsyXN2VAHdL6TBb2L88anLQgdyje6R4=
 github.com/bytedance/sonic v1.15.4 h1:FgtV/4aBHpla9AxuMpuuzVUpa/Cf3izufkxNmnEzdI8=

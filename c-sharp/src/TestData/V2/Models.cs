@@ -16,6 +16,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class Message
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -42,6 +43,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class DocumentMeta
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -56,6 +58,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class DocumentItem
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -72,6 +75,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class Document
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -90,6 +94,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class Telemetry
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -108,6 +113,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class Strings
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -120,6 +126,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class EventAttr
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -134,6 +141,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class Event
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -155,6 +163,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class BatchMessage
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -167,6 +176,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class BatchDocument
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -179,6 +189,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class BatchTelemetry
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -191,6 +202,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class BatchStrings
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
@@ -203,6 +215,7 @@ namespace GLD.SerializerBenchmark.TestData.V2
     [DataContract]
     [ProtoBuf.ProtoContract] [LightProto.ProtoContract]
     [Schema]
+    [Apache.Fory.ForyStruct]
     public partial class BatchEvent
     {
         [DataMember(Order = 1)] [ProtoBuf.ProtoMember(1)] [LightProto.ProtoMember(1)] [Id(0)] [Key(0)]
