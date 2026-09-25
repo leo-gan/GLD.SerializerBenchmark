@@ -5,9 +5,9 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 ## Design: type-agnostic wrappers (Codable) + schema bridges
 
 - **Codable wrappers** under `Serializers/` only see the type-erased `Fixture` API.
-- **Schema codecs** (Protobuf, FlatBuffers, Avro, Cap’n Proto) use a domain↔native bridge in prepare / post-decode (same idea as Go protobuf / Rust prost). Conversion is not the “optimal hot path”; timed work is the library encode/decode.
+- **Schema codecs** (Protobuf, FlatBuffers, Avro, Cap’n Proto, Dagr) use a domain↔native bridge in prepare / post-decode (same idea as Go protobuf / Rust prost). Conversion is not the “optimal hot path”; timed work is the library encode/decode.
 
-## Serializers (14)
+## Serializers (15)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -25,6 +25,7 @@ Native Swift benchmark runner for Data Model v2 fixtures (`message`, `document`,
 | **FlatBuffers** | Schema | google/flatbuffers | Generated from `swift/schemas/benchmark.fbs` |
 | **SwiftAvroCore** | Schema | lynixliu/SwiftAvroCore | Schemaless binary + JSON schema |
 | **CapnProto** | Schema | Cap’n Proto C++ | C ABI bridge (`CapnpBridge`) |
+| **dagr** | Schema | local package `DagrGen/` (`dagr build`) | Generated from `schemas/v2/dagr/`; direct builder + lazy reader |
 
 ## Host tools (schema)
 
@@ -41,6 +42,10 @@ Regenerate:
 ```bash
 ./swift/scripts/generate-schemas.sh
 ```
+
+Dagr (`DagrGen/`, SwiftPM module `BenchmarkV2`) is emitted by `dagr build` from
+`schemas/v2/dagr/schema.py`; the receipt `schemas/v2/dagr/dagr.lock.json` pins the generator
+version reported as `SerializerVersion`. Never hand-edit `DagrGen/`.
 
 ## Run
 
