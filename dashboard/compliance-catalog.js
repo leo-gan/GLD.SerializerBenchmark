@@ -290,6 +290,12 @@ export const CATALOG = [
   { language: "mojo", name: "mojo-toml", formats: ["toml"], docs: "https://github.com/DataBooth/mojo-toml", evidence: "DataBooth/mojo-toml: TOML." },
   { language: "mojo", name: "mojo-msgpack", formats: ["msgpack"], docs: "https://github.com/leo-gan/gld-messagepack", evidence: "gld-messagepack: MessagePack wire." },
   { language: "mojo", name: "gld-yaml", formats: ["yaml"], docs: "https://github.com/leo-gan/gld-yaml", evidence: "gld-yaml: YAML value encode/decode." },
+  { language: "rust", name: "dagr", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "go", name: "dagr", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "swift", name: "dagr", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "javascript", name: "dagr", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "python", name: "dagr", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
+  { language: "mojo", name: "dagr", formats: [], docs: "https://codeberg.org/mzaks/dagr", evidence: "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus." },
 ];
 
 /** @type {Map<string, CatalogEntry>} */

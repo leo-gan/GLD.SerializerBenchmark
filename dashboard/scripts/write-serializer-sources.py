@@ -1034,6 +1034,15 @@ SPECIFICS: dict[str, str] = {
         "exists as compact binary JSON. This crate maps serde types to "
         "named MessagePack maps."
     ),
+    "dagr": (
+        "Dagr (\"Data Graph\") is a schema-driven binary format for data "
+        "graphs — shared and cyclic nodes included — built on an arena model. "
+        "One Python DSL schema generates the code for every target language "
+        "(`dagr build`), so there is no runtime library: the suite commits the "
+        "generated code from `schemas/v2/dagr/schema.py`. Nodes here use the "
+        "`packed` layout; the timed path is the generated direct builder on "
+        "encode and the lazy reader materializing the domain value on decode."
+    ),
     "prost": (
         "prost is the de-facto Protocol Buffers implementation for Rust "
         "(tokio-rs). The problem was that Google does not ship an "
@@ -1568,6 +1577,12 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("rust", "minicbor"): "minicbor",
     ("rust", "rmp-serde"): "rmp-serde",
     ("rust", "prost"): "prost",
+    ("rust", "dagr"): "dagr",
+    ("go", "dagr"): "dagr",
+    ("swift", "dagr"): "dagr",
+    ("javascript", "dagr"): "dagr",
+    ("python", "dagr"): "dagr",
+    ("mojo", "dagr"): "dagr",
     ("rust", "serde_avro_fast"): "serde-avro-fast",
     ("rust", "bson"): "bson",
     ("rust", "flexbuffers"): "flexbuffers",

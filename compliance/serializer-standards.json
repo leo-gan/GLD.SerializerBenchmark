@@ -136,7 +136,8 @@
       ],
       "py-ubjson": [
         "ubjson"
-      ]
+      ],
+      "dagr": []
     },
     "javascript": {
       "JSON.stringify": [
@@ -193,7 +194,8 @@
       "v8-serializer": [],
       "devalue": [],
       "sia": [],
-      "bser": []
+      "bser": [],
+      "dagr": []
     },
     "go": {
       "encoding/json": [
@@ -251,7 +253,8 @@
         "toml"
       ],
       "encoding/gob": [],
-      "kelindar/binary": []
+      "kelindar/binary": [],
+      "dagr": []
     },
     "java": {
       "jackson": [
@@ -508,7 +511,8 @@
       "nanoserde": [],
       "postcard": [],
       "speedy": [],
-      "rkyv": []
+      "rkyv": [],
+      "dagr": []
     },
     "cpp": {
       "nlohmann_json": [
@@ -629,7 +633,8 @@
         "plist"
       ],
       "XMLCoder": [],
-      "BinaryCodable": []
+      "BinaryCodable": [],
+      "dagr": []
     },
     "php": {
       "json": [
@@ -678,7 +683,9 @@
       "serde.toml": [
         "toml"
       ],
-      "serde.msgpack": [],
+      "serde.msgpack": [
+        "msgpack"
+      ],
       "zig-msgpack": [
         "msgpack"
       ],
@@ -703,7 +710,9 @@
       "std.zon": [
         "zon"
       ],
-      "serde.zon": [],
+      "serde.zon": [
+        "zon"
+      ],
       "serde.xml": [],
       "comptime-bin": [],
       "s2s": []
@@ -738,7 +747,8 @@
       ],
       "gld-yaml": [
         "yaml"
-      ]
+      ],
+      "dagr": []
     }
   }
 }

@@ -470,6 +470,10 @@
       }
     },
     "go": {
+      "dagr": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+      },
       "encoding/gob": {
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/gob",
         "version": "go1.24.13",
@@ -719,6 +723,10 @@
         "version": "1.6.6",
         "specifics": "cbor-x is a high-performance CBOR encoder/decoder for JS, from the same author as msgpackr. The problem was slow or allocating CBOR stacks in Node. It solves that with reusable Encoder/Decoder instances."
       },
+      "dagr": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+      },
       "devalue": {
         "source_url": "https://github.com/Rich-Harris/devalue",
         "version": "5.9.2",
@@ -923,6 +931,10 @@
         "version": "0.3.4",
         "specifics": "EmberJson is a Mojo JSON library using language reflection. Mojo is a young language; EmberJson exists to give it a community JSON serialize/deserialize path. This row times that reflection API."
       },
+      "dagr": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
+      },
       "ehsanmok-json": {
         "source_url": "https://github.com/ehsanmok/json",
         "version": "0.4.0",
@@ -943,6 +955,11 @@
         "version": "0.6.0",
         "specifics": "gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the IETF binary JSON-like format. The library exists to give Mojo a first-class CBOR encode/decode."
       },
+      "mojo-flatbuffers": {
+        "source_url": "https://github.com/leo-gan/gld-flatbuffers",
+        "version": "0.2.0",
+        "specifics": "mojo-flatbuffers is a registered serializer in the mojo suite. This page links its upstream source; the language inventory table describes the timed call path."
+      },
       "mojo-json": {
         "source_url": "https://github.com/leo-gan/gld-json",
         "version": "0.3.0",
@@ -957,11 +974,6 @@
         "source_url": "https://github.com/leo-gan/gld-protobuf",
         "version": "0.6.0",
         "specifics": "gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf exists as a language-neutral IDL. This library generates Mojo from the suite `.proto` and times encode/decode."
-      },
-      "mojo-flatbuffers": {
-        "source_url": "https://github.com/leo-gan/gld-flatbuffers",
-        "version": "0.2.0",
-        "specifics": "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can use fields without unpacking the buffer. This row times a reused Builder and generated pack/unpack on the suite tables."
       },
       "mojo-toml": {
         "source_url": "https://github.com/DataBooth/mojo-toml",
@@ -1064,6 +1076,10 @@
         "source_url": "https://github.com/cloudpipe/cloudpickle",
         "version": "3.1.2",
         "specifics": "cloudpickle extends pickle so cluster and serverless runtimes can ship functions and dynamic objects, not just importable classes. The problem was that pickle cannot serialize many constructs that job schedulers need. cloudpickle solves that by capturing more of the Python object model — with the same security caveats."
+      },
+      "dagr": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
       },
       "dill": {
         "source_url": "https://github.com/uqfoundation/dill",
@@ -1176,6 +1192,10 @@
         "source_url": "https://github.com/enarx/ciborium",
         "version": "0.2.2",
         "specifics": "ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSON-like format. The crate exists to give Rust a serde CBOR backend."
+      },
+      "dagr": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
       },
       "flexbuffers": {
         "source_url": "https://github.com/google/flatbuffers",
@@ -1313,6 +1333,10 @@
         "source_url": "https://github.com/jpsim/Yams",
         "version": "5.4.0",
         "specifics": "Yams is a Swift wrapper around libyaml. YAML exists as a human-friendly config language. Yams is the usual Swift YAML library."
+      },
+      "dagr": {
+        "source_url": "https://codeberg.org/mzaks/dagr",
+        "specifics": "Dagr (\"Data Graph\") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode."
       },
       "protobuf-wire": {
         "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/swift/index.md",
