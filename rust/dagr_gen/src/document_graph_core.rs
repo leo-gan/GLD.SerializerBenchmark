@@ -1,0 +1,111 @@
+#![allow(dead_code, non_snake_case, unused_imports, unused_variables, unexpected_cfgs, clippy::all)]
+#[cfg(all(dagr_no_std, not(dagr_no_alloc)))] use alloc::{vec, vec::Vec, string::String, string::ToString, boxed::Box, borrow::ToOwned};
+use crate::dagr_runtime::{DagrError, PackedSink, StorePacked};
+
+
+// ── Direct Graph Builder ("spec/33-direct-graph-builder.md") ─────────────────────
+// Arena-free construction for this packed-rooted tree: plain value structs in,
+// byte-identical graph buffer out. `direct::to_bytes*(v) == arena.to_bytes*()`.
+pub mod direct {
+    use crate::dagr_runtime::{NodeStoreRef, DagrError, PackedSink};
+    #[cfg(not(dagr_no_std))] use crate::dagr_runtime::DagrBuilder;
+    #[cfg(all(dagr_no_std, not(dagr_no_alloc)))] use alloc::vec::Vec;
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct DocumentMeta<'a> {
+        pub region: Option<&'a str>,
+        pub version: Option<i32>,
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct DocumentItem<'a> {
+        pub sku: Option<&'a str>,
+        pub qty: Option<i32>,
+        pub price_minor: Option<i64>,
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct Document<'a> {
+        pub id: Option<&'a str>,
+        pub status: Option<i32>,
+        pub meta: Option<&'a DocumentMeta<'a>>,
+        pub items: &'a [DocumentItem<'a>],
+    }
+
+    impl<'a> DocumentMeta<'a> {
+        pub fn store_packed<B: PackedSink + ?Sized>(&self, b: &mut B) -> Result<NodeStoreRef, DagrError> {
+            let _before = b.cursor();
+            if let Some(_v) = self.version { let _zz = crate::dagr_runtime::to_zigzag(_v as i64); if crate::dagr_runtime::leb_length(_zz) < 4 { b.store_leb(_zz)?; b.store_leb((1u64 << 1) | 0)?; } else { b.store_i32(_v)?; b.store_leb((1u64 << 1) | 1)?; } }
+            if let Some(_s) = self.region.as_deref() { let _bs = _s.as_bytes(); b.store_raw(_bs)?; b.store_leb(_bs.len() as u64)?; b.store_leb((0u64 << 1) | 1)?; }
+            b.store_leb((b.cursor() - _before) as u64)?;
+            Ok(NodeStoreRef::Offset(b.cursor()))
+        }
+    }
+
+    impl<'a> DocumentItem<'a> {
+        pub fn store_packed<B: PackedSink + ?Sized>(&self, b: &mut B) -> Result<NodeStoreRef, DagrError> {
+            let _before = b.cursor();
+            if let Some(_v) = self.price_minor { let _zz = crate::dagr_runtime::to_zigzag(_v as i64); if crate::dagr_runtime::leb_length(_zz) < 8 { b.store_leb(_zz)?; b.store_leb((2u64 << 1) | 0)?; } else { b.store_i64(_v)?; b.store_leb((2u64 << 1) | 1)?; } }
+            if let Some(_v) = self.qty { let _zz = crate::dagr_runtime::to_zigzag(_v as i64); if crate::dagr_runtime::leb_length(_zz) < 4 { b.store_leb(_zz)?; b.store_leb((1u64 << 1) | 0)?; } else { b.store_i32(_v)?; b.store_leb((1u64 << 1) | 1)?; } }
+            if let Some(_s) = self.sku.as_deref() { let _bs = _s.as_bytes(); b.store_raw(_bs)?; b.store_leb(_bs.len() as u64)?; b.store_leb((0u64 << 1) | 1)?; }
+            b.store_leb((b.cursor() - _before) as u64)?;
+            Ok(NodeStoreRef::Offset(b.cursor()))
+        }
+    }
+
+    impl<'a> Document<'a> {
+        pub fn store_packed<B: PackedSink + ?Sized>(&self, b: &mut B) -> Result<NodeStoreRef, DagrError> {
+            let _before = b.cursor();
+            {
+                let _items_arr = &self.items;
+                if !_items_arr.is_empty() {
+                let _cnt_items = _items_arr.len();
+                let _bef_items = b.cursor();
+                for _e in _items_arr.iter().rev() { _e.store_packed(b)?; }
+                b.store_leb(_cnt_items as u64)?;
+                b.store_leb((b.cursor() - _bef_items) as u64)?;
+                    b.store_leb((3u64 << 1) | 1)?;
+                }
+            }
+            if let Some(_n) = self.meta { _n.store_packed(b)?; b.store_leb((2u64 << 1) | 1)?; }
+            if let Some(_v) = self.status { let _zz = crate::dagr_runtime::to_zigzag(_v as i64); if crate::dagr_runtime::leb_length(_zz) < 4 { b.store_leb(_zz)?; b.store_leb((1u64 << 1) | 0)?; } else { b.store_i32(_v)?; b.store_leb((1u64 << 1) | 1)?; } }
+            if let Some(_s) = self.id.as_deref() { let _bs = _s.as_bytes(); b.store_raw(_bs)?; b.store_leb(_bs.len() as u64)?; b.store_leb((0u64 << 1) | 1)?; }
+            b.store_leb((b.cursor() - _before) as u64)?;
+            Ok(NodeStoreRef::Offset(b.cursor()))
+        }
+    }
+
+    /// 36 §8 — build the finished buffer (body, alignment, framing) into any `PackedSink`,
+    /// e.g. a stack `FixedBuilder`: no heap. Start from an empty (reset) builder; returns the
+    /// buffer length, the bytes are `b.record_bytes()`.
+    pub fn write_into<B: PackedSink + ?Sized>(root: &Document<'_>, b: &mut B) -> Result<usize, DagrError> {
+        let root_ref = root.store_packed(b)?;
+        let root_off = root_ref.to_offset().unwrap_or(0);
+        b.store_leb(((b.cursor() - root_off) as u64) << 2)?;
+        Ok(b.cursor())
+    }
+
+    #[cfg(not(dagr_no_std))]
+    pub fn to_bytes(root: &Document<'_>) -> Result<Vec<u8>, DagrError> {
+        let mut b = DagrBuilder::with_capacity(4096);   // direct = tree → small buffer, grows if needed
+        write_into(root, &mut b)?;
+        Ok(b.finalize())
+    }
+
+    #[cfg(not(dagr_no_std))]
+    pub struct Writer;
+    #[cfg(not(dagr_no_std))]
+    impl Writer {
+        pub fn new() -> Self { Writer }
+        pub fn to_bytes(&mut self, root: &Document<'_>) -> Result<Vec<u8>, DagrError> { to_bytes(root) }
+    }
+    #[cfg(not(dagr_no_std))]
+    impl Default for Writer { fn default() -> Self { Writer::new() } }
+}
+
+pub struct DocumentGraph;
+impl DocumentGraph {
+    #[cfg(not(dagr_no_std))]
+    pub fn to_bytes(root: &direct::Document<'_>) -> Result<Vec<u8>, crate::dagr_runtime::DagrError> { direct::to_bytes(root) }
+    pub fn write_into<B: crate::dagr_runtime::PackedSink + ?Sized>(root: &direct::Document<'_>, b: &mut B) -> Result<usize, crate::dagr_runtime::DagrError> { direct::write_into(root, b) }
+}
