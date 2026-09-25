@@ -63,7 +63,7 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 | [prost](https://github.com/tokio-rs/prost) | Schema | `prost` + build | Protobuf messages in `prepare` | adapted | De-facto Rust Protobuf (no Google-owned Rust runtime; `prost-build` + fixture/`shared` protos) |
 | [rkyv](https://github.com/rkyv/rkyv) | Zero-copy | `rkyv` 0.8 | **Full** `Archive` on structs | adapted | Timed deser **materializes** owned `T` for fidelity |
 | [rmp-serde](https://github.com/3Hren/msgpack-rust) | MessagePack | `rmp-serde` | `to_vec_named` | adapted | Named maps |
-| [dagr](https://codeberg.org/mzaks/dagr) | Schema | generated `benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | Encode converts domain → borrowed value structs inside the timed path (prost converts in `prepare`); bytes copied out because Dagr writes back-to-front |
+| [dagr](https://codeberg.org/mzaks/dagr) | Schema | generated `benchmark_v2` | **Direct** builder into a reused `DagrBuilder`; lazy reader → domain | adapted | Direct value structs built in `prepare` (like prost's messages); timed encode is `write_into` only; bytes copied out because Dagr writes back-to-front |
 | [serde_avro_fast](https://github.com/Ten0/serde_avro_fast) | Schema | `serde_avro_fast` | Serde one-pass datum; reused `SerializerConfig` | native | Prefer over official `apache-avro` (Value intermediate is multi-× slower than JSON on small records) |
 | [serde_json](https://github.com/serde-rs/json) | JSON | `serde_json` | Serde `Fixture` | native | Baseline |
 | [simd-json](https://github.com/simd-lite/simd-json) | JSON | `simd-json` | SIMD **parse**; ser via serde_json | adapted | Honest split responsibilities |

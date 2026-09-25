@@ -50,7 +50,7 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 
 | Serializer | Category | Package | Native path | Stream | Notes |
 |------------|----------|---------|-------------|--------|-------|
-| [dagr](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`go/gen/dagrv2`) | direct builder / lazy reader | **adapted** | Domain → direct value structs → bytes timed; lazy accessors → domain timed; N>1 suite frame |
+| [dagr](https://codeberg.org/mzaks/dagr) | Schema | dagr + gen (`go/gen/dagrv2`) | direct builder / lazy reader | **adapted** | Direct value structs built in Prepare (like protobuf's toProto); `BuildAppend` timed; lazy accessors → domain timed; N>1 suite frame |
 | [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob) | Native | stdlib | registered types | native | Buffer Reset between encodes |
 | [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) | JSON | stdlib | struct tags | native | Stream `SetEscapeHTML(false)` |
 | [fxamacker/cbor](https://github.com/fxamacker/cbor) | CBOR | cbor/v2 | reused Enc/DecMode | native | Default EncOptions (not CoreDet) |
@@ -177,7 +177,7 @@ for rep:
 - **encoding/gob** and **kelindar/binary** are not cross-language wire formats.
 - **pelletier/go-toml** wraps multi-instance cells as a TOML table with `items` (TOML cannot use bare array roots).
 - **Stream adapted** only for **protobuf**, **linkedin/goavro** and **dagr** (bytes-only libraries; OCF/gRPC would change wire format). All other registered Go codecs use **native** stream APIs.
-- **dagr** has no Batch wrapper in its schema: multi-instance cells use the suite's cross-language frame (`u32 LE count` + `u32 LE len` + record, per instance — same as the Rust/C runners). Unlike **protobuf** (message built in prepare, `ToDomain` untimed), dagr builds its direct value structs from the domain value and materializes the domain value from the lazy reader **inside** the timer, so its row does strictly more work at the suite boundary.
+- **dagr** has no Batch wrapper in its schema: multi-instance cells use the suite's cross-language frame (`u32 LE count` + `u32 LE len` + record, per instance — same as the Rust/C runners). Like **protobuf** (message built in Prepare), dagr builds its direct value structs in Prepare. Unlike protobuf (`ToDomain` untimed), dagr materializes the domain value from the lazy reader **inside** the timer, so its decode does strictly more work at the suite boundary.
 - **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
 Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).

@@ -5,8 +5,8 @@
  *
  * One DataGraph per suite type, all nodes `packed`. Serialize uses the generated **direct
  * builder** (`writeInto`: plain value objects → bytes, no arena) into one `Builder` reused
- * across calls (`reset()`); the value objects are built from the domain value inside the
- * timed path, every field set. Deserialize uses
+ * across calls (`reset()`). The value objects are the codec's native model, so — like the
+ * protobuf libraries' messages — they are built in `prepare()` (untimed), every field set. Deserialize uses
  * the generated **lazy reader** (`<Type>Accessor.lazyRoot`) and materializes the domain
  * value inside the timed path (i64 fields are `bigint` on the Dagr side → Number).
  *
@@ -48,53 +48,50 @@ const big = (v) => BigInt(v);
 const num = (v) => (v === null ? 0 : Number(v));
 const str = (v) => (v === null ? '' : v);
 
-/* ---------- encode: domain → direct-builder value → bytes ---------- */
+/* ---------- encode: direct-builder values (prepared, untimed) → bytes (timed) ---------- */
 
 // One builder for the whole run: each encode resets it and stores the record at its far
 // end; `recordBytes()` is a view of that record, valid until the next encode.
 const B = new Builder(2 * 1024 * 1024, 4096);
 
-const encoders = {
-  message: (m) =>
-    MessageDirect.writeInto({
-      f_bool: m.f_bool,
-      f_int32: m.f_int32,
-      f_int64: big(m.f_int64),
-      f_float64: m.f_float64,
-      f_string: m.f_string,
-      f_bool_2: m.f_bool_2,
-      f_int32_2: m.f_int32_2,
-      f_string_2: m.f_string_2,
-    }, B),
-  document: (d) => {
-    const src = d.items;
-    const items = new Array(src.length);
-    for (let i = 0; i < src.length; i++) {
-      const it = src[i];
-      items[i] = { sku: it.sku, qty: it.qty, price_minor: big(it.price_minor) };
-    }
-    return DocumentDirect.writeInto({
-      id: d.id,
-      status: d.status,
-      meta: { region: d.meta.region, version: d.meta.version },
-      items,
-    }, B);
-  },
-  telemetry: (t) =>
-    TelemetryDirect.writeInto({ source: t.source, ts: big(t.ts), tags: t.tags, values: t.values }, B),
-  strings: (s) => StringsDirect.writeInto({ items: s.items }, B),
-  event: (e) => {
-    const src = e.attrs;
-    const attrs = new Array(src.length);
-    for (let i = 0; i < src.length; i++) attrs[i] = { key: src[i].key, value: src[i].value };
-    return EventDirect.writeInto({
-      event_id: e.event_id,
-      event_type: e.event_type,
-      occurred_at: big(e.occurred_at),
-      producer: e.producer,
-      attrs,
-    }, B);
-  },
+// Domain → direct-builder value objects. These are the codec's native model (the
+// counterpart of the protobuf libraries' message objects), so — like them — they are
+// built in `prepare()`, outside the timer.
+const converters = {
+  message: (m) => ({
+    f_bool: m.f_bool,
+    f_int32: m.f_int32,
+    f_int64: big(m.f_int64),
+    f_float64: m.f_float64,
+    f_string: m.f_string,
+    f_bool_2: m.f_bool_2,
+    f_int32_2: m.f_int32_2,
+    f_string_2: m.f_string_2,
+  }),
+  document: (d) => ({
+    id: d.id,
+    status: d.status,
+    meta: { region: d.meta.region, version: d.meta.version },
+    items: d.items.map((it) => ({ sku: it.sku, qty: it.qty, price_minor: big(it.price_minor) })),
+  }),
+  telemetry: (t) => ({ source: t.source, ts: big(t.ts), tags: t.tags, values: t.values }),
+  strings: (s) => ({ items: s.items }),
+  event: (e) => ({
+    event_id: e.event_id,
+    event_type: e.event_type,
+    occurred_at: big(e.occurred_at),
+    producer: e.producer,
+    attrs: e.attrs.map((a) => ({ key: a.key, value: a.value })),
+  }),
+};
+
+// Timed: the generated direct builder's writeInto.
+const writers = {
+  message: (v) => MessageDirect.writeInto(v, B),
+  document: (v) => DocumentDirect.writeInto(v, B),
+  telemetry: (v) => TelemetryDirect.writeInto(v, B),
+  strings: (v) => StringsDirect.writeInto(v, B),
+  event: (v) => EventDirect.writeInto(v, B),
 };
 
 /* ---------- decode: lazy reader → domain ---------- */
@@ -207,20 +204,23 @@ function decodeBatch(decode, u8) {
 let encodeOne = null;
 let decodeOne = null;
 let isBatch = false;
+let prepared = null;   // direct-builder value(s) for the cell, built in prepare()
 
 export const dagrSer = {
   name: 'dagr',
   version: dagrVersion(),
   category: 'schema',
-  supports: (dataName) => Object.prototype.hasOwnProperty.call(encoders, dataName),
+  supports: (dataName) => Object.prototype.hasOwnProperty.call(writers, dataName),
   prepare(dataName, value) {
-    encodeOne = encoders[dataName];
+    const conv = converters[dataName];
+    encodeOne = writers[dataName];
     decodeOne = decoders[dataName];
     if (!encodeOne) throw new Error(`dagr: no graph for ${dataName}`);
     isBatch = Array.isArray(value);
+    prepared = isBatch ? value.map(conv) : conv(value);
   },
-  serialize(value) {
-    return isBatch ? encodeBatch(encodeOne, value) : encodeOneRecord(encodeOne, value);
+  serialize() {
+    return isBatch ? encodeBatch(encodeOne, prepared) : encodeOneRecord(encodeOne, prepared);
   },
   deserialize(buf) {
     return isBatch ? decodeBatch(decodeOne, buf) : decodeOne(buf);

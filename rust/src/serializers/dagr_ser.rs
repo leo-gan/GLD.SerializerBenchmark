@@ -7,8 +7,9 @@
 //! and materializes the owned domain value for the fidelity check (the decode + the
 //! domain build are both timed, like prost's `decode` + `from_pb`).
 //!
-//! The borrowed direct structs are built from the domain value inside the timed path
-//! (that includes one small `Vec` per array field) — there is no untimed native model.
+//! Like prost's generated messages, the direct builder's value structs are this codec's
+//! native model: they are built from the suite values in `prepare_many` (untimed), and the
+//! timed `serialize_into` only runs `write_into`.
 
 use crate::data::{
     Document, DocumentItem, DocumentMeta, Event, EventAttr, Fixture, Message, Strings, Telemetry,
@@ -34,78 +35,128 @@ fn s(v: Option<&str>) -> String {
 }
 
 // ── encode (direct builder) ─────────────────────────────────────────────────
+//
+// The direct builder's value structs are this codec's native model — the counterpart of
+// prost's generated messages — so, like prost, they are built from the suite values in
+// `prepare_many` (untimed) and the timed `serialize_into` only runs `write_into`.
 
-fn encode_message(b: &mut DagrBuilder, m: &Message) -> Result<(), DagrError> {
-    let v = msg_core::direct::Message {
-        f_bool: Some(m.f_bool),
-        f_int32: Some(m.f_int32),
-        f_int64: Some(m.f_int64),
-        f_float64: Some(m.f_float64),
-        f_string: Some(&m.f_string),
-        f_bool_2: Some(m.f_bool_2),
-        f_int32_2: Some(m.f_int32_2),
-        f_string_2: Some(&m.f_string_2),
-    };
-    msg_core::direct::write_into(&v, b).map(|_| ())
+use doc_core::direct as dd;
+use ev_core::direct as ed;
+
+/// Extend a borrow of `Prepared`'s own heap storage to `'static`.
+///
+/// SAFETY (for every use below): the target lives in a heap allocation owned by the same
+/// `Prepared` (the boxed fixture copy, or a boxed side table) that is never mutated,
+/// reallocated or dropped while `values` exists — `values` is declared first, so it drops
+/// first, and nothing is pushed into a side table after a value borrows from it.
+unsafe fn erase<T: ?Sized>(r: &T) -> &'static T {
+    unsafe { &*(r as *const T) }
 }
 
-fn encode_document(b: &mut DagrBuilder, d: &Document) -> Result<(), DagrError> {
-    let meta = doc_core::direct::DocumentMeta {
-        region: Some(&d.meta.region),
-        version: Some(d.meta.version),
-    };
-    let items: Vec<doc_core::direct::DocumentItem> = d
-        .items
-        .iter()
-        .map(|it| doc_core::direct::DocumentItem {
-            sku: Some(&it.sku),
-            qty: Some(it.qty),
-            price_minor: Some(it.price_minor),
-        })
-        .collect();
-    let v = doc_core::direct::Document {
-        id: Some(&d.id),
-        status: Some(d.status),
-        meta: Some(&meta),
-        items: &items,
-    };
-    doc_core::direct::write_into(&v, b).map(|_| ())
+enum Values {
+    None,
+    Message(Vec<msg_core::direct::Message<'static>>),
+    Document(Vec<dd::Document<'static>>),
+    Telemetry(Vec<tel_core::direct::Telemetry<'static>>),
+    Strings(Vec<str_core::direct::Strings<'static>>),
+    Event(Vec<ed::Event<'static>>),
 }
 
-fn encode_telemetry(b: &mut DagrBuilder, t: &Telemetry) -> Result<(), DagrError> {
-    let tags: Vec<&str> = t.tags.iter().map(String::as_str).collect();
-    let v = tel_core::direct::Telemetry {
-        source: Some(&t.source),
-        ts: Some(t.ts),
-        tags: &tags,
-        values: &t.values,
-    };
-    tel_core::direct::write_into(&v, b).map(|_| ())
+/// The prepared direct value structs of one cell and the storage they borrow from.
+struct Prepared {
+    values: Values,
+    _metas: Vec<Box<dd::DocumentMeta<'static>>>,
+    _items: Vec<Box<[dd::DocumentItem<'static>]>>,
+    _attrs: Vec<Box<[ed::EventAttr<'static>]>>,
+    _strs: Vec<Box<[&'static str]>>,
+    _owner: Box<[Fixture]>,
 }
 
-fn encode_strings(b: &mut DagrBuilder, st: &Strings) -> Result<(), DagrError> {
-    let items: Vec<&str> = st.items.iter().map(String::as_str).collect();
-    let v = str_core::direct::Strings { items: &items };
-    str_core::direct::write_into(&v, b).map(|_| ())
-}
+impl Prepared {
+    fn empty() -> Self {
+        Self { values: Values::None, _metas: Vec::new(), _items: Vec::new(), _attrs: Vec::new(),
+               _strs: Vec::new(), _owner: Box::new([]) }
+    }
 
-fn encode_event(b: &mut DagrBuilder, e: &Event) -> Result<(), DagrError> {
-    let attrs: Vec<ev_core::direct::EventAttr> = e
-        .attrs
-        .iter()
-        .map(|a| ev_core::direct::EventAttr {
-            key: Some(&a.key),
-            value: Some(&a.value),
-        })
-        .collect();
-    let v = ev_core::direct::Event {
-        event_id: Some(&e.event_id),
-        event_type: Some(&e.event_type),
-        occurred_at: Some(e.occurred_at),
-        producer: Some(&e.producer),
-        attrs: &attrs,
-    };
-    ev_core::direct::write_into(&v, b).map(|_| ())
+    fn build(fixtures: &[Fixture]) -> Result<Self> {
+        let mut p = Self::empty();
+        p._owner = fixtures.to_vec().into_boxed_slice();
+        // SAFETY: see `erase` — `_owner` is not touched again once values borrow from it.
+        let owner: &'static [Fixture] = unsafe { erase(&*p._owner) };
+        let strs = |p: &mut Self, v: &'static [String]| -> &'static [&'static str] {
+            p._strs.push(v.iter().map(String::as_str).collect());
+            unsafe { erase(&**p._strs.last().unwrap()) }
+        };
+        let kind_err = || anyhow!("dagr: mixed fixture kinds in one cell");
+        p.values = match owner.first() {
+            None => Values::None,
+            Some(Fixture::Message(_)) => Values::Message(owner.iter().map(|f| match f {
+                Fixture::Message(m) => Ok(msg_core::direct::Message {
+                    f_bool: Some(m.f_bool), f_int32: Some(m.f_int32), f_int64: Some(m.f_int64),
+                    f_float64: Some(m.f_float64), f_string: Some(&m.f_string), f_bool_2: Some(m.f_bool_2),
+                    f_int32_2: Some(m.f_int32_2), f_string_2: Some(&m.f_string_2),
+                }),
+                _ => Err(kind_err()),
+            }).collect::<Result<_>>()?),
+            Some(Fixture::Document(_)) => {
+                let mut docs = Vec::with_capacity(owner.len());
+                for f in owner {
+                    let Fixture::Document(d) = f else { return Err(kind_err()) };
+                    p._metas.push(Box::new(dd::DocumentMeta { region: Some(&d.meta.region), version: Some(d.meta.version) }));
+                    p._items.push(d.items.iter().map(|it| dd::DocumentItem {
+                        sku: Some(&it.sku), qty: Some(it.qty), price_minor: Some(it.price_minor) }).collect());
+                    let meta = unsafe { erase(&**p._metas.last().unwrap()) };
+                    let items = unsafe { erase(&**p._items.last().unwrap()) };
+                    docs.push(dd::Document { id: Some(&d.id), status: Some(d.status), meta: Some(meta), items });
+                }
+                Values::Document(docs)
+            }
+            Some(Fixture::Telemetry(_)) => {
+                let mut ts = Vec::with_capacity(owner.len());
+                for f in owner {
+                    let Fixture::Telemetry(t) = f else { return Err(kind_err()) };
+                    let tags = strs(&mut p, &t.tags);
+                    ts.push(tel_core::direct::Telemetry { source: Some(&t.source), ts: Some(t.ts), tags, values: &t.values });
+                }
+                Values::Telemetry(ts)
+            }
+            Some(Fixture::Strings(_)) => {
+                let mut ss = Vec::with_capacity(owner.len());
+                for f in owner {
+                    let Fixture::Strings(st) = f else { return Err(kind_err()) };
+                    ss.push(str_core::direct::Strings { items: strs(&mut p, &st.items) });
+                }
+                Values::Strings(ss)
+            }
+            Some(Fixture::Event(_)) => {
+                let mut es = Vec::with_capacity(owner.len());
+                for f in owner {
+                    let Fixture::Event(e) = f else { return Err(kind_err()) };
+                    p._attrs.push(e.attrs.iter().map(|a| ed::EventAttr { key: Some(&a.key), value: Some(&a.value) }).collect());
+                    let attrs = unsafe { erase(&**p._attrs.last().unwrap()) };
+                    es.push(ed::Event { event_id: Some(&e.event_id), event_type: Some(&e.event_type),
+                        occurred_at: Some(e.occurred_at), producer: Some(&e.producer), attrs });
+                }
+                Values::Event(es)
+            }
+        };
+        Ok(p)
+    }
+
+    /// Timed: store prepared value `i` into `b` (the direct builder's `write_into`).
+    #[inline]
+    fn write(&self, i: usize, b: &mut DagrBuilder) -> Result<(), DagrError> {
+        let missing = DagrError::InvalidData;
+        match &self.values {
+            Values::Message(v) => msg_core::direct::write_into(v.get(i).ok_or(missing)?, b),
+            Values::Document(v) => doc_core::direct::write_into(v.get(i).ok_or(missing)?, b),
+            Values::Telemetry(v) => tel_core::direct::write_into(v.get(i).ok_or(missing)?, b),
+            Values::Strings(v) => str_core::direct::write_into(v.get(i).ok_or(missing)?, b),
+            Values::Event(v) => ev_core::direct::write_into(v.get(i).ok_or(missing)?, b),
+            Values::None => Err(missing),
+        }
+        .map(|_| ())
+    }
 }
 
 // ── decode (lazy reader → owned domain value) ───────────────────────────────
@@ -210,21 +261,12 @@ fn decode_event(data: &[u8]) -> Result<Fixture, DagrError> {
 
 // ── BenchSerializer ─────────────────────────────────────────────────────────
 
-type EncodeFn = fn(&mut DagrBuilder, &Fixture) -> Result<(), DagrError>;
 type DecodeFn = fn(&[u8]) -> Result<Fixture, DagrError>;
-
-macro_rules! encode_fn {
-    ($variant:ident, $f:ident) => {
-        (|b: &mut DagrBuilder, fx: &Fixture| match fx {
-            Fixture::$variant(v) => $f(b, v),
-            _ => Err(DagrError::InvalidData),
-        }) as EncodeFn
-    };
-}
 
 pub struct DagrSer {
     builder: DagrBuilder,
-    encode: EncodeFn,
+    prepared: Prepared,
+    enc_i: usize,
     decode: DecodeFn,
 }
 
@@ -232,7 +274,8 @@ impl Default for DagrSer {
     fn default() -> Self {
         Self {
             builder: DagrBuilder::with_capacity(4096),
-            encode: encode_fn!(Message, encode_message),
+            prepared: Prepared::empty(),
+            enc_i: 0,
             decode: decode_message,
         }
     }
@@ -256,21 +299,30 @@ impl BenchSerializer for DagrSer {
         )
     }
     fn prepare(&mut self, fixture: &Fixture) -> Result<()> {
-        let (encode, decode): (EncodeFn, DecodeFn) = match fixture {
-            Fixture::Message(_) => (encode_fn!(Message, encode_message), decode_message),
-            Fixture::Document(_) => (encode_fn!(Document, encode_document), decode_document),
-            Fixture::Telemetry(_) => (encode_fn!(Telemetry, encode_telemetry), decode_telemetry),
-            Fixture::Strings(_) => (encode_fn!(Strings, encode_strings), decode_strings),
-            Fixture::Event(_) => (encode_fn!(Event, encode_event), decode_event),
+        self.prepare_many(std::slice::from_ref(fixture))
+    }
+    fn prepare_many(&mut self, fixtures: &[Fixture]) -> Result<()> {
+        let first = fixtures.first().ok_or_else(|| anyhow!("dagr: empty cell"))?;
+        self.decode = match first {
+            Fixture::Message(_) => decode_message,
+            Fixture::Document(_) => decode_document,
+            Fixture::Telemetry(_) => decode_telemetry,
+            Fixture::Strings(_) => decode_strings,
+            Fixture::Event(_) => decode_event,
         };
-        self.encode = encode;
-        self.decode = decode;
+        self.prepared = Prepared::build(fixtures)?;
+        self.enc_i = 0;
         Ok(())
     }
-    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+    fn begin_cell_encode(&mut self) {
+        self.enc_i = 0;
+    }
+    fn serialize_into(&mut self, _fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        let i = self.enc_i;
+        self.enc_i += 1;
         let b = &mut self.builder;
         PackedSink::reset(b);
-        (self.encode)(b, fixture).map_err(err)?;
+        self.prepared.write(i, b).map_err(err)?;
         out.extend_from_slice(b.record_bytes());
         Ok(())
     }

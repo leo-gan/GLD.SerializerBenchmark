@@ -30,11 +30,11 @@ import (
 // Telemetry.values marked `raw` (native-LE doubles, like protobuf's packed double).
 //
 // Serialize (timed): the generated **direct builder** (plain value structs → bytes, no
-// arena). The value structs are filled from the suite value inside the timed call (the
-// Opt wrappers are field copies; slices of strings/doubles are passed through, node
-// arrays use a reused scratch slice). One `<Graph>Builder` per type is created in
-// Prepare and reset by every Build; `BuildAppend` appends the record to a reused output
-// buffer (Dagr writes back-to-front, so that one copy is inherent).
+// arena). The value structs are this codec's native model, so — like protobuf's toProto —
+// they are built from the suite values in Prepare (untimed); the timed call only runs
+// `BuildAppend`. One `<Graph>Builder` per type is created in Prepare and reset by every
+// Build; `BuildAppend` appends the record to a reused output buffer (Dagr writes
+// back-to-front, so that one copy is inherent).
 //
 // Deserialize (timed): the generated **lazy reader** (`dagr.RootOffset` framing check +
 // `New<Root>Accessor`, the body of `Open<Graph>Unchecked`; one recover per call so
@@ -49,7 +49,7 @@ import (
 // Per-type encode/decode functions are bound in Prepare (no type switch on the clock).
 // Stream mode is adapted (Dagr's graph API is []byte-in / []byte-out).
 type dagrSer struct {
-	enc func(dst []byte, v any) ([]byte, error)
+	enc func(dst []byte) []byte // timed: encode the prepared value(s)
 	dec func(buf []byte) (any, error)
 	out []byte // reused encode buffer; SerializeBytes returns a copy (as protobuf does)
 
@@ -59,9 +59,6 @@ type dagrSer struct {
 	telB *telemetrygraphdirect.TelemetryGraphBuilder
 	strB *stringsgraphdirect.StringsGraphBuilder
 	evB  *eventgraphdirect.EventGraphBuilder
-
-	docItems []documentgraphdirect.DocumentItem
-	evAttrs  []eventgraphdirect.EventAttr
 }
 
 func newDagr() *dagrSer { return &dagrSer{} }
@@ -117,27 +114,27 @@ func (s *dagrSer) Prepare(fx model.Fixture) error {
 		if s.msgB == nil {
 			s.msgB = messagegraphdirect.NewMessageGraphBuilder()
 		}
-		s.enc, s.dec = bindDagr(fx.Value, s.putMessage, getMessage)
+		s.enc, s.dec = bindDagr(fx.Value, directMessage, s.msgB.BuildAppend, getMessage)
 	case modelv2.Document, []modelv2.Document:
 		if s.docB == nil {
 			s.docB = documentgraphdirect.NewDocumentGraphBuilder()
 		}
-		s.enc, s.dec = bindDagr(fx.Value, s.putDocument, getDocument)
+		s.enc, s.dec = bindDagr(fx.Value, directDocument, s.docB.BuildAppend, getDocument)
 	case modelv2.Telemetry, []modelv2.Telemetry:
 		if s.telB == nil {
 			s.telB = telemetrygraphdirect.NewTelemetryGraphBuilder()
 		}
-		s.enc, s.dec = bindDagr(fx.Value, s.putTelemetry, getTelemetry)
+		s.enc, s.dec = bindDagr(fx.Value, directTelemetry, s.telB.BuildAppend, getTelemetry)
 	case modelv2.Strings, []modelv2.Strings:
 		if s.strB == nil {
 			s.strB = stringsgraphdirect.NewStringsGraphBuilder()
 		}
-		s.enc, s.dec = bindDagr(fx.Value, s.putStrings, getStrings)
+		s.enc, s.dec = bindDagr(fx.Value, directStrings, s.strB.BuildAppend, getStrings)
 	case modelv2.Event, []modelv2.Event:
 		if s.evB == nil {
 			s.evB = eventgraphdirect.NewEventGraphBuilder()
 		}
-		s.enc, s.dec = bindDagr(fx.Value, s.putEvent, getEvent)
+		s.enc, s.dec = bindDagr(fx.Value, directEvent, s.evB.BuildAppend, getEvent)
 	default:
 		return fmt.Errorf("dagr: unsupported type %T", fx.Value)
 	}
@@ -145,15 +142,11 @@ func (s *dagrSer) Prepare(fx model.Fixture) error {
 	return nil
 }
 
-func (s *dagrSer) SerializeBytes(fx model.Fixture) ([]byte, error) {
+func (s *dagrSer) SerializeBytes(_ model.Fixture) ([]byte, error) {
 	if s.enc == nil {
 		return nil, fmt.Errorf("dagr: prepare() required before serialize")
 	}
-	var err error
-	s.out, err = s.enc(s.out[:0], fx.Value)
-	if err != nil {
-		return nil, err
-	}
+	s.out = s.enc(s.out[:0])
 	out := make([]byte, len(s.out))
 	copy(out, s.out)
 	return out, nil
@@ -181,37 +174,35 @@ func (s *dagrSer) DeserializeStream(r io.Reader) (any, error) {
 	return AdaptedDeserializeStream(s, r)
 }
 
-// bindDagr binds the single-record or the framed-batch codec for T, chosen once from
-// the prepared value's shape.
-func bindDagr[T any](
+// bindDagr converts the prepared suite value(s) to direct value structs ONCE (untimed —
+// the counterpart of protobuf's toProto in Prepare) and binds the single-record or the
+// framed-batch codec, chosen from the value's shape.
+func bindDagr[T, V any](
 	sample any,
-	put func(dst []byte, v T) []byte,
+	conv func(T) V,
+	put func(dst []byte, v V) []byte,
 	get func(buf []byte) (T, error),
-) (func([]byte, any) ([]byte, error), func([]byte) (any, error)) {
-	if _, batch := sample.([]T); !batch {
-		enc := func(dst []byte, v any) ([]byte, error) {
-			x, ok := v.(T)
-			if !ok {
-				return nil, fmt.Errorf("dagr: expected %T, got %T", x, v)
-			}
-			return put(dst, x), nil
-		}
+) (func([]byte) []byte, func([]byte) (any, error)) {
+	if x, single := sample.(T); single {
+		v := conv(x)
+		enc := func(dst []byte) []byte { return put(dst, v) }
 		dec := func(buf []byte) (any, error) { return get(buf) }
 		return enc, dec
 	}
-	enc := func(dst []byte, v any) ([]byte, error) {
-		xs, ok := v.([]T)
-		if !ok {
-			return nil, fmt.Errorf("dagr: expected %T, got %T", xs, v)
-		}
-		dst = binary.LittleEndian.AppendUint32(dst, uint32(len(xs)))
-		for i := range xs {
+	xs := sample.([]T)
+	vs := make([]V, len(xs))
+	for i := range xs {
+		vs[i] = conv(xs[i])
+	}
+	enc := func(dst []byte) []byte {
+		dst = binary.LittleEndian.AppendUint32(dst, uint32(len(vs)))
+		for i := range vs {
 			at := len(dst)
 			dst = append(dst, 0, 0, 0, 0)
-			dst = put(dst, xs[i])
+			dst = put(dst, vs[i])
 			binary.LittleEndian.PutUint32(dst[at:], uint32(len(dst)-at-4))
 		}
-		return dst, nil
+		return dst
 	}
 	dec := func(buf []byte) (any, error) {
 		if len(buf) < 4 {
@@ -240,10 +231,10 @@ func bindDagr[T any](
 	return enc, dec
 }
 
-// ── encode (direct builder; every field set, no zero elision) ──────────────
+// ── suite value → direct value struct (Prepare, untimed; every field set) ───
 
-func (s *dagrSer) putMessage(dst []byte, m modelv2.Message) []byte {
-	return s.msgB.BuildAppend(dst, messagegraphdirect.Message{
+func directMessage(m modelv2.Message) messagegraphdirect.Message {
+	return messagegraphdirect.Message{
 		FBool:    dagr.Some(m.FBool),
 		FInt32:   dagr.Some(m.FInt32),
 		FInt64:   dagr.Some(m.FInt64),
@@ -252,21 +243,19 @@ func (s *dagrSer) putMessage(dst []byte, m modelv2.Message) []byte {
 		FBool2:   dagr.Some(m.FBool2),
 		FInt32_2: dagr.Some(m.FInt32_2),
 		FString2: dagr.Some(m.FString2),
-	})
+	}
 }
 
-func (s *dagrSer) putDocument(dst []byte, d modelv2.Document) []byte {
-	items := s.docItems[:0]
-	for i := range d.Items {
-		it := d.Items[i]
-		items = append(items, documentgraphdirect.DocumentItem{
+func directDocument(d modelv2.Document) documentgraphdirect.Document {
+	items := make([]documentgraphdirect.DocumentItem, len(d.Items))
+	for i, it := range d.Items {
+		items[i] = documentgraphdirect.DocumentItem{
 			Sku:        dagr.Some(it.SKU),
 			Qty:        dagr.Some(it.Qty),
 			PriceMinor: dagr.Some(it.PriceMinor),
-		})
+		}
 	}
-	s.docItems = items
-	return s.docB.BuildAppend(dst, documentgraphdirect.Document{
+	return documentgraphdirect.Document{
 		ID:     dagr.Some(d.ID),
 		Status: dagr.Some(d.Status),
 		Meta: dagr.Some(documentgraphdirect.DocumentMeta{
@@ -274,39 +263,34 @@ func (s *dagrSer) putDocument(dst []byte, d modelv2.Document) []byte {
 			Version: dagr.Some(d.Meta.Version),
 		}),
 		Items: dagr.Some(items),
-	})
+	}
 }
 
-func (s *dagrSer) putTelemetry(dst []byte, t modelv2.Telemetry) []byte {
-	return s.telB.BuildAppend(dst, telemetrygraphdirect.Telemetry{
+func directTelemetry(t modelv2.Telemetry) telemetrygraphdirect.Telemetry {
+	return telemetrygraphdirect.Telemetry{
 		Source: dagr.Some(t.Source),
 		Ts:     dagr.Some(t.TS),
 		Tags:   dagr.Some(t.Tags),
 		Values: dagr.Some(t.Values),
-	})
-}
-
-func (s *dagrSer) putStrings(dst []byte, st modelv2.Strings) []byte {
-	return s.strB.BuildAppend(dst, stringsgraphdirect.Strings{Items: dagr.Some(st.Items)})
-}
-
-func (s *dagrSer) putEvent(dst []byte, e modelv2.Event) []byte {
-	attrs := s.evAttrs[:0]
-	for i := range e.Attrs {
-		a := e.Attrs[i]
-		attrs = append(attrs, eventgraphdirect.EventAttr{
-			Key:   dagr.Some(a.Key),
-			Value: dagr.Some(a.Value),
-		})
 	}
-	s.evAttrs = attrs
-	return s.evB.BuildAppend(dst, eventgraphdirect.Event{
+}
+
+func directStrings(st modelv2.Strings) stringsgraphdirect.Strings {
+	return stringsgraphdirect.Strings{Items: dagr.Some(st.Items)}
+}
+
+func directEvent(e modelv2.Event) eventgraphdirect.Event {
+	attrs := make([]eventgraphdirect.EventAttr, len(e.Attrs))
+	for i, a := range e.Attrs {
+		attrs[i] = eventgraphdirect.EventAttr{Key: dagr.Some(a.Key), Value: dagr.Some(a.Value)}
+	}
+	return eventgraphdirect.Event{
 		EventID:    dagr.Some(e.EventID),
 		EventType:  dagr.Some(e.EventType),
 		OccurredAt: dagr.Some(e.OccurredAt),
 		Producer:   dagr.Some(e.Producer),
 		Attrs:      dagr.Some(attrs),
-	})
+	}
 }
 
 // ── decode (lazy reader → owned suite value; strings are copied out) ──────
