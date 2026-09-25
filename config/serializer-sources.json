@@ -119,11 +119,6 @@
       }
     },
     "cpp": {
-      "fory": {
-        "source_url": "https://github.com/apache/fory",
-        "version": "1.7.4",
-        "specifics": "Apache Fory native binary serialization of registered C++ structs and vectors using FORY_STRUCT."
-      },
       "arduinojson": {
         "source_url": "https://github.com/bblanchon/ArduinoJson",
         "version": "7.4.3",
@@ -177,6 +172,10 @@
         "source_url": "https://github.com/google/flatbuffers",
         "version": "flatbuffers-flex",
         "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses FORY_STRUCT with registered C++ structs and vectors in native mode."
       },
       "glaze": {
         "source_url": "https://github.com/stephenberry/glaze",
@@ -275,11 +274,6 @@
       }
     },
     "csharp": {
-      "fory": {
-        "source_url": "https://github.com/apache/fory",
-        "version": "1.7.4",
-        "specifics": "Apache Fory binary serialization using ForyStruct source-generated serializers."
-      },
       "Apache.Avro": {
         "source_url": "https://github.com/apache/avro",
         "version": "1.12.2",
@@ -477,14 +471,13 @@
         "source_url": "https://github.com/mgholam/fastJSON",
         "version": "2.4.0.4",
         "specifics": "fastJSON (mgholam) is a small .NET JSON serializer. It was written to keep JSON simple and dependency-light. This row times that compact implementation."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses Apache.Fory source-generated serializers; string mode includes Base64 and streams are adapted."
       }
     },
     "go": {
-      "fory": {
-        "source_url": "https://github.com/apache/fory",
-        "version": "1.7.4",
-        "specifics": "Apache Fory native binary serialization of registered Go structs and slices."
-      },
       "encoding/gob": {
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/gob",
         "version": "go1.24.13",
@@ -494,6 +487,10 @@
         "source_url": "https://github.com/golang/go/tree/master/src/encoding/json",
         "version": "go1.24.13",
         "specifics": "Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses github.com/apache/fory/go/fory in native mode on registered structs and slices."
       },
       "fxamacker/cbor": {
         "source_url": "https://github.com/fxamacker/cbor",
@@ -694,11 +691,6 @@
       }
     },
     "javascript": {
-      "fory": {
-        "source_url": "https://github.com/apache/fory",
-        "version": "1.7.4",
-        "specifics": "Apache Fory schema-generated JavaScript/TypeScript codecs for structs and lists."
-      },
       "@msgpack/msgpack": {
         "source_url": "https://github.com/msgpack/msgpack-javascript",
         "version": "3.1.3",
@@ -758,6 +750,10 @@
         "source_url": "https://github.com/google/flatbuffers",
         "version": "24.12.23",
         "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses @apache-fory/core with registered struct/list schemas and the bytes API."
       },
       "google-protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf-javascript",
@@ -829,7 +825,7 @@
       "fory": {
         "source_url": "https://github.com/apache/fory",
         "version": "1.3.0",
-        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol."
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory-kotlin module through ForyKotlin in native mode on Kotlin data classes."
       },
       "gson": {
         "source_url": "https://github.com/google/gson",
@@ -1057,11 +1053,6 @@
       }
     },
     "python": {
-      "fory": {
-        "source_url": "https://github.com/apache/fory",
-        "version": "1.7.4",
-        "specifics": "Apache Fory native binary serialization of registered Python dataclasses."
-      },
       "amazon-ion": {
         "source_url": "https://github.com/amazon-ion/ion-python",
         "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation."
@@ -1098,6 +1089,10 @@
       "flexbuffers": {
         "source_url": "https://github.com/google/flatbuffers",
         "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses pyfory in native mode on registered dataclasses."
       },
       "json": {
         "source_url": "https://github.com/python/cpython/tree/main/Lib/json",
@@ -1177,11 +1172,6 @@
       }
     },
     "rust": {
-      "fory": {
-        "source_url": "https://github.com/apache/fory",
-        "version": "1.7.4",
-        "specifics": "Apache Fory native binary serialization using the ForyStruct derive and a reused output buffer."
-      },
       "bincode": {
         "source_url": "https://github.com/bincode-org/bincode",
         "version": "2.0.1",
@@ -1206,6 +1196,10 @@
         "source_url": "https://github.com/google/flatbuffers",
         "version": "2.0.0",
         "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory crate with ForyStruct-derived serializers in native mode and a reused output buffer."
       },
       "minicbor": {
         "source_url": "https://github.com/twittner/minicbor",
@@ -1269,11 +1263,6 @@
       }
     },
     "swift": {
-      "fory": {
-        "source_url": "https://github.com/apache/fory",
-        "version": "1.7.4",
-        "specifics": "Apache Fory binary serialization using the ForyStruct macro on Swift value types."
-      },
       "BinaryCodable": {
         "source_url": "https://github.com/christophhagen/BinaryCodable",
         "version": "4.0.0",
@@ -1343,6 +1332,10 @@
         "source_url": "https://github.com/jpsim/Yams",
         "version": "5.4.0",
         "specifics": "Yams is a Swift wrapper around libyaml. YAML exists as a human-friendly config language. Yams is the usual Swift YAML library."
+      },
+      "fory": {
+        "source_url": "https://github.com/apache/fory",
+        "specifics": "Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses ForyStruct macro-generated serializers on Swift value types."
       },
       "protobuf-wire": {
         "source_url": "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/docs/swift/index.md",

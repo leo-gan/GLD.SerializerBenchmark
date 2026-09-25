@@ -136,7 +136,8 @@
       ],
       "py-ubjson": [
         "ubjson"
-      ]
+      ],
+      "fory": []
     },
     "javascript": {
       "JSON.stringify": [
@@ -193,7 +194,8 @@
       "v8-serializer": [],
       "devalue": [],
       "sia": [],
-      "bser": []
+      "bser": [],
+      "fory": []
     },
     "go": {
       "encoding/json": [
@@ -251,7 +253,8 @@
         "toml"
       ],
       "encoding/gob": [],
-      "kelindar/binary": []
+      "kelindar/binary": [],
+      "fory": []
     },
     "java": {
       "jackson": [
@@ -467,7 +470,8 @@
       "NetSerializer": [],
       "ServiceStack": [],
       "SharpSerializer": [],
-      "ZeroFormatter": []
+      "ZeroFormatter": [],
+      "fory": []
     },
     "rust": {
       "serde_json": [
@@ -508,7 +512,8 @@
       "nanoserde": [],
       "postcard": [],
       "speedy": [],
-      "rkyv": []
+      "rkyv": [],
+      "fory": []
     },
     "cpp": {
       "nlohmann_json": [
@@ -586,7 +591,8 @@
       "custom_binary": [],
       "yas": [],
       "zpp_bits": [],
-      "boost_serialization": []
+      "boost_serialization": [],
+      "fory": []
     },
     "swift": {
       "Foundation.JSONEncoder": [
@@ -629,7 +635,8 @@
         "plist"
       ],
       "XMLCoder": [],
-      "BinaryCodable": []
+      "BinaryCodable": [],
+      "fory": []
     },
     "php": {
       "json": [
@@ -678,7 +685,9 @@
       "serde.toml": [
         "toml"
       ],
-      "serde.msgpack": [],
+      "serde.msgpack": [
+        "msgpack"
+      ],
       "zig-msgpack": [
         "msgpack"
       ],
@@ -703,7 +712,9 @@
       "std.zon": [
         "zon"
       ],
-      "serde.zon": [],
+      "serde.zon": [
+        "zon"
+      ],
       "serde.xml": [],
       "comptime-bin": [],
       "s2s": []

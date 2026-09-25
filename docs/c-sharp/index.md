@@ -133,6 +133,10 @@ fastJSON (mgholam) is a small .NET JSON serializer. It was written to keep JSON 
 
 FlatSharp is a FlatBuffers implementation for .NET. FlatBuffers exists so readers can use serialized data without unpacking. FlatSharp generates C# from `.fbs` and times builder/parse on those tables.
 
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses Apache.Fory source-generated serializers; string mode includes Base64 and streams are adapted.
+
 #### [FsPickler](https://github.com/mbraceproject/FsPickler) · `5.3.2`
 
 FsPickler is an F#/.NET pickler for fast binary (and JSON) serialization of .NET objects. It was created in the MBrace project so distributed F# could ship graphs efficiently.

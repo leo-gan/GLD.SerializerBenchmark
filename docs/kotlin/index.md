@@ -103,7 +103,7 @@ FlatBuffers was created at Google so games and clients could access serialized d
 
 #### [fory](https://github.com/apache/fory) · `1.3.0`
 
-Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol.
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses the fory-kotlin module through ForyKotlin in native mode on Kotlin data classes.
 
 #### [gson](https://github.com/google/gson) · `2.14.0`
 

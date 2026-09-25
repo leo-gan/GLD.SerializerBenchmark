@@ -75,6 +75,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("c", "custom-binary"): "https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/c/src/ser_custom_binary.c",
     ("c", "libyaml"): "https://github.com/yaml/libyaml",
     # Python
+    ("python", "fory"): "https://github.com/apache/fory",
     ("python", "json"): "https://github.com/python/cpython/tree/main/Lib/json",
     ("python", "msgspec"): "https://github.com/jcrist/msgspec",
     ("python", "msgspec-msgpack"): "https://github.com/jcrist/msgspec",
@@ -95,6 +96,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("python", "newsmile"): "https://github.com/FasterXML/smile-format-specification",
     ("python", "plistlib"): "https://github.com/python/cpython/tree/main/Lib/plistlib.py",
     # JavaScript
+    ("javascript", "fory"): "https://github.com/apache/fory",
     ("javascript", "JSON.stringify"): "https://github.com/nodejs/node",
     ("javascript", "json-pack-msgpack"): "https://github.com/jsonjoy-com/json-pack",
     ("javascript", "bson"): "https://github.com/mongodb/js-bson",
@@ -103,6 +105,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("javascript", "v8-serializer"): "https://github.com/nodejs/node",
     ("javascript", "bser"): "https://github.com/facebook/watchman",
     # Go
+    ("go", "fory"): "https://github.com/apache/fory",
     ("go", "encoding/json"): "https://github.com/golang/go/tree/master/src/encoding/json",
     ("go", "protobuf"): "https://github.com/protocolbuffers/protobuf-go",
     ("go", "mongo-bson"): "https://github.com/mongodb/mongo-go-driver",
@@ -130,6 +133,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("kotlin", "fory"): "https://github.com/apache/fory",
     ("kotlin", "obor"): "https://github.com/orandja/obor",
     # C#
+    ("csharp", "fory"): "https://github.com/apache/fory",
     ("csharp", "System.Text.Json"): "https://github.com/dotnet/runtime",
     ("csharp", "Json.Net"): "https://github.com/JamesNK/Newtonsoft.Json",
     ("csharp", "Json.Net (Helper)"): "https://github.com/JamesNK/Newtonsoft.Json",
@@ -149,6 +153,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("csharp", "CsvHelper"): "https://github.com/JoshClose/CsvHelper",
     ("csharp", "Nerdbank.MessagePack"): "https://github.com/AArnott/Nerdbank.MessagePack",
     # Rust
+    ("rust", "fory"): "https://github.com/apache/fory",
     ("rust", "serde_json"): "https://github.com/serde-rs/json",
     ("rust", "simd-json"): "https://github.com/simd-lite/simd-json",
     ("rust", "sonic-rs"): "https://github.com/cloudwego/sonic-rs",
@@ -167,6 +172,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("rust", "speedy"): "https://github.com/koute/speedy",
     ("rust", "rkyv"): "https://github.com/rkyv/rkyv",
     # C++
+    ("cpp", "fory"): "https://github.com/apache/fory",
     ("cpp", "nlohmann_json"): "https://github.com/nlohmann/json",
     ("cpp", "nlohmann_cbor"): "https://github.com/nlohmann/json",
     ("cpp", "nlohmann_msgpack"): "https://github.com/nlohmann/json",
@@ -188,6 +194,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("cpp", "boost_serialization"): "https://github.com/boostorg/serialization",
     ("cpp", "yaml-cpp"): "https://github.com/jbeder/yaml-cpp",
     # Swift
+    ("swift", "fory"): "https://github.com/apache/fory",
     ("swift", "Foundation.JSONEncoder"): "https://github.com/apple/swift-foundation",
     ("swift", "Foundation.PropertyListEncoder"): "https://github.com/apple/swift-foundation",
     ("swift", "FlatBuffers"): "https://github.com/google/flatbuffers",
@@ -1409,6 +1416,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("c", "custom-binary"): "custom-binary",
     ("c", "libyaml"): "libyaml",
     ("python", "json"): "cpython-json",
+    ("python", "fory"): "fory",
     ("python", "orjson"): "orjson",
     ("python", "msgspec"): "msgspec",
     ("python", "msgspec-msgpack"): "msgspec",
@@ -1433,6 +1441,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "plistlib"): "plistlib",
     ("python", "py-ubjson"): "py-ubjson",
     ("javascript", "JSON.stringify"): "json-stringify",
+    ("javascript", "fory"): "fory",
     ("javascript", "fast-json-stringify"): "fast-json-stringify",
     ("javascript", "simdjson-parse+JSON.stringify"): "simdjson-js",
     ("javascript", "js-yaml"): "js-yaml",
@@ -1454,6 +1463,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("javascript", "sia"): "sia",
     ("javascript", "bser"): "bser",
     ("go", "encoding/json"): "go-json",
+    ("go", "fory"): "fory",
     ("go", "goccy/go-json"): "goccy-json",
     ("go", "jsoniter"): "jsoniter-go",
     ("go", "segmentio/encoding/json"): "segmentio-json",
@@ -1521,6 +1531,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("kotlin", "fory"): "fory",
     ("kotlin", "protostuff"): "protostuff",
     ("csharp", "System.Text.Json"): "stj",
+    ("csharp", "fory"): "fory",
     ("csharp", "Json.Net"): "newtonsoft",
     ("csharp", "Json.Net (Helper)"): "newtonsoft",
     ("csharp", "Jil"): "jil",
@@ -1561,6 +1572,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("csharp", "SharpSerializer"): "sharpserializer",
     ("csharp", "ZeroFormatter"): "zeroformatter",
     ("rust", "serde_json"): "serde-json",
+    ("rust", "fory"): "fory",
     ("rust", "simd-json"): "simd-json",
     ("rust", "sonic-rs"): "sonic-rs",
     ("rust", "serde_yaml"): "serde-yaml",
@@ -1578,6 +1590,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("rust", "speedy"): "speedy",
     ("rust", "rkyv"): "rkyv",
     ("cpp", "nlohmann_json"): "nlohmann",
+    ("cpp", "fory"): "fory",
     ("cpp", "nlohmann_cbor"): "nlohmann",
     ("cpp", "nlohmann_msgpack"): "nlohmann",
     ("cpp", "nlohmann_bson"): "nlohmann",
@@ -1608,6 +1621,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("cpp", "zpp_bits"): "zpp-bits",
     ("cpp", "boost_serialization"): "boost-ser",
     ("swift", "Foundation.JSONEncoder"): "foundation-json",
+    ("swift", "fory"): "fory",
     ("swift", "IkigaJSON"): "ikigajson",
     ("swift", "Yams"): "yams",
     ("swift", "SwiftCbor"): "swift-cbor",
@@ -1669,6 +1683,30 @@ SPEC_KEY: dict[tuple[str, str], str] = {
 
 # Extra sentence for a specific row (path / format variant).
 EXTRA: dict[tuple[str, str], str] = {
+    ("python", "fory"): (
+        "This row uses pyfory in native mode on registered dataclasses."
+    ),
+    ("javascript", "fory"): (
+        "This row uses @apache-fory/core with registered struct/list schemas and the bytes API."
+    ),
+    ("go", "fory"): (
+        "This row uses github.com/apache/fory/go/fory in native mode on registered structs and slices."
+    ),
+    ("kotlin", "fory"): (
+        "This row uses the fory-kotlin module through ForyKotlin in native mode on Kotlin data classes."
+    ),
+    ("csharp", "fory"): (
+        "This row uses Apache.Fory source-generated serializers; string mode includes Base64 and streams are adapted."
+    ),
+    ("rust", "fory"): (
+        "This row uses the fory crate with ForyStruct-derived serializers in native mode and a reused output buffer."
+    ),
+    ("cpp", "fory"): (
+        "This row uses FORY_STRUCT with registered C++ structs and vectors in native mode."
+    ),
+    ("swift", "fory"): (
+        "This row uses ForyStruct macro-generated serializers on Swift value types."
+    ),
     ("python", "msgspec-msgpack"): (
         "This row times the MessagePack encoder/decoder on the same Struct types."
     ),
