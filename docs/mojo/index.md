@@ -5,7 +5,7 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, Protocol Buffers, FlatBuffers, Avro, YAML, and MessagePack.
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, the leo-gan **gld-** libraries for JSON, CBOR, Protocol Buffers, FlatBuffers, Avro, YAML, and MessagePack, and Dagr (generated Mojo from the suite's Dagr schema).
 
 ## Runtime
 
@@ -16,14 +16,14 @@ Mojo compiles to **native machine code**. This suite targets **Mojo 1.0.0** on L
 | | This suite |
 |---|---|
 | Tools | Mojo **1.0.0** via `pixi` (`https://conda.modular.com/max`) |
-| Build | `pixi run mojo run -I src -I vendor/... src/main.mojo` |
+| Build | `pixi run mojo run -I src -I src/gen/dagr -I vendor/... src/main.mojo` |
 | Prepare | `./scripts/install-host-requirements.sh mojo` |
 | Run | `mojo/scripts/run-benchmarks.sh` |
 | Memory | Manual ownership / compiler-managed, not a tracing GC |
 
 ### What this suite runs
 
-The runner is timed in an optimized `mojo run` / `mojo build` path. EmberJson uses official reflection `serialize` / `deserialize`. ehsanmok/json times official `serialize_json` on suite types (v0.3.1 reflects `Int32` and `List[struct]` on the write path) except `telemetry`, which builds a `Value` tree because `serialize_json` mis-matches `List[Float64]`. Decode is `loads` plus a `Value` walk (`List[struct]` deserialize is still unsupported). CBOR and Avro time `encode` / `decode` on suite types that implement `CborDatum` / `AvroDatum`. Protobuf converts suite objects to generated messages **outside** the timer, then times `encode` / `decode`. FlatBuffers keeps one `Builder`. Timed serialize is `clear`, generated `pack`, and `finish`. Timed deserialize is `unpack` into the suite value.
+The runner is timed in an optimized `mojo run` / `mojo build` path. EmberJson uses official reflection `serialize` / `deserialize`. ehsanmok/json times official `serialize_json` on suite types (v0.3.1 reflects `Int32` and `List[struct]` on the write path) except `telemetry`, which builds a `Value` tree because `serialize_json` mis-matches `List[Float64]`. Decode is `loads` plus a `Value` walk (`List[struct]` deserialize is still unsupported). CBOR and Avro time `encode` / `decode` on suite types that implement `CborDatum` / `AvroDatum`. Protobuf converts suite objects to generated messages **outside** the timer, then times `encode` / `decode`. FlatBuffers keeps one `Builder`. Timed serialize is `clear`, generated `pack`, and `finish`. Timed deserialize is `unpack` into the suite value. Dagr keeps one generated `Builder` and `reset()`s it per instance; every graph encodes through its generated direct builder (no arena). Message and Strings go through the generated direct builder; Document, Telemetry and Event build the generated arena (one per call) and write it with the generated arena serializer, because the Mojo generator has no direct builder for node-ref or numeric arrays yet. Both steps are timed from the suite value. Timed deserialize is the generated lazy reader materialized into the suite value.
 
 ### What changes the numbers
 
@@ -62,6 +62,7 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [mojo-toml](https://github.com/DataBooth/mojo-toml) | Text | DataBooth/mojo-toml 0.9.1 | bytes only | `to_toml` / `parse` |
 | [gld-yaml](https://github.com/leo-gan/gld-yaml) | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.5.0 | bytes only | `yaml.encode` / `yaml.decode` on suite types |
 | [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) | Binary | leo-gan/gld-messagepack 0.3.0 | bytes only | WireWriter / WireReader |
+| [dagr](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.0 (generator) | bytes only | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`; generated direct builder into one reused `Builder` (`write_{root}_graph_direct`); lazy reader decode (`read_{root}_root`) |
 
 ### Specifics
 
@@ -89,7 +90,7 @@ gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf e
 
 #### [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) · `0.2.0`
 
-gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can take fields from the buffer without first copying the whole message into a new object. This row keeps one `Builder`, calls `clear` before each message, and times generated `pack` / `unpack` against the suite tables in `cpp/schemas/benchmark.fbs`.
+mojo-flatbuffers is a registered serializer in the mojo suite. This page links its upstream source; the language inventory table describes the timed call path.
 
 #### [mojo-avro](https://github.com/leo-gan/gld-avro) · `0.4.0`
 
@@ -107,6 +108,10 @@ gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a huma
 
 gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format.
 
+#### [dagr](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. Nodes here use the `packed` layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode.
+
 ### Call-path contract
 
 ```text
@@ -119,6 +124,7 @@ fidelity                         # untimed, float-tolerant
 ### Caveats
 
 - Stream mode is not claimed (`stream_policy: bytes_only`).
+- dagr's generated modules import each other by bare module name, so every Mojo build adds `-I src/gen/dagr`. Do not hand-edit `src/gen/dagr/`; regenerate with `dagr build` in `schemas/v2/dagr/`.
 - EmberJson 0.3.4 is the modular-community package. The newer `from_json` / `to_json` API on EmberJson main is not what this row times.
 - ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with mojo-avro’s `json` module. GPU/`max` is stubbed; the timed path is the default CPU parser. v0.3.1 added `Value.object()` / `Value.array()` so adapters no longer parse `"{}"` / `"[]"` per node. This suite times **v0.4.0**.
 - Apache Arrow (marrow) and Parquet are columnar file/table APIs, not object codecs for these fixtures.

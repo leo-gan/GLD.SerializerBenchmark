@@ -15,6 +15,7 @@ from bench.toml_ser import TomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
+from bench.dagr_ser import DagrSer
 
 
 def _contains(hay: String, needle: String) -> Bool:
@@ -192,6 +193,7 @@ def run() raises:
     var gldj = GldJsonSer()
     var yaml = YamlSer()
     var msgp = MsgpackSer()
+    var dagr = DagrSer()
     var names = List[String]()
     names.append(ember.name())
     names.append(ehsan.name())
@@ -203,6 +205,7 @@ def run() raises:
     names.append(gldj.name())
     names.append(yaml.name())
     names.append(msgp.name())
+    names.append(dagr.name())
     if ser_filter.byte_length() > 0:
         var filtered = List[String]()
         var ni = 0
@@ -265,6 +268,11 @@ def run() raises:
                     _ = yaml.serialize_bytes(fx)
                 elif nm == msgp.name():
                     _ = msgp.serialize_bytes(fx)
+                elif nm == dagr.name():
+                    if not dagr.supports(fx.type_id):
+                        ri += 1
+                        continue
+                    _ = dagr.serialize_bytes(fx)
                 else:
                     _ = toml.serialize_bytes(fx)
                 ready.append(nm)
@@ -396,6 +404,18 @@ def run() raises:
                             var buf = msgp.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = msgp.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == dagr.name():
+                            ver = dagr.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = dagr.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = dagr.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1

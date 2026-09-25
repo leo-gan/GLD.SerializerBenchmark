@@ -9,6 +9,7 @@ from bench.toml_ser import TomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
+from bench.dagr_ser import DagrSer
 
 
 def _roundtrip_all(type_id: String) raises:
@@ -24,6 +25,7 @@ def _roundtrip_all(type_id: String) raises:
     var gldj = GldJsonSer()
     var yaml = YamlSer()
     var msgp = MsgpackSer()
+    var dagr = DagrSer()
     if not ember.check(fx, ember.serialize_bytes(fx)):
         raise Error("emberjson fidelity " + type_id)
     if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
@@ -44,6 +46,8 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("gld-yaml fidelity " + type_id)
     if not msgp.check(fx, msgp.serialize_bytes(fx)):
         raise Error("mojo-msgpack fidelity " + type_id)
+    if not dagr.check(fx, dagr.serialize_bytes(fx)):
+        raise Error("dagr fidelity " + type_id)
 
 
 def _ehsan_batch(type_id: String) raises:
@@ -62,6 +66,17 @@ def _flatbuffers_batch(type_id: String) raises:
         raise Error("flatbuffers fidelity n=100 " + type_id)
 
 
+def _dagr_batch(type_id: String) raises:
+    var cfg = TypeConfig()
+    var fx = make_cell(type_id, cfg, UInt64(42), 100, "")
+    var dagr = DagrSer()
+    # Twice: the second call reuses the builder and the size hint.
+    if not dagr.check(fx, dagr.serialize_bytes(fx)):
+        raise Error("dagr fidelity n=100 " + type_id)
+    if not dagr.check(fx, dagr.serialize_bytes(fx)):
+        raise Error("dagr fidelity n=100 (reuse) " + type_id)
+
+
 def main() raises:
     _roundtrip_all("message")
     _roundtrip_all("document")
@@ -75,4 +90,9 @@ def main() raises:
     _flatbuffers_batch("strings")
     _flatbuffers_batch("event")
     _flatbuffers_batch("message")
+    _dagr_batch("message")
+    _dagr_batch("document")
+    _dagr_batch("telemetry")
+    _dagr_batch("strings")
+    _dagr_batch("event")
     print("ok")
