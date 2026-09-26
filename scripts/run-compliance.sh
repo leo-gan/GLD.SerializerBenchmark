@@ -381,7 +381,8 @@ if want_lang mojo && command -v pixi >/dev/null 2>&1 && [[ -f "$PROJECT_ROOT/moj
         pixi run mojo build \
             -I src -I vendor/cbor_src -I vendor/pb_src -I vendor/toml_src \
             -I vendor/ehsanmok_src -I vendor/gldjson_src -I vendor/yaml_src \
-            -I vendor/msgpack_src -I vendor/fb_src \
+            -I vendor/msgpack_src -I vendor/fb_src -I vendor/avro_src \
+            -I vendor/emberjson_src -I vendor/bson_src \
             src/compliance.mojo -o "$MOJO_BIN"
     ) || true
     if [[ -x "$MOJO_BIN" ]]; then

@@ -5,17 +5,17 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, the leo-gan **gld-** libraries for JSON, CBOR, Protocol Buffers, FlatBuffers, Avro, YAML, and MessagePack, and Dagr (generated Mojo from the suite's Dagr schema).
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, and MessagePack, and Dagr (generated Mojo from the suite's Dagr schema).
 
 ## Runtime
 
 ### What it is
 
-Mojo compiles to **native machine code**. This suite targets **Mojo 1.0.0** on Linux x86_64 through a `pixi` environment (`mojo/pixi.toml`).
+Mojo compiles to **native machine code**. This suite targets **Mojo 1.1.0** on Linux x86_64 through a `pixi` environment (`mojo/pixi.toml`).
 
 | | This suite |
 |---|---|
-| Tools | Mojo **1.0.0** via `pixi` (`https://conda.modular.com/max`) |
+| Tools | Mojo **1.1.0** via `pixi` (`https://conda.modular.com/max`) |
 | Build | `pixi run mojo run -I src -I src/gen/dagr -I vendor/... src/main.mojo` |
 | Prepare | `./scripts/install-host-requirements.sh mojo` |
 | Run | `mojo/scripts/run-benchmarks.sh` |
@@ -27,13 +27,13 @@ The runner is timed in an optimized `mojo run` / `mojo build` path. EmberJson us
 
 ### What changes the numbers
 
-Mojo 1.0 is a young compiler. A nightly compiler or a different pixi lock can move these numbers a lot. CBOR and Protobuf are compiled from vendored sources with renamed internal packages (`cbor_runtime`, `pb_runtime`, …) so they can share one process with mojo-avro, which owns the conda `runtime` / `wire` / `json` module names.
+Mojo 1.1 is a young compiler. A nightly compiler or a different pixi lock can move these numbers a lot. The gld libraries, including Avro, are compiled from vendored sources with renamed internal packages (`cbor_runtime`, `pb_runtime`, `avro_runtime`, …) so they can share one process.
 
 ### Suite-specific gotchas
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native BSON or XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is not published yet, so TOML stays on DataBooth/mojo-toml.
+There is no native XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is not published yet, so TOML stays on DataBooth/mojo-toml. BSON is `mojo-bson` (gld-bson 0.1.0), the latest release that builds on Mojo 1.1.
 
 These times cannot be ranked against another language.
 
@@ -66,6 +66,7 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.0 (generator) | bytes only | Same schema, `regular` layout (`<Type>RegularGraph`); generated arena + `write_{root}_graph` into a reused `Builder`; lazy reader decode |
 | [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.0 (generator) | bytes only | Same schema, `frozen` layout (`<Type>FrozenGraph`); generated arena + `write_{root}_graph` into a reused `Builder`; lazy reader decode |
 | [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.0 (generator) | bytes only | Same schema, `frozen+packed` layout (`<Type>FrozenPackedGraph`); generated direct builder into one reused `Builder`; lazy reader decode |
+| [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
 
 ### Specifics
 
@@ -111,6 +112,10 @@ gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a huma
 
 gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format.
 
+#### [mojo-bson](https://github.com/leo-gan/gld-bson) · `0.1.0`
+
+gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types. Package 0.1.0 is the latest release that builds on Mojo 1.1.
+
 #### [dagr](https://codeberg.org/mzaks/dagr)
 
 Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The schema emits every suite type in all four node layouts (`spec/16-choosing-a-node-layout.md`), one row each: `dagr-packed`, `dagr-regular` (vtable, evolvable), `dagr-frozen` (fixed struct, no evolution) and `dagr-frozen-packed` (bitset + positional inline, no evolution). The timed encode path is the generated direct builder where the generator has one (packed, frozen+packed) and the generated arena + arena serializer otherwise (regular, frozen); decode is always the lazy reader materializing the domain value.
@@ -129,9 +134,9 @@ fidelity                         # untimed, float-tolerant
 - Stream mode is not claimed (`stream_policy: bytes_only`).
 - dagr's generated modules import each other by bare module name, so every Mojo build adds `-I src/gen/dagr`. Do not hand-edit `src/gen/dagr/`; regenerate with `dagr build` in `schemas/v2/dagr/`.
 - EmberJson 0.3.4 is the modular-community package. The newer `from_json` / `to_json` API on EmberJson main is not what this row times.
-- ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with mojo-avro’s `json` module. GPU/`max` is stubbed; the timed path is the default CPU parser. v0.3.1 added `Value.object()` / `Value.array()` so adapters no longer parse `"{}"` / `"[]"` per node. This suite times **v0.4.0**.
+- ehsanmok/json is vendored as `ehsanmok_json` so it does not collide with the other JSON packages. GPU/`max` is stubbed; the timed path is the default CPU parser. v0.3.1 added `Value.object()` / `Value.array()` so adapters no longer parse `"{}"` / `"[]"` per node. This suite times **v0.4.0**.
 - Apache Arrow (marrow) and Parquet are columnar file/table APIs, not object codecs for these fixtures.
-- `f0cii/mojo-csv` last moved in 2024 (Magic-era nightly) and does not compile on Mojo 1.0.
+- `f0cii/mojo-csv` last moved in 2024 (Magic-era nightly) and does not compile on Mojo 1.1.
 - `forfudan/decimojo` is a decimal-math library. Its old tomlmojo parser is not a standalone serializer.
 
 Also: [`mojo/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/mojo/README.md).

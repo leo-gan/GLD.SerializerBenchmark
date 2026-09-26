@@ -52,9 +52,9 @@ struct NodeKey(Copyable, Movable, ImplicitlyCopyable, Hashable, Equatable):
         return not (self == other)
 
     def __hash__[H: Hasher](self, mut hasher: H):
-        hasher.update(self.t)
-        hasher.update(self.a)
-        hasher.update(self.i)
+        self.t.__hash__(hasher)
+        self.a.__hash__(hasher)
+        self.i.__hash__(hasher)
 
 
 # Visited-set key for cross-arena equality: a (left, right) node pair.
@@ -75,12 +75,12 @@ struct EqPair(Copyable, Movable, ImplicitlyCopyable, Hashable, Equatable):
         return not (self == other)
 
     def __hash__[H: Hasher](self, mut hasher: H):
-        hasher.update(self.lt)
-        hasher.update(self.la)
-        hasher.update(self.li)
-        hasher.update(self.rt)
-        hasher.update(self.ra)
-        hasher.update(self.ri)
+        self.lt.__hash__(hasher)
+        self.la.__hash__(hasher)
+        self.li.__hash__(hasher)
+        self.rt.__hash__(hasher)
+        self.ra.__hash__(hasher)
+        self.ri.__hash__(hasher)
 
 
 @fieldwise_init
@@ -157,16 +157,16 @@ struct DocumentMeta[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable,
         var i = self._i()
         var key = NodeKey(0, self._aid(), i)
         if key in seen:
-            hasher.update(UInt64(0))
+            UInt64(0).__hash__(hasher)
             return
         seen.add(key)
-        hasher.update(UInt64(0))
+        UInt64(0).__hash__(hasher)
         ref _o0 = self._a[]._arr_document_meta[i].region
         if _o0:
-            hasher.update(_o0.value())
+            _o0.value().__hash__(hasher)
         ref _o1 = self._a[]._arr_document_meta[i].version
         if _o1:
-            hasher.update(_o1.value())
+            _o1.value().__hash__(hasher)
     def __eq__(self, other: Self) -> Bool:
         return self.equals(other)
     def __ne__(self, other: Self) -> Bool:
@@ -253,19 +253,19 @@ struct DocumentItem[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable,
         var i = self._i()
         var key = NodeKey(1, self._aid(), i)
         if key in seen:
-            hasher.update(UInt64(0))
+            UInt64(0).__hash__(hasher)
             return
         seen.add(key)
-        hasher.update(UInt64(1))
+        UInt64(1).__hash__(hasher)
         ref _o0 = self._a[]._arr_document_item[i].sku
         if _o0:
-            hasher.update(_o0.value())
+            _o0.value().__hash__(hasher)
         ref _o1 = self._a[]._arr_document_item[i].qty
         if _o1:
-            hasher.update(_o1.value())
+            _o1.value().__hash__(hasher)
         ref _o2 = self._a[]._arr_document_item[i].price_minor
         if _o2:
-            hasher.update(_o2.value())
+            _o2.value().__hash__(hasher)
     def __eq__(self, other: Self) -> Bool:
         return self.equals(other)
     def __ne__(self, other: Self) -> Bool:
@@ -368,16 +368,16 @@ struct Document[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Wri
         var i = self._i()
         var key = NodeKey(2, self._aid(), i)
         if key in seen:
-            hasher.update(UInt64(0))
+            UInt64(0).__hash__(hasher)
             return
         seen.add(key)
-        hasher.update(UInt64(2))
+        UInt64(2).__hash__(hasher)
         ref _o0 = self._a[]._arr_document[i].id
         if _o0:
-            hasher.update(_o0.value())
+            _o0.value().__hash__(hasher)
         ref _o1 = self._a[]._arr_document[i].status
         if _o1:
-            hasher.update(_o1.value())
+            _o1.value().__hash__(hasher)
         var _r2 = self.meta()
         if _r2:
             _r2.value()._hash_cyc(hasher, seen)

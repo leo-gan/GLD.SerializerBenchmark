@@ -1332,7 +1332,7 @@ languages:
     log_dir: logs/mojo
     time_unit: nanoseconds
     docs_dir: docs/mojo
-    min_mojo_version: "1.0.0"
+    min_mojo_version: "1.1.0"
     stream_policy: bytes_only
     serializers:
       - name: EmberJson
@@ -1405,6 +1405,11 @@ languages:
         package: dagr (generator 2026.9.0, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr, frozen+packed layout — <Type>FrozenPackedGraph from schemas/v2/dagr/schema.py"
         optimal_api: "Direct value structs → write_{root}_graph_direct into one reused Builder; lazy {Node}Accessor decode"
+      - name: mojo-bson
+        category: binary
+        package: leo-gan/gld-bson
+        rationale: "Pure-Mojo BSON 1.0/1.1 via WireWriter / WireReader (last release that builds on Mojo 1.1)"
+        optimal_api: "bson WireWriter / WireReader on suite types (vendored as bson_*)"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

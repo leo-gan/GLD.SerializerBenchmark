@@ -2,7 +2,7 @@
 # Refresh vendored Mojo libraries and rewrite colliding package names.
 # Prefers sibling checkouts next to this repo (…/GLD/gld-json, …) and
 # falls back to a shallow git clone. Run from repo root or mojo/.
-# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src}.
+# Commits should keep vendor/{gldjson_src,cbor_src,pb_src,toml_src,yaml_src,msgpack_src,ehsanmok_src,fb_src,avro_src}.
 set -euo pipefail
 MOJO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$MOJO_DIR"
@@ -41,6 +41,8 @@ acquire gld-protobuf "$tmp/gld-protobuf" https://github.com/leo-gan/gld-protobuf
 acquire gld-yaml "$tmp/gld-yaml" https://github.com/leo-gan/gld-yaml.git
 acquire gld-messagepack "$tmp/gld-messagepack" https://github.com/leo-gan/gld-messagepack.git
 acquire gld-flatbuffers "$tmp/gld-flatbuffers" https://github.com/leo-gan/gld-flatbuffers.git
+acquire gld-avro "$tmp/gld-avro" https://github.com/leo-gan/gld-avro.git
+acquire gld-bson "$tmp/gld-bson" https://github.com/leo-gan/gld-bson.git
 # DataBooth TOML is not a leo-gan sibling; clone (or reuse a sibling if present).
 if [[ -d "$SIBLING_ROOT/mojo-toml/src/toml" ]]; then
   echo "[INFO] using sibling $SIBLING_ROOT/mojo-toml"
@@ -154,6 +156,30 @@ rewrite_tree(
     },
 )
 rewrite_tree(
+    src_root / "gld-bson" / "src",
+    mojo / "vendor" / "bson_src",
+    {
+        "runtime": "bson_runtime",
+        "wire": "bson_wire",
+        "schema": "bson_schema",
+        "codegen": "bson_codegen",
+        "bson": "bson_lib",
+    },
+)
+rewrite_tree(
+    src_root / "gld-avro" / "src",
+    mojo / "vendor" / "avro_src",
+    {
+        "runtime": "avro_runtime",
+        "wire": "avro_wire",
+        "schema": "avro_schema",
+        "json": "avro_json",
+        "deflate": "avro_deflate",
+        "codegen": "avro_codegen",
+        "avro": "avro",
+    },
+)
+rewrite_tree(
     src_root / "gld-flatbuffers" / "src",
     mojo / "vendor" / "fb_src",
     {
@@ -172,6 +198,12 @@ ej_dest = mojo / "vendor" / "ehsanmok_src" / "ehsanmok_json"
 if ej_dest.exists():
     shutil.rmtree(ej_dest)
 shutil.copytree(src_root / "ehsanmok-json" / "json", ej_dest)
+# Mojo 1.1 removed the InlineArray alias. The v0.4.0 tag still uses it.
+for path in ej_dest.rglob("*.mojo"):
+    text = path.read_text(encoding="utf-8")
+    updated = text.replace("InlineArray", "Array")
+    if updated != text:
+        path.write_text(updated, encoding="utf-8")
 # GPU path needs Modular `max`; this harness times the CPU parser only.
 (ej_dest / "gpu" / "__init__.mojo").write_text(
     """# GPU backends require Modular `max`. This harness times the default

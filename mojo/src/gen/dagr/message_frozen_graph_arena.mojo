@@ -52,9 +52,9 @@ struct NodeKey(Copyable, Movable, ImplicitlyCopyable, Hashable, Equatable):
         return not (self == other)
 
     def __hash__[H: Hasher](self, mut hasher: H):
-        hasher.update(self.t)
-        hasher.update(self.a)
-        hasher.update(self.i)
+        self.t.__hash__(hasher)
+        self.a.__hash__(hasher)
+        self.i.__hash__(hasher)
 
 
 # Visited-set key for cross-arena equality: a (left, right) node pair.
@@ -75,12 +75,12 @@ struct EqPair(Copyable, Movable, ImplicitlyCopyable, Hashable, Equatable):
         return not (self == other)
 
     def __hash__[H: Hasher](self, mut hasher: H):
-        hasher.update(self.lt)
-        hasher.update(self.la)
-        hasher.update(self.li)
-        hasher.update(self.rt)
-        hasher.update(self.ra)
-        hasher.update(self.ri)
+        self.lt.__hash__(hasher)
+        self.la.__hash__(hasher)
+        self.li.__hash__(hasher)
+        self.rt.__hash__(hasher)
+        self.ra.__hash__(hasher)
+        self.ri.__hash__(hasher)
 
 
 @fieldwise_init
@@ -214,34 +214,34 @@ struct Message[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writ
         var i = self._i()
         var key = NodeKey(0, self._aid(), i)
         if key in seen:
-            hasher.update(UInt64(0))
+            UInt64(0).__hash__(hasher)
             return
         seen.add(key)
-        hasher.update(UInt64(0))
+        UInt64(0).__hash__(hasher)
         ref _o0 = self._a[]._arr_message[i].f_bool
         if _o0:
-            hasher.update(_o0.value())
+            _o0.value().__hash__(hasher)
         ref _o1 = self._a[]._arr_message[i].f_int32
         if _o1:
-            hasher.update(_o1.value())
+            _o1.value().__hash__(hasher)
         ref _o2 = self._a[]._arr_message[i].f_int64
         if _o2:
-            hasher.update(_o2.value())
+            _o2.value().__hash__(hasher)
         ref _o3 = self._a[]._arr_message[i].f_float64
         if _o3:
-            hasher.update(String(_o3.value()))
+            String(_o3.value()).__hash__(hasher)
         ref _o4 = self._a[]._arr_message[i].f_string
         if _o4:
-            hasher.update(_o4.value())
+            _o4.value().__hash__(hasher)
         ref _o5 = self._a[]._arr_message[i].f_bool_2
         if _o5:
-            hasher.update(_o5.value())
+            _o5.value().__hash__(hasher)
         ref _o6 = self._a[]._arr_message[i].f_int32_2
         if _o6:
-            hasher.update(_o6.value())
+            _o6.value().__hash__(hasher)
         ref _o7 = self._a[]._arr_message[i].f_string_2
         if _o7:
-            hasher.update(_o7.value())
+            _o7.value().__hash__(hasher)
     def __eq__(self, other: Self) -> Bool:
         return self.equals(other)
     def __ne__(self, other: Self) -> Bool:

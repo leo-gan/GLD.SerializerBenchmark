@@ -52,9 +52,9 @@ struct NodeKey(Copyable, Movable, ImplicitlyCopyable, Hashable, Equatable):
         return not (self == other)
 
     def __hash__[H: Hasher](self, mut hasher: H):
-        hasher.update(self.t)
-        hasher.update(self.a)
-        hasher.update(self.i)
+        self.t.__hash__(hasher)
+        self.a.__hash__(hasher)
+        self.i.__hash__(hasher)
 
 
 # Visited-set key for cross-arena equality: a (left, right) node pair.
@@ -75,12 +75,12 @@ struct EqPair(Copyable, Movable, ImplicitlyCopyable, Hashable, Equatable):
         return not (self == other)
 
     def __hash__[H: Hasher](self, mut hasher: H):
-        hasher.update(self.lt)
-        hasher.update(self.la)
-        hasher.update(self.li)
-        hasher.update(self.rt)
-        hasher.update(self.ra)
-        hasher.update(self.ri)
+        self.lt.__hash__(hasher)
+        self.la.__hash__(hasher)
+        self.li.__hash__(hasher)
+        self.rt.__hash__(hasher)
+        self.ra.__hash__(hasher)
+        self.ri.__hash__(hasher)
 
 
 @fieldwise_init
@@ -125,12 +125,12 @@ struct Strings[o: Origin[mut=False]](Copyable, Movable, ImplicitlyCopyable, Writ
         var i = self._i()
         var key = NodeKey(0, self._aid(), i)
         if key in seen:
-            hasher.update(UInt64(0))
+            UInt64(0).__hash__(hasher)
             return
         seen.add(key)
-        hasher.update(UInt64(0))
+        UInt64(0).__hash__(hasher)
         for _i0 in range(len(self._a[]._arr_strings[i].items)):
-            hasher.update(self._a[]._arr_strings[i].items[_i0])
+            self._a[]._arr_strings[i].items[_i0].__hash__(hasher)
     def __eq__(self, other: Self) -> Bool:
         return self.equals(other)
     def __ne__(self, other: Self) -> Bool:

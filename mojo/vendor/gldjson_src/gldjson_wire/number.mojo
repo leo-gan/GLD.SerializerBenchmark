@@ -541,7 +541,7 @@ def parse_int[
 
 @always_inline
 def _pow10f(k: Int) -> Float64:
-    """EmberJson POWER_OF_TEN values. If-chain: InlineArray needs materialize."""
+    """EmberJson POWER_OF_TEN values. If-chain: Array needs materialize."""
     if k == 0:
         return 1.0
     if k == 1:

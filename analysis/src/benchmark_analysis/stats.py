@@ -856,8 +856,11 @@ def _summarize_series(
     out[f"{prefix}_min_ns"] = float(np.min(arr))
     out[f"{prefix}_max_ns"] = float(np.max(arr))
 
-    for p in cfg.get("report_percentiles", [5, 25, 50, 75, 95, 99]):
-        out[f"{prefix}_p{int(p)}_ns"] = float(np.percentile(arr, p))
+    percentiles = list(cfg.get("report_percentiles", [5, 25, 50, 75, 95, 99]))
+    if percentiles:
+        at = np.percentile(arr, percentiles)
+        for p, value in zip(percentiles, at):
+            out[f"{prefix}_p{int(p)}_ns"] = float(value)
 
     boot_cfg = cfg.get("bootstrap") or {}
     if boot_cfg.get("enabled", True) and len(arr) >= cfg.get("min_samples_for_inference", 5):

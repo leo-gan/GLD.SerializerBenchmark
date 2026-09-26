@@ -760,6 +760,9 @@
       "mojo-msgpack": [
         "msgpack"
       ],
+      "mojo-bson": [
+        "bson"
+      ],
       "gld-yaml": [
         "yaml"
       ],

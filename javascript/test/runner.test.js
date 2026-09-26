@@ -18,6 +18,17 @@ test('B-1 schedule golden vector A,B,C → C,B,A', () => {
   assert.deepEqual(goldenPermutation(), ['C', 'B', 'A']);
 });
 
+test('deepEqual covers null, missing keys, and array length', () => {
+  assert.equal(deepEqual(null, null), true);
+  assert.equal(deepEqual(null, undefined), false);
+  assert.equal(deepEqual(undefined, undefined), true);
+  assert.equal(deepEqual([1, 2], [1, 2, 3]), false);
+  assert.equal(deepEqual([1, null], [1, undefined]), false);
+  assert.equal(deepEqual({ a: 1, b: 2 }, { b: 2, a: 1 }), true);
+  assert.equal(deepEqual({ a: 1 }, { a: 1, b: 2 }), false);
+  assert.equal(deepEqual({ a: 1 }, { a: 1, b: undefined }), false);
+});
+
 test('V2 fixtures are deterministic for seed 42', () => {
   const a = allFixturesV2(42);
   const b = allFixturesV2(42);

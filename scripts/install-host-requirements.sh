@@ -359,7 +359,7 @@ install_mojo() {
   else
     echo "[OK] pixi already present: $(pixi --version 2>/dev/null | head -1)"
   fi
-  echo "[INFO] pixi install in mojo/ (Mojo 1.0 + EmberJson + mojo-avro)..."
+  echo "[INFO] pixi install in mojo/ (Mojo 1.1)..."
   (cd "$PROJECT_ROOT/mojo" && pixi install)
   echo "[OK] $(cd "$PROJECT_ROOT/mojo" && pixi run mojo --version)"
 }

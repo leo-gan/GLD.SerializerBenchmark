@@ -13,6 +13,7 @@ from bench.dagr_ser import DagrSer
 from bench.dagr_regular_ser import DagrRegularSer
 from bench.dagr_frozen_ser import DagrFrozenSer
 from bench.dagr_frozen_packed_ser import DagrFrozenPackedSer
+from bench.bson_ser import BsonSer
 
 
 def _roundtrip_all(type_id: String) raises:
@@ -29,6 +30,7 @@ def _roundtrip_all(type_id: String) raises:
     var yaml = YamlSer()
     var msgp = MsgpackSer()
     var dagr = DagrSer()
+    var bson = BsonSer()
     if not ember.check(fx, ember.serialize_bytes(fx)):
         raise Error("emberjson fidelity " + type_id)
     if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
@@ -60,6 +62,8 @@ def _roundtrip_all(type_id: String) raises:
     var dagr_fp = DagrFrozenPackedSer()
     if not dagr_fp.check(fx, dagr_fp.serialize_bytes(fx)):
         raise Error("dagr-frozen-packed fidelity " + type_id)
+    if not bson.check(fx, bson.serialize_bytes(fx)):
+        raise Error("mojo-bson fidelity " + type_id)
 
 
 def _ehsan_batch(type_id: String) raises:

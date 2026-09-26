@@ -19,6 +19,7 @@ from bench.dagr_ser import DagrSer
 from bench.dagr_regular_ser import DagrRegularSer
 from bench.dagr_frozen_ser import DagrFrozenSer
 from bench.dagr_frozen_packed_ser import DagrFrozenPackedSer
+from bench.bson_ser import BsonSer
 
 
 def _contains(hay: String, needle: String) -> Bool:
@@ -200,6 +201,7 @@ def run() raises:
     var dagr_reg = DagrRegularSer()
     var dagr_frz = DagrFrozenSer()
     var dagr_fp = DagrFrozenPackedSer()
+    var bson = BsonSer()
     var names = List[String]()
     names.append(ember.name())
     names.append(ehsan.name())
@@ -210,6 +212,7 @@ def run() raises:
     names.append(toml.name())
     names.append(gldj.name())
     names.append(yaml.name())
+    names.append(bson.name())
     names.append(msgp.name())
     names.append(dagr.name())
     names.append(dagr_reg.name())
@@ -297,6 +300,8 @@ def run() raises:
                         ri += 1
                         continue
                     _ = dagr_fp.serialize_bytes(fx)
+                elif nm == bson.name():
+                    _ = bson.serialize_bytes(fx)
                 else:
                     _ = toml.serialize_bytes(fx)
                 ready.append(nm)
@@ -476,6 +481,18 @@ def run() raises:
                             var buf = dagr_fp.serialize_bytes(fx)
                             var t1 = Int(perf_counter_ns())
                             var back = dagr_fp.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == bson.name():
+                            ver = bson.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = bson.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = bson.deserialize_bytes(fx, buf)
                             var t2 = Int(perf_counter_ns())
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1
