@@ -62,10 +62,10 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 | [mojo-toml](https://github.com/DataBooth/mojo-toml) | Text | DataBooth/mojo-toml 0.9.1 | bytes only | `to_toml` / `parse` |
 | [gld-yaml](https://github.com/leo-gan/gld-yaml) | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.5.0 | bytes only | `yaml.encode` / `yaml.decode` on suite types |
 | [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) | Binary | leo-gan/gld-messagepack 0.3.0 | bytes only | WireWriter / WireReader |
-| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.0 (generator) | bytes only | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`; generated direct builder into one reused `Builder` (`write_{root}_graph_direct`); lazy reader decode (`read_{root}_root`) |
-| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.0 (generator) | bytes only | Same schema, `regular` layout (`<Type>RegularGraph`); generated arena + `write_{root}_graph` into a reused `Builder`; lazy reader decode |
-| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.0 (generator) | bytes only | Same schema, `frozen` layout (`<Type>FrozenGraph`); generated arena + `write_{root}_graph` into a reused `Builder`; lazy reader decode |
-| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.0 (generator) | bytes only | Same schema, `frozen+packed` layout (`<Type>FrozenPackedGraph`); generated direct builder into one reused `Builder`; lazy reader decode |
+| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.2 (generator) | bytes only | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`; generated direct builder into one reused `Builder` (`write_{root}_graph_direct`); lazy reader decode (`read_{root}_root`) |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.2 (generator) | bytes only | Same schema, `regular` layout (`<Type>RegularGraph`); generated arena + `write_{root}_graph` into a reused `Builder`; lazy reader decode |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.2 (generator) | bytes only | Same schema, `frozen` layout (`<Type>FrozenGraph`); generated arena + `write_{root}_graph` into a reused `Builder`; lazy reader decode |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | dagr 2026.9.2 (generator) | bytes only | Same schema, `frozen+packed` layout (`<Type>FrozenPackedGraph`); generated direct builder into one reused `Builder`; lazy reader decode |
 | [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
 
 ### Specifics

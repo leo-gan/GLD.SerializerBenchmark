@@ -159,7 +159,7 @@ public final class DagrSerializer: BenchSerializer {
     }
 
     /// Generator version from the committed receipt
-    /// (`provenance.tool_version: "dagr 2026.9.0"` → `2026.9.0`).
+    /// (`provenance.tool_version: "dagr 2026.9.2"` → `2026.9.2`).
     static func receiptVersion() -> String {
         let rel = "schemas/v2/dagr/dagr.lock.json"
         let candidates = [

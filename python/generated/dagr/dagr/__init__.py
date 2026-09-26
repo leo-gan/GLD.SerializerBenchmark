@@ -7,4 +7,4 @@ imports nothing so that the shipped copy of the package inside a ``dagr build --
 python`` output stays self-contained.
 """
 
-__version__ = "2026.9.1"
+__version__ = "2026.9.2"

@@ -213,8 +213,8 @@ struct DagrFrozenPackedSer(Movable):
     var _hint: Int   # last output size: pre-reserves the batch output buffer
 
     def __init__(out self):
-        # Generator version from schemas/v2/dagr/dagr.lock.json ("tool_version": "dagr 2026.9.0").
-        self.version = "2026.9.0"
+        # Generator version from schemas/v2/dagr/dagr.lock.json ("tool_version": "dagr 2026.9.2").
+        self.version = "2026.9.2"
         self._b = Builder[_VT](hint=64)
         self._hint = 0
 

@@ -82,7 +82,7 @@ var (
 )
 
 // dagrToolVersion is the generator version recorded in the committed receipt
-// schemas/v2/dagr/dagr.lock.json (provenance.tool_version "dagr 2026.9.0" → "2026.9.0") — the
+// schemas/v2/dagr/dagr.lock.json (provenance.tool_version "dagr 2026.9.2" → "2026.9.2") — the
 // Go analogue of rust/build.rs's DAGR_VERSION. The generated code is vendored as a local
 // module, so build info carries no version for it. go:embed cannot reach outside the Go
 // module, so the receipt is read once at runtime from the repository root (the runner

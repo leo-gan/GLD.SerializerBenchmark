@@ -2301,7 +2301,7 @@
     "../../../mojo/src/gen/dagr/telemetry_regular_graph_reader.mojo": "sha256:6bcd13a868537e85ae1b74ead68c1c4bdc5d3990236a01c78dcb6e0bafe849b5",
     "../../../mojo/src/gen/dagr/telemetry_regular_graph_restore.mojo": "sha256:57950987e8bc5ea6268dc9fa5d503e01c577378a8db0fa67001263941c2c202a",
     "../../../mojo/src/gen/dagr/telemetry_regular_graph_serde.mojo": "sha256:d3ae378c87b07ab50b5fb826a219c57ec12e41a5359572635950dce28ab4b797",
-    "../../../python/generated/dagr/dagr/__init__.py": "sha256:c4a0ced01df81da27c6d18a27e6b9990c8f978b480e7e7d5ed75010d16448d25",
+    "../../../python/generated/dagr/dagr/__init__.py": "sha256:5da21204b3cf0d40e6454ffa56fc9b2fa46a3389d7b23b849ec79c532bdf9b30",
     "../../../python/generated/dagr/dagr/codegen/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "../../../python/generated/dagr/dagr/codegen/shared.py": "sha256:f6a0f9442d3d65ffd25ab80274c059a2bbfa03fd8eba520e3dcb8b01dff7aa97",
     "../../../python/generated/dagr/dagr/config.py": "sha256:56664649f1e67e7e7fe10ce9d59e302e017b4ee30658d9b04c9ba5cf8a39d585",
@@ -2435,9 +2435,9 @@
   },
   "provenance": {
     "command": "dagr build",
-    "generated_at": "2026-09-26T06:08:26.453367+00:00",
+    "generated_at": "2026-09-26T06:59:24.920393+00:00",
     "host": null,
-    "tool_version": "dagr 2026.9.1"
+    "tool_version": "dagr 2026.9.2"
   },
   "receipt_version": 1,
   "targets": [

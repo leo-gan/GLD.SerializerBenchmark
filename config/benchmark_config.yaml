@@ -1387,22 +1387,22 @@ languages:
         optimal_api: "msgpack WireWriter / WireReader on suite types (vendored as msgpack_*)"
       - name: dagr-packed
         category: schema
-        package: dagr (generator 2026.9.0, https://codeberg.org/mzaks/dagr)
+        package: dagr (generator 2026.9.2, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr data-graph format; Mojo generated from schemas/v2/dagr/schema.py (all nodes packed, Telemetry values raw)"
         optimal_api: "Reused Builder; generated direct builder (write_{root}_graph_direct) for all types; lazy {Node}Accessor decode"
       - name: dagr-regular
         category: schema
-        package: dagr (generator 2026.9.0, https://codeberg.org/mzaks/dagr)
+        package: dagr (generator 2026.9.2, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr, regular (vtable) layout — <Type>RegularGraph from schemas/v2/dagr/schema.py"
         optimal_api: "Generated arena + write_{root}_graph into a reused per-graph Builder (no direct builder for regular); lazy {Node}Accessor decode"
       - name: dagr-frozen
         category: schema
-        package: dagr (generator 2026.9.0, https://codeberg.org/mzaks/dagr)
+        package: dagr (generator 2026.9.2, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr, frozen layout — <Type>FrozenGraph from schemas/v2/dagr/schema.py"
         optimal_api: "Generated arena + write_{root}_graph into a reused Builder (no direct builder for frozen); lazy {Node}Accessor decode"
       - name: dagr-frozen-packed
         category: schema
-        package: dagr (generator 2026.9.0, https://codeberg.org/mzaks/dagr)
+        package: dagr (generator 2026.9.2, https://codeberg.org/mzaks/dagr)
         rationale: "Dagr, frozen+packed layout — <Type>FrozenPackedGraph from schemas/v2/dagr/schema.py"
         optimal_api: "Direct value structs → write_{root}_graph_direct into one reused Builder; lazy {Node}Accessor decode"
       - name: mojo-bson

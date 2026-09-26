@@ -84,7 +84,7 @@ def _module(type_id: str, suffix: str = "") -> Any:
 
 @lru_cache(maxsize=1)
 def _generator_version() -> str:
-    """Generator version from the committed ``dagr build`` receipt (``dagr 2026.9.0``)."""
+    """Generator version from the committed ``dagr build`` receipt (``dagr 2026.9.2``)."""
     try:
         with open(_LOCK, encoding="utf-8") as f:
             tool = json.load(f).get("provenance", {}).get("tool_version", "")
