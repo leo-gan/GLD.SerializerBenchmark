@@ -129,6 +129,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
+name = "benchmark_v2"
+version = "0.1.0"
+
+[[package]]
 name = "bincode"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1596,6 +1600,7 @@ name = "serializer-benchmark-rust"
 version = "0.3.1"
 dependencies = [
  "anyhow",
+ "benchmark_v2",
  "bincode",
  "bitcode",
  "bson",

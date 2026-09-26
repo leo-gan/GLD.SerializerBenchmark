@@ -199,8 +199,12 @@ func TestStreamModeLabels(t *testing.T) {
 		"pelletier/go-toml":        StreamNative,
 		"hamba/avro":               StreamNative,
 		// Byte-slice-only libraries (OCF would change wire format vs bytes):
-		"protobuf":        StreamAdapted,
-		"linkedin/goavro": StreamAdapted,
+		"protobuf":           StreamAdapted,
+		"linkedin/goavro":    StreamAdapted,
+		"dagr-packed":        StreamAdapted,
+		"dagr-regular":       StreamAdapted,
+		"dagr-frozen":        StreamAdapted,
+		"dagr-frozen-packed": StreamAdapted,
 	}
 	seen := map[string]bool{}
 	for _, ser := range All() {
@@ -266,5 +270,45 @@ func TestAllSerializersMessageStreamRoundtrip(t *testing.T) {
 				t.Fatalf("stream fidelity failed for %s", ser.Name())
 			}
 		})
+	}
+}
+
+// TestDagrBatchFramingAndVersion (every Dagr layout row): N>1 cells use the suite frame (u32 count + (u32 len +
+// record)×N) and round-trip; the version comes from schemas/v2/dagr/dagr.lock.json.
+func TestDagrBatchFramingAndVersion(t *testing.T) {
+	for _, s := range []*dagrSer{newDagr(), newDagrRegular(), newDagrFrozen(), newDagrFrozenPacked()} {
+		t.Run(s.Name(), func(t *testing.T) { testDagrBatchFramingAndVersion(t, s) })
+	}
+}
+
+func testDagrBatchFramingAndVersion(t *testing.T, s *dagrSer) {
+	if v := s.Version(); v == "" || strings.HasPrefix(v, "dagr") {
+		t.Fatalf("dagr version %q", v)
+	}
+	for _, typeID := range []string{"message", "document", "telemetry", "strings", "event"} {
+		for _, n := range []int{1, 3} {
+			_, val := modelv2.FixtureFromCell(modelv2.Cell{TypeID: typeID, DataTypeInstanceCount: n}, 42)
+			fx := model.Fixture{Name: typeID, Value: val}
+			if err := s.Prepare(fx); err != nil {
+				t.Fatal(err)
+			}
+			raw, err := s.SerializeBytes(fx)
+			if err != nil {
+				t.Fatalf("%s n=%d: %v", typeID, n, err)
+			}
+			if n > 1 && int(raw[0]) != n {
+				t.Fatalf("%s n=%d: frame count %d", typeID, n, raw[0])
+			}
+			out, err := s.DeserializeBytes(raw)
+			if err != nil {
+				t.Fatalf("%s n=%d: %v", typeID, n, err)
+			}
+			if !model.Fidelity(fx.Value, out) {
+				t.Fatalf("%s n=%d: fidelity", typeID, n)
+			}
+			if _, err := s.DeserializeBytes(raw[:len(raw)/2]); err == nil && n == 1 {
+				t.Logf("%s: truncated record decoded without error (lazy reader)", typeID)
+			}
+		}
 	}
 }

@@ -1,0 +1,91 @@
+#![allow(dead_code, non_snake_case, unused_imports, unused_variables, unexpected_cfgs, clippy::all)]
+#[cfg(all(dagr_no_std, not(dagr_no_alloc)))] use alloc::{vec, vec::Vec, string::String, string::ToString, boxed::Box, borrow::ToOwned};
+use crate::dagr_runtime::{DagrError, PackedSink, StorePacked};
+
+
+// ── Direct Graph Builder ("spec/33-direct-graph-builder.md") ─────────────────────
+// Arena-free construction for this packed-rooted tree: plain value structs in,
+// byte-identical graph buffer out. `direct::to_bytes*(v) == arena.to_bytes*()`.
+pub mod direct {
+    use crate::dagr_runtime::{NodeStoreRef, DagrError, PackedSink};
+    #[cfg(not(dagr_no_std))] use crate::dagr_runtime::DagrBuilder;
+    #[cfg(all(dagr_no_std, not(dagr_no_alloc)))] use alloc::vec::Vec;
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct Message<'a> {
+        pub f_bool: Option<bool>,
+        pub f_int32: Option<i32>,
+        pub f_int64: Option<i64>,
+        pub f_float64: Option<f64>,
+        pub f_string: Option<&'a str>,
+        pub f_bool_2: Option<bool>,
+        pub f_int32_2: Option<i32>,
+        pub f_string_2: Option<&'a str>,
+    }
+
+    impl<'a> Message<'a> {
+        pub fn store_packed<B: PackedSink + ?Sized>(&self, b: &mut B) -> Result<NodeStoreRef, DagrError> {
+            let _before = b.cursor();
+            let mut _obs0 = 0u8;
+            _obs0 |= u8::from(self.f_bool.is_some()) << 0;
+            _obs0 |= u8::from(self.f_int32.is_some()) << 1;
+            _obs0 |= u8::from(self.f_int64.is_some()) << 2;
+            _obs0 |= u8::from(self.f_float64.is_some()) << 3;
+            _obs0 |= u8::from(self.f_string.is_some()) << 4;
+            _obs0 |= u8::from(self.f_bool_2.is_some()) << 5;
+            _obs0 |= u8::from(self.f_int32_2.is_some()) << 6;
+            _obs0 |= u8::from(self.f_string_2.is_some()) << 7;
+            let mut _ebs0 = 0u8;
+            if let Some(_v) = self.f_int32 { _ebs0 |= u8::from(crate::dagr_runtime::leb_length(crate::dagr_runtime::to_zigzag(_v as i64)) >= 4) << 0; }
+            if let Some(_v) = self.f_int64 { _ebs0 |= u8::from(crate::dagr_runtime::leb_length(crate::dagr_runtime::to_zigzag(_v as i64)) >= 8) << 1; }
+            if self.f_float64.is_some() { _ebs0 |= 1u8 << 2; }
+            if let Some(_v) = self.f_int32_2 { _ebs0 |= u8::from(crate::dagr_runtime::leb_length(crate::dagr_runtime::to_zigzag(_v as i64)) >= 4) << 3; }
+            if let Some(_s) = self.f_string_2.as_deref() { let _bs = _s.as_bytes(); b.store_raw(_bs)?; b.store_leb(_bs.len() as u64)?; }
+            if let Some(_v) = self.f_int32_2 { if _ebs0 & 8 != 0 { b.store_i32(_v)?; } else { b.store_leb(crate::dagr_runtime::to_zigzag(_v as i64))?; } }
+            if let Some(_v) = self.f_bool_2 { b.store_bool(_v)?; }
+            if let Some(_s) = self.f_string.as_deref() { let _bs = _s.as_bytes(); b.store_raw(_bs)?; b.store_leb(_bs.len() as u64)?; }
+            if let Some(_v) = self.f_float64 { b.store_f64(_v)?; }
+            if let Some(_v) = self.f_int64 { if _ebs0 & 2 != 0 { b.store_i64(_v)?; } else { b.store_leb(crate::dagr_runtime::to_zigzag(_v as i64))?; } }
+            if let Some(_v) = self.f_int32 { if _ebs0 & 1 != 0 { b.store_i32(_v)?; } else { b.store_leb(crate::dagr_runtime::to_zigzag(_v as i64))?; } }
+            if let Some(_v) = self.f_bool { b.store_bool(_v)?; }
+            b.store_u8(_ebs0)?;
+            b.store_u8(_obs0)?;
+            b.store_leb((b.cursor() - _before) as u64)?;
+            Ok(NodeStoreRef::Offset(b.cursor()))
+        }
+    }
+
+    /// 36 §8 — build the finished buffer (body, alignment, framing) into any `PackedSink`,
+    /// e.g. a stack `FixedBuilder`: no heap. Start from an empty (reset) builder; returns the
+    /// buffer length, the bytes are `b.record_bytes()`.
+    pub fn write_into<B: PackedSink + ?Sized>(root: &Message<'_>, b: &mut B) -> Result<usize, DagrError> {
+        let root_ref = root.store_packed(b)?;
+        let root_off = root_ref.to_offset().unwrap_or(0);
+        b.store_leb(((b.cursor() - root_off) as u64) << 2)?;
+        Ok(b.cursor())
+    }
+
+    #[cfg(not(dagr_no_std))]
+    pub fn to_bytes(root: &Message<'_>) -> Result<Vec<u8>, DagrError> {
+        let mut b = DagrBuilder::with_capacity(4096);   // direct = tree → small buffer, grows if needed
+        write_into(root, &mut b)?;
+        Ok(b.finalize())
+    }
+
+    #[cfg(not(dagr_no_std))]
+    pub struct Writer;
+    #[cfg(not(dagr_no_std))]
+    impl Writer {
+        pub fn new() -> Self { Writer }
+        pub fn to_bytes(&mut self, root: &Message<'_>) -> Result<Vec<u8>, DagrError> { to_bytes(root) }
+    }
+    #[cfg(not(dagr_no_std))]
+    impl Default for Writer { fn default() -> Self { Writer::new() } }
+}
+
+pub struct MessageFrozenPackedGraph;
+impl MessageFrozenPackedGraph {
+    #[cfg(not(dagr_no_std))]
+    pub fn to_bytes(root: &direct::Message<'_>) -> Result<Vec<u8>, crate::dagr_runtime::DagrError> { direct::to_bytes(root) }
+    pub fn write_into<B: crate::dagr_runtime::PackedSink + ?Sized>(root: &direct::Message<'_>, b: &mut B) -> Result<usize, crate::dagr_runtime::DagrError> { direct::write_into(root, b) }
+}

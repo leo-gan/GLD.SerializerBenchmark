@@ -13,9 +13,10 @@ rust/src/serializers/
   direct.rs        # minicbor, rkyv, nanoserde, speedy
   prost_ser.rs     # prost + fixture conversion
   avro_ser.rs      # serde_avro_fast (Avro binary datum)
+  dagr_ser.rs      # Dagr, four node layouts (generated direct builder / arena + lazy reader)
 ```
 
-## Serializers (16)
+## Serializers (20)
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
@@ -33,6 +34,10 @@ rust/src/serializers/
 | rkyv | Zero-copy | timed path materializes owned `T` for fidelity |
 | prost | Protobuf | convert in `prepare`; timed codec only |
 | serde_avro_fast | Schema | schema + `SerializerConfig` once; `to_datum` / `from_datum_slice` |
+| dagr-packed | Schema | generated crate `dagr_gen/`; direct builder `write_into` a reused `DagrBuilder` / lazy `read_root` → domain |
+| dagr-regular | Schema | same crate, `regular` (vtable) graphs; generated arena built in `prepare`, timed arena `store` into a reused `DagrBuilder` / lazy `read_root` → domain |
+| dagr-frozen | Schema | same crate, `frozen` graphs; arena path as `dagr-regular` |
+| dagr-frozen-packed | Schema | same crate, `frozen`+`packed` graphs; direct builder path as `dagr-packed` |
 | nanoserde | Binary | `SerBin` / `DeBin` |
 | speedy | Binary | `Writable` / `Readable` |
 
@@ -75,4 +80,5 @@ Analysis: `analyze-benchmarks -l rust`.
 ## Build notes
 
 - `build.rs` compiles `schemas/v2/protobuf/benchmark_v2.proto` via prost-build.  
+- `dagr_gen/` is generated and committed: `cd schemas/v2/dagr && dagr build` (`pip install dagr-cli`). `build.rs` reads the Dagr version from the receipt `dagr.lock.json`.  
 - Offline builds need a populated `target/` / vendor cache.

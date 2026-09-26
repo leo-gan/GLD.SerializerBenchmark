@@ -2,7 +2,7 @@
 
 Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `document`, `telemetry`, `strings`, `event`).
 
-## Serializers (11)
+## Serializers (15)
 
 | Name | Category | Package | Notes |
 |------|----------|---------|-------|
@@ -16,9 +16,13 @@ Native Mojo 1.1 benchmark runner for Data Model v2 fixtures (`message`, `documen
 | mojo-toml | Text | DataBooth/mojo-toml | `to_toml` / `parse` (vendored source) |
 | gld-yaml | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.4.0 | `yaml.encode` / `yaml.decode` on suite types (vendored sources) |
 | mojo-msgpack | Binary | leo-gan/gld-messagepack 0.3.0 | WireWriter / WireReader (vendored sources) |
+| dagr-packed | Schema | dagr 2026.9.2 (generator) | Generated from `schemas/v2/dagr/schema.py` into `src/gen/dagr/`: generated direct builder into one reused `Builder` (`write_{root}_graph_direct`), lazy reader decode (`read_{root}_root`) |
+| dagr-regular | Schema | dagr 2026.9.2 (generator) | Same schema, `<Type>RegularGraph` (all nodes `regular`, vtables): no direct builder for this layout, so the suite value is copied into the generated arena and written with `write_{root}_graph(b, arena)` into a reused per-graph `Builder` (both timed); lazy reader decode |
+| dagr-frozen | Schema | dagr 2026.9.2 (generator) | Same schema, `<Type>FrozenGraph` (all nodes `frozen`, fixed layout, no evolution): generated arena + `write_{root}_graph` into a reused `Builder` (both timed); lazy reader decode |
+| dagr-frozen-packed | Schema | dagr 2026.9.2 (generator) | Same schema, `<Type>FrozenPackedGraph` (all nodes `frozen` + `packed`): generated direct builder into one reused `Builder`, like `dagr-packed`; lazy reader decode |
 | mojo-bson | Binary | leo-gan/gld-bson 0.1.0 | WireWriter / WireReader (vendored sources; latest release that builds on Mojo 1.1) |
 
-JSON, CBOR, Protobuf, YAML, MessagePack, FlatBuffers, and Avro are compiled from `vendor/` with colliding internals renamed (`runtime`, `wire`, `json`, and the rest) so they can live in one process. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub. The vendored ehsanmok/json tree spells `Array` where v0.4.0 still says `InlineArray`, which Mojo 1.1 removed.
+JSON, CBOR, Protobuf, YAML, MessagePack, FlatBuffers, and Avro are compiled from `vendor/` with colliding internals renamed (`runtime`, `wire`, `json`, and the rest) so they can live in one process. Dagr's generated code (`src/gen/dagr/`, from `dagr build`) imports its modules by bare name, so builds add `-I src/gen/dagr`. `./mojo/scripts/fetch-vendors.sh` prefers sibling checkouts under `…/GLD/gld-*` and falls back to GitHub. The vendored ehsanmok/json tree spells `Array` where v0.4.0 still says `InlineArray`, which Mojo 1.1 removed.
 
 ## Host tools
 

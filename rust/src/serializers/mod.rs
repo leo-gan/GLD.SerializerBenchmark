@@ -22,6 +22,7 @@
 //! - [`direct`] — minicbor, rkyv, nanoserde, speedy
 //! - [`prost_ser`] — prost + fixture conversion
 //! - [`avro_ser`] — serde_avro_fast (Avro binary datum)
+//! - [`dagr_ser`] — Dagr, four node layouts (generated direct builder / arena + lazy reader)
 //! - [`kinded`] — shared kind-tracked direct codec macro
 
 use crate::data::Fixture;
@@ -33,6 +34,7 @@ include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
 
 mod avro_ser;
 mod binary_serde;
+mod dagr_ser;
 mod direct;
 mod json;
 mod kinded;
@@ -43,6 +45,7 @@ use avro_ser::AvroFastSer;
 use binary_serde::{
     BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, PostcardSer, RmpSerde,
 };
+use dagr_ser::{DagrFrozenPackedSer, DagrFrozenSer, DagrRegularSer, DagrSer};
 use direct::{MinicborDirect, NanoserdeSer, RkyvSer, SpeedySer};
 use json::{SerdeJson, SimdJson, SonicRs};
 use prost_ser::ProstSer;
@@ -167,6 +170,10 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(RkyvSer::default()),
         Box::new(ProstSer::default()),
         Box::new(AvroFastSer::default()),
+        Box::new(DagrSer::default()),
+        Box::new(DagrRegularSer::default()),
+        Box::new(DagrFrozenSer::default()),
+        Box::new(DagrFrozenPackedSer::default()),
         Box::new(NanoserdeSer::default()),
         Box::new(SpeedySer::default()),
         Box::new(SerdeYaml::default()),

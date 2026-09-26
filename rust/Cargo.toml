@@ -24,6 +24,8 @@ flexbuffers = "2"
 rkyv = { version = "0.8", features = ["std", "bytecheck", "alloc"] }
 minicbor = { version = "0.25", features = ["std", "derive"] }
 prost = "0.13"
+# Dagr: generated crate (schemas/v2/dagr/schema.py → `dagr build`); no runtime dependency.
+benchmark_v2 = { path = "dagr_gen" }
 # High-perf Avro datum codec (wire-compatible with apache-avro; avoids Value intermediate).
 # Official apache-avro 0.21 deser is multi-× slower than serde_json on small records.
 serde_avro_fast = "2"

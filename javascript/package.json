@@ -10,7 +10,8 @@
     "test": "node --test test/runner.test.js",
     "generate:protobuf-es": "bash scripts/generate-protobuf-es.sh",
     "generate:google-protobuf": "bash scripts/generate-google-protobuf.sh",
-    "generate:protobuf": "npm run generate:protobuf-es && npm run generate:google-protobuf"
+    "generate:protobuf": "npm run generate:protobuf-es && npm run generate:google-protobuf",
+    "generate:dagr": "bash scripts/generate-dagr.sh"
   },
   "engines": {
     "node": ">=18"
@@ -37,5 +38,8 @@
   },
   "optionalDependencies": {
     "simdjson": "^0.9.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12"
   }
 }

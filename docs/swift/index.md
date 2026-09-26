@@ -5,7 +5,7 @@ title: "Swift"
 Swift
 =====
 
-Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto).
+Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto, Dagr).
 
 ## Runtime
 
@@ -54,6 +54,10 @@ The steps to install the toolchain and run the benchmark are in [`swift/README.m
 |------------|----------|---------|--------|-------|
 | [BinaryCodable](https://github.com/christophhagen/BinaryCodable) | Binary | BinaryCodable | adapted | Pure-Swift binary Codable |
 | [CapnProto](https://github.com/capnproto/capnproto) | Schema | Cap’n Proto C++ | adapted | C ABI over official C++ runtime |
+| [dagr-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`swift/DagrGen`, `dagr build`) | adapted | Packed nodes; generated direct builder → reused `DataArenaBuilder`; lazy reader → domain (timed). N>1 framed by the wrapper (u32 count + (u32 len + buffer)×N) |
+| [dagr-regular](https://codeberg.org/mzaks/dagr) | Schema | generated (`swift/DagrGen`, `dagr build`) | adapted | Regular (vtable) nodes, `<T>RegularGraph`; suite value → generated arena → root stored into a reused `DataArenaBuilder` (timed); lazy reader → domain. N>1: one self-contained record per item, same frame |
+| [dagr-frozen](https://codeberg.org/mzaks/dagr) | Schema | generated (`swift/DagrGen`, `dagr build`) | adapted | Frozen nodes, `<T>FrozenGraph`; same call path as dagr-regular |
+| [dagr-frozen-packed](https://codeberg.org/mzaks/dagr) | Schema | generated (`swift/DagrGen`, `dagr build`) | adapted | Frozen+packed nodes, `<T>FrozenPackedGraph`; same call path as dagr-packed (direct builder) |
 | [FlatBuffers](https://github.com/google/flatbuffers) | Schema | google/flatbuffers | adapted | Generated from suite `.fbs` |
 | [Foundation.JSONEncoder](https://github.com/apple/swift-foundation) | JSON | Foundation | adapted | Compact |
 | [Foundation.PropertyListEncoder](https://github.com/apple/swift-foundation) | Native | Foundation | adapted | Binary plist |
@@ -78,6 +82,10 @@ BinaryCodable is a pure-Swift binary Codable implementation. It was written so S
 #### [CapnProto](https://github.com/capnproto/capnproto) · `capnproto-1.0.2`
 
 Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage could use a binary layout that is already the in-memory representation — no encode step. The problem was protobuf's parse/serialize cost. Cap'n Proto solves it with an IDL and packed/unpacked segments.
+
+#### [dagr](https://codeberg.org/mzaks/dagr)
+
+Dagr ("Data Graph") is a schema-driven binary format for data graphs — shared and cyclic nodes included — built on an arena model. One Python DSL schema generates the code for every target language (`dagr build`), so there is no runtime library: the suite commits the generated code from `schemas/v2/dagr/schema.py`. The `dagr-packed` row uses the `packed` node layout; the timed path is the generated direct builder on encode and the lazy reader materializing the domain value on decode. The schema also emits every suite type in the other three layouts (`deletable=False`), benchmarked as `dagr-regular` (vtable nodes — the evolvable default), `dagr-frozen` (fixed field set, no vtable) and `dagr-frozen-packed` (no compatibility at all, smallest); see the Dagr spec's `16-choosing-a-node-layout.md`.
 
 #### [FlatBuffers](https://github.com/google/flatbuffers) · `24.3.25`
 
@@ -143,6 +151,8 @@ fidelity                         # untimed, float-tolerant
 - Stream mode is **adapted** for all registered codecs.
 - Cap’n Proto has no maintained first-class Swift codegen; the benchmark runner uses the **official C++ library** via `CapnpBridge` (requires `libcapnp` / `libkj`, typically under `~/.local`).
 - TOML uses mattt/swift-toml (toml++); Linux builds may need GCC 11 `libstdc++` include flags (set in `run-benchmarks.sh`).
+- **dagr-packed** call path: timed serialize builds the generated `<Graph>.Direct.*` value structs from the suite value (like SwiftProtobuf's `toProtobuf`) and stores them into one reused `DataArenaBuilder`; timed deserialize walks the generated lazy accessors and builds the suite value. `SerializerVersion` is the generator version from `schemas/v2/dagr/dagr.lock.json`. Batch items are read in place with the generated `lazyRoot(from:at:)` (no per-item copy). The remaining gap on `telemetry` decode is one `Data.withUnsafeBytes` per raw `f64` element.
+- **dagr-regular / dagr-frozen / dagr-frozen-packed**: one `DagrSerializer(layout:)` class shares the harness with `dagr-packed` (`Serializers/Dagr.swift`, bridges in `Serializers/DagrLayouts.swift`). frozen-packed has a generated direct builder and is timed exactly like `dagr-packed`. regular and frozen have none, so timed serialize builds a fresh generated `<Graph>.Arena` from the suite value and stores its root into the reused `DataArenaBuilder` (what `Arena.toData()` does, minus its per-call builder); their lazy getters are `get throws`. Regular/frozen stores go through the builder's dedup tables (strings, vtables, node ids) that only `reset()` clears, so for N>1 each item is encoded as its own self-contained record and copied into the frame (one extra copy per item) — no cross-item dedup.
 
 Also: [`swift/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/swift/README.md).
 

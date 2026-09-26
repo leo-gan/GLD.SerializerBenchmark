@@ -50,6 +50,28 @@ final class RoundtripTests: XCTestCase {
         }
     }
 
+    /// Dagr frames N>1 itself (u32 count + (u32 len + buffer)×N) — cover every type.
+    /// Covers all four layouts (dagr-packed, dagr-regular, dagr-frozen, dagr-frozen-packed), N=1 and N>1.
+    func testDagrBatchRoundtripAllTypes() throws {
+        for layout in DagrLayout.allCases {
+            let ser = DagrSerializer(layout: layout)
+            XCTAssertEqual(ser.name, layout.rawValue)
+            XCTAssertNotEqual(ser.version, "unknown")
+            for typeId in ["message", "document", "telemetry", "strings", "event"] {
+                for n in [1, 5] {
+                    let fx = try fixtureFromCell(
+                        typeId: typeId, typeConfig: [:], typeConfigHash: "", instanceCount: n, seed: 11
+                    )
+                    try roundtrip(ser, fx)
+                    XCTAssertTrue(
+                        fx.fidelity(against: try ser.deserializeStream(ser.serializeStream(fx).0)),
+                        "\(layout.rawValue) \(typeId) n=\(n)"
+                    )
+                }
+            }
+        }
+    }
+
     func testWrappersStayTypeAgnostic() throws {
         let msg = Message(
             f_bool: true, f_int32: 1, f_int64: 2, f_float64: 3.0, f_string: "a",

@@ -600,6 +600,12 @@ add("mojo", "mojo-bson", ["bson"], "https://github.com/leo-gan/gld-bson",
 add("mojo", "gld-yaml", ["yaml"], "https://github.com/leo-gan/gld-yaml",
     "gld-yaml: YAML value encode/decode.")
 
+# --- Dagr (one generated codec per language and node layout, schemas/v2/dagr) ---
+for _lang in ("rust", "go", "swift", "javascript", "python", "mojo"):
+    for _row in ("dagr-packed", "dagr-regular", "dagr-frozen", "dagr-frozen-packed"):
+        add(_lang, _row, [], "https://codeberg.org/mzaks/dagr",
+            "Dagr: data-graph binary format generated from schemas/v2/dagr; no external interchange spec in the corpus.")
+
 
 def main() -> int:
     import json

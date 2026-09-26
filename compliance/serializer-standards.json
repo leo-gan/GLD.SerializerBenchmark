@@ -136,7 +136,11 @@
       ],
       "py-ubjson": [
         "ubjson"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "javascript": {
       "JSON.stringify": [
@@ -193,7 +197,11 @@
       "v8-serializer": [],
       "devalue": [],
       "sia": [],
-      "bser": []
+      "bser": [],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "go": {
       "encoding/json": [
@@ -251,7 +259,11 @@
         "toml"
       ],
       "encoding/gob": [],
-      "kelindar/binary": []
+      "kelindar/binary": [],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "java": {
       "jackson": [
@@ -508,7 +520,11 @@
       "nanoserde": [],
       "postcard": [],
       "speedy": [],
-      "rkyv": []
+      "rkyv": [],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "cpp": {
       "nlohmann_json": [
@@ -629,7 +645,11 @@
         "plist"
       ],
       "XMLCoder": [],
-      "BinaryCodable": []
+      "BinaryCodable": [],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     },
     "php": {
       "json": [
@@ -745,7 +765,11 @@
       ],
       "gld-yaml": [
         "yaml"
-      ]
+      ],
+      "dagr-packed": [],
+      "dagr-regular": [],
+      "dagr-frozen": [],
+      "dagr-frozen-packed": []
     }
   }
 }
