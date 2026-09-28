@@ -45,7 +45,7 @@ namespace GLD.SerializerBenchmark.Serializers
         private Action<object, Stream> serializeToStream;
         private Func<Stream, object> deserializeFromStream;
 
-        public override string StreamMode => this.serializeToStream is null ? "text_on_stream" : "native";
+        public override string StreamMode => this.serializeToStream is null ? "adapted" : "native";
 
         public override string Serialize(object serializable) => serialize(serializable);
 

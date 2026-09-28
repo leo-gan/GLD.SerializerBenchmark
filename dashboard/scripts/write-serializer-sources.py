@@ -1798,15 +1798,18 @@ EXTRA: dict[tuple[str, str], str] = {
         "the stream row adapts its byte-array API."
     ),
     ("csharp", "ShapeShift.Taml"): (
-        "The stream row writes and reads text through `TextWriter`/`TextReader`. "
+        "The package has no streaming text API, so the stream row adapts its "
+        "complete string output. "
         "The `strings` fixture is unsupported because its N=100 batch cannot "
         "be deserialized."
     ),
     ("csharp", "ShapeShift.Toml"): (
-        "The stream row writes and reads text through `TextWriter`/`TextReader`."
+        "The package has no streaming text API, so the stream row adapts its "
+        "complete string output."
     ),
     ("csharp", "ShapeShift.Yaml"): (
-        "The stream row writes and reads text through `TextWriter`/`TextReader`."
+        "The package has no streaming text API, so the stream row adapts its "
+        "complete string output."
     ),
     ("cpp", "nlohmann_cbor"): "This row times `to_cbor` / `from_cbor`.",
     ("cpp", "nlohmann_msgpack"): "This row times `to_msgpack` / `from_msgpack`.",

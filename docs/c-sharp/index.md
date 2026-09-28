@@ -266,15 +266,15 @@ ShapeShift is a source-generated serialization framework built on PolyType contr
 
 #### [ShapeShift.Taml](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized.
 
 #### [ShapeShift.Toml](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output.
 
 #### [ShapeShift.Yaml](https://github.com/AArnott/ShapeShift) · `0.1.1068-alpha`
 
-ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`.
+ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output.
 
 #### [SpanJson](https://github.com/Tornhoof/SpanJson) · `4.2.1`
 
@@ -326,9 +326,9 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (canonical mode labe
 
 | Kind | What is timed | Examples |
 |------|----------------|----------|
-| **Adapted stream** | Stream path writes/reads a complete string, Base64 value, or in-memory buffer rather than using a native streaming API | ShapeShift.Cbor / ShapeShift.Protobuf, **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
+| **Adapted stream** | Stream path writes/reads a complete string, Base64 value, or in-memory buffer rather than using a native streaming API | ShapeShift.Cbor / ShapeShift.Protobuf / ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
 | **Native binary stream** | Library writes/reads `Stream` with its binary API | ShapeShift.Json / ShapeShift.MsgPack, ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
-| **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
+| **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
 
 When stream ≈ string within a few percent on the Dashboard, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.
 

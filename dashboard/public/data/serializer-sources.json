@@ -452,17 +452,17 @@
       "ShapeShift.Taml": {
         "source_url": "https://github.com/AArnott/ShapeShift",
         "version": "0.1.1068-alpha",
-        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized."
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output. The `strings` fixture is unsupported because its N=100 batch cannot be deserialized."
       },
       "ShapeShift.Toml": {
         "source_url": "https://github.com/AArnott/ShapeShift",
         "version": "0.1.1068-alpha",
-        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`."
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output."
       },
       "ShapeShift.Yaml": {
         "source_url": "https://github.com/AArnott/ShapeShift",
         "version": "0.1.1068-alpha",
-        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The stream row writes and reads text through `TextWriter`/`TextReader`."
+        "specifics": "ShapeShift is a source-generated serialization framework built on PolyType contracts. It solves the reflection and trimming limitations of conventional serializers by generating strongly typed conversion logic for each model at compile time. The package has no streaming text API, so the stream row adapts its complete string output."
       },
       "SharpSerializer": {
         "source_url": "https://github.com/polenter/SharpSerializer",
