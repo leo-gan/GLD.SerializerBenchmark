@@ -56,20 +56,176 @@ def _bytes_to_input(raw: bytes) -> tuple[str, str]:
         return raw.hex(), "hex"
 
 
-def _json_section(name: str) -> tuple[str, str, str, str]:
+# JSONTestSuite marks these y_ (must accept). RFC 4627 §2.2, RFC 7159 §4, and
+# RFC 8259 §4 only say member names SHOULD be unique, and that behavior is
+# unpredictable when they are not. Score them implementation-defined.
+_DUP_OBJECT_STEMS = frozenset(
+    {
+        "y_object_duplicated_key",
+        "y_object_duplicated_key_and_value",
+    }
+)
+
+_DUP_PARAGRAPH = (
+    "The names within an object SHOULD be unique. When they are not, "
+    "the behavior is unpredictable across implementations."
+)
+
+
+def _json_topic(name: str) -> str:
     n = name.lower()
-    base = "https://www.rfc-editor.org/rfc/rfc8259"
     if "string" in n or "escaped" in n or "unicode" in n or "utf" in n or "surrogate" in n:
-        return "7", "Strings", f"{base}#section-7", "A string is a sequence of Unicode code points wrapped in quotation marks, with the escapes listed in RFC 8259 §7."
+        return "string"
     if "number" in n or "int" in n or "real" in n or "minus" in n or "plus" in n:
-        return "6", "Numbers", f"{base}#section-6", "A number is produced from the RFC 8259 number grammar. NaN and Infinity are not number tokens."
+        return "number"
     if "object" in n:
-        return "4", "Objects", f"{base}#section-4", "An object is a pair of curly brackets surrounding zero or more name/value pairs."
+        return "object"
     if "array" in n:
-        return "5", "Arrays", f"{base}#section-5", "An array is a pair of square brackets surrounding zero or more values."
+        return "array"
     if "comment" in n:
-        return "2", "JSON Grammar", f"{base}#section-2", "The JSON grammar has no comment production."
-    return "2", "JSON Grammar", f"{base}#section-2", "A JSON text is one serialized value matching the RFC 8259 grammar."
+        return "comment"
+    return "grammar"
+
+
+def _json_cite(rfc: str, topic: str) -> tuple[str, str, str, str]:
+    """Section citation for one JSONTestSuite filename topic under one RFC.
+
+    RFC 7159 and RFC 8259 share section numbers. RFC 4627 puts values, objects,
+    arrays, numbers, and strings in §2.1–§2.5, and its JSON text is only an
+    object or an array (§2).
+    """
+    if rfc == "4627":
+        base = "https://www.rfc-editor.org/rfc/rfc4627"
+        table = {
+            "string": (
+                "2.5",
+                "Strings",
+                f"{base}#section-2.5",
+                "A string is a sequence of zero or more Unicode characters wrapped in quotation marks, with the escapes listed in RFC 4627 §2.5.",
+            ),
+            "number": (
+                "2.4",
+                "Numbers",
+                f"{base}#section-2.4",
+                "A number is produced from the RFC 4627 number grammar. NaN and Infinity are not number tokens.",
+            ),
+            "object": (
+                "2.2",
+                "Objects",
+                f"{base}#section-2.2",
+                "An object is a pair of curly brackets surrounding zero or more name/value pairs.",
+            ),
+            "array": (
+                "2.3",
+                "Arrays",
+                f"{base}#section-2.3",
+                "An array is a pair of square brackets surrounding zero or more values.",
+            ),
+            "comment": (
+                "2",
+                "JSON Grammar",
+                f"{base}#section-2",
+                "The JSON grammar has no comment production.",
+            ),
+            "grammar": (
+                "2",
+                "JSON Grammar",
+                f"{base}#section-2",
+                "A JSON text is a serialized object or array.",
+            ),
+        }
+        return table[topic]
+    number = "7159" if rfc == "7159" else "8259"
+    base = f"https://www.rfc-editor.org/rfc/rfc{number}"
+    label = f"RFC {number}"
+    table = {
+        "string": (
+            "7",
+            "Strings",
+            f"{base}#section-7",
+            f"A string is a sequence of Unicode code points wrapped in quotation marks, with the escapes listed in {label} §7.",
+        ),
+        "number": (
+            "6",
+            "Numbers",
+            f"{base}#section-6",
+            f"A number is produced from the {label} number grammar. NaN and Infinity are not number tokens.",
+        ),
+        "object": (
+            "4",
+            "Objects",
+            f"{base}#section-4",
+            "An object is a pair of curly brackets surrounding zero or more name/value pairs.",
+        ),
+        "array": (
+            "5",
+            "Arrays",
+            f"{base}#section-5",
+            "An array is a pair of square brackets surrounding zero or more values.",
+        ),
+        "comment": (
+            "2",
+            "JSON Grammar",
+            f"{base}#section-2",
+            "The JSON grammar has no comment production.",
+        ),
+        "grammar": (
+            "2",
+            "JSON Grammar",
+            f"{base}#section-2",
+            f"A JSON text is one serialized value matching the {label} grammar.",
+        ),
+    }
+    return table[topic]
+
+
+def jts_case_fields(name: str, raw: bytes, rfc: str) -> dict[str, str]:
+    """Citation and scoring fields for one JSONTestSuite file under one RFC.
+
+    ``name`` is the suite filename (``y_string_space.json``) or its stem.
+    ``rfc`` is ``4627``, ``7159``, or ``8259``.
+    """
+    filename = name if name.endswith(".json") else f"{name}.json"
+    stem = filename[:-5]
+    sec, title, url, para = _json_cite(rfc, _json_topic(filename))
+    top = raw.lstrip()[:1]
+    if filename.startswith("y_"):
+        expect = "accept"
+        req = "MUST"
+        if rfc == "4627" and top not in (b"{", b"["):
+            expect = "reject"
+            sec, title, url, para = _json_cite("4627", "grammar")
+    elif filename.startswith("n_"):
+        expect = "reject"
+        req = "MUST NOT"
+    elif filename.startswith("i_"):
+        expect = "any"
+        req = "MAY"
+    else:
+        raise ValueError(filename)
+    notes = f"Vendored from nst/JSONTestSuite test_parsing/{filename} (MIT)."
+    if rfc == "4627" and filename.startswith("y_") and top not in (b"{", b"[") and stem not in _DUP_OBJECT_STEMS:
+        notes += " Rejected under RFC 4627 because the top-level value is not an object or array."
+    if stem in _DUP_OBJECT_STEMS:
+        expect = "any"
+        req = "SHOULD"
+        sec, title, url, para = _json_cite(rfc, "object")
+        para = _DUP_PARAGRAPH
+        notes = (
+            f"Vendored from nst/JSONTestSuite test_parsing/{filename} (MIT). "
+            "JSONTestSuite marks this file y_ (must accept). This catalog scores it "
+            "implementation-defined: the RFC says member names SHOULD be unique and "
+            "behavior is unpredictable when they are not."
+        )
+    return {
+        "section": sec,
+        "section_title": title,
+        "section_url": url,
+        "paragraph": para,
+        "requirement": req,
+        "expect": expect,
+        "notes": notes,
+    }
 
 
 def import_json() -> None:
@@ -83,36 +239,27 @@ def import_json() -> None:
         raw = path.read_bytes()
         text, enc = _bytes_to_input(raw)
         name = path.name
-        sec, title, url, para = _json_section(name)
-        stripped = raw.lstrip()
-        top = stripped[:1]
-        if name.startswith("y_"):
-            expect_8259 = "accept"
-            expect_4627 = "accept" if top in (b"{", b"[") else "reject"
-            req = "MUST"
-        elif name.startswith("n_"):
-            expect_8259 = expect_4627 = "reject"
-            req = "MUST NOT"
-        elif name.startswith("i_"):
-            expect_8259 = expect_4627 = "any"
-            req = "MAY"
-        else:
+        if not (name.startswith("y_") or name.startswith("n_") or name.startswith("i_")):
             continue
         stem = path.stem
-        common = {
-            "title": stem.replace("_", " "),
-            "section": sec,
-            "section_title": title,
-            "section_url": url,
-            "paragraph": para,
-            "requirement": req,
-            "input": text,
-            "input_encoding": enc,
-            "notes": f"Vendored from nst/JSONTestSuite test_parsing/{name} (MIT).",
-        }
-        rfc8259.append({**common, "id": f"jts-8259-{stem}", "expect": expect_8259})
-        rfc7159.append({**common, "id": f"jts-7159-{stem}", "expect": expect_8259})
-        rfc4627.append({**common, "id": f"jts-4627-{stem}", "expect": expect_4627})
+        title = stem.replace("_", " ")
+        for rfc, bucket in (("8259", rfc8259), ("7159", rfc7159), ("4627", rfc4627)):
+            fields = jts_case_fields(name, raw, rfc)
+            bucket.append(
+                {
+                    "title": title,
+                    "section": fields["section"],
+                    "section_title": fields["section_title"],
+                    "section_url": fields["section_url"],
+                    "paragraph": fields["paragraph"],
+                    "requirement": fields["requirement"],
+                    "input": text,
+                    "input_encoding": enc,
+                    "notes": fields["notes"],
+                    "id": f"jts-{rfc}-{stem}",
+                    "expect": fields["expect"],
+                }
+            )
 
     extras_8259 = [c for c in _load_existing("json/rfc8259.json") if not str(c["id"]).startswith("jts-")]
     extras_7159 = [c for c in _load_existing("json/rfc7159.json") if not str(c["id"]).startswith("jts-")]
