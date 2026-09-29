@@ -23,9 +23,43 @@ func pbVarint(_ data: Data, _ i: inout Int) throws -> UInt64 {
     throw PBError.truncated
 }
 
+/// JSONSerialization boxes JSON numbers and JSON bools as NSNumber, and
+/// `is Bool` is also true for integer 0 and 1. A JSON bool uses objCType "c"
+/// (`__NSCFBoolean`); a JSON integer uses "i" or a wider integer encoding.
+func jsonIsBool(_ raw: Any) -> Bool {
+    guard let n = raw as? NSNumber else { return false }
+    return String(cString: n.objCType) == "c"
+}
+
+func pbJsonInt32(_ raw: Any) throws -> Int {
+    if jsonIsBool(raw) { throw PBError.badType }
+    if let n = raw as? NSNumber { return n.intValue }
+    if let s = raw as? String {
+        let body = s.hasPrefix("-") ? String(s.dropFirst()) : s
+        guard !body.isEmpty, body.allSatisfy({ $0 >= "0" && $0 <= "9" }), Int(s) != nil else {
+            throw PBError.badType
+        }
+        return Int(s) ?? 0
+    }
+    throw PBError.badType
+}
+
 func decodeProtobufWire(_ data: Data, schema: String) throws -> Any {
     if schema == "json" {
-        return try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+        let v = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+        guard let obj = v as? [String: Any] else { throw PBError.badJSON }
+        if let raw = obj["n"], !(raw is NSNull) { _ = try pbJsonInt32(raw) }
+        if let raw = obj["s"], !(raw is NSNull) {
+            guard raw is String else { throw PBError.badType }
+        }
+        if let raw = obj["ok"], !(raw is NSNull) {
+            guard jsonIsBool(raw) else { throw PBError.badType }
+        }
+        if let raw = obj["tags"], !(raw is NSNull) {
+            guard let arr = raw as? [Any] else { throw PBError.badType }
+            for item in arr { _ = try pbJsonInt32(item) }
+        }
+        return obj
     }
     var i = 0
     while i < data.count {
