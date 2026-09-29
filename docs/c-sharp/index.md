@@ -180,11 +180,11 @@ LightProto is a source-generated, protobuf-net-style serializer for modern .NET.
 
 MemoryPack was created by Yoshifumi Kawai for extremely fast, source-generated binary serialization on modern .NET. The problem was existing binary libraries allocating and reflecting too much. `[MemoryPackable]` types get generated encode/decode.
 
-#### [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) · `2.5.303`
+#### [MessagePack-CSharp](https://github.com/MessagePack-CSharp/MessagePack-CSharp) · `2.5.305`
 
 MessagePack-CSharp is the official MessagePack implementation for .NET (neuecc / MessagePack-CSharp). MessagePack exists as compact binary JSON. This library is the standard .NET codec, including a contractless resolver.
 
-#### [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack) · `1.3.86`
+#### [Nerdbank.MessagePack](https://github.com/AArnott/Nerdbank.MessagePack) · `1.3.88`
 
 Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses reflection-based POCO shapes with stable numeric keys and the library's default value retention.
 
@@ -192,31 +192,31 @@ Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shape
 
 Migrant is Antmicro's .NET binary serializer for object graphs. In this suite the timed path is a JSON envelope, not native Migrant domain graphs. See the language inventory.
 
-#### [MS Binary](https://github.com/dotnet/runtime) · `.NET 10.0.12`
+#### [MS Binary](https://github.com/dotnet/runtime) · `.NET 10.0.10`
 
 BinaryFormatter is legacy .NET binary serialization. It exists so the early framework could persist object graphs. It is obsolete and unsafe for untrusted input; the suite keeps the row as a historical baseline.
 
-#### [MS Bond Compact](https://github.com/microsoft/bond) · `.NET 10.0.12`
+#### [MS Bond Compact](https://github.com/microsoft/bond) · `.NET 10.0.10`
 
 Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary.
 
-#### [MS Bond Fast](https://github.com/microsoft/bond) · `.NET 10.0.12`
+#### [MS Bond Fast](https://github.com/microsoft/bond) · `.NET 10.0.10`
 
 Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary.
 
-#### [MS Bond Json](https://github.com/microsoft/bond) · `.NET 10.0.12`
+#### [MS Bond Json](https://github.com/microsoft/bond) · `.NET 10.0.10`
 
 Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol.
 
-#### [MS DataContract](https://github.com/dotnet/runtime) · `.NET 10.0.12`
+#### [MS DataContract](https://github.com/dotnet/runtime) · `.NET 10.0.10`
 
 DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules.
 
-#### [MS DataContract Json](https://github.com/dotnet/runtime) · `.NET 10.0.12`
+#### [MS DataContract Json](https://github.com/dotnet/runtime) · `.NET 10.0.10`
 
 DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules.
 
-#### [MS XmlSerializer](https://github.com/dotnet/runtime) · `.NET 10.0.12`
+#### [MS XmlSerializer](https://github.com/dotnet/runtime) · `.NET 10.0.10`
 
 XmlSerializer is classic .NET XML serialization. It exists so the framework could map objects to XML documents. This row is real domain XML when the attributes allow it.
 
@@ -327,7 +327,8 @@ CSV column `StringOrStream` is **`string`** or **`Stream`** (canonical mode labe
 | Kind | What is timed | Examples |
 |------|----------------|----------|
 | **Adapted stream** | Stream path writes/reads a complete string, Base64 value, or in-memory buffer rather than using a native streaming API | ShapeShift.Cbor / ShapeShift.Protobuf / ShapeShift.Taml / ShapeShift.Toml / ShapeShift.Yaml, **ExtendedXmlSerializer**, CsvHelper (CSV text via StreamWriter), fastJson / NetJSON when they delegate to the string path, some Ceras string-delegate paths |
-| **Native binary stream** | Library writes/reads `Stream` with its binary API | ShapeShift.Json / ShapeShift.MsgPack, ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
+| **Native text stream** | Library writes/reads `Stream` directly with its text codec API | ShapeShift.Json |
+| **Native binary stream** | Library writes/reads `Stream` with its binary API | ShapeShift.MsgPack, ProtoBuf, LightProto, Bond, BinaryPack, MemoryPack, NetSerializer, Hyperion, GroBuf, Google.Protobuf, Apache.Avro, DataContract*, FsPickler, ZeroFormatter, Migrant *(envelope only)*, … |
 | **Text writer on stream** | Library writes to `TextWriter`/`JsonTextWriter` over the stream (real library streaming text API; not “serialize whole string then dump”) | Json.Net, YamlDotNet, SharpYaml, System.Text.Json (when bound to stream), … |
 
 When stream ≈ string within a few percent on the Dashboard, check which kind applies. Prefer **within-mode** comparisons (string vs string, stream vs stream). **String mode for binary codecs** almost always includes Base64; do not compare that string size 1:1 with pure binary stream size without converting.

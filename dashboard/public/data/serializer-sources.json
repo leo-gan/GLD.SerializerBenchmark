@@ -352,37 +352,37 @@
       },
       "MS Binary": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 10.0.12",
+        "version": ".NET 10.0.10",
         "specifics": "BinaryFormatter is legacy .NET binary serialization. It exists so the early framework could persist object graphs. It is obsolete and unsafe for untrusted input; the suite keeps the row as a historical baseline."
       },
       "MS Bond Compact": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 10.0.12",
+        "version": ".NET 10.0.10",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Compact Binary."
       },
       "MS Bond Fast": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 10.0.12",
+        "version": ".NET 10.0.10",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times Bond Fast Binary."
       },
       "MS Bond Json": {
         "source_url": "https://github.com/microsoft/bond",
-        "version": ".NET 10.0.12",
+        "version": ".NET 10.0.10",
         "specifics": "Microsoft Bond was created for large-scale Microsoft services that needed a schema, several binary protocols, and codegen — in the same design space as Thrift/protobuf. Compact, Fast, and JSON protocols share one schema. This row times the Bond JSON protocol."
       },
       "MS DataContract": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 10.0.12",
+        "version": ".NET 10.0.10",
         "specifics": "DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules."
       },
       "MS DataContract Json": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 10.0.12",
+        "version": ".NET 10.0.10",
         "specifics": "DataContractSerializer and DataContractJsonSerializer are framework WCF-era serializers. They exist so .NET services could share an explicit data-contract model (XML or JSON) without XmlSerializer's older rules."
       },
       "MS XmlSerializer": {
         "source_url": "https://github.com/dotnet/runtime",
-        "version": ".NET 10.0.12",
+        "version": ".NET 10.0.10",
         "specifics": "XmlSerializer is classic .NET XML serialization. It exists so the framework could map objects to XML documents. This row is real domain XML when the attributes allow it."
       },
       "MemoryPack": {
