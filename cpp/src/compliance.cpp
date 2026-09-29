@@ -230,10 +230,14 @@ int main(int argc, char** argv) {
           return json::parse(raw.begin(), raw.end());
         }});
       } else if (fmt == "cbor") {
-        ads.push_back({"nlohmann_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw, true, false); }});
-        ads.push_back({"jsoncons_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw, true, false); }});
+        // The binary decoders are called with the default allow_exceptions=true:
+        // with allow_exceptions=false, malformed input is reported by returning a
+        // discarded value instead of throwing, which the catch block below would
+        // miss and score as "accepted".
+        ads.push_back({"nlohmann_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw); }});
+        ads.push_back({"jsoncons_cbor", [](const auto& raw, const auto&) { return json::from_cbor(raw); }});
       } else if (fmt == "msgpack") {
-        ads.push_back({"nlohmann_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
+        ads.push_back({"nlohmann_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw); }});
 #if __has_include(<msgpack.hpp>)
         // Real msgpack-c / msgpack-cxx. It throws on invalid input
         // (msgpack::parse_error for reserved bytes such as 0xc1, and
@@ -253,12 +257,12 @@ int main(int argc, char** argv) {
           return json(mp_type_name(oh.get().type));
         }});
 #endif
-        ads.push_back({"jsoncons_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw, true, false); }});
+        ads.push_back({"jsoncons_msgpack", [](const auto& raw, const auto&) { return json::from_msgpack(raw); }});
       } else if (fmt == "ubjson") {
-        ads.push_back({"nlohmann_ubjson", [](const auto& raw, const auto&) { return json::from_ubjson(raw, true, false); }});
+        ads.push_back({"nlohmann_ubjson", [](const auto& raw, const auto&) { return json::from_ubjson(raw); }});
       } else if (fmt == "bson") {
-        ads.push_back({"nlohmann_bson", [](const auto& raw, const auto&) { return json::from_bson(raw, true, false); }});
-        ads.push_back({"jsoncons_bson", [](const auto& raw, const auto&) { return json::from_bson(raw, true, false); }});
+        ads.push_back({"nlohmann_bson", [](const auto& raw, const auto&) { return json::from_bson(raw); }});
+        ads.push_back({"jsoncons_bson", [](const auto& raw, const auto&) { return json::from_bson(raw); }});
       } else if (fmt == "protobuf") {
         ads.push_back({"protobuf-wire", decode_protobuf});
         ads.push_back({"protobuf", decode_protobuf});
@@ -337,7 +341,9 @@ int main(int argc, char** argv) {
           if (c.value("expect", "") == "reject") {
             row["outcome"] = "fail";
             row["detail"] = "parser accepted input the spec requires to be rejected";
-            row["observed"] = std::string("accepted as ") + got.dump();
+            // Non-throwing dump: an accepted value may hold invalid UTF-8, and a
+            // throw here would leave the row marked "fail" but counted as a pass.
+            row["observed"] = std::string("accepted as ") + got.dump(-1, ' ', false, json::error_handler_t::replace);
             f++;
           } else {
             try {
