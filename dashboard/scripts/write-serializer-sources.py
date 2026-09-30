@@ -90,6 +90,11 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("python", "dill"): "https://github.com/uqfoundation/dill",
     ("python", "tomllib"): "https://github.com/python/cpython/tree/main/Lib/tomllib",
     ("python", "amazon-ion"): "https://github.com/amazon-ion/ion-python",
+    ("javascript", "ion-js"): "https://github.com/amazon-ion/ion-js",
+    ("go", "ion-go"): "https://github.com/amazon-ion/ion-go",
+    ("csharp", "Amazon.IonDotnet"): "https://github.com/amazon-ion/ion-dotnet",
+    ("rust", "ion-rs"): "https://github.com/amazon-ion/ion-rust",
+    ("c", "ion-c"): "https://github.com/amazon-ion/ion-c",
     ("python", "bson"): "https://github.com/mongodb/mongo-python-driver",
     ("python", "flexbuffers"): "https://github.com/google/flatbuffers",
     ("python", "newsmile"): "https://github.com/FasterXML/smile-format-specification",
@@ -475,6 +480,44 @@ SPECIFICS: dict[str, str] = {
         "superset of JSON (text and binary) for internal services. The "
         "problem was JSON's limited types. ion-python is the official "
         "Python implementation."
+    ),
+    "ion-js": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. ion-js is the official "
+        "JavaScript implementation. This row times binary dump/load; the "
+        "Ion DOM is turned into plain objects outside the timer."
+    ),
+    "ion-go": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. ion-go is the official Go "
+        "implementation. This row times MarshalBinary / Unmarshal and the "
+        "binary encoder stream."
+    ),
+    "ion-dotnet": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. Amazon.IonDotnet is the Ion "
+        "team .NET reader and writer. NuGet marks the package deprecated "
+        "and the GitHub repository is archived; the Ion libraries page "
+        "still lists it. This row pins NuGet 1.3.2 (the newest package "
+        "there; it fixes CVE-2025-11573) and reflects over the suite types "
+        "to write binary Ion."
+    ),
+    "ion-rs": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. ion-rs is the official Rust "
+        "implementation. This row uses the crate's experimental serde "
+        "feature (to_binary / from_ion)."
+    ),
+    "ion-c": (
+        "Amazon Ion was created at Amazon as a rich, self-describing "
+        "superset of JSON (text and binary) for internal services. The "
+        "problem was JSON's limited types. ion-c is the official C "
+        "implementation. This row times the binary writer and reader on "
+        "the suite visitor, including a native FILE* stream."
     ),
     "bson": (
         "BSON (Binary JSON) was created for MongoDB so documents could be "
@@ -1440,6 +1483,11 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("python", "dill"): "dill",
     ("python", "tomllib"): "tomllib",
     ("python", "amazon-ion"): "amazon-ion",
+    ("javascript", "ion-js"): "ion-js",
+    ("go", "ion-go"): "ion-go",
+    ("csharp", "Amazon.IonDotnet"): "ion-dotnet",
+    ("rust", "ion-rs"): "ion-rs",
+    ("c", "ion-c"): "ion-c",
     ("python", "bson"): "bson",
     ("python", "flexbuffers"): "flexbuffers",
     ("python", "newsmile"): "smile",

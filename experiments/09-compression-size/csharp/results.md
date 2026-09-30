@@ -1,7 +1,7 @@
 # Experiment 9 results — csharp
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/09-compression-size/csharp/logs/csharp/2026-08-17-115915.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/09-compression-size/csharp/logs/csharp/2026-09-29-184458.csv`
 **Language:** csharp
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,9 +12,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| SpanJson | 4.2.1 | 6.12 | 2.61 | 8.74 | 157 | 139 | JSON — fast writer from Experiment 1 | fastest | yes | 94 |
-| Google.Protobuf | 3.35.1 | 5.85 | 4.68 | 10.6 | 68 | 88 | Protocol Buffers — Google library | slower | yes | 95 |
-| System.Text.Json | 8.0.0.0 | 16.0 | 13.2 | 29.3 | 212 | 189 | JSON — ships with modern .NET | slower | yes | 95 |
+| SpanJson | 4.2.1 | 11.9 | 3.96 | 16.3 | 157 | 139 | JSON — fast writer from Experiment 1 | fastest | yes | 97 |
+| Google.Protobuf | 3.36.2 | 10.6 | 7.82 | 18.5 | 68 | 88 | Protocol Buffers — Google library | close | yes | 93 |
+| System.Text.Json | 8.0.0.0 | 32.1 | 19.4 | 51.0 | 157 | 139 | JSON — ships with modern .NET | slower | yes | 99 |
 
 ## In memory — sample E (words), 1 record(s) per write
 
@@ -22,9 +22,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| Google.Protobuf | 3.35.1 | 8.94 | 8.27 | 17.4 | 492 | 386 | Protocol Buffers — Google library | fastest | yes | 89 |
-| SpanJson | 4.2.1 | 10.1 | 7.61 | 17.4 | 410 | 272 | JSON — fast writer from Experiment 1 | similar | yes | 93 |
-| System.Text.Json | 8.0.0.0 | 22.3 | 21.6 | 44.3 | 548 | 389 | JSON — ships with modern .NET | slower | yes | 94 |
+| SpanJson | 4.2.1 | 11.8 | 8.44 | 20.4 | 410 | 272 | JSON — fast writer from Experiment 1 | fastest | yes | 89 |
+| Google.Protobuf | 3.36.2 | 13.0 | 11.7 | 26.0 | 492 | 386 | Protocol Buffers — Google library | slower | yes | 97 |
+| System.Text.Json | 8.0.0.0 | 29.3 | 24.8 | 54.2 | 410 | 272 | JSON — ships with modern .NET | slower | yes | 96 |
 
 ## In memory — sample C (sensor), 1 record(s) per write
 
@@ -32,31 +32,31 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| Google.Protobuf | 3.35.1 | 12.3 | 10.1 | 22.9 | 1416 | 1102 | Protocol Buffers — Google library | fastest | yes | 94 |
-| System.Text.Json | 8.0.0.0 | 71.7 | 48.8 | 122 | 3212 | 1778 | JSON — ships with modern .NET | slower | yes | 91 |
-| SpanJson | 4.2.1 | 67.6 | 68.9 | 137 | 2407 | 1320 | JSON — fast writer from Experiment 1 | slower | yes | 86 |
+| Google.Protobuf | 3.36.2 | 18.1 | 18.2 | 34.7 | 1416 | 1102 | Protocol Buffers — Google library | fastest | yes | 94 |
+| System.Text.Json | 8.0.0.0 | 84.2 | 54.9 | 140 | 2407 | 1320 | JSON — ships with modern .NET | slower | yes | 96 |
+| SpanJson | 4.2.1 | 79.4 | 75.7 | 158 | 2407 | 1320 | JSON — fast writer from Experiment 1 | slower | yes | 92 |
 
 ## Stream call (side note)
 
 | Library | N | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|---|------------|-----------|-------------------|---------------------------|
-| Google.Protobuf | 1 | 3.92 | 3.83 | 7.79 | real |
-| SpanJson | 1 | 5.37 | 3.99 | 9.39 | text_on_stream |
-| System.Text.Json | 1 | 14.3 | 12.1 | 26.9 | text_on_stream |
-| Google.Protobuf | 1 | 6.96 | 10.5 | 17.8 | real |
-| SpanJson | 1 | 11.2 | 11.3 | 22.7 | text_on_stream |
-| System.Text.Json | 1 | 21.7 | 25.8 | 47.9 | text_on_stream |
-| Google.Protobuf | 1 | 9.46 | 8.00 | 17.4 | real |
-| SpanJson | 1 | 65.0 | 36.7 | 102 | text_on_stream |
-| System.Text.Json | 1 | 68.7 | 49.2 | 117 | text_on_stream |
+| Google.Protobuf | 1 | 5.43 | 5.30 | 10.6 | real |
+| SpanJson | 1 | 7.77 | 4.90 | 12.8 | text_on_stream |
+| System.Text.Json | 1 | 17.9 | 14.6 | 32.6 | text_on_stream |
+| Google.Protobuf | 1 | 11.6 | 18.0 | 29.4 | real |
+| SpanJson | 1 | 15.8 | 14.1 | 30.6 | text_on_stream |
+| System.Text.Json | 1 | 37.1 | 37.9 | 73.3 | text_on_stream |
+| Google.Protobuf | 1 | 11.2 | 8.58 | 20.3 | real |
+| SpanJson | 1 | 49.0 | 55.0 | 105 | text_on_stream |
+| System.Text.Json | 1 | 63.0 | 73.2 | 125 | text_on_stream |
 
 ## Libraries that belong in the conversation
 
 We do not name a single winner. Groups are separate for each sample and each number of records. Named JSON only.
 
-**sample B (flat), N = 1, memory** — not clearly slower: `SpanJson`. Small gap: —. Time/size front: `SpanJson`, `Google.Protobuf`.
+**sample B (flat), N = 1, memory** — not clearly slower: `SpanJson`. Small gap: `Google.Protobuf`. Time/size front: `SpanJson`, `Google.Protobuf`.
 
-**sample E (words), N = 1, memory** — not clearly slower: `Google.Protobuf`, `SpanJson`. Small gap: —. Time/size front: `Google.Protobuf`, `SpanJson`.
+**sample E (words), N = 1, memory** — not clearly slower: `SpanJson`. Small gap: —. Time/size front: `SpanJson`.
 
 **sample C (sensor), N = 1, memory** — not clearly slower: `Google.Protobuf`. Small gap: —. Time/size front: `Google.Protobuf`.
 

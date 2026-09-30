@@ -196,3 +196,31 @@ impl BenchSerializer for BsonSer {
         Ok(bson::from_slice(data)?)
     }
 }
+
+#[derive(Default)]
+pub struct IonRsSer;
+
+impl BenchSerializer for IonRsSer {
+    fn name(&self) -> &'static str {
+        "ion-rs"
+    }
+    fn version(&self) -> &'static str {
+        ver("ion-rs")
+    }
+    fn stream_mode(&self) -> StreamMode {
+        // experimental-serde publishes to_binary (a fresh Vec) and from_ion.
+        // There is no public serde writer into an existing Write.
+        StreamMode::Adapted
+    }
+    fn prepare(&mut self, _: &Fixture) -> Result<()> {
+        Ok(())
+    }
+    fn serialize_into(&mut self, fixture: &Fixture, out: &mut Vec<u8>) -> Result<()> {
+        let bytes = ion_rs::serde::to_binary(fixture).map_err(|e| anyhow::anyhow!("{e}"))?;
+        out.extend_from_slice(&bytes);
+        Ok(())
+    }
+    fn deserialize_bytes(&mut self, data: &[u8]) -> Result<Fixture> {
+        ion_rs::serde::from_ion(data).map_err(|e| anyhow::anyhow!("{e}"))
+    }
+}

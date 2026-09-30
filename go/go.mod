@@ -29,6 +29,7 @@ require (
 )
 
 require (
+	github.com/amazon-ion/ion-go v1.5.0 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
 	github.com/bytedance/sonic/loader v0.5.2 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect

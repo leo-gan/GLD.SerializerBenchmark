@@ -68,6 +68,9 @@
       "custom-binary": [],
       "libyaml": [
         "yaml"
+      ],
+      "ion-c": [
+        "ion"
       ]
     },
     "python": {
@@ -169,6 +172,9 @@
       "bson": [
         "bson"
       ],
+      "ion-js": [
+        "ion"
+      ],
       "avsc": [
         "avro"
       ],
@@ -246,6 +252,9 @@
       ],
       "mongo-bson": [
         "bson"
+      ],
+      "ion-go": [
+        "ion"
       ],
       "pelletier/go-toml": [
         "toml"
@@ -427,6 +436,9 @@
       "MessagePack-CSharp": [
         "msgpack"
       ],
+      "Amazon.IonDotnet": [
+        "ion"
+      ],
       "Google.Protobuf": [
         "protobuf"
       ],
@@ -499,6 +511,9 @@
       ],
       "bson": [
         "bson"
+      ],
+      "ion-rs": [
+        "ion"
       ],
       "flexbuffers": [
         "flatbuffers"

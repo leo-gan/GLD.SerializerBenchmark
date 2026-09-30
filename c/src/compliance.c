@@ -471,6 +471,111 @@ static int dec_flatcc(const unsigned char *data, size_t n, const cJSON *schema) 
 }
 #endif
 
+#ifdef HAS_IONC
+#include <ionc/ion.h>
+/* ion-c validates operator symbols, lob bodies, and annotation SIDs when the
+ * value is read. Skipping a positioned scalar leaves those checks unrun. */
+static int ion_read_scalar(hREADER rd, ION_TYPE t) {
+  iERR e = IERR_INVALID_ARG;
+  if (t == tid_NULL) {
+    ION_TYPE n;
+    e = ion_reader_read_null(rd, &n);
+  } else if (t == tid_BOOL) {
+    BOOL v;
+    e = ion_reader_read_bool(rd, &v);
+  } else if (t == tid_INT) {
+    ION_INT *v = NULL;
+    e = ion_int_alloc(NULL, &v);
+    if (e == IERR_OK) e = ion_reader_read_ion_int(rd, v);
+    ion_int_free(v);
+  } else if (t == tid_FLOAT) {
+    double v;
+    e = ion_reader_read_double(rd, &v);
+  } else if (t == tid_DECIMAL) {
+    ION_DECIMAL v;
+    ion_decimal_zero(&v);
+    e = ion_reader_read_ion_decimal(rd, &v);
+    ion_decimal_free(&v);
+  } else if (t == tid_TIMESTAMP) {
+    ION_TIMESTAMP v;
+    memset(&v, 0, sizeof v);
+    e = ion_reader_read_timestamp(rd, &v);
+  } else if (t == tid_SYMBOL) {
+    ION_SYMBOL v;
+    memset(&v, 0, sizeof v);
+    e = ion_reader_read_ion_symbol(rd, &v);
+  } else if (t == tid_STRING) {
+    ION_STRING v;
+    memset(&v, 0, sizeof v);
+    e = ion_reader_read_string(rd, &v);
+  } else if (t == tid_CLOB || t == tid_BLOB) {
+    SIZE n = 0;
+    e = ion_reader_get_lob_size(rd, &n);
+    if (e == IERR_OK) {
+      if (n > (SIZE)(8 * 1024 * 1024)) return -1;
+      BYTE *buf = n ? (BYTE *)malloc(n) : NULL;
+      if (n && !buf) return -1;
+      BYTE tiny = 0;
+      SIZE got = 0;
+      e = ion_reader_read_lob_bytes(rd, n ? buf : &tiny, n, &got);
+      free(buf);
+    }
+  }
+  return e == IERR_OK ? 0 : -1;
+}
+static int ion_consume(hREADER rd, ION_TYPE t) {
+  BOOL in_struct = 0;
+  if (ion_reader_is_in_struct(rd, &in_struct) != IERR_OK) return -1;
+  if (in_struct) {
+    ION_STRING name;
+    memset(&name, 0, sizeof name);
+    if (ion_reader_get_field_name(rd, &name) != IERR_OK) return -1;
+  }
+  SIZE ann = 0;
+  if (ion_reader_get_annotation_count(rd, &ann) != IERR_OK) return -1;
+  if (ann > 256) return -1;
+  if (ann) {
+    ION_STRING *names = (ION_STRING *)calloc(ann, sizeof *names);
+    if (!names) return -1;
+    SIZE got = 0;
+    iERR e = ion_reader_get_annotations(rd, names, ann, &got);
+    free(names);
+    if (e != IERR_OK) return -1;
+  }
+  BOOL is_null = 0;
+  if (ion_reader_is_null(rd, &is_null) != IERR_OK) return -1;
+  if (is_null) return 0;
+  if (t == tid_LIST || t == tid_SEXP || t == tid_STRUCT) {
+    if (ion_reader_step_in(rd) != IERR_OK) return -1;
+    for (;;) {
+      ION_TYPE child;
+      iERR e = ion_reader_next(rd, &child);
+      if (e == IERR_EOF || (e == IERR_OK && child == tid_EOF)) break;
+      if (e != IERR_OK) return -1;
+      if (ion_consume(rd, child) != 0) return -1;
+    }
+    return ion_reader_step_out(rd) == IERR_OK ? 0 : -1;
+  }
+  return ion_read_scalar(rd, t);
+}
+static int dec_ion(const unsigned char *data, size_t n, const cJSON *schema) {
+  (void)schema;
+  if (n == 0) return 0;
+  if (!data || n > 0x7fffffff) return -1;
+  hREADER rd = NULL;
+  if (ion_reader_open_buffer(&rd, (BYTE *)data, (SIZE)n, NULL) != IERR_OK) return -1;
+  int rc = 0;
+  for (;;) {
+    ION_TYPE t;
+    iERR e = ion_reader_next(rd, &t);
+    if (e == IERR_EOF || (e == IERR_OK && t == tid_EOF)) break;
+    if (e != IERR_OK || ion_consume(rd, t) != 0) { rc = -1; break; }
+  }
+  ion_reader_close(rd);
+  return rc;
+}
+#endif
+
 #ifdef HAS_LIBYAML
 #include <yaml.h>
 static int dec_yaml(const unsigned char *data, size_t n, const cJSON *schema) {
@@ -571,6 +676,9 @@ int main(int argc, char **argv) {
 #endif
 #ifdef HAS_LIBYAML
   ADD("libyaml", "yaml", dec_yaml);
+#endif
+#ifdef HAS_IONC
+  ADD("ion-c", "ion", dec_ion);
 #endif
   ADD("protobuf-wire", "protobuf", dec_protobuf_wire);
 #ifdef HAS_NANOPB

@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using Amazon.IonDotnet;
+using Amazon.IonDotnet.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using YamlDotNet.Serialization;
@@ -240,6 +242,7 @@ namespace GLD.SerializerBenchmark
                 new("YamlDotNet", "yaml", SerializerVersionRegistry.Resolve("YamlDotNet"), (b, _) => yaml.Deserialize<object>(Encoding.UTF8.GetString(b))),
                 new("SharpYaml", "yaml", SerializerVersionRegistry.Resolve("SharpYaml"), DecodeSharpYaml),
                 new("MessagePack-CSharp", "msgpack", SerializerVersionRegistry.Resolve("MessagePack-CSharp"), (b, _) => MessagePack.MessagePackSerializer.Deserialize<object>(b)),
+                new("Amazon.IonDotnet", "ion", SerializerVersionRegistry.Resolve("Amazon.IonDotnet"), DecodeIon),
                 new("Nerdbank.MessagePack", "msgpack", SerializerVersionRegistry.Resolve("Nerdbank.MessagePack"), DecodeNerdbankMessagePack),
                 new("Google.Protobuf", "protobuf", SerializerVersionRegistry.Resolve("Google.Protobuf"), DecodeGoogleProtobuf),
                 new("ProtoBuf", "protobuf", SerializerVersionRegistry.Resolve("ProtoBuf"), DecodeProtobufNet),
@@ -250,6 +253,67 @@ namespace GLD.SerializerBenchmark
                 new("MS Bond Json", "bond", SerializerVersionRegistry.Resolve("MS Bond Json"), (b, _) => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(b))),
                 new("FlatSharp", "flatbuffers", SerializerVersionRegistry.Resolve("FlatSharp"), (b, _) => b.Length >= 4 ? (object)b.Length : throw new InvalidDataException("short")),
             };
+        }
+
+        /// <summary>Walk the datagram. Accept/reject follows the reader, not a POCO mapping.</summary>
+        private static object DecodeIon(byte[] data, string schema)
+        {
+            using var reader = IonReaderBuilder.Build(data);
+            var n = 0;
+            while (reader.MoveNext() != IonType.None)
+            {
+                n++;
+                ConsumeIon(reader);
+            }
+            return n;
+        }
+
+        private static void ConsumeIon(IIonReader reader)
+        {
+            if (reader.IsInStruct)
+                _ = reader.GetFieldNameSymbol();
+            _ = reader.GetTypeAnnotations();
+            if (reader.CurrentIsNull || reader.CurrentType == IonType.Null)
+                return;
+            var t = reader.CurrentType;
+            if (t.IsContainer())
+            {
+                reader.StepIn();
+                while (reader.MoveNext() != IonType.None)
+                    ConsumeIon(reader);
+                reader.StepOut();
+                return;
+            }
+            switch (t)
+            {
+                case IonType.Bool:
+                    _ = reader.BoolValue();
+                    break;
+                case IonType.Int:
+                    _ = reader.BigIntegerValue();
+                    break;
+                case IonType.Float:
+                    _ = reader.DoubleValue();
+                    break;
+                case IonType.Decimal:
+                    _ = reader.DecimalValue();
+                    break;
+                case IonType.Timestamp:
+                    _ = reader.TimestampValue();
+                    break;
+                case IonType.Symbol:
+                    _ = reader.SymbolValue();
+                    break;
+                case IonType.String:
+                    _ = reader.StringValue();
+                    break;
+                case IonType.Blob:
+                case IonType.Clob:
+                    _ = reader.NewByteArray();
+                    break;
+                default:
+                    throw new InvalidDataException("unsupported ion type " + t);
+            }
         }
 
         private static bool TooDeep(byte[] b)
@@ -359,7 +423,9 @@ namespace GLD.SerializerBenchmark
             try
             {
                 var raw = InputBytes(c);
-                if (TooDeep(raw) || raw.Length > a.MaxBytes)
+                // TooDeep counts '{'/'[' bytes for text parsers that blow the stack.
+                // Ion binary uses those bytes as data, and Ion text uses them as containers.
+                if ((a.Format != "ion" && TooDeep(raw)) || raw.Length > a.MaxBytes)
                     throw new InvalidDataException("input too nested or large for this runner");
                 got = a.Decode(raw, SchemaText(c.Schema));
             }

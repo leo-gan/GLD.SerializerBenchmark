@@ -56,6 +56,7 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 | [goccy/go-json](https://github.com/goccy/go-json) | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
 | [goccy/go-yaml](https://github.com/goccy/go-yaml) | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
 | [hamba/avro](https://github.com/hamba/avro) | Schema | hamba/avro/v2 | frozen API + schema cache | **native** | Stream `NewEncoder`/`NewDecoder`; schema parse once |
+| [ion-go](https://github.com/amazon-ion/ion-go) | Binary | ion-go | `MarshalBinary` / `Unmarshal` | **native** | Binary encoder stream; wire names are Go field names (no `ion` tags on the suite structs) |
 | [jsoniter](https://github.com/json-iterator/go) | JSON | json-iterator/go | compatible config | native | Widely deployed |
 | [kelindar/binary](https://github.com/kelindar/binary) | Binary | kelindar/binary | Encoder.Reset | native | Go-only compact packer |
 | [linkedin/goavro](https://github.com/linkedin/goavro) | Schema | goavro/v2 | BinaryFromNative maps | **adapted** | Bytes-only codec; OCF is a different format; map convert untimed |
@@ -98,6 +99,10 @@ goccy/go-yaml is a high-performance YAML 1.2 library for Go. The problem was tha
 #### [hamba/avro](https://github.com/hamba/avro) · `2.31.0`
 
 hamba/avro is a high-performance Avro library for Go. Avro was created for compact, schema-driven records. hamba focuses on a frozen API and schema cache so the timed path is encode/decode, not schema parse.
+
+#### [ion-go](https://github.com/amazon-ion/ion-go) · `1.5.0`
+
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-go is the official Go implementation. This row times MarshalBinary / Unmarshal and the binary encoder stream. Suite structs carry `json` tags, not `ion` tags, so the wire uses the Go field names.
 
 #### [jsoniter](https://github.com/json-iterator/go) · `1.1.12`
 

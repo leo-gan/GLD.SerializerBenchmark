@@ -32,6 +32,7 @@ from .data_v2 import protobuf_bridge
 from .report import BenchmarkError, BenchmarkLog, LogStorage, aggregate_logs, print_report, save_errors
 from .serializers import (
     AvroSerializer,
+    AmazonIonSerializer,
     Cbor2Serializer,
     CloudpickleSerializer,
     DillSerializer,
@@ -63,6 +64,7 @@ ALL_SERIALIZERS = [
     MsgspecMessagePackSerializer(),
     MsgpackSerializer(),
     Cbor2Serializer(),
+    AmazonIonSerializer(),
     ProtobufSerializer(),
     AvroSerializer(),
     FlatBuffersSerializer(),

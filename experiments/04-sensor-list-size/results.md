@@ -1,7 +1,7 @@
 # When is JSON too big for a sensor?
 
 **Question:** As a list of sensor numbers grows, when does JSON no longer fit a small radio packet?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `telemetry`, one record, list lengths [8, 32, 128, 512] · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -21,20 +21,20 @@ Bytes written. Lower is smaller. Marks: 128 B, 512 B.
 | postcard | 91 | 286 | 1051 | 4128 | >128, >512 | postcard — compact Rust |
 | prost | 94 | 290 | 1054 | 4131 | >128, >512 | Protocol Buffers |
 | rmp-serde | 135 | 356 | 1216 | 4677 | >128, >512 | MessagePack |
+| serde_json | 234 | 672 | 2420 | 9415 | >128, >512 | JSON — usual Rust library |
 | sonic-rs | 234 | 672 | 2420 | 9415 | >128, >512 | JSON — fast writer from Experiment 1 |
 | ciborium | 135 | 355 | 1215 | 4677 | >128, >512 | CBOR |
-| serde_json | 234 | 672 | 2420 | 9415 | >128, >512 | JSON — usual Rust library |
 
 ### c
 
 | Library | 8 nums | 32 nums | 128 nums | 512 nums | vs 128 / 512 at 512 nums | Role |
 |---------|--------|--------|--------|--------|--------------------------|------|
-| nanopb | 105 | 317 | 1187 | 4640 | >128, >512 | Protocol Buffers — nanopb (read the C page before quoting) |
 | protobuf-wire | 105 | 317 | 1187 | 4640 | >128, >512 | Protocol Buffers — in-tree wire helper |
+| nanopb | 105 | 317 | 1187 | 4640 | >128, >512 | Protocol Buffers — nanopb (read the C page before quoting) |
 | mpack | 129 | 343 | 1213 | 4666 | >128, >512 | MessagePack |
 | tinycbor | 129 | 342 | 1212 | 4666 | >128, >512 | CBOR — Intel tinycbor |
-| yyjson | 226 | 661 | 2418 | 9371 | >128, >512 | JSON — fast writer from Experiment 1 |
 | qcbor | 129 | 342 | 1212 | 4666 | >128, >512 | CBOR — small-device writer |
+| yyjson | 226 | 661 | 2418 | 9371 | >128, >512 | JSON — fast writer from Experiment 1 |
 | zcbor | 132 | 344 | 1214 | 4667 | >128, >512 | CBOR — structured (zcbor) |
 | cJSON | 226 | 667 | 2448 | 9482 | >128, >512 | JSON — common C library |
 
@@ -93,99 +93,99 @@ Write + read middle values in microseconds. Lower is better **inside that langua
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| postcard | 0.21 | 91 | fastest |
-| prost | 0.35 | 94 | slower |
-| rmp-serde | 0.37 | 135 | slower |
-| sonic-rs | 0.73 | 234 | slower |
-| ciborium | 0.75 | 135 | slower |
-| serde_json | 0.84 | 234 | slower |
+| postcard | 0.45 | 91 | fastest |
+| prost | 0.60 | 94 | slower |
+| rmp-serde | 0.98 | 135 | slower |
+| serde_json | 1.47 | 234 | slower |
+| sonic-rs | 1.53 | 234 | slower |
+| ciborium | 1.57 | 135 | slower |
 
 **32 numbers** — not clearly slower: `postcard`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| postcard | 0.29 | 286 | fastest |
-| prost | 0.50 | 290 | slower |
-| rmp-serde | 0.61 | 356 | slower |
-| ciborium | 1.14 | 355 | slower |
-| sonic-rs | 1.58 | 672 | slower |
-| serde_json | 1.67 | 672 | slower |
+| postcard | 0.61 | 286 | fastest |
+| prost | 0.87 | 290 | slower |
+| rmp-serde | 1.25 | 356 | slower |
+| ciborium | 2.19 | 355 | slower |
+| serde_json | 2.71 | 672 | slower |
+| sonic-rs | 2.91 | 672 | slower |
 
 **128 numbers** — not clearly slower: `postcard`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| postcard | 0.51 | 1051 | fastest |
-| prost | 0.77 | 1054 | slower |
-| rmp-serde | 1.16 | 1216 | slower |
-| ciborium | 2.79 | 1215 | slower |
-| sonic-rs | 5.05 | 2420 | slower |
-| serde_json | 5.22 | 2420 | slower |
+| postcard | 0.86 | 1051 | fastest |
+| prost | 1.38 | 1054 | slower |
+| rmp-serde | 1.73 | 1216 | slower |
+| ciborium | 4.11 | 1215 | slower |
+| serde_json | 6.88 | 2420 | slower |
+| sonic-rs | 7.97 | 2420 | slower |
 
 **512 numbers** — not clearly slower: `postcard`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| postcard | 1.18 | 4128 | fastest |
-| prost | 1.58 | 4131 | slower |
-| rmp-serde | 3.05 | 4677 | slower |
-| ciborium | 8.78 | 4677 | slower |
-| serde_json | 18.2 | 9415 | slower |
-| sonic-rs | 18.5 | 9415 | slower |
+| postcard | 1.85 | 4128 | fastest |
+| prost | 2.86 | 4131 | slower |
+| rmp-serde | 3.75 | 4677 | slower |
+| ciborium | 11.6 | 4677 | slower |
+| serde_json | 22.7 | 9415 | slower |
+| sonic-rs | 27.8 | 9415 | slower |
 
 ### c
 
-**8 numbers** — not clearly slower: `nanopb`, `protobuf-wire`. Small gap: —.
+**8 numbers** — not clearly slower: `protobuf-wire`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| nanopb | 0.27 | 105 | fastest |
-| protobuf-wire | 0.27 | 105 | similar |
-| mpack | 1.12 | 129 | slower |
-| tinycbor | 1.46 | 129 | slower |
-| yyjson | 1.49 | 226 | slower |
-| qcbor | 1.85 | 129 | slower |
-| zcbor | 2.10 | 132 | slower |
-| cJSON | 8.66 | 226 | slower |
+| protobuf-wire | 0.43 | 105 | fastest |
+| nanopb | 0.46 | 105 | slower |
+| mpack | 1.37 | 129 | slower |
+| tinycbor | 2.13 | 129 | slower |
+| qcbor | 2.41 | 129 | slower |
+| yyjson | 2.42 | 226 | slower |
+| zcbor | 3.05 | 132 | slower |
+| cJSON | 11.9 | 226 | slower |
 
-**32 numbers** — not clearly slower: `protobuf-wire`, `nanopb`. Small gap: —.
-
-| Library | Write + read (µs) | Size (bytes) | Group |
-|---------|-------------------|--------------|-------|
-| protobuf-wire | 0.40 | 317 | fastest |
-| nanopb | 0.40 | 317 | similar |
-| mpack | 1.84 | 343 | slower |
-| yyjson | 3.23 | 661 | slower |
-| tinycbor | 6.60 | 342 | slower |
-| qcbor | 7.40 | 342 | slower |
-| zcbor | 8.04 | 344 | slower |
-| cJSON | 29.5 | 667 | slower |
-
-**128 numbers** — not clearly slower: `protobuf-wire`. Small gap: `nanopb`.
+**32 numbers** — not clearly slower: `protobuf-wire`. Small gap: `nanopb`.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 0.64 | 1187 | fastest |
-| nanopb | 0.65 | 1187 | close |
-| mpack | 3.33 | 1213 | slower |
-| yyjson | 7.58 | 2418 | slower |
-| tinycbor | 79.6 | 1212 | slower |
-| qcbor | 80.6 | 1212 | slower |
-| zcbor | 88.2 | 1214 | slower |
-| cJSON | 117 | 2448 | slower |
+| protobuf-wire | 0.53 | 317 | fastest |
+| nanopb | 0.56 | 317 | close |
+| mpack | 1.92 | 343 | slower |
+| yyjson | 4.26 | 661 | slower |
+| tinycbor | 7.83 | 342 | slower |
+| qcbor | 8.49 | 342 | slower |
+| zcbor | 9.25 | 344 | slower |
+| cJSON | 35.9 | 667 | slower |
 
-**512 numbers** — not clearly slower: `protobuf-wire`. Small gap: —.
+**128 numbers** — not clearly slower: `protobuf-wire`, `nanopb`. Small gap: —.
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| protobuf-wire | 1.57 | 4640 | fastest |
-| nanopb | 1.76 | 4640 | slower |
-| mpack | 7.06 | 4666 | slower |
-| yyjson | 28.7 | 9371 | slower |
-| cJSON | 579 | 9482 | slower |
-| tinycbor | 1195 | 4666 | slower |
-| qcbor | 1209 | 4666 | slower |
-| zcbor | 1302 | 4667 | slower |
+| protobuf-wire | 0.81 | 1187 | fastest |
+| nanopb | 0.82 | 1187 | similar |
+| mpack | 3.11 | 1213 | slower |
+| yyjson | 9.87 | 2418 | slower |
+| tinycbor | 85.7 | 1212 | slower |
+| qcbor | 87.6 | 1212 | slower |
+| zcbor | 92.2 | 1214 | slower |
+| cJSON | 131 | 2448 | slower |
+
+**512 numbers** — not clearly slower: `protobuf-wire`. Small gap: `nanopb`.
+
+| Library | Write + read (µs) | Size (bytes) | Group |
+|---------|-------------------|--------------|-------|
+| protobuf-wire | 1.92 | 4640 | fastest |
+| nanopb | 2.13 | 4640 | close |
+| mpack | 8.97 | 4666 | slower |
+| yyjson | 32.9 | 9371 | slower |
+| cJSON | 624 | 9482 | slower |
+| tinycbor | 1326 | 4666 | slower |
+| qcbor | 1342 | 4666 | slower |
+| zcbor | 1460 | 4667 | slower |
 
 ### kotlin
 

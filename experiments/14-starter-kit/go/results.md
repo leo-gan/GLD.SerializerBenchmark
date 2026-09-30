@@ -1,7 +1,7 @@
 # Experiment 14 results — go
 
-**Date:** 2026-08-29
-**Raw file:** `experiments/14-starter-kit/go/logs/go/2026-08-28-182216.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/14-starter-kit/go/logs/go/2026-09-29-185711.csv`
 **Language:** go
 **Sample:** one nested document (`document`, one record)
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,19 +12,19 @@ Times are middle values in microseconds (µs). Lower time is better.
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Named fields? | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|---------------|-------|-------------------|-------------|
-| goccy/go-json | 0.10.6 | 1.45 | 2.26 | 3.69 | 448 | 234 | yes | fastest | yes | 89 |
-| protobuf | 1.36.11 | 1.82 | 2.42 | 4.26 | 155 | 179 | yes | similar | yes | 94 |
-| vmihailenco/msgpack | 5.4.1 | 2.19 | 4.04 | 6.30 | 397 | 242 | yes | slower | yes | 93 |
-| encoding/json | go1.24.13 | 1.86 | 8.34 | 10.3 | 448 | 234 | yes | slower | yes | 95 |
+| goccy/go-json | 0.10.6 | 2.07 | 2.90 | 5.09 | 448 | 234 | yes | fastest | yes | 88 |
+| protobuf | 1.36.12 | 2.28 | 2.91 | 5.37 | 155 | 179 | yes | similar | yes | 89 |
+| vmihailenco/msgpack | 5.4.1 | 3.19 | 4.98 | 8.24 | 405 | 239 | yes | slower | yes | 88 |
+| encoding/json | go1.24.13 | 2.79 | 11.1 | 14.1 | 448 | 234 | yes | slower | yes | 95 |
 
 ## Stream call (side note)
 
 | Library | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|------------|-----------|-------------------|---------------------------|
-| protobuf | 2.00 | 2.55 | 4.61 | copied |
-| goccy/go-json | 1.87 | 3.23 | 4.98 | real |
-| vmihailenco/msgpack | 3.37 | 4.40 | 7.73 | real |
-| encoding/json | 2.05 | 10.0 | 12.2 | real |
+| protobuf | 1.99 | 2.69 | 4.68 | copied |
+| goccy/go-json | 1.69 | 3.21 | 4.89 | real |
+| vmihailenco/msgpack | 3.46 | 4.24 | 7.83 | real |
+| encoding/json | 2.21 | 10.0 | 12.3 | real |
 
 ## Libraries that belong in the conversation
 

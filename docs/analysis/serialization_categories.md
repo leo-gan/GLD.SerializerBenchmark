@@ -83,14 +83,14 @@ Examples use **log `SerializerName` values** from language overviews (not always
 - **Prefer when:** internal services, caches and queues, JSON-like flexibility without text parse cost.
 - **Trade-offs:** not human-readable; evolution is ad hoc unless you add conventions.
 - **Examples in suite:**
-  - **Python:** `msgpack`, `msgspec-msgpack`, `cbor2`
-  - **Rust:** `rmp-serde`, `ciborium`, `minicbor`, `bson`, `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy`, `flexbuffers`
-  - **C:** `mpack`, `msgpack-c`, `tinycbor`, `libcbor`, `libcbor-stream`, `qcbor`, `ubj`, `libbson`, `custom-binary`
-  - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `bson`, `bser`, `sia`
-  - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `ugorji/msgpack`, `fxamacker/cbor`, `ugorji/cbor`, `kelindar/binary`, `mongo-bson`
+  - **Python:** `msgpack`, `msgspec-msgpack`, `cbor2`, `amazon-ion`
+  - **Rust:** `rmp-serde`, `ciborium`, `minicbor`, `bson`, `bincode`, `postcard`, `bitcode`, `nanoserde`, `speedy`, `flexbuffers`, `ion-rs`
+  - **C:** `mpack`, `msgpack-c`, `tinycbor`, `libcbor`, `libcbor-stream`, `qcbor`, `ubj`, `libbson`, `custom-binary`, `ion-c`
+  - **JavaScript:** `msgpackr`, `@msgpack/msgpack`, `json-pack-msgpack`, `cbor-x`, `cbor`, `bson`, `bser`, `sia`, `ion-js`
+  - **Go:** `vmihailenco/msgpack`, `shamaton/msgpack`, `ugorji/msgpack`, `fxamacker/cbor`, `ugorji/cbor`, `kelindar/binary`, `mongo-bson`, `ion-go`
   - **Java:** `kryo`, `fory`, `protostuff`, `hessian`, `msgpack`, `jackson-cbor`, `jackson-smile`, `ion`, `bson`
   - **C++:** `msgpack`, `nlohmann_*`, `cereal`, `bitsery`, `zpp_bits`, `yas`, `cista`, `boost_serialization`, `jsoncons_*`, `custom_binary`
-  - **C#:** many binary graph/type serializers (`Ceras`, `Hyperion`, `BinaryPack`, `MemoryPack`, …)—portability and trust model vary; see the [C# overview](../c-sharp/index.md). **MessagePack-CSharp is registered** (`ContractlessStandardResolver`).
+  - **C#:** many binary graph/type serializers (`Ceras`, `Hyperion`, `BinaryPack`, `MemoryPack`, `Amazon.IonDotnet`, …)—portability and trust model vary; see the [C# overview](../c-sharp/index.md). **MessagePack-CSharp is registered** (`ContractlessStandardResolver`).
 
 ### Schema-driven
 

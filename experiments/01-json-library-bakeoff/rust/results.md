@@ -1,7 +1,7 @@
 # Experiment 1 results — rust
 
-**Date:** 2026-08-16
-**Raw file:** `experiments/01-json-library-bakeoff/rust/logs/rust/2026-08-16-150530.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/01-json-library-bakeoff/rust/logs/rust/2026-09-29-184051.csv`
 **Language:** rust
 **Sample:** one nested document (`document`, one record)
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,17 +12,17 @@ Times are middle values in microseconds (µs). Lower time is better.
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Named fields? | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|---------------|-------|-------------------|-------------|
-| sonic-rs | 0.3.17 | 0.47 | 0.82 | 1.30 | 460 | — | yes | fastest | yes | 90 |
-| serde_json | 1.0.150 | 0.52 | 1.10 | 1.63 | 460 | — | yes | slower | yes | 91 |
-| simd-json | 0.14.3 | 0.52 | 1.45 | 1.97 | 460 | — | yes | slower | yes | 89 |
+| sonic-rs | 0.3.17 | 0.70 | 1.94 | 2.66 | 460 | 237 | yes | fastest | yes | 82 |
+| serde_json | 1.0.151 | 0.81 | 2.40 | 3.22 | 460 | 237 | yes | slower | yes | 89 |
+| simd-json | 0.14.3 | 0.84 | 2.91 | 3.75 | 460 | 237 | yes | slower | yes | 88 |
 
 ## Stream call (side note)
 
 | Library | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|------------|-----------|-------------------|---------------------------|
-| sonic-rs | 0.68 | 0.95 | 1.61 | copied |
-| simd-json | 0.79 | 1.52 | 2.31 | copied |
-| serde_json | 1.50 | 2.85 | 4.38 | real |
+| sonic-rs | 0.93 | 2.03 | 2.98 | copied |
+| simd-json | 1.14 | 2.79 | 3.91 | copied |
+| serde_json | 2.25 | 4.06 | 6.37 | real |
 
 ## Libraries that belong in the conversation
 

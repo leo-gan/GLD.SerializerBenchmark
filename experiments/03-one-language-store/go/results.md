@@ -1,7 +1,7 @@
 # Experiment 3 results — go
 
-**Date:** 2026-08-16
-**Raw file:** `experiments/03-one-language-store/go/logs/go/2026-08-16-160023.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/03-one-language-store/go/logs/go/2026-09-29-184150.csv`
 **Language:** go
 **Sample:** one flat record (`message`), 1 record per write
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,17 +12,17 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf | 1.36.11 | 0.65 | 0.45 | 1.10 | 50 | — | other languages can read — Protocol Buffers | fastest | yes | 86 |
-| goccy/go-json | 0.10.6 | 0.72 | 0.92 | 1.70 | 168 | — | other languages can read — JSON | slower | yes | 88 |
-| encoding/gob | go1.24.13 | 2.74 | 12.0 | 14.6 | 173 | — | one language — gob | slower | yes | 86 |
+| protobuf | 1.36.12 | 0.80 | 0.72 | 1.50 | 50 | 75 | other languages can read — Protocol Buffers | fastest | yes | 89 |
+| goccy/go-json | 0.10.6 | 0.81 | 1.11 | 1.94 | 168 | 142 | other languages can read — JSON | slower | yes | 90 |
+| encoding/gob | go1.24.13 | 3.14 | 12.3 | 15.9 | 173 | 171 | one language — gob | slower | yes | 87 |
 
 ## Stream call (side note)
 
 | Library | N | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|---|------------|-----------|-------------------|---------------------------|
-| protobuf | 1 | 0.74 | 0.57 | 1.31 | copied |
-| goccy/go-json | 1 | 0.85 | 1.12 | 1.95 | real |
-| encoding/gob | 1 | 2.62 | 11.0 | 13.6 | real |
+| protobuf | 1 | 0.96 | 0.86 | 1.80 | copied |
+| goccy/go-json | 1 | 0.86 | 1.46 | 2.36 | real |
+| encoding/gob | 1 | 3.12 | 12.5 | 15.8 | real |
 
 ## Libraries that belong in the conversation
 

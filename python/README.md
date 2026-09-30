@@ -1,6 +1,6 @@
 # Python Serializer Benchmark
 
-Host benchmark runner evaluating **16 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
+Host benchmark runner evaluating **18 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
@@ -9,7 +9,8 @@ Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 | Group | Serializers | Notes |
 | :--- | :--- | :--- |
 | **JSON** | `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs` | Text-based; typed stacks use prepare/prepare_data. |
-| **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2` | Compact binary, schema-optional. |
+| **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2`, `amazon-ion` | Compact binary, schema-optional. Ion is the official `amazon-ion` binary dump/load. |
+| **Text** | `yaml` | PyYAML. |
 | **Schema** | `protobuf`, `avro`, `flatbuffers` | Requires schemas / codegen (flatc for FlatBuffers). |
 | **Python-native** | `pickle`, `cloudpickle`, `dill` | Language-native pickle family. |
 
