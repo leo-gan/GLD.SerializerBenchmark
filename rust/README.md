@@ -15,45 +15,46 @@ rust/src/serializers/
   avro_ser.rs      # serde_avro_fast (Avro binary datum)
 ```
 
-## Serializers (16)
+## Serializers (17)
 
-| Name | Category | Call path notes |
-|------|----------|-----------------|
-| serde_json | JSON | `to_vec` / `from_slice`; native stream |
-| simd-json | JSON | SIMD parse; ser via `serde_json` |
-| sonic-rs | JSON | `to_vec` / `from_slice` |
-| rmp-serde | MessagePack | `to_vec_named` / `from_slice` |
-| ciborium | CBOR | reusable buffer; native stream |
-| bincode | Binary | config reused in `prepare` |
-| postcard | Binary | `to_allocvec` / `from_bytes` |
-| bitcode | Binary | `serialize` / `deserialize` |
-| flexbuffers | FlexBuffers | Serde flexbuffers path |
-| bson | Document binary | `bson::to_vec` / `from_slice` |
-| minicbor | CBOR | direct `Encode`/`Decode` |
-| rkyv | Zero-copy | timed path materializes owned `T` for fidelity |
-| prost | Protobuf | convert in `prepare`; timed codec only |
-| serde_avro_fast | Schema | schema + `SerializerConfig` once; `to_datum` / `from_datum_slice` |
-| nanoserde | Binary | `SerBin` / `DeBin` |
-| speedy | Binary | `Writable` / `Readable` |
+| Name            | Category        | Call path notes                                                            |
+| --------------- | --------------- | -------------------------------------------------------------------------- |
+| serde_json      | JSON            | `to_vec` / `from_slice`; native stream                                     |
+| simd-json       | JSON            | SIMD parse; ser via `serde_json`                                           |
+| sonic-rs        | JSON            | `to_vec` / `from_slice`                                                    |
+| rmp-serde       | MessagePack     | `to_vec_named` / `from_slice`                                              |
+| ciborium        | CBOR            | reusable buffer; native stream                                             |
+| bincode         | Binary          | config reused in `prepare`                                                 |
+| postcard        | Binary          | `to_allocvec` / `from_bytes`                                               |
+| bitcode         | Binary          | `serialize` / `deserialize`                                                |
+| fory            | Binary          | registered structs; `serialize_to` reuses the output buffer; `deserialize` |
+| flexbuffers     | FlexBuffers     | Serde flexbuffers path                                                     |
+| bson            | Document binary | `bson::to_vec` / `from_slice`                                              |
+| minicbor        | CBOR            | direct `Encode`/`Decode`                                                   |
+| rkyv            | Zero-copy       | timed path materializes owned `T` for fidelity                             |
+| prost           | Protobuf        | convert in `prepare`; timed codec only                                     |
+| serde_avro_fast | Schema          | schema + `SerializerConfig` once; `to_datum` / `from_datum_slice`          |
+| nanoserde       | Binary          | `SerBin` / `DeBin`                                                         |
+| speedy          | Binary          | `Writable` / `Readable`                                                    |
 
 ### Call-path contract
 
-1. `prepare` — untimed (bind kind-specific encode fns, codec config)  
-2. `serialize_into` / `deserialize_bytes` — timed  
+1. `prepare` — untimed (bind kind-specific encode fns, codec config)
+2. `serialize_into` / `deserialize_bytes` — timed
 3. Stream: **native** or **adapted**
 
 ### Timing methodology (issue #59)
 
-| Concern | Policy |
-|---------|--------|
-| **Output buffer** | Benchmark runner owns a reusable `Vec<u8>`, `clear()`s before each timed encode, reuses capacity across reps. Cold allocation is expected in warmup (rep 0; dropped when `exclude_warmup` is set). Timed work is encode into that buffer. |
-| **Optimization barriers** | `std::hint::black_box` on timed inputs and outputs. |
-| **Fixture kind** | Direct codecs (`minicbor`, `rkyv`, …) bind a monomorphic encode fn in `prepare` so the timed path is not a multi-way `match fixture`. |
-| **RNG** | `rand_pcg::Lcg64Xsh32` with nothing-up-my-sleeve π digits + suite `BENCHMARK_SEED` mix (within-language determinism only). |
+| Concern                   | Policy                                                                                                                                                                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Output buffer**         | Benchmark runner owns a reusable `Vec<u8>`, `clear()`s before each timed encode, reuses capacity across reps. Cold allocation is expected in warmup (rep 0; dropped when `exclude_warmup` is set). Timed work is encode into that buffer. |
+| **Optimization barriers** | `std::hint::black_box` on timed inputs and outputs.                                                                                                                                                                                       |
+| **Fixture kind**          | Direct codecs (`minicbor`, `rkyv`, …) bind a monomorphic encode fn in `prepare` so the timed path is not a multi-way `match fixture`.                                                                                                     |
+| **RNG**                   | `rand_pcg::Lcg64Xsh32` with nothing-up-my-sleeve π digits + suite `BENCHMARK_SEED` mix (within-language determinism only).                                                                                                                |
 
 ### Not yet in suite
 
-- **flatbuffers** / **capnp** (separate IDL codegen)  
+- **flatbuffers** / **capnp** (separate IDL codegen)
 - **miniserde** (JSON-only niche)
 
 ## Test data
@@ -74,5 +75,5 @@ Analysis: `analyze-benchmarks -l rust`.
 
 ## Build notes
 
-- `build.rs` compiles `schemas/v2/protobuf/benchmark_v2.proto` via prost-build.  
+- `build.rs` compiles `schemas/v2/protobuf/benchmark_v2.proto` via prost-build.
 - Offline builds need a populated `target/` / vendor cache.

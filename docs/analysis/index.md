@@ -2,7 +2,7 @@
 
 This section explains **how this project measures serializers**, not the theory of formats themselves. On the site it lives under the **Benchmarks** tab. Live interactive results live under the **Dashboard** tab.
 
-If Learn / Serialization 101 answers *“what is serialization?”*, Benchmarks answers *“how do we time it fairly, and what do the numbers mean?”*
+If Learn / Serialization 101 answers _“what is serialization?”_, Benchmarks answers _“how do we time it fairly, and what do the numbers mean?”_
 
 You do not need to be a performance engineer to read these pages. They are written for introductory computer science students and for anyone who wants a clear picture of the suite before diving into tables and plots.
 
@@ -43,23 +43,23 @@ Each programming language has a small program called a **benchmark runner**. The
 
 ## Contribute
 
-| Task | Guide |
-|------|--------|
+| Task                                        | Guide                                         |
+| ------------------------------------------- | --------------------------------------------- |
 | Add **one library** to an existing language | [Adding a serializer](ADDING_A_SERIALIZER.md) |
-| Add a **new language** tree | [Adding a language](ADDING_A_LANGUAGE.md) |
+| Add a **new language** tree                 | [Adding a language](ADDING_A_LANGUAGE.md)     |
 
 ---
 
 ## Shared terms (quick)
 
-| Say this | Not this | Means |
-|----------|----------|--------|
-| **data type** | “fixture” | One of `message`, `document`, `telemetry`, `strings`, `event` |
-| **benchmark runner** | “harness” | Per-language program that times serializers and writes the CSV |
-| **batch size N** | — | How many instances in one serialize call (`1` or `100`) |
-| **category / family** | — | JSON, schemaless binary, schema-driven, language-native |
-| **I/O mode** (bytes / stream) | — | How the library was called (buffer vs stream), **not** payload size |
-| **run mode** (smoke / full / …) | — | How heavy the experiment is (repetitions / intent) |
+| Say this                        | Not this  | Means                                                               |
+| ------------------------------- | --------- | ------------------------------------------------------------------- |
+| **data type**                   | “fixture” | One of `message`, `document`, `telemetry`, `strings`, `event`       |
+| **benchmark runner**            | “harness” | Per-language program that times serializers and writes the CSV      |
+| **batch size N**                | —         | How many instances in one serialize call (`1` or `100`)             |
+| **category / family**           | —         | JSON, schemaless binary, schema-driven, language-native             |
+| **I/O mode** (bytes / stream)   | —         | How the library was called (buffer vs stream), **not** payload size |
+| **run mode** (smoke / full / …) | —         | How heavy the experiment is (repetitions / intent)                  |
 
 Full mode guide: [Modes](modes.md). Data-type glossary: [Test data — vocabulary](test_data_configuration.md#vocabulary).
 
@@ -69,26 +69,26 @@ Full mode guide: [Modes](modes.md). Data-type glossary: [Test data — vocabular
 
 **Suggested order for a first visit**
 
-1. **[Architecture](architecture.md)** — lab design and what is timed  
-2. **[Timing honesty](TIMING_HONESTY.md)** — what `prepare` may do, and what `serialize` must do  
-3. **[Modes](modes.md)** + **[Test data](test_data_configuration.md)** — what the columns mean  
-4. **[Methodology](ANALYSIS_METHODOLOGY.md)** — warmup, filters, uncertainty  
-5. **[Metrics](METRICS.md)** when a column name is opaque  
-6. **[Claims and replication](CLAIMS_AND_REPLICATION.md)** before publishing a blog or paper claim  
+1. **[Architecture](architecture.md)** — lab design and what is timed
+2. **[Timing honesty](TIMING_HONESTY.md)** — what `prepare` may do, and what `serialize` must do
+3. **[Modes](modes.md)** + **[Test data](test_data_configuration.md)** — what the columns mean
+4. **[Methodology](ANALYSIS_METHODOLOGY.md)** — warmup, filters, uncertainty
+5. **[Metrics](METRICS.md)** when a column name is opaque
+6. **[Claims and replication](CLAIMS_AND_REPLICATION.md)** before publishing a blog or paper claim
 
-| Page | What you will learn | Start here if you want… |
-|------|---------------------|-------------------------|
-| **[Architecture](architecture.md)** | How the repository is organized and how timing works | The measurement design |
-| **[Timing honesty](TIMING_HONESTY.md)** | What belongs in `prepare` vs the timed encode/decode | “Is this row measuring a real encode?” |
-| **[Modes](modes.md)** | I/O modes (bytes/stream) and run modes (smoke…research) | Why the Dashboard Mode filter has two paths; which run preset to use |
-| **[Categories](serialization_categories.md)** | Four families of serializers (JSON, binary, schema-driven, native) | Fair “apples to apples” groups |
-| **[Test data](test_data_configuration.md)** | The five sample data types and how sizes are chosen | What we serialize |
-| **[Methodology](ANALYSIS_METHODOLOGY.md)** | Warmup, outliers, confidence intervals, effect sizes, exploratory ranks | How CSVs become published numbers |
-| **[Metrics](METRICS.md)** | Names and meanings of every reported measurement | “What does this column mean?” |
-| **[Claims and replication](CLAIMS_AND_REPLICATION.md)** | L1 / L2 / L3: what you may claim from one run vs many | Honest generalization language |
-| **[Adding a serializer](ADDING_A_SERIALIZER.md)** | Drop-in checklist for one library | Author path |
-| **[Adding a language](ADDING_A_LANGUAGE.md)** | Checklist to plug in a new language benchmark runner | Extending the suite |
-| **[Dashboard](../dashboard/)** | Live measured numbers (Overview, Details, Compare) | The published L1 artifact |
+| Page                                                    | What you will learn                                                     | Start here if you want…                                              |
+| ------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **[Architecture](architecture.md)**                     | How the repository is organized and how timing works                    | The measurement design                                               |
+| **[Timing honesty](TIMING_HONESTY.md)**                 | What belongs in `prepare` vs the timed encode/decode                    | “Is this row measuring a real encode?”                               |
+| **[Modes](modes.md)**                                   | I/O modes (bytes/stream) and run modes (smoke…research)                 | Why the Dashboard Mode filter has two paths; which run preset to use |
+| **[Categories](serialization_categories.md)**           | Four families of serializers (JSON, binary, schema-driven, native)      | Fair “apples to apples” groups                                       |
+| **[Test data](test_data_configuration.md)**             | The five sample data types and how sizes are chosen                     | What we serialize                                                    |
+| **[Methodology](ANALYSIS_METHODOLOGY.md)**              | Warmup, outliers, confidence intervals, effect sizes, exploratory ranks | How CSVs become published numbers                                    |
+| **[Metrics](METRICS.md)**                               | Names and meanings of every reported measurement                        | “What does this column mean?”                                        |
+| **[Claims and replication](CLAIMS_AND_REPLICATION.md)** | L1 / L2 / L3: what you may claim from one run vs many                   | Honest generalization language                                       |
+| **[Adding a serializer](ADDING_A_SERIALIZER.md)**       | Drop-in checklist for one library                                       | Author path                                                          |
+| **[Adding a language](ADDING_A_LANGUAGE.md)**           | Checklist to plug in a new language benchmark runner                    | Extending the suite                                                  |
+| **[Dashboard](../dashboard/)**                          | Live measured numbers (Overview, Details, Compare)                      | The published L1 artifact                                            |
 
 Theory tracks: [101](../theory/101/index.md) · [201](../theory/201/index.md) · [301](../theory/301/index.md) · [401](../theory/401/index.md). Live charts: [Dashboard](../dashboard/).
 
@@ -98,21 +98,21 @@ Theory tracks: [101](../theory/101/index.md) · [201](../theory/201/index.md) ·
 
 Each language has a hand-written **Overview** (roster, caveats, how to read this runner). Measured numbers live on the **Dashboard**. Unpublished CLI reports land under `reports/<docs_dir>/results.md` for PR diffs — do not commit them to the site.
 
-| Language | Serializers (registered) | Overview | Dashboard |
-|----------|--------------------------|----------|-----------|
-| C | **20** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
-| C# | **38** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
-| C++ | **27+** | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
-| Go | **19** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
-| Java | **18** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
-| JavaScript | **20** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
-| Kotlin | **26** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
-| Mojo | **6** | [Overview](../mojo/index.md) | [Dashboard](../dashboard/?lang=mojo) |
-| PHP | **15** | [Overview](../php/index.md) | [Dashboard](../dashboard/?lang=php) |
-| Python | **16** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
-| Rust | **16** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
-| Swift | **14** | [Overview](../swift/index.md) | [Dashboard](../dashboard/?lang=swift) |
-| Zig | **17** | [Overview](../zig/index.md) | [Dashboard](../dashboard/?lang=zig) |
+| Language   | Serializers (registered) | Overview                           | Dashboard                                  |
+| ---------- | ------------------------ | ---------------------------------- | ------------------------------------------ |
+| C          | **20**                   | [Overview](../c/index.md)          | [Dashboard](../dashboard/?lang=c)          |
+| C#         | **41**                   | [Overview](../c-sharp/index.md)    | [Dashboard](../dashboard/?lang=csharp)     |
+| C++        | **27+**                  | [Overview](../cpp/index.md)        | [Dashboard](../dashboard/?lang=cpp)        |
+| Go         | **20**                   | [Overview](../go/index.md)         | [Dashboard](../dashboard/?lang=go)         |
+| Java       | **18**                   | [Overview](../java/index.md)       | [Dashboard](../dashboard/?lang=java)       |
+| JavaScript | **21** †                 | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
+| Kotlin     | **26**                   | [Overview](../kotlin/index.md)     | [Dashboard](../dashboard/?lang=kotlin)     |
+| Mojo       | **6**                    | [Overview](../mojo/index.md)       | [Dashboard](../dashboard/?lang=mojo)       |
+| PHP        | **15**                   | [Overview](../php/index.md)        | [Dashboard](../dashboard/?lang=php)        |
+| Python     | **17**                   | [Overview](../python/index.md)     | [Dashboard](../dashboard/?lang=python)     |
+| Rust       | **17**                   | [Overview](../rust/index.md)       | [Dashboard](../dashboard/?lang=rust)       |
+| Swift      | **15**                   | [Overview](../swift/index.md)      | [Dashboard](../dashboard/?lang=swift)      |
+| Zig        | **17**                   | [Overview](../zig/index.md)        | [Dashboard](../dashboard/?lang=zig)        |
 
 † In JavaScript, `simdjson` is optional (it needs a native addon). If that addon fails to build, the rest of the run still continues without it.
 

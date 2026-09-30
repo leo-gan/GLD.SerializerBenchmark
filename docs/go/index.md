@@ -30,7 +30,7 @@ Go’s garbage collector is designed for short pauses, but allocation still matt
 
 ### Suite-specific gotchas
 
-**protobuf** and **linkedin/goavro** have no native stream API in this suite. Their stream rows are **adapted**: the timed path is still bytes, then a write or read of those bytes.
+**fory**, **protobuf**, and **linkedin/goavro** use **adapted** stream rows in this suite: the timed path encodes to bytes before writing, or reads the bytes before decoding.
 
 These times cannot be ranked against another language.
 
@@ -175,7 +175,7 @@ for rep:
 - **protobuf** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
 - **encoding/gob** and **kelindar/binary** are not cross-language wire formats.
 - **pelletier/go-toml** wraps multi-instance cells as a TOML table with `items` (TOML cannot use bare array roots).
-- **Stream adapted** only for **protobuf** and **linkedin/goavro** (bytes-only libraries; OCF/gRPC would change wire format). All other registered Go codecs use **native** stream APIs.
+- **Stream adapted** for **fory**, **protobuf**, and **linkedin/goavro**: these rows wrap byte encode/decode with stream writes/reads. All other registered Go codecs use **native** stream APIs.
 - **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
 Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).

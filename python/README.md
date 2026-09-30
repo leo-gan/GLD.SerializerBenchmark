@@ -1,27 +1,27 @@
 # Python Serializer Benchmark
 
-Host benchmark runner evaluating **16 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
+Host benchmark runner evaluating **17 Python serializers** with the same CSV schema and dual-mode (bytes / stream) methodology as the other language suites.
 
 Serializer inventory: [docs/python/index.md](../docs/python/index.md).
 
 ## Serializer Groups
 
-| Group | Serializers | Notes |
-| :--- | :--- | :--- |
-| **JSON** | `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs` | Text-based; typed stacks use prepare/prepare_data. |
-| **Binary** | `msgpack`, `msgspec-msgpack`, `cbor2` | Compact binary, schema-optional. |
-| **Schema** | `protobuf`, `avro`, `flatbuffers` | Requires schemas / codegen (flatc for FlatBuffers). |
-| **Python-native** | `pickle`, `cloudpickle`, `dill` | Language-native pickle family. |
+| Group             | Serializers                                                                     | Notes                                               |
+| :---------------- | :------------------------------------------------------------------------------ | :-------------------------------------------------- |
+| **JSON**          | `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs` | Text-based; typed stacks use prepare/prepare_data.  |
+| **Binary**        | `msgpack`, `msgspec-msgpack`, `cbor2`, `fory`                                   | Compact binary, schema-optional.                    |
+| **Schema**        | `protobuf`, `avro`, `flatbuffers`                                               | Requires schemas / codegen (flatc for FlatBuffers). |
+| **Python-native** | `pickle`, `cloudpickle`, `dill`                                                 | Language-native pickle family.                      |
 
 ## Test data
 
-| Type id | Purpose |
-| :--- | :--- |
-| **message** | Flat mixed primitives (small POCO). |
-| **document** | Nested document with line items. |
-| **telemetry** | Numeric bulk / measurements. |
-| **strings** | Homogeneous string list (allocation pressure). |
-| **event** | Event envelope with attributes. |
+| Type id       | Purpose                                        |
+| :------------ | :--------------------------------------------- |
+| **message**   | Flat mixed primitives (small POCO).            |
+| **document**  | Nested document with line items.               |
+| **telemetry** | Numeric bulk / measurements.                   |
+| **strings**   | Homogeneous string list (allocation pressure). |
+| **event**     | Event envelope with attributes.                |
 
 Catalog: `schemas/data_catalog_v2.yaml`. Run matrices: `config/library/`.
 
@@ -34,13 +34,13 @@ Every serializer is tested in **both modes**. Libraries without a native stream 
 
 ## Metrics
 
-| Metric | How It Is Measured | Rationale |
-| :--- | :--- | :--- |
-| **Throughput (ops/sec)** | `1_000_000_000 / nanoseconds` for serialize, deserialize, and combined. | Same formula as other benchmark runners. |
-| **Latency** | Total elapsed nanoseconds per repetition; **all** indices written to CSV (including warmup index 0). Analysis may exclude warmup. | Raw logs stay complete for re-analysis. |
-| **Memory Allocation** | `tracemalloc` peak allocated bytes during each repetition. | C-extension allocations may be under-counted. |
-| **Output Size** | `len(bytes)` or `BytesIO.tell()`. | Comparable across languages. |
-| **Type Fidelity** | Semantic roundtrip equality score (1.0 = perfect). | Relaxes strict type identity (`datetime` vs ISO string, etc.). |
+| Metric                   | How It Is Measured                                                                                                                | Rationale                                                      |
+| :----------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
+| **Throughput (ops/sec)** | `1_000_000_000 / nanoseconds` for serialize, deserialize, and combined.                                                           | Same formula as other benchmark runners.                       |
+| **Latency**              | Total elapsed nanoseconds per repetition; **all** indices written to CSV (including warmup index 0). Analysis may exclude warmup. | Raw logs stay complete for re-analysis.                        |
+| **Memory Allocation**    | `tracemalloc` peak allocated bytes during each repetition.                                                                        | C-extension allocations may be under-counted.                  |
+| **Output Size**          | `len(bytes)` or `BytesIO.tell()`.                                                                                                 | Comparable across languages.                                   |
+| **Type Fidelity**        | Semantic roundtrip equality score (1.0 = perfect).                                                                                | Relaxes strict type identity (`datetime` vs ISO string, etc.). |
 
 ## Architecture & Design Decisions
 
@@ -73,13 +73,13 @@ cd python
 ./scripts/run-benchmarks.sh smoke
 ```
 
-| Mode | Command | Description |
-| :--- | :--- | :--- |
-| **Smoke** | `./scripts/run-benchmarks.sh smoke` | Short matrix from `config/library/smoke.yaml`. |
-| **Verify All** | `./scripts/run-benchmarks.sh all-single` | 10 reps, all serializers, full type matrix. |
-| **Full Run** | `./scripts/run-benchmarks.sh full` | 100 repetitions. |
-| **Research** | `./scripts/run-benchmarks.sh research` | 500 repetitions. |
-| **Custom** | `./scripts/run-benchmarks.sh custom 50 "json" "message"` | Custom reps and name filters. |
+| Mode           | Command                                                  | Description                                    |
+| :------------- | :------------------------------------------------------- | :--------------------------------------------- |
+| **Smoke**      | `./scripts/run-benchmarks.sh smoke`                      | Short matrix from `config/library/smoke.yaml`. |
+| **Verify All** | `./scripts/run-benchmarks.sh all-single`                 | 10 reps, all serializers, full type matrix.    |
+| **Full Run**   | `./scripts/run-benchmarks.sh full`                       | 100 repetitions.                               |
+| **Research**   | `./scripts/run-benchmarks.sh research`                   | 500 repetitions.                               |
+| **Custom**     | `./scripts/run-benchmarks.sh custom 50 "json" "message"` | Custom reps and name filters.                  |
 
 Direct `uv` invocation (package lives under `src/` — set `PYTHONPATH`):
 
@@ -132,4 +132,4 @@ See root README and [Benchmark architecture](../docs/analysis/architecture.md).
 
 ---
 
-*Authored by Leonid Ganeline*
+_Authored by Leonid Ganeline_
