@@ -42,6 +42,7 @@ from .serializers import (
     MsgspecSerializer,
     OrjsonSerializer,
     PickleSerializer,
+    ForySerializer,
     PyYamlSerializer,
     ProtobufSerializer,
     PydanticSerializer,
@@ -68,6 +69,7 @@ ALL_SERIALIZERS = [
     FlatBuffersSerializer(),
     PyYamlSerializer(),
     PickleSerializer(),
+    ForySerializer(),
     CloudpickleSerializer(),
     DillSerializer(),
 ]

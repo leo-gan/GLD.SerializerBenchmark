@@ -2,8 +2,7 @@
 title: "Go"
 ---
 
-Go
-===
+# Go
 
 Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encoding/gob`), a competitive **JSON performance tier** (sonic, goccy, jsoniter, segmentio, ugorji), **schemaless binary** (MessagePack, CBOR, kelindar/binary, BSON), **text documents** (YAML, TOML), and **schema/IDL** stacks (protobuf, Avro).
 
@@ -13,13 +12,13 @@ Go’s serialization landscape mixes **stdlib** codecs (`encoding/json`, `encodi
 
 Go compiles to **native machine code** before the process starts. There is no Java-style virtual machine and no intermediate language such as .NET IL. The compiler still embeds a small **runtime** in every binary. That runtime includes a concurrent garbage collector, a scheduler for goroutines (Go’s lightweight threads), and the stacks those goroutines use. You do not install a separate “Go VM” in order to run the benchmark.
 
-| | This suite |
-|---|---|
-| Language / module | Go **1.24** (`go.mod` toolchain `go1.24.13`) |
-| Host bootstrap | Go **1.22 or newer**. `GOTOOLCHAIN=auto` may download 1.24. |
-| Prepare | `./scripts/install-host-requirements.sh go` installs into `~/.local/go` |
-| Run | `go/scripts/run-benchmarks.sh` runs `go build` and then the binary |
-| Memory | Concurrent garbage collector inside the Go runtime |
+|                   | This suite                                                              |
+| ----------------- | ----------------------------------------------------------------------- |
+| Language / module | Go **1.25** (`go.mod`)                                                  |
+| Host bootstrap    | Go **1.22 or newer**. `GOTOOLCHAIN=auto` may download 1.25.             |
+| Prepare           | `./scripts/install-host-requirements.sh go` installs into `~/.local/go` |
+| Run               | `go/scripts/run-benchmarks.sh` runs `go build` and then the binary      |
+| Memory            | Concurrent garbage collector inside the Go runtime                      |
 
 ### What this suite runs
 
@@ -31,7 +30,7 @@ Go’s garbage collector is designed for short pauses, but allocation still matt
 
 ### Suite-specific gotchas
 
-**protobuf** and **linkedin/goavro** have no native stream API in this suite. Their stream rows are **adapted**: the timed path is still bytes, then a write or read of those bytes.
+**fory**, **protobuf**, and **linkedin/goavro** use **adapted** stream rows in this suite: the timed path encodes to bytes before writing, or reads the bytes before decoding.
 
 These times cannot be ranked against another language.
 
@@ -48,28 +47,29 @@ The steps to install the toolchain and run the benchmark are in [`go/README.md`]
 
 ## Serializers
 
-| Serializer | Category | Package | Native path | Stream | Notes |
-|------------|----------|---------|-------------|--------|-------|
-| [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob) | Native | stdlib | registered types | native | Buffer Reset between encodes |
-| [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) | JSON | stdlib | struct tags | native | Stream `SetEscapeHTML(false)` |
-| [fxamacker/cbor](https://github.com/fxamacker/cbor) | CBOR | cbor/v2 | reused Enc/DecMode | native | Default EncOptions (not CoreDet) |
-| [goccy/go-json](https://github.com/goccy/go-json) | JSON | goccy/go-json | drop-in API | native | Fast stdlib substitute |
-| [goccy/go-yaml](https://github.com/goccy/go-yaml) | YAML | goccy/go-yaml | Marshal/Unmarshal | native | High-perf YAML |
-| [hamba/avro](https://github.com/hamba/avro) | Schema | hamba/avro/v2 | frozen API + schema cache | **native** | Stream `NewEncoder`/`NewDecoder`; schema parse once |
-| [jsoniter](https://github.com/json-iterator/go) | JSON | json-iterator/go | compatible config | native | Widely deployed |
-| [kelindar/binary](https://github.com/kelindar/binary) | Binary | kelindar/binary | Encoder.Reset | native | Go-only compact packer |
-| [linkedin/goavro](https://github.com/linkedin/goavro) | Schema | goavro/v2 | BinaryFromNative maps | **adapted** | Bytes-only codec; OCF is a different format; map convert untimed |
-| [mongo-bson](https://github.com/mongodb/mongo-go-driver) | Document | mongo-driver/bson | Encoder+JSON tags | native | Batch wrap `{items}`; length-prefixed stream read |
-| [pelletier/go-toml](https://github.com/pelletier/go-toml) | TOML | go-toml/v2 | Marshal/Unmarshal | native | Batch wrapped `{items}` untimed |
-| [protobuf](https://github.com/protocolbuffers/protobuf-go) | Schema | protobuf + gen | Message in prepare | **adapted** | MarshalAppend; ToDomain untimed; no native stream API |
-| [segmentio/encoding/json](https://github.com/segmentio/encoding) | JSON | segmentio/encoding | drop-in API | native | Production fork |
-| [shamaton/msgpack](https://github.com/shamaton/msgpack) | MessagePack | msgpack/v3 | Marshal/Unmarshal | **native** | Stream `MarshalWrite`/`UnmarshalRead` |
-| [shamaton/msgpack (array)](https://github.com/shamaton/msgpack) | MessagePack | msgpack/v3 | MarshalAsArray/UnmarshalAsArray | **native** | Struct-as-array (no field-name keys); stream `MarshalWriteAsArray`/`UnmarshalReadAsArray` |
-| [sonic](https://github.com/bytedance/sonic) | JSON | bytedance/sonic | `ConfigDefault` + Pretouch | native | SIMD-oriented hot path |
-| [ugorji/cbor](https://github.com/ugorji/go) | CBOR | ugorji/go/codec | CborHandle + EncoderBytes | native | go-codec multi-format |
-| [ugorji/json](https://github.com/ugorji/go) | JSON | ugorji/go/codec | JsonHandle + EncoderBytes | native | go-codec multi-format |
-| [ugorji/msgpack](https://github.com/ugorji/go) | MessagePack | ugorji/go/codec | MsgpackHandle + EncoderBytes | native | go-codec multi-format |
-| [vmihailenco/msgpack](https://github.com/vmihailenco/msgpack) | MessagePack | msgpack/v5 | reused Encoder | native | `Encoder.Reset` + buffer |
+| Serializer                                                                  | Category    | Package            | Native path                     | Stream      | Notes                                                                                     |
+| --------------------------------------------------------------------------- | ----------- | ------------------ | ------------------------------- | ----------- | ----------------------------------------------------------------------------------------- |
+| [encoding/gob](https://github.com/golang/go/tree/master/src/encoding/gob)   | Native      | stdlib             | registered types                | native      | Buffer Reset between encodes                                                              |
+| [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) | JSON        | stdlib             | struct tags                     | native      | Stream `SetEscapeHTML(false)`                                                             |
+| [fory](https://github.com/apache/fory)                                      | Native      | fory/go/fory       | registered structs              | adapted     | Native mode; registration outside timing                                                  |
+| [fxamacker/cbor](https://github.com/fxamacker/cbor)                         | CBOR        | cbor/v2            | reused Enc/DecMode              | native      | Default EncOptions (not CoreDet)                                                          |
+| [goccy/go-json](https://github.com/goccy/go-json)                           | JSON        | goccy/go-json      | drop-in API                     | native      | Fast stdlib substitute                                                                    |
+| [goccy/go-yaml](https://github.com/goccy/go-yaml)                           | YAML        | goccy/go-yaml      | Marshal/Unmarshal               | native      | High-perf YAML                                                                            |
+| [hamba/avro](https://github.com/hamba/avro)                                 | Schema      | hamba/avro/v2      | frozen API + schema cache       | **native**  | Stream `NewEncoder`/`NewDecoder`; schema parse once                                       |
+| [jsoniter](https://github.com/json-iterator/go)                             | JSON        | json-iterator/go   | compatible config               | native      | Widely deployed                                                                           |
+| [kelindar/binary](https://github.com/kelindar/binary)                       | Binary      | kelindar/binary    | Encoder.Reset                   | native      | Go-only compact packer                                                                    |
+| [linkedin/goavro](https://github.com/linkedin/goavro)                       | Schema      | goavro/v2          | BinaryFromNative maps           | **adapted** | Bytes-only codec; OCF is a different format; map convert untimed                          |
+| [mongo-bson](https://github.com/mongodb/mongo-go-driver)                    | Document    | mongo-driver/bson  | Encoder+JSON tags               | native      | Batch wrap `{items}`; length-prefixed stream read                                         |
+| [pelletier/go-toml](https://github.com/pelletier/go-toml)                   | TOML        | go-toml/v2         | Marshal/Unmarshal               | native      | Batch wrapped `{items}` untimed                                                           |
+| [protobuf](https://github.com/protocolbuffers/protobuf-go)                  | Schema      | protobuf + gen     | Message in prepare              | **adapted** | MarshalAppend; ToDomain untimed; no native stream API                                     |
+| [segmentio/encoding/json](https://github.com/segmentio/encoding)            | JSON        | segmentio/encoding | drop-in API                     | native      | Production fork                                                                           |
+| [shamaton/msgpack](https://github.com/shamaton/msgpack)                     | MessagePack | msgpack/v3         | Marshal/Unmarshal               | **native**  | Stream `MarshalWrite`/`UnmarshalRead`                                                     |
+| [shamaton/msgpack (array)](https://github.com/shamaton/msgpack)             | MessagePack | msgpack/v3         | MarshalAsArray/UnmarshalAsArray | **native**  | Struct-as-array (no field-name keys); stream `MarshalWriteAsArray`/`UnmarshalReadAsArray` |
+| [sonic](https://github.com/bytedance/sonic)                                 | JSON        | bytedance/sonic    | `ConfigDefault` + Pretouch      | native      | SIMD-oriented hot path                                                                    |
+| [ugorji/cbor](https://github.com/ugorji/go)                                 | CBOR        | ugorji/go/codec    | CborHandle + EncoderBytes       | native      | go-codec multi-format                                                                     |
+| [ugorji/json](https://github.com/ugorji/go)                                 | JSON        | ugorji/go/codec    | JsonHandle + EncoderBytes       | native      | go-codec multi-format                                                                     |
+| [ugorji/msgpack](https://github.com/ugorji/go)                              | MessagePack | ugorji/go/codec    | MsgpackHandle + EncoderBytes    | native      | go-codec multi-format                                                                     |
+| [vmihailenco/msgpack](https://github.com/vmihailenco/msgpack)               | MessagePack | msgpack/v5         | reused Encoder                  | native      | `Encoder.Reset` + buffer                                                                  |
 
 ### Specifics
 
@@ -82,6 +82,10 @@ encoding/gob is Go's native binary stream for Go types. It was created so Go pro
 #### [encoding/json](https://github.com/golang/go/tree/master/src/encoding/json) · `go1.24.13`
 
 Go's `encoding/json` is the standard library JSON codec. It exists so every Go program can speak RFC 8259 with struct tags. This row is the baseline other Go JSON libraries try to beat.
+
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses github.com/apache/fory/go/fory in native mode on registered structs and slices.
 
 #### [fxamacker/cbor](https://github.com/fxamacker/cbor) · `2.9.4`
 
@@ -171,7 +175,7 @@ for rep:
 - **protobuf** date fields may use millisecond timestamps; fidelity allows limited date-string drift where configured.
 - **encoding/gob** and **kelindar/binary** are not cross-language wire formats.
 - **pelletier/go-toml** wraps multi-instance cells as a TOML table with `items` (TOML cannot use bare array roots).
-- **Stream adapted** only for **protobuf** and **linkedin/goavro** (bytes-only libraries; OCF/gRPC would change wire format). All other registered Go codecs use **native** stream APIs.
+- **Stream adapted** for **fory**, **protobuf**, and **linkedin/goavro**: these rows wrap byte encode/decode with stream writes/reads. All other registered Go codecs use **native** stream APIs.
 - **mongo-bson** uses official Encoder/Decoder + `UseJSONStructTags` (no JSON map bridge).
 
 Also: [`go/README.md`](https://github.com/leo-gan/GLD.SerializerBenchmark/blob/master/go/README.md) (call-path table). [Serialization Categories](../analysis/serialization_categories.md).

@@ -2,8 +2,7 @@
 title: "Swift"
 ---
 
-Swift
-=====
+# Swift
 
 Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, IkigaJSON, MessagePack, CBOR, BSON, YAML, XML) with **schema/IDL** stacks (SwiftProtobuf, FlatBuffers, Avro, Cap’n Proto).
 
@@ -13,13 +12,13 @@ Swift’s serialization stack mixes **Codable** codecs (Foundation JSON/plist, I
 
 Swift compiles to **native machine code**. Memory is managed with **ARC** (Automatic Reference Counting). An object is freed when the last reference to it goes away. That is not the same as the tracing garbage collector used by .NET or the JVM. Swift is not treated here as an Apple-only language. This runner is built and timed on **Linux** as well.
 
-| | This suite |
-|---|---|
-| Tools | Swift **5.10 or newer** (`Package.swift`). The install script places Swift **6.x** under `~/.local/swift`. |
-| Build | Swift Package Manager (`swift build -c release`) |
-| Prepare | `./scripts/install-host-requirements.sh swift` |
-| Run | `swift/scripts/run-benchmarks.sh` |
-| Memory | Automatic reference counting, not a tracing garbage collector |
+|         | This suite                                                                                                |
+| ------- | --------------------------------------------------------------------------------------------------------- |
+| Tools   | Swift **6.0 or newer** (`Package.swift`). The install script places Swift **6.x** under `~/.local/swift`. |
+| Build   | Swift Package Manager (`swift build -c release`)                                                          |
+| Prepare | `./scripts/install-host-requirements.sh swift`                                                            |
+| Run     | `swift/scripts/run-benchmarks.sh`                                                                         |
+| Memory  | Automatic reference counting, not a tracing garbage collector                                             |
 
 ### What this suite runs
 
@@ -50,22 +49,23 @@ The steps to install the toolchain and run the benchmark are in [`swift/README.m
 
 ## Serializers
 
-| Serializer | Category | Package | Stream | Notes |
-|------------|----------|---------|--------|-------|
-| [BinaryCodable](https://github.com/christophhagen/BinaryCodable) | Binary | BinaryCodable | adapted | Pure-Swift binary Codable |
-| [CapnProto](https://github.com/capnproto/capnproto) | Schema | Cap’n Proto C++ | adapted | C ABI over official C++ runtime |
-| [FlatBuffers](https://github.com/google/flatbuffers) | Schema | google/flatbuffers | adapted | Generated from suite `.fbs` |
-| [Foundation.JSONEncoder](https://github.com/apple/swift-foundation) | JSON | Foundation | adapted | Compact |
-| [Foundation.PropertyListEncoder](https://github.com/apple/swift-foundation) | Native | Foundation | adapted | Binary plist |
-| [IkigaJSON](https://github.com/orlandos-nl/IkigaJSON) | JSON | IkigaJSON | adapted | Server JSON |
-| [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore) | Schema | SwiftAvroCore | adapted | Binary Avro + schema |
-| [SwiftBSON](https://github.com/mongodb/swift-bson) | Binary | swift-bson | adapted | Map-root wrap for N>1 |
-| [SwiftCbor](https://github.com/nnabeyang/swift-cbor) | Binary | swift-cbor | adapted | Codable CBOR |
-| [SwiftMsgpack](https://github.com/nnabeyang/swift-msgpack) | Binary | swift-msgpack | adapted | Codable MessagePack |
-| [SwiftProtobuf](https://github.com/apple/swift-protobuf) | Schema | apple/swift-protobuf | adapted | Generated from suite `.proto` |
-| [TOML](https://github.com/mattt/swift-toml) | Text | mattt/swift-toml | adapted | Map-root wrap for N>1 |
-| [XMLCoder](https://github.com/CoreOffice/XMLCoder) | Text | XMLCoder | adapted | Root `payload` |
-| [Yams](https://github.com/jpsim/Yams) | Text | Yams | adapted | YAML |
+| Serializer                                                                  | Category | Package              | Stream  | Notes                                         |
+| --------------------------------------------------------------------------- | -------- | -------------------- | ------- | --------------------------------------------- |
+| [BinaryCodable](https://github.com/christophhagen/BinaryCodable)            | Binary   | BinaryCodable        | adapted | Pure-Swift binary Codable                     |
+| [CapnProto](https://github.com/capnproto/capnproto)                         | Schema   | Cap’n Proto C++      | adapted | C ABI over official C++ runtime               |
+| [FlatBuffers](https://github.com/google/flatbuffers)                        | Schema   | google/flatbuffers   | adapted | Generated from suite `.fbs`                   |
+| [fory](https://github.com/apache/fory)                                      | Binary   | apache/fory          | adapted | Generated serializers on native Swift structs |
+| [Foundation.JSONEncoder](https://github.com/apple/swift-foundation)         | JSON     | Foundation           | adapted | Compact                                       |
+| [Foundation.PropertyListEncoder](https://github.com/apple/swift-foundation) | Native   | Foundation           | adapted | Binary plist                                  |
+| [IkigaJSON](https://github.com/orlandos-nl/IkigaJSON)                       | JSON     | IkigaJSON            | adapted | Server JSON                                   |
+| [SwiftAvroCore](https://github.com/lynixliu/SwiftAvroCore)                  | Schema   | SwiftAvroCore        | adapted | Binary Avro + schema                          |
+| [SwiftBSON](https://github.com/mongodb/swift-bson)                          | Binary   | swift-bson           | adapted | Map-root wrap for N>1                         |
+| [SwiftCbor](https://github.com/nnabeyang/swift-cbor)                        | Binary   | swift-cbor           | adapted | Codable CBOR                                  |
+| [SwiftMsgpack](https://github.com/nnabeyang/swift-msgpack)                  | Binary   | swift-msgpack        | adapted | Codable MessagePack                           |
+| [SwiftProtobuf](https://github.com/apple/swift-protobuf)                    | Schema   | apple/swift-protobuf | adapted | Generated from suite `.proto`                 |
+| [TOML](https://github.com/mattt/swift-toml)                                 | Text     | mattt/swift-toml     | adapted | Map-root wrap for N>1                         |
+| [XMLCoder](https://github.com/CoreOffice/XMLCoder)                          | Text     | XMLCoder             | adapted | Root `payload`                                |
+| [Yams](https://github.com/jpsim/Yams)                                       | Text     | Yams                 | adapted | YAML                                          |
 
 ### Specifics
 
@@ -82,6 +82,10 @@ Cap'n Proto was created by Kenton Varda (after protobuf 2) so RPC and storage co
 #### [FlatBuffers](https://github.com/google/flatbuffers) · `24.3.25`
 
 FlatBuffers was created at Google so games and clients could access serialized data without an unpack step. The problem was that protobuf-style decode allocated a full object graph. FlatBuffers solves it with a schema and a binary layout that can be traversed in place.
+
+#### [fory](https://github.com/apache/fory)
+
+Apache Fory (formerly Fury) was created for high-performance, cross-language serialization. The problem was that JVM-centric binary codecs and slow portable formats left a gap. Fory registers types and serializes with a compact binary protocol. This row uses ForyStruct macro-generated serializers on Swift value types.
 
 #### [Foundation.JSONEncoder](https://github.com/apple/swift-foundation) · `Foundation`
 

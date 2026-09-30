@@ -7,7 +7,6 @@ import benchmark.model.v2.Message;
 import benchmark.model.v2.Strings;
 import benchmark.model.v2.Telemetry;
 import org.apache.fory.Fory;
-import org.apache.fory.config.Language;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,7 +20,7 @@ import java.util.ArrayList;
  * The former coordinates {@code org.apache.fury:fury-core} (letter <b>u</b>) are obsolete for 1.x.
  * See <a href="https://fory.apache.org/">fory.apache.org</a> and GitHub {@code apache/fory}.
  *
- * <p>Recommended hot path: reuse one {@link Fory} with {@code Language.JAVA} + codegen; register
+ * <p>Recommended hot path: reuse one {@link Fory} with {@code xlang=false} + codegen; register
  * all hot classes <em>before</em> the first serialize (registration freezes after first use);
  * timed path is {@link Fory#serialize}/{@link Fory#deserialize}.
  *
@@ -33,7 +32,7 @@ public final class ForySer implements BenchSerializer {
   public ForySer() {
     fory =
         Fory.builder()
-            .withLanguage(Language.JAVA)
+            .withXlang(false)
             .requireClassRegistration(true)
             .withRefTracking(false)
             .withCodegen(true)

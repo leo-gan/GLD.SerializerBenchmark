@@ -3,6 +3,7 @@ package serializers
 // All returns registered serializers in a stable display order.
 func All() []BenchSerializer {
 	return []BenchSerializer{
+		newFory(),
 		// JSON family
 		newEncodingJSON(),
 		newSonicJSON(),

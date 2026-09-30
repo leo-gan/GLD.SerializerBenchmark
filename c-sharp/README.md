@@ -1,6 +1,6 @@
 # .NET Serializer Benchmark
 
-Extensible suite evaluating **40 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
+Extensible suite evaluating **41 .NET serializers** (speed, size, fidelity) on shared suite fixtures.
 
 Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
@@ -8,7 +8,7 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 ## Key Features
 
-- **40 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Nerdbank.MessagePack, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more). **Not** included: Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
+- **41 serializers** registered in `Program.cs` (Json.NET, protobuf-net, LightProto, Bond, Jil, SpanJson, Utf8Json, System.Text.Json, MemoryPack, MessagePack-CSharp, Nerdbank.MessagePack, Ceras, FlatSharp, Apache.Avro, Hyperion, SharpSerializer, and more). **Not** included: Wire; Apex.Serialization (net8 crash); FluentSerializer (unsuitable for suite graphs).
 - **Suite data types**: Data Model v2 type ids `message`, `document`, `telemetry`, `strings`, `event` — domain POCOs in `TestData/V2/Models.cs`.
 - **Dual mode**: **string** vs **Stream**. Text codecs use real text on the string path; **binary** codecs usually use **Base64** of bytes on the string path. Stream is **native** when the library writes the stream, or **adapted** when the benchmark runner wraps the string path — see [inventory honesty](../docs/c-sharp/index.md#string-mode-vs-stream-mode).
 - **CSV logs** + optional `*.errors.csv` + `*.configs.json` sidecars.
@@ -20,13 +20,13 @@ Serializer inventory: [docs/c-sharp/index.md](../docs/c-sharp/index.md).
 
 Domain types live under `TestData/V2/` and match `schemas/data_catalog_v2.yaml` / `benchmark_v2.proto`.
 
-| Type id | Domain type | Shape |
-| :--- | :--- | :--- |
-| **message** | `Message` | Flat mixed scalars + strings |
-| **document** | `Document` | Nested meta + item list |
+| Type id       | Domain type | Shape                                   |
+| :------------ | :---------- | :-------------------------------------- |
+| **message**   | `Message`   | Flat mixed scalars + strings            |
+| **document**  | `Document`  | Nested meta + item list                 |
 | **telemetry** | `Telemetry` | Source, timestamp, tags, numeric series |
-| **strings** | `Strings` | String list |
-| **event** | `Event` | Id/type/time/producer + attribute list |
+| **strings**   | `Strings`   | String list                             |
+| **event**     | `Event`     | Id/type/time/producer + attribute list  |
 
 For `N>1`, payloads use batch wrappers (`BatchMessage`, …) so codecs that need a single root object stay happy.
 
@@ -52,13 +52,13 @@ cd c-sharp
 ./scripts/run-benchmarks.sh smoke
 ```
 
-| Mode | Command | Description |
-| :--- | :--- | :--- |
-| **Smoke** | `./scripts/run-benchmarks.sh smoke` | Short run (reps from config; default filter Json.Net / message). |
-| **Verify All** | `./scripts/run-benchmarks.sh all-single` | 10 reps, all serializers. |
-| **Full Run** | `./scripts/run-benchmarks.sh full` | 100 reps. |
-| **Research** | `./scripts/run-benchmarks.sh research` | 500 reps. |
-| **Custom** | `./scripts/run-benchmarks.sh custom 50 "Json" "message"` | Custom reps / filters. |
+| Mode           | Command                                                  | Description                                                      |
+| :------------- | :------------------------------------------------------- | :--------------------------------------------------------------- |
+| **Smoke**      | `./scripts/run-benchmarks.sh smoke`                      | Short run (reps from config; default filter Json.Net / message). |
+| **Verify All** | `./scripts/run-benchmarks.sh all-single`                 | 10 reps, all serializers.                                        |
+| **Full Run**   | `./scripts/run-benchmarks.sh full`                       | 100 reps.                                                        |
+| **Research**   | `./scripts/run-benchmarks.sh research`                   | 500 reps.                                                        |
+| **Custom**     | `./scripts/run-benchmarks.sh custom 50 "Json" "message"` | Custom reps / filters.                                           |
 
 Direct `dotnet` (same env vars the script sets):
 
@@ -126,4 +126,4 @@ Libraries run in **default configurations**. Use results as a baseline; always r
 
 ---
 
-*Authored by Leonid Ganeline*
+_Authored by Leonid Ganeline_

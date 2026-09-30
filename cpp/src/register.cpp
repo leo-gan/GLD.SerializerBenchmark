@@ -19,6 +19,7 @@ SerializerPtr make_nlohmann_bson();
 SerializerPtr make_cereal();
 SerializerPtr make_bitsery();
 SerializerPtr make_zpp_bits();
+SerializerPtr make_fory();
 SerializerPtr make_yas();
 SerializerPtr make_cista();
 SerializerPtr make_jsoncons_cbor();
@@ -56,6 +57,7 @@ std::vector<SerializerPtr> all_serializers() {
   add(v, make_cereal());
   add(v, make_bitsery());
   add(v, make_zpp_bits());
+  add(v, make_fory());
   add(v, make_yas());
   add(v, make_cista());
   add(v, make_jsoncons_cbor());

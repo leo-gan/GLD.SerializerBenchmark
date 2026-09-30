@@ -5,11 +5,10 @@ module serializer-benchmark-go
 //   go get -u=patch ./... && go get <module>@latest && go mod tidy
 // Avoid jumping to a new major import path (e.g. mongo-driver/v2) without a harness review.
 
-go 1.24.0
-
-toolchain go1.24.13
+go 1.25.0
 
 require (
+	github.com/apache/fory/go/fory v1.7.4
 	github.com/bytedance/sonic v1.15.4
 	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/goccy/go-json v0.10.6

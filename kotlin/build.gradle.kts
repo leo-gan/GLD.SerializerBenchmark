@@ -2,9 +2,9 @@ import com.google.protobuf.gradle.id
 import com.google.protobuf.gradle.proto
 
 plugins {
-    kotlin("jvm") version "2.1.20"
-    kotlin("plugin.serialization") version "2.1.20"
-    id("com.google.devtools.ksp") version "2.1.20-1.0.31"
+    kotlin("jvm") version "2.3.20"
+    kotlin("plugin.serialization") version "2.3.20"
+    id("com.google.devtools.ksp") version "2.3.12"
     id("com.google.protobuf") version "0.9.4"
     id("com.gradleup.shadow") version "8.3.6"
     application
@@ -14,14 +14,14 @@ plugins {
 group = "benchmark"
 version = "1.0.0-SNAPSHOT"
 
-val kotlinVersion = "2.1.20"
+val kotlinVersion = "2.3.20"
 val kotlinxSerialization = "1.8.1"
 val jackson = "2.19.0"
 val protobuf = "4.35.0"
 val avro = "1.12.1"
 val moshi = "1.15.2"
 val kryo = "5.6.2"
-val fory = "1.3.0"
+val fory = "1.7.4"
 val protostuff = "1.8.0"
 val gson = "2.14.0"
 val avro4k = "2.9.0"
@@ -77,7 +77,7 @@ dependencies {
     implementation("com.google.code.gson:gson:$gson")
 
     implementation("com.esotericsoftware:kryo:$kryo")
-    implementation("org.apache.fory:fory-core:$fory")
+    implementation("org.apache.fory:fory-kotlin:$fory")
     implementation("io.protostuff:protostuff-core:$protostuff")
     implementation("io.protostuff:protostuff-runtime:$protostuff")
 

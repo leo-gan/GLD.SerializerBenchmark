@@ -8,14 +8,14 @@
 
 Compare 200+ serialization libraries across **13 languages**.
 
-| Start here | |
-|------------|--|
-| **Home** | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/) |
-| **Numbers** | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/) |
-| **Experiments** | [One-question tests](https://leo-gan.github.io/GLD.SerializerBenchmark/experiments/) |
-| **Compliance** | [RFC / spec catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/) |
-| **Learn** | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/) |
-| **Benchmarks** | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
+| Start here      |                                                                                                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Home**        | [Documentation](https://leo-gan.github.io/GLD.SerializerBenchmark/)                                                                                                                 |
+| **Numbers**     | [Live dashboard](https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/)                                                                                                      |
+| **Experiments** | [One-question tests](https://leo-gan.github.io/GLD.SerializerBenchmark/experiments/)                                                                                                |
+| **Compliance**  | [RFC / spec catalog](https://leo-gan.github.io/GLD.SerializerBenchmark/compliance/)                                                                                                 |
+| **Learn**       | [Serialization 101–401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/)                                                                                              |
+| **Benchmarks**  | [How we measure](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [Metrics](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/METRICS/) |
 
 <p align="center">
   <a href="https://leo-gan.github.io/GLD.SerializerBenchmark/dashboard/">
@@ -29,29 +29,29 @@ Compare 200+ serialization libraries across **13 languages**.
 
 ## Who it is for
 
-| Audience | Use case | Course |
-|----------|----------|--------|
-| **Computer science students** | Theory, history, worked examples | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/), [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/) |
-| **System integrators** | Pick formats that fit payloads and runtimes | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Researchers** | Reproducible measurement and experiments | [Methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/) |
-| **Serializer authors** | Add a codec, version A/B, regression checks | [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/) · [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
+| Audience                      | Use case                                    | Course                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Computer science students** | Theory, history, worked examples            | [101](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/101/), [201](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/201/)                                    |
+| **System integrators**        | Pick formats that fit payloads and runtimes | [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/)                                                                                                          |
+| **Researchers**               | Reproducible measurement and experiments    | [Methodology](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ANALYSIS_METHODOLOGY/) · [301](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/301/)        |
+| **Serializer authors**        | Add a codec, version A/B, regression checks | [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/) · [401](https://leo-gan.github.io/GLD.SerializerBenchmark/theory/401/) |
 
 ---
 
 ## Supported languages
 
 - [C](https://leo-gan.github.io/GLD.SerializerBenchmark/c/) — 20
-- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 40 serializers registered
+- [C# (.NET)](https://leo-gan.github.io/GLD.SerializerBenchmark/c-sharp/) — 41 serializers registered
 - [C++](https://leo-gan.github.io/GLD.SerializerBenchmark/cpp/) — 27+
-- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 19
+- [Go](https://leo-gan.github.io/GLD.SerializerBenchmark/go/) — 20
 - [Java](https://leo-gan.github.io/GLD.SerializerBenchmark/java/) — 18
-- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 20
+- [JavaScript](https://leo-gan.github.io/GLD.SerializerBenchmark/javascript/) — 21
 - [Kotlin](https://leo-gan.github.io/GLD.SerializerBenchmark/kotlin/) — 26
 - [Mojo](https://leo-gan.github.io/GLD.SerializerBenchmark/mojo/) — 6
 - [PHP](https://leo-gan.github.io/GLD.SerializerBenchmark/php/) — 15
-- [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 16
-- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 16
-- [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 14
+- [Python](https://leo-gan.github.io/GLD.SerializerBenchmark/python/) — 17
+- [Rust](https://leo-gan.github.io/GLD.SerializerBenchmark/rust/) — 17
+- [Swift](https://leo-gan.github.io/GLD.SerializerBenchmark/swift/) — 15
 - [Zig](https://leo-gan.github.io/GLD.SerializerBenchmark/zig/) — 17
 
 [Adding a language](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_LANGUAGE/) · [Adding a serializer](https://leo-gan.github.io/GLD.SerializerBenchmark/analysis/ADDING_A_SERIALIZER/).

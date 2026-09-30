@@ -34,6 +34,7 @@ include!(concat!(env!("OUT_DIR"), "/dep_versions.rs"));
 mod avro_ser;
 mod binary_serde;
 mod direct;
+mod fory_ser;
 mod json;
 mod kinded;
 mod prost_ser;
@@ -150,6 +151,7 @@ pub trait BenchSerializer: Send {
 
 pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
     vec![
+        Box::new(fory_ser::ForySer::default()),
         // JSON
         Box::new(SerdeJson::default()),
         Box::new(SimdJson::default()),

@@ -10,17 +10,17 @@ import benchmark.model.v2.Message
 import benchmark.model.v2.Strings
 import benchmark.model.v2.Telemetry
 import org.apache.fory.Fory
-import org.apache.fory.config.Language
+import org.apache.fory.kotlin.ForyKotlin
 
 /**
  * Apache Fory — JIT/codegen high-performance binary serialization.
  *
- * Hot path: reuse one [Fory] with Language.JAVA + codegen; register types before first use.
+ * Hot path: reuse one [Fory] in native mode; register types before first use.
  */
 class ForySer : BenchSerializer {
     private val fory: Fory =
-        Fory.builder()
-            .withLanguage(Language.JAVA)
+        ForyKotlin.builder()
+            .withXlang(false)
             .requireClassRegistration(true)
             .withRefTracking(false)
             .withCodegen(true)

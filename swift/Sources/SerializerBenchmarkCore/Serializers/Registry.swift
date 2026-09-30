@@ -9,6 +9,7 @@ public func allSerializers() -> [any BenchSerializer] {
         // Native / pure-Swift binary Codable
         PropertyListBinarySerializer(),
         BinaryCodableSerializer(),
+        ForySerializer(),
         // Schemaless binary
         MsgPackSerializer(),
         CborSerializer(),
