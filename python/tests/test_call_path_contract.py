@@ -20,8 +20,10 @@ sys.path.insert(0, str(ROOT))
 
 from benchmark.comparer import compare
 from benchmark.data_v2 import make_one
+from benchmark.data_v2.fidelity import fidelity_v2
 from benchmark.data_v2.models import Message
 from benchmark.serializers.binary_cbor2 import Cbor2Serializer
+from benchmark.serializers.binary_ion import AmazonIonSerializer
 from benchmark.serializers.binary_msgpack import MsgpackSerializer
 from benchmark.serializers.json_msgspec import MsgspecMessagePackSerializer, MsgspecSerializer
 from benchmark.serializers.json_orjson import OrjsonSerializer
@@ -105,6 +107,21 @@ def test_protobuf_roundtrip_message():
         # protobuf returns message object; fidelity via bridge/compare may be loose
         assert data and len(data) > 0
         assert out is not None
+
+
+def test_amazon_ion_roundtrip_v2():
+    """IonPyDict is a Mapping, not a dict. fidelity_v2 is the bench comparator."""
+    ser = AmazonIonSerializer()
+    for name in ("message", "document", "telemetry", "strings", "event"):
+        original = make_one(name, {}, 42, 0)
+        ser.prepare(name, type(original))
+        native = ser.prepare_data(original, name, type(original))
+        data = ser.serialize_bytes(native)
+        assert isinstance(data, (bytes, bytearray)) and len(data) > 0
+        assert fidelity_v2(original, ser.deserialize_bytes(data)) == 1.0
+        buf = io.BytesIO()
+        ser.serialize_stream(native, buf)
+        assert fidelity_v2(original, ser.deserialize_stream(buf)) == 1.0
 
 
 def test_stream_path_roundtrip():

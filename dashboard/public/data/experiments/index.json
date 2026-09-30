@@ -1,6 +1,6 @@
 {
   "schema": "gld.dashboard.experiments/1",
-  "generated_at": "2026-09-24T01:18:08Z",
+  "generated_at": "2026-09-30T02:01:33Z",
   "count": 14,
   "with_results": 14,
   "experiments": [
@@ -47,7 +47,7 @@
       ],
       "has_results": true,
       "payload": "experiments/01-json-library-bakeoff.json.gz",
-      "generated_at": "2026-09-24T01:14:37Z",
+      "generated_at": "2026-09-30T01:40:52Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -119,7 +119,7 @@
           "rows": 3
         }
       ],
-      "source_bytes": 123126
+      "source_bytes": 123143
     },
     {
       "id": "02-flat-record-formats",
@@ -165,7 +165,7 @@
       ],
       "has_results": true,
       "payload": "experiments/02-flat-record-formats.json.gz",
-      "generated_at": "2026-09-24T01:14:48Z",
+      "generated_at": "2026-09-30T01:41:47Z",
       "sample": {
         "kind": "message",
         "n": [
@@ -176,13 +176,13 @@
       "languages": [
         {
           "id": "python",
-          "status": "missing",
-          "rows": 0
+          "status": "ok",
+          "rows": 20
         },
         {
           "id": "go",
-          "status": "missing",
-          "rows": 0
+          "status": "ok",
+          "rows": 20
         },
         {
           "id": "java",
@@ -201,18 +201,18 @@
         },
         {
           "id": "javascript",
-          "status": "missing",
-          "rows": 0
+          "status": "ok",
+          "rows": 10
         },
         {
           "id": "rust",
-          "status": "missing",
-          "rows": 0
+          "status": "ok",
+          "rows": 15
         },
         {
           "id": "c",
-          "status": "missing",
-          "rows": 0
+          "status": "ok",
+          "rows": 24
         },
         {
           "id": "cpp",
@@ -240,7 +240,7 @@
           "rows": 16
         }
       ],
-      "source_bytes": 124517
+      "source_bytes": 218605
     },
     {
       "id": "03-one-language-store",
@@ -272,7 +272,7 @@
       ],
       "has_results": true,
       "payload": "experiments/03-one-language-store.json.gz",
-      "generated_at": "2026-09-24T01:14:58Z",
+      "generated_at": "2026-09-30T01:41:51Z",
       "sample": {
         "kind": "message",
         "n": 1
@@ -314,7 +314,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 72458
+      "source_bytes": 72400
     },
     {
       "id": "04-sensor-list-size",
@@ -1068,7 +1068,7 @@
       ],
       "has_results": true,
       "payload": "experiments/04-sensor-list-size.json.gz",
-      "generated_at": "2026-09-24T01:15:09Z",
+      "generated_at": "2026-09-30T01:41:58Z",
       "sample": {
         "kind": "telemetry",
         "n": 1
@@ -1077,7 +1077,7 @@
         {
           "id": "rust",
           "status": "ok",
-          "rows": 48
+          "rows": 44
         },
         {
           "id": "c",
@@ -1105,7 +1105,7 @@
           "rows": 32
         }
       ],
-      "source_bytes": 307022
+      "source_bytes": 303010
     },
     {
       "id": "05-event-log-formats",
@@ -1179,7 +1179,7 @@
       ],
       "has_results": true,
       "payload": "experiments/05-event-log-formats.json.gz",
-      "generated_at": "2026-09-24T01:15:21Z",
+      "generated_at": "2026-09-30T01:43:52Z",
       "sample": {
         "kind": "event",
         "n": [
@@ -1221,7 +1221,7 @@
         {
           "id": "rust",
           "status": "ok",
-          "rows": 12
+          "rows": 11
         },
         {
           "id": "javascript",
@@ -1254,7 +1254,7 @@
           "rows": 16
         }
       ],
-      "source_bytes": 196946
+      "source_bytes": 195846
     },
     {
       "id": "06-document-db-formats",
@@ -1299,7 +1299,7 @@
       ],
       "has_results": true,
       "payload": "experiments/06-document-db-formats.json.gz",
-      "generated_at": "2026-09-24T01:15:31Z",
+      "generated_at": "2026-09-30T01:43:58Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -1356,7 +1356,7 @@
           "rows": 4
         }
       ],
-      "source_bytes": 51465
+      "source_bytes": 51533
     },
     {
       "id": "07-write-once-read-many",
@@ -1927,7 +1927,7 @@
       ],
       "has_results": true,
       "payload": "experiments/07-write-once-read-many.json.gz",
-      "generated_at": "2026-09-24T01:15:42Z",
+      "generated_at": "2026-09-30T01:44:32Z",
       "sample": {
         "kind": [
           "document",
@@ -1997,7 +1997,7 @@
           "rows": 6
         }
       ],
-      "source_bytes": 101276
+      "source_bytes": 101317
     },
     {
       "id": "08-human-files",
@@ -2055,7 +2055,7 @@
       ],
       "has_results": true,
       "payload": "experiments/08-human-files.json.gz",
-      "generated_at": "2026-09-24T01:15:52Z",
+      "generated_at": "2026-09-30T01:44:55Z",
       "sample": {
         "kind": [
           "document",
@@ -2130,7 +2130,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 99084
+      "source_bytes": 99015
     },
     {
       "id": "09-compression-size",
@@ -2317,7 +2317,7 @@
       ],
       "has_results": true,
       "payload": "experiments/09-compression-size.json.gz",
-      "generated_at": "2026-09-24T01:16:03Z",
+      "generated_at": "2026-09-30T01:45:26Z",
       "sample": {
         "kind": [
           "strings",
@@ -2393,7 +2393,7 @@
           "rows": 24
         }
       ],
-      "source_bytes": 219528
+      "source_bytes": 219641
     },
     {
       "id": "10-one-vs-hundred",
@@ -2495,7 +2495,7 @@
       ],
       "has_results": true,
       "payload": "experiments/10-one-vs-hundred.json.gz",
-      "generated_at": "2026-09-24T01:16:15Z",
+      "generated_at": "2026-09-30T01:47:36Z",
       "sample": {
         "kind": [
           "message",
@@ -2573,7 +2573,7 @@
           "rows": 32
         }
       ],
-      "source_bytes": 332463
+      "source_bytes": 332507
     },
     {
       "id": "11-memory-vs-stream",
@@ -2618,7 +2618,7 @@
       ],
       "has_results": true,
       "payload": "experiments/11-memory-vs-stream.json.gz",
-      "generated_at": "2026-09-24T01:16:26Z",
+      "generated_at": "2026-09-30T01:47:38Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2660,7 +2660,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 63958
+      "source_bytes": 63957
     },
     {
       "id": "12-format-vs-library",
@@ -2705,7 +2705,7 @@
       ],
       "has_results": true,
       "payload": "experiments/12-format-vs-library.json.gz",
-      "generated_at": "2026-09-24T01:16:37Z",
+      "generated_at": "2026-09-30T01:47:51Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -2757,7 +2757,7 @@
           "rows": 8
         }
       ],
-      "source_bytes": 115089
+      "source_bytes": 115162
     },
     {
       "id": "13-ranking-accident",
@@ -2857,7 +2857,7 @@
       ],
       "has_results": true,
       "payload": "experiments/13-ranking-accident.json.gz",
-      "generated_at": "2026-09-24T01:16:54Z",
+      "generated_at": "2026-09-30T01:56:57Z",
       "sample": {
         "kind": [
           "document",
@@ -2938,7 +2938,7 @@
           "rows": 30
         }
       ],
-      "source_bytes": 878278
+      "source_bytes": 878571
     },
     {
       "id": "14-starter-kit",
@@ -2983,7 +2983,7 @@
       ],
       "has_results": true,
       "payload": "experiments/14-starter-kit.json.gz",
-      "generated_at": "2026-09-24T01:17:05Z",
+      "generated_at": "2026-09-30T01:57:14Z",
       "sample": {
         "kind": "document",
         "n": 1
@@ -3055,7 +3055,7 @@
           "rows": 7
         }
       ],
-      "source_bytes": 100649
+      "source_bytes": 100698
     }
   ]
 }

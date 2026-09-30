@@ -1,7 +1,7 @@
 # Can we send YAML on the live path?
 
 **Question:** On the same records, how much slower and larger are YAML, TOML, and XML than JSON?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `['document', 'strings']`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -71,7 +71,7 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 | cpp | ok | `nlohmann_json` | — |
 | go | ok | `goccy/go-json` | — |
 | swift | ok | `IkigaJSON` | — |
-| csharp | ok | `System.Text.Json` | `MS XmlSerializer` |
+| csharp | ok | `System.Text.Json` | — |
 | zig | ok | `serde.zon` | — |
 | mojo | ok | `mojo-json` | — |
 
@@ -83,15 +83,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 5.16 | 448 | fastest |
-| yaml | 1372 | 429 | slower |
+| orjson | 6.48 | 448 | fastest |
+| yaml | 1577 | 429 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| orjson | 3.32 | 410 | fastest |
-| yaml | 761 | 406 | slower |
+| orjson | 4.54 | 410 | fastest |
+| yaml | 907 | 406 | slower |
 
 ### java
 
@@ -149,15 +149,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 8.69 | 448 | fastest |
-| js-yaml | 88.2 | 477 | slower |
+| JSON.stringify | 9.96 | 448 | fastest |
+| js-yaml | 90.9 | 477 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| JSON.stringify | 5.24 | 411 | fastest |
-| js-yaml | 51.1 | 471 | slower |
+| JSON.stringify | 6.19 | 411 | fastest |
+| js-yaml | 54.7 | 471 | slower |
 
 ### rust
 
@@ -165,15 +165,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde_json | 2.90 | 460 | fastest |
-| serde_yaml | 30.7 | 438 | slower |
+| serde_json | 3.17 | 460 | fastest |
+| serde_yaml | 34.6 | 438 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| serde_json | 2.54 | 390 | fastest |
-| serde_yaml | 22.8 | 383 | slower |
+| serde_json | 3.06 | 390 | fastest |
+| serde_yaml | 24.4 | 383 | slower |
 
 ### c
 
@@ -181,15 +181,15 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 5.97 | 460 | fastest |
-| libyaml | 32.4 | 461 | slower |
+| yyjson | 6.33 | 460 | fastest |
+| libyaml | 37.9 | 461 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| yyjson | 3.76 | 387 | fastest |
-| libyaml | 18.6 | 447 | slower |
+| yyjson | 3.96 | 387 | fastest |
+| libyaml | 21.2 | 447 | slower |
 
 ### cpp
 
@@ -213,17 +213,17 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| goccy/go-json | 5.32 | 448 | fastest |
-| pelletier/go-toml | 19.4 | 500 | slower |
-| goccy/go-yaml | 201 | 429 | slower |
+| goccy/go-json | 4.86 | 448 | fastest |
+| pelletier/go-toml | 17.7 | 500 | slower |
+| goccy/go-yaml | 205 | 429 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| goccy/go-json | 3.56 | 411 | fastest |
-| pelletier/go-toml | 7.03 | 441 | slower |
-| goccy/go-yaml | 94.7 | 407 | slower |
+| goccy/go-json | 3.12 | 411 | fastest |
+| pelletier/go-toml | 6.63 | 441 | slower |
+| goccy/go-yaml | 84.9 | 407 | slower |
 
 ### swift
 
@@ -251,17 +251,17 @@ Times in two languages are **not** one contest. Named JSON only. A rank that fli
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| System.Text.Json | 96.3 | 588 | fastest |
-| MS XmlSerializer | 128 | 1258 | close |
-| YamlDotNet | 867 | 421 | slower |
+| System.Text.Json | 84.0 | 440 | fastest |
+| MS XmlSerializer | 111 | 1258 | slower |
+| YamlDotNet | 778 | 421 | slower |
 
 **E (words), 1 record(s)**
 
 | Library | Write + read (µs) | Size (bytes) | Group |
 |---------|-------------------|--------------|-------|
-| System.Text.Json | 60.3 | 548 | fastest |
-| MS XmlSerializer | 140 | 1187 | slower |
-| YamlDotNet | 746 | 406 | slower |
+| System.Text.Json | 45.4 | 410 | fastest |
+| MS XmlSerializer | 119 | 1187 | slower |
+| YamlDotNet | 727 | 406 | slower |
 
 ### zig
 

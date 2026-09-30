@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import asdict, fields, is_dataclass
 from typing import Any
 
@@ -40,7 +41,8 @@ def _norm(obj: Any) -> Any:
             pass
     if is_dataclass(obj) and not isinstance(obj, type):
         return {f.name: _norm(getattr(obj, f.name)) for f in fields(obj)}
-    if isinstance(obj, dict):
+    # amazon.ion IonPyDict is a Mapping and not a dict.
+    if isinstance(obj, Mapping):
         return {str(k): _norm(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
         return [_norm(v) for v in obj]

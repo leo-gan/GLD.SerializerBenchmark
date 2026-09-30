@@ -1,7 +1,7 @@
 # Experiment 9 results — c
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/09-compression-size/c/logs/c/2026-08-17-115904.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/09-compression-size/c/logs/c/2026-09-29-184456.csv`
 **Language:** c
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,10 +12,10 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf-wire | wire-v2 | 0.15 | 0.17 | 0.32 | 56 | 77 | Protocol Buffers — in-tree wire helper | fastest | yes | 94 |
-| mpack | 1.1 | 0.31 | 0.77 | 1.07 | 128 | 127 | MessagePack | slower | yes | 93 |
-| yyjson | 0.10.0 | 1.17 | 0.64 | 1.82 | 171 | 141 | JSON — fast writer from Experiment 1 | slower | yes | 94 |
-| cJSON | 1.7.18 | 2.76 | 1.71 | 4.50 | 172 | 141 | JSON — common C library | slower | yes | 97 |
+| protobuf-wire | wire-v2 | 0.21 | 0.29 | 0.51 | 56 | 77 | Protocol Buffers — in-tree wire helper | fastest | yes | 90 |
+| mpack | 1.1.1 | 0.46 | 1.17 | 1.64 | 128 | 127 | MessagePack | slower | yes | 87 |
+| yyjson | 0.10.0 | 1.60 | 1.12 | 2.72 | 171 | 141 | JSON — fast writer from Experiment 1 | slower | yes | 97 |
+| cJSON | 1.7.19 | 3.56 | 2.51 | 6.08 | 172 | 141 | JSON — common C library | slower | yes | 92 |
 
 ## In memory — sample E (words), 1 record(s) per write
 
@@ -23,10 +23,10 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf-wire | wire-v2 | 0.43 | 0.37 | 0.81 | 356 | 270 | Protocol Buffers — in-tree wire helper | fastest | yes | 93 |
-| mpack | 1.1 | 0.50 | 1.33 | 1.84 | 334 | 264 | MessagePack | slower | yes | 92 |
-| yyjson | 0.10.0 | 1.32 | 2.11 | 3.41 | 399 | 276 | JSON — fast writer from Experiment 1 | slower | yes | 88 |
-| cJSON | 1.7.18 | 3.69 | 4.65 | 8.34 | 399 | 276 | JSON — common C library | slower | yes | 95 |
+| protobuf-wire | wire-v2 | 0.52 | 0.38 | 0.90 | 356 | 270 | Protocol Buffers — in-tree wire helper | fastest | yes | 93 |
+| mpack | 1.1.1 | 0.59 | 1.37 | 1.97 | 334 | 264 | MessagePack | slower | yes | 90 |
+| yyjson | 0.10.0 | 1.47 | 2.30 | 3.77 | 399 | 276 | JSON — fast writer from Experiment 1 | slower | yes | 87 |
+| cJSON | 1.7.19 | 3.95 | 5.04 | 8.91 | 399 | 276 | JSON — common C library | slower | yes | 91 |
 
 ## In memory — sample C (sensor), 1 record(s) per write
 
@@ -34,27 +34,27 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf-wire | wire-v2 | 0.29 | 0.43 | 0.72 | 1181 | 1139 | Protocol Buffers — in-tree wire helper | fastest | yes | 91 |
-| mpack | 1.1 | 0.74 | 2.01 | 2.74 | 1207 | 1166 | MessagePack | slower | yes | 92 |
-| yyjson | 0.10.0 | 5.27 | 4.03 | 9.31 | 2409 | 1324 | JSON — fast writer from Experiment 1 | slower | yes | 90 |
-| cJSON | 1.7.18 | 99.9 | 24.9 | 125 | 2446 | 1345 | JSON — common C library | slower | yes | 96 |
+| protobuf-wire | wire-v2 | 0.36 | 0.51 | 0.87 | 1181 | 1139 | Protocol Buffers — in-tree wire helper | fastest | yes | 80 |
+| mpack | 1.1.1 | 0.90 | 2.56 | 3.45 | 1207 | 1166 | MessagePack | slower | yes | 90 |
+| yyjson | 0.10.0 | 6.20 | 4.89 | 11.0 | 2409 | 1324 | JSON — fast writer from Experiment 1 | slower | yes | 85 |
+| cJSON | 1.7.19 | 110 | 29.6 | 140 | 2446 | 1345 | JSON — common C library | slower | yes | 91 |
 
 ## Stream call (side note)
 
 | Library | N | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|---|------------|-----------|-------------------|---------------------------|
-| protobuf-wire | 1 | 0.39 | 0.38 | 0.76 | copied |
-| mpack | 1 | 0.57 | 0.97 | 1.54 | copied |
-| yyjson | 1 | 1.44 | 0.81 | 2.26 | copied |
-| cJSON | 1 | 3.15 | 1.92 | 5.08 | copied |
-| protobuf-wire | 1 | 0.71 | 0.57 | 1.28 | copied |
-| mpack | 1 | 0.78 | 1.52 | 2.31 | copied |
-| yyjson | 1 | 1.58 | 2.34 | 3.90 | copied |
-| cJSON | 1 | 4.33 | 5.65 | 10.0 | copied |
-| protobuf-wire | 1 | 0.62 | 0.67 | 1.28 | copied |
-| mpack | 1 | 1.05 | 2.26 | 3.30 | copied |
-| yyjson | 1 | 5.67 | 4.37 | 10.1 | copied |
-| cJSON | 1 | 101 | 27.3 | 129 | copied |
+| protobuf-wire | 1 | 0.47 | 0.52 | 0.98 | copied |
+| mpack | 1 | 0.73 | 1.41 | 2.15 | copied |
+| yyjson | 1 | 2.43 | 1.61 | 4.04 | real |
+| cJSON | 1 | 4.12 | 2.76 | 6.91 | copied |
+| protobuf-wire | 1 | 0.81 | 0.62 | 1.44 | copied |
+| mpack | 1 | 0.88 | 1.80 | 2.68 | copied |
+| yyjson | 1 | 2.61 | 3.04 | 5.68 | real |
+| cJSON | 1 | 4.97 | 6.29 | 11.3 | copied |
+| protobuf-wire | 1 | 0.72 | 0.77 | 1.51 | copied |
+| mpack | 1 | 1.24 | 2.71 | 3.92 | copied |
+| yyjson | 1 | 7.26 | 5.50 | 12.7 | real |
+| cJSON | 1 | 109 | 31.4 | 140 | copied |
 
 ## Libraries that belong in the conversation
 

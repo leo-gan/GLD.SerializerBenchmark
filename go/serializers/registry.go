@@ -20,6 +20,7 @@ func All() []BenchSerializer {
 		newKelindarBinary(),
 		newEncodingGob(),
 		newMongoBSON(),
+		newAmazonIon(),
 		// Text document formats
 		newGoccyYAML(),
 		newPelletierTOML(),

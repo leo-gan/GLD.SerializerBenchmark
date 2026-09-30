@@ -1,7 +1,7 @@
 # Experiment 4 results — rust
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/04-sensor-list-size/rust/logs/rust/2026-08-16-161217.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/04-sensor-list-size/rust/logs/rust/2026-09-29-184156.csv`
 **Language:** rust
 **Sample:** one sensor record (`telemetry`), list lengths 8, 32, 128, 512
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,12 +12,12 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| postcard | 1.1.3 | 0.09 | 0.13 | 0.21 | 91 | — | postcard — compact Rust | fastest | yes | 85 |
-| prost | 0.13.5 | 0.15 | 0.20 | 0.35 | 94 | — | Protocol Buffers | slower | yes | 86 |
-| rmp-serde | 1.3.1 | 0.15 | 0.22 | 0.37 | 135 | — | MessagePack | slower | yes | 85 |
-| sonic-rs | 0.3.17 | 0.27 | 0.46 | 0.73 | 234 | — | JSON — fast writer from Experiment 1 | slower | yes | 88 |
-| ciborium | 0.2.2 | 0.18 | 0.56 | 0.75 | 135 | — | CBOR | slower | yes | 88 |
-| serde_json | 1.0.150 | 0.32 | 0.53 | 0.84 | 234 | — | JSON — usual Rust library | slower | yes | 94 |
+| postcard | 1.1.3 | 0.17 | 0.29 | 0.45 | 91 | 688 | postcard — compact Rust | fastest | yes | 85 |
+| prost | 0.13.5 | 0.18 | 0.42 | 0.60 | 94 | 690 | Protocol Buffers | slower | yes | 84 |
+| rmp-serde | 1.3.1 | 0.25 | 0.71 | 0.98 | 135 | 776 | MessagePack | slower | yes | 87 |
+| serde_json | 1.0.151 | 0.41 | 1.05 | 1.47 | 234 | 878 | JSON — usual Rust library | slower | yes | 88 |
+| sonic-rs | 0.3.17 | 0.49 | 1.04 | 1.53 | 234 | 878 | JSON — fast writer from Experiment 1 | slower | yes | 83 |
+| ciborium | 0.2.2 | 0.44 | 1.14 | 1.57 | 135 | 776 | CBOR | slower | yes | 85 |
 
 ## In memory — 32 numbers in the list
 
@@ -25,12 +25,12 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| postcard | 1.1.3 | 0.12 | 0.17 | 0.29 | 286 | — | postcard — compact Rust | fastest | yes | 93 |
-| prost | 0.13.5 | 0.17 | 0.32 | 0.50 | 290 | — | Protocol Buffers | slower | yes | 96 |
-| rmp-serde | 1.3.1 | 0.28 | 0.32 | 0.61 | 356 | — | MessagePack | slower | yes | 95 |
-| ciborium | 0.2.2 | 0.38 | 0.77 | 1.14 | 355 | — | CBOR | slower | yes | 91 |
-| sonic-rs | 0.3.17 | 0.66 | 0.92 | 1.58 | 672 | — | JSON — fast writer from Experiment 1 | slower | yes | 91 |
-| serde_json | 1.0.150 | 0.58 | 1.07 | 1.67 | 672 | — | JSON — usual Rust library | slower | yes | 73 |
+| postcard | 1.1.3 | 0.23 | 0.38 | 0.61 | 286 | 688 | postcard — compact Rust | fastest | yes | 89 |
+| prost | 0.13.5 | 0.23 | 0.63 | 0.87 | 290 | 690 | Protocol Buffers | slower | yes | 85 |
+| rmp-serde | 1.3.1 | 0.33 | 0.92 | 1.25 | 356 | 776 | MessagePack | slower | yes | 89 |
+| ciborium | 0.2.2 | 0.71 | 1.44 | 2.19 | 355 | 776 | CBOR | slower | yes | 84 |
+| serde_json | 1.0.151 | 0.83 | 1.86 | 2.71 | 672 | 878 | JSON — usual Rust library | slower | yes | 88 |
+| sonic-rs | 0.3.17 | 1.06 | 1.84 | 2.91 | 672 | 878 | JSON — fast writer from Experiment 1 | slower | yes | 86 |
 
 ## In memory — 128 numbers in the list
 
@@ -38,12 +38,12 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| postcard | 1.1.3 | 0.22 | 0.29 | 0.51 | 1051 | — | postcard — compact Rust | fastest | yes | 93 |
-| prost | 0.13.5 | 0.27 | 0.50 | 0.77 | 1054 | — | Protocol Buffers | slower | yes | 89 |
-| rmp-serde | 1.3.1 | 0.57 | 0.59 | 1.16 | 1216 | — | MessagePack | slower | yes | 87 |
-| ciborium | 0.2.2 | 1.16 | 1.62 | 2.79 | 1215 | — | CBOR | slower | yes | 91 |
-| sonic-rs | 0.3.17 | 2.39 | 2.65 | 5.05 | 2420 | — | JSON — fast writer from Experiment 1 | slower | yes | 86 |
-| serde_json | 1.0.150 | 2.06 | 3.15 | 5.22 | 2420 | — | JSON — usual Rust library | slower | yes | 76 |
+| postcard | 1.1.3 | 0.34 | 0.53 | 0.86 | 1051 | 688 | postcard — compact Rust | fastest | yes | 84 |
+| prost | 0.13.5 | 0.30 | 1.08 | 1.38 | 1054 | 690 | Protocol Buffers | slower | yes | 79 |
+| rmp-serde | 1.3.1 | 0.45 | 1.27 | 1.73 | 1216 | 776 | MessagePack | slower | yes | 85 |
+| ciborium | 0.2.2 | 1.59 | 2.51 | 4.11 | 1215 | 776 | CBOR | slower | yes | 85 |
+| serde_json | 1.0.151 | 2.32 | 4.54 | 6.88 | 2420 | 878 | JSON — usual Rust library | slower | yes | 81 |
+| sonic-rs | 0.3.17 | 3.53 | 4.43 | 7.97 | 2420 | 878 | JSON — fast writer from Experiment 1 | slower | yes | 78 |
 
 ## In memory — 512 numbers in the list
 
@@ -51,41 +51,37 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| postcard | 1.1.3 | 0.53 | 0.66 | 1.18 | 4128 | — | postcard — compact Rust | fastest | yes | 92 |
-| prost | 0.13.5 | 0.69 | 0.90 | 1.58 | 4131 | — | Protocol Buffers | slower | yes | 92 |
-| rmp-serde | 1.3.1 | 1.53 | 1.51 | 3.05 | 4677 | — | MessagePack | slower | yes | 87 |
-| ciborium | 0.2.2 | 4.14 | 4.63 | 8.78 | 4677 | — | CBOR | slower | yes | 85 |
-| serde_json | 1.0.150 | 7.45 | 10.8 | 18.2 | 9415 | — | JSON — usual Rust library | slower | yes | 90 |
-| sonic-rs | 0.3.17 | 8.96 | 9.50 | 18.5 | 9415 | — | JSON — fast writer from Experiment 1 | slower | yes | 91 |
+| postcard | 1.1.3 | 0.69 | 1.17 | 1.85 | 4128 | 688 | postcard — compact Rust | fastest | yes | 97 |
+| prost | 0.13.5 | 0.87 | 2.00 | 2.86 | 4131 | 690 | Protocol Buffers | slower | yes | 98 |
+| rmp-serde | 1.3.1 | 1.07 | 2.67 | 3.75 | 4677 | 776 | MessagePack | slower | yes | 97 |
+| ciborium | 0.2.2 | 5.10 | 6.56 | 11.6 | 4677 | 776 | CBOR | slower | yes | 95 |
+| serde_json | 1.0.151 | 8.54 | 14.1 | 22.7 | 9415 | 878 | JSON — usual Rust library | slower | yes | 89 |
+| sonic-rs | 0.3.17 | 13.5 | 14.3 | 27.8 | 9415 | 878 | JSON — fast writer from Experiment 1 | slower | yes | 94 |
 
 ## Stream call (side note)
 
 | Library | Points | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|--------|------------|-----------|-------------------|---------------------------|
-| postcard | 8 | 0.15 | 0.16 | 0.31 | copied |
-| rmp-serde | 8 | 0.24 | 0.27 | 0.51 | copied |
-| prost | 8 | 0.29 | 0.24 | 0.52 | copied |
-| sonic-rs | 8 | 0.36 | 0.48 | 0.84 | copied |
-| ciborium | 8 | 0.38 | 0.64 | 1.02 | real |
-| serde_json | 8 | 0.52 | 1.22 | 1.74 | real |
-| postcard | 32 | 0.18 | 0.19 | 0.38 | copied |
-| prost | 32 | 0.32 | 0.31 | 0.64 | copied |
-| rmp-serde | 32 | 0.35 | 0.35 | 0.70 | copied |
-| ciborium | 32 | 0.69 | 0.88 | 1.57 | real |
-| sonic-rs | 32 | 0.76 | 0.93 | 1.69 | copied |
-| serde_json | 32 | 1.06 | 2.48 | 3.54 | real |
-| postcard | 128 | 0.25 | 0.34 | 0.58 | copied |
-| prost | 128 | 0.34 | 0.57 | 0.91 | copied |
-| rmp-serde | 128 | 0.61 | 0.64 | 1.25 | copied |
-| ciborium | 128 | 1.97 | 1.85 | 3.81 | real |
-| sonic-rs | 128 | 2.40 | 2.62 | 5.00 | copied |
-| serde_json | 128 | 2.68 | 7.63 | 10.4 | real |
-| postcard | 512 | 0.48 | 0.68 | 1.16 | copied |
-| prost | 512 | 0.72 | 1.02 | 1.78 | copied |
-| rmp-serde | 512 | 1.71 | 1.57 | 3.28 | copied |
-| ciborium | 512 | 6.92 | 5.95 | 12.9 | real |
-| sonic-rs | 512 | 9.67 | 9.87 | 19.5 | copied |
-| serde_json | 512 | 9.68 | 28.3 | 38.0 | real |
+| postcard | 8 | 0.28 | 0.34 | 0.61 | copied |
+| rmp-serde | 8 | 0.34 | 0.72 | 1.07 | copied |
+| sonic-rs | 8 | 0.63 | 1.08 | 1.70 | copied |
+| ciborium | 8 | 0.84 | 1.29 | 2.16 | real |
+| serde_json | 8 | 1.03 | 1.86 | 2.90 | real |
+| postcard | 32 | 0.33 | 0.40 | 0.74 | copied |
+| rmp-serde | 32 | 0.45 | 0.94 | 1.39 | copied |
+| ciborium | 32 | 1.25 | 1.70 | 2.94 | real |
+| sonic-rs | 32 | 1.20 | 1.87 | 3.07 | copied |
+| serde_json | 32 | 1.70 | 3.54 | 5.28 | real |
+| postcard | 128 | 0.46 | 0.69 | 1.15 | copied |
+| rmp-serde | 128 | 0.61 | 1.42 | 2.04 | copied |
+| ciborium | 128 | 2.77 | 3.03 | 5.81 | real |
+| sonic-rs | 128 | 3.74 | 4.66 | 8.38 | copied |
+| serde_json | 128 | 3.73 | 9.85 | 13.7 | real |
+| postcard | 512 | 0.93 | 1.26 | 2.18 | copied |
+| rmp-serde | 512 | 1.31 | 2.83 | 4.13 | copied |
+| ciborium | 512 | 8.91 | 8.10 | 17.0 | real |
+| sonic-rs | 512 | 14.1 | 14.8 | 29.0 | copied |
+| serde_json | 512 | 11.7 | 33.9 | 45.6 | real |
 
 ## Libraries that belong in the conversation
 

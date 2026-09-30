@@ -83,7 +83,7 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
         FILE *wf = fmemopen(buf, buf_cap, "w+");
         if (!wf) rc = -1;
         else {
-            rc = S->serialize_fp(fx, wf, &out_len);
+            rc = bench_serialize_cell_fp(S, fx, wf, &out_len);
             if (rc == 0) {
                 if (fflush(wf) != 0) rc = -1;
                 else out_len = (size_t)ftell(wf);
@@ -105,12 +105,7 @@ static int run_one_trial(serializer_t *S, test_fixture_t *fx, const char *type_i
         return -1;
     }
     if (native_stream) {
-        FILE *rf = fmemopen(buf, out_len ? out_len : 1, "r");
-        if (!rf) rc = -1;
-        else {
-            rc = S->deserialize_fp(rf, &out_fx, fx->kind);
-            fclose(rf);
-        }
+        rc = bench_deserialize_cell_fp(S, buf, out_len, &out_fx, fx->kind);
     } else {
         if (mode[0] == 's') {
             rc = bench_stream_read_all(buf, buf_cap, out_len);
@@ -201,6 +196,7 @@ int run_benchmarks_v2(int repetitions, const char *log_dir) {
     }
 
     serializer_t sers[BENCH_MAX_SERIALIZERS];
+    memset(sers, 0, sizeof sers);
     int ser_count = 0;
     register_all_serializers(sers, &ser_count);
 

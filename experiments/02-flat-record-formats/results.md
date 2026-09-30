@@ -1,7 +1,7 @@
 # Should two services inside the company stop using JSON?
 
 **Question:** On one small record, how do JSON, MessagePack, and Protocol Buffers compare?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `message`, [1, 100] record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -14,16 +14,16 @@ We do not name a single winner. This sample is one small flat record. A differen
 
 | Language | Status | Not clearly slower | Small gap | Time/size front | Full table |
 |----------|--------|--------------------|-----------|-----------------|------------|
-| python | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [python/results.md](python/results.md) |
-| go | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [go/results.md](go/results.md) |
+| python | ok | `msgspec-msgpack` | — | `msgspec-msgpack`, `protobuf` | [python/results.md](python/results.md) |
+| go | ok | `shamaton/msgpack`, `protobuf` | — | `shamaton/msgpack`, `protobuf` | [go/results.md](go/results.md) |
 | java | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [java/results.md](java/results.md) |
 | kotlin | ok | `protobuf` | — | `protobuf` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
-| javascript | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [javascript/results.md](javascript/results.md) |
-| rust | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [rust/results.md](rust/results.md) |
-| c | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [c/results.md](c/results.md) |
+| javascript | ok | `JSON.stringify` | — | `JSON.stringify`, `msgpackr`, `protobufjs`, `protobuf-es` | [javascript/results.md](javascript/results.md) |
+| rust | ok | `prost` | — | `prost` | [rust/results.md](rust/results.md) |
+| c | ok | `protobuf-wire`, `protobuf-c` | — | `protobuf-wire` | [c/results.md](c/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
-| csharp | ok | `SpanJson` | `Google.Protobuf` | `SpanJson`, `Google.Protobuf` | [csharp/results.md](csharp/results.md) |
+| csharp | ok | `Google.Protobuf`, `SpanJson` | — | `Google.Protobuf` | [csharp/results.md](csharp/results.md) |
 | swift | missing | no CSV in this language folder yet | no CSV in this language folder yet | no CSV in this language folder yet | [swift/results.md](swift/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-avro`, `mojo-protobuf` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
@@ -32,16 +32,16 @@ We do not name a single winner. This sample is one small flat record. A differen
 
 | Language | Status | Not clearly slower | Small gap | Time/size front |
 |----------|--------|--------------------|-----------|-----------------|
-| python | missing | — | — | — |
-| go | missing | — | — | — |
+| python | ok | `msgspec-msgpack` | — | `msgspec-msgpack` |
+| go | ok | `protobuf` | — | `protobuf` |
 | java | missing | — | — | — |
 | kotlin | ok | `protobuf` | — | `protobuf` |
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` |
-| javascript | missing | — | — | — |
-| rust | missing | — | — | — |
-| c | missing | — | — | — |
+| javascript | ok | `protobufjs`, `JSON.stringify` | — | `protobufjs`, `protobuf-es` |
+| rust | ok | `prost` | — | `prost` |
+| c | ok | `protobuf-c`, `protobuf-wire` | — | `protobuf-c` |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` |
-| csharp | ok | `MessagePack-CSharp`, `Google.Protobuf` | `ProtoBuf`, `SpanJson` | `MessagePack-CSharp`, `Google.Protobuf` |
+| csharp | ok | `MessagePack-CSharp`, `SpanJson`, `Google.Protobuf` | `ProtoBuf` | `MessagePack-CSharp`, `ProtoBuf` |
 | swift | missing | — | — | — |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` |
 | mojo | ok | `mojo-avro` | — | `mojo-avro` |
@@ -52,11 +52,47 @@ Every listed library (JSON, MessagePack, Protocol Buffers). Times are middle val
 
 ### python
 
-no CSV in this language folder yet
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| msgspec-msgpack | 2.37 | 52 | MessagePack — msgspec | fastest |
+| orjson | 3.08 | 168 | JSON — fast writer from Experiment 1 | slower |
+| protobuf | 4.85 | 50 | Protocol Buffers | slower |
+| msgpack | 5.95 | 124 | MessagePack | slower |
+| json | 17.5 | 168 | JSON — ships with Python | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| msgspec-msgpack | 30.8 | 4831 | MessagePack — msgspec | fastest |
+| protobuf | 33.8 | 4841 | Protocol Buffers | slower |
+| orjson | 62.2 | 16546 | JSON — fast writer from Experiment 1 | slower |
+| msgpack | 112 | 12031 | MessagePack | slower |
+| json | 244 | 16546 | JSON — ships with Python | slower |
 
 ### go
 
-no CSV in this language folder yet
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| shamaton/msgpack | 1.22 | 124 | MessagePack — fast Go writer | fastest |
+| protobuf | 1.32 | 50 | Protocol Buffers | similar |
+| goccy/go-json | 1.66 | 168 | JSON — fast writer from Experiment 1 | slower |
+| vmihailenco/msgpack | 1.93 | 128 | MessagePack | slower |
+| encoding/json | 3.70 | 168 | JSON — ships with Go | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf | 39.4 | 4841 | Protocol Buffers | fastest |
+| shamaton/msgpack | 47.3 | 12031 | MessagePack — fast Go writer | slower |
+| goccy/go-json | 60.4 | 16546 | JSON — fast writer from Experiment 1 | slower |
+| vmihailenco/msgpack | 75.7 | 12457 | MessagePack | slower |
+| encoding/json | 189 | 16546 | JSON — ships with Go | slower |
 
 ### java
 
@@ -104,15 +140,69 @@ no CSV in this language folder yet
 
 ### javascript
 
-no CSV in this language folder yet
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| JSON.stringify | 5.81 | 168 | JSON — ships with JavaScript | fastest |
+| msgpackr | 14.0 | 126 | MessagePack | slower |
+| protobufjs | 16.7 | 52 | Protocol Buffers | slower |
+| @msgpack/msgpack | 18.3 | 124 | MessagePack — official package | slower |
+| protobuf-es | 22.1 | 50 | Protocol Buffers | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobufjs | 90.7 | 5047 | Protocol Buffers | fastest |
+| JSON.stringify | 96.5 | 16546 | JSON — ships with JavaScript | similar |
+| msgpackr | 121 | 12231 | MessagePack | slower |
+| protobuf-es | 125 | 4841 | Protocol Buffers | slower |
+| @msgpack/msgpack | 132 | 12031 | MessagePack — official package | slower |
 
 ### rust
 
-no CSV in this language folder yet
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| prost | 0.47 | 55 | Protocol Buffers | fastest |
+| rmp-serde | 0.86 | 136 | MessagePack | slower |
+| sonic-rs | 1.14 | 182 | JSON — fast writer from Experiment 1 | slower |
+| serde_json | 1.25 | 182 | JSON — usual Rust library | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| prost | 22.6 | 5102 | Protocol Buffers | fastest |
+| rmp-serde | 37.7 | 13364 | MessagePack | slower |
+| sonic-rs | 44.6 | 18070 | JSON — fast writer from Experiment 1 | slower |
+| serde_json | 66.0 | 18070 | JSON — usual Rust library | slower |
 
 ### c
 
-no CSV in this language folder yet
+**1 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf-wire | 0.39 | 51 | Protocol Buffers — in-tree wire helper | fastest |
+| protobuf-c | 0.39 | 51 | Protocol Buffers — protobuf-c (timed path is the suite wire codec) | similar |
+| msgpack-c | 1.32 | 125 | MessagePack — official C library | slower |
+| mpack | 1.36 | 125 | MessagePack | slower |
+| yyjson | 2.13 | 170 | JSON — fast writer from Experiment 1 | slower |
+| cJSON | 5.21 | 170 | JSON — common C library | slower |
+
+**100 record(s) per write**
+
+| Library | Write + read (µs) | Size (bytes) | Role | Group |
+|---------|-------------------|--------------|------|-------|
+| protobuf-c | 41.6 | 4932 | Protocol Buffers — protobuf-c (timed path is the suite wire codec) | fastest |
+| protobuf-wire | 41.7 | 4932 | Protocol Buffers — in-tree wire helper | similar |
+| mpack | 71.2 | 12295 | MessagePack | slower |
+| msgpack-c | 74.1 | 12295 | MessagePack — official C library | slower |
+| yyjson | 119 | 16717 | JSON — fast writer from Experiment 1 | slower |
+| cJSON | 314 | 16741 | JSON — common C library | slower |
 
 ### cpp
 
@@ -140,21 +230,21 @@ no CSV in this language folder yet
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| SpanJson | 10.2 | 157 | JSON — fast writer from Experiment 1 | fastest |
-| Google.Protobuf | 10.6 | 68 | Protocol Buffers — Google library | close |
-| MessagePack-CSharp | 13.9 | 72 | MessagePack | slower |
-| ProtoBuf | 16.6 | 68 | Protocol Buffers — protobuf-net | slower |
-| System.Text.Json | 47.2 | 212 | JSON — ships with modern .NET | slower |
+| Google.Protobuf | 11.0 | 68 | Protocol Buffers — Google library | fastest |
+| SpanJson | 11.3 | 157 | JSON — fast writer from Experiment 1 | similar |
+| MessagePack-CSharp | 14.8 | 72 | MessagePack | slower |
+| ProtoBuf | 17.1 | 68 | Protocol Buffers — protobuf-net | slower |
+| System.Text.Json | 49.6 | 157 | JSON — ships with modern .NET | slower |
 
 **100 record(s) per write**
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| MessagePack-CSharp | 110 | 6580 | MessagePack | fastest |
-| Google.Protobuf | 134 | 6456 | Protocol Buffers — Google library | similar |
-| ProtoBuf | 136 | 6456 | Protocol Buffers — protobuf-net | close |
-| SpanJson | 149 | 15456 | JSON — fast writer from Experiment 1 | close |
-| System.Text.Json | 346 | 20608 | JSON — ships with modern .NET | slower |
+| MessagePack-CSharp | 117 | 6580 | MessagePack | fastest |
+| SpanJson | 126 | 15456 | JSON — fast writer from Experiment 1 | similar |
+| ProtoBuf | 129 | 6456 | Protocol Buffers — protobuf-net | close |
+| Google.Protobuf | 151 | 6456 | Protocol Buffers — Google library | similar |
+| System.Text.Json | 332 | 15456 | JSON — ships with modern .NET | slower |
 
 ### swift
 

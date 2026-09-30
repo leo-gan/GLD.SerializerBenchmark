@@ -17,18 +17,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/amazon-ion/ion-go/ion"
+	"github.com/bytedance/sonic"
 	"github.com/fxamacker/cbor/v2"
-	hambaavro "github.com/hamba/avro/v2"
-	goavro "github.com/linkedin/goavro/v2"
 	goccyjson "github.com/goccy/go-json"
 	goccyyaml "github.com/goccy/go-yaml"
+	hambaavro "github.com/hamba/avro/v2"
 	jsoniter "github.com/json-iterator/go"
+	goavro "github.com/linkedin/goavro/v2"
 	"github.com/pelletier/go-toml/v2"
 	segmentiojson "github.com/segmentio/encoding/json"
 	"github.com/shamaton/msgpack/v3"
 	ugorji "github.com/ugorji/go/codec"
 	vmsgpack "github.com/vmihailenco/msgpack/v5"
-	"github.com/bytedance/sonic"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -41,19 +42,19 @@ import (
 )
 
 type Case struct {
-	ID             string          `json:"id"`
-	Title          string          `json:"title"`
-	Section        string          `json:"section"`
-	SectionTitle   string          `json:"section_title"`
-	SectionURL     string          `json:"section_url"`
-	Paragraph      string          `json:"paragraph"`
-	Requirement    string          `json:"requirement"`
-	Expect         string          `json:"expect"`
-	Input          string          `json:"input"`
-	InputEncoding  string          `json:"input_encoding"`
-	Decoded        json.RawMessage `json:"decoded"`
-	HasDecoded     bool            `json:"-"`
-	Schema         json.RawMessage `json:"schema"`
+	ID            string          `json:"id"`
+	Title         string          `json:"title"`
+	Section       string          `json:"section"`
+	SectionTitle  string          `json:"section_title"`
+	SectionURL    string          `json:"section_url"`
+	Paragraph     string          `json:"paragraph"`
+	Requirement   string          `json:"requirement"`
+	Expect        string          `json:"expect"`
+	Input         string          `json:"input"`
+	InputEncoding string          `json:"input_encoding"`
+	Decoded       json.RawMessage `json:"decoded"`
+	HasDecoded    bool            `json:"-"`
+	Schema        json.RawMessage `json:"schema"`
 }
 
 type Suite struct {
@@ -253,6 +254,72 @@ func caseSchema(c Case) string {
 	return strings.Trim(string(c.Schema), "\"")
 }
 
+// decodeIon walks every value so accept/reject follows the reader, not a Go type mapping.
+func decodeIon(b []byte, _ string) (any, error) {
+	r := ion.NewReaderBytes(b)
+	n := 0
+	for r.Next() {
+		n++
+		if err := consumeIon(r); err != nil {
+			return nil, err
+		}
+	}
+	if err := r.Err(); err != nil {
+		return nil, err
+	}
+	return n, nil
+}
+
+func consumeIon(r ion.Reader) error {
+	if _, err := r.Annotations(); err != nil {
+		return err
+	}
+	if r.IsInStruct() {
+		if _, err := r.FieldName(); err != nil {
+			return err
+		}
+	}
+	if r.IsNull() || r.Type() == ion.NullType {
+		return nil
+	}
+	if ion.IsContainer(r.Type()) {
+		if err := r.StepIn(); err != nil {
+			return err
+		}
+		for r.Next() {
+			if err := consumeIon(r); err != nil {
+				return err
+			}
+		}
+		if err := r.Err(); err != nil {
+			return err
+		}
+		return r.StepOut()
+	}
+	var err error
+	switch r.Type() {
+	case ion.BoolType:
+		_, err = r.BoolValue()
+	case ion.IntType:
+		_, err = r.BigIntValue()
+	case ion.FloatType:
+		_, err = r.FloatValue()
+	case ion.DecimalType:
+		_, err = r.DecimalValue()
+	case ion.TimestampType:
+		_, err = r.TimestampValue()
+	case ion.SymbolType:
+		_, err = r.SymbolValue()
+	case ion.StringType:
+		_, err = r.StringValue()
+	case ion.BlobType, ion.ClobType:
+		_, err = r.ByteValue()
+	default:
+		err = fmt.Errorf("unsupported ion type %s", r.Type())
+	}
+	return err
+}
+
 func builtin() []adapter {
 	jsonDec := func(fn func([]byte, any) error) func([]byte, string) (any, error) {
 		return func(b []byte, _ string) (any, error) {
@@ -301,6 +368,7 @@ func builtin() []adapter {
 		{"vmihailenco/msgpack", "msgpack", moduleVer("github.com/vmihailenco/msgpack/v5"), jsonDec(vmsgpack.Unmarshal)},
 		{"shamaton/msgpack", "msgpack", moduleVer("github.com/shamaton/msgpack/v3"), jsonDec(msgpack.Unmarshal)},
 		{"ugorji/msgpack", "msgpack", moduleVer("github.com/ugorji/go/codec"), ugorjiMP},
+		{"ion-go", "ion", moduleVer("github.com/amazon-ion/ion-go"), decodeIon},
 		{"mongo-bson", "bson", moduleVer("go.mongodb.org/mongo-driver"), func(b []byte, _ string) (any, error) {
 			vr := bsonrw.NewBSONDocumentReader(b)
 			dec, err := bson.NewDecoder(vr)
@@ -671,10 +739,10 @@ func writeReport(path string, results []Result, adapterErrs []string) error {
 	}
 	sort.Strings(formatList)
 	doc := map[string]any{
-		"schema": "gld.dashboard.compliance/1",
+		"schema":       "gld.dashboard.compliance/1",
 		"generated_at": time.Now().UTC().Format("2006-01-02T15:04:05Z"),
-		"language": "go", "languages": []string{"go"}, "policy": "report-only",
-		"scope": map[string]any{"formats": formatList},
+		"language":     "go", "languages": []string{"go"}, "policy": "report-only",
+		"scope":  map[string]any{"formats": formatList},
 		"passed": p, "failed": f, "skipped": s, "errors": e,
 		"catalog_errors": []string{}, "serializer_errors": adapterErrs,
 		"results": results,

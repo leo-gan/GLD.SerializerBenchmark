@@ -220,5 +220,7 @@ extern "C" void bench_register_protobuf_google(serializer_t* o, int* c) {
   o[*c].serialize = ser;
   o[*c].deserialize = de;
   o[*c].fidelity = fidelity_fx;
+  o[*c].serialize_fp = nullptr;
+  o[*c].deserialize_fp = nullptr;
   (*c)++;
 }

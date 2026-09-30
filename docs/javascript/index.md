@@ -67,6 +67,7 @@ The steps to install Node and run the benchmark are in [`javascript/README.md`](
 | [flatbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` | `Builder` / `ByteBuffer` |
 | [flexbuffers](https://github.com/google/flatbuffers) | Schema | `flatbuffers` (FlexBuffers) | `encode` / `toObject` |
 | [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) | Schema | `google-protobuf` | official jspb `serializeBinary` / `deserializeBinary` |
+| [ion-js](https://github.com/amazon-ion/ion-js) | Binary | `ion-js` | `dumpBinary` / `load`; plain-object conversion is outside the timer |
 | [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack) | Binary | `@jsonjoy.com/json-pack` | `MsgPackEncoder` / `MsgPackDecoder` |
 | [JSON.stringify](https://github.com/nodejs/node) | JSON | builtin | `JSON.stringify` / `JSON.parse` |
 | [msgpackr](https://github.com/kriszyp/msgpackr) | Binary | `msgpackr` | reused `Packr` / `Unpackr` |
@@ -127,6 +128,10 @@ FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can h
 #### [google-protobuf](https://github.com/protocolbuffers/protobuf-javascript) · `3.21.4`
 
 This is Google's official JavaScript protobuf runtime (`google-protobuf` / jspb). It exists so the same `.proto` contracts can run in JS. The suite times `serializeBinary` / `deserializeBinary`.
+
+#### [ion-js](https://github.com/amazon-ion/ion-js) · `5.2.1`
+
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-js is the official JavaScript implementation. This row times binary dump/load; the Ion DOM is turned into plain objects outside the timer.
 
 #### [json-pack-msgpack](https://github.com/jsonjoy-com/json-pack) · `18.30.0`
 

@@ -1,7 +1,7 @@
 # Experiment 6 results — javascript
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/06-document-db-formats/javascript/logs/javascript/2026-08-17-110017.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/06-document-db-formats/javascript/logs/javascript/2026-09-29-184354.csv`
 **Language:** javascript
 **Sample:** one order-like record (`document`), 1 record per write
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,9 +12,9 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| JSON.stringify | node-24.15.0 | 3.48 | 3.93 | 7.13 | 448 | — | JSON | fastest | yes | 86 |
-| msgpackr | 1.12.1 | 6.40 | 10.9 | 17.6 | 345 | — | MessagePack | slower | yes | 84 |
-| bson | 6.10.4 | 15.2 | 11.7 | 27.2 | 493 | — | BSON | slower | yes | 89 |
+| JSON.stringify | node-24.15.0 | 4.42 | 5.63 | 10.3 | 448 | 230 | JSON | fastest | yes | 85 |
+| msgpackr | 1.12.1 | 6.50 | 13.0 | 19.7 | 345 | 232 | MessagePack | slower | yes | 84 |
+| bson | 6.10.4 | 18.2 | 12.9 | 32.6 | 493 | 276 | BSON | slower | yes | 87 |
 
 ## Libraries that belong in the conversation
 

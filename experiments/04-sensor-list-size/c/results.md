@@ -1,7 +1,7 @@
 # Experiment 4 results — c
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/04-sensor-list-size/c/logs/c/2026-08-17-113556.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/04-sensor-list-size/c/logs/c/2026-09-29-184151.csv`
 **Language:** c
 **Sample:** one sensor record (`telemetry`), list lengths 8, 32, 128, 512
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,14 +12,14 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| nanopb | 0.4.9 | 0.12 | 0.15 | 0.27 | 105 | — | Protocol Buffers — nanopb (read the C page before quoting) | fastest | yes | 95 |
-| protobuf-wire | wire-v2 | 0.12 | 0.15 | 0.27 | 105 | — | Protocol Buffers — in-tree wire helper | similar | yes | 95 |
-| mpack | 1.1 | 0.26 | 0.85 | 1.12 | 129 | — | MessagePack | slower | yes | 91 |
-| tinycbor | 0.6.0 | 0.38 | 1.08 | 1.46 | 129 | — | CBOR — Intel tinycbor | slower | yes | 89 |
-| yyjson | 0.10.0 | 0.84 | 0.65 | 1.49 | 226 | — | JSON — fast writer from Experiment 1 | slower | yes | 91 |
-| qcbor | 1.5.1 | 0.75 | 1.09 | 1.85 | 129 | — | CBOR — small-device writer | slower | yes | 93 |
-| zcbor | 0.9 | 0.43 | 1.67 | 2.10 | 132 | — | CBOR — structured (zcbor) | slower | yes | 91 |
-| cJSON | 1.7.18 | 6.75 | 1.93 | 8.66 | 226 | — | JSON — common C library | slower | yes | 92 |
+| protobuf-wire | wire-v2 | 0.18 | 0.24 | 0.43 | 105 | 741 | Protocol Buffers — in-tree wire helper | fastest | yes | 89 |
+| nanopb | 0.4.9.2 | 0.21 | 0.25 | 0.46 | 105 | 741 | Protocol Buffers — nanopb (read the C page before quoting) | slower | yes | 86 |
+| mpack | 1.1.1 | 0.42 | 0.94 | 1.37 | 129 | 768 | MessagePack | slower | yes | 92 |
+| tinycbor | 0.6.0 | 0.57 | 1.55 | 2.13 | 129 | 766 | CBOR — Intel tinycbor | slower | yes | 96 |
+| qcbor | 1.6.1 | 0.86 | 1.55 | 2.41 | 129 | 766 | CBOR — small-device writer | slower | yes | 94 |
+| yyjson | 0.10.0 | 1.36 | 1.06 | 2.42 | 226 | 865 | JSON — fast writer from Experiment 1 | slower | yes | 90 |
+| zcbor | 0.9 | 0.67 | 2.35 | 3.05 | 132 | 768 | CBOR — structured (zcbor) | slower | yes | 94 |
+| cJSON | 1.7.19 | 8.66 | 3.31 | 11.9 | 226 | 874 | JSON — common C library | slower | yes | 96 |
 
 ## In memory — 32 numbers in the list
 
@@ -27,14 +27,14 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf-wire | wire-v2 | 0.15 | 0.25 | 0.40 | 317 | — | Protocol Buffers — in-tree wire helper | fastest | yes | 98 |
-| nanopb | 0.4.9 | 0.15 | 0.25 | 0.40 | 317 | — | Protocol Buffers — nanopb (read the C page before quoting) | similar | yes | 97 |
-| mpack | 1.1 | 0.36 | 1.47 | 1.84 | 343 | — | MessagePack | slower | yes | 99 |
-| yyjson | 0.10.0 | 1.46 | 1.76 | 3.23 | 661 | — | JSON — fast writer from Experiment 1 | slower | yes | 89 |
-| tinycbor | 0.6.0 | 0.59 | 6.02 | 6.60 | 342 | — | CBOR — Intel tinycbor | slower | yes | 97 |
-| qcbor | 1.5.1 | 1.33 | 6.04 | 7.40 | 342 | — | CBOR — small-device writer | slower | yes | 96 |
-| zcbor | 0.9 | 0.65 | 7.37 | 8.04 | 344 | — | CBOR — structured (zcbor) | slower | yes | 92 |
-| cJSON | 1.7.18 | 23.9 | 5.53 | 29.5 | 667 | — | JSON — common C library | slower | yes | 93 |
+| protobuf-wire | wire-v2 | 0.23 | 0.31 | 0.53 | 317 | 741 | Protocol Buffers — in-tree wire helper | fastest | yes | 89 |
+| nanopb | 0.4.9.2 | 0.25 | 0.32 | 0.56 | 317 | 741 | Protocol Buffers — nanopb (read the C page before quoting) | close | yes | 95 |
+| mpack | 1.1.1 | 0.60 | 1.32 | 1.92 | 343 | 768 | MessagePack | slower | yes | 94 |
+| yyjson | 0.10.0 | 2.22 | 2.01 | 4.26 | 661 | 865 | JSON — fast writer from Experiment 1 | slower | yes | 97 |
+| tinycbor | 0.6.0 | 0.79 | 7.02 | 7.83 | 342 | 766 | CBOR — Intel tinycbor | slower | yes | 93 |
+| qcbor | 1.6.1 | 1.44 | 7.03 | 8.49 | 342 | 766 | CBOR — small-device writer | slower | yes | 88 |
+| zcbor | 0.9 | 0.93 | 8.30 | 9.25 | 344 | 768 | CBOR — structured (zcbor) | slower | yes | 95 |
+| cJSON | 1.7.19 | 28.0 | 7.89 | 35.9 | 667 | 874 | JSON — common C library | slower | yes | 93 |
 
 ## In memory — 128 numbers in the list
 
@@ -42,14 +42,14 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf-wire | wire-v2 | 0.23 | 0.41 | 0.64 | 1187 | — | Protocol Buffers — in-tree wire helper | fastest | yes | 95 |
-| nanopb | 0.4.9 | 0.23 | 0.42 | 0.65 | 1187 | — | Protocol Buffers — nanopb (read the C page before quoting) | close | yes | 89 |
-| mpack | 1.1 | 0.59 | 2.78 | 3.33 | 1213 | — | MessagePack | slower | yes | 93 |
-| yyjson | 0.10.0 | 4.16 | 3.28 | 7.58 | 2418 | — | JSON — fast writer from Experiment 1 | slower | yes | 94 |
-| tinycbor | 0.6.0 | 1.21 | 78.4 | 79.6 | 1212 | — | CBOR — Intel tinycbor | slower | yes | 95 |
-| qcbor | 1.5.1 | 3.36 | 77.2 | 80.6 | 1212 | — | CBOR — small-device writer | slower | yes | 90 |
-| zcbor | 0.9 | 1.36 | 86.5 | 88.2 | 1214 | — | CBOR — structured (zcbor) | slower | yes | 98 |
-| cJSON | 1.7.18 | 92.5 | 23.9 | 117 | 2448 | — | JSON — common C library | slower | yes | 92 |
+| protobuf-wire | wire-v2 | 0.31 | 0.49 | 0.81 | 1187 | 741 | Protocol Buffers — in-tree wire helper | fastest | yes | 86 |
+| nanopb | 0.4.9.2 | 0.33 | 0.49 | 0.82 | 1187 | 741 | Protocol Buffers — nanopb (read the C page before quoting) | similar | yes | 88 |
+| mpack | 1.1.1 | 0.89 | 2.19 | 3.11 | 1213 | 768 | MessagePack | slower | yes | 86 |
+| yyjson | 0.10.0 | 5.44 | 4.45 | 9.87 | 2418 | 865 | JSON — fast writer from Experiment 1 | slower | yes | 94 |
+| tinycbor | 0.6.0 | 1.40 | 84.3 | 85.7 | 1212 | 766 | CBOR — Intel tinycbor | slower | yes | 90 |
+| qcbor | 1.6.1 | 3.18 | 84.5 | 87.6 | 1212 | 766 | CBOR — small-device writer | slower | yes | 86 |
+| zcbor | 0.9 | 1.89 | 90.2 | 92.2 | 1214 | 768 | CBOR — structured (zcbor) | slower | yes | 96 |
+| cJSON | 1.7.19 | 103 | 27.7 | 131 | 2448 | 874 | JSON — common C library | slower | yes | 89 |
 
 ## In memory — 512 numbers in the list
 
@@ -57,61 +57,61 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| protobuf-wire | wire-v2 | 0.49 | 1.08 | 1.57 | 4640 | — | Protocol Buffers — in-tree wire helper | fastest | yes | 84 |
-| nanopb | 0.4.9 | 0.59 | 1.15 | 1.76 | 4640 | — | Protocol Buffers — nanopb (read the C page before quoting) | slower | yes | 87 |
-| mpack | 1.1 | 1.58 | 5.45 | 7.06 | 4666 | — | MessagePack | slower | yes | 91 |
-| yyjson | 0.10.0 | 16.2 | 12.2 | 28.7 | 9371 | — | JSON — fast writer from Experiment 1 | slower | yes | 88 |
-| cJSON | 1.7.18 | 370 | 209 | 579 | 9482 | — | JSON — common C library | slower | yes | 91 |
-| tinycbor | 0.6.0 | 3.79 | 1191 | 1195 | 4666 | — | CBOR — Intel tinycbor | slower | yes | 88 |
-| qcbor | 1.5.1 | 11.2 | 1198 | 1209 | 4666 | — | CBOR — small-device writer | slower | yes | 89 |
-| zcbor | 0.9 | 4.00 | 1296 | 1302 | 4667 | — | CBOR — structured (zcbor) | slower | yes | 93 |
+| protobuf-wire | wire-v2 | 0.64 | 1.25 | 1.92 | 4640 | 741 | Protocol Buffers — in-tree wire helper | fastest | yes | 93 |
+| nanopb | 0.4.9.2 | 0.67 | 1.46 | 2.13 | 4640 | 741 | Protocol Buffers — nanopb (read the C page before quoting) | close | yes | 92 |
+| mpack | 1.1.1 | 2.45 | 6.40 | 8.97 | 4666 | 768 | MessagePack | slower | yes | 94 |
+| yyjson | 0.10.0 | 18.7 | 14.1 | 32.9 | 9371 | 865 | JSON — fast writer from Experiment 1 | slower | yes | 95 |
+| cJSON | 1.7.19 | 403 | 222 | 624 | 9482 | 874 | JSON — common C library | slower | yes | 97 |
+| tinycbor | 0.6.0 | 4.43 | 1322 | 1326 | 4666 | 766 | CBOR — Intel tinycbor | slower | yes | 96 |
+| qcbor | 1.6.1 | 10.3 | 1332 | 1342 | 4666 | 766 | CBOR — small-device writer | slower | yes | 92 |
+| zcbor | 0.9 | 6.20 | 1452 | 1460 | 4667 | 768 | CBOR — structured (zcbor) | slower | yes | 99 |
 
 ## Stream call (side note)
 
 | Library | Points | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|--------|------------|-----------|-------------------|---------------------------|
-| nanopb | 8 | 0.35 | 0.34 | 0.69 | copied |
-| protobuf-wire | 8 | 0.36 | 0.33 | 0.70 | copied |
-| mpack | 8 | 0.51 | 0.74 | 1.26 | copied |
-| tinycbor | 8 | 0.60 | 1.28 | 1.88 | copied |
-| yyjson | 8 | 1.09 | 0.83 | 1.92 | copied |
-| qcbor | 8 | 1.00 | 1.30 | 2.31 | copied |
-| zcbor | 8 | 0.68 | 1.86 | 2.55 | copied |
-| cJSON | 8 | 7.17 | 2.28 | 9.45 | copied |
-| protobuf-wire | 32 | 0.36 | 0.42 | 0.77 | copied |
-| nanopb | 32 | 0.35 | 0.43 | 0.78 | copied |
-| mpack | 32 | 0.58 | 1.04 | 1.62 | copied |
-| yyjson | 32 | 1.71 | 1.43 | 3.18 | copied |
-| tinycbor | 32 | 0.78 | 6.23 | 7.00 | copied |
-| qcbor | 32 | 1.57 | 6.24 | 7.86 | copied |
-| zcbor | 32 | 0.91 | 7.53 | 8.49 | copied |
-| cJSON | 32 | 24.4 | 6.28 | 30.7 | copied |
-| nanopb | 128 | 0.45 | 0.59 | 1.04 | copied |
-| protobuf-wire | 128 | 0.46 | 0.58 | 1.05 | copied |
-| mpack | 128 | 0.81 | 1.79 | 2.62 | copied |
-| yyjson | 128 | 4.28 | 3.42 | 7.73 | copied |
-| tinycbor | 128 | 1.41 | 76.1 | 77.4 | copied |
-| qcbor | 128 | 3.62 | 75.9 | 80.1 | copied |
-| zcbor | 128 | 1.58 | 83.6 | 85.7 | copied |
-| cJSON | 128 | 93.4 | 26.1 | 119 | copied |
-| protobuf-wire | 512 | 0.88 | 1.39 | 2.29 | copied |
-| nanopb | 512 | 0.95 | 1.42 | 2.43 | copied |
-| mpack | 512 | 2.02 | 5.19 | 7.37 | copied |
-| yyjson | 512 | 16.3 | 12.7 | 29.0 | copied |
-| cJSON | 512 | 377 | 214 | 593 | copied |
-| tinycbor | 512 | 4.28 | 1212 | 1217 | copied |
-| qcbor | 512 | 12.0 | 1206 | 1217 | copied |
-| zcbor | 512 | 4.79 | 1306 | 1314 | copied |
+| protobuf-wire | 8 | 0.46 | 0.46 | 0.92 | copied |
+| nanopb | 8 | 0.47 | 0.48 | 0.95 | copied |
+| mpack | 8 | 0.71 | 1.21 | 1.93 | copied |
+| tinycbor | 8 | 0.84 | 1.87 | 2.72 | copied |
+| qcbor | 8 | 1.16 | 1.86 | 3.04 | copied |
+| zcbor | 8 | 0.96 | 2.65 | 3.63 | copied |
+| yyjson | 8 | 2.21 | 1.61 | 3.86 | real |
+| cJSON | 8 | 9.41 | 3.84 | 13.3 | copied |
+| protobuf-wire | 32 | 0.47 | 0.51 | 0.98 | copied |
+| nanopb | 32 | 0.48 | 0.52 | 1.01 | copied |
+| mpack | 32 | 0.82 | 1.57 | 2.40 | copied |
+| yyjson | 32 | 3.31 | 2.59 | 5.89 | real |
+| tinycbor | 32 | 1.03 | 7.34 | 8.38 | copied |
+| qcbor | 32 | 1.69 | 7.34 | 9.03 | copied |
+| zcbor | 32 | 1.23 | 8.50 | 9.79 | copied |
+| cJSON | 32 | 29.0 | 8.72 | 37.6 | copied |
+| protobuf-wire | 128 | 0.65 | 0.74 | 1.38 | copied |
+| nanopb | 128 | 0.66 | 0.74 | 1.41 | copied |
+| mpack | 128 | 1.20 | 2.44 | 3.67 | copied |
+| yyjson | 128 | 6.64 | 5.00 | 11.7 | real |
+| tinycbor | 128 | 1.75 | 84.4 | 86.4 | copied |
+| qcbor | 128 | 3.50 | 84.4 | 87.8 | copied |
+| zcbor | 128 | 2.19 | 90.1 | 92.6 | copied |
+| cJSON | 128 | 104 | 30.4 | 134 | copied |
+| protobuf-wire | 512 | 1.05 | 1.58 | 2.65 | copied |
+| nanopb | 512 | 1.07 | 1.86 | 2.93 | copied |
+| mpack | 512 | 2.79 | 6.55 | 9.49 | copied |
+| yyjson | 512 | 20.4 | 15.1 | 35.6 | real |
+| cJSON | 512 | 399 | 228 | 627 | copied |
+| tinycbor | 512 | 4.78 | 1304 | 1308 | copied |
+| qcbor | 512 | 10.7 | 1301 | 1313 | copied |
+| zcbor | 512 | 6.18 | 1427 | 1434 | copied |
 
 ## Libraries that belong in the conversation
 
 We do not name a single winner. Groups are separate for each list length. Size is the first number we care about.
 
-**8 numbers, memory** — not clearly slower: `nanopb`, `protobuf-wire`. Small gap: —. Time/size front: `nanopb`, `protobuf-wire`.
+**8 numbers, memory** — not clearly slower: `protobuf-wire`. Small gap: —. Time/size front: `protobuf-wire`.
 
-**32 numbers, memory** — not clearly slower: `protobuf-wire`, `nanopb`. Small gap: —. Time/size front: `protobuf-wire`.
+**32 numbers, memory** — not clearly slower: `protobuf-wire`. Small gap: `nanopb`. Time/size front: `protobuf-wire`.
 
-**128 numbers, memory** — not clearly slower: `protobuf-wire`. Small gap: `nanopb`. Time/size front: `protobuf-wire`.
+**128 numbers, memory** — not clearly slower: `protobuf-wire`, `nanopb`. Small gap: —. Time/size front: `protobuf-wire`.
 
-**512 numbers, memory** — not clearly slower: `protobuf-wire`. Small gap: —. Time/size front: `protobuf-wire`.
+**512 numbers, memory** — not clearly slower: `protobuf-wire`. Small gap: `nanopb`. Time/size front: `protobuf-wire`.
 

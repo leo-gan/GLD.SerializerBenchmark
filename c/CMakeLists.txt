@@ -249,6 +249,17 @@ if(EXISTS ${TP_BUILD}/avro-c/src/libavro.a)
   message(STATUS "serializer: avro-c REAL")
 endif()
 
+if(EXISTS ${TP_BUILD}/ion-c/ionc/libionc.so AND EXISTS ${TP}/ion-c/ionc/include/ionc/ion.h)
+  list(APPEND BENCH_SOURCES src/serializers/ser_ionc.c)
+  list(APPEND BENCH_INCLUDES ${TP}/ion-c/ionc/include ${TP}/ion-c/decNumber/include)
+  list(APPEND BENCH_LIBS
+    ${TP_BUILD}/ion-c/ionc/libionc.so
+    ${TP_BUILD}/ion-c/decNumber/libdecNumber.so)
+  add_compile_definitions(HAS_IONC=1 DECNUMDIGITS=34)
+  set(BENCH_HAS_IONC 1)
+  message(STATUS "serializer: ion-c REAL")
+endif()
+
 if(EXISTS ${TP}/libyaml/src/api.c AND EXISTS ${TP}/libyaml/include/yaml.h)
   list(APPEND BENCH_SOURCES
     ${TP}/libyaml/src/api.c
@@ -312,5 +323,10 @@ list(APPEND TEST_SOURCES tests/test_roundtrip.c)
 add_executable(c_serializer_tests ${TEST_SOURCES})
 target_include_directories(c_serializer_tests PRIVATE ${BENCH_INCLUDES})
 target_link_libraries(c_serializer_tests PRIVATE ${BENCH_LIBS})
+if(BENCH_HAS_IONC)
+  set(_ionc_rpath "${TP_BUILD}/ion-c/ionc;${TP_BUILD}/ion-c/decNumber")
+  set_target_properties(serializer_benchmark_c c_compliance c_serializer_tests
+    PROPERTIES BUILD_RPATH "${_ionc_rpath}")
+endif()
 enable_testing()
 add_test(NAME c_serializer_roundtrip COMMAND c_serializer_tests)

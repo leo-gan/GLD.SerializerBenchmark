@@ -57,6 +57,7 @@ The steps to install the toolchain and run the benchmark are in [`rust/README.md
 | [bson](https://github.com/mongodb/bson-rust) | Document | `bson` | Serde | adapted | Document DB interop |
 | [ciborium](https://github.com/enarx/ciborium) | CBOR | `ciborium` | Serde | native | Reused write buffer |
 | [flexbuffers](https://github.com/google/flatbuffers) | FlexBuffers | `flexbuffers` | Serde | adapted | Schemaless FB family |
+| [ion-rs](https://github.com/amazon-ion/ion-rust) | Binary | `ion-rs` | Serde `experimental-serde` | adapted | `to_binary` allocates; no public serde `into_writer` |
 | [minicbor](https://github.com/twittner/minicbor) | CBOR | `minicbor` | **Direct** `Encode`/`Decode` on structs | adapted | No MessagePack envelope |
 | [nanoserde](https://github.com/not-fl3/nanoserde) | Binary | `nanoserde` | `SerBin`/`DeBin` | adapted | Zero-dep style binary |
 | [postcard](https://github.com/jamesmunns/postcard) | Binary | `postcard` | Serde | adapted | no_std-friendly format |
@@ -92,6 +93,10 @@ ciborium is a CBOR implementation for serde (Enarx). CBOR is the IETF binary JSO
 #### [flexbuffers](https://github.com/google/flatbuffers) · `2.0.0`
 
 FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it.
+
+#### [ion-rs](https://github.com/amazon-ion/ion-rust) · `1.0.1`
+
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (`to_binary` / `from_ion`). The public serde API allocates, so the stream column is adapted.
 
 #### [minicbor](https://github.com/twittner/minicbor) · `0.25.1`
 

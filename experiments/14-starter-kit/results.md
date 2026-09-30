@@ -1,7 +1,7 @@
 # What is a starter kit of serializers for typical jobs?
 
 **Question:** If we do not want to rank every library first, which few serializers cover the usual jobs — public JSON, compact bytes inside the company, and a shared field file — on one shop order?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -14,7 +14,7 @@ We do not name a single winner. This sample is one small order. A different reco
 
 | Language | Status | Not clearly slower | Small gap | Not both slower and larger | Full table |
 |----------|--------|--------------------|-----------|----------------------------|------------|
-| python | ok | `msgspec-msgpack`, `orjson` | — | `msgspec-msgpack` | [python/results.md](python/results.md) |
+| python | ok | `msgspec-msgpack` | `orjson` | `msgspec-msgpack` | [python/results.md](python/results.md) |
 | go | ok | `goccy/go-json`, `protobuf` | — | `goccy/go-json`, `protobuf` | [go/results.md](go/results.md) |
 | java | ok | `jsoniter` | — | `jsoniter`, `protobuf` | [java/results.md](java/results.md) |
 | kotlin | ok | `moshi-codegen`, `protobuf` | — | `moshi-codegen`, `protobuf` | [kotlin/results.md](kotlin/results.md) |
@@ -23,7 +23,7 @@ We do not name a single winner. This sample is one small order. A different reco
 | rust | ok | `prost` | — | `prost` | [rust/results.md](rust/results.md) |
 | c | ok | `protobuf-c` | — | `protobuf-c` | [c/results.md](c/results.md) |
 | cpp | ok | `protobuf-wire` | — | `protobuf-wire` | [cpp/results.md](cpp/results.md) |
-| csharp | ok | `SpanJson` | — | `SpanJson`, `MessagePack-CSharp` | [csharp/results.md](csharp/results.md) |
+| csharp | ok | `SpanJson` | — | `SpanJson`, `Google.Protobuf`, `MessagePack-CSharp` | [csharp/results.md](csharp/results.md) |
 | swift | ok | `SwiftProtobuf` | — | `SwiftProtobuf` | [swift/results.md](swift/results.md) |
 | zig | ok | `protobuf` | — | `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-avro` | — | `mojo-avro` | [mojo/results.md](mojo/results.md) |
@@ -36,19 +36,19 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| msgspec-msgpack | 4.37 | 129 | compact internal bytes — MessagePack | fastest |
-| orjson | 5.18 | 448 | public JSON — fastest named JSON from Experiment 1 | similar |
-| protobuf | 6.69 | 155 | shared schema — Protocol Buffers | slower |
-| json | 26.2 | 448 | public JSON — ships with Python | slower |
+| msgspec-msgpack | 4.74 | 129 | compact internal bytes — MessagePack | fastest |
+| orjson | 5.76 | 448 | public JSON — fastest named JSON from Experiment 1 | close |
+| protobuf | 8.54 | 155 | shared schema — Protocol Buffers | slower |
+| json | 28.8 | 448 | public JSON — ships with Python | slower |
 
 ### go
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| goccy/go-json | 3.69 | 448 | public JSON — fastest named JSON from Experiment 1 | fastest |
-| protobuf | 4.26 | 155 | shared schema — Protocol Buffers | similar |
-| vmihailenco/msgpack | 6.30 | 397 | compact internal bytes — MessagePack | slower |
-| encoding/json | 10.3 | 448 | public JSON — ships with Go | slower |
+| goccy/go-json | 5.09 | 448 | public JSON — fastest named JSON from Experiment 1 | fastest |
+| protobuf | 5.37 | 155 | shared schema — Protocol Buffers | similar |
+| vmihailenco/msgpack | 8.24 | 405 | compact internal bytes — MessagePack | slower |
+| encoding/json | 14.1 | 448 | public JSON — ships with Go | slower |
 
 ### java
 
@@ -80,27 +80,27 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| JSON.stringify | 8.70 | 448 | public JSON — ships with JavaScript (also fastest in Experiment 1) | fastest |
-| msgpackr | 16.2 | 345 | compact internal bytes — MessagePack | slower |
-| google-protobuf | 38.9 | 155 | shared schema — Protocol Buffers | slower |
+| JSON.stringify | 9.27 | 448 | public JSON — ships with JavaScript (also fastest in Experiment 1) | fastest |
+| msgpackr | 15.1 | 345 | compact internal bytes — MessagePack | slower |
+| google-protobuf | 34.0 | 155 | shared schema — Protocol Buffers | slower |
 
 ### rust
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| prost | 1.43 | 155 | shared schema — Protocol Buffers | fastest |
-| rmp-serde | 1.96 | 333 | compact internal bytes — MessagePack | slower |
-| sonic-rs | 2.23 | 460 | public JSON — fastest named JSON from Experiment 1 | slower |
-| serde_json | 2.74 | 460 | public JSON — usual Rust library | slower |
+| prost | 1.57 | 155 | shared schema — Protocol Buffers | fastest |
+| rmp-serde | 2.27 | 333 | compact internal bytes — MessagePack | slower |
+| sonic-rs | 2.62 | 460 | public JSON — fastest named JSON from Experiment 1 | slower |
+| serde_json | 2.98 | 460 | public JSON — usual Rust library | slower |
 
 ### c
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| protobuf-c | 1.12 | 166 | shared schema — Protocol Buffers (timed path is the suite wire codec) | fastest |
-| mpack | 2.73 | 335 | compact internal bytes — MessagePack | slower |
-| yyjson | 5.58 | 460 | public JSON — fastest named JSON from Experiment 1 | slower |
-| cJSON | 13.5 | 460 | public JSON — small common C library | slower |
+| protobuf-c | 1.08 | 166 | shared schema — Protocol Buffers (timed path is the suite wire codec) | fastest |
+| mpack | 2.76 | 335 | compact internal bytes — MessagePack | slower |
+| yyjson | 5.40 | 460 | public JSON — fastest named JSON from Experiment 1 | slower |
+| cJSON | 13.0 | 460 | public JSON — small common C library | slower |
 
 ### cpp
 
@@ -115,10 +115,10 @@ Every listed library (public JSON, MessagePack, Protocol Buffers). Times are mid
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| SpanJson | 14.1 | 440 | public JSON — fastest named JSON from Experiment 1 | fastest |
-| MessagePack-CSharp | 22.1 | 188 | compact internal bytes — MessagePack | slower |
-| Google.Protobuf | 22.3 | 208 | shared schema — Protocol Buffers | slower |
-| System.Text.Json | 68.7 | 440 | public JSON — ships with modern .NET | slower |
+| SpanJson | 15.5 | 440 | public JSON — fastest named JSON from Experiment 1 | fastest |
+| Google.Protobuf | 20.9 | 208 | shared schema — Protocol Buffers | slower |
+| MessagePack-CSharp | 24.0 | 188 | compact internal bytes — MessagePack | slower |
+| System.Text.Json | 64.4 | 440 | public JSON — ships with modern .NET | slower |
 
 ### swift
 

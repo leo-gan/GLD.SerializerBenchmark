@@ -18,7 +18,7 @@
 //!
 //! Layout (one family / concern per file, matching Go/Python/C):
 //! - [`json`] — serde_json, simd-json, sonic-rs
-//! - [`binary_serde`] — rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson
+//! - [`binary_serde`] — rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson, ion-rs
 //! - [`direct`] — minicbor, rkyv, nanoserde, speedy
 //! - [`prost_ser`] — prost + fixture conversion
 //! - [`avro_ser`] — serde_avro_fast (Avro binary datum)
@@ -41,7 +41,7 @@ mod yaml;
 
 use avro_ser::AvroFastSer;
 use binary_serde::{
-    BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, PostcardSer, RmpSerde,
+    BincodeSer, BitcodeSer, BsonSer, CiboriumSer, FlexbuffersSer, IonRsSer, PostcardSer, RmpSerde,
 };
 use direct::{MinicborDirect, NanoserdeSer, RkyvSer, SpeedySer};
 use json::{SerdeJson, SimdJson, SonicRs};
@@ -162,6 +162,7 @@ pub fn all_serializers() -> Vec<Box<dyn BenchSerializer>> {
         Box::new(BitcodeSer::default()),
         Box::new(FlexbuffersSer::default()),
         Box::new(BsonSer::default()),
+        Box::new(IonRsSer::default()),
         // Direct / zero-copy / schema
         Box::new(MinicborDirect::default()),
         Box::new(RkyvSer::default()),

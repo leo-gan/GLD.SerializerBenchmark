@@ -1,7 +1,7 @@
 # Is a one-language format worth the lock-in?
 
 **Question:** On one small record, is a format only one language can read faster than a format other languages can read?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `message`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -14,7 +14,7 @@ We do not name a single winner. This sample is one small flat record. A differen
 
 | Language | Status | Not clearly slower | Small gap | Time/size front | Full table |
 |----------|--------|--------------------|-----------|-----------------|------------|
-| python | ok | `orjson` | `msgspec-msgpack` | `orjson`, `msgspec-msgpack`, `protobuf` | [python/results.md](python/results.md) |
+| python | ok | `msgspec-msgpack` | — | `msgspec-msgpack`, `protobuf` | [python/results.md](python/results.md) |
 | java | ok | `protobuf` | — | `protobuf`, `kryo` | [java/results.md](java/results.md) |
 | kotlin | ok | `protobuf` | — | `protobuf`, `kryo` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack` | [php/results.md](php/results.md) |
@@ -32,12 +32,12 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| orjson | 1.70 | 168 | other languages can read — JSON | fastest |
-| msgspec-msgpack | 1.86 | 52 | other languages can read — MessagePack | close |
-| protobuf | 3.12 | 50 | other languages can read — Protocol Buffers | slower |
-| pickle | 7.15 | 202 | one language — pickle | slower |
-| cloudpickle | 15.5 | 202 | one language — cloudpickle | slower |
-| dill | 57.2 | 202 | one language — dill | slower |
+| msgspec-msgpack | 2.24 | 52 | other languages can read — MessagePack | fastest |
+| orjson | 3.18 | 168 | other languages can read — JSON | slower |
+| protobuf | 4.99 | 50 | other languages can read — Protocol Buffers | slower |
+| pickle | 10.7 | 202 | one language — pickle | slower |
+| cloudpickle | 22.2 | 202 | one language — cloudpickle | slower |
+| dill | 79.0 | 202 | one language — dill | slower |
 
 ### java
 
@@ -79,9 +79,9 @@ Every listed library (one-language, and libraries other languages can read). Tim
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| protobuf | 1.10 | 50 | other languages can read — Protocol Buffers | fastest |
-| goccy/go-json | 1.70 | 168 | other languages can read — JSON | slower |
-| encoding/gob | 14.6 | 173 | one language — gob | slower |
+| protobuf | 1.50 | 50 | other languages can read — Protocol Buffers | fastest |
+| goccy/go-json | 1.94 | 168 | other languages can read — JSON | slower |
+| encoding/gob | 15.9 | 173 | one language — gob | slower |
 
 ### zig
 

@@ -57,6 +57,7 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 
 | Log name | Category | Package | Native input (`prepare_data`) | Stream mode | Notes |
 |----------|----------|---------|---------------------------------|-------------|-------|
+| [amazon-ion](https://github.com/amazon-ion/ion-python) | Binary | `amazon-ion` | dict | native | Official Ion binary `simpleion` dump/load |
 | [avro](https://github.com/fastavro/fastavro) | Schema | `fastavro` | record dict | adapted | Compact schemaless size; dict/union path slower than protobuf C++ |
 | [cbor2](https://github.com/agronholm/cbor2) | Binary | `cbor2` | dict | native | IETF CBOR (RFC 8949) |
 | [cloudpickle](https://github.com/cloudpipe/cloudpickle) | Native | `cloudpickle` | dataclass | native | Extended pickle; same security caveats |
@@ -77,6 +78,10 @@ The steps to install the toolchain and run the benchmark are in [`python/README.
 ### Specifics
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [amazon-ion](https://github.com/amazon-ion/ion-python) · `0.15.0`
+
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation. This row times binary `simpleion` dump/load on the dict from `prepare_data`, including a native `BytesIO` stream.
 
 #### [avro](https://github.com/fastavro/fastavro) · `1.12.2`
 

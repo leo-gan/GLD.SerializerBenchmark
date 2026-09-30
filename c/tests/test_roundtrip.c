@@ -28,6 +28,7 @@ static void test_compress_sizes(void) {
 
 static void test_all_roundtrips(void) {
     serializer_t sers[BENCH_MAX_SERIALIZERS];
+    memset(sers, 0, sizeof sers);
     int n = 0;
     register_all_serializers(sers, &n);
     CHECK(n >= 5, "expected several serializers, got %d", n);
@@ -58,8 +59,94 @@ static void test_all_roundtrips(void) {
             if (rc != 0) continue;
             bool ok = S->fidelity ? S->fidelity(fx, &out) : true;
             CHECK(ok, "%s fidelity %s", S->name, fx->name);
+            if (!(S->serialize_fp && S->deserialize_fp)) continue;
+            FILE *wf = fmemopen(buf, sizeof buf, "w+");
+            CHECK(wf != NULL, "%s fmemopen %s", S->name, fx->name);
+            if (!wf) continue;
+            size_t slen = 0;
+            int src = S->serialize_fp(fx, wf, &slen);
+            if (src == 0 && fflush(wf) != 0) src = -1;
+            long pos = ftell(wf);
+            fclose(wf);
+            if (src == 0) slen = pos > 0 ? (size_t)pos : 0;
+            CHECK(src == 0 && slen > 0, "%s stream serialize %s rc=%d len=%zu",
+                  S->name, fx->name, src, slen);
+            if (src != 0 || slen == 0) continue;
+            FILE *rf = fmemopen(buf, slen, "r");
+            CHECK(rf != NULL, "%s fmemopen read %s", S->name, fx->name);
+            if (!rf) continue;
+            test_fixture_t out2;
+            memset(&out2, 0, sizeof out2);
+            int drc = S->deserialize_fp(rf, &out2, fx->kind);
+            fclose(rf);
+            CHECK(drc == 0, "%s stream deserialize %s rc=%d", S->name, fx->name, drc);
+            if (drc != 0) continue;
+            bool ok2 = S->fidelity ? S->fidelity(fx, &out2) : true;
+            CHECK(ok2, "%s stream fidelity %s", S->name, fx->name);
         }
     }
+}
+
+/* Native FILE* serializers must encode every instance at N>1.
+ * A single head-value write labels N but round-trips one object. */
+static void test_native_stream_batch(void) {
+    serializer_t sers[BENCH_MAX_SERIALIZERS];
+    memset(sers, 0, sizeof sers);
+    int nser = 0;
+    register_all_serializers(sers, &nser);
+    const int N = 3;
+    test_fixture_t items[3];
+    memset(items, 0, sizeof items);
+    for (int i = 0; i < N; i++) {
+        data_make_one(&items[i], TD_MESSAGE, (uint64_t)(1000 + i), 0, 8, 32, 32, 4);
+        items[i].batch_n = 1;
+        items[i].batch = NULL;
+    }
+    test_fixture_t fx;
+    memset(&fx, 0, sizeof fx);
+    fx.name = "message";
+    fx.kind = TD_MESSAGE;
+    fx.batch_n = N;
+    fx.batch = items;
+    fx.message = items[0].message;
+
+    static uint8_t buf[1024 * 1024];
+    int native = 0;
+    for (int si = 0; si < nser; si++) {
+        serializer_t *S = &sers[si];
+        if (!(S->serialize_fp && S->deserialize_fp)) continue;
+        native++;
+        if (S->prepare && S->prepare(TD_MESSAGE, &items[0]) != 0) {
+            CHECK(0, "%s batch prepare failed", S->name);
+            continue;
+        }
+        FILE *wf = fmemopen(buf, sizeof buf, "w+");
+        CHECK(wf != NULL, "%s batch fmemopen", S->name);
+        if (!wf) continue;
+        size_t len = 0;
+        int rc = bench_serialize_cell_fp(S, &fx, wf, &len);
+        if (rc == 0 && fflush(wf) != 0) rc = -1;
+        long pos = ftell(wf);
+        fclose(wf);
+        if (rc == 0) len = pos > 0 ? (size_t)pos : 0;
+        CHECK(rc == 0 && len > 200, "%s batch stream ser rc=%d len=%zu", S->name, rc, len);
+        if (rc != 0 || len == 0) continue;
+        test_fixture_t out;
+        memset(&out, 0, sizeof out);
+        out.kind = TD_MESSAGE;
+        out.batch_n = N;
+        rc = bench_deserialize_cell_fp(S, buf, len, &out, TD_MESSAGE);
+        CHECK(rc == 0, "%s batch stream de rc=%d", S->name, rc);
+        if (rc != 0) {
+            if (out.batch) free(out.batch);
+            continue;
+        }
+        CHECK(out.batch_n == N && out.batch != NULL, "%s batch_n %d", S->name, out.batch_n);
+        bool ok = bench_fidelity_cell(S, &fx, &out);
+        CHECK(ok, "%s batch stream fidelity", S->name);
+        if (out.batch) free(out.batch);
+    }
+    CHECK(native >= 2, "expected yyjson and ion-c native streams, got %d", native);
 }
 
 static void test_telemetry_points_from_config(void) {
@@ -101,6 +188,7 @@ int main(void) {
     test_telemetry_points_from_config();
     test_compress_sizes();
     test_all_roundtrips();
+    test_native_stream_batch();
     printf("%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }

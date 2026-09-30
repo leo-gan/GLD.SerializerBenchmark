@@ -45,7 +45,7 @@ def test_v2_types_supported_by_schemaless_serializers():
 
     v2_types = ("message", "document", "telemetry", "strings", "event")
     schemaless = {
-        "json", "orjson", "msgspec", "rapidjson", "msgpack", "cbor2",
+        "json", "orjson", "msgspec", "rapidjson", "msgpack", "cbor2", "amazon-ion",
         "pickle", "cloudpickle", "dill", "pydantic", "mashumaro",
     }
     for ser in ALL_SERIALIZERS:

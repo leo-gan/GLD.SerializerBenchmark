@@ -67,6 +67,8 @@ add("c", "custom-binary", [], "https://github.com/leo-gan/GLD.SerializerBenchmar
     "Suite length-prefixed V2 baseline; no public interchange spec.")
 add("c", "libyaml", ["yaml"], "https://github.com/yaml/libyaml",
     "libyaml: official C library for YAML 1.1 (the parser under PyYAML / Yams).")
+add("c", "ion-c", ["ion"], "https://github.com/amazon-ion/ion-c",
+    "ion-c: Ion team C implementation of the Amazon Ion data format (binary and text).")
 
 # --- Python ---
 add("python", "json", ["json"], "https://docs.python.org/3/library/json.html",
@@ -139,6 +141,8 @@ add("javascript", "cbor-x", ["cbor"], "https://github.com/kriszyp/cbor-x",
     "cbor-x: CBOR encoder/decoder.")
 add("javascript", "bson", ["bson"], "https://www.mongodb.com/docs/drivers/node/current/data-formats/bson/",
     "Official MongoDB Node bson package.")
+add("javascript", "ion-js", ["ion"], "https://github.com/amazon-ion/ion-js",
+    "ion-js: Ion team JavaScript implementation of Amazon Ion.")
 add("javascript", "avsc", ["avro"], "https://github.com/mtth/avsc",
     "avsc: Apache Avro for JavaScript.")
 add("javascript", "protobufjs", ["protobuf"], "https://github.com/protobufjs/protobuf.js",
@@ -197,6 +201,8 @@ add("go", "linkedin/goavro", ["avro"], "https://github.com/linkedin/goavro",
     "LinkedIn goavro: Apache Avro binary codec.")
 add("go", "mongo-bson", ["bson"], "https://pkg.go.dev/go.mongodb.org/mongo-driver/bson",
     "Official MongoDB Go BSON package.")
+add("go", "ion-go", ["ion"], "https://github.com/amazon-ion/ion-go",
+    "ion-go: Ion team Go implementation of Amazon Ion.")
 add("go", "pelletier/go-toml", ["toml"], "https://github.com/pelletier/go-toml",
     "go-toml: TOML parser/encoder (TOML 1.0).")
 add("go", "encoding/gob", [], "https://pkg.go.dev/encoding/gob",
@@ -333,6 +339,8 @@ add("csharp", "SharpYaml", ["yaml"], "https://github.com/xoofx/SharpYaml",
     "SharpYaml: YAML parser/emitter for .NET.")
 add("csharp", "MessagePack-CSharp", ["msgpack"], "https://github.com/MessagePack-CSharp/MessagePack-CSharp",
     "Official MessagePack for C#.")
+add("csharp", "Amazon.IonDotnet", ["ion"], "https://github.com/amazon-ion/ion-dotnet",
+    "Amazon.IonDotnet: Ion team .NET reader/writer for Amazon Ion (NuGet Amazon.IonDotnet).")
 add("csharp", "Google.Protobuf", ["protobuf"], "https://protobuf.dev/",
     "Official Google.Protobuf C# runtime.")
 add("csharp", "ProtoBuf", ["protobuf"], "https://github.com/protobuf-net/protobuf-net",
@@ -405,6 +413,8 @@ add("rust", "serde_avro_fast", ["avro"], "https://docs.rs/serde_avro_fast",
     "serde_avro_fast: Apache Avro via Serde.")
 add("rust", "bson", ["bson"], "https://docs.rs/bson",
     "Official MongoDB Rust BSON crate.")
+add("rust", "ion-rs", ["ion"], "https://github.com/amazon-ion/ion-rust",
+    "ion-rs: Ion team Rust implementation of Amazon Ion (serde via the experimental-serde feature).")
 add("rust", "flexbuffers", ["flatbuffers"], "https://docs.rs/flexbuffers",
     "flexbuffers crate: FlatBuffers FlexBuffers.")
 add("rust", "bincode", [], "https://docs.rs/bincode",

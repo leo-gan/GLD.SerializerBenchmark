@@ -258,6 +258,10 @@ function makeAdapters() {
     const { BSON } = require('bson');
     add('bson', 'bson', (buf) => BSON.deserialize(buf), 'mongodb bson', 'bson');
   } catch { /* optional */ }
+  try {
+    const ion = require('ion-js');
+    add('ion-js', 'ion', (buf) => ion.loadAll(buf).length, 'ion-js loadAll (accept/reject)', 'ion-js');
+  } catch { /* optional */ }
   add('flexbuffers', 'flatbuffers', (buf) => flexToObject(buf), 'flatbuffers flexbuffers', 'flatbuffers');
   add('flatbuffers', 'flatbuffers', (buf) => flexToObject(buf), 'flatbuffers table/flex root', 'flatbuffers');
   try {

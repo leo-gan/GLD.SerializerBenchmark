@@ -1,7 +1,7 @@
 # Is it the format, or the library?
 
 **Question:** If one library can write several formats, how much of the difference is the format, and how much is that library?
-**Date:** 2026-09-24
+**Date:** 2026-09-30
 **Sample:** `document`, 1 record(s) per write · [`sample.json`](sample.json)
 **Settings:** [`experiment.yaml`](experiment.yaml)
 **Machine-readable file:** [`results.json`](results.json)
@@ -18,9 +18,9 @@ We do not name a single winner. This sample is one small order. A different reco
 | kotlin | ok | `moshi-codegen` | — | `moshi-codegen`, `kotlinx-cbor`, `kotlinx-protobuf` | [kotlin/results.md](kotlin/results.md) |
 | php | ok | `json` | — | `json`, `rybakit-msgpack`, `protobuf` | [php/results.md](php/results.md) |
 | cpp | ok | `nlohmann_json`, `nlohmann_bson`, `nlohmann_msgpack`, `nlohmann_cbor`, `nlohmann_ubjson` | — | `nlohmann_json`, `nlohmann_msgpack` | [cpp/results.md](cpp/results.md) |
-| go | ok | `goccy/go-json` | — | `goccy/go-json`, `ugorji/msgpack`, `shamaton/msgpack` | [go/results.md](go/results.md) |
-| csharp | ok | `MS Bond Fast` | — | `MS Bond Fast`, `MS Bond Compact` | [csharp/results.md](csharp/results.md) |
-| javascript | ok | `google-protobuf` | — | `google-protobuf` | [javascript/results.md](javascript/results.md) |
+| go | ok | `goccy/go-json` | `shamaton/msgpack` | `goccy/go-json`, `shamaton/msgpack` | [go/results.md](go/results.md) |
+| csharp | ok | `MS Bond Fast` | `MS Bond Compact` | `MS Bond Fast`, `MS Bond Compact` | [csharp/results.md](csharp/results.md) |
+| javascript | ok | `protobufjs` | — | `protobufjs` | [javascript/results.md](javascript/results.md) |
 | zig | ok | `comptime-bin` | — | `comptime-bin`, `protobuf` | [zig/results.md](zig/results.md) |
 | mojo | ok | `mojo-avro` | `mojo-json` | `mojo-avro` | [mojo/results.md](mojo/results.md) |
 
@@ -88,13 +88,13 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| goccy/go-json | 2.89 | 448 | JSON — another library (Experiment 1) | fastest |
-| ugorji/msgpack | 3.68 | 329 | ugorji — MessagePack | slower |
-| shamaton/msgpack | 3.71 | 317 | MessagePack — another library | slower |
-| ugorji/cbor | 4.02 | 332 | ugorji — CBOR | slower |
-| ugorji/json | 4.84 | 448 | ugorji — JSON | slower |
-| vmihailenco/msgpack | 5.06 | 397 | MessagePack — another library | slower |
-| encoding/json | 8.66 | 448 | JSON — ships with Go | slower |
+| goccy/go-json | 3.90 | 448 | JSON — another library (Experiment 1) | fastest |
+| shamaton/msgpack | 4.38 | 325 | MessagePack — another library | close |
+| ugorji/msgpack | 4.90 | 329 | ugorji — MessagePack | slower |
+| ugorji/cbor | 5.21 | 332 | ugorji — CBOR | slower |
+| vmihailenco/msgpack | 6.57 | 405 | MessagePack — another library | slower |
+| ugorji/json | 6.71 | 448 | ugorji — JSON | slower |
+| encoding/json | 11.0 | 448 | JSON — ships with Go | slower |
 
 ### csharp
 
@@ -102,10 +102,10 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| MS Bond Fast | 10.3 | 376 | Bond — Fast Binary | fastest |
-| MS Bond Compact | 11.8 | 208 | Bond — Compact Binary | slower |
-| Google.Protobuf | 20.9 | 208 | Protocol Buffers — Google library | slower |
-| ProtoBuf | 25.8 | 208 | Protocol Buffers — protobuf-net | slower |
+| MS Bond Fast | 12.9 | 376 | Bond — Fast Binary | fastest |
+| MS Bond Compact | 14.0 | 208 | Bond — Compact Binary | close |
+| Google.Protobuf | 28.2 | 208 | Protocol Buffers — Google library | slower |
+| ProtoBuf | 36.1 | 208 | Protocol Buffers — protobuf-net | slower |
 
 ### javascript
 
@@ -113,9 +113,9 @@ Every listed library (same library across formats, and same format across librar
 
 | Library | Write + read (µs) | Size (bytes) | Role | Group |
 |---------|-------------------|--------------|------|-------|
-| google-protobuf | 16.0 | 155 | Protocol Buffers — google-protobuf | fastest |
-| protobufjs | 38.7 | 155 | Protocol Buffers — protobufjs | slower |
-| protobuf-es | 68.9 | 155 | Protocol Buffers — protobuf-es | slower |
+| protobufjs | 27.1 | 155 | Protocol Buffers — protobufjs | fastest |
+| google-protobuf | 40.3 | 155 | Protocol Buffers — google-protobuf | slower |
+| protobuf-es | 40.7 | 155 | Protocol Buffers — protobuf-es | slower |
 
 ### zig
 

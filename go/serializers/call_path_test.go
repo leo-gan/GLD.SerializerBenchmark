@@ -137,7 +137,7 @@ func TestRegistryHasExpectedNames(t *testing.T) {
 	for _, want := range []string{
 		"encoding/json", "sonic", "goccy/go-json", "jsoniter",
 		"vmihailenco/msgpack", "shamaton/msgpack", "fxamacker/cbor",
-		"encoding/gob", "mongo-bson", "protobuf", "hamba/avro", "linkedin/goavro",
+		"encoding/gob", "mongo-bson", "ion-go", "protobuf", "hamba/avro", "linkedin/goavro",
 	} {
 		if !names[want] {
 			t.Errorf("missing serializer %s", want)
@@ -195,6 +195,7 @@ func TestStreamModeLabels(t *testing.T) {
 		"kelindar/binary":          StreamNative,
 		"encoding/gob":             StreamNative,
 		"mongo-bson":               StreamNative,
+		"ion-go":                   StreamNative,
 		"goccy/go-yaml":            StreamNative,
 		"pelletier/go-toml":        StreamNative,
 		"hamba/avro":               StreamNative,

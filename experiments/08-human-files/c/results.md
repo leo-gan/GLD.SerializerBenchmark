@@ -1,7 +1,7 @@
 # Experiment 8 results — c
 
-**Date:** 2026-08-17
-**Raw file:** `experiments/08-human-files/c/logs/c/2026-08-17-130327.csv`
+**Date:** 2026-09-30
+**Raw file:** `experiments/08-human-files/c/logs/c/2026-09-29-184433.csv`
 **Language:** c
 **Sample:** A–E (`document`, `message`, `telemetry`, `event`, `strings`), 1 and 100 records
 **Cleaning:** first trial dropped; default stall filter (same as the project)
@@ -12,8 +12,8 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 3.55 | 2.36 | 5.97 | 460 | 252 | JSON | fastest | yes | 86 |
-| libyaml | 0.2.5 | 11.1 | 21.1 | 32.4 | 461 | 248 | YAML | slower | yes | 89 |
+| yyjson | 0.10.0 | 3.88 | 2.46 | 6.33 | 460 | 252 | JSON | fastest | yes | 89 |
+| libyaml | 0.2.5 | 12.1 | 25.4 | 37.9 | 461 | 248 | YAML | slower | yes | 95 |
 
 ## In memory — sample E (words), 1 record(s) per write
 
@@ -21,17 +21,17 @@ Times are middle values in microseconds (µs). Lower time is better **inside thi
 
 | Library | Version | Write (µs) | Read (µs) | Write + read (µs) | Size (bytes) | Size after gzip (bytes) | Role | Group | Same information? | Trials kept |
 |---------|---------|------------|-----------|-------------------|--------------|-------------------------|------|-------|-------------------|-------------|
-| yyjson | 0.10.0 | 1.41 | 2.34 | 3.76 | 387 | 252 | JSON | fastest | yes | 96 |
-| libyaml | 0.2.5 | 6.49 | 12.1 | 18.6 | 447 | 248 | YAML | slower | yes | 98 |
+| yyjson | 0.10.0 | 1.51 | 2.45 | 3.96 | 387 | 252 | JSON | fastest | yes | 85 |
+| libyaml | 0.2.5 | 7.22 | 13.9 | 21.2 | 447 | 248 | YAML | slower | yes | 90 |
 
 ## Stream call (side note)
 
 | Library | N | Write (µs) | Read (µs) | Write + read (µs) | How the stream path works |
 |---------|---|------------|-----------|-------------------|---------------------------|
-| yyjson | 1 | 4.49 | 2.98 | 7.44 | real |
-| libyaml | 1 | 11.2 | 21.0 | 32.3 | copied |
-| yyjson | 1 | 2.18 | 2.88 | 5.07 | real |
-| libyaml | 1 | 6.78 | 12.1 | 18.9 | copied |
+| yyjson | 1 | 5.17 | 3.26 | 8.44 | real |
+| libyaml | 1 | 12.8 | 25.9 | 39.0 | copied |
+| yyjson | 1 | 2.44 | 3.07 | 5.52 | real |
+| libyaml | 1 | 7.62 | 14.1 | 21.6 | copied |
 
 ## Libraries that belong in the conversation
 

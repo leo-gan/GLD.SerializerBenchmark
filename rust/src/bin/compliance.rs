@@ -247,6 +247,16 @@ fn builtin() -> Vec<Adapter> {
             },
         },
         Adapter {
+            name: "ion-rs",
+            format: "ion",
+            version: crate_version("ion-rs").to_string(),
+            decode: |b, _| {
+                // Element walk accepts Ion-only types (symbols, decimals, sexps).
+                let seq = ion_rs::Element::read_all(b).map_err(|e| anyhow::anyhow!("{e}"))?;
+                Ok(Value::from(seq.len() as u64))
+            },
+        },
+        Adapter {
             name: "flexbuffers",
             format: "flatbuffers",
             version: crate_version("flexbuffers").to_string(),

@@ -9,13 +9,13 @@ rust/src/serializers/
   mod.rs           # trait, helpers, all_serializers()
   kinded.rs        # shared kind-tracked direct codec macro
   json.rs          # serde_json, simd-json, sonic-rs
-  binary_serde.rs  # rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson
+  binary_serde.rs  # rmp-serde, ciborium, bincode, postcard, bitcode, flexbuffers, bson, ion-rs
   direct.rs        # minicbor, rkyv, nanoserde, speedy
   prost_ser.rs     # prost + fixture conversion
   avro_ser.rs      # serde_avro_fast (Avro binary datum)
 ```
 
-## Serializers (16)
+## Serializers (17)
 
 | Name | Category | Call path notes |
 |------|----------|-----------------|
@@ -29,6 +29,7 @@ rust/src/serializers/
 | bitcode | Binary | `serialize` / `deserialize` |
 | flexbuffers | FlexBuffers | Serde flexbuffers path |
 | bson | Document binary | `bson::to_vec` / `from_slice` |
+| ion-rs | Binary | `experimental-serde` `to_binary` / `from_ion` (allocating; stream adapted) |
 | minicbor | CBOR | direct `Encode`/`Decode` |
 | rkyv | Zero-copy | timed path materializes owned `T` for fidelity |
 | prost | Protobuf | convert in `prepare`; timed codec only |

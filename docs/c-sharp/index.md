@@ -60,6 +60,7 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 
 | Log name | Category | Library / notes |
 |----------|----------|-----------------|
+| [Amazon.IonDotnet](https://github.com/amazon-ion/ion-dotnet) | Binary | Ion team .NET binary reader/writer (NuGet `Amazon.IonDotnet`); reflection over suite types; `forceFloat64` |
 | [Apache.Avro](https://github.com/apache/avro) | Schema | Official Apache.Avro Reflect on domain POCOs; schema once in Initialize |
 | [BinaryPack](https://github.com/Sergio0694/BinaryPack) | Binary | BinaryPack on domain types (`T : new()`); string mode = Base64 of bytes |
 | [Ceras](https://github.com/rikimaru0345/Ceras) | Binary | Ceras |
@@ -104,6 +105,10 @@ The steps to install the toolchain and run the benchmark are in [`c-sharp/README
 ### Specifics
 
 Why each library exists, what problem it was written to solve, and how. Names link to the source repository (or the stdlib / in-tree path this suite times). A version after the name is the last measured `SerializerVersion` from this suite's latest bench.
+
+#### [Amazon.IonDotnet](https://github.com/amazon-ion/ion-dotnet) · `1.3.2`
+
+Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. Amazon.IonDotnet is the Ion team .NET reader and writer. NuGet marks the package deprecated and the GitHub repository is archived; the Ion libraries page still lists it. This row pins NuGet 1.3.2, the newest package published there (the page's 1.3.4 tag is not on NuGet) and the release that fixes CVE-2025-11573. The timed path reflects over the suite types and writes binary Ion with `forceFloat64` so doubles stay float64. The stream path writes to the harness `Stream`.
 
 #### [Apache.Avro](https://github.com/apache/avro) · `1.12.2`
 

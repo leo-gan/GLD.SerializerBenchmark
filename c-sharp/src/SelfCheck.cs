@@ -75,6 +75,41 @@ namespace GLD.SerializerBenchmark
                 }
             }
 
+            var ion = new AmazonIonDotnetSerializerSer();
+            foreach (var fx in fixtures)
+            {
+                try
+                {
+                    ion.Initialize(fx.DataType, fx.SecondaryDataTypes);
+                    ion.PrepareData(fx.Data);
+                    var s = ion.Serialize(fx.Data);
+                    var d = ion.ToDomain(ion.Deserialize(s));
+                    if (!Comparer.Compare(fx.Data, d, out var err, new Log { Size = s?.Length ?? 1 }, false))
+                    {
+                        Console.WriteLine($"FAIL Amazon.IonDotnet bytes {fx.Name}: {err}");
+                        failures++;
+                    }
+                    else
+                    {
+                        using var ms = new System.IO.MemoryStream();
+                        ion.Serialize(fx.Data, ms);
+                        var d2 = ion.ToDomain(ion.Deserialize(ms));
+                        if (!Comparer.Compare(fx.Data, d2, out var err2, new Log { Size = (int)ms.Length }, false))
+                        {
+                            Console.WriteLine($"FAIL Amazon.IonDotnet stream {fx.Name}: {err2}");
+                            failures++;
+                        }
+                        else
+                            Console.WriteLine($"OK   Amazon.IonDotnet {fx.Name}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"FAIL Amazon.IonDotnet {fx.Name}: {ex.GetType().Name}: {ex.Message}");
+                    failures++;
+                }
+            }
+
             // SpanJson/Utf8Json/Jil on a simple v2 message fixture
             foreach (ISerDeser ser in new ISerDeser[] { new SpanJsonSerializerSer(), new Utf8JsonSerializerSer(), new JilSerializer() })
             {

@@ -143,6 +143,12 @@ int bench_serialize_cell(const serializer_t *S, const test_fixture_t *fx,
                          uint8_t *buf, size_t buf_cap, size_t *out_len);
 int bench_deserialize_cell(const serializer_t *S, const uint8_t *buf, size_t len,
                            test_fixture_t *out_fx, test_data_kind_t kind);
+/* Native FILE* equivalent of the cell helpers. Batch n>1 uses the same
+ * length-prefixed frame; each payload still crosses serialize_fp / deserialize_fp. */
+int bench_serialize_cell_fp(const serializer_t *S, const test_fixture_t *fx,
+                            FILE *f, size_t *out_len);
+int bench_deserialize_cell_fp(const serializer_t *S, const uint8_t *buf, size_t len,
+                              test_fixture_t *out_fx, test_data_kind_t kind);
 uint64_t bench_now_ns(void);
 bool bench_fidelity_cell(const serializer_t *S, const test_fixture_t *a,
                          const test_fixture_t *b);
@@ -177,6 +183,7 @@ void bench_register_flatcc(serializer_t *out, int *count);
 void bench_register_avro_c(serializer_t *out, int *count);
 void bench_register_yaml(serializer_t *out, int *count);
 void bench_register_zcbor(serializer_t *out, int *count);
+void bench_register_ionc(serializer_t *out, int *count);
 
 int bench_stream_write_all(const uint8_t *buf, size_t len);
 int bench_stream_read_all(uint8_t *buf, size_t cap, size_t expect_len);

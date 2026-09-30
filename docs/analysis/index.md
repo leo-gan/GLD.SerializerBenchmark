@@ -100,17 +100,17 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 
 | Language | Serializers (registered) | Overview | Dashboard |
 |----------|--------------------------|----------|-----------|
-| C | **20** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
-| C# | **38** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
+| C | **21** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
+| C# | **41** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
 | C++ | **27+** | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
-| Go | **19** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
+| Go | **21** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
 | Java | **18** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
-| JavaScript | **20** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
+| JavaScript | **21** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
 | Kotlin | **26** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
 | Mojo | **6** | [Overview](../mojo/index.md) | [Dashboard](../dashboard/?lang=mojo) |
 | PHP | **15** | [Overview](../php/index.md) | [Dashboard](../dashboard/?lang=php) |
-| Python | **16** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
-| Rust | **16** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
+| Python | **18** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
+| Rust | **17** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |
 | Swift | **14** | [Overview](../swift/index.md) | [Dashboard](../dashboard/?lang=swift) |
 | Zig | **17** | [Overview](../zig/index.md) | [Dashboard](../dashboard/?lang=zig) |
 

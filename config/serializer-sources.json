@@ -27,6 +27,11 @@
         "version": "0.6.3",
         "specifics": "flatcc is the maintained C implementation of FlatBuffers. FlatBuffers was created at Google so games and other clients could read serialized data without a parsing/unpacking step. flatcc solves the C side with a schema compiler and a C builder/reader."
       },
+      "ion-c": {
+        "source_url": "https://github.com/amazon-ion/ion-c",
+        "version": "1.1.6",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-c is the official C implementation. This row times the binary writer and reader on the suite visitor, including a native FILE* stream."
+      },
       "jansson": {
         "source_url": "https://github.com/akheron/jansson",
         "version": "2.15.1",
@@ -270,6 +275,11 @@
       }
     },
     "csharp": {
+      "Amazon.IonDotnet": {
+        "source_url": "https://github.com/amazon-ion/ion-dotnet",
+        "version": "1.3.2",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. Amazon.IonDotnet is the Ion team .NET reader and writer. NuGet marks the package deprecated and the GitHub repository is archived; the Ion libraries page still lists it. This row pins NuGet 1.3.2 (the newest package there; it fixes CVE-2025-11573) and reflects over the suite types to write binary Ion."
+      },
       "Apache.Avro": {
         "source_url": "https://github.com/apache/avro",
         "version": "1.12.2",
@@ -312,7 +322,7 @@
       },
       "Google.Protobuf": {
         "source_url": "https://github.com/protocolbuffers/protobuf",
-        "version": "3.36.1",
+        "version": "3.36.2",
         "specifics": "Protocol Buffers were created at Google so many languages could share a compact, evolving binary contract without hand-written parsers. The problem was ad-hoc binary formats and verbose XML. Protobuf solves it with an IDL, generated code, and a documented tag/length wire format."
       },
       "GroBuf": {
@@ -386,7 +396,7 @@
       },
       "MessagePack-CSharp": {
         "source_url": "https://github.com/MessagePack-CSharp/MessagePack-CSharp",
-        "version": "2.5.302",
+        "version": "2.5.305",
         "specifics": "MessagePack-CSharp is the official MessagePack implementation for .NET (neuecc / MessagePack-CSharp). MessagePack exists as compact binary JSON. This library is the standard .NET codec, including a contractless resolver."
       },
       "Migrant": {
@@ -396,7 +406,7 @@
       },
       "Nerdbank.MessagePack": {
         "source_url": "https://github.com/AArnott/Nerdbank.MessagePack",
-        "version": "1.3.86",
+        "version": "1.3.88",
         "specifics": "Nerdbank.MessagePack is a modern .NET MessagePack serializer built on type shapes. This row uses reflection-based POCO shapes with stable numeric keys and the library's default value retention."
       },
       "NetJSON": {
@@ -430,7 +440,7 @@
       },
       "SharpYaml": {
         "source_url": "https://github.com/xoofx/SharpYaml",
-        "version": "3.13.1",
+        "version": "3.14.0",
         "specifics": "SharpYaml is a YAML parser/emitter for .NET (a port/evolution of YamlDotNet lineage ideas). It exists as another maintained YAML stack for C#."
       },
       "SpanJson": {
@@ -499,6 +509,11 @@
         "source_url": "https://github.com/hamba/avro",
         "version": "2.31.0",
         "specifics": "hamba/avro is a high-performance Avro library for Go. Avro was created for compact, schema-driven records. hamba focuses on a frozen API and schema cache so the timed path is encode/decode, not schema parse."
+      },
+      "ion-go": {
+        "source_url": "https://github.com/amazon-ion/ion-go",
+        "version": "1.5.0",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-go is the official Go implementation. This row times MarshalBinary / Unmarshal and the binary encoder stream."
       },
       "jsoniter": {
         "source_url": "https://github.com/json-iterator/go",
@@ -743,6 +758,11 @@
         "source_url": "https://github.com/protocolbuffers/protobuf-javascript",
         "version": "3.21.4",
         "specifics": "This is Google's official JavaScript protobuf runtime (`google-protobuf` / jspb). It exists so the same `.proto` contracts can run in JS. The suite times `serializeBinary` / `deserializeBinary`."
+      },
+      "ion-js": {
+        "source_url": "https://github.com/amazon-ion/ion-js",
+        "version": "5.2.1",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-js is the official JavaScript implementation. This row times binary dump/load; the Ion DOM is turned into plain objects outside the timer."
       },
       "js-yaml": {
         "source_url": "https://github.com/nodeca/js-yaml",
@@ -1049,6 +1069,7 @@
     "python": {
       "amazon-ion": {
         "source_url": "https://github.com/amazon-ion/ion-python",
+        "version": "0.15.0",
         "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-python is the official Python implementation."
       },
       "avro": {
@@ -1186,6 +1207,11 @@
         "source_url": "https://github.com/google/flatbuffers",
         "version": "2.0.0",
         "specifics": "FlexBuffers is the schemaless cousin of FlatBuffers. It was created so you can have a FlatBuffers-family binary without compiling a schema. The same Google repository implements it."
+      },
+      "ion-rs": {
+        "source_url": "https://github.com/amazon-ion/ion-rust",
+        "version": "1.0.1",
+        "specifics": "Amazon Ion was created at Amazon as a rich, self-describing superset of JSON (text and binary) for internal services. The problem was JSON's limited types. ion-rs is the official Rust implementation. This row uses the crate's experimental serde feature (to_binary / from_ion)."
       },
       "minicbor": {
         "source_url": "https://github.com/twittner/minicbor",
