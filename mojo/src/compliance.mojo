@@ -9,6 +9,9 @@ from yaml import decode_all_values as yaml_decode_all
 from cbor import decode_value as cbor_decode
 from msgpack import decode_value as msgpack_decode
 from bson_runtime.value import decode_document
+from smile import decode_bytes as smile_decode
+from ion import decode as ion_decode
+from ion_runtime.symtab import Catalog
 from toml import parse as toml_parse
 from avro import GenericDatum, parse_avsc
 from emberjson import Value
@@ -168,6 +171,14 @@ def _try_msgpack(buf: List[Byte]) raises:
 
 def _try_bson(buf: List[Byte]) raises:
     _ = decode_document(Span(buf))
+
+
+def _try_smile(buf: List[Byte]) raises:
+    _ = smile_decode(Span(buf))
+
+
+def _try_ion(buf: List[Byte]) raises:
+    _ = ion_decode(Span(buf), Catalog())
 
 
 def _try_avro(buf: List[Byte], schema_json: String) raises:
@@ -433,6 +444,10 @@ def _run_one(
                 _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
                 schema,
             )
+        elif fmt == "ion":
+            _try_ion(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
+        elif fmt == "smile":
+            _try_smile(_hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text))
         elif fmt == "flatbuffers":
             _try_flatbuffers(
                 _hex_bytes(input_text) if enc == "hex" else _utf8_bytes(input_text),
@@ -603,30 +618,36 @@ def main() raises:
                 sers.append("ehsanmok-json")
                 vers.append("0.4.0")
                 sers.append("mojo-json")
-                vers.append("0.4.0")
+                vers.append("0.5.0")
             elif fmt == "yaml":
                 sers.append("gld-yaml")
-                vers.append("0.5.0")
+                vers.append("0.6.0")
             elif fmt == "toml":
                 sers.append("mojo-toml")
                 vers.append("0.9.1")
             elif fmt == "cbor":
                 sers.append("mojo-cbor")
-                vers.append("0.7.0")
+                vers.append("0.8.0")
             elif fmt == "msgpack":
                 sers.append("mojo-msgpack")
-                vers.append("0.3.0")
+                vers.append("0.4.0")
             elif fmt == "bson":
                 sers.append("mojo-bson")
                 vers.append("0.1.0")
             elif fmt == "protobuf":
                 sers.append("mojo-protobuf")
-                vers.append("0.6.0")
+                vers.append("0.7.0")
             elif fmt == "avro":
                 sers.append("mojo-avro")
                 vers.append("0.4.0")
             elif fmt == "flatbuffers":
                 sers.append("mojo-flatbuffers")
+                vers.append("0.4.0")
+            elif fmt == "ion":
+                sers.append("mojo-ion")
+                vers.append("0.2.0")
+            elif fmt == "smile":
+                sers.append("mojo-smile")
                 vers.append("0.2.0")
             else:
                 var msg = "No adapter registered for format " + fmt + " (" + standard + " (" + version + "))"

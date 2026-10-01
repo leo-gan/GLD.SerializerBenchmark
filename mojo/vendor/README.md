@@ -1,7 +1,7 @@
 # Vendored Mojo libraries
 
 `gldjson_src/`, `cbor_src/`, `pb_src/`, `yaml_src/`, `msgpack_src/`,
-`fb_src/`, and `avro_src/` are copies of the leo-gan `gld-*` libraries with
+`fb_src/`, `avro_src/`, `bson_src/`, `ion_src/`, and `smile_src/` are copies of the leo-gan `gld-*` libraries with
 colliding top-level packages renamed (`json` → `gldjson` or `avro_json`,
 `runtime` → `gldjson_runtime` / `cbor_runtime` / `pb_runtime` /
 `yaml_runtime` / `msgpack_runtime` / `avro_runtime`, and the matching
@@ -11,7 +11,9 @@ colliding top-level packages renamed (`json` → `gldjson` or `avro_json`,
 Mojo 1.0 `.mojoc`, so the harness compiles these sources instead.
 
 `toml_src/` is `DataBooth/mojo-toml` unchanged (`toml` does not collide).
-`gld-toml` is not published yet, so this harness does not vendor it.
+`gld-toml` is published as `mojo-toml` on prefix.dev. This harness still times DataBooth/mojo-toml so the TOML row stays the same library.
+
+`smile_src` keeps one guard that gld-smile 0.2.0 does not have. A buffer that starts with `0x3A` and is shorter than four bytes is a truncated header. The 0.2.0 decoder left those bytes in place and looped. This copy raises end-of-input instead. `fetch-vendors.sh` puts that guard back after each copy.
 
 `ehsanmok_src/ehsanmok_json/` is `ehsanmok/json` v0.4.0 renamed off the `json`
 package name. `InlineArray` is spelled `Array` because Mojo 1.1 removed that

@@ -269,12 +269,22 @@ struct WireWriter(Movable):
             self.write_byte(Byte(0xC6))
             self.write_be(UInt64(n), 4)
 
+    @always_inline
     def write_str(mut self, v: String):
-        var b = v.as_bytes()
-        var n = len(b)
+        var n = v.byte_length()
         if n <= 31:
-            self.write_fixstr(b)
+            self.ensure(1 + n)
+            var dest = self.buf.unsafe_ptr().unsafe_offset(self.pos)
+            dest[] = Byte(0xA0 | n)
+            if n > 0:
+                unsafe_memcpy(
+                    dest=dest.unsafe_offset(1),
+                    src=v.unsafe_ptr(),
+                    count=n,
+                )
+            self.pos += 1 + n
             return
+        var b = v.as_bytes()
         self.write_str_header(n)
         self.write_bytes(b)
 

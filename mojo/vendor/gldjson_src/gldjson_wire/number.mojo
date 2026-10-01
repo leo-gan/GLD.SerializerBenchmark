@@ -72,9 +72,14 @@ def write_int_digits(mut dest: List[Byte], mut pos: Int, v: Int64):
 comptime _DIGIT_PAIRS = "00010203040506070809101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899"
 
 
+@always_inline
+def _putb(mut dest: List[Byte], i: Int, b: Byte):
+    dest.unsafe_ptr().unsafe_offset(i)[] = b
+
+
 def write_int_known(mut dest: List[Byte], mut pos: Int, v: Int64, n: Int):
     if v == Int64(0):
-        dest[pos] = Byte(48)
+        _putb(dest, pos, Byte(48))
         pos += 1
         return
     if v == Int64.MIN:
@@ -82,29 +87,30 @@ def write_int_known(mut dest: List[Byte], mut pos: Int, v: Int64, n: Int):
         var b = s.as_bytes()
         var i = 0
         while i < len(b):
-            dest[pos] = b[i]
+            _putb(dest, pos, b[i])
             pos += 1
             i += 1
         return
     var start = pos
     var mag = v
     if v < Int64(0):
-        dest[pos] = Byte(45)
+        _putb(dest, pos, Byte(45))
         mag = -v
     var write = start + n
     var x = mag
     var pairs = _DIGIT_PAIRS.as_bytes()
+    var raw = dest.unsafe_ptr()
     while x >= Int64(100):
         var r = Int(x % Int64(100))
         write -= 2
-        dest[write] = pairs[r * 2]
-        dest[write + 1] = pairs[r * 2 + 1]
+        raw.unsafe_offset(write)[] = pairs[r * 2]
+        raw.unsafe_offset(write + 1)[] = pairs[r * 2 + 1]
         x = x // Int64(100)
     write -= 1
-    dest[write] = Byte(48 + Int(x % Int64(10)))
+    raw.unsafe_offset(write)[] = Byte(48 + Int(x % Int64(10)))
     if x >= Int64(10):
         write -= 1
-        dest[write] = Byte(48 + Int(x // Int64(10)))
+        raw.unsafe_offset(write)[] = Byte(48 + Int(x // Int64(10)))
     pos = start + n
 
 
@@ -245,6 +251,57 @@ def _float_text(v: Float64) -> String:
     return s
 
 
+@always_inline
+def try_write_simple_float(mut dest: List[Byte], mut pos: Int, v: Float64) -> Bool:
+    """Exact int-valued (`N.0`) or hundredths floats. False → general writer.
+
+    Caller must have 24 bytes of spare capacity. Output matches the 9-decimal
+    writer for values that are exactly k/100.
+    """
+    if pos + 24 > len(dest):
+        return False
+    if v != v:
+        return False
+    var exp = Int((_f64_bits(v) >> UInt64(52)) & UInt64(0x7FF))
+    if exp == 0x7FF:
+        return False
+    if _is_neg_zero(v):
+        return False
+    if _int_valued_float(v):
+        write_int_digits(dest, pos, Int64(v))
+        _putb(dest, pos, Byte(46))
+        _putb(dest, pos + 1, Byte(48))
+        pos += 2
+        return True
+    var neg = False
+    var x = v
+    if x < 0.0:
+        neg = True
+        x = -x
+    if x >= 1.0e14:
+        return False
+    var scaled = x * 100.0
+    var iv = Int64(scaled)
+    if Float64(iv) != scaled:
+        return False
+    if neg:
+        _putb(dest, pos, Byte(45))
+        pos += 1
+    var whole = iv // Int64(100)
+    var frac = Int(iv % Int64(100))
+    write_int_digits(dest, pos, whole)
+    _putb(dest, pos, Byte(46))
+    pos += 1
+    var d1 = frac // 10
+    var d0 = frac % 10
+    _putb(dest, pos, Byte(48 + d1))
+    pos += 1
+    if d0 != 0:
+        _putb(dest, pos, Byte(48 + d0))
+        pos += 1
+    return True
+
+
 def write_float_digits(mut dest: List[Byte], mut pos: Int, v: Float64) raises DecodeError:
     if v != v:
         raise DecodeError(DecodeError.KIND_RANGE, 0)
@@ -312,6 +369,197 @@ def _write_round_decimal(mut dest: List[Byte], mut pos: Int, v: Float64) -> Bool
     return True
 
 
+@always_inline
+def _consume_digits[
+    origin: ImmOrigin
+](
+    data: Span[Byte, origin],
+    mut pos: Int,
+    mut acc: Int64,
+    mut nd: Int,
+    mut overflow: Bool,
+):
+    """Digits at `pos`. SWAR only when the 4th/8th byte is already a digit."""
+    var raw = data.unsafe_ptr()
+    while pos < len(data):
+        if pos + 8 <= len(data):
+            var c8 = Int(raw.unsafe_offset(pos + 7)[])
+            if c8 >= 48 and c8 <= 57:
+                var w = _load_u64_at(data, pos)
+                if _is_eight_digits(w):
+                    nd += 8
+                    if nd <= 18:
+                        acc = acc * Int64(100000000) + Int64(_parse_eight_digits(w))
+                    else:
+                        overflow = True
+                    pos += 8
+                    continue
+        if pos + 4 <= len(data):
+            var c4 = Int(raw.unsafe_offset(pos + 3)[])
+            if c4 >= 48 and c4 <= 57:
+                var w4 = _load_u32_at(data, pos)
+                if _is_four_digits(w4):
+                    nd += 4
+                    if nd <= 18:
+                        acc = acc * Int64(10000) + Int64(_parse_four_digits(w4))
+                    else:
+                        overflow = True
+                    pos += 4
+                    continue
+        var d = Int(raw.unsafe_offset(pos)[]) - 48
+        if d < 0 or d > 9:
+            break
+        nd += 1
+        if nd <= 18:
+            acc = acc * Int64(10) + Int64(d)
+        else:
+            overflow = True
+        pos += 1
+
+
+@always_inline
+def try_parse_small_int[
+    origin: ImmOrigin
+](data: Span[Byte, origin], mut pos: Int, mut out: Int64) -> Bool:
+    """1–9 digit integers, or 0. Leaves `pos` unchanged on failure."""
+    var n = len(data)
+    var p = pos
+    if p >= n:
+        return False
+    var raw = data.unsafe_ptr()
+    var c = Int(raw.unsafe_offset(p)[])
+    var neg = False
+    if c == 45:
+        neg = True
+        p += 1
+        if p >= n:
+            return False
+        c = Int(raw.unsafe_offset(p)[])
+    if c == 48:
+        p += 1
+        if p < n:
+            var n2 = Int(raw.unsafe_offset(p)[])
+            if (n2 >= 48 and n2 <= 57) or n2 == 46 or n2 == 101 or n2 == 69:
+                return False
+        pos = p
+        out = Int64(0)
+        return True
+    if c < 48 or c > 57:
+        return False
+    var acc = c - 48
+    p += 1
+    var nd = 1
+    while nd < 9 and p < n:
+        var d = Int(raw.unsafe_offset(p)[]) - 48
+        if d < 0 or d > 9:
+            break
+        acc = acc * 10 + d
+        nd += 1
+        p += 1
+    if nd == 9 and p < n:
+        var more = Int(raw.unsafe_offset(p)[]) - 48
+        if more >= 0 and more <= 9:
+            return False
+    if p < n:
+        var t = Int(raw.unsafe_offset(p)[])
+        if t == 46 or t == 101 or t == 69:
+            return False
+    pos = p
+    if neg:
+        out = Int64(-acc)
+    else:
+        out = Int64(acc)
+    return True
+
+
+@always_inline
+def try_parse_short_float[
+    origin: ImmOrigin
+](data: Span[Byte, origin], mut pos: Int, mut out: Float64) -> Bool:
+    """Short decimals with ≤6 digits each side and no exponent.
+
+    Same `acc / 10^frac` reduction as `parse_number` for this range.
+    """
+    var n = len(data)
+    var p = pos
+    if p >= n:
+        return False
+    var raw = data.unsafe_ptr()
+    var c = Int(raw.unsafe_offset(p)[])
+    var neg = False
+    if c == 45:
+        neg = True
+        p += 1
+        if p >= n:
+            return False
+        c = Int(raw.unsafe_offset(p)[])
+    if c < 48 or c > 57:
+        return False
+    var acc = 0
+    var nd = 0
+    if c == 48:
+        nd = 1
+        p += 1
+        if p < n:
+            var n2 = Int(raw.unsafe_offset(p)[])
+            if n2 >= 48 and n2 <= 57:
+                return False
+    else:
+        while nd < 6 and p < n:
+            var d = Int(raw.unsafe_offset(p)[]) - 48
+            if d < 0 or d > 9:
+                break
+            acc = acc * 10 + d
+            nd += 1
+            p += 1
+        if nd == 6 and p < n:
+            var more = Int(raw.unsafe_offset(p)[]) - 48
+            if more >= 0 and more <= 9:
+                return False
+    var frac = 0
+    if p < n and Int(raw.unsafe_offset(p)[]) == 46:
+        p += 1
+        var fd = 0
+        if p >= n:
+            return False
+        while fd < 6 and p < n:
+            var d = Int(raw.unsafe_offset(p)[]) - 48
+            if d < 0 or d > 9:
+                break
+            acc = acc * 10 + d
+            fd += 1
+            p += 1
+        if fd == 0:
+            return False
+        if fd == 6 and p < n:
+            var more = Int(raw.unsafe_offset(p)[]) - 48
+            if more >= 0 and more <= 9:
+                return False
+        frac = fd
+    if p < n:
+        var t = Int(raw.unsafe_offset(p)[])
+        if t == 101 or t == 69:
+            return False
+    var f = Float64(acc)
+    if frac == 1:
+        f = f / 10.0
+    elif frac == 2:
+        f = f / 100.0
+    elif frac == 3:
+        f = f / 1000.0
+    elif frac == 4:
+        f = f / 10000.0
+    elif frac == 5:
+        f = f / 100000.0
+    elif frac == 6:
+        f = f / 1000000.0
+    if neg:
+        f = -f
+    pos = p
+    out = f
+    return True
+
+
 def parse_number[
     origin: ImmOrigin
 ](data: Span[Byte, origin], mut pos: Int) raises DecodeError -> NumberTok:
@@ -340,36 +588,7 @@ def parse_number[
             if is_digit(n):
                 raise DecodeError(DecodeError.KIND_NUMBER, start)
     else:
-        while pos + 8 <= len(data):
-            var w = _load_u64_at(data, pos)
-            if not _is_eight_digits(w):
-                break
-            nd += 8
-            if nd <= 18:
-                acc = acc * Int64(100000000) + Int64(_parse_eight_digits(w))
-            else:
-                overflow = True
-            pos += 8
-        while pos + 4 <= len(data):
-            var w4 = _load_u32_at(data, pos)
-            if not _is_four_digits(w4):
-                break
-            nd += 4
-            if nd <= 18:
-                acc = acc * Int64(10000) + Int64(_parse_four_digits(w4))
-            else:
-                overflow = True
-            pos += 4
-        while pos < len(data):
-            var d = Int(data[pos]) - 48
-            if d < 0 or d > 9:
-                break
-            nd += 1
-            if nd <= 18:
-                acc = acc * Int64(10) + Int64(d)
-            else:
-                overflow = True
-            pos += 1
+        _consume_digits(data, pos, acc, nd, overflow)
     var is_int = True
     var frac = 0
     var exp = 0
@@ -379,36 +598,7 @@ def parse_number[
         if pos >= len(data) or not is_digit(Int(data[pos])):
             raise DecodeError(DecodeError.KIND_NUMBER, start)
         var fs = pos
-        while pos + 8 <= len(data):
-            var w = _load_u64_at(data, pos)
-            if not _is_eight_digits(w):
-                break
-            nd += 8
-            if nd <= 18:
-                acc = acc * Int64(100000000) + Int64(_parse_eight_digits(w))
-            else:
-                overflow = True
-            pos += 8
-        while pos + 4 <= len(data):
-            var w4 = _load_u32_at(data, pos)
-            if not _is_four_digits(w4):
-                break
-            nd += 4
-            if nd <= 18:
-                acc = acc * Int64(10000) + Int64(_parse_four_digits(w4))
-            else:
-                overflow = True
-            pos += 4
-        while pos < len(data):
-            var d = Int(data[pos]) - 48
-            if d < 0 or d > 9:
-                break
-            nd += 1
-            if nd <= 18:
-                acc = acc * Int64(10) + Int64(d)
-            else:
-                overflow = True
-            pos += 1
+        _consume_digits(data, pos, acc, nd, overflow)
         frac = pos - fs
     if pos < len(data) and (Int(data[pos]) == 101 or Int(data[pos]) == 69):
         is_int = False
@@ -496,39 +686,11 @@ def parse_int[
         if pos < len(data) and is_digit(Int(data[pos])):
             raise DecodeError(DecodeError.KIND_NUMBER, start)
     else:
-        while pos + 8 <= len(data):
-            var w = _load_u64_at(data, pos)
-            if not _is_eight_digits(w):
-                break
-            nd += 8
-            if nd <= 18:
-                acc = acc * Int64(100000000) + Int64(_parse_eight_digits(w))
-            else:
-                pos = start
-                return parse_number(data, pos).i
-            pos += 8
-        while pos + 4 <= len(data):
-            var w4 = _load_u32_at(data, pos)
-            if not _is_four_digits(w4):
-                break
-            nd += 4
-            if nd <= 18:
-                acc = acc * Int64(10000) + Int64(_parse_four_digits(w4))
-            else:
-                pos = start
-                return parse_number(data, pos).i
-            pos += 4
-        while pos < len(data):
-            var d = Int(data[pos]) - 48
-            if d < 0 or d > 9:
-                break
-            nd += 1
-            if nd <= 18:
-                acc = acc * Int64(10) + Int64(d)
-            else:
-                pos = start
-                return parse_number(data, pos).i
-            pos += 1
+        var overflow = False
+        _consume_digits(data, pos, acc, nd, overflow)
+        if overflow:
+            pos = start
+            return parse_number(data, pos).i
     if pos < len(data):
         var n = Int(data[pos])
         if n == 46 or n == 101 or n == 69:
@@ -541,7 +703,7 @@ def parse_int[
 
 @always_inline
 def _pow10f(k: Int) -> Float64:
-    """EmberJson POWER_OF_TEN values. If-chain: Array needs materialize."""
+    """EmberJson POWER_OF_TEN values. If-chain: InlineArray needs materialize."""
     if k == 0:
         return 1.0
     if k == 1:

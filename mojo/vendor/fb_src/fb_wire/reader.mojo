@@ -19,6 +19,7 @@ from fb_wire.scalar import (
 )
 
 
+@always_inline
 def root_pos[origin: ImmOrigin](data: Span[Byte, origin], size_prefixed: Bool) raises -> Int:
     """Return the absolute position of the root table."""
     var base = 0
@@ -43,22 +44,24 @@ def file_identifier[origin: ImmOrigin](data: Span[Byte, origin]) raises -> Strin
     return String(from_utf8=data[4:8])
 
 
+@always_inline
 def field_voffset[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id: Int) raises -> Int:
     """Byte offset of field `id` inside the table object, or 0 when absent."""
     if table < 0 or table + 4 > len(data):
         raise Error("truncated")
-    var raw_soff = read_i32(data, table)
-    var soff = int_from_i32(raw_soff)
+    var soff = int_from_i32(Int32(load_u32(data, table)))
     var vtable = table - soff
     if vtable < 0 or vtable + 4 > len(data):
         raise Error("bad vtable")
-    var vbytes = Int(read_u16(data, vtable))
+    var vbytes = Int(load_u16(data, vtable))
     if vbytes < 4 or vtable + vbytes > len(data):
         raise Error("bad vtable")
     var entry = 4 + 2 * id
     if entry >= vbytes:
         return 0
-    return Int(read_u16(data, vtable + entry))
+    if vtable + entry + 2 > len(data):
+        raise Error("truncated")
+    return Int(load_u16(data, vtable + entry))
 
 
 struct TableRef[origin: ImmOrigin]:
@@ -89,24 +92,28 @@ struct TableRef[origin: ImmOrigin]:
         self.vt = vtable
         self.vbytes = vbytes
 
+    @always_inline
     def off(self, id: Int) -> Int:
         var entry = 4 + 2 * id
         if entry >= self.vbytes:
             return 0
         return Int(load_u16(self.data, self.vt + entry))
 
+    @always_inline
     def i32(self, id: Int, default: Int32) -> Int32:
         var o = self.off(id)
         if o == 0:
             return default
         return Int32(load_u32(self.data, self.table + o))
 
+    @always_inline
     def i64(self, id: Int, default: Int64) -> Int64:
         var o = self.off(id)
         if o == 0:
             return default
         return Int64(load_u64(self.data, self.table + o))
 
+    @always_inline
     def f64(self, id: Int, default: Float64) -> Float64:
         var o = self.off(id)
         if o == 0:
@@ -130,6 +137,7 @@ struct TableRef[origin: ImmOrigin]:
             raise Error("bad offset")
         return dest
 
+    @always_inline
     def string(self, id: Int) raises -> String:
         var pos = self.uoffset(id)
         if pos < 0:
@@ -137,6 +145,7 @@ struct TableRef[origin: ImmOrigin]:
         return read_string_at(self.data, pos)
 
 
+@always_inline
 def indirect[origin: ImmOrigin](data: Span[Byte, origin], pos: Int) raises -> Int:
     var rel = Int(read_u32(data, pos))
     var dest = pos + rel
@@ -153,6 +162,7 @@ def indirect_field[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id: 
     return indirect(data, table + off)
 
 
+@always_inline
 def read_string_at[origin: ImmOrigin](data: Span[Byte, origin], pos: Int) raises -> String:
     var n = Int(read_u32(data, pos))
     if n < 0 or pos + 4 + n + 1 > len(data):
@@ -184,6 +194,7 @@ def vector_offset_at[origin: ImmOrigin](data: Span[Byte, origin], pos: Int, inde
     return indirect(data, slot)
 
 
+@always_inline
 def read_i32_field[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id: Int, default: Int32) raises -> Int32:
     var off = field_voffset(data, table, id)
     if off == 0:
@@ -198,6 +209,7 @@ def read_u32_field[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id: 
     return read_u32(data, table + off)
 
 
+@always_inline
 def read_i64_field[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id: Int, default: Int64) raises -> Int64:
     var off = field_voffset(data, table, id)
     if off == 0:
@@ -247,6 +259,7 @@ def read_f32_field[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id: 
     return read_f32(data, table + off)
 
 
+@always_inline
 def read_f64_field[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id: Int, default: Float64) raises -> Float64:
     var off = field_voffset(data, table, id)
     if off == 0:
@@ -261,6 +274,7 @@ def read_bool_field[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id:
     return read_bool(data, table + off)
 
 
+@always_inline
 def read_string_field[origin: ImmOrigin](data: Span[Byte, origin], table: Int, id: Int) raises -> String:
     var pos = indirect_field(data, table, id)
     if pos < 0:

@@ -203,13 +203,10 @@ def parse_item(mut p: _Diag, mut v: CborValue) raises DecodeError -> Int:
         if p.peek() == 95:
             flags = FLAG_INDEF
             p.pos += 1
-        var kstart = len(v.kids)
-        var count = 0
+        var direct = List[Int]()
         p.skip_ws()
         while p.peek() != 93 and p.peek() != -1:
-            var ch = parse_item(p, v)
-            v.kids.append(ch)
-            count += 1
+            direct.append(parse_item(p, v))
             p.skip_ws()
             if p.peek() == 44:
                 p.pos += 1
@@ -217,6 +214,10 @@ def parse_item(mut p: _Diag, mut v: CborValue) raises DecodeError -> Int:
         if p.peek() != 93:
             raise DecodeError(DecodeError.KIND_DIAG, p.pos)
         p.pos += 1
+        var kstart = len(v.kids)
+        var count = len(direct)
+        for i in range(count):
+            v.kids.append(direct[i])
         return v.add(CborNode(CK_ARRAY, a=Int64(kstart), b=UInt64(count), flags=flags))
     if c == 123:
         p.pos += 1
@@ -225,8 +226,7 @@ def parse_item(mut p: _Diag, mut v: CborValue) raises DecodeError -> Int:
         if p.peek() == 95:
             mflags = FLAG_INDEF
             p.pos += 1
-        var mstart = len(v.kids)
-        var pairs = 0
+        var directm = List[Int]()
         p.skip_ws()
         while p.peek() != 125 and p.peek() != -1:
             var key = parse_item(p, v)
@@ -235,9 +235,8 @@ def parse_item(mut p: _Diag, mut v: CborValue) raises DecodeError -> Int:
                 raise DecodeError(DecodeError.KIND_DIAG, p.pos)
             p.pos += 1
             var val = parse_item(p, v)
-            v.kids.append(key)
-            v.kids.append(val)
-            pairs += 1
+            directm.append(key)
+            directm.append(val)
             p.skip_ws()
             if p.peek() == 44:
                 p.pos += 1
@@ -245,6 +244,10 @@ def parse_item(mut p: _Diag, mut v: CborValue) raises DecodeError -> Int:
         if p.peek() != 125:
             raise DecodeError(DecodeError.KIND_DIAG, p.pos)
         p.pos += 1
+        var mstart = len(v.kids)
+        var pairs = len(directm) // 2
+        for i in range(len(directm)):
+            v.kids.append(directm[i])
         return v.add(CborNode(CK_MAP, a=Int64(mstart), b=UInt64(pairs), flags=mflags))
     if _is_alpha(c):
         var id = _ident(p)

@@ -19,7 +19,7 @@ from bench.data import (
 def _nl_key(mut w: WireWriter, key: String, first: Bool):
     if not first:
         w.write_ascii("\n")
-    w.write_ascii(key)
+    w.write_bytes(key.as_bytes())
     w.write_ascii(": ")
 
 
@@ -347,7 +347,7 @@ struct YamlSer:
     var version: String
 
     def __init__(out self):
-        self.version = "0.2.0"
+        self.version = "0.6.0"
 
     def name(self) -> String:
         return "gld-yaml"

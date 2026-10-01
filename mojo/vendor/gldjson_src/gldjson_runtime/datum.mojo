@@ -3,7 +3,7 @@ from std.collections import List, Span
 from gldjson_runtime.error import DecodeError
 from gldjson_runtime.options import DecodeOptions, EncodeOptions
 from gldjson_runtime.value import JsonValue, decode_value, encode_value
-from gldjson_wire.number import encoded_float_len, encoded_int_len
+from gldjson_wire.number import encoded_float_len, encoded_int_len, try_parse_short_float
 from gldjson_wire.reader import WireReader
 from gldjson_wire.string import encoded_string_len
 from gldjson_wire.writer import WireWriter
@@ -86,17 +86,29 @@ def read_bool[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -
     raise DecodeError(DecodeError.KIND_TYPE, r.position())
 
 
+@always_inline
 def read_bool_here[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Bool:
-    if r.pos >= len(r.data):
-        raise DecodeError(DecodeError.KIND_EOF, r.pos)
-    var c = Int(r.data[r.pos])
+    var p = r.pos
+    var n = len(r.data)
+    if p + 4 <= n:
+        var w = r.load_u32_at(0)
+        if w == UInt32(0x65757274):
+            r.pos = p + 4
+            return True
+        if p + 5 <= n and w == UInt32(0x736C6166) and Int(r.data[p + 4]) == 101:
+            r.pos = p + 5
+            return False
+        raise DecodeError(DecodeError.KIND_TYPE, p)
+    if p >= n:
+        raise DecodeError(DecodeError.KIND_EOF, p)
+    var c = Int(r.data[p])
     if c == 116:
         r.read_true_here()
         return True
     if c == 102:
         r.read_false_here()
         return False
-    raise DecodeError(DecodeError.KIND_TYPE, r.pos)
+    raise DecodeError(DecodeError.KIND_TYPE, p)
 
 
 def read_float[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Float64:
@@ -106,7 +118,11 @@ def read_float[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError 
     return tok.f
 
 
+@always_inline
 def read_float_here[origin: ImmOrigin](mut r: WireReader[origin]) raises DecodeError -> Float64:
+    var fast = 0.0
+    if try_parse_short_float(r.data, r.pos, fast):
+        return fast
     var tok = r.read_number_here()
     if tok.is_int:
         return Float64(tok.i)

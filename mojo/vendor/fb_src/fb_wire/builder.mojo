@@ -5,9 +5,11 @@ from std.memory import unsafe_memcpy
 struct Builder:
     """Builds one FlatBuffers buffer from the high addresses downward.
 
-    The cursor starts at the end of a zeroed block. Each value is stored
+    The cursor starts at the end of one allocated block. Each value is stored
     before the values that point at it, so a `uoffset` is always a positive
     distance. `clear` keeps the block so the next message does not allocate.
+    Bytes below `head` are not part of the output. Padding that is part of
+    the output is written as zeros.
     """
 
     var buf: List[Byte]
@@ -29,16 +31,17 @@ struct Builder:
         var cap = capacity
         if cap < 1:
             cap = 1
-        self.buf = List[Byte](capacity=cap)
-        for _ in range(cap):
-            self.buf.append(Byte(0))
+        # One allocation. The suffix below `head` is overwritten or explicitly
+        # padded before it becomes part of a finished buffer.
+        self.buf = List[Byte](unsafe_uninit_length=cap)
         self.head = cap
         self.minalign = 1
         self.nested = False
         self.object_end = 0
-        self.vtable = List[Int]()
+        # Typical tables are small. Reserving avoids a realloc on the first one.
+        self.vtable = List[Int](capacity=16)
         self.vtable_len = 0
-        self.vt_offsets = List[Int]()
+        self.vt_offsets = List[Int](capacity=8)
         self.vt_used = 0
         self.vector_elems = 0
         self.force_defaults = False
@@ -100,30 +103,59 @@ struct Builder:
         self.head += prefix
         self.buf = fresh^
 
+    def _ensure(mut self, need: Int) raises:
+        while self.head < need:
+            self.grow()
+
+    @always_inline
     def prep(mut self, size: Int, additional: Int) raises:
         if size > self.minalign:
             self.minalign = size
         var align_size = (-(len(self.buf) - self.head + additional)) & (size - 1)
-        while self.head < align_size + size + additional:
-            self.grow()
-        self.pad(align_size)
+        var need = align_size + size + additional
+        if self.head < need:
+            self._ensure(need)
+        if align_size != 0:
+            self.pad(align_size)
 
+    @always_inline
     def pad(mut self, n: Int):
-        for _ in range(n):
-            self.place_u8(0)
+        # Alignment padding is 1..7 bytes on the scalar path. A library memset
+        # is slower than a couple of stores, and a byte loop gets turned into one.
+        self.head -= n
+        var p = self.buf.unsafe_ptr().unsafe_offset(self.head)
+        var left = n
+        while left >= 8:
+            p.unsafe_bitcast[UInt64]()[] = 0
+            p = p.unsafe_offset(8)
+            left -= 8
+        if left >= 4:
+            p.unsafe_bitcast[UInt32]()[] = 0
+            p = p.unsafe_offset(4)
+            left -= 4
+        if left >= 2:
+            p.unsafe_bitcast[UInt16]()[] = 0
+            p = p.unsafe_offset(2)
+            left -= 2
+        if left == 1:
+            p[] = Byte(0)
 
+    @always_inline
     def place_u8(mut self, v: UInt8):
         self.head -= 1
-        self.buf[self.head] = Byte(v)
+        self.buf.unsafe_ptr().unsafe_offset(self.head)[] = Byte(v)
 
+    @always_inline
     def place_u16(mut self, v: UInt16):
         self.head -= 2
         self.buf.unsafe_ptr().unsafe_offset(self.head).unsafe_bitcast[UInt16]()[] = v
 
+    @always_inline
     def place_u32(mut self, v: UInt32):
         self.head -= 4
         self.buf.unsafe_ptr().unsafe_offset(self.head).unsafe_bitcast[UInt32]()[] = v
 
+    @always_inline
     def place_u64(mut self, v: UInt64):
         self.head -= 8
         self.buf.unsafe_ptr().unsafe_offset(self.head).unsafe_bitcast[UInt64]()[] = v
@@ -152,46 +184,57 @@ struct Builder:
     def u16_at(self, index: Int) -> UInt16:
         return self.buf.unsafe_ptr().unsafe_offset(index).unsafe_bitcast[UInt16]()[]
 
+    @always_inline
     def prepend_u8(mut self, v: UInt8) raises:
         self.prep(1, 0)
         self.place_u8(v)
 
+    @always_inline
     def prepend_u16(mut self, v: UInt16) raises:
         self.prep(2, 0)
         self.place_u16(v)
 
+    @always_inline
     def prepend_u32(mut self, v: UInt32) raises:
         self.prep(4, 0)
         self.place_u32(v)
 
+    @always_inline
     def prepend_u64(mut self, v: UInt64) raises:
         self.prep(8, 0)
         self.place_u64(v)
 
+    @always_inline
     def prepend_i8(mut self, v: Int8) raises:
         self.prep(1, 0)
         self.place_i8(v)
 
+    @always_inline
     def prepend_i16(mut self, v: Int16) raises:
         self.prep(2, 0)
         self.place_i16(v)
 
+    @always_inline
     def prepend_i32(mut self, v: Int32) raises:
         self.prep(4, 0)
         self.place_i32(v)
 
+    @always_inline
     def prepend_i64(mut self, v: Int64) raises:
         self.prep(8, 0)
         self.place_i64(v)
 
+    @always_inline
     def prepend_f32(mut self, v: Float32) raises:
         self.prep(4, 0)
         self.place_f32(v)
 
+    @always_inline
     def prepend_f64(mut self, v: Float64) raises:
         self.prep(8, 0)
         self.place_f64(v)
 
+    @always_inline
     def prepend_bool(mut self, v: Bool) raises:
         var b: UInt8 = 0
         if v:
@@ -234,6 +277,7 @@ struct Builder:
             b = 1
         self.place_u8(b)
 
+    @always_inline
     def prepend_uoffset_relative(mut self, off: Int) raises:
         self.prep(4, 0)
         if off > self.offset():
@@ -241,6 +285,7 @@ struct Builder:
         var off2 = self.offset() - off + 4
         self.place_u32(UInt32(off2))
 
+    @always_inline
     def prepend_soffset_relative(mut self, off: Int) raises:
         self.prep(4, 0)
         if off > self.offset():
@@ -248,25 +293,29 @@ struct Builder:
         var off2 = self.offset() - off + 4
         self.place_i32(Int32(off2))
 
+    @always_inline
     def assert_nested(self) raises:
         if not self.nested:
             raise Error("not nested")
 
+    @always_inline
     def assert_not_nested(self) raises:
         if self.nested:
             raise Error("nested")
 
+    @always_inline
     def slot(mut self, slotnum: Int) raises:
         self.assert_nested()
-        self.vtable[slotnum] = self.offset()
+        self.vtable.unsafe_ptr().unsafe_offset(slotnum)[] = self.offset()
 
     def start_object(mut self, numfields: Int) raises:
         self.assert_not_nested()
         while len(self.vtable) < numfields:
             self.vtable.append(0)
+        var slots = self.vtable.unsafe_ptr()
         var i = 0
         while i < numfields:
-            self.vtable[i] = 0
+            slots.unsafe_offset(i)[] = 0
             i += 1
         self.vtable_len = numfields
         self.object_end = self.offset()
@@ -284,66 +333,68 @@ struct Builder:
             self.vt_offsets.append(off)
         self.vt_used += 1
 
-    def _vt_equal(self, stored_off: Int, object_offset: Int, nfields: Int) -> Bool:
+    def _vt_same(self, stored_off: Int, new_pos: Int, body: Int) -> Bool:
+        """True when an existing vtable has the same field offsets.
+
+        The 16-bit object size is not part of the key, matching the historical
+        comparison. `body` is `(nfields + 2) * 2`.
+        """
         var pos = len(self.buf) - stored_off
-        if pos < 0 or pos + 4 > len(self.buf):
+        if pos < 0 or pos + body > len(self.buf):
             return False
-        var vbytes = Int(self.u16_at(pos))
-        if vbytes // 2 - 2 != nfields:
+        if Int(self.u16_at(pos)) != body:
             return False
-        var i = 0
-        while i < nfields:
-            var at = pos + 4 + 2 * i
-            if at + 2 > len(self.buf):
+        var i = 4
+        while i < body:
+            if self.u16_at(pos + i) != self.u16_at(new_pos + i):
                 return False
-            var elem = self.vtable[i]
-            var exp = 0
-            if elem != 0:
-                exp = object_offset - elem
-            if Int(self.u16_at(at)) != exp:
-                return False
-            i += 1
+            i += 2
         return True
 
     def write_vtable(mut self) raises -> Int:
         self.prepend_soffset_relative(0)
         var object_offset = self.offset()
         var n = self.vtable_len
+        var slots = self.vtable.unsafe_ptr()
         var trailing = 0
         var i = n - 1
         while i >= 0:
-            if self.vtable[i] != 0:
+            if slots.unsafe_offset(i)[] != 0:
                 break
             trailing += 1
             i -= 1
         var nfields = n - trailing
+        var body = (nfields + 2) * 2
+        if self.head < body:
+            self._ensure(body)
+        var object_size = object_offset - self.object_end
+        self.head -= body
+        var new_pos = self.head
+        var words = self.buf.unsafe_ptr().unsafe_offset(new_pos).unsafe_bitcast[UInt16]()
+        words[] = UInt16(body)
+        words.unsafe_offset(1)[] = UInt16(object_size)
+        i = 0
+        while i < nfields:
+            var elem = slots.unsafe_offset(i)[]
+            var off: UInt16 = 0
+            if elem != 0:
+                off = UInt16(object_offset - elem)
+            words.unsafe_offset(2 + i)[] = off
+            i += 1
         var found = -1
         var vi = 0
         while vi < self.vt_used:
-            if self._vt_equal(self.vt_offsets[vi], object_offset, nfields):
+            if self._vt_same(self.vt_offsets[vi], new_pos, body):
                 found = self.vt_offsets[vi]
                 break
             vi += 1
+        var object_start = len(self.buf) - object_offset
         if found < 0:
-            i = nfields - 1
-            while i >= 0:
-                var elem = self.vtable[i]
-                var off = 0
-                if elem != 0:
-                    off = object_offset - elem
-                self.place_u16(UInt16(off))
-                i -= 1
-            var object_size = object_offset - self.object_end
-            self.place_u16(UInt16(object_size))
-            var v_bytes = (nfields + 2) * 2
-            self.place_u16(UInt16(v_bytes))
-            var object_start = len(self.buf) - object_offset
             var soff = self.offset() - object_offset
             self.write_i32_at(object_start, Int32(soff))
             found = self.offset()
             self._push_vt(found)
         else:
-            var object_start = len(self.buf) - object_offset
             self.head = object_start
             var soff = found - object_offset
             self.write_i32_at(self.head, Int32(soff))
@@ -431,11 +482,12 @@ struct Builder:
         return self.offset()
 
     def create_string(mut self, text: String) raises -> Int:
-        if self.share_strings and text in self.shared:
+        if not self.share_strings:
+            return self.create_string_bytes(text.as_bytes())
+        if text in self.shared:
             return self.shared[text]
         var off = self.create_string_bytes(text.as_bytes())
-        if self.share_strings:
-            self.shared[text] = off
+        self.shared[text] = off
         return off
 
     def create_string_bytes[origin: ImmOrigin](mut self, raw: Span[Byte, origin]) raises -> Int:

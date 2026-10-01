@@ -109,6 +109,17 @@ struct WireReader[origin: ImmOrigin](Movable):
         self.pos += n
         return string_from_utf8(self.data[start : start + n], at)
 
+    def read_payload_span(mut self, n: Int) raises DecodeError -> Span[Byte, Self.origin]:
+        """Consume `n` bytes and return a view. Caller validates UTF-8 when needed."""
+        var at = self.pos
+        if n < 0 or n > MAX_ITEM_BYTES:
+            raise DecodeError(DecodeError.KIND_RANGE, at)
+        if n > self.remaining():
+            raise DecodeError(DecodeError.KIND_EOF, at)
+        var start = self.pos
+        self.pos += n
+        return self.data[start : start + n]
+
     def check_count(self, n: UInt64) raises DecodeError:
         if n > UInt64(MAX_COUNT):
             raise DecodeError(DecodeError.KIND_RANGE, self.pos)

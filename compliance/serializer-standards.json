@@ -758,6 +758,12 @@
       "mojo-bson": [
         "bson"
       ],
+      "mojo-ion": [
+        "ion"
+      ],
+      "mojo-smile": [
+        "smile"
+      ],
       "gld-yaml": [
         "yaml"
       ]

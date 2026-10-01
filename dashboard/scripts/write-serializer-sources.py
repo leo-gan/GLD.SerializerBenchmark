@@ -1411,14 +1411,16 @@ SPECIFICS: dict[str, str] = {
     ),
     "gld-flatbuffers": (
         "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for "
-        "Mojo. FlatBuffers exists so a reader can use fields without "
-        "unpacking the buffer. This row times a reused Builder and "
-        "generated pack/unpack on the suite tables."
+        "Mojo. FlatBuffers exists so a reader can take fields from the "
+        "buffer without first copying the whole message into a new "
+        "object. This row keeps one `Builder`, calls `clear` before each "
+        "message, and times generated `pack` / `unpack` against the suite "
+        "tables in `cpp/schemas/benchmark.fbs`."
     ),
     "mojo-toml": (
         "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as "
-        "an obvious config language. This is the published Mojo TOML "
-        "implementation (`gld-toml` is not out yet)."
+        "an obvious config language. This row still times that library. "
+        "`gld-toml` is published separately and is not this row."
     ),
     "gld-yaml": (
         "gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML "
@@ -1434,8 +1436,19 @@ SPECIFICS: dict[str, str] = {
         "gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON "
         "exists so MongoDB can store JSON-like documents in a binary, "
         "traversable layout. This row times WireWriter / WireReader on "
-        "suite types. Package 0.1.0 is the latest release that builds "
-        "on Mojo 1.1."
+        "suite types."
+    ),
+    "gld-ion": (
+        "gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. "
+        "Ion exists as a typed superset of JSON with text and binary "
+        "encodings. This row times Ion 1.0 binary encode and decode of "
+        "a document built from the suite value."
+    ),
+    "gld-smile": (
+        "gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. "
+        "Smile exists as a compact binary form of JSON. This row times "
+        "`encode_doc` and `decode_bytes` on a document built from the "
+        "suite value."
     ),
 }
 
@@ -1728,6 +1741,8 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "gld-yaml"): "gld-yaml",
     ("mojo", "mojo-msgpack"): "gld-msgpack",
     ("mojo", "mojo-bson"): "gld-bson",
+    ("mojo", "mojo-ion"): "gld-ion",
+    ("mojo", "mojo-smile"): "gld-smile",
 }
 
 # Extra sentence for a specific row (path / format variant).

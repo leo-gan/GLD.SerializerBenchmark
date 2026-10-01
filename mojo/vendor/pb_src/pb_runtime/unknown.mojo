@@ -49,8 +49,7 @@ struct UnknownFieldSet(
         else:
             raise DecodeError(DecodeError.KIND_INVALID_WIRE, dec.position(), field)
         var chunk = tmp^.finish()
-        for i in range(len(chunk)):
-            self.buf.append(chunk[i])
+        self.buf.extend(chunk^)
 
     def __eq__(self, other: Self) -> Bool:
         if len(self.buf) != len(other.buf):

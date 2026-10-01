@@ -2,7 +2,7 @@ from std.collections import List, Span
 from std.memory import unsafe_memcpy
 
 from yaml_runtime.options import EncodeOptions
-from yaml_wire.number import encoded_float_len, encoded_int_len, write_float_digits, write_int_known
+from yaml_wire.number import encoded_int_len, write_float_digits, write_int_known
 from yaml_wire.scalar import hex_digit_ascii, is_plain_safe
 
 
@@ -49,7 +49,7 @@ struct WireWriter(Movable):
         )
         self.pos += n
 
-    def write_ascii(mut self, s: String):
+    def write_ascii(mut self, s: StaticString):
         self.write_bytes(s.as_bytes())
 
     def write_indent(mut self, options: EncodeOptions):
@@ -101,9 +101,29 @@ struct WireWriter(Movable):
         write_int_known(self.buf, self.pos, v, n)
 
     def write_float(mut self, v: Float64):
-        var n = encoded_float_len(v)
-        self.ensure(n + 4)
-        write_float_digits(self.buf, self.pos, v)
+        # One conversion. `encoded_float_len` plus `write_float_digits` each
+        # called `String(v)` for a non-integral finite float.
+        if v != v:
+            self.ensure(4)
+            write_float_digits(self.buf, self.pos, v)
+            return
+        if v > 1.7976931348623157e308:
+            self.ensure(4)
+            write_float_digits(self.buf, self.pos, v)
+            return
+        if v < -1.7976931348623157e308:
+            self.ensure(5)
+            write_float_digits(self.buf, self.pos, v)
+            return
+        if v <= 9.223372036854776e18 and v >= -9.223372036854776e18:
+            var iv = Int64(v)
+            if Float64(iv) == v:
+                var n = encoded_int_len(iv)
+                self.ensure(n + 2)
+                write_float_digits(self.buf, self.pos, v)
+                return
+        var s = String(v)
+        self.write_bytes(s.as_bytes())
 
     def write_string(mut self, s: String, options: EncodeOptions):
         var data = s.as_bytes()

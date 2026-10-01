@@ -5,7 +5,7 @@ title: "Mojo"
 Mojo
 ====
 
-Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, and MessagePack.
+Mojo’s serialization stack is still young. This runner times **pure-Mojo** libraries: EmberJson and ehsanmok/json for JSON, mojo-toml for TOML, and the leo-gan **gld-** libraries for JSON, CBOR, BSON, Protocol Buffers, FlatBuffers, Avro, YAML, MessagePack, Ion, and Smile. The gld libraries target Mojo 1.1.
 
 ## Runtime
 
@@ -33,7 +33,7 @@ Mojo 1.1 is a young compiler. A nightly compiler or a different pixi lock can mo
 
 I/O mode is **bytes only**. None of the registered libraries expose a native stream API that is not a label on the bytes path.
 
-There is no native XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is not published yet, so TOML stays on DataBooth/mojo-toml. BSON is `mojo-bson` (gld-bson 0.1.0), the latest release that builds on Mojo 1.1.
+There is no native XML library in this wave. Apache Arrow / Parquet (columnar file formats) are not object serializers for these fixtures. `gld-toml` is published, and this TOML row still times DataBooth/mojo-toml. BSON is `mojo-bson` (gld-bson 0.1.0). Ion is `mojo-ion` (gld-ion 0.2.0) and Smile is `mojo-smile` (gld-smile 0.2.0).
 
 These times cannot be ranked against another language.
 
@@ -54,15 +54,17 @@ The steps to install the toolchain and run the benchmark are in [`mojo/README.md
 |------------|----------|---------|--------|-------|
 | [EmberJson](https://github.com/bgreni/EmberJson) | JSON | emberjson 0.3.4 | bytes only | Reflection `serialize` / `deserialize` |
 | [ehsanmok-json](https://github.com/ehsanmok/json) | JSON | ehsanmok/json 0.4.0 | bytes only | `serialize_json` encode; `loads` + Value walk decode (CPU parser) |
-| [mojo-json](https://github.com/leo-gan/gld-json) | JSON | leo-gan/gld-json 0.4.0 | bytes only | Typed WireWriter / WireReader (vendored as `gldjson`) |
-| [mojo-cbor](https://github.com/leo-gan/gld-cbor) | Binary | leo-gan/gld-cbor 0.7.0 | bytes only | `CborDatum` encode / decode |
-| [mojo-protobuf](https://github.com/leo-gan/gld-protobuf) | Schema | leo-gan/gld-protobuf 0.6.0 | bytes only | Generated from suite `.proto` |
-| [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) | Schema | leo-gan/gld-flatbuffers 0.2.0 | bytes only | Reused `Builder` and generated tables from the suite `.fbs` |
+| [mojo-json](https://github.com/leo-gan/gld-json) | JSON | leo-gan/gld-json 0.5.0 | bytes only | Typed WireWriter / WireReader (vendored as `gldjson`) |
+| [mojo-cbor](https://github.com/leo-gan/gld-cbor) | Binary | leo-gan/gld-cbor 0.8.0 | bytes only | `CborDatum` encode / decode |
+| [mojo-protobuf](https://github.com/leo-gan/gld-protobuf) | Schema | leo-gan/gld-protobuf 0.7.0 | bytes only | Generated from suite `.proto` |
+| [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) | Schema | leo-gan/gld-flatbuffers 0.4.0 | bytes only | Reused `Builder` and generated tables from the suite `.fbs` |
 | [mojo-avro](https://github.com/leo-gan/gld-avro) | Schema | leo-gan/gld-avro 0.4.0 | bytes only | `AvroDatum` encode / decode |
 | [mojo-toml](https://github.com/DataBooth/mojo-toml) | Text | DataBooth/mojo-toml 0.9.1 | bytes only | `to_toml` / `parse` |
-| [gld-yaml](https://github.com/leo-gan/gld-yaml) | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.5.0 | bytes only | `yaml.encode` / `yaml.decode` on suite types |
-| [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) | Binary | leo-gan/gld-messagepack 0.3.0 | bytes only | WireWriter / WireReader |
+| [gld-yaml](https://github.com/leo-gan/gld-yaml) | Text | [leo-gan/gld-yaml](https://github.com/leo-gan/gld-yaml) 0.6.0 | bytes only | `yaml.encode` / `yaml.decode` on suite types |
+| [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) | Binary | leo-gan/gld-messagepack 0.4.0 | bytes only | WireWriter / WireReader |
 | [mojo-bson](https://github.com/leo-gan/gld-bson) | Binary | leo-gan/gld-bson 0.1.0 | bytes only | WireWriter / WireReader |
+| [mojo-ion](https://github.com/leo-gan/gld-ion) | Binary | leo-gan/gld-ion 0.2.0 | bytes only | Ion 1.0 binary document encode / decode |
+| [mojo-smile](https://github.com/leo-gan/gld-smile) | Binary | leo-gan/gld-smile 0.2.0 | bytes only | Smile document encode / decode |
 
 ### Specifics
 
@@ -76,19 +78,19 @@ EmberJson is a Mojo JSON library using language reflection. Mojo is a young lang
 
 ehsanmok/json is a Mojo JSON parser/serializer. It was written to give Mojo a JSON stack with a Value tree and a `serialize_json` path. Decode in this suite is `loads` plus a Value walk.
 
-#### [mojo-json](https://github.com/leo-gan/gld-json) · `0.3.0`
+#### [mojo-json](https://github.com/leo-gan/gld-json) · `0.5.0`
 
 gld-json (leo-gan) is a typed JSON WireWriter/Reader for Mojo. It was created because Mojo lacked a suite-ready, typed JSON codec aligned with this benchmark's domain types.
 
-#### [mojo-cbor](https://github.com/leo-gan/gld-cbor) · `0.6.0`
+#### [mojo-cbor](https://github.com/leo-gan/gld-cbor) · `0.8.0`
 
 gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the IETF binary JSON-like format. The library exists to give Mojo a first-class CBOR encode/decode.
 
-#### [mojo-protobuf](https://github.com/leo-gan/gld-protobuf) · `0.6.0`
+#### [mojo-protobuf](https://github.com/leo-gan/gld-protobuf) · `0.7.0`
 
 gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf exists as a language-neutral IDL. This library generates Mojo from the suite `.proto` and times encode/decode.
 
-#### [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) · `0.2.0`
+#### [mojo-flatbuffers](https://github.com/leo-gan/gld-flatbuffers) · `0.4.0`
 
 gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can take fields from the buffer without first copying the whole message into a new object. This row keeps one `Builder`, calls `clear` before each message, and times generated `pack` / `unpack` against the suite tables in `cpp/schemas/benchmark.fbs`.
 
@@ -98,19 +100,27 @@ gld-avro (leo-gan) implements Apache Avro for Mojo via `AvroDatum`. Avro exists 
 
 #### [mojo-toml](https://github.com/DataBooth/mojo-toml) · `0.9.1`
 
-DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This is the published Mojo TOML implementation (`gld-toml` is not out yet).
+DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row still times that library. `gld-toml` is published separately and is not this row.
 
-#### [gld-yaml](https://github.com/leo-gan/gld-yaml) · `0.2.0`
+#### [gld-yaml](https://github.com/leo-gan/gld-yaml) · `0.6.0`
 
 gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a human-friendly config language. The library was written so Mojo can speak YAML on suite types.
 
-#### [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) · `0.3.0`
+#### [mojo-msgpack](https://github.com/leo-gan/gld-messagepack) · `0.4.0`
 
 gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format.
 
 #### [mojo-bson](https://github.com/leo-gan/gld-bson) · `0.1.0`
 
-gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types. Package 0.1.0 is the latest release that builds on Mojo 1.1.
+gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types.
+
+#### [mojo-ion](https://github.com/leo-gan/gld-ion) · `0.2.0`
+
+gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. Ion exists as a typed superset of JSON with text and binary encodings. This row times Ion 1.0 binary encode and decode of a document built from the suite value.
+
+#### [mojo-smile](https://github.com/leo-gan/gld-smile) · `0.2.0`
+
+gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. Smile exists as a compact binary form of JSON. This row times `encode_doc` and `decode_bytes` on a document built from the suite value.
 
 ### Call-path contract
 
