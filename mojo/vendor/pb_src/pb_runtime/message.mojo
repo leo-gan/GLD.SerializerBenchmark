@@ -18,6 +18,7 @@ trait ProtoMessage(Copyable, Movable, Defaultable, Deinitable):
         ...
 
 
+@always_inline
 def encode[T: ProtoMessage](msg: T) -> List[Byte]:
     var cap = msg.encoded_len()
     if cap < 1:
@@ -27,6 +28,7 @@ def encode[T: ProtoMessage](msg: T) -> List[Byte]:
     return enc^.finish()
 
 
+@always_inline
 def decode[
     T: ProtoMessage, origin: ImmOrigin
 ](buf: Span[Byte, origin]) raises DecodeError -> T:

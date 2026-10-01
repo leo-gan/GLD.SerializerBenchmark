@@ -10,6 +10,8 @@ from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
 from bench.bson_ser import BsonSer
+from bench.ion_ser import IonSer
+from bench.smile_ser import SmileSer
 
 
 def _roundtrip_all(type_id: String) raises:
@@ -26,6 +28,8 @@ def _roundtrip_all(type_id: String) raises:
     var yaml = YamlSer()
     var msgp = MsgpackSer()
     var bson = BsonSer()
+    var ion = IonSer()
+    var smile = SmileSer()
     if not ember.check(fx, ember.serialize_bytes(fx)):
         raise Error("emberjson fidelity " + type_id)
     if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
@@ -48,6 +52,10 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("mojo-msgpack fidelity " + type_id)
     if not bson.check(fx, bson.serialize_bytes(fx)):
         raise Error("mojo-bson fidelity " + type_id)
+    if not ion.check(fx, ion.serialize_bytes(fx)):
+        raise Error("mojo-ion fidelity " + type_id)
+    if not smile.check(fx, smile.serialize_bytes(fx)):
+        raise Error("mojo-smile fidelity " + type_id)
 
 
 def _ehsan_batch(type_id: String) raises:

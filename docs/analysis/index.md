@@ -107,7 +107,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | Java | **18** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |
 | JavaScript | **21** † | [Overview](../javascript/index.md) | [Dashboard](../dashboard/?lang=javascript) |
 | Kotlin | **26** | [Overview](../kotlin/index.md) | [Dashboard](../dashboard/?lang=kotlin) |
-| Mojo | **6** | [Overview](../mojo/index.md) | [Dashboard](../dashboard/?lang=mojo) |
+| Mojo | **13** | [Overview](../mojo/index.md) | [Dashboard](../dashboard/?lang=mojo) |
 | PHP | **15** | [Overview](../php/index.md) | [Dashboard](../dashboard/?lang=php) |
 | Python | **18** | [Overview](../python/index.md) | [Dashboard](../dashboard/?lang=python) |
 | Rust | **17** | [Overview](../rust/index.md) | [Dashboard](../dashboard/?lang=rust) |

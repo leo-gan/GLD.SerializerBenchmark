@@ -1,7 +1,7 @@
 from std.collections import List, Span
 from std.memory import unsafe_memcpy
 
-from cbor_wire.head import extra_len, head_byte, shortest_ai
+from cbor_wire.head import extra_len, head_byte
 from cbor_wire.half import f32_to_bits, f64_to_bits, f64_to_half_bits, half_to_f64
 
 
@@ -68,8 +68,15 @@ struct WireWriter(Movable):
         if n == 0:
             return
         self.ensure(n)
+        var dest = self.pos
+        # Short payloads (map keys, small bstr) lose to memcpy startup.
+        if n <= 8:
+            for i in range(n):
+                self.buf[dest + i] = data[i]
+            self.pos = dest + n
+            return
         unsafe_memcpy(
-            dest=self.buf.unsafe_ptr().unsafe_offset(self.pos),
+            dest=self.buf.unsafe_ptr().unsafe_offset(dest),
             src=data.unsafe_ptr(),
             count=n,
         )
@@ -87,17 +94,39 @@ struct WireWriter(Movable):
         self.pos += n
 
     def write_head(mut self, major: Int, argument: UInt64):
-        var ai = shortest_ai(argument)
-        var extra = extra_len(ai)
-        self.ensure(1 + extra)
-        self.buf[self.pos] = head_byte(major, ai)
-        self.pos += 1
-        var i = extra
-        while i > 0:
-            i -= 1
-            var shift = UInt64(i) * UInt64(8)
-            self.buf[self.pos] = Byte((argument >> shift) & UInt64(0xFF))
+        # Small arguments are a single byte. Do not build a temporary length list.
+        if argument < UInt64(24):
+            self.ensure(1)
+            self.buf[self.pos] = Byte((major << 5) | Int(argument))
             self.pos += 1
+            return
+        var ai = 24
+        var extra = 1
+        if argument >= UInt64(256):
+            if argument < UInt64(65536):
+                ai = 25
+                extra = 2
+            elif argument < (UInt64(1) << UInt64(32)):
+                ai = 26
+                extra = 4
+            else:
+                ai = 27
+                extra = 8
+        self.ensure(1 + extra)
+        var p = self.pos
+        self.buf[p] = Byte((major << 5) | ai)
+        if extra == 1:
+            self.buf[p + 1] = Byte(argument & UInt64(0xFF))
+        elif extra == 2:
+            self.buf[p + 1] = Byte((argument >> UInt64(8)) & UInt64(0xFF))
+            self.buf[p + 2] = Byte(argument & UInt64(0xFF))
+        else:
+            var i = extra
+            while i > 0:
+                i -= 1
+                var shift = UInt64(i) * UInt64(8)
+                self.buf[p + 1 + (extra - 1 - i)] = Byte((argument >> shift) & UInt64(0xFF))
+        self.pos = p + 1 + extra
 
     def write_head_raw(mut self, major: Int, ai: Int, argument: UInt64):
         var extra = extra_len(ai)
@@ -123,7 +152,17 @@ struct WireWriter(Movable):
 
     def write_int(mut self, v: Int64):
         if v >= Int64(0):
+            if v < Int64(24):
+                self.ensure(1)
+                self.buf[self.pos] = Byte(Int(v))
+                self.pos += 1
+                return
             self.write_uint(UInt64(v))
+            return
+        if v >= Int64(-24):
+            self.ensure(1)
+            self.buf[self.pos] = Byte(0x20 | Int(-(v + Int64(1))))
+            self.pos += 1
             return
         var mag = UInt64(-(v + Int64(1)))
         self.write_nint_arg(mag)
@@ -134,7 +173,16 @@ struct WireWriter(Movable):
 
     def write_tstr(mut self, v: String):
         var b = v.as_bytes()
-        self.write_head(3, UInt64(len(b)))
+        var n = len(b)
+        if n < 24:
+            self.ensure(1 + n)
+            var p = self.pos
+            self.buf[p] = Byte(0x60 | n)
+            for i in range(n):
+                self.buf[p + 1 + i] = b[i]
+            self.pos = p + 1 + n
+            return
+        self.write_head(3, UInt64(n))
         self.write_bytes(b)
 
     def write_array_len(mut self, n: Int):

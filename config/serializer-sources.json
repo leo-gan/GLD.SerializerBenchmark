@@ -950,7 +950,7 @@
       },
       "gld-yaml": {
         "source_url": "https://github.com/leo-gan/gld-yaml",
-        "version": "0.2.0",
+        "version": "0.6.0",
         "specifics": "gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML exists as a human-friendly config language. The library was written so Mojo can speak YAML on suite types."
       },
       "mojo-avro": {
@@ -961,37 +961,47 @@
       "mojo-bson": {
         "source_url": "https://github.com/leo-gan/gld-bson",
         "version": "0.1.0",
-        "specifics": "gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types. Package 0.1.0 is the latest release that builds on Mojo 1.1."
+        "specifics": "gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON exists so MongoDB can store JSON-like documents in a binary, traversable layout. This row times WireWriter / WireReader on suite types."
       },
       "mojo-cbor": {
         "source_url": "https://github.com/leo-gan/gld-cbor",
-        "version": "0.6.0",
+        "version": "0.8.0",
         "specifics": "gld-cbor (leo-gan) implements CBOR for Mojo via a `CborDatum` trait. CBOR is the IETF binary JSON-like format. The library exists to give Mojo a first-class CBOR encode/decode."
       },
       "mojo-flatbuffers": {
         "source_url": "https://github.com/leo-gan/gld-flatbuffers",
+        "version": "0.4.0",
+        "specifics": "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can take fields from the buffer without first copying the whole message into a new object. This row keeps one `Builder`, calls `clear` before each message, and times generated `pack` / `unpack` against the suite tables in `cpp/schemas/benchmark.fbs`."
+      },
+      "mojo-ion": {
+        "source_url": "https://github.com/leo-gan/gld-ion",
         "version": "0.2.0",
-        "specifics": "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for Mojo. FlatBuffers exists so a reader can use fields without unpacking the buffer. This row times a reused Builder and generated pack/unpack on the suite tables."
+        "specifics": "gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. Ion exists as a typed superset of JSON with text and binary encodings. This row times Ion 1.0 binary encode and decode of a document built from the suite value."
       },
       "mojo-json": {
         "source_url": "https://github.com/leo-gan/gld-json",
-        "version": "0.3.0",
+        "version": "0.5.0",
         "specifics": "gld-json (leo-gan) is a typed JSON WireWriter/Reader for Mojo. It was created because Mojo lacked a suite-ready, typed JSON codec aligned with this benchmark's domain types."
       },
       "mojo-msgpack": {
         "source_url": "https://github.com/leo-gan/gld-messagepack",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "specifics": "gld-messagepack (leo-gan) is a MessagePack WireWriter/Reader for Mojo. MessagePack exists as compact binary JSON. The library gives Mojo that format."
       },
       "mojo-protobuf": {
         "source_url": "https://github.com/leo-gan/gld-protobuf",
-        "version": "0.6.0",
+        "version": "0.7.0",
         "specifics": "gld-protobuf (leo-gan) is a Protocol Buffers implementation for Mojo. Protobuf exists as a language-neutral IDL. This library generates Mojo from the suite `.proto` and times encode/decode."
+      },
+      "mojo-smile": {
+        "source_url": "https://github.com/leo-gan/gld-smile",
+        "version": "0.2.0",
+        "specifics": "gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. Smile exists as a compact binary form of JSON. This row times `encode_doc` and `decode_bytes` on a document built from the suite value."
       },
       "mojo-toml": {
         "source_url": "https://github.com/DataBooth/mojo-toml",
         "version": "0.9.1",
-        "specifics": "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This is the published Mojo TOML implementation (`gld-toml` is not out yet)."
+        "specifics": "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as an obvious config language. This row still times that library. `gld-toml` is published separately and is not this row."
       }
     },
     "php": {

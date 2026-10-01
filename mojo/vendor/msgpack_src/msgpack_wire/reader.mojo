@@ -1,9 +1,32 @@
+from std.bit import byte_swap
 from std.collections import List, Span
 from std.memory import unsafe_memcpy
+from std.sys.info import is_little_endian
 
 from msgpack_runtime.error import DecodeError
 from msgpack_runtime.options import DecodeOptions, MAX_COUNT, MAX_ITEM_BYTES
 from msgpack_wire.utf8 import string_from_utf8
+
+
+@always_inline
+def _u16_be(raw: UInt16) -> UInt16:
+    if is_little_endian():
+        return byte_swap(raw)
+    return raw
+
+
+@always_inline
+def _u32_be(raw: UInt32) -> UInt32:
+    if is_little_endian():
+        return byte_swap(raw)
+    return raw
+
+
+@always_inline
+def _u64_be(raw: UInt64) -> UInt64:
+    if is_little_endian():
+        return byte_swap(raw)
+    return raw
 
 
 struct WireReader[origin: ImmOrigin](Movable):
@@ -54,38 +77,23 @@ struct WireReader[origin: ImmOrigin](Movable):
             raise DecodeError(DecodeError.KIND_RANGE, self.pos)
         if n > self.remaining():
             raise DecodeError(DecodeError.KIND_EOF, self.pos)
+        var p = self.data.unsafe_ptr().unsafe_offset(self.pos)
         if n == 8:
-            var b0 = UInt64(Int(self.data[self.pos]))
-            var b1 = UInt64(Int(self.data[self.pos + 1]))
-            var b2 = UInt64(Int(self.data[self.pos + 2]))
-            var b3 = UInt64(Int(self.data[self.pos + 3]))
-            var b4 = UInt64(Int(self.data[self.pos + 4]))
-            var b5 = UInt64(Int(self.data[self.pos + 5]))
-            var b6 = UInt64(Int(self.data[self.pos + 6]))
-            var b7 = UInt64(Int(self.data[self.pos + 7]))
+            var bits = _u64_be(p.unsafe_bitcast[UInt64]()[])
             self.pos += 8
-            return (
-                (b0 << UInt64(56))
-                | (b1 << UInt64(48))
-                | (b2 << UInt64(40))
-                | (b3 << UInt64(32))
-                | (b4 << UInt64(24))
-                | (b5 << UInt64(16))
-                | (b6 << UInt64(8))
-                | b7
-            )
+            return bits
         if n == 4:
-            var c0 = UInt64(Int(self.data[self.pos]))
-            var c1 = UInt64(Int(self.data[self.pos + 1]))
-            var c2 = UInt64(Int(self.data[self.pos + 2]))
-            var c3 = UInt64(Int(self.data[self.pos + 3]))
+            var bits4 = UInt64(_u32_be(p.unsafe_bitcast[UInt32]()[]))
             self.pos += 4
-            return (c0 << UInt64(24)) | (c1 << UInt64(16)) | (c2 << UInt64(8)) | c3
+            return bits4
         if n == 2:
-            var d0 = UInt64(Int(self.data[self.pos]))
-            var d1 = UInt64(Int(self.data[self.pos + 1]))
+            var bits2 = UInt64(_u16_be(p.unsafe_bitcast[UInt16]()[]))
             self.pos += 2
-            return (d0 << UInt64(8)) | d1
+            return bits2
+        if n == 1:
+            var bits1 = UInt64(Int(p[]))
+            self.pos += 1
+            return bits1
         var out = UInt64(0)
         var i = 0
         while i < n:
@@ -131,21 +139,25 @@ struct WireReader[origin: ImmOrigin](Movable):
         self.pos += n
         return True
 
+    @always_inline
     def try_eat_fixstr[origin2: ImmOrigin](mut self, name: Span[Byte, origin2]) -> Bool:
         """Match a shortest-form string key without allocating."""
         var n = len(name)
         if n > 31:
             return False
-        if self.pos + 1 + n > len(self.data):
+        var pos = self.pos
+        if pos + 1 + n > len(self.data):
             return False
-        if Int(self.data[self.pos]) != (0xA0 | n):
+        var dp = self.data.unsafe_ptr()
+        if Int(dp.unsafe_offset(pos)[]) != (0xA0 | n):
             return False
+        var np = name.unsafe_ptr()
         var i = 0
         while i < n:
-            if Int(self.data[self.pos + 1 + i]) != Int(name[i]):
+            if Int(dp.unsafe_offset(pos + 1 + i)[]) != Int(np.unsafe_offset(i)[]):
                 return False
             i += 1
-        self.pos += 1 + n
+        self.pos = pos + 1 + n
         return True
 
     def load_u64(self) -> UInt64:
@@ -210,15 +222,19 @@ struct WireReader[origin: ImmOrigin](Movable):
             return Int64(bits)
         return Int64(bits)
 
+    @always_inline
     def read_i64(mut self) raises DecodeError -> Int64:
         var at = self.pos
-        var b = self.take_byte()
-        if b == 0xC1:
-            raise DecodeError(DecodeError.KIND_UNUSED, at)
+        if at >= len(self.data):
+            raise DecodeError(DecodeError.KIND_EOF, at)
+        var b = Int(self.data[at])
+        self.pos = at + 1
         if b <= 0x7F:
             return Int64(b)
         if b >= 0xE0:
             return Int64(b - 256)
+        if b == 0xC1:
+            raise DecodeError(DecodeError.KIND_UNUSED, at)
         if b == 0xCC:
             return Int64(self.read_be(1))
         if b == 0xCD:
@@ -306,22 +322,52 @@ struct WireReader[origin: ImmOrigin](Movable):
         var bits = UInt32(self.read_be(4))
         return Float32(from_bits=bits)
 
+    @always_inline
     def read_f64(mut self) raises DecodeError -> Float64:
         var at = self.pos
-        var b = self.take_byte()
-        if b == 0xCA:
-            var bits32 = UInt32(self.read_be(4))
-            return Float64(Float32(from_bits=bits32))
+        if at >= len(self.data):
+            raise DecodeError(DecodeError.KIND_EOF, at)
+        var b = Int(self.data[at])
         if b == 0xCB:
-            var bits = self.read_be(8)
+            if at + 9 > len(self.data):
+                raise DecodeError(DecodeError.KIND_EOF, at)
+            var bits = _u64_be(
+                self.data.unsafe_ptr().unsafe_offset(at + 1).unsafe_bitcast[UInt64]()[]
+            )
+            self.pos = at + 9
             return Float64(from_bits=bits)
+        if b == 0xCA:
+            if at + 5 > len(self.data):
+                raise DecodeError(DecodeError.KIND_EOF, at)
+            var bits32 = _u32_be(
+                self.data.unsafe_ptr().unsafe_offset(at + 1).unsafe_bitcast[UInt32]()[]
+            )
+            self.pos = at + 5
+            return Float64(Float32(from_bits=bits32))
         raise DecodeError(DecodeError.KIND_TYPE, at)
 
+    @always_inline
     def read_as_f64(mut self) raises DecodeError -> Float64:
         var at = self.pos
-        var b = self.peek_byte()
-        if b == 0xCA or b == 0xCB:
+        if at >= len(self.data):
+            raise DecodeError(DecodeError.KIND_EOF, at)
+        var b = Int(self.data[at])
+        if b == 0xCB:
+            if at + 9 > len(self.data):
+                raise DecodeError(DecodeError.KIND_EOF, at)
+            var bits = _u64_be(
+                self.data.unsafe_ptr().unsafe_offset(at + 1).unsafe_bitcast[UInt64]()[]
+            )
+            self.pos = at + 9
+            return Float64(from_bits=bits)
+        if b == 0xCA:
             return self.read_f64()
+        if b <= 0x7F:
+            self.pos = at + 1
+            return Float64(b)
+        if b >= 0xE0:
+            self.pos = at + 1
+            return Float64(b - 256)
         if self.peek_is_int():
             var t = self.try_read_int()
             if t[0]:
@@ -345,13 +391,23 @@ struct WireReader[origin: ImmOrigin](Movable):
             return Int(n)
         raise DecodeError(DecodeError.KIND_TYPE, at)
 
+    @always_inline
     def read_str(mut self) raises DecodeError -> String:
         var at = self.pos
-        var n = self._str_len()
-        self.check_len(n)
+        if at >= len(self.data):
+            raise DecodeError(DecodeError.KIND_EOF, at)
+        var b = Int(self.data[at])
+        if b >= 0xA0 and b <= 0xBF:
+            var n = b & 0x1F
+            if at + 1 + n > len(self.data):
+                raise DecodeError(DecodeError.KIND_EOF, at)
+            self.pos = at + 1 + n
+            return string_from_utf8(self.data[at + 1 : at + 1 + n], at)
+        var nlen = self._str_len()
+        self.check_len(nlen)
         var start = self.pos
-        self.pos += n
-        return string_from_utf8(self.data[start : start + n], at)
+        self.pos += nlen
+        return string_from_utf8(self.data[start : start + nlen], at)
 
     def _bin_len(mut self) raises DecodeError -> Int:
         var at = self.pos
@@ -458,19 +514,23 @@ struct WireReader[origin: ImmOrigin](Movable):
             return
         if b == 0xCC or b == 0xD0:
             self.pos += 1
-            _ = self.read_exact(1)
+            self.check_len(1)
+            self.pos += 1
             return
         if b == 0xCD or b == 0xD1:
             self.pos += 1
-            _ = self.read_exact(2)
+            self.check_len(2)
+            self.pos += 2
             return
         if b == 0xCE or b == 0xD2 or b == 0xCA:
             self.pos += 1
-            _ = self.read_exact(4)
+            self.check_len(4)
+            self.pos += 4
             return
         if b == 0xCF or b == 0xD3 or b == 0xCB:
             self.pos += 1
-            _ = self.read_exact(8)
+            self.check_len(8)
+            self.pos += 8
             return
         if (b >= 0xA0 and b <= 0xBF) or b == 0xD9 or b == 0xDA or b == 0xDB:
             var n = self._str_len()
@@ -479,11 +539,13 @@ struct WireReader[origin: ImmOrigin](Movable):
             return
         if b == 0xC4 or b == 0xC5 or b == 0xC6:
             var bn = self._bin_len()
-            _ = self.read_exact(bn)
+            self.check_len(bn)
+            self.pos += bn
             return
         if (b >= 0xC7 and b <= 0xC9) or (b >= 0xD4 and b <= 0xD8):
             var eh = self._ext_header()
-            _ = self.read_exact(eh[1])
+            self.check_len(eh[1])
+            self.pos += eh[1]
             return
         if (b >= 0x90 and b <= 0x9F) or b == 0xDC or b == 0xDD:
             self.enter()

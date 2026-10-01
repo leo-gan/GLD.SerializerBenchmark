@@ -185,7 +185,7 @@ struct FlatBuffersSer:
     var builder: Builder
 
     def __init__(out self):
-        self.version = "0.2.0"
+        self.version = "0.4.0"
         self.builder = Builder(65536)
 
     def name(self) -> String:

@@ -1337,8 +1337,18 @@ languages:
       - name: mojo-bson
         category: binary
         package: leo-gan/gld-bson
-        rationale: "Pure-Mojo BSON 1.0/1.1 via WireWriter / WireReader (last release that builds on Mojo 1.1)"
+        rationale: "Pure-Mojo BSON via WireWriter / WireReader"
         optimal_api: "bson WireWriter / WireReader on suite types (vendored as bson_*)"
+      - name: mojo-ion
+        category: binary
+        package: leo-gan/gld-ion
+        rationale: "Pure-Mojo Amazon Ion 1.0 binary via document encode / decode"
+        optimal_api: "ion.encode / ion.decode on an IonDoc built from the suite value (vendored as ion_*)"
+      - name: mojo-smile
+        category: binary
+        package: leo-gan/gld-smile
+        rationale: "Pure-Mojo Smile 1.0 via document encode / decode"
+        optimal_api: "smile.encode_doc / smile.decode_bytes on a SmileDoc built from the suite value (vendored as smile_*)"
 
 # -----------------------------------------------------------------------------
 # Extensibility: template for adding a language

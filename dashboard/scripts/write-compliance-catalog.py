@@ -606,7 +606,11 @@ add("mojo", "mojo-toml", ["toml"], "https://github.com/DataBooth/mojo-toml",
 add("mojo", "mojo-msgpack", ["msgpack"], "https://github.com/leo-gan/gld-messagepack",
     "gld-messagepack: MessagePack wire.")
 add("mojo", "mojo-bson", ["bson"], "https://github.com/leo-gan/gld-bson",
-    "gld-bson 0.1.0: BSON documents via decode_document (Mojo 1.1).")
+    "gld-bson: BSON documents via decode_document (Mojo 1.1).")
+add("mojo", "mojo-ion", ["ion"], "https://github.com/leo-gan/gld-ion",
+    "gld-ion 0.2.0: Amazon Ion text and binary decode.")
+add("mojo", "mojo-smile", ["smile"], "https://github.com/leo-gan/gld-smile",
+    "gld-smile 0.2.0: Smile decode_bytes.")
 add("mojo", "gld-yaml", ["yaml"], "https://github.com/leo-gan/gld-yaml",
     "gld-yaml: YAML value encode/decode.")
 

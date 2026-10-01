@@ -285,7 +285,7 @@ struct MsgpackSer:
     var version: String
 
     def __init__(out self):
-        self.version = "0.3.0"
+        self.version = "0.4.0"
 
     def name(self) -> String:
         return "mojo-msgpack"
