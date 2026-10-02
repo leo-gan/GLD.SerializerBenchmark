@@ -5,9 +5,9 @@ module serializer-benchmark-go
 //   go get -u=patch ./... && go get <module>@latest && go mod tidy
 // Avoid jumping to a new major import path (e.g. mongo-driver/v2) without a harness review.
 
-go 1.24.0
+go 1.27.0
 
-toolchain go1.24.13
+toolchain go1.27.1
 
 require (
 	github.com/bytedance/sonic v1.15.4
@@ -16,7 +16,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/hamba/avro/v2 v2.31.0
 	github.com/json-iterator/go v1.1.12
-	github.com/kelindar/binary v1.0.19 // v1.0.20 needs Go 1.25; suite toolchain is 1.24.13
+	github.com/kelindar/binary v1.0.19 // stay on this pin; v1.0.20 is a separate bump
 	github.com/klauspost/compress v1.18.2
 	github.com/linkedin/goavro/v2 v2.15.0
 	github.com/pelletier/go-toml/v2 v2.4.3

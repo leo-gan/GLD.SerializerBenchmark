@@ -2,9 +2,13 @@ from std.collections import List, Optional, Span
 
 from yaml_runtime.error import DecodeError
 from yaml_runtime.options import DecodeOptions
-from yaml_wire.indent import IndentStack
 from yaml_wire.number import hex_val, is_digit
-from yaml_wire.scalar import is_doc_mark_at, parse_double_quoted, parse_single_quoted
+from yaml_wire.scalar import (
+    is_doc_mark_at,
+    parse_double_quoted,
+    parse_single_quoted,
+    string_from_plain_scalar,
+)
 from yaml_wire.simdscan import scan_comment_or_break, scan_plain_stop
 from yaml_wire.utf8 import string_from_utf8
 
@@ -55,7 +59,6 @@ struct WireReader[origin: ImmOrigin](Movable):
     var pos: Int
     var depth: Int
     var options: DecodeOptions
-    var indents: IndentStack
     var line_start: Int
     var at_line_start: Bool
     var last_tag: Int
@@ -81,7 +84,6 @@ struct WireReader[origin: ImmOrigin](Movable):
         self.pos = 0
         self.depth = depth
         self.options = options
-        self.indents = IndentStack()
         self.line_start = 0
         self.at_line_start = True
         self.last_tag = TAG_NONE
@@ -109,6 +111,7 @@ struct WireReader[origin: ImmOrigin](Movable):
     def _at_end(self) -> Bool:
         return self.pos >= len(self.data)
 
+    @always_inline
     def _cur(self) -> Int:
         if self.pos >= len(self.data):
             return -1
@@ -211,10 +214,14 @@ struct WireReader[origin: ImmOrigin](Movable):
         else:
             self.pos = len(self.data)
 
+    @always_inline
     def line_indent(self) -> Int:
         var i = self.line_start
+        var nlen = len(self.data)
+        if i >= nlen or Int(self.data[i]) != 32:
+            return 0
         var n = 0
-        while i < len(self.data):
+        while i < nlen:
             var c = Int(self.data[i])
             if c == 32:
                 n += 1
@@ -253,11 +260,15 @@ struct WireReader[origin: ImmOrigin](Movable):
         return d == 10 or d == 13 or d == 32 or d == 9 or d == 35
 
     def consume_props(mut self) raises DecodeError:
-        self.last_tag = TAG_NONE
-        self.last_anchor = String()
         var c0 = self._cur()
         if c0 != 38 and c0 != 33:
+            self.last_tag = TAG_NONE
+            if self.last_anchor.byte_length() != 0:
+                self.last_anchor = String()
             return
+        self.last_tag = TAG_NONE
+        if self.last_anchor.byte_length() != 0:
+            self.last_anchor = String()
         var i = 0
         var saw_anchor = False
         while i < 2:
@@ -454,8 +465,45 @@ struct WireReader[origin: ImmOrigin](Movable):
         self.pos = saved
         self.at_line_start = False
 
+    @always_inline
     def begin_map(mut self) raises DecodeError -> MapState:
         self._enter()
+        if (
+            self.flow_depth == 0
+            and len(self.anchor_names) == 0
+            and self.at_line_start
+            and self.pos < len(self.data)
+        ):
+            var c = Int(self.data[self.pos])
+            if (
+                c != 123
+                and c != 38
+                and c != 33
+                and c != 42
+                and c != 32
+                and c != 9
+                and c != 10
+                and c != 13
+                and c != 35
+            ):
+                var doc = False
+                if c == 45 or c == 46:
+                    doc = self._is_doc_mark()
+                if not doc:
+                    var col = 0
+                    var k = self.line_start
+                    var ok = k <= self.pos
+                    while ok and k < self.pos:
+                        if Int(self.data[k]) != 32:
+                            ok = False
+                            break
+                        col += 1
+                        k += 1
+                    if ok and k == self.pos:
+                        self.last_tag = TAG_NONE
+                        if self.last_anchor.byte_length() != 0:
+                            self.last_anchor = String()
+                        return MapState(CTX_BLOCK, col)
         self.skip_separation()
         var saved = self.take_alias()
         if saved:
@@ -478,8 +526,114 @@ struct WireReader[origin: ImmOrigin](Movable):
             ind = self.pos - self.line_start
         return MapState(CTX_BLOCK, ind)
 
+    @always_inline
+    def _fast_next_block_key(mut self, mut state: MapState) -> Int:
+        """1 = key, -1 = no more keys, 0 = use the general scanner.
+
+        Handles a block map whose next key is plain content at `state.indent`
+        after a single break, or that is already positioned on that content.
+        """
+        if state.ctx != CTX_BLOCK or self.flow_depth != 0:
+            return 0
+        var n = len(self.data)
+        var i = self.pos
+        if self.at_line_start:
+            if i < self.line_start or i > n:
+                return 0
+            var k = self.line_start
+            while k < i:
+                if Int(self.data[k]) != 32:
+                    return 0
+                k += 1
+            var col = 0
+            var j = self.line_start
+            while j < n and Int(self.data[j]) == 32:
+                col += 1
+                j += 1
+            if j != i:
+                return 0
+            if j >= n:
+                self.pos = j
+                return -1
+            if Int(self.data[j]) == 9 or Int(self.data[j]) == 35:
+                return 0
+            return self._commit_fast_key(state, col, j, self.line_start)
+        while i < n:
+            var c = Int(self.data[i])
+            if c == 32 or c == 9:
+                i += 1
+                continue
+            break
+        if i >= n:
+            self.pos = i
+            return -1
+        var c = Int(self.data[i])
+        if c != 10 and c != 13:
+            return 0
+        if c == 13:
+            i += 1
+            if i < n and Int(self.data[i]) == 10:
+                i += 1
+        else:
+            i += 1
+        var line = i
+        var col = 0
+        while i < n and Int(self.data[i]) == 32:
+            col += 1
+            i += 1
+        if i >= n:
+            self.pos = i
+            self.line_start = line
+            self.at_line_start = True
+            return -1
+        var c2 = Int(self.data[i])
+        if c2 == 9 or c2 == 35 or c2 == 10 or c2 == 13:
+            return 0
+        return self._commit_fast_key(state, col, i, line)
+
+    @always_inline
+    def _commit_fast_key(
+        mut self, mut state: MapState, col: Int, j: Int, line: Int
+    ) -> Int:
+        var n = len(self.data)
+        var c = Int(self.data[j])
+        if col == 0 and (c == 45 or c == 46) and j + 2 < n:
+            var b = Int(self.data[j + 1])
+            var c3 = Int(self.data[j + 2])
+            if (c == 45 and b == 45 and c3 == 45) or (c == 46 and b == 46 and c3 == 46):
+                var end_ok = j + 3 >= n
+                if not end_ok:
+                    var d = Int(self.data[j + 3])
+                    end_ok = d == 10 or d == 13 or d == 32 or d == 9 or d == 35
+                if end_ok:
+                    self.line_start = line
+                    self.pos = j
+                    self.at_line_start = True
+                    return -1
+        if c == 63:
+            var nq = -1
+            if j + 1 < n:
+                nq = Int(self.data[j + 1])
+            if nq < 0 or nq == 32 or nq == 9 or nq == 10 or nq == 13:
+                return 0
+        if col > state.indent:
+            return 0
+        self.line_start = line
+        self.pos = j
+        self.at_line_start = True
+        if col < state.indent:
+            return -1
+        state.seen += 1
+        return 1
+
+    @always_inline
     def next_key(mut self, mut state: MapState) raises DecodeError -> Bool:
         state.explicit = 0
+        var fast = self._fast_next_block_key(state)
+        if fast == 1:
+            return True
+        if fast == -1:
+            return False
         if state.ctx == CTX_BLOCK and not self.at_line_start and not self._at_end():
             self._skip_inline_ws()
             var c = self._cur()
@@ -567,10 +721,24 @@ struct WireReader[origin: ImmOrigin](Movable):
         state.seen += 1
         return True
 
+    @always_inline
     def try_key[o: ImmOrigin](mut self, lit: Span[Byte, o]) -> Bool:
         var start = self.pos
         if self.at_line_start:
-            start = self.line_start + self.line_indent()
+            if self.pos == self.line_start:
+                start = self.pos
+            else:
+                var p = self.line_start
+                var spaces = p <= self.pos
+                while spaces and p < self.pos:
+                    if Int(self.data[p]) != 32:
+                        spaces = False
+                        break
+                    p += 1
+                if spaces and p == self.pos:
+                    start = self.pos
+                else:
+                    start = self.line_start + self.line_indent()
         if start + len(lit) + 1 <= len(self.data):
             var i = 0
             var ok = True
@@ -774,7 +942,18 @@ struct WireReader[origin: ImmOrigin](Movable):
         if not _is_null_word(s):
             raise DecodeError(DecodeError.KIND_TYPE, self.position())
 
+    @always_inline
     def read_bool(mut self) raises DecodeError -> Bool:
+        if len(self.anchor_names) == 0:
+            var c0 = self._cur()
+            if c0 == 116 and self._match("true"):
+                self.at_line_start = False
+                self.last_tag = TAG_NONE
+                return True
+            if c0 == 102 and self._match("false"):
+                self.at_line_start = False
+                self.last_tag = TAG_NONE
+                return False
         var saved = self.take_alias()
         if self.at_line_start:
             self.skip_separation()
@@ -799,7 +978,39 @@ struct WireReader[origin: ImmOrigin](Movable):
             return False
         raise DecodeError(DecodeError.KIND_TYPE, self.position())
 
+    @always_inline
     def read_int(mut self) raises DecodeError -> Int64:
+        if len(self.anchor_names) == 0:
+            var c0 = self._cur()
+            if (
+                c0 != 34
+                and c0 != 39
+                and c0 != 124
+                and c0 != 62
+                and c0 != 33
+                and c0 != 38
+                and c0 != 42
+            ):
+                var neg = False
+                var digit_c = c0
+                if c0 == 45 or c0 == 43:
+                    neg = c0 == 45
+                    if self.pos + 1 < len(self.data):
+                        digit_c = Int(self.data[self.pos + 1])
+                    else:
+                        digit_c = -1
+                if is_digit(digit_c):
+                    if c0 == 45 or c0 == 43:
+                        self.pos += 1
+                    var acc = Int64(0)
+                    while is_digit(self._cur()):
+                        acc = acc * Int64(10) + Int64(self._cur() - 48)
+                        self.pos += 1
+                    self.at_line_start = False
+                    self.last_tag = TAG_NONE
+                    if neg:
+                        return -acc
+                    return acc
         var saved = self.take_alias()
         if self.at_line_start:
             self.skip_separation()
@@ -839,7 +1050,22 @@ struct WireReader[origin: ImmOrigin](Movable):
     def read_float(mut self) raises DecodeError -> Float64:
         return self.read_as_f64()
 
+    @always_inline
     def read_as_f64(mut self) raises DecodeError -> Float64:
+        if len(self.anchor_names) == 0:
+            var c0 = self._cur()
+            if (
+                is_digit(c0) or c0 == 45 or c0 == 43 or c0 == 46
+            ) and c0 != 33:
+                var lo = 0
+                var hi = 0
+                if self._try_take_plain_slice(lo, hi):
+                    self.last_tag = TAG_NONE
+                    var sp = self.data[lo:hi]
+                    try:
+                        return _parse_core_float_span(sp, lo)
+                    except _:
+                        return Float64(_parse_core_int_span(sp, lo))
         var saved = self.take_alias()
         if self.at_line_start:
             self.skip_separation()
@@ -866,7 +1092,30 @@ struct WireReader[origin: ImmOrigin](Movable):
         except _:
             raise DecodeError(DecodeError.KIND_TYPE, self.position())
 
+    @always_inline
     def read_string(mut self) raises DecodeError -> String:
+        if len(self.anchor_names) == 0:
+            var c0 = self._cur()
+            if (
+                c0 > 32
+                and c0 != 35
+                and c0 != 34
+                and c0 != 39
+                and c0 != 124
+                and c0 != 62
+                and c0 != 33
+                and c0 != 38
+                and c0 != 42
+                and c0 != 91
+                and c0 != 123
+            ):
+                var lo = 0
+                var hi = 0
+                if self._try_take_plain_slice(lo, hi):
+                    self.last_tag = TAG_NONE
+                    if hi == lo:
+                        return String()
+                    return string_from_plain_scalar(self.data[lo:hi], lo)
         var saved = self.take_alias()
         var s = self._read_plain_or_quoted()
         if saved:
@@ -965,6 +1214,19 @@ struct WireReader[origin: ImmOrigin](Movable):
         return ok
 
     def skip_document_start(mut self) raises DecodeError:
+        if self.at_line_start and self.pos < len(self.data):
+            var c = Int(self.data[self.pos])
+            if (
+                c != 37
+                and c != 45
+                and c != 46
+                and c != 32
+                and c != 9
+                and c != 10
+                and c != 13
+                and c != 35
+            ):
+                return
         self.skip_separation()
         while self.pos < len(self.data) and self.at_line_start and self.line_indent() == 0:
             if self._cur() == 37:
@@ -1197,7 +1459,8 @@ struct WireReader[origin: ImmOrigin](Movable):
         self._skip_to_break()
         self._eat_break()
 
-    def _match(mut self, lit: String) -> Bool:
+    @always_inline
+    def _match(mut self, lit: StaticString) -> Bool:
         var b = lit.as_bytes()
         if self.pos + len(b) > len(self.data):
             return False
@@ -1440,7 +1703,124 @@ struct WireReader[origin: ImmOrigin](Movable):
             return True
         return False
 
+    @always_inline
+    def _try_take_plain_slice(mut self, mut lo: Int, mut hi: Int) raises DecodeError -> Bool:
+        """Plain scalar that does not fold across lines.
+
+        On success, `lo:hi` is the scalar text in `data` and the cursor matches
+        `_read_plain`. On failure the cursor is unchanged.
+        """
+        var saved_pos = self.pos
+        var saved_ls = self.line_start
+        var saved_als = self.at_line_start
+        var start = self.pos
+        var n = len(self.data)
+        if start >= n:
+            lo = start
+            hi = start
+            return True
+        if self.flow_depth > 0 and Int(self.data[start]) == 45:
+            var nxt = -1
+            if start + 1 < n:
+                nxt = Int(self.data[start + 1])
+            if (
+                nxt < 0
+                or nxt == 44
+                or nxt == 93
+                or nxt == 125
+                or nxt == 32
+                or nxt == 9
+                or nxt == 10
+                or nxt == 13
+                or nxt == 35
+            ):
+                return False
+        var min_indent = self.line_indent()
+        if self.at_line_start:
+            min_indent -= 1
+        var line_end = scan_plain_stop(self.data, start)
+        if line_end < n and Int(self.data[line_end]) == 35:
+            if line_end > start and Int(self.data[line_end - 1]) == 32:
+                pass
+            else:
+                line_end = scan_plain_stop(self.data, line_end + 1)
+        if self.flow_depth > 0:
+            var t = start
+            while t < line_end:
+                var fc = Int(self.data[t])
+                if fc == 44 or fc == 93 or fc == 125:
+                    line_end = t
+                    break
+                t += 1
+        var end = line_end
+        while end > start:
+            var ch = Int(self.data[end - 1])
+            if ch == 32 or ch == 9:
+                end -= 1
+                continue
+            break
+        var k = start
+        var stop_colon = False
+        while k < end:
+            var ch = Int(self.data[k])
+            if ch == 58:
+                var nxt = -1
+                if k + 1 < n:
+                    nxt = Int(self.data[k + 1])
+                if nxt < 0 or nxt == 32 or nxt == 9 or nxt == 10 or nxt == 13 or nxt == 35:
+                    stop_colon = True
+                    break
+                if self.flow_depth > 0 and (
+                    nxt == 44 or nxt == 93 or nxt == 125 or nxt == 34 or nxt == 39
+                ):
+                    stop_colon = True
+                    break
+            k += 1
+        if stop_colon:
+            self.pos = k
+            self.at_line_start = False
+            lo = start
+            hi = k
+            return True
+        lo = start
+        hi = end
+        self.pos = line_end
+        if self.pos < n and (Int(self.data[self.pos]) == 10 or Int(self.data[self.pos]) == 13):
+            self._eat_break()
+            if (
+                self.flow_depth == 0
+                and self.pos == self.line_start
+                and self.pos < n
+            ):
+                var c0 = Int(self.data[self.pos])
+                if c0 > 32 and c0 != 35:
+                    var stop = False
+                    if c0 == 45 or c0 == 46:
+                        stop = self._is_doc_mark()
+                    if not stop and 0 <= min_indent:
+                        stop = True
+                    if stop:
+                        return True
+            if not self._continue_plain():
+                return True
+            if self._at_end() or self._is_doc_mark():
+                return True
+            var col = self.line_indent()
+            if col <= min_indent and self.flow_depth == 0:
+                return True
+            self.pos = saved_pos
+            self.line_start = saved_ls
+            self.at_line_start = saved_als
+            return False
+        return True
+
     def _read_plain(mut self) raises DecodeError -> String:
+        var lo = 0
+        var hi = 0
+        if self._try_take_plain_slice(lo, hi):
+            if hi == lo:
+                return String()
+            return string_from_plain_scalar(self.data[lo:hi], lo)
         var start = self.pos
         if self._at_end():
             return String()
@@ -1691,8 +2071,25 @@ def _is_false_word(s: String) -> Bool:
     return s == "false" or s == "False" or s == "FALSE"
 
 
+def _bytes_eq[origin: ImmOrigin](b: Span[Byte, origin], lit: StaticString) -> Bool:
+    var lb = lit.as_bytes()
+    if len(b) != len(lb):
+        return False
+    var i = 0
+    while i < len(lb):
+        if Int(b[i]) != Int(lb[i]):
+            return False
+        i += 1
+    return True
+
+
 def _parse_core_int(s: String, offset: Int) raises DecodeError -> Int64:
-    var b = s.as_bytes()
+    return _parse_core_int_span(s.as_bytes(), offset)
+
+
+def _parse_core_int_span[
+    origin: ImmOrigin
+](b: Span[Byte, origin], offset: Int) raises DecodeError -> Int64:
     var n = len(b)
     if n == 0:
         raise DecodeError(DecodeError.KIND_TYPE, offset)
@@ -1761,14 +2158,28 @@ def _parse_oct[origin: ImmOrigin](b: Span[Byte, origin], start: Int, neg: Bool, 
 
 
 def _parse_core_float(s: String, offset: Int) raises DecodeError -> Float64:
-    if s == ".nan" or s == ".NaN" or s == ".NAN":
-        return Float64(from_bits=UInt64(0x7FF8000000000000))
-    if s == ".inf" or s == ".Inf" or s == ".INF" or s == "+.inf" or s == "+.Inf" or s == "+.INF":
-        return Float64(from_bits=UInt64(0x7FF0000000000000))
-    if s == "-.inf" or s == "-.Inf" or s == "-.INF":
-        return Float64(from_bits=UInt64(0xFFF0000000000000))
-    var b = s.as_bytes()
+    return _parse_core_float_span(s.as_bytes(), offset)
+
+
+@always_inline
+def _parse_core_float_span[
+    origin: ImmOrigin
+](b: Span[Byte, origin], offset: Int) raises DecodeError -> Float64:
     var n = len(b)
+    if n == 4 or n == 5:
+        if _bytes_eq(b, ".nan") or _bytes_eq(b, ".NaN") or _bytes_eq(b, ".NAN"):
+            return Float64(from_bits=UInt64(0x7FF8000000000000))
+        if (
+            _bytes_eq(b, ".inf")
+            or _bytes_eq(b, ".Inf")
+            or _bytes_eq(b, ".INF")
+            or _bytes_eq(b, "+.inf")
+            or _bytes_eq(b, "+.Inf")
+            or _bytes_eq(b, "+.INF")
+        ):
+            return Float64(from_bits=UInt64(0x7FF0000000000000))
+        if _bytes_eq(b, "-.inf") or _bytes_eq(b, "-.Inf") or _bytes_eq(b, "-.INF"):
+            return Float64(from_bits=UInt64(0xFFF0000000000000))
     var i = 0
     if n == 0:
         raise DecodeError(DecodeError.KIND_TYPE, offset)
@@ -1793,11 +2204,16 @@ def _parse_core_float(s: String, offset: Int) raises DecodeError -> Float64:
         i += 1
     if not saw_digit or (not saw_dot and not saw_exp):
         raise DecodeError(DecodeError.KIND_TYPE, offset)
-    return _parse_decimal_float(s, offset)
+    return _parse_decimal_float_span(b, offset)
 
 
 def _parse_decimal_float(s: String, offset: Int) raises DecodeError -> Float64:
-    var b = s.as_bytes()
+    return _parse_decimal_float_span(s.as_bytes(), offset)
+
+
+def _parse_decimal_float_span[
+    origin: ImmOrigin
+](b: Span[Byte, origin], offset: Int) raises DecodeError -> Float64:
     var i = 0
     var sign = 1.0
     if len(b) == 0:

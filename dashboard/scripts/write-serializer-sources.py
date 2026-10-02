@@ -109,6 +109,7 @@ URL_OVERRIDE: dict[tuple[str, str], str] = {
     ("javascript", "bser"): "https://github.com/facebook/watchman",
     # Go
     ("go", "encoding/json"): "https://github.com/golang/go/tree/master/src/encoding/json",
+    ("go", "encoding/json/v2"): "https://github.com/golang/go/tree/master/src/encoding/json/v2",
     ("go", "protobuf"): "https://github.com/protocolbuffers/protobuf-go",
     ("go", "mongo-bson"): "https://github.com/mongodb/mongo-go-driver",
     ("go", "encoding/gob"): "https://github.com/golang/go/tree/master/src/encoding/gob",
@@ -660,7 +661,16 @@ SPECIFICS: dict[str, str] = {
     "go-json": (
         "Go's `encoding/json` is the standard library JSON codec. It "
         "exists so every Go program can speak RFC 8259 with struct tags. "
-        "This row is the baseline other Go JSON libraries try to beat."
+        "This row is the baseline other Go JSON libraries try to beat. "
+        "On Go 1.27 the package keeps v1 semantics. The stricter defaults "
+        "are the separate `encoding/json/v2` row."
+    ),
+    "go-json-v2": (
+        "`encoding/json/v2` is the Go 1.27 standard library JSON API with "
+        "stricter defaults than `encoding/json`: invalid UTF-8 and duplicate "
+        "object names are errors, and `<`, `>`, and `&` are not HTML-escaped. "
+        "This row times `Marshal` / `Unmarshal` and `MarshalWrite` / "
+        "`UnmarshalRead`."
     ),
     "goccy-json": (
         "goccy/go-json was written as a faster drop-in for `encoding/json`. "
@@ -1418,14 +1428,21 @@ SPECIFICS: dict[str, str] = {
     ),
     "gld-flatbuffers": (
         "gld-flatbuffers (leo-gan) is a FlatBuffers implementation for "
-        "Mojo. FlatBuffers exists so a reader can use fields without "
-        "unpacking the buffer. This row times a reused Builder and "
-        "generated pack/unpack on the suite tables."
+        "Mojo. FlatBuffers exists so a reader can take fields from the "
+        "buffer without first copying the whole message into a new "
+        "object. This row keeps one `Builder`, calls `clear` before each "
+        "message, and times generated `pack` / `unpack` against the suite "
+        "tables in `cpp/schemas/benchmark.fbs`."
     ),
     "mojo-toml": (
         "DataBooth/mojo-toml is a TOML library for Mojo. TOML exists as "
-        "an obvious config language. This is the published Mojo TOML "
-        "implementation (`gld-toml` is not out yet)."
+        "an obvious config language. This row times that library. "
+        "leo-gan/gld-toml is a different library and is the gld-toml row."
+    ),
+    "gld-toml": (
+        "gld-toml (leo-gan) is a from-scratch TOML 1.1 library for Mojo. "
+        "It is not DataBooth/mojo-toml. The benchmark vendors it as gldtoml "
+        "so its package name does not collide with DataBooth's toml package."
     ),
     "gld-yaml": (
         "gld-yaml (leo-gan) implements YAML encode/decode for Mojo. YAML "
@@ -1441,8 +1458,19 @@ SPECIFICS: dict[str, str] = {
         "gld-bson (leo-gan) is a from-scratch BSON codec for Mojo. BSON "
         "exists so MongoDB can store JSON-like documents in a binary, "
         "traversable layout. This row times WireWriter / WireReader on "
-        "suite types. Package 0.1.0 is the latest release that builds "
-        "on Mojo 1.1."
+        "suite types."
+    ),
+    "gld-ion": (
+        "gld-ion (leo-gan) is a from-scratch Amazon Ion codec for Mojo. "
+        "Ion exists as a typed superset of JSON with text and binary "
+        "encodings. This row times Ion 1.0 binary encode and decode of "
+        "a document built from the suite value."
+    ),
+    "gld-smile": (
+        "gld-smile (leo-gan) is a from-scratch Smile codec for Mojo. "
+        "Smile exists as a compact binary form of JSON. This row times "
+        "`encode_doc` and `decode_bytes` on a document built from the "
+        "suite value."
     ),
 }
 
@@ -1522,6 +1550,7 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("javascript", "sia"): "sia",
     ("javascript", "bser"): "bser",
     ("go", "encoding/json"): "go-json",
+    ("go", "encoding/json/v2"): "go-json-v2",
     ("go", "goccy/go-json"): "goccy-json",
     ("go", "jsoniter"): "jsoniter-go",
     ("go", "segmentio/encoding/json"): "segmentio-json",
@@ -1738,9 +1767,12 @@ SPEC_KEY: dict[tuple[str, str], str] = {
     ("mojo", "mojo-flatbuffers"): "gld-flatbuffers",
     ("mojo", "mojo-avro"): "gld-avro",
     ("mojo", "mojo-toml"): "mojo-toml",
+    ("mojo", "gld-toml"): "gld-toml",
     ("mojo", "gld-yaml"): "gld-yaml",
     ("mojo", "mojo-msgpack"): "gld-msgpack",
     ("mojo", "mojo-bson"): "gld-bson",
+    ("mojo", "mojo-ion"): "gld-ion",
+    ("mojo", "mojo-smile"): "gld-smile",
 }
 
 # Extra sentence for a specific row (path / format variant).

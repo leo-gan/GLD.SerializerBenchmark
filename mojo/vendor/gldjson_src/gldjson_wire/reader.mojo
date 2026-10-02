@@ -3,9 +3,9 @@ from std.collections import Span
 from gldjson_runtime.error import DecodeError
 from gldjson_runtime.options import DecodeOptions
 from gldjson_wire.classify import MAX_COUNT, MAX_DEPTH
-from gldjson_wire.number import NumberTok, parse_int, parse_number
+from gldjson_wire.number import NumberTok, parse_int, parse_number, try_parse_small_int
 from gldjson_wire.simdscan import skip_ws_span
-from gldjson_wire.string import parse_string
+from gldjson_wire.string import parse_string, try_parse_plain_string
 
 
 struct WireReader[origin: ImmOrigin](Movable):
@@ -146,7 +146,11 @@ struct WireReader[origin: ImmOrigin](Movable):
         self.skip_ws()
         return parse_string(self.data, self.pos)
 
+    @always_inline
     def read_string_here(mut self) raises DecodeError -> String:
+        var plain = String()
+        if try_parse_plain_string(self.data, self.pos, plain):
+            return plain^
         return parse_string(self.data, self.pos)
 
     def read_number(mut self) raises DecodeError -> NumberTok:
@@ -156,7 +160,11 @@ struct WireReader[origin: ImmOrigin](Movable):
     def read_number_here(mut self) raises DecodeError -> NumberTok:
         return parse_number(self.data, self.pos)
 
+    @always_inline
     def read_int_here(mut self) raises DecodeError -> Int64:
+        var small = Int64(0)
+        if try_parse_small_int(self.data, self.pos, small):
+            return small
         return parse_int(self.data, self.pos)
 
     def skip_value(mut self) raises DecodeError:

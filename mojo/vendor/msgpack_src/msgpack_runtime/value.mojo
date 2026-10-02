@@ -103,11 +103,13 @@ struct MsgpackValue(Movable):
             raise DecodeError(DecodeError.KIND_TYPE, 0)
         var start = Int(self.nodes[self.root].a)
         var n = Int(self.nodes[self.root].b)
-        var out = List[Byte](capacity=n)
-        var i = 0
-        while i < n:
-            out.append(self.bytes[start + i])
-            i += 1
+        var out = List[Byte](unsafe_uninit_length=n)
+        if n > 0:
+            unsafe_memcpy(
+                dest=out.unsafe_ptr(),
+                src=self.bytes.unsafe_ptr().unsafe_offset(start),
+                count=n,
+            )
         return out^
 
     def as_ext(self) raises DecodeError -> MsgpackExt:
@@ -191,11 +193,13 @@ def _view(src: MsgpackValue, root: Int) -> MsgpackValue:
     out.kids = src.kids.copy()
     out.texts = src.texts.copy()
     var nb = len(src.bytes)
-    out.bytes = List[Byte](capacity=nb)
-    var i = 0
-    while i < nb:
-        out.bytes.append(src.bytes[i])
-        i += 1
+    out.bytes = List[Byte](unsafe_uninit_length=nb)
+    if nb > 0:
+        unsafe_memcpy(
+            dest=out.bytes.unsafe_ptr(),
+            src=src.bytes.unsafe_ptr(),
+            count=nb,
+        )
     var ne = len(src.exts)
     var j = 0
     while j < ne:
@@ -255,9 +259,18 @@ def decode_item[
         v.texts.append(s^)
         idx = v.add(MsgpackNode(CK_STR, a=Int64(ti)))
     elif r.peek_is_bin():
-        var raw = r.read_bin()
-        var start = _append_bytes(v, raw)
-        idx = v.add(MsgpackNode(CK_BIN, a=Int64(start), b=UInt64(len(raw))))
+        var nb = r._bin_len()
+        r.check_len(nb)
+        var start = len(v.bytes)
+        if nb > 0:
+            v.bytes.resize(unsafe_uninit_length=start + nb)
+            unsafe_memcpy(
+                dest=v.bytes.unsafe_ptr().unsafe_offset(start),
+                src=r.data.unsafe_ptr().unsafe_offset(r.pos),
+                count=nb,
+            )
+            r.pos += nb
+        idx = v.add(MsgpackNode(CK_BIN, a=Int64(start), b=UInt64(nb)))
     elif r.peek_is_ext():
         var saved = r.pos
         var ext = r.read_ext()
@@ -273,29 +286,23 @@ def decode_item[
             idx = v.add(MsgpackNode(CK_EXT, a=Int64(ei)))
     elif (b >= 0x90 and b <= 0x9F) or b == 0xDC or b == 0xDD:
         var n = r.read_array_header()
-        var ids = List[Int]()
+        var kstart = len(v.kids)
+        if n > 0:
+            v.kids.resize(unsafe_uninit_length=kstart + n)
         var i = 0
         while i < n:
-            ids.append(decode_item(r, v))
-            i += 1
-        var kstart = len(v.kids)
-        i = 0
-        while i < len(ids):
-            v.kids.append(ids[i])
+            v.kids[kstart + i] = decode_item(r, v)
             i += 1
         idx = v.add(MsgpackNode(CK_ARRAY, a=Int64(kstart), b=UInt64(n)))
     elif (b >= 0x80 and b <= 0x8F) or b == 0xDE or b == 0xDF:
         var pn = r.read_map_header()
-        var ids = List[Int]()
-        var j = 0
-        while j < pn:
-            ids.append(decode_item(r, v))
-            ids.append(decode_item(r, v))
-            j += 1
         var mstart = len(v.kids)
-        j = 0
-        while j < len(ids):
-            v.kids.append(ids[j])
+        var slots = pn * 2
+        if slots > 0:
+            v.kids.resize(unsafe_uninit_length=mstart + slots)
+        var j = 0
+        while j < slots:
+            v.kids[mstart + j] = decode_item(r, v)
             j += 1
         idx = v.add(MsgpackNode(CK_MAP, a=Int64(mstart), b=UInt64(pn)))
     else:
@@ -338,12 +345,15 @@ def encode_item(v: MsgpackValue, idx: Int, mut w: WireWriter) raises DecodeError
     elif n.kind == CK_BIN:
         var start = Int(n.a)
         var nb = Int(n.b)
-        var tmp = List[Byte](capacity=nb)
-        var i = 0
-        while i < nb:
-            tmp.append(v.bytes[start + i])
-            i += 1
-        w.write_bin(tmp)
+        w.write_bin_header(nb)
+        if nb > 0:
+            w.ensure(nb)
+            unsafe_memcpy(
+                dest=w.buf.unsafe_ptr().unsafe_offset(w.pos),
+                src=v.bytes.unsafe_ptr().unsafe_offset(start),
+                count=nb,
+            )
+            w.pos += nb
     elif n.kind == CK_ARRAY:
         var count = Int(n.b)
         w.write_array_header(count)

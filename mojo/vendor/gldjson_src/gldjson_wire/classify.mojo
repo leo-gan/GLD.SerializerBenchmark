@@ -7,6 +7,7 @@ def is_ws(c: Int) -> Bool:
     return c == 32 or c == 9 or c == 10 or c == 13
 
 
+@always_inline
 def is_digit(c: Int) -> Bool:
     return c >= 48 and c <= 57
 

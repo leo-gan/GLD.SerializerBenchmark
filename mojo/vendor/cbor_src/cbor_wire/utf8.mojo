@@ -6,11 +6,18 @@ from cbor_runtime.error import DecodeError
 def string_from_utf8[
     origin: ImmOrigin
 ](span: Span[Byte, origin], offset: Int, field: Int = 0) raises DecodeError -> String:
-    """Wrap `String(from_utf8=)` and remap the default Error to DecodeError."""
-    try:
-        return String(from_utf8=span)
-    except _:
-        raise DecodeError(DecodeError.KIND_UTF8, offset, field)
+    """Wrap `String(from_utf8=)` and remap the default Error to DecodeError.
+
+    Bytes below 128 are valid UTF-8, so they skip the full validator.
+    """
+    var n = len(span)
+    for i in range(n):
+        if Int(span[i]) >= 0x80:
+            try:
+                return String(from_utf8=span)
+            except _:
+                raise DecodeError(DecodeError.KIND_UTF8, offset, field)
+    return String(unsafe_from_utf8=span)
 
 
 def span_from_utf8[

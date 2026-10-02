@@ -111,16 +111,41 @@ def read_head[
     pos += 1
     var major = b >> 5
     var ai = b & 0x1F
-    if ai >= 28 and ai <= 30:
-        raise DecodeError(DecodeError.KIND_RESERVED_AI, at)
-    if ai == AI_INDEF:
-        return (major, UInt64(0), ai)
+    # One-byte heads are the common case (small ints, short text, lengths < 24).
     if ai < 24:
         return (major, UInt64(ai), ai)
-    var n = extra_len(ai)
-    if n == 0:
+    if ai == 24:
+        if pos >= len(data):
+            raise DecodeError(DecodeError.KIND_EOF, pos)
+        var arg8 = UInt64(data[pos])
+        pos += 1
+        if major == 7 and arg8 < UInt64(32):
+            raise DecodeError(DecodeError.KIND_SIMPLE, at)
+        return (major, arg8, ai)
+    if ai == AI_INDEF:
+        return (major, UInt64(0), ai)
+    if ai > 27:
         raise DecodeError(DecodeError.KIND_RESERVED_AI, at)
-    var arg = read_be(data, pos, n)
-    if major == 7 and ai == 24 and arg < UInt64(32):
-        raise DecodeError(DecodeError.KIND_SIMPLE, at)
+    var n = 2
+    if ai == 26:
+        n = 4
+    elif ai == 27:
+        n = 8
+    if pos + n > len(data):
+        raise DecodeError(DecodeError.KIND_EOF, pos)
+    var arg: UInt64
+    if n == 2:
+        arg = (UInt64(data[pos]) << UInt64(8)) | UInt64(data[pos + 1])
+    elif n == 4:
+        arg = (
+            (UInt64(data[pos]) << UInt64(24))
+            | (UInt64(data[pos + 1]) << UInt64(16))
+            | (UInt64(data[pos + 2]) << UInt64(8))
+            | UInt64(data[pos + 3])
+        )
+    else:
+        arg = 0
+        for i in range(8):
+            arg = (arg << UInt64(8)) | UInt64(data[pos + i])
+    pos += n
     return (major, arg, ai)

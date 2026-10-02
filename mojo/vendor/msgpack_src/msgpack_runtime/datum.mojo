@@ -41,11 +41,10 @@ def encode_into[
     `dest` is grown to at least 512 bytes and is not shrunk. Callers must
     use the returned count as the live prefix.
     """
-    var need = value.encoded_len(options) + 16
-    if need < 512:
-        need = 512
-    if len(dest) < need:
-        dest.resize(unsafe_uninit_length=need)
+    # `encode_to` sizes the live prefix. Keep a reusable floor so the hot
+    # loop does not walk `encoded_len` twice.
+    if len(dest) < 512:
+        dest.resize(unsafe_uninit_length=512)
     var w = WireWriter(dest^, pos=0)
     value.encode_to(w, options)
     var n = w.pos

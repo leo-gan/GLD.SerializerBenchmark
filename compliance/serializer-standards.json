@@ -205,6 +205,9 @@
       "encoding/json": [
         "json"
       ],
+      "encoding/json/v2": [
+        "json"
+      ],
       "goccy/go-json": [
         "json"
       ],
@@ -766,11 +769,20 @@
       "mojo-toml": [
         "toml"
       ],
+      "gld-toml": [
+        "toml"
+      ],
       "mojo-msgpack": [
         "msgpack"
       ],
       "mojo-bson": [
         "bson"
+      ],
+      "mojo-ion": [
+        "ion"
+      ],
+      "mojo-smile": [
+        "smile"
       ],
       "gld-yaml": [
         "yaml"

@@ -55,7 +55,7 @@ install_go() {
     echo "     (module may download a newer toolchain via GOTOOLCHAIN=auto)"
     return
   fi
-  local go_ver=1.24.5
+  local go_ver=1.27.1
   local arch go_arch
   arch="$(uname -m)"
   case "$arch" in

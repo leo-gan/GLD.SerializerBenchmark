@@ -12,10 +12,13 @@ from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.flatbuffers_ser import FlatBuffersSer
 from bench.toml_ser import TomlSer
+from bench.gldtoml_ser import GldTomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
 from bench.bson_ser import BsonSer
+from bench.ion_ser import IonSer
+from bench.smile_ser import SmileSer
 
 
 def _contains(hay: String, needle: String) -> Bool:
@@ -190,10 +193,13 @@ def run() raises:
     var proto = ProtobufSer()
     var fb = FlatBuffersSer()
     var toml = TomlSer()
+    var gldtoml = GldTomlSer()
     var gldj = GldJsonSer()
     var yaml = YamlSer()
     var msgp = MsgpackSer()
     var bson = BsonSer()
+    var ion = IonSer()
+    var smile = SmileSer()
     var names = List[String]()
     names.append(ember.name())
     names.append(ehsan.name())
@@ -202,9 +208,12 @@ def run() raises:
     names.append(proto.name())
     names.append(fb.name())
     names.append(toml.name())
+    names.append(gldtoml.name())
     names.append(gldj.name())
     names.append(yaml.name())
     names.append(bson.name())
+    names.append(ion.name())
+    names.append(smile.name())
     names.append(msgp.name())
     if ser_filter.byte_length() > 0:
         var filtered = List[String]()
@@ -261,15 +270,17 @@ def run() raises:
                 elif nm == gldj.name():
                     _ = gldj.serialize_bytes(fx)
                 elif nm == yaml.name():
-                    # Nested items: YAML for N>1 still trips the indent decoder.
-                    if fx.n != 1:
-                        ri += 1
-                        continue
                     _ = yaml.serialize_bytes(fx)
                 elif nm == msgp.name():
                     _ = msgp.serialize_bytes(fx)
                 elif nm == bson.name():
                     _ = bson.serialize_bytes(fx)
+                elif nm == ion.name():
+                    _ = ion.serialize_bytes(fx)
+                elif nm == smile.name():
+                    _ = smile.serialize_bytes(fx)
+                elif nm == gldtoml.name():
+                    _ = gldtoml.serialize_bytes(fx)
                 else:
                     _ = toml.serialize_bytes(fx)
                 ready.append(nm)
@@ -417,6 +428,42 @@ def run() raises:
                             ser_ns = t1 - t0
                             deser_ns = t2 - t1
                             size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == ion.name():
+                            ver = ion.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = ion.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = ion.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == smile.name():
+                            ver = smile.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = smile.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = smile.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = len(buf)
+                            if not fidelity(fx, back):
+                                ok = 0.0
+                        elif nm == gldtoml.name():
+                            ver = gldtoml.version
+                            var t0 = Int(perf_counter_ns())
+                            var buf = gldtoml.serialize_bytes(fx)
+                            var t1 = Int(perf_counter_ns())
+                            var back = gldtoml.deserialize_bytes(fx, buf)
+                            var t2 = Int(perf_counter_ns())
+                            ser_ns = t1 - t0
+                            deser_ns = t2 - t1
+                            size = buf.byte_length()
                             if not fidelity(fx, back):
                                 ok = 0.0
                         else:

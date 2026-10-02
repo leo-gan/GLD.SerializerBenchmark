@@ -169,6 +169,8 @@ add("javascript", "bser", [], "https://facebook.github.io/watchman/docs/bser.htm
 # --- Go ---
 add("go", "encoding/json", ["json"], "https://pkg.go.dev/encoding/json",
     "Go stdlib encoding/json: RFC 7159 JSON.")
+add("go", "encoding/json/v2", ["json"], "https://pkg.go.dev/encoding/json/v2",
+    "Go 1.27 encoding/json/v2: stricter JSON defaults (invalid UTF-8 and duplicate names rejected).")
 add("go", "goccy/go-json", ["json"], "https://github.com/goccy/go-json",
     "goccy/go-json: fast encoding/json-compatible JSON library.")
 add("go", "jsoniter", ["json"], "https://github.com/json-iterator/go",
@@ -614,11 +616,17 @@ add("mojo", "mojo-flatbuffers", ["flatbuffers"], "https://github.com/leo-gan/gld
 add("mojo", "mojo-avro", ["avro"], "https://github.com/leo-gan/gld-avro",
     "gld-avro: Avro datum encode/decode.")
 add("mojo", "mojo-toml", ["toml"], "https://github.com/DataBooth/mojo-toml",
-    "DataBooth/mojo-toml: TOML.")
+    "DataBooth/mojo-toml: TOML. Not leo-gan/gld-toml.")
+add("mojo", "gld-toml", ["toml"], "https://github.com/leo-gan/gld-toml",
+    "gld-toml: TOML 1.1 TomlDoc encode/decode. Vendored as gldtoml so it does not collide with DataBooth's toml package.")
 add("mojo", "mojo-msgpack", ["msgpack"], "https://github.com/leo-gan/gld-messagepack",
     "gld-messagepack: MessagePack wire.")
 add("mojo", "mojo-bson", ["bson"], "https://github.com/leo-gan/gld-bson",
-    "gld-bson 0.1.0: BSON documents via decode_document (Mojo 1.1).")
+    "gld-bson: BSON documents via decode_document (Mojo 1.1).")
+add("mojo", "mojo-ion", ["ion"], "https://github.com/leo-gan/gld-ion",
+    "gld-ion 0.2.0: Amazon Ion text and binary decode.")
+add("mojo", "mojo-smile", ["smile"], "https://github.com/leo-gan/gld-smile",
+    "gld-smile 0.2.0: Smile decode_bytes.")
 add("mojo", "gld-yaml", ["yaml"], "https://github.com/leo-gan/gld-yaml",
     "gld-yaml: YAML value encode/decode.")
 

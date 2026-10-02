@@ -13,6 +13,7 @@ import {
   exportScatterPng,
   exportBarPng,
 } from './charts.js';
+import { paretoOptimalGroups } from './pareto.js';
 import {
   formatSig,
   formatIntGrouped,
@@ -27,6 +28,7 @@ import {
   chooseLatencyUnit,
   chooseOpsUnit,
   serializerLabelFromGroup,
+  serializerSelectLabel,
 } from './format.js';
 import {
   loadSerializerSources,
@@ -2226,10 +2228,13 @@ function filterAndRefresh() {
 }
 
 function setViewMetric(metric) {
-  state.displayMetric = metric;
-  document.getElementById('btn-ops-sec')?.classList.toggle('active', metric === 'ops');
-  document.getElementById('btn-time-ns')?.classList.toggle('active', metric === 'time');
+  state.displayMetric = metric === 'time' ? 'time' : 'ops';
+  document.getElementById('btn-ops-sec')?.classList.toggle('active', state.displayMetric === 'ops');
+  document.getElementById('btn-time-ns')?.classList.toggle('active', state.displayMetric === 'time');
   updateRankSortPrimaryLabel();
+  calculateParetoFrontier();
+  updateKPIs();
+  renderTable();
   saveSettings();
   updateCharts(state.filteredGroups, state.paretoSerializerNames, state.displayMetric);
 }
@@ -2383,28 +2388,11 @@ function formatRosterRelativeCell(row, key, higherIsBetter, scales, baselineGrou
   return formatRelativeCell(v, baseVal, higherIsBetter, scales, key, 'base');
 }
 
-function isParetoDominated(g, groups) {
-  const gOps = g.avg_ops_per_sec;
-  const gSize = g.median_size_bytes;
-  if (gOps == null || gSize == null) return true;
-  return groups.some((other) => {
-    if (other === g) return false;
-    const oOps = other.avg_ops_per_sec;
-    const oSize = other.median_size_bytes;
-    if (oOps == null || oSize == null) return false;
-    const betterOrEqualOps = oOps >= gOps;
-    const betterOrEqualSize = oSize <= gSize;
-    const strictlyBetter = oOps > gOps || oSize < gSize;
-    return betterOrEqualOps && betterOrEqualSize && strictlyBetter;
-  });
-}
-
-function paretoOptimalGroups(groups) {
-  return groups.filter((g) => !isParetoDominated(g, groups));
-}
-
 function calculateParetoFrontier() {
-  state.paretoSerializerNames = paretoOptimalGroups(state.filteredGroups).map((g) => g.serializer);
+  state.paretoSerializerNames = paretoOptimalGroups(
+    state.filteredGroups,
+    state.displayMetric
+  ).map((g) => g.serializer);
 }
 
 // ---------- Cross-language ----------
@@ -2675,7 +2663,7 @@ function applyCrossLangParetoSelection() {
   const selected = [];
   for (const lang of LANGUAGE_CATALOG) {
     const groups = filterGroupsForCrossLang(state.crossLangGroupsByLang[lang.id] || []);
-    const pareto = paretoOptimalGroups(groups)
+    const pareto = paretoOptimalGroups(groups, 'ops')
       .sort((a, b) => b.avg_ops_per_sec - a.avg_ops_per_sec)
       .slice(0, 2);
     pareto.forEach((g) => selected.push({ lang: lang.id, serializer: g.serializer }));
@@ -2713,7 +2701,8 @@ function refreshCrossLangAddSerializerOptions() {
       const g = groups.find((x) => x.serializer === n);
       const opt = document.createElement('option');
       opt.value = n;
-      opt.textContent = g ? serializerLabelFromGroup(g) : n;
+      opt.textContent = serializerSelectLabel(n, g?.serializer_version || '', names);
+      opt.title = g ? serializerLabelFromGroup(g) : n;
       serSel.appendChild(opt);
     });
 }
@@ -2864,7 +2853,8 @@ function populateSameSerAddSelect() {
     const g = groupForSerializer(n);
     const opt = document.createElement('option');
     opt.value = n;
-    opt.textContent = g ? serializerLabelFromGroup(g) : n;
+    opt.textContent = serializerSelectLabel(n, g?.serializer_version || '', state.serializerNames);
+    opt.title = g ? serializerLabelFromGroup(g) : n;
     sel.appendChild(opt);
   });
 }
@@ -2935,8 +2925,10 @@ function updateXlBaselineSelect() {
     const opt = document.createElement('option');
     opt.value = `${x.lang}|${x.serializer}`;
     const g = findCrossLangGroup(x.lang, x.serializer);
-    const serLabel = g ? serializerLabelFromGroup(g) : x.serializer;
+    const peers = state.xlSelected.filter((y) => y.lang === x.lang).map((y) => y.serializer);
+    const serLabel = serializerSelectLabel(x.serializer, g?.serializer_version || '', peers);
     opt.textContent = `${languageLabel(x.lang)} / ${serLabel}`;
+    opt.title = g ? `${languageLabel(x.lang)} / ${serializerLabelFromGroup(g)}` : opt.textContent;
     sel.appendChild(opt);
   });
   if (
@@ -3012,7 +3004,8 @@ function updateKPIs() {
   if (paretoDesc) {
     const pl =
       state.filterPolicies[state.filterPolicy]?.label || state.filterPolicy || 'default';
-    paretoDesc.textContent = `Optimal trade-offs · samples: ${pl}`;
+    const axis = state.displayMetric === 'time' ? 'latency / size' : 'ops/s / size';
+    paretoDesc.textContent = `Undominated ${axis} · samples: ${pl}`;
   }
 }
 
@@ -3040,10 +3033,12 @@ function populateBaselineSelect() {
       const opt = document.createElement('option');
       opt.value = name;
       const g = groupForSerializer(name);
-      const label = g ? serializerLabelFromGroup(g) : name;
+      const ver = g?.serializer_version || '';
+      const label = serializerSelectLabel(name, ver, state.serializerNames);
       opt.textContent = label + (state.paretoSerializerNames.includes(name) ? ' ★' : '');
+      const full = g ? serializerLabelFromGroup(g) : name;
       const href = serializerSourceUrl(state.currentLanguage, name);
-      if (href) opt.title = href;
+      opt.title = href ? `${full} · ${href}` : full;
       sel.appendChild(opt);
     });
     if (state.compareBaseline && state.serializerNames.includes(state.compareBaseline)) {
@@ -3459,6 +3454,9 @@ function renderCompareMatrix() {
     const serName = col.group?.serializer || (col.key.includes('|') ? col.key.split('|').slice(1).join('|') : col.key);
     const serLang = col.group?.language || (col.key.includes('|') ? col.key.split('|')[0] : state.currentLanguage);
     const src = serializerSourceUrl(serLang, serName);
+    // The node actually parented by <th>. insertBefore must use this, not the
+    // inner name span, or Cross-language headers throw and the matrix stays empty.
+    let nameHost = nameEl;
     if (src) {
       const a = document.createElement('a');
       a.className = 'serializer-link';
@@ -3466,10 +3464,9 @@ function renderCompareMatrix() {
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       a.appendChild(nameEl);
-      th.appendChild(a);
-    } else {
-      th.appendChild(nameEl);
+      nameHost = a;
     }
+    th.appendChild(nameHost);
     if (ver) {
       const verEl = document.createElement('span');
       verEl.className = 'cmp-th-ver';
@@ -3480,7 +3477,7 @@ function renderCompareMatrix() {
       const subEl = document.createElement('span');
       subEl.className = 'cmp-th-lang';
       subEl.textContent = sub;
-      th.insertBefore(subEl, nameEl);
+      th.insertBefore(subEl, nameHost);
     }
     if (col.isBaseline) {
       const baseEl = document.createElement('span');

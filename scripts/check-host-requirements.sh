@@ -65,7 +65,7 @@ check_go() {
   if command -v go >/dev/null 2>&1; then
     ok "go ($(go version 2>/dev/null)) [GOTOOLCHAIN=${GOTOOLCHAIN:-auto}]"
   else
-    miss "go — https://go.dev/dl/ (bootstrap 1.22+; module uses toolchain go1.24.x)"
+    miss "go — https://go.dev/dl/ (bootstrap 1.22+; module uses toolchain go1.27.x)"
   fi
 }
 

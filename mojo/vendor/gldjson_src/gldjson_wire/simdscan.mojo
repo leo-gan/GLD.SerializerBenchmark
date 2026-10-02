@@ -54,18 +54,43 @@ def first_escape_or_quote[origin: ImmOrigin](data: Span[Byte, origin], start: In
 
 
 @always_inline
+def _special_mask_8(w: UInt64) -> UInt64:
+    """High bit per byte that is `"`, `\\`, or < 32. simdjson haszero / hasless."""
+    var q = w ^ UInt64(0x2222222222222222)
+    var qz = (q - UInt64(0x0101010101010101)) & ~q & UInt64(0x8080808080808080)
+    var b = w ^ UInt64(0x5C5C5C5C5C5C5C5C)
+    var bz = (b - UInt64(0x0101010101010101)) & ~b & UInt64(0x8080808080808080)
+    var hl = (w - UInt64(0x2020202020202020)) & ~w & UInt64(0x8080808080808080)
+    return qz | bz | hl
+
+
+@always_inline
 def scan_plain_string[
     origin: ImmOrigin
 ](data: Span[Byte, origin], start: Int, mut ascii: Bool) -> Int:
     """Quote/escape/control index. Sets `ascii` False on any byte >= 128.
 
-    SIMD first when 16 bytes remain (mid-object always does). Scalar-first-16
-    was slower on the official strings suite.
+    An 8-byte probe runs first so a short string does not pay for a full SIMD
+    chunk when the closing quote is inside those eight bytes. A miss falls
+    through to the SIMD scan.
     """
     ascii = True
     var n = len(data)
     var i = start
     var ptr = data.unsafe_ptr()
+    if i + 8 <= n:
+        var w = ptr.unsafe_offset(i).unsafe_bitcast[UInt64]()[]
+        var special = _special_mask_8(w)
+        var nonascii = w & UInt64(0x8080808080808080)
+        if special != 0:
+            var rel = Int(count_trailing_zeros(special)) // 8
+            var content = (UInt64(1) << UInt64(rel * 8)) - UInt64(1)
+            if (nonascii & content) != 0:
+                ascii = False
+            return i + rel
+        if nonascii != 0:
+            ascii = False
+        i += 8
     var q = SIMD[DType.uint8, SCAN_W](34)
     var sl = SIMD[DType.uint8, SCAN_W](92)
     var thirty_two = SIMD[DType.uint8, SCAN_W](32)
@@ -89,10 +114,18 @@ def scan_plain_string[
     return n
 
 
+@always_inline
 def needs_escape_bytes[origin: ImmOrigin](data: Span[Byte, origin]) -> Bool:
     var n = len(data)
     var i = 0
     var ptr = data.unsafe_ptr()
+    if n < SCAN_W:
+        while i < n:
+            var c = Int(ptr.unsafe_offset(i)[])
+            if c < 32 or c == 34 or c == 92:
+                return True
+            i += 1
+        return False
     var q = SIMD[DType.uint8, SCAN_W](34)
     var sl = SIMD[DType.uint8, SCAN_W](92)
     var thirty_two = SIMD[DType.uint8, SCAN_W](32)

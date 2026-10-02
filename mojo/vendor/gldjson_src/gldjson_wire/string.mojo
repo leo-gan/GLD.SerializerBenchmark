@@ -7,6 +7,7 @@ from gldjson_wire.simdscan import needs_escape_bytes, scan_plain_string
 from gldjson_wire.utf8 import string_from_utf8
 
 
+@always_inline
 def needs_escape[origin: ImmOrigin](data: Span[Byte, origin]) -> Bool:
     return needs_escape_bytes(data)
 
@@ -96,9 +97,38 @@ def _hex(n: Int) -> Byte:
     return Byte(87 + n)
 
 
+@always_inline
+def try_parse_plain_string[
+    origin: ImmOrigin
+](data: Span[Byte, origin], mut pos: Int, mut out: String) -> Bool:
+    """Unescaped ASCII string whose closing quote is within 8 bytes."""
+    var n = len(data)
+    var p = pos
+    if p >= n or Int(data[p]) != 34:
+        return False
+    var i = p + 1
+    var limit = i + 8
+    if limit > n:
+        limit = n
+    var raw = data.unsafe_ptr()
+    while i < limit:
+        var c = Int(raw.unsafe_offset(i)[])
+        if c == 34:
+            out = String(unsafe_from_utf8=data[p + 1 : i])
+            pos = i + 1
+            return True
+        if c < 32 or c == 92 or c >= 128:
+            return False
+        i += 1
+    return False
+
+
 def parse_string[
     origin: ImmOrigin
 ](data: Span[Byte, origin], mut pos: Int) raises DecodeError -> String:
+    var plain = String()
+    if try_parse_plain_string(data, pos, plain):
+        return plain^
     if pos >= len(data) or Int(data[pos]) != 34:
         raise DecodeError(DecodeError.KIND_SYNTAX, pos)
     var start = pos

@@ -6,10 +6,13 @@ from bench.avro_ser import AvroSer
 from bench.protobuf_ser import ProtobufSer
 from bench.flatbuffers_ser import FlatBuffersSer
 from bench.toml_ser import TomlSer
+from bench.gldtoml_ser import GldTomlSer
 from bench.gldjson_ser import GldJsonSer
 from bench.yaml_ser import YamlSer
 from bench.msgpack_ser import MsgpackSer
 from bench.bson_ser import BsonSer
+from bench.ion_ser import IonSer
+from bench.smile_ser import SmileSer
 
 
 def _roundtrip_all(type_id: String) raises:
@@ -22,10 +25,13 @@ def _roundtrip_all(type_id: String) raises:
     var proto = ProtobufSer()
     var fb = FlatBuffersSer()
     var toml = TomlSer()
+    var gldtoml = GldTomlSer()
     var gldj = GldJsonSer()
     var yaml = YamlSer()
     var msgp = MsgpackSer()
     var bson = BsonSer()
+    var ion = IonSer()
+    var smile = SmileSer()
     if not ember.check(fx, ember.serialize_bytes(fx)):
         raise Error("emberjson fidelity " + type_id)
     if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
@@ -40,6 +46,8 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("flatbuffers fidelity " + type_id)
     if not toml.check(fx, toml.serialize_bytes(fx)):
         raise Error("toml fidelity " + type_id)
+    if not gldtoml.check(fx, gldtoml.serialize_bytes(fx)):
+        raise Error("gld-toml fidelity " + type_id)
     if not gldj.check(fx, gldj.serialize_bytes(fx)):
         raise Error("mojo-json fidelity " + type_id)
     if not yaml.check(fx, yaml.serialize_bytes(fx)):
@@ -48,6 +56,10 @@ def _roundtrip_all(type_id: String) raises:
         raise Error("mojo-msgpack fidelity " + type_id)
     if not bson.check(fx, bson.serialize_bytes(fx)):
         raise Error("mojo-bson fidelity " + type_id)
+    if not ion.check(fx, ion.serialize_bytes(fx)):
+        raise Error("mojo-ion fidelity " + type_id)
+    if not smile.check(fx, smile.serialize_bytes(fx)):
+        raise Error("mojo-smile fidelity " + type_id)
 
 
 def _ehsan_batch(type_id: String) raises:
@@ -56,6 +68,26 @@ def _ehsan_batch(type_id: String) raises:
     var ehsan = EhsanJsonSer()
     if not ehsan.check(fx, ehsan.serialize_bytes(fx)):
         raise Error("ehsanmok-json fidelity n=100 " + type_id)
+
+
+def _yaml_batch(type_id: String) raises:
+    var cfg = TypeConfig()
+    var one = make_one(type_id, cfg, UInt64(42), 0)
+    var fx = make_cell(type_id, cfg, UInt64(42), 100, "")
+    var yaml = YamlSer()
+    var small = yaml.serialize_bytes(one)
+    var buf = yaml.serialize_bytes(fx)
+    if not yaml.check(fx, buf):
+        raise Error("gld-yaml fidelity n=100 " + type_id)
+    if len(buf) < len(small) * 50:
+        raise Error(
+            "gld-yaml size n=100 "
+            + type_id
+            + " "
+            + String(len(buf))
+            + " vs n=1 "
+            + String(len(small))
+        )
 
 
 def _flatbuffers_batch(type_id: String) raises:
@@ -79,4 +111,9 @@ def main() raises:
     _flatbuffers_batch("strings")
     _flatbuffers_batch("event")
     _flatbuffers_batch("message")
+    _yaml_batch("message")
+    _yaml_batch("document")
+    _yaml_batch("telemetry")
+    _yaml_batch("strings")
+    _yaml_batch("event")
     print("ok")

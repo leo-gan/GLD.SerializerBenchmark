@@ -939,29 +939,31 @@ def _add_call(base: Int, slot: Int, expr: String, default: Int64) -> String:
 
 
 def _prepend_call(base: Int, expr: String) -> String:
+    # start_vector already aligned and reserved this slot. push_* stores
+    # the scalar without running alignment again.
     if base == BT_BOOL:
-        return "b.prepend_bool(" + expr + ")"
+        return "b.push_bool(" + expr + ")"
     if base == BT_BYTE:
-        return "b.prepend_i8(" + expr + ")"
+        return "b.push_i8(" + expr + ")"
     if base == BT_UTYPE:
-        return "b.prepend_u8(" + expr + ")"
+        return "b.push_u8(" + expr + ")"
     if base == BT_UBYTE:
-        return "b.prepend_u8(" + expr + ")"
+        return "b.push_u8(" + expr + ")"
     if base == BT_SHORT:
-        return "b.prepend_i16(" + expr + ")"
+        return "b.push_i16(" + expr + ")"
     if base == BT_USHORT:
-        return "b.prepend_u16(" + expr + ")"
+        return "b.push_u16(" + expr + ")"
     if base == BT_INT:
-        return "b.prepend_i32(" + expr + ")"
+        return "b.push_i32(" + expr + ")"
     if base == BT_UINT:
-        return "b.prepend_u32(" + expr + ")"
+        return "b.push_u32(" + expr + ")"
     if base == BT_LONG:
-        return "b.prepend_i64(" + expr + ")"
+        return "b.push_i64(" + expr + ")"
     if base == BT_ULONG:
-        return "b.prepend_u64(" + expr + ")"
+        return "b.push_u64(" + expr + ")"
     if base == BT_FLOAT:
-        return "b.prepend_f32(" + expr + ")"
-    return "b.prepend_f64(" + expr + ")"
+        return "b.push_f32(" + expr + ")"
+    return "b.push_f64(" + expr + ")"
 
 
 def _place_field(schema: Schema, objects: List[String], prefix: String, field: FieldDef) -> String:

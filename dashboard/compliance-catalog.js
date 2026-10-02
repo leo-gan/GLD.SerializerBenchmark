@@ -85,6 +85,7 @@ export const CATALOG = [
   { language: "javascript", name: "sia", formats: [], docs: "https://github.com/TimeleapLabs/sia", evidence: "Sia: project-specific binary tags, no public MUST/MUST NOT spec." },
   { language: "javascript", name: "bser", formats: [], docs: "https://facebook.github.io/watchman/docs/bser.html", evidence: "Watchman BSER: Facebook Watchman binary protocol, not a general interchange spec." },
   { language: "go", name: "encoding/json", formats: ["json"], docs: "https://pkg.go.dev/encoding/json", evidence: "Go stdlib encoding/json: RFC 7159 JSON." },
+  { language: "go", name: "encoding/json/v2", formats: ["json"], docs: "https://pkg.go.dev/encoding/json/v2", evidence: "Go 1.27 encoding/json/v2: stricter JSON defaults (invalid UTF-8 and duplicate names rejected)." },
   { language: "go", name: "goccy/go-json", formats: ["json"], docs: "https://github.com/goccy/go-json", evidence: "goccy/go-json: fast encoding/json-compatible JSON library." },
   { language: "go", name: "jsoniter", formats: ["json"], docs: "https://github.com/json-iterator/go", evidence: "json-iterator: high-performance JSON for Go." },
   { language: "go", name: "segmentio/encoding/json", formats: ["json"], docs: "https://github.com/segmentio/encoding", evidence: "segmentio/encoding/json: drop-in encoding/json replacement." },
@@ -298,9 +299,12 @@ export const CATALOG = [
   { language: "mojo", name: "mojo-protobuf", formats: ["protobuf"], docs: "https://github.com/leo-gan/gld-protobuf", evidence: "gld-protobuf from the suite .proto." },
   { language: "mojo", name: "mojo-flatbuffers", formats: ["flatbuffers"], docs: "https://github.com/leo-gan/gld-flatbuffers", evidence: "gld-flatbuffers: reused Builder and generated tables from the suite .fbs." },
   { language: "mojo", name: "mojo-avro", formats: ["avro"], docs: "https://github.com/leo-gan/gld-avro", evidence: "gld-avro: Avro datum encode/decode." },
-  { language: "mojo", name: "mojo-toml", formats: ["toml"], docs: "https://github.com/DataBooth/mojo-toml", evidence: "DataBooth/mojo-toml: TOML." },
+  { language: "mojo", name: "mojo-toml", formats: ["toml"], docs: "https://github.com/DataBooth/mojo-toml", evidence: "DataBooth/mojo-toml: TOML. Not leo-gan/gld-toml." },
+  { language: "mojo", name: "gld-toml", formats: ["toml"], docs: "https://github.com/leo-gan/gld-toml", evidence: "gld-toml: TOML 1.1 TomlDoc encode/decode. Vendored as gldtoml so it does not collide with DataBooth's toml package." },
   { language: "mojo", name: "mojo-msgpack", formats: ["msgpack"], docs: "https://github.com/leo-gan/gld-messagepack", evidence: "gld-messagepack: MessagePack wire." },
-  { language: "mojo", name: "mojo-bson", formats: ["bson"], docs: "https://github.com/leo-gan/gld-bson", evidence: "gld-bson 0.1.0: BSON documents via decode_document (Mojo 1.1)." },
+  { language: "mojo", name: "mojo-bson", formats: ["bson"], docs: "https://github.com/leo-gan/gld-bson", evidence: "gld-bson: BSON documents via decode_document (Mojo 1.1)." },
+  { language: "mojo", name: "mojo-ion", formats: ["ion"], docs: "https://github.com/leo-gan/gld-ion", evidence: "gld-ion 0.2.0: Amazon Ion text and binary decode." },
+  { language: "mojo", name: "mojo-smile", formats: ["smile"], docs: "https://github.com/leo-gan/gld-smile", evidence: "gld-smile 0.2.0: Smile decode_bytes." },
   { language: "mojo", name: "gld-yaml", formats: ["yaml"], docs: "https://github.com/leo-gan/gld-yaml", evidence: "gld-yaml: YAML value encode/decode." },
 ];
 
