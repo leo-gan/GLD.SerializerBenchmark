@@ -101,7 +101,7 @@ Each language has a hand-written **Overview** (roster, caveats, how to read this
 | Language | Serializers (registered) | Overview | Dashboard |
 |----------|--------------------------|----------|-----------|
 | C | **21** | [Overview](../c/index.md) | [Dashboard](../dashboard/?lang=c) |
-| C# | **41** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
+| C# | **47** | [Overview](../c-sharp/index.md) | [Dashboard](../dashboard/?lang=csharp) |
 | C++ | **27+** | [Overview](../cpp/index.md) | [Dashboard](../dashboard/?lang=cpp) |
 | Go | **22** | [Overview](../go/index.md) | [Dashboard](../dashboard/?lang=go) |
 | Java | **18** | [Overview](../java/index.md) | [Dashboard](../dashboard/?lang=java) |

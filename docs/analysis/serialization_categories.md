@@ -68,7 +68,7 @@ Examples use **log `SerializerName` values** from language overviews (not always
 - **Prefer when:** public APIs, human-edited config, multi-vendor clients without an interface description language (IDL).
 - **Trade-offs:** readable; larger payloads; performance varies sharply by implementation.
 - **Examples in suite:**
-  - **C#:** `Json.Net`, `Json.Net (Helper)`, `System.Text.Json`, `SpanJson`, `Utf8Json`, `Jil`, `NetJSON`, `ServiceStack Json`, …
+  - **C#:** `Json.Net`, `Json.Net (Helper)`, `System.Text.Json`, `ShapeShift.Json`, `SpanJson`, `Utf8Json`, `NetJSON`, `ServiceStack Json`, …
   - **Python:** `json`, `orjson`, `msgspec`, `rapidjson`, `pydantic`, `mashumaro`, `serpyco-rs`
   - **Rust:** `serde_json`, `simd-json`, `sonic-rs`
   - **C:** `cJSON`, `yyjson`, `jansson`, `parson`, `json-c`
