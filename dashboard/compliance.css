@@ -255,6 +255,11 @@ body.dash-view-compliance #experiments {
   background: var(--bg-surface);
 }
 
+#cmp-filter-serializer {
+  min-width: 14rem;
+  width: max-content;
+}
+
 .cmp-filter-nospec select,
 .cmp-opt-nospec {
   font-style: italic;
