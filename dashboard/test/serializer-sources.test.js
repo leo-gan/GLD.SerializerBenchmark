@@ -67,6 +67,43 @@ test('serializerNameHtml wraps known names in a source link', () => {
   assert.equal(serializerNameHtml('python', 'unknown', 'unknown'), 'unknown');
 });
 
+test('encoding/json/v2 links to the v2 tree, and catalog docs cover a stale sources file', () => {
+  const data = loadCatalog();
+  setSerializerSources(data);
+  const v1 = serializerSourceUrl('go', 'encoding/json');
+  const v2 = serializerSourceUrl('go', 'encoding/json/v2');
+  assert.equal(v1, 'https://github.com/golang/go/tree/master/src/encoding/json');
+  assert.equal(v2, 'https://github.com/golang/go/tree/master/src/encoding/json/v2');
+  assert.notEqual(v1, v2);
+  const html = serializerNameHtml('go', 'encoding/json/v2', 'encoding/json/v2:go1.27.1', {
+    strong: true,
+  });
+  assert.match(html, /href="https:\/\/github.com\/golang\/go\/tree\/master\/src\/encoding\/json\/v2"/);
+  assert.match(html, /<strong>encoding\/json\/v2:go1.27.1<\/strong>/);
+
+  setSerializerSources({
+    languages: {
+      go: {
+        'encoding/json': {
+          source_url: 'https://github.com/golang/go/tree/master/src/encoding/json',
+        },
+      },
+    },
+  });
+  assert.equal(
+    serializerSourceUrl('go', 'encoding/json/v2'),
+    'https://pkg.go.dev/encoding/json/v2',
+  );
+  assert.match(
+    serializerNameHtml('go', 'encoding/json/v2', 'encoding/json/v2:1.27.1'),
+    /href="https:\/\/pkg.go.dev\/encoding\/json\/v2"/,
+  );
+  assert.equal(
+    serializerSourceUrl('go', 'encoding/json'),
+    'https://github.com/golang/go/tree/master/src/encoding/json',
+  );
+});
+
 test('catalog versions match latest bench SerializerVersion when present', () => {
   const data = loadCatalog();
   const dataDir = join(root, 'dashboard', 'public', 'data');

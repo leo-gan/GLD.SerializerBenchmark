@@ -5,7 +5,7 @@
  * (fed by ./scripts/run-compliance.sh). Results live here, not in MkDocs pages.
  */
 import './compliance.css';
-import { serializerDisplayName } from './format.js';
+import { serializerDisplayName, serializerSelectLabel } from './format.js';
 import {
   loadSerializerSources,
   serializerNameHtml,
@@ -89,14 +89,14 @@ function matchesRow(row, key) {
   return matrixMatchesRow(row, key, ui.lang === ALL_LANG ? '' : ui.lang);
 }
 
-function serializerLabel(row) {
-  const name = serializerOf(row);
+function versionForLabel(row) {
   const fromRow = row?.serializer_version == null ? '' : String(row.serializer_version).trim();
-  const ver =
-    fromRow && fromRow !== 'unknown' && fromRow !== '—'
-      ? fromRow
-      : benchVersion(String(row?.language || payload?.language || ''), name);
-  return serializerDisplayName(name, ver);
+  if (fromRow && fromRow !== 'unknown' && fromRow !== '—') return fromRow;
+  return benchVersion(String(row?.language || payload?.language || ''), serializerOf(row));
+}
+
+function serializerLabel(row) {
+  return serializerDisplayName(serializerOf(row), versionForLabel(row));
 }
 
 function benchVersion(language, name) {
@@ -573,6 +573,7 @@ function renderMain(root) {
     : allStandards
       ? roster.map((e) => e.key)
       : formatSubset(matrix, ui.format, group.language, group.benchVersions).map((e) => e.key);
+  const namesInList = serializers.map((key) => parseRowIdentity(key).serializer || key);
 
   root.innerHTML = `
     <div class="cmp-header">
@@ -616,13 +617,16 @@ function renderMain(root) {
           const sample = langRows.find(
             (r) => serializerOf(r) === ser && languageOf(r) === language,
           );
-          const label = sample
-            ? serializerLabel(sample)
-            : serializerDisplayName(ser, benchVersion(language, ser));
+          const ver = sample
+            ? versionForLabel(sample)
+            : benchVersion(language, ser);
+          const label = serializerSelectLabel(ser, ver, namesInList);
           return isMultiLang() ? `${langLabel(language)} · ${label}` : label;
         }
         const sample = langRows.find((r) => serializerOf(r) === name);
-        return sample ? serializerLabel(sample) : name;
+        return sample
+          ? serializerSelectLabel(serializerOf(sample), versionForLabel(sample), namesInList)
+          : name;
       })}
     </div>
     <h3 class="cmp-kicker">${noSpec ? 'Serializers not scored under a public spec family' : 'Pass rate by serializer × standard version'}</h3>

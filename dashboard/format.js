@@ -73,6 +73,31 @@ export function serializerLabelFromGroup(g) {
   return serializerDisplayName(g.serializer, g.serializer_version);
 }
 
+/**
+ * Closed `<select>` text for one serializer.
+ *
+ * `encoding/json:go1.27.1` and `encoding/json/v2:go1.27.1` share a version
+ * suffix, so the only difference (`/v2`) sits in the middle and the list
+ * reads as two copies of v1. When one name extends another with `/`, the
+ * option text is the name alone. Callers put `name:version` on `title`.
+ *
+ * @param {string} name
+ * @param {string} [version]
+ * @param {string[]} [allNames] other option values in the same select
+ */
+export function serializerSelectLabel(name, version, allNames) {
+  const self = name == null ? '' : String(name).trim();
+  if (!self) return '—';
+  const names = Array.isArray(allNames) ? allNames : [];
+  const collides = names.some((other) => {
+    const peer = other == null ? '' : String(other).trim();
+    if (!peer || peer === self) return false;
+    return peer.startsWith(`${self}/`) || self.startsWith(`${peer}/`);
+  });
+  if (collides) return self;
+  return serializerDisplayName(self, version);
+}
+
 /** Locale-grouped integer (sizes, counts). */
 export function formatIntGrouped(value) {
   if (value === null || value === undefined || value === '') return '—';

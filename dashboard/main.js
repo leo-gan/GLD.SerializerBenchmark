@@ -28,6 +28,7 @@ import {
   chooseLatencyUnit,
   chooseOpsUnit,
   serializerLabelFromGroup,
+  serializerSelectLabel,
 } from './format.js';
 import {
   loadSerializerSources,
@@ -2700,7 +2701,8 @@ function refreshCrossLangAddSerializerOptions() {
       const g = groups.find((x) => x.serializer === n);
       const opt = document.createElement('option');
       opt.value = n;
-      opt.textContent = g ? serializerLabelFromGroup(g) : n;
+      opt.textContent = serializerSelectLabel(n, g?.serializer_version || '', names);
+      opt.title = g ? serializerLabelFromGroup(g) : n;
       serSel.appendChild(opt);
     });
 }
@@ -2851,7 +2853,8 @@ function populateSameSerAddSelect() {
     const g = groupForSerializer(n);
     const opt = document.createElement('option');
     opt.value = n;
-    opt.textContent = g ? serializerLabelFromGroup(g) : n;
+    opt.textContent = serializerSelectLabel(n, g?.serializer_version || '', state.serializerNames);
+    opt.title = g ? serializerLabelFromGroup(g) : n;
     sel.appendChild(opt);
   });
 }
@@ -2922,8 +2925,10 @@ function updateXlBaselineSelect() {
     const opt = document.createElement('option');
     opt.value = `${x.lang}|${x.serializer}`;
     const g = findCrossLangGroup(x.lang, x.serializer);
-    const serLabel = g ? serializerLabelFromGroup(g) : x.serializer;
+    const peers = state.xlSelected.filter((y) => y.lang === x.lang).map((y) => y.serializer);
+    const serLabel = serializerSelectLabel(x.serializer, g?.serializer_version || '', peers);
     opt.textContent = `${languageLabel(x.lang)} / ${serLabel}`;
+    opt.title = g ? `${languageLabel(x.lang)} / ${serializerLabelFromGroup(g)}` : opt.textContent;
     sel.appendChild(opt);
   });
   if (
@@ -3028,10 +3033,12 @@ function populateBaselineSelect() {
       const opt = document.createElement('option');
       opt.value = name;
       const g = groupForSerializer(name);
-      const label = g ? serializerLabelFromGroup(g) : name;
+      const ver = g?.serializer_version || '';
+      const label = serializerSelectLabel(name, ver, state.serializerNames);
       opt.textContent = label + (state.paretoSerializerNames.includes(name) ? ' ★' : '');
+      const full = g ? serializerLabelFromGroup(g) : name;
       const href = serializerSourceUrl(state.currentLanguage, name);
-      if (href) opt.title = href;
+      opt.title = href ? `${full} · ${href}` : full;
       sel.appendChild(opt);
     });
     if (state.compareBaseline && state.serializerNames.includes(state.compareBaseline)) {
